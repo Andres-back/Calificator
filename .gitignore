@@ -1,0 +1,55 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.venv/
+venv/
+
+# Node / Vite / Playwright
+frontend/node_modules/
+frontend/dist/
+frontend/coverage/
+frontend/test-results/
+frontend/playwright-report/
+frontend/.playwright-cli/
+frontend/output/
+*.tsbuildinfo
+
+# Runtime data
+uploads/
+backend/uploads/
+pgdata/
+redisdata/
+ollama_data/
+*.log
+
+# Secrets and local environment
+.env
+.env.*
+!.env.example
+!backend/.env.example
+!frontend/.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Local tooling / generated artifacts
+.agents/
+.claude/
+.playwright-cli/
+output/
+tmp/
+*.zip
+*.rar
+
+# OS / IDE
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

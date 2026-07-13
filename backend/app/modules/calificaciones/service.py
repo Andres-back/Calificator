@@ -1,0 +1,208 @@
+"""Servicio principal de calificaciones."""
+from __future__ import annotations
+
+from decimal import Decimal
+from uuid import UUID
+
+from fastapi import HTTPException, status
+from sqlalchemy import select
+from sqlalchemy.orm import selectinload
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.modules.calificaciones.models import Calificacion, Entrega
+from app.modules.calificaciones.schemas import AjustarNota, BoletinItem, ConfirmarNota
+from app.modules.evaluaciones.models import Evaluacion
+from app.modules.materias.models import Materia
+from app.modules.matriculas.models import Matricula
+from app.modules.evaluaciones.state_machine import transition_evaluation_state
+from app.modules.users.models import User
+from app.shared.enums import CalificacionEstado, EntregaEstado, EvaluacionEstado, MatriculaEstado, UserRole
+
+
+def validate_score_within_evaluation(score: Decimal, evaluacion: Evaluacion, field_name: str) -> None:
+    if score < 0:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"{field_name} no puede ser negativa",
+        )
+    if score > evaluacion.nota_maxima:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"{field_name} no puede superar la nota maxima de la evaluacion",
+        )
+
+
+def ensure_evaluation_accepts_grading(evaluacion: Evaluacion) -> None:
+    if evaluacion.estado == EvaluacionEstado.CERRADA.value:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="La evaluacion cerrada no acepta nuevas entregas ni calificaciones",
+        )
+    if evaluacion.estado not in {EvaluacionEstado.PUBLICADA.value, EvaluacionEstado.EN_CALIFICACION.value}:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="La evaluacion no esta disponible para entregas o calificaciones",
+        )
+
+
+def transition_to_grading_if_needed(evaluacion: Evaluacion) -> None:
+    if evaluacion.estado == EvaluacionEstado.PUBLICADA.value:
+        transition_evaluation_state(evaluacion, EvaluacionEstado.EN_CALIFICACION)
+
+
+async def get_evaluation_for_calificacion(db: AsyncSession, cal: Calificacion) -> Evaluacion:
+    evaluacion = await db.scalar(
+        select(Evaluacion)
+        .options(selectinload(Evaluacion.blueprint))
+        .where(Evaluacion.id == cal.evaluacion_id)
+    )
+    if not evaluacion:
+        raise HTTPException(status_code=404, detail="Evaluacion no encontrada")
+    return evaluacion
+
+
+async def get_calificacion_or_404(db: AsyncSession, calificacion_id: UUID) -> Calificacion:
+    cal = await db.scalar(
+        select(Calificacion)
+        .options(selectinload(Calificacion.entrega))
+        .where(Calificacion.id == calificacion_id)
+    )
+    if not cal:
+        raise HTTPException(status_code=404, detail="Calificación no encontrada")
+    return cal
+
+
+async def confirmar_nota(
+    db: AsyncSession,
+    cal: Calificacion,
+    payload: ConfirmarNota,
+) -> Calificacion:
+    evaluacion = await get_evaluation_for_calificacion(db, cal)
+    validate_score_within_evaluation(payload.nota_confirmada, evaluacion, "nota_confirmada")
+    cal.nota_confirmada = payload.nota_confirmada
+    cal.revisado_por_docente = True
+    cal.estado = CalificacionEstado.CONFIRMADA.value
+    await db.commit()
+    await db.refresh(cal)
+    return cal
+
+
+async def ajustar_nota(
+    db: AsyncSession,
+    cal: Calificacion,
+    payload: AjustarNota,
+) -> Calificacion:
+    evaluacion = await get_evaluation_for_calificacion(db, cal)
+    validate_score_within_evaluation(payload.nota_confirmada, evaluacion, "nota_confirmada")
+    cal.nota_confirmada = payload.nota_confirmada
+    if payload.feedback:
+        cal.feedback = payload.feedback
+    cal.revisado_por_docente = True
+    cal.estado = CalificacionEstado.AJUSTADA.value
+    await db.commit()
+    await db.refresh(cal)
+    return cal
+
+
+async def list_calificaciones_for_evaluacion(
+    db: AsyncSession, evaluacion_id: UUID
+) -> list[Calificacion]:
+    result = await db.scalars(
+        select(Calificacion).where(Calificacion.evaluacion_id == evaluacion_id)
+    )
+    return list(result)
+
+
+async def get_boletin(
+    db: AsyncSession,
+    estudiante_id: UUID,
+    materia_id: UUID,
+) -> list[dict]:
+    """Return a report card with one joined query instead of one query per grade."""
+    rows = await db.execute(
+        select(Calificacion, Evaluacion)
+        .outerjoin(Evaluacion, Evaluacion.id == Calificacion.evaluacion_id)
+        .where(
+            Calificacion.estudiante_id == estudiante_id,
+            Calificacion.materia_id == materia_id,
+        )
+    )
+    return [
+        {
+            "evaluacion_id": cal.evaluacion_id,
+            "evaluacion_nombre": evaluacion.nombre if evaluacion else "",
+            "nota_confirmada": cal.nota_confirmada,
+            "nota_sugerida": cal.nota_sugerida,
+            "nota_maxima": evaluacion.nota_maxima if evaluacion else Decimal("5"),
+            "estado": cal.estado,
+            "feedback": cal.feedback,
+        }
+        for cal, evaluacion in rows.all()
+    ]
+
+
+async def get_resumen_academico(
+    db: AsyncSession,
+    estudiante_id: UUID,
+) -> dict:
+    """Aggregate confirmed grades for active enrollments in a single query."""
+    rows = await db.execute(
+        select(
+            Calificacion.materia_id,
+            Materia.nombre,
+            Calificacion.nota_confirmada,
+            Evaluacion.nota_maxima,
+        )
+        .join(Evaluacion, Evaluacion.id == Calificacion.evaluacion_id)
+        .join(Materia, Materia.id == Calificacion.materia_id)
+        .join(Matricula, Matricula.materia_id == Calificacion.materia_id)
+        .where(
+            Calificacion.estudiante_id == estudiante_id,
+            Calificacion.nota_confirmada.is_not(None),
+            Matricula.estudiante_id == estudiante_id,
+            Matricula.estado == MatriculaEstado.ACTIVO.value,
+        )
+    )
+
+    by_materia: dict[UUID, dict] = {}
+    for materia_id, materia_nombre, nota_confirmada, nota_maxima in rows.all():
+        if nota_confirmada is None:
+            continue
+        maximo = Decimal(nota_maxima or 0)
+        normalized = float(nota_confirmada)
+        if maximo > 0:
+            normalized = float((Decimal(nota_confirmada) / maximo) * Decimal("5"))
+
+        current = by_materia.setdefault(
+            materia_id,
+            {
+                "materia_id": materia_id,
+                "materia_nombre": materia_nombre,
+                "sum": 0.0,
+                "total_notas": 0,
+            },
+        )
+        current["sum"] += normalized
+        current["total_notas"] += 1
+
+    materias = [
+        {
+            "materia_id": data["materia_id"],
+            "materia_nombre": data["materia_nombre"],
+            "promedio": data["sum"] / data["total_notas"],
+            "total_notas": data["total_notas"],
+        }
+        for data in by_materia.values()
+        if data["total_notas"]
+    ]
+    materias.sort(key=lambda materia: materia["promedio"], reverse=True)
+    total_notas = sum(materia["total_notas"] for materia in materias)
+    total_sum = sum(materia["promedio"] * materia["total_notas"] for materia in materias)
+
+    return {
+        "mejor": materias[0] if materias else None,
+        "por_mejorar": materias[-1] if len(materias) > 1 else None,
+        "promedio_general": total_sum / total_notas if total_notas else None,
+        "total_materias": len(materias),
+        "total_notas": total_notas,
+    }
