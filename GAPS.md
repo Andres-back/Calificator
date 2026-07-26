@@ -1,88 +1,51 @@
 # XCalificator — Análisis de brechas: Manual v1.1 vs Backend
 
-> Generado: 2026-06-29
+> Generado: 2026-06-29 / Última actualización: 2026-07-26
 > Manual analizado: `MANUAL_NEGOCIO.md` v1.1
-> Estado: P0/P1/P2 #7-#10 completados (2026-07-22)
+> Rama: `main`
 
 ---
 
 ## Resumen ejecutivo
 
-| Prioridad | Total | Corregidos hoy | Pendientes |
+| Prioridad | Total | Corregidos | Pendientes |
 |---|---:|---:|---:|
-| P0 — El app no inicia | 0 | 0 (ya estaban OK) | 0 |
+| P0 — El app no inicia | 0 | 0 | 0 |
 | P1 — Brecha estructural crítica | 6 | 6 | 0 |
 | P2 — Feature faltante | 6 | 6 | 0 |
 | P3 — Nice-to-have / futuro | 4 | 0 | 4 |
 
 ---
 
-## Correcciones aplicadas hoy (P1)
+## Correcciones aplicadas históricamente (P1)
 
-### 1. `evaluaciones.modalidad` — columna faltante ✅ CORREGIDO
+### 1. `evaluaciones.modalidad` — columna faltante ✅
+**Manual §5.3.** Columna `modalidad VARCHAR(20) NULLABLE` + CHECK + enum `EvaluacionModalidad`. Migración aplicada.
 
-**Manual §5.3** define tres modalidades de resolución: `online`, `fisica`, `mixta`.
-**Antes:** el modelo `Evaluacion` no tenía este campo.
-**Después:**
-- Columna `modalidad VARCHAR(20) NULLABLE` agregada al modelo SQLAlchemy.
-- `CHECK (modalidad IN ('online', 'fisica', 'mixta'))` en DB.
-- `EvaluacionModalidad` enum agregado a `shared/enums.py`.
-- Migración `202606290004_manual_v1_1_gaps.py`.
+### 2. `EntregaTipo` CHECK limitado ✅
+Ampliado a `'online','foto','pdf','captura','opcion_multiple','interactiva','mixta'`.
 
-### 2. `EntregaTipo` CHECK muy estrecho ✅ CORREGIDO
+### 3. `EntregaEstado` — estados faltantes ✅
+Agregados `en_progreso` y `procesando`.
 
-**Manual §7.1** agrega `opcion_multiple`, `interactiva`, `mixta`.
-**Antes:** `CHECK tipo IN ('online','foto','pdf','captura')`.
-**Después:** `CHECK tipo IN ('online','foto','pdf','captura','opcion_multiple','interactiva','mixta')` + enum actualizado.
+### 4. `CalificacionEstado.anulada` faltante ✅
+Agregado al modelo y base de datos.
 
-### 3. `EntregaEstado` estados faltantes ✅ CORREGIDO
+### 5. Modo Salón — sesiones en base de datos ✅
+Modelo `SalonSesion` + tabla `salon_sesiones`. Ya no se pierden al reiniciar.
 
-**Manual §7.2** agrega `en_progreso` (estudiante abrió y está resolviendo) y `procesando` (IA analizando).
-**Antes:** `('pendiente','recibida','calificada','revisada','requiere_reintento')`.
-**Después:** se incluyen `en_progreso` y `procesando` en CHECK y enum.
-
-### 4. `CalificacionEstado.anulada` faltante ✅ CORREGIDO
-
-**Manual §7.3** define estado `anulada` (docente descarta la calificación).
-**Antes:** no existía en CHECK ni enum.
-**Después:** agregado a ambos.
-
-### 5. Modo Salón — sesiones en memoria ✅ CORREGIDO
-
-**Manual §11.2:** "La sesión debe persistir en base de datos, no solo en memoria, para evitar pérdida si se reinicia el servidor."
-**Antes:** `_salon_sesiones: dict[str, UUID] = {}` en módulo — se perdía al reiniciar.
-**Después:**
-- Modelo `SalonSesion` en `calificaciones/models.py`.
-- Tabla `salon_sesiones` en migración `202606290004`.
-- Router actualizado: `POST /calificaciones/modo-salon/iniciar` persiste en DB.
-- Nuevo endpoint `DELETE /calificaciones/modo-salon/{sesion_id}` para cerrar sesión.
-
-### 6. Naming — `student_name` → `nombre_estudiante` ✅ CORREGIDO
-
-Convención del sistema: español + snake_case.
-Archivos corregidos:
-- `app/modules/herramientas/schemas.py` — `PlanRefuerzoRequest.nombre_estudiante`
-- `app/modules/herramientas/generators/plan_refuerzo.py` — referencia al campo
-- `app/services/pdf_service.py` — parámetro de función
+### 6. Naming `student_name` → `nombre_estudiante` ✅
+Schemas corregidos para seguir convención español + snake_case.
 
 ---
 
-## Features faltantes (P2)
+## Features faltantes (P2) — todos corregidos
 
-### 7. Endpoint de entrega online para estudiantes ✅ CORREGIDO HOY
+### 7. Endpoint de entrega online para estudiantes ✅
+`POST /evaluaciones/{id}/entregas`. Crea `Entrega` (tipo `online`) y `Calificacion` (estado `sugerida`).
 
-**Manual §5.4** define el flujo donde el estudiante responde en la plataforma.
-**Antes:** solo existía `POST /calificaciones/foto` (profesor sube foto física).
-**Después:** `POST /evaluaciones/{evaluacion_id}/entregas` para rol `estudiante`.
-- Valida matrícula activa.
-- Valida que la evaluación esté publicada.
-- Llama a `grade_submission` con `respuesta_texto`.
-- Crea `Entrega` (tipo `online`) y `Calificacion` (estado `sugerida`).
-- El docente confirma por el flujo existente.
-
-### 8. Generadores de herramientas incompletos ✅ CORREGIDO HOY
-
-**Manual §8.4** lista 17 herramientas. Los 5 generadores faltantes se crearon hoy:
+### 8. Generadores de herramientas completos ✅
+Se crearon los 5 generadores que faltaban:
 
 | Herramienta | Generator | Estado |
 |---|---|---|
@@ -90,125 +53,112 @@ Archivos corregidos:
 | Crucigrama | `crucigrama.py` | ✅ |
 | Cuento educativo | `cuento.py` | ✅ |
 | Guía de clase | `guia.py` | ✅ |
-| Taller | (usa `guia` internamente) | ⚠️ Thin |
+| Taller | `taller.py` | ✅ |
 | Examen | `examen.py` | ✅ |
 | Rúbrica | `rubrica.py` | ✅ |
 | Plan de refuerzo | `plan_refuerzo.py` | ✅ |
-| Emparejar conceptos | `emparejar.py` | ✅ |
+| Emparejar | `emparejar.py` | ✅ |
 | Unir columnas | `unir_columnas.py` | ✅ |
-| **Ficha didáctica** | `ficha.py` | ✅ Nuevo |
-| **Quiz rápido** | `quiz_rapido.py` | ✅ Nuevo |
-| **Lectura comprensiva** | `lectura_comprensiva.py` | ✅ Nuevo |
-| **Mapa conceptual** | `mapa_conceptual.py` | ✅ Nuevo |
-| **Flashcards** | `flashcards.py` | ✅ Nuevo |
+| **Ficha didáctica** | `ficha.py` | ✅ |
+| **Quiz rápido** | `quiz_rapido.py` | ✅ |
+| **Lectura comprensiva** | `lectura_comprensiva.py` | ✅ |
+| **Mapa conceptual** | `mapa_conceptual.py` | ✅ |
+| **Flashcards** | `flashcards.py` | ✅ |
 | Para colorear | `para_colorear.py` | ✅ |
-| Informe estudiante | — | ⏳ P3 |
-| Informe acudiente | — | ⏳ P3 |
-| Presentación | módulo independiente | ✅ |
 
-**Acción:** se crearon los 5 generadores, schemas (`FichaRequest`, `QuizRapidoRequest`, `LecturaComprensivaRequest`, `MapaConceptualRequest`, `FlashcardsRequest`), service functions y endpoints REST. También se registraron en el frontend (`meta.ts`, `forms/index.ts`, `tools.tsx`, `api.ts`). El build del frontend compila y construye sin errores.
+Todos los 15 tipos tienen generador backend, schema, service, endpoint REST, y vista frontend.
 
-### 9. Intentos configurables ✅ CORREGIDO HOY
+### 9. Intentos configurables ✅
+Columnas `politica_intento` + `intentos_permitidos` en `Evaluacion`. Validación en `crear_entrega_online`.
 
-**Manual §10.3** define `un_intento`, `multiples_intentos`, `mejor_puntaje`, `ultimo_intento`, `practica_libre`.
-**Antes:** el modelo `Evaluacion` no tenía `intentos_permitidos` ni `politica_intento`.
-**Después:**
-- Enum `PoliticaIntento` en `shared/enums.py`.
-- Columnas `politica_intento VARCHAR(30)` + `intentos_permitidos INTEGER` en modelo, schemas y service.
-- CHECK constraints en DB.
-- Lógica de validación en `crear_entrega_online` respeta cada política.
-- Migración ejecutada en producción.
+### 10. Tiempo límite por evaluación ✅
+Columna `tiempo_limite_minutos` en modelo y schemas. Validación servidor (HTTP 410 si expiró).
 
-### 10. Tiempo límite por evaluación ✅ CORREGIDO HOY
+### 11. Modo lote (batch de fotos) ✅
+`POST /calificaciones/lote` — múltiples imágenes con `estudiante_id`. Procesa cada foto con IA, crea entregas y calificaciones.
 
-**Manual §5.4:** "El docente puede configurar tiempo límite."
-**Antes:** no existía `tiempo_limite_minutos` en el modelo `Evaluacion`.
-**Después:**
-- Columna `tiempo_limite_minutos INTEGER NULLABLE` en modelo y schemas.
-- Validación del lado servidor al crear entrega (HTTP 410 si expiró).
-- CHECK constraint en DB.
-- Migración ejecutada en producción.
+### 12. Estados por estudiante en Modo Salón ✅
+Tabla `salon_sesion_estudiantes` con estados por estudiante. Inicialización, resumen, PATCH individual.
 
-**Nota:** el campo se puede configurar desde el frontend de creación/edición de evaluaciones (queda pendiente añadir el UI field si se desea).
+---
 
-### 11. Modo lote (batch de fotos) ✅ CORREGIDO HOY
+## Trabajo completado en sesión 2026-07-26
 
-**Manual §5.5** define submodo `lote`: el profesor sube varias fotos y luego las asocia a estudiantes.
-**Antes:** solo `foto_individual` y `modo_salon` implementados.
-**Después:**
-- Endpoint `POST /calificaciones/lote` que acepta múltiples imágenes con sus `estudiante_id`.
-- Valida matrícula de todos los estudiantes, procesa cada foto con IA, crea entregas y calificaciones.
-- Devuelve lista de calificaciones + errores por si alguna falla.
+### Impresión optimizada (ahorro de papel)
+- Nueva hoja `print.css` con estilos `@media print` para todas las herramientas
+- Oculta sidebar, topbar, botones, badges, navegación, modales al imprimir
+- Tipografía compacta (9pt) y espaciado reducido para ocupar menos hojas
+- Header de impresión con campos: **Nombre**, **Grado**, **Fecha**, **Nota**
+- Pistas de crucigrama en 2 columnas al imprimir
+- Flashcards, sopa de letras, crucigrama con celdas compactas
+- Matching (unir columnas / emparejar) en formato texto plano sin cables SVG
+- Clase `print:hidden` en elementos de navegación (breadcrumb, volver, botones)
 
-### 12. Estados por estudiante en Modo Salón ✅ CORREGIDO HOY
+### Branding — imágenes generadas integradas
+- `logo-full.png` en Sidebar y LoginPage
+- `pattern-subtle.png` como textura en fondo del Sidebar
+- `pattern-hero.png` como patrón decorativo en LoginPage
+- `feature-evaluate.png` como fondo decorativo en EvaluacionesPage
 
-**Manual §11.2** define estados por estudiante: `pendiente`, `fotografiado`, `calificado`, `confirmado`, `omitido`.
-**Antes:** solo se rastrea si ya hay `Calificacion` (binario).
-**Después:**
-- Tabla `salon_sesion_estudiantes` con `estado` (pendiente/fotografiado/calificado/confirmado/omitido/error).
-- CHECK constraint + unique(sesion_id, estudiante_id).
-- `init_sesion_estudiantes()` precarga todos los matriculados al iniciar sesión.
-- `get_sesion_summary()` devuelve conteos por estado.
-- `PATCH .../{estudiante_id}` para omitir o cambiar estado manualmente.
-- `GET .../estudiantes` lista completa con estados.
-- `grade_student_photo` actualiza automáticamente fotografiado → calificado.
-- Confirmar/Ajustar nota actualiza a confirmado si hay sesión activa.
+### PDF backend — renderizadores completos
+Se agregaron renderers para los tipos que mostraban **JSON crudo** en PDF:
+
+| Tipo | Renderer | PDF estudiante | PDF soluciones |
+|---|---|---|---|
+| `lectura_comprensiva` | `_render_lectura_comprensiva` | Texto + preguntas con líneas | Con respuestas |
+| `quiz_rapido` | `_render_quiz_rapido` (alias de examen) | Opción múltiple | Con respuestas |
+| `ficha` | `_render_ficha` | Ejercicios con opciones | Con respuestas |
+| `flashcards` | `_render_flashcards` | Solo anverso, espacio para escribir | Anverso → reverso |
+| `mapa_conceptual` | `_render_mapa_conceptual` | Concepto principal + nodos + relaciones | Completo |
+
+Header unificado en todos los PDFs: **Nombre, Grado, Fecha, Nota** con líneas para llenar.
+
+### Frontend — cambios adicionales
+- Icono de impresión (`Printer`) y compartir (`Share2`) en DetailPage
+- Manejo de `handlePrint` con `window.print()`
 
 ---
 
 ## Items futuros (P3)
 
 ### 13. Evaluación modalidad mixta ❌ FUTURO
-
-**Manual §5.6** define preguntas con `modalidad_respuesta` individual (`online`, `fisica`, `archivo`).
-Requiere cambio en la estructura del campo `preguntas` (JSONB) para soportar `modalidad_respuesta` por pregunta y lógica de unión de entregas parciales.
+**Manual §5.6** define preguntas con `modalidad_respuesta` individual. Requiere estructura JSONB por pregunta.
 
 ### 14. Control de visibilidad de feedback ❌ FUTURO
-
-**Manual §10.1 / R4:** el docente configura si el feedback se muestra inmediatamente o al cierre.
-No hay columna `mostrar_feedback_al` ni lógica de retención en la API.
+**Manual §10.1 / R4.** No hay columna `mostrar_feedback_al` ni lógica de retención.
 
 ### 15. Informe para acudiente ❌ FUTURO
-
-**Manual §14.4** define informe en lenguaje no técnico para padres.
-No existe endpoint ni generador para este tipo de reporte.
+**Manual §14.4.** No existe endpoint ni generador.
 
 ### 16. Reporte por actividad interactiva ❌ FUTURO
-
-**Manual §14.3:** métricas por herramienta interactiva (estudiantes que iniciaron, terminaron, tiempo promedio, ítems con más errores).
-No existe estructura de datos para capturar estos eventos.
+**Manual §14.3.** No existe estructura de datos para capturar eventos.
 
 ---
 
-## Estado de las reglas de negocio críticas
+## Estado de reglas de negocio críticas
 
-| Regla | Descripción | Estado backend |
+| Regla | Descripción | Estado |
 |---|---|---|
 | R1 | IA sugiere, docente confirma | ✅ `requiere_revision_docente: true` siempre |
 | R2 | Actividades pueden ser práctica o evaluación | ⚠️ Enum existe, flujo de asignación pendiente |
-| R3 | Toda actividad online guarda intento | ✅ `Entrega` se persiste con respuesta y timestamp |
-| R4 | Versión estudiante no muestra solución antes de enviar | ✅ Endpoint `/boletin` solo devuelve `confirmada`/`ajustada` |
-| R5 | Todo material puede exportarse | ⚠️ PDF service existe; HTML/imagen pendiente |
-| R6 | Online y física producen mismo tipo de calificación | ✅ Mismo flujo `Calificacion` → boletín |
-| R7 | Blueprint siempre presente | ✅ `grade_submission` falla si no hay blueprint |
-| R8 | Nota máxima inmutable después de publicar | ❌ No hay validación que bloquee cambio de `nota_maxima` en estado `publicada` |
+| R3 | Toda actividad online guarda intento | ✅ `Entrega` persiste |
+| R4 | Versión estudiante no muestra solución | ✅ Endpoint `/boletin` filtra |
+| R5 | Todo material puede exportarse | ⚠️ PDF funciona; falta HTML/imagen |
+| R6 | Online y física producen mismo tipo de calificación | ✅ Mismo flujo `Calificacion` |
+| R7 | Blueprint siempre presente | ✅ `grade_submission` lo requiere |
+| R8 | Nota máxima inmutable después de publicar | ✅ Validación en `update_evaluacion` |
 | R9 | Estudiante solo ve calificaciones confirmadas | ✅ Filtro en `get_boletin()` |
-| R10 | Reintentos configurables | ✅ Implementado (P2 #9) |
-| R11 | Evidencia física se conserva | ✅ `archivo_url` persiste en `Entrega` |
-| R12 | Xali no resuelve evaluaciones activas | ✅ Prompt de Xali prohíbe explícitamente revelar respuestas |
+| R10 | Reintentos configurables | ✅ Implementado |
+| R11 | Evidencia física se conserva | ✅ `archivo_url` en `Entrega` |
+| R12 | Xali no resuelve evaluaciones activas | ✅ Prompt prohíbe explícitamente |
 
-**R8 requiere fix inmediato:** agregar validación en `evaluaciones/service.py` para bloquear cambio de `nota_maxima` cuando `estado == 'publicada'`.
+**R8 ya corregido** — `update_evaluacion` en `evaluaciones/service.py` bloquea cambio de `nota_maxima` si `estado == 'publicada'`.
 
 ---
 
-## Fix adicional recomendado: R8
+## Pendientes conocidos
 
-```python
-# evaluaciones/service.py — en función de update
-async def update_evaluacion(db, evaluacion_id, payload):
-    ev = await get_evaluacion_or_404(db, evaluacion_id)
-    if ev.estado == EvaluacionEstado.PUBLICADA and payload.nota_maxima is not None:
-        if payload.nota_maxima != ev.nota_maxima:
-            raise HTTPException(400, "No se puede cambiar nota_maxima de una evaluación publicada (R8)")
-    ...
-```
+- **Disco raíz en VPS:** `/dev/sda2` al 100% en entorno dev. Docker storage en `/mnt/data/docker` (overlayfs, 3.9 GB). Solución temporal: `docker system prune -a -f` y mover caches a `/mnt`.
+- **Docker Compose build:** requiere `DOCKER_BUILDKIT=0` o instalar buildx.
+- **Test preexistente:** `test_production_config::test_production_settings_accept_non_default_secrets` falla (cookie_secure=False en test).
+- **Lint preexistente:** 7 errores de `react-hooks/rules-of-hooks` en `MateriaDbaPage.tsx`.
