@@ -59,7 +59,9 @@ function renderDetail() {
     <QueryClientProvider client={client}>
       <MemoryRouter initialEntries={['/app/materias/materia-1']}>
         <Routes>
-          <Route path="/app/materias/:id" element={<MateriaDetailPage />} />
+          <Route path="/app/materias/:id" element={<MateriaDetailPage />}>
+            <Route index element={<div>Acceso confirmado</div>} />
+          </Route>
         </Routes>
       </MemoryRouter>
     </QueryClientProvider>,

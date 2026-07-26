@@ -1,9 +1,12 @@
 import { lazy, Suspense } from 'react';
-import { createBrowserRouter, Navigate } from 'react-router-dom';
+import { createBrowserRouter, Link, Navigate, useRouteError } from 'react-router-dom';
 import { AppShell } from '@/components/layout/AppShell';
 import { RequireAuth } from '@/components/auth/RequireAuth';
 import { RequireRole } from '@/components/auth/RequireRole';
-import { LoadingScreen } from '@/components/ui';
+import { LoadingScreen, Button } from '@/components/ui';
+import { routes } from '@/config/routes';
+import { ForbiddenPage } from '@/pages/ForbiddenPage';
+import { NotFoundPage } from '@/pages/NotFoundPage';
 
 const LoginPage = lazy(() => import('@/modules/auth/LoginPage').then((m) => ({ default: m.LoginPage })));
 const DashboardPage = lazy(() => import('@/modules/dashboard/DashboardPage').then((m) => ({ default: m.DashboardPage })));
@@ -28,63 +31,117 @@ const XaliPage = lazy(() => import('@/modules/xali/XaliPage').then((m) => ({ def
 
 const lazyPage = (el: React.ReactNode) => <Suspense fallback={<LoadingScreen />}>{el}</Suspense>;
 
+/**
+ * Error boundary global: atrapa errores de renderizado inesperados.
+ */
+function RouterErrorBoundary() {
+  const error = useRouteError();
+  console.error('[RouterErrorBoundary]', error);
+  return (
+    <div className="flex min-h-screen flex-col items-center justify-center bg-bg px-4 text-center">
+      <h1 className="font-display text-3xl font-extrabold">Algo salió mal</h1>
+      <p className="mt-3 max-w-md text-muted">
+        Se produjo un error inesperado. Puedes volver al inicio e intentarlo de nuevo.
+      </p>
+      <div className="mt-8 flex flex-wrap gap-3">
+        <Button onClick={() => window.location.reload()}>Recargar página</Button>
+        <Link
+          to={routes.app}
+          className="focus-ring inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-brand-600 px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-700"
+        >
+          Ir al inicio
+        </Link>
+      </div>
+    </div>
+  );
+}
+
 export const router = createBrowserRouter([
-  { path: '/login', element: lazyPage(<LoginPage />) },
+  { path: routes.login, element: lazyPage(<LoginPage />), errorElement: <RouterErrorBoundary /> },
+
+  /* ── Páginas de error fuera del AppShell ── */
+  { path: routes.notFound, element: lazyPage(<NotFoundPage />) },
+
+  /* ── App protegida ── */
   {
     element: <RequireAuth />,
+    errorElement: <RouterErrorBoundary />,
     children: [
       {
-        path: '/app',
+        path: routes.app,
         element: <AppShell />,
+        errorElement: <RouterErrorBoundary />,
         children: [
           { index: true, element: lazyPage(<DashboardPage />) },
-          // Rutas compartidas (docente, estudiante)
+
+          /* ── Página 403 dentro del shell ── */
+          { path: '403', element: lazyPage(<ForbiddenPage />) },
+          { path: '404', element: lazyPage(<NotFoundPage />) },
+
+          /* ── Rutas compartidas (profesor + estudiante + admin cuando aplique) ── */
           { path: 'materias', element: lazyPage(<MateriasListPage />) },
           { path: 'materias/unirse', element: lazyPage(<UnirseMateriaPage />) },
+
+          /* Detalle de materia (layout con tabs + <Outlet />) */
           {
-            // MateriaDetailPage ahora es un layout con tabs y <Outlet />
             path: 'materias/:id',
             element: lazyPage(<MateriaDetailPage />),
             children: [
               { index: true, element: lazyPage(<MateriaVistaGeneral />) },
+              // Todas las rutas compartidas — cada componente interno verifica rol
               { path: 'evaluaciones', element: lazyPage(<MateriaEvaluaciones />) },
-              { path: 'calificar', element: lazyPage(<MateriaCalificar />) },
+              // Solo docente/admin
+              {
+                element: <RequireRole allow={['profesor', 'admin']} />,
+                children: [
+                  { path: 'calificar', element: lazyPage(<MateriaCalificar />) },
+                  { path: 'dba', element: lazyPage(<MateriaDbaPage />) },
+                ],
+              },
+              // Estudiante ve su boletín propio, profesor ve boletín del grupo
               { path: 'boletin', element: lazyPage(<MateriaBoletin />) },
-              { path: 'dba', element: lazyPage(<MateriaDbaPage />) },
             ],
           },
+
           { path: 'evaluaciones', element: lazyPage(<EvaluacionesPage />) },
           { path: 'evaluaciones/:id/resolver', element: lazyPage(<ResolverEvaluacionPage />) },
           { path: 'calificaciones/boletin', element: lazyPage(<BoletinPage />) },
           { path: 'xali', element: lazyPage(<XaliPage />) },
-          // Rutas solo admin
+
+          /* ── Rutas solo admin ── */
           {
             element: <RequireRole allow={['admin']} />,
             children: [
               { path: 'admin/configuracion-ia', element: lazyPage(<AdminAIConfigPage />) },
             ],
           },
-          // Rutas solo docente/admin — simplificadas
+
+          /* ── Rutas solo docente/admin ── */
           {
             element: <RequireRole allow={['profesor', 'admin']} />,
             children: [
               { path: 'herramientas', element: lazyPage(<ListPage />) },
               { path: 'herramientas/nuevo', element: lazyPage(<GeneratePage />) },
               { path: 'herramientas/:id', element: lazyPage(<DetailPage />) },
-              // Redirigir rutas antiguas de calificaciones → Materias
-              { path: 'calificaciones', element: <Navigate to="/app/materias" replace /> },
-              { path: 'calificaciones/foto', element: <Navigate to="/app/materias" replace /> },
-              { path: 'calificaciones/salon', element: <Navigate to="/app/materias" replace /> },
+              // Redirigir rutas antiguas de calificaciones → Materias con explicación
+              { path: 'calificaciones', element: <Navigate to={routes.materias} replace /> },
+              { path: 'calificaciones/foto', element: <Navigate to={routes.materias} replace /> },
+              { path: 'calificaciones/salon', element: <Navigate to={routes.materias} replace /> },
               { path: 'presentaciones', element: lazyPage(<PresentacionesPage />) },
               { path: 'reportes', element: lazyPage(<ReportesPage />) },
             ],
           },
+
+          /* ── Catch-all dentro de /app: 404 ── */
+          { path: '*', element: lazyPage(<NotFoundPage />) },
         ],
       },
     ],
   },
-  { path: '/', element: <Navigate to="/app" replace /> },
-  { path: '*', element: <Navigate to="/app" replace /> },
+
+  /* ── Redirecciones raíz ── */
+  { path: '/', element: <Navigate to={routes.app} replace /> },
+  { path: '*', element: lazyPage(<NotFoundPage />) },
 ], {
   future: {
     v7_relativeSplatPath: true,

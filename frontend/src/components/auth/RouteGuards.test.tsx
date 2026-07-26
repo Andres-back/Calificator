@@ -53,7 +53,7 @@ describe('route guards', () => {
     expect(screen.getByText('Private dashboard')).toBeInTheDocument();
   });
 
-  it('redirects a student away from an admin-only route', () => {
+  it('redirects a student to 403 from an admin-only route', () => {
     useAuth.setState({ user: userFor('estudiante'), status: 'authenticated' });
 
     render(
@@ -62,12 +62,12 @@ describe('route guards', () => {
           <Route element={<RequireRole allow={['admin']} />}>
             <Route path="/app/admin" element={<p>Admin console</p>} />
           </Route>
-          <Route path="/app" element={<p>Student dashboard</p>} />
+          <Route path="/app/403" element={<p>Acceso denegado</p>} />
         </Routes>
       </MemoryRouter>,
     );
 
-    expect(screen.getByText('Student dashboard')).toBeInTheDocument();
+    expect(screen.getByText('Acceso denegado')).toBeInTheDocument();
     expect(screen.queryByText('Admin console')).not.toBeInTheDocument();
   });
 });

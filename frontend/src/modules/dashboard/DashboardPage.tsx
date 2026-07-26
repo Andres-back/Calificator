@@ -15,13 +15,15 @@ import {
   Wand2,
 } from 'lucide-react';
 import { useAuth } from '@/stores/auth';
-import { TOOLS, TOOL_BY_TIPO } from '@/modules/herramientas/meta';
+import { TOOLS } from '@/modules/herramientas/meta';
 import { listMaterials } from '@/modules/herramientas/api';
 import { listMaterias } from '@/modules/materias/api';
 import { Badge, Card, Skeleton } from '@/components/ui';
+import { QueryBoundary, QueryEmpty } from '@/components/ui/QueryState';
 import { DashboardEstudiante } from './DashboardEstudiante';
 import { DashboardAdmin } from './DashboardAdmin';
 import { cn } from '@/lib/cn';
+import { routes } from '@/config/routes';
 
 const fade = {
   hidden: { opacity: 0, y: 10 },
@@ -30,15 +32,15 @@ const fade = {
 
 const teacherActions = [
   {
-    to: '/app/calificaciones/foto',
+    to: routes.materias,
     icon: Camera,
-    title: 'Calificar una evidencia por foto',
-    description: 'Toma o sube la respuesta, deja que visión la interprete y revisa la nota sugerida.',
+    title: 'Calificar por fotografía',
+    description: 'Selecciona una materia y evaluación, luego sube o toma la foto de la evidencia.',
     badge: 'Visión IA',
     tone: 'bg-cyan-500/10 text-cyan-700 dark:text-cyan-300',
   },
   {
-    to: '/app/calificaciones',
+    to: routes.materias,
     icon: ListChecks,
     title: 'Revisar calificaciones sugeridas',
     description: 'Confirma o ajusta cada resultado antes de convertirlo en nota definitiva.',
@@ -46,7 +48,7 @@ const teacherActions = [
     tone: 'bg-amber-500/10 text-amber-700 dark:text-amber-300',
   },
   {
-    to: '/app/evaluaciones',
+    to: routes.evaluaciones,
     icon: ClipboardCheck,
     title: 'Preparar una evaluación',
     description: 'Organiza criterios, preguntas y nota máxima para evaluar en línea, papel o ambas.',
@@ -62,35 +64,46 @@ export function DashboardPage() {
   return <DashboardDocente />;
 }
 
+function WorkspaceMetric({ loading, value, label, icon: Icon }: { loading: boolean; value: number; label: string; icon: React.ElementType }) {
+  return (
+    <Card className={`flex items-center gap-3 p-4 ${loading ? 'opacity-60' : ''}`}>
+      <span className="grid h-10 w-10 place-items-center rounded-lg bg-brand-50 text-brand-600 dark:bg-brand-500/15 dark:text-brand-300">
+        <Icon className="h-5 w-5" />
+      </span>
+      <div>
+        <p className="text-2xl font-extrabold">{loading ? '—' : value}</p>
+        <p className="text-xs text-muted">{label}</p>
+      </div>
+    </Card>
+  );
+}
+
 function DashboardDocente() {
   const { user } = useAuth();
   const materialsQuery = useQuery({ queryKey: ['materials', 'recent'], queryFn: () => listMaterials() });
   const materiasQuery = useQuery({ queryKey: ['materias'], queryFn: listMaterias });
-  const recent = materialsQuery.data ?? [];
-  const materias = materiasQuery.data ?? [];
   const firstName = user?.nombre?.split(' ')[0] ?? 'Docente';
 
   return (
     <div className="space-y-7">
       <header className="relative overflow-hidden border-b border-border pb-6 lg:flex-row lg:items-end lg:justify-between">
-        {/* Hero Image Background */}
         <div className="absolute inset-0 z-0">
-          <img 
-            src="/branding/hero-classroom.png" 
-            alt="" 
+          <img
+            src="/branding/hero-classroom.png"
+            alt=""
             className="h-full w-full object-cover opacity-15 dark:opacity-10"
           />
           <div className="absolute inset-0 bg-gradient-to-r from-surface via-surface/95 to-surface/80" />
         </div>
-        
+
         <div className="relative z-10 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.14em] text-brand-600 dark:text-brand-300">Centro de trabajo docente</p>
             <h1 className="mt-2 font-display text-3xl font-extrabold sm:text-4xl">Hola, {firstName}</h1>
-            <p className="mt-2 max-w-2xl text-muted">Califica evidencias, revisa sugerencias de IA y prepara recursos para tu siguiente clase.</p>
+            <p className="mt-2 max-w-2xl text-muted">Selecciona una materia para comenzar a calificar, o crea nuevos recursos para tu clase.</p>
           </div>
           <Link
-            to="/app/calificaciones/foto"
+            to={routes.materias}
             className="focus-ring inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-brand-600 px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-700"
           >
             <Camera className="h-4 w-4" /> Calificar por foto
@@ -126,6 +139,7 @@ function DashboardDocente() {
           </div>
         </Card>
 
+        {/* Tu espacio de trabajo */}
         <Card className="p-5 sm:p-6">
           <div className="flex items-center gap-3">
             <span className="grid h-10 w-10 place-items-center rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-300"><CheckCircle2 className="h-5 w-5" /></span>
@@ -135,8 +149,24 @@ function DashboardDocente() {
             </div>
           </div>
           <div className="mt-5 grid grid-cols-2 gap-3">
-            <WorkspaceMetric loading={materiasQuery.isLoading} value={materias.length} label="Materias" icon={BookOpen} />
-            <WorkspaceMetric loading={materialsQuery.isLoading} value={recent.length} label="Recursos" icon={Wand2} />
+            <QueryBoundary
+              query={materiasQuery}
+              loading={<Skeleton className="h-20" />}
+              empty={<WorkspaceMetric loading={false} value={0} label="Materias" icon={BookOpen} />}
+            >
+              {(materias) => (
+                <WorkspaceMetric loading={false} value={materias.length} label="Materias" icon={BookOpen} />
+              )}
+            </QueryBoundary>
+            <QueryBoundary
+              query={materialsQuery}
+              loading={<Skeleton className="h-20" />}
+              empty={<WorkspaceMetric loading={false} value={0} label="Recursos" icon={Wand2} />}
+            >
+              {(recent) => (
+                <WorkspaceMetric loading={false} value={recent.length} label="Recursos" icon={Wand2} />
+              )}
+            </QueryBoundary>
           </div>
           <div className="mt-5 rounded-lg border border-border bg-surface-2/60 p-4">
             <div className="flex items-start gap-3">
@@ -156,14 +186,14 @@ function DashboardDocente() {
             <p className="text-xs font-bold uppercase tracking-[0.12em] text-muted">Recursos didácticos</p>
             <h2 className="mt-1 font-display text-xl font-bold">Crear para la clase</h2>
           </div>
-          <Link to="/app/herramientas" className="focus-ring inline-flex items-center gap-1 rounded-md text-sm font-semibold text-brand-600 hover:text-brand-700">
+          <Link to={routes.herramientas} className="focus-ring inline-flex items-center gap-1 rounded-md text-sm font-semibold text-brand-600 hover:text-brand-700">
             Ver herramientas <ArrowRight className="h-4 w-4" />
           </Link>
         </div>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
           {TOOLS.slice(0, 6).map((tool, index) => (
             <motion.div key={tool.tipo} custom={index} variants={fade} initial="hidden" animate="show">
-              <Link to={`/app/herramientas/nuevo?tipo=${tool.tipo}`}>
+              <Link to={routes.herramientaNueva(tool.tipo)}>
                 <Card interactive className="h-full p-4">
                   <div className={cn('mb-3 grid h-10 w-10 place-items-center rounded-lg bg-gradient-to-br text-white shadow-sm', tool.gradient)}>
                     <tool.icon className="h-5 w-5" />
@@ -178,48 +208,61 @@ function DashboardDocente() {
       </section>
 
       <section>
-        <div className="mb-4 flex items-center justify-between gap-4">
+        <div className="mb-4 flex items-end justify-between gap-4">
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.12em] text-muted">Continuidad</p>
-            <h2 className="mt-1 inline-flex items-center gap-2 font-display text-xl font-bold"><Clock className="h-5 w-5 text-muted" /> Material reciente</h2>
+            <h2 className="mt-1 font-display text-xl font-bold">Material reciente</h2>
           </div>
-          <Link to="/app/herramientas/nuevo" className="focus-ring inline-flex items-center gap-1 rounded-md text-sm font-semibold text-brand-600 hover:text-brand-700"><Plus className="h-4 w-4" /> Crear</Link>
+          <Link to={routes.herramientas + '?tipo=todos'} className="focus-ring inline-flex items-center gap-1 rounded-md text-sm font-semibold text-brand-600 hover:text-brand-700">
+            Crear <Plus className="h-4 w-4" />
+          </Link>
         </div>
-        {materialsQuery.isLoading ? (
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{Array.from({ length: 3 }).map((_, index) => <Skeleton key={index} className="h-24" />)}</div>
-        ) : recent.length > 0 ? (
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {recent.slice(0, 6).map((material) => {
-              const meta = TOOL_BY_TIPO[material.tipo];
-              const Icon = meta?.icon ?? Sparkles;
-              return (
-                <Link key={material.id} to={`/app/herramientas/${material.id}`}>
-                  <Card interactive className="flex h-full items-center gap-3 p-4">
-                    <div className={cn('grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-gradient-to-br text-white', meta?.gradient ?? 'from-slate-400 to-slate-600')}><Icon className="h-5 w-5" /></div>
-                    <div className="min-w-0"><p className="truncate text-sm font-semibold">{material.titulo}</p><p className="mt-1 text-xs text-muted">{meta?.label ?? material.tipo}</p></div>
-                  </Card>
+        <QueryBoundary
+          query={materialsQuery}
+          loading={
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
+              {Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-24" />)}
+            </div>
+          }
+          empty={
+            <QueryEmpty
+              icon={Wand2}
+              title="Sin materiales todavía"
+              description="Crea tu primer material didáctico con la ayuda de la IA."
+              action={
+                <Link
+                  to={routes.herramientaNueva()}
+                  className="focus-ring inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-brand-600 px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-700"
+                >
+                  <Plus className="h-4 w-4" /> Crear material
                 </Link>
-              );
-            })}
-          </div>
-        ) : (
-          <Card className="flex flex-col items-start gap-3 border-dashed p-6 sm:flex-row sm:items-center">
-            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-lg bg-brand-500/10 text-brand-600"><Sparkles className="h-5 w-5" /></span>
-            <div className="flex-1"><p className="font-semibold">Aún no has creado material</p><p className="mt-1 text-sm text-muted">Prepara una guía, rúbrica o actividad lista para tu grupo.</p></div>
-            <Link to="/app/herramientas/nuevo" className="focus-ring inline-flex items-center gap-1 rounded-md text-sm font-semibold text-brand-600 hover:text-brand-700">Crear material <ArrowRight className="h-4 w-4" /></Link>
-          </Card>
-        )}
+              }
+            />
+          }
+        >
+          {(recent) => (
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
+              {recent.map((item: any, index: number) => {
+                const meta = TOOLS.find((t) => t.tipo === item.tipo);
+                const Icon = meta?.icon ?? Wand2;
+                return (
+                  <motion.div key={item.id} custom={index} variants={fade} initial="hidden" animate="show">
+                    <Link to={routes.herramienta(item.id)}>
+                      <Card interactive className="h-full p-4">
+                        <div className={cn('mb-3 grid h-10 w-10 place-items-center rounded-lg', meta?.gradient ? `bg-gradient-to-br ${meta.gradient} text-white shadow-sm` : 'bg-brand-50 text-brand-600')}>
+                          <Icon className="h-5 w-5" />
+                        </div>
+                        <p className="truncate text-sm font-semibold">{item.titulo ?? item.tipo}</p>
+                        <p className="mt-1 text-xs text-muted">{meta?.label ?? item.tipo}</p>
+                      </Card>
+                    </Link>
+                  </motion.div>
+                );
+              })}
+            </div>
+          )}
+        </QueryBoundary>
       </section>
-    </div>
-  );
-}
-
-function WorkspaceMetric({ loading, value, label, icon: Icon }: { loading: boolean; value: number; label: string; icon: typeof BookOpen }) {
-  return (
-    <div className="rounded-lg border border-border p-4">
-      <Icon className="h-4 w-4 text-muted" />
-      {loading ? <Skeleton className="mt-3 h-7 w-12" /> : <p className="mt-3 text-2xl font-extrabold">{value}</p>}
-      <p className="mt-1 text-xs text-muted">{label}</p>
     </div>
   );
 }

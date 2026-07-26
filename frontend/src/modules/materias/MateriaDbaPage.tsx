@@ -16,23 +16,20 @@ import type { DBAPersonalizado } from '@/types/api';
 
 const EMPTY = { enunciado: '', evidencias_aprendizaje: '', ejemplo: '' };
 
-export function MateriaDbaPage() {
-  const { id = '' } = useParams();
-  const user = useAuth((state) => state.user);
-  if (user?.rol === 'estudiante') return <Navigate to={`/app/materias/${id}`} replace />;
+function DbaContent({ materiaId }: { materiaId: string }) {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<DBAPersonalizado | null>(null);
   const [form, setForm] = useState(EMPTY);
   const { target: confirmDeleteTarget, setTarget: setConfirmDeleteTarget, mutation: remove } = useDeleteConfirm({
     mutationFn: deleteDbaPersonalizado,
-    queryKey: ['dba-personalizados', id],
+    queryKey: ['dba-personalizados', materiaId],
     successMessage: 'DBA desactivado.',
   });
 
-  const { data: materia } = useQuery({ queryKey: ['materia', id], queryFn: () => getMateria(id) });
-  const { data, isLoading, isError } = useQuery({ queryKey: ['dba-personalizados', id], queryFn: () => listDbaPersonalizados(id) });
+  const { data: materia } = useQuery({ queryKey: ['materia', materiaId], queryFn: () => getMateria(materiaId) });
+  const { data, isLoading, isError } = useQuery({ queryKey: ['dba-personalizados', materiaId], queryFn: () => listDbaPersonalizados(materiaId) });
 
-  const invalidate = () => queryClient.invalidateQueries({ queryKey: ['dba-personalizados', id] });
+  const invalidate = () => queryClient.invalidateQueries({ queryKey: ['dba-personalizados', materiaId] });
 
   const openCreate = () => { setEditing(null); setForm(EMPTY); setOpen(true); };
   const openEdit = (d: DBAPersonalizado) => {
@@ -48,62 +45,65 @@ export function MateriaDbaPage() {
         evidencias_aprendizaje: form.evidencias_aprendizaje.trim() || undefined,
         ejemplo: form.ejemplo.trim() || undefined,
       };
-      return editing ? updateDbaPersonalizado(editing.id, payload) : createDbaPersonalizado(id, payload);
+      return editing ? updateDbaPersonalizado(editing.id, payload) : createDbaPersonalizado(materiaId, payload);
     },
     onSuccess: () => { invalidate(); toast.success(editing ? 'DBA actualizado' : 'DBA creado'); setOpen(false); },
     onError: (e) => toast.error(toApiError(e).detail),
   });
 
-
-
   const valid = form.enunciado.trim().length >= 10;
 
+  if (isLoading) {
+    return <div className="grid gap-4">{Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-20" />)}</div>;
+  }
+
   return (
-    <div className="space-y-6">
-      <Link to={`/app/materias/${id}`} className="inline-flex items-center gap-1.5 text-sm font-medium text-muted hover:text-fg">
-        <ArrowLeft className="h-4 w-4" /> Volver a la materia
-      </Link>
+    <div className="space-y-5">
+      <div className="flex items-center justify-between gap-4">
+        <div>
+          <PageHeader
+            title="DBA personalizados"
+            eyebrow="Derechos Básicos de Aprendizaje"
+            subtitle={materia ? `Gestiona los DBA personalizados para ${materia.nombre}.` : 'Crea y gestiona DBA personalizados para esta materia.'}
+          />
+        </div>
+        <Button onClick={openCreate} disabled={save.isPending}>
+          <Plus className="h-4 w-4" /> Nuevo DBA
+        </Button>
+      </div>
 
-      <PageHeader
-        title="DBA de la materia"
-        subtitle={materia ? `${materia.nombre}${materia.area ? ` · ${materia.area}` : ''}${materia.grado ? ` · ${materia.grado}°` : ''}` : 'Criterios curriculares personalizados'}
-        action={<Button onClick={openCreate}><Plus className="h-4 w-4" /> Nuevo DBA</Button>}
-      />
-
-      {isLoading ? (
-        <div className="grid gap-3">{Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-24" />)}</div>
-      ) : isError ? (
-        <EmptyState icon={AlertTriangle} title="No se pudieron cargar los DBA" description="Revisa tu conexión e inténtalo de nuevo." />
+      {isError ? (
+        <Card className="flex items-start gap-3 border-rose-200 p-5 dark:border-rose-500/20">
+          <AlertTriangle className="mt-0.5 h-5 w-5 text-rose-500" />
+          <div>
+            <p className="font-semibold">No se pudieron cargar los DBA</p>
+            <p className="mt-1 text-sm text-muted">Revisa tu conexión e inténtalo de nuevo.</p>
+          </div>
+        </Card>
       ) : !data || data.length === 0 ? (
         <EmptyState
           icon={BookMarked}
           title="Sin DBA personalizados"
-          description="Crea criterios curriculares propios para esta materia. No reemplazan los DBA oficiales del MEN."
+          description="Crea tu primer Derecho Básico de Aprendizaje personalizado para esta materia."
           action={<Button onClick={openCreate}><Plus className="h-4 w-4" /> Nuevo DBA</Button>}
         />
       ) : (
-        <div className="grid gap-3">
-          <AnimatePresence mode="popLayout">
-            {data.map((d, i) => (
-              <motion.div key={d.id} layout initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.97 }} transition={{ delay: i * 0.03 }}>
+        <AnimatePresence mode="popLayout">
+          <div className="grid gap-4">
+            {data.map((dba, i) => (
+              <motion.div key={dba.id} layout initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }} transition={{ delay: i * 0.04 }}>
                 <Card className="p-5">
-                  <div className="flex items-start gap-4">
-                    <div className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-violet-50 text-violet-600 dark:bg-violet-500/15 dark:text-violet-300">
-                      <BookMarked className="h-5 w-5" />
-                    </div>
+                  <div className="flex items-start justify-between gap-4">
                     <div className="min-w-0 flex-1">
-                      <div className="mb-1.5 flex flex-wrap items-center gap-2">
-                        <Badge tone="violet">Personalizado</Badge>
-                        <Badge tone="neutral">{d.area} · {d.grado}°</Badge>
-                      </div>
-                      <p className="font-medium leading-relaxed">{d.enunciado}</p>
-                      {d.evidencias_aprendizaje && <p className="mt-2 text-sm text-muted"><span className="font-semibold text-fg">Evidencias:</span> {d.evidencias_aprendizaje}</p>}
-                      {d.ejemplo && <p className="mt-1 text-sm text-muted"><span className="font-semibold text-fg">Ejemplo:</span> {d.ejemplo}</p>}
+                      <p className="font-semibold">{dba.enunciado}</p>
+                      {dba.evidencias_aprendizaje && <p className="mt-2 text-sm text-muted"><b>Evidencias:</b> {dba.evidencias_aprendizaje}</p>}
+                      {dba.ejemplo && <p className="mt-1 text-sm text-muted"><b>Ejemplo:</b> {dba.ejemplo}</p>}
                     </div>
-                    <div className="flex shrink-0 gap-2">
-                      <Button size="icon" variant="ghost" className="h-9 w-9" onClick={() => openEdit(d)} title="Editar"><Pencil className="h-4 w-4" /></Button>
-                      <Button size="icon" variant="ghost" className="h-9 w-9 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10" loading={remove.isPending}
-                        onClick={() => setConfirmDeleteTarget({ id: d.id, title: d.enunciado })} title="Desactivar">
+                    <div className="flex shrink-0 gap-1">
+                      <Button size="icon" variant="ghost" onClick={() => openEdit(dba)} aria-label={`Editar DBA ${dba.enunciado}`} title="Editar">
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button size="icon" variant="ghost" onClick={() => setConfirmDeleteTarget({ id: dba.id, title: dba.enunciado })} className="text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10" aria-label={`Eliminar DBA ${dba.enunciado}`} title="Eliminar">
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
@@ -111,28 +111,44 @@ export function MateriaDbaPage() {
                 </Card>
               </motion.div>
             ))}
-          </AnimatePresence>
-        </div>
+          </div>
+        </AnimatePresence>
       )}
 
-      <Modal open={open} onClose={() => setOpen(false)} title={editing ? 'Editar DBA' : 'Nuevo DBA personalizado'}>
-        <form onSubmit={(e) => { e.preventDefault(); if (valid && !save.isPending) save.mutate(); }} className="space-y-4">
-          <Field label="Enunciado" required hint="Mínimo 10 caracteres. Describe el aprendizaje o criterio.">
-            <Textarea value={form.enunciado} onChange={(e) => setForm({ ...form, enunciado: e.target.value })} placeholder="El estudiante comprende…" required />
-            {form.enunciado.length > 0 && form.enunciado.trim().length < 10 && (
-              <span className="mt-1 block text-xs text-rose-500">Faltan {10 - form.enunciado.trim().length} caracteres.</span>
-            )}
+      <Modal open={open} onClose={() => setOpen(false)} title={editing ? 'Editar DBA' : 'Nuevo DBA'}>
+        <div className="space-y-4">
+          <Field label="Enunciado" required hint="Describe el derecho básico de aprendizaje. Mínimo 10 caracteres.">
+            <Textarea
+              value={form.enunciado}
+              onChange={(event) => setForm((prev) => ({ ...prev, enunciado: event.currentTarget.value }))}
+              placeholder="Ej: Comprende la relación entre los seres vivos y su entorno."
+              rows={3}
+              aria-invalid={Boolean(form.enunciado && !valid)}
+            />
           </Field>
-          <Field label="Evidencias de aprendizaje (opcional)">
-            <Textarea value={form.evidencias_aprendizaje} onChange={(e) => setForm({ ...form, evidencias_aprendizaje: e.target.value })} placeholder="Cómo se demuestra el logro…" />
+          <Field label="Evidencias de aprendizaje" hint="Opcional. Indicadores observables de que el estudiante alcanzó el DBA.">
+            <Textarea
+              value={form.evidencias_aprendizaje}
+              onChange={(event) => setForm((prev) => ({ ...prev, evidencias_aprendizaje: event.currentTarget.value }))}
+              placeholder="Ej: Identifica factores bióticos y abióticos en un ecosistema local."
+              rows={2}
+            />
           </Field>
-          <Field label="Ejemplo (opcional)">
-            <Input value={form.ejemplo} onChange={(e) => setForm({ ...form, ejemplo: e.target.value })} placeholder="Un ejemplo concreto…" />
+          <Field label="Ejemplo" hint="Opcional. Situación o caso concreto que ilustra el DBA.">
+            <Textarea
+              value={form.ejemplo}
+              onChange={(event) => setForm((prev) => ({ ...prev, ejemplo: event.currentTarget.value }))}
+              placeholder="Ej: Al visitar un humedal, el estudiante clasifica los organismos que observa."
+              rows={2}
+            />
           </Field>
-          <Button type="submit" loading={save.isPending} disabled={!valid} className="w-full">
-            {editing ? 'Guardar cambios' : 'Crear DBA'}
-          </Button>
-        </form>
+          <div className="flex justify-end gap-3">
+            <Button variant="ghost" onClick={() => setOpen(false)}>Cancelar</Button>
+            <Button onClick={() => save.mutate()} disabled={!valid || save.isPending} loading={save.isPending}>
+              {editing ? 'Actualizar' : 'Crear DBA'}
+            </Button>
+          </div>
+        </div>
       </Modal>
 
       <ConfirmDialog
@@ -140,11 +156,24 @@ export function MateriaDbaPage() {
         onClose={() => setConfirmDeleteTarget(null)}
         onConfirm={() => remove.mutate()}
         title="Desactivar DBA"
+        description="El DBA se desactivará y ya no estará disponible para nuevas evaluaciones. Las evaluaciones existentes no se ven afectadas."
         confirmLabel="Desactivar"
         tone="danger"
         loading={remove.isPending}
-        description="El DBA se desactivará, no se borra físicamente. Puedes volver a activarlo después."
       />
     </div>
   );
+}
+
+export function MateriaDbaPage() {
+  const { id = '' } = useParams();
+  const user = useAuth((state) => state.user);
+  const materiaId = id;
+
+  // Students cannot manage DBA — redirect to the subject overview
+  if (user?.rol === 'estudiante') {
+    return <Navigate to={`/app/materias/${materiaId}`} replace />;
+  }
+
+  return <DbaContent materiaId={materiaId} />;
 }

@@ -36,5 +36,5 @@ test('login mocks a professor session and protects the admin navigation', async 
   await expect(page.getByRole('link', { name: /Materias/i })).toBeVisible();
 
   await page.goto('/app/admin/configuracion-ia');
-  await expect(page).toHaveURL(/\/app$/);
+  await expect(page).toHaveURL(/\/app\/403/);
 });
