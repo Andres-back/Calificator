@@ -1,21 +1,25 @@
 from __future__ import annotations
 
+from datetime import datetime, timezone
 from decimal import Decimal
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Response, UploadFile, status
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.permissions import get_current_user, is_student_enrolled, require_role
 from app.db.session import get_db
 from app.modules.calificaciones import service
 from app.modules.calificaciones.grading_service import grade_submission
-from app.modules.calificaciones.models import Calificacion, Entrega, SalonSesion
+from app.modules.calificaciones.models import Calificacion, Entrega, SalonSesion, SalonSesionEstudiante
 from app.modules.calificaciones.salon_mode_service import (
     create_sesion_id,
     get_pending_students,
+    get_sesion_summary,
     grade_student_photo,
+    init_sesion_estudiantes,
+    update_estudiante_estado,
 )
 from app.modules.calificaciones.schemas import (
     AjustarNota,
@@ -23,10 +27,14 @@ from app.modules.calificaciones.schemas import (
     ConfirmarNota,
     EntregaOnlineCreate,
     EntregaRead,
+    SalonEstudianteRead,
+    SalonEstudianteUpdate,
+    SalonResumen,
     SalonSesionRead,
     ResumenAcademico,
 )
 from app.modules.evaluaciones import service as evaluaciones_service
+from app.shared.enums import PoliticaIntento
 from app.modules.evaluaciones.blueprint_service import evaluation_to_grading_blueprint
 from app.modules.materias import service as materias_service
 from app.modules.users.models import User
@@ -95,6 +103,98 @@ async def calificar_foto(
     return cal
 
 
+@router.post("/calificaciones/lote", status_code=status.HTTP_201_CREATED)
+async def calificar_lote(
+    evaluacion_id: UUID = Form(...),
+    files: list[UploadFile] = File(...),
+    estudiantes: str = Form(...),  # JSON array de UUIDs en orden
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> object:
+    """Sube varias fotos de una evaluación física y las asocia a estudiantes.
+    - evaluacion_id: UUID de la evaluación.
+    - files: lista de archivos de imagen (mismo orden que estudiantes).
+    - estudiantes: JSON array de UUIDs de estudiantes ["id1", "id2", ...].
+    """
+    import json
+
+    require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
+    evaluacion = await evaluaciones_service.ensure_can_manage_evaluation(db, evaluacion_id, current_user)
+    service.ensure_evaluation_accepts_grading(evaluacion)
+
+    try:
+        estudiante_ids = json.loads(estudiantes)
+    except (json.JSONDecodeError, TypeError):
+        raise HTTPException(status_code=400, detail="'estudiantes' debe ser un JSON array de UUIDs")
+
+    if len(files) != len(estudiante_ids):
+        raise HTTPException(
+            status_code=400,
+            detail=f"Cantidad de archivos ({len(files)}) no coincide con estudiantes ({len(estudiante_ids)})",
+        )
+
+    # Validar que todos los estudiantes estén matriculados
+    for sid in estudiante_ids:
+        sid_uuid = UUID(sid) if isinstance(sid, str) else sid
+        if not await is_student_enrolled(db, evaluacion.materia_id, sid_uuid):
+            raise HTTPException(status_code=403, detail=f"Estudiante {sid} no está matriculado en esta materia")
+
+    calificaciones_list: list[CalificacionRead] = []
+    errores: list[dict] = []
+
+    for i, foto in enumerate(files):
+        sid = estudiante_ids[i]
+        sid_uuid = UUID(sid) if isinstance(sid, str) else sid
+        try:
+            content = await foto.read()
+            mime = validate_mime(content, foto.filename or "image.jpg")
+            grading = await grade_submission(
+                db,
+                evaluacion_id=evaluacion.id,
+                materia_id=evaluacion.materia_id,
+                blueprint=evaluation_to_grading_blueprint(evaluacion),
+                image_bytes=content,
+                image_mime=mime,
+                user_id=current_user.id,
+            )
+            service.validate_score_within_evaluation(grading.nota_sugerida, evaluacion, "nota_sugerida")
+
+            archivo_url = await save_upload(content, foto.filename or f"lote_{i}.jpg", subfolder="entregas")
+            entrega = Entrega(
+                evaluacion_id=evaluacion.id,
+                estudiante_id=sid_uuid,
+                materia_id=evaluacion.materia_id,
+                tipo=EntregaTipo.FOTO.value,
+                archivo_url=archivo_url,
+                estado=EntregaEstado.CALIFICADA.value,
+                visual_text_json=grading.raw_model_output,
+            )
+            db.add(entrega)
+            await db.flush()
+
+            cal = Calificacion(
+                evaluacion_id=evaluacion.id,
+                entrega_id=entrega.id,
+                estudiante_id=sid_uuid,
+                materia_id=evaluacion.materia_id,
+                profesor_id=current_user.id,
+                nota_sugerida=grading.nota_sugerida,
+                confianza=Decimal(str(grading.confianza)),
+                feedback=grading.feedback_estudiante,
+                resultado_json=grading.raw_model_output,
+                estado=CalificacionEstado.SUGERIDA.value,
+            )
+            db.add(cal)
+            calificaciones_list.append(CalificacionRead.model_validate(cal))
+        except Exception as e:
+            errores.append({"estudiante_id": str(sid), "filename": foto.filename or f"lote_{i}", "error": str(e)})
+
+    service.transition_to_grading_if_needed(evaluacion)
+    await db.commit()
+
+    return {"calificaciones": [c.model_dump() for c in calificaciones_list], "errores": errores}
+
+
 @router.patch("/calificaciones/{calificacion_id}/confirmar", response_model=CalificacionRead)
 async def confirmar(
     calificacion_id: UUID,
@@ -138,8 +238,6 @@ async def get_resumen_academico(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> dict:
-    # A cross-subject summary would expose other teachers' records, so it is
-    # intentionally limited to the student themself or an administrator.
     if current_user.rol == UserRole.ESTUDIANTE.value:
         if current_user.id != estudiante_id:
             raise HTTPException(status_code=403, detail="No autorizado")
@@ -147,6 +245,7 @@ async def get_resumen_academico(
         raise HTTPException(status_code=403, detail="No autorizado")
 
     return await service.get_resumen_academico(db, estudiante_id)
+
 
 @router.get("/estudiantes/{estudiante_id}/boletin")
 async def get_boletin(
@@ -172,6 +271,8 @@ async def get_boletin(
     return await service.get_boletin(db, estudiante_id, materia_id)
 
 
+# ── Modo Salón ─────────────────────────────────────────────────────────────────
+
 @router.post("/calificaciones/modo-salon/iniciar", response_model=SalonSesionRead)
 async def iniciar_salon(
     evaluacion_id: UUID,
@@ -182,8 +283,6 @@ async def iniciar_salon(
     evaluacion = await evaluaciones_service.ensure_can_manage_evaluation(db, evaluacion_id, current_user)
     service.ensure_evaluation_accepts_grading(evaluacion)
 
-    # Starting twice from the same account/evaluation must resume the active
-    # persisted session instead of creating parallel salon sessions.
     sesion = await db.scalar(
         select(SalonSesion)
         .where(
@@ -200,13 +299,15 @@ async def iniciar_salon(
             profesor_id=current_user.id,
         )
         db.add(sesion)
+        await db.flush()
+        await init_sesion_estudiantes(db, sesion, evaluacion)
         await db.commit()
 
-    pendientes = await get_pending_students(db, evaluacion_id)
+    _, _total, pendientes, _c, _cf, _o = await get_sesion_summary(db, sesion.id)
     return {
         "sesion_id": sesion.id,
         "evaluacion_id": evaluacion_id,
-        "estudiantes_pendientes": len(pendientes),
+        "estudiantes_pendientes": pendientes,
         "estado": sesion.estado,
     }
 
@@ -217,24 +318,95 @@ async def obtener_salon(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> dict:
-    """Validate a locally remembered session against the server source of truth."""
     require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
     sesion = await db.scalar(select(SalonSesion).where(SalonSesion.id == sesion_id))
     if not sesion:
         raise HTTPException(status_code=404, detail="Sesión no encontrada")
-
-    evaluacion = await evaluaciones_service.ensure_can_manage_evaluation(
-        db,
-        sesion.evaluacion_id,
-        current_user,
+    await evaluaciones_service.ensure_can_manage_evaluation(
+        db, sesion.evaluacion_id, current_user,
     )
-    pendientes = await get_pending_students(db, evaluacion.id)
+    _, _total, pendientes, _c, _cf, _o = await get_sesion_summary(db, sesion_id)
     return {
         "sesion_id": sesion.id,
         "evaluacion_id": sesion.evaluacion_id,
-        "estudiantes_pendientes": len(pendientes),
+        "estudiantes_pendientes": pendientes,
         "estado": sesion.estado,
     }
+
+
+@router.get(
+    "/calificaciones/modo-salon/{sesion_id}/estudiantes",
+    response_model=SalonResumen,
+)
+async def salon_estudiantes(
+    sesion_id: str,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
+    sesion = await db.scalar(select(SalonSesion).where(SalonSesion.id == sesion_id))
+    if not sesion:
+        raise HTTPException(status_code=404, detail="Sesión no encontrada")
+    await evaluaciones_service.ensure_can_manage_evaluation(
+        db, sesion.evaluacion_id, current_user,
+    )
+
+    estudiantes, total, pendientes, calificados, confirmados, omitidos = await get_sesion_summary(db, sesion_id)
+    return {
+        "sesion_id": sesion_id,
+        "evaluacion_id": sesion.evaluacion_id,
+        "estudiantes": [
+            SalonEstudianteRead(
+                estudiante_id=e.estudiante_id,
+                estado=e.estado,
+                error_msg=e.error_msg,
+            )
+            for e in estudiantes
+        ],
+        "total": total,
+        "pendientes": pendientes,
+        "calificados": calificados,
+        "confirmados": confirmados,
+        "omitidos": omitidos,
+    }
+
+
+@router.patch(
+    "/calificaciones/modo-salon/{sesion_id}/estudiantes/{estudiante_id}",
+    response_model=SalonEstudianteRead,
+)
+async def salon_actualizar_estudiante(
+    sesion_id: str,
+    estudiante_id: UUID,
+    payload: SalonEstudianteUpdate,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
+    sesion = await db.scalar(select(SalonSesion).where(SalonSesion.id == sesion_id))
+    if not sesion:
+        raise HTTPException(status_code=404, detail="Sesión no encontrada")
+    if sesion.estado != "activa":
+        raise HTTPException(status_code=409, detail="La sesión está cerrada")
+    await evaluaciones_service.ensure_can_manage_evaluation(
+        db, sesion.evaluacion_id, current_user,
+    )
+
+    sse = await update_estudiante_estado(
+        db, sesion_id, estudiante_id, payload.estado, payload.error_msg,
+    )
+    if not sse:
+        raise HTTPException(
+            status_code=404,
+            detail="El estudiante no está registrado en esta sesión",
+        )
+    await db.commit()
+    return {
+        "estudiante_id": sse.estudiante_id,
+        "estado": sse.estado,
+        "error_msg": sse.error_msg,
+    }
+
 
 @router.post("/calificaciones/modo-salon/{sesion_id}/foto", response_model=CalificacionRead)
 async def salon_foto(
@@ -251,9 +423,7 @@ async def salon_foto(
     if sesion.estado != "activa":
         raise HTTPException(status_code=409, detail="La sesión de Modo Salón está cerrada")
     evaluacion = await evaluaciones_service.ensure_can_manage_evaluation(
-        db,
-        sesion.evaluacion_id,
-        current_user,
+        db, sesion.evaluacion_id, current_user,
     )
     service.ensure_evaluation_accepts_grading(evaluacion)
     if not await is_student_enrolled(db, evaluacion.materia_id, estudiante_id):
@@ -268,6 +438,7 @@ async def salon_foto(
         image_bytes=content,
         image_mime=mime,
         profesor_id=current_user.id,
+        sesion_id=sesion_id,
     )
 
 
@@ -286,14 +457,14 @@ async def cerrar_salon(
     if not sesion:
         raise HTTPException(status_code=404, detail="Sesion no encontrada")
     await evaluaciones_service.ensure_can_manage_evaluation(
-        db,
-        sesion.evaluacion_id,
-        current_user,
+        db, sesion.evaluacion_id, current_user,
     )
     sesion.estado = "cerrada"
     await db.commit()
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
+
+# ── Entregas ────────────────────────────────────────────────────────────────────
 
 @router.post("/evaluaciones/{evaluacion_id}/entregas", response_model=EntregaRead, status_code=status.HTTP_201_CREATED)
 async def crear_entrega_online(
@@ -307,18 +478,49 @@ async def crear_entrega_online(
     service.ensure_evaluation_accepts_grading(evaluacion)
     if not await is_student_enrolled(db, evaluacion.materia_id, current_user.id):
         raise HTTPException(status_code=403, detail="No estas matriculado en esta materia")
-    existing_entrega = await db.scalar(
-        select(Entrega.id).where(
-            Entrega.evaluacion_id == evaluacion.id,
-            Entrega.estudiante_id == current_user.id,
-            Entrega.estado != EntregaEstado.REQUIERE_REINTENTO.value,
+
+    if evaluacion.tiempo_limite_minutos and evaluacion.fecha_publicacion:
+        deadline = evaluacion.fecha_publicacion.replace(tzinfo=timezone.utc) if evaluacion.fecha_publicacion.tzinfo is None else evaluacion.fecha_publicacion
+        elapsed = (datetime.now(timezone.utc) - deadline).total_seconds() / 60
+        if elapsed > evaluacion.tiempo_limite_minutos:
+            raise HTTPException(
+                status_code=status.HTTP_410_GONE,
+                detail=f"El tiempo límite de {evaluacion.tiempo_limite_minutos} minuto(s) para esta evaluación ha expirado.",
+            )
+
+    politica = evaluacion.politica_intento
+    if politica is None or politica == PoliticaIntento.UN_INTENTO.value:
+        existing_entrega = await db.scalar(
+            select(Entrega.id).where(
+                Entrega.evaluacion_id == evaluacion.id,
+                Entrega.estudiante_id == current_user.id,
+                Entrega.estado != EntregaEstado.REQUIERE_REINTENTO.value,
+            )
         )
-    )
-    if existing_entrega:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="Ya entregaste esta evaluacion. No puedes reenviarla.",
-        )
+        if existing_entrega:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Ya entregaste esta evaluacion. No puedes reenviarla.",
+            )
+    elif politica == PoliticaIntento.PRACTICA_LIBRE.value:
+        pass
+    elif politica in (
+        PoliticaIntento.MULTIPLES_INTENTOS.value,
+        PoliticaIntento.MEJOR_PUNTAJE.value,
+        PoliticaIntento.ULTIMO_INTENTO.value,
+    ):
+        if evaluacion.intentos_permitidos is not None:
+            count = await db.scalar(
+                select(func.count(Entrega.id)).where(
+                    Entrega.evaluacion_id == evaluacion.id,
+                    Entrega.estudiante_id == current_user.id,
+                )
+            )
+            if count is not None and count >= evaluacion.intentos_permitidos:
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail=f"Has alcanzado el límite de {evaluacion.intentos_permitidos} intento(s) para esta evaluación.",
+                )
 
     respuesta_texto = payload.respuesta_texto
 

@@ -76,6 +76,25 @@ class AjustarNota(BaseModel):
     feedback: str | None = None
 
 
+# ── Lote ───────────────────────────────────────────────────────────────────────
+
+class LoteFotoEntry(BaseModel):
+    estudiante_id: UUID
+    filename: str
+
+
+class LoteFotoRequest(BaseModel):
+    evaluacion_id: UUID
+    entries: list[LoteFotoEntry]
+
+
+class LoteFotoRead(BaseModel):
+    calificaciones: list[CalificacionRead]
+    errores: list[dict]
+
+    model_config = {"from_attributes": True}
+
+
 # ── Modo Salón ──────────────────────────────────────────────────────────────────
 
 class SalonSesionCreate(BaseModel):
@@ -92,6 +111,30 @@ class SalonSesionRead(BaseModel):
 class SalonFotoRequest(BaseModel):
     estudiante_id: UUID
     # imagen viene como multipart/form-data
+
+
+class SalonEstudianteRead(BaseModel):
+    estudiante_id: UUID
+    estado: str
+    error_msg: str | None = None
+
+    model_config = {"from_attributes": True}
+
+
+class SalonEstudianteUpdate(BaseModel):
+    estado: str
+    error_msg: str | None = None
+
+
+class SalonResumen(BaseModel):
+    sesion_id: str
+    evaluacion_id: UUID
+    estudiantes: list[SalonEstudianteRead]
+    total: int
+    pendientes: int
+    calificados: int
+    confirmados: int
+    omitidos: int
 
 
 class BoletinItem(BaseModel):

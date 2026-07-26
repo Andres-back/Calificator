@@ -7,7 +7,7 @@ from uuid import UUID as PyUUID, uuid4
 
 from sqlalchemy import (
     Boolean, CheckConstraint, DateTime, ForeignKey, Index,
-    Numeric, String, Text, func, text,
+    Numeric, String, Text, UniqueConstraint, func, text,
 )
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -106,6 +106,34 @@ class SalonSesion(Base):
     updated_at: Mapped[datetime] = mapped_column(
         DateTime, nullable=False, server_default=func.now(), onupdate=func.now()
     )
+
+
+class SalonSesionEstudiante(Base):
+    """Estado por estudiante dentro de una sesión de Modo Salón."""
+    __tablename__ = "salon_sesion_estudiantes"
+    __table_args__ = (
+        UniqueConstraint("sesion_id", "estudiante_id", name="uq_salon_sesion_estudiante"),
+    )
+
+    id: Mapped[PyUUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid4, server_default=text("uuid_generate_v4()")
+    )
+    sesion_id: Mapped[str] = mapped_column(
+        String(32), ForeignKey("salon_sesiones.id", ondelete="CASCADE"), nullable=False
+    )
+    estudiante_id: Mapped[PyUUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id"), nullable=False
+    )
+    estado: Mapped[str] = mapped_column(String(20), nullable=False, default="pendiente")
+    error_msg: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, nullable=False, server_default=func.now(), onupdate=func.now()
+    )
+
+
+Index("idx_sse_sesion", SalonSesionEstudiante.sesion_id)
+Index("idx_sse_estudiante", SalonSesionEstudiante.estudiante_id)
 
 
 Index("idx_salon_sesiones_evaluacion", SalonSesion.evaluacion_id)

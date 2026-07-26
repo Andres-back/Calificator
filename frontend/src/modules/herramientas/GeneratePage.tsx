@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import toast from 'react-hot-toast';
-import { ArrowLeft, Sparkles, Wand2, Gamepad2, FileText, BookOpenCheck, ClipboardCheck, FileDown, ShieldCheck } from 'lucide-react';
+import { ArrowLeft, Sparkles, Wand2, Gamepad2, FileText } from 'lucide-react';
 import { Card } from '@/components/ui';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { TeachingCycle } from '@/components/business/TeachingCycle';
@@ -14,13 +14,6 @@ import { toApiError } from '@/lib/api';
 import type { MaterialTipo } from '@/types/api';
 
 const GEN_MESSAGES = ['Leyendo contexto pedagógico', 'Alineando tema, grado y DBA', 'Armando actividad imprimible', 'Preparando revisión docente', 'Casi listo'];
-
-const qualityChecks = [
-  { icon: BookOpenCheck, label: 'DBA y grado', detail: 'Usa el contexto curricular disponible.' },
-  { icon: ClipboardCheck, label: 'Revisión docente', detail: 'Nada se publica sin confirmación.' },
-  { icon: FileDown, label: 'Salida flexible', detail: 'Diseñado para PDF, aula y seguimiento.' },
-  { icon: ShieldCheck, label: 'IA responsable', detail: 'La respuesta se puede editar y corregir.' },
-];
 
 function GeneratingOverlay() {
   const [i, setI] = useState(0);
@@ -146,23 +139,6 @@ export function GeneratePage() {
               <p className="flex items-center gap-2"><Sparkles className="h-4 w-4 text-brand-500" /> Generado con IA</p>
               {tool.interactive && <p className="flex items-center gap-2"><Gamepad2 className="h-4 w-4 text-violet-500" /> Versión interactiva jugable</p>}
               <p className="flex items-center gap-2"><FileText className="h-4 w-4 text-emerald-500" /> PDF estudiante + respuestas</p>
-            </div>
-          </Card>
-
-          <Card className="p-4">
-            <p className="mb-3 text-xs font-semibold uppercase text-muted">Control pedagógico</p>
-            <div className="space-y-3">
-              {qualityChecks.map((item) => (
-                <div key={item.label} className="flex gap-3">
-                  <div className="grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-border bg-surface-2 text-brand-600 dark:text-brand-300">
-                    <item.icon className="h-4 w-4" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold">{item.label}</p>
-                    <p className="text-xs leading-snug text-muted">{item.detail}</p>
-                  </div>
-                </div>
-              ))}
             </div>
           </Card>
 

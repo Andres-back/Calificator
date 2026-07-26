@@ -11,6 +11,7 @@ class Settings(BaseSettings):
     API_PREFIX: str = "/api"
     SECRET_KEY: str = "change-me"
     JWT_SECRET: str | None = None
+    COOKIE_SECURE: bool | None = None
     JWT_ACCESS_EXPIRE_MINUTES: int = 60
     JWT_REFRESH_EXPIRE_DAYS: int = 7
     JWT_EXPIRY: int | None = None
@@ -127,6 +128,8 @@ class Settings(BaseSettings):
 
     @property
     def cookie_secure(self) -> bool:
+        if self.COOKIE_SECURE is not None:
+            return self.COOKIE_SECURE
         return self.ENV == "production"
 
     @property

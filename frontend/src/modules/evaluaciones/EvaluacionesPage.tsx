@@ -3,16 +3,16 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
-import { Plus, ClipboardCheck, Send, Lock, FileText, Trash2, BookOpen, UserPlus } from 'lucide-react';
+import { Plus, ClipboardCheck, Send, Lock, FileText, Trash2, BookOpen, UserPlus, Pencil } from 'lucide-react';
 import { Button, Card, Badge, statusTone, Skeleton, EmptyState, Modal, Input, Field, Textarea, Select } from '@/components/ui';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { useMaterias, MateriaSelect } from '@/modules/materias/MateriaSelect';
 import { listDbaCombinado } from '@/modules/materias/dbaApi';
-import { listEvaluaciones, createEvaluacion, publicarEvaluacion, cerrarEvaluacion, type EvaluacionCreate } from './api';
+import { listEvaluaciones, createEvaluacion, updateEvaluacion, publicarEvaluacion, cerrarEvaluacion, type EvaluacionCreate, type EvaluacionUpdate } from './api';
 import { queryClient } from '@/lib/queryClient';
 import { toApiError } from '@/lib/api';
 import { useAuth } from '@/stores/auth';
-import type { DBAUnifiedItem, EvaluacionEstado, EvaluacionModalidad } from '@/types/api';
+import type { DBAUnifiedItem, Evaluacion, EvaluacionEstado, EvaluacionModalidad } from '@/types/api';
 
 const ESTADO_LABEL: Record<EvaluacionEstado, string> = {
   borrador: 'Borrador',
@@ -61,6 +61,23 @@ const emptyPending: Record<ListField, string> = {
   respuestas: '',
 };
 
+function evaluacionToForm(ev: Evaluacion): EvaluationForm {
+  return {
+    materia_id: ev.materia_id,
+    nombre: ev.nombre,
+    descripcion: ev.descripcion ?? '',
+    modalidad: (ev.modalidad ?? 'online') as EvaluacionModalidad,
+    nota_maxima: Number(ev.nota_maxima),
+    tipo_origen: 'nativa',
+    dba_ids: (ev.dba_ids ?? []) as string[],
+    dba_personalizado_ids: (ev.dba_personalizado_ids ?? []) as string[],
+    metas: (ev.metas_profesor ?? []) as string[],
+    criterios: (ev.criterios ?? []).map((c: Record<string, unknown>) => (c.nombre as string) ?? ''),
+    preguntas: (ev.preguntas ?? []).map((p: Record<string, unknown>) => (p.enunciado as string) ?? ''),
+    respuestas: (ev.respuestas_esperadas ?? []).map((r: Record<string, unknown>) => (r.texto as string) ?? ''),
+  };
+}
+
 function listIsValid(values: string[]) {
   return values.every((value) => value.trim().length > 0);
 }
@@ -74,6 +91,7 @@ function DynamicTextList({
   onAdd,
   onChange,
   onRemove,
+  hint,
 }: {
   label: string;
   placeholder: string;
@@ -83,10 +101,11 @@ function DynamicTextList({
   onAdd: () => void;
   onChange: (index: number, value: string) => void;
   onRemove: (index: number) => void;
+  hint?: string;
 }) {
   return (
     <div className="space-y-2">
-      <Field label={label}>
+      <Field label={label} hint={hint}>
         <div className="flex gap-2">
           <Input value={pending} onChange={(event) => onPendingChange(event.target.value)} placeholder={placeholder} />
           <Button type="button" variant="secondary" onClick={onAdd}>
@@ -159,72 +178,37 @@ function DBASelector({
   );
 }
 
-export function EvaluacionesPage() {
-  const user = useAuth((state) => state.user);
-  const [params, setParams] = useSearchParams();
-  const { data: materias, isLoading: loadingMaterias } = useMaterias();
-  const materiaId = params.get('materia') || materias?.[0]?.id || '';
-  const [open, setOpen] = useState(false);
-  const [form, setForm] = useState<EvaluationForm>(() => emptyForm(materiaId));
-  const [pending, setPending] = useState<Record<ListField, string>>(emptyPending);
-
-  useEffect(() => {
-    if (!params.get('materia') && materias?.[0]?.id) setParams({ materia: materias[0].id }, { replace: true });
-  }, [materias, params, setParams]);
-
-  const { data: evals, isLoading } = useQuery({
-    queryKey: ['evaluaciones', materiaId],
-    queryFn: () => listEvaluaciones(materiaId),
-    enabled: !!materiaId,
-  });
-
-  const { data: dbaItems, isLoading: loadingDBA, isError: dbaError } = useQuery({
-    queryKey: ['materia-dba', form.materia_id],
-    queryFn: () => listDbaCombinado(form.materia_id),
-    enabled: open && !!form.materia_id,
-    retry: false,
-  });
-
-  const create = useMutation({
-    mutationFn: (payload: EvaluacionCreate) => createEvaluacion(payload),
-    onSuccess: (evaluacion) => {
-      queryClient.invalidateQueries({ queryKey: ['evaluaciones', evaluacion.materia_id] });
-      setParams({ materia: evaluacion.materia_id }, { replace: true });
-      toast.success('Evaluacion creada');
-      setOpen(false);
-      setForm(emptyForm(evaluacion.materia_id));
-      setPending(emptyPending);
-    },
-    onError: (error) => toast.error(toApiError(error).detail),
-  });
-
-  const publicar = useMutation({
-    mutationFn: publicarEvaluacion,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['evaluaciones', materiaId] });
-      toast.success('Evaluacion publicada');
-    },
-    onError: (error) => toast.error(toApiError(error).detail),
-  });
-
-  const cerrar = useMutation({
-    mutationFn: cerrarEvaluacion,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['evaluaciones', materiaId] });
-      toast.success('Evaluacion cerrada');
-    },
-    onError: (error) => toast.error(toApiError(error).detail),
-  });
-
-  const noMaterias = !loadingMaterias && (!materias || materias.length === 0);
-  const isStudent = user?.rol === 'estudiante';
-
-  function openCreateModal() {
-    setForm(emptyForm(materiaId));
-    setPending(emptyPending);
-    setOpen(true);
-  }
-
+function EvaluationFormModal({
+  open,
+  onClose,
+  title,
+  form,
+  setForm,
+  pending,
+  setPending,
+  dbaItems,
+  loadingDBA,
+  dbaError,
+  materias,
+  isEdit,
+  onSubmit,
+  isPending,
+}: {
+  open: boolean;
+  onClose: () => void;
+  title: string;
+  form: EvaluationForm;
+  setForm: React.Dispatch<React.SetStateAction<EvaluationForm>>;
+  pending: Record<ListField, string>;
+  setPending: React.Dispatch<React.SetStateAction<Record<ListField, string>>>;
+  dbaItems: DBAUnifiedItem[] | undefined;
+  loadingDBA: boolean;
+  dbaError: boolean;
+  materias: { id: string; nombre: string }[] | undefined;
+  isEdit: boolean;
+  onSubmit: () => void;
+  isPending: boolean;
+}) {
   function addListItem(field: ListField) {
     const value = pending[field].trim();
     if (!value) return;
@@ -268,59 +252,268 @@ export function EvaluacionesPage() {
     setForm((current) => ({ ...current, materia_id, dba_ids: [], dba_personalizado_ids: [] }));
   }
 
-  function buildPayload(): EvaluacionCreate | null {
-    const nombre = form.nombre.trim();
-    if (!form.materia_id) {
-      toast.error('Selecciona una materia');
-      return null;
-    }
-    if (!nombre) {
-      toast.error('El nombre es obligatorio');
-      return null;
-    }
-    if (!form.modalidad) {
-      toast.error('Selecciona una modalidad');
-      return null;
-    }
-    if (!Number.isFinite(form.nota_maxima) || form.nota_maxima <= 0) {
-      toast.error('La nota maxima debe ser mayor que 0');
-      return null;
-    }
-    if (!listIsValid(form.criterios) || !listIsValid(form.preguntas) || !listIsValid(form.respuestas)) {
-      toast.error('Las listas no deben contener elementos vacios');
-      return null;
-    }
+  return (
+    <Modal open={open} onClose={onClose} title={title} className="max-w-4xl">
+      <div className="space-y-6">
+        <div className="grid gap-4 md:grid-cols-2">
+          <Field label="Materia" required>
+            <Select value={form.materia_id} onChange={(event) => handleFormMateriaChange(event.target.value)} required disabled={isEdit}>
+              <option value="">Selecciona una materia</option>
+              {materias?.map((materia) => (
+                <option key={materia.id} value={materia.id}>{materia.nombre}</option>
+              ))}
+            </Select>
+            {isEdit && <p className="mt-1 text-xs text-muted">La materia no se puede cambiar al editar.</p>}
+          </Field>
+          <Field label="Modalidad" required>
+            <Select value={form.modalidad} onChange={(event) => setForm({ ...form, modalidad: event.target.value as EvaluacionModalidad })} required>
+              <option value="online">Online</option>
+              <option value="fisica">Fisica</option>
+              <option value="mixta">Mixta</option>
+            </Select>
+          </Field>
+        </div>
 
+        <div className="grid gap-4 md:grid-cols-[1fr_180px]">
+          <Field label="Nombre" required>
+            <Input value={form.nombre} onChange={(event) => setForm({ ...form, nombre: event.target.value })} placeholder="Examen unidad 1" required minLength={2} />
+          </Field>
+          <Field label="Nota maxima" required>
+            <Input type="number" min={0.1} step="0.1" value={form.nota_maxima} onChange={(event) => setForm({ ...form, nota_maxima: Number(event.target.value) })} required />
+          </Field>
+        </div>
+
+        <Field label="Descripcion">
+          <Textarea value={form.descripcion} onChange={(event) => setForm({ ...form, descripcion: event.target.value })} placeholder="Proposito, alcance o instrucciones generales." />
+        </Field>
+
+        <div className="grid gap-5 md:grid-cols-2">
+          <DynamicTextList
+            label="Metas del profesor"
+            placeholder="Ej. Identificar relaciones causa-efecto"
+            values={form.metas}
+            pending={pending.metas}
+            onPendingChange={(value) => setPending({ ...pending, metas: value })}
+            onAdd={() => addListItem('metas')}
+            onChange={(index, value) => updateListItem('metas', index, value)}
+            onRemove={(index) => removeListItem('metas', index)}
+            hint="¿Qué quieres que aprendan los estudiantes?"
+          />
+          <DynamicTextList
+            label="Criterios de evaluación"
+            placeholder="Ej. Procedimiento claro, uso de vocabulario técnico"
+            values={form.criterios}
+            pending={pending.criterios}
+            onPendingChange={(value) => setPending({ ...pending, criterios: value })}
+            onAdd={() => addListItem('criterios')}
+            onChange={(index, value) => updateListItem('criterios', index, value)}
+            onRemove={(index) => removeListItem('criterios', index)}
+            hint="¿Cómo vas a calificar? Define los criterios."
+          />
+          <DynamicTextList
+            label="Preguntas"
+            placeholder="Escribe una pregunta para la evaluación"
+            values={form.preguntas}
+            pending={pending.preguntas}
+            onPendingChange={(value) => setPending({ ...pending, preguntas: value })}
+            onAdd={() => addListItem('preguntas')}
+            onChange={(index, value) => updateListItem('preguntas', index, value)}
+            onRemove={(index) => removeListItem('preguntas', index)}
+            hint="Las preguntas que responderán los estudiantes."
+          />
+          <DynamicTextList
+            label="Respuestas esperadas"
+            placeholder="Escribe la respuesta esperada para cada pregunta"
+            values={form.respuestas}
+            pending={pending.respuestas}
+            onPendingChange={(value) => setPending({ ...pending, respuestas: value })}
+            onAdd={() => addListItem('respuestas')}
+            onChange={(index, value) => updateListItem('respuestas', index, value)}
+            onRemove={(index) => removeListItem('respuestas', index)}
+            hint="La IA usará esto para calificar. Sé específico."
+          />
+        </div>
+
+        <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200">
+          <p className="font-semibold">💡 Tip: Define al menos las metas y los criterios</p>
+          <p className="mt-1">La IA calificará automáticamente según los criterios que definas. Si no agregas criterios, la calificación será más general.</p>
+        </div>
+
+        <Field label="DBA" hint="Opcional. Selecciona los derechos basicos asociados a la evaluacion.">
+          <DBASelector
+            items={dbaItems}
+            selectedOfficial={form.dba_ids}
+            selectedCustom={form.dba_personalizado_ids}
+            loading={loadingDBA}
+            error={dbaError}
+            onToggle={toggleDBA}
+          />
+        </Field>
+
+        <div className="flex flex-col-reverse gap-3 border-t border-border pt-4 sm:flex-row sm:justify-end">
+          <Button type="button" variant="outline" onClick={onClose}>Cancelar</Button>
+          <Button onClick={onSubmit} loading={isPending}>{isEdit ? 'Guardar cambios' : 'Crear evaluacion'}</Button>
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
+export function EvaluacionesPage() {
+  const user = useAuth((state) => state.user);
+  const [params, setParams] = useSearchParams();
+  const { data: materias, isLoading: loadingMaterias } = useMaterias();
+  const materiaId = params.get('materia') || materias?.[0]?.id || '';
+  const [open, setOpen] = useState(false);
+  const [editingEval, setEditingEval] = useState<Evaluacion | null>(null);
+  const [form, setForm] = useState<EvaluationForm>(() => emptyForm(materiaId));
+  const [pending, setPending] = useState<Record<ListField, string>>(emptyPending);
+
+  useEffect(() => {
+    if (!params.get('materia') && materias?.[0]?.id) setParams({ materia: materias[0].id }, { replace: true });
+  }, [materias, params, setParams]);
+
+  const { data: evals, isLoading } = useQuery({
+    queryKey: ['evaluaciones', materiaId],
+    queryFn: () => listEvaluaciones(materiaId),
+    enabled: !!materiaId,
+  });
+
+  const { data: dbaItems, isLoading: loadingDBA, isError: dbaError } = useQuery({
+    queryKey: ['materia-dba', form.materia_id],
+    queryFn: () => listDbaCombinado(form.materia_id),
+    enabled: open && !!form.materia_id,
+    retry: false,
+  });
+
+  const create = useMutation({
+    mutationFn: (payload: EvaluacionCreate) => createEvaluacion(payload),
+    onSuccess: (evaluacion) => {
+      queryClient.invalidateQueries({ queryKey: ['evaluaciones', evaluacion.materia_id] });
+      setParams({ materia: evaluacion.materia_id }, { replace: true });
+      toast.success('Evaluacion creada');
+      setOpen(false);
+      setForm(emptyForm(evaluacion.materia_id));
+      setPending(emptyPending);
+    },
+    onError: (error) => toast.error(toApiError(error).detail),
+  });
+
+  const update = useMutation({
+    mutationFn: ({ id, payload }: { id: string; payload: EvaluacionUpdate }) => updateEvaluacion(id, payload),
+    onSuccess: (evaluacion) => {
+      queryClient.invalidateQueries({ queryKey: ['evaluaciones', evaluacion.materia_id] });
+      toast.success('Evaluacion actualizada');
+      setOpen(false);
+      setEditingEval(null);
+      setForm(emptyForm(evaluacion.materia_id));
+      setPending(emptyPending);
+    },
+    onError: (error) => toast.error(toApiError(error).detail),
+  });
+
+  const publicar = useMutation({
+    mutationFn: publicarEvaluacion,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['evaluaciones', materiaId] });
+      toast.success('Evaluacion publicada');
+    },
+    onError: (error) => toast.error(toApiError(error).detail),
+  });
+
+  const cerrar = useMutation({
+    mutationFn: cerrarEvaluacion,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['evaluaciones', materiaId] });
+      toast.success('Evaluacion cerrada');
+    },
+    onError: (error) => toast.error(toApiError(error).detail),
+  });
+
+  const noMaterias = !loadingMaterias && (!materias || materias.length === 0);
+  const isStudent = user?.rol === 'estudiante';
+
+  function openCreateModal() {
+    setEditingEval(null);
+    setForm(emptyForm(materiaId));
+    setPending(emptyPending);
+    setOpen(true);
+  }
+
+  function openEditModal(ev: Evaluacion) {
+    setEditingEval(ev);
+    setForm(evaluacionToForm(ev));
+    setPending(emptyPending);
+    setOpen(true);
+  }
+
+  function buildCreatePayload(): EvaluacionCreate | null {
+    const nombre = form.nombre.trim();
+    if (!form.materia_id) { toast.error('Selecciona una materia'); return null; }
+    if (!nombre) { toast.error('El nombre es obligatorio'); return null; }
+    if (!form.modalidad) { toast.error('Selecciona una modalidad'); return null; }
+    if (!Number.isFinite(form.nota_maxima) || form.nota_maxima <= 0) { toast.error('La nota maxima debe ser mayor que 0'); return null; }
+    if (!listIsValid(form.criterios) || !listIsValid(form.preguntas) || !listIsValid(form.respuestas)) {
+      toast.error('Las listas no deben contener elementos vacios'); return null;
+    }
     return {
-      materia_id: form.materia_id,
-      nombre,
+      materia_id: form.materia_id, nombre,
       descripcion: form.descripcion.trim() || undefined,
-      tipo_origen: form.tipo_origen,
-      modalidad: form.modalidad,
-      nota_maxima: form.nota_maxima,
-      dba_ids: form.dba_ids,
-      dba_personalizado_ids: form.dba_personalizado_ids,
-      metas_profesor: form.metas.map((meta) => meta.trim()).filter(Boolean),
-      criterios: form.criterios.map((nombreCriterio) => ({ nombre: nombreCriterio.trim() })),
-      preguntas: form.preguntas.map((enunciado) => ({ enunciado: enunciado.trim() })),
-      respuestas_esperadas: form.respuestas.map((texto) => ({ texto: texto.trim() })),
+      tipo_origen: form.tipo_origen, modalidad: form.modalidad, nota_maxima: form.nota_maxima,
+      dba_ids: form.dba_ids, dba_personalizado_ids: form.dba_personalizado_ids,
+      metas_profesor: form.metas.map((m) => m.trim()).filter(Boolean),
+      criterios: form.criterios.map((n) => ({ nombre: n.trim() })),
+      preguntas: form.preguntas.map((e) => ({ enunciado: e.trim() })),
+      respuestas_esperadas: form.respuestas.map((t) => ({ texto: t.trim() })),
     };
   }
 
-  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const payload = buildPayload();
-    if (payload) create.mutate(payload);
+  function buildUpdatePayload(): EvaluacionUpdate | null {
+    const nombre = form.nombre.trim();
+    if (!nombre) { toast.error('El nombre es obligatorio'); return null; }
+    if (!listIsValid(form.criterios) || !listIsValid(form.preguntas) || !listIsValid(form.respuestas)) {
+      toast.error('Las listas no deben contener elementos vacios'); return null;
+    }
+    return {
+      nombre, descripcion: form.descripcion.trim() || undefined,
+      modalidad: form.modalidad, nota_maxima: form.nota_maxima,
+      metas_profesor: form.metas.map((m) => m.trim()).filter(Boolean),
+      criterios: form.criterios.map((n) => ({ nombre: n.trim() })),
+      preguntas: form.preguntas.map((e) => ({ enunciado: e.trim() })),
+      respuestas_esperadas: form.respuestas.map((t) => ({ texto: t.trim() })),
+    };
+  }
+
+  function handleSubmit() {
+    if (editingEval) {
+      const payload = buildUpdatePayload();
+      if (payload) update.mutate({ id: editingEval.id, payload });
+    } else {
+      const payload = buildCreatePayload();
+      if (payload) create.mutate(payload);
+    }
   }
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        title="Evaluaciones"
-        eyebrow={isStudent ? 'Tu aprendizaje' : 'Diseño evaluativo'}
-        subtitle={isStudent ? 'Consulta las evaluaciones de tus materias y resuelve las que estén disponibles.' : 'Crea, publica y revisa evaluaciones con apoyo de IA.'}
-        action={!isStudent && !noMaterias && <Button onClick={openCreateModal} disabled={!materiaId}><Plus className="h-4 w-4" /> Nueva evaluación</Button>}
-      />
+      <div className="relative overflow-hidden rounded-xl">
+        <div className="absolute inset-0 z-0">
+          <img
+            src="/branding/feature-evaluate.png"
+            alt=""
+            className="h-full w-full object-cover opacity-10 dark:opacity-5"
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-surface via-surface/95 to-surface/80" />
+        </div>
+        <div className="relative z-10">
+          <PageHeader
+            title="Evaluaciones"
+            eyebrow={isStudent ? 'Tu aprendizaje' : 'Diseño evaluativo'}
+            subtitle={isStudent ? 'Consulta las evaluaciones de tus materias y resuelve las que estén disponibles.' : 'Crea, publica y revisa evaluaciones con apoyo de IA.'}
+            action={!isStudent && !noMaterias && <Button onClick={openCreateModal} disabled={!materiaId}><Plus className="h-4 w-4" /> Nueva evaluación</Button>}
+          />
+        </div>
+      </div>
 
       {noMaterias ? (
         <EmptyState
@@ -350,6 +543,7 @@ export function EvaluacionesPage() {
           ) : !evals || evals.length === 0 ? (
             <EmptyState
               icon={ClipboardCheck}
+              image="/branding/empty-no-evals.png"
               title="Sin evaluaciones"
               description={isStudent ? 'No hay evaluaciones disponibles para esta materia.' : 'Crea la primera evaluación de esta materia.'}
               action={!isStudent && <Button onClick={openCreateModal}><Plus className="h-4 w-4" /> Nueva evaluación</Button>}
@@ -383,7 +577,16 @@ export function EvaluacionesPage() {
                           Resolver
                         </Link>
                       )}
-                      {!isStudent && ev.estado === 'borrador' && <Button size="sm" loading={publicar.isPending} onClick={() => publicar.mutate(ev.id)}><Send className="h-4 w-4" /> Publicar</Button>}
+                      {!isStudent && ev.estado === 'borrador' && (
+                        <>
+                          <Button size="sm" variant="outline" onClick={() => openEditModal(ev)}>
+                            <Pencil className="h-4 w-4" /> Editar
+                          </Button>
+                          <Button size="sm" loading={publicar.isPending} onClick={() => publicar.mutate(ev.id)}>
+                            <Send className="h-4 w-4" /> Publicar
+                          </Button>
+                        </>
+                      )}
                       {!isStudent && (ev.estado === 'publicada' || ev.estado === 'en_calificacion' || ev.estado === 'pendiente_revision') && (
                         <Button size="sm" variant="outline" loading={cerrar.isPending} onClick={() => cerrar.mutate(ev.id)}><Lock className="h-4 w-4" /> Cerrar</Button>
                       )}
@@ -396,99 +599,22 @@ export function EvaluacionesPage() {
         </>
       )}
 
-      <Modal open={open} onClose={() => setOpen(false)} title="Nueva evaluación" className="max-w-4xl">
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="grid gap-4 md:grid-cols-2">
-            <Field label="Materia" required>
-              <Select value={form.materia_id} onChange={(event) => handleFormMateriaChange(event.target.value)} required>
-                <option value="">Selecciona una materia</option>
-                {materias?.map((materia) => (
-                  <option key={materia.id} value={materia.id}>{materia.nombre}</option>
-                ))}
-              </Select>
-            </Field>
-            <Field label="Modalidad" required>
-              <Select value={form.modalidad} onChange={(event) => setForm({ ...form, modalidad: event.target.value as EvaluacionModalidad })} required>
-                <option value="online">Online</option>
-                <option value="fisica">Fisica</option>
-                <option value="mixta">Mixta</option>
-              </Select>
-            </Field>
-          </div>
-
-          <div className="grid gap-4 md:grid-cols-[1fr_180px]">
-            <Field label="Nombre" required>
-              <Input value={form.nombre} onChange={(event) => setForm({ ...form, nombre: event.target.value })} placeholder="Examen unidad 1" required minLength={2} />
-            </Field>
-            <Field label="Nota maxima" required>
-              <Input type="number" min={0.1} step="0.1" value={form.nota_maxima} onChange={(event) => setForm({ ...form, nota_maxima: Number(event.target.value) })} required />
-            </Field>
-          </div>
-
-          <Field label="Descripcion">
-            <Textarea value={form.descripcion} onChange={(event) => setForm({ ...form, descripcion: event.target.value })} placeholder="Proposito, alcance o instrucciones generales." />
-          </Field>
-
-          <div className="grid gap-5 md:grid-cols-2">
-            <DynamicTextList
-              label="Metas del profesor"
-              placeholder="Ej. Identificar relaciones causa-efecto"
-              values={form.metas}
-              pending={pending.metas}
-              onPendingChange={(value) => setPending({ ...pending, metas: value })}
-              onAdd={() => addListItem('metas')}
-              onChange={(index, value) => updateListItem('metas', index, value)}
-              onRemove={(index) => removeListItem('metas', index)}
-            />
-            <DynamicTextList
-              label="Criterios"
-              placeholder="Ej. Procedimiento claro"
-              values={form.criterios}
-              pending={pending.criterios}
-              onPendingChange={(value) => setPending({ ...pending, criterios: value })}
-              onAdd={() => addListItem('criterios')}
-              onChange={(index, value) => updateListItem('criterios', index, value)}
-              onRemove={(index) => removeListItem('criterios', index)}
-            />
-            <DynamicTextList
-              label="Preguntas"
-              placeholder="Escribe una pregunta"
-              values={form.preguntas}
-              pending={pending.preguntas}
-              onPendingChange={(value) => setPending({ ...pending, preguntas: value })}
-              onAdd={() => addListItem('preguntas')}
-              onChange={(index, value) => updateListItem('preguntas', index, value)}
-              onRemove={(index) => removeListItem('preguntas', index)}
-            />
-            <DynamicTextList
-              label="Respuestas esperadas"
-              placeholder="Escribe una respuesta esperada"
-              values={form.respuestas}
-              pending={pending.respuestas}
-              onPendingChange={(value) => setPending({ ...pending, respuestas: value })}
-              onAdd={() => addListItem('respuestas')}
-              onChange={(index, value) => updateListItem('respuestas', index, value)}
-              onRemove={(index) => removeListItem('respuestas', index)}
-            />
-          </div>
-
-          <Field label="DBA" hint="Opcional. Selecciona los derechos basicos asociados a la evaluacion.">
-            <DBASelector
-              items={dbaItems}
-              selectedOfficial={form.dba_ids}
-              selectedCustom={form.dba_personalizado_ids}
-              loading={loadingDBA}
-              error={dbaError}
-              onToggle={toggleDBA}
-            />
-          </Field>
-
-          <div className="flex flex-col-reverse gap-3 border-t border-border pt-4 sm:flex-row sm:justify-end">
-            <Button type="button" variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
-            <Button type="submit" loading={create.isPending}>Crear evaluacion</Button>
-          </div>
-        </form>
-      </Modal>
+      <EvaluationFormModal
+        open={open}
+        onClose={() => { setOpen(false); setEditingEval(null); }}
+        title={editingEval ? 'Editar evaluación' : 'Nueva evaluación'}
+        form={form}
+        setForm={setForm}
+        pending={pending}
+        setPending={setPending}
+        dbaItems={dbaItems}
+        loadingDBA={loadingDBA}
+        dbaError={dbaError}
+        materias={materias}
+        isEdit={!!editingEval}
+        onSubmit={handleSubmit}
+        isPending={create.isPending || update.isPending}
+      />
     </div>
   );
 }

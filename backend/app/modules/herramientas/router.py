@@ -13,11 +13,16 @@ from app.modules.herramientas.schemas import (
     CuentoRequest,
     EmparejarRequest,
     ExamenRequest,
+    FichaRequest,
+    FlashcardsRequest,
     GuiaRequest,
+    LecturaComprensivaRequest,
+    MapaConceptualRequest,
     MaterialListItem,
     MaterialRead,
     ParaColorearRequest,
     PlanRefuerzoRequest,
+    QuizRapidoRequest,
     RubricaRequest,
     SopaLetrasRequest,
     TallerRequest,
@@ -141,6 +146,56 @@ async def rubrica(
 ) -> dict:
     require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
     return await service.gen_rubrica(db, req, current_user)
+
+
+@router.post("/ficha", status_code=status.HTTP_201_CREATED)
+async def ficha(
+    req: FichaRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
+    return await service.gen_ficha(db, req, current_user)
+
+
+@router.post("/quiz-rapido", status_code=status.HTTP_201_CREATED)
+async def quiz_rapido(
+    req: QuizRapidoRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
+    return await service.gen_quiz_rapido(db, req, current_user)
+
+
+@router.post("/lectura-comprensiva", status_code=status.HTTP_201_CREATED)
+async def lectura_comprensiva(
+    req: LecturaComprensivaRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
+    return await service.gen_lectura_comprensiva(db, req, current_user)
+
+
+@router.post("/mapa-conceptual", status_code=status.HTTP_201_CREATED)
+async def mapa_conceptual(
+    req: MapaConceptualRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
+    return await service.gen_mapa_conceptual(db, req, current_user)
+
+
+@router.post("/flashcards", status_code=status.HTTP_201_CREATED)
+async def flashcards(
+    req: FlashcardsRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
+    return await service.gen_flashcards(db, req, current_user)
 
 
 @router.post("/plan-refuerzo", status_code=status.HTTP_201_CREATED)

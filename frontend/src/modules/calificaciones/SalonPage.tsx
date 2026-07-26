@@ -5,9 +5,10 @@ import toast from 'react-hot-toast';
 import { ArrowLeft, Camera, CheckCircle2, DoorClosed, HelpCircle, ImageUp, Play, SkipForward, Users } from 'lucide-react';
 import { Badge, Button, Card, ConfirmDialog, EmptyState, Field, Input, Select, Skeleton, GuidedTour, RichContent } from '@/components/ui';
 import { PageHeader } from '@/components/layout/PageHeader';
-import { listMaterias, getMateriaEstudiantes } from '@/modules/materias/api';
+import { useMaterias, useEstudiantes } from '@/modules/materias/MateriaSelect';
 import { listEvaluaciones } from '@/modules/evaluaciones/api';
 import { toApiError } from '@/lib/api';
+import { confidenceLabel } from '@/lib/utils';
 import { useAuth } from '@/stores/auth';
 import { queryClient } from '@/lib/queryClient';
 import { cerrarSalon, getSalonSesion, iniciarSalon, listCalificaciones, salonFoto } from './api';
@@ -18,12 +19,6 @@ const ACCEPTED_IMAGE_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/web
 
 type SessionStatus = 'idle' | 'recovering' | 'active';
 type StoredSalonSession = { sesionId: string; evaluacionId: string; materiaId: string };
-
-function confidenceLabel(value: number | null) {
-  if (value == null) return 'Sin confianza reportada';
-  const normalized = value > 1 ? value : value * 100;
-  return `${normalized.toFixed(0)}%`;
-}
 
 function studentLabel(student: User) {
   return student.nombre || student.email || student.id.slice(0, 8);
@@ -150,10 +145,7 @@ export function SalonPage() {
     return () => window.removeEventListener('beforeunload', warnBeforeUnload);
   }, [sessionActive]);
 
-  const { data: materias, isLoading: loadingMaterias } = useQuery({
-    queryKey: ['materias'],
-    queryFn: listMaterias,
-  });
+  const { data: materias, isLoading: loadingMaterias } = useMaterias();
 
   useEffect(() => {
     if (!materiaId && materias?.[0] && !sessionRecovering) setMateriaId(materias[0].id);
@@ -173,22 +165,13 @@ export function SalonPage() {
     if (evaluaciones?.length === 0) setEvaluacionId('');
   }, [evaluacionId, evaluaciones, sessionActive, sessionRecovering]);
 
-  const { data: materiaConEstudiantes, isLoading: loadingEstudiantes } = useQuery({
-    queryKey: ['materia-estudiantes', materiaId],
-    queryFn: () => getMateriaEstudiantes(materiaId),
-    enabled: Boolean(materiaId),
-  });
+  const { estudiantes, isLoading: loadingEstudiantes } = useEstudiantes(materiaId);
   const calificacionesSesionQuery = useQuery({
     queryKey: ['calificaciones', evaluacionId, 'salon-progress'],
     queryFn: () => listCalificaciones(evaluacionId),
     enabled: sessionActive && Boolean(evaluacionId),
     retry: false,
   });
-
-  const estudiantes = useMemo(
-    () => materiaConEstudiantes?.estudiantes ?? [],
-    [materiaConEstudiantes?.estudiantes],
-  );
   const selectedMateria = materias?.find((materia) => materia.id === materiaId);
   const selectedEvaluacion = evaluaciones?.find((evaluacion) => evaluacion.id === evaluacionId);
 

@@ -12,14 +12,15 @@ const GeneratePage = lazy(() => import('@/modules/herramientas/GeneratePage').th
 const DetailPage = lazy(() => import('@/modules/herramientas/DetailPage').then((m) => ({ default: m.DetailPage })));
 const MateriasListPage = lazy(() => import('@/modules/materias/MateriasListPage').then((m) => ({ default: m.MateriasListPage })));
 const MateriaDetailPage = lazy(() => import('@/modules/materias/MateriaDetailPage').then((m) => ({ default: m.MateriaDetailPage })));
+const MateriaVistaGeneral = lazy(() => import('@/modules/materias/MateriaVistaGeneral').then((m) => ({ default: m.MateriaVistaGeneral })));
+const MateriaEvaluaciones = lazy(() => import('@/modules/materias/MateriaEvaluaciones').then((m) => ({ default: m.MateriaEvaluaciones })));
+const MateriaCalificar = lazy(() => import('@/modules/materias/MateriaCalificar').then((m) => ({ default: m.MateriaCalificar })));
+const MateriaBoletin = lazy(() => import('@/modules/materias/MateriaBoletin').then((m) => ({ default: m.MateriaBoletin })));
 const MateriaDbaPage = lazy(() => import('@/modules/materias/MateriaDbaPage').then((m) => ({ default: m.MateriaDbaPage })));
 const UnirseMateriaPage = lazy(() => import('@/modules/materias/UnirseMateriaPage').then((m) => ({ default: m.UnirseMateriaPage })));
 const EvaluacionesPage = lazy(() => import('@/modules/evaluaciones/EvaluacionesPage').then((m) => ({ default: m.EvaluacionesPage })));
 const ResolverEvaluacionPage = lazy(() => import('@/modules/evaluaciones/ResolverEvaluacionPage').then((m) => ({ default: m.ResolverEvaluacionPage })));
 const AdminAIConfigPage = lazy(() => import('@/modules/admin/AdminAIConfigPage').then((m) => ({ default: m.AdminAIConfigPage })));
-const CalificacionesPage = lazy(() => import('@/modules/calificaciones/CalificacionesPage').then((m) => ({ default: m.CalificacionesPage })));
-const CalificarFotoPage = lazy(() => import('@/modules/calificaciones/CalificarFotoPage').then((m) => ({ default: m.CalificarFotoPage })));
-const SalonPage = lazy(() => import('@/modules/calificaciones/SalonPage').then((m) => ({ default: m.SalonPage })));
 const BoletinPage = lazy(() => import('@/modules/calificaciones/BoletinPage').then((m) => ({ default: m.BoletinPage })));
 const PresentacionesPage = lazy(() => import('@/modules/presentaciones/PresentacionesPage').then((m) => ({ default: m.PresentacionesPage })));
 const ReportesPage = lazy(() => import('@/modules/reportes/ReportesPage').then((m) => ({ default: m.ReportesPage })));
@@ -37,11 +38,21 @@ export const router = createBrowserRouter([
         element: <AppShell />,
         children: [
           { index: true, element: lazyPage(<DashboardPage />) },
-          // Rutas compartidas (docente y estudiante)
+          // Rutas compartidas (docente, estudiante)
           { path: 'materias', element: lazyPage(<MateriasListPage />) },
           { path: 'materias/unirse', element: lazyPage(<UnirseMateriaPage />) },
-          { path: 'materias/:id', element: lazyPage(<MateriaDetailPage />) },
-          { path: 'materias/:id/dba', element: lazyPage(<MateriaDbaPage />) },
+          {
+            // MateriaDetailPage ahora es un layout con tabs y <Outlet />
+            path: 'materias/:id',
+            element: lazyPage(<MateriaDetailPage />),
+            children: [
+              { index: true, element: lazyPage(<MateriaVistaGeneral />) },
+              { path: 'evaluaciones', element: lazyPage(<MateriaEvaluaciones />) },
+              { path: 'calificar', element: lazyPage(<MateriaCalificar />) },
+              { path: 'boletin', element: lazyPage(<MateriaBoletin />) },
+              { path: 'dba', element: lazyPage(<MateriaDbaPage />) },
+            ],
+          },
           { path: 'evaluaciones', element: lazyPage(<EvaluacionesPage />) },
           { path: 'evaluaciones/:id/resolver', element: lazyPage(<ResolverEvaluacionPage />) },
           { path: 'calificaciones/boletin', element: lazyPage(<BoletinPage />) },
@@ -53,16 +64,17 @@ export const router = createBrowserRouter([
               { path: 'admin/configuracion-ia', element: lazyPage(<AdminAIConfigPage />) },
             ],
           },
-          // Rutas solo docente/admin (el estudiante es redirigido a /app)
+          // Rutas solo docente/admin — simplificadas
           {
             element: <RequireRole allow={['profesor', 'admin']} />,
             children: [
               { path: 'herramientas', element: lazyPage(<ListPage />) },
               { path: 'herramientas/nuevo', element: lazyPage(<GeneratePage />) },
               { path: 'herramientas/:id', element: lazyPage(<DetailPage />) },
-              { path: 'calificaciones', element: lazyPage(<CalificacionesPage />) },
-              { path: 'calificaciones/foto', element: lazyPage(<CalificarFotoPage />) },
-              { path: 'calificaciones/salon', element: lazyPage(<SalonPage />) },
+              // Redirigir rutas antiguas de calificaciones → Materias
+              { path: 'calificaciones', element: <Navigate to="/app/materias" replace /> },
+              { path: 'calificaciones/foto', element: <Navigate to="/app/materias" replace /> },
+              { path: 'calificaciones/salon', element: <Navigate to="/app/materias" replace /> },
               { path: 'presentaciones', element: lazyPage(<PresentacionesPage />) },
               { path: 'reportes', element: lazyPage(<ReportesPage />) },
             ],

@@ -186,6 +186,85 @@ export function RubricaForm({ loading, onSubmit }: ToolFormProps) {
   );
 }
 
+export function FichaForm({ loading, onSubmit }: ToolFormProps) {
+  const b = useBaseForm();
+  const [n, setN] = useState(6);
+  return (
+    <div className="space-y-5">
+      <BaseFields base={b.base} set={b.set} tituloPlaceholder="Ficha: suma y resta de fracciones" />
+      <FormSection title="Cantidad de ejercicios" hint="La IA elige tipos variados (completar, opción múltiple, desarrollo).">
+        <Stepper value={n} onChange={setN} min={2} max={15} label="ejercicios" />
+      </FormSection>
+      <ExtraInstructions value={b.base.instrucciones_adicionales} onChange={(v) => b.set('instrucciones_adicionales', v)} />
+      <GenerateButton loading={loading} disabled={!b.valid} onClick={() => onSubmit({ ...b.payload(), cantidad_ejercicios: n })} />
+    </div>
+  );
+}
+
+
+export function QuizRapidoForm({ loading, onSubmit }: ToolFormProps) {
+  const b = useBaseForm();
+  const [n, setN] = useState(8);
+  return (
+    <div className="space-y-5">
+      <BaseFields base={b.base} set={b.set} tituloPlaceholder="Quiz rápido: el ciclo del agua" />
+      <FormSection title="Cantidad de preguntas">
+        <Stepper value={n} onChange={setN} min={3} max={20} label="preguntas" />
+      </FormSection>
+      <ExtraInstructions value={b.base.instrucciones_adicionales} onChange={(v) => b.set('instrucciones_adicionales', v)} />
+      <GenerateButton loading={loading} disabled={!b.valid} onClick={() => onSubmit({ ...b.payload(), cantidad_preguntas: n })} />
+    </div>
+  );
+}
+
+
+export function LecturaComprensivaForm({ loading, onSubmit }: ToolFormProps) {
+  const b = useBaseForm();
+  const [n, setN] = useState(5);
+  return (
+    <div className="space-y-5">
+      <BaseFields base={b.base} set={b.set} tituloPlaceholder="Lectura: los primeros habitantes" />
+      <FormSection title="Cantidad de preguntas" hint="Se incluyen preguntas literales, inferenciales y de vocabulario.">
+        <Stepper value={n} onChange={setN} min={2} max={15} label="preguntas" />
+      </FormSection>
+      <ExtraInstructions value={b.base.instrucciones_adicionales} onChange={(v) => b.set('instrucciones_adicionales', v)} />
+      <GenerateButton loading={loading} disabled={!b.valid} onClick={() => onSubmit({ ...b.payload(), cantidad_preguntas: n })} />
+    </div>
+  );
+}
+
+
+export function MapaConceptualForm({ loading, onSubmit }: ToolFormProps) {
+  const b = useBaseForm();
+  return (
+    <div className="space-y-5">
+      <BaseFields base={b.base} set={b.set} tituloPlaceholder="Mapa conceptual: el sistema solar" />
+      <FormSection title="Generación automática" hint="La IA construye la estructura jerárquica de conceptos y relaciones.">
+        <p className="text-sm text-muted">Solo necesitas definir el tema arriba. La IA se encarga del resto.</p>
+      </FormSection>
+      <ExtraInstructions value={b.base.instrucciones_adicionales} onChange={(v) => b.set('instrucciones_adicionales', v)} />
+      <GenerateButton loading={loading} disabled={!b.valid} onClick={() => onSubmit({ ...b.payload() })} />
+    </div>
+  );
+}
+
+
+export function FlashcardsForm({ loading, onSubmit }: ToolFormProps) {
+  const b = useBaseForm();
+  const [n, setN] = useState(10);
+  return (
+    <div className="space-y-5">
+      <BaseFields base={b.base} set={b.set} tituloPlaceholder="Flashcards: verbos en inglés" />
+      <FormSection title="Cantidad de tarjetas" hint="Cada tarjeta tiene un concepto y su definición.">
+        <Stepper value={n} onChange={setN} min={3} max={30} label="tarjetas" />
+      </FormSection>
+      <ExtraInstructions value={b.base.instrucciones_adicionales} onChange={(v) => b.set('instrucciones_adicionales', v)} />
+      <GenerateButton loading={loading} disabled={!b.valid} onClick={() => onSubmit({ ...b.payload(), cantidad_tarjetas: n })} />
+    </div>
+  );
+}
+
+
 export function PlanRefuerzoForm({ loading, onSubmit }: ToolFormProps) {
   const b = useBaseForm();
   const [estudiante, setEstudiante] = useState('');

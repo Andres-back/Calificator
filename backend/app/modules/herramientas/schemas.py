@@ -64,6 +64,26 @@ class RubricaRequest(HerramientaBaseRequest):
     escala: list[str] = Field(default_factory=lambda: ["Excelente", "Bueno", "Regular", "Insuficiente"])
 
 
+class FichaRequest(HerramientaBaseRequest):
+    cantidad_ejercicios: int = Field(default=6, ge=2, le=15)
+
+
+class QuizRapidoRequest(HerramientaBaseRequest):
+    cantidad_preguntas: int = Field(default=8, ge=3, le=20)
+
+
+class LecturaComprensivaRequest(HerramientaBaseRequest):
+    cantidad_preguntas: int = Field(default=5, ge=2, le=15)
+
+
+class MapaConceptualRequest(HerramientaBaseRequest):
+    pass
+
+
+class FlashcardsRequest(HerramientaBaseRequest):
+    cantidad_tarjetas: int = Field(default=10, ge=3, le=30)
+
+
 class PlanRefuerzoRequest(HerramientaBaseRequest):
     nombre_estudiante: str
     dificultades: list[str] = Field(default_factory=list)

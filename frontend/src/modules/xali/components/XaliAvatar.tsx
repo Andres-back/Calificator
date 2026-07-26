@@ -1,5 +1,3 @@
-import visorImage from '@/assets/xali-bot/visor-avatar.png';
-import checkImage from '@/assets/xali-bot/check-avatar.png';
 import { cn } from '@/lib/cn';
 
 type XaliAvatarMood = 'default' | 'happy' | 'success' | 'thinking' | 'student' | 'teacher';
@@ -10,36 +8,30 @@ type XaliAvatarProps = {
   size?: XaliAvatarSize;
   variant?: XaliAvatarVariant;
   mood?: XaliAvatarMood;
-  /** Flotación suave continua (usa la keyframe `float` del tema). */
   animated?: boolean;
   className?: string;
-  imageClassName?: string;
 };
 
-const sizeClasses: Record<XaliAvatarSize, { wrapper: string; image: string }> = {
-  xs: { wrapper: 'h-8 w-8', image: 'h-7 w-7' },
-  sm: { wrapper: 'h-9 w-9', image: 'h-8 w-8' },
-  md: { wrapper: 'h-11 w-11', image: 'h-10 w-10' },
-  lg: { wrapper: 'h-16 w-16', image: 'h-14 w-14' },
-  xl: { wrapper: 'h-24 w-24', image: 'h-20 w-20' },
+const sizeMap: Record<XaliAvatarSize, { box: number; ring: number; pupil: number; glow: number }> = {
+  xs: { box: 32, ring: 14, pupil: 4, glow: 6 },
+  sm: { box: 36, ring: 16, pupil: 5, glow: 7 },
+  md: { box: 44, ring: 20, pupil: 6, glow: 8 },
+  lg: { box: 64, ring: 28, pupil: 8, glow: 12 },
+  xl: { box: 96, ring: 42, pupil: 12, glow: 18 },
 };
 
-/** Fondo/anillo por mood. student = cian/menta (tutor), teacher = índigo/violeta (copiloto). */
-const moodClasses: Record<XaliAvatarMood, string> = {
-  default: 'bg-white/95 ring-black/5',
-  happy: 'bg-sky-50 ring-sky-200 dark:bg-sky-500/15 dark:ring-sky-500/30',
-  success: 'bg-emerald-50 ring-emerald-200 dark:bg-emerald-500/15 dark:ring-emerald-500/30',
-  thinking: 'bg-white/95 ring-black/5',
-  student: 'bg-gradient-to-br from-sky-50 to-emerald-50 ring-cyan-200 dark:from-sky-500/15 dark:to-emerald-500/10 dark:ring-cyan-500/30',
-  teacher: 'bg-gradient-to-br from-brand-50 to-violet-500/10 ring-violet-300 dark:from-brand-500/15 dark:to-violet-500/10 dark:ring-violet-500/30',
+const moodGradients: Record<XaliAvatarMood, [string, string, string]> = {
+  default: ['#6366f1', '#818cf8', '#a5b4fc'],
+  happy: ['#0ea5e9', '#38bdf8', '#7dd3fc'],
+  success: ['#10b981', '#34d399', '#6ee7b7'],
+  thinking: ['#6366f1', '#818cf8', '#a5b4fc'],
+  student: ['#06b6d4', '#22d3ee', '#67e8f9'],
+  teacher: ['#7c3aed', '#a78bfa', '#c4b5fd'],
 };
 
 /**
- * Avatar de la mascota Xali. Compacto por diseño: los assets actuales (visor y
- * check con fondo transparente) funcionan como "cara". El check (`success`/
- * `variant="success"`) es para estados de logro/confirmación — NO usarlo como
- * avatar principal de conversación. El cuerpo completo por piezas queda para
- * una fase futura SVG/animable.
+ * SVG avatar de Xali — robot amigable con visor luminoso.
+ * Reemplaza la imagen PNG genérica por un vectorial atractivo.
  */
 export function XaliAvatar({
   size = 'md',
@@ -47,29 +39,78 @@ export function XaliAvatar({
   mood = 'default',
   animated = false,
   className,
-  imageClassName,
 }: XaliAvatarProps) {
   const resolvedVariant = variant ?? (mood === 'success' ? 'success' : 'default');
-  const image = resolvedVariant === 'success' ? checkImage : visorImage;
-  const label = resolvedVariant === 'success' ? 'Revision segura de Xali' : 'Avatar de Xali';
+  const s = sizeMap[size];
+  const [c1, c2, c3] = moodGradients[mood];
+  const gradId = `xg-${size}-${mood}`;
 
   return (
     <span
       className={cn(
-        'grid shrink-0 place-items-center overflow-hidden rounded-2xl shadow-sm ring-1',
-        moodClasses[mood],
+        'inline-flex shrink-0 items-center justify-center overflow-hidden rounded-2xl shadow-sm ring-1 ring-black/5',
         mood === 'thinking' && 'animate-pulse',
         animated && mood !== 'thinking' && 'animate-float',
-        sizeClasses[size].wrapper,
         className,
       )}
+      style={{ width: s.box, height: s.box }}
     >
-      <img
-        src={image}
-        alt={label}
-        className={cn('select-none object-contain', sizeClasses[size].image, imageClassName)}
-        draggable={false}
-      />
+      <svg
+        viewBox="0 0 48 48"
+        width={s.box}
+        height={s.box}
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+        aria-label="Avatar de Xali"
+      >
+        <defs>
+          <radialGradient id={gradId} cx="50%" cy="40%" r="55%">
+            <stop offset="0%" stopColor={c3} />
+            <stop offset="100%" stopColor={c1} />
+          </radialGradient>
+          <filter id={`glow-${gradId}`}>
+            <feGaussianBlur stdDeviation="1.5" result="blur" />
+            <feMerge>
+              <feMergeNode in="blur" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
+        </defs>
+
+        {/* Background circle */}
+        <circle cx="24" cy="24" r="23" fill={`url(#${gradId})`} />
+
+        {/* Visor / face plate */}
+        <rect x="12" y="16" width="24" height="16" rx="8" fill="white" fillOpacity="0.92" />
+
+        {/* Eyes */}
+        {resolvedVariant === 'success' ? (
+          /* Checkmark for success mood */
+          <path
+            d="M18 24l3 3 6-6"
+            stroke={c1}
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        ) : (
+          <>
+            {/* Left eye */}
+            <circle cx="19" cy="24" r={s.pupil * 0.45} fill={c1} filter={`url(#glow-${gradId})`} />
+            <circle cx="19" cy="23.5" r={s.pupil * 0.18} fill="white" fillOpacity="0.8" />
+            {/* Right eye */}
+            <circle cx="29" cy="24" r={s.pupil * 0.45} fill={c1} filter={`url(#glow-${gradId})`} />
+            <circle cx="29" cy="23.5" r={s.pupil * 0.18} fill="white" fillOpacity="0.8" />
+          </>
+        )}
+
+        {/* Antenna */}
+        <line x1="24" y1="8" x2="24" y2="14" stroke={c2} strokeWidth="1.5" strokeLinecap="round" />
+        <circle cx="24" cy="7" r="2" fill={c2} />
+
+        {/* Body hint */}
+        <rect x="18" y="33" width="12" height="8" rx="4" fill={c2} fillOpacity="0.7" />
+      </svg>
     </span>
   );
 }

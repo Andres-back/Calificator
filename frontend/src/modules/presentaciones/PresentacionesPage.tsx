@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
+import { useDeleteConfirm } from '@/lib/hooks';
 import {
   AlertTriangle,
   CheckCircle2,
@@ -14,14 +15,13 @@ import {
   Presentation,
   Trash2,
 } from 'lucide-react';
-import { Button, Card, Badge, Skeleton, EmptyState, Modal, QueryError, ConfirmDialog } from '@/components/ui';
+import { Button, Card, Badge, Skeleton, EmptyState, Modal, QueryError, ConfirmDialog, StatCard } from '@/components/ui';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { useMaterias } from '@/modules/materias/MateriaSelect';
 import {
   createPresentacion,
   deletePresentacion,
   downloadPresentacionFile,
-  exportPresentacion,
   getPresentacionEditorUrl,
   listPresentaciones,
   type PresentacionCreate,
@@ -56,7 +56,11 @@ function trustedEditorPath(value: string) {
 
 export function PresentacionesPage() {
   const [open, setOpen] = useState(false);
-  const [presentationToDelete, setPresentationToDelete] = useState<{ id: string; titulo: string } | null>(null);
+  const { target: presentationToDelete, setTarget: setPresentationToDelete, mutation: remove } = useDeleteConfirm({
+    mutationFn: deletePresentacion,
+    queryKey: ['presentaciones'],
+    successMessage: 'Presentación eliminada.',
+  });
   const materias = useMaterias();
 
   const { data, isLoading, isError, error, refetch } = useQuery({
@@ -78,19 +82,6 @@ export function PresentacionesPage() {
     onError: (e) => toast.error(toApiError(e).detail),
   });
 
-  const exportFile = useMutation({
-    mutationFn: async ({ id, format, title }: { id: string; format: 'pptx' | 'pdf'; title: string }) => {
-      const exported = await exportPresentacion(id, format);
-      await downloadPresentacionFile(id, format, exported.titulo || title);
-      return exported;
-    },
-    onSuccess: (_data, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['presentaciones'] });
-      toast.success(`${variables.format.toUpperCase()} exportado.`);
-    },
-    onError: (e) => toast.error(toApiError(e).detail),
-  });
-
   const downloadFile = useMutation({
     mutationFn: ({ id, format, title }: { id: string; format: 'pptx' | 'pdf'; title: string }) =>
       downloadPresentacionFile(id, format, title),
@@ -105,15 +96,7 @@ export function PresentacionesPage() {
     onError: (error) => toast.error(toApiError(error).detail),
   });
 
-  const remove = useMutation({
-    mutationFn: deletePresentacion,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['presentaciones'] });
-      setPresentationToDelete(null);
-      toast.success('Presentación eliminada.');
-    },
-    onError: (e) => toast.error(toApiError(e).detail),
-  });
+
 
   return (
     <div className="space-y-6">
@@ -126,9 +109,9 @@ export function PresentacionesPage() {
 
       {!isLoading && data && data.length > 0 && (
         <div className="grid gap-3 sm:grid-cols-3">
-          <PresentationMetric label="En proceso" value={data.filter((item) => item.estado === 'queued' || item.estado === 'running').length} icon={Clock} tone="info" />
-          <PresentationMetric label="Listas" value={data.filter((item) => item.estado === 'success').length} icon={CheckCircle2} tone="success" />
-          <PresentationMetric label="Con error" value={data.filter((item) => item.estado === 'failed').length} icon={AlertTriangle} tone="error" />
+          <StatCard icon={Clock} label="En proceso" value={data.filter((item) => item.estado === 'queued' || item.estado === 'running').length} tone="info" size="sm" />
+          <StatCard icon={CheckCircle2} label="Listas" value={data.filter((item) => item.estado === 'success').length} tone="success" size="sm" />
+          <StatCard icon={AlertTriangle} label="Con error" value={data.filter((item) => item.estado === 'failed').length} tone="error" size="sm" />
         </div>
       )}
 
@@ -190,17 +173,7 @@ export function PresentacionesPage() {
                         <FileText className="h-4 w-4" /> Descargar PDF
                       </Button>
                     )}
-                    {p.estado === 'success' && (
-                      <>
-                        <Button size="sm" variant="ghost" onClick={() => exportFile.mutate({ id: p.id, format: 'pptx', title: p.titulo })} loading={exportFile.isPending}>
-                          <Download className="h-4 w-4" /> Regenerar PPTX
-                        </Button>
-                        <Button size="sm" variant="ghost" onClick={() => exportFile.mutate({ id: p.id, format: 'pdf', title: p.titulo })} loading={exportFile.isPending}>
-                          <FileText className="h-4 w-4" /> Regenerar PDF
-                        </Button>
-                      </>
-                    )}
-                    <Button size="icon" variant="ghost" className="h-9 w-9 text-rose-600" onClick={() => setPresentationToDelete({ id: p.id, titulo: p.titulo })} loading={remove.isPending} aria-label={`Eliminar ${p.titulo}`} title="Eliminar presentación">
+                    <Button size="icon" variant="ghost" className="h-9 w-9 text-rose-600" onClick={() => setPresentationToDelete({ id: p.id, title: p.titulo })} loading={remove.isPending} aria-label={`Eliminar ${p.titulo}`} title="Eliminar presentación">
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
@@ -227,9 +200,9 @@ export function PresentacionesPage() {
       <ConfirmDialog
         open={Boolean(presentationToDelete)}
         onClose={() => setPresentationToDelete(null)}
-        onConfirm={() => presentationToDelete && remove.mutate(presentationToDelete.id)}
+        onConfirm={() => remove.mutate()}
         title="Eliminar presentación"
-        description={presentationToDelete ? `Eliminarás “${presentationToDelete.titulo}” y sus archivos asociados. Esta acción no se puede deshacer.` : undefined}
+        description={presentationToDelete ? `Eliminarás "${presentationToDelete.title}" y sus archivos asociados. Esta acción no se puede deshacer.` : undefined}
         confirmLabel="Eliminar"
         tone="danger"
         loading={remove.isPending}
@@ -238,16 +211,4 @@ export function PresentacionesPage() {
   );
 }
 
-function PresentationMetric({ label, value, icon: Icon, tone }: { label: string; value: number; icon: typeof Clock; tone: 'info' | 'success' | 'error' }) {
-  const tones = {
-    info: 'bg-sky-50 text-sky-600 dark:bg-sky-500/15 dark:text-sky-300',
-    success: 'bg-emerald-50 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-300',
-    error: 'bg-rose-50 text-rose-600 dark:bg-rose-500/15 dark:text-rose-300',
-  };
-  return (
-    <Card className="flex items-center gap-3 p-4">
-      <span className={`grid h-9 w-9 place-items-center rounded-lg ${tones[tone]}`}><Icon className="h-4 w-4" /></span>
-      <div><p className="text-xl font-extrabold">{value}</p><p className="text-xs text-muted">{label}</p></div>
-    </Card>
-  );
-}
+

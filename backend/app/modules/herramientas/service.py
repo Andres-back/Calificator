@@ -11,22 +11,32 @@ from app.modules.herramientas.generators import (
     cuento,
     emparejar,
     examen,
+    ficha,
+    flashcards,
     guia,
+    lectura_comprensiva,
+    mapa_conceptual,
+    para_colorear,
     plan_refuerzo,
+    quiz_rapido,
     rubrica,
     sopa_letras,
     unir_columnas,
 )
-from app.modules.herramientas.generators import para_colorear
 from app.modules.materias import service as materias_service
 from app.modules.herramientas.schemas import (
     CrucigramaRequest,
     CuentoRequest,
     EmparejarRequest,
     ExamenRequest,
+    FichaRequest,
+    FlashcardsRequest,
     GuiaRequest,
+    LecturaComprensivaRequest,
+    MapaConceptualRequest,
     ParaColorearRequest,
     PlanRefuerzoRequest,
+    QuizRapidoRequest,
     RubricaRequest,
     SopaLetrasRequest,
     TallerRequest,
@@ -363,6 +373,61 @@ async def gen_rubrica(db: AsyncSession, req: RubricaRequest, current_user: User)
     return await _save_material(
         db, profesor_id=current_user.id, materia_id=materia_id,
         tipo=MaterialTipo.RUBRICA, titulo=req.titulo,
+        input_json=req.model_dump(), contenido_json=result,
+    )
+
+
+async def gen_ficha(db: AsyncSession, req: FichaRequest, current_user: User) -> dict:
+    materia_id = await _resolve_materia_id(db, req, current_user)
+    llm = LLMRouter(user_id=current_user.id)
+    result = await ficha.generate(req, llm)
+    return await _save_material(
+        db, profesor_id=current_user.id, materia_id=materia_id,
+        tipo=MaterialTipo.FICHA, titulo=req.titulo,
+        input_json=req.model_dump(), contenido_json=result,
+    )
+
+
+async def gen_quiz_rapido(db: AsyncSession, req: QuizRapidoRequest, current_user: User) -> dict:
+    materia_id = await _resolve_materia_id(db, req, current_user)
+    llm = LLMRouter(user_id=current_user.id)
+    result = await quiz_rapido.generate(req, llm)
+    return await _save_material(
+        db, profesor_id=current_user.id, materia_id=materia_id,
+        tipo=MaterialTipo.QUIZ_RAPIDO, titulo=req.titulo,
+        input_json=req.model_dump(), contenido_json=result,
+    )
+
+
+async def gen_lectura_comprensiva(db: AsyncSession, req: LecturaComprensivaRequest, current_user: User) -> dict:
+    materia_id = await _resolve_materia_id(db, req, current_user)
+    llm = LLMRouter(user_id=current_user.id)
+    result = await lectura_comprensiva.generate(req, llm)
+    return await _save_material(
+        db, profesor_id=current_user.id, materia_id=materia_id,
+        tipo=MaterialTipo.LECTURA_COMPRENSIVA, titulo=req.titulo,
+        input_json=req.model_dump(), contenido_json=result,
+    )
+
+
+async def gen_mapa_conceptual(db: AsyncSession, req: MapaConceptualRequest, current_user: User) -> dict:
+    materia_id = await _resolve_materia_id(db, req, current_user)
+    llm = LLMRouter(user_id=current_user.id)
+    result = await mapa_conceptual.generate(req, llm)
+    return await _save_material(
+        db, profesor_id=current_user.id, materia_id=materia_id,
+        tipo=MaterialTipo.MAPA_CONCEPTUAL, titulo=req.titulo,
+        input_json=req.model_dump(), contenido_json=result,
+    )
+
+
+async def gen_flashcards(db: AsyncSession, req: FlashcardsRequest, current_user: User) -> dict:
+    materia_id = await _resolve_materia_id(db, req, current_user)
+    llm = LLMRouter(user_id=current_user.id)
+    result = await flashcards.generate(req, llm)
+    return await _save_material(
+        db, profesor_id=current_user.id, materia_id=materia_id,
+        tipo=MaterialTipo.FLASHCARDS, titulo=req.titulo,
         input_json=req.model_dump(), contenido_json=result,
     )
 

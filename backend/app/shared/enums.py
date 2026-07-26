@@ -44,6 +44,14 @@ class BlueprintNivelContexto(StrEnum):
     MINIMO = "minimo"
 
 
+class PoliticaIntento(StrEnum):
+    UN_INTENTO = "un_intento"
+    MULTIPLES_INTENTOS = "multiples_intentos"
+    MEJOR_PUNTAJE = "mejor_puntaje"
+    ULTIMO_INTENTO = "ultimo_intento"
+    PRACTICA_LIBRE = "practica_libre"
+
+
 class EvaluacionModalidad(StrEnum):
     ONLINE = "online"
     FISICA = "fisica"
@@ -141,6 +149,15 @@ class LLMProvider(StrEnum):
     GROQ = "groq"
     OLLAMA = "ollama"
     TEMPLATE = "template"
+
+
+class SalonEstudianteEstado(StrEnum):
+    PENDIENTE = "pendiente"
+    FOTOGRAFIADO = "fotografiado"
+    CALIFICADO = "calificado"
+    CONFIRMADO = "confirmado"
+    OMITIDO = "omitido"
+    ERROR = "error"
 
 
 class ImageProvider(StrEnum):

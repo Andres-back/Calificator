@@ -49,20 +49,39 @@ export function DashboardEstudiante() {
       <motion.div
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
-        className="border-b border-border pb-6"
+        className="relative overflow-hidden border-b border-border pb-6"
       >
-        <div>
-          <span className="inline-flex items-center gap-1.5 rounded-md border border-brand-500/20 bg-brand-500/10 px-2.5 py-1 text-xs font-semibold text-brand-700 dark:text-brand-200">
-            <GraduationCap className="h-3.5 w-3.5" /> Tu espacio de aprendizaje
-          </span>
-          <h1 className="mt-3 font-display text-3xl font-extrabold">Hola, {firstName}</h1>
-          <p className="mt-2 max-w-2xl text-muted">
-            Este es tu espacio para revisar tus avances y seguir mejorando.
-          </p>
-          <p className="mt-4 flex max-w-2xl items-start gap-2 border-l-2 border-brand-300 pl-3 text-sm text-muted">
-            <Sparkles className="mr-1.5 inline h-4 w-4 text-brand-500" />
-            La constancia mejora tus resultados. Revisa tus materias, atiende la retroalimentación y sigue avanzando.
-          </p>
+        {/* Hero Image Background */}
+        <div className="absolute inset-0 z-0">
+          <img 
+            src="/branding/hero-ai-brain.png" 
+            alt="" 
+            className="h-full w-full object-cover opacity-15 dark:opacity-10"
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-surface via-surface/95 to-surface/80" />
+        </div>
+        
+        <div className="relative z-10 flex items-start gap-4">
+          <div className="min-w-0 flex-1">
+            <span className="inline-flex items-center gap-1.5 rounded-md border border-brand-500/20 bg-brand-500/10 px-2.5 py-1 text-xs font-semibold text-brand-700 dark:text-brand-200">
+              <GraduationCap className="h-3.5 w-3.5" /> Tu espacio de aprendizaje
+            </span>
+            <h1 className="mt-3 font-display text-3xl font-extrabold">Hola, {firstName}</h1>
+            <p className="mt-2 max-w-2xl text-muted">
+              Este es tu espacio para revisar tus avances y seguir mejorando.
+            </p>
+            <p className="mt-4 flex max-w-2xl items-start gap-2 border-l-2 border-brand-300 pl-3 text-sm text-muted">
+              <Sparkles className="mr-1.5 inline h-4 w-4 text-brand-500" />
+              La constancia mejora tus resultados. Revisa tus materias, atiende la retroalimentación y sigue avanzando.
+            </p>
+          </div>
+          <div className="hidden shrink-0 sm:block">
+            <img
+              src="/branding/xali-hello.png"
+              alt="Xali"
+              className="h-24 w-24 object-contain"
+            />
+          </div>
         </div>
       </motion.div>
 
@@ -90,8 +109,13 @@ export function DashboardEstudiante() {
         ) : (
           <div className="grid gap-4 md:grid-cols-3">
             {/* Mejor materia */}
-            <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
-              <Card className="h-full p-5">
+            <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="relative overflow-hidden rounded-xl border border-emerald-200 bg-emerald-50/50 p-5 dark:border-emerald-500/30 dark:bg-emerald-500/10">
+              <img
+                src="/branding/xali-celebrating.png"
+                alt=""
+                className="absolute -right-3 -top-3 h-20 w-20 object-contain opacity-90"
+              />
+              <div className="relative z-10">
                 <div className="mb-3 flex items-center gap-2">
                   <span className="grid h-10 w-10 place-items-center rounded-lg bg-emerald-50 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-300">
                     <Award className="h-5 w-5" />
@@ -101,12 +125,17 @@ export function DashboardEstudiante() {
                 <p className="font-display text-lg font-bold">{data!.mejor?.materia_nombre}</p>
                 <p className="mt-1 text-3xl font-extrabold text-fg">{fmt(data!.mejor?.promedio ?? null)}</p>
                 <p className="mt-2 text-sm text-muted">¡Excelente! Mantén ese ritmo.</p>
-              </Card>
+              </div>
             </motion.div>
 
             {/* Materia por fortalecer */}
-            <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
-              <Card className="h-full p-5">
+            <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} className="relative overflow-hidden rounded-xl border border-amber-200 bg-amber-50/50 p-5 dark:border-amber-500/30 dark:bg-amber-500/10">
+              <img
+                src="/branding/xali-studying.png"
+                alt=""
+                className="absolute -right-3 -top-3 h-20 w-20 object-contain opacity-90"
+              />
+              <div className="relative z-10">
                 <div className="mb-3 flex items-center gap-2">
                   <span className={cn('grid h-10 w-10 place-items-center rounded-lg', data!.por_mejorar ? 'bg-amber-50 text-amber-600 dark:bg-amber-500/15 dark:text-amber-300' : 'bg-emerald-50 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-300')}>
                     <Target className="h-5 w-5" />
@@ -125,7 +154,7 @@ export function DashboardEstudiante() {
                     <p className="mt-1 text-sm text-muted">Sigue así en tu materia y suma más evaluaciones para ver tu progreso completo.</p>
                   </>
                 )}
-              </Card>
+              </div>
             </motion.div>
 
             {/* Promedio general */}

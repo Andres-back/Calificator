@@ -1,24 +1,33 @@
 import { useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, Navigate, useParams } from 'react-router-dom';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { ArrowLeft, Plus, BookMarked, Pencil, Trash2, AlertTriangle } from 'lucide-react';
-import { Button, Card, Badge, Skeleton, EmptyState, Modal, Input, Field, Textarea } from '@/components/ui';
+import { Button, Card, Badge, Skeleton, EmptyState, Modal, Input, Field, Textarea, ConfirmDialog } from '@/components/ui';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { getMateria } from './api';
 import { listDbaPersonalizados, createDbaPersonalizado, updateDbaPersonalizado, deleteDbaPersonalizado } from './dbaApi';
 import { queryClient } from '@/lib/queryClient';
 import { toApiError } from '@/lib/api';
+import { useAuth } from '@/stores/auth';
+import { useDeleteConfirm } from '@/lib/hooks';
 import type { DBAPersonalizado } from '@/types/api';
 
 const EMPTY = { enunciado: '', evidencias_aprendizaje: '', ejemplo: '' };
 
 export function MateriaDbaPage() {
   const { id = '' } = useParams();
+  const user = useAuth((state) => state.user);
+  if (user?.rol === 'estudiante') return <Navigate to={`/app/materias/${id}`} replace />;
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<DBAPersonalizado | null>(null);
   const [form, setForm] = useState(EMPTY);
+  const { target: confirmDeleteTarget, setTarget: setConfirmDeleteTarget, mutation: remove } = useDeleteConfirm({
+    mutationFn: deleteDbaPersonalizado,
+    queryKey: ['dba-personalizados', id],
+    successMessage: 'DBA desactivado.',
+  });
 
   const { data: materia } = useQuery({ queryKey: ['materia', id], queryFn: () => getMateria(id) });
   const { data, isLoading, isError } = useQuery({ queryKey: ['dba-personalizados', id], queryFn: () => listDbaPersonalizados(id) });
@@ -45,11 +54,7 @@ export function MateriaDbaPage() {
     onError: (e) => toast.error(toApiError(e).detail),
   });
 
-  const remove = useMutation({
-    mutationFn: (dbaId: string) => deleteDbaPersonalizado(dbaId),
-    onSuccess: () => { invalidate(); toast.success('DBA desactivado'); },
-    onError: (e) => toast.error(toApiError(e).detail),
-  });
+
 
   const valid = form.enunciado.trim().length >= 10;
 
@@ -97,8 +102,8 @@ export function MateriaDbaPage() {
                     </div>
                     <div className="flex shrink-0 gap-2">
                       <Button size="icon" variant="ghost" className="h-9 w-9" onClick={() => openEdit(d)} title="Editar"><Pencil className="h-4 w-4" /></Button>
-                      <Button size="icon" variant="ghost" className="h-9 w-9 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10" loading={remove.isPending && remove.variables === d.id}
-                        onClick={() => { if (confirm('¿Desactivar este DBA? No se borra físicamente.')) remove.mutate(d.id); }} title="Desactivar">
+                      <Button size="icon" variant="ghost" className="h-9 w-9 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10" loading={remove.isPending}
+                        onClick={() => setConfirmDeleteTarget({ id: d.id, title: d.enunciado })} title="Desactivar">
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
@@ -129,6 +134,17 @@ export function MateriaDbaPage() {
           </Button>
         </form>
       </Modal>
+
+      <ConfirmDialog
+        open={Boolean(confirmDeleteTarget)}
+        onClose={() => setConfirmDeleteTarget(null)}
+        onConfirm={() => remove.mutate()}
+        title="Desactivar DBA"
+        confirmLabel="Desactivar"
+        tone="danger"
+        loading={remove.isPending}
+        description="El DBA se desactivará, no se borra físicamente. Puedes volver a activarlo después."
+      />
     </div>
   );
 }

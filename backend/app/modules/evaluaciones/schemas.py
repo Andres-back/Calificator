@@ -10,6 +10,7 @@ from app.shared.enums import (
     EvaluacionEstado,
     EvaluacionModalidad,
     EvaluacionTipoOrigen,
+    PoliticaIntento,
 )
 
 
@@ -20,6 +21,9 @@ class EvaluacionCreate(BaseModel):
     tipo_origen: EvaluacionTipoOrigen = EvaluacionTipoOrigen.NATIVA
     modalidad: EvaluacionModalidad = EvaluacionModalidad.ONLINE
     nota_maxima: Decimal = Field(default=Decimal("5.0"), gt=0)
+    politica_intento: PoliticaIntento | None = None
+    intentos_permitidos: int | None = Field(default=None, gt=0)
+    tiempo_limite_minutos: int | None = Field(default=None, gt=0)
     dba_ids: list[UUID] = Field(default_factory=list)
     dba_personalizado_ids: list[UUID] = Field(default_factory=list)
     metas_profesor: list[str] = Field(default_factory=list)
@@ -33,6 +37,9 @@ class EvaluacionUpdate(BaseModel):
     descripcion: str | None = None
     nota_maxima: Decimal | None = Field(default=None, gt=0)
     modalidad: EvaluacionModalidad | None = None
+    politica_intento: PoliticaIntento | None = None
+    intentos_permitidos: int | None = Field(default=None, gt=0)
+    tiempo_limite_minutos: int | None = Field(default=None, gt=0)
     dba_ids: list[UUID] | None = None
     dba_personalizado_ids: list[UUID] | None = None
     metas_profesor: list[str] | None = None
@@ -68,9 +75,12 @@ class EvaluacionRead(BaseModel):
     descripcion: str | None
     tipo_origen: EvaluacionTipoOrigen
     modalidad: EvaluacionModalidad | None
+    politica_intento: str | None
+    intentos_permitidos: int | None
     nota_maxima: Decimal
     estado: EvaluacionEstado
     fecha_publicacion: datetime | None
+    tiempo_limite_minutos: int | None
     dba_ids: list[str]
     dba_personalizado_ids: list[str]
     metas_profesor: list[str]

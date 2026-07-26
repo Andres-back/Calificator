@@ -2,26 +2,11 @@ import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { BarChart3, BookOpen, ClipboardCheck, TrendingUp } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, CartesianGrid } from 'recharts';
-import { Card, Skeleton, EmptyState, QueryState } from '@/components/ui';
+import { Card, Skeleton, EmptyState, QueryState, StatCard } from '@/components/ui';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { getResumenProfesor } from './api';
-import { cn } from '@/lib/cn';
 
 const BARS = ['#6366F1', '#8B5CF6', '#EC4899', '#F59E0B', '#10B981', '#06B6D4'];
-
-function Stat({ icon: Icon, label, value, tone }: { icon: typeof BookOpen; label: string; value: string; tone: string }) {
-  return (
-    <Card className="flex items-center gap-4 p-5">
-      <div className={cn('grid h-11 w-11 place-items-center rounded-lg', tone)}>
-        <Icon className="h-6 w-6" />
-      </div>
-      <div>
-        <p className="font-display text-2xl font-extrabold">{value}</p>
-        <p className="text-sm text-muted">{label}</p>
-      </div>
-    </Card>
-  );
-}
 
 export function ReportesPage() {
   const { data, isLoading, isError, error, refetch } = useQuery({ queryKey: ['reporte-resumen'], queryFn: getResumenProfesor });
@@ -35,6 +20,22 @@ export function ReportesPage() {
   return (
     <div className="space-y-6">
       <PageHeader title="Reportes" eyebrow="Seguimiento docente" subtitle="Compara resultados confirmados e identifica dónde enfocar el acompañamiento." />
+      
+      {/* Feature Image Banner */}
+      <div className="relative overflow-hidden rounded-xl border border-border bg-surface">
+        <div className="flex items-center gap-4 p-4">
+          <img 
+            src="/branding/feature-report.png" 
+            alt="" 
+            className="h-16 w-16 rounded-lg object-contain opacity-80"
+          />
+          <div>
+            <p className="font-display font-bold">Reportes y estadísticas</p>
+            <p className="mt-1 text-sm text-muted">Visualiza el rendimiento de tus materias y estudiantes con gráficas detalladas.</p>
+          </div>
+        </div>
+      </div>
+
       <QueryState
         isLoading={isLoading}
         isError={isError}
@@ -47,9 +48,9 @@ export function ReportesPage() {
 
         <>
           <div className="grid gap-4 sm:grid-cols-3">
-            <Stat icon={BookOpen} label="Materias" value={String(materias.length)} tone="bg-brand-50 text-brand-600 dark:bg-brand-500/15 dark:text-brand-300" />
-            <Stat icon={ClipboardCheck} label="Calificaciones" value={String(totalCals)} tone="bg-emerald-50 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-300" />
-            <Stat icon={TrendingUp} label="Promedio general" value={promGeneral.toFixed(2)} tone="bg-amber-50 text-amber-600 dark:bg-amber-500/15 dark:text-amber-300" />
+            <StatCard icon={BookOpen} label="Materias" value={String(materias.length)} tone="brand" />
+            <StatCard icon={ClipboardCheck} label="Calificaciones" value={String(totalCals)} tone="success" />
+            <StatCard icon={TrendingUp} label="Promedio general" value={promGeneral.toFixed(2)} tone="warning" />
           </div>
 
           <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>

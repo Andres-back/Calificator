@@ -15,3 +15,5 @@ export { EmptyState } from './EmptyState';
 export { RichContent, normalizeEducationalMarkdown } from './RichContent';
 export type { RichContentProps, RichContentVariant } from './RichContent';
 export { QueryLoading, QueryError, QueryEmpty, QueryState } from './QueryState';
+export { StatCard } from './StatCard';
+export type { StatTone } from './StatCard';

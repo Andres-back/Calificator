@@ -72,18 +72,30 @@ function DashboardDocente() {
 
   return (
     <div className="space-y-7">
-      <header className="flex flex-col gap-5 border-b border-border pb-6 lg:flex-row lg:items-end lg:justify-between">
-        <div>
-          <p className="text-xs font-bold uppercase tracking-[0.14em] text-brand-600 dark:text-brand-300">Centro de trabajo docente</p>
-          <h1 className="mt-2 font-display text-3xl font-extrabold sm:text-4xl">Hola, {firstName}</h1>
-          <p className="mt-2 max-w-2xl text-muted">Califica evidencias, revisa sugerencias de IA y prepara recursos para tu siguiente clase.</p>
+      <header className="relative overflow-hidden border-b border-border pb-6 lg:flex-row lg:items-end lg:justify-between">
+        {/* Hero Image Background */}
+        <div className="absolute inset-0 z-0">
+          <img 
+            src="/branding/hero-classroom.png" 
+            alt="" 
+            className="h-full w-full object-cover opacity-15 dark:opacity-10"
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-surface via-surface/95 to-surface/80" />
         </div>
-        <Link
-          to="/app/calificaciones/foto"
-          className="focus-ring inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-brand-600 px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-700"
-        >
-          <Camera className="h-4 w-4" /> Calificar por foto
-        </Link>
+        
+        <div className="relative z-10 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.14em] text-brand-600 dark:text-brand-300">Centro de trabajo docente</p>
+            <h1 className="mt-2 font-display text-3xl font-extrabold sm:text-4xl">Hola, {firstName}</h1>
+            <p className="mt-2 max-w-2xl text-muted">Califica evidencias, revisa sugerencias de IA y prepara recursos para tu siguiente clase.</p>
+          </div>
+          <Link
+            to="/app/calificaciones/foto"
+            className="focus-ring inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-brand-600 px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-700"
+          >
+            <Camera className="h-4 w-4" /> Calificar por foto
+          </Link>
+        </div>
       </header>
 
       <section className="grid items-start gap-5 xl:grid-cols-[minmax(0,1.35fr)_minmax(280px,0.65fr)]">

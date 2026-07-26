@@ -99,6 +99,9 @@ def _student_safe_evaluation(evaluacion: Evaluacion) -> dict:
         "nota_maxima": evaluacion.nota_maxima,
         "estado": evaluacion.estado,
         "fecha_publicacion": evaluacion.fecha_publicacion,
+        "politica_intento": evaluacion.politica_intento,
+        "intentos_permitidos": evaluacion.intentos_permitidos,
+        "tiempo_limite_minutos": evaluacion.tiempo_limite_minutos,
         "dba_ids": evaluacion.dba_ids,
         "dba_personalizado_ids": evaluacion.dba_personalizado_ids,
         "metas_profesor": evaluacion.metas_profesor,
@@ -184,6 +187,9 @@ async def create_evaluation(
         modalidad=payload.modalidad.value,
         nota_maxima=payload.nota_maxima,
         estado=EvaluacionEstado.BORRADOR.value,
+        politica_intento=payload.politica_intento.value if payload.politica_intento else None,
+        intentos_permitidos=payload.intentos_permitidos,
+        tiempo_limite_minutos=payload.tiempo_limite_minutos,
         dba_ids=_uuid_values(payload.dba_ids),
         dba_personalizado_ids=_uuid_values(payload.dba_personalizado_ids),
         metas_profesor=payload.metas_profesor,
@@ -258,6 +264,12 @@ async def update_evaluation(
             evaluacion.nota_maxima = Decimal(value)
         elif field == "modalidad" and value is not None:
             evaluacion.modalidad = value.value
+        elif field == "politica_intento" and value is not None:
+            evaluacion.politica_intento = value.value
+        elif field == "intentos_permitidos" and value is not None:
+            evaluacion.intentos_permitidos = int(value)
+        elif field == "tiempo_limite_minutos" and value is not None:
+            evaluacion.tiempo_limite_minutos = int(value)
         elif value is not None or field == "descripcion":
             setattr(evaluacion, field, value)
 

@@ -85,6 +85,7 @@ export function MateriasListPage() {
         empty={
           <EmptyState
             icon={BookOpen}
+              image="/branding/empty-no-subjects.png"
             title={isStudent ? 'Aún no estás inscrito en materias' : 'Aún no tienes materias'}
             description={isStudent ? 'Únete a una materia usando el código que te compartió tu docente.' : 'Crea tu primera clase y comparte el código para que tus estudiantes se inscriban.'}
             action={

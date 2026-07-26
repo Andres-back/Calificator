@@ -3,12 +3,12 @@ from decimal import Decimal
 from uuid import uuid4
 from uuid import UUID as PyUUID
 
-from sqlalchemy import CheckConstraint, DateTime, ForeignKey, Index, Numeric, String, Text, UniqueConstraint, func, text
+from sqlalchemy import CheckConstraint, DateTime, ForeignKey, Index, Integer, Numeric, String, Text, UniqueConstraint, func, text
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
-from app.shared.enums import BlueprintNivelContexto, EvaluacionEstado, EvaluacionModalidad, EvaluacionTipoOrigen
+from app.shared.enums import BlueprintNivelContexto, EvaluacionEstado, EvaluacionModalidad, EvaluacionTipoOrigen, PoliticaIntento
 
 
 class Evaluacion(Base):
@@ -25,6 +25,14 @@ class Evaluacion(Base):
         CheckConstraint(
             "modalidad IN ('online', 'fisica', 'mixta')",
             name="ck_evaluaciones_modalidad",
+        ),
+        CheckConstraint(
+            "politica_intento IN ('un_intento', 'multiples_intentos', 'mejor_puntaje', 'ultimo_intento', 'practica_libre')",
+            name="ck_evaluaciones_politica_intento",
+        ),
+        CheckConstraint(
+            "intentos_permitidos IS NULL OR intentos_permitidos > 0",
+            name="ck_evaluaciones_intentos_permitidos",
         ),
     )
 
@@ -50,7 +58,14 @@ class Evaluacion(Base):
     nota_maxima: Mapped[Decimal] = mapped_column(Numeric(6, 2), nullable=False, default=Decimal("5.0"))
     estado: Mapped[str] = mapped_column(String(40), nullable=False, default=EvaluacionEstado.BORRADOR.value)
     modalidad: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    politica_intento: Mapped[str | None] = mapped_column(String(30), nullable=True)
+    intentos_permitidos: Mapped[int | None] = mapped_column(
+        Integer, nullable=True
+    )
     fecha_publicacion: Mapped[datetime | None] = mapped_column(DateTime)
+    tiempo_limite_minutos: Mapped[int | None] = mapped_column(
+        Integer, nullable=True
+    )
     dba_ids: Mapped[list[str]] = mapped_column(JSONB, nullable=False, default=list)
     dba_personalizado_ids: Mapped[list[str]] = mapped_column(
         JSONB,

@@ -102,7 +102,7 @@ export function CrucigramaView({ data }: { data: CrucigramaContenido }) {
 
       <div className="overflow-x-auto">
         <div
-          className="inline-grid gap-0.5 rounded-2xl bg-surface-2 p-3"
+          className="inline-grid gap-0.5 rounded-2xl bg-surface-2 p-3 crucigrama-grid"
           style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}
         >
           {grid.map((row, r) =>
@@ -136,7 +136,7 @@ export function CrucigramaView({ data }: { data: CrucigramaContenido }) {
         </div>
       </div>
 
-      <div className="grid gap-6 sm:grid-cols-2">
+      <div className="grid gap-6 sm:grid-cols-2 pistas-grid">
         {[
           { title: 'Horizontales', items: horiz },
           { title: 'Verticales', items: vert },

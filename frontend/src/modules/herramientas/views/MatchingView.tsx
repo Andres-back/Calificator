@@ -85,7 +85,7 @@ export function MatchingView({ data }: { data: MatchingContenido }) {
         Haz clic en un elemento de la izquierda y luego en su pareja de la derecha.
       </div>
 
-      <div ref={containerRef} className="relative">
+      <div ref={containerRef} className="relative matching-container">
         <svg className="pointer-events-none absolute inset-0 h-full w-full" style={{ zIndex: 1 }}>
           {cables.map((c) => (
             <g key={c.key}>

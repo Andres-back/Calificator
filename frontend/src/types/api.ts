@@ -27,7 +27,12 @@ export type MaterialTipo =
   | 'taller'
   | 'examen'
   | 'rubrica'
-  | 'plan_refuerzo';
+  | 'plan_refuerzo'
+  | 'ficha'
+  | 'quiz_rapido'
+  | 'lectura_comprensiva'
+  | 'mapa_conceptual'
+  | 'flashcards';
 
 export interface MaterialListItem {
   id: string;
@@ -126,6 +131,7 @@ export interface Evaluacion {
   modalidad: EvaluacionModalidad | null;
   nota_maxima: number;
   estado: EvaluacionEstado;
+  tiempo_limite_minutos: number | null;
   fecha_publicacion: string | null;
   dba_ids: string[];
   dba_personalizado_ids: string[];

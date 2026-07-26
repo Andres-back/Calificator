@@ -94,6 +94,21 @@ export function CalificacionesPage() {
         }
       />
 
+      {/* Feature Image Banner */}
+      <div className="relative overflow-hidden rounded-xl border border-border bg-surface">
+        <div className="flex items-center gap-4 p-4">
+          <img 
+            src="/branding/feature-grade.png" 
+            alt="" 
+            className="h-16 w-16 rounded-lg object-contain opacity-80"
+          />
+          <div>
+            <p className="font-display font-bold">Calificación asistida por IA</p>
+            <p className="mt-1 text-sm text-muted">La IA analiza las respuestas y sugiere notas. Tú decides si confirmar o ajustar.</p>
+          </div>
+        </div>
+      </div>
+
       <GuidedTour steps={calificacionesTour} open={tourOpen} onClose={() => setTourOpen(false)} />
 
       {noMaterias ? (

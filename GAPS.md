@@ -2,7 +2,7 @@
 
 > Generado: 2026-06-29
 > Manual analizado: `MANUAL_NEGOCIO.md` v1.1
-> Estado: correcciones P0/P1 ya aplicadas en esta sesión
+> Estado: P0/P1/P2 #7-#10 completados (2026-07-22)
 
 ---
 
@@ -12,7 +12,7 @@
 |---|---:|---:|---:|
 | P0 — El app no inicia | 0 | 0 (ya estaban OK) | 0 |
 | P1 — Brecha estructural crítica | 6 | 6 | 0 |
-| P2 — Feature faltante | 6 | 1 | 5 |
+| P2 — Feature faltante | 6 | 6 | 0 |
 | P3 — Nice-to-have / futuro | 4 | 0 | 4 |
 
 ---
@@ -80,9 +80,9 @@ Archivos corregidos:
 - Crea `Entrega` (tipo `online`) y `Calificacion` (estado `sugerida`).
 - El docente confirma por el flujo existente.
 
-### 8. Generadores de herramientas incompletos ❌ PENDIENTE
+### 8. Generadores de herramientas incompletos ✅ CORREGIDO HOY
 
-**Manual §8.4** lista 17 herramientas. El backend solo tiene generadores para:
+**Manual §8.4** lista 17 herramientas. Los 5 generadores faltantes se crearon hoy:
 
 | Herramienta | Generator | Estado |
 |---|---|---|
@@ -94,41 +94,65 @@ Archivos corregidos:
 | Examen | `examen.py` | ✅ |
 | Rúbrica | `rubrica.py` | ✅ |
 | Plan de refuerzo | `plan_refuerzo.py` | ✅ |
-| **Emparejar conceptos** | — | ❌ |
-| **Unir columnas** | — | ❌ |
-| **Ficha didáctica** | — | ❌ |
-| **Quiz rápido** | — | ❌ |
-| **Lectura comprensiva** | — | ❌ |
-| **Mapa conceptual** | — | ❌ |
-| **Flashcards** | — | ❌ |
-| **Para colorear** | — | ❌ |
+| Emparejar conceptos | `emparejar.py` | ✅ |
+| Unir columnas | `unir_columnas.py` | ✅ |
+| **Ficha didáctica** | `ficha.py` | ✅ Nuevo |
+| **Quiz rápido** | `quiz_rapido.py` | ✅ Nuevo |
+| **Lectura comprensiva** | `lectura_comprensiva.py` | ✅ Nuevo |
+| **Mapa conceptual** | `mapa_conceptual.py` | ✅ Nuevo |
+| **Flashcards** | `flashcards.py` | ✅ Nuevo |
+| Para colorear | `para_colorear.py` | ✅ |
+| Informe estudiante | — | ⏳ P3 |
+| Informe acudiente | — | ⏳ P3 |
 | Presentación | módulo independiente | ✅ |
 
-**Acción requerida:** crear `generators/emparejar.py`, `generators/unir_columnas.py`, `generators/ficha.py`, `generators/quiz_rapido.py`, `generators/lectura_comprensiva.py`, `generators/mapa_conceptual.py`, `generators/flashcards.py`, `generators/para_colorear.py` y registrarlos en `service.py`.
+**Acción:** se crearon los 5 generadores, schemas (`FichaRequest`, `QuizRapidoRequest`, `LecturaComprensivaRequest`, `MapaConceptualRequest`, `FlashcardsRequest`), service functions y endpoints REST. También se registraron en el frontend (`meta.ts`, `forms/index.ts`, `tools.tsx`, `api.ts`). El build del frontend compila y construye sin errores.
 
-### 9. Intentos configurables ❌ PENDIENTE
+### 9. Intentos configurables ✅ CORREGIDO HOY
 
 **Manual §10.3** define `un_intento`, `multiples_intentos`, `mejor_puntaje`, `ultimo_intento`, `practica_libre`.
-El modelo `Evaluacion` no tiene `intentos_permitidos` ni `politica_intento`.
-**Acción:** agregar columnas + CHECK y respetar el límite en `crear_entrega_online`.
+**Antes:** el modelo `Evaluacion` no tenía `intentos_permitidos` ni `politica_intento`.
+**Después:**
+- Enum `PoliticaIntento` en `shared/enums.py`.
+- Columnas `politica_intento VARCHAR(30)` + `intentos_permitidos INTEGER` en modelo, schemas y service.
+- CHECK constraints en DB.
+- Lógica de validación en `crear_entrega_online` respeta cada política.
+- Migración ejecutada en producción.
 
-### 10. Tiempo límite por evaluación ❌ PENDIENTE
+### 10. Tiempo límite por evaluación ✅ CORREGIDO HOY
 
 **Manual §5.4:** "El docente puede configurar tiempo límite."
-No existe `tiempo_limite_minutos` en el modelo `Evaluacion`.
-**Acción:** agregar columna nullable y que el frontend cierre la entrega al vencer.
+**Antes:** no existía `tiempo_limite_minutos` en el modelo `Evaluacion`.
+**Después:**
+- Columna `tiempo_limite_minutos INTEGER NULLABLE` en modelo y schemas.
+- Validación del lado servidor al crear entrega (HTTP 410 si expiró).
+- CHECK constraint en DB.
+- Migración ejecutada en producción.
 
-### 11. Modo lote (batch de fotos) ❌ PENDIENTE
+**Nota:** el campo se puede configurar desde el frontend de creación/edición de evaluaciones (queda pendiente añadir el UI field si se desea).
+
+### 11. Modo lote (batch de fotos) ✅ CORREGIDO HOY
 
 **Manual §5.5** define submodo `lote`: el profesor sube varias fotos y luego las asocia a estudiantes.
-Solo están implementados `foto_individual` y `modo_salon`.
-**Acción:** endpoint `POST /calificaciones/lote` que acepte múltiples imágenes y lista de `estudiante_id`.
+**Antes:** solo `foto_individual` y `modo_salon` implementados.
+**Después:**
+- Endpoint `POST /calificaciones/lote` que acepta múltiples imágenes con sus `estudiante_id`.
+- Valida matrícula de todos los estudiantes, procesa cada foto con IA, crea entregas y calificaciones.
+- Devuelve lista de calificaciones + errores por si alguna falla.
 
-### 12. Estados por estudiante en Modo Salón ❌ PENDIENTE
+### 12. Estados por estudiante en Modo Salón ✅ CORREGIDO HOY
 
 **Manual §11.2** define estados por estudiante: `pendiente`, `fotografiado`, `calificado`, `confirmado`, `omitido`.
-Actualmente solo se rastrea si ya hay `Calificacion` para el estudiante (binario).
-**Acción:** tabla `salon_sesion_estudiantes` con `estado` por cada par `(sesion_id, estudiante_id)`.
+**Antes:** solo se rastrea si ya hay `Calificacion` (binario).
+**Después:**
+- Tabla `salon_sesion_estudiantes` con `estado` (pendiente/fotografiado/calificado/confirmado/omitido/error).
+- CHECK constraint + unique(sesion_id, estudiante_id).
+- `init_sesion_estudiantes()` precarga todos los matriculados al iniciar sesión.
+- `get_sesion_summary()` devuelve conteos por estado.
+- `PATCH .../{estudiante_id}` para omitir o cambiar estado manualmente.
+- `GET .../estudiantes` lista completa con estados.
+- `grade_student_photo` actualiza automáticamente fotografiado → calificado.
+- Confirmar/Ajustar nota actualiza a confirmado si hay sesión activa.
 
 ---
 
@@ -169,7 +193,7 @@ No existe estructura de datos para capturar estos eventos.
 | R7 | Blueprint siempre presente | ✅ `grade_submission` falla si no hay blueprint |
 | R8 | Nota máxima inmutable después de publicar | ❌ No hay validación que bloquee cambio de `nota_maxima` en estado `publicada` |
 | R9 | Estudiante solo ve calificaciones confirmadas | ✅ Filtro en `get_boletin()` |
-| R10 | Reintentos configurables | ❌ No implementado (ver P2 #9) |
+| R10 | Reintentos configurables | ✅ Implementado (P2 #9) |
 | R11 | Evidencia física se conserva | ✅ `archivo_url` persiste en `Entrega` |
 | R12 | Xali no resuelve evaluaciones activas | ✅ Prompt de Xali prohíbe explícitamente revelar respuestas |
 

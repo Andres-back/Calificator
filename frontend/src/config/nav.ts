@@ -2,15 +2,12 @@ import {
   LayoutDashboard,
   Wrench,
   BookOpen,
-  ClipboardCheck,
-  GraduationCap,
-  Camera,
-  UsersRound,
-  FileText,
-  Presentation,
   BarChart3,
   Sparkles,
   Settings2,
+  Presentation,
+  ClipboardCheck,
+  FileText,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -23,14 +20,8 @@ export interface NavItem {
 
 export const profesorNav: NavItem[] = [
   { label: 'Inicio', to: '/app', icon: LayoutDashboard },
-  { label: 'Herramientas', to: '/app/herramientas', icon: Wrench },
   { label: 'Materias', to: '/app/materias', icon: BookOpen },
-  { label: 'Evaluaciones', to: '/app/evaluaciones', icon: ClipboardCheck },
-  { label: 'Calificaciones', to: '/app/calificaciones', icon: GraduationCap },
-  { label: 'Calificar foto', to: '/app/calificaciones/foto', icon: Camera },
-  { label: 'Modo Salón', to: '/app/calificaciones/salon', icon: UsersRound },
-  { label: 'Boletín', to: '/app/calificaciones/boletin', icon: FileText },
-  { label: 'Presentaciones', to: '/app/presentaciones', icon: Presentation },
+  { label: 'Herramientas', to: '/app/herramientas', icon: Wrench },
   { label: 'Reportes', to: '/app/reportes', icon: BarChart3 },
   { label: 'Asistente Xali', to: '/app/xali', icon: Sparkles },
 ];

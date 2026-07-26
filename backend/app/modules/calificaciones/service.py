@@ -9,7 +9,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.modules.calificaciones.models import Calificacion, Entrega
+from app.modules.calificaciones.models import Calificacion, Entrega, SalonSesion, SalonSesionEstudiante
 from app.modules.calificaciones.schemas import AjustarNota, BoletinItem, ConfirmarNota
 from app.modules.evaluaciones.models import Evaluacion
 from app.modules.materias.models import Materia
@@ -82,6 +82,7 @@ async def confirmar_nota(
     cal.nota_confirmada = payload.nota_confirmada
     cal.revisado_por_docente = True
     cal.estado = CalificacionEstado.CONFIRMADA.value
+    await _update_salon_estudiante_estado(db, cal, "confirmado")
     await db.commit()
     await db.refresh(cal)
     return cal
@@ -99,6 +100,7 @@ async def ajustar_nota(
         cal.feedback = payload.feedback
     cal.revisado_por_docente = True
     cal.estado = CalificacionEstado.AJUSTADA.value
+    await _update_salon_estudiante_estado(db, cal, "confirmado")
     await db.commit()
     await db.refresh(cal)
     return cal
@@ -111,6 +113,28 @@ async def list_calificaciones_for_evaluacion(
         select(Calificacion).where(Calificacion.evaluacion_id == evaluacion_id)
     )
     return list(result)
+
+
+async def _update_salon_estudiante_estado(
+    db: AsyncSession, cal: Calificacion, estado: str,
+) -> None:
+    """Si hay una sesión activa de Modo Salón, actualiza el estado del estudiante."""
+    sesion = await db.scalar(
+        select(SalonSesion).where(
+            SalonSesion.evaluacion_id == cal.evaluacion_id,
+            SalonSesion.estado == "activa",
+        )
+    )
+    if not sesion:
+        return
+    sse = await db.scalar(
+        select(SalonSesionEstudiante).where(
+            SalonSesionEstudiante.sesion_id == sesion.id,
+            SalonSesionEstudiante.estudiante_id == cal.estudiante_id,
+        )
+    )
+    if sse:
+        sse.estado = estado
 
 
 async def get_boletin(

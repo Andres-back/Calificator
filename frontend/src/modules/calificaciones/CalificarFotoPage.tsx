@@ -5,9 +5,10 @@ import toast from 'react-hot-toast';
 import { ArrowLeft, ArrowRight, Camera, CheckCircle2, FileImage, ImageUp, HelpCircle, RotateCcw, ScanText, Smartphone, Trash2, TriangleAlert, UploadCloud } from 'lucide-react';
 import { Badge, Button, Card, EmptyState, Field, Select, Skeleton, GuidedTour, RichContent } from '@/components/ui';
 import { PageHeader } from '@/components/layout/PageHeader';
-import { listMaterias, getMateriaEstudiantes } from '@/modules/materias/api';
+import { useMaterias, useEstudiantes } from '@/modules/materias/MateriaSelect';
 import { listEvaluaciones } from '@/modules/evaluaciones/api';
 import { toApiError } from '@/lib/api';
+import { confidenceLabel } from '@/lib/utils';
 import { calificarFoto } from './api';
 import { fotoTour } from './tourSteps';
 import type { Calificacion } from '@/types/api';
@@ -16,12 +17,6 @@ const ACCEPTED_IMAGE_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/web
 // Mirrors backend/app/core/config.py -> MAX_IMAGE_SIZE_MB (default 10).
 const MAX_IMAGE_SIZE_MB = 10;
 const MAX_IMAGE_SIZE_BYTES = MAX_IMAGE_SIZE_MB * 1024 * 1024;
-
-function confidenceLabel(value: number | null) {
-  if (value == null) return 'Sin confianza reportada';
-  const normalized = value > 1 ? value : value * 100;
-  return `${normalized.toFixed(0)}%`;
-}
 
 function gradingErrorMessage(error: unknown) {
   const apiError = toApiError(error);
@@ -56,10 +51,7 @@ export function CalificarFotoPage() {
     return () => URL.revokeObjectURL(objectUrl);
   }, [foto]);
 
-  const { data: materias, isLoading: loadingMaterias } = useQuery({
-    queryKey: ['materias'],
-    queryFn: listMaterias,
-  });
+  const { data: materias, isLoading: loadingMaterias } = useMaterias();
 
   useEffect(() => {
     if (!materiaId && materias?.[0]) setMateriaId(materias[0].id);
@@ -71,16 +63,7 @@ export function CalificarFotoPage() {
     enabled: Boolean(materiaId),
   });
 
-  const { data: materiaConEstudiantes, isLoading: loadingEstudiantes } = useQuery({
-    queryKey: ['materia-estudiantes', materiaId],
-    queryFn: () => getMateriaEstudiantes(materiaId),
-    enabled: Boolean(materiaId),
-  });
-
-  const estudiantes = useMemo(
-    () => materiaConEstudiantes?.estudiantes ?? [],
-    [materiaConEstudiantes?.estudiantes],
-  );
+  const { estudiantes, isLoading: loadingEstudiantes } = useEstudiantes(materiaId);
   const evaluacionSeleccionada = useMemo(
     () => evaluaciones?.find((evaluacion) => evaluacion.id === evaluacionId),
     [evaluacionId, evaluaciones],

@@ -2,21 +2,23 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
-import toast from 'react-hot-toast';
 import { Plus, Download, Trash2, Wrench, Gamepad2, ClipboardCheck, FileDown, Layers3 } from 'lucide-react';
 import { Button, Card, Badge, Skeleton, EmptyState, QueryState, ConfirmDialog } from '@/components/ui';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { listMaterials, deleteMaterial, pdfUrl } from './api';
-import { TOOLS, TOOL_BY_TIPO } from './meta';
-import { queryClient } from '@/lib/queryClient';
+import { TOOL_BY_TIPO } from './meta';
+import { useDeleteConfirm } from '@/lib/hooks';
 import { cn } from '@/lib/cn';
 
 const CATEGORIES = ['Todos', 'Juego', 'Evaluación', 'Material'] as const;
 
 export function ListPage() {
   const [cat, setCat] = useState<(typeof CATEGORIES)[number]>('Todos');
-  const [deleteTarget, setDeleteTarget] = useState<{ id: string; title: string } | null>(null);
-  const [isDeleting, setIsDeleting] = useState(false);
+  const { target: deleteTarget, setTarget: setDeleteTarget, mutation: deleteMutation } = useDeleteConfirm({
+    mutationFn: deleteMaterial,
+    queryKey: ['materials'],
+    successMessage: 'Material eliminado.',
+  });
   const { data, isLoading, isError, error, refetch } = useQuery({ queryKey: ['materials'], queryFn: () => listMaterials() });
 
   const filtered = (data ?? []).filter((m) => cat === 'Todos' || TOOL_BY_TIPO[m.tipo]?.category === cat);
@@ -31,20 +33,7 @@ export function ListPage() {
     { label: 'PDF listos', value: printable, icon: FileDown, tone: 'bg-amber-50 text-amber-600 dark:bg-amber-500/15 dark:text-amber-300' },
   ];
 
-  const remove = async () => {
-    if (!deleteTarget || isDeleting) return;
-    setIsDeleting(true);
-    try {
-      await deleteMaterial(deleteTarget.id);
-      await queryClient.invalidateQueries({ queryKey: ['materials'] });
-      toast.success('Material eliminado');
-      setDeleteTarget(null);
-    } catch {
-      toast.error('No fue posible eliminar el material. Intenta nuevamente.');
-    } finally {
-      setIsDeleting(false);
-    }
-  };
+
 
   return (
     <div className="space-y-6">
@@ -133,36 +122,15 @@ export function ListPage() {
           </motion.div>
         )}
       </QueryState>
-      {/* Sugerencias de creación */}
-      {!isLoading && (
-        <section className="border-t border-border pt-6">
-          <div className="mb-4">
-            <h2 className="font-display text-lg font-bold">¿Qué quieres crear?</h2>
-            <p className="text-sm text-muted">Elige un formato y XCalificator preparará la estructura inicial.</p>
-          </div>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-            {TOOLS.map((t) => (
-              <Link key={t.tipo} to={`/app/herramientas/nuevo?tipo=${t.tipo}`}>
-                <Card interactive className="h-full p-3 text-center">
-                  <div className={cn('mx-auto mb-2 grid h-10 w-10 place-items-center rounded-lg bg-gradient-to-br text-white', t.gradient)}>
-                    <t.icon className="h-5 w-5" />
-                  </div>
-                  <p className="text-xs font-semibold">{t.label}</p>
-                </Card>
-              </Link>
-            ))}
-          </div>
-        </section>
-      )}
       <ConfirmDialog
         open={Boolean(deleteTarget)}
         onClose={() => setDeleteTarget(null)}
-        onConfirm={() => void remove()}
+        onConfirm={() => deleteMutation.mutate()}
         title="Eliminar material"
         description={<>Se eliminará <strong className="text-fg">{deleteTarget?.title}</strong>. Esta acción no se puede deshacer.</>}
         confirmLabel="Eliminar"
         tone="danger"
-        loading={isDeleting}
+        loading={deleteMutation.isPending}
       />
     </div>
   );
