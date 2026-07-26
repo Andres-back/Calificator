@@ -17,7 +17,7 @@ Evaluar el impacto de la implementación de un software integral de apoyo acadé
 
 2. **Diseñar** la arquitectura y los componentes funcionales del sistema XCalificator, definiendo los flujos de generación de contenido, calificación asistida, retroalimentación y gestión académica.
 
-3. **Desarrollar** el sistema XCalificator como una aplicación web que integre modelos de lenguaje (LLM), técnicas RAG y OCR, para la generación de actividades, procesamiento de evaluaciones y registro académico.
+3. **Desarrollar** el sistema XCalificator como una aplicación web que integre modelos de lenguaje (LLM), técnicas RAG y visión por computadora, para la generación de actividades, procesamiento de evaluaciones y registro académico.
 
 4. **Implementar** el sistema en un entorno piloto en la Institución Educativa San Agustín, permitiendo su uso por parte de docentes en actividades reales de evaluación.
 
@@ -33,7 +33,7 @@ Evaluar el impacto de la implementación de un software integral de apoyo acadé
 | Frontend | React 18 + Vite + TypeScript |
 | IA / LLM | Proveedores configurables (OpenAI-compatible, Groq, Ollama) |
 | RAG | pgvector (búsqueda semántica + chunking) |
-| OCR | Procesamiento de imágenes de evaluaciones físicas |
+| Visión por computadora | Procesamiento de imágenes de evaluaciones físicas |
 | Contenedores | Docker Compose |
 
 **Principio rector:** *La IA sugiere. El docente decide.*
@@ -90,7 +90,7 @@ POSTGRES_PORT=5433 docker compose up -d
 ├── backend/          # FastAPI + Celery + SQLAlchemy + pgvector
 │   ├── app/
 │   │   ├── modules/  # Módulos funcionales (evaluaciones, herramientas, calificaciones, xali, rag...)
-│   │   ├── services/  # LLM router, embeddings, OCR, imágenes
+│   │   ├── services/  # LLM router, embeddings, visión por computadora, imágenes
 │   │   └── shared/   # Prompts, enums, utilerías
 │   └── tests/
 ├── frontend/         # React + Vite + TypeScript

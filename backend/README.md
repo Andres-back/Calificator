@@ -3,7 +3,7 @@
 > **Proyecto de investigación** — Institución Educativa San Agustín, Mocoa, Putumayo  
 > Módulo backend del sistema integral de apoyo académico basado en LLM
 
-Backend FastAPI con arquitectura modular para el sistema XCalificator. Integra modelos de lenguaje (LLM), búsqueda semántica RAG con pgvector, procesamiento OCR y cola de tareas Celery.
+Backend FastAPI con arquitectura modular para el sistema XCalificator. Integra modelos de lenguaje (LLM), búsqueda semántica RAG con pgvector, visión por computadora y cola de tareas Celery.
 
 ## Stack
 
@@ -12,7 +12,7 @@ Backend FastAPI con arquitectura modular para el sistema XCalificator. Integra m
 - **Cache / Cola:** Redis + Celery
 - **IA:** LLM Router multicascada (OpenAI-compatible, Groq, Ollama)
 - **Búsqueda semántica:** pgvector (cosine similarity sobre embeddings)
-- **OCR:** Procesamiento de imágenes de evaluaciones
+- **Visión por computadora:** Procesamiento de imágenes de evaluaciones
 
 ## Módulos (backend/app/modules)
 

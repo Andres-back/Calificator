@@ -332,7 +332,7 @@ Submodos:
 Reglas:
 
 - Visión es el flujo principal para comprender la imagen.
-- OCR puede existir como apoyo auxiliar, no como centro del sistema.
+- Visión por computadora puede existir como apoyo auxiliar, no como centro del sistema.
 - Si la imagen está borrosa o incompleta, la entrega pasa a `requiere_reintento` o `requiere_revision`.
 - La IA debe devolver nivel de confianza y alertas.
 
