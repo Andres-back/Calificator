@@ -1,0 +1,392 @@
+/* ───────────────────────────────────────────────────────────────────────────
+   XCalificator — Print stylesheet (versión compacta, ahorro de papel)
+   Oculta la interfaz de la app y comprime el contenido para ocupar
+   la menor cantidad de hojas posible sin perder legibilidad.
+   ─────────────────────────────────────────────────────────────────────────── */
+
+@media print {
+  /* ── Reset base: ahorrar tinta, maximizar espacio ── */
+  *,
+  *::before,
+  *::after {
+    background: transparent !important;
+    background-color: transparent !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+    color: #000 !important;
+    border-color: #bbb !important;
+  }
+
+  html,
+  body {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #fff !important;
+    font-size: 9pt !important;
+    line-height: 1.3 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* ── Ocultar TODO lo que no sea contenido ── */
+  nav,
+  .sidebar,
+  aside,
+  header,
+  .topbar,
+  .banner,
+  button,
+  .btn,
+  [role="button"],
+  .toaster,
+  .Toastify,
+  [class*="toast"],
+  [class*="modal"],
+  [class*="dialog"],
+  .fixed,
+  .sticky,
+  footer,
+  iframe,
+  video,
+  select,
+  label:has(+ input[type="checkbox"]:not(.print\\:block)),
+  .interactive-only {
+    display: none !important;
+  }
+
+  /* ── Simplificar layout ── */
+  .flex,
+  .flex-1,
+  .min-h-screen,
+  .h-screen {
+    display: block !important;
+    height: auto !important;
+    min-height: auto !important;
+    overflow: visible !important;
+  }
+
+  .overflow-y-auto,
+  .overflow-x-auto,
+  .overflow-hidden {
+    overflow: visible !important;
+  }
+
+  main,
+  [class*="max-w-"],
+  .mx-auto {
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* ── Comprimir espaciado ── */
+  [class*="space-y"] > * {
+    margin-bottom: 0 !important;
+  }
+  [class*="gap-"] {
+    gap: 2pt !important;
+  }
+  [class*="p-"],
+  [class*="px-"],
+  [class*="py-"],
+  [class*="pt-"],
+  [class*="pb-"],
+  [class*="pl-"],
+  [class*="pr-"] {
+    padding: 0 !important;
+  }
+
+  /* ── Tarjetas / bloques ── */
+  [class*="rounded"],
+  [class*="card"],
+  [class*="Card"],
+  [class*="card-"] {
+    border: none !important;
+    border-radius: 0 !important;
+    padding: 2pt 0 !important;
+    margin: 3pt 0 !important;
+    background: transparent !important;
+  }
+
+  /* ── Tipografía compacta ── */
+  h1 {
+    font-size: 14pt !important;
+    font-weight: 700 !important;
+    margin: 6pt 0 3pt !important;
+  }
+  h2 {
+    font-size: 12pt !important;
+    font-weight: 700 !important;
+    margin: 5pt 0 2pt !important;
+  }
+  h3,
+  h4 {
+    font-size: 10pt !important;
+    font-weight: 700 !important;
+    margin: 4pt 0 2pt !important;
+  }
+  p {
+    margin: 2pt 0 !important;
+  }
+  li {
+    margin: 1pt 0 !important;
+  }
+  ul,
+  ol {
+    margin: 2pt 0 !important;
+    padding-left: 16pt !important;
+  }
+
+  /* ── Badges ── */
+  [class*="badge"],
+  [class*="Badge"] {
+    display: inline !important;
+    border: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    font-size: 8pt !important;
+    font-weight: 700 !important;
+  }
+  [class*="badge"]::before {
+    content: "[" !important;
+  }
+  [class*="badge"]::after {
+    content: "]" !important;
+  }
+
+  /* ── Tablas compactas ── */
+  table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    font-size: 8pt !important;
+    margin: 3pt 0 !important;
+  }
+  th,
+  td {
+    border: 1px solid #ccc !important;
+    padding: 2pt 3pt !important;
+    text-align: left !important;
+  }
+
+  /* ── Inputs / lineas de respuesta ── */
+  input,
+  textarea,
+  [contenteditable] {
+    border: none !important;
+    border-bottom: 0.5pt solid #999 !important;
+    background: transparent !important;
+    padding: 0 !important;
+    margin: 0 2pt !important;
+    font-family: inherit !important;
+    font-size: 9pt !important;
+    width: auto !important;
+    min-width: 40pt !important;
+    height: auto !important;
+    display: inline !important;
+  }
+
+  hr {
+    display: none !important;
+  }
+
+  /* ── Enlaces ── */
+  a {
+    color: #1e40af !important;
+    text-decoration: none !important;
+  }
+
+  /* ── Imágenes ── */
+  img {
+    max-width: 60% !important;
+    page-break-inside: avoid !important;
+    margin: 3pt auto !important;
+    display: block !important;
+  }
+
+  /* ── Grillas: forzar flujo natural ── */
+  [class*="grid-cols-"],
+  .grid,
+  [class*="inline-grid"] {
+    display: block !important;
+  }
+  [class*="grid"] > *,
+  [class*="grid-cols"] > * {
+    display: inline-block !important;
+    vertical-align: top !important;
+  }
+
+  /* ── Evitar saltos de página que desperdicien espacio ── */
+  .print-avoid-break {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+  .print-break-before {
+    page-break-before: always !important;
+    break-before: page !important;
+  }
+
+  /* ── Crucigrama ── */
+  .inline-grid.crucigrama-grid {
+    display: inline-grid !important;
+    gap: 1pt !important;
+    padding: 3pt !important;
+  }
+  .crucigrama-cell {
+    width: 16pt !important;
+    height: 16pt !important;
+    border: 0.5pt solid #333 !important;
+    text-align: center !important;
+    vertical-align: middle !important;
+    font-size: 9pt !important;
+    font-weight: 700 !important;
+  }
+  .crucigrama-cell input {
+    width: 100% !important;
+    height: 100% !important;
+    border: none !important;
+    text-align: center !important;
+    font-size: 9pt !important;
+    padding: 0 !important;
+    min-width: auto !important;
+  }
+  .crucigrama-cell .cell-number {
+    font-size: 5pt !important;
+    line-height: 1 !important;
+  }
+
+  /* ── Sopa de letras ── */
+  .sopa-grid {
+    display: inline-grid !important;
+    gap: 0.5pt !important;
+  }
+  .sopa-cell {
+    width: 14pt !important;
+    height: 14pt !important;
+    border: 0.5pt solid #999 !important;
+    text-align: center !important;
+    vertical-align: middle !important;
+    font-size: 8pt !important;
+    font-family: monospace !important;
+    line-height: 14pt !important;
+  }
+
+  /* ── Flashcards compactos ── */
+  .flashcard {
+    border: 1pt solid #666 !important;
+    border-radius: 4pt !important;
+    padding: 6pt !important;
+    margin: 3pt !important;
+    min-height: 50pt !important;
+    display: inline-block !important;
+    width: 120pt !important;
+    page-break-inside: avoid !important;
+    vertical-align: top !important;
+  }
+  .flashcard .flashcard-front {
+    font-weight: 700 !important;
+    font-size: 10pt !important;
+    margin-bottom: 2pt !important;
+  }
+  .flashcard .flashcard-back {
+    font-size: 8pt !important;
+  }
+
+  /* ── Matching (unir columnas / emparejar) ── */
+  .matching-row {
+    display: flex !important;
+    align-items: center !important;
+    gap: 4pt !important;
+    margin: 2pt 0 !important;
+    font-size: 8pt !important;
+  }
+  .matching-row .item-a,
+  .matching-row .item-b {
+    flex: 1 !important;
+    border: 0.5pt solid #ccc !important;
+    padding: 2pt 4pt !important;
+  }
+
+  /* Matching items: mostrar como texto plano */
+  .matching-container button {
+    display: flex !important;
+    border: 0.5pt solid #ccc !important;
+    padding: 2pt 4pt !important;
+    margin: 1pt 0 !important;
+    font-size: 8pt !important;
+    text-align: left !important;
+    cursor: default !important;
+  }
+  .matching-container button * {
+    display: inline !important;
+  }
+  svg.matching-cables {
+    display: none !important;
+  }
+
+  /* ── Encabezado de impresión ── */
+  .print-header {
+    text-align: center !important;
+    border-bottom: 1.5pt solid #1e40af !important;
+    margin-bottom: 6pt !important;
+    padding: 4pt 0 8pt !important;
+  }
+  .print-header h1 {
+    margin: 0 0 2pt !important;
+    font-size: 14pt !important;
+  }
+  .print-header .meta {
+    font-size: 7.5pt !important;
+    margin: 0 0 6pt !important;
+  }
+  .print-header .student-info {
+    display: flex !important;
+    justify-content: space-between !important;
+    font-size: 9pt !important;
+    margin-top: 8pt !important;
+    padding-top: 0 !important;
+    border-top: none !important;
+  }
+  .print-header .student-info .line {
+    display: inline-block !important;
+    min-width: 80pt !important;
+    border-bottom: 0.5pt solid #999 !important;
+  }
+
+  /* ── Ocultar sidebar y navegación ── */
+  .flex.h-screen > div:first-child,
+  aside,
+  [class*="hidden lg:block"] {
+    display: none !important;
+  }
+
+  /* ── Links de navegación interna ── */
+  a[href*="/app/herramientas"],
+  a[href*="/app/materias"] {
+    display: none !important;
+  }
+
+  /* ── Animaciones / transform 3D → nada ── */
+  [class*="perspective"],
+  [style*="transform"],
+  .motion-div,
+  [class*="motion"] {
+    transform: none !important;
+    perspective: none !important;
+    animation: none !important;
+    transition: none !important;
+  }
+
+  /* ── Pistas de crucigrama: 2 columnas ── */
+  .pistas-grid {
+    column-count: 2 !important;
+    column-gap: 12pt !important;
+  }
+  .pistas-grid > * {
+    break-inside: avoid !important;
+  }
+
+  /* ── Ocultar SVG decorativos ── */
+  svg:not([aria-label]) {
+    display: none !important;
+  }
+}

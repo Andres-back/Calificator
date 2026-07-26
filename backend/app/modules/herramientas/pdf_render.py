@@ -62,6 +62,10 @@ body {{ font-family: 'DejaVu Sans', sans-serif; color: {GRAY}; font-size: 11px; 
   background: {VIOLET}; color: #fff; font-weight: bold; font-size: 12px;
   padding: 8px 13px; border-radius: 9px; margin: 14px 0 12px; letter-spacing: .4px;
 }}
+.header-form {{ width: 100%; margin: 0 0 14px; border-collapse: collapse; }}
+.header-form td {{ padding: 6px 4px; font-size: 11px; border: none; }}
+.header-line {{ display: inline-block; border-bottom: 1px solid {GRAY}; min-width: 200px; }}
+.header-line.short {{ min-width: 90px; }}
 .instr {{
   background: #FFFBEB; border: 1px solid #FDE68A; color: #92400E;
   border-radius: 12px; padding: 11px 14px; font-size: 10.5px; margin-bottom: 12px;
@@ -489,6 +493,120 @@ _RENDERERS = {
 }
 
 
+# ── Lectura comprensiva ──────────────────────────────────────────────────────
+def _render_lectura_comprensiva(c: dict, soluciones: bool) -> str:
+    out = ['<div class="sectionbar">LECTURA COMPRENSIVA</div>']
+    if c.get("instrucciones"):
+        out.append(f'<div class="instr indigo">{_e(c["instrucciones"])}</div>')
+    if c.get("texto"):
+        out.append('<div class="card" style="background:#EFF6FF; border-color:#BFDBFE;">')
+        out.append(f'<p class="p" style="font-size:11.5px; line-height:1.6; margin:0;">{_e(c["texto"])}</p>')
+        out.append("</div>")
+    if c.get("preguntas"):
+        out.append('<div class="h3">Preguntas de comprensión</div>')
+        for q in c["preguntas"]:
+            out.append('<div class="card">')
+            tipo_badge = f' <span class="pts">[{_e(q.get("tipo"))}]</span>' if q.get("tipo") else ""
+            out.append(f'<p class="p"><b>{_e(q.get("numero"))}.</b> {_e(q.get("enunciado"))}{tipo_badge}</p>')
+            if soluciones and q.get("respuesta_esperada"):
+                out.append(f'<p class="opt" style="color:#15803D"><b>Respuesta:</b> {_e(q["respuesta_esperada"])}</p>')
+            else:
+                out.append('<div class="line"></div><div class="line"></div><div class="line"></div>')
+            out.append("</div>")
+    return "".join(out)
+
+
+# ── Quiz rápido (igual que examen) ──────────────────────────────────────────
+def _render_quiz_rapido(c: dict, soluciones: bool) -> str:
+    return _render_examen(c, soluciones)
+
+
+# ── Ficha didáctica ──────────────────────────────────────────────────────────
+def _render_ficha(c: dict, soluciones: bool) -> str:
+    out = ['<div class="sectionbar">FICHA DIDÁCTICA</div>']
+    if c.get("objetivo"):
+        out.append(f'<div class="instr">{_e(c["objetivo"])}</div>')
+    if c.get("instrucciones"):
+        out.append(f'<div class="instr indigo">{_e(c["instrucciones"])}</div>')
+    for ex in c.get("ejercicios") or []:
+        out.append('<div class="card">')
+        out.append(f'<p class="p"><b>{_e(ex.get("numero"))}.</b> ({_e(ex.get("tipo", "ejercicio"))}) <b>{_e(ex.get("enunciado"))}</b></p>')
+        if ex.get("opciones"):
+            for idx, op in enumerate(ex["opciones"]):
+                letra = chr(65 + idx)
+                txt = _e(re.sub(r"^\s*[A-Ha-h]\)\s*", "", str(op or "")))
+                out.append(f'<p class="opt"><span class="circle">○ {letra})</span> {txt}</p>')
+        if soluciones and ex.get("respuesta_esperada"):
+            out.append(f'<p class="opt" style="color:#15803D"><b>Respuesta:</b> {_e(ex["respuesta_esperada"])}</p>')
+        else:
+            out.append('<div class="line"></div><div class="line"></div>')
+        out.append("</div>")
+    return "".join(out)
+
+
+# ── Flashcards ───────────────────────────────────────────────────────────────
+def _render_flashcards(c: dict, soluciones: bool) -> str:
+    out = ['<div class="sectionbar">FLASHCARDS</div>']
+    if c.get("instrucciones"):
+        out.append(f'<div class="instr indigo">{_e(c["instrucciones"])}</div>')
+    if soluciones:
+        # Hoja de respuestas: pares anverso → reverso
+        out.append('<div class="h3">Tarjetas (anverso / reverso)</div>')
+        for t in c.get("tarjetas") or []:
+            out.append('<div class="card">')
+            out.append(f'<p class="p"><b>#{_e(t.get("numero"))} · {_e(t.get("anverso"))}</b></p>')
+            out.append(f'<p class="opt" style="color:#15803D">→ {_e(t.get("reverso"))}</p>')
+            out.append("</div>")
+    else:
+        # Estudiante: solo anverso, espacio para escribir reverso
+        for t in c.get("tarjetas") or []:
+            out.append('<div class="card">')
+            out.append(f'<p class="p"><b>#{_e(t.get("numero"))} · {_e(t.get("anverso"))}</b></p>')
+            out.append('<div class="line"></div><div class="line"></div>')
+            out.append("</div>")
+    return "".join(out)
+
+
+# ── Mapa conceptual ──────────────────────────────────────────────────────────
+def _render_mapa_conceptual(c: dict, soluciones: bool) -> str:
+    out = ['<div class="sectionbar">MAPA CONCEPTUAL</div>']
+    if c.get("descripcion"):
+        out.append(f'<div class="instr indigo">{_e(c["descripcion"])}</div>')
+    if c.get("concepto_principal"):
+        out.append('<div class="instr" style="text-align:center; font-size:13px; font-weight:bold;">')
+        out.append(f'Concepto principal: {_e(c["concepto_principal"])}')
+        out.append("</div>")
+    nodos = c.get("nodos") or []
+    if nodos:
+        out.append('<div class="h3">Nodos</div>')
+        # 3 columnas
+        n = nodos
+        out.append('<table class="grid"><tr>')
+        for i, nd in enumerate(n):
+            if i > 0 and i % 3 == 0:
+                out.append("</tr><tr>")
+            out.append(f'<td><b>Nivel {_e(nd.get("nivel"))}</b><br/>{_e(nd.get("concepto"))}')
+            if nd.get("descripcion_breve"):
+                out.append(f'<br/><i>{_e(nd["descripcion_breve"])}</i>')
+            out.append("</td>")
+        out.append("</tr></table>")
+    relaciones = c.get("relaciones") or []
+    if relaciones:
+        out.append('<div class="h3">Relaciones</div>')
+        for r in relaciones:
+            eti = f' [{_e(r.get("etiqueta"))}]' if r.get("etiqueta") else ""
+            out.append(f'<p class="p"><b>{_e(r.get("origen"))}</b> →{eti} <b>{_e(r.get("destino"))}</b></p>')
+    return "".join(out)
+
+
+# Actualizar mapa de renderers con los tipos nuevos
+_RENDERERS["lectura_comprensiva"] = _render_lectura_comprensiva
+_RENDERERS["quiz_rapido"] = _render_quiz_rapido
+_RENDERERS["ficha"] = _render_ficha
+_RENDERERS["flashcards"] = _render_flashcards
+_RENDERERS["mapa_conceptual"] = _render_mapa_conceptual
+
+
 def render_material_html(material: dict, soluciones: bool = False) -> str:
     tipo = material.get("tipo")
     contenido = material.get("contenido_json") or {}
@@ -509,6 +627,16 @@ def render_material_html(material: dict, soluciones: bool = False) -> str:
   <div class="topbar"><span class="htitle">{_e(titulo)}</span><span class="brand">XCalificator</span></div>
   <div class="title">{_e(titulo)}</div>
   <div class="subtitle">{_e(meta)}</div>
+  <table class="header-form">
+    <tr>
+      <td style="width:65%"><b>Nombre:</b> <span class="header-line">&nbsp;</span></td>
+      <td style="width:35%"><b>Grado:</b> <span class="header-line short">&nbsp;</span></td>
+    </tr>
+    <tr>
+      <td><b>Fecha:</b> <span class="header-line short">&nbsp;</span></td>
+      <td><b>Nota:</b> <span class="header-line short">&nbsp;</span></td>
+    </tr>
+  </table>
   {inner}
 </body></html>"""
 

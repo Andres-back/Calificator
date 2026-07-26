@@ -8,9 +8,7 @@ import { useAuth } from '@/stores/auth';
 function Logo() {
   return (
     <div className="flex items-center gap-2.5 px-2">
-      <div className="grid h-9 w-9 place-items-center rounded-lg bg-brand-600 text-white font-display font-extrabold shadow-sm">
-        X
-      </div>
+      <img src="/branding/logo-full.png" alt="XCalificator" className="h-10 w-10 rounded-lg object-contain" />
       <div className="leading-tight">
         <p className="font-display font-extrabold text-fg">XCalificator</p>
         <p className="text-[10px] uppercase tracking-wider text-muted">Plataforma IA</p>
@@ -30,9 +28,17 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   const RoleIcon = roleMessage.icon;
 
   return (
-    <aside className="flex h-full w-64 flex-col gap-5 border-r border-border bg-surface px-3 py-5">
-      <Logo />
-      <nav className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto pr-1">
+    <aside className="relative flex h-full w-64 flex-col gap-5 overflow-hidden border-r border-border bg-surface px-3 py-5">
+      <div className="absolute inset-0 z-0">
+        <img
+          src="/branding/pattern-subtle.png"
+          alt=""
+          className="h-full w-full object-cover opacity-[0.04] dark:opacity-[0.03]"
+        />
+      </div>
+      <div className="relative z-10 flex h-full flex-col gap-5">
+        <Logo />
+        <nav className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto pr-1">
         <p className="px-3 pb-1 text-[11px] font-semibold uppercase tracking-wider text-muted">Menú</p>
         {navItems.map((item) => (
           <NavLink
@@ -74,6 +80,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
           <p className="font-display text-sm font-bold text-fg">{roleMessage.title}</p>
           <p className="mt-0.5 text-xs text-muted">{roleMessage.detail}</p>
         </div>
+      </div>
       </div>
     </aside>
   );

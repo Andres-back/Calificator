@@ -15,6 +15,7 @@ import { queryClient } from '@/lib/queryClient';
 import { router } from '@/router';
 import { AuthBootstrap } from '@/components/auth/RequireAuth';
 import './index.css';
+import './print.css';
 
 // Desregistra cualquier service worker rogue (cacheado por el entorno/preview):
 // era la fuente del `sw.js` que interceptaba fetches e imponía una CSP ajena.

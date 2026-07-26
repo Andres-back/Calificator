@@ -86,6 +86,13 @@ export function LoginPage() {
   return (
     <div className="relative min-h-screen overflow-hidden bg-surface text-fg">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(99,102,241,0.16),transparent_34%),radial-gradient(circle_at_bottom_right,rgba(20,184,166,0.13),transparent_30%)]" />
+      <div className="absolute inset-0 z-0">
+        <img
+          src="/branding/pattern-hero.png"
+          alt=""
+          className="h-full w-full object-cover opacity-[0.06] dark:opacity-[0.04]"
+        />
+      </div>
       <div className="absolute right-5 top-5 z-10">
         <ThemeToggle />
       </div>
@@ -94,9 +101,7 @@ export function LoginPage() {
         <div className="grid w-full max-w-5xl gap-8 lg:grid-cols-[1fr_420px] lg:items-center">
           <section className="hidden lg:block">
             <div className="mb-8 flex items-center gap-3">
-              <div className="grid h-12 w-12 place-items-center rounded-lg bg-brand-600 font-display text-2xl font-extrabold text-white shadow-sm">
-                X
-              </div>
+              <img src="/branding/logo-full.png" alt="XCalificator" className="h-14 w-14 rounded-xl object-contain" />
               <div>
                 <p className="font-display text-2xl font-extrabold">XCalificator</p>
                 <p className="text-sm text-muted">Evaluación asistida por IA</p>
@@ -119,6 +124,14 @@ export function LoginPage() {
               <p className="mt-5 max-w-lg text-base leading-7 text-muted">
                 Plataforma de apoyo docente para crear, resolver y calificar evaluaciones con IA.
               </p>
+
+              <div className="mt-6">
+                <img
+                  src="/branding/hero-login.png"
+                  alt="XCalificator - IA para educación"
+                  className="w-full max-w-md rounded-2xl shadow-lg"
+                />
+              </div>
 
               <div className="mt-8 grid gap-3">
                 {[
@@ -144,9 +157,7 @@ export function LoginPage() {
           >
             <Card className="mx-auto w-full max-w-md p-6 shadow-lg sm:p-8">
               <div className="mb-7 text-center">
-                <div className="mx-auto mb-4 grid h-14 w-14 place-items-center rounded-lg bg-brand-600 font-display text-2xl font-extrabold text-white shadow-sm lg:hidden">
-                  X
-                </div>
+                <img src="/branding/logo-full.png" alt="XCalificator" className="mx-auto mb-4 h-16 w-16 rounded-xl object-contain lg:hidden" />
                 <p className="font-display text-2xl font-extrabold">XCalificator</p>
                 <p className="mt-2 text-sm font-semibold text-brand-600 dark:text-brand-300">La IA sugiere. El docente decide.</p>
                 <p className="mt-3 text-sm leading-6 text-muted">
@@ -217,6 +228,55 @@ export function LoginPage() {
               <div className="mt-5 flex items-center justify-between gap-3 text-xs text-muted">
                 <span>Tu contraseña nunca se guarda en este dispositivo.</span>
                 <span className="rounded-full bg-surface-2 px-2.5 py-1 font-semibold">Recuperar: próximamente</span>
+              </div>
+
+              {/* Quick access — temporal, para desarrollo */}
+              <div className="mt-5 border-t border-border pt-4">
+                <p className="mb-2 text-center text-[11px] font-semibold uppercase tracking-wider text-muted">Accesos rápidos</p>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      setLoading(true);
+                      setErrors({});
+                      try {
+                        const loggedUser = await login('profesor@test.com', 'Test1234!');
+                        localStorage.setItem(LAST_EMAIL_KEY, 'profesor@test.com');
+                        toast.success('Bienvenido a XCalificator');
+                        navigate(getLandingPath(loggedUser.rol), { replace: true });
+                      } catch (error) {
+                        setErrors({ general: friendlyLoginError(error) });
+                      } finally {
+                        setLoading(false);
+                      }
+                    }}
+                    disabled={loading}
+                    className="flex-1 rounded-lg border border-violet-200 bg-violet-50 px-3 py-2 text-xs font-medium text-violet-700 transition-colors hover:bg-violet-100 dark:border-violet-500/30 dark:bg-violet-500/10 dark:text-violet-300"
+                  >
+                    👨‍🏫 Profesor
+                  </button>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      setLoading(true);
+                      setErrors({});
+                      try {
+                        const loggedUser = await login('estudiante@test.com', 'Test1234!');
+                        localStorage.setItem(LAST_EMAIL_KEY, 'estudiante@test.com');
+                        toast.success('Bienvenido a XCalificator');
+                        navigate(getLandingPath(loggedUser.rol), { replace: true });
+                      } catch (error) {
+                        setErrors({ general: friendlyLoginError(error) });
+                      } finally {
+                        setLoading(false);
+                      }
+                    }}
+                    disabled={loading}
+                    className="flex-1 rounded-lg border border-cyan-200 bg-cyan-50 px-3 py-2 text-xs font-medium text-cyan-700 transition-colors hover:bg-cyan-100 dark:border-cyan-500/30 dark:bg-cyan-500/10 dark:text-cyan-300"
+                  >
+                    🎓 Estudiante
+                  </button>
+                </div>
               </div>
             </Card>
           </motion.div>
