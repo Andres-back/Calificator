@@ -74,8 +74,9 @@ export function ReportesPage() {
 
           <Card className="p-5">
             <p className="mb-3 font-display font-bold">Detalle por materia</p>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+            <div className="overflow-x-auto" role="region" aria-label="Detalle del promedio por materia" tabIndex={0}>
+              <table className="min-w-[520px] w-full text-sm">
+                <caption className="sr-only">Cantidad de calificaciones y promedio confirmado por materia</caption>
                 <thead className="bg-surface-2 text-left text-xs uppercase text-muted">
                   <tr><th className="px-3 py-2.5">Materia</th><th className="px-3 py-2.5">Calificaciones</th><th className="px-3 py-2.5">Promedio</th></tr>
                 </thead>

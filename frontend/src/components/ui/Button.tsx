@@ -2,50 +2,51 @@ import { forwardRef, type ButtonHTMLAttributes } from 'react';
 import { Loader2 } from 'lucide-react';
 import { cn } from '@/lib/cn';
 
-type Variant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger' | 'success';
+type Variant = 'primary' | 'secondary' | 'tertiary' | 'outline' | 'ghost' | 'danger' | 'success' | 'link';
 type Size = 'sm' | 'md' | 'lg' | 'icon';
 
 const variants: Record<Variant, string> = {
-  primary:
-    'uiverse-action border border-brand-600 bg-brand-600 text-white shadow-sm hover:border-brand-700 hover:bg-brand-700 active:bg-brand-800',
-  secondary:
-    'border border-border bg-surface-2 text-fg hover:border-slate-300 hover:bg-surface dark:hover:border-slate-600',
-  outline:
-    'border border-border bg-surface text-fg hover:border-slate-300 hover:bg-surface-2 dark:hover:border-slate-600',
-  ghost: 'text-fg hover:bg-surface-2',
-  danger: 'text-white bg-rose-600 hover:bg-rose-500 shadow-sm hover:shadow-md active:translate-y-0',
-  success: 'text-white bg-emerald-600 hover:bg-emerald-500 shadow-sm hover:shadow-md active:translate-y-0',
+  primary: 'uiverse-action border border-brand-700 bg-brand-700 text-white shadow-sm hover:border-brand-800 hover:bg-brand-800 active:bg-brand-900',
+  secondary: 'border border-border bg-surface-2 text-fg hover:border-slate-400 hover:bg-surface dark:hover:border-slate-500',
+  tertiary: 'border border-transparent text-fg hover:bg-surface-2',
+  outline: 'border border-border bg-surface text-fg hover:border-slate-400 hover:bg-surface-2 dark:hover:border-slate-500',
+  ghost: 'border border-transparent text-fg hover:bg-surface-2',
+  danger: 'border border-rose-700 bg-rose-700 text-white shadow-sm hover:bg-rose-800',
+  success: 'border border-emerald-700 bg-emerald-700 text-white shadow-sm hover:bg-emerald-800',
+  link: 'h-auto border border-transparent px-0 text-interactive underline-offset-4 hover:underline',
 };
 
 const sizes: Record<Size, string> = {
-  sm: 'h-9 px-3.5 text-sm gap-1.5 rounded-lg',
+  sm: 'min-h-10 px-3.5 text-sm gap-1.5 rounded-lg',
   md: 'h-11 px-5 text-sm gap-2 rounded-lg',
   lg: 'h-12 px-6 text-base gap-2 rounded-lg',
-  icon: 'h-10 w-10 rounded-lg',
+  icon: 'h-11 w-11 rounded-lg',
 };
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: Variant;
   size?: Size;
   loading?: boolean;
+  loadingLabel?: string;
 }
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant = 'primary', size = 'md', loading, disabled, children, ...props }, ref) => (
+  ({ className, variant = 'primary', size = 'md', loading, loadingLabel, disabled, children, ...props }, ref) => (
     <button
       ref={ref}
       disabled={disabled || loading}
+      aria-busy={loading || undefined}
       className={cn(
-        'inline-flex items-center justify-center font-semibold transition-colors duration-200 focus-ring',
-        'disabled:opacity-50 disabled:pointer-events-none select-none',
+        'focus-ring inline-flex items-center justify-center font-semibold transition-[background-color,border-color,color,box-shadow] duration-200',
+        'select-none disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-55',
         variants[variant],
         sizes[size],
         className,
       )}
       {...props}
     >
-      {loading && <Loader2 className="relative h-4 w-4 animate-spin" />}
-      {children}
+      {loading && <Loader2 className="relative h-4 w-4 animate-spin" aria-hidden="true" />}
+      <span>{loading && loadingLabel ? loadingLabel : children}</span>
     </button>
   ),
 );

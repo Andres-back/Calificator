@@ -22,7 +22,7 @@ function GeneratingOverlay() {
     return () => clearInterval(t);
   }, []);
   return (
-    <motion.div className="fixed inset-0 z-[70] grid place-items-center bg-bg/75 p-4 backdrop-blur-md" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+    <motion.div role="status" aria-live="polite" aria-busy="true" className="fixed inset-0 z-[70] grid place-items-center bg-bg/75 p-4 backdrop-blur-md" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
       <div className="w-full max-w-md overflow-hidden rounded-lg border border-border bg-surface shadow-xl">
         <div className="relative grid place-items-center bg-brand-700 px-8 py-10 text-white">
           <div className="scan-line" />
@@ -63,14 +63,14 @@ export function GeneratePage() {
   if (!tool) {
     return (
       <div className="space-y-6">
-        <button onClick={() => navigate('/app/herramientas')} className="inline-flex items-center gap-1.5 text-sm font-medium text-muted hover:text-fg">
+        <button type="button" onClick={() => navigate('/app/herramientas')} className="focus-ring inline-flex min-h-10 items-center gap-1.5 rounded-lg px-2 text-sm font-medium text-secondary hover:bg-surface-2 hover:text-fg">
           <ArrowLeft className="h-4 w-4" /> Volver
         </button>
         <PageHeader title="Crear material" eyebrow="Recursos didácticos" subtitle="Elige un formato y completa únicamente el contexto que necesita tu clase." />
         <TeachingCycle compact />
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
           {TOOLS.map((t, idx) => (
-            <motion.button key={t.tipo} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.04 }} onClick={() => setParams({ tipo: t.tipo })} className="group text-left">
+            <motion.button type="button" key={t.tipo} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.04 }} onClick={() => setParams({ tipo: t.tipo })} className="focus-ring group rounded-lg text-left">
               <Card interactive className="h-full p-5">
                 <div className={cn('mb-3 grid h-11 w-11 place-items-center rounded-lg bg-gradient-to-br text-white shadow-sm', t.gradient)}>
                   <t.icon className="h-6 w-6" />
@@ -108,7 +108,7 @@ export function GeneratePage() {
     <div className="space-y-6">
       <AnimatePresence>{busy && <GeneratingOverlay />}</AnimatePresence>
 
-      <button onClick={() => setParams({})} className="inline-flex items-center gap-1.5 text-sm font-medium text-muted hover:text-fg">
+      <button type="button" onClick={() => setParams({})} className="focus-ring inline-flex min-h-10 items-center gap-1.5 rounded-lg px-2 text-sm font-medium text-secondary hover:bg-surface-2 hover:text-fg">
         <ArrowLeft className="h-4 w-4" /> Cambiar herramienta
       </button>
 
@@ -147,8 +147,8 @@ export function GeneratePage() {
             <p className="mb-3 text-xs font-semibold uppercase text-muted">Otras herramientas</p>
             <div className="grid grid-cols-5 gap-2">
               {TOOLS.filter((t) => t.tipo !== tool.tipo).slice(0, 10).map((t) => (
-                <button key={t.tipo} onClick={() => setParams({ tipo: t.tipo })} title={t.label} className={cn('grid aspect-square place-items-center rounded-lg bg-gradient-to-br text-white transition hover:scale-110', t.gradient)}>
-                  <t.icon className="h-4 w-4" />
+                <button type="button" key={t.tipo} onClick={() => setParams({ tipo: t.tipo })} title={t.label} aria-label={`Cambiar a ${t.label}`} className={cn('focus-ring grid min-h-11 min-w-11 aspect-square place-items-center rounded-lg bg-gradient-to-br text-white transition hover:scale-105', t.gradient)}>
+                  <t.icon className="h-4 w-4" aria-hidden="true" />
                 </button>
               ))}
             </div>

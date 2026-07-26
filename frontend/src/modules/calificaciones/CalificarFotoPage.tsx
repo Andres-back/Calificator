@@ -9,6 +9,7 @@ import { useMaterias, useEstudiantes } from '@/modules/materias/MateriaSelect';
 import { listEvaluaciones } from '@/modules/evaluaciones/api';
 import { toApiError } from '@/lib/api';
 import { confidenceLabel } from '@/lib/utils';
+import { useAuth } from '@/stores/auth';
 import { calificarFoto } from './api';
 import { fotoTour } from './tourSteps';
 import type { Calificacion } from '@/types/api';
@@ -27,6 +28,7 @@ function gradingErrorMessage(error: unknown) {
 }
 
 export function CalificarFotoPage() {
+  const role = useAuth((state) => state.user?.rol ?? 'profesor');
   const [materiaId, setMateriaId] = useState('');
   const [evaluacionId, setEvaluacionId] = useState('');
   const [estudianteId, setEstudianteId] = useState('');
@@ -184,7 +186,7 @@ export function CalificarFotoPage() {
         }
       />
 
-      <GuidedTour steps={fotoTour} open={tourOpen} onClose={() => setTourOpen(false)} />
+      <GuidedTour steps={fotoTour} open={tourOpen} onClose={() => setTourOpen(false)} tourId="calificacion-foto" role={role} version={1} />
 
       {noMaterias ? (
         <EmptyState icon={Camera} title="Primero crea una materia" description="Necesitas una materia con evaluaciones y estudiantes matriculados." />

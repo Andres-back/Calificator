@@ -49,7 +49,7 @@
   iframe,
   video,
   select,
-  label:has(+ input[type="checkbox"]:not(.print\\:block)),
+  label:has(+ input[type="checkbox"]:not(.print\:block)),
   .interactive-only {
     display: none !important;
   }

@@ -1,4 +1,4 @@
-import { Navigate, Outlet } from 'react-router-dom';
+import { Navigate, Outlet, useOutletContext } from 'react-router-dom';
 import { useAuth } from '@/stores/auth';
 import type { UserRole } from '@/types/api';
 
@@ -11,8 +11,9 @@ import type { UserRole } from '@/types/api';
  */
 export function RequireRole({ allow }: { allow: UserRole[] }) {
   const user = useAuth((state) => state.user);
+  const parentContext = useOutletContext<unknown>();
   if (user && !allow.includes(user.rol)) {
     return <Navigate to="/app/403" replace />;
   }
-  return <Outlet />;
+  return <Outlet context={parentContext} />;
 }

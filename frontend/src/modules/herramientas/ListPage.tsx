@@ -112,7 +112,7 @@ export function ListPage() {
                       </Link>
                       <div className="mt-4 flex items-center gap-2 border-t border-border pt-3">
                         <a href={pdfUrl(material.id)} target="_blank" rel="noreferrer" className="flex-1"><Button size="sm" variant="outline" className="w-full"><Download className="h-4 w-4" /> PDF</Button></a>
-                        <Button size="icon" variant="ghost" className="h-9 w-9 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10" onClick={() => setDeleteTarget({ id: material.id, title: material.titulo })} aria-label={`Eliminar ${material.titulo}`} title="Eliminar material"><Trash2 className="h-4 w-4" /></Button>
+                        <Button size="icon" variant="ghost" className="text-rose-700 hover:bg-rose-50 dark:text-rose-300 dark:hover:bg-rose-500/10" onClick={() => setDeleteTarget({ id: material.id, title: material.titulo })} aria-label={`Eliminar ${material.titulo}`} title="Eliminar material"><Trash2 className="h-4 w-4" /></Button>
                       </div>
                     </Card>
                   </motion.div>

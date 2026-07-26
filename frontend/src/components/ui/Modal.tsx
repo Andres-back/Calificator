@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef, type ReactNode, type RefObject } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { X } from 'lucide-react';
 import { cn } from '@/lib/cn';
 
@@ -22,6 +22,7 @@ export function Modal({
   open,
   onClose,
   title,
+  description,
   children,
   className,
   closeOnBackdrop = true,
@@ -33,6 +34,7 @@ export function Modal({
   open: boolean;
   onClose: () => void;
   title?: ReactNode;
+  description?: ReactNode;
   children: ReactNode;
   className?: string;
   closeOnBackdrop?: boolean;
@@ -45,6 +47,8 @@ export function Modal({
   const previouslyFocusedRef = useRef<HTMLElement | null>(null);
   const onCloseRef = useRef(onClose);
   const titleId = useId();
+  const descriptionId = useId();
+  const reduceMotion = useReducedMotion();
 
   useEffect(() => {
     onCloseRef.current = onClose;
@@ -57,14 +61,13 @@ export function Modal({
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
 
-    const focusInitialElement = () => {
+    const frame = window.requestAnimationFrame(() => {
       const initialTarget = initialFocusRef?.current;
       const focusTarget = initialTarget && !initialTarget.hasAttribute('disabled')
         ? initialTarget
         : getFocusableElements(dialogRef.current)[0] ?? dialogRef.current;
       focusTarget?.focus();
-    };
-    const frame = window.requestAnimationFrame(focusInitialElement);
+    });
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape' && closeOnEscape) {
@@ -108,12 +111,12 @@ export function Modal({
       {open && (
         <motion.div
           className="fixed inset-0 z-50 flex items-center justify-center p-4"
-          initial={{ opacity: 0 }}
+          initial={reduceMotion ? false : { opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
         >
           <div
-            className="absolute inset-0 bg-slate-950/55 backdrop-blur-[2px]"
+            className="absolute inset-0 bg-slate-950/60 backdrop-blur-[2px]"
             onClick={closeOnBackdrop ? onClose : undefined}
             aria-hidden="true"
           />
@@ -122,23 +125,25 @@ export function Modal({
             role="dialog"
             aria-modal="true"
             aria-labelledby={title ? titleId : undefined}
+            aria-describedby={description ? descriptionId : undefined}
             aria-label={title ? undefined : ariaLabel}
             tabIndex={-1}
-            className={cn('relative max-h-[calc(100vh-2rem)] w-full max-w-lg overflow-y-auto card glass p-5 sm:p-6', className)}
-            initial={{ opacity: 0, scale: 0.96, y: 12 }}
+            className={cn('safe-area-pb relative max-h-[calc(100dvh-2rem)] w-full max-w-lg overflow-y-auto card glass p-5 sm:p-6', className)}
+            initial={reduceMotion ? false : { opacity: 0, scale: 0.96, y: 12 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.96, y: 12 }}
-            transition={{ type: 'spring', damping: 24, stiffness: 280 }}
+            transition={reduceMotion ? { duration: 0 } : { type: 'spring', damping: 24, stiffness: 280 }}
           >
-            {title && <h2 id={titleId} className="mb-4 pr-8 font-display text-xl font-bold">{title}</h2>}
+            {title && <h2 id={titleId} className="mb-4 pr-10 font-display text-xl font-bold">{title}</h2>}
+            {description && <div id={descriptionId} className="mb-4 text-sm leading-6 text-secondary">{description}</div>}
             {showCloseButton && (
               <button
                 type="button"
                 onClick={onClose}
-                className="absolute right-4 top-4 rounded-lg p-1.5 text-muted transition hover:bg-surface-2 hover:text-fg focus-ring"
+                className="focus-ring absolute right-3 top-3 grid min-h-10 min-w-10 place-items-center rounded-lg text-muted transition hover:bg-surface-2 hover:text-fg"
                 aria-label="Cerrar diálogo"
               >
-                <X className="h-5 w-5" />
+                <X className="h-5 w-5" aria-hidden="true" />
               </button>
             )}
             {children}

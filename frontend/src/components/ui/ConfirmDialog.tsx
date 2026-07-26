@@ -31,9 +31,8 @@ export function ConfirmDialog({
   children?: ReactNode;
 }) {
   return (
-    <Modal open={open} onClose={onClose} title={title} closeOnBackdrop={!loading} closeOnEscape={!loading} showCloseButton={!loading}>
+    <Modal open={open} onClose={onClose} title={title} description={description} closeOnBackdrop={!loading} closeOnEscape={!loading} showCloseButton={!loading}>
       <div className="space-y-4">
-        {description && <div className="text-sm leading-relaxed text-muted">{description}</div>}
         {children}
         <div className="flex flex-col-reverse gap-2 pt-1 sm:flex-row sm:justify-end">
           <Button variant="outline" onClick={onClose} disabled={loading}>

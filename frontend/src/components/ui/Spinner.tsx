@@ -2,12 +2,12 @@ import { Loader2 } from 'lucide-react';
 import { cn } from '@/lib/cn';
 
 export function Spinner({ className }: { className?: string }) {
-  return <Loader2 className={cn('h-5 w-5 animate-spin text-brand-500', className)} />;
+  return <Loader2 className={cn('h-5 w-5 animate-spin text-brand-500', className)} aria-hidden="true" />;
 }
 
 export function LoadingScreen({ label = 'Cargando…' }: { label?: string }) {
   return (
-    <div className="flex h-full min-h-[40vh] flex-col items-center justify-center gap-3 text-muted">
+    <div className="flex h-full min-h-[40vh] flex-col items-center justify-center gap-3 text-secondary" role="status">
       <Spinner className="h-7 w-7" />
       <span className="text-sm">{label}</span>
     </div>
@@ -15,5 +15,5 @@ export function LoadingScreen({ label = 'Cargando…' }: { label?: string }) {
 }
 
 export function Skeleton({ className }: { className?: string }) {
-  return <div className={cn('relative overflow-hidden rounded-xl bg-surface-2 shimmer', className)} />;
+  return <div aria-hidden="true" className={cn('relative overflow-hidden rounded-xl bg-surface-2 shimmer', className)} />;
 }

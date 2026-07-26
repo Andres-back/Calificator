@@ -240,12 +240,15 @@ export function AdminAIConfigPage() {
         title="Configuración de IA"
         eyebrow="Operación de inteligencia artificial"
         subtitle="Conecta credenciales, define modelos y decide qué proveedor atiende cada capacidad de la plataforma."
+        breadcrumbs={[{ label: 'Inicio', to: '/app' }, { label: 'Configuración de IA' }]}
+        primaryAction={
+          <Button loading={saveMutation.isPending} loadingLabel="Guardando…" disabled={!hasUnsavedChanges || saveMutation.isPending} onClick={requestSave}>
+            Guardar cambios
+          </Button>
+        }
       />
 
       <Card className="flex flex-wrap items-center gap-3 p-4">
-        <Button size="sm" loading={saveMutation.isPending} disabled={!hasUnsavedChanges || saveMutation.isPending} onClick={requestSave}>
-          Guardar cambios
-        </Button>
         <Button size="sm" variant="outline" loading={restoreMutation.isPending} onClick={() => setRestoreDialogOpen(true)}>
           Restaurar valores
         </Button>

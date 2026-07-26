@@ -24,12 +24,12 @@ export function EmptyState({
         <img src={image} alt="" className={imageClass} />
       ) : (
         <div className="mb-4 grid h-14 w-14 place-items-center rounded-lg border border-brand-200 bg-brand-50 text-brand-600 dark:border-brand-500/30 dark:bg-brand-500/10 dark:text-brand-300">
-          <Icon className="h-7 w-7" />
+          <Icon className="h-7 w-7" aria-hidden="true" />
         </div>
       )}
       <h3 className="font-display text-lg font-bold text-fg">{title}</h3>
       {description && <p className="mt-1.5 max-w-sm text-sm leading-relaxed text-muted">{description}</p>}
-      {action && <div className="mt-5">{action}</div>}
+      {action && <div className="mt-5 w-full sm:w-auto [&>a]:w-full [&>button]:w-full sm:[&>a]:w-auto sm:[&>button]:w-auto">{action}</div>}
     </div>
   );
 }

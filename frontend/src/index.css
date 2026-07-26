@@ -5,12 +5,21 @@
 /* ───────────────────────── Tokens de tema ───────────────────────── */
 @layer base {
   :root {
-    --bg: 248 250 252;        /* slate-50 */
+    --bg: 248 250 252;
     --surface: 255 255 255;
-    --surface-2: 248 250 252;
-    --border: 226 232 240;    /* slate-200 */
-    --fg: 15 23 42;           /* slate-900 */
-    --muted: 100 116 139;     /* slate-500 */
+    --surface-2: 241 245 249;
+    --surface-elevated: 255 255 255;
+    --border: 203 213 225;
+    --fg: 15 23 42;
+    --secondary: 71 85 105;
+    --muted: 100 116 139;
+    --interactive: 79 70 229;
+    --focus: 37 99 235;
+    --success: 4 120 87;
+    --warning: 180 83 9;
+    --error: 190 18 60;
+    --info: 3 105 161;
+    --disabled: 148 163 184;
     color-scheme: light;
   }
 
@@ -18,23 +27,47 @@
     --bg: 9 9 18;
     --surface: 22 23 38;
     --surface-2: 30 31 51;
-    --border: 44 46 74;
-    --fg: 226 232 240;
+    --surface-elevated: 30 31 51;
+    --border: 71 73 105;
+    --fg: 241 245 249;
+    --secondary: 203 213 225;
     --muted: 148 163 184;
+    --interactive: 165 180 252;
+    --focus: 147 197 253;
+    --success: 110 231 183;
+    --warning: 253 186 116;
+    --error: 253 164 175;
+    --info: 125 211 252;
+    --disabled: 100 116 139;
     color-scheme: dark;
   }
 
   * {
     @apply border-border;
-    letter-spacing: 0 !important;
   }
 
-  html { -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+  html {
+    min-height: 100%;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
 
   body {
+    min-height: 100%;
     @apply bg-bg text-fg font-sans antialiased;
     background-image: none;
   }
+
+  button,
+  [role='button'],
+  a,
+  input,
+  select,
+  textarea {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  :focus-visible { scroll-margin-block: 5rem; }
 
   ::selection { @apply bg-brand-500/25; }
 
@@ -57,7 +90,28 @@
     @apply rounded-lg border border-border bg-surface shadow-card;
   }
   .focus-ring {
-    @apply outline-none ring-offset-2 ring-offset-bg focus-visible:ring-2 focus-visible:ring-brand-500;
+    @apply outline-none ring-offset-2 ring-offset-bg focus-visible:ring-2 focus-visible:ring-focus;
+  }
+  .page-title {
+    @apply font-display text-2xl font-extrabold leading-tight text-fg sm:text-3xl;
+  }
+  .section-title {
+    @apply font-display text-xl font-bold leading-tight text-fg;
+  }
+  .card-title {
+    @apply font-display text-lg font-bold leading-snug text-fg;
+  }
+  .supporting-text {
+    @apply text-sm leading-6 text-secondary;
+  }
+  .field-error {
+    @apply text-sm font-medium text-error;
+  }
+  .safe-area-pb {
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
+  }
+  .safe-area-pt {
+    padding-top: env(safe-area-inset-top);
   }
   .text-gradient {
     @apply bg-clip-text text-transparent;
@@ -124,6 +178,10 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  html:focus-within {
+    scroll-behavior: auto;
+  }
+
   *, *::before, *::after {
     scroll-behavior: auto !important;
     animation-duration: 0.01ms !important;

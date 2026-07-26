@@ -7,9 +7,10 @@ export function ThemeToggle() {
   const dark = mode === 'dark';
   return (
     <button
+      type="button"
       onClick={toggle}
       aria-label="Cambiar tema"
-      className="focus-ring relative grid h-10 w-10 place-items-center overflow-hidden rounded-lg border border-border bg-surface text-fg transition hover:border-brand-300"
+      className="focus-ring relative grid h-11 w-11 place-items-center overflow-hidden rounded-lg border border-border bg-surface text-fg transition hover:border-brand-300"
     >
       <motion.span
         key={mode}
@@ -17,7 +18,7 @@ export function ThemeToggle() {
         animate={{ y: 0, opacity: 1, rotate: 0 }}
         transition={{ type: 'spring', stiffness: 300, damping: 20 }}
       >
-        {dark ? <Moon className="h-5 w-5 text-brand-300" /> : <Sun className="h-5 w-5 text-amber-500" />}
+        {dark ? <Moon className="h-5 w-5 text-brand-300" aria-hidden="true" /> : <Sun className="h-5 w-5 text-amber-600" aria-hidden="true" />}
       </motion.span>
     </button>
   );

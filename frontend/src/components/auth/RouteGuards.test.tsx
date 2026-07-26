@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { MemoryRouter, Outlet, Route, Routes, useOutletContext } from 'react-router-dom';
 import { RequireAuth } from './RequireAuth';
 import { RequireRole } from './RequireRole';
 import { useAuth } from '@/stores/auth';
@@ -69,5 +69,30 @@ describe('route guards', () => {
 
     expect(screen.getByText('Acceso denegado')).toBeInTheDocument();
     expect(screen.queryByText('Admin console')).not.toBeInTheDocument();
+  });
+  it('preserves parent outlet context through a role guard', () => {
+    useAuth.setState({ user: userFor('profesor'), status: 'authenticated' });
+
+    function Parent() {
+      return <Outlet context={{ materia: 'Matemáticas 8°' }} />;
+    }
+    function Child() {
+      const context = useOutletContext<{ materia: string }>();
+      return <p>{context.materia}</p>;
+    }
+
+    render(
+      <MemoryRouter initialEntries={['/app/materias/1/calificar']}>
+        <Routes>
+          <Route element={<Parent />}>
+            <Route element={<RequireRole allow={['profesor', 'admin']} />}>
+              <Route path="/app/materias/1/calificar" element={<Child />} />
+            </Route>
+          </Route>
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText('Matemáticas 8°')).toBeInTheDocument();
   });
 });

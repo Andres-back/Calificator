@@ -21,7 +21,9 @@ export interface NavItem {
 export const profesorNav: NavItem[] = [
   { label: 'Inicio', to: '/app', icon: LayoutDashboard },
   { label: 'Materias', to: '/app/materias', icon: BookOpen },
+  { label: 'Evaluaciones', to: '/app/evaluaciones', icon: ClipboardCheck },
   { label: 'Herramientas', to: '/app/herramientas', icon: Wrench },
+  { label: 'Presentaciones', to: '/app/presentaciones', icon: Presentation },
   { label: 'Reportes', to: '/app/reportes', icon: BarChart3 },
   { label: 'Asistente Xali', to: '/app/xali', icon: Sparkles },
 ];

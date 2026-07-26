@@ -26,8 +26,13 @@ export function SopaLetrasView({ data }: { data: SopaContenido }) {
   const [start, setStart] = useState<Cell | null>(null);
   const [end, setEnd] = useState<Cell | null>(null);
   const [focusedCell, setFocusedCell] = useState<Cell>({ r: 0, c: 0 });
+  const [announcement, setAnnouncement] = useState('');
 
-  const norm = (value: string) => value.toUpperCase().replace(/[^A-ZÑ]/g, '');
+  const norm = (value: string) => value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toUpperCase()
+    .replace(/[^A-ZÑ]/g, '');
 
   const cellsBetween = useCallback((from: Cell | null, to: Cell | null): Cell[] => {
     if (!from || !to) return [];
@@ -58,6 +63,9 @@ export function SopaLetrasView({ data }: { data: SopaContenido }) {
         if (match && !found.includes(norm(match))) {
           setFound((current) => [...current, norm(match)]);
           setHighlighted((current) => [...current, ...cells]);
+          setAnnouncement(`Palabra ${match} encontrada.`);
+        } else {
+          setAnnouncement('La selección no corresponde a una palabra pendiente.');
         }
       }
     }
@@ -140,9 +148,10 @@ export function SopaLetrasView({ data }: { data: SopaContenido }) {
   return (
     <div className="space-y-5">
       <Confetti fire={complete} />
+      <p className="sr-only" role="status" aria-live="polite">{announcement}</p>
       <div className="flex items-center justify-between gap-3">
         <p className="text-sm text-muted" aria-live="polite">Encontradas: <span className="font-bold text-brand-600">{found.length}/{banco.length}</span></p>
-        {found.length > 0 && <Button size="sm" variant="ghost" onClick={() => { setFound([]); setHighlighted([]); cancelSelection(); }}><RotateCcw className="h-4 w-4" /> Reiniciar</Button>}
+        {found.length > 0 && <Button size="sm" variant="ghost" onClick={() => { setFound([]); setHighlighted([]); setAnnouncement('Sopa de letras reiniciada.'); cancelSelection(); }}><RotateCcw className="h-4 w-4" /> Reiniciar</Button>}
       </div>
 
       <p id="sopa-instructions" className="text-sm text-muted">
@@ -159,9 +168,11 @@ export function SopaLetrasView({ data }: { data: SopaContenido }) {
           onPointerUp={handlePointerUp}
           onPointerCancel={cancelSelection}
           aria-describedby="sopa-instructions"
+          role="grid"
+          aria-label={`Sopa de letras de ${rows} filas por ${cols} columnas`}
         >
           {grid.map((row, rowIndex) => (
-            <div key={rowIndex} className="flex">
+            <div key={rowIndex} className="flex" role="row">
               {row.map((character, columnIndex) => {
                 const selected = isSelected(rowIndex, columnIndex);
                 const highlightedCell = isHighlighted(rowIndex, columnIndex);
@@ -176,14 +187,15 @@ export function SopaLetrasView({ data }: { data: SopaContenido }) {
                     tabIndex={active ? 0 : -1}
                     onFocus={() => setFocusedCell({ r: rowIndex, c: columnIndex })}
                     onKeyDown={(event) => handleCellKeyDown(event, { r: rowIndex, c: columnIndex })}
-                    aria-pressed={selected || highlightedCell}
+                    role="gridcell"
+                    aria-selected={selected || highlightedCell}
                     aria-label={`Fila ${rowIndex + 1}, columna ${columnIndex + 1}, letra ${String(character).toUpperCase()}${highlightedCell ? ', parte de una palabra encontrada' : selected ? ', selección actual' : ''}`}
                     className={cn(
-                      'grid h-10 w-10 touch-none place-items-center font-mono text-sm font-bold transition-colors focus-visible:z-10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-brand-600 sm:h-9 sm:w-9',
+                      'grid h-11 w-11 touch-none place-items-center font-mono text-sm font-bold transition-colors focus-visible:z-10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-focus',
                       highlightedCell
                         ? 'rounded-full bg-emerald-200 text-emerald-800 dark:bg-emerald-500/30 dark:text-emerald-200'
                         : selected
-                          ? 'rounded-md bg-brand-400 text-white'
+                          ? 'rounded-md bg-brand-600 text-white ring-2 ring-brand-900 ring-offset-1 ring-offset-surface'
                           : 'text-fg hover:bg-brand-50 dark:hover:bg-brand-500/10',
                     )}
                   >

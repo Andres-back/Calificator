@@ -84,7 +84,8 @@ export function ResolverEvaluacionPage() {
         title={evaluacion.nombre}
         eyebrow="Evaluación online"
         subtitle="Lee los enunciados con calma y envía tu respuesta para revisión docente."
-        action={<Link to="/app/evaluaciones" className="focus-ring inline-flex h-11 items-center justify-center gap-2 rounded-lg border border-border bg-surface px-5 text-sm font-semibold text-fg transition-colors hover:bg-surface-2"><ArrowLeft className="h-4 w-4" /> Volver</Link>}
+        breadcrumbs={[{ label: 'Evaluaciones', to: '/app/evaluaciones' }, { label: evaluacion.nombre }]}
+        backAction={<Link to="/app/evaluaciones" className="focus-ring inline-flex h-11 items-center justify-center gap-2 rounded-lg border border-border bg-surface px-5 text-sm font-semibold text-fg transition-colors hover:bg-surface-2"><ArrowLeft className="h-4 w-4" aria-hidden="true" /> Volver</Link>}
       />
 
       <Card className="space-y-4 border-l-4 border-l-brand-500 p-5">

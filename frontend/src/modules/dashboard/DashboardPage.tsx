@@ -7,11 +7,9 @@ import {
   Camera,
   CheckCircle2,
   ClipboardCheck,
-  Clock,
   GraduationCap,
   ListChecks,
   Plus,
-  Sparkles,
   Wand2,
 } from 'lucide-react';
 import { useAuth } from '@/stores/auth';
@@ -24,6 +22,7 @@ import { DashboardEstudiante } from './DashboardEstudiante';
 import { DashboardAdmin } from './DashboardAdmin';
 import { cn } from '@/lib/cn';
 import { routes } from '@/config/routes';
+import type { MaterialListItem } from '@/types/api';
 
 const fade = {
   hidden: { opacity: 0, y: 10 },
@@ -122,7 +121,7 @@ function DashboardDocente() {
           </div>
           <div className="mt-5 divide-y divide-border">
             {teacherActions.map((action, index) => (
-              <motion.div key={action.to} custom={index} variants={fade} initial="hidden" animate="show">
+              <motion.div key={action.title} custom={index} variants={fade} initial="hidden" animate="show">
                 <Link to={action.to} className="group flex items-start gap-3 py-4 first:pt-0 last:pb-0">
                   <span className={cn('grid h-10 w-10 shrink-0 place-items-center rounded-lg', action.tone)}><action.icon className="h-5 w-5" /></span>
                   <span className="min-w-0 flex-1">
@@ -242,7 +241,7 @@ function DashboardDocente() {
         >
           {(recent) => (
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
-              {recent.map((item: any, index: number) => {
+              {recent.map((item: MaterialListItem, index: number) => {
                 const meta = TOOLS.find((t) => t.tipo === item.tipo);
                 const Icon = meta?.icon ?? Wand2;
                 return (

@@ -1,9 +1,9 @@
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
-import { Activity, AlertTriangle, ArrowRight, Bot, FileText, Presentation, Settings2, ShieldCheck, Sparkles, Users } from 'lucide-react';
-import { Badge, Card, Skeleton } from '@/components/ui';
-import { getAISettings } from '@/modules/admin/api';
+import { Activity, AlertTriangle, Bot, FileText, GitCompareArrows, Presentation, Settings2, ShieldCheck, Sparkles } from 'lucide-react';
+import { ActionCard, AlertCard, Badge, Card, MetricCard, Skeleton } from '@/components/ui';
+import { getAIAudit, getAISettings, getConfigHash } from '@/modules/admin/api';
 import { toApiError } from '@/lib/api';
 import { useAuth } from '@/stores/auth';
 
@@ -23,6 +23,14 @@ export function DashboardAdmin() {
   const settingsQuery = useQuery({
     queryKey: ['admin', 'ai-settings'],
     queryFn: getAISettings,
+  });
+  const consistencyQuery = useQuery({
+    queryKey: ['admin', 'ai-config-hash'],
+    queryFn: getConfigHash,
+  });
+  const auditQuery = useQuery({
+    queryKey: ['admin', 'ai-audit', 6],
+    queryFn: () => getAIAudit(6),
   });
   const firstName = user?.nombre?.split(' ')[0] ?? 'Administrador';
 
@@ -55,15 +63,25 @@ export function DashboardAdmin() {
         </div>
       </motion.section>
 
-      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      {providerAlerts.length > 0 && (
+        <AlertCard
+          tone="error"
+          title={`${providerAlerts.length} proveedor${providerAlerts.length === 1 ? '' : 'es'} de IA requiere${providerAlerts.length === 1 ? '' : 'n'} atención`}
+          description="La última prueba reportó un error. Revisa el proveedor antes de depender de ese flujo."
+          action={<Link to="/app/admin/configuracion-ia" className="focus-ring inline-flex min-h-11 items-center rounded-lg border border-rose-700 px-4 text-sm font-semibold text-rose-700 hover:bg-rose-50 dark:text-rose-200 dark:hover:bg-rose-500/10">Revisar proveedores</Link>}
+        />
+      )}
+
+      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5" aria-label="Estado de la plataforma">
         {settingsQuery.isLoading ? (
-          Array.from({ length: 4 }).map((_, index) => <Skeleton key={index} className="h-32" />)
+          Array.from({ length: 5 }).map((_, index) => <Skeleton key={index} className="h-36" />)
         ) : (
           <>
-            <StatusCard icon={Bot} label="Proveedores activos" value={`${activeProviders.length}`} detail={`${configuredProviders} con credenciales configuradas`} tone="brand" />
-            <StatusCard icon={Activity} label="Llamadas de IA" value={`${usage?.total_calls ?? 0}`} detail="Uso registrado por la plataforma" tone="success" />
-            <StatusCard icon={AlertTriangle} label="Alertas de proveedor" value={`${providerAlerts.length}`} detail={providerAlerts.length ? 'Requieren revisión técnica' : 'Sin errores reportados'} tone={providerAlerts.length ? 'warning' : 'success'} />
-            <StatusCard icon={Sparkles} label="Costo estimado" value={formatCost(usage?.total_cost ?? 0)} detail="Acumulado registrado" tone="neutral" />
+            <MetricCard icon={Bot} label="Proveedores activos" value={activeProviders.length} context={`${configuredProviders} con credenciales configuradas`} tone="brand" status="Actual" />
+            <MetricCard icon={AlertTriangle} label="Alertas de proveedor" value={providerAlerts.length} context={providerAlerts.length ? 'Requieren revisión técnica' : 'Sin errores reportados'} tone={providerAlerts.length ? 'warning' : 'success'} status={providerAlerts.length ? 'Atención' : 'Correcto'} />
+            <MetricCard icon={GitCompareArrows} label="Backend y worker" value={consistencyQuery.isLoading ? '—' : consistencyQuery.data?.consistent ? 'Consistentes' : 'Revisar'} context={consistencyQuery.data?.consistent ? 'Ambos usan la misma configuración' : 'Comprueba el estado del worker'} tone={consistencyQuery.data?.consistent ? 'success' : 'warning'} status="Configuración" />
+            <MetricCard icon={Activity} label="Llamadas de IA" value={usage?.total_calls ?? 0} context="Uso registrado por la plataforma" tone="info" status="Acumulado" />
+            <MetricCard icon={Sparkles} label="Costo estimado" value={formatCost(usage?.total_cost ?? 0)} context="Costo acumulado informado por los proveedores" tone="neutral" status="Referencia" />
           </>
         )}
       </section>
@@ -91,18 +109,7 @@ export function DashboardAdmin() {
         </div>
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           {quickLinks.map((item) => (
-            <Link key={item.to} to={item.to}>
-              <Card interactive className="group flex h-full items-center gap-3 p-4">
-                <div className={`grid h-10 w-10 shrink-0 place-items-center rounded-lg ${item.tone}`}>
-                  <item.icon className="h-5 w-5" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="font-semibold text-sm">{item.label}</p>
-                  <p className="mt-0.5 text-xs text-muted">{item.description}</p>
-                </div>
-                <ArrowRight className="h-4 w-4 text-muted transition group-hover:translate-x-0.5 group-hover:text-brand-500" />
-              </Card>
-            </Link>
+            <ActionCard key={item.to} to={item.to} icon={item.icon} title={item.label} description={item.description} />
           ))}
         </div>
       </section>
@@ -137,43 +144,28 @@ export function DashboardAdmin() {
 
         <Card className="p-5">
           <div className="flex items-center gap-3">
-            <span className="grid h-10 w-10 place-items-center rounded-lg bg-surface-2 text-muted"><Users className="h-5 w-5" /></span>
+            <span className="grid h-10 w-10 place-items-center rounded-lg bg-surface-2 text-secondary"><FileText className="h-5 w-5" aria-hidden="true" /></span>
             <div>
-              <h2 className="font-display font-bold">Usuarios</h2>
-              <p className="text-sm text-muted">Administración de cuentas</p>
+              <h2 className="font-display font-bold">Últimos cambios administrativos</h2>
+              <p className="text-sm text-secondary">Registro reciente de configuración</p>
             </div>
           </div>
-          <p className="mt-5 text-sm leading-6 text-muted">
-            El módulo de usuarios todavía no está disponible en este entorno. No se muestra una acción que no tenga un endpoint autorizado.
-          </p>
+          {auditQuery.isLoading ? (
+            <Skeleton className="mt-5 h-24" />
+          ) : auditQuery.data?.logs.length ? (
+            <ul className="mt-5 divide-y divide-border">
+              {auditQuery.data.logs.slice(0, 4).map((log, index) => (
+                <li key={`${log.created_at ?? 'sin-fecha'}-${index}`} className="py-3">
+                  <p className="text-sm font-semibold text-fg">{log.action}</p>
+                  <p className="mt-0.5 text-xs text-secondary">{log.entity}{log.field ? ` · ${log.field}` : ''}</p>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="mt-5 text-sm leading-6 text-secondary">Todavía no hay cambios administrativos registrados.</p>
+          )}
         </Card>
       </section>
     </div>
-  );
-}
-
-function StatusCard({ icon: Icon, label, value, detail, tone }: {
-  icon: typeof Activity;
-  label: string;
-  value: string;
-  detail: string;
-  tone: 'brand' | 'success' | 'warning' | 'neutral';
-}) {
-  const tones = {
-    brand: 'bg-brand-500/10 text-brand-600 dark:text-brand-300',
-    success: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-300',
-    warning: 'bg-amber-500/10 text-amber-600 dark:text-amber-300',
-    neutral: 'bg-surface-2 text-muted',
-  };
-  return (
-    <Card className="p-5">
-      <div className="flex items-center justify-between gap-3">
-        <span className={`grid h-10 w-10 place-items-center rounded-lg ${tones[tone]}`}><Icon className="h-5 w-5" /></span>
-        <Badge tone={tone === 'neutral' ? 'neutral' : tone}>{tone === 'warning' ? 'Atención' : 'Actual'}</Badge>
-      </div>
-      <p className="mt-5 text-2xl font-extrabold">{value}</p>
-      <p className="mt-1 text-sm font-semibold">{label}</p>
-      <p className="mt-1 text-xs text-muted">{detail}</p>
-    </Card>
   );
 }

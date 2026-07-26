@@ -1,46 +1,85 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Outlet } from 'react-router-dom';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { Sidebar } from './Sidebar';
 import { Topbar } from './Topbar';
 
 export function AppShell() {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const menuButtonRef = useRef<HTMLButtonElement>(null);
+  const appContentRef = useRef<HTMLDivElement>(null);
+  const reduceMotion = useReducedMotion();
+
+  useEffect(() => {
+    if (!mobileOpen) return;
+    const previousOverflow = document.body.style.overflow;
+    const appContent = appContentRef.current;
+    document.body.style.overflow = 'hidden';
+    appContent?.setAttribute('inert', '');
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        setMobileOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleEscape);
+    const menuButton = menuButtonRef.current;
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      appContent?.removeAttribute('inert');
+      window.removeEventListener('keydown', handleEscape);
+      menuButton?.focus();
+    };
+  }, [mobileOpen]);
 
   return (
-    <div className="flex h-screen bg-bg">
-      {/* Sidebar desktop */}
+    <div className="flex min-h-dvh bg-bg lg:h-dvh">
+      <a
+        href="#main-content"
+        className="focus-ring fixed left-3 top-3 z-[100] -translate-y-24 rounded-lg bg-brand-700 px-4 py-3 text-sm font-semibold text-white shadow-lg transition-transform focus:translate-y-0"
+      >
+        Saltar al contenido principal
+      </a>
+
       <div className="hidden lg:block">
         <Sidebar />
       </div>
 
-      {/* Sidebar móvil */}
       <AnimatePresence>
         {mobileOpen && (
           <>
             <motion.div
-              className="fixed inset-0 z-40 bg-slate-900/50 backdrop-blur-sm lg:hidden"
-              initial={{ opacity: 0 }}
+              className="fixed inset-0 z-40 bg-slate-900/55 backdrop-blur-sm lg:hidden"
+              initial={reduceMotion ? false : { opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setMobileOpen(false)}
+              aria-hidden="true"
             />
             <motion.div
               className="fixed inset-y-0 left-0 z-50 lg:hidden"
-              initial={{ x: -300 }}
+              initial={reduceMotion ? false : { x: -300 }}
               animate={{ x: 0 }}
               exit={{ x: -300 }}
-              transition={{ type: 'spring', damping: 28, stiffness: 280 }}
+              transition={reduceMotion ? { duration: 0 } : { type: 'spring', damping: 28, stiffness: 280 }}
             >
-              <Sidebar onNavigate={() => setMobileOpen(false)} />
+              <Sidebar mobile onNavigate={() => setMobileOpen(false)} onClose={() => setMobileOpen(false)} />
             </motion.div>
           </>
         )}
       </AnimatePresence>
 
-      <div className="flex min-w-0 flex-1 flex-col">
-        <Topbar onMenu={() => setMobileOpen(true)} />
-        <main className="flex-1 overflow-y-auto px-4 py-5 sm:px-6 lg:px-8 lg:py-7">
+      <div ref={appContentRef} className="flex min-w-0 flex-1 flex-col lg:min-h-0">
+        <Topbar
+          onMenu={() => setMobileOpen(true)}
+          menuButtonRef={menuButtonRef}
+          menuExpanded={mobileOpen}
+        />
+        <main
+          id="main-content"
+          tabIndex={-1}
+          className="safe-area-pb min-w-0 flex-1 px-4 py-5 outline-none sm:px-6 lg:min-h-0 lg:overflow-y-auto lg:px-8 lg:py-7"
+        >
           <div className="mx-auto max-w-7xl">
             <Outlet />
           </div>

@@ -43,8 +43,8 @@ export function TagInput({
           className={cn('inline-flex items-center gap-1 rounded-lg border px-2 py-1 text-sm font-semibold', CHIP_COLORS[i % CHIP_COLORS.length])}
         >
           {tag}
-          <button type="button" onClick={() => onChange(value.filter((_, j) => j !== i))} className="opacity-60 hover:opacity-100">
-            <X className="h-3.5 w-3.5" />
+          <button type="button" onClick={() => onChange(value.filter((_, j) => j !== i))} className="focus-ring grid min-h-10 min-w-10 place-items-center rounded-lg opacity-70 hover:bg-black/5 hover:opacity-100" aria-label={`Eliminar ${tag}`}>
+            <X className="h-4 w-4" aria-hidden="true" />
           </button>
         </motion.span>
       ))}
@@ -79,15 +79,15 @@ export function Stepper({
   return (
     <div className="rounded-xl border border-border bg-surface p-3">
       <div className="flex items-center gap-3">
-        <button type="button" onClick={() => onChange(clamp(value - 1))} className="grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-border hover:border-brand-300 hover:bg-surface-2 transition">
-          <Minus className="h-4 w-4" />
+        <button type="button" onClick={() => onChange(clamp(value - 1))} disabled={value <= min} aria-label={`Reducir ${label ?? 'valor'}`} className="focus-ring grid h-11 w-11 shrink-0 place-items-center rounded-lg border border-border transition hover:border-brand-300 hover:bg-surface-2 disabled:cursor-not-allowed disabled:opacity-50">
+          <Minus className="h-4 w-4" aria-hidden="true" />
         </button>
         <div className="flex-1 text-center">
           <span className="font-display text-2xl font-extrabold text-gradient">{value}</span>
           {label && <span className="ml-1 text-xs text-muted">{label}</span>}
         </div>
-        <button type="button" onClick={() => onChange(clamp(value + 1))} className="grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-border hover:border-brand-300 hover:bg-surface-2 transition">
-          <Plus className="h-4 w-4" />
+        <button type="button" onClick={() => onChange(clamp(value + 1))} disabled={value >= max} aria-label={`Aumentar ${label ?? 'valor'}`} className="focus-ring grid h-11 w-11 shrink-0 place-items-center rounded-lg border border-border transition hover:border-brand-300 hover:bg-surface-2 disabled:cursor-not-allowed disabled:opacity-50">
+          <Plus className="h-4 w-4" aria-hidden="true" />
         </button>
       </div>
       <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-surface-2">
@@ -108,14 +108,16 @@ export function Segmented<T extends string>({
   options: { value: T; label: string; icon?: React.ReactNode }[];
 }) {
   return (
-    <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${options.length}, minmax(0,1fr))` }}>
+    <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${options.length}, minmax(0,1fr))` }} role="radiogroup">
       {options.map((o) => (
         <button
           key={o.value}
           type="button"
           onClick={() => onChange(o.value)}
+          role="radio"
+          aria-checked={value === o.value}
           className={cn(
-            'relative rounded-xl border-2 px-3 py-2.5 text-sm font-semibold transition',
+            'focus-ring relative min-h-11 rounded-xl border-2 px-3 py-2.5 text-sm font-semibold transition',
             value === o.value ? 'border-brand-400 text-brand-700 dark:text-brand-200' : 'border-border text-muted hover:border-brand-200',
           )}
         >
@@ -149,8 +151,9 @@ export function OptionChips({
             key={o.value}
             type="button"
             onClick={() => toggle(o.value)}
+            aria-pressed={on}
             className={cn(
-              'rounded-full border px-3.5 py-1.5 text-sm font-semibold transition',
+              'focus-ring min-h-11 rounded-full border px-3.5 py-1.5 text-sm font-semibold transition',
               on ? 'border-brand-600 bg-brand-600 text-white shadow-sm' : 'border-border bg-surface text-muted hover:border-brand-300 hover:text-fg',
             )}
           >

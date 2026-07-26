@@ -13,9 +13,11 @@ import { listCalificaciones, confirmarNota, ajustarNota } from './api';
 import { calificacionesTour } from './tourSteps';
 import { queryClient } from '@/lib/queryClient';
 import { toApiError } from '@/lib/api';
+import { useAuth } from '@/stores/auth';
 import type { Calificacion } from '@/types/api';
 
 export function CalificacionesPage() {
+  const role = useAuth((state) => state.user?.rol ?? 'profesor');
   const { data: materias } = useMaterias();
   const [materiaId, setMateriaId] = useState('');
   const [evalId, setEvalId] = useState('');
@@ -109,7 +111,7 @@ export function CalificacionesPage() {
         </div>
       </div>
 
-      <GuidedTour steps={calificacionesTour} open={tourOpen} onClose={() => setTourOpen(false)} />
+      <GuidedTour steps={calificacionesTour} open={tourOpen} onClose={() => setTourOpen(false)} tourId="calificaciones" role={role} version={1} />
 
       {noMaterias ? (
         <EmptyState icon={GraduationCap} title="Primero crea una materia y una evaluación" />

@@ -77,14 +77,14 @@ export function LoginPage() {
 
   if (status === 'authenticated') {
     return (
-      <div className="grid min-h-screen place-items-center">
+      <div className="grid min-h-dvh place-items-center">
         <LoadingScreen label="Redirigiendo..." />
       </div>
     );
   }
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-surface text-fg">
+    <div className="relative min-h-dvh bg-surface text-fg">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(99,102,241,0.16),transparent_34%),radial-gradient(circle_at_bottom_right,rgba(20,184,166,0.13),transparent_30%)]" />
       <div className="absolute inset-0 z-0">
         <img
@@ -97,7 +97,7 @@ export function LoginPage() {
         <ThemeToggle />
       </div>
 
-      <main className="relative grid min-h-screen place-items-center px-4 py-10 sm:px-6">
+      <main className="relative grid min-h-dvh place-items-center px-4 py-10 sm:px-6">
         <div className="grid w-full max-w-5xl gap-8 lg:grid-cols-[1fr_420px] lg:items-center">
           <section className="hidden lg:block">
             <div className="mb-8 flex items-center gap-3">
@@ -137,11 +137,11 @@ export function LoginPage() {
                 {[
                   { icon: BookOpenCheck, text: 'Crea evaluaciones y recursos en un flujo ordenado.' },
                   { icon: ShieldCheck, text: 'Mantiene al docente como autoridad final de la nota.' },
-                  { icon: LockKeyhole, text: 'Acceso seguro mediante sesion protegida por el backend.' },
+                  { icon: LockKeyhole, text: 'Acceso seguro mediante sesión protegida por el backend.' },
                 ].map((item) => (
                   <div key={item.text} className="flex items-center gap-3 text-sm text-muted">
                     <div className="grid h-9 w-9 place-items-center rounded-xl bg-surface-2 text-brand-500">
-                      <item.icon className="h-4.5 w-4.5" />
+                      <item.icon className="h-4 w-4" aria-hidden="true" />
                     </div>
                     <span>{item.text}</span>
                   </div>
@@ -205,7 +205,7 @@ export function LoginPage() {
                     <button
                       type="button"
                       onClick={() => setShowPassword((value) => !value)}
-                      className="absolute right-2 top-1/2 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-lg text-muted transition hover:bg-surface-2 hover:text-fg focus-ring"
+                      className="absolute right-0 top-1/2 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-lg text-muted transition hover:bg-surface-2 hover:text-fg focus-ring"
                       aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
                     >
                       {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -215,13 +215,13 @@ export function LoginPage() {
                 </Field>
 
                 {errors.general && (
-                  <div className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-200">
+                  <div className="rounded-xl border border-rose-300 bg-rose-50 px-3 py-2 text-sm text-rose-800 dark:border-rose-500/40 dark:bg-rose-500/10 dark:text-rose-200" role="alert">
                     {errors.general}
                   </div>
                 )}
 
-                <Button type="submit" size="lg" loading={loading} disabled={loading} className="w-full">
-                  Iniciar sesion
+                <Button type="submit" size="lg" loading={loading} loadingLabel="Iniciando sesión…" disabled={loading} className="w-full">
+                  Iniciar sesión
                 </Button>
               </form>
 
@@ -230,7 +230,8 @@ export function LoginPage() {
                 <span className="rounded-full bg-surface-2 px-2.5 py-1 font-semibold">Recuperar: próximamente</span>
               </div>
 
-              {/* Quick access — temporal, para desarrollo */}
+              {/* Accesos de prueba visibles solo durante desarrollo local. */}
+              {import.meta.env.DEV && (
               <div className="mt-5 border-t border-border pt-4">
                 <p className="mb-2 text-center text-[11px] font-semibold uppercase tracking-wider text-muted">Accesos rápidos</p>
                 <div className="flex gap-2">
@@ -278,6 +279,7 @@ export function LoginPage() {
                   </button>
                 </div>
               </div>
+              )}
             </Card>
           </motion.div>
         </div>

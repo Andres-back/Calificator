@@ -13,7 +13,7 @@ import {
   TrendingUp,
   UserPlus,
 } from 'lucide-react';
-import { Card, Badge, Skeleton, EmptyState } from '@/components/ui';
+import { ActionCard, Card, Badge, Skeleton, EmptyState, QueryError } from '@/components/ui';
 import { XaliAvatar } from '@/modules/xali/components/XaliAvatar';
 import { useAuth } from '@/stores/auth';
 import { getResumenAcademico } from '@/modules/calificaciones/api';
@@ -35,7 +35,7 @@ export function DashboardEstudiante() {
   const user = useAuth((state) => state.user);
   const firstName = user?.nombre?.split(' ')[0] ?? 'Estudiante';
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['student-academic-summary', user?.id],
     queryFn: () => getResumenAcademico(user!.id),
     enabled: !!user?.id,
@@ -85,11 +85,43 @@ export function DashboardEstudiante() {
         </div>
       </motion.div>
 
+      <section aria-labelledby="student-next-title">
+        <div className="mb-4">
+          <p className="text-xs font-bold uppercase tracking-wide text-brand-700 dark:text-brand-300">Prioridad</p>
+          <h2 id="student-next-title" className="section-title mt-1">¿Qué actividad tienes pendiente?</h2>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <ActionCard
+            to="/app/evaluaciones"
+            icon={ClipboardCheck}
+            title="Revisar evaluaciones"
+            description="Consulta las actividades publicadas y continúa las que tengas pendientes."
+            tone="brand"
+            meta="Abrir evaluaciones"
+          />
+          <ActionCard
+            to="/app/xali"
+            icon={Sparkles}
+            title="Pedir ayuda a Xali"
+            description="Aclara una duda o repasa la retroalimentación que ya recibiste."
+            tone="info"
+            meta="Conversar con Xali"
+          />
+        </div>
+      </section>
+
       {/* Resumen académico */}
       <section>
         <h2 className="mb-4 font-display text-xl font-bold">Tu progreso</h2>
         {isLoading ? (
           <div className="grid gap-4 md:grid-cols-3">{Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-40" />)}</div>
+        ) : isError ? (
+          <QueryError
+            title="No pudimos cargar tu progreso"
+            description="Tus calificaciones no se reemplazaron por ceros. Reintenta para consultar la información confirmada."
+            error={error}
+            onRetry={() => void refetch()}
+          />
         ) : !hasData ? (
           <EmptyState
             icon={GraduationCap}
@@ -188,9 +220,9 @@ export function DashboardEstudiante() {
         <h2 className="mb-4 font-display text-xl font-bold">Accesos rápidos</h2>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {QUICK_LINKS.map((link, i) => (
-            <motion.div key={link.to} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}>
-              <Link to={link.to}>
-                <Card interactive className="group flex items-center gap-3 p-4">
+            <motion.div key={link.to} className="min-w-0" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}>
+              <Link to={link.to} className="block min-w-0">
+                <Card interactive className="group flex min-w-0 items-center gap-3 p-4">
                   {'xali' in link && link.xali ? (
                     <XaliAvatar size="md" mood="student" className="rounded-xl" />
                   ) : (
@@ -202,7 +234,7 @@ export function DashboardEstudiante() {
                     <p className="font-semibold text-sm">{link.label}</p>
                     <p className="truncate text-xs text-muted">{link.desc}</p>
                   </div>
-                  <ArrowRight className="h-4 w-4 text-muted transition group-hover:translate-x-0.5 group-hover:text-brand-500" />
+                  <ArrowRight className="h-4 w-4 shrink-0 text-muted transition group-hover:translate-x-0.5 group-hover:text-brand-500" />
                 </Card>
               </Link>
             </motion.div>

@@ -17,7 +17,7 @@ import type { DBAUnifiedItem, Evaluacion, EvaluacionEstado, EvaluacionModalidad 
 const ESTADO_LABEL: Record<EvaluacionEstado, string> = {
   borrador: 'Borrador',
   publicada: 'Publicada',
-  en_calificacion: 'En calificacion',
+  en_calificacion: 'En calificación',
   pendiente_revision: 'Por revisar',
   cerrada: 'Cerrada',
 };
@@ -146,7 +146,7 @@ function DBASelector({
   onToggle: (item: DBAUnifiedItem) => void;
 }) {
   if (loading) return <Skeleton className="h-28" />;
-  if (error) return <p className="text-sm text-muted">No se pudieron cargar los DBA. Puedes crear la evaluacion sin seleccionarlos.</p>;
+  if (error) return <p className="text-sm text-muted">No se pudieron cargar los DBA. Puedes crear la evaluación sin seleccionarlos.</p>;
   if (!items || items.length === 0) return <p className="text-sm text-muted">No hay DBA disponibles.</p>;
 
   const hasCustom = items.some((item) => item.fuente === 'personalizado');
@@ -339,7 +339,7 @@ function EvaluationFormModal({
           <p className="mt-1">La IA calificará automáticamente según los criterios que definas. Si no agregas criterios, la calificación será más general.</p>
         </div>
 
-        <Field label="DBA" hint="Opcional. Selecciona los derechos basicos asociados a la evaluacion.">
+        <Field label="DBA" hint="Opcional. Selecciona los derechos básicos asociados a la evaluación.">
           <DBASelector
             items={dbaItems}
             selectedOfficial={form.dba_ids}
@@ -352,7 +352,7 @@ function EvaluationFormModal({
 
         <div className="flex flex-col-reverse gap-3 border-t border-border pt-4 sm:flex-row sm:justify-end">
           <Button type="button" variant="outline" onClick={onClose}>Cancelar</Button>
-          <Button onClick={onSubmit} loading={isPending}>{isEdit ? 'Guardar cambios' : 'Crear evaluacion'}</Button>
+          <Button onClick={onSubmit} loading={isPending}>{isEdit ? 'Guardar cambios' : 'Crear evaluación'}</Button>
         </div>
       </div>
     </Modal>

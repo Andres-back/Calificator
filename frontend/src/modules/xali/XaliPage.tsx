@@ -1,8 +1,8 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import toast from 'react-hot-toast';
-import { Send, Trash2, Bot, ArrowRight, GraduationCap } from 'lucide-react';
+import { Send, Trash2, Bot, ArrowRight, ArrowDown, GraduationCap, RefreshCw } from 'lucide-react';
 import { Button, Card, RichContent, Select, QueryError, QueryLoading } from '@/components/ui';
 import { getHistory, sendMessage, clearHistory, listEvaluacionesEntregadas, sendEvaluationMessage } from './api';
 import { XaliAvatar } from './components/XaliAvatar';
@@ -70,13 +70,18 @@ export function XaliPage() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [thinking, setThinking] = useState(false);
+  const [failedPrompt, setFailedPrompt] = useState<string | null>(null);
+  const [isAtBottom, setIsAtBottom] = useState(true);
   const endRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const reduceMotion = useReducedMotion();
 
   const entregadasFiltradas = useMemo(
     () => entregadas.filter((item) => !materiaId || item.materia_id === materiaId),
     [entregadas, materiaId],
   );
   const evaluacionContextual = entregadas.find((item) => item.evaluacion_id === evaluacionContextualId);
+  const materiaContextual = materias.find((item) => item.id === materiaId);
 
   useEffect(() => {
     if (history) setMessages(history);
@@ -86,29 +91,38 @@ export function XaliPage() {
       setEvaluacionContextualId('');
     }
   }, [entregadasFiltradas, evaluacionContextualId]);
-  useEffect(() => {
-    endRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, thinking]);
+  const scrollToLatest = useCallback((behavior: ScrollBehavior = reduceMotion ? 'auto' : 'smooth') => {
+    endRef.current?.scrollIntoView({ behavior, block: 'end' });
+    setIsAtBottom(true);
+  }, [reduceMotion]);
 
-  const send = async (text: string) => {
+  useEffect(() => {
+    if (isAtBottom || thinking) scrollToLatest();
+  }, [isAtBottom, messages, scrollToLatest, thinking]);
+
+  const send = async (text: string, appendUserMessage = true) => {
     const msg = text.trim();
     if (!msg || thinking) return;
     if (evaluacionContextual && !evaluacionContextual.puede_chatear) {
-      toast.error('Primero debes esperar la confirmacion del docente.');
+      toast.error('Primero debes esperar la confirmación del docente.');
       return;
     }
     setInput('');
-    const userMsg: ChatMessage = { id: 'u' + Date.now(), role: 'user', mensaje: msg, created_at: new Date().toISOString() };
-    setMessages((m) => [...m, userMsg]);
+    setFailedPrompt(null);
+    if (appendUserMessage) {
+      const userMsg: ChatMessage = { id: 'u' + Date.now(), role: 'user', mensaje: msg, created_at: new Date().toISOString() };
+      setMessages((current) => [...current, userMsg]);
+    }
     setThinking(true);
     try {
       const { respuesta } = evaluacionContextual?.puede_chatear
         ? await sendEvaluationMessage(evaluacionContextual.evaluacion_id, msg)
         : await sendMessage(msg, materiaId || undefined);
       setMessages((m) => [...m, { id: 'a' + Date.now(), role: 'assistant', mensaje: respuesta, created_at: new Date().toISOString() }]);
-    } catch (e) {
-      toast.error(toApiError(e).detail);
-      setMessages((m) => [...m, { id: 'e' + Date.now(), role: 'assistant', mensaje: 'No pude responder en este momento. Intenta de nuevo.', created_at: new Date().toISOString() }]);
+    } catch (error) {
+      console.error('[Xali] No fue posible responder', toApiError(error).status);
+      toast.error('Xali no pudo responder en este momento. Puedes reintentar el último mensaje.');
+      setFailedPrompt(msg);
     } finally {
       setThinking(false);
     }
@@ -147,6 +161,8 @@ export function XaliPage() {
         <div className="flex flex-wrap items-center gap-2">
           {isStudent && entregadasFiltradas.length > 0 && (
             <Select
+              id="xali-evaluation-context"
+              aria-label="Contexto de evaluación"
               value={evaluacionContextualId}
               onChange={(e) => {
                 setEvaluacionContextualId(e.target.value);
@@ -163,7 +179,7 @@ export function XaliPage() {
               ))}
             </Select>
           )}
-          <Select value={materiaId} onChange={(e) => setMateriaId(e.target.value)} className="w-44">
+          <Select id="xali-subject-context" aria-label="Contexto de materia" value={materiaId} onChange={(e) => setMateriaId(e.target.value)} className="w-full sm:w-48">
             <option value="">Todas</option>
             {materias.map((m) => (
               <option key={m.id} value={m.id}>
@@ -172,12 +188,18 @@ export function XaliPage() {
             ))}
           </Select>
           {messages.length > 0 && (
-            <Button variant="ghost" size="sm" onClick={reset}>
-              <Trash2 className="h-4 w-4" />
+            <Button variant="ghost" size="icon" onClick={reset} aria-label="Borrar historial de Xali" title="Borrar historial">
+              <Trash2 className="h-4 w-4" aria-hidden="true" />
             </Button>
           )}
         </div>
       </div>
+
+      {materiaContextual && (
+        <div className="rounded-xl border border-sky-300 bg-sky-50 px-4 py-2.5 text-sm text-sky-900 dark:border-sky-500/40 dark:bg-sky-500/10 dark:text-sky-100" role="status">
+          Xali está usando el contexto de <strong>{materiaContextual.nombre}</strong>.
+        </div>
+      )}
 
       {/* Contexto de evaluación activa (compacto, solo cuando tiene sentido) */}
       {isStudent && evaluacionContextual && (
@@ -221,9 +243,9 @@ export function XaliPage() {
       )}
 
       {/* ── Chat ── */}
-      <Card className="flex min-h-[480px] flex-1 flex-col overflow-hidden sm:min-h-[540px]">
+      <Card className="relative flex min-h-[480px] flex-1 flex-col overflow-hidden sm:min-h-[540px]">
         {/* Messages */}
-        <div className="flex-1 space-y-4 overflow-y-auto px-4 py-5 sm:px-6">
+        <div ref={scrollRef} className="flex-1 space-y-4 overflow-y-auto px-4 py-5 sm:px-6" role="log" aria-label="Historial de conversación con Xali" aria-live="polite" onScroll={(event) => { const element = event.currentTarget; setIsAtBottom(element.scrollHeight - element.scrollTop - element.clientHeight < 48); }}>
           {loadingHistory && messages.length === 0 && !thinking && (
             <QueryLoading label="Cargando historial…" className="flex min-h-[220px] items-center justify-center" />
           )}
@@ -318,9 +340,21 @@ export function XaliPage() {
             })}
           </AnimatePresence>
 
+          {failedPrompt && !thinking && (
+            <div className="flex items-start gap-2.5" role="alert">
+              <XaliAvatar size="xs" mood="thinking" />
+              <div className="max-w-[90%] rounded-2xl rounded-bl-md border border-rose-300 bg-rose-50 px-4 py-3 text-sm text-rose-900 dark:border-rose-500/40 dark:bg-rose-500/10 dark:text-rose-100">
+                <p>No pude responder ese mensaje. Revisa tu conexión o vuelve a intentarlo.</p>
+                <Button size="sm" variant="outline" className="mt-3" onClick={() => void send(failedPrompt, false)}>
+                  <RefreshCw className="h-4 w-4" aria-hidden="true" /> Reintentar mensaje
+                </Button>
+              </div>
+            </div>
+          )}
+
           {/* Thinking */}
           {thinking && (
-            <div className="flex items-end gap-2.5">
+            <div className="flex items-end gap-2.5" role="status" aria-label="Xali está respondiendo">
               <XaliAvatar size="xs" mood="thinking" />
               <div className="flex items-center gap-2.5 rounded-2xl rounded-bl-md border border-border bg-surface px-4 py-3">
                 <span className="flex items-center gap-1">
@@ -333,12 +367,17 @@ export function XaliPage() {
                     />
                   ))}
                 </span>
-                <span className="text-xs text-muted">Pensando…</span>
+                <span className="text-xs text-secondary">Xali está respondiendo…</span>
               </div>
             </div>
           )}
           <div ref={endRef} />
         </div>
+        {!isAtBottom && (
+          <Button type="button" size="sm" variant="secondary" className="absolute bottom-24 right-4 z-10 shadow-md" onClick={() => scrollToLatest()}>
+            <ArrowDown className="h-4 w-4" aria-hidden="true" /> Ir al mensaje más reciente
+          </Button>
+        )}
 
         {/* Input */}
         <form
@@ -349,6 +388,9 @@ export function XaliPage() {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder={inputPlaceholder}
+            aria-label="Mensaje para Xali"
+            aria-describedby="xali-input-help"
+            autoComplete="off"
             disabled={contextualBlocked}
             className="focus-ring min-h-12 flex-1 rounded-xl border border-border bg-surface-2 px-4 py-3 text-sm outline-none placeholder:text-muted/60 transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100 disabled:cursor-not-allowed disabled:opacity-60 dark:focus:ring-brand-500/20"
           />
@@ -357,16 +399,17 @@ export function XaliPage() {
             size="icon"
             loading={thinking}
             disabled={!input.trim() || contextualBlocked}
-            title="Enviar"
+            title="Enviar mensaje"
+            aria-label="Enviar mensaje a Xali"
             className="!rounded-xl"
           >
-            <Send className="h-4 w-4" />
+            <Send className="h-4 w-4" aria-hidden="true" />
           </Button>
         </form>
       </Card>
 
       {/* Footer sutil */}
-      <p className="text-center text-[11px] text-muted/60">
+      <p id="xali-input-help" className="text-center text-xs text-secondary">
         {isStudent
           ? 'Xali te orienta. Tu docente valida y decide.'
           : 'La IA sugiere. El docente decide.'}

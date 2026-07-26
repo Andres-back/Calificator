@@ -316,7 +316,7 @@ export function SalonPage() {
         }
       />
 
-      <GuidedTour steps={salonTour} open={tourOpen} onClose={() => setTourOpen(false)} />
+      <GuidedTour steps={salonTour} open={tourOpen} onClose={() => setTourOpen(false)} tourId="modo-salon" role={user?.rol ?? 'profesor'} version={1} />
 
       <Card className="flex items-start gap-3 border-l-4 border-l-emerald-500 p-5">
         <CheckCircle2 className="mt-0.5 h-5 w-5 text-emerald-500" />

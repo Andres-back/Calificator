@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { X, ArrowLeft, ArrowRight, Check, SkipForward } from 'lucide-react';
 import { Button } from './Button';
+import { markTourCompleted } from './tourState';
 
 export interface TourStep {
-  /** Selector CSS del elemento a resaltar, p. ej. `[data-tour="calificaciones-confirmar"]`. Opcional: si falta o no existe, el paso se muestra centrado. */
   target?: string;
   title: string;
   description: string;
@@ -15,52 +15,81 @@ export interface TourStep {
 interface Pos {
   top: number;
   left: number;
-  centered: boolean;
 }
 
 const CARD_W = 340;
 const GAP = 14;
 
-/**
- * Guía interactiva propia (sin dependencias externas). Resalta elementos por
- * selector y muestra una tarjeta explicativa paso a paso. Solo explica: no
- * dispara acciones ni modifica datos. Si un target no existe (p. ej. no hay
- * calificaciones cargadas) el paso se muestra centrado sin romperse.
- */
-export function GuidedTour({ steps, open, onClose }: { steps: TourStep[]; open: boolean; onClose: () => void }) {
+export function GuidedTour({
+  steps,
+  open,
+  onClose,
+  tourId,
+  role,
+  version = 1,
+}: {
+  steps: TourStep[];
+  open: boolean;
+  onClose: () => void;
+  tourId?: string;
+  role?: string;
+  version?: number;
+}) {
   const [index, setIndex] = useState(0);
   const [rect, setRect] = useState<DOMRect | null>(null);
-  const [pos, setPos] = useState<Pos>({ top: 0, left: 0, centered: true });
+  const [pos, setPos] = useState<Pos>({ top: 0, left: 0 });
   const cardRef = useRef<HTMLDivElement | null>(null);
+  const previousFocusRef = useRef<HTMLElement | null>(null);
+  const reduceMotion = useReducedMotion();
+  const [availableSteps, setAvailableSteps] = useState<TourStep[]>([]);
+  const [stepsResolved, setStepsResolved] = useState(false);
 
-  const step = steps[index];
-  const total = steps.length;
+  useLayoutEffect(() => {
+    if (!open) {
+      setAvailableSteps([]);
+      setStepsResolved(false);
+      return;
+    }
+    setIndex(0);
+    setAvailableSteps(steps.filter((candidate) => !candidate.target || document.querySelector(candidate.target)));
+    setStepsResolved(true);
+  }, [open, steps]);
+
+  const step = availableSteps[index];
+  const total = availableSteps.length;
   const isFirst = index === 0;
   const isLast = index === total - 1;
 
-  // Reiniciar al abrir.
   useEffect(() => {
-    if (open) setIndex(0);
+    if (!open) return;
+    previousFocusRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    setIndex(0);
+    return () => {
+      previousFocusRef.current?.focus();
+      previousFocusRef.current = null;
+    };
   }, [open]);
 
-  // Localizar y resaltar el target del paso actual.
+  useEffect(() => {
+    if (open && stepsResolved && total === 0) onClose();
+  }, [onClose, open, stepsResolved, total]);
+
   const measureTarget = useCallback(() => {
     if (!open || !step) return;
-    const el = step.target ? document.querySelector<HTMLElement>(step.target) : null;
-    if (el) {
-      el.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
-      setRect(el.getBoundingClientRect());
-    } else {
+    const element = step.target ? document.querySelector<HTMLElement>(step.target) : null;
+    if (!element) {
       setRect(null);
+      return;
     }
-  }, [open, step]);
+    element.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'center', inline: 'nearest' });
+    setRect(element.getBoundingClientRect());
+  }, [open, reduceMotion, step]);
 
   useEffect(() => {
     measureTarget();
-    // Re-medir tras el posible scroll suave.
-    const t = window.setTimeout(measureTarget, 320);
-    return () => window.clearTimeout(t);
-  }, [measureTarget, index]);
+    const timer = window.setTimeout(measureTarget, reduceMotion ? 0 : 320);
+    return () => window.clearTimeout(timer);
+  }, [measureTarget, index, reduceMotion]);
 
   useEffect(() => {
     if (!open) return;
@@ -73,66 +102,57 @@ export function GuidedTour({ steps, open, onClose }: { steps: TourStep[]; open: 
     };
   }, [open, measureTarget]);
 
-  // Calcular la posición de la tarjeta a partir del rect resaltado.
   useLayoutEffect(() => {
-    if (!open) return;
-    const cardH = cardRef.current?.offsetHeight ?? 190;
-    const vw = window.innerWidth;
-    const vh = window.innerHeight;
+    if (!open || !step) return;
+    const cardHeight = cardRef.current?.offsetHeight ?? 190;
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
     if (!rect) {
-      setPos({ top: Math.max(GAP, vh / 2 - cardH / 2), left: Math.max(GAP, vw / 2 - CARD_W / 2), centered: true });
+      setPos({ top: Math.max(GAP, viewportHeight / 2 - cardHeight / 2), left: Math.max(GAP, viewportWidth / 2 - CARD_W / 2) });
       return;
     }
-    const placement = step?.placement ?? 'bottom';
-    let top: number;
-    let left: number;
-    if (placement === 'top') {
-      top = rect.top - cardH - GAP;
-      left = rect.left + rect.width / 2 - CARD_W / 2;
-    } else if (placement === 'left') {
+    const placement = step.placement ?? 'bottom';
+    let top = rect.bottom + GAP;
+    let left = rect.left + rect.width / 2 - CARD_W / 2;
+    if (placement === 'top') top = rect.top - cardHeight - GAP;
+    if (placement === 'left') {
       top = rect.top;
       left = rect.left - CARD_W - GAP;
-    } else if (placement === 'right') {
+    }
+    if (placement === 'right') {
       top = rect.top;
       left = rect.right + GAP;
-    } else {
-      top = rect.bottom + GAP;
-      left = rect.left + rect.width / 2 - CARD_W / 2;
     }
-    // Si no cabe debajo, colocar encima.
-    if ((placement === 'bottom' || !step?.placement) && top + cardH + GAP > vh) {
-      top = rect.top - cardH - GAP;
-    }
-    left = Math.max(GAP, Math.min(left, vw - CARD_W - GAP));
-    top = Math.max(GAP, Math.min(top, vh - cardH - GAP));
-    setPos({ top, left, centered: false });
+    if (placement === 'bottom' && top + cardHeight + GAP > viewportHeight) top = rect.top - cardHeight - GAP;
+    left = Math.max(GAP, Math.min(left, viewportWidth - CARD_W - GAP));
+    top = Math.max(GAP, Math.min(top, viewportHeight - cardHeight - GAP));
+    setPos({ top, left });
   }, [rect, step, index, open]);
 
-  const close = useCallback(() => {
+  const close = useCallback((completed = false) => {
+    if (completed && tourId && role) markTourCompleted({ tourId, role, version });
     setIndex(0);
     onClose();
-  }, [onClose]);
+  }, [onClose, role, tourId, version]);
 
   const next = useCallback(() => {
-    if (isLast) close();
-    else setIndex((i) => Math.min(i + 1, total - 1));
-  }, [isLast, close, total]);
+    if (isLast) close(true);
+    else setIndex((current) => Math.min(current + 1, total - 1));
+  }, [close, isLast, total]);
+  const previous = useCallback(() => setIndex((current) => Math.max(current - 1, 0)), []);
 
-  const prev = useCallback(() => setIndex((i) => Math.max(i - 1, 0)), []);
-
-  // Cerrar con Escape; foco al abrir/cambiar de paso.
   useEffect(() => {
     if (!open) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') close();
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') close(false);
     };
-    window.addEventListener('keydown', onKey);
-    const t = window.setTimeout(() => cardRef.current?.focus(), 60);
+    window.addEventListener('keydown', onKeyDown);
+    const timer = window.setTimeout(() => cardRef.current?.focus(), reduceMotion ? 0 : 60);
     return () => {
-      window.removeEventListener('keydown', onKey);
-      window.clearTimeout(t);
+      window.removeEventListener('keydown', onKeyDown);
+      window.clearTimeout(timer);
     };
-  }, [open, index, close]);
+  }, [close, index, open, reduceMotion]);
 
   if (!open || !step) return null;
 
@@ -140,78 +160,54 @@ export function GuidedTour({ steps, open, onClose }: { steps: TourStep[]; open: 
     <AnimatePresence>
       <motion.div
         key="tour"
-        className="fixed inset-0 z-[60]"
-        initial={{ opacity: 0 }}
+        className="pointer-events-none fixed inset-0 z-[60]"
+        initial={reduceMotion ? false : { opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
       >
-        {/* Spotlight: dim de toda la pantalla salvo el elemento resaltado. */}
         {rect ? (
           <div
-            className="pointer-events-none absolute rounded-xl ring-2 ring-brand-400 transition-all duration-200"
+            className="absolute rounded-xl ring-2 ring-focus"
             style={{
               top: rect.top - 6,
               left: rect.left - 6,
               width: rect.width + 12,
               height: rect.height + 12,
-              boxShadow: '0 0 0 9999px rgba(15, 23, 42, 0.55)',
+              boxShadow: '0 0 0 9999px rgba(15, 23, 42, 0.58)',
             }}
+            aria-hidden="true"
           />
         ) : (
-          <div className="pointer-events-none absolute inset-0 bg-slate-900/55" />
+          <div className="absolute inset-0 bg-slate-900/60" aria-hidden="true" />
         )}
 
-        {/* Tarjeta explicativa */}
         <motion.div
           ref={cardRef}
           role="dialog"
           aria-modal="false"
           aria-label={`Guía: ${step.title}`}
           tabIndex={-1}
-          className="card glass fixed p-5 shadow-xl outline-none"
+          className="card glass pointer-events-auto fixed p-5 shadow-xl outline-none"
           style={{ top: pos.top, left: pos.left, width: CARD_W, maxWidth: 'calc(100vw - 28px)' }}
-          initial={{ opacity: 0, scale: 0.97, y: 6 }}
+          initial={reduceMotion ? false : { opacity: 0, scale: 0.97, y: 6 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.97 }}
-          transition={{ type: 'spring', damping: 24, stiffness: 300 }}
+          transition={reduceMotion ? { duration: 0 } : { type: 'spring', damping: 24, stiffness: 300 }}
         >
-          <button
-            onClick={close}
-            aria-label="Cerrar guía"
-            className="absolute right-3 top-3 rounded-lg p-1 text-muted transition hover:bg-surface-2 hover:text-fg"
-          >
-            <X className="h-4 w-4" />
+          <button type="button" onClick={() => close(false)} aria-label="Cerrar guía" className="focus-ring absolute right-2 top-2 grid min-h-10 min-w-10 place-items-center rounded-lg text-muted hover:bg-surface-2 hover:text-fg">
+            <X className="h-4 w-4" aria-hidden="true" />
           </button>
-
-          <p className="text-xs font-semibold uppercase tracking-wide text-brand-500">
-            Paso {index + 1} de {total}
-          </p>
-          <h3 className="mt-1 pr-6 font-display text-lg font-bold">{step.title}</h3>
-          <p className="mt-1.5 text-sm leading-relaxed text-muted">{step.description}</p>
-
-          <div className="mt-4 flex items-center justify-between gap-2">
-            <button
-              onClick={close}
-              className="inline-flex items-center gap-1 text-xs font-medium text-muted transition hover:text-fg"
-            >
-              <SkipForward className="h-3.5 w-3.5" /> Saltar
+          <p className="text-xs font-semibold uppercase tracking-wide text-brand-700 dark:text-brand-300">Paso {index + 1} de {total}</p>
+          <h2 className="mt-1 pr-8 font-display text-lg font-bold">{step.title}</h2>
+          <p className="mt-1.5 text-sm leading-6 text-secondary">{step.description}</p>
+          <div className="mt-4 flex flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <button type="button" onClick={() => close(false)} className="focus-ring inline-flex min-h-10 items-center justify-center gap-1 rounded-lg px-2 text-xs font-medium text-secondary hover:bg-surface-2 hover:text-fg">
+              <SkipForward className="h-3.5 w-3.5" aria-hidden="true" /> Saltar
             </button>
             <div className="flex gap-2">
-              {!isFirst && (
-                <Button size="sm" variant="outline" onClick={prev}>
-                  <ArrowLeft className="h-4 w-4" /> Anterior
-                </Button>
-              )}
+              {!isFirst && <Button size="sm" variant="outline" onClick={previous}><ArrowLeft className="h-4 w-4" aria-hidden="true" /> Anterior</Button>}
               <Button size="sm" onClick={next}>
-                {isLast ? (
-                  <>
-                    <Check className="h-4 w-4" /> Finalizar
-                  </>
-                ) : (
-                  <>
-                    Siguiente <ArrowRight className="h-4 w-4" />
-                  </>
-                )}
+                {isLast ? <><Check className="h-4 w-4" aria-hidden="true" /> Finalizar</> : <>Siguiente <ArrowRight className="h-4 w-4" aria-hidden="true" /></>}
               </Button>
             </div>
           </div>

@@ -104,7 +104,8 @@ export function PresentacionesPage() {
         title="Presentaciones"
         eyebrow="Contenido educativo"
         subtitle="Genera, revisa y exporta material de clase sin perder el control editorial."
-        action={<Button onClick={() => setOpen(true)}><Plus className="h-4 w-4" /> Nueva presentación</Button>}
+        breadcrumbs={[{ label: 'Inicio', to: '/app' }, { label: 'Presentaciones' }]}
+        primaryAction={<Button onClick={() => setOpen(true)}><Plus className="h-4 w-4" aria-hidden="true" /> Nueva presentación</Button>}
       />
 
       {!isLoading && data && data.length > 0 && (
@@ -173,7 +174,7 @@ export function PresentacionesPage() {
                         <FileText className="h-4 w-4" /> Descargar PDF
                       </Button>
                     )}
-                    <Button size="icon" variant="ghost" className="h-9 w-9 text-rose-600" onClick={() => setPresentationToDelete({ id: p.id, title: p.titulo })} loading={remove.isPending} aria-label={`Eliminar ${p.titulo}`} title="Eliminar presentación">
+                    <Button size="icon" variant="ghost" className="text-rose-700 dark:text-rose-300" onClick={() => setPresentationToDelete({ id: p.id, title: p.titulo })} loading={remove.isPending} aria-label={`Eliminar ${p.titulo}`} title="Eliminar presentación">
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>

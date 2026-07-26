@@ -198,7 +198,7 @@ export function AICredentialsPanel({ config }: { config: GlobalAIConfig }) {
                     <button
                       type="button"
                       onClick={() => setVisible((current) => ({ ...current, [item.id]: !current[item.id] }))}
-                      className="focus-ring absolute right-1.5 top-1/2 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-md text-muted hover:bg-surface-2 hover:text-fg"
+                      className="focus-ring absolute right-0 top-1/2 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-md text-muted hover:bg-surface-2 hover:text-fg"
                       aria-label={visible[item.id] ? `Ocultar clave de ${item.label}` : `Mostrar clave de ${item.label}`}
                     >
                       {visible[item.id] ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}

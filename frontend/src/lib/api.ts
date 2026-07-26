@@ -115,20 +115,37 @@ export interface ApiError {
   detail: string;
 }
 
-/** Normaliza errores de Axios a un mensaje legible para la interfaz. */
+const TECHNICAL_DETAIL = /(request failed|status code|traceback|exception|stack trace|sql|axios|internal server|<html|undefined is not|cannot read propert|\{\s*"|\[object)/i;
+
+function fallbackMessage(status: number) {
+  if (status === 0) return 'No se pudo conectar con el servidor. Revisa tu conexión e intenta nuevamente.';
+  if (status === 401) return 'Tu sesión expiró. Inicia sesión nuevamente.';
+  if (status === 403) return 'No tienes permiso para realizar esta acción.';
+  if (status === 404) return 'La información solicitada ya no está disponible.';
+  if (status === 409) return 'No pudimos completar la acción porque la información cambió. Actualiza la página e intenta de nuevo.';
+  if (status === 422) return 'Revisa los campos marcados e intenta guardar nuevamente.';
+  if (status === 429) return 'Has realizado demasiadas solicitudes. Espera unos segundos e intenta nuevamente.';
+  if (status >= 500) return 'El servicio no está disponible en este momento. Intenta más tarde.';
+  return 'No pudimos completar la acción. Revisa la información e intenta nuevamente.';
+}
+
+function safeUserDetail(detail: unknown, status: number) {
+  if (typeof detail !== 'string') return fallbackMessage(status);
+  const normalized = detail.trim();
+  if (!normalized || normalized.length > 240 || TECHNICAL_DETAIL.test(normalized)) return fallbackMessage(status);
+  return normalized;
+}
+
+/** Normaliza errores a mensajes accionables y evita exponer detalles internos. */
 export function toApiError(error: unknown): ApiError {
   if (error instanceof AxiosError) {
     const status = error.response?.status ?? 0;
     const data = error.response?.data as { detail?: unknown } | undefined;
-    let detail = 'Ocurrió un error inesperado.';
-    if (typeof data?.detail === 'string') detail = data.detail;
-    else if (Array.isArray(data?.detail)) {
-      detail = data.detail.map((item: { msg?: unknown }) => item?.msg).filter(Boolean).join(' · ') || detail;
-    } else if (status === 0) {
-      detail = 'No se pudo conectar con el servidor.';
-    }
+    const detail = Array.isArray(data?.detail)
+      ? fallbackMessage(status || 422)
+      : safeUserDetail(data?.detail, status);
     return { status, detail };
   }
-  if (error instanceof Error) return { status: 0, detail: error.message };
-  return { status: 0, detail: 'Ocurrió un error inesperado.' };
+  if (error instanceof Error) return { status: 0, detail: safeUserDetail(error.message, 0) };
+  return { status: 0, detail: fallbackMessage(0) };
 }

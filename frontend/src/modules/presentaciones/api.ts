@@ -51,7 +51,7 @@ export async function downloadPresentacionFile(id: string, format: 'pptx' | 'pdf
       : contentType.includes('pdf') || contentType.includes('octet-stream');
   if (!validType) {
     const message = await data.text().catch(() => '');
-    throw new Error(message || 'El backend no devolvio un archivo valido.');
+    throw new Error(message || 'El backend no devolvió un archivo válido.');
   }
 
   const disposition = String(headers['content-disposition'] ?? '');

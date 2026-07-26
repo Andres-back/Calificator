@@ -132,27 +132,32 @@ export function MateriaBoletin() {
         ) : sorted.length === 0 ? (
           <EmptyState icon={Users} title="Sin estudiantes" description="Matricula estudiantes para ver sus notas." />
         ) : (
-          <div className="overflow-x-auto rounded-xl border border-border">
-            <table className="w-full text-sm">
+          <div className="overflow-x-auto rounded-xl border border-border" role="region" aria-label="Calificaciones por estudiante y evaluación" tabIndex={0}>
+            <table className="min-w-[640px] w-full text-sm">
+              <caption className="sr-only">Calificaciones cerradas, promedios y estado de cada estudiante</caption>
               <thead>
                 <tr className="border-b border-border bg-surface-2 text-left">
-                  <th className="cursor-pointer px-4 py-3 font-semibold text-muted" onClick={() => toggleSort('nombre')}>
-                    <span className="inline-flex items-center gap-1">Estudiante <SortIcon field="nombre" /></span>
+                  <th className="sticky left-0 z-10 bg-surface-2 px-2 py-1 text-left font-semibold text-secondary" aria-sort={sortField === 'nombre' ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none'}>
+                    <button type="button" onClick={() => toggleSort('nombre')} className="focus-ring inline-flex min-h-10 items-center gap-1 rounded-md px-2">
+                      Estudiante <SortIcon field="nombre" />
+                    </button>
                   </th>
                   {cerradas.map((ev) => (
                     <th key={ev.id} className="px-3 py-3 font-semibold text-muted whitespace-nowrap text-center" title={ev.nombre}>
                       {ev.nombre.length > 12 ? ev.nombre.slice(0, 12) + '…' : ev.nombre}
                     </th>
                   ))}
-                  <th className="cursor-pointer px-4 py-3 font-semibold text-muted text-center" onClick={() => toggleSort('promedio')}>
-                    <span className="inline-flex items-center gap-1">Promedio <SortIcon field="promedio" /></span>
+                  <th className="px-2 py-1 text-center font-semibold text-secondary" aria-sort={sortField === 'promedio' ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none'}>
+                    <button type="button" onClick={() => toggleSort('promedio')} className="focus-ring inline-flex min-h-10 items-center gap-1 rounded-md px-2">
+                      Promedio <SortIcon field="promedio" />
+                    </button>
                   </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
                 {sorted.map((row) => (
                   <tr key={row.id} className="hover:bg-surface-2/50 transition-colors">
-                    <td className="px-4 py-3 font-medium">{row.nombre}</td>
+                    <td className="sticky left-0 bg-surface px-4 py-3 font-medium">{row.nombre}</td>
                     {cerradas.map((ev) => {
                       const cal = row.calificaciones.get(ev.id);
                       return (

@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { MemoryRouter } from 'react-router-dom';
 import { AxiosError, type InternalAxiosRequestConfig } from 'axios';
 import { AdminAIConfigPage } from './AdminAIConfigPage';
 import type { AISettings } from './api';
@@ -100,9 +101,11 @@ function renderPage() {
     defaultOptions: { queries: { retry: false } },
   });
   return render(
-    <QueryClientProvider client={client}>
-      <AdminAIConfigPage />
-    </QueryClientProvider>,
+    <MemoryRouter>
+      <QueryClientProvider client={client}>
+        <AdminAIConfigPage />
+      </QueryClientProvider>
+    </MemoryRouter>,
   );
 }
 

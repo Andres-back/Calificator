@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client';
 import { RouterProvider } from 'react-router-dom';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'react-hot-toast';
+import { MotionConfig } from 'framer-motion';
 // Fuentes auto-hospedadas (sin peticiones externas → sin errores de CSP).
 import '@fontsource/inter/400.css';
 import '@fontsource/inter/500.css';
@@ -26,6 +27,7 @@ if ('serviceWorker' in navigator) {
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
+    <MotionConfig reducedMotion="user">
     <QueryClientProvider client={queryClient}>
       <AuthBootstrap>
         <RouterProvider router={router} future={{ v7_startTransition: true }} />
@@ -33,10 +35,20 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
       <Toaster
         position="top-right"
         toastOptions={{
-          className: '!bg-surface !text-fg !border !border-border !shadow-glow',
-          duration: 3500,
+          className: '!bg-surface-elevated !text-fg !border !border-border !shadow-glow',
+          duration: 5000,
+          ariaProps: {
+            role: 'status',
+            'aria-live': 'polite',
+          },
+        }}
+        containerStyle={{
+          top: 'max(1rem, env(safe-area-inset-top))',
+          right: 'max(1rem, env(safe-area-inset-right))',
+          maxWidth: 'calc(100vw - 2rem)',
         }}
       />
     </QueryClientProvider>
+    </MotionConfig>
   </React.StrictMode>,
 );

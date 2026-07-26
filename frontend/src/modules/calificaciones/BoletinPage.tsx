@@ -53,7 +53,7 @@ function BoletinList({ items }: { items: BoletinItem[] }) {
                 <p className="font-semibold">{item.evaluacion_nombre}</p>
                 <div className="mt-2 flex flex-wrap gap-2">
                   <Badge tone={confirmed ? 'success' : 'warning'}>
-                    {confirmed ? 'Nota confirmada' : 'Pendiente de confirmacion docente'}
+                    {confirmed ? 'Nota confirmada' : 'Pendiente de confirmación docente'}
                   </Badge>
                   <Badge tone={statusTone[item.estado] ?? 'neutral'}>{formatStatus(item.estado)}</Badge>
                   <Badge tone="neutral">{formatDate(item.fecha)}</Badge>
@@ -149,7 +149,7 @@ export function BoletinPage() {
         }
       />
 
-      <GuidedTour steps={boletinTour} open={tourOpen} onClose={() => setTourOpen(false)} />
+      <GuidedTour steps={boletinTour} open={tourOpen} onClose={() => setTourOpen(false)} tourId="boletin" role={user?.rol ?? 'estudiante'} version={1} />
 
       <Card data-tour="boletin-info" className="flex items-start gap-3 p-5">
         <ShieldCheck className="mt-0.5 h-5 w-5 text-emerald-500" />

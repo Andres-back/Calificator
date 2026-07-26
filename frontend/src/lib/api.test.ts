@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AxiosError, type AxiosResponse, type InternalAxiosRequestConfig } from 'axios';
-import { api, resetSessionExpiryState, setSessionExpiredHandler } from './api';
+import { api, resetSessionExpiryState, setSessionExpiredHandler, toApiError } from './api';
 
 const originalAdapter = api.defaults.adapter;
 
@@ -58,5 +58,23 @@ describe('session interceptor', () => {
       '/forbidden-resource',
     ]);
     expect(onExpired).not.toHaveBeenCalled();
+  });
+});
+describe('user-facing API errors', () => {
+  it('does not expose technical transport details', () => {
+    const config = { headers: {} } as InternalAxiosRequestConfig;
+    const response = {
+      data: { detail: 'Request failed with status code 503: internal server exception' },
+      status: 503,
+      statusText: 'Error',
+      headers: {},
+      config,
+    } as AxiosResponse;
+    const error = new AxiosError('Request failed', 'ERR_BAD_RESPONSE', config, undefined, response);
+
+    expect(toApiError(error)).toEqual({
+      status: 503,
+      detail: 'El servicio no está disponible en este momento. Intenta más tarde.',
+    });
   });
 });
