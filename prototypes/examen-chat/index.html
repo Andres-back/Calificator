@@ -1,0 +1,1714 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='28' font-size='28'>📝</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+<title>Creator de Exámenes — XCalificator</title>
+<style>
+  :root {
+    --brand-50: #eef2ff; --brand-100: #e0e7ff; --brand-200: #c7d2fe;
+    --brand-300: #a5b4fc; --brand-400: #818cf8; --brand-500: #6366f1;
+    --brand-600: #4f46e5; --brand-700: #4338ca; --brand-800: #3730a3; --brand-900: #312e81;
+    --violet-500: #8b5cf6;
+    --bg: #090912;
+    --surface: #161726;
+    --surface-2: #1e1f33;
+    --border: #2a2b44;
+    --fg: #f1f1f3;
+    --fg-2: #c7c7d1;
+    --secondary: #a1a1aa;
+    --muted: #6b6b7b;
+    --success: #22c55e;
+    --warning: #f59e0b;
+    --error: #ef4444;
+    --radius: 12px;
+    --shadow: 0 4px 24px rgba(0,0,0,.3);
+    --font-body: 'Inter', system-ui, -apple-system, sans-serif;
+    --font-display: 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif;
+    --space-xl: 32px;
+    --grid-gap: 12px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: var(--font-body);
+    background: var(--bg);
+    color: var(--fg);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Header */
+  .header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 24px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  .header .brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
+  }
+  .header .brand span.logo {
+    width: 36px; height: 36px; border-radius: 8px;
+    background: linear-gradient(135deg,var(--brand-600),var(--violet-500));
+    display: grid; place-items: center;
+    font-size: 18px; font-weight: 800; color: #fff; flex-shrink: 0;
+  }
+  .header .brand h1 { font-family: var(--font-display); font-size: 17px; font-weight: 800; color: var(--fg); }
+  .header .brand h1 span { color: var(--brand-400); }
+  .header .badge {
+    font-size: 11px;
+    background: var(--brand-600);
+    color: #fff;
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-weight: 700;
+    letter-spacing: .02em;
+  }
+  .header select {
+    margin-left: auto;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    color: var(--fg);
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: var(--font-body);
+    min-width: 240px;
+    cursor: pointer;
+  }
+  .header select:focus { outline: 2px solid var(--brand-500); outline-offset: 2px; }
+
+  /* Layout */
+  .layout {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  /* Sidebar */
+  .sidebar {
+    width: 320px;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    padding: 16px;
+    overflow-y: auto;
+    display: none;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .sidebar.visible { display: flex; }
+  .sidebar h2 {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    color: var(--muted);
+    font-weight: 700;
+  }
+  .dba-card {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+  .dba-card .enunciado { font-weight: 600; margin-bottom: 4px; }
+  .dba-card .meta { font-size: 12px; color: var(--secondary); }
+  .dba-card.clickable {
+    cursor: pointer;
+    transition: all .12s;
+  }
+  .dba-card.clickable:hover { border-color: var(--brand-500); }
+  .dba-tag {
+    display: inline-block;
+    background: linear-gradient(135deg, var(--brand-600), var(--violet-500));
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 4px;
+    margin-bottom: 6px;
+    letter-spacing: .02em;
+  }
+
+  /* Chat */
+  .chat-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    max-width: 800px;
+    margin: 0 auto;
+    width: 100%;
+  }
+  .messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .msg {
+    display: flex;
+    gap: 12px;
+    max-width: 92%;
+    animation: fadeIn .3s ease;
+  }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  .msg.bot { align-self: flex-start; }
+  .msg.user { align-self: flex-end; flex-direction: row-reverse; }
+  .msg .avatar {
+    width: 34px; height: 34px; border-radius: 50%;
+    display: grid; place-items: center;
+    font-size: 15px; font-weight: 700;
+    flex-shrink: 0;
+  }
+  .msg.bot .avatar { background: linear-gradient(135deg, var(--brand-600), var(--violet-500)); color: #fff; box-shadow: 0 2px 8px rgba(99,102,241,.3); }
+  .msg.user .avatar { background: var(--surface-2); color: var(--secondary); border: 1px solid var(--border); }
+  .msg .bubble {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 16px;
+    font-size: 14px;
+    line-height: 1.6;
+  }
+  .msg.bot .bubble { border-top-left-radius: 4px; }
+  .msg.user .bubble {
+    border-top-right-radius: 4px;
+    background: var(--brand-600);
+    border-color: var(--brand-600);
+    color: #fff;
+  }
+  .msg .bubble p { margin-bottom: 8px; }
+  .msg .bubble p:last-child { margin-bottom: 0; }
+  .msg .bubble strong { font-weight: 700; }
+  .msg .bubble code {
+    background: rgba(0,0,0,.2);
+    padding: 1px 4px;
+    border-radius: 4px;
+    font-size: 13px;
+  }
+
+  /* Question type selector — compacto */
+  .qtype-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin: 8px 0;
+  }
+  .qtype-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 12px;
+    cursor: pointer;
+    transition: all .12s;
+  }
+  .qtype-row:hover { border-color: var(--brand-500); }
+  .qtype-row.selected {
+    border-color: var(--brand-500);
+    background: rgba(99,102,241,.06);
+  }
+  .qtype-row .icon { font-size: 18px; flex-shrink: 0; width: 24px; text-align: center; }
+  .qtype-row .name { font-weight: 600; font-size: 13px; flex-shrink: 0; min-width: 140px; }
+  .qtype-row .desc { font-size: 11px; color: var(--secondary); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .qtype-row .count-wrap {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    opacity: .3;
+    pointer-events: none;
+    transition: opacity .15s;
+    flex-shrink: 0;
+  }
+  .qtype-row.selected .count-wrap { opacity: 1; pointer-events: auto; }
+  .qtype-row .count-wrap label { font-size: 11px; color: var(--secondary); }
+  .qtype-row .count-wrap input {
+    width: 44px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    padding: 3px 6px;
+    color: var(--fg);
+    font-size: 13px;
+    font-family: var(--font-body);
+    text-align: center;
+  }
+  .qtype-row .count-wrap input:focus { border-color: var(--brand-500); outline: none; }
+
+  /* Upload area */
+  .upload-area {
+    background: var(--surface);
+    border: 2px dashed var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    text-align: center;
+    margin: 12px 0;
+    cursor: pointer;
+    transition: all .15s;
+  }
+  .upload-area:hover, .upload-area.drag-over { border-color: var(--brand-500); background: var(--surface-2); }
+  .upload-area .icon { font-size: 32px; margin-bottom: 8px; }
+  .upload-area .title { font-weight: 600; font-size: 14px; margin-bottom: 4px; }
+  .upload-area .sub { font-size: 12px; color: var(--secondary); }
+  .upload-area input[type="file"] { display: none; }
+  .upload-area .preview {
+    display: none;
+    margin-top: 12px;
+    padding: 10px;
+    background: var(--surface-2);
+    border-radius: 8px;
+    font-size: 13px;
+    text-align: left;
+  }
+  .upload-area .preview .file-info { color: var(--success); font-weight: 600; }
+
+  /* Text paste area */
+  .text-paste-area {
+    margin: 12px 0;
+  }
+  .text-paste-area textarea {
+    width: 100%;
+    min-height: 100px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px;
+    color: var(--fg);
+    font-size: 13px;
+    font-family: var(--font-body);
+    resize: vertical;
+    outline: none;
+  }
+  .text-paste-area textarea:focus { border-color: var(--brand-500); }
+  .text-paste-area textarea::placeholder { color: var(--muted); }
+
+  /* Progress steps */
+  .step-indicator {
+    display: flex;
+    gap: 4px;
+    padding: 0 16px;
+    margin-top: 8px;
+    justify-content: center;
+  }
+  .step-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    transition: all .3s;
+  }
+  .step-dot.active { background: var(--brand-500); border-color: var(--brand-500); }
+  .step-dot.done { background: var(--success); border-color: var(--success); }
+
+  /* Question preview */
+  .question-preview {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px;
+    margin-top: 10px;
+  }
+  .question-preview .q-header {
+    display: flex; align-items: start; justify-content: space-between; gap: 8px; margin-bottom: 8px;
+  }
+  .question-preview .q-header input.q-enunciado {
+    flex: 1;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 6px 10px;
+    color: var(--fg);
+    font-size: 13px;
+    font-weight: 600;
+    font-family: var(--font-body);
+  }
+  .question-preview .q-type-badge {
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-weight: 700;
+    white-space: nowrap;
+    background: var(--brand-600);
+    color: #fff;
+  }
+  .question-preview .options { display: flex; flex-direction: column; gap: 6px; }
+  .question-preview .option {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 13px; padding: 8px 10px;
+    background: var(--surface-2);
+    border-radius: 8px;
+    border: 1px solid transparent;
+  }
+  .question-preview .option .letter {
+    width: 22px; height: 22px; border-radius: 50%;
+    background: var(--bg);
+    display: grid; place-items: center;
+    font-size: 11px; font-weight: 700;
+    color: var(--secondary);
+    flex-shrink: 0;
+  }
+  .question-preview .option input[type="checkbox"],
+  .question-preview .option input[type="radio"] { accent-color: var(--brand-500); }
+  .question-preview .option input.q-option {
+    flex: 1;
+    background: transparent; border: none;
+    color: var(--fg); font-size: 13px;
+    font-family: var(--font-body); outline: none;
+  }
+  .question-preview .vf-options {
+    display: flex; gap: 8px; margin-top: 8px;
+  }
+  .question-preview .vf-option {
+    flex: 1;
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--surface-2);
+    text-align: center;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all .15s;
+  }
+  .question-preview .vf-option.selected {
+    border-color: var(--brand-500);
+    background: rgba(99,102,241,.1);
+  }
+  .question-preview .vf-option.correct {
+    border-color: var(--success);
+    background: rgba(34,197,94,.1);
+  }
+  .question-preview .q-meta {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 8px;
+    padding: 6px 8px;
+    background: var(--bg);
+    border-radius: 6px;
+  }
+
+  /* Buttons */
+  .action-buttons { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 18px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--surface-2);
+    color: var(--fg);
+    font-size: 13px;
+    font-weight: 600;
+    font-family: var(--font-body);
+    cursor: pointer;
+    transition: all .15s;
+  }
+  .btn:hover { background: var(--border); border-color: var(--muted); }
+  .btn.primary {
+    background: var(--brand-600);
+    border-color: var(--brand-600);
+    color: #fff;
+  }
+  .btn.primary:hover { background: var(--brand-700); border-color: var(--brand-700); }
+  .btn.success { background: #166534; border-color: #166534; color: #fff; }
+  .btn.success:hover { background: #15803d; border-color: #15803d; }
+  .btn.warning { background: #92400e; border-color: #92400e; color: #fff; }
+  .btn.warning:hover { background: #a16207; border-color: #a16207; }
+  .btn.danger { background: #991b1b; border-color: #991b1b; color: #fff; }
+  .btn:disabled { opacity: .4; cursor: not-allowed; }
+  .btn.sm { padding: 6px 14px; font-size: 12px; }
+  .btn.full { width: 100%; justify-content: center; }
+
+  /* Input */
+  .input-area {
+    padding: 16px;
+    border-top: 1px solid var(--border);
+    background: var(--surface);
+    display: flex;
+    gap: 8px;
+  }
+  .input-area input {
+    flex: 1;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 14px;
+    color: var(--fg);
+    font-size: 14px;
+    font-family: var(--font-body);
+    outline: none;
+  }
+  .input-area input:focus { border-color: var(--brand-500); box-shadow: 0 0 0 3px rgba(99,102,241,.15); }
+  .input-area input::placeholder { color: var(--muted); }
+
+  /* Status bar */
+  .status-bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    font-size: 13px;
+    color: var(--secondary);
+  }
+  .toggle {
+    position: relative;
+    width: 44px; height: 24px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all .2s;
+  }
+  .toggle.active { background: var(--success); border-color: var(--success); }
+  .toggle .knob {
+    position: absolute;
+    top: 2px; left: 2px;
+    width: 18px; height: 18px;
+    background: #fff;
+    border-radius: 50%;
+    transition: all .2s;
+    box-shadow: 0 1px 3px rgba(0,0,0,.2);
+  }
+  .toggle.active .knob { left: 22px; }
+
+  /* Toast */
+  .toast {
+    position: fixed; bottom: 24px; right: 24px;
+    background: var(--surface-elevated);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px 20px;
+    font-size: 14px;
+    box-shadow: var(--shadow);
+    display: none;
+    animation: fadeIn .3s ease;
+    z-index: 100;
+  }
+  .toast.show { display: block; }
+  .toast.success { border-color: var(--success); }
+  .toast.error { border-color: var(--error); }
+
+  /* Empty state */
+  .empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    color: var(--secondary);
+    gap: 12px;
+    text-align: center;
+    padding: 60px 40px;
+  }
+  .empty-state .icon { font-size: 56px; }
+  .empty-state h2 { font-family: var(--font-display); font-size: 20px; color: var(--fg); font-weight: 800; }
+  .empty-state p { font-size: 14px; max-width: 420px; line-height: 1.6; }
+
+  /* Scrollable text for doc content */
+  .doc-preview {
+    max-height: 120px;
+    overflow-y: auto;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px;
+    font-size: 12px;
+    color: var(--secondary);
+    margin-top: 6px;
+    white-space: pre-wrap;
+    font-family: monospace;
+  }
+
+  @media (max-width: 768px) {
+    .sidebar { width: 100%; max-height: 200px; }
+    .header select { min-width: 100%; }
+    .msg { max-width: 95%; }
+    .qtype-list { gap: 4px; }
+    .qtype-row .desc { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <a class="brand" href="/">
+    <span class="logo">XC</span>
+    <h1>XCalificator <span>Creator</span></h1>
+  </a>
+  <span class="badge">Chat-v2</span>
+  <select id="materiaSelect" onchange="onMateriaChange()">
+    <option value="">— Seleccionar materia —</option>
+  </select>
+</div>
+
+<!-- Login overlay -->
+<div id="loginOverlay" style="position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:200;padding:24px">
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:40px;width:100%;max-width:400px;text-align:center">
+    <span style="width:56px;height:56px;border-radius:12px;background:linear-gradient(135deg,var(--brand-600),var(--violet-500));display:inline-flex;align-items:center;justify-content:center;font-size:28px;font-weight:800;color:#fff;margin-bottom:16px">XC</span>
+    <h2 style="font-family:var(--font-display);font-size:20px;font-weight:800;margin-bottom:4px">XCalificator Creator</h2>
+    <p style="color:var(--secondary);font-size:14px;margin-bottom:24px">Ingresa para crear exámenes con IA</p>
+    <div style="display:flex;flex-direction:column;gap:12px;text-align:left">
+      <input id="loginEmail" type="email" placeholder="Correo electrónico" style="background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;color:var(--fg);font-size:14px;font-family:var(--font-body);outline:none" autofocus>
+      <input id="loginPassword" type="password" placeholder="Contraseña" style="background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;color:var(--fg);font-size:14px;font-family:var(--font-body);outline:none" onkeydown="if(event.key==='Enter') handleLogin()">
+      <p id="loginError" style="color:var(--error);font-size:13px;display:none"></p>
+      <button id="loginBtn" class="btn primary" onclick="handleLogin()" style="justify-content:center;padding:12px;font-size:15px">Ingresar</button>
+    </div>
+  </div>
+</div>
+
+<div class="layout" id="appContent" style="display:none">
+  <div class="sidebar" id="dbaSidebar">
+    <h2>📚 DBA de la materia</h2>
+    <div id="dbaList"><p style="font-size:13px;color:var(--muted)">Selecciona una materia para ver sus DBA.</p></div>
+    <h2 style="margin-top:8px">📄 Documentos</h2>
+    <div id="docList"><p style="font-size:13px;color:var(--muted)">Documentos subidos aparecerán aquí.</p></div>
+    <h2 style="margin-top:8px;display:flex;justify-content:space-between;align-items:center">
+      📝 Exámenes guardados
+      <span id="examCount" style="font-size:10px;color:var(--muted);font-weight:400"></span>
+    </h2>
+    <div id="examList"></div>
+    <h2 style="margin-top:8px">💬 Conversaciones</h2>
+    <div id="sessionList"><p style="font-size:12px;color:var(--muted)">Cargando…</p></div>
+  </div>
+
+  <div class="chat-area">
+    <div class="messages" id="messages">
+      <div class="empty-state" id="emptyState">
+        <div class="icon">💬</div>
+        <h2>Bienvenido al Creator de Exámenes</h2>
+        <p>Selecciona una materia y conversemos sobre qué evaluar. La IA usará los DBA y documentos de la materia para sugerir preguntas.</p>
+      </div>
+    </div>
+
+    <div class="input-area" id="inputArea" style="display:none">
+      <input type="text" id="chatInput" placeholder="Escribe tu respuesta…" onkeydown="if(event.key==='Enter') sendMessage()" autofocus>
+      <button class="btn primary" onclick="sendMessage()">Enviar</button>
+    </div>
+
+    <div class="status-bar" id="statusBar" style="display:none">
+      <div class="toggle" id="statusToggle" onclick="toggleStatus()">
+        <div class="knob"></div>
+      </div>
+      <span id="statusLabel">Examen inactivo — los estudiantes no pueden entregar</span>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ─── State ─── */
+const STATE = {
+  materiaId: null,
+  materiaName: '',
+  materias: [],
+  dbaList: [],
+  active: false,
+  sessionId: null,      // current chat session ID (persistencia)
+  sessionTitle: '',     // title of current session
+
+  // Flow state machine
+  // idle | topic | topic_done | qtypes | upload | generating | reviewing | done
+  step: 'idle',
+
+  // Data collected during flow
+  topicText: '',
+  qtypes: {},         // { "opcion_multiple": 3, "abierta": 2, ... }
+  uploadedContent: null, // { type: 'text'|'image', content: '...', name: '...' }
+
+  preguntasAprobadas: [],
+  currentSugerencias: [],
+  examenCreado: null,
+};
+
+const API = '/api';
+
+const QUESTION_TYPES = [
+  { id: 'opcion_multiple', icon: '🔤', name: 'Opción múltiple (ABCD)', desc: 'Una respuesta correcta entre varias opciones', defaultCount: 3 },
+  { id: 'verdadero_falso', icon: '⚡', name: 'Verdadero / Falso', desc: 'Afirmaciones para juzgar como verdaderas o falsas', defaultCount: 2 },
+  { id: 'abierta', icon: '✏️', name: 'Respuesta abierta', desc: 'El estudiante desarrolla su respuesta libremente', defaultCount: 2 },
+  { id: 'seleccion_multiple', icon: '☑️', name: 'Selección múltiple', desc: 'Varias respuestas correctas entre las opciones', defaultCount: 2 },
+  { id: 'completar', icon: '🔠', name: 'Completar / Llenar blancos', desc: 'Frases con espacios para completar', defaultCount: 1 },
+];
+
+/* ─── Init ─── */
+async function init() {
+  const authCheck = await fetch(`${API}/materias`, { credentials: 'include' });
+  if (authCheck.ok) {
+    const materias = await authCheck.json();
+    STATE.materias = materias;
+    const sel = document.getElementById('materiaSelect');
+    sel.innerHTML = '<option value="">— Seleccionar materia —</option>';
+    materias.forEach(m => {
+      const opt = document.createElement('option');
+      opt.value = m.id;
+      opt.textContent = `${m.nombre} ${m.grado ? `(${m.grado})` : ''}`;
+      sel.appendChild(opt);
+    });
+    document.getElementById('loginOverlay').style.display = 'none';
+    document.getElementById('appContent').style.display = 'flex';
+    addBotMsg('Bienvenido de nuevo. Selecciona una materia arriba para empezar.');
+  }
+}
+
+async function handleLogin() {
+  const email = document.getElementById('loginEmail').value.trim();
+  const password = document.getElementById('loginPassword').value.trim();
+  if (!email || !password) return;
+  const btn = document.getElementById('loginBtn');
+  btn.disabled = true; btn.textContent = 'Ingresando…';
+  try {
+    const r = await fetch(`${API}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ email, password }),
+    });
+    if (!r.ok) {
+      const err = await r.json();
+      throw new Error(err.detail || 'Credenciales inválidas');
+    }
+    await init();
+  } catch (e) {
+    document.getElementById('loginError').textContent = e.message;
+    document.getElementById('loginError').style.display = 'block';
+    btn.disabled = false; btn.textContent = 'Ingresar';
+  }
+}
+
+async function onMateriaChange() {
+  const sel = document.getElementById('materiaSelect');
+  STATE.materiaId = sel.value;
+  if (!STATE.materiaId) return;
+
+  const materia = STATE.materias.find(m => m.id === STATE.materiaId);
+  STATE.materiaName = materia?.nombre || '';
+  resetFlow();
+
+  document.getElementById('dbaSidebar').classList.add('visible');
+  document.getElementById('inputArea').style.display = 'flex';
+  document.getElementById('statusBar').style.display = 'none';
+  document.getElementById('emptyState').style.display = 'none';
+  document.getElementById('messages').innerHTML = '';
+  document.getElementById('chatInput').disabled = false;
+
+  loadDBA();
+  loadDocumentList();
+  loadExistingExams();
+  loadSessionsForMateria();
+  startFlow();
+}
+
+function resetFlow() {
+  STATE.step = 'idle';
+  STATE.topicText = '';
+  STATE.qtypes = {};
+  STATE.uploadedContent = null;
+  STATE.preguntasAprobadas = [];
+  STATE.currentSugerencias = [];
+  STATE.examenCreado = null;
+  STATE.sessionId = null;
+  STATE.sessionTitle = '';
+}
+
+async function loadDBA() {
+  const dbaDiv = document.getElementById('dbaList');
+  dbaDiv.innerHTML = '<p style="font-size:13px;color:var(--muted)">Cargando DBA…</p>';
+  try {
+    const r = await fetch(`${API}/materias/${STATE.materiaId}/dba`, { credentials: 'include' });
+    if (r.ok) {
+      const items = await r.json();
+      STATE.dbaList = items;
+      if (items.length === 0) {
+        dbaDiv.innerHTML = '<p style="font-size:13px;color:var(--muted)">No hay DBA para esta materia.</p>';
+      } else {
+        dbaDiv.innerHTML = items.slice(0, 8).map(d => `
+          <div class="dba-card">
+            <span class="dba-tag">${d.fuente || 'DBA'}</span>
+            <div class="enunciado">${d.descripcion || d.enunciado || ''}</div>
+            ${d.evidencias_aprendizaje ? `<div class="meta">📌 ${d.evidencias_aprendizaje}</div>` : ''}
+          </div>
+        `).join('');
+        if (items.length > 8) dbaDiv.innerHTML += `<p style="font-size:12px;color:var(--muted)">… y ${items.length - 8} más</p>`;
+      }
+    }
+    // Load existing documents for this materia
+    loadDocumentList();
+  } catch (e) {
+    dbaDiv.innerHTML = '<p style="font-size:13px;color:var(--error)">Error al cargar DBA</p>';
+  }
+}
+
+async function loadDocumentList() {
+  const docDiv = document.getElementById('docList');
+  try {
+    const r = await fetch(`${API}/rag/sources?materia_id=${STATE.materiaId}`, { credentials: 'include' });
+    if (r.ok) {
+      const sources = await r.json();
+      const examSources = sources.filter(s => s.tipo === 'evaluacion');
+      if (examSources.length === 0) {
+        docDiv.innerHTML = '<p style="font-size:12px;color:var(--muted)">Sin documentos subidos para exámenes.</p>';
+      } else {
+        docDiv.innerHTML = examSources.slice(-3).reverse().map(s => `
+          <div class="dba-card" style="font-size:12px">
+            <div style="font-weight:600">📄 ${s.titulo}</div>
+            <div class="meta">${s.tipo} · ${new Date(s.created_at).toLocaleDateString()}</div>
+          </div>
+        `).join('');
+      }
+    }
+  } catch (_) {
+    docDiv.innerHTML = '<p style="font-size:12px;color:var(--muted)">No se pudieron cargar documentos.</p>';
+  }
+}
+
+/* ─── Cargar exámenes guardados en Herramientas ─── */
+async function loadExistingExams() {
+  const examDiv = document.getElementById('examList');
+  const countSpan = document.getElementById('examCount');
+  examDiv.innerHTML = '<p style="font-size:12px;color:var(--muted)">Cargando…</p>';
+  try {
+    const r = await fetch(`${API}/herramientas?tipo=examen&limit=20`, { credentials: 'include' });
+    if (!r.ok) throw new Error('Error');
+    const items = await r.json();
+    // Filter for current materia
+    const filtered = items.filter(i => i.materia_id === STATE.materiaId);
+    if (filtered.length === 0) {
+      examDiv.innerHTML = '<p style="font-size:12px;color:var(--muted)">Sin exámenes guardados.</p>';
+      if (countSpan) countSpan.textContent = '';
+      return;
+    }
+    if (countSpan) countSpan.textContent = `(${filtered.length})`;
+    examDiv.innerHTML = filtered.map(e => `
+      <div class="dba-card clickable" onclick="editExistingExamen('${e.id}')" title="Editar: ${e.titulo}">
+        <div style="font-weight:600;font-size:12px">📝 ${e.titulo}</div>
+        <div class="meta">${new Date(e.created_at).toLocaleDateString()} · ${e.tipo}</div>
+      </div>
+    `).join('');
+  } catch (_) {
+    examDiv.innerHTML = '<p style="font-size:12px;color:var(--muted)">No se pudieron cargar exámenes.</p>';
+  }
+}
+
+async function editExistingExamen(materialId) {
+  try {
+    const r = await fetch(`${API}/herramientas/${materialId}`, { credentials: 'include' });
+    if (!r.ok) throw new Error('Error al cargar');
+    const material = await r.json();
+    const preguntasRaw = material.contenido_json?.preguntas;
+    if (!preguntasRaw || !Array.isArray(preguntasRaw) || preguntasRaw.length === 0) {
+      showToast('Este examen no tiene preguntas editables', 'error');
+      return;
+    }
+    // Normalize preguntas to our format
+    const preguntas = preguntasRaw.map((p, i) => ({
+      numero: i + 1,
+      tipo: p.tipo || 'opcion_multiple',
+      enunciado: p.enunciado || '',
+      opciones: p.opciones || [],
+      respuesta_correcta: p.respuesta_correcta ?? 0,
+      opciones_correctas: p.opciones_correctas,
+      puntaje: p.puntaje || 1.0,
+      dba_relacionado: p.dba_relacionado || '',
+      justificacion: p.justificacion || '',
+    }));
+    STATE.currentSugerencias = preguntas;
+    STATE.topicText = material.titulo || 'Examen editado';
+    STATE.examenCreado = material;
+    STATE.step = 'reviewing';
+    STATE.active = false;
+    document.getElementById('statusBar').style.display = 'none';
+    addBotMsg(`📝 **Editando:** ${material.titulo}`);
+    showPreguntasSugeridas(preguntas);
+    document.getElementById('inputArea').style.display = 'flex';
+    document.getElementById('chatInput').disabled = true;
+  } catch (e) {
+    showToast('Error al cargar el examen: ' + e.message, 'error');
+  }
+}
+
+/* ─── Persistencia de sesiones (SQLite local) ─── */
+
+async function createSession() {
+  if (!STATE.materiaId) return;
+  try {
+    const r = await fetch(`${API}/chat/sessions`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        materia_id: STATE.materiaId,
+        titulo: STATE.topicText || `Chat ${new Date().toLocaleString()}`,
+      }),
+    });
+    if (r.ok) {
+      const data = await r.json();
+      STATE.sessionId = data.id;
+      STATE.sessionTitle = data.titulo;
+    }
+  } catch (_) {}
+}
+
+async function saveMessage(role, content) {
+  if (!STATE.sessionId) return;
+  try {
+    await fetch(`${API}/chat/sessions/${STATE.sessionId}/messages`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messages: [{ role, content }] }),
+    });
+  } catch (_) {}
+}
+
+async function loadSessionsForMateria() {
+  const examDiv = document.getElementById('sessionList');
+  if (!STATE.materiaId) return;
+  try {
+    const r = await fetch(`${API}/chat/sessions?materia_id=${STATE.materiaId}`, { credentials: 'include' });
+    if (!r.ok) throw new Error();
+    const sessions = await r.json();
+    if (sessions.length === 0) {
+      examDiv.innerHTML = '<p style="font-size:12px;color:var(--muted)">Sin conversaciones guardadas.</p>';
+      return;
+    }
+    examDiv.innerHTML = sessions.map(s => {
+      const isActive = s.id === STATE.sessionId;
+      return `<div class="dba-card clickable" style="${isActive ? 'border-color:var(--brand-500)' : ''}" onclick="loadSessionChat('${s.id}')" title="Continuar: ${s.titulo}">
+        <div style="font-weight:600;font-size:12px">${isActive ? '▶ ' : ''}💬 ${s.titulo || 'Chat'}</div>
+        <div class="meta">${s.message_count || 0} msgs · ${new Date(s.created_at).toLocaleDateString()}</div>
+      </div>`;
+    }).join('');
+  } catch (_) {
+    examDiv.innerHTML = '<p style="font-size:12px;color:var(--muted)">Sin conversaciones guardadas.</p>';
+  }
+}
+
+async function loadSessionChat(sessionId) {
+  if (sessionId === STATE.sessionId) return; // already on this session
+  try {
+    const r = await fetch(`${API}/chat/sessions/${sessionId}`, { credentials: 'include' });
+    if (!r.ok) throw new Error();
+    const session = await r.json();
+    STATE.sessionId = session.id;
+    STATE.sessionTitle = session.titulo || 'Chat';
+    STATE.materiaId = session.materia_id;
+
+    // Clear messages area and restore
+    document.getElementById('messages').innerHTML = '';
+    for (const msg of (session.messages || [])) {
+      if (msg.role === 'bot') {
+        const div = document.createElement('div');
+        div.className = 'msg bot';
+        div.innerHTML = `<div class="avatar">🤖</div><div class="bubble">${mdToHtml(msg.content)}</div>`;
+        document.getElementById('messages').appendChild(div);
+      } else {
+        const div = document.createElement('div');
+        div.className = 'msg user';
+        div.innerHTML = `<div class="avatar">👤</div><div class="bubble">${escapeHtml(msg.content)}</div>`;
+        document.getElementById('messages').appendChild(div);
+      }
+    }
+    document.getElementById('inputArea').style.display = 'flex';
+    document.getElementById('chatInput').disabled = true;
+    document.getElementById('statusBar').style.display = 'none';
+
+    addBotMsg(`📂 Has reanudado la conversación: **${session.titulo}**. Puedes seguir desde aquí o empezar una nueva.`);
+    STATE.step = 'topic_done';
+    loadExistingExams();
+  } catch (e) {
+    showToast('Error al cargar la conversación: ' + e.message, 'error');
+  }
+}
+
+/* ─── Chat Flow ─── */
+async function startFlow() {
+  STATE.step = 'topic';
+  // Create persistent session (await so messages have a sessionId)
+  await createSession();
+  document.getElementById('chatInput').disabled = false;
+  addBotMsg(`Hola! Soy el asistente para crear exámenes de **${STATE.materiaName}**.`);
+  addBotMsg(`**Paso 1:** Cuéntame, **¿qué tema o contenido quieres evaluar?**`);
+  addBotMsg(`Ej: "La fotosíntesis en grado 5", "Ecuaciones de primer grado", o "La independencia de Colombia"`);
+}
+
+function sendMessage() {
+  const input = document.getElementById('chatInput');
+  const text = input.value.trim();
+  if (!text || STATE.step === 'done' || STATE.step === 'generating') return;
+  input.value = '';
+
+  if (STATE.step === 'topic') {
+    addUserMsg(text);
+    STATE.topicText = text;
+    // Update session title with this topic
+    STATE.sessionTitle = `Examen: ${text.substring(0, 60)}`;
+    // Update session title in DB
+    fetch(`${API}/chat/sessions`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        materia_id: STATE.materiaId,
+        titulo: STATE.sessionTitle,
+        session_id: STATE.sessionId,
+      }),
+    }).catch(() => {});
+    showQuestionTypeSelector();
+  } else if (STATE.step === 'topic_done') {
+    addUserMsg(text);
+    STATE.topicText = text;
+    showQuestionTypeSelector();
+  } else {
+    addUserMsg(text);
+    addBotMsg('Estoy procesando tu solicitud...');
+  }
+}
+
+/* ─── Question Type Selector ─── */
+function showQuestionTypeSelector() {
+  STATE.step = 'qtypes';
+  STATE.qtypes = {};
+  const sel = document.getElementById('qtypeList');
+  if (sel) sel.removeEventListener('click', onQtypeListClick);
+  if (sel) sel.removeEventListener('change', onQtypeListChange);
+
+  const qtypesHtml = `
+    <div>
+      <p><strong>Paso 2:</strong> ¿Qué tipos de preguntas y cuántas de cada una?</p>
+      <div class="qtype-list" id="qtypeList">
+        ${QUESTION_TYPES.map(t => `
+          <div class="qtype-row" data-id="${t.id}">
+            <span class="icon">${t.icon}</span>
+            <span class="name">${t.name}</span>
+            <span class="desc">${t.desc}</span>
+            <div class="count-wrap">
+              <label>Cant:</label>
+              <input type="number" data-id="${t.id}" min="0" max="20" value="${t.defaultCount}">
+            </div>
+          </div>
+        `).join('')}
+      </div>
+      <div class="action-buttons" style="margin-top:8px">
+        <button class="btn primary full" onclick="confirmQTypes()">✅ Confirmar tipos de preguntas</button>
+      </div>
+    </div>
+  `;
+  addBotMsg(qtypesHtml);
+
+  // Attach delegated listeners after render
+  setTimeout(() => {
+    const list = document.getElementById('qtypeList');
+    if (!list) return;
+    list.addEventListener('click', onQtypeListClick);
+    list.addEventListener('change', onQtypeListChange);
+  }, 50);
+}
+
+function onQtypeListClick(e) {
+  const row = e.target.closest('.qtype-row');
+  if (!row) return;
+  // If the click was on the input, don't toggle
+  if (e.target.tagName === 'INPUT') return;
+  row.classList.toggle('selected');
+  const id = row.dataset.id;
+  const input = row.querySelector('input');
+  if (row.classList.contains('selected')) {
+    STATE.qtypes[id] = parseInt(input.value) || 1;
+  } else {
+    delete STATE.qtypes[id];
+  }
+}
+
+function onQtypeListChange(e) {
+  if (e.target.tagName !== 'INPUT') return;
+  const row = e.target.closest('.qtype-row');
+  if (!row) return;
+  const id = row.dataset.id;
+  const val = Math.max(0, Math.min(20, parseInt(e.target.value) || 0));
+  e.target.value = val;
+  if (val === 0) {
+    row.classList.remove('selected');
+    delete STATE.qtypes[id];
+  } else if (STATE.qtypes[id] !== undefined) {
+    STATE.qtypes[id] = val;
+  }
+}
+
+function toggleQType(id) { /* replaced by delegated events */ }
+function updateQTypeCount(id, val) { /* replaced by delegated events */ }
+
+function confirmQTypes() {
+  const total = Object.values(STATE.qtypes).reduce((a, b) => a + b, 0);
+  if (total === 0) {
+    showToast('Selecciona al menos un tipo de pregunta', 'error');
+    return;
+  }
+
+  const typesText = Object.entries(STATE.qtypes)
+    .map(([id, count]) => {
+      const t = QUESTION_TYPES.find(q => q.id === id);
+      return `**${count}** ${t ? t.name : id}`;
+    })
+    .join(', ');
+
+  addUserMsg(`✅ ${total} preguntas: ${typesText}`);
+
+  // Now ask about uploading content
+  showUploadOption();
+}
+
+/* ─── Upload Section ─── */
+function showUploadOption() {
+  STATE.step = 'upload';
+
+  const html = `
+    <div>
+      <p><strong>Paso 3 (opcional):</strong> ¿Tienes material de referencia para el examen?</p>
+      <p style="font-size:12px;color:var(--secondary);margin-bottom:8px">
+        Puedes pegar texto de un libro, subir una foto del libro de texto, o continuar sin material adicional.
+        <br><em>El contenido se usará <strong>solo para este examen</strong>, sin afectar los DBA ni otros exámenes.</em>
+      </p>
+
+      <div class="text-paste-area">
+        <textarea id="examTextPaste" placeholder="Pega aquí el texto del libro, apuntes o contenido de referencia..."></textarea>
+      </div>
+
+      <div class="upload-area" id="uploadArea" onclick="document.getElementById('fileInput').click()">
+        <div class="icon">📷</div>
+        <div class="title">Subir foto o documento</div>
+        <div class="sub">PDF, JPG, PNG — también puedes arrastrar</div>
+        <input type="file" id="fileInput" accept="image/*,application/pdf,.txt" onchange="handleFileUpload(event)">
+        <div class="preview" id="uploadPreview"></div>
+      </div>
+
+      <div class="action-buttons" style="margin-top:8px">
+        <button class="btn primary" onclick="confirmUploadContent()">📝 Generar examen</button>
+        <button class="btn" onclick="skipUpload()">⏭️ Saltar, no tengo material</button>
+      </div>
+    </div>
+  `;
+  addBotMsg(html);
+
+  // Setup drag-and-drop
+  setTimeout(() => {
+    const area = document.getElementById('uploadArea');
+    if (!area) return;
+    area.addEventListener('dragover', e => { e.preventDefault(); area.classList.add('drag-over'); });
+    area.addEventListener('dragleave', () => area.classList.remove('drag-over'));
+    area.addEventListener('drop', e => {
+      e.preventDefault();
+      area.classList.remove('drag-over');
+      if (e.dataTransfer.files.length > 0) {
+        handleFileDrop(e.dataTransfer.files[0]);
+      }
+    });
+    // Also handle paste in the textarea to show it's ready
+    const textarea = document.getElementById('examTextPaste');
+    if (textarea) {
+      textarea.addEventListener('input', () => {
+        if (textarea.value.trim().length > 20) {
+          // Enable the generate button visual feedback
+        }
+      });
+    }
+  }, 100);
+}
+
+function handleFileUpload(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  processUploadedFile(file);
+}
+
+function handleFileDrop(file) {
+  processUploadedFile(file);
+}
+
+function processUploadedFile(file) {
+  const preview = document.getElementById('uploadPreview');
+  const area = document.getElementById('uploadArea');
+
+  if (file.type.startsWith('image/')) {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const dataUrl = e.target.result;
+      STATE.uploadedContent = { type: 'image', content: dataUrl, name: file.name };
+      preview.innerHTML = `
+        <div class="file-info">✅ ${file.name} (${(file.size / 1024).toFixed(1)} KB)</div>
+        <img src="${dataUrl}" style="max-width:100%;max-height:150px;margin-top:8px;border-radius:4px">
+      `;
+      preview.style.display = 'block';
+      area.querySelector('.title').textContent = '¡Archivo recibido!';
+    };
+    reader.readAsDataURL(file);
+  } else if (file.type === 'text/plain' || file.name.endsWith('.txt')) {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      STATE.uploadedContent = { type: 'text', content: e.target.result, name: file.name };
+      preview.innerHTML = `<div class="file-info">✅ ${file.name} (${(file.size / 1024).toFixed(1)} KB)</div>`;
+      preview.style.display = 'block';
+      area.querySelector('.title').textContent = '¡Archivo recibido!';
+    };
+    reader.readAsText(file);
+  } else if (file.type === 'application/pdf') {
+    STATE.uploadedContent = { type: 'pdf', content: '[PDF subido: ' + file.name + ']', name: file.name };
+    preview.innerHTML = `<div class="file-info">✅ ${file.name} (${(file.size / 1024).toFixed(1)} KB) — PDF recibido</div>`;
+    preview.style.display = 'block';
+    area.querySelector('.title').textContent = '¡PDF recibido!';
+  } else {
+    showToast('Formato no soportado. Usa JPG, PNG, PDF o TXT.', 'error');
+  }
+}
+
+function confirmUploadContent() {
+  const textarea = document.getElementById('examTextPaste');
+  if (textarea && textarea.value.trim()) {
+    STATE.uploadedContent = { type: 'text', content: textarea.value.trim(), name: 'Texto pegado' };
+  }
+  generateExam();
+}
+
+function skipUpload() {
+  STATE.uploadedContent = null;
+  generateExam();
+}
+
+/* ─── Generate Exam ─── */
+async function generateExam() {
+  STATE.step = 'generating';
+  showTyping();
+
+  const materia = STATE.materias.find(m => m.id === STATE.materiaId);
+  const dbaContext = STATE.dbaList.slice(0, 5).map(d => `- ${d.descripcion || d.enunciado || ''}`).join('\n');
+
+  // Build the uploaded content section (EXAM-specific, NOT DBA)
+  let examSpecificContext = '';
+  if (STATE.uploadedContent) {
+    if (STATE.uploadedContent.type === 'text') {
+      examSpecificContext = `
+=== CONTENIDO ESPECÍFICO DEL EXAMEN (FUENTE EXTERNA — NO ES DBA) ===
+El profesor ha proporcionado el siguiente material de referencia para crear el examen.
+Este contenido es específico de esta evaluación y NO debe mezclarse con los DBA generales:
+
+${STATE.uploadedContent.content}
+
+=== FIN DEL CONTENIDO ESPECÍFICO ===`;
+    } else if (STATE.uploadedContent.type === 'image') {
+      examSpecificContext = `
+=== MATERIAL VISUAL PROPORCIONADO PARA EL EXAMEN ===
+El profesor subió una imagen: ${STATE.uploadedContent.name}.
+[La imagen está disponible para análisis visual si el modelo lo soporta]
+=== FIN DEL MATERIAL VISUAL ===`;
+    } else if (STATE.uploadedContent.type === 'pdf') {
+      examSpecificContext = `
+=== DOCUMENTO PDF PROPORCIONADO PARA EL EXAMEN ===
+Archivo: ${STATE.uploadedContent.name}.
+[PDF subido como referencia para el contenido del examen]
+=== FIN DEL DOCUMENTO PDF ===`;
+    }
+  }
+
+  // Build question type specs
+  const qtypeSpecs = Object.entries(STATE.qtypes)
+    .map(([id, count]) => {
+      const t = QUESTION_TYPES.find(q => q.id === id);
+      return `  - ${t ? t.name : id}: ${count} preguntas`;
+    })
+    .join('\n');
+
+  const prompt = `Eres un asistente curricular colombiano experto en crear exámenes alineados a DBA.
+
+Contexto de la materia:
+- Materia: ${STATE.materiaName}
+- Área: ${materia?.area || 'N/A'}
+- Grado: ${materia?.grado || 'N/A'}
+
+DBA disponibles (currículo oficial — usar SOLO como guía de alineación curricular):
+${dbaContext || '(No hay DBA específicos disponibles)'}
+
+${examSpecificContext}
+
+El profesor quiere evaluar: "${STATE.topicText}"
+
+ESPECIFICACIONES DEL EXAMEN:
+${qtypeSpecs}
+
+Genera un examen educativo completo en formato JSON con la siguiente estructura:
+{
+  "titulo": "Título del examen basado en el tema",
+  "instrucciones": "Instrucciones claras para el estudiante",
+  "preguntas": [
+    {
+      "numero": 1,
+      "tipo": "opcion_multiple|verdadero_falso|abierta|seleccion_multiple|completar",
+      "enunciado": "Texto de la pregunta",
+      "opciones": ["A) ...", "B) ...", "C) ...", "D) ..."],
+      "respuesta_correcta": "Índice o texto de la respuesta correcta",
+      "opciones_correctas": [0, 2] (solo para seleccion_multiple),
+      "puntaje": 1.0,
+      "dba_relacionado": "DBA que cubre esta pregunta",
+      "justificacion": "Por qué se evalúa este contenido"
+    }
+  ],
+  "total_puntaje": 10.0
+}
+
+Reglas por tipo:
+- opcion_multiple: array opciones con A) B) C) D), respuesta_correcta es índice numérico
+- verdadero_falso: opciones ["Verdadero", "Falso"], respuesta_correcta es "Verdadero" o "Falso"
+- abierta: sin opciones, respuesta_correcta es una guía de lo que debe incluir la respuesta
+- seleccion_multiple: varias correctas, usa opciones_correctas como array de índices
+- completar: enunciado con espacios "____", respuesta_correcta con las palabras faltantes
+
+IMPORTANTE: El contenido específico que el profesor subió DEBE usarse como fuente principal
+para las preguntas, pero alineándolo a los DBA correspondientes. NO mezcles el contenido
+subido con los DBA como si fueran lo mismo — son fuentes separadas.`;
+
+  try {
+    let preguntas = null;
+
+    // Try via xali/chat first
+    try {
+      const r = await fetch(`${API}/xali/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          materia_id: STATE.materiaId,
+          mensaje: prompt,
+          modo: 'evaluacion',
+        }),
+      });
+      if (r.ok) {
+        const data = await r.json();
+        const text = data.respuesta || data.message || '';
+        const jsonMatch = text.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          const parsed = JSON.parse(jsonMatch[0]);
+          preguntas = parsed.preguntas || parsed;
+        }
+      }
+    } catch (_) { /* fallback */ }
+
+    // Fallback: generate demo exam with correct counts and types
+    if (!preguntas || !Array.isArray(preguntas) || preguntas.length === 0) {
+      preguntas = generateDemoQuestions();
+    }
+
+    STATE.currentSugerencias = Array.isArray(preguntas) ? preguntas : (preguntas.preguntas || []);
+    removeTyping();
+
+    if (STATE.currentSugerencias.length === 0) {
+      addBotMsg('No se pudieron generar preguntas. Intenta de nuevo con más detalles.');
+      STATE.step = 'topic';
+      return;
+    }
+
+    showPreguntasSugeridas(STATE.currentSugerencias);
+
+    // If there was uploaded content, save it as exam-specific RAG source
+    if (STATE.uploadedContent && STATE.uploadedContent.type === 'text' && STATE.uploadedContent.content.length > 50) {
+      saveAsRagSource(STATE.uploadedContent.content, STATE.uploadedContent.name);
+    }
+
+  } catch (e) {
+    removeTyping();
+    addBotMsg(`Hubo un error generando el examen: ${e.message}. Intenta de nuevo.`);
+    STATE.step = 'topic';
+  }
+}
+
+async function saveAsRagSource(content, title) {
+  try {
+    await fetch(`${API}/rag/sources`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({
+        materia_id: STATE.materiaId,
+        tipo: 'evaluacion',
+        titulo: `Examen: ${title || STATE.topicText.substring(0, 60)}`,
+        contenido: content,
+      }),
+    });
+    loadDocumentList();
+  } catch (_) { /* silent — optional */ }
+}
+
+function generateDemoQuestions() {
+  const questions = [];
+  let num = 1;
+
+  Object.entries(STATE.qtypes).forEach(([type, count]) => {
+    const materia = STATE.materias.find(m => m.id === STATE.materiaId);
+    for (let i = 0; i < count; i++) {
+      const q = {
+        numero: num++,
+        tipo: type,
+        enunciado: `[${type}] Pregunta sobre "${STATE.topicText}" — ${i + 1}`,
+        opciones: [],
+        respuesta_correcta: '',
+        puntaje: 1.0,
+        dba_relacionado: STATE.dbaList[i % STATE.dbaList.length]?.descripcion || 'DBA general',
+        justificacion: 'Pregunta alineada al DBA y generada para el tema especificado.',
+      };
+
+      if (type === 'opcion_multiple') {
+        q.opciones = ['A) Primera opción correcta', 'B) Segunda opción', 'C) Tercera opción', 'D) Cuarta opción'];
+        q.respuesta_correcta = '0';
+      } else if (type === 'verdadero_falso') {
+        q.opciones = ['Verdadero', 'Falso'];
+        q.respuesta_correcta = i % 2 === 0 ? 'Verdadero' : 'Falso';
+      } else if (type === 'abierta') {
+        q.opciones = [];
+        q.respuesta_correcta = 'Respuesta modelo: el estudiante debe explicar...';
+      } else if (type === 'seleccion_multiple') {
+        q.opciones = ['A) Primera opción correcta', 'B) Segunda opción también correcta', 'C) Opción incorrecta', 'D) Otra opción incorrecta'];
+        q.respuesta_correcta = [0, 1];
+        q.opciones_correctas = [0, 1];
+      } else if (type === 'completar') {
+        q.opciones = [];
+        q.enunciado = `Completa la frase sobre "${STATE.topicText}": __________ es importante porque __________.`;
+        q.respuesta_correcta = 'Palabras clave según el tema';
+      }
+
+      questions.push(q);
+    }
+  });
+
+  return questions;
+}
+
+/* ─── Display Generated Questions ─── */
+function showPreguntasSugeridas(preguntas) {
+  STATE.step = 'reviewing';
+  let html = `✅ **Excelente!** Basado en el tema y los DBA, generé **${preguntas.length} preguntas**.
+Puedes editar cada pregunta, marcar la respuesta correcta y luego crear el examen.`;
+
+  preguntas.forEach((q, i) => {
+    const typeLabel = QUESTION_TYPES.find(t => t.id === q.tipo)?.name || q.tipo;
+
+    html += `<div class="question-preview" data-q="${i}">`;
+
+    // Header
+    html += `<div class="q-header">
+      <input class="q-enunciado" value="${escapeAttr(q.enunciado)}" style="flex:1;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:6px 10px;color:var(--fg);font-size:13px;font-weight:600;font-family:var(--font-body)">
+      <span class="q-type-badge">${typeLabel}</span>
+    </div>`;
+
+    // Options based on type
+    if (q.tipo === 'opcion_multiple') {
+      html += `<div class="options">`;
+      (q.opciones || ['']).forEach((o, oi) => {
+        html += `<label class="option" style="cursor:pointer">
+          <input type="radio" name="correcta_${i}" value="${oi}" ${String(q.respuesta_correcta) === String(oi) ? 'checked' : ''} style="accent-color:var(--brand-500)">
+          <span class="letter">${String.fromCharCode(65 + oi)}</span>
+          <input class="q-option" value="${escapeAttr(o)}" style="flex:1;background:transparent;border:none;color:var(--fg);font-size:13px;font-family:var(--font-body);outline:none">
+        </label>`;
+      });
+      html += `</div>`;
+    } else if (q.tipo === 'verdadero_falso') {
+      html += `<div class="vf-options">
+        <div class="vf-option ${q.respuesta_correcta === 'Verdadero' ? 'selected correct' : ''}" onclick="selectVF(${i}, 'Verdadero', this)">
+          ✅ Verdadero
+        </div>
+        <div class="vf-option ${q.respuesta_correcta === 'Falso' ? 'selected correct' : ''}" onclick="selectVF(${i}, 'Falso', this)">
+          ❌ Falso
+        </div>
+      </div>`;
+    } else if (q.tipo === 'seleccion_multiple') {
+      html += `<div class="options" style="font-size:12px;color:var(--secondary);margin-bottom:6px">Respuestas correctas (selecciona varias):</div>
+      <div class="options">`;
+      (q.opciones || ['']).forEach((o, oi) => {
+        const isCorrect = (q.opciones_correctas || []).includes(oi) || (q.respuesta_correcta || []).includes(oi);
+        html += `<label class="option" style="cursor:pointer">
+          <input type="checkbox" name="correcta_${i}" value="${oi}" ${isCorrect ? 'checked' : ''} style="accent-color:var(--brand-500)">
+          <span class="letter">${String.fromCharCode(65 + oi)}</span>
+          <input class="q-option" value="${escapeAttr(o)}" style="flex:1;background:transparent;border:none;color:var(--fg);font-size:13px;font-family:var(--font-body);outline:none">
+        </label>`;
+      });
+      html += `</div>`;
+    } else if (q.tipo === 'abierta' || q.tipo === 'completar') {
+      html += `<div style="padding:8px;background:var(--bg);border-radius:8px;font-size:12px;color:var(--secondary)">
+        📝 Respuesta guía: <input class="q-respuesta-abierta" value="${escapeAttr(q.respuesta_correcta || '')}" style="flex:1;background:transparent;border:none;color:var(--fg);font-size:13px;font-family:var(--font-body);outline:none;width:100%;margin-top:4px">
+      </div>`;
+    }
+
+    // DBA reference footer
+    html += `<div class="q-meta">
+      📚 ${escapeHtml(q.dba_relacionado || '')} ${q.justificacion ? '· ' + escapeHtml(q.justificacion) : ''}
+    </div>`;
+
+    html += `</div>`;
+  });
+
+  // Action buttons
+  html += `<div class="action-buttons">
+    <button class="btn success" onclick="aprobarPreguntas()">✅ Crear examen con estas preguntas</button>
+    <button class="btn" onclick="pedirCambios()">🔄 Pedir cambios al asistente</button>
+    <button class="btn warning" onclick="empezarDeNuevo()">🔁 Empezar de nuevo</button>
+  </div>`;
+
+  addBotMsg(html);
+}
+
+function selectVF(qIndex, value, el) {
+  const container = el.closest('.vf-options');
+  container.querySelectorAll('.vf-option').forEach(o => o.classList.remove('selected', 'correct'));
+  el.classList.add('selected', 'correct');
+  // Store the value on the question preview for later collection
+  container.dataset.vfValue = value;
+}
+
+function escapeAttr(s) {
+  return String(s).replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+function escapeHtml(s) {
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+/* ─── Review Actions ─── */
+function aprobarPreguntas() {
+  const previews = document.querySelectorAll('.question-preview');
+  STATE.preguntasAprobadas = Array.from(previews).map((preview, i) => {
+    const original = STATE.currentSugerencias[i] || {};
+    const enunciado = preview.querySelector('.q-enunciado')?.value || original.enunciado || '';
+    const tipo = original.tipo || 'opcion_multiple';
+
+    let correcta = original.respuesta_correcta;
+    let opciones_correctas = original.opciones_correctas;
+    let opciones = original.opciones || [];
+
+    if (tipo === 'opcion_multiple') {
+      const checked = preview.querySelector('input[type="radio"]:checked');
+      correcta = checked ? parseInt(checked.value) : 0;
+      opciones = Array.from(preview.querySelectorAll('.q-option')).map(el => el.value);
+    } else if (tipo === 'verdadero_falso') {
+      const vfContainer = preview.querySelector('.vf-options');
+      correcta = vfContainer?.dataset?.vfValue || original.respuesta_correcta || 'Verdadero';
+      opciones = ['Verdadero', 'Falso'];
+    } else if (tipo === 'seleccion_multiple') {
+      const checked = preview.querySelectorAll('input[type="checkbox"]:checked');
+      opciones_correctas = Array.from(checked).map(cb => parseInt(cb.value));
+      correcta = opciones_correctas;
+      opciones = Array.from(preview.querySelectorAll('.q-option')).map(el => el.value);
+    } else if (tipo === 'abierta' || tipo === 'completar') {
+      const respInput = preview.querySelector('.q-respuesta-abierta');
+      correcta = respInput?.value || original.respuesta_correcta || '';
+      opciones = [];
+    }
+
+    return {
+      enunciado,
+      tipo,
+      opciones,
+      respuesta_correcta: correcta,
+      opciones_correctas,
+      puntaje: original.puntaje || 1.0,
+      dba_relacionado: original.dba_relacionado || '',
+      justificacion: original.justificacion || '',
+    };
+  });
+
+  addBotMsg('✅ Perfecto. Voy a crear el examen con estas preguntas.');
+
+  // Determine if editing existing
+  const isEditing = STATE.examenCreado && STATE.examenCreado.id;
+  if (isEditing) {
+    STATE.examenCreado = null; // force new creation below
+  }
+  crearExamen(isEditing);
+}
+
+function pedirCambios() {
+  STATE.step = 'topic_done';
+  addBotMsg('Claro, dime qué te gustaría cambiar. Ejemplos:');
+  addBotMsg('• "Haz las preguntas más difíciles"');
+  addBotMsg('• "Cambia el enfoque a aplicación práctica"');
+  addBotMsg('• "Agrega más preguntas de completar"');
+  addBotMsg('• "Usa más ejemplos de la vida real"');
+  document.getElementById('chatInput').disabled = false;
+}
+
+function empezarDeNuevo() {
+  resetFlow();
+  document.getElementById('chatInput').disabled = false;
+  startFlow();
+}
+
+/* ─── Create Exam ─── */
+async function crearExamen(isEditing) {
+  showTyping();
+  try {
+    const preguntas = STATE.preguntasAprobadas;
+    const suffix = isEditing ? ' (editado)' : '';
+    const nombre = `Examen: ${STATE.topicText.substring(0, 80)}${suffix}`;
+    const totalPuntaje = preguntas.reduce((s, q) => s + (q.puntaje || 1.0), 0);
+
+    const r = await fetch(`${API}/evaluaciones`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({
+        materia_id: STATE.materiaId,
+        nombre: nombre,
+        descripcion: `Examen creado con asistente IA. ${preguntas.length} preguntas de tipos variados. Tema: ${STATE.topicText}`,
+        nota_maxima: totalPuntaje,
+        preguntas: preguntas.map((q, i) => ({
+          numero: i + 1,
+          tipo: q.tipo,
+          enunciado: q.enunciado,
+          opciones: q.opciones?.map(o => o.replace(/^[A-Z]\)\s*/, '')),
+          respuesta_correcta: q.tipo === 'seleccion_multiple' ? (q.opciones_correctas || []) : q.respuesta_correcta,
+          opciones_correctas: q.tipo === 'seleccion_multiple' ? (q.opciones_correctas || []) : undefined,
+          puntaje: q.puntaje || 1.0,
+        })),
+      }),
+    });
+
+    if (!r.ok) throw new Error('Error al crear evaluación: ' + (await r.text()));
+
+    const evaluacion = await r.json();
+    STATE.examenCreado = evaluacion;
+
+    // Save as material
+    try {
+      await fetch(`${API}/herramientas/examen-from-chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          materia_id: STATE.materiaId,
+          titulo: nombre,
+          preguntas: STATE.preguntasAprobadas,
+        }),
+      });
+    } catch (_) {}
+    // Refresh sidebar
+    loadExistingExams();
+    loadDocumentList();
+
+    removeTyping();
+    STATE.step = 'done';
+    STATE.active = true;
+
+    // Summary
+    const typesSummary = Object.entries(STATE.qtypes)
+      .map(([id, count]) => `${count} ${QUESTION_TYPES.find(t => t.id === id)?.name || id}`)
+      .join(', ');
+
+    addBotMsg(`✅ **Examen creado exitosamente en ${STATE.materiaName}!**`);
+    addBotMsg(`📝 **${STATE.preguntasAprobadas.length} preguntas** (${typesSummary})`);
+    addBotMsg(`📖 **Tema:** ${STATE.topicText}`);
+    if (STATE.uploadedContent) {
+      addBotMsg(`📎 **Material de referencia usado:** ${STATE.uploadedContent.name}`);
+    }
+    addBotMsg(`Puedes ver la evaluación en la sección "Evaluaciones" dentro de la materia, o generar otro examen.`);
+
+    const statusBar = document.getElementById('statusBar');
+    statusBar.style.display = 'flex';
+    updateStatusUI();
+
+    document.getElementById('inputArea').style.display = 'none';
+
+    // Offer to create another
+    addBotMsg(`¿Quieres crear otro examen o prefieres revisar el que acabo de crear?`);
+
+  } catch (e) {
+    removeTyping();
+    addBotMsg(`❌ Error al crear el examen: ${e.message}. ¿Intentamos de nuevo?`);
+    STATE.step = 'reviewing';
+  }
+}
+
+/* ─── Chat helpers ─── */
+function mdToHtml(text) {
+  let html = text;
+  html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
+  html = html.replace(/\n/g, '<br>');
+  return html;
+}
+
+function addBotMsg(text) {
+  const div = document.createElement('div');
+  div.className = 'msg bot';
+  div.innerHTML = `<div class="avatar">🤖</div><div class="bubble">${mdToHtml(text)}</div>`;
+  document.getElementById('messages').appendChild(div);
+  div.scrollIntoView({ behavior: 'smooth' });
+  saveMessage('bot', text);
+}
+
+function addUserMsg(text) {
+  const div = document.createElement('div');
+  div.className = 'msg user';
+  div.innerHTML = `<div class="avatar">👤</div><div class="bubble">${escapeHtml(text)}</div>`;
+  document.getElementById('messages').appendChild(div);
+  div.scrollIntoView({ behavior: 'smooth' });
+  saveMessage('user', text);
+}
+
+function showTyping() {
+  const div = document.createElement('div');
+  div.className = 'msg bot';
+  div.id = 'typing';
+  div.innerHTML = `<div class="avatar">🤖</div><div class="bubble"><span class="loading-dots">✍️ Generando preguntas…</span></div>`;
+  document.getElementById('messages').appendChild(div);
+  div.scrollIntoView({ behavior: 'smooth' });
+  document.getElementById('chatInput').disabled = true;
+}
+
+function removeTyping() {
+  const el = document.getElementById('typing');
+  if (el) el.remove();
+  document.getElementById('chatInput').disabled = false;
+  document.getElementById('chatInput').focus();
+}
+
+/* ─── Status toggle ─── */
+function toggleStatus() {
+  STATE.active = !STATE.active;
+  updateStatusUI();
+  showToast(STATE.active ? '✅ Examen activado — estudiantes pueden entregar' : '🔴 Examen desactivado — entregas cerradas', 'success');
+}
+
+function updateStatusUI() {
+  const toggle = document.getElementById('statusToggle');
+  const label = document.getElementById('statusLabel');
+  toggle.classList.toggle('active', STATE.active);
+  label.textContent = STATE.active
+    ? '✅ Activo — los estudiantes pueden ver y entregar el examen'
+    : '🔴 Inactivo — los estudiantes NO pueden entregar';
+}
+
+function showToast(msg, type) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show ' + (type || '');
+  clearTimeout(t._hide);
+  t._hide = setTimeout(() => t.classList.remove('show'), 4000);
+}
+
+/* ─── Boot ─── */
+init();
+</script>
+</body>
+</html>

@@ -90,6 +90,23 @@ class PlanRefuerzoRequest(HerramientaBaseRequest):
     calificacion_actual: float | None = None
 
 
+class ExamenFromChatPregunta(BaseModel):
+    enunciado: str
+    tipo: str = "opcion_multiple"
+    opciones: list[str] = Field(default_factory=list)
+    respuesta_correcta: str | list | int | None = None
+    opciones_correctas: list[int] | None = None
+    puntaje: float = 1.0
+    dba_relacionado: str | None = None
+    justificacion: str | None = None
+
+
+class ExamenFromChatRequest(BaseModel):
+    materia_id: UUID
+    titulo: str
+    preguntas: list[ExamenFromChatPregunta]
+
+
 class MaterialRead(BaseModel):
     id: UUID
     tipo: str

@@ -1,4 +1,6 @@
-# Presenton patches
+# Presenton patches — XCalificator
+
+> **Proyecto de investigación** — Institución Educativa San Agustín, Mocoa, Putumayo  
 
 Patches reversibles montados por `docker-compose.yml`.
 

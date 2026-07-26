@@ -4,6 +4,7 @@ from __future__ import annotations
 import json
 from uuid import UUID
 
+from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modules.herramientas.generators import (
@@ -28,6 +29,7 @@ from app.modules.herramientas.schemas import (
     CrucigramaRequest,
     CuentoRequest,
     EmparejarRequest,
+    ExamenFromChatRequest,
     ExamenRequest,
     FichaRequest,
     FlashcardsRequest,
@@ -158,6 +160,46 @@ async def delete_material(db: AsyncSession, material_id: UUID, profesor_id: UUID
     )
     await db.commit()
     return (result.rowcount or 0) > 0
+
+
+async def update_material(db: AsyncSession, material_id: UUID, profesor_id: UUID, payload: dict) -> dict:
+    """Actualiza campos de un material. Solo 'materia_id' y 'titulo' permitidos."""
+    from sqlalchemy import text
+
+    allowed = {"materia_id", "titulo"}
+    campos = {k: v for k, v in payload.items() if k in allowed and v is not None}
+    if not campos:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No hay campos válidos para actualizar")
+
+    sql_parts = []
+    params: dict = {"id": str(material_id), "p": str(profesor_id)}
+    for k, v in campos.items():
+        if k == "materia_id":
+            sql_parts.append("materia_id = :materia_id")
+            params["materia_id"] = str(UUID(v) if isinstance(v, str) else v)
+        else:
+            sql_parts.append(f"{k} = :{k}")
+            params[k] = v
+
+    sql_parts.append("updated_at = now()")
+    set_clause = ", ".join(sql_parts)
+    result = await db.execute(
+        text(f"UPDATE materiales_generados SET {set_clause} WHERE id = :id AND profesor_id = :p RETURNING id, tipo, titulo, materia_id, contenido_json, archivo_url, created_at"),
+        params,
+    )
+    await db.commit()
+    row = result.fetchone()
+    if row is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Material no encontrado")
+    return {
+        "id": row[0],
+        "tipo": row[1],
+        "titulo": row[2],
+        "materia_id": row[3],
+        "contenido_json": row[4],
+        "archivo_url": row[5],
+        "created_at": row[6],
+    }
 
 
 async def get_material(db: AsyncSession, material_id: UUID, profesor_id: UUID) -> dict | None:
@@ -352,6 +394,26 @@ Genera un taller pedagógico práctico. Devuelve JSON:
         db, profesor_id=current_user.id, materia_id=materia_id,
         tipo=MaterialTipo.TALLER, titulo=req.titulo,
         input_json=req.model_dump(), contenido_json=result,
+    )
+
+
+async def gen_examen_from_chat(
+    db: AsyncSession,
+    req: ExamenFromChatRequest,
+    current_user: User,
+) -> dict:
+    materia_id = await _resolve_materia_id(db, req, current_user)
+    contenido = {
+        "titulo": req.titulo,
+        "instrucciones": "Examen creado desde el asistente de chat.",
+        "preguntas": [p.model_dump() for p in req.preguntas],
+        "total_puntaje": sum(p.puntaje for p in req.preguntas),
+    }
+    return await _save_material(
+        db, profesor_id=current_user.id, materia_id=materia_id,
+        tipo=MaterialTipo.EXAMEN, titulo=req.titulo,
+        input_json={"origen": "chat", "cantidad": len(req.preguntas)},
+        contenido_json=contenido,
     )
 
 

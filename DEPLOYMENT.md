@@ -1,4 +1,7 @@
-# Despliegue en VPS
+# Despliegue en VPS — XCalificator
+
+> **Proyecto de investigación** — Institución Educativa San Agustín, Mocoa, Putumayo  
+> Sistema integral de apoyo académico basado en LLM
 
 ## Requisitos
 

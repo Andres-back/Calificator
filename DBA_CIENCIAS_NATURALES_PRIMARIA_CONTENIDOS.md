@@ -1,5 +1,8 @@
 # Contenidos DBA - Ciencias Naturales Primaria
 
+> **Proyecto de investigación** — Institución Educativa San Agustín, Mocoa, Putumayo  
+> Contenido de referencia para XCalificator. Basado en DBA del MEN Colombia.
+
 Fuente curricular base: DBA de Ciencias Naturales y Educacion Ambiental, MEN / Colombia Aprende.
 
 ## Grado 1

@@ -12,6 +12,7 @@ from app.modules.herramientas.schemas import (
     CrucigramaRequest,
     CuentoRequest,
     EmparejarRequest,
+    ExamenFromChatRequest,
     ExamenRequest,
     FichaRequest,
     FlashcardsRequest,
@@ -126,6 +127,16 @@ async def taller(
 ) -> dict:
     require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
     return await service.gen_taller(db, req, current_user)
+
+
+@router.post("/examen-from-chat", status_code=status.HTTP_201_CREATED)
+async def examen_from_chat(
+    req: ExamenFromChatRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
+    return await service.gen_examen_from_chat(db, req, current_user)
 
 
 @router.post("/examen", status_code=status.HTTP_201_CREATED)
@@ -256,3 +267,19 @@ async def material_pdf(
         media_type="application/pdf",
         headers={"Content-Disposition": f'inline; filename="{slug}.pdf"'},
     )
+
+
+@router.patch("/{material_id}", status_code=status.HTTP_200_OK)
+async def actualizar_material(
+    material_id: UUID,
+    payload: dict,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    """Actualiza campos del material (ej: materia_id, titulo). Solo profesor dueño o admin."""
+    require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
+    material = await service.get_material(db, material_id, current_user.id)
+    if material is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Material no encontrado")
+    updated = await service.update_material(db, material_id, current_user.id, payload)
+    return updated

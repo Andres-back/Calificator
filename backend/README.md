@@ -1,49 +1,51 @@
-# XCalificator Backend
+# XCalificator — Backend
 
-Backend FastAPI modular para las fases 1 y 2 de XCalificator:
+> **Proyecto de investigación** — Institución Educativa San Agustín, Mocoa, Putumayo  
+> Módulo backend del sistema integral de apoyo académico basado en LLM
 
-- Autenticacion con JWT en cookies `httpOnly`.
-- Usuarios con roles `admin`, `profesor` y `estudiante`.
-- Materias con codigo unico de matricula.
-- Matricula de estudiantes por codigo.
-- Catalogo DBA.
-- Evaluaciones `nativa`, `externa_digitalizada` y `sorpresa`.
-- `EvaluationBlueprint` obligatorio para cada evaluacion.
-- Migracion inicial Alembic con PostgreSQL y `pgvector`.
+Backend FastAPI con arquitectura modular para el sistema XCalificator. Integra modelos de lenguaje (LLM), búsqueda semántica RAG con pgvector, procesamiento OCR y cola de tareas Celery.
 
-## Ejecutar en local con Docker
+## Stack
 
-```bash
-docker compose up --build
-docker compose exec backend alembic upgrade head
-```
+- **Framework:** FastAPI + SQLAlchemy async + Alembic
+- **Base de datos:** PostgreSQL 16 + pgvector
+- **Cache / Cola:** Redis + Celery
+- **IA:** LLM Router multicascada (OpenAI-compatible, Groq, Ollama)
+- **Búsqueda semántica:** pgvector (cosine similarity sobre embeddings)
+- **OCR:** Procesamiento de imágenes de evaluaciones
 
-Para usar variables locales propias, crea `backend/.env` y ejecuta Docker Compose con
-`BACKEND_ENV_FILE=./backend/.env`.
+## Módulos (backend/app/modules)
 
-API:
+| Módulo | Función |
+|---|---|
+| `auth/` | Autenticación con JWT en cookies httpOnly |
+| `users/` | Usuarios con roles admin, profesor, estudiante |
+| `materias/` | Materias, grados, código de matrícula |
+| `matriculas/` | Matrícula de estudiantes |
+| `evaluaciones/` | Creación, publicación, resolución, calificación |
+| `herramientas/` | 15 tipos de materiales didácticos generados por IA |
+| `calificaciones/` | Calificación, modo salón, boletín |
+| `xali/` | Asistente IA conversacional para estudiantes y docentes |
+| `rag/` | Ingesta y búsqueda semántica RAG (pgvector) |
+| `dba/` | Catalogo de Derechos Básicos de Aprendizaje |
+| `presentaciones/` | Generación de presentaciones educativas |
+| `imagenes/` | Generación y gestión de imágenes IA |
+| `reportes/` | Estadísticas y reportes académicos |
+| `admin_ai_config/` | Configuración dinámica de proveedores LLM |
+| `jobs/` | Tareas programadas y cola de trabajos |
 
-```txt
-http://localhost:8000/health
-http://localhost:8000/docs
-```
-
-## Ejecutar sin Docker
-
-```bash
-cd backend
-python -m venv .venv
-.venv\Scripts\activate
-pip install -r requirements.txt
-alembic upgrade head
-uvicorn app.main:app --reload
-```
-
-## Pruebas
+## Desarrollo
 
 ```bash
-cd backend
-pytest
+cd /mnt/Calificator
+docker compose up -d backend
+# O local:
+pip install -e backend/
+uvicorn app.main:app --reload --port 8000
 ```
 
-Si las dependencias no estan instaladas, las pruebas unitarias puras siguen sirviendo para validar generacion de codigos y construccion de blueprints.
+## Tests
+
+```bash
+docker exec -w /app calificator-backend-1 python3 -m pytest tests/ -v
+```

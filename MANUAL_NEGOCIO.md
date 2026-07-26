@@ -1,6 +1,7 @@
-# XCalificator — Manual de Negocio Mejorado
+# XCalificator — Manual de Negocio
 
-> Versión 1.1 · Contexto: Colombia, educación básica y media · Idioma del sistema: español
+> **Proyecto de investigación** — Institución Educativa San Agustín, Mocoa, Putumayo  
+> Versión 1.1 · Contexto: Colombia, educación básica y media · Idioma del sistema: español  
 > Enfoque: plataforma docente con IA para planear, crear, evaluar, calificar, retroalimentar, reforzar y reportar.
 
 ---
@@ -86,8 +87,8 @@ Funciones:
 - Subir archivos, capturas o fotos cuando la actividad lo permita.
 - Realizar actividades interactivas: sopa de letras, crucigrama, emparejar, unir columnas, fichas, cuentos con preguntas, etc.
 - Consultar calificaciones confirmadas.
-- Recibir retroalimentación.
-- Usar Xali como tutor pedagógico.
+- Recibir retroalimentación del docente.
+- Chatear con Xali sobre evaluaciones ya calificadas por el docente. Xali le muestra al estudiante cómo debió resolverlo, lo guía paso a paso, señala el error y cómo abordarlo correctamente, pero nunca le entrega la respuesta resuelta. El objetivo es que el estudiante entienda su error y aprenda a resolverlo por sí mismo.
 
 ### 3.4 Acudiente o padre de familia (opcional futuro)
 
@@ -1055,9 +1056,13 @@ El docente define si una actividad acepta reintentos y cómo se calcula el punta
 
 Las fotos o archivos usados para calificar deben conservarse como evidencia, salvo políticas de eliminación configuradas por la institución.
 
-### R12 — Xali no resuelve evaluaciones activas
+### R12 — Xali solo responde sobre evaluaciones ya calificadas
 
-Xali puede explicar conceptos, dar pistas y orientar, pero no entregar respuestas directas de una evaluación activa.
+Para estudiantes, Xali únicamente puede conversar sobre evaluaciones que el docente ya haya calificado y confirmado. Su rol es guiar al estudiante: mostrarle cómo debió resolver el ejercicio, señalar el error, explicar el concepto y cómo abordarlo correctamente, pero **nunca entregar la respuesta resuelta**. El aprendizaje debe ocurrir por descubrimiento guiado, no por solución directa.
+
+No responde como tutor general ni sobre temas no vinculados a una entrega calificada.
+
+Para docentes, Xali actúa como copiloto pedagógico para planear clases y crear materiales.
 
 ---
 
@@ -1152,7 +1157,8 @@ XCalificator debe registrar evidencia para demostrar impacto.
 | Nota sugerida | Nota propuesta por IA/autocorrección. |
 | Nota confirmada | Nota validada por el docente. |
 | Vision Router | Módulo que interpreta fotos, cuadernos, hojas y capturas. |
-| Xali | Tutor IA para estudiantes. |
+| Xali (estudiante) | Asistente IA que guía al estudiante sobre evaluaciones ya calificadas. Muestra cómo debió resolverlo, señala errores y explica conceptos, pero nunca da la respuesta resuelta. Solo responde sobre entregas confirmadas por el docente. |
+| Xali (docente) | Copiloto pedagógico para planear clases y crear materiales. |
 
 ---
 
