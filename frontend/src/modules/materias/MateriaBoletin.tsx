@@ -1,13 +1,12 @@
 import { useMemo, useState } from 'react';
 import { useQuery, useQueries } from '@tanstack/react-query';
-import { ArrowDown, ArrowUp, CheckCircle2, FileText, Users } from 'lucide-react';
-import { Badge, Card, EmptyState, Skeleton } from '@/components/ui';
+import { ArrowDown, ArrowUp, FileText, Users } from 'lucide-react';
+import { Card, EmptyState, Skeleton } from '@/components/ui';
 import { listEvaluaciones } from '@/modules/evaluaciones/api';
-import { listCalificaciones } from '@/modules/calificaciones/api';
-import { useMateriaContext } from './MateriaDetailPage';
-import { getBoletin } from '@/modules/calificaciones/api';
+import { listCalificaciones, getBoletin } from '@/modules/calificaciones/api';
+import { useMateriaContext } from './MateriaContext';
 import { useAuth } from '@/stores/auth';
-import type { Calificacion, Evaluacion } from '@/types/api';
+import type { Calificacion } from '@/types/api';
 import { cn } from '@/lib/cn';
 
 type SortField = 'nombre' | 'promedio' | 'confirmadas';
@@ -23,13 +22,13 @@ interface StudentRow {
 }
 
 export function MateriaBoletin() {
-  const { materia, canManageMateria, isStudent } = useMateriaContext();
+  const { materia, canManageMateria } = useMateriaContext();
   const [sortField, setSortField] = useState<SortField>('nombre');
   const [sortDir, setSortDir] = useState<SortDir>('asc');
 
   const estudiantesList = useMemo(() => {
     if ('estudiantes' in materia) {
-      return (materia as any).estudiantes as Array<{ id: string; nombre: string; email: string }>;
+      return (materia.estudiantes as unknown) as Array<{ id: string; nombre: string; email: string }>;
     }
     return [];
   }, [materia]);

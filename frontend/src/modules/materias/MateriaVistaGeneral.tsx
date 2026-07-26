@@ -1,10 +1,10 @@
 import { useMutation } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
-import { Copy, RefreshCw, Users, ClipboardCheck, BookMarked, Mail } from 'lucide-react';
+import { Copy, RefreshCw, Users, ClipboardCheck, Mail } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button, Card, Badge, EmptyState } from '@/components/ui';
 import { regenerateCode } from './api';
-import { useMateriaContext } from './MateriaDetailPage';
+import { useMateriaContext } from './MateriaContext';
 import { queryClient } from '@/lib/queryClient';
 import { toApiError } from '@/lib/api';
 import type { MateriaConEstudiantes } from '@/types/api';

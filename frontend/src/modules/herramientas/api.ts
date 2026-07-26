@@ -22,6 +22,11 @@ export async function deleteMaterial(id: string): Promise<void> {
   await api.delete(`${BASE}/${id}`);
 }
 
+export async function updateMaterial(id: string, payload: { materia_id?: string; titulo?: string }): Promise<Material> {
+  const { data } = await api.patch<Material>(`${BASE}/${id}`, payload);
+  return data;
+}
+
 /** URL del PDF (estudiante o soluciones). El navegador envía la cookie de sesión. */
 export function pdfUrl(id: string, soluciones = false): string {
   const base = import.meta.env.VITE_API_URL ?? '/api';

@@ -6,7 +6,6 @@ import {
   Sparkles,
   Settings2,
   Presentation,
-  ClipboardCheck,
   FileText,
   type LucideIcon,
 } from 'lucide-react';
@@ -21,7 +20,6 @@ export interface NavItem {
 export const profesorNav: NavItem[] = [
   { label: 'Inicio', to: '/app', icon: LayoutDashboard },
   { label: 'Materias', to: '/app/materias', icon: BookOpen },
-  { label: 'Evaluaciones', to: '/app/evaluaciones', icon: ClipboardCheck },
   { label: 'Herramientas', to: '/app/herramientas', icon: Wrench },
   { label: 'Presentaciones', to: '/app/presentaciones', icon: Presentation },
   { label: 'Reportes', to: '/app/reportes', icon: BarChart3 },
@@ -39,7 +37,6 @@ export const adminNav: NavItem[] = [
 export const estudianteNav: NavItem[] = [
   { label: 'Inicio', to: '/app', icon: LayoutDashboard },
   { label: 'Mis materias', to: '/app/materias', icon: BookOpen },
-  { label: 'Evaluaciones', to: '/app/evaluaciones', icon: ClipboardCheck },
   { label: 'Mi boletín', to: '/app/calificaciones/boletin', icon: FileText },
   { label: 'Asistente Xali', to: '/app/xali', icon: Sparkles },
 ];

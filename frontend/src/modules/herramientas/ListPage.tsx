@@ -8,6 +8,7 @@ import { PageHeader } from '@/components/layout/PageHeader';
 import { listMaterials, deleteMaterial, pdfUrl } from './api';
 import { TOOL_BY_TIPO } from './meta';
 import { useDeleteConfirm } from '@/lib/hooks';
+import { formatDate } from '@/lib/dates';
 import { cn } from '@/lib/cn';
 
 const CATEGORIES = ['Todos', 'Juego', 'Evaluación', 'Material'] as const;
@@ -108,7 +109,7 @@ export function ListPage() {
                         <div className="flex items-center gap-2"><Badge tone="neutral">{meta?.label ?? material.tipo}</Badge>{meta?.interactive && <Badge tone="violet"><Gamepad2 className="h-3 w-3" /> Interactivo</Badge>}</div>
                         {material.materia_nombre && <p className="mt-2 text-xs font-semibold text-brand-600">{material.materia_nombre}</p>}
                         <p className="mt-2 font-semibold line-clamp-2">{material.titulo}</p>
-                        <p className="mt-1 text-xs text-muted">{new Date(material.created_at).toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
+                        <p className="mt-1 text-xs text-muted">{formatDate(material.created_at)}</p>
                       </Link>
                       <div className="mt-4 flex items-center gap-2 border-t border-border pt-3">
                         <a href={pdfUrl(material.id)} target="_blank" rel="noreferrer" className="flex-1"><Button size="sm" variant="outline" className="w-full"><Download className="h-4 w-4" /> PDF</Button></a>

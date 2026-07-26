@@ -1,9 +1,10 @@
 import { lazy, Suspense } from 'react';
-import { createBrowserRouter, Link, Navigate, useRouteError } from 'react-router-dom';
+import { createBrowserRouter, Navigate } from 'react-router-dom';
 import { AppShell } from '@/components/layout/AppShell';
 import { RequireAuth } from '@/components/auth/RequireAuth';
 import { RequireRole } from '@/components/auth/RequireRole';
-import { LoadingScreen, Button } from '@/components/ui';
+import { LoadingScreen } from '@/components/ui';
+import { RouterErrorBoundary } from '@/components/RouterErrorBoundary';
 import { routes } from '@/config/routes';
 import { ForbiddenPage } from '@/pages/ForbiddenPage';
 import { NotFoundPage } from '@/pages/NotFoundPage';
@@ -30,31 +31,6 @@ const ReportesPage = lazy(() => import('@/modules/reportes/ReportesPage').then((
 const XaliPage = lazy(() => import('@/modules/xali/XaliPage').then((m) => ({ default: m.XaliPage })));
 
 const lazyPage = (el: React.ReactNode) => <Suspense fallback={<LoadingScreen />}>{el}</Suspense>;
-
-/**
- * Error boundary global: atrapa errores de renderizado inesperados.
- */
-function RouterErrorBoundary() {
-  const error = useRouteError();
-  console.error('[RouterErrorBoundary]', error);
-  return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-bg px-4 text-center">
-      <h1 className="font-display text-3xl font-extrabold">Algo salió mal</h1>
-      <p className="mt-3 max-w-md text-muted">
-        Se produjo un error inesperado. Puedes volver al inicio e intentarlo de nuevo.
-      </p>
-      <div className="mt-8 flex flex-wrap gap-3">
-        <Button onClick={() => window.location.reload()}>Recargar página</Button>
-        <Link
-          to={routes.app}
-          className="focus-ring inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-brand-600 px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-700"
-        >
-          Ir al inicio
-        </Link>
-      </div>
-    </div>
-  );
-}
 
 export const router = createBrowserRouter([
   { path: routes.login, element: lazyPage(<LoginPage />), errorElement: <RouterErrorBoundary /> },

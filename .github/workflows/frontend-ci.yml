@@ -1,0 +1,157 @@
+# Frontend CI — XCalificator
+#
+# Runs on every PR and push to main:
+#  1. Install dependencies (lockfile-based)
+#  2. ESLint
+#  3. TypeScript type-check
+#  4. Vitest (unit)
+#  5. Vite build
+#  6. Playwright (mocked)
+#  7. Axe accessibility checks  (placeholder)
+#  8. npm audit (dependency security)
+#
+# Rules:
+#  - No secrets used for mocked tests
+#  - npm cache properly configured
+#  - Action versions pinned
+#  - No sensitive variables printed
+#  - No deploy step
+
+name: Frontend CI
+
+on:
+  pull_request:
+    paths:
+      - 'frontend/**'
+      - '.github/workflows/frontend-ci.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'frontend/**'
+      - '.github/workflows/frontend-ci.yml'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CI: true
+  NODE_VERSION: '20'
+
+defaults:
+  run:
+    working-directory: frontend
+
+jobs:
+  quality:
+    name: Quality checks
+    runs-on: ubuntu-22.04
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Setup Node.js ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+        env:
+          # No secrets needed for test/build
+          NODE_AUTH_TOKEN: ''
+
+      - name: ESLint
+        run: npm run lint
+        continue-on-error: false
+
+      - name: TypeScript type-check
+        run: npx tsc --noEmit
+        continue-on-error: false
+
+      - name: Vitest (unit)
+        run: npm run test:run
+        continue-on-error: false
+
+      - name: Vite build
+        run: npm run build
+        continue-on-error: false
+
+  e2e-mock:
+    name: Playwright (mocked)
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    needs: [quality]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Setup Node.js ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Run mocked e2e tests
+        run: npm run test:mock
+        # No secrets — all API responses are intercepted by Playwright route mocks
+
+  audit:
+    name: Dependency audit
+    runs-on: ubuntu-22.04
+    timeout-minutes: 5
+    needs: [quality]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Setup Node.js ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: npm audit
+        run: npm audit --audit-level=high || true
+        # Do not fail the pipeline — audit is informational
+        # Production fixes should be tracked as separate issues
+
+  # Placeholder for future accessibility checks
+  # accessibility:
+  #   name: Axe accessibility
+  #   runs-on: ubuntu-22.04
+  #   timeout-minutes: 10
+  #   needs: [quality]
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - uses: actions/setup-node@v4
+  #       with:
+  #         node-version: ${{ env.NODE_VERSION }}
+  #         cache: 'npm'
+  #         cache-dependency-path: frontend/package-lock.json
+  #     - run: npm ci
+  #     - run: npx playwright install --with-deps chromium
+  #     - run: npm run test:a11y

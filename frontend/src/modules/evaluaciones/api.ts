@@ -1,4 +1,5 @@
 import { api } from '@/lib/api';
+import { useQuery } from '@tanstack/react-query';
 import type { DBARead, EntregaOnlineCreate, EntregaRead, Evaluacion, EvaluacionModalidad } from '@/types/api';
 
 export interface EvaluacionCreate {
@@ -54,4 +55,12 @@ export async function crearEntregaOnline(evaluacionId: string, payload: EntregaO
 export async function listDBA(params?: ListDBAParams): Promise<DBARead[]> {
   const { data } = await api.get<DBARead[]>('/dba', { params });
   return data;
+}
+
+export function useEvaluacion(id: string) {
+  return useQuery({
+    queryKey: ['evaluacion', id],
+    queryFn: () => getEvaluacion(id),
+    enabled: Boolean(id),
+  });
 }

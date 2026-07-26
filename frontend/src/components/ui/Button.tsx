@@ -46,7 +46,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       {...props}
     >
       {loading && <Loader2 className="relative h-4 w-4 animate-spin" aria-hidden="true" />}
-      <span>{loading && loadingLabel ? loadingLabel : children}</span>
+      {loading && loadingLabel ? <span>{loadingLabel}</span> : children}
     </button>
   ),
 );

@@ -80,3 +80,24 @@ class DBAUnifiedItem(BaseModel):
     descripcion: str
     evidencias_aprendizaje: str | None = None
     ejemplo: str | None = None
+
+
+# ── DBA desde documento (RAG) ──────────────────────────────────────────
+
+
+class DBASuggestionItem(BaseModel):
+    """Una sugerencia de DBA generada desde un documento."""
+
+    enunciado: str
+    evidencias_aprendizaje: str | None = None
+    ejemplo: str | None = None
+
+
+class DBAUploadResponse(BaseModel):
+    """Respuesta tras procesar un documento subido."""
+
+    source_id: UUID
+    nombre_archivo: str
+    paginas_parrafos: int
+    caracteres_extraidos: int
+    sugerencias: list[DBASuggestionItem]

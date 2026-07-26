@@ -1,5 +1,6 @@
 import axios, { AxiosError, type InternalAxiosRequestConfig } from 'axios';
 import toast from 'react-hot-toast';
+import { getReporter } from '@/lib/errorReporter';
 
 /**
  * Cliente HTTP autenticado por cookies HttpOnly. Nunca persiste ni expone tokens
@@ -31,6 +32,27 @@ export function setSessionExpiredHandler(handler: SessionExpiredHandler) {
 
 export function resetSessionExpiryState() {
   sessionExpiryHandled = false;
+}
+
+/** Extrae el correlationId de las cabeceras de respuesta (si existe) */
+function extractCorrelationId(error: AxiosError): string | undefined {
+  return error.response?.headers?.['x-correlation-id'] as string | undefined;
+}
+
+/** Reporta un error HTTP a la capa de observabilidad (sanitizado automáticamente) */
+function reportHttpError(error: AxiosError, config?: SessionRequestConfig) {
+  const reporter = getReporter();
+  const status = error.response?.status;
+  const correlationId = extractCorrelationId(error);
+
+  // No reportar errores de refresh (causarían loops)
+  if (config?.url?.includes('/auth/refresh')) return;
+
+  reporter.captureException(error, {
+    route: typeof window !== 'undefined' ? window.location.pathname : undefined,
+    httpStatus: status,
+    correlationId,
+  });
 }
 
 function isAuthPathWithoutRefresh(config: SessionRequestConfig) {
@@ -91,11 +113,13 @@ api.interceptors.response.use(
     releaseRequest(config);
 
     if (error.response?.status !== 401 || !config || isAuthPathWithoutRefresh(config)) {
+      reportHttpError(error, config);
       return Promise.reject(error);
     }
 
     if (config._sessionRetried) {
       expireSession();
+      reportHttpError(error, config);
       return Promise.reject(error);
     }
 
@@ -105,6 +129,7 @@ api.interceptors.response.use(
       return api(config);
     } catch {
       expireSession();
+      reportHttpError(error, config);
       return Promise.reject(error);
     }
   },

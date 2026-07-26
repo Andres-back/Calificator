@@ -5,7 +5,7 @@ import toast from 'react-hot-toast';
 import { Plus, ClipboardCheck, Lock, Clock, Pencil } from 'lucide-react';
 import { Badge, Button, Card, EmptyState, Field, Input, Modal, QueryError, Skeleton, Textarea } from '@/components/ui';
 import { listEvaluaciones, createEvaluacion, updateEvaluacion, cerrarEvaluacion, type EvaluacionUpdate } from '@/modules/evaluaciones/api';
-import { useMateriaContext } from './MateriaDetailPage';
+import { useMateriaContext } from './MateriaContext';
 import { toApiError } from '@/lib/api';
 import { queryClient } from '@/lib/queryClient';
 import type { Evaluacion } from '@/types/api';
@@ -90,10 +90,9 @@ export function MateriaEvaluaciones() {
   }
 
   const evaluaciones = evaluacionesQuery.data;
-  const { publicadas, cerradas } = useMemo(() => {
-    if (!evaluaciones) return { publicadas: [], cerradas: [] };
+  const { cerradas } = useMemo(() => {
+    if (!evaluaciones) return { cerradas: [] };
     return {
-      publicadas: evaluaciones.filter((e) => e.estado !== 'cerrada'),
       cerradas: evaluaciones.filter((e) => e.estado === 'cerrada'),
     };
   }, [evaluaciones]);

@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Response, UploadFile, File, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.permissions import get_current_user, require_roles
@@ -14,7 +14,9 @@ from app.modules.dba.schemas import (
     DBAPersonalizadoUpdate,
     DBARead,
     DBAUnifiedItem,
+    DBAUploadResponse, DBASuggestionItem,
 )
+from app.modules.dba import document_service
 from app.modules.materias import service as materias_service
 from app.modules.users.models import User
 from app.shared.enums import UserRole
@@ -137,3 +139,90 @@ async def list_materia_dba_combined(
 ) -> list[dict]:
     materia = await materias_service.ensure_can_read_materia(db, materia_id, current_user)
     return await service.list_combined_dba(db, materia)
+
+
+# ── Subida de documentos para generar DBA (RAG) ────────────────────────
+
+
+@custom_router.post(
+    "/materias/{materia_id}/dba-personalizados/upload-document",
+    response_model=DBAUploadResponse,
+    status_code=status.HTTP_200_OK,
+    tags=["dba-personalizados"],
+)
+async def upload_document_for_dba(
+    materia_id: UUID,
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> object:
+    """Sube un PDF o DOCX, extrae texto, genera sugerencias de DBA vía RAG+LLM."""
+    materia = await materias_service.ensure_can_manage_materia(db, materia_id, current_user)
+
+    contenido = await file.read()
+    mime = file.content_type or ""
+
+    if mime not in document_service.MIMES_PERMITIDOS:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Tipo de archivo no soportado: {mime}. Usa PDF o Word (.docx).",
+        )
+
+    texto = document_service.extraer_texto(contenido, mime)
+    if not texto.strip():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No se pudo extraer texto del documento. Verifica que no esté protegido o vacío.",
+        )
+
+    # Contar páginas/párrafos aproximados
+    paginas_parrafos = texto.count("\n\n") + 1
+    caracteres = len(texto)
+
+    # Generar sugerencias vía LLM
+    sugerencias = await document_service.generar_sugerencias_dba(
+        user_id=current_user.id,
+        materia_id=materia_id,
+        area=materia.area or "General",
+        grado=materia.grado or "N/A",
+        texto_completo=texto,
+    )
+
+    # Guardar como fuente RAG para futuras consultas
+    from app.modules.rag.models import RagSource, RagChunk
+    from app.services.embedding_service import embed_texts
+
+    fuente = RagSource(
+        profesor_id=current_user.id,
+        materia_id=materia_id,
+        tipo="dba",
+        titulo=file.filename or "Documento DBA",
+        contenido_original=texto[:10000],
+        metadata_json={"origen": "upload_dba", "caracteres": caracteres},
+    )
+    db.add(fuente)
+    await db.flush()
+
+    chunks_texto = document_service._chunk_text(texto)
+    if chunks_texto:
+        embeddings = await embed_texts(chunks_texto)
+        for i, (chunk, emb) in enumerate(zip(chunks_texto, embeddings, strict=False)):
+            db.add(RagChunk(
+                source_id=fuente.id,
+                profesor_id=current_user.id,
+                materia_id=materia_id,
+                tipo="dba",
+                chunk_text=chunk,
+                embedding=emb if any(v != 0.0 for v in emb) else None,
+                metadata_json={"indice": i, "total_chunks": len(chunks_texto)},
+            ))
+    await db.commit()
+    await db.refresh(fuente)
+
+    return DBAUploadResponse(
+        source_id=fuente.id,
+        nombre_archivo=file.filename or "documento",
+        paginas_parrafos=paginas_parrafos,
+        caracteres_extraidos=caracteres,
+        sugerencias=[DBASuggestionItem(**s) for s in sugerencias],
+    )

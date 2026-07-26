@@ -29,6 +29,7 @@ import {
 import { PresentacionForm } from './PresentacionForm';
 import { queryClient } from '@/lib/queryClient';
 import { toApiError } from '@/lib/api';
+import { formatDate } from '@/lib/dates';
 
 const STATE: Record<string, { tone: 'warning' | 'info' | 'success' | 'error'; label: string; icon: typeof Clock; accent: string; iconTone: string }> = {
   queued: { tone: 'warning', label: 'En cola', icon: Clock, accent: 'border-l-amber-500', iconTone: 'bg-amber-50 text-amber-600 dark:bg-amber-500/15 dark:text-amber-300' },
@@ -143,7 +144,7 @@ export function PresentacionesPage() {
                       <Badge tone={st.tone}><st.icon className={`h-3.5 w-3.5 ${p.estado === 'running' ? 'animate-spin' : ''}`} /> {st.label}</Badge>
                     </div>
                     <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted">
-                      <span>{new Date(p.created_at).toLocaleDateString('es-CO', { day: '2-digit', month: 'short' })}</span>
+                      <span>{formatDate(p.created_at, { day: '2-digit', month: 'short' })}</span>
                       {(p.pptx_url || p.pdf_url) && <span>Archivos listos para descarga</span>}
                     </div>
                   </div>

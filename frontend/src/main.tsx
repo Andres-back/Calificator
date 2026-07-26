@@ -18,12 +18,18 @@ import { AuthBootstrap } from '@/components/auth/RequireAuth';
 import './index.css';
 import './print.css';
 
-// Desregistra cualquier service worker rogue (cacheado por el entorno/preview):
+// ── Observabilidad desacoplada ────────────────────────────────────────
+import { installGlobalErrorHandlers } from '@/lib/errorReporter';
+
+// ── Service worker rogue cleanup ──
 // era la fuente del `sw.js` que interceptaba fetches e imponía una CSP ajena.
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.getRegistrations().then((regs) => regs.forEach((r) => r.unregister())).catch(() => {});
   if (window.caches) caches.keys().then((keys) => keys.forEach((k) => caches.delete(k))).catch(() => {});
 }
+
+// ── Global error handlers (siempre al inicio) ──
+installGlobalErrorHandlers();
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

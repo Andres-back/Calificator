@@ -4,12 +4,14 @@ import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Download, FileCheck2, Trash2, Gamepad2, Printer, Share2 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { Button, LoadingScreen, Badge, Card, ConfirmDialog } from '@/components/ui';
-import { getMaterial, pdfUrl, deleteMaterial } from './api';
+import { Button, LoadingScreen, Badge, Card, ConfirmDialog, Select } from '@/components/ui';
+import { getMaterial, pdfUrl, deleteMaterial, updateMaterial } from './api';
 import { TOOL_BY_TIPO } from './meta';
 import { CrucigramaView, SopaLetrasView, MatchingView, ContenidoView } from './views';
+import { useMaterias } from '@/modules/materias/MateriaSelect';
 import type { ToolContent } from './views/ContenidoView';
 import { cn } from '@/lib/cn';
+import { toApiError } from '@/lib/api';
 import { queryClient } from '@/lib/queryClient';
 import type { CrucigramaContenido, MatchingContenido, SopaContenido } from '@/types/api';
 
@@ -18,6 +20,8 @@ export function DetailPage() {
   const navigate = useNavigate();
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [assigning, setAssigning] = useState(false);
+  const { data: materias = [] } = useMaterias();
   const { data: material, isLoading } = useQuery({ queryKey: ['material', id], queryFn: () => getMaterial(id) });
 
   if (isLoading) return <LoadingScreen />;
@@ -63,6 +67,20 @@ export function DetailPage() {
       }
     } catch {
       // user cancelled
+    }
+  };
+
+  const handleAssignMateria = async (materiaId: string) => {
+    setAssigning(true);
+    try {
+      await updateMaterial(id, { materia_id: materiaId || undefined });
+      await queryClient.invalidateQueries({ queryKey: ['material', id] });
+      await queryClient.invalidateQueries({ queryKey: ['materials'] });
+      toast.success(materiaId ? 'Material asignado a la materia' : 'Materia desasignada');
+    } catch (err) {
+      toast.error(toApiError(err).detail);
+    } finally {
+      setAssigning(false);
     }
   };
 
@@ -145,6 +163,25 @@ export function DetailPage() {
               <Trash2 className="h-4 w-4" />
             </Button>
           </div>
+        </div>
+        {material.materia_id && (
+          <p className="mt-3 text-xs text-muted">
+            Asignado a: <span className="font-semibold text-brand-600">{materias.find((m) => m.id === material.materia_id)?.nombre ?? '—'}</span>
+          </p>
+        )}
+        <div className="mt-3 flex items-center gap-2 print:hidden">
+          <span className="text-xs text-muted">Materia:</span>
+          <Select
+            value={material?.materia_id ?? ''}
+            onChange={(e) => handleAssignMateria(e.target.value)}
+            disabled={assigning}
+            className="max-w-xs"
+          >
+            <option value="">Sin asignar</option>
+            {materias.map((m) => (
+              <option key={m.id} value={m.id}>{m.nombre}{m.grado ? ` - ${m.grado}` : ''}</option>
+            ))}
+          </Select>
         </div>
       </motion.div>
 

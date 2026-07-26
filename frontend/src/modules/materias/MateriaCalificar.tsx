@@ -9,7 +9,6 @@ import {
   ChevronRight,
   FileImage,
   ImageUp,
-  Loader2,
   RotateCcw,
   ScanText,
   Smartphone,
@@ -18,10 +17,15 @@ import {
   UploadCloud,
   Users,
 } from 'lucide-react';
-import { Badge, Button, Card, EmptyState, Field, Input, Select, RichContent, Skeleton } from '@/components/ui';
+import { Badge, Button, Card, EmptyState, Select, RichContent, Skeleton } from '@/components/ui';
 import { listEvaluaciones } from '@/modules/evaluaciones/api';
-import { calificarFoto, listCalificaciones, confirmarNota, ajustarNota } from '@/modules/calificaciones/api';
-import { useMateriaContext } from './MateriaDetailPage';
+import {
+  calificarFoto,
+  listCalificaciones,
+  confirmarNota,
+  ajustarNota,
+} from '@/modules/calificaciones/api';
+import { useMateriaContext } from './MateriaContext';
 import { toApiError } from '@/lib/api';
 import { confidenceLabel } from '@/lib/utils';
 import type { Calificacion } from '@/types/api';
@@ -58,7 +62,7 @@ export function MateriaCalificar() {
     if (evaluacionIdParam && evaluacionIdParam !== evaluacionId) {
       setEvaluacionId(evaluacionIdParam);
     }
-  }, [evaluacionIdParam]);
+  }, [evaluacionIdParam, evaluacionId]);
 
   const { data: evaluaciones, isLoading: loadingEval } = useQuery({
     queryKey: ['evaluaciones', materia.id],
@@ -73,8 +77,8 @@ export function MateriaCalificar() {
   const evaluationClosed = evalSeleccionada?.estado === 'cerrada';
 
   const estudiantesList = useMemo(() => {
-    if ('estudiantes' in materia && Array.isArray((materia as any).estudiantes)) {
-      return (materia as any).estudiantes as Array<{ id: string; nombre: string; email: string }>;
+    if ('estudiantes' in materia && Array.isArray((materia as { estudiantes: unknown }).estudiantes)) {
+      return ((materia as { estudiantes: Array<{ id: string; nombre: string; email: string }> }).estudiantes);
     }
     return [];
   }, [materia]);
@@ -440,18 +444,21 @@ export function MateriaCalificar() {
                       )}
 
                       {/* Agent scores if available */}
-                      {resultado.resultado_json && (resultado.resultado_json as any).nota_grader_a != null && (
-                        <div className="rounded-xl border border-border bg-surface-2/60 p-3 text-sm">
-                          <p className="text-xs font-semibold text-muted mb-1">Doble verificación IA:</p>
-                          <div className="flex gap-3 text-xs text-muted">
-                            <span>DeepSeek: <strong>{(resultado.resultado_json as any).nota_grader_a}</strong></span>
-                            <span>Qwen: <strong>{(resultado.resultado_json as any).nota_grader_b}</strong></span>
-                            {(resultado.resultado_json as any).discrepancia && (
-                              <span className="text-amber-600 flex items-center gap-1"><TriangleAlert className="h-3 w-3" /> Discrepancia detectada</span>
-                            )}
+                      {resultado.resultado_json && (() => {
+                        const rj = resultado.resultado_json as Record<string, number | boolean | undefined>;
+                        return rj.nota_grader_a != null && (
+                          <div className="rounded-xl border border-border bg-surface-2/60 p-3 text-sm">
+                            <p className="text-xs font-semibold text-muted mb-1">Doble verificación IA:</p>
+                            <div className="flex gap-3 text-xs text-muted">
+                              <span>DeepSeek: <strong>{rj.nota_grader_a}</strong></span>
+                              <span>Qwen: <strong>{rj.nota_grader_b}</strong></span>
+                              {rj.discrepancia && (
+                                <span className="text-amber-600 flex items-center gap-1"><TriangleAlert className="h-3 w-3" /> Discrepancia detectada</span>
+                              )}
+                            </div>
                           </div>
-                        </div>
-                      )}
+                        );
+                      })()}
 
                       {!evaluationClosed && (
                         <div className="space-y-2 pt-2">

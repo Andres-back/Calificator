@@ -1,16 +1,12 @@
-import { Link, Outlet, useLocation, useParams, useOutletContext } from 'react-router-dom';
+import { Link, Outlet, useLocation, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
-import { ArrowLeft, BookOpen, ClipboardCheck, Camera, BarChart3, BookMarked, LayoutGrid, Users, Copy, RefreshCw, Mail, BadgeCheck } from 'lucide-react';
-import { Badge, Button, Card, LoadingScreen, Skeleton, EmptyState, QueryError } from '@/components/ui';
-import { getMateria, getMateriaEstudiantes, regenerateCode } from './api';
+import { ArrowLeft, BookOpen, ClipboardCheck, Camera, BarChart3, BookMarked, LayoutGrid, Users } from 'lucide-react';
+import { Badge, LoadingScreen, QueryError } from '@/components/ui';
+import { getMateria, getMateriaEstudiantes } from './api';
 import { toApiError } from '@/lib/api';
 import { useAuth } from '@/stores/auth';
 import { cn } from '@/lib/cn';
-import { useMutation } from '@tanstack/react-query';
-import type { Materia, MateriaConEstudiantes } from '@/types/api';
-import toast from 'react-hot-toast';
-import { queryClient } from '@/lib/queryClient';
 
 const ALL_TABS = [
   { label: 'Vista general', to: '', icon: LayoutGrid },
@@ -98,7 +94,7 @@ export function MateriaDetailPage() {
             <span className="text-sm text-muted">{[materia.area, materia.grado].filter(Boolean).join(' · ') || 'Sin área o grado definidos'}</span>
             {'estudiantes' in materia && (
               <span className="flex items-center gap-1 text-sm text-muted">
-                <Users className="h-3.5 w-3.5" /> {'estudiantes' in materia ? (materia as any).estudiantes.length : 0} estudiantes
+                <Users className="h-3.5 w-3.5" /> {(materia as { estudiantes: unknown[] }).estudiantes.length} estudiantes
               </span>
             )}
           </div>
@@ -128,19 +124,7 @@ export function MateriaDetailPage() {
           );
         })}
       </nav>
-
-      {/* Sub-content via Outlet */}
       <Outlet context={{ materia, canManageMateria, isStudent }} />
     </div>
   );
-}
-
-/** Hook to access materia context from child routes */
-type MateriaContext = {
-  materia: Materia | MateriaConEstudiantes;
-  canManageMateria: boolean;
-  isStudent: boolean;
-};
-export function useMateriaContext(): MateriaContext {
-  return useOutletContext<MateriaContext>();
 }
