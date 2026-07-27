@@ -44,6 +44,7 @@ export const routes = {
   presentaciones: '/app/presentaciones',
   reportes: '/app/reportes',
   adminAI: '/app/admin/configuracion-ia',
+  analytics: '/app/analytics',
 };
 
 /** Ruta de login con state para redirección post-login */

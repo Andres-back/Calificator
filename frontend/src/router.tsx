@@ -30,6 +30,7 @@ const CalificacionesWorkspace = lazy(() => import('@/modules/calificaciones/Cali
 const PresentacionesPage = lazy(() => import('@/modules/presentaciones/PresentacionesPage').then((m) => ({ default: m.PresentacionesPage })));
 const ReportesPage = lazy(() => import('@/modules/reportes/ReportesPage').then((m) => ({ default: m.ReportesPage })));
 const XaliPage = lazy(() => import('@/modules/xali/XaliPage').then((m) => ({ default: m.XaliPage })));
+const AnalyticsPage = lazy(() => import('@/modules/analytics/AnalyticsPage').then((m) => ({ default: m.AnalyticsPage })));
 
 const lazyPage = (el: React.ReactNode) => <Suspense fallback={<LoadingScreen />}>{el}</Suspense>;
 
@@ -103,6 +104,7 @@ export const router = createBrowserRouter([
               // Nuevo workspace de revisión
               { path: 'calificaciones/workspace', element: lazyPage(<CalificacionesWorkspace />) },
               { path: 'calificaciones/workspace/:evaluacionId', element: lazyPage(<CalificacionesWorkspace />) },
+              { path: 'analytics', element: lazyPage(<AnalyticsPage />) },
               { path: 'presentaciones', element: lazyPage(<PresentacionesPage />) },
               { path: 'reportes', element: lazyPage(<ReportesPage />) },
             ],
