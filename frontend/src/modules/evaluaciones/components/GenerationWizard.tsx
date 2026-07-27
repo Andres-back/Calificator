@@ -617,14 +617,13 @@ function StepRevisar({
 }) {
   const materiaNombre = materias?.find((m) => m.id === form.materia_id)?.nombre || form.materia_id;
 
-  const tipoLabels: Record<string, string> = {
-    opcion_multiple: 'Opción múltiple',
-    abierta: 'Abierta',
-    verdadero_falso: 'Verdadero / Falso',
-    completar: 'Completar',
-  };
-
   const items = useMemo(() => {
+    const tipoLabels: Record<string, string> = {
+      opcion_multiple: 'Opción múltiple',
+      abierta: 'Abierta',
+      verdadero_falso: 'Verdadero / Falso',
+      completar: 'Completar',
+    };
     const list: { label: string; value: string }[] = [];
     list.push({ label: 'Materia', value: materiaNombre });
     list.push({ label: 'Nombre de la evaluación', value: form.nombre });

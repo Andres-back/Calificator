@@ -410,6 +410,7 @@ export function ContenidoView({ tipo, data }: { tipo: MaterialTipo; data: ToolCo
       <div className="space-y-5">
         {data.objetivo && <div className="rounded-xl border border-brand-200 bg-brand-50 px-4 py-3 text-sm dark:border-brand-500/30 dark:bg-brand-500/10">{data.objetivo}</div>}
         {data.instrucciones && <p className="text-sm text-muted">{data.instrucciones}</p>}
+        {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
         {(data.ejercicios ?? []).map((ex: any, i: number) => (
           <Block key={i} i={i}>
             <div className="flex items-start gap-2">
@@ -446,6 +447,7 @@ export function ContenidoView({ tipo, data }: { tipo: MaterialTipo; data: ToolCo
           </div>
         )}
         <Section title="Preguntas de comprensión" />
+        {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
         {(data.preguntas ?? []).map((q: any, i: number) => (
           <Block key={i} i={i}>
             <div className="flex flex-wrap items-start gap-2">
@@ -477,6 +479,7 @@ export function ContenidoView({ tipo, data }: { tipo: MaterialTipo; data: ToolCo
         )}
         <Section title="Nodos" />
         <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+          {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
           {(data.nodos ?? []).map((n: any, i: number) => (
             <div key={n.id ?? i} className="rounded-lg border border-border bg-surface p-3">
               <Badge tone="brand">Nivel {n.nivel}</Badge>
@@ -489,6 +492,7 @@ export function ContenidoView({ tipo, data }: { tipo: MaterialTipo; data: ToolCo
           <>
             <Section title="Relaciones" />
             <div className="space-y-1">
+              {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
               {data.relaciones.map((r: any, i: number) => (
                 <div key={i} className="flex items-center gap-2 text-sm">
                   <span className="rounded bg-surface-2 px-2 py-0.5 font-semibold">{r.origen}</span>
