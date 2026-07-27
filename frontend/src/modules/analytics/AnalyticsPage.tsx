@@ -108,9 +108,11 @@ function ResumenTab({ materiaId }: { materiaId: string }) {
 function RendimientoTab({ materiaId }: { materiaId: string }) {
   const crit = useQuery({ queryKey: ['analytics-criterios', materiaId], queryFn: () => api.get('/analytics/criterios', { params: materiaId ? { materia_id: materiaId } : {} }).then(r => r.data) });
   const pregs = useQuery({ queryKey: ['analytics-preguntas', materiaId], queryFn: () => api.get('/analytics/preguntas', { params: materiaId ? { materia_id: materiaId } : {} }).then(r => r.data) });
+  const sint = useQuery({ queryKey: ['analytics-sintesis', materiaId], queryFn: () => api.get('/analytics/sintesis', { params: materiaId ? { materia_id: materiaId } : {} }).then(r => r.data) });
 
   const cData = crit.data as CriterioRow[] | undefined;
   const pData = pregs.data as any[] | undefined;
+  const sData = sint.data as any;
 
   if (crit.isLoading) return <div className="grid gap-4 sm:grid-cols-3">{Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-24" />)}</div>;
 
@@ -151,6 +153,66 @@ function RendimientoTab({ materiaId }: { materiaId: string }) {
       </Card>
     ) : (
       <Card className="p-5 text-center text-sm text-muted">No hay datos de criterios. Las métricas aparecen cuando califiques evaluaciones con rúbrica.</Card>
+    )}
+
+    {/* Síntesis pedagógica */}
+    {sData && !sint.isLoading && (
+      <Card className="space-y-5 p-5">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h3 className="font-display font-bold">Resumen pedagógico</h3>
+            <p className="text-xs text-muted">{sData.contexto.evaluaciones_analizadas} evaluación(es) · {sData.contexto.estudiantes_analizados} estudiantes · {sData.contexto.calificaciones_analizadas} calificaciones</p>
+          </div>
+          <div className="flex gap-2">
+            <a href={`/api/analytics/export/criterios.csv${materiaId ? `?materia_id=${materiaId}` : ''}`}
+              className="focus-ring inline-flex h-8 items-center gap-1 rounded-lg border border-border px-3 text-xs font-semibold text-fg hover:bg-surface-2"
+              target="_blank" rel="noopener noreferrer">CSV criterios</a>
+            <a href={`/api/analytics/export/estudiantes.csv${materiaId ? `?materia_id=${materiaId}` : ''}`}
+              className="focus-ring inline-flex h-8 items-center gap-1 rounded-lg border border-border px-3 text-xs font-semibold text-fg hover:bg-surface-2"
+              target="_blank" rel="noopener noreferrer">CSV estudiantes</a>
+          </div>
+        </div>
+
+        {/* Alertas */}
+        {sData.alertas?.length > 0 && (
+          <div className="space-y-2">
+            {sData.alertas.map((a: any, i: number) => (
+              <div key={i} className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
+                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                <span>{a.mensaje}</span>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          {/* Fortalezas */}
+          {sData.fortalezas?.length > 0 && (
+            <div className="space-y-3">
+              <p className="flex items-center gap-2 text-xs font-semibold text-emerald-600"><CheckCircle2 className="h-4 w-4" /> Fortalezas del grupo</p>
+              {sData.fortalezas.map((f: any, i: number) => (
+                <div key={i} className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 dark:border-emerald-500/20 dark:bg-emerald-500/5">
+                  <p className="text-sm font-semibold text-emerald-800 dark:text-emerald-200">{f.titulo}</p>
+                  <p className="text-xs text-emerald-600 dark:text-emerald-300">{f.porcentaje_logro.toFixed(0)}% logro · {f.evidencia.estudiantes_evaluados} estudiantes</p>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Dificultades */}
+          {sData.dificultades?.length > 0 && (
+            <div className="space-y-3">
+              <p className="flex items-center gap-2 text-xs font-semibold text-rose-600"><AlertTriangle className="h-4 w-4" /> Aspectos para reforzar</p>
+              {sData.dificultades.map((d: any, i: number) => (
+                <div key={i} className="rounded-lg border border-rose-200 bg-rose-50 p-3 dark:border-rose-500/20 dark:bg-rose-500/5">
+                  <p className="text-sm font-semibold text-rose-800 dark:text-rose-200">{d.titulo}</p>
+                  <p className="text-xs text-rose-600 dark:text-rose-300">{d.porcentaje_logro.toFixed(0)}% logro · {d.evidencia.estudiantes_con_dificultad}/{d.evidencia.estudiantes_evaluados} con dificultad</p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </Card>
     )}
 
     {/* Preguntas */}

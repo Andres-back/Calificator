@@ -590,3 +590,156 @@ async def get_estudiante_detalle(
         "evaluaciones": evaluaciones,
         "criterios": criterios_res,
     }
+
+
+# ── 2B.2: Síntesis pedagógica ──────────────────────────────────────────────────
+
+
+async def get_sintesis(
+    db: AsyncSession,
+    profesor_id: UUID,
+    materia_id: UUID | None = None,
+    evaluacion_id: UUID | None = None,
+    fecha_desde: datetime | None = None,
+    fecha_hasta: datetime | None = None,
+    umbral_min_estudiantes: int = 5,
+) -> dict:
+    """Síntesis determinística: fortalezas, dificultades y alertas."""
+    desde, hasta = _default_date_range()
+    if fecha_desde: desde = fecha_desde
+    if fecha_hasta: hasta = fecha_hasta
+
+    # Reutilizar get_criterios para los datos subyacentes
+    criterios = await get_criterios(db, profesor_id, materia_id, evaluacion_id, desde, hasta)
+
+    # Contar calificaciones y evaluaciones
+    eval_filter = [Evaluacion.profesor_id == profesor_id]
+    if materia_id:
+        eval_filter.append(Evaluacion.materia_id == materia_id)
+    total_evals = await db.scalar(select(func.count(Evaluacion.id)).where(*eval_filter))
+
+    cal_filter = [Calificacion.revisado_por_docente == True, Evaluacion.profesor_id == profesor_id]
+    if materia_id:
+        cal_filter.append(Evaluacion.materia_id == materia_id)
+    if evaluacion_id:
+        cal_filter.append(Calificacion.evaluacion_id == evaluacion_id)
+    total_cals = await db.scalar(
+        select(func.count(Calificacion.id)).join(Evaluacion, Calificacion.evaluacion_id == Evaluacion.id).where(*cal_filter)
+    )
+
+    # Contar estudiantes únicos
+    est_rows = await db.execute(
+        select(func.count(func.distinct(Calificacion.estudiante_id)))
+        .join(Evaluacion, Calificacion.evaluacion_id == Evaluacion.id)
+        .where(*cal_filter)
+    )
+    total_est = est_rows.scalar() or 0
+
+    fortalezas = []
+    dificultades = []
+    alertas = []
+
+    for c in criterios:
+        item = {
+            "tipo": "criterio",
+            "titulo": c["nombre"],
+            "porcentaje_logro": c["porcentaje_logro"],
+            "evidencia": {
+                "estudiantes_evaluados": c["estudiantes_evaluados"],
+                "estudiantes_con_dificultad": c["estudiantes_con_dificultad"],
+            },
+        }
+        if c["porcentaje_logro"] >= 80 and c["estudiantes_evaluados"] >= umbral_min_estudiantes:
+            fortalezas.append({**item, "nivel": "dominado"})
+        elif c["porcentaje_logro"] < 60:
+            if c["estudiantes_evaluados"] < umbral_min_estudiantes:
+                alertas.append({
+                    "tipo": "datos_insuficientes",
+                    "mensaje": f"El criterio '{c['nombre']}' tiene solo {c['estudiantes_evaluados']} estudiante(s) evaluados. Los resultados pueden no ser representativos.",
+                })
+            else:
+                dificultades.append({**item, "nivel": "requiere_refuerzo"})
+        elif c["porcentaje_logro"] < 80 and c["estudiantes_evaluados"] >= umbral_min_estudiantes:
+            item["nivel"] = "en_desarrollo"
+            # No agregar a dificultades si está ≥ 60, es "en desarrollo"
+
+    # Alerta general si hay pocos datos
+    if total_est < umbral_min_estudiantes:
+        alertas.insert(0, {
+            "tipo": "datos_insuficientes",
+            "mensaje": f"La síntesis se basa en solo {total_est} estudiante(s). Los resultados pueden no ser representativos del grupo.",
+        })
+
+    return {
+        "contexto": {
+            "evaluaciones_analizadas": total_evals or 0,
+            "estudiantes_analizados": total_est,
+            "calificaciones_analizadas": total_cals or 0,
+        },
+        "fortalezas": fortalezas,
+        "dificultades": dificultades,
+        "alertas": alertas,
+    }
+
+
+def _csv_escape(value: str) -> str:
+    """Escapa un valor para CSV compatible con Excel."""
+    if "," in value or '"' in value or "\n" in value:
+        return '"' + value.replace('"', '""') + '"'
+    return value
+
+
+async def export_criterios_csv(
+    db: AsyncSession,
+    profesor_id: UUID,
+    materia_id: UUID | None = None,
+    evaluacion_id: UUID | None = None,
+    fecha_desde: datetime | None = None,
+    fecha_hasta: datetime | None = None,
+) -> str:
+    """Exporta criterios a CSV."""
+    criterios = await get_criterios(db, profesor_id, materia_id, evaluacion_id, fecha_desde, fecha_hasta)
+    lines = ["materia,grupo,evaluacion,criterio,porcentaje_logro,nivel,estudiantes_evaluados,estudiantes_con_dificultad"]
+    for c in criterios:
+        materia_nombre = ""
+        if materia_id:
+            from app.modules.materias.models import Materia
+            m = await db.scalar(select(Materia.nombre).where(Materia.id == materia_id))
+            materia_nombre = m or ""
+        lines.append(",".join([
+            _csv_escape(materia_nombre),
+            "",
+            "",
+            _csv_escape(c["nombre"]),
+            str(c["porcentaje_logro"]),
+            c["nivel_atencion"],
+            str(c["estudiantes_evaluados"]),
+            str(c["estudiantes_con_dificultad"]),
+        ]))
+    return "\n".join(lines)
+
+
+async def export_estudiantes_csv(
+    db: AsyncSession,
+    profesor_id: UUID,
+    materia_id: UUID | None = None,
+    evaluacion_id: UUID | None = None,
+    fecha_desde: datetime | None = None,
+    fecha_hasta: datetime | None = None,
+) -> str:
+    """Exporta lista de estudiantes a CSV."""
+    estudiantes = await get_estudiantes(db, profesor_id, materia_id, evaluacion_id, fecha_desde, fecha_hasta)
+    lines = ["estudiante,grupo,promedio_pct,tendencia,evaluaciones_presentadas,entregas_pendientes,criterios_con_dificultad,senales_observables"]
+    # Tendencia no está disponible en la lista simple; la calculamos aproximada
+    for e in estudiantes:
+        lines.append(",".join([
+            _csv_escape(e.get("nombre", "")),
+            "",
+            str(e.get("promedio_pct", 0)),
+            e.get("nivel_atencion", ""),
+            str(e.get("total_evaluaciones", 0)),
+            str(e.get("pendientes", 0)),
+            str(e.get("bajo_rendimiento", 0)),
+            _csv_escape("; ".join(e.get("senales", []))),
+        ]))
+    return "\n".join(lines)

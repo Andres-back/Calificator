@@ -151,3 +151,66 @@ async def analytics_estudiante_detalle(
     if not result:
         raise HTTPException(status_code=404, detail="Estudiante no encontrado")
     return result
+
+
+@router.get("/analytics/sintesis")
+async def analytics_sintesis(
+    materia_id: UUID | None = Query(None),
+    evaluacion_id: UUID | None = Query(None),
+    fecha_desde: datetime | None = Query(None),
+    fecha_hasta: datetime | None = Query(None),
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    """Síntesis pedagógica determinística del grupo."""
+    require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
+    return await service.get_sintesis(
+        db, profesor_id=current_user.id, materia_id=materia_id,
+        evaluacion_id=evaluacion_id, fecha_desde=fecha_desde, fecha_hasta=fecha_hasta,
+    )
+
+
+@router.get("/analytics/export/criterios.csv")
+async def export_criterios_csv(
+    materia_id: UUID | None = Query(None),
+    evaluacion_id: UUID | None = Query(None),
+    fecha_desde: datetime | None = Query(None),
+    fecha_hasta: datetime | None = Query(None),
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Exporta criterios a CSV."""
+    require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
+    csv_content = await service.export_criterios_csv(
+        db, profesor_id=current_user.id, materia_id=materia_id,
+        evaluacion_id=evaluacion_id, fecha_desde=fecha_desde, fecha_hasta=fecha_hasta,
+    )
+    from fastapi.responses import PlainTextResponse
+    return PlainTextResponse(
+        content=csv_content,
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=criterios.csv"},
+    )
+
+
+@router.get("/analytics/export/estudiantes.csv")
+async def export_estudiantes_csv(
+    materia_id: UUID | None = Query(None),
+    evaluacion_id: UUID | None = Query(None),
+    fecha_desde: datetime | None = Query(None),
+    fecha_hasta: datetime | None = Query(None),
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Exporta estudiantes a CSV."""
+    require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
+    csv_content = await service.export_estudiantes_csv(
+        db, profesor_id=current_user.id, materia_id=materia_id,
+        evaluacion_id=evaluacion_id, fecha_desde=fecha_desde, fecha_hasta=fecha_hasta,
+    )
+    from fastapi.responses import PlainTextResponse
+    return PlainTextResponse(
+        content=csv_content,
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=estudiantes.csv"},
+    )
