@@ -231,3 +231,45 @@ async def ai_concordancia(
         db, profesor_id=current_user.id, materia_id=materia_id,
         evaluacion_id=evaluacion_id, fecha_desde=fecha_desde, fecha_hasta=fecha_hasta,
     )
+
+
+@router.get("/analytics/ai-quality/latency")
+async def ai_latency(
+    materia_id: UUID | None = Query(None),
+    evaluacion_id: UUID | None = Query(None),
+    fecha_desde: datetime | None = Query(None),
+    fecha_hasta: datetime | None = Query(None),
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    """Latencia del pipeline (P50, P90, P95) por etapa."""
+    require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
+    return await service.get_latency(db, profesor_id=current_user.id, materia_id=materia_id, evaluacion_id=evaluacion_id, fecha_desde=fecha_desde, fecha_hasta=fecha_hasta)
+
+
+@router.get("/analytics/ai-quality/errors")
+async def ai_errors(
+    materia_id: UUID | None = Query(None),
+    evaluacion_id: UUID | None = Query(None),
+    fecha_desde: datetime | None = Query(None),
+    fecha_hasta: datetime | None = Query(None),
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    """Errores del pipeline: tasa, tipos y alertas de modelo."""
+    require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
+    return await service.get_errors(db, profesor_id=current_user.id, materia_id=materia_id, evaluacion_id=evaluacion_id, fecha_desde=fecha_desde, fecha_hasta=fecha_hasta)
+
+
+@router.get("/analytics/ai-quality/confidence")
+async def ai_confidence(
+    materia_id: UUID | None = Query(None),
+    evaluacion_id: UUID | None = Query(None),
+    fecha_desde: datetime | None = Query(None),
+    fecha_hasta: datetime | None = Query(None),
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    """Distribución de confianza del modelo."""
+    require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
+    return await service.get_confidence(db, profesor_id=current_user.id, materia_id=materia_id, evaluacion_id=evaluacion_id, fecha_desde=fecha_desde, fecha_hasta=fecha_hasta)

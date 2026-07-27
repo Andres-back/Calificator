@@ -260,7 +260,31 @@ function RendimientoTab({ materiaId }: { materiaId: string }) {
 }
 
 /* ═══════════════════════ CALIDAD DE IA ═══════════════════════ */
-function ConcordanciaTab({ materiaId }: { materiaId: string }) {
+type AiSubTab = 'concordancia' | 'rendimiento' | 'errores';
+const AI_TABS: { id: AiSubTab; label: string }[] = [
+  { id: 'concordancia', label: 'Concordancia' },
+  { id: 'rendimiento', label: 'Rendimiento' },
+  { id: 'errores', label: 'Errores' },
+];
+
+function CalidadIaTab({ materiaId }: { materiaId: string }) {
+  const [sub, setSub] = useState<AiSubTab>('concordancia');
+  return (<>
+    <div className="flex gap-1 rounded-lg bg-surface-2 p-1">
+      {AI_TABS.map(t => (
+        <button key={t.id} type="button" onClick={() => setSub(t.id)}
+          className={`focus-ring flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition ${sub === t.id ? 'bg-surface text-fg shadow-sm' : 'text-muted hover:text-fg'}`}>
+          {t.label}
+        </button>
+      ))}
+    </div>
+    {sub === 'concordancia' && <ConcordanciaTabBody materiaId={materiaId} />}
+    {sub === 'rendimiento' && <RendimientoIaTab materiaId={materiaId} />}
+    {sub === 'errores' && <ErroresIaTab materiaId={materiaId} />}
+  </>);
+}
+
+function ConcordanciaTabBody({ materiaId }: { materiaId: string }) {
   const conc = useQuery({ queryKey: ['ai-concordancia', materiaId], queryFn: () => api.get('/analytics/ai-quality/concordancia', { params: materiaId ? { materia_id: materiaId } : {} }).then(r => r.data) });
 
   if (conc.isLoading) return <div className="grid gap-4 sm:grid-cols-4">{Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-28" />)}</div>;
@@ -382,6 +406,72 @@ function EstudiantesTab({ materiaId }: { materiaId: string }) {
   </>);
 }
 
+/* ── Sub-tab: Rendimiento (latencia + confianza) ── */
+function RendimientoIaTab({ materiaId }: { materiaId: string }) {
+  const lat = useQuery({ queryKey: ['ai-latency', materiaId], queryFn: () => api.get('/analytics/ai-quality/latency', { params: materiaId ? { materia_id: materiaId } : {} }).then(r => r.data) });
+  const conf = useQuery({ queryKey: ['ai-confidence', materiaId], queryFn: () => api.get('/analytics/ai-quality/confidence', { params: materiaId ? { materia_id: materiaId } : {} }).then(r => r.data) });
+
+  if (lat.isLoading || conf.isLoading) return <div className="grid gap-4 sm:grid-cols-4">{Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-28" />)}</div>;
+  const ld = lat.data as any; const cd = conf.data as any;
+  return (<>
+    <div className="grid gap-4 sm:grid-cols-4">
+      {ld?.total ? (<>
+        <MetricCard icon={<Clock className="h-5 w-5" />} label="Latencia mediana" value={`${(ld.total.p50_ms / 1000).toFixed(1)}s`} sub={`n=${ld.total.sample_size}`} />
+        <MetricCard icon={<TrendingUp className="h-5 w-5" />} label="P95 latencia" value={`${(ld.total.p95_ms / 1000).toFixed(1)}s`} />
+      </>) : (<MetricCard icon={<Clock className="h-5 w-5" />} label="Latencia" value="—" sub="Sin datos" />)}
+      {cd ? (<>
+        <MetricCard icon={<CheckCircle2 className="h-5 w-5" />} label="Confianza promedio" value={`${(cd.promedio * 100).toFixed(0)}%`} sub={`n=${cd.sample_size}`} />
+        <MetricCard icon={<Sparkles className="h-5 w-5" />} label="Confianza alta" value={String(cd.alta)} sub={`media ${cd.media} · baja ${cd.baja}`} />
+      </>) : null}
+    </div>
+
+    {/* Etapas */}
+    {ld?.stages?.length > 0 && <Card className="p-5"><h3 className="mb-4 font-display font-bold">Latencia por etapa</h3>
+      <div className="overflow-x-auto"><table className="w-full text-left text-sm"><thead><tr className="border-b border-border text-xs font-semibold text-muted"><th className="pb-2 pr-4">Etapa</th><th className="pb-2 pr-4 text-right">Promedio</th><th className="pb-2 pr-4 text-right">P50</th><th className="pb-2 pr-4 text-right">P90</th><th className="pb-2 pr-4 text-right">P95</th><th className="pb-2 pr-4 text-right">% del total</th></tr></thead>
+        <tbody>{ld.stages.map((s: any) => <tr key={s.stage} className="border-b border-border/50 last:border-0"><td className="py-2.5 pr-4 font-medium capitalize">{s.stage.replace(/_/g, ' ')}</td><td className="py-2.5 pr-4 text-right">{(s.average_ms / 1000).toFixed(1)}s</td><td className="py-2.5 pr-4 text-right">{(s.p50_ms / 1000).toFixed(1)}s</td><td className="py-2.5 pr-4 text-right">{(s.p90_ms / 1000).toFixed(1)}s</td><td className="py-2.5 pr-4 text-right">{(s.p95_ms / 1000).toFixed(1)}s</td><td className="py-2.5 pr-4 text-right">{s.percentage_of_total.toFixed(0)}%</td></tr>)}</tbody></table></div>
+    </Card>}
+
+    {/* Confianza */}
+    {cd && cd.sample_size > 0 && <Card className="space-y-4 p-5"><h3 className="font-display font-bold">Distribución de confianza</h3>
+      <div className="grid gap-4 sm:grid-cols-3">
+        <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4"><p className="text-2xl font-extrabold text-emerald-700">{cd.alta}</p><p className="text-xs text-emerald-700">Alta (≥80%)</p></div>
+        <div className="rounded-xl border border-amber-200 bg-amber-50 p-4"><p className="text-2xl font-extrabold text-amber-700">{cd.media}</p><p className="text-xs text-amber-700">Media (60-79%)</p></div>
+        <div className="rounded-xl border border-rose-200 bg-rose-50 p-4"><p className="text-2xl font-extrabold text-rose-700">{cd.baja}</p><p className="text-xs text-rose-700">Baja (&lt;60%)</p></div>
+      </div>
+    </Card>}
+  </>);
+}
+
+/* ── Sub-tab: Errores ── */
+function ErroresIaTab({ materiaId }: { materiaId: string }) {
+  const err = useQuery({ queryKey: ['ai-errors', materiaId], queryFn: () => api.get('/analytics/ai-quality/errors', { params: materiaId ? { materia_id: materiaId } : {} }).then(r => r.data) });
+  if (err.isLoading) return <div className="grid gap-4 sm:grid-cols-4">{Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-28" />)}</div>;
+  const d = err.data as any;
+  if (!d || d.total_runs === 0) return <EmptyState icon={AlertTriangle} title="Sin datos" description="No hay ejecuciones registradas." />;
+  return (<>
+    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <MetricCard icon={<BarChart3 className="h-5 w-5" />} label="Ejecuciones totales" value={String(d.total_runs)} />
+      <MetricCard icon={<AlertTriangle className="h-5 w-5" />} label="Tasa de error" value={`${(d.error_rate * 100).toFixed(1)}%`} sub={`${d.total_errors} errores`} trend={d.error_rate > 0.05 ? 'down' : 'up'} />
+    </div>
+    {d.por_tipo && Object.keys(d.por_tipo).length > 0 && <Card className="p-5"><h3 className="mb-4 font-display font-bold">Errores por tipo</h3>
+      <div className="space-y-2">{Object.entries(d.por_tipo).map(([tipo, count]) => (
+        <div key={tipo} className="flex items-center justify-between rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm">
+          <span className="capitalize text-fg">{tipo.replace(/_/g, ' ')}</span>
+          <span className="font-semibold">{String(count)}</span>
+        </div>
+      ))}</div>
+    </Card>}
+    {d.alertas_modelo && Object.keys(d.alertas_modelo).length > 0 && <Card className="p-5"><h3 className="mb-4 font-display font-bold">Alertas del modelo</h3>
+      <div className="space-y-2">{Object.entries(d.alertas_modelo).slice(0, 10).map(([alerta, count]) => (
+        <div key={alerta} className="flex items-center justify-between rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm">
+          <span className="text-fg">{alerta}</span>
+          <span className="font-semibold">{String(count)}</span>
+        </div>
+      ))}</div>
+    </Card>}
+  </>);
+}
+
 function DetalleEstudiante({ data }: { data: any }) {
   const d = data as any;
   return (
@@ -454,7 +544,7 @@ export function AnalyticsPage() {
       {tab === 'resumen' && <ResumenTab materiaId={materiaId} />}
       {tab === 'rendimiento' && <RendimientoTab materiaId={materiaId} />}
       {tab === 'estudiantes' && <EstudiantesTab materiaId={materiaId} />}
-      {tab === 'calidad_ia' && <ConcordanciaTab materiaId={materiaId} />}
+      {tab === 'calidad_ia' && <CalidadIaTab materiaId={materiaId} />}
 
       <p className="text-center text-[10px] text-muted"><HelpCircle className="mr-1 inline h-3 w-3" />Tiempo estimado ahorrado — calculado contra línea base de 3 min por corrección manual. Datos pueden tardar hasta 1 minuto.</p>
     </div>

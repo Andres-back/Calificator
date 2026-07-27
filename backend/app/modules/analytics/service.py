@@ -914,3 +914,187 @@ async def export_estudiantes_csv(
             _csv_escape("; ".join(e.get("senales", []))),
         ]))
     return "\n".join(lines)
+
+
+# ── 2C.2: Latencia, errores y confianza ─────────────────────────────────────────
+
+
+async def get_latency(
+    db: AsyncSession,
+    profesor_id: UUID,
+    materia_id: UUID | None = None,
+    evaluacion_id: UUID | None = None,
+    fecha_desde: datetime | None = None,
+    fecha_hasta: datetime | None = None,
+) -> dict:
+    """Latencia del pipeline desde datos de resultado_json."""
+    desde, hasta = _default_date_range()
+    if fecha_desde: desde = fecha_desde
+    if fecha_hasta: hasta = fecha_hasta
+
+    cal_filter = [
+        Calificacion.revisado_por_docente == True,
+        Evaluacion.profesor_id == profesor_id,
+        Calificacion.created_at >= desde,
+        Calificacion.created_at <= hasta,
+    ]
+    if materia_id: cal_filter.append(Evaluacion.materia_id == materia_id)
+    if evaluacion_id: cal_filter.append(Calificacion.evaluacion_id == evaluacion_id)
+
+    rows = await db.execute(
+        select(Calificacion.resultado_json).join(Evaluacion, Calificacion.evaluacion_id == Evaluacion.id).where(*cal_filter)
+    )
+
+    tiempos_vision: list[int] = []
+    tiempos_grader_a: list[int] = []
+    tiempos_grader_b: list[int] = []
+    tiempos_total: list[int] = []
+
+    for (rj,) in rows:
+        if not isinstance(rj, dict):
+            continue
+        vision = rj.get("vision", {}) or {}
+        grader_a = rj.get("grader_a", {}) or {}
+        grader_b = rj.get("grader_b", {}) or {}
+
+        t_v = vision.get("tiempo_ms", 0) or 0
+        t_ga = grader_a.get("tiempo_ms", 0) or 0
+        t_gb = grader_b.get("tiempo_ms", 0) or 0
+
+        if t_v > 0: tiempos_vision.append(t_v)
+        if t_ga > 0: tiempos_grader_a.append(t_ga)
+        if t_gb > 0: tiempos_grader_b.append(t_gb)
+        total = t_v + t_ga + t_gb
+        if total > 0: tiempos_total.append(total)
+
+    def _stats(vals: list[int]) -> dict:
+        if not vals:
+            return {"sample_size": 0, "average_ms": 0, "p50_ms": 0, "p90_ms": 0, "p95_ms": 0}
+        s = sorted(vals)
+        n = len(s)
+        return {
+            "sample_size": n,
+            "average_ms": round(sum(s) / n, 1),
+            "p50_ms": s[int(n * 0.5)],
+            "p90_ms": s[int(n * 0.9)],
+            "p95_ms": s[int(n * 0.95)],
+        }
+
+    total_stats = _stats(tiempos_total)
+    stages = []
+    if tiempos_vision:
+        s = _stats(tiempos_vision)
+        s["stage"] = "vision"
+        s["percentage_of_total"] = round(s["average_ms"] / total_stats["average_ms"] * 100, 1) if total_stats["average_ms"] else 0
+        stages.append(s)
+    if tiempos_grader_a:
+        s = _stats(tiempos_grader_a)
+        s["stage"] = "grading_primary"
+        s["percentage_of_total"] = round(s["average_ms"] / total_stats["average_ms"] * 100, 1) if total_stats["average_ms"] else 0
+        stages.append(s)
+    if tiempos_grader_b:
+        s = _stats(tiempos_grader_b)
+        s["stage"] = "grading_secondary"
+        s["percentage_of_total"] = round(s["average_ms"] / total_stats["average_ms"] * 100, 1) if total_stats["average_ms"] else 0
+        stages.append(s)
+
+    return {"total": total_stats, "stages": stages}
+
+
+async def get_errors(
+    db: AsyncSession,
+    profesor_id: UUID,
+    materia_id: UUID | None = None,
+    evaluacion_id: UUID | None = None,
+    fecha_desde: datetime | None = None,
+    fecha_hasta: datetime | None = None,
+) -> dict:
+    """Errores del pipeline desde incidencias y resultado_json."""
+    desde, hasta = _default_date_range()
+    if fecha_desde: desde = fecha_desde
+    if fecha_hasta: hasta = fecha_hasta
+
+    cal_filter = [Calificacion.revisado_por_docente == True, Evaluacion.profesor_id == profesor_id]
+    if materia_id: cal_filter.append(Evaluacion.materia_id == materia_id)
+    if evaluacion_id: cal_filter.append(Calificacion.evaluacion_id == evaluacion_id)
+    total_runs = await db.scalar(
+        select(func.count(Calificacion.id)).join(Evaluacion, Calificacion.evaluacion_id == Evaluacion.id).where(*cal_filter)
+    ) or 0
+
+    inc_filter = [CalificacionIncidencia.created_at >= desde, CalificacionIncidencia.created_at <= hasta]
+    if evaluacion_id:
+        inc_filter.append(CalificacionIncidencia.calificacion_id.in_(
+            select(Calificacion.id).where(Calificacion.evaluacion_id == evaluacion_id)
+        ))
+    inc_rows = await db.execute(
+        select(CalificacionIncidencia.tipo, func.count(CalificacionIncidencia.id))
+        .where(*inc_filter).group_by(CalificacionIncidencia.tipo)
+    )
+    errores_por_tipo: dict[str, int] = {}
+    for row in inc_rows:
+        errores_por_tipo[str(row[0])] = int(row[1])
+    total_incidencias = sum(errores_por_tipo.values())
+
+    alertas = await db.execute(
+        select(Calificacion.resultado_json).join(Evaluacion, Calificacion.evaluacion_id == Evaluacion.id).where(*cal_filter)
+    )
+    alerta_counts: dict[str, int] = {}
+    for (rj,) in alertas:
+        if not isinstance(rj, dict):
+            continue
+        for grader_key in ("grader_a", "grader_b", "vision"):
+            g = rj.get(grader_key, {}) or {}
+            for a in g.get("alertas", []):
+                if isinstance(a, str):
+                    alerta_counts[a] = alerta_counts.get(a, 0) + 1
+
+    error_rate = round(total_incidencias / total_runs, 4) if total_runs > 0 else 0
+    return {
+        "total_runs": total_runs,
+        "total_errors": total_incidencias,
+        "error_rate": error_rate,
+        "por_tipo": errores_por_tipo,
+        "alertas_modelo": alerta_counts,
+    }
+
+
+async def get_confidence(
+    db: AsyncSession,
+    profesor_id: UUID,
+    materia_id: UUID | None = None,
+    evaluacion_id: UUID | None = None,
+    fecha_desde: datetime | None = None,
+    fecha_hasta: datetime | None = None,
+) -> dict:
+    """Distribución de confianza del modelo."""
+    desde, hasta = _default_date_range()
+    if fecha_desde: desde = fecha_desde
+    if fecha_hasta: hasta = fecha_hasta
+
+    cal_filter = [
+        Calificacion.confianza.is_not(None),
+        Calificacion.revisado_por_docente == True,
+        Evaluacion.profesor_id == profesor_id,
+        Calificacion.created_at >= desde,
+        Calificacion.created_at <= hasta,
+    ]
+    if materia_id: cal_filter.append(Evaluacion.materia_id == materia_id)
+    if evaluacion_id: cal_filter.append(Calificacion.evaluacion_id == evaluacion_id)
+
+    rows = await db.execute(
+        select(Calificacion.confianza).join(Evaluacion, Calificacion.evaluacion_id == Evaluacion.id).where(*cal_filter)
+    )
+    valores = [float(row[0]) for row in rows if row[0] is not None]
+    n = len(valores)
+    if n == 0:
+        return {"sample_size": 0, "promedio": 0, "alta": 0, "media": 0, "baja": 0}
+    alta = sum(1 for v in valores if v >= 0.8)
+    media = sum(1 for v in valores if 0.6 <= v < 0.8)
+    baja = sum(1 for v in valores if v < 0.6)
+    return {
+        "sample_size": n,
+        "promedio": round(sum(valores) / n, 4),
+        "alta": alta,
+        "media": media,
+        "baja": baja,
+    }
