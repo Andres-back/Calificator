@@ -1,6 +1,7 @@
 from fastapi import APIRouter
 
 from app.modules.admin_ai_config.router import router as admin_ai_config_router
+from app.modules.analytics.router import router as analytics_router
 from app.modules.auth.router import router as auth_router
 from app.modules.calificaciones.router import router as calificaciones_router
 from app.modules.dba.router import custom_router as dba_custom_router
@@ -38,3 +39,4 @@ api_router.include_router(reportes_router)
 api_router.include_router(impacto_router)
 api_router.include_router(jobs_router)
 api_router.include_router(admin_ai_config_router)
+api_router.include_router(analytics_router)

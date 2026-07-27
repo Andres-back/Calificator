@@ -16,6 +16,7 @@ import { listEvaluaciones } from '@/modules/evaluaciones/api';
 import { queryClient } from '@/lib/queryClient';
 import { toApiError } from '@/lib/api';
 import { useAuth } from '@/stores/auth';
+import { trackEvent } from '@/lib/analytics';
 import {
   ajustarNota, ajustarNotaBatch, confirmarNota, confirmarNotaBatch,
   crearIncidencia, getCalificacionDetalle, listarIncidencias,
@@ -694,6 +695,11 @@ export function CalificacionesWorkspace() {
     if (evals?.length === 0) setEvalId('');
   }, [evals, evalId]);
 
+  // Track workspace opened
+  useEffect(() => {
+    if (evalId) trackEvent('workspace_opened', { evaluacion_id: evalId, materia_id: materiaId });
+  }, [evalId, materiaId]);
+
   const { data: cals, isLoading } = useQuery({
     queryKey: ['calificaciones', evalId],
     queryFn: () => listCalificaciones(evalId),
@@ -724,12 +730,12 @@ export function CalificacionesWorkspace() {
   // Mutations
   const confirmarMut = useMutation({
     mutationFn: (c: Calificacion) => confirmarNota(c.id, Number(c.nota_sugerida ?? 0)),
-    onSuccess: () => { invalidate(); toast.success('Nota confirmada'); setConfirmingSingle(null); },
+    onSuccess: () => { invalidate(); toast.success('Nota confirmada'); setConfirmingSingle(null); trackEvent('calificacion_confirmed', { evaluacion_id: evalId }); },
     onError: (e) => toast.error(toApiError(e).detail),
   });
   const ajustarMut = useMutation({
     mutationFn: (args: { id: string; nota: number; feedback?: string }) => ajustarNota(args.id, args.nota, args.feedback),
-    onSuccess: () => { invalidate(); toast.success('Nota ajustada'); },
+    onSuccess: () => { invalidate(); toast.success('Nota ajustada'); trackEvent('grade_adjusted', { evaluacion_id: evalId }); },
     onError: (e) => toast.error(toApiError(e).detail),
   });
   const confirmBatchMut = useMutation({
@@ -739,6 +745,7 @@ export function CalificacionesWorkspace() {
       toast.success(`${res.exitosos} nota(s) confirmada(s)`);
       if (res.fallidos > 0) toast.error(`${res.fallidos} fallaron`);
       setSelectedBatch(new Set());
+      trackEvent('batch_confirmed', { evaluacion_id: evalId, batch_size: res.exitosos });
     },
     onError: (e) => toast.error(toApiError(e).detail),
   });
@@ -749,12 +756,13 @@ export function CalificacionesWorkspace() {
       toast.success(`${res.exitosos} nota(s) ajustada(s)`);
       if (res.fallidos > 0) toast.error(`${res.fallidos} fallaron`);
       setSelectedBatch(new Set());
+      trackEvent('batch_adjusted', { evaluacion_id: evalId, batch_size: res.exitosos });
     },
     onError: (e) => toast.error(toApiError(e).detail),
   });
   const publishMut = useMutation({
     mutationFn: (id: string) => publicarNota(id),
-    onSuccess: () => { invalidate(); toast.success('Nota publicada al estudiante'); },
+    onSuccess: () => { invalidate(); toast.success('Nota publicada al estudiante'); trackEvent('calificacion_published', { evaluacion_id: evalId }); },
     onError: (e) => toast.error(toApiError(e).detail),
   });
   const publishBatchMut = useMutation({
@@ -764,6 +772,7 @@ export function CalificacionesWorkspace() {
       toast.success(`${res.exitosos} nota(s) publicada(s)`);
       if (res.fallidos > 0) toast.error(`${res.fallidos} no pudieron publicarse`);
       setSelectedBatch(new Set());
+      trackEvent('batch_published', { evaluacion_id: evalId, batch_size: res.exitosos });
     },
     onError: (e) => toast.error(toApiError(e).detail),
   });
@@ -912,7 +921,7 @@ export function CalificacionesWorkspace() {
                     <button
                       key={c.id}
                       type="button"
-                      onClick={() => { setSelectedId(c.id); if (window.innerWidth < 1024) setSelectedBatch(new Set()); }}
+                      onClick={() => { setSelectedId(c.id); trackEvent('calificacion_opened', { calificacion_id: c.id, evaluacion_id: evalId }); if (window.innerWidth < 1024) setSelectedBatch(new Set()); }}
                       className={`focus-ring flex w-full items-center gap-3 rounded-xl border p-3 text-left transition-all ${
                         selected ? 'border-brand-300 bg-brand-50 dark:bg-brand-500/10' : 'border-border bg-surface hover:bg-surface-2'
                       }`}
