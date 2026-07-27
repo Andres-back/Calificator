@@ -157,15 +157,25 @@ async def get_boletin(
     db: AsyncSession,
     estudiante_id: UUID,
     materia_id: UUID,
+    publicada_only: bool = True,
 ) -> list[dict]:
-    """Return a report card with one joined query instead of one query per grade."""
+    """Return a report card with one joined query instead of one query per grade.
+
+    Args:
+        publicada_only: If True (default), only returns publicada calificaciones.
+                        Teachers/admins can pass False to see all.
+    """
+    where_clauses = [
+        Calificacion.estudiante_id == estudiante_id,
+        Calificacion.materia_id == materia_id,
+    ]
+    if publicada_only:
+        where_clauses.append(Calificacion.estado == CalificacionEstado.PUBLICADA.value)
+
     rows = await db.execute(
         select(Calificacion, Evaluacion)
         .outerjoin(Evaluacion, Evaluacion.id == Calificacion.evaluacion_id)
-        .where(
-            Calificacion.estudiante_id == estudiante_id,
-            Calificacion.materia_id == materia_id,
-        )
+        .where(*where_clauses)
     )
     return [
         {
@@ -184,8 +194,18 @@ async def get_boletin(
 async def get_resumen_academico(
     db: AsyncSession,
     estudiante_id: UUID,
+    publicada_only: bool = True,
 ) -> dict:
     """Aggregate confirmed grades for active enrollments in a single query."""
+    where_clauses = [
+        Calificacion.estudiante_id == estudiante_id,
+        Calificacion.nota_confirmada.is_not(None),
+        Matricula.estudiante_id == estudiante_id,
+        Matricula.estado == MatriculaEstado.ACTIVO.value,
+    ]
+    if publicada_only:
+        where_clauses.append(Calificacion.estado == CalificacionEstado.PUBLICADA.value)
+
     rows = await db.execute(
         select(
             Calificacion.materia_id,
@@ -196,12 +216,7 @@ async def get_resumen_academico(
         .join(Evaluacion, Evaluacion.id == Calificacion.evaluacion_id)
         .join(Materia, Materia.id == Calificacion.materia_id)
         .join(Matricula, Matricula.materia_id == Calificacion.materia_id)
-        .where(
-            Calificacion.estudiante_id == estudiante_id,
-            Calificacion.nota_confirmada.is_not(None),
-            Matricula.estudiante_id == estudiante_id,
-            Matricula.estado == MatriculaEstado.ACTIVO.value,
-        )
+        .where(*where_clauses)
     )
 
     by_materia: dict[UUID, dict] = {}
@@ -399,6 +414,60 @@ async def ajustar_nota_batch(
             results.append(BatchResultItem(calificacion_id=item.calificacion_id, success=False, error=exc.detail))
         except Exception as exc:
             results.append(BatchResultItem(calificacion_id=item.calificacion_id, success=False, error=str(exc)))
+    await db.commit()
+    exitosos = sum(1 for r in results if r.success)
+    return BatchResult(results=results, total=len(results), exitosos=exitosos, fallidos=len(results) - exitosos)
+
+
+# ── Publicar ─────────────────────────────────────────────────────────────────────
+
+
+async def publicar_nota(
+    db: AsyncSession,
+    cal: Calificacion,
+) -> Calificacion:
+    """Cambia estado a publicada. La calificación debe estar confirmada o ajustada."""
+    if cal.estado not in (CalificacionEstado.CONFIRMADA.value, CalificacionEstado.AJUSTADA.value):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Solo calificaciones confirmadas o ajustadas pueden publicarse. Estado actual: {cal.estado}",
+        )
+    cal.estado = CalificacionEstado.PUBLICADA.value
+    _append_timeline_event(
+        cal, tipo="publicada",
+        nota_anterior=cal.nota_confirmada, nota_nueva=cal.nota_confirmada,
+        detalle="Resultados publicados al estudiante",
+    )
+    await db.commit()
+    await db.refresh(cal)
+    return cal
+
+
+async def publicar_nota_batch(
+    db: AsyncSession,
+    calificacion_ids: list[UUID],
+) -> BatchResult:
+    results: list[BatchResultItem] = []
+    for cal_id in calificacion_ids:
+        try:
+            cal = await get_calificacion_or_404(db, cal_id)
+            if cal.estado not in (CalificacionEstado.CONFIRMADA.value, CalificacionEstado.AJUSTADA.value):
+                results.append(BatchResultItem(
+                    calificacion_id=cal_id, success=False,
+                    error=f"Estado {cal.estado} no permite publicación",
+                ))
+                continue
+            cal.estado = CalificacionEstado.PUBLICADA.value
+            _append_timeline_event(
+                cal, tipo="publicada",
+                nota_anterior=cal.nota_confirmada, nota_nueva=cal.nota_confirmada,
+                detalle="Resultados publicados en lote",
+            )
+            results.append(BatchResultItem(calificacion_id=cal_id, success=True))
+        except HTTPException as exc:
+            results.append(BatchResultItem(calificacion_id=cal_id, success=False, error=exc.detail))
+        except Exception as exc:
+            results.append(BatchResultItem(calificacion_id=cal_id, success=False, error=str(exc)))
     await db.commit()
     exitosos = sum(1 for r in results if r.success)
     return BatchResult(results=results, total=len(results), exitosos=exitosos, fallidos=len(results) - exitosos)

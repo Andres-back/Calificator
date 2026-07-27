@@ -83,6 +83,7 @@ class CalificacionEstado(StrEnum):
     CONFIRMADA = "confirmada"
     AJUSTADA = "ajustada"
     REQUIERE_REVISION = "requiere_revision"
+    PUBLICADA = "publicada"
     ANULADA = "anulada"
 
 

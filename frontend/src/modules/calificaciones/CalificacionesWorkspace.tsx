@@ -18,13 +18,17 @@ import { toApiError } from '@/lib/api';
 import { useAuth } from '@/stores/auth';
 import {
   ajustarNota, ajustarNotaBatch, confirmarNota, confirmarNotaBatch,
-  getCalificacionDetalle, listCalificaciones,
+  getCalificacionDetalle, listCalificaciones, publicarNota, publicarNotaBatch,
 } from './api';
-import type { Calificacion, CalificacionDetalle, GradeFilter } from '@/types/api';
+import type { BatchResult, Calificacion, CalificacionDetalle, GradeFilter } from '@/types/api';
 
 const CONFIRMADA = 'confirmada';
 const AJUSTADA = 'ajustada';
+const PUBLICADA = 'publicada';
 const SUGERIDA = 'sugerida';
+
+/* States considered "teacher approved" */
+const DONE_STATES = new Set([CONFIRMADA, AJUSTADA, PUBLICADA]);
 
 /* ─── Helper ─── */
 function studentLabel(
@@ -91,9 +95,11 @@ function PanelDetalle({
   onClose,
   onConfirm,
   onAjustar,
+  onPublish,
   onRechazar,
   confirmPending,
   adjustPending,
+  publishPending,
 }: {
   cal: CalificacionDetalle;
   notaMaxima: number | undefined;
@@ -101,16 +107,19 @@ function PanelDetalle({
   onClose: () => void;
   onConfirm: (id: string, nota: number) => void;
   onAjustar: (id: string, nota: number, feedback?: string) => void;
+  onPublish: (id: string) => void;
   onRechazar: (id: string) => void;
   confirmPending: boolean;
   adjustPending: boolean;
+  publishPending: boolean;
 }) {
   const [adjNota, setAdjNota] = useState(Number(cal.nota_confirmada ?? cal.nota_sugerida ?? 0));
   const [adjFeedback, setAdjFeedback] = useState(cal.feedback ?? '');
   const [showAjustar, setShowAjustar] = useState(false);
   const [adjError, setAdjError] = useState('');
 
-  const confirmada = cal.estado === CONFIRMADA || cal.estado === AJUSTADA;
+  const done = DONE_STATES.has(cal.estado);
+  const published = cal.estado === PUBLICADA;
   const estudiante = studentMap.get(cal.estudiante_id);
   const pipeline = cal.resultado_json as Record<string, unknown>;
   const vision = pipeline?.vision as Record<string, unknown> | undefined;
@@ -146,15 +155,15 @@ function PanelDetalle({
         <div className="flex items-center justify-between">
           <div>
             <p className="text-sm text-muted">
-              {confirmada ? 'Nota confirmada' : 'Nota sugerida'}
+              {done ? (published ? 'Nota publicada' : 'Nota confirmada') : 'Nota sugerida'}
             </p>
             <p className="font-display text-4xl font-extrabold text-fg">
               {Number(cal.nota_confirmada ?? cal.nota_sugerida ?? 0).toFixed(1)}
               {notaMaxima != null && <span className="ml-2 text-lg font-semibold text-muted">/ {notaMaxima.toFixed(1)}</span>}
             </p>
           </div>
-          <Badge tone={confirmada ? 'success' : 'warning'}>
-            {confirmada ? 'Confirmada' : 'Por revisar'}
+          <Badge tone={done ? (published ? 'brand' : 'success') : 'warning'}>
+            {published ? 'Publicada' : done ? 'Confirmada' : 'Por revisar'}
           </Badge>
         </div>
 
@@ -271,7 +280,7 @@ function PanelDetalle({
         )}
 
         {/* Acciones */}
-        {!confirmada && (
+        {!done && (
           <div className="flex flex-wrap gap-2">
             <Button
               onClick={() => onConfirm(cal.id, adjNota)}
@@ -287,6 +296,22 @@ function PanelDetalle({
               <RotateCcw className="h-4 w-4" /> Rechazar → revisión
             </Button>
           </div>
+        )}
+        {done && !published && (
+          <div className="flex flex-wrap gap-2">
+            <Button onClick={() => onPublish(cal.id)} loading={publishPending} disabled={publishPending}>
+              <CheckCircle2 className="h-4 w-4" /> Publicar al estudiante
+            </Button>
+          </div>
+        )}
+        {published && (
+          <Card className="flex items-start gap-3 border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-500/30 dark:bg-emerald-500/10">
+            <CheckCircle2 className="mt-0.5 h-5 w-5 text-emerald-500" />
+            <div>
+              <p className="font-semibold text-emerald-800 dark:text-emerald-200">Resultados publicados</p>
+              <p className="text-sm text-emerald-700 dark:text-emerald-300">El estudiante ya puede ver su nota y retroalimentación.</p>
+            </div>
+          </Card>
         )}
 
         {showAjustar && (
@@ -321,6 +346,7 @@ function BatchActions({
   notaMaxima,
   onConfirmBatch,
   onAjustarBatch,
+  onPublishBatch,
   onClear,
   batchPending,
 }: {
@@ -328,6 +354,7 @@ function BatchActions({
   notaMaxima: number | undefined;
   onConfirmBatch: (items: { calificacion_id: string; nota_confirmada: number }[]) => void;
   onAjustarBatch: (items: { calificacion_id: string; nota_confirmada: number }[]) => void;
+  onPublishBatch: (ids: string[]) => void;
   onClear: () => void;
   batchPending: boolean;
 }) {
@@ -360,6 +387,9 @@ function BatchActions({
           </Button>
           <Button size="sm" variant="outline" onClick={() => setShowBulk(!showBulk)} disabled={batchPending}>
             <Pencil className="h-4 w-4" /> Ajustar nota común
+          </Button>
+          <Button size="sm" variant="secondary" onClick={() => onPublishBatch(selected.map((c) => c.id))} disabled={batchPending}>
+            <CheckCircle2 className="h-4 w-4" /> Publicar seleccionados
           </Button>
           <Button size="sm" variant="ghost" onClick={onClear}>
             <X className="h-4 w-4" /> Limpiar
@@ -488,19 +518,34 @@ export function CalificacionesWorkspace() {
     },
     onError: (e) => toast.error(toApiError(e).detail),
   });
+  const publishMut = useMutation({
+    mutationFn: (id: string) => publicarNota(id),
+    onSuccess: () => { invalidate(); toast.success('Nota publicada al estudiante'); },
+    onError: (e) => toast.error(toApiError(e).detail),
+  });
+  const publishBatchMut = useMutation({
+    mutationFn: (ids: string[]) => publicarNotaBatch(ids),
+    onSuccess: (res: BatchResult) => {
+      invalidate();
+      toast.success(`${res.exitosos} nota(s) publicada(s)`);
+      if (res.fallidos > 0) toast.error(`${res.fallidos} no pudieron publicarse`);
+      setSelectedBatch(new Set());
+    },
+    onError: (e) => toast.error(toApiError(e).detail),
+  });
 
   // Derived
   const displayedCals = useMemo(() => {
     const items = [...(cals ?? [])].sort((a, b) => {
-      const aConfirmed = a.estado === CONFIRMADA || a.estado === AJUSTADA;
-      const bConfirmed = b.estado === CONFIRMADA || b.estado === AJUSTADA;
+      const aConfirmed = DONE_STATES.has(a.estado);
+      const bConfirmed = DONE_STATES.has(b.estado);
       if (aConfirmed !== bConfirmed) return aConfirmed ? 1 : -1;
       return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
     });
     const filtered = gradeFilter === 'pendientes'
-      ? items.filter((c) => c.estado !== CONFIRMADA && c.estado !== AJUSTADA)
+      ? items.filter((c) => !DONE_STATES.has(c.estado))
       : gradeFilter === 'confirmadas'
-        ? items.filter((c) => c.estado === CONFIRMADA || c.estado === AJUSTADA)
+        ? items.filter((c) => DONE_STATES.has(c.estado))
         : items;
     if (!searchTerm) return filtered;
     const q = searchTerm.toLowerCase();
@@ -512,7 +557,7 @@ export function CalificacionesWorkspace() {
 
   const gradeSummary = useMemo(() => {
     const items = cals ?? [];
-    const confirmed = items.filter((c) => c.estado === CONFIRMADA || c.estado === AJUSTADA).length;
+    const confirmed = items.filter((c) => DONE_STATES.has(c.estado)).length;
     return { total: items.length, confirmed, pending: items.length - confirmed };
   }, [cals]);
 
@@ -623,7 +668,8 @@ export function CalificacionesWorkspace() {
             ) : (
               <div className="space-y-1 pt-3">
                 {displayedCals.map((c) => {
-                  const confirmada = c.estado === CONFIRMADA || c.estado === AJUSTADA;
+                  const done = DONE_STATES.has(c.estado);
+                  const published = c.estado === PUBLICADA;
                   const selected = selectedId === c.id;
                   const checked = selectedBatch.has(c.id);
                   return (
@@ -653,14 +699,14 @@ export function CalificacionesWorkspace() {
                         <div className="min-w-0">
                           <p className="truncate text-sm font-semibold">{studentLabel(c, studentMap)}</p>
                           <div className="flex flex-wrap items-center gap-1.5">
-                            <Badge tone={confirmada ? 'success' : 'warning'}>{confirmada ? 'Confirmada' : 'Pendiente'}</Badge>
+                            <Badge tone={done ? (published ? 'brand' : 'success') : 'warning'}>{published ? 'Publicada' : done ? 'Confirmada' : 'Pendiente'}</Badge>
                             {Number(c.confianza ?? 0) < 0.5 && Number(c.confianza ?? 0) > 0 && (
                               <Badge tone="error">Conf. baja</Badge>
                             )}
                           </div>
                         </div>
                       </div>
-                      <span className={`ml-auto shrink-0 font-display text-xl font-extrabold ${confirmada ? 'text-fg' : 'text-amber-600'}`}>
+                      <span className={`ml-auto shrink-0 font-display text-xl font-extrabold ${done && !published ? 'text-fg' : done ? 'text-brand-600' : 'text-amber-600'}`}>
                         {Number(c.nota_confirmada ?? c.nota_sugerida ?? 0).toFixed(1)}
                       </span>
                     </button>
@@ -703,9 +749,11 @@ export function CalificacionesWorkspace() {
                     if (cal) { setConfirmingSingle(cal); }
                   }}
                   onAjustar={(id, nota, feedback) => ajustarMut.mutate({ id, nota, feedback })}
+                  onPublish={(id) => publishMut.mutate(id)}
                   onRechazar={(id) => setRejectId(id)}
                   confirmPending={confirmarMut.isPending}
                   adjustPending={ajustarMut.isPending}
+                  publishPending={publishMut.isPending}
                 />
               ) : (
                 <div className="flex items-center justify-center p-5 text-sm text-muted">Sin datos.</div>
@@ -725,8 +773,9 @@ export function CalificacionesWorkspace() {
         notaMaxima={notaMaxima}
         onConfirmBatch={(items) => confirmBatchMut.mutate(items)}
         onAjustarBatch={(items) => ajustarBatchMut.mutate(items)}
+        onPublishBatch={(ids) => publishBatchMut.mutate(ids)}
         onClear={() => setSelectedBatch(new Set())}
-        batchPending={confirmBatchMut.isPending || ajustarBatchMut.isPending}
+        batchPending={confirmBatchMut.isPending || ajustarBatchMut.isPending || publishBatchMut.isPending}
       />
 
       {/* Confirm dialog */}

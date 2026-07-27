@@ -73,3 +73,16 @@ export async function ajustarNotaBatch(items: { calificacion_id: string; nota_co
   const { data } = await api.post<BatchResult>('/calificaciones/lote/ajustar', { items });
   return data;
 }
+
+
+/* ── Publicar ── */
+
+export async function publicarNota(calificacionId: string): Promise<Calificacion> {
+  const { data } = await api.patch<Calificacion>(`/calificaciones/${calificacionId}/publicar`);
+  return data;
+}
+
+export async function publicarNotaBatch(calificacionIds: string[]): Promise<BatchResult> {
+  const { data } = await api.post<BatchResult>('/calificaciones/lote/publicar', calificacionIds);
+  return data;
+}

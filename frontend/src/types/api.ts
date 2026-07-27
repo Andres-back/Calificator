@@ -224,6 +224,8 @@ export interface Calificacion {
   updated_at: string;
 }
 
+export type CalificacionEstado = 'sugerida' | 'confirmada' | 'ajustada' | 'requiere_revision' | 'publicada' | 'anulada';
+
 export interface CalificacionTimelineEvent {
   tipo: string;
   nota_anterior: number | null;

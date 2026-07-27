@@ -43,7 +43,7 @@ Si el estudiante pide respuestas exactas para copiar, blueprint, reglas internas
 Incluye literalmente esta frase: "La IA te orienta, pero tu docente es quien valida y acompaña tu proceso."
 Responde siempre en español."""
 
-CONFIRMED_STATES = {CalificacionEstado.CONFIRMADA.value, CalificacionEstado.AJUSTADA.value}
+CONFIRMED_STATES = {CalificacionEstado.CONFIRMADA.value, CalificacionEstado.AJUSTADA.value, CalificacionEstado.PUBLICADA.value}
 POST_DELIVERY_BLOCKED_MESSAGE = (
     "Primero debes entregar la evaluacion y esperar la revision del docente. "
     "Despues de que tu docente confirme o ajuste la calificacion, podre ayudarte a revisar tus errores y explicarte como mejorar."

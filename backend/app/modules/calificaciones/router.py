@@ -395,7 +395,8 @@ async def get_resumen_academico(
     elif current_user.rol != UserRole.ADMIN.value:
         raise HTTPException(status_code=403, detail="No autorizado")
 
-    return await service.get_resumen_academico(db, estudiante_id)
+    publicada_only = current_user.rol == UserRole.ESTUDIANTE.value
+    return await service.get_resumen_academico(db, estudiante_id, publicada_only=publicada_only)
 
 
 @router.get("/estudiantes/{estudiante_id}/boletin")
@@ -419,7 +420,8 @@ async def get_boletin(
 
     if not await is_student_enrolled(db, materia_id, estudiante_id):
         raise HTTPException(status_code=403, detail="El estudiante no esta matriculado en esta materia")
-    return await service.get_boletin(db, estudiante_id, materia_id)
+    publicada_only = current_user.rol == UserRole.ESTUDIANTE.value
+    return await service.get_boletin(db, estudiante_id, materia_id, publicada_only=publicada_only)
 
 
 # ── Modo Salón ─────────────────────────────────────────────────────────────────
@@ -729,7 +731,32 @@ async def get_calificacion_detalle(
     return await service.get_calificacion_detalle(db, calificacion_id)
 
 
+# ── Publicar ─────────────────────────────────────────────────────────────────────
+
+
+@router.patch("/calificaciones/{calificacion_id}/publicar", response_model=CalificacionRead)
+async def publicar(
+    calificacion_id: UUID,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> object:
+    require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
+    cal = await service.get_calificacion_or_404(db, calificacion_id)
+    await evaluaciones_service.ensure_can_manage_evaluation(db, cal.evaluacion_id, current_user)
+    return await service.publicar_nota(db, cal)
+
+
 # ── Batch operations ─────────────────────────────────────────────────────────────
+
+
+@router.post("/calificaciones/lote/publicar", response_model=BatchResult)
+async def publicar_lote(
+    payload: list[UUID],
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> object:
+    require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
+    return await service.publicar_nota_batch(db, payload)
 
 
 @router.post("/calificaciones/lote/confirmar", response_model=BatchResult)

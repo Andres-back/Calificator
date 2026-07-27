@@ -58,7 +58,7 @@ class Calificacion(Base):
     __tablename__ = "calificaciones"
     __table_args__ = (
         CheckConstraint(
-            "estado IN ('sugerida','confirmada','ajustada','requiere_revision','anulada')",
+            "estado IN ('sugerida','confirmada','ajustada','requiere_revision','publicada','anulada')",
             name="ck_calificaciones_estado",
         ),
     )
