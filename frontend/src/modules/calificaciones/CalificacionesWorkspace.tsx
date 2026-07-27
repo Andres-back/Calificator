@@ -87,6 +87,105 @@ function Timeline({ events }: { events: CalificacionDetalle['timeline'] }) {
   );
 }
 
+/* ─── Sub-componente: Resumen IA ─── */
+function AIPipelineSummary({
+  confianza,
+  graderA,
+  graderB,
+  comparator,
+  vision,
+}: {
+  confianza: number | null;
+  graderA: Record<string, unknown> | undefined;
+  graderB: Record<string, unknown> | undefined;
+  comparator: Record<string, unknown> | undefined;
+  vision: Record<string, unknown> | undefined;
+}) {
+  const [expanded, setExpanded] = useState(false);
+
+  const graderAError = Boolean(graderA?.error);
+  const graderBError = Boolean(graderB?.error);
+  const discrepancia = Boolean(comparator?.discrepancia);
+  const confianzaAlta = confianza != null && confianza >= 0.7;
+  const confianzaMedia = confianza != null && confianza >= 0.4 && confianza < 0.7;
+
+  let summary: { label: string; tone: string; icon: string };
+  if (graderAError && graderBError) {
+    summary = { label: 'Error en análisis automático. Se requiere revisión docente.', tone: 'rose', icon: '⚠️' };
+  } else if (discrepancia) {
+    summary = { label: 'Los evaluadores de IA tuvieron diferencias significativas. Revisa los criterios.', tone: 'amber', icon: '⚡' };
+  } else if (confianzaAlta) {
+    summary = { label: 'Los evaluadores de IA coincidieron. Confianza alta.', tone: 'emerald', icon: '✓' };
+  } else if (confianzaMedia) {
+    summary = { label: 'Confianza media. Revisa los criterios detenidamente.', tone: 'amber', icon: '→' };
+  } else {
+    summary = { label: 'Confianza baja. Se recomienda revisión detallada.', tone: 'rose', icon: '⚠' };
+  }
+
+  const toneBorder = {
+    emerald: 'border-emerald-200 dark:border-emerald-500/30',
+    amber: 'border-amber-200 dark:border-amber-500/30',
+    rose: 'border-rose-200 dark:border-rose-500/30',
+  }[summary.tone] ?? 'border-border';
+
+  return (
+    <div className={`rounded-xl border ${toneBorder}`}>
+      <button
+        type="button"
+        onClick={() => setExpanded(!expanded)}
+        className="focus-ring flex w-full items-center justify-between px-4 py-3 text-left"
+      >
+        <span className="flex items-center gap-2 text-sm font-semibold">
+          <Sparkles className="h-4 w-4 text-brand-500" />
+          <span>{summary.icon} {summary.label}</span>
+        </span>
+        <span className="flex items-center gap-1 text-xs text-muted">
+          {expanded ? 'Ocultar detalles' : 'Ver detalles'}
+          {expanded ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
+        </span>
+      </button>
+
+      {expanded && (
+        <div className="space-y-2 border-t border-border px-4 py-3 text-xs">
+          {vision && (
+            <div className="flex items-center justify-between">
+              <span>Visión ({String(vision.modelo ?? '—')})</span>
+              <span className={vision.usable !== false ? 'text-emerald-600' : 'text-rose-600'}>
+                {vision.usable !== false ? '✓' : '✗'} {vision.tiempo_ms ? `${vision.tiempo_ms}ms` : ''}
+              </span>
+            </div>
+          )}
+          {graderA && (
+            <div className="flex items-center justify-between">
+              <span>Evaluador A ({String(graderA.modelo ?? '')})</span>
+              <span className={graderA.error ? 'text-rose-600' : 'text-fg'}>
+                {graderA.nota != null ? Number(graderA.nota).toFixed(1) : '—'}
+              </span>
+            </div>
+          )}
+          {graderB && (
+            <div className="flex items-center justify-between">
+              <span>Evaluador B ({String(graderB.modelo ?? '')})</span>
+              <span className={graderB.error ? 'text-rose-600' : 'text-fg'}>
+                {graderB.nota != null ? Number(graderB.nota).toFixed(1) : '—'}
+              </span>
+            </div>
+          )}
+          {comparator && (
+            <div className="flex items-center justify-between border-t border-border pt-2 font-semibold">
+              <span>Consolidado{discrepancia ? ' ⚠️' : ''}</span>
+              <span>{comparator.nota_final != null ? Number(comparator.nota_final).toFixed(1) : '—'}</span>
+            </div>
+          )}
+          {!!comparator?.analisis && (
+            <p className="pt-1 italic text-muted">{String(comparator.analisis)}</p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* ─── Sub-componente: PanelDetalle ─── */
 function PanelDetalle({
   cal,
@@ -233,48 +332,15 @@ function PanelDetalle({
           );
         })()}
 
-        {/* Pipeline */}
+        {/* Pipeline — resumen colapsable */}
         {!!pipeline?.orchestrator && (
-          <div className="rounded-xl border border-border">
-            <p className="flex items-center gap-2 border-b border-border px-4 py-2 text-xs font-semibold text-muted">
-              <ScanText className="h-4 w-4" /> Pipeline de calificación
-            </p>
-            <div className="space-y-2 px-4 py-3 text-xs">
-              {vision && (
-                <div className="flex items-center justify-between">
-                  <span>Visión ({String(vision.modelo ?? '—')})</span>
-                  <span className={vision.usable !== false ? 'text-emerald-600' : 'text-rose-600'}>
-                    {vision.usable !== false ? '✅' : '❌'} {vision.tiempo_ms ? `${vision.tiempo_ms}ms` : ''}
-                  </span>
-                </div>
-              )}
-              {graderA && (
-                <div className="flex items-center justify-between">
-                  <span>Grader A ({String(graderA.modelo ?? '')})</span>
-                  <span className={graderA.error ? 'text-rose-600' : 'text-fg'}>
-                    {graderA.nota != null ? Number(graderA.nota).toFixed(1) : '—'}
-                  </span>
-                </div>
-              )}
-              {graderB && (
-                <div className="flex items-center justify-between">
-                  <span>Grader B ({String(graderB.modelo ?? '')})</span>
-                  <span className={graderB.error ? 'text-rose-600' : 'text-fg'}>
-                    {graderB.nota != null ? Number(graderB.nota).toFixed(1) : '—'}
-                  </span>
-                </div>
-              )}
-              {comparator && (
-                <div className="flex items-center justify-between border-t border-border pt-2 font-semibold">
-                  <span>Comparator{comparator.discrepancia ? ' ⚠️' : ''}</span>
-                  <span>{comparator.nota_final != null ? Number(comparator.nota_final).toFixed(1) : '—'}</span>
-                </div>
-              )}
-              {!!comparator?.analisis && (
-                <p className="pt-1 italic text-muted">{String(comparator.analisis)}</p>
-              )}
-            </div>
-          </div>
+          <AIPipelineSummary
+            confianza={cal.confianza}
+            graderA={graderA}
+            graderB={graderB}
+            comparator={comparator}
+            vision={vision}
+          />
         )}
 
         {/* Criterios */}
