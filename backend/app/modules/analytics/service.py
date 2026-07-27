@@ -592,7 +592,178 @@ async def get_estudiante_detalle(
     }
 
 
-# ── 2B.2: Síntesis pedagógica ──────────────────────────────────────────────────
+# ── 2C.1: Concordancia docente–IA ──────────────────────────────────────────────
+
+
+def _kappa_simple(observed: list[int], expected: list[int], categories: list[int]) -> float:
+    """Cohen's Kappa simple."""
+    n = len(observed)
+    if n == 0:
+        return 0.0
+    k = len(categories)
+    # Matriz de confusión
+    matrix = [[0] * k for _ in range(k)]
+    cat_idx = {c: i for i, c in enumerate(categories)}
+    for o, e in zip(observed, expected, strict=True):
+        matrix[cat_idx[o]][cat_idx[e]] += 1
+    # Proporción observada
+    po = sum(matrix[i][i] for i in range(k)) / n
+    # Proporción esperada
+    row_totals = [sum(matrix[i]) for i in range(k)]
+    col_totals = [sum(matrix[j][i] for j in range(k)) for i in range(k)]
+    pe = sum(row_totals[i] * col_totals[i] for i in range(k)) / (n * n)
+    if pe >= 1:
+        return 1.0
+    return (po - pe) / (1 - pe) if (1 - pe) != 0 else 0.0
+
+
+def _kappa_weighted(observed: list[int], expected: list[int], categories: list[int]) -> float:
+    """Cohen's Kappa ponderado con pesos cuadráticos."""
+    n = len(observed)
+    if n == 0:
+        return 0.0
+    k = len(categories)
+    matrix = [[0] * k for _ in range(k)]
+    cat_idx = {c: i for i, c in enumerate(categories)}
+    for o, e in zip(observed, expected, strict=True):
+        matrix[cat_idx[o]][cat_idx[e]] += 1
+    # Pesos cuadráticos
+    weights = [[1.0 - ((i - j) ** 2) / ((k - 1) ** 2) for j in range(k)] for i in range(k)]
+    po_num = sum(weights[i][j] * matrix[i][j] for i in range(k) for j in range(k))
+    po = po_num / n
+    row_totals = [sum(matrix[i]) for i in range(k)]
+    col_totals = [sum(matrix[j][i] for j in range(k)) for i in range(k)]
+    pe_num = sum(weights[i][j] * row_totals[i] * col_totals[j] / n for i in range(k) for j in range(k))
+    pe = pe_num / n
+    if pe >= 1:
+        return 1.0
+    return (po - pe) / (1 - pe) if (1 - pe) != 0 else 0.0
+
+
+async def get_concordancia(
+    db: AsyncSession,
+    profesor_id: UUID,
+    materia_id: UUID | None = None,
+    evaluacion_id: UUID | None = None,
+    fecha_desde: datetime | None = None,
+    fecha_hasta: datetime | None = None,
+) -> dict:
+    """Analiza concordancia entre nota sugerida por IA y nota confirmada por docente."""
+    desde, hasta = _default_date_range()
+    if fecha_desde: desde = fecha_desde
+    if fecha_hasta: hasta = fecha_hasta
+
+    cal_filter = [
+        Calificacion.nota_sugerida.is_not(None),
+        Calificacion.nota_confirmada.is_not(None),
+        Calificacion.revisado_por_docente == True,
+        Calificacion.created_at >= desde,
+        Calificacion.created_at <= hasta,
+        Evaluacion.profesor_id == profesor_id,
+    ]
+    if materia_id:
+        cal_filter.append(Evaluacion.materia_id == materia_id)
+    if evaluacion_id:
+        cal_filter.append(Calificacion.evaluacion_id == evaluacion_id)
+
+    rows = await db.execute(
+        select(
+            Calificacion.nota_sugerida, Calificacion.nota_confirmada,
+            Evaluacion.nota_maxima, Calificacion.evaluacion_id, Evaluacion.nombre,
+            Calificacion.confianza, Calificacion.estado,
+        )
+        .join(Evaluacion, Calificacion.evaluacion_id == Evaluacion.id)
+        .where(*cal_filter)
+    )
+
+    diferencias: list[float] = []
+    dentro_tolerancia = 0
+    override_up = 0
+    override_down = 0
+    exactos = 0
+    total = 0
+    por_evaluacion: dict[str, dict] = {}
+    orig_cats: list[int] = []
+    final_cats: list[int] = []
+
+    # Categorías para Kappa (escala 0-5)
+    CATEGORIAS = [0, 1, 2, 3, 4, 5]
+
+    for row in rows:
+        sug = float(row.nota_sugerida or 0)
+        conf = float(row.nota_confirmada or 0)
+        max_n = float(row.nota_maxima or 5)
+
+        # Normalizar a escala 0-5
+        sug_norm = (sug / max_n * 5) if max_n > 0 else 0
+        conf_norm = (conf / max_n * 5) if max_n > 0 else 0
+
+        diff = abs(conf_norm - sug_norm)
+        diferencias.append(diff)
+        total += 1
+
+        # Tolerancia ±0.2 en escala 0-5
+        if diff <= 0.2:
+            dentro_tolerancia += 1
+
+        if conf_norm == sug_norm:
+            exactos += 1
+        elif conf_norm > sug_norm:
+            override_up += 1
+        else:
+            override_down += 1
+
+        # Categorizar para Kappa
+        orig_cat = min(int(sug_norm), 5)
+        final_cat = min(int(conf_norm), 5)
+        orig_cats.append(orig_cat)
+        final_cats.append(final_cat)
+
+        # Por evaluación
+        ev_id = str(row.evaluacion_id)
+        if ev_id not in por_evaluacion:
+            por_evaluacion[ev_id] = {"nombre": row.nombre or "", "total": 0, "exactos": 0, "suma_diff": 0.0, "conf_posibles": []}
+        por_evaluacion[ev_id]["total"] += 1
+        por_evaluacion[ev_id]["exactos"] += 1 if conf_norm == sug_norm else 0
+        por_evaluacion[ev_id]["suma_diff"] += diff
+
+    # Kappa
+    kappa_simple = _kappa_simple(orig_cats, final_cats, CATEGORIAS)
+    kappa_weighted = _kappa_weighted(orig_cats, final_cats, CATEGORIAS)
+
+    mae = sum(diferencias) / total if total > 0 else 0
+    coincidencia_exacta = exactos / total if total > 0 else 0
+    tolerancia_pct = dentro_tolerancia / total if total > 0 else 0
+
+    ev_list = [
+        {
+            "evaluacion_id": eid,
+            "nombre": data["nombre"],
+            "total": data["total"],
+            "coincidencia_exacta": round(data["exactos"] / data["total"], 4) if data["total"] > 0 else 0,
+            "mae": round(data["suma_diff"] / data["total"], 4) if data["total"] > 0 else 0,
+        }
+        for eid, data in sorted(por_evaluacion.items(), key=lambda x: x[1]["suma_diff"] / max(x[1]["total"], 1), reverse=True)
+    ]
+
+    return {
+        "total_calificaciones": total,
+        "coincidencia_exacta": round(coincidencia_exacta, 4),
+        "coincidencia_tolerancia": round(tolerancia_pct, 4),
+        "mae_normalizado": round(mae, 4),
+        "overrides": {
+            "sin_cambio": exactos,
+            "aumentadas": override_up,
+            "disminuidas": override_down,
+        },
+        "kappa": {
+            "simple": round(kappa_simple, 4),
+            "ponderado": round(kappa_weighted, 4),
+            "categorias": CATEGORIAS,
+            "muestra": total,
+        },
+        "por_evaluacion": ev_list,
+    }
 
 
 async def get_sintesis(

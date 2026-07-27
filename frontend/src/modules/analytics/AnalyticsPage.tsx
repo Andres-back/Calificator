@@ -24,12 +24,13 @@ interface Overview {
 interface EvalRow { id: string; nombre: string; estado: string; total_entregas: number; pendientes: number; confirmadas: number; publicadas: number; promedio: number; tasa_aprobacion: number; }
 interface CriterioRow { nombre: string; porcentaje_logro: number; estudiantes_evaluados: number; estudiantes_con_dificultad: number; nivel_atencion: string; }
 interface EstudianteRow { estudiante_id: string; nombre: string; email: string; promedio_pct: number; total_evaluaciones: number; pendientes: number; bajo_rendimiento: number; senales: string[]; nivel_atencion: string; }
-type Tab = 'resumen' | 'rendimiento' | 'estudiantes';
+type Tab = 'resumen' | 'rendimiento' | 'estudiantes' | 'calidad_ia';
 
 const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
   { id: 'resumen', label: 'Resumen', icon: <BarChart3 className="h-4 w-4" /> },
   { id: 'rendimiento', label: 'Rendimiento', icon: <BookOpen className="h-4 w-4" /> },
   { id: 'estudiantes', label: 'Estudiantes', icon: <Users className="h-4 w-4" /> },
+  { id: 'calidad_ia', label: 'Calidad de IA', icon: <Sparkles className="h-4 w-4" /> },
 ];
 
 function formatSegundos(s: number) {
@@ -258,6 +259,54 @@ function RendimientoTab({ materiaId }: { materiaId: string }) {
   </>);
 }
 
+/* ═══════════════════════ CALIDAD DE IA ═══════════════════════ */
+function ConcordanciaTab({ materiaId }: { materiaId: string }) {
+  const conc = useQuery({ queryKey: ['ai-concordancia', materiaId], queryFn: () => api.get('/analytics/ai-quality/concordancia', { params: materiaId ? { materia_id: materiaId } : {} }).then(r => r.data) });
+
+  if (conc.isLoading) return <div className="grid gap-4 sm:grid-cols-4">{Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-28" />)}</div>;
+  if (conc.error) return <EmptyState icon={Sparkles} title="Error" description={toApiError(conc.error).detail} />;
+  const d = conc.data as any;
+  if (!d || d.total_calificaciones === 0) return <EmptyState icon={Sparkles} title="Sin datos aún" description="Las métricas de concordancia aparecen cuando hay calificaciones confirmadas por el docente." />;
+
+  const interpretKappa = (v: number) => v >= 0.81 ? 'Casi perfecta' : v >= 0.61 ? 'Sustancial' : v >= 0.41 ? 'Moderada' : v >= 0.21 ? 'Regular' : 'Baja';
+  return (<>
+    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <MetricCard icon={<CheckCircle2 className="h-5 w-5" />} label="Coincidencia exacta" value={`${(d.coincidencia_exacta * 100).toFixed(0)}%`} sub={`${d.total_calificaciones} calificaciones`} trend={d.coincidencia_exacta >= 0.7 ? 'up' : 'down'} />
+      <MetricCard icon={<TrendingUp className="h-5 w-5" />} label="Coincidencia (tolerancia ±0.2)" value={`${(d.coincidencia_tolerancia * 100).toFixed(0)}%`} />
+      <MetricCard icon={<BarChart3 className="h-5 w-5" />} label="MAE normalizado" value={d.mae_normalizado.toFixed(2)} sub={`escala 0-5`} />
+      <MetricCard icon={<Sparkles className="h-5 w-5" />} label={`Kappa ponderado: ${interpretKappa(d.kappa.ponderado)}`} value={d.kappa.ponderado.toFixed(3)} sub={`n=${d.kappa.muestra}`} />
+    </div>
+
+    {/* Overrides */}
+    <Card className="space-y-4 p-5">
+      <h3 className="font-display font-bold">Ajustes del docente</h3>
+      <div className="grid gap-4 sm:grid-cols-3">
+        <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4"><p className="text-2xl font-extrabold text-emerald-700">{d.overrides.sin_cambio}</p><p className="text-xs text-emerald-700">Sin cambios (coincidencia exacta)</p></div>
+        <div className="rounded-xl border border-amber-200 bg-amber-50 p-4"><p className="text-2xl font-extrabold text-amber-700">{d.overrides.aumentadas}</p><p className="text-xs text-amber-700">Aumentadas por docente</p></div>
+        <div className="rounded-xl border border-rose-200 bg-rose-50 p-4"><p className="text-2xl font-extrabold text-rose-700">{d.overrides.disminuidas}</p><p className="text-xs text-rose-700">Disminuidas por docente</p></div>
+      </div>
+    </Card>
+
+    {/* Kappa */}
+    <Card className="p-5">
+      <h3 className="mb-4 font-display font-bold">Concordancia Kappa</h3>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div><p className="text-xs text-muted">Kappa simple</p><p className="text-2xl font-extrabold">{d.kappa.simple.toFixed(3)}</p><p className="text-xs text-muted">Categorías: {d.kappa.categorias.join(', ')}</p></div>
+        <div><p className="text-xs text-muted">Kappa ponderado (cuadrático)</p><p className="text-2xl font-extrabold">{d.kappa.ponderado.toFixed(3)}</p><p className="text-xs text-muted">Muestra: {d.kappa.muestra} · {interpretKappa(d.kappa.ponderado)}</p></div>
+      </div>
+    </Card>
+
+    {/* Por evaluación */}
+    {d.por_evaluacion?.length > 0 && (
+      <Card className="p-5">
+        <h3 className="mb-4 font-display font-bold">Concordancia por evaluación</h3>
+        <div className="overflow-x-auto"><table className="w-full text-left text-sm"><thead><tr className="border-b border-border text-xs font-semibold text-muted"><th className="pb-2 pr-4">Evaluación</th><th className="pb-2 pr-4 text-right">Total</th><th className="pb-2 pr-4 text-right">Coincidencia</th><th className="pb-2 pr-4 text-right">MAE</th></tr></thead>
+          <tbody>{d.por_evaluacion.map((ev: any) => <tr key={ev.evaluacion_id} className="border-b border-border/50 last:border-0"><td className="py-2.5 pr-4 font-medium">{ev.nombre}</td><td className="py-2.5 pr-4 text-right">{ev.total}</td><td className="py-2.5 pr-4 text-right">{(ev.coincidencia_exacta * 100).toFixed(0)}%</td><td className="py-2.5 pr-4 text-right font-semibold">{ev.mae.toFixed(2)}</td></tr>)}</tbody></table></div>
+      </Card>
+    )}
+  </>);
+}
+
 /* ═══════════════════════ ESTUDIANTES ═══════════════════════ */
 function EstudiantesTab({ materiaId }: { materiaId: string }) {
   const est = useQuery({ queryKey: ['analytics-estudiantes', materiaId], queryFn: () => api.get('/analytics/estudiantes', { params: materiaId ? { materia_id: materiaId } : {} }).then(r => r.data) });
@@ -405,6 +454,7 @@ export function AnalyticsPage() {
       {tab === 'resumen' && <ResumenTab materiaId={materiaId} />}
       {tab === 'rendimiento' && <RendimientoTab materiaId={materiaId} />}
       {tab === 'estudiantes' && <EstudiantesTab materiaId={materiaId} />}
+      {tab === 'calidad_ia' && <ConcordanciaTab materiaId={materiaId} />}
 
       <p className="text-center text-[10px] text-muted"><HelpCircle className="mr-1 inline h-3 w-3" />Tiempo estimado ahorrado — calculado contra línea base de 3 min por corrección manual. Datos pueden tardar hasta 1 minuto.</p>
     </div>

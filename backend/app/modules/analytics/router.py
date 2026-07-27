@@ -214,3 +214,20 @@ async def export_estudiantes_csv(
         media_type="text/csv",
         headers={"Content-Disposition": "attachment; filename=estudiantes.csv"},
     )
+
+
+@router.get("/analytics/ai-quality/concordancia")
+async def ai_concordancia(
+    materia_id: UUID | None = Query(None),
+    evaluacion_id: UUID | None = Query(None),
+    fecha_desde: datetime | None = Query(None),
+    fecha_hasta: datetime | None = Query(None),
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    """Concordancia entre IA y docente: MAE, Kappa, overrides."""
+    require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
+    return await service.get_concordancia(
+        db, profesor_id=current_user.id, materia_id=materia_id,
+        evaluacion_id=evaluacion_id, fecha_desde=fecha_desde, fecha_hasta=fecha_hasta,
+    )
