@@ -9,6 +9,7 @@ import { useMaterias } from '@/modules/materias/MateriaSelect';
 import { useEstudiantes } from '@/modules/materias/hooks';
 import { listEvaluaciones } from '@/modules/evaluaciones/api';
 import { toApiError } from '@/lib/api';
+import { routes } from '@/config/routes';
 import { confidenceLabel } from '@/lib/utils';
 import { useAuth } from '@/stores/auth';
 import { calificarFoto } from './api';
@@ -182,7 +183,7 @@ export function CalificarFotoPage() {
         action={
           <div className="flex flex-wrap gap-2">
             <Button variant="outline" onClick={() => setTourOpen(true)}><HelpCircle className="h-4 w-4" /> ¿Cómo se usa?</Button>
-            <Link to="/app/calificaciones" className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-border px-5 text-sm font-semibold text-fg transition-all hover:bg-surface-2"><ArrowLeft className="h-4 w-4" /> Volver</Link>
+            <Link to={routes.calificacionesWorkspace} className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-border px-5 text-sm font-semibold text-fg transition-all hover:bg-surface-2"><ArrowLeft className="h-4 w-4" /> Volver</Link>
           </div>
         }
       />
@@ -317,7 +318,7 @@ export function CalificarFotoPage() {
                 <div className="flex flex-wrap gap-2"><Badge tone="neutral">Confianza {confidenceLabel(resultado.confianza)}</Badge><Badge tone={resultado.estado === 'sugerida' ? 'warning' : 'brand'}>{resultado.estado}</Badge></div>
                 {resultado.feedback && <div className="rounded-xl bg-surface-2 p-4 text-sm text-muted"><RichContent content={resultado.feedback} variant="feedback" /></div>}
                 <div className="flex items-start gap-2 rounded-xl border border-border p-3 text-sm text-muted"><CheckCircle2 className="mt-0.5 h-4 w-4 text-emerald-500" /><span>Confirma o ajusta esta nota desde la lista de calificaciones.</span></div>
-                <Link to="/app/calificaciones" className="focus-ring inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 text-sm font-semibold text-white transition hover:bg-emerald-700">Revisar y confirmar <ArrowRight className="h-4 w-4" /></Link>
+                <Link to={routes.calificacionesWorkspace} className="focus-ring inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 text-sm font-semibold text-white transition hover:bg-emerald-700">Revisar y confirmar <ArrowRight className="h-4 w-4" /></Link>
               </div>
             )}
           </Card>

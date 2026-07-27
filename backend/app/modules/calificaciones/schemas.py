@@ -168,3 +168,80 @@ class ResumenAcademico(BaseModel):
     promedio_general: float | None
     total_materias: int
     total_notas: int
+
+
+# ── Timeline / Auditoría ─────────────────────────────────────────────────────────
+
+class CalificacionTimelineEvent(BaseModel):
+    tipo: str  # 'confirmada' | 'ajustada' | 'rechazada' | 'sugerida' | 'anulada'
+    nota_anterior: Decimal | None = None
+    nota_nueva: Decimal | None = None
+    feedback: str | None = None
+    actor_id: UUID | None = None
+    actor_nombre: str | None = None
+    timestamp: datetime | None = None
+    detalle: str | None = None
+
+
+# ── Detalle de calificación ──────────────────────────────────────────────────────
+
+class CalificacionDetalleRead(BaseModel):
+    id: UUID
+    evaluacion_id: UUID
+    evaluacion_nombre: str = ""
+    materia_id: UUID
+    materia_nombre: str = ""
+    estudiante_id: UUID
+    estudiante_nombre: str = ""
+    estudiante_email: str = ""
+    nota_sugerida: Decimal | None
+    nota_confirmada: Decimal | None
+    nota_maxima: Decimal | None
+    confianza: Decimal | None
+    feedback: str | None
+    estado: str
+    revisado_por_docente: bool
+    resultado_json: dict = {}
+    entrega_tipo: str | None = None
+    entrega_archivo_url: str | None = None
+    entrega_respuesta_texto: str | None = None
+    entrega_created_at: datetime | None = None
+    timeline: list[CalificacionTimelineEvent] = []
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+# ── Batch ────────────────────────────────────────────────────────────────────────
+
+class BatchConfirmItem(BaseModel):
+    calificacion_id: UUID
+    nota_confirmada: Decimal = Field(ge=0)
+
+
+class BatchConfirmRequest(BaseModel):
+    items: list[BatchConfirmItem]
+
+
+class BatchAjustarItem(BaseModel):
+    calificacion_id: UUID
+    nota_confirmada: Decimal = Field(ge=0)
+    feedback: str | None = None
+
+
+class BatchAjustarRequest(BaseModel):
+    items: list[BatchAjustarItem]
+
+
+class BatchResultItem(BaseModel):
+    calificacion_id: UUID
+    success: bool
+    error: str | None = None
+
+
+class BatchResult(BaseModel):
+    results: list[BatchResultItem]
+    total: int
+    exitosos: int
+    fallidos: int

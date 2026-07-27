@@ -26,6 +26,7 @@ const EvaluacionesPage = lazy(() => import('@/modules/evaluaciones/EvaluacionesP
 const ResolverEvaluacionPage = lazy(() => import('@/modules/evaluaciones/ResolverEvaluacionPage').then((m) => ({ default: m.ResolverEvaluacionPage })));
 const AdminAIConfigPage = lazy(() => import('@/modules/admin/AdminAIConfigPage').then((m) => ({ default: m.AdminAIConfigPage })));
 const BoletinPage = lazy(() => import('@/modules/calificaciones/BoletinPage').then((m) => ({ default: m.BoletinPage })));
+const CalificacionesWorkspace = lazy(() => import('@/modules/calificaciones/CalificacionesWorkspace').then((m) => ({ default: m.CalificacionesWorkspace })));
 const PresentacionesPage = lazy(() => import('@/modules/presentaciones/PresentacionesPage').then((m) => ({ default: m.PresentacionesPage })));
 const ReportesPage = lazy(() => import('@/modules/reportes/ReportesPage').then((m) => ({ default: m.ReportesPage })));
 const XaliPage = lazy(() => import('@/modules/xali/XaliPage').then((m) => ({ default: m.XaliPage })));
@@ -99,10 +100,9 @@ export const router = createBrowserRouter([
               { path: 'herramientas', element: lazyPage(<ListPage />) },
               { path: 'herramientas/nuevo', element: lazyPage(<GeneratePage />) },
               { path: 'herramientas/:id', element: lazyPage(<DetailPage />) },
-              // Redirigir rutas antiguas de calificaciones → Materias con explicación
-              { path: 'calificaciones', element: <Navigate to={routes.materias} replace /> },
-              { path: 'calificaciones/foto', element: <Navigate to={routes.materias} replace /> },
-              { path: 'calificaciones/salon', element: <Navigate to={routes.materias} replace /> },
+              // Nuevo workspace de revisión
+              { path: 'calificaciones/workspace', element: lazyPage(<CalificacionesWorkspace />) },
+              { path: 'calificaciones/workspace/:evaluacionId', element: lazyPage(<CalificacionesWorkspace />) },
               { path: 'presentaciones', element: lazyPage(<PresentacionesPage />) },
               { path: 'reportes', element: lazyPage(<ReportesPage />) },
             ],

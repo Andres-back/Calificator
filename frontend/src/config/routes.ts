@@ -30,6 +30,8 @@ export const routes = {
 
   /* ── Calificaciones ── */
   calificacionesBoletin: '/app/calificaciones/boletin',
+  calificacionesWorkspace: '/app/calificaciones/workspace',
+  calificacionesEvaluacion: (id: string) => `/app/calificaciones/workspace/${id}` as const,
 
   /* ── Herramientas ── */
   herramientas: '/app/herramientas',

@@ -224,6 +224,45 @@ export interface Calificacion {
   updated_at: string;
 }
 
+export interface CalificacionTimelineEvent {
+  tipo: string;
+  nota_anterior: number | null;
+  nota_nueva: number | null;
+  feedback: string | null;
+  actor_id: string | null;
+  actor_nombre: string | null;
+  timestamp: string | null;
+  detalle: string | null;
+}
+
+export interface CalificacionDetalle extends Calificacion {
+  evaluacion_nombre: string;
+  materia_nombre: string;
+  estudiante_nombre: string;
+  estudiante_email: string;
+  nota_maxima: number | null;
+  entrega_tipo: string | null;
+  entrega_archivo_url: string | null;
+  entrega_respuesta_texto: string | null;
+  entrega_created_at: string | null;
+  timeline: CalificacionTimelineEvent[];
+}
+
+export interface BatchResultItem {
+  calificacion_id: string;
+  success: boolean;
+  error: string | null;
+}
+
+export interface BatchResult {
+  results: BatchResultItem[];
+  total: number;
+  exitosos: number;
+  fallidos: number;
+}
+
+export type GradeFilter = 'todas' | 'pendientes' | 'confirmadas';
+
 export interface EntregaRead {
   id: string;
   evaluacion_id: string;

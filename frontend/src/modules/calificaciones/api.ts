@@ -1,5 +1,5 @@
 import { api } from '@/lib/api';
-import type { BoletinItem, Calificacion, ResumenAcademico, SalonSesionRead } from '@/types/api';
+import type { BatchResult, BoletinItem, Calificacion, CalificacionDetalle, ResumenAcademico, SalonSesionRead } from '@/types/api';
 
 export async function listCalificaciones(evaluacionId: string): Promise<Calificacion[]> {
   const { data } = await api.get<Calificacion[]>(`/evaluaciones/${evaluacionId}/calificaciones`);
@@ -50,5 +50,26 @@ export async function getBoletin(estudianteId: string, materiaId: string): Promi
 }
 export async function getResumenAcademico(estudianteId: string): Promise<ResumenAcademico> {
   const { data } = await api.get<ResumenAcademico>(`/estudiantes/${estudianteId}/resumen-academico`);
+  return data;
+}
+
+
+/* ── Detalle ── */
+
+export async function getCalificacionDetalle(calificacionId: string): Promise<CalificacionDetalle> {
+  const { data } = await api.get<CalificacionDetalle>(`/calificaciones/${calificacionId}/detalle`);
+  return data;
+}
+
+
+/* ── Batch ── */
+
+export async function confirmarNotaBatch(items: { calificacion_id: string; nota_confirmada: number }[]): Promise<BatchResult> {
+  const { data } = await api.post<BatchResult>('/calificaciones/lote/confirmar', { items });
+  return data;
+}
+
+export async function ajustarNotaBatch(items: { calificacion_id: string; nota_confirmada: number; feedback?: string }[]): Promise<BatchResult> {
+  const { data } = await api.post<BatchResult>('/calificaciones/lote/ajustar', { items });
   return data;
 }

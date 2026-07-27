@@ -24,6 +24,10 @@ from app.modules.calificaciones.salon_mode_service import (
 )
 from app.modules.calificaciones.schemas import (
     AjustarNota,
+    BatchAjustarRequest,
+    BatchConfirmRequest,
+    BatchResult,
+    CalificacionDetalleRead,
     CalificacionRead,
     ConfirmarNota,
     EntregaOnlineCreate,
@@ -710,3 +714,39 @@ async def crear_entrega_online(
     await db.commit()
     await db.refresh(entrega)
     return entrega
+
+
+# ── Detalle ──────────────────────────────────────────────────────────────────────
+
+
+@router.get("/calificaciones/{calificacion_id}/detalle", response_model=CalificacionDetalleRead)
+async def get_calificacion_detalle(
+    calificacion_id: UUID,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> object:
+    require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
+    return await service.get_calificacion_detalle(db, calificacion_id)
+
+
+# ── Batch operations ─────────────────────────────────────────────────────────────
+
+
+@router.post("/calificaciones/lote/confirmar", response_model=BatchResult)
+async def confirmar_lote(
+    payload: BatchConfirmRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> object:
+    require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
+    return await service.confirmar_nota_batch(db, payload.items, current_user)
+
+
+@router.post("/calificaciones/lote/ajustar", response_model=BatchResult)
+async def ajustar_lote(
+    payload: BatchAjustarRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> object:
+    require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
+    return await service.ajustar_nota_batch(db, payload.items, current_user)

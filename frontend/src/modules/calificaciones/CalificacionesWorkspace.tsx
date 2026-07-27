@@ -1,0 +1,769 @@
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useNavigate, useParams, Link } from 'react-router-dom';
+import { useMutation, useQuery } from '@tanstack/react-query';
+import { motion } from 'framer-motion';
+import toast from 'react-hot-toast';
+import {
+  ArrowLeft, ArrowRight, Camera, CheckCircle2, ChevronDown, ChevronRight,
+  Clock, FileImage, GraduationCap, HelpCircle, Pencil, RotateCcw,
+  ScanText, Search, ShieldAlert, Sparkles, X,
+} from 'lucide-react';
+import { Badge, Button, Card, ConfirmDialog, Field, Input, Modal, RichContent, Select, Skeleton, Textarea } from '@/components/ui';
+import { PageHeader } from '@/components/layout/PageHeader';
+import { useMaterias } from '@/modules/materias/MateriaSelect';
+import { useEstudiantes } from '@/modules/materias/hooks';
+import { listEvaluaciones } from '@/modules/evaluaciones/api';
+import { queryClient } from '@/lib/queryClient';
+import { toApiError } from '@/lib/api';
+import { useAuth } from '@/stores/auth';
+import {
+  ajustarNota, ajustarNotaBatch, confirmarNota, confirmarNotaBatch,
+  getCalificacionDetalle, listCalificaciones,
+} from './api';
+import type { Calificacion, CalificacionDetalle, GradeFilter } from '@/types/api';
+
+const CONFIRMADA = 'confirmada';
+const AJUSTADA = 'ajustada';
+const SUGERIDA = 'sugerida';
+
+/* ─── Helper ─── */
+function studentLabel(
+  c: Calificacion,
+  studentMap: Map<string, { nombre: string; email?: string }>,
+) {
+  const s = studentMap.get(c.estudiante_id);
+  return s?.nombre ?? `ID ${c.estudiante_id.slice(0, 8)}`;
+}
+
+/* ─── Sub-componente: Timeline ─── */
+function Timeline({ events }: { events: CalificacionDetalle['timeline'] }) {
+  const [open, setOpen] = useState(false);
+  if (!events || events.length === 0) return null;
+  return (
+    <div className="rounded-xl border border-border">
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        className="focus-ring flex w-full items-center justify-between px-4 py-3 text-left text-sm font-semibold"
+      >
+        <span className="flex items-center gap-2">
+          <Clock className="h-4 w-4 text-muted" />
+          Historial de cambios ({events.length})
+        </span>
+        {open ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+      </button>
+      {open && (
+        <div className="space-y-2 border-t border-border px-4 pb-3 pt-2">
+          {events.map((ev, i) => (
+            <div key={i} className="flex items-start gap-3 text-xs">
+              <div className={`mt-1 grid h-5 w-5 shrink-0 place-items-center rounded-full text-[10px] font-bold text-white ${
+                ev.tipo === 'confirmada' ? 'bg-emerald-500' : ev.tipo === 'ajustada' ? 'bg-amber-500' : 'bg-sky-500'
+              }`}>
+                {i + 1}
+              </div>
+              <div className="min-w-0">
+                <p className="font-medium text-fg">
+                  {ev.tipo === 'confirmada' ? 'Confirmada' : ev.tipo === 'ajustada' ? 'Ajustada' : ev.tipo}
+                  {ev.nota_anterior != null && ev.nota_nueva != null && (
+                    <>: {ev.nota_anterior.toFixed(1)} → {ev.nota_nueva.toFixed(1)}</>
+                  )}
+                </p>
+                {ev.detalle && <p className="text-muted">{ev.detalle}</p>}
+                {ev.feedback && <p className="mt-0.5 italic text-muted">"{ev.feedback}"</p>}
+                <div className="mt-0.5 flex gap-2 text-muted">
+                  {ev.actor_nombre && <span>{ev.actor_nombre}</span>}
+                  {ev.timestamp && <span>{new Date(ev.timestamp).toLocaleString('es-CO')}</span>}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ─── Sub-componente: PanelDetalle ─── */
+function PanelDetalle({
+  cal,
+  notaMaxima,
+  studentMap,
+  onClose,
+  onConfirm,
+  onAjustar,
+  onRechazar,
+  confirmPending,
+  adjustPending,
+}: {
+  cal: CalificacionDetalle;
+  notaMaxima: number | undefined;
+  studentMap: Map<string, { nombre: string; email?: string }>;
+  onClose: () => void;
+  onConfirm: (id: string, nota: number) => void;
+  onAjustar: (id: string, nota: number, feedback?: string) => void;
+  onRechazar: (id: string) => void;
+  confirmPending: boolean;
+  adjustPending: boolean;
+}) {
+  const [adjNota, setAdjNota] = useState(Number(cal.nota_confirmada ?? cal.nota_sugerida ?? 0));
+  const [adjFeedback, setAdjFeedback] = useState(cal.feedback ?? '');
+  const [showAjustar, setShowAjustar] = useState(false);
+  const [adjError, setAdjError] = useState('');
+
+  const confirmada = cal.estado === CONFIRMADA || cal.estado === AJUSTADA;
+  const estudiante = studentMap.get(cal.estudiante_id);
+  const pipeline = cal.resultado_json as Record<string, unknown>;
+  const vision = pipeline?.vision as Record<string, unknown> | undefined;
+  const graderA = pipeline?.grader_a as Record<string, unknown> | undefined;
+  const graderB = pipeline?.grader_b as Record<string, unknown> | undefined;
+  const comparator = pipeline?.comparator as Record<string, unknown> | undefined;
+  const criterios = (graderA?.criterios ?? []) as Array<Record<string, unknown>>;
+  const alertas = (graderA?.alertas ?? []) as string[];
+
+  function submitAjuste() {
+    const n = Number(adjNota);
+    if (isNaN(n) || n < 0) { setAdjError('Nota inválida'); return; }
+    if (notaMaxima != null && n > notaMaxima) { setAdjError(`Máximo ${notaMaxima}`); return; }
+    setAdjError('');
+    onAjustar(cal.id, n, adjFeedback || undefined);
+  }
+
+  return (
+    <div className="flex h-full flex-col">
+      {/* Header */}
+      <div className="flex items-center justify-between border-b border-border px-5 py-4">
+        <div className="min-w-0">
+          <p className="truncate font-display text-lg font-bold">{cal.estudiante_nombre || estudiante?.nombre || 'Estudiante'}</p>
+          <p className="text-xs text-muted">{cal.evaluacion_nombre} · {cal.materia_nombre}</p>
+        </div>
+        <button type="button" onClick={onClose} className="focus-ring ml-2 rounded-lg p-1.5 text-muted hover:text-fg lg:hidden">
+          <X className="h-5 w-5" />
+        </button>
+      </div>
+
+      <div className="flex-1 space-y-5 overflow-y-auto p-5">
+        {/* Nota principal */}
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm text-muted">
+              {confirmada ? 'Nota confirmada' : 'Nota sugerida'}
+            </p>
+            <p className="font-display text-4xl font-extrabold text-fg">
+              {Number(cal.nota_confirmada ?? cal.nota_sugerida ?? 0).toFixed(1)}
+              {notaMaxima != null && <span className="ml-2 text-lg font-semibold text-muted">/ {notaMaxima.toFixed(1)}</span>}
+            </p>
+          </div>
+          <Badge tone={confirmada ? 'success' : 'warning'}>
+            {confirmada ? 'Confirmada' : 'Por revisar'}
+          </Badge>
+        </div>
+
+        {/* Confianza */}
+        {(() => {
+          if (cal.confianza == null || cal.confianza <= 0) return null;
+          return <p className="text-xs text-muted">Confianza: {(cal.confianza * 100).toFixed(0)}%</p>;
+        })()}
+
+        {/* Evidencia */}
+        {(() => {
+          if (!cal.entrega_archivo_url) return null;
+          return (
+          <div className="rounded-xl border border-border bg-surface-2">
+            <p className="flex items-center gap-2 border-b border-border px-4 py-2 text-xs font-semibold text-muted">
+              <FileImage className="h-4 w-4" /> Evidencia
+            </p>
+            <img
+              src={cal.entrega_archivo_url}
+              alt="Evidencia del estudiante"
+              className="max-h-80 w-full bg-white object-contain p-2"
+            />
+          </div>
+          );
+        })()}
+        {(() => {
+          if (!cal.entrega_respuesta_texto) return null;
+          return (
+          <div className="rounded-xl border border-border bg-surface-2 p-4">
+            <p className="mb-2 text-xs font-semibold text-muted">Respuesta del estudiante</p>
+            <p className="whitespace-pre-wrap text-sm text-fg">{cal.entrega_respuesta_texto}</p>
+          </div>
+          );
+        })()}
+
+        {/* Pipeline */}
+        {!!pipeline?.orchestrator && (
+          <div className="rounded-xl border border-border">
+            <p className="flex items-center gap-2 border-b border-border px-4 py-2 text-xs font-semibold text-muted">
+              <ScanText className="h-4 w-4" /> Pipeline de calificación
+            </p>
+            <div className="space-y-2 px-4 py-3 text-xs">
+              {vision && (
+                <div className="flex items-center justify-between">
+                  <span>Visión ({String(vision.modelo ?? '—')})</span>
+                  <span className={vision.usable !== false ? 'text-emerald-600' : 'text-rose-600'}>
+                    {vision.usable !== false ? '✅' : '❌'} {vision.tiempo_ms ? `${vision.tiempo_ms}ms` : ''}
+                  </span>
+                </div>
+              )}
+              {graderA && (
+                <div className="flex items-center justify-between">
+                  <span>Grader A ({String(graderA.modelo ?? '')})</span>
+                  <span className={graderA.error ? 'text-rose-600' : 'text-fg'}>
+                    {graderA.nota != null ? Number(graderA.nota).toFixed(1) : '—'}
+                  </span>
+                </div>
+              )}
+              {graderB && (
+                <div className="flex items-center justify-between">
+                  <span>Grader B ({String(graderB.modelo ?? '')})</span>
+                  <span className={graderB.error ? 'text-rose-600' : 'text-fg'}>
+                    {graderB.nota != null ? Number(graderB.nota).toFixed(1) : '—'}
+                  </span>
+                </div>
+              )}
+              {comparator && (
+                <div className="flex items-center justify-between border-t border-border pt-2 font-semibold">
+                  <span>Comparator{comparator.discrepancia ? ' ⚠️' : ''}</span>
+                  <span>{comparator.nota_final != null ? Number(comparator.nota_final).toFixed(1) : '—'}</span>
+                </div>
+              )}
+              {!!comparator?.analisis && (
+                <p className="pt-1 italic text-muted">{String(comparator.analisis)}</p>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Criterios */}
+        {criterios.length > 0 && (
+          <div className="rounded-xl border border-border">
+            <p className="flex items-center gap-2 border-b border-border px-4 py-2 text-xs font-semibold text-muted">
+              <ShieldAlert className="h-4 w-4" /> Criterios de evaluación
+            </p>
+            <div className="space-y-2 px-4 py-3">
+              {criterios.map((c, i) => (
+                <div key={i} className="flex items-center justify-between text-sm">
+                  <span className="text-muted">{String(c.nombre ?? '')}</span>
+                  <span className="font-semibold text-fg">
+                    {Number(c.puntaje ?? 0).toFixed(1)} / {Number(c.maximo ?? 0).toFixed(1)}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Feedback */}
+        <Field label="Retroalimentación">
+          <Textarea
+            value={adjFeedback}
+            onChange={(e) => setAdjFeedback(e.target.value)}
+            placeholder="Escribe o edita el feedback para el estudiante…"
+            rows={4}
+          />
+        </Field>
+
+        {/* Alertas */}
+        {alertas.length > 0 && (
+          <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200">
+            {alertas.map((a, i) => <p key={i}>⚠️ {a}</p>)}
+          </div>
+        )}
+
+        {/* Acciones */}
+        {!confirmada && (
+          <div className="flex flex-wrap gap-2">
+            <Button
+              onClick={() => onConfirm(cal.id, adjNota)}
+              loading={confirmPending}
+              disabled={confirmPending}
+            >
+              <CheckCircle2 className="h-4 w-4" /> Confirmar nota
+            </Button>
+            <Button variant="outline" onClick={() => setShowAjustar(!showAjustar)}>
+              <Pencil className="h-4 w-4" /> Ajustar
+            </Button>
+            <Button variant="ghost" onClick={() => onRechazar(cal.id)}>
+              <RotateCcw className="h-4 w-4" /> Rechazar → revisión
+            </Button>
+          </div>
+        )}
+
+        {showAjustar && (
+          <Card className="space-y-3 p-4">
+            <Field label="Nota" hint={notaMaxima != null ? `0 - ${notaMaxima}` : undefined}>
+              <Input
+                type="number"
+                step="0.1"
+                min={0}
+                max={notaMaxima}
+                value={adjNota}
+                onChange={(e) => { setAdjNota(Number(e.target.value)); setAdjError(''); }}
+              />
+              {adjError && <span className="mt-1 block text-xs text-rose-500">{adjError}</span>}
+            </Field>
+            <Button onClick={submitAjuste} loading={adjustPending} className="w-full">
+              Guardar ajuste
+            </Button>
+          </Card>
+        )}
+
+        {/* Timeline */}
+        <Timeline events={cal.timeline} />
+      </div>
+    </div>
+  );
+}
+
+/* ─── Sub-componente: BatchActions ─── */
+function BatchActions({
+  selected,
+  notaMaxima,
+  onConfirmBatch,
+  onAjustarBatch,
+  onClear,
+  batchPending,
+}: {
+  selected: Calificacion[];
+  notaMaxima: number | undefined;
+  onConfirmBatch: (items: { calificacion_id: string; nota_confirmada: number }[]) => void;
+  onAjustarBatch: (items: { calificacion_id: string; nota_confirmada: number }[]) => void;
+  onClear: () => void;
+  batchPending: boolean;
+}) {
+  const [bulkNota, setBulkNota] = useState(notaMaxima ?? 5);
+  const [showBulk, setShowBulk] = useState(false);
+
+  if (selected.length === 0) return null;
+
+  return (
+    <motion.div
+      initial={{ y: 60 }}
+      animate={{ y: 0 }}
+      className="sticky bottom-0 z-20 -mx-4 border-t border-border bg-surface px-4 py-3 shadow-lg sm:-mx-6 sm:px-6"
+    >
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="text-sm font-semibold">
+          {selected.length} seleccionado{selected.length > 1 ? 's' : ''}
+        </p>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            size="sm"
+            onClick={() => onConfirmBatch(selected.map((c) => ({
+              calificacion_id: c.id,
+              nota_confirmada: Number(c.nota_sugerida ?? 0),
+            })))}
+            loading={batchPending}
+            disabled={batchPending}
+          >
+            <CheckCircle2 className="h-4 w-4" /> Confirmar todos
+          </Button>
+          <Button size="sm" variant="outline" onClick={() => setShowBulk(!showBulk)} disabled={batchPending}>
+            <Pencil className="h-4 w-4" /> Ajustar nota común
+          </Button>
+          <Button size="sm" variant="ghost" onClick={onClear}>
+            <X className="h-4 w-4" /> Limpiar
+          </Button>
+        </div>
+      </div>
+      {showBulk && (
+        <div className="mt-3 flex flex-wrap items-end gap-3 border-t border-border pt-3">
+          <Field label="Nota común">
+            <div className="w-32">
+              <Input
+              type="number"
+              step="0.1"
+              min={0}
+              max={notaMaxima}
+              value={bulkNota}
+              onChange={(e) => setBulkNota(Number(e.target.value))}
+            />
+            </div>
+          </Field>
+          <Button
+            size="sm"
+            onClick={() => {
+              onAjustarBatch(selected.map((c) => ({
+                calificacion_id: c.id,
+                nota_confirmada: bulkNota,
+              })));
+              setShowBulk(false);
+            }}
+            loading={batchPending}
+            disabled={batchPending}
+          >
+            Aplicar a {selected.length}
+          </Button>
+        </div>
+      )}
+    </motion.div>
+  );
+}
+
+/* ─── Componente principal ─── */
+export function CalificacionesWorkspace() {
+  const navigate = useNavigate();
+  const { evaluacionId: evalIdParam } = useParams<{ evaluacionId: string }>();
+  const user = useAuth((state) => state.user);
+  const [materiaId, setMateriaId] = useState('');
+  const [evalId, setEvalId] = useState(evalIdParam ?? '');
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedBatch, setSelectedBatch] = useState<Set<string>>(new Set());
+  const [searchTerm, setSearchTerm] = useState('');
+  const [gradeFilter, setGradeFilter] = useState<GradeFilter>('todas');
+  const [confirmingSingle, setConfirmingSingle] = useState<Calificacion | null>(null);
+  const [rejectId, setRejectId] = useState<string | null>(null);
+  const detailPanelRef = useRef<HTMLDivElement>(null);
+
+  const { data: materias } = useMaterias();
+  useEffect(() => { if (!materiaId && materias?.[0]) setMateriaId(materias[0].id); }, [materias, materiaId]);
+
+  const { data: evals } = useQuery({
+    queryKey: ['evaluaciones', materiaId],
+    queryFn: () => listEvaluaciones(materiaId),
+    enabled: !!materiaId,
+  });
+  useEffect(() => {
+    if (evals && evals.length > 0 && !evals.find((e) => e.id === evalId)) {
+      setEvalId(evals[0].id);
+    }
+    if (evals?.length === 0) setEvalId('');
+  }, [evals, evalId]);
+
+  const { data: cals, isLoading } = useQuery({
+    queryKey: ['calificaciones', evalId],
+    queryFn: () => listCalificaciones(evalId),
+    enabled: !!evalId,
+  });
+  const selectedEval = evals?.find((e) => e.id === evalId);
+  const notaMaxima = selectedEval?.nota_maxima != null ? Number(selectedEval.nota_maxima) : undefined;
+
+  // Student map
+  const { estudiantes } = useEstudiantes(materiaId);
+  const studentMap = useMemo(
+    () => new Map(estudiantes.map((s) => [s.id, s])),
+    [estudiantes],
+  );
+
+  // Detail query
+  const detalleQuery = useQuery({
+    queryKey: ['calificacion-detalle', selectedId],
+    queryFn: () => getCalificacionDetalle(selectedId!),
+    enabled: !!selectedId,
+  });
+
+  const invalidate = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: ['calificaciones', evalId] });
+    if (selectedId) queryClient.invalidateQueries({ queryKey: ['calificacion-detalle', selectedId] });
+  }, [evalId, selectedId]);
+
+  // Mutations
+  const confirmarMut = useMutation({
+    mutationFn: (c: Calificacion) => confirmarNota(c.id, Number(c.nota_sugerida ?? 0)),
+    onSuccess: () => { invalidate(); toast.success('Nota confirmada'); setConfirmingSingle(null); },
+    onError: (e) => toast.error(toApiError(e).detail),
+  });
+  const ajustarMut = useMutation({
+    mutationFn: (args: { id: string; nota: number; feedback?: string }) => ajustarNota(args.id, args.nota, args.feedback),
+    onSuccess: () => { invalidate(); toast.success('Nota ajustada'); },
+    onError: (e) => toast.error(toApiError(e).detail),
+  });
+  const confirmBatchMut = useMutation({
+    mutationFn: (items: { calificacion_id: string; nota_confirmada: number }[]) => confirmarNotaBatch(items),
+    onSuccess: (res) => {
+      invalidate();
+      toast.success(`${res.exitosos} nota(s) confirmada(s)`);
+      if (res.fallidos > 0) toast.error(`${res.fallidos} fallaron`);
+      setSelectedBatch(new Set());
+    },
+    onError: (e) => toast.error(toApiError(e).detail),
+  });
+  const ajustarBatchMut = useMutation({
+    mutationFn: (items: { calificacion_id: string; nota_confirmada: number }[]) => ajustarNotaBatch(items),
+    onSuccess: (res) => {
+      invalidate();
+      toast.success(`${res.exitosos} nota(s) ajustada(s)`);
+      if (res.fallidos > 0) toast.error(`${res.fallidos} fallaron`);
+      setSelectedBatch(new Set());
+    },
+    onError: (e) => toast.error(toApiError(e).detail),
+  });
+
+  // Derived
+  const displayedCals = useMemo(() => {
+    const items = [...(cals ?? [])].sort((a, b) => {
+      const aConfirmed = a.estado === CONFIRMADA || a.estado === AJUSTADA;
+      const bConfirmed = b.estado === CONFIRMADA || b.estado === AJUSTADA;
+      if (aConfirmed !== bConfirmed) return aConfirmed ? 1 : -1;
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    });
+    const filtered = gradeFilter === 'pendientes'
+      ? items.filter((c) => c.estado !== CONFIRMADA && c.estado !== AJUSTADA)
+      : gradeFilter === 'confirmadas'
+        ? items.filter((c) => c.estado === CONFIRMADA || c.estado === AJUSTADA)
+        : items;
+    if (!searchTerm) return filtered;
+    const q = searchTerm.toLowerCase();
+    return filtered.filter((c) => {
+      const s = studentMap.get(c.estudiante_id);
+      return s?.nombre?.toLowerCase().includes(q) || s?.email?.toLowerCase().includes(q) || c.estudiante_id.includes(q);
+    });
+  }, [cals, gradeFilter, searchTerm, studentMap]);
+
+  const gradeSummary = useMemo(() => {
+    const items = cals ?? [];
+    const confirmed = items.filter((c) => c.estado === CONFIRMADA || c.estado === AJUSTADA).length;
+    return { total: items.length, confirmed, pending: items.length - confirmed };
+  }, [cals]);
+
+  function toggleSelect(id: string) {
+    setSelectedBatch((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }
+
+  const selectedArray = useMemo(
+    () => (cals ?? []).filter((c) => selectedBatch.has(c.id)),
+    [cals, selectedBatch],
+  );
+
+  return (
+    <div className="flex h-full flex-col">
+      {/* Header */}
+      <PageHeader
+        title="Calificaciones"
+        eyebrow="Workspace de revisión"
+        subtitle="Revisa, confirma o ajusta las calificaciones sugeridas por la IA."
+        action={
+          <div className="flex flex-wrap gap-2">
+            <Link
+              to="/app/calificaciones/foto"
+              className="focus-ring inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-border bg-surface px-4 text-sm font-semibold text-fg transition-colors hover:bg-surface-2"
+            >
+              <Camera className="h-4 w-4" /> Calificar foto
+            </Link>
+          </div>
+        }
+      />
+
+      {/* Selectores */}
+      <Card className="mx-4 mb-4 grid gap-4 p-4 sm:grid-cols-2">
+        <Field label="Materia">
+          <Select value={materiaId} onChange={(e) => { setMateriaId(e.target.value); setSelectedId(null); setSelectedBatch(new Set()); }}>
+            {materias?.map((m) => <option key={m.id} value={m.id}>{m.nombre}</option>)}
+          </Select>
+        </Field>
+        <Field label="Evaluación">
+          <Select value={evalId} onChange={(e) => { setEvalId(e.target.value); setSelectedId(null); setSelectedBatch(new Set()); }}>
+            {(!evals || evals.length === 0) && <option value="">Sin evaluaciones</option>}
+            {evals?.map((ev) => <option key={ev.id} value={ev.id}>{ev.nombre}</option>)}
+          </Select>
+        </Field>
+      </Card>
+
+      {/* Main split view */}
+      <div className="flex flex-1 flex-col overflow-hidden lg:flex-row">
+        {/* Left panel — list */}
+        <div className={`flex flex-col border-border ${selectedId ? 'hidden lg:flex lg:w-1/3 lg:border-r' : 'flex-1'} ${!evalId ? 'flex-1' : ''}`}>
+          {/* Summary + filters */}
+          {evalId && cals && cals.length > 0 && (
+            <div className="space-y-3 border-b border-border px-4 pb-4 pt-2">
+              <div className="flex items-center justify-between">
+                <div className="flex gap-4">
+                  <div><p className="text-lg font-extrabold text-amber-600">{gradeSummary.pending}</p><p className="text-xs text-muted">Por revisar</p></div>
+                  <div><p className="text-lg font-extrabold text-emerald-600">{gradeSummary.confirmed}</p><p className="text-xs text-muted">Confirmadas</p></div>
+                  <div><p className="text-lg font-extrabold text-fg">{gradeSummary.total}</p><p className="text-xs text-muted">Total</p></div>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
+                  <input
+                    type="text"
+                    placeholder="Buscar estudiante…"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="focus-ring h-9 w-full rounded-lg border border-border bg-surface-2 pl-9 pr-3 text-sm"
+                  />
+                </div>
+                <div className="flex rounded-lg bg-surface-2 p-0.5">
+                  {(['todas', 'pendientes', 'confirmadas'] as const).map((f) => (
+                    <button
+                      key={f}
+                      type="button"
+                      onClick={() => setGradeFilter(f)}
+                      className={`focus-ring min-h-8 rounded-md px-2.5 text-xs font-semibold capitalize transition ${gradeFilter === f ? 'bg-surface text-fg shadow-sm' : 'text-muted hover:text-fg'}`}
+                    >
+                      {f}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Student list */}
+          <div className="flex-1 overflow-y-auto px-4 pb-4">
+            {!evalId ? (
+              <div className="flex flex-1 items-center justify-center py-12 text-sm text-muted">
+                Selecciona materia y evaluación para comenzar.
+              </div>
+            ) : isLoading ? (
+              <div className="space-y-2 pt-4">{Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-16" />)}</div>
+            ) : !cals || cals.length === 0 ? (
+              <div className="flex flex-1 items-center justify-center py-12 text-sm text-muted">
+                Sin calificaciones aún. Cuando los estudiantes entreguen o subas fotos, aparecerán aquí.
+              </div>
+            ) : displayedCals.length === 0 ? (
+              <div className="flex flex-1 items-center justify-center py-12 text-sm text-muted">
+                No hay resultados con ese filtro.
+              </div>
+            ) : (
+              <div className="space-y-1 pt-3">
+                {displayedCals.map((c) => {
+                  const confirmada = c.estado === CONFIRMADA || c.estado === AJUSTADA;
+                  const selected = selectedId === c.id;
+                  const checked = selectedBatch.has(c.id);
+                  return (
+                    <button
+                      key={c.id}
+                      type="button"
+                      onClick={() => { setSelectedId(c.id); if (window.innerWidth < 1024) setSelectedBatch(new Set()); }}
+                      className={`focus-ring flex w-full items-center gap-3 rounded-xl border p-3 text-left transition-all ${
+                        selected ? 'border-brand-300 bg-brand-50 dark:bg-brand-500/10' : 'border-border bg-surface hover:bg-surface-2'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2 truncate">
+                        <div
+                          onClick={(e) => { e.stopPropagation(); toggleSelect(c.id); }}
+                          className={`grid h-5 w-5 shrink-0 place-items-center rounded border-2 transition ${
+                            checked ? 'border-brand-500 bg-brand-500 text-white' : 'border-muted'
+                          }`}
+                          role="checkbox"
+                          aria-checked={checked}
+                          tabIndex={-1}
+                        >
+                          {checked && <CheckCircle2 className="h-3.5 w-3.5" />}
+                        </div>
+                        <div className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-sky-50 text-sky-600 dark:bg-sky-500/15 dark:text-sky-300">
+                          <GraduationCap className="h-5 w-5" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-semibold">{studentLabel(c, studentMap)}</p>
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            <Badge tone={confirmada ? 'success' : 'warning'}>{confirmada ? 'Confirmada' : 'Pendiente'}</Badge>
+                            {Number(c.confianza ?? 0) < 0.5 && Number(c.confianza ?? 0) > 0 && (
+                              <Badge tone="error">Conf. baja</Badge>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      <span className={`ml-auto shrink-0 font-display text-xl font-extrabold ${confirmada ? 'text-fg' : 'text-amber-600'}`}>
+                        {Number(c.nota_confirmada ?? c.nota_sugerida ?? 0).toFixed(1)}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Right panel — detail */}
+        <div
+          ref={detailPanelRef}
+          className={`flex-1 overflow-hidden ${
+            selectedId
+              ? 'fixed inset-0 z-30 bg-surface lg:static lg:z-auto'
+              : 'hidden lg:flex lg:items-center lg:justify-center'
+          }`}
+        >
+          {selectedId ? (
+            <>
+              {/* Mobile overlay close */}
+              <div className="sticky top-0 z-10 flex items-center justify-between border-b border-border bg-surface px-4 py-2 lg:hidden">
+                <button type="button" onClick={() => setSelectedId(null)} className="flex items-center gap-2 text-sm font-semibold text-muted">
+                  <ArrowLeft className="h-4 w-4" /> Volver a lista
+                </button>
+              </div>
+              {detalleQuery.isLoading ? (
+                <div className="space-y-4 p-5">{Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-20" />)}</div>
+              ) : detalleQuery.error ? (
+                <div className="p-5 text-sm text-rose-600">Error al cargar detalle.</div>
+              ) : detalleQuery.data ? (
+                <PanelDetalle
+                  cal={detalleQuery.data}
+                  notaMaxima={notaMaxima}
+                  studentMap={studentMap}
+                  onClose={() => { setSelectedId(null); }}
+                  onConfirm={(id, nota) => {
+                    const cal = cals?.find((c) => c.id === id);
+                    if (cal) { setConfirmingSingle(cal); }
+                  }}
+                  onAjustar={(id, nota, feedback) => ajustarMut.mutate({ id, nota, feedback })}
+                  onRechazar={(id) => setRejectId(id)}
+                  confirmPending={confirmarMut.isPending}
+                  adjustPending={ajustarMut.isPending}
+                />
+              ) : (
+                <div className="flex items-center justify-center p-5 text-sm text-muted">Sin datos.</div>
+              )}
+            </>
+          ) : (
+            <div className="hidden items-center justify-center p-5 text-sm text-muted lg:flex">
+              Selecciona un estudiante para ver el detalle.
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Batch actions */}
+      <BatchActions
+        selected={selectedArray}
+        notaMaxima={notaMaxima}
+        onConfirmBatch={(items) => confirmBatchMut.mutate(items)}
+        onAjustarBatch={(items) => ajustarBatchMut.mutate(items)}
+        onClear={() => setSelectedBatch(new Set())}
+        batchPending={confirmBatchMut.isPending || ajustarBatchMut.isPending}
+      />
+
+      {/* Confirm dialog */}
+      <ConfirmDialog
+        open={!!confirmingSingle}
+        onClose={() => setConfirmingSingle(null)}
+        onConfirm={() => confirmingSingle && confirmarMut.mutate(confirmingSingle)}
+        title="Confirmar nota"
+        confirmLabel="Confirmar"
+        loading={confirmarMut.isPending}
+        description={
+          <span>
+            Vas a confirmar la nota de <strong>{confirmingSingle ? studentLabel(confirmingSingle, studentMap) : ''}</strong>
+            {' '}con <strong>{Number(confirmingSingle?.nota_sugerida ?? 0).toFixed(1)}</strong>.
+          </span>
+        }
+      />
+
+      {/* Reject -> requiere_revision — currently just toasts, backend supports it */}
+      <ConfirmDialog
+        open={!!rejectId}
+        onClose={() => setRejectId(null)}
+        onConfirm={() => {
+          const cal = cals?.find((c) => c.id === rejectId);
+          if (cal) {
+            // Marcar como requiere_revision via ajustar con estado
+            ajustarMut.mutate({ id: cal.id, nota: 0, feedback: 'Rechazada — requiere revisión manual.' });
+          }
+          setRejectId(null);
+          toast.success('Calificación marcada para revisión manual.');
+        }}
+        title="Rechazar calificación"
+        confirmLabel="Marcar para revisión"
+        tone="danger"
+        loading={ajustarMut.isPending}
+        description="Esta calificación se marcará para revisión manual. El docente deberá evaluarla personalmente."
+      />
+    </div>
+  );
+}
