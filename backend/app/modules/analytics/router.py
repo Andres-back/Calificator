@@ -87,3 +87,67 @@ async def analytics_evaluacion_detalle(
     if not result:
         raise HTTPException(status_code=404, detail="Evaluación no encontrada")
     return result
+
+
+@router.get("/analytics/criterios")
+async def analytics_criterios(
+    materia_id: UUID | None = Query(None),
+    evaluacion_id: UUID | None = Query(None),
+    fecha_desde: datetime | None = Query(None),
+    fecha_hasta: datetime | None = Query(None),
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> list[dict]:
+    """Rendimiento agregado por criterio de evaluación."""
+    require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
+    return await service.get_criterios(
+        db, profesor_id=current_user.id, materia_id=materia_id,
+        evaluacion_id=evaluacion_id, fecha_desde=fecha_desde, fecha_hasta=fecha_hasta,
+    )
+
+
+@router.get("/analytics/preguntas")
+async def analytics_preguntas(
+    evaluacion_id: UUID | None = Query(None),
+    fecha_desde: datetime | None = Query(None),
+    fecha_hasta: datetime | None = Query(None),
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> list[dict]:
+    """Rendimiento por pregunta."""
+    require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
+    return await service.get_preguntas(
+        db, profesor_id=current_user.id, evaluacion_id=evaluacion_id,
+        fecha_desde=fecha_desde, fecha_hasta=fecha_hasta,
+    )
+
+
+@router.get("/analytics/estudiantes")
+async def analytics_estudiantes(
+    materia_id: UUID | None = Query(None),
+    evaluacion_id: UUID | None = Query(None),
+    fecha_desde: datetime | None = Query(None),
+    fecha_hasta: datetime | None = Query(None),
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> list[dict]:
+    """Lista de estudiantes con señales de atención."""
+    require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
+    return await service.get_estudiantes(
+        db, profesor_id=current_user.id, materia_id=materia_id,
+        evaluacion_id=evaluacion_id, fecha_desde=fecha_desde, fecha_hasta=fecha_hasta,
+    )
+
+
+@router.get("/analytics/estudiantes/{estudiante_id}")
+async def analytics_estudiante_detalle(
+    estudiante_id: UUID,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    """Detalle de un estudiante."""
+    require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
+    result = await service.get_estudiante_detalle(db, estudiante_id, profesor_id=current_user.id)
+    if not result:
+        raise HTTPException(status_code=404, detail="Estudiante no encontrado")
+    return result

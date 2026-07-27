@@ -309,3 +309,284 @@ async def get_evaluacion_detail(
             for e in ultimos_eventos
         ],
     }
+
+
+# ── 2B: Rendimiento pedagógico ──────────────────────────────────────────────────
+
+
+async def get_criterios(
+    db: AsyncSession,
+    profesor_id: UUID,
+    materia_id: UUID | None = None,
+    evaluacion_id: UUID | None = None,
+    fecha_desde: datetime | None = None,
+    fecha_hasta: datetime | None = None,
+) -> list[dict]:
+    """Rendimiento agregado por criterio de evaluación."""
+    desde, hasta = _default_date_range()
+    if fecha_desde: desde = fecha_desde
+    if fecha_hasta: hasta = fecha_hasta
+
+    cal_filter = [Calificacion.revisado_por_docente == True, Calificacion.created_at >= desde, Calificacion.created_at <= hasta]
+    if evaluacion_id:
+        cal_filter.append(Calificacion.evaluacion_id == evaluacion_id)
+    else:
+        cal_filter.append(Evaluacion.profesor_id == profesor_id)
+        if materia_id:
+            cal_filter.append(Evaluacion.materia_id == materia_id)
+
+    query = select(Calificacion.resultado_json, Evaluacion.nota_maxima).join(Evaluacion, Calificacion.evaluacion_id == Evaluacion.id).where(*cal_filter)
+    rows = await db.execute(query)
+    db_rows = rows.all()
+
+    # Extraer criterios del JSONB
+    criterios_map: dict[str, dict] = {}
+    total_estudiantes = len(db_rows)
+    for row in db_rows:
+        rj = row[0] if isinstance(row, tuple) else row.resultado_json
+        if not rj:
+            continue
+        grader_a = rj.get("grader_a", {}) if isinstance(rj, dict) else {}
+        criterios = grader_a.get("criterios", []) if isinstance(grader_a, dict) else []
+        for crit in criterios:
+            nombre = str(crit.get("nombre", ""))
+
+            # Normalizar puntajes a escala 0-5
+            puntaje = float(crit.get("puntaje", 0))
+            maximo = float(crit.get("maximo", 1))
+            if maximo > 0:
+                pct = (puntaje / maximo) * 100
+            else:
+                pct = 0
+
+            if nombre not in criterios_map:
+                criterios_map[nombre] = {
+                    "nombre": nombre,
+                    "suma_pct": 0.0,
+                    "conteo": 0,
+                    "est_dificultad": 0,
+                    "puntaje_maximo_total": 0.0,
+                }
+            criterios_map[nombre]["suma_pct"] += pct
+            criterios_map[nombre]["conteo"] += 1
+            criterios_map[nombre]["puntaje_maximo_total"] += maximo
+            if pct < 60:
+                criterios_map[nombre]["est_dificultad"] += 1
+
+    result = []
+    for nombre, data in sorted(criterios_map.items()):
+        pct_promedio = data["suma_pct"] / data["conteo"] if data["conteo"] > 0 else 0
+        nivel = "dominado" if pct_promedio >= 80 else ("en_desarrollo" if pct_promedio >= 60 else "requiere_refuerzo")
+        result.append({
+            "nombre": nombre,
+            "porcentaje_logro": round(pct_promedio, 1),
+            "estudiantes_evaluados": data["conteo"],
+            "estudiantes_con_dificultad": data["est_dificultad"],
+            "nivel_atencion": nivel,
+        })
+
+    return sorted(result, key=lambda r: r["porcentaje_logro"])
+
+
+async def get_preguntas(
+    db: AsyncSession,
+    profesor_id: UUID,
+    evaluacion_id: UUID | None = None,
+    fecha_desde: datetime | None = None,
+    fecha_hasta: datetime | None = None,
+) -> list[dict]:
+    """Rendimiento por pregunta (desde preguntas de la evaluación)."""
+    desde, hasta = _default_date_range()
+    if fecha_desde: desde = fecha_desde
+    if fecha_hasta: hasta = fecha_hasta
+
+    eval_filter = [Evaluacion.profesor_id == profesor_id]
+    if evaluacion_id:
+        eval_filter = [Evaluacion.id == evaluacion_id]
+
+    evals = await db.scalars(select(Evaluacion).where(*eval_filter))
+    result = []
+    for ev in evals:
+        preguntas = ev.preguntas or []
+        if not preguntas:
+            continue
+        cals = await db.scalars(
+            select(Calificacion).where(
+                Calificacion.evaluacion_id == ev.id,
+                Calificacion.revisado_por_docente == True,
+                Calificacion.created_at >= desde,
+                Calificacion.created_at <= hasta,
+            )
+        )
+        cal_list = list(cals)
+        total_cals = len(cal_list)
+        for i, pregunta in enumerate(preguntas):
+            texto = str(pregunta.get("texto", pregunta.get("enunciado", f"Pregunta {i + 1}")))[:120]
+            tipo = str(pregunta.get("tipo", ""))
+            puntaje_max = float(pregunta.get("puntaje", pregunta.get("valor", 1)))
+            result.append({
+                "evaluacion_nombre": ev.nombre,
+                "evaluacion_id": str(ev.id),
+                "indice": i,
+                "texto": texto,
+                "tipo": tipo,
+                "puntaje_maximo": puntaje_max,
+                "total_respuestas": total_cals,
+            })
+
+    return result
+
+
+async def get_estudiantes(
+    db: AsyncSession,
+    profesor_id: UUID,
+    materia_id: UUID | None = None,
+    evaluacion_id: UUID | None = None,
+    fecha_desde: datetime | None = None,
+    fecha_hasta: datetime | None = None,
+) -> list[dict]:
+    """Lista de estudiantes con indicadores de atención."""
+    desde, hasta = _default_date_range()
+    if fecha_desde: desde = fecha_desde
+    if fecha_hasta: hasta = fecha_hasta
+
+    cal_filter = [
+        Calificacion.revisado_por_docente == True,
+        Calificacion.created_at >= desde,
+        Calificacion.created_at <= hasta,
+    ]
+    if evaluacion_id:
+        cal_filter.append(Calificacion.evaluacion_id == evaluacion_id)
+    else:
+        cal_filter.append(Evaluacion.profesor_id == profesor_id)
+        if materia_id:
+            cal_filter.append(Evaluacion.materia_id == materia_id)
+
+    rows = await db.execute(
+        select(
+            Calificacion.estudiante_id,
+            Calificacion.nota_confirmada,
+            Calificacion.nota_sugerida,
+            Calificacion.estado,
+            Evaluacion.nota_maxima,
+        )
+        .join(Evaluacion, Calificacion.evaluacion_id == Evaluacion.id)
+        .where(*cal_filter)
+    )
+
+    from collections import defaultdict
+    est_map: dict[str, dict] = defaultdict(lambda: {"suma": 0.0, "conteo": 0, "pendientes": 0, "bajo": 0, "notas_brutas": []})
+
+    for row in rows:
+        eid = str(row.estudiante_id)
+        nota = float(row.nota_confirmada or row.nota_sugerida or 0)
+        max_n = float(row.nota_maxima or 5)
+        pct = (nota / max_n * 100) if max_n > 0 else 0
+        est_map[eid]["suma"] += pct
+        est_map[eid]["conteo"] += 1
+        est_map[eid]["notas_brutas"].append(nota)
+        if pct < 60:
+            est_map[eid]["bajo"] += 1
+        if row.estado in ("sugerida", "requiere_revision"):
+            est_map[eid]["pendientes"] += 1
+
+    # Obtener nombres de estudiantes
+    from app.modules.users.models import User
+    uids = [UUID(eid) for eid in est_map]
+    users = {}
+    if uids:
+        user_rows = await db.execute(select(User.id, User.nombre, User.email).where(User.id.in_(uids)))
+        for urow in user_rows:
+            users[str(urow.id)] = {"nombre": urow.nombre, "email": urow.email}
+
+    result = []
+    for eid, data in est_map.items():
+        promedio = data["suma"] / data["conteo"] if data["conteo"] > 0 else 0
+        senales = []
+        if promedio < 60 and data["conteo"] >= 2:
+            senales.append("bajo_desempeno_recurrente")
+        if data["pendientes"] > 0:
+            senales.append("entregas_pendientes")
+        if data["bajo"] == data["conteo"] and data["conteo"] >= 2:
+            senales.append("dificultad_generalizada")
+        u = users.get(eid, {})
+        nivel = "atencion" if promedio < 60 else ("seguimiento" if promedio < 75 else "estable")
+        result.append({
+            "estudiante_id": eid,
+            "nombre": u.get("nombre", ""),
+            "email": u.get("email", ""),
+            "promedio_pct": round(promedio, 1),
+            "total_evaluaciones": data["conteo"],
+            "pendientes": data["pendientes"],
+            "bajo_rendimiento": data["bajo"],
+            "senales": senales,
+            "nivel_atencion": nivel,
+        })
+
+    return sorted(result, key=lambda r: r["promedio_pct"])
+
+
+async def get_estudiante_detalle(
+    db: AsyncSession,
+    estudiante_id: UUID,
+    profesor_id: UUID,
+) -> dict | None:
+    """Detalle de un estudiante con sus evaluaciones y criterios."""
+    cal_filter = [
+        Calificacion.estudiante_id == estudiante_id,
+        Calificacion.revisado_por_docente == True,
+        Evaluacion.profesor_id == profesor_id,
+    ]
+    rows = await db.execute(
+        select(Calificacion, Evaluacion.nombre, Evaluacion.nota_maxima)
+        .join(Evaluacion, Calificacion.evaluacion_id == Evaluacion.id)
+        .where(*cal_filter)
+        .order_by(Calificacion.created_at.desc())
+    )
+
+    evaluaciones = []
+    criterios_acum: dict[str, dict] = {}
+    for row in rows:
+        cal = row[0] if isinstance(row, tuple) else row.Calificacion
+        ev_nombre = row.nombre if hasattr(row, 'nombre') else row[1]
+        ev_max = float(row.nota_maxima) if hasattr(row, 'nota_maxima') else float(row[2] or 5)
+        nota = float(cal.nota_confirmada or cal.nota_sugerida or 0)
+
+        evaluaciones.append({
+            "evaluacion_id": str(cal.evaluacion_id),
+            "nombre": ev_nombre,
+            "nota": nota,
+            "nota_maxima": ev_max,
+            "porcentaje": round((nota / ev_max * 100) if ev_max > 0 else 0, 1),
+            "estado": cal.estado,
+            "fecha": cal.created_at.isoformat() if cal.created_at else None,
+        })
+
+        # Extraer criterios
+        rj = cal.resultado_json or {}
+        grader_a = rj.get("grader_a", {}) if isinstance(rj, dict) else {}
+        for crit in grader_a.get("criterios", []):
+            nombre = str(crit.get("nombre", ""))
+            pct = (float(crit.get("puntaje", 0)) / float(crit.get("maximo", 1)) * 100) if float(crit.get("maximo", 1)) > 0 else 0
+            if nombre not in criterios_acum:
+                criterios_acum[nombre] = {"suma": 0.0, "conteo": 0}
+            criterios_acum[nombre]["suma"] += pct
+            criterios_acum[nombre]["conteo"] += 1
+
+    criterios_res = [
+        {"nombre": nombre, "promedio_pct": round(data["suma"] / data["conteo"], 1)}
+        for nombre, data in sorted(criterios_acum.items(), key=lambda x: x[1]["suma"] / x[1]["conteo"])
+    ]
+
+    notas = [e["porcentaje"] for e in evaluaciones]
+    promedio = sum(notas) / len(notas) if notas else 0
+    tendencia = "mejora" if len(notas) >= 2 and notas[-1] > notas[0] else ("descenso" if len(notas) >= 2 and notas[-1] < notas[0] else "estable")
+
+    return {
+        "estudiante_id": str(estudiante_id),
+        "promedio_general": round(promedio, 1),
+        "total_evaluaciones": len(evaluaciones),
+        "tendencia": tendencia,
+        "evaluaciones": evaluaciones,
+        "criterios": criterios_res,
+    }
