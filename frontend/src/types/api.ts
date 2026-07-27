@@ -263,7 +263,29 @@ export interface BatchResult {
   fallidos: number;
 }
 
-export type GradeFilter = 'todas' | 'pendientes' | 'confirmadas';
+/* ── Incidencias ── */
+
+export interface IncidenciaRead {
+  id: string;
+  calificacion_id: string;
+  tipo: string;
+  descripcion: string;
+  estado: string;
+  metadata_json: Record<string, unknown>;
+  resolucion: string | null;
+  resuelto_por: string | null;
+  resolved_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface IncidenciaCreate {
+  tipo: string;
+  descripcion: string;
+  metadata_json?: Record<string, unknown>;
+}
+
+export type GradeFilter = 'todas' | 'pendientes' | 'confirmadas' | 'incidencias';
 
 export interface EntregaRead {
   id: string;

@@ -1,5 +1,5 @@
 import { api } from '@/lib/api';
-import type { BatchResult, BoletinItem, Calificacion, CalificacionDetalle, ResumenAcademico, SalonSesionRead } from '@/types/api';
+import type { BatchResult, BoletinItem, Calificacion, CalificacionDetalle, IncidenciaRead, ResumenAcademico, SalonSesionRead } from '@/types/api';
 
 export async function listCalificaciones(evaluacionId: string): Promise<Calificacion[]> {
   const { data } = await api.get<Calificacion[]>(`/evaluaciones/${evaluacionId}/calificaciones`);
@@ -84,5 +84,23 @@ export async function publicarNota(calificacionId: string): Promise<Calificacion
 
 export async function publicarNotaBatch(calificacionIds: string[]): Promise<BatchResult> {
   const { data } = await api.post<BatchResult>('/calificaciones/lote/publicar', calificacionIds);
+  return data;
+}
+
+
+/* ── Incidencias ── */
+
+export async function listarIncidencias(calificacionId: string): Promise<IncidenciaRead[]> {
+  const { data } = await api.get<IncidenciaRead[]>(`/calificaciones/${calificacionId}/incidencias`);
+  return data;
+}
+
+export async function crearIncidencia(calificacionId: string, payload: { tipo: string; descripcion: string }): Promise<IncidenciaRead> {
+  const { data } = await api.post<IncidenciaRead>(`/calificaciones/${calificacionId}/incidencias`, payload);
+  return data;
+}
+
+export async function resolverIncidencia(incidenciaId: string, resolucion: string): Promise<IncidenciaRead> {
+  const { data } = await api.patch<IncidenciaRead>(`/incidencias/${incidenciaId}/resolver`, { resolucion });
   return data;
 }

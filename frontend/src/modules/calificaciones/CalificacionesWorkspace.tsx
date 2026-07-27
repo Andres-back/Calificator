@@ -18,9 +18,10 @@ import { toApiError } from '@/lib/api';
 import { useAuth } from '@/stores/auth';
 import {
   ajustarNota, ajustarNotaBatch, confirmarNota, confirmarNotaBatch,
-  getCalificacionDetalle, listCalificaciones, publicarNota, publicarNotaBatch,
+  crearIncidencia, getCalificacionDetalle, listarIncidencias,
+  listCalificaciones, publicarNota, publicarNotaBatch, resolverIncidencia,
 } from './api';
-import type { BatchResult, Calificacion, CalificacionDetalle, GradeFilter } from '@/types/api';
+import type { BatchResult, Calificacion, CalificacionDetalle, GradeFilter, IncidenciaRead } from '@/types/api';
 
 const CONFIRMADA = 'confirmada';
 const AJUSTADA = 'ajustada';
@@ -180,6 +181,106 @@ function AIPipelineSummary({
           {!!comparator?.analisis && (
             <p className="pt-1 italic text-muted">{String(comparator.analisis)}</p>
           )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ─── Sub-componente: Incidencias ─── */
+
+function IncidenciasSection({ calificacionId }: { calificacionId: string }) {
+  const [showCreate, setShowCreate] = useState(false);
+  const [newTipo, setNewTipo] = useState('confianza_baja');
+  const [newDesc, setNewDesc] = useState('');
+  const [resolveId, setResolveId] = useState<string | null>(null);
+  const [resolveText, setResolveText] = useState('');
+
+  const { data: incidencias, isLoading, refetch } = useQuery({
+    queryKey: ['incidencias', calificacionId],
+    queryFn: () => listarIncidencias(calificacionId),
+  });
+  const createMut = useMutation({
+    mutationFn: () => crearIncidencia(calificacionId, { tipo: newTipo, descripcion: newDesc }),
+    onSuccess: () => { refetch(); setShowCreate(false); setNewDesc(''); toast.success('Incidencia creada'); },
+    onError: (e) => toast.error(toApiError(e).detail),
+  });
+  const resolveMut = useMutation({
+    mutationFn: () => resolverIncidencia(resolveId!, resolveText),
+    onSuccess: () => { refetch(); setResolveId(null); setResolveText(''); toast.success('Incidencia resuelta'); },
+    onError: (e) => toast.error(toApiError(e).detail),
+  });
+
+  return (
+    <div className="rounded-xl border border-border">
+      <div className="flex items-center justify-between border-b border-border px-4 py-2">
+        <p className="flex items-center gap-2 text-xs font-semibold text-muted">
+          <ShieldAlert className="h-4 w-4" /> Incidencias {incidencias && incidencias.length > 0 && `(${incidencias.length})`}
+        </p>
+        <button type="button" onClick={() => setShowCreate(!showCreate)} className="focus-ring text-xs font-semibold text-brand-600 hover:text-brand-700">
+          + Nueva
+        </button>
+      </div>
+
+      {showCreate && (
+        <div className="space-y-3 border-b border-border px-4 py-3">
+          <Field label="Tipo">
+            <select value={newTipo} onChange={(e) => setNewTipo(e.target.value)} className="focus-ring h-9 w-full rounded-lg border border-border bg-surface-2 px-3 text-sm">
+              <option value="imagen_no_usable">Imagen no utilizable</option>
+              <option value="vision_failed">Error de visión</option>
+              <option value="grader_error">Error de calificación</option>
+              <option value="discrepancia_alta">Discrepancia alta</option>
+              <option value="confianza_baja">Confianza baja</option>
+              <option value="docente_rechazo">Docente rechazó</option>
+            </select>
+          </Field>
+          <Field label="Descripción">
+            <textarea value={newDesc} onChange={(e) => setNewDesc(e.target.value)} rows={3}
+              className="focus-ring w-full rounded-lg border border-border bg-surface-2 p-2 text-sm" />
+          </Field>
+          <div className="flex justify-end gap-2">
+            <Button size="sm" variant="ghost" onClick={() => setShowCreate(false)}>Cancelar</Button>
+            <Button size="sm" onClick={() => createMut.mutate()} loading={createMut.isPending} disabled={!newDesc.trim()}>
+              Crear incidencia
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {isLoading ? (
+        <div className="space-y-2 p-4">{Array.from({ length: 2 }).map((_, i) => <Skeleton key={i} className="h-10" />)}</div>
+      ) : !incidencias || incidencias.length === 0 ? (
+        <p className="p-4 text-center text-xs text-muted">Sin incidencias registradas.</p>
+      ) : (
+        <div className="space-y-2 p-3">
+          {incidencias.map((inc) => (
+            <div key={inc.id} className="rounded-lg border border-border bg-surface-2 p-3 text-xs">
+              <div className="flex items-start justify-between gap-2">
+                <div>
+                  <Badge tone={inc.estado === 'abierta' ? 'warning' : 'success'}>{inc.estado === 'abierta' ? 'Abierta' : 'Resuelta'}</Badge>
+                  <span className="ml-2 font-semibold text-fg">{inc.tipo.replace(/_/g, ' ')}</span>
+                </div>
+                {inc.estado === 'abierta' && (
+                  <button type="button" onClick={() => setResolveId(inc.id)} className="focus-ring shrink-0 text-brand-600 hover:text-brand-700">Resolver</button>
+                )}
+              </div>
+              <p className="mt-1 text-muted">{inc.descripcion}</p>
+              {inc.resolucion && <p className="mt-1 italic text-muted">Resolución: {inc.resolucion}</p>}
+
+              {resolveId === inc.id && (
+                <div className="mt-2 space-y-2">
+                  <textarea value={resolveText} onChange={(e) => setResolveText(e.target.value)} rows={2} placeholder="¿Cómo se resolvió?"
+                    className="focus-ring w-full rounded-lg border border-border bg-surface p-2 text-xs" />
+                  <div className="flex justify-end gap-2">
+                    <Button size="sm" variant="ghost" onClick={() => setResolveId(null)}>Cancelar</Button>
+                    <Button size="sm" onClick={() => resolveMut.mutate()} loading={resolveMut.isPending} disabled={!resolveText.trim()}>
+                      Guardar resolución
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
         </div>
       )}
     </div>
@@ -435,6 +536,9 @@ function PanelDetalle({
 
         {/* Timeline */}
         <Timeline events={cal.timeline} />
+
+        {/* Incidencias */}
+        <IncidenciasSection calificacionId={cal.id} />
       </div>
     </div>
     <ConfirmDialog
@@ -676,6 +780,8 @@ export function CalificacionesWorkspace() {
       ? items.filter((c) => !DONE_STATES.has(c.estado))
       : gradeFilter === 'confirmadas'
         ? items.filter((c) => DONE_STATES.has(c.estado))
+        : gradeFilter === 'incidencias'
+          ? items.filter((c) => c.estado === 'requiere_revision')
         : items;
     if (!searchTerm) return filtered;
     const q = searchTerm.toLowerCase();
@@ -764,7 +870,7 @@ export function CalificacionesWorkspace() {
                   />
                 </div>
                 <div className="flex rounded-lg bg-surface-2 p-0.5">
-                  {(['todas', 'pendientes', 'confirmadas'] as const).map((f) => (
+                  {(['todas', 'pendientes', 'confirmadas', 'incidencias'] as const).map((f) => (
                     <button
                       key={f}
                       type="button"
