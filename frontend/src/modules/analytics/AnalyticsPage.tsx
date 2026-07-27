@@ -11,6 +11,7 @@ import { PageHeader } from '@/components/layout/PageHeader';
 import { useMaterias } from '@/modules/materias/MateriaSelect';
 import { api, toApiError } from '@/lib/api';
 import { useAuth } from '@/stores/auth';
+import { XaliRefuerzoModal } from './XaliRefuerzoModal';
 
 /* ─── Types ─── */
 interface Overview {
@@ -109,6 +110,7 @@ function RendimientoTab({ materiaId }: { materiaId: string }) {
   const crit = useQuery({ queryKey: ['analytics-criterios', materiaId], queryFn: () => api.get('/analytics/criterios', { params: materiaId ? { materia_id: materiaId } : {} }).then(r => r.data) });
   const pregs = useQuery({ queryKey: ['analytics-preguntas', materiaId], queryFn: () => api.get('/analytics/preguntas', { params: materiaId ? { materia_id: materiaId } : {} }).then(r => r.data) });
   const sint = useQuery({ queryKey: ['analytics-sintesis', materiaId], queryFn: () => api.get('/analytics/sintesis', { params: materiaId ? { materia_id: materiaId } : {} }).then(r => r.data) });
+  const [refuerzoCriterio, setRefuerzoCriterio] = useState<CriterioRow | null>(null);
 
   const cData = crit.data as CriterioRow[] | undefined;
   const pData = pregs.data as any[] | undefined;
@@ -141,7 +143,15 @@ function RendimientoTab({ materiaId }: { materiaId: string }) {
               <div key={c.nombre} className="group">
                 <div className="flex items-center justify-between text-sm">
                   <span className="font-medium text-fg">{c.nombre}</span>
-                  <span className="text-xs text-muted">{c.porcentaje_logro.toFixed(0)}% · {c.estudiantes_con_dificultad}/{c.estudiantes_evaluados} con dificultad</span>
+                  <span className="flex items-center gap-2">
+                    <span className="text-xs text-muted">{c.porcentaje_logro.toFixed(0)}% · {c.estudiantes_con_dificultad}/{c.estudiantes_evaluados} con dificultad</span>
+                    {c.nivel_atencion !== 'dominado' && (
+                      <button type="button" onClick={() => { setRefuerzoCriterio(c); }}
+                        className="focus-ring hidden text-xs font-semibold text-brand-600 hover:text-brand-700 group-hover:inline">
+                        Refuerzo
+                      </button>
+                    )}
+                  </span>
                 </div>
                 <div className="mt-1 h-4 w-full overflow-hidden rounded-full bg-surface-2">
                   <motion.div initial={{ width: 0 }} animate={{ width: `${c.porcentaje_logro}%` }} className={`h-full rounded-full ${color}`} transition={{ duration: 0.8 }} />
@@ -231,6 +241,19 @@ function RendimientoTab({ materiaId }: { materiaId: string }) {
           ))}
         </div>
       </Card>
+    )}
+
+    {/* Modal Xali refuerzo */}
+    {refuerzoCriterio && (
+      <XaliRefuerzoModal
+        open={!!refuerzoCriterio}
+        onClose={() => setRefuerzoCriterio(null)}
+        materiaId={materiaId}
+        criterioNombre={refuerzoCriterio.nombre}
+        porcentajeLogro={refuerzoCriterio.porcentaje_logro}
+        estudiantesConDificultad={refuerzoCriterio.estudiantes_con_dificultad}
+        totalEstudiantes={refuerzoCriterio.estudiantes_evaluados}
+      />
     )}
   </>);
 }
