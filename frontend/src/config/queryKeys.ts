@@ -15,6 +15,7 @@ export const queryKeys = {
     detailStudent: (id: string) => ['materia', id, 'student'] as const,
     estudiantes: (id: string) => ['materia', id, 'estudiantes'] as const,
     dbaPersonalizados: (id: string) => ['dba-personalizados', id] as const,
+    dbaCombined: (id: string) => ['materia-dba', id] as const,
   },
   evaluaciones: {
     all: ['evaluaciones'] as const,

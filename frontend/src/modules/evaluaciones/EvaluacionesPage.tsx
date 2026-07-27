@@ -9,6 +9,8 @@ import { PageHeader } from '@/components/layout/PageHeader';
 import { useMaterias, MateriaSelect } from '@/modules/materias/MateriaSelect';
 import { listDbaCombinado } from '@/modules/materias/dbaApi';
 import { GenerationWizard } from './components/GenerationWizard';
+import { DBASelector } from './components/DBASelector';
+import { queryKeys } from '@/config/queryKeys';
 import {
   listEvaluaciones,
   createEvaluacion,
@@ -151,54 +153,6 @@ function DynamicTextList({
           ))}
         </div>
       )}
-    </div>
-  );
-}
-
-function DBASelector({
-  items,
-  selectedOfficial,
-  selectedCustom,
-  loading,
-  error,
-  onToggle,
-}: {
-  items: DBAUnifiedItem[] | undefined;
-  selectedOfficial: string[];
-  selectedCustom: string[];
-  loading: boolean;
-  error: boolean;
-  onToggle: (item: DBAUnifiedItem) => void;
-}) {
-  if (loading) return <Skeleton className="h-28" />;
-  if (error) return <p className="text-sm text-muted">No se pudieron cargar los DBA. Puedes crear la evaluación sin seleccionarlos.</p>;
-  if (!items || items.length === 0) return <p className="text-sm text-muted">No hay DBA disponibles.</p>;
-
-  const hasCustom = items.some((item) => item.fuente === 'personalizado');
-
-  return (
-    <div className="max-h-52 space-y-2 overflow-y-auto rounded-xl border border-border bg-surface p-3">
-      {items.map((item) => (
-        <label key={`${item.fuente}-${item.id}`} className="flex gap-3 rounded-lg p-2 hover:bg-surface-2">
-          <input
-            type="checkbox"
-            checked={item.fuente === 'personalizado' ? selectedCustom.includes(item.id) : selectedOfficial.includes(item.id)}
-            onChange={() => onToggle(item)}
-            className="mt-1 h-4 w-4 accent-brand-500"
-          />
-          <span className="min-w-0">
-            <span className="flex flex-wrap items-center gap-2 text-sm font-medium text-fg">
-              {item.codigo || 'DBA personalizado'}
-              <Badge tone={item.fuente === 'personalizado' ? 'violet' : 'brand'}>
-                {item.fuente === 'personalizado' ? 'Personalizado' : 'Oficial MEN'}
-              </Badge>
-            </span>
-            <span className="block text-xs text-muted">{item.area} · Grado {item.grado}</span>
-            <span className="block text-xs text-muted">{item.descripcion}</span>
-          </span>
-        </label>
-      ))}
-      {!hasCustom && <p className="px-2 text-xs text-muted">Esta materia no tiene DBA personalizados.</p>}
     </div>
   );
 }
@@ -455,13 +409,13 @@ export function EvaluacionesPage() {
   }, [materias, params, setParams]);
 
   const { data: evals, isLoading } = useQuery({
-    queryKey: ['evaluaciones', materiaId],
+    queryKey: queryKeys.evaluaciones.list(materiaId),
     queryFn: () => listEvaluaciones(materiaId),
     enabled: !!materiaId,
   });
 
   const { data: dbaItems, isLoading: loadingDBA, isError: dbaError } = useQuery({
-    queryKey: ['materia-dba', form.materia_id],
+    queryKey: queryKeys.materias.dbaCombined(form.materia_id),
     queryFn: () => listDbaCombinado(form.materia_id),
     enabled: open && !!form.materia_id,
     retry: false,
@@ -470,7 +424,7 @@ export function EvaluacionesPage() {
   const create = useMutation({
     mutationFn: (payload: EvaluacionCreate) => createEvaluacion(payload),
     onSuccess: (evaluacion) => {
-      queryClient.invalidateQueries({ queryKey: ['evaluaciones', evaluacion.materia_id] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.evaluaciones.list(evaluacion.materia_id) });
       setParams({ materia: evaluacion.materia_id }, { replace: true });
       toast.success('Evaluacion creada');
       setOpen(false);
@@ -483,7 +437,7 @@ export function EvaluacionesPage() {
   const generate = useMutation({
     mutationFn: (payload: EvaluacionGenerarRequest) => generarBorradorEvaluacion(payload),
     onSuccess: (evaluacion) => {
-      queryClient.invalidateQueries({ queryKey: ['evaluaciones', evaluacion.materia_id] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.evaluaciones.list(evaluacion.materia_id) });
       setParams({ materia: evaluacion.materia_id }, { replace: true });
       toast.success('Borrador IA creado. Revísalo antes de publicarlo.');
       setOpen(false);
@@ -496,7 +450,7 @@ export function EvaluacionesPage() {
   const update = useMutation({
     mutationFn: ({ id, payload }: { id: string; payload: EvaluacionUpdate }) => updateEvaluacion(id, payload),
     onSuccess: (evaluacion) => {
-      queryClient.invalidateQueries({ queryKey: ['evaluaciones', evaluacion.materia_id] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.evaluaciones.list(evaluacion.materia_id) });
       toast.success('Evaluacion actualizada');
       setOpen(false);
       setEditingEval(null);
@@ -509,7 +463,7 @@ export function EvaluacionesPage() {
   const publicar = useMutation({
     mutationFn: publicarEvaluacion,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['evaluaciones', materiaId] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.evaluaciones.list(materiaId) });
       toast.success('Evaluacion publicada');
     },
     onError: (error) => toast.error(toApiError(error).detail),
@@ -518,7 +472,7 @@ export function EvaluacionesPage() {
   const cerrar = useMutation({
     mutationFn: cerrarEvaluacion,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['evaluaciones', materiaId] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.evaluaciones.list(materiaId) });
       toast.success('Evaluacion cerrada');
     },
     onError: (error) => toast.error(toApiError(error).detail),
@@ -649,7 +603,7 @@ export function EvaluacionesPage() {
             title="Evaluaciones"
             eyebrow={isStudent ? 'Tu aprendizaje' : 'Diseño evaluativo'}
             subtitle={isStudent ? 'Consulta las evaluaciones de tus materias y resuelve las que estén disponibles.' : 'Crea, publica y revisa evaluaciones con apoyo de IA.'}
-            action={!isStudent && !noMaterias && <div className="flex flex-wrap gap-2"><Button onClick={() => setWizardOpen(true)}><Sparkles className="h-4 w-4" /> Generar con IA</Button><Button variant="outline" onClick={openCreateModal} disabled={!materiaId}><Plus className="h-4 w-4" /> Manual</Button></div>}
+            action={!isStudent && !noMaterias && <div className="flex flex-wrap gap-2"><Button onClick={() => setWizardOpen(true)}><Sparkles className="h-4 w-4" /> Generar con IA</Button><Button variant="outline" onClick={openCreateModal} disabled={!materiaId}><Plus className="h-4 w-4" /> Crear manualmente</Button></div>}
           />
         </div>
       </div>
@@ -685,7 +639,7 @@ export function EvaluacionesPage() {
               image="/branding/empty-no-evals.png"
               title="Sin evaluaciones"
               description={isStudent ? 'No hay evaluaciones disponibles para esta materia.' : 'Crea la primera evaluación de esta materia.'}
-              action={!isStudent && <div className="flex flex-wrap justify-center gap-2"><Button onClick={() => setWizardOpen(true)}><Sparkles className="h-4 w-4" /> Generar con IA</Button><Button variant="outline" onClick={openCreateModal}><Plus className="h-4 w-4" /> Manual</Button></div>}
+              action={!isStudent && <div className="flex flex-wrap justify-center gap-2"><Button onClick={() => setWizardOpen(true)}><Sparkles className="h-4 w-4" /> Generar con IA</Button><Button variant="outline" onClick={openCreateModal}><Plus className="h-4 w-4" /> Crear manualmente</Button></div>}
             />
           ) : (
             <div className="grid gap-3">
@@ -741,13 +695,21 @@ export function EvaluacionesPage() {
         </>
       )}
 
-      <GenerationWizard
-        open={wizardOpen}
-        onClose={() => { setWizardOpen(false); }}
-        materias={materias}
-        onGenerate={(payload) => generate.mutate(payload)}
-        aiPending={generate.isPending}
-      />
+      {user && !isStudent && (
+        <GenerationWizard
+          open={wizardOpen}
+          onClose={() => { setWizardOpen(false); }}
+          userId={user.id}
+          materias={materias}
+          initialMateriaId={materiaId}
+          onCompleted={(evaluacion) => {
+            queryClient.invalidateQueries({ queryKey: queryKeys.evaluaciones.list(evaluacion.materia_id) });
+            setParams({ materia: evaluacion.materia_id }, { replace: true });
+            toast.success('Evaluación creada como borrador.');
+            setWizardOpen(false);
+          }}
+        />
+      )}
       <EvaluationFormModal
         open={open}
         onClose={() => { setOpen(false); setEditingEval(null); }}

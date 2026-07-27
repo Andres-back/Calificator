@@ -1,967 +1,536 @@
-import { useEffect, useMemo, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import {
-  ArrowLeft,
-  ArrowRight,
-  Sparkles,
-  FileText,
-  ListChecks,
-  CheckCircle,
-  XCircle,
-  Type,
-  HelpCircle,
-  BookOpen,
-  CheckSquare,
-  AlertTriangle,
+  AlertTriangle, ArrowDown, ArrowLeft, ArrowRight, ArrowUp, Bot, Check,
+  ChevronDown, ChevronUp, Copy, FileImage, FileText, HelpCircle, ListChecks,
+  Minus, Plus, Send, Sparkles, Trash2, Type, X,
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
-import { Badge, Skeleton, Modal, Field } from '@/components/ui';
+import { Badge, Button, ConfirmDialog, Field, Input, Modal, Textarea } from '@/components/ui';
 import { BotonGrande } from '@/components/ui/BotonGrande';
+import { queryKeys } from '@/config/queryKeys';
+import { toApiError } from '@/lib/api';
+import { cn } from '@/lib/cn';
+import { MateriaSelect } from '@/modules/materias/MateriaSelect';
 import { listDbaCombinado } from '@/modules/materias/dbaApi';
+import { sendMessage } from '@/modules/xali/api';
+import type { DBAUnifiedItem, Evaluacion, Materia } from '@/types/api';
+import { generarBorradorEvaluacion, updateEvaluacion, type EvaluacionGenerarRequest } from '../api';
+import { DBASelector } from './DBASelector';
 import { PasosGuia } from './PasosGuia';
-import type { DBAUnifiedItem, EvaluacionModalidad } from '@/types/api';
-import type { EvaluacionGenerarRequest } from '../api';
+import {
+  createEmptyWizardState, discardWizardDraft, duplicateQuestion,
+  evaluationToEditableQuestions, loadWizardDraft, MAX_QUESTIONS, MIN_QUESTIONS,
+  moveQuestion, persistWizardDraft, QUESTION_TYPES, questionsToUpdatePayload,
+  renumberQuestions, selectedQuestionTypes, totalQuestionCount, validateQuestion,
+  validateStep, type EditableQuestion, type QuestionType, type WizardState,
+} from './generationWizardModel';
 
-/* ── Constantes ── */
-const STORAGE_KEY = 'xcal-wizard-progress';
+const TYPE_COPY: Record<QuestionType, { label: string; description: string; icon: typeof ListChecks }> = {
+  opcion_multiple: { label: 'Opción múltiple', description: 'Varias opciones y una respuesta correcta', icon: ListChecks },
+  verdadero_falso: { label: 'Verdadero o falso', description: 'Afirmaciones para analizar', icon: Check },
+  abierta: { label: 'Respuesta abierta', description: 'El estudiante desarrolla su respuesta', icon: FileText },
+  completar: { label: 'Completar', description: 'Frases con espacios por resolver', icon: Type },
+};
 
-type TipoPregunta = 'opcion_multiple' | 'abierta' | 'verdadero_falso' | 'completar';
-
-const TIPOS_DISPONIBLES: { value: TipoPregunta; label: string; icon: React.ReactNode; desc: string }[] = [
-  { value: 'opcion_multiple', label: 'Opción múltiple', icon: <ListChecks className="h-6 w-6" />, desc: 'Varias opciones, una respuesta correcta' },
-  { value: 'verdadero_falso', label: 'Verdadero / Falso', icon: <div className="flex gap-1"><CheckCircle className="h-6 w-6 text-emerald-500" /><XCircle className="h-6 w-6 text-rose-500" /></div>, desc: 'Afirmaciones para juzgar como verdaderas o falsas' },
-  { value: 'abierta', label: 'Abierta', icon: <FileText className="h-6 w-6" />, desc: 'Respuesta libre y desarrollada por el estudiante' },
-  { value: 'completar', label: 'Completar', icon: <Type className="h-6 w-6" />, desc: 'Completar espacios en blanco en una frase' },
-];
-
-const POLITICA_OPCIONES = [
-  { value: 'un_intento', label: 'Intento único' },
-  { value: 'multiples_intentos', label: 'Múltiples intentos' },
-  { value: '', label: 'Sin definir (por defecto)' },
-];
-
-/* ── Estado inicial ── */
-interface WizardForm {
-  materia_id: string;
-  nombre: string;
-  descripcion: string;
-  modalidad: EvaluacionModalidad;
-  nota_maxima: number;
-  cantidad_preguntas: number;
-  tipos_pregunta: TipoPregunta[];
-  dba_ids: string[];
-  dba_personalizado_ids: string[];
-  metas: string[];
-  criterios: string[];
-  instrucciones_adicionales: string;
-  politica_intento: 'un_intento' | 'multiples_intentos' | null;
-  intentos_permitidos: number;
-  tiempo_limite_minutos: number;
-  tema: string;
-}
-
-function emptyWizardForm(materiaId = ''): WizardForm {
-  return {
-    materia_id: materiaId,
-    nombre: '',
-    descripcion: '',
-    modalidad: 'online',
-    nota_maxima: 5,
-    cantidad_preguntas: 10,
-    tipos_pregunta: ['opcion_multiple', 'abierta'],
-    dba_ids: [],
-    dba_personalizado_ids: [],
-    metas: [],
-    criterios: [],
-    instrucciones_adicionales: '',
-    politica_intento: null,
-    intentos_permitidos: 1,
-    tiempo_limite_minutos: 0,
-    tema: '',
-  };
-}
-
-function saveToLocalStorage(form: WizardForm, step: number, materiaNombre: string) {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ form, step, materiaNombre, savedAt: Date.now() }));
-  } catch { /* quota exceeded, ignore */ }
-}
-
-function loadFromLocalStorage(): { form: WizardForm; step: number; materiaNombre: string } | null {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return null;
-    const data = JSON.parse(raw);
-    if (!data.form || typeof data.step !== 'number') return null;
-    const elapsed = Date.now() - (data.savedAt || 0);
-    if (elapsed > 24 * 60 * 60 * 1000) {
-      localStorage.removeItem(STORAGE_KEY);
-      return null;
-    }
-    return data;
-  } catch {
-    localStorage.removeItem(STORAGE_KEY);
-    return null;
-  }
-}
-
-function clearSavedProgress() {
-  try { localStorage.removeItem(STORAGE_KEY); } catch { /* ignore */ }
-}
-
-/* ── Step content components ── */
-
-function StepMateria({
-  form,
-  materias,
-  onChange,
+function QuestionCard({
+  question, index, total, onChange, onDelete, onDuplicate, onMove,
 }: {
-  form: WizardForm;
-  materias: { id: string; nombre: string }[] | undefined;
-  onChange: (patch: Partial<WizardForm>) => void;
+  question: EditableQuestion;
+  index: number;
+  total: number;
+  onChange: (patch: Partial<EditableQuestion>) => void;
+  onDelete: () => void;
+  onDuplicate: () => void;
+  onMove: (direction: -1 | 1) => void;
 }) {
-  return (
-    <div className="space-y-6">
-      <div>
-        <p className="text-sm text-muted">Selecciona la materia para la que deseas crear la evaluación.</p>
-      </div>
+  const error = validateQuestion(question, index);
 
-      <Field label="Materia" required>
-        <select
-          value={form.materia_id}
-          onChange={(e) => onChange({ materia_id: e.target.value })}
-          className="focus-ring min-h-[48px] w-full rounded-xl border-2 border-border bg-surface px-4 text-lg text-fg transition-colors hover:border-brand-300 focus:border-brand-500"
-          required
-        >
-          <option value="">— Selecciona una materia —</option>
-          {materias?.map((m) => (
-            <option key={m.id} value={m.id} className="text-base">{m.nombre}</option>
-          ))}
-        </select>
-      </Field>
-
-      <Field label="Nombre de la evaluación" required hint="Ej. Evaluación bimestral de ciencias">
-        <input
-          type="text"
-          value={form.nombre}
-          onChange={(e) => onChange({ nombre: e.target.value })}
-          placeholder="Ej. Evaluación bimestral - Unidad 3"
-          className="focus-ring min-h-[48px] w-full rounded-xl border-2 border-border bg-surface px-4 text-lg text-fg placeholder:text-muted/60 transition-colors hover:border-brand-300 focus:border-brand-500"
-          minLength={2}
-          required
-        />
-      </Field>
-
-      <Field label="Descripción (opcional)" hint="Propósito y alcance de la evaluación">
-        <textarea
-          value={form.descripcion}
-          onChange={(e) => onChange({ descripcion: e.target.value })}
-          placeholder="Ej. Esta evaluación cubre los temas vistos en la unidad 3..."
-          className="focus-ring min-h-[48px] w-full rounded-xl border-2 border-border bg-surface px-4 py-3 text-lg text-fg placeholder:text-muted/60 transition-colors hover:border-brand-300 focus:border-brand-500"
-          rows={2}
-        />
-      </Field>
-
-      <div className="grid grid-cols-2 gap-4">
-        <Field label="Modalidad" required>
-          <select
-            value={form.modalidad}
-            onChange={(e) => onChange({ modalidad: e.target.value as EvaluacionModalidad })}
-            className="focus-ring min-h-[48px] w-full rounded-xl border-2 border-border bg-surface px-4 text-lg text-fg transition-colors hover:border-brand-300 focus:border-brand-500"
-          >
-            <option value="online">Online</option>
-            <option value="fisica">Física</option>
-            <option value="mixta">Mixta</option>
-          </select>
-        </Field>
-        <Field label="Nota máxima" required>
-          <input
-            type="number"
-            min={0.1}
-            step="0.1"
-            value={form.nota_maxima}
-            onChange={(e) => onChange({ nota_maxima: Math.max(0.1, Number(e.target.value)) })}
-            className="focus-ring min-h-[48px] w-full rounded-xl border-2 border-border bg-surface px-4 text-lg text-fg transition-colors hover:border-brand-300 focus:border-brand-500"
-          />
-        </Field>
-      </div>
-    </div>
-  );
-}
-
-function StepDBA({
-  items,
-  loading,
-  error,
-  selectedOfficial,
-  selectedCustom,
-  onToggle,
-}: {
-  items: DBAUnifiedItem[] | undefined;
-  loading: boolean;
-  error: boolean;
-  selectedOfficial: string[];
-  selectedCustom: string[];
-  onToggle: (item: DBAUnifiedItem) => void;
-}) {
-  if (loading) {
-    return (
-      <div className="space-y-3">
-        <Skeleton className="h-16 rounded-xl" />
-        <Skeleton className="h-16 rounded-xl" />
-        <Skeleton className="h-16 rounded-xl" />
-      </div>
-    );
+  function changeOption(optionIndex: number, value: string) {
+    const previous = question.opciones[optionIndex];
+    onChange({
+      opciones: question.opciones.map((option, current) => current === optionIndex ? value : option),
+      respuestaEsperada: question.respuestaEsperada === previous ? value : question.respuestaEsperada,
+    });
   }
-
-  if (error) {
-    return (
-      <div className="rounded-xl border-2 border-amber-200 bg-amber-50 p-6 text-center dark:border-amber-500/30 dark:bg-amber-500/10">
-        <AlertTriangle className="mx-auto h-10 w-10 text-amber-500" />
-        <p className="mt-3 text-base font-semibold text-amber-800 dark:text-amber-200">Error al cargar DBA</p>
-        <p className="mt-1 text-sm text-amber-600 dark:text-amber-300">Puedes continuar sin seleccionar DBA, pero la IA tendrá menos contexto.</p>
-      </div>
-    );
-  }
-
-  if (!items || items.length === 0) {
-    return (
-      <div className="rounded-xl border-2 border-border bg-surface p-6 text-center">
-        <BookOpen className="mx-auto h-10 w-10 text-muted" />
-        <p className="mt-3 text-base font-semibold text-fg">No hay DBA disponibles</p>
-        <p className="mt-1 text-sm text-muted">Puedes continuar sin seleccionar DBA.</p>
-      </div>
-    );
-  }
-
-  const hasCustom = items.some((item) => item.fuente === 'personalizado');
 
   return (
-    <div className="space-y-4">
-      <p className="text-sm text-muted">
-        Selecciona los DBA (Derechos Básicos de Aprendizaje) que evaluará esta prueba.
-        La IA los usará como base para generar preguntas alineadas al currículo.
-      </p>
-      <p className="text-xs font-semibold text-brand-600">
-        {selectedOfficial.length + selectedCustom.length} seleccionados
-      </p>
-      <div className="max-h-72 space-y-2 overflow-y-auto rounded-xl border-2 border-border bg-surface p-3">
-        {items.map((item) => {
-          const isSelected = item.fuente === 'personalizado'
-            ? selectedCustom.includes(item.id)
-            : selectedOfficial.includes(item.id);
-          return (
-            <button
-              key={`${item.fuente}-${item.id}`}
-              type="button"
-              onClick={() => onToggle(item)}
-              className={[
-                'flex w-full gap-4 rounded-xl border-2 p-4 text-left transition-all',
-                isSelected
-                  ? 'border-brand-500 bg-brand-50 dark:border-brand-400 dark:bg-brand-500/10'
-                  : 'border-border bg-surface hover:border-brand-300 hover:bg-surface-2',
-              ].join(' ')}
-            >
-              <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center">
-                <CheckSquare
-                  className={cn(
-                    'h-6 w-6',
-                    isSelected ? 'text-brand-600' : 'text-border',
+    <article className={cn('rounded-2xl border-2 bg-surface', error ? 'border-amber-300' : 'border-border')}>
+      <button
+        type="button"
+        onClick={() => onChange({ expanded: !question.expanded })}
+        className="focus-ring flex min-h-14 w-full items-center gap-3 rounded-2xl p-3 text-left"
+        aria-expanded={question.expanded}
+        aria-controls={`question-${question.clientId}`}
+      >
+        <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-brand-100 font-bold text-brand-700">{index + 1}</span>
+        <span className="min-w-0 flex-1">
+          <span className="block truncate text-base font-semibold text-fg">{question.enunciado || 'Pregunta sin enunciado'}</span>
+          <span className="text-sm text-muted">{TYPE_COPY[question.tipo].label} · {question.puntaje || 0} puntos</span>
+        </span>
+        {question.expanded ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
+      </button>
+
+      {question.expanded && (
+        <div id={`question-${question.clientId}`} className="space-y-4 border-t border-border p-4">
+          {error && <p role="alert" className="rounded-lg bg-amber-50 p-3 text-sm text-amber-900 dark:bg-amber-500/10 dark:text-amber-100">{error}</p>}
+          <Field label="Enunciado" required>
+            <Textarea value={question.enunciado} onChange={(event) => onChange({ enunciado: event.target.value })} className="min-h-24 text-base" />
+          </Field>
+
+          {(question.tipo === 'opcion_multiple' || question.tipo === 'verdadero_falso') && (
+            <div className="space-y-3">
+              <p className="text-base font-semibold">Opciones</p>
+              {question.opciones.map((option, optionIndex) => (
+                <div key={optionIndex} className="flex gap-2">
+                  <Input
+                    value={option}
+                    onChange={(event) => changeOption(optionIndex, event.target.value)}
+                    disabled={question.tipo === 'verdadero_falso'}
+                    className="min-h-12 text-base"
+                    aria-label={`Opción ${optionIndex + 1} de la pregunta ${index + 1}`}
+                  />
+                  {question.tipo === 'opcion_multiple' && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => onChange({
+                        opciones: question.opciones.filter((_, current) => current !== optionIndex),
+                        respuestaEsperada: question.respuestaEsperada === option ? '' : question.respuestaEsperada,
+                      })}
+                      aria-label={`Eliminar opción ${optionIndex + 1}`}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
                   )}
-                  fill={isSelected ? 'currentColor' : 'none'}
-                />
-              </span>
-              <span className="min-w-0">
-                <span className="flex flex-wrap items-center gap-2 text-base font-semibold text-fg">
-                  {item.codigo || 'DBA personalizado'}
-                  <Badge tone={item.fuente === 'personalizado' ? 'violet' : 'brand'}>
-                    {item.fuente === 'personalizado' ? 'Personalizado' : 'MEN'}
-                  </Badge>
-                </span>
-                <span className="mt-1 block text-sm text-muted">{item.area} · Grado {item.grado}</span>
-                <span className="mt-1 block text-sm text-fg">{item.descripcion}</span>
-              </span>
-            </button>
-          );
-        })}
-      </div>
-      {!hasCustom && (
-        <p className="text-xs text-muted">⬆ Esta materia no tiene DBA personalizados.</p>
+                </div>
+              ))}
+              {question.tipo === 'opcion_multiple' && (
+                <Button type="button" variant="outline" onClick={() => onChange({ opciones: [...question.opciones, ''] })}>
+                  <Plus className="h-4 w-4" /> Agregar opción
+                </Button>
+              )}
+              <Field label="Respuesta correcta" required>
+                <select
+                  value={question.respuestaEsperada}
+                  onChange={(event) => onChange({ respuestaEsperada: event.target.value })}
+                  className="focus-ring min-h-12 w-full rounded-lg border border-border bg-surface px-4 text-base text-fg"
+                >
+                  <option value="">Selecciona la respuesta</option>
+                  {question.opciones.filter(Boolean).map((option, optionIndex) => (
+                    <option key={`${option}-${optionIndex}`} value={option}>{option}</option>
+                  ))}
+                </select>
+              </Field>
+            </div>
+          )}
+
+          {(question.tipo === 'abierta' || question.tipo === 'completar') && (
+            <Field label="Respuesta esperada" required>
+              <Textarea value={question.respuestaEsperada} onChange={(event) => onChange({ respuestaEsperada: event.target.value })} className="min-h-20 text-base" />
+            </Field>
+          )}
+
+          <Field label="Puntaje" required>
+            <Input type="number" min={0.01} step={0.01} value={question.puntaje} onChange={(event) => onChange({ puntaje: Number(event.target.value) })} className="min-h-12 max-w-40 text-base" />
+          </Field>
+          <div className="flex flex-wrap gap-2 border-t border-border pt-3">
+            <Button type="button" variant="outline" onClick={onDuplicate}><Copy className="h-4 w-4" /> Duplicar</Button>
+            <Button type="button" variant="outline" onClick={() => onMove(-1)} disabled={index === 0}><ArrowUp className="h-4 w-4" /> Subir</Button>
+            <Button type="button" variant="outline" onClick={() => onMove(1)} disabled={index === total - 1}><ArrowDown className="h-4 w-4" /> Bajar</Button>
+            <Button type="button" variant="danger" onClick={onDelete}><Trash2 className="h-4 w-4" /> Eliminar</Button>
+          </div>
+        </div>
       )}
-    </div>
+    </article>
   );
 }
 
-function StepCantidad({
-  value,
-  onChange,
+function XaliPanel({
+  state, materiaNombre, onSuggestion,
 }: {
-  value: number;
-  onChange: (value: number) => void;
+  state: WizardState;
+  materiaNombre: string;
+  onSuggestion: (suggestion: string, target: string) => void;
 }) {
-  return (
-    <div className="space-y-6">
-      <p className="text-sm text-muted">¿Cuántas preguntas debe tener la evaluación?</p>
-
-      <div className="flex items-center justify-center gap-6">
-        <button
-          type="button"
-          onClick={() => onChange(Math.max(3, value - 1))}
-          disabled={value <= 3}
-          className="focus-ring grid h-14 w-14 place-items-center rounded-2xl border-2 border-border bg-surface text-2xl font-bold text-fg transition-all hover:border-brand-400 hover:bg-brand-50 disabled:cursor-not-allowed disabled:opacity-30 dark:hover:bg-brand-500/10"
-          aria-label="Reducir cantidad de preguntas"
-        >
-          −
-        </button>
-
-        <div className="flex min-w-[100px] flex-col items-center">
-          <span className="text-6xl font-bold text-brand-700 tabular-nums">{value}</span>
-          <span className="text-sm text-muted">preguntas</span>
-        </div>
-
-        <button
-          type="button"
-          onClick={() => onChange(Math.min(30, value + 1))}
-          disabled={value >= 30}
-          className="focus-ring grid h-14 w-14 place-items-center rounded-2xl border-2 border-border bg-surface text-2xl font-bold text-fg transition-all hover:border-brand-400 hover:bg-brand-50 disabled:cursor-not-allowed disabled:opacity-30 dark:hover:bg-brand-500/10"
-          aria-label="Aumentar cantidad de preguntas"
-        >
-          +
-        </button>
-      </div>
-
-      {/* Slider de rango visual */}
-      <div className="mx-auto max-w-md">
-        <input
-          type="range"
-          min={3}
-          max={30}
-          value={value}
-          onChange={(e) => onChange(Number(e.target.value))}
-          className="w-full accent-brand-600"
-          aria-label="Cantidad de preguntas (deslizador)"
-        />
-        <div className="mt-1 flex justify-between text-xs text-muted">
-          <span>3</span>
-          <span>10</span>
-          <span>20</span>
-          <span>30</span>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function StepTipoPregunta({
-  selected,
-  onChange,
-}: {
-  selected: TipoPregunta[];
-  onChange: (tipos: TipoPregunta[]) => void;
-}) {
-  function toggle(tipo: TipoPregunta) {
-    if (selected.includes(tipo)) {
-      if (selected.length <= 1) return; // keep at least one
-      onChange(selected.filter((t) => t !== tipo));
-    } else {
-      onChange([...selected, tipo]);
-    }
-  }
+  const [expanded, setExpanded] = useState(false);
+  const [message, setMessage] = useState('');
+  const [suggestion, setSuggestion] = useState('');
+  const context = useMemo(() => [
+    `Materia: ${materiaNombre || 'sin seleccionar'}`,
+    `Paso: ${state.step} de 6`,
+    `DBA seleccionados: ${state.dbaIds.length + state.dbaPersonalizadoIds.length}`,
+    `Tipos: ${selectedQuestionTypes(state.counts).map((type) => TYPE_COPY[type].label).join(', ') || 'sin configurar'}`,
+    `Preguntas generadas: ${state.questions.length}`,
+  ], [materiaNombre, state]);
+  const target = state.questions.length ? 'Enunciado de la primera pregunta' : 'Indicaciones adicionales para la IA';
+  const chat = useMutation({
+    mutationFn: () => sendMessage([
+      'Contexto del wizard de creación de evaluaciones:',
+      ...context,
+      `Preguntas actuales: ${JSON.stringify(state.questions.slice(0, 12).map((question) => question.enunciado))}`,
+      `Solicitud del docente: ${message.trim()}`,
+      'Responde con una sugerencia breve. No modifiques ningún dato.',
+    ].join('\n'), state.materiaId || undefined),
+    onSuccess: (response) => { setSuggestion(response.respuesta); setMessage(''); },
+    onError: (error) => toast.error(toApiError(error).detail),
+  });
 
   return (
-    <div className="space-y-4">
-      <p className="text-sm text-muted">¿Qué tipo de preguntas quieres generar? Puedes seleccionar varios.</p>
-
-      <div className="grid gap-3 sm:grid-cols-2">
-        {TIPOS_DISPONIBLES.map((tipo) => {
-          const isSelected = selected.includes(tipo.value);
-          return (
-            <button
-              key={tipo.value}
-              type="button"
-              onClick={() => toggle(tipo.value)}
-              className={[
-                'flex items-start gap-4 rounded-xl border-2 p-5 text-left transition-all',
-                isSelected
-                  ? 'border-brand-500 bg-brand-50 ring-2 ring-brand-200 dark:border-brand-400 dark:bg-brand-500/10 dark:ring-brand-500/30'
-                  : 'border-border bg-surface hover:border-brand-300 hover:bg-surface-2',
-              ].join(' ')}
-            >
-              <span className={cn(
-                'grid h-12 w-12 shrink-0 place-items-center rounded-xl text-2xl',
-                isSelected ? 'bg-brand-100 text-brand-700 dark:bg-brand-500/20 dark:text-brand-200' : 'bg-surface-2 text-muted',
-              )}>
-                {tipo.icon}
-              </span>
-              <span>
-                <span className={cn(
-                  'block text-lg font-bold',
-                  isSelected ? 'text-brand-800 dark:text-brand-200' : 'text-fg',
-                )}>
-                  {tipo.label}
-                </span>
-                <span className="mt-1 block text-sm text-muted">{tipo.desc}</span>
-                {isSelected && (
-                  <span className="mt-2 inline-flex items-center gap-1 rounded-full bg-brand-100 px-3 py-1 text-xs font-semibold text-brand-700 dark:bg-brand-500/20 dark:text-brand-200">
-                    <CheckCircle className="h-3 w-3" /> Seleccionado
-                  </span>
-                )}
-              </span>
-            </button>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-function StepDetalles({
-  form,
-  onChange,
-}: {
-  form: WizardForm;
-  onChange: (patch: Partial<WizardForm>) => void;
-}) {
-  const [metaInput, setMetaInput] = useState('');
-  const [criterioInput, setCriterioInput] = useState('');
-
-  function addMeta() {
-    const v = metaInput.trim();
-    if (!v) return;
-    onChange({ metas: [...form.metas, v] });
-    setMetaInput('');
-  }
-
-  function removeMeta(index: number) {
-    onChange({ metas: form.metas.filter((_, i) => i !== index) });
-  }
-
-  function addCriterio() {
-    const v = criterioInput.trim();
-    if (!v) return;
-    onChange({ criterios: [...form.criterios, v] });
-    setCriterioInput('');
-  }
-
-  function removeCriterio(index: number) {
-    onChange({ criterios: form.criterios.filter((_, i) => i !== index) });
-  }
-
-  return (
-    <div className="space-y-6">
-      <p className="text-sm text-muted">Completa los detalles adicionales para que la IA genere una evaluación más precisa.</p>
-
-      {/* Metas del profesor */}
-      <div className="rounded-xl border-2 border-border bg-surface p-4">
-        <div className="flex items-start gap-3">
-          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-brand-50 text-brand-600 dark:bg-brand-500/15 dark:text-brand-300">
-            <BookOpen className="h-5 w-5" />
-          </span>
-          <div className="min-w-0 flex-1">
-            <p className="text-base font-bold text-fg">Metas del profesor</p>
-            <p className="text-sm text-muted">¿Qué quieres que los estudiantes logren con esta evaluación?</p>
-
-            <div className="mt-3 flex gap-2">
-              <input
-                type="text"
-                value={metaInput}
-                onChange={(e) => setMetaInput(e.target.value)}
-                onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addMeta(); } }}
-                placeholder="Ej. Identificar relaciones causa-efecto"
-                className="focus-ring min-h-[44px] flex-1 rounded-xl border-2 border-border bg-surface px-4 text-base text-fg placeholder:text-muted/60 transition-colors hover:border-brand-300 focus:border-brand-500"
-              />
-              <button
-                type="button"
-                onClick={addMeta}
-                disabled={!metaInput.trim()}
-                className="focus-ring inline-flex min-h-[44px] items-center gap-2 rounded-xl border-2 border-brand-300 bg-brand-50 px-4 text-base font-semibold text-brand-700 transition-colors hover:bg-brand-100 disabled:cursor-not-allowed disabled:opacity-40 dark:border-brand-500/30 dark:bg-brand-500/10 dark:text-brand-200"
-              >
-                Agregar
-              </button>
-            </div>
-
-            {form.metas.length > 0 && (
-              <div className="mt-3 flex flex-wrap gap-2">
-                {form.metas.map((meta, i) => (
-                  <span key={i} className="inline-flex items-center gap-2 rounded-full border border-border bg-surface-2 px-3 py-1.5 text-sm font-medium text-fg">
-                    {meta}
-                    <button type="button" onClick={() => removeMeta(i)} className="text-muted hover:text-rose-600" aria-label={`Eliminar meta ${i + 1}`}>×</button>
-                  </span>
-                ))}
-              </div>
-            )}
+    <aside className="rounded-2xl border-2 border-violet-200 bg-violet-50/60 p-4 dark:border-violet-500/30 dark:bg-violet-500/10" aria-label="Asistencia opcional de Xali">
+      <button type="button" onClick={() => setExpanded((value) => !value)} className="focus-ring flex min-h-12 w-full items-center gap-3 rounded-xl text-left" aria-expanded={expanded}>
+        <span className="grid h-10 w-10 place-items-center rounded-full bg-violet-600 text-white"><Bot className="h-5 w-5" /></span>
+        <span className="min-w-0 flex-1"><span className="block text-base font-bold">Pregúntale a Xali</span><span className="block text-sm text-muted">Asistencia opcional y separada</span></span>
+        {expanded ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
+      </button>
+      {expanded && (
+        <div className="mt-4 space-y-4">
+          <div className="rounded-xl border border-violet-200 bg-surface p-3 dark:border-violet-500/30">
+            <p className="flex items-center gap-2 text-sm font-bold"><HelpCircle className="h-4 w-4" /> Contexto que usará Xali</p>
+            <ul className="mt-2 space-y-1 text-sm text-muted">{context.map((item) => <li key={item}>• {item}</li>)}</ul>
           </div>
-        </div>
-      </div>
-
-      {/* Criterios de evaluación */}
-      <div className="rounded-xl border-2 border-border bg-surface p-4">
-        <div className="flex items-start gap-3">
-          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-amber-50 text-amber-600 dark:bg-amber-500/15 dark:text-amber-300">
-            <HelpCircle className="h-5 w-5" />
-          </span>
-          <div className="min-w-0 flex-1">
-            <p className="text-base font-bold text-fg">Criterios de evaluación</p>
-            <p className="text-sm text-muted">¿Cómo se calificará? Define los criterios para la corrección automática.</p>
-
-            <div className="mt-3 flex gap-2">
-              <input
-                type="text"
-                value={criterioInput}
-                onChange={(e) => setCriterioInput(e.target.value)}
-                onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addCriterio(); } }}
-                placeholder="Ej. Procedimiento claro, uso de vocabulario técnico"
-                className="focus-ring min-h-[44px] flex-1 rounded-xl border-2 border-border bg-surface px-4 text-base text-fg placeholder:text-muted/60 transition-colors hover:border-brand-300 focus:border-brand-500"
-              />
-              <button
-                type="button"
-                onClick={addCriterio}
-                disabled={!criterioInput.trim()}
-                className="focus-ring inline-flex min-h-[44px] items-center gap-2 rounded-xl border-2 border-amber-300 bg-amber-50 px-4 text-base font-semibold text-amber-700 transition-colors hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-40 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200"
-              >
-                Agregar
-              </button>
-            </div>
-
-            {form.criterios.length > 0 && (
-              <div className="mt-3 flex flex-wrap gap-2">
-                {form.criterios.map((c, i) => (
-                  <span key={i} className="inline-flex items-center gap-2 rounded-full border border-border bg-surface-2 px-3 py-1.5 text-sm font-medium text-fg">
-                    {c}
-                    <button type="button" onClick={() => removeCriterio(i)} className="text-muted hover:text-rose-600" aria-label={`Eliminar criterio ${i + 1}`}>×</button>
-                  </span>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Instrucciones adicionales */}
-      <div className="rounded-xl border-2 border-border bg-surface p-4">
-        <div className="flex items-start gap-3">
-          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-violet-50 text-violet-600 dark:bg-violet-500/15 dark:text-violet-300">
-            <FileText className="h-5 w-5" />
-          </span>
-          <div className="min-w-0 flex-1">
-            <p className="text-base font-bold text-fg">Instrucciones adicionales para la IA</p>
-            <p className="text-sm text-muted">Indicaciones extras para la generación de preguntas (opcional).</p>
-            <textarea
-              value={form.instrucciones_adicionales}
-              onChange={(e) => onChange({ instrucciones_adicionales: e.target.value })}
-              placeholder="Ej. Incluir preguntas de análisis y aplicación, no solo de memorización..."
-              className="focus-ring mt-3 min-h-[80px] w-full rounded-xl border-2 border-border bg-surface px-4 py-3 text-base text-fg placeholder:text-muted/60 transition-colors hover:border-brand-300 focus:border-brand-500"
-              rows={3}
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* Política de intentos y tiempo */}
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div className="rounded-xl border-2 border-border bg-surface p-4">
-          <p className="text-base font-bold text-fg">Política de intentos</p>
-          <p className="text-sm text-muted">¿Cuántos intentos tiene el estudiante?</p>
-          <select
-            value={form.politica_intento ?? ''}
-            onChange={(e) => onChange({ politica_intento: (e.target.value || null) as 'un_intento' | 'multiples_intentos' | null })}
-            className="focus-ring mt-3 min-h-[44px] w-full rounded-xl border-2 border-border bg-surface px-4 text-base text-fg transition-colors hover:border-brand-300 focus:border-brand-500"
-          >
-            {POLITICA_OPCIONES.map((o) => (
-              <option key={o.value} value={o.value}>{o.label}</option>
-            ))}
-          </select>
-          {form.politica_intento === 'multiples_intentos' && (
-            <div className="mt-3">
-              <p className="mb-1 text-sm font-medium text-fg">Intentos permitidos</p>
-              <input
-                type="number"
-                min={2}
-                max={10}
-                value={form.intentos_permitidos}
-                onChange={(e) => onChange({ intentos_permitidos: Math.max(2, Math.min(10, Number(e.target.value))) })}
-                className="focus-ring min-h-[44px] w-full rounded-xl border-2 border-border bg-surface px-4 text-base text-fg transition-colors hover:border-brand-300 focus:border-brand-500"
-              />
+          <Field label="¿Qué necesitas mejorar?">
+            <Textarea value={message} onChange={(event) => setMessage(event.target.value)} className="min-h-24 text-base" placeholder="Ejemplo: haz más clara una pregunta..." />
+          </Field>
+          <Button type="button" onClick={() => chat.mutate()} loading={chat.isPending} disabled={!message.trim() || chat.isPending} className="w-full">
+            <Send className="h-4 w-4" /> Enviar a Xali
+          </Button>
+          {suggestion && (
+            <div className="space-y-3 rounded-xl border border-violet-300 bg-surface p-3">
+              <p className="text-sm font-bold text-violet-800 dark:text-violet-200">Sugerencia de Xali</p>
+              <p className="whitespace-pre-wrap text-sm leading-6">{suggestion}</p>
+              <p className="text-sm text-muted"><strong>Campo que cambiará:</strong> {target}</p>
+              <Button type="button" variant="outline" onClick={() => onSuggestion(suggestion, target)} className="w-full">Revisar y aplicar</Button>
             </div>
           )}
         </div>
-
-        <div className="rounded-xl border-2 border-border bg-surface p-4">
-          <p className="text-base font-bold text-fg">Tiempo límite</p>
-          <p className="text-sm text-muted">Minutos para completar la evaluación (opcional).</p>
-          <div className="mt-3 flex items-center gap-3">
-            <input
-              type="number"
-              min={0}
-              max={300}
-              value={form.tiempo_limite_minutos || ''}
-              onChange={(e) => onChange({ tiempo_limite_minutos: Math.max(0, Number(e.target.value)) })}
-              placeholder="0 = sin límite"
-              className="focus-ring min-h-[44px] w-full rounded-xl border-2 border-border bg-surface px-4 text-base text-fg transition-colors hover:border-brand-300 focus:border-brand-500"
-            />
-            <span className="text-base text-muted">min</span>
-          </div>
-        </div>
-      </div>
-    </div>
+      )}
+    </aside>
   );
 }
 
-function StepRevisar({
-  form,
-  materias,
-}: {
-  form: WizardForm;
-  materias: { id: string; nombre: string }[] | undefined;
-}) {
-  const materiaNombre = materias?.find((m) => m.id === form.materia_id)?.nombre || form.materia_id;
-
-  const items = useMemo(() => {
-    const tipoLabels: Record<string, string> = {
-      opcion_multiple: 'Opción múltiple',
-      abierta: 'Abierta',
-      verdadero_falso: 'Verdadero / Falso',
-      completar: 'Completar',
-    };
-    const list: { label: string; value: string }[] = [];
-    list.push({ label: 'Materia', value: materiaNombre });
-    list.push({ label: 'Nombre de la evaluación', value: form.nombre });
-    if (form.descripcion) list.push({ label: 'Descripción', value: form.descripcion });
-    list.push({ label: 'Modalidad', value: form.modalidad === 'online' ? 'Online' : form.modalidad === 'fisica' ? 'Física' : 'Mixta' });
-    list.push({ label: 'Nota máxima', value: String(form.nota_maxima) });
-    list.push({ label: 'Cantidad de preguntas', value: String(form.cantidad_preguntas) });
-    list.push({ label: 'Tipos de pregunta', value: form.tipos_pregunta.map((t) => tipoLabels[t] || t).join(', ') });
-    const dbaCount = form.dba_ids.length + form.dba_personalizado_ids.length;
-    list.push({ label: 'DBA seleccionados', value: `${dbaCount} DBA` });
-    if (form.metas.length > 0) list.push({ label: 'Metas del profesor', value: form.metas.join(' — ') });
-    if (form.criterios.length > 0) list.push({ label: 'Criterios de evaluación', value: form.criterios.join(' — ') });
-    if (form.instrucciones_adicionales) list.push({ label: 'Instrucciones adicionales', value: form.instrucciones_adicionales });
-    if (form.politica_intento) {
-      list.push({ label: 'Política de intentos', value: form.politica_intento === 'un_intento' ? 'Intento único' : `Múltiples intentos (${form.intentos_permitidos})` });
-    }
-    if (form.tiempo_limite_minutos > 0) {
-      list.push({ label: 'Tiempo límite', value: `${form.tiempo_limite_minutos} minutos` });
-    }
-    return list;
-  }, [form, materiaNombre]);
-
-  return (
-    <div className="space-y-6">
-      <div className="rounded-xl border-2 border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-500/30 dark:bg-emerald-500/10">
-        <p className="flex items-center gap-2 text-base font-bold text-emerald-800 dark:text-emerald-200">
-          <Sparkles className="h-5 w-5" /> Revisa y confirma
-        </p>
-        <p className="mt-1 text-sm text-emerald-600 dark:text-emerald-300">
-          La IA generará un borrador alineado con los DBA, metas y criterios seleccionados.
-          Podrás editarlo antes de publicarlo.
-        </p>
-      </div>
-
-      <div className="space-y-3">
-        {items.map((item, i) => (
-          <div key={i} className="rounded-xl border-2 border-border bg-surface p-4">
-            <p className="text-xs font-semibold uppercase tracking-wide text-muted">{item.label}</p>
-            <p className="mt-1 text-base font-medium text-fg">{item.value}</p>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function cn(...classes: (string | false | undefined | null)[]): string {
-  return classes.filter(Boolean).join(' ');
-}
-
-/* ── Componente principal ── */
 export function GenerationWizard({
-  open,
-  onClose,
-  materias,
-  onGenerate,
-  aiPending,
+  open, onClose, userId, materias, initialMateriaId = '', onCompleted,
 }: {
   open: boolean;
   onClose: () => void;
-  materias: { id: string; nombre: string }[] | undefined;
-  onGenerate: (payload: EvaluacionGenerarRequest) => void;
-  aiPending: boolean;
+  userId: string;
+  materias: Materia[] | undefined;
+  initialMateriaId?: string;
+  onCompleted: (evaluation: Evaluacion) => void;
 }) {
-  const totalSteps = 6;
+  const availableMaterias = useMemo(() => materias ?? [], [materias]);
+  const [state, setState] = useState<WizardState>(() => createEmptyWizardState(initialMateriaId));
+  const [restorePrompt, setRestorePrompt] = useState(false);
+  const [canPersist, setCanPersist] = useState(false);
+  const [generationError, setGenerationError] = useState<string | null>(null);
+  const [xaliConfirmation, setXaliConfirmation] = useState<{ suggestion: string; target: string } | null>(null);
+  const generateLock = useRef(false);
+  const confirmLock = useRef(false);
+  const materiaNombre = availableMaterias.find((materia) => materia.id === state.materiaId)?.nombre ?? '';
 
-  // Estado del wizard
-  const [step, setStep] = useState(1);
-  const [form, setForm] = useState<WizardForm>(() => emptyWizardForm());
-  const [showRestore, setShowRestore] = useState(false);
-
-  // DBA query
-  const { data: dbaItems, isLoading: loadingDBA, isError: dbaError } = useQuery({
-    queryKey: ['materia-dba', form.materia_id],
-    queryFn: () => listDbaCombinado(form.materia_id),
-    enabled: open && !!form.materia_id,
+  const dba = useQuery({
+    queryKey: queryKeys.materias.dbaCombined(state.materiaId),
+    queryFn: () => listDbaCombinado(state.materiaId),
+    enabled: open && Boolean(state.materiaId),
     retry: false,
   });
 
-  // Restaurar progreso guardado
+  const generate = useMutation({
+    mutationFn: (payload: EvaluacionGenerarRequest) => generarBorradorEvaluacion(payload),
+    onSuccess: (evaluation) => {
+      setGenerationError(null);
+      setState((current) => ({
+        ...current,
+        generatedEvaluationId: evaluation.id,
+        questions: evaluationToEditableQuestions(evaluation),
+      }));
+      toast.success('Borrador generado. Revísalo antes de continuar.');
+    },
+    onError: (error) => setGenerationError(toApiError(error).detail),
+    onSettled: () => { generateLock.current = false; },
+  });
+
+  const confirm = useMutation({
+    mutationFn: ({ id, payload }: { id: string; payload: Parameters<typeof updateEvaluacion>[1] }) => updateEvaluacion(id, payload),
+    onSuccess: (evaluation) => {
+      discardWizardDraft(localStorage, userId);
+      onCompleted(evaluation);
+    },
+    onError: (error) => toast.error(toApiError(error).detail),
+    onSettled: () => { confirmLock.current = false; },
+  });
+
   useEffect(() => {
-    if (open) {
-      const saved = loadFromLocalStorage();
-      if (saved && saved.form.materia_id) {
-        setForm(saved.form);
-        setStep(saved.step);
-        setShowRestore(true);
-      } else {
-        setForm(emptyWizardForm());
-        setStep(1);
-        setShowRestore(false);
-      }
+    if (!open) return;
+    setGenerationError(null);
+    setCanPersist(false);
+    const restored = loadWizardDraft(localStorage, userId);
+    if (restored) {
+      setState(restored);
+      setRestorePrompt(true);
+      return;
     }
-  }, [open]);
+    setState(createEmptyWizardState(initialMateriaId || availableMaterias[0]?.id || ''));
+    setRestorePrompt(false);
+    setCanPersist(true);
+  }, [availableMaterias, initialMateriaId, open, userId]);
 
-  // Guardar progreso al cambiar de paso
   useEffect(() => {
-    if (open && form.materia_id) {
-      const materiaNombre = materias?.find((m) => m.id === form.materia_id)?.nombre || '';
-      saveToLocalStorage(form, step, materiaNombre);
-    }
-  }, [open, form, step, materias]);
+    if (open && canPersist) persistWizardDraft(localStorage, userId, state);
+  }, [canPersist, open, state, userId]);
 
-  function handleFormChange(patch: Partial<WizardForm>) {
-    setForm((prev) => ({ ...prev, ...patch }));
+  function patch(patchValue: Partial<WizardState>) {
+    setState((current) => ({ ...current, ...patchValue }));
   }
 
-  function toggleDBA(item: DBAUnifiedItem) {
-    setForm((prev) => ({
-      ...prev,
-      dba_ids:
-        item.fuente === 'oficial'
-          ? prev.dba_ids.includes(item.id)
-            ? prev.dba_ids.filter((id) => id !== item.id)
-            : [...prev.dba_ids, item.id]
-          : prev.dba_ids,
-      dba_personalizado_ids:
-        item.fuente === 'personalizado'
-          ? prev.dba_personalizado_ids.includes(item.id)
-            ? prev.dba_personalizado_ids.filter((id) => id !== item.id)
-            : [...prev.dba_personalizado_ids, item.id]
-          : prev.dba_personalizado_ids,
-    }));
-  }
-
-  function canGoNext(): boolean {
-    switch (step) {
-      case 1:
-        return !!form.materia_id && form.nombre.trim().length >= 2;
-      case 2:
-        return true; // DBA optional
-      case 3:
-        return form.cantidad_preguntas >= 3 && form.cantidad_preguntas <= 30;
-      case 4:
-        return form.tipos_pregunta.length > 0;
-      case 5:
-        return true; // all optional
-      case 6:
-        return true;
-      default:
-        return false;
-    }
-  }
-
-  function getValidationMessage(): string | null {
-    switch (step) {
-      case 1:
-        if (!form.materia_id) return 'Selecciona una materia para continuar.';
-        if (form.nombre.trim().length < 2) return 'Escribe un nombre de al menos 2 caracteres.';
-        return null;
-      case 3:
-        if (form.cantidad_preguntas < 3 || form.cantidad_preguntas > 30) return 'La cantidad debe estar entre 3 y 30.';
-        return null;
-      case 4:
-        if (form.tipos_pregunta.length === 0) return 'Selecciona al menos un tipo de pregunta.';
-        return null;
-      case 6: {
-        const dbaCount = form.dba_ids.length + form.dba_personalizado_ids.length;
-        if (dbaCount === 0) return 'No has seleccionado DBA. La IA tendrá menos contexto. ¿Quieres continuar de todas formas?';
-        return null;
+  function toggleDba(item: DBAUnifiedItem) {
+    setState((current) => item.fuente === 'personalizado'
+      ? {
+        ...current,
+        dbaPersonalizadoIds: current.dbaPersonalizadoIds.includes(item.id)
+          ? current.dbaPersonalizadoIds.filter((id) => id !== item.id)
+          : [...current.dbaPersonalizadoIds, item.id],
       }
-      default:
-        return null;
+      : {
+        ...current,
+        dbaIds: current.dbaIds.includes(item.id)
+          ? current.dbaIds.filter((id) => id !== item.id)
+          : [...current.dbaIds, item.id],
+      });
+  }
+
+  function generateDraft() {
+    if (generate.isPending || generateLock.current) return;
+    const error = [1, 2, 3, 4].map((step) => validateStep(state, step)).find(Boolean);
+    if (error) { setGenerationError(error); return; }
+    const distribution = QUESTION_TYPES
+      .filter((type) => state.counts[type] > 0)
+      .map((type) => `${TYPE_COPY[type].label}: ${state.counts[type]}`)
+      .join(', ');
+    const instructions = [
+      `Distribución requerida por tipo: ${distribution}.`,
+      state.instruccionesAdicionales.trim(),
+      state.referenceText.trim() ? `Material de referencia proporcionado por el docente:\n${state.referenceText.trim()}` : '',
+    ].filter(Boolean).join('\n\n');
+    generateLock.current = true;
+    generate.mutate({
+      materia_id: state.materiaId,
+      nombre: state.nombre.trim(),
+      tema: state.descripcion.trim() || state.nombre.trim(),
+      descripcion: state.descripcion.trim() || undefined,
+      modalidad: state.modalidad,
+      nota_maxima: state.notaMaxima,
+      cantidad_preguntas: totalQuestionCount(state.counts),
+      tipos_pregunta: selectedQuestionTypes(state.counts),
+      dba_ids: state.dbaIds,
+      dba_personalizado_ids: state.dbaPersonalizadoIds,
+      metas_profesor: [],
+      criterios_docente: [],
+      instrucciones_adicionales: instructions || undefined,
+    });
+  }
+
+  function confirmEvaluation() {
+    if (confirm.isPending || confirmLock.current || !state.generatedEvaluationId) return;
+    const error = validateStep(state, 5);
+    if (error) { toast.error(error); return; }
+    confirmLock.current = true;
+    confirm.mutate({
+      id: state.generatedEvaluationId,
+      payload: {
+        nombre: state.nombre.trim(),
+        descripcion: state.descripcion.trim() || undefined,
+        modalidad: state.modalidad,
+        nota_maxima: state.notaMaxima,
+        dba_ids: state.dbaIds,
+        dba_personalizado_ids: state.dbaPersonalizadoIds,
+        ...questionsToUpdatePayload(state.questions),
+      },
+    });
+  }
+
+  function resetDraft(close = false) {
+    discardWizardDraft(localStorage, userId);
+    setState(createEmptyWizardState(initialMateriaId || availableMaterias[0]?.id || ''));
+    setRestorePrompt(false);
+    setCanPersist(!close);
+    if (close) onClose();
+  }
+
+  function applyXali() {
+    if (!xaliConfirmation) return;
+    if (state.questions.length) {
+      const [first, ...rest] = state.questions;
+      patch({ questions: [{ ...first, enunciado: `${first.enunciado}\n${xaliConfirmation.suggestion}`.trim(), expanded: true }, ...rest] });
+    } else {
+      patch({ instruccionesAdicionales: [state.instruccionesAdicionales, xaliConfirmation.suggestion].filter(Boolean).join('\n') });
     }
+    setXaliConfirmation(null);
+    toast.success('Sugerencia aplicada después de tu confirmación.');
   }
 
-  function goNext() {
-    if (!canGoNext()) return;
-    if (step < totalSteps) setStep((s) => s + 1);
-  }
-
-  function goBack() {
-    if (step > 1) setStep((s) => s - 1);
-  }
-
-  function buildPayload(): EvaluacionGenerarRequest | null {
-    const dbaCount = form.dba_ids.length + form.dba_personalizado_ids.length;
-    if (!form.materia_id) { toast.error('Selecciona una materia'); return null; }
-    if (form.nombre.trim().length < 2) { toast.error('Escribe un nombre para la evaluación'); return null; }
-    if (dbaCount === 0) {
-      toast.error('Selecciona al menos un DBA para generar con IA');
-      return null;
-    }
-
-    return {
-      materia_id: form.materia_id,
-      nombre: form.nombre.trim(),
-      tema: form.tema.trim() || form.descripcion.trim() || form.nombre.trim(),
-      descripcion: form.descripcion.trim() || undefined,
-      modalidad: form.modalidad,
-      nota_maxima: form.nota_maxima,
-      cantidad_preguntas: form.cantidad_preguntas,
-      tipos_pregunta: form.tipos_pregunta,
-      dba_ids: form.dba_ids,
-      dba_personalizado_ids: form.dba_personalizado_ids,
-      metas_profesor: form.metas.map((m) => m.trim()).filter(Boolean),
-      criterios_docente: form.criterios.map((c) => c.trim()).filter(Boolean),
-      instrucciones_adicionales: form.instrucciones_adicionales.trim() || undefined,
-      politica_intento: form.politica_intento,
-      intentos_permitidos: form.politica_intento === 'multiples_intentos' ? form.intentos_permitidos : undefined,
-      tiempo_limite_minutos: form.tiempo_limite_minutos > 0 ? form.tiempo_limite_minutos : undefined,
-    };
-  }
-
-  function handleGenerate() {
-    const payload = buildPayload();
-    if (!payload) return;
-    clearSavedProgress();
-    onGenerate(payload);
-  }
-
-  function handleClose() {
-    clearSavedProgress();
-    onClose();
-  }
-
-  const isLastStep = step === totalSteps;
-  const validationMsg = getValidationMessage();
+  const validation = validateStep(state);
+  const total = totalQuestionCount(state.counts);
+  const questionErrors = state.questions.filter((question, index) => validateQuestion(question, index)).length;
 
   return (
-    <Modal open={open} onClose={handleClose} title="" className="max-w-2xl" showCloseButton={false}>
-      <div className="space-y-5">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <span className="grid h-10 w-10 place-items-center rounded-xl bg-brand-100 text-brand-700 dark:bg-brand-500/15 dark:text-brand-200">
-              <Sparkles className="h-5 w-5" />
-            </span>
-            <div>
-              <p className="text-lg font-bold text-fg">Generar con IA</p>
-              <p className="text-sm text-muted">Evaluación alineada al currículo</p>
+    <>
+      <Modal
+        open={open}
+        onClose={onClose}
+        title=""
+        ariaLabel="Generar evaluación con IA"
+        className="max-w-6xl p-0 sm:p-0"
+        showCloseButton={false}
+        closeOnBackdrop={!generate.isPending && !confirm.isPending}
+        closeOnEscape={!generate.isPending && !confirm.isPending}
+      >
+        <div className="flex max-h-[calc(100dvh-2rem)] flex-col [&_button]:min-h-12 [&_button]:min-w-12">
+          <header className="sticky top-0 z-10 border-b border-border bg-surface/95 p-4 backdrop-blur sm:p-5">
+            <div className="flex items-center gap-3">
+              <span className="grid h-12 w-12 place-items-center rounded-xl bg-brand-100 text-brand-700"><Sparkles className="h-6 w-6" /></span>
+              <div className="min-w-0 flex-1"><h2 className="text-xl font-bold">Generar con IA</h2><p className="text-sm text-muted">Flujo guiado para docentes</p></div>
+              <Button type="button" variant="ghost" size="icon" onClick={onClose} disabled={generate.isPending || confirm.isPending} aria-label="Cerrar wizard"><X className="h-5 w-5" /></Button>
             </div>
+            <div className="mt-4"><PasosGuia currentStep={state.step} /></div>
+          </header>
+
+          <div className="overflow-y-auto p-4 sm:p-5">
+            {restorePrompt ? (
+              <div role="alert" className="rounded-2xl border-2 border-amber-300 bg-amber-50 p-4 dark:bg-amber-500/10">
+                <p className="flex items-center gap-2 text-base font-bold text-amber-900 dark:text-amber-100"><AlertTriangle className="h-5 w-5" /> Encontramos una evaluación sin terminar.</p>
+                {state.referenceFile?.needsReselection && <p className="mt-2 text-sm">Vuelve a seleccionar {state.referenceFile.name}; solo se conservó su información básica.</p>}
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <Button type="button" onClick={() => { setRestorePrompt(false); setCanPersist(true); }}>Continuar</Button>
+                  <Button type="button" variant="outline" onClick={() => resetDraft(true)}>Descartar</Button>
+                  <Button type="button" variant="outline" onClick={() => resetDraft(false)}>Empezar de nuevo</Button>
+                </div>
+              </div>
+            ) : (
+              <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
+                <main className="min-w-0 rounded-2xl border border-border bg-surface-2/50 p-4 sm:p-5">
+                  {state.step === 1 && (
+                    <section aria-labelledby="wizard-step-title" className="space-y-5">
+                      <div><h3 id="wizard-step-title" className="text-xl font-bold">¿Para qué materia es la evaluación?</h3><p className="mt-1 text-base text-muted">Selecciona el curso y dale un nombre fácil de reconocer.</p></div>
+                      <Field label="Materia" required><div className="[&_select]:min-h-12 [&_select]:max-w-none [&_select]:text-base"><MateriaSelect value={state.materiaId} materias={availableMaterias} onChange={(materiaId) => patch({ materiaId, dbaIds: [], dbaPersonalizadoIds: [], generatedEvaluationId: null, questions: [] })} /></div></Field>
+                      <Field label="Nombre de la evaluación" required hint="Ejemplo: Evaluación de fracciones — período 2"><Input autoFocus value={state.nombre} onChange={(event) => patch({ nombre: event.target.value })} className="min-h-12 text-base" placeholder="Escribe un nombre claro" /></Field>
+                      <Field label="Descripción breve" hint="Opcional"><Textarea value={state.descripcion} onChange={(event) => patch({ descripcion: event.target.value })} className="min-h-24 text-base" placeholder="¿Qué tema o unidad quieres evaluar?" /></Field>
+                    </section>
+                  )}
+
+                  {state.step === 2 && (
+                    <section aria-labelledby="wizard-step-title" className="space-y-4">
+                      <div><h3 id="wizard-step-title" className="text-xl font-bold">Selecciona los DBA</h3><p className="mt-1 text-base text-muted">La IA usará estos aprendizajes del MEN. Seleccionados: <strong>{state.dbaIds.length + state.dbaPersonalizadoIds.length}</strong>.</p></div>
+                      <DBASelector items={dba.data} selectedOfficial={state.dbaIds} selectedCustom={state.dbaPersonalizadoIds} loading={dba.isLoading} error={dba.isError} onToggle={toggleDba} spacious />
+                    </section>
+                  )}
+
+                  {state.step === 3 && (
+                    <section aria-labelledby="wizard-step-title" className="space-y-4">
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+                        <div><h3 id="wizard-step-title" className="text-xl font-bold">Configura las preguntas</h3><p className="mt-1 text-base text-muted">Elige cuántas preguntas quieres de cada tipo.</p></div>
+                        <div className="rounded-xl bg-brand-100 px-4 py-2 text-center text-brand-800"><span className="block text-2xl font-bold">{total}</span><span className="text-sm">preguntas en total</span></div>
+                      </div>
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        {QUESTION_TYPES.map((type) => {
+                          const copy = TYPE_COPY[type];
+                          const Icon = copy.icon;
+                          const value = state.counts[type];
+                          return (
+                            <div key={type} className={cn('rounded-2xl border-2 p-4', value ? 'border-brand-400 bg-brand-50 dark:bg-brand-500/10' : 'border-border bg-surface')}>
+                              <div className="flex gap-3"><span className="grid h-12 w-12 place-items-center rounded-xl bg-surface-2 text-brand-700"><Icon className="h-6 w-6" /></span><div><p className="text-base font-bold">{copy.label}</p><p className="text-sm text-muted">{copy.description}</p></div></div>
+                              <div className="mt-4 flex items-center justify-between">
+                                <Button type="button" variant="outline" size="icon" onClick={() => patch({ counts: { ...state.counts, [type]: Math.max(0, value - 1) } })} disabled={!value} aria-label={`Quitar una pregunta de ${copy.label}`}><Minus className="h-5 w-5" /></Button>
+                                <span className="text-3xl font-bold text-brand-700">{value}</span>
+                                <Button type="button" variant="outline" size="icon" onClick={() => patch({ counts: { ...state.counts, [type]: Math.min(MAX_QUESTIONS, value + 1) } })} aria-label={`Agregar una pregunta de ${copy.label}`}><Plus className="h-5 w-5" /></Button>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                      <p className="text-sm text-muted">Mínimo {MIN_QUESTIONS} y máximo {MAX_QUESTIONS} preguntas.</p>
+                    </section>
+                  )}
+
+                  {state.step === 4 && (
+                    <section aria-labelledby="wizard-step-title" className="space-y-5">
+                      <div><h3 id="wizard-step-title" className="text-xl font-bold">Añade material de referencia</h3><p className="mt-1 text-base text-muted">Es opcional. Puedes pegar texto para orientar la generación.</p></div>
+                      <div className="grid gap-3 sm:grid-cols-3">
+                        <div className="rounded-xl border-2 border-brand-500 bg-brand-50 p-4 dark:bg-brand-500/10"><FileText className="h-7 w-7 text-brand-700" /><p className="mt-2 text-base font-bold">Texto</p><Badge tone="success" className="mt-2">Compatible</Badge></div>
+                        <div aria-disabled="true" className="rounded-xl border border-border bg-surface-2 p-4 opacity-70"><FileImage className="h-7 w-7 text-muted" /><p className="mt-2 text-base font-bold">Imagen</p><p className="mt-1 text-sm text-muted">No disponible en el endpoint actual.</p></div>
+                        <div aria-disabled="true" className="rounded-xl border border-border bg-surface-2 p-4 opacity-70"><FileText className="h-7 w-7 text-muted" /><p className="mt-2 text-base font-bold">PDF</p><p className="mt-1 text-sm text-muted">No disponible en el endpoint actual.</p></div>
+                      </div>
+                      <Field label="Texto de referencia" hint={`${state.referenceText.length}/4000 caracteres`}><Textarea value={state.referenceText} onChange={(event) => patch({ referenceText: event.target.value })} className="min-h-40 text-base" maxLength={4000} placeholder="Pega aquí una lectura o un resumen..." /></Field>
+                      <Field label="Indicaciones adicionales para la IA" hint="Opcional"><Textarea value={state.instruccionesAdicionales} onChange={(event) => patch({ instruccionesAdicionales: event.target.value })} className="min-h-24 text-base" maxLength={2000} /></Field>
+                    </section>
+                  )}
+
+                  {state.step === 5 && (
+                    !state.generatedEvaluationId || !state.questions.length ? (
+                      <section aria-labelledby="wizard-step-title" className="space-y-5 text-center">
+                        <div><h3 id="wizard-step-title" className="text-xl font-bold">Genera el borrador</h3><p className="mx-auto mt-2 max-w-xl text-base text-muted">La IA preparará {total} preguntas. Nada se publica sin tu revisión.</p></div>
+                        {generationError && <div role="alert" className="rounded-xl border border-rose-300 bg-rose-50 p-4 text-left text-base text-rose-900 dark:bg-rose-500/10 dark:text-rose-100">{generationError}</div>}
+                        <BotonGrande onClick={generateDraft} loading={generate.isPending} disabled={generate.isPending} icon={<Sparkles className="h-5 w-5" />} className="mx-auto sm:w-auto">{generate.isPending ? 'Generando preguntas...' : 'Generar borrador'}</BotonGrande>
+                      </section>
+                    ) : (
+                      <section aria-labelledby="wizard-step-title" className="space-y-4">
+                        <div className="flex items-end justify-between gap-3"><div><h3 id="wizard-step-title" className="text-xl font-bold">Revisa y edita las preguntas</h3><p className="mt-1 text-base text-muted">Abre cada tarjeta. Tú decides el contenido final.</p></div><Badge tone={questionErrors ? 'warning' : 'success'}>{questionErrors ? `${questionErrors} por corregir` : 'Todas válidas'}</Badge></div>
+                        <div className="max-h-[52vh] space-y-3 overflow-y-auto pr-1">
+                          {state.questions.map((question, index) => (
+                            <QuestionCard
+                              key={question.clientId}
+                              question={question}
+                              index={index}
+                              total={state.questions.length}
+                              onChange={(questionPatch) => patch({ questions: state.questions.map((current, currentIndex) => currentIndex === index ? { ...current, ...questionPatch } : current) })}
+                              onDelete={() => patch({ questions: renumberQuestions(state.questions.filter((_, currentIndex) => currentIndex !== index)) })}
+                              onDuplicate={() => patch({ questions: duplicateQuestion(state.questions, index) })}
+                              onMove={(direction) => patch({ questions: moveQuestion(state.questions, index, direction) })}
+                            />
+                          ))}
+                        </div>
+                      </section>
+                    )
+                  )}
+
+                  {state.step === 6 && (
+                    <section aria-labelledby="wizard-step-title" className="space-y-5">
+                      <div><h3 id="wizard-step-title" className="text-xl font-bold">Confirma la evaluación</h3><p className="mt-1 text-base text-muted">Se guardará como borrador en la lista normal.</p></div>
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        {[
+                          ['Nombre', state.nombre], ['Materia', materiaNombre],
+                          ['DBA', String(state.dbaIds.length + state.dbaPersonalizadoIds.length)],
+                          ['Preguntas', String(state.questions.length)],
+                          ['Puntaje total', state.questions.reduce((sum, question) => sum + question.puntaje, 0).toFixed(2)],
+                          ['Estado inicial', 'Borrador'],
+                        ].map(([label, value]) => <div key={label} className="rounded-xl border border-border bg-surface p-4"><p className="text-sm font-semibold text-muted">{label}</p><p className="mt-1 text-base font-bold">{value}</p></div>)}
+                      </div>
+                      <div className="rounded-xl border border-emerald-300 bg-emerald-50 p-4 text-base text-emerald-900 dark:bg-emerald-500/10 dark:text-emerald-100"><p className="font-bold">La IA sugiere. Tú decides.</p><p className="mt-1">La evaluación no se publicará automáticamente.</p></div>
+                    </section>
+                  )}
+                </main>
+                <XaliPanel state={state} materiaNombre={materiaNombre} onSuggestion={(suggestion, target) => setXaliConfirmation({ suggestion, target })} />
+              </div>
+            )}
           </div>
-          <button
-            type="button"
-            onClick={handleClose}
-            className="focus-ring grid h-10 w-10 place-items-center rounded-xl border-2 border-border bg-surface text-muted transition-colors hover:bg-surface-2 hover:text-fg"
-            aria-label="Cerrar"
-          >
-            ×
-          </button>
-        </div>
 
-        {/* Progress bar */}
-        <PasosGuia currentStep={step} totalSteps={totalSteps} />
-
-        {/* Restore notice */}
-        {showRestore && (
-          <div className="rounded-xl border-2 border-amber-200 bg-amber-50 p-3 text-sm text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200">
-            <p className="flex items-center gap-2 font-semibold">
-              <AlertTriangle className="h-4 w-4" /> Progreso restaurado
-            </p>
-            <p className="mt-1">Continuamos desde donde lo dejaste.</p>
-          </div>
-        )}
-
-        {/* Step content with animation */}
-        <div className="min-h-[280px]">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={step}
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              transition={{ duration: 0.2 }}
-            >
-              {step === 1 && <StepMateria form={form} materias={materias} onChange={handleFormChange} />}
-              {step === 2 && (
-                <StepDBA
-                  items={dbaItems}
-                  loading={loadingDBA}
-                  error={dbaError}
-                  selectedOfficial={form.dba_ids}
-                  selectedCustom={form.dba_personalizado_ids}
-                  onToggle={toggleDBA}
-                />
-              )}
-              {step === 3 && (
-                <StepCantidad
-                  value={form.cantidad_preguntas}
-                  onChange={(v) => handleFormChange({ cantidad_preguntas: v })}
-                />
-              )}
-              {step === 4 && (
-                <StepTipoPregunta
-                  selected={form.tipos_pregunta}
-                  onChange={(tipos) => handleFormChange({ tipos_pregunta: tipos })}
-                />
-              )}
-              {step === 5 && <StepDetalles form={form} onChange={handleFormChange} />}
-              {step === 6 && <StepRevisar form={form} materias={materias} />}
-            </motion.div>
-          </AnimatePresence>
-        </div>
-
-        {/* Validation message */}
-        {validationMsg && step < 6 && (
-          <div className="flex items-start gap-2 rounded-xl border-2 border-amber-200 bg-amber-50 p-3 text-sm text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200">
-            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-            <span>{validationMsg}</span>
-          </div>
-        )}
-
-        {/* Navigation buttons */}
-        <div className="flex items-center justify-between gap-3 border-t border-border pt-4">
-          <BotonGrande
-            variant="outline"
-            icon={<ArrowLeft className="h-5 w-5" />}
-            onClick={goBack}
-            disabled={step === 1}
-            className="sm:w-auto"
-          >
-            Atrás
-          </BotonGrande>
-
-          {isLastStep ? (
-            <BotonGrande
-              variant="primary"
-              icon={<Sparkles className="h-5 w-5" />}
-              onClick={handleGenerate}
-              loading={aiPending}
-              className="sm:w-auto"
-            >
-              {aiPending ? 'Generando...' : 'Generar evaluación'}
-            </BotonGrande>
-          ) : (
-            <BotonGrande
-              variant="primary"
-              icon={<ArrowRight className="h-5 w-5" />}
-              onClick={goNext}
-              disabled={!canGoNext()}
-              className="sm:w-auto"
-            >
-              Siguiente
-            </BotonGrande>
+          {!restorePrompt && (
+            <footer className="sticky bottom-0 z-10 flex flex-col-reverse gap-3 border-t border-border bg-surface/95 p-4 backdrop-blur sm:flex-row sm:items-center sm:justify-between sm:p-5">
+              <BotonGrande variant="outline" onClick={() => patch({ step: Math.max(1, state.step - 1) })} disabled={state.step === 1 || generate.isPending || confirm.isPending} icon={<ArrowLeft className="h-5 w-5" />} className="sm:w-auto">Atrás</BotonGrande>
+              <div className="text-center text-sm text-muted" aria-live="polite">{validation ?? 'Paso completo. Puedes continuar.'}</div>
+              {state.step === 6
+                ? <BotonGrande onClick={confirmEvaluation} loading={confirm.isPending} disabled={Boolean(validation) || confirm.isPending} icon={<Check className="h-5 w-5" />} className="sm:w-auto">Crear evaluación</BotonGrande>
+                : <BotonGrande onClick={() => { const error = validateStep(state); if (error) toast.error(error); else patch({ step: Math.min(6, state.step + 1) }); }} disabled={Boolean(validation) || generate.isPending} icon={<ArrowRight className="h-5 w-5" />} className="sm:w-auto">Siguiente</BotonGrande>}
+            </footer>
           )}
         </div>
-      </div>
-    </Modal>
+      </Modal>
+
+      <ConfirmDialog open={Boolean(xaliConfirmation)} onClose={() => setXaliConfirmation(null)} onConfirm={applyXali} title="¿Aplicar la sugerencia de Xali?" description="Xali nunca modifica el wizard sin tu aprobación." confirmLabel="Sí, aplicar">
+        {xaliConfirmation && <div className="space-y-2 rounded-xl border border-violet-200 bg-violet-50 p-3 dark:bg-violet-500/10"><p className="text-sm"><strong>Campo:</strong> {xaliConfirmation.target}</p><p className="text-sm leading-6">{xaliConfirmation.suggestion}</p></div>}
+      </ConfirmDialog>
+    </>
   );
 }

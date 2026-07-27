@@ -148,6 +148,7 @@ function fallbackMessage(status: number) {
   if (status === 403) return 'No tienes permiso para realizar esta acción.';
   if (status === 404) return 'La información solicitada ya no está disponible.';
   if (status === 409) return 'No pudimos completar la acción porque la información cambió. Actualiza la página e intenta de nuevo.';
+  if (status === 413) return 'El archivo es demasiado grande. Selecciona uno de menor tamaño e intenta nuevamente.';
   if (status === 422) return 'Revisa los campos marcados e intenta guardar nuevamente.';
   if (status === 429) return 'Has realizado demasiadas solicitudes. Espera unos segundos e intenta nuevamente.';
   if (status >= 500) return 'El servicio no está disponible en este momento. Intenta más tarde.';
