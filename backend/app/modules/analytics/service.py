@@ -969,7 +969,7 @@ async def get_latency(
 
     def _stats(vals: list[int]) -> dict:
         if not vals:
-            return {"sample_size": 0, "average_ms": 0, "p50_ms": 0, "p90_ms": 0, "p95_ms": 0}
+            return {"sample_size": 0, "average_ms": 0, "p50_ms": 0, "p90_ms": 0, "p95_ms": 0, "sufficient_data": False}
         s = sorted(vals)
         n = len(s)
         return {
@@ -978,6 +978,7 @@ async def get_latency(
             "p50_ms": s[int(n * 0.5)],
             "p90_ms": s[int(n * 0.9)],
             "p95_ms": s[int(n * 0.95)],
+            "sufficient_data": n >= 10,
         }
 
     total_stats = _stats(tiempos_total)
@@ -998,7 +999,12 @@ async def get_latency(
         s["percentage_of_total"] = round(s["average_ms"] / total_stats["average_ms"] * 100, 1) if total_stats["average_ms"] else 0
         stages.append(s)
 
-    return {"total": total_stats, "stages": stages}
+    return {
+        "total": total_stats,
+        "stages": stages,
+        "measurement_source": "inferred",
+        "measurement_quality": "aggregated_from_resultado_json",
+    }
 
 
 async def get_errors(
@@ -1051,10 +1057,12 @@ async def get_errors(
     error_rate = round(total_incidencias / total_runs, 4) if total_runs > 0 else 0
     return {
         "total_runs": total_runs,
-        "total_errors": total_incidencias,
-        "error_rate": error_rate,
+        "total_incidencias": total_incidencias,
+        "tasa_incidencias": error_rate,
         "por_tipo": errores_por_tipo,
         "alertas_modelo": alerta_counts,
+        "measurement_source": "incidencias_y_alertas",
+        "measurement_quality": "partial_no_retries",
     }
 
 

@@ -451,7 +451,7 @@ function ErroresIaTab({ materiaId }: { materiaId: string }) {
   return (<>
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
       <MetricCard icon={<BarChart3 className="h-5 w-5" />} label="Ejecuciones totales" value={String(d.total_runs)} />
-      <MetricCard icon={<AlertTriangle className="h-5 w-5" />} label="Tasa de error" value={`${(d.error_rate * 100).toFixed(1)}%`} sub={`${d.total_errors} errores`} trend={d.error_rate > 0.05 ? 'down' : 'up'} />
+      <MetricCard icon={<AlertTriangle className="h-5 w-5" />} label="Incidencias y alertas" value={`${(d.tasa_incidencias * 100).toFixed(1)}%`} sub={`${d.total_incidencias} registradas`} trend={d.tasa_incidencias > 0.05 ? 'down' : 'up'} />
     </div>
     {d.por_tipo && Object.keys(d.por_tipo).length > 0 && <Card className="p-5"><h3 className="mb-4 font-display font-bold">Errores por tipo</h3>
       <div className="space-y-2">{Object.entries(d.por_tipo).map(([tipo, count]) => (
