@@ -90,6 +90,12 @@ class Calificacion(Base):
 
 Index("idx_calificaciones_estudiante_materia", Calificacion.estudiante_id, Calificacion.materia_id)
 Index("idx_calificaciones_evaluacion", Calificacion.evaluacion_id)
+Index(
+    "uq_calificaciones_entrega_nonnull",
+    Calificacion.entrega_id,
+    unique=True,
+    postgresql_where=Calificacion.entrega_id.is_not(None),
+)
 
 
 class SalonSesion(Base):

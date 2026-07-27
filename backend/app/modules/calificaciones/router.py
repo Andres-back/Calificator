@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from datetime import datetime, timezone
 from decimal import Decimal
 from uuid import UUID
@@ -27,6 +28,7 @@ from app.modules.calificaciones.schemas import (
     ConfirmarNota,
     EntregaOnlineCreate,
     EntregaRead,
+    LoteAsincronoRead,
     SalonEstudianteRead,
     SalonEstudianteUpdate,
     SalonResumen,
@@ -34,14 +36,20 @@ from app.modules.calificaciones.schemas import (
     ResumenAcademico,
 )
 from app.modules.evaluaciones import service as evaluaciones_service
-from app.shared.enums import PoliticaIntento
 from app.modules.evaluaciones.blueprint_service import evaluation_to_grading_blueprint
+from app.modules.jobs import service as jobs_service
 from app.modules.materias import service as materias_service
 from app.modules.users.models import User
 from app.services.storage_service import save_upload, validate_mime
-from app.shared.enums import CalificacionEstado, EntregaEstado, EntregaTipo, UserRole
+from app.shared.enums import (
+    CalificacionEstado, EntregaEstado, EntregaTipo, JobEstado, JobTipo,
+    PoliticaIntento, UserRole,
+)
+from app.workers.tasks_grading import grade_batch
 
 router = APIRouter(tags=["calificaciones"])
+MAX_ASYNC_BATCH_FILES = 50
+MAX_ASYNC_BATCH_BYTES = 100 * 1024 * 1024
 
 
 @router.post("/calificaciones/foto", response_model=CalificacionRead, status_code=status.HTTP_201_CREATED)
@@ -193,6 +201,145 @@ async def calificar_lote(
     await db.commit()
 
     return {"calificaciones": [c.model_dump() for c in calificaciones_list], "errores": errores}
+
+
+@router.post(
+    "/calificaciones/lote/asincrono",
+    response_model=LoteAsincronoRead,
+    status_code=status.HTTP_202_ACCEPTED,
+)
+async def calificar_lote_asincrono(
+    evaluacion_id: UUID = Form(...),
+    files: list[UploadFile] = File(...),
+    estudiantes: str = Form(...),
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    """Persist photos first, then grade them in a cancellable background job."""
+    require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
+    evaluacion = await evaluaciones_service.ensure_can_manage_evaluation(
+        db, evaluacion_id, current_user,
+    )
+    service.ensure_evaluation_accepts_grading(evaluacion)
+
+    try:
+        raw_student_ids = json.loads(estudiantes)
+        if not isinstance(raw_student_ids, list):
+            raise TypeError
+        estudiante_ids = [UUID(str(value)) for value in raw_student_ids]
+    except (json.JSONDecodeError, TypeError, ValueError) as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="'estudiantes' debe ser un JSON array de UUIDs validos",
+        ) from exc
+
+    if not files:
+        raise HTTPException(status_code=400, detail="El lote debe contener al menos una foto")
+    if len(files) > MAX_ASYNC_BATCH_FILES:
+        raise HTTPException(
+            status_code=413,
+            detail=f"El lote supera el maximo de {MAX_ASYNC_BATCH_FILES} archivos",
+        )
+    if len(files) != len(estudiante_ids):
+        raise HTTPException(
+            status_code=400,
+            detail=f"Cantidad de archivos ({len(files)}) no coincide con estudiantes ({len(estudiante_ids)})",
+        )
+    if len(set(estudiante_ids)) != len(estudiante_ids):
+        raise HTTPException(
+            status_code=400,
+            detail="Cada estudiante puede aparecer una sola vez por lote",
+        )
+
+    for estudiante_id in estudiante_ids:
+        if not await is_student_enrolled(db, evaluacion.materia_id, estudiante_id):
+            raise HTTPException(
+                status_code=403,
+                detail=f"Estudiante {estudiante_id} no esta matriculado en esta materia",
+            )
+
+    prepared_files: list[tuple[bytes, str]] = []
+    total_bytes = 0
+    for index, foto in enumerate(files):
+        content = await foto.read()
+        try:
+            validate_mime(content, foto.filename or "image.jpg")
+        except ValueError as exc:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Archivo {index + 1} no es una imagen o PDF permitido",
+            ) from exc
+        total_bytes += len(content)
+        if total_bytes > MAX_ASYNC_BATCH_BYTES:
+            raise HTTPException(
+                status_code=413,
+                detail="El tamano total del lote supera 100 MB",
+            )
+        prepared_files.append((content, foto.filename or f"lote_{index}.jpg"))
+
+    entregas: list[Entrega] = []
+    try:
+        for estudiante_id, (content, filename) in zip(
+            estudiante_ids, prepared_files, strict=True,
+        ):
+            archivo_url = await save_upload(content, filename, subfolder="entregas")
+            entrega = Entrega(
+                evaluacion_id=evaluacion.id,
+                estudiante_id=estudiante_id,
+                materia_id=evaluacion.materia_id,
+                tipo=EntregaTipo.FOTO.value,
+                archivo_url=archivo_url,
+                estado=EntregaEstado.RECIBIDA.value,
+            )
+            db.add(entrega)
+            entregas.append(entrega)
+        await db.flush()
+        entrega_ids = [entrega.id for entrega in entregas]
+        job_id = await jobs_service.create_job(
+            db,
+            user_id=current_user.id,
+            tipo=JobTipo.CALIFICACION_LOTE.value,
+            input_json={
+                "evaluacion_id": str(evaluacion.id),
+                "entrega_ids": [str(value) for value in entrega_ids],
+                "estudiante_ids": [str(value) for value in estudiante_ids],
+                "modalidad": "foto",
+            },
+        )
+        await db.commit()
+    except Exception:
+        await db.rollback()
+        raise
+
+    try:
+        grade_batch.apply_async(kwargs={
+            "evaluacion_id": str(evaluacion.id),
+            "estudiante_ids": [],
+            "entrega_ids": [str(value) for value in entrega_ids],
+            "job_id": str(job_id),
+            "profesor_id": str(current_user.id),
+        })
+    except Exception as exc:  # noqa: BLE001
+        for entrega in entregas:
+            entrega.estado = EntregaEstado.REQUIERE_REINTENTO.value
+        await jobs_service.finish_job(
+            db,
+            job_id,
+            estado=JobEstado.FAILED.value,
+            resultado_json={"entrega_ids": [str(value) for value in entrega_ids]},
+            error=str(exc),
+        )
+        await db.commit()
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="No fue posible encolar la calificacion; las entregas quedaron disponibles para reintento",
+        ) from exc
+
+    return {
+        "job_id": job_id,
+        "estado": JobEstado.QUEUED.value,
+        "entrega_ids": entrega_ids,
+    }
 
 
 @router.patch("/calificaciones/{calificacion_id}/confirmar", response_model=CalificacionRead)

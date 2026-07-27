@@ -139,6 +139,14 @@ export interface Evaluacion {
   criterios: Record<string, unknown>[];
   preguntas: Record<string, unknown>[];
   respuestas_esperadas: Record<string, unknown>[];
+  blueprint?: {
+    reglas_feedback?: {
+      trazabilidad?: {
+        generada_por_ia?: boolean;
+        requiere_validacion_docente?: boolean;
+      };
+    };
+  } | null;
   created_at: string;
   updated_at: string;
 }

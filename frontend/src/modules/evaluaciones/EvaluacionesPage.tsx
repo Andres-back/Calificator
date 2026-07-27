@@ -3,12 +3,22 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
-import { Plus, ClipboardCheck, Send, Lock, FileText, Trash2, BookOpen, UserPlus, Pencil } from 'lucide-react';
+import { Plus, ClipboardCheck, Send, Lock, FileText, Trash2, BookOpen, UserPlus, Pencil, Sparkles } from 'lucide-react';
 import { Button, Card, Badge, statusTone, Skeleton, EmptyState, Modal, Input, Field, Textarea, Select } from '@/components/ui';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { useMaterias, MateriaSelect } from '@/modules/materias/MateriaSelect';
 import { listDbaCombinado } from '@/modules/materias/dbaApi';
-import { listEvaluaciones, createEvaluacion, updateEvaluacion, publicarEvaluacion, cerrarEvaluacion, type EvaluacionCreate, type EvaluacionUpdate } from './api';
+import {
+  listEvaluaciones,
+  createEvaluacion,
+  generarBorradorEvaluacion,
+  updateEvaluacion,
+  publicarEvaluacion,
+  cerrarEvaluacion,
+  type EvaluacionCreate,
+  type EvaluacionGenerarRequest,
+  type EvaluacionUpdate,
+} from './api';
 import { queryClient } from '@/lib/queryClient';
 import { toApiError } from '@/lib/api';
 import { useAuth } from '@/stores/auth';
@@ -37,6 +47,10 @@ interface EvaluationForm {
   criterios: string[];
   preguntas: string[];
   respuestas: string[];
+  cantidad_ia: number;
+  criterios_detalle: Record<string, unknown>[];
+  preguntas_detalle: Record<string, unknown>[];
+  respuestas_detalle: Record<string, unknown>[];
 }
 
 const emptyForm = (materiaId = ''): EvaluationForm => ({
@@ -52,6 +66,10 @@ const emptyForm = (materiaId = ''): EvaluationForm => ({
   criterios: [],
   preguntas: [],
   respuestas: [],
+  cantidad_ia: 10,
+  criterios_detalle: [],
+  preguntas_detalle: [],
+  respuestas_detalle: [],
 });
 
 const emptyPending: Record<ListField, string> = {
@@ -74,7 +92,13 @@ function evaluacionToForm(ev: Evaluacion): EvaluationForm {
     metas: (ev.metas_profesor ?? []) as string[],
     criterios: (ev.criterios ?? []).map((c: Record<string, unknown>) => (c.nombre as string) ?? ''),
     preguntas: (ev.preguntas ?? []).map((p: Record<string, unknown>) => (p.enunciado as string) ?? ''),
-    respuestas: (ev.respuestas_esperadas ?? []).map((r: Record<string, unknown>) => (r.texto as string) ?? ''),
+    respuestas: (ev.respuestas_esperadas ?? []).map(
+      (r: Record<string, unknown>) => ((r.texto ?? r.respuesta) as string) ?? '',
+    ),
+    cantidad_ia: Math.max(3, ev.preguntas?.length ?? 10),
+    criterios_detalle: ev.criterios ?? [],
+    preguntas_detalle: ev.preguntas ?? [],
+    respuestas_detalle: ev.respuestas_esperadas ?? [],
   };
 }
 
@@ -192,7 +216,9 @@ function EvaluationFormModal({
   materias,
   isEdit,
   onSubmit,
+  onGenerateAI,
   isPending,
+  aiPending,
 }: {
   open: boolean;
   onClose: () => void;
@@ -207,12 +233,20 @@ function EvaluationFormModal({
   materias: { id: string; nombre: string }[] | undefined;
   isEdit: boolean;
   onSubmit: () => void;
+  onGenerateAI: () => void;
   isPending: boolean;
+  aiPending: boolean;
 }) {
   function addListItem(field: ListField) {
     const value = pending[field].trim();
     if (!value) return;
-    setForm((current) => ({ ...current, [field]: [...current[field], value] }));
+    setForm((current) => {
+      const next = { ...current, [field]: [...current[field], value] };
+      if (field === 'criterios') next.criterios_detalle = [...current.criterios_detalle, {}];
+      if (field === 'preguntas') next.preguntas_detalle = [...current.preguntas_detalle, {}];
+      if (field === 'respuestas') next.respuestas_detalle = [...current.respuestas_detalle, {}];
+      return next;
+    });
     setPending((current) => ({ ...current, [field]: '' }));
   }
 
@@ -224,10 +258,22 @@ function EvaluationFormModal({
   }
 
   function removeListItem(field: ListField, index: number) {
-    setForm((current) => ({
-      ...current,
-      [field]: current[field].filter((_, itemIndex) => itemIndex !== index),
-    }));
+    setForm((current) => {
+      const next = {
+        ...current,
+        [field]: current[field].filter((_, itemIndex) => itemIndex !== index),
+      };
+      if (field === 'criterios') {
+        next.criterios_detalle = current.criterios_detalle.filter((_, itemIndex) => itemIndex !== index);
+      }
+      if (field === 'preguntas') {
+        next.preguntas_detalle = current.preguntas_detalle.filter((_, itemIndex) => itemIndex !== index);
+      }
+      if (field === 'respuestas') {
+        next.respuestas_detalle = current.respuestas_detalle.filter((_, itemIndex) => itemIndex !== index);
+      }
+      return next;
+    });
   }
 
   function toggleDBA(item: DBAUnifiedItem) {
@@ -339,7 +385,7 @@ function EvaluationFormModal({
           <p className="mt-1">La IA calificará automáticamente según los criterios que definas. Si no agregas criterios, la calificación será más general.</p>
         </div>
 
-        <Field label="DBA" hint="Opcional. Selecciona los derechos básicos asociados a la evaluación.">
+        <Field label="DBA" hint="Opcional para creación manual; obligatorio para generar con IA.">
           <DBASelector
             items={dbaItems}
             selectedOfficial={form.dba_ids}
@@ -350,9 +396,42 @@ function EvaluationFormModal({
           />
         </Field>
 
+        {!isEdit && (
+          <div className="rounded-xl border border-brand-200 bg-brand-50/70 p-4 dark:border-brand-500/30 dark:bg-brand-500/10">
+            <div className="flex items-start gap-3">
+              <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-brand-100 text-brand-700 dark:bg-brand-500/20 dark:text-brand-200">
+                <Sparkles className="h-4 w-4" />
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-semibold text-fg">Borrador alineado con IA</p>
+                <p className="mt-1 text-xs text-muted">
+                  Usa los DBA, metas y criterios seleccionados. Se guarda como borrador: revísalo y edítalo antes de publicar.
+                </p>
+                <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-end">
+                  <div className="sm:w-48">
+                    <Field label="Cantidad de preguntas">
+                      <Input
+                        type="number"
+                        min={3}
+                        max={30}
+                        value={form.cantidad_ia}
+                        onChange={(event) => setForm({ ...form, cantidad_ia: Number(event.target.value) })}
+                      />
+                    </Field>
+                  </div>
+                  <Button type="button" onClick={onGenerateAI} loading={aiPending} disabled={isPending}>
+                    <Sparkles className="h-4 w-4" />
+                    Generar borrador con IA
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="flex flex-col-reverse gap-3 border-t border-border pt-4 sm:flex-row sm:justify-end">
           <Button type="button" variant="outline" onClick={onClose}>Cancelar</Button>
-          <Button onClick={onSubmit} loading={isPending}>{isEdit ? 'Guardar cambios' : 'Crear evaluación'}</Button>
+          <Button onClick={onSubmit} loading={isPending} disabled={aiPending}>{isEdit ? 'Guardar cambios' : 'Crear manualmente'}</Button>
         </div>
       </div>
     </Modal>
@@ -392,6 +471,19 @@ export function EvaluacionesPage() {
       queryClient.invalidateQueries({ queryKey: ['evaluaciones', evaluacion.materia_id] });
       setParams({ materia: evaluacion.materia_id }, { replace: true });
       toast.success('Evaluacion creada');
+      setOpen(false);
+      setForm(emptyForm(evaluacion.materia_id));
+      setPending(emptyPending);
+    },
+    onError: (error) => toast.error(toApiError(error).detail),
+  });
+
+  const generate = useMutation({
+    mutationFn: (payload: EvaluacionGenerarRequest) => generarBorradorEvaluacion(payload),
+    onSuccess: (evaluacion) => {
+      queryClient.invalidateQueries({ queryKey: ['evaluaciones', evaluacion.materia_id] });
+      setParams({ materia: evaluacion.materia_id }, { replace: true });
+      toast.success('Borrador IA creado. Revísalo antes de publicarlo.');
       setOpen(false);
       setForm(emptyForm(evaluacion.materia_id));
       setPending(emptyPending);
@@ -477,11 +569,56 @@ export function EvaluacionesPage() {
     return {
       nombre, descripcion: form.descripcion.trim() || undefined,
       modalidad: form.modalidad, nota_maxima: form.nota_maxima,
+      dba_ids: form.dba_ids, dba_personalizado_ids: form.dba_personalizado_ids,
       metas_profesor: form.metas.map((m) => m.trim()).filter(Boolean),
-      criterios: form.criterios.map((n) => ({ nombre: n.trim() })),
-      preguntas: form.preguntas.map((e) => ({ enunciado: e.trim() })),
-      respuestas_esperadas: form.respuestas.map((t) => ({ texto: t.trim() })),
+      criterios: form.criterios.map((n, index) => ({
+        ...(form.criterios_detalle[index] ?? {}),
+        nombre: n.trim(),
+      })),
+      preguntas: form.preguntas.map((e, index) => ({
+        ...(form.preguntas_detalle[index] ?? {}),
+        enunciado: e.trim(),
+      })),
+      respuestas_esperadas: form.respuestas.map((t, index) => {
+        const previous = form.respuestas_detalle[index] ?? {};
+        return Object.prototype.hasOwnProperty.call(previous, 'respuesta')
+          ? { ...previous, respuesta: t.trim() }
+          : { ...previous, texto: t.trim() };
+      }),
     };
+  }
+
+  function buildGeneratePayload(): EvaluacionGenerarRequest | null {
+    const nombre = form.nombre.trim();
+    const selectedDbaCount = form.dba_ids.length + form.dba_personalizado_ids.length;
+    if (!form.materia_id) { toast.error('Selecciona una materia'); return null; }
+    if (nombre.length < 2) { toast.error('Escribe un nombre para la evaluación'); return null; }
+    if (selectedDbaCount === 0) { toast.error('Selecciona al menos un DBA para generar con IA'); return null; }
+    if (!Number.isInteger(form.cantidad_ia) || form.cantidad_ia < 3 || form.cantidad_ia > 30) {
+      toast.error('La cantidad de preguntas debe estar entre 3 y 30'); return null;
+    }
+    if (!Number.isFinite(form.nota_maxima) || form.nota_maxima <= 0) {
+      toast.error('La nota máxima debe ser mayor que 0'); return null;
+    }
+    return {
+      materia_id: form.materia_id,
+      nombre,
+      tema: form.descripcion.trim() || nombre,
+      descripcion: form.descripcion.trim() || undefined,
+      modalidad: form.modalidad,
+      nota_maxima: form.nota_maxima,
+      cantidad_preguntas: form.cantidad_ia,
+      tipos_pregunta: ['opcion_multiple', 'abierta'],
+      dba_ids: form.dba_ids,
+      dba_personalizado_ids: form.dba_personalizado_ids,
+      metas_profesor: form.metas.map((value) => value.trim()).filter(Boolean),
+      criterios_docente: form.criterios.map((value) => value.trim()).filter(Boolean),
+    };
+  }
+
+  function handleGenerateAI() {
+    const payload = buildGeneratePayload();
+    if (payload) generate.mutate(payload);
   }
 
   function handleSubmit() {
@@ -560,6 +697,9 @@ export function EvaluacionesPage() {
                       <div className="flex flex-wrap items-center gap-2">
                         <p className="font-semibold">{ev.nombre}</p>
                         <Badge tone={statusTone[ev.estado] ?? 'neutral'}>{ESTADO_LABEL[ev.estado]}</Badge>
+                        {ev.blueprint?.reglas_feedback?.trazabilidad?.generada_por_ia && (
+                          <Badge tone="violet"><Sparkles className="mr-1 h-3 w-3" /> Borrador IA</Badge>
+                        )}
                       </div>
                       <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
                         <Badge tone="neutral" className="capitalize">{ev.modalidad ?? 'online'}</Badge>
@@ -613,7 +753,9 @@ export function EvaluacionesPage() {
         materias={materias}
         isEdit={!!editingEval}
         onSubmit={handleSubmit}
+        onGenerateAI={handleGenerateAI}
         isPending={create.isPending || update.isPending}
+        aiPending={generate.isPending}
       />
     </div>
   );

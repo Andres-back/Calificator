@@ -37,23 +37,26 @@ async def search_chunks(
 
     # Intenta con columna vector nativa (embedding_vec); si no, usa la columna ARRAY
     try:
-        sql = f"""
-            SELECT
-                id,
-                chunk_text,
-                tipo,
-                metadata,
-                1 - (embedding_vec <=> CAST(:embedding AS vector)) AS similarity
-            FROM rag_chunks
-            {where_sql}
-            {"AND" if where_sql else "WHERE"} embedding_vec IS NOT NULL
-            ORDER BY embedding_vec <=> CAST(:embedding AS vector)
-            LIMIT :limit
-        """
-        result = await db.execute(
-            text(sql),
-            params,
-        )
+        # Keep a missing pgvector extension/column from aborting the caller's
+        # transaction before the portable fallback query can run.
+        async with db.begin_nested():
+            sql = f"""
+                SELECT
+                    id,
+                    chunk_text,
+                    tipo,
+                    metadata,
+                    1 - (embedding_vec <=> CAST(:embedding AS vector)) AS similarity
+                FROM rag_chunks
+                {where_sql}
+                {"AND" if where_sql else "WHERE"} embedding_vec IS NOT NULL
+                ORDER BY embedding_vec <=> CAST(:embedding AS vector)
+                LIMIT :limit
+            """
+            result = await db.execute(
+                text(sql),
+                params,
+            )
     except Exception:  # noqa: BLE001
         # Fallback: sin order semántico, sólo por texto
         logger.warning("pgvector similarity search unavailable, falling back to text search")

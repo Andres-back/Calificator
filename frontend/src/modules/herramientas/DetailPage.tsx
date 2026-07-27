@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Download, FileCheck2, Trash2, Gamepad2, Printer, Share2 } from 'lucide-react';
+import { ArrowLeft, Download, FileCheck2, Trash2, Gamepad2, Printer, Share2, Sparkles } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Button, LoadingScreen, Badge, Card, ConfirmDialog, Select } from '@/components/ui';
 import { getMaterial, pdfUrl, deleteMaterial, updateMaterial } from './api';
@@ -32,6 +32,12 @@ export function DetailPage() {
   const content = material.contenido_json;
   const contentTitle = typeof content.titulo === 'string' ? content.titulo : material.titulo;
   const instructions = typeof content.instrucciones === 'string' ? content.instrucciones : null;
+  const aiTrace = (
+    content._xcalificator
+    && typeof content._xcalificator === 'object'
+    && !Array.isArray(content._xcalificator)
+  ) ? content._xcalificator as Record<string, unknown> : null;
+  const alignedDba = Array.isArray(aiTrace?.dba_seleccionados) ? aiTrace.dba_seleccionados.length : 0;
 
   const remove = async () => {
     if (isDeleting) return;
@@ -184,6 +190,16 @@ export function DetailPage() {
           </Select>
         </div>
       </motion.div>
+
+      {aiTrace && (
+        <div className="flex gap-3 rounded-xl border border-violet-200 bg-violet-50 px-4 py-3 text-sm text-violet-900 dark:border-violet-500/30 dark:bg-violet-500/10 dark:text-violet-100 print:hidden">
+          <Sparkles className="mt-0.5 h-4 w-4 shrink-0" />
+          <div>
+            <p className="font-semibold">Borrador IA alineado con {alignedDba} DBA{alignedDba === 1 ? '' : 's'}</p>
+            <p className="mt-0.5 text-xs opacity-80">La IA propone. Revisa el contenido y valida que sea apropiado para tu grupo antes de imprimir, descargar o compartir.</p>
+          </div>
+        </div>
+      )}
 
       {instructions && material.tipo !== 'examen' && (
         <div className="rounded-lg border border-brand-200 bg-brand-50 px-4 py-3 text-sm text-brand-800 dark:border-brand-500/30 dark:bg-brand-500/10 dark:text-brand-200 print:hidden">

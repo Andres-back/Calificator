@@ -97,6 +97,12 @@ class LoteFotoRead(BaseModel):
 
 # ── Modo Salón ──────────────────────────────────────────────────────────────────
 
+class LoteAsincronoRead(BaseModel):
+    job_id: UUID
+    estado: str
+    entrega_ids: list[UUID]
+
+
 class SalonSesionCreate(BaseModel):
     evaluacion_id: UUID
 

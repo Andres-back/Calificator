@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, PrivateAttr
 
 from app.shared.enums import MaterialTipo
 
@@ -15,6 +15,10 @@ class HerramientaBaseRequest(BaseModel):
     area: str | None = None
     tema: str
     instrucciones_adicionales: str | None = None
+    dba_ids: list[UUID] = Field(default_factory=list)
+    dba_personalizado_ids: list[UUID] = Field(default_factory=list)
+    _contexto_dba_rag: str = PrivateAttr(default="")
+    _alineacion_esperada: dict = PrivateAttr(default_factory=dict)
 
 
 class SopaLetrasRequest(HerramientaBaseRequest):
@@ -49,12 +53,10 @@ class GuiaRequest(HerramientaBaseRequest):
 
 
 class TallerRequest(HerramientaBaseRequest):
-    dba_ids: list[UUID] = Field(default_factory=list)
     cantidad_puntos: int = Field(default=5, ge=2, le=15)
 
 
 class ExamenRequest(HerramientaBaseRequest):
-    dba_ids: list[UUID] = Field(default_factory=list)
     cantidad_preguntas: int = Field(default=10, ge=3, le=30)
     tipos_pregunta: list[str] = Field(default_factory=lambda: ["opcion_multiple", "abierta"])
 

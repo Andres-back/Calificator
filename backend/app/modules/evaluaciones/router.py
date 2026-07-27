@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.permissions import get_current_user
 from app.db.session import get_db
-from app.modules.evaluaciones import service
+from app.modules.evaluaciones import generation_service, service
 from app.modules.evaluaciones.schemas import (
     DigitalizarEvaluacionExternaRequest,
     EvaluacionBlueprintRead,
@@ -13,12 +13,26 @@ from app.modules.evaluaciones.schemas import (
     EvaluacionRead,
     EvaluacionEstadoRead,
     EvaluacionEstructuraValidacion,
+    EvaluacionGenerarRequest,
     EvaluacionSorpresaCreate,
     EvaluacionUpdate,
 )
 from app.modules.users.models import User
 
 router = APIRouter(tags=["evaluaciones"])
+
+
+@router.post(
+    "/evaluaciones/generar-borrador",
+    response_model=EvaluacionRead,
+    status_code=status.HTTP_201_CREATED,
+)
+async def generate_evaluation_draft(
+    payload: EvaluacionGenerarRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> object:
+    return await generation_service.generate_evaluation_draft(db, payload, current_user)
 
 
 @router.post("/evaluaciones/externa/digitalizar", response_model=EvaluacionRead, status_code=status.HTTP_201_CREATED)

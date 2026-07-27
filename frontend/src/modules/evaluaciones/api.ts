@@ -17,6 +17,22 @@ export interface EvaluacionCreate {
   respuestas_esperadas?: Record<string, unknown>[];
 }
 
+export interface EvaluacionGenerarRequest {
+  materia_id: string;
+  nombre: string;
+  tema: string;
+  descripcion?: string;
+  modalidad: EvaluacionModalidad;
+  nota_maxima: number;
+  cantidad_preguntas: number;
+  tipos_pregunta: Array<'opcion_multiple' | 'abierta' | 'verdadero_falso' | 'completar'>;
+  dba_ids: string[];
+  dba_personalizado_ids: string[];
+  metas_profesor: string[];
+  criterios_docente: string[];
+  instrucciones_adicionales?: string;
+}
+
 export type EvaluacionUpdate = Partial<Omit<EvaluacionCreate, 'materia_id' | 'tipo_origen'>>;
 
 export interface ListDBAParams {
@@ -34,6 +50,10 @@ export async function getEvaluacion(id: string): Promise<Evaluacion> {
 }
 export async function createEvaluacion(payload: EvaluacionCreate): Promise<Evaluacion> {
   const { data } = await api.post<Evaluacion>('/evaluaciones', payload);
+  return data;
+}
+export async function generarBorradorEvaluacion(payload: EvaluacionGenerarRequest): Promise<Evaluacion> {
+  const { data } = await api.post<Evaluacion>('/evaluaciones/generar-borrador', payload);
   return data;
 }
 export async function updateEvaluacion(id: string, payload: EvaluacionUpdate): Promise<Evaluacion> {

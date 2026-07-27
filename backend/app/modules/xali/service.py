@@ -1,6 +1,8 @@
 """Xali: asistente pedagógico IA para estudiantes."""
 from __future__ import annotations
 
+import re
+import unicodedata
 from uuid import UUID
 
 from fastapi import HTTPException, status
@@ -46,6 +48,95 @@ POST_DELIVERY_BLOCKED_MESSAGE = (
     "Primero debes entregar la evaluacion y esperar la revision del docente. "
     "Despues de que tu docente confirme o ajuste la calificacion, podre ayudarte a revisar tus errores y explicarte como mejorar."
 )
+XALI_VALIDATION_NOTICE = (
+    "La IA te orienta, pero tu docente es quien valida y acompa\u00f1a tu proceso."
+)
+DIRECT_ANSWER_REFUSAL = (
+    "Puedo ayudarte a entender el tema y practicar, pero no puedo darte respuestas "
+    "para copiar ni revelar informaci\u00f3n interna de la evaluaci\u00f3n. Cu\u00e9ntame qu\u00e9 parte "
+    "intentaste o en qu\u00e9 paso te atascaste y te dar\u00e9 una pista para continuar. "
+    f"{XALI_VALIDATION_NOTICE}"
+)
+GUIDED_RESPONSE_FALLBACK = (
+    "No puedo presentar la respuesta final ni una opci\u00f3n exacta para copiar. Para avanzar, "
+    "vuelve al enunciado, identifica qu\u00e9 concepto eval\u00faa, compara ese concepto con tu "
+    "procedimiento y explica con tus palabras d\u00f3nde cambiar\u00edas el siguiente paso. Si me "
+    "cuentas qu\u00e9 paso te genera duda, te dar\u00e9 una pista m\u00e1s espec\u00edfica. "
+    f"{XALI_VALIDATION_NOTICE}"
+)
+
+_DIRECT_ANSWER_REQUEST_PATTERNS = tuple(
+    re.compile(pattern)
+    for pattern in (
+        r"\b(?:dame|dime|revela|muestra|pasame)\b.{0,45}\b(?:respuesta|solucion|resultado)\b",
+        r"\b(?:cual|que)\s+es\s+(?:la|el)\s+(?:respuesta|solucion|resultado)\b",
+        r"\b(?:respuesta|solucion)\s+(?:exacta|correcta|final)\b",
+        r"\b(?:resuelve|resuelveme|resolveme|soluciona|haz)\b.{0,35}\b(?:por mi|complet[ao]|enter[ao]|evaluacion|prueba|examen)\b",
+        r"\bsolo\s+(?:dime|dame|escribe|pon|marca)\b",
+        r"\bhazme\s+(?:la|el)\s+(?:tarea|evaluacion|prueba|examen)\b",
+    )
+)
+
+_DIRECT_ANSWER_OUTPUT_PATTERNS = tuple(
+    re.compile(pattern)
+    for pattern in (
+        r"\b(?:la\s+)?(?:respuesta|solucion)\s+(?:(?:correcta|exacta|final)\s+)?(?:es|seria)\b",
+        r"\b(?:el\s+)?resultado\s+(?:correcto\s+)?(?:es|seria)\b",
+        r"\bmarca\s+(?:la\s+)?opcion\s+[a-z0-9]\b",
+        r"\b(?:escribe|pon)\s+(?:exactamente|literalmente)\b",
+    )
+)
+
+
+def _normalize_policy_text(value: str) -> str:
+    normalized = unicodedata.normalize("NFKD", value.casefold())
+    without_accents = "".join(char for char in normalized if not unicodedata.combining(char))
+    return re.sub(r"\s+", " ", without_accents).strip()
+
+
+def is_direct_answer_request(message: str) -> bool:
+    """Detect unambiguous requests for an answer ready to copy."""
+    normalized = _normalize_policy_text(message)
+    return any(pattern.search(normalized) for pattern in _DIRECT_ANSWER_REQUEST_PATTERNS)
+
+
+def enforce_guided_response(response: str) -> str:
+    """Keep model output from turning tutoring into a direct final answer."""
+    normalized = _normalize_policy_text(response)
+    if any(pattern.search(normalized) for pattern in _DIRECT_ANSWER_OUTPUT_PATTERNS):
+        return GUIDED_RESPONSE_FALLBACK
+    if XALI_VALIDATION_NOTICE not in response:
+        return f"{response.rstrip()}\n\n{XALI_VALIDATION_NOTICE}"
+    return response
+
+
+async def _save_chat_exchange(
+    db: AsyncSession,
+    *,
+    estudiante_id: UUID,
+    materia_id: UUID | None,
+    mensaje: str,
+    respuesta: str,
+) -> None:
+    values = {
+        "s": str(estudiante_id),
+        "m": str(materia_id) if materia_id else None,
+    }
+    await db.execute(
+        text(
+            "INSERT INTO chat_messages (student_id, materia_id, role, mensaje) "
+            "VALUES (:s, :m, 'user', :msg)"
+        ),
+        {**values, "msg": mensaje},
+    )
+    await db.execute(
+        text(
+            "INSERT INTO chat_messages (student_id, materia_id, role, mensaje) "
+            "VALUES (:s, :m, 'assistant', :msg)"
+        ),
+        {**values, "msg": respuesta},
+    )
+    await db.commit()
 
 
 async def chat(
@@ -57,6 +148,16 @@ async def chat(
     is_teacher: bool = False,
 ) -> str:
     system_prompt = XALI_TEACHER_SYSTEM if is_teacher else XALI_STUDENT_SYSTEM
+    if not is_teacher and is_direct_answer_request(mensaje):
+        await _save_chat_exchange(
+            db,
+            estudiante_id=estudiante_id,
+            materia_id=materia_id,
+            mensaje=mensaje,
+            respuesta=DIRECT_ANSWER_REFUSAL,
+        )
+        return DIRECT_ANSWER_REFUSAL
+
     params = {"s": str(estudiante_id)}
     materia_filter = ""
     if materia_id:
@@ -92,23 +193,16 @@ Responde de forma clara y pedagógica."""
 
     llm = LLMRouter(user_id=estudiante_id)
     respuesta = await llm.generate_text("xali_chat", prompt)
+    if not is_teacher:
+        respuesta = enforce_guided_response(respuesta)
 
-    # Guardar mensajes
-    await db.execute(
-        text(
-            "INSERT INTO chat_messages (student_id, materia_id, role, mensaje) "
-            "VALUES (:s, :m, 'user', :msg)"
-        ),
-        {"s": str(estudiante_id), "m": str(materia_id) if materia_id else None, "msg": mensaje},
+    await _save_chat_exchange(
+        db,
+        estudiante_id=estudiante_id,
+        materia_id=materia_id,
+        mensaje=mensaje,
+        respuesta=respuesta,
     )
-    await db.execute(
-        text(
-            "INSERT INTO chat_messages (student_id, materia_id, role, mensaje) "
-            "VALUES (:s, :m, 'assistant', :msg)"
-        ),
-        {"s": str(estudiante_id), "m": str(materia_id) if materia_id else None, "msg": respuesta},
-    )
-    await db.commit()
     return respuesta
 
 
@@ -216,6 +310,14 @@ async def chat_about_delivered_evaluation(
         estudiante_id=estudiante_id,
         evaluacion_id=evaluacion_id,
     )
+    if is_direct_answer_request(mensaje):
+        return {
+            "respuesta": DIRECT_ANSWER_REFUSAL,
+            "contexto_usado": {
+                "evaluacion_entregada": True,
+                "calificacion_confirmada": True,
+            },
+        }
 
     prompt = f"""{XALI_EVALUATION_SYSTEM}
 
@@ -250,7 +352,7 @@ para la proxima evaluacion."""
     llm = LLMRouter(user_id=estudiante_id)
     respuesta = await llm.generate_text("xali_evaluacion_post_entrega", prompt)
     return {
-        "respuesta": respuesta,
+        "respuesta": enforce_guided_response(respuesta),
         "contexto_usado": {
             "evaluacion_entregada": True,
             "calificacion_confirmada": True,

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Feather, BookText, ScrollText, Palette } from 'lucide-react';
 import { Field, Input } from '@/components/ui';
 import { TagInput, Stepper, Segmented, OptionChips } from './widgets';
-import { BaseFields, ExtraInstructions, FormSection, GenerateButton, useBaseForm, type ToolFormProps } from './base';
+import { BaseFields, DBAAlignmentSelector, ExtraInstructions, FormSection, GenerateButton, useBaseForm, type ToolFormProps } from './base';
 
 /* Cada herramienta tiene su propio "menú" de creación especializado. */
 
@@ -72,6 +72,7 @@ export function ExamenForm({ loading, onSubmit }: ToolFormProps) {
   return (
     <div className="space-y-5">
       <BaseFields base={b.base} set={b.set} tituloPlaceholder="Examen corto del ciclo del agua" />
+      <DBAAlignmentSelector base={b.base} set={b.set} />
       <FormSection title="Número de preguntas">
         <Stepper value={n} onChange={setN} min={3} max={30} label="preguntas" />
       </FormSection>
@@ -79,7 +80,7 @@ export function ExamenForm({ loading, onSubmit }: ToolFormProps) {
         <OptionChips value={tipos} onChange={setTipos} options={TIPOS_PREGUNTA} />
       </FormSection>
       <ExtraInstructions value={b.base.instrucciones_adicionales} onChange={(v) => b.set('instrucciones_adicionales', v)} />
-      <GenerateButton loading={loading} disabled={!b.valid || tipos.length === 0} onClick={() => onSubmit({ ...b.payload(), cantidad_preguntas: n, tipos_pregunta: tipos })} />
+      <GenerateButton loading={loading} disabled={!b.valid || tipos.length === 0 || b.base.dba_ids.length + b.base.dba_personalizado_ids.length === 0} onClick={() => onSubmit({ ...b.payload(), cantidad_preguntas: n, tipos_pregunta: tipos })} />
     </div>
   );
 }
@@ -91,6 +92,7 @@ export function GuiaForm({ loading, onSubmit }: ToolFormProps) {
   return (
     <div className="space-y-5">
       <BaseFields base={b.base} set={b.set} tituloPlaceholder="Guía sobre la propagación de la luz" />
+      <DBAAlignmentSelector base={b.base} set={b.set} />
       <FormSection title="Objetivos de aprendizaje" hint="Opcional. Escribe cada objetivo y pulsa Enter.">
         <TagInput value={objetivos} onChange={setObjetivos} placeholder="Reconocer materiales opacos…" />
       </FormSection>
@@ -98,7 +100,7 @@ export function GuiaForm({ loading, onSubmit }: ToolFormProps) {
         <Stepper value={n} onChange={setN} min={2} max={15} label="actividades" />
       </FormSection>
       <ExtraInstructions value={b.base.instrucciones_adicionales} onChange={(v) => b.set('instrucciones_adicionales', v)} />
-      <GenerateButton loading={loading} disabled={!b.valid} onClick={() => onSubmit({ ...b.payload(), objetivos, cantidad_actividades: n })} />
+      <GenerateButton loading={loading} disabled={!b.valid || b.base.dba_ids.length + b.base.dba_personalizado_ids.length === 0} onClick={() => onSubmit({ ...b.payload(), objetivos, cantidad_actividades: n })} />
     </div>
   );
 }
@@ -109,11 +111,12 @@ export function TallerForm({ loading, onSubmit }: ToolFormProps) {
   return (
     <div className="space-y-5">
       <BaseFields base={b.base} set={b.set} tituloPlaceholder="Taller de sombras" />
+      <DBAAlignmentSelector base={b.base} set={b.set} />
       <FormSection title="Cantidad de puntos" hint="Cada punto incluye espacio para responder.">
         <Stepper value={n} onChange={setN} min={2} max={15} label="puntos" />
       </FormSection>
       <ExtraInstructions value={b.base.instrucciones_adicionales} onChange={(v) => b.set('instrucciones_adicionales', v)} />
-      <GenerateButton loading={loading} disabled={!b.valid} onClick={() => onSubmit({ ...b.payload(), cantidad_puntos: n })} />
+      <GenerateButton loading={loading} disabled={!b.valid || b.base.dba_ids.length + b.base.dba_personalizado_ids.length === 0} onClick={() => onSubmit({ ...b.payload(), cantidad_puntos: n })} />
     </div>
   );
 }

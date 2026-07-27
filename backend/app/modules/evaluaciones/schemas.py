@@ -1,9 +1,9 @@
 from datetime import datetime
 from decimal import Decimal
-from typing import Any
+from typing import Any, Literal
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from app.shared.enums import (
     BlueprintNivelContexto,
@@ -131,3 +131,70 @@ class EvaluacionEstadoRead(BaseModel):
     estado: EvaluacionEstado
 
     model_config = ConfigDict(from_attributes=True)
+
+
+TIPOS_PREGUNTA_IA = Literal[
+    "opcion_multiple",
+    "abierta",
+    "verdadero_falso",
+    "completar",
+]
+
+
+class EvaluacionGenerarRequest(BaseModel):
+    materia_id: UUID
+    nombre: str = Field(min_length=2, max_length=220)
+    tema: str = Field(min_length=3, max_length=500)
+    descripcion: str | None = None
+    modalidad: EvaluacionModalidad = EvaluacionModalidad.ONLINE
+    nota_maxima: Decimal = Field(default=Decimal("5.0"), gt=0)
+    cantidad_preguntas: int = Field(default=10, ge=3, le=30)
+    tipos_pregunta: list[TIPOS_PREGUNTA_IA] = Field(
+        default_factory=lambda: ["opcion_multiple", "abierta"],
+        min_length=1,
+    )
+    dba_ids: list[UUID] = Field(default_factory=list)
+    dba_personalizado_ids: list[UUID] = Field(default_factory=list)
+    metas_profesor: list[str] = Field(default_factory=list)
+    criterios_docente: list[str] = Field(default_factory=list)
+    instrucciones_adicionales: str | None = Field(default=None, max_length=2000)
+    politica_intento: PoliticaIntento | None = None
+    intentos_permitidos: int | None = Field(default=None, gt=0)
+    tiempo_limite_minutos: int | None = Field(default=None, gt=0)
+
+    @model_validator(mode="after")
+    def require_dba_alignment(self) -> "EvaluacionGenerarRequest":
+        if not self.dba_ids and not self.dba_personalizado_ids:
+            raise ValueError("Selecciona al menos un DBA para generar la evaluacion")
+        if len(set(self.dba_ids)) != len(self.dba_ids):
+            raise ValueError("No repitas DBA oficiales")
+        if len(set(self.dba_personalizado_ids)) != len(self.dba_personalizado_ids):
+            raise ValueError("No repitas DBA personalizados")
+        return self
+
+
+class CriterioGeneradoIA(BaseModel):
+    nombre: str = Field(min_length=3)
+    descripcion: str = Field(min_length=5)
+    dba_ids: list[UUID] = Field(min_length=1)
+
+
+class PreguntaGeneradaIA(BaseModel):
+    numero: int = Field(ge=1)
+    tipo: TIPOS_PREGUNTA_IA
+    enunciado: str = Field(min_length=5)
+    opciones: list[str] = Field(default_factory=list)
+    respuesta_esperada: Any
+    puntaje_relativo: Decimal = Field(default=Decimal("1"), gt=0)
+    dba_ids: list[UUID] = Field(min_length=1)
+    justificacion_alineacion: str = Field(min_length=5)
+    fuente_contexto_ids: list[UUID] = Field(default_factory=list)
+
+
+class EvaluacionContenidoIA(BaseModel):
+    instrucciones: str = Field(min_length=5)
+    metas_aprendizaje: list[str] = Field(min_length=1)
+    criterios: list[CriterioGeneradoIA] = Field(min_length=1)
+    preguntas: list[PreguntaGeneradaIA] = Field(min_length=1)
+    errores_comunes: list[str] = Field(default_factory=list)
+    reglas_feedback: dict[str, Any] = Field(default_factory=dict)
