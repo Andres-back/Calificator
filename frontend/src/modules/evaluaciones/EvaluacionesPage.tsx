@@ -8,6 +8,7 @@ import { Button, Card, Badge, statusTone, Skeleton, EmptyState, Modal, Input, Fi
 import { PageHeader } from '@/components/layout/PageHeader';
 import { useMaterias, MateriaSelect } from '@/modules/materias/MateriaSelect';
 import { listDbaCombinado } from '@/modules/materias/dbaApi';
+import { GenerationWizard } from './components/GenerationWizard';
 import {
   listEvaluaciones,
   createEvaluacion,
@@ -444,6 +445,7 @@ export function EvaluacionesPage() {
   const { data: materias, isLoading: loadingMaterias } = useMaterias();
   const materiaId = params.get('materia') || materias?.[0]?.id || '';
   const [open, setOpen] = useState(false);
+  const [wizardOpen, setWizardOpen] = useState(false);
   const [editingEval, setEditingEval] = useState<Evaluacion | null>(null);
   const [form, setForm] = useState<EvaluationForm>(() => emptyForm(materiaId));
   const [pending, setPending] = useState<Record<ListField, string>>(emptyPending);
@@ -647,7 +649,7 @@ export function EvaluacionesPage() {
             title="Evaluaciones"
             eyebrow={isStudent ? 'Tu aprendizaje' : 'Diseño evaluativo'}
             subtitle={isStudent ? 'Consulta las evaluaciones de tus materias y resuelve las que estén disponibles.' : 'Crea, publica y revisa evaluaciones con apoyo de IA.'}
-            action={!isStudent && !noMaterias && <Button onClick={openCreateModal} disabled={!materiaId}><Plus className="h-4 w-4" /> Nueva evaluación</Button>}
+            action={!isStudent && !noMaterias && <div className="flex flex-wrap gap-2"><Button onClick={() => setWizardOpen(true)}><Sparkles className="h-4 w-4" /> Generar con IA</Button><Button variant="outline" onClick={openCreateModal} disabled={!materiaId}><Plus className="h-4 w-4" /> Manual</Button></div>}
           />
         </div>
       </div>
@@ -683,7 +685,7 @@ export function EvaluacionesPage() {
               image="/branding/empty-no-evals.png"
               title="Sin evaluaciones"
               description={isStudent ? 'No hay evaluaciones disponibles para esta materia.' : 'Crea la primera evaluación de esta materia.'}
-              action={!isStudent && <Button onClick={openCreateModal}><Plus className="h-4 w-4" /> Nueva evaluación</Button>}
+              action={!isStudent && <div className="flex flex-wrap justify-center gap-2"><Button onClick={() => setWizardOpen(true)}><Sparkles className="h-4 w-4" /> Generar con IA</Button><Button variant="outline" onClick={openCreateModal}><Plus className="h-4 w-4" /> Manual</Button></div>}
             />
           ) : (
             <div className="grid gap-3">
@@ -739,6 +741,13 @@ export function EvaluacionesPage() {
         </>
       )}
 
+      <GenerationWizard
+        open={wizardOpen}
+        onClose={() => { setWizardOpen(false); }}
+        materias={materias}
+        onGenerate={(payload) => generate.mutate(payload)}
+        aiPending={generate.isPending}
+      />
       <EvaluationFormModal
         open={open}
         onClose={() => { setOpen(false); setEditingEval(null); }}

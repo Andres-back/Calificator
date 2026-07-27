@@ -16,6 +16,8 @@ export { ThemeToggle } from './ThemeToggle';
 export { EmptyState } from './EmptyState';
 export { RichContent, normalizeEducationalMarkdown } from './RichContent';
 export type { RichContentProps, RichContentVariant } from './RichContent';
+export { BotonGrande } from './BotonGrande';
+export type { BotonGrandeProps } from './BotonGrande';
 export { QueryLoading, QueryError, QueryEmpty, QueryState } from './QueryState';
 export { MetricCard, ActionCard, StatusCard, ContentCard, AlertCard, EmptyStateCard } from './SummaryCard';
 export type { SemanticTone } from './SummaryCard';

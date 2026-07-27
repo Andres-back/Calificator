@@ -48,8 +48,20 @@ Evaluar el impacto de la implementación de un software integral de apoyo acadé
 | **Herramientas** | 15 tipos de materiales didácticos generados por IA (examen, crucigrama, guía, taller, flashcards, etc.) |
 | **Calificaciones** | Calificación por foto, modo salón, boletín, resumen académico |
 | **Presentaciones** | Generación automática de presentaciones educativas |
-| **Xali** | Asistente IA conversacional para estudiantes y docentes |
+| **Xali** | Asistente IA conversacional para estudiantes y docentes — política de guía pedagógica sin respuestas directas |
+| **IA Generativa** | Generación de borradores de evaluación alineados a DBA + RAG; calificación asíncrona en lote con Celery |
 | **Reportes** | Estadísticas por materia, promedio, rendimiento académico |
+
+---
+
+## ✨ Novedades (v1.2)
+
+| Capacidad | Descripción |
+|---|---|
+| **Generación de evaluaciones con IA** | El docente selecciona DBA, tema, metas y criterios; la IA produce un borrador completo que se revisa antes de publicar. Validación estricta de UUIDs, cobertura total de DBA y uso obligatorio del contexto RAG. |
+| **Calificación asíncrona en lote** | Sube fotos de evaluaciones escritas → se persisten las entregas → worker Celery idempotente y cancelable califica una por una. Progreso visible, errores individuales, reintento por entrega fallida. |
+| **Alineación DBA en materiales** | Las 15 herramientas educativas (examen, guía, taller, crucigrama, etc.) ahora exigen alineación DBA + contexto RAG. La IA debe demostrar cobertura de cada DBA en el contenido generado. |
+| **Xali — política pedagógica** | Detección de solicitudes de respuesta directa (6 patrones), filtro de salida (4 patrones), y rechazo anticipado. Xali nunca da la respuesta: orienta y guía. |
 
 ---
 
@@ -107,7 +119,7 @@ POSTGRES_PORT=5433 docker compose up -d
 
 | Prototipo | Puerto | Descripción |
 |---|---|---|
-| [examen-chat](prototypes/examen-chat/) | `:3099` | Asistente conversacional para crear exámenes. Pregunta tipos y cantidades de preguntas, acepta texto/libro como referencia RAG aislada, guarda sesiones en SQLite local. |
+| [examen-chat](prototypes/examen-chat/) | `:3099` | Asistente conversacional paso a paso para crear exámenes. 6 pasos guiados (tema → tipos de pregunta → material → revisión → creación → listo). Wizard separado del chat histórico, controles grandes (48px+), diseño para docentes mayores. Guarda sesiones en SQLite local. |
 | [herramienta-chat](prototypes/herramienta-chat/) | `:3100` | Asistente conversacional para generar otros materiales didácticos. |
 
 ---

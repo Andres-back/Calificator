@@ -31,6 +31,9 @@ export interface EvaluacionGenerarRequest {
   metas_profesor: string[];
   criterios_docente: string[];
   instrucciones_adicionales?: string;
+  politica_intento?: 'un_intento' | 'multiples_intentos' | 'mejor_puntaje' | 'ultimo_intento' | 'practica_libre' | null;
+  intentos_permitidos?: number;
+  tiempo_limite_minutos?: number;
 }
 
 export type EvaluacionUpdate = Partial<Omit<EvaluacionCreate, 'materia_id' | 'tipo_origen'>>;
