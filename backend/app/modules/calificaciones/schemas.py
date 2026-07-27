@@ -245,3 +245,31 @@ class BatchResult(BaseModel):
     total: int
     exitosos: int
     fallidos: int
+
+
+# ── Incidencias ──────────────────────────────────────────────────────────────────
+
+class IncidenciaCreate(BaseModel):
+    tipo: str = Field(..., pattern=r'^(imagen_no_usable|vision_failed|grader_error|discrepancia_alta|confianza_baja|docente_rechazo)$')
+    descripcion: str = Field(..., min_length=1, max_length=2000)
+    metadata_json: dict = {}
+
+
+class IncidenciaRead(BaseModel):
+    id: UUID
+    calificacion_id: UUID
+    tipo: str
+    descripcion: str
+    estado: str
+    metadata_json: dict = {}
+    resolucion: str | None = None
+    resuelto_por: UUID | None = None
+    resolved_at: datetime | None = None
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class ResolverIncidencia(BaseModel):
+    resolucion: str = Field(..., min_length=1, max_length=2000)

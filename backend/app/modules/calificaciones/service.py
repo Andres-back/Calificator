@@ -385,6 +385,9 @@ async def confirmar_nota_batch(
     return BatchResult(results=results, total=len(results), exitosos=exitosos, fallidos=len(results) - exitosos)
 
 
+# ── Incidencias ───────────────────────────────────────────────────────────────────
+
+
 async def ajustar_nota_batch(
     db: AsyncSession,
     items: list[BatchAjustarItem],
@@ -417,6 +420,9 @@ async def ajustar_nota_batch(
     await db.commit()
     exitosos = sum(1 for r in results if r.success)
     return BatchResult(results=results, total=len(results), exitosos=exitosos, fallidos=len(results) - exitosos)
+
+
+# ── Incidencias ───────────────────────────────────────────────────────────────────
 
 
 # ── Publicar ─────────────────────────────────────────────────────────────────────
@@ -471,3 +477,61 @@ async def publicar_nota_batch(
     await db.commit()
     exitosos = sum(1 for r in results if r.success)
     return BatchResult(results=results, total=len(results), exitosos=exitosos, fallidos=len(results) - exitosos)
+
+
+# ── Incidencias ───────────────────────────────────────────────────────────────────
+
+
+async def crear_incidencia(
+    db: AsyncSession,
+    calificacion_id: UUID,
+    tipo: str,
+    descripcion: str,
+    metadata_json: dict | None = None,
+) -> dict:
+    from app.modules.calificaciones.incidencia_models import CalificacionIncidencia
+    inc = CalificacionIncidencia(calificacion_id=calificacion_id, tipo=tipo, descripcion=descripcion, metadata_json=metadata_json or {})
+    db.add(inc)
+    await db.commit()
+    await db.refresh(inc)
+    return {
+        "id": inc.id, "calificacion_id": inc.calificacion_id, "tipo": inc.tipo,
+        "descripcion": inc.descripcion, "estado": inc.estado,
+        "metadata_json": inc.metadata_json, "resolucion": inc.resolucion,
+        "resuelto_por": inc.resuelto_por, "resolved_at": inc.resolved_at,
+        "created_at": inc.created_at, "updated_at": inc.updated_at,
+    }
+
+
+async def listar_incidencias(db: AsyncSession, calificacion_id: UUID) -> list[dict]:
+    from app.modules.calificaciones.incidencia_models import CalificacionIncidencia
+    result = await db.scalars(
+        select(CalificacionIncidencia).where(CalificacionIncidencia.calificacion_id == calificacion_id)
+        .order_by(CalificacionIncidencia.created_at.desc())
+    )
+    return [
+        {"id": inc.id, "calificacion_id": inc.calificacion_id, "tipo": inc.tipo,
+         "descripcion": inc.descripcion, "estado": inc.estado, "metadata_json": inc.metadata_json,
+         "resolucion": inc.resolucion, "resuelto_por": inc.resuelto_por,
+         "resolved_at": inc.resolved_at, "created_at": inc.created_at, "updated_at": inc.updated_at}
+        for inc in result.all()
+    ]
+
+
+async def resolver_incidencia(db: AsyncSession, incidencia_id: UUID, resolucion: str, resuelto_por: UUID) -> dict | None:
+    from app.modules.calificaciones.incidencia_models import CalificacionIncidencia
+    inc = await db.scalar(select(CalificacionIncidencia).where(CalificacionIncidencia.id == incidencia_id))
+    if not inc:
+        return None
+    inc.estado = "resuelta"
+    inc.resolucion = resolucion
+    inc.resuelto_por = resuelto_por
+    inc.resolved_at = datetime.now(timezone.utc)
+    await db.commit()
+    await db.refresh(inc)
+    return {
+        "id": inc.id, "calificacion_id": inc.calificacion_id, "tipo": inc.tipo,
+        "descripcion": inc.descripcion, "estado": inc.estado, "metadata_json": inc.metadata_json,
+        "resolucion": inc.resolucion, "resuelto_por": inc.resuelto_por,
+        "resolved_at": inc.resolved_at, "created_at": inc.created_at, "updated_at": inc.updated_at,
+    }

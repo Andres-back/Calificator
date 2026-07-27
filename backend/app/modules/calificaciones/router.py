@@ -32,7 +32,10 @@ from app.modules.calificaciones.schemas import (
     ConfirmarNota,
     EntregaOnlineCreate,
     EntregaRead,
+    IncidenciaCreate,
+    IncidenciaRead,
     LoteAsincronoRead,
+    ResolverIncidencia,
     SalonEstudianteRead,
     SalonEstudianteUpdate,
     SalonResumen,
@@ -777,3 +780,45 @@ async def ajustar_lote(
 ) -> object:
     require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
     return await service.ajustar_nota_batch(db, payload.items, current_user)
+
+
+# ── Incidencias ───────────────────────────────────────────────────────────────────
+
+
+@router.post("/calificaciones/{calificacion_id}/incidencias", response_model=IncidenciaRead, status_code=status.HTTP_201_CREATED)
+async def crear_incidencia(
+    calificacion_id: UUID,
+    payload: IncidenciaCreate,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> object:
+    require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
+    cal = await service.get_calificacion_or_404(db, calificacion_id)
+    await evaluaciones_service.ensure_can_manage_evaluation(db, cal.evaluacion_id, current_user)
+    return await service.crear_incidencia(db, calificacion_id, payload.tipo, payload.descripcion, payload.metadata_json)
+
+
+@router.get("/calificaciones/{calificacion_id}/incidencias", response_model=list[IncidenciaRead])
+async def listar_incidencias(
+    calificacion_id: UUID,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> object:
+    require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
+    cal = await service.get_calificacion_or_404(db, calificacion_id)
+    await evaluaciones_service.ensure_can_manage_evaluation(db, cal.evaluacion_id, current_user)
+    return await service.listar_incidencias(db, calificacion_id)
+
+
+@router.patch("/incidencias/{incidencia_id}/resolver", response_model=IncidenciaRead)
+async def resolver_incidencia(
+    incidencia_id: UUID,
+    payload: ResolverIncidencia,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> object:
+    require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
+    result = await service.resolver_incidencia(db, incidencia_id, payload.resolucion, current_user.id)
+    if not result:
+        raise HTTPException(status_code=404, detail="Incidencia no encontrada")
+    return result
