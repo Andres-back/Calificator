@@ -97,6 +97,7 @@ function PanelDetalle({
   onAjustar,
   onPublish,
   onRechazar,
+  onDirtyChange,
   confirmPending,
   adjustPending,
   publishPending,
@@ -109,6 +110,7 @@ function PanelDetalle({
   onAjustar: (id: string, nota: number, feedback?: string) => void;
   onPublish: (id: string) => void;
   onRechazar: (id: string) => void;
+  onDirtyChange?: (dirty: boolean) => void;
   confirmPending: boolean;
   adjustPending: boolean;
   publishPending: boolean;
@@ -117,9 +119,37 @@ function PanelDetalle({
   const [adjFeedback, setAdjFeedback] = useState(cal.feedback ?? '');
   const [showAjustar, setShowAjustar] = useState(false);
   const [adjError, setAdjError] = useState('');
+  const [showDirtyWarning, setShowDirtyWarning] = useState(false);
+  const pendingClose = useRef<(() => void) | null>(null);
 
   const done = DONE_STATES.has(cal.estado);
   const published = cal.estado === PUBLICADA;
+  const originalNota = Number(cal.nota_confirmada ?? cal.nota_sugerida ?? 0);
+  const originalFeedback = cal.feedback ?? '';
+  const isDirty = adjNota !== originalNota || adjFeedback !== originalFeedback;
+
+  // Reset dirty state when cal changes
+  useEffect(() => {
+    setAdjNota(Number(cal.nota_confirmada ?? cal.nota_sugerida ?? 0));
+    setAdjFeedback(cal.feedback ?? '');
+    setShowAjustar(false);
+    setAdjError('');
+    setShowDirtyWarning(false);
+    pendingClose.current = null;
+  }, [cal.id, cal.nota_confirmada, cal.nota_sugerida, cal.feedback]);
+
+  // Notify parent about dirty state
+  useEffect(() => {
+    onDirtyChange?.(isDirty);
+  }, [isDirty, onDirtyChange]);
+
+  function handleClose() {
+    if (isDirty) {
+      setShowDirtyWarning(true);
+    } else {
+      onClose();
+    }
+  }
   const estudiante = studentMap.get(cal.estudiante_id);
   const pipeline = cal.resultado_json as Record<string, unknown>;
   const vision = pipeline?.vision as Record<string, unknown> | undefined;
@@ -138,14 +168,18 @@ function PanelDetalle({
   }
 
   return (
+    <>
     <div className="flex h-full flex-col">
       {/* Header */}
       <div className="flex items-center justify-between border-b border-border px-5 py-4">
-        <div className="min-w-0">
-          <p className="truncate font-display text-lg font-bold">{cal.estudiante_nombre || estudiante?.nombre || 'Estudiante'}</p>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <p className="truncate font-display text-lg font-bold">{cal.estudiante_nombre || estudiante?.nombre || 'Estudiante'}</p>
+            {isDirty && <span className="shrink-0 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-700 dark:bg-amber-500/20 dark:text-amber-300">Sin guardar</span>}
+          </div>
           <p className="text-xs text-muted">{cal.evaluacion_nombre} · {cal.materia_nombre}</p>
         </div>
-        <button type="button" onClick={onClose} className="focus-ring ml-2 rounded-lg p-1.5 text-muted hover:text-fg lg:hidden">
+        <button type="button" onClick={handleClose} className="focus-ring ml-2 rounded-lg p-1.5 text-muted hover:text-fg lg:hidden">
           <X className="h-5 w-5" />
         </button>
       </div>
@@ -337,6 +371,34 @@ function PanelDetalle({
         <Timeline events={cal.timeline} />
       </div>
     </div>
+    <ConfirmDialog
+      open={showDirtyWarning}
+      onClose={() => setShowDirtyWarning(false)}
+      onConfirm={() => { setShowDirtyWarning(false); onClose(); }}
+      title="Cambios sin guardar"
+      confirmLabel="Descartar cambios"
+      cancelLabel="Volver"
+      tone="primary"
+      description="Tienes cambios en la nota o retroalimentación que no se han guardado. Si cierras sin guardar, se perderán."
+    >
+      <div className="mt-3 flex flex-col gap-2">
+        <Button
+          size="sm"
+          onClick={() => {
+            setShowDirtyWarning(false);
+            if (!done) {
+              onConfirm(cal.id, adjNota);
+            } else {
+              onAjustar(cal.id, adjNota, adjFeedback || undefined);
+            }
+          }}
+          loading={confirmPending || adjustPending}
+        >
+          Guardar cambios
+        </Button>
+      </div>
+    </ConfirmDialog>
+    </>
   );
 }
 
@@ -443,6 +505,8 @@ export function CalificacionesWorkspace() {
   const [gradeFilter, setGradeFilter] = useState<GradeFilter>('todas');
   const [confirmingSingle, setConfirmingSingle] = useState<Calificacion | null>(null);
   const [rejectId, setRejectId] = useState<string | null>(null);
+  const [mobileDirty, setMobileDirty] = useState(false);
+  const [mobileDirtyConfirm, setMobileDirtyConfirm] = useState(false);
   const detailPanelRef = useRef<HTMLDivElement>(null);
 
   const { data: materias } = useMaterias();
@@ -730,9 +794,10 @@ export function CalificacionesWorkspace() {
             <>
               {/* Mobile overlay close */}
               <div className="sticky top-0 z-10 flex items-center justify-between border-b border-border bg-surface px-4 py-2 lg:hidden">
-                <button type="button" onClick={() => setSelectedId(null)} className="flex items-center gap-2 text-sm font-semibold text-muted">
+                <button type="button" onClick={() => { if (mobileDirty) setMobileDirtyConfirm(true); else setSelectedId(null); }} className="flex items-center gap-2 text-sm font-semibold text-muted">
                   <ArrowLeft className="h-4 w-4" /> Volver a lista
                 </button>
+                {mobileDirty && <span className="text-[10px] font-semibold text-amber-600">Sin guardar</span>}
               </div>
               {detalleQuery.isLoading ? (
                 <div className="space-y-4 p-5">{Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-20" />)}</div>
@@ -751,6 +816,7 @@ export function CalificacionesWorkspace() {
                   onAjustar={(id, nota, feedback) => ajustarMut.mutate({ id, nota, feedback })}
                   onPublish={(id) => publishMut.mutate(id)}
                   onRechazar={(id) => setRejectId(id)}
+                  onDirtyChange={setMobileDirty}
                   confirmPending={confirmarMut.isPending}
                   adjustPending={ajustarMut.isPending}
                   publishPending={publishMut.isPending}
@@ -812,6 +878,18 @@ export function CalificacionesWorkspace() {
         tone="danger"
         loading={ajustarMut.isPending}
         description="Esta calificación se marcará para revisión manual. El docente deberá evaluarla personalmente."
+      />
+
+      {/* Mobile dirty state confirm */}
+      <ConfirmDialog
+        open={mobileDirtyConfirm}
+        onClose={() => setMobileDirtyConfirm(false)}
+        onConfirm={() => { setMobileDirtyConfirm(false); setMobileDirty(false); setSelectedId(null); }}
+        title="Cambios sin guardar"
+        confirmLabel="Descartar cambios"
+        cancelLabel="Volver"
+        tone="danger"
+        description="Tienes cambios en la nota o retroalimentación que no se han guardado. Si vuelves a la lista sin guardar, se perderán."
       />
     </div>
   );
