@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import uuid
 from dataclasses import dataclass, field
 from decimal import Decimal
 from typing import Any
@@ -75,7 +76,12 @@ async def orchestrate_grading(
     Returns:
         GradingResult con nota final consolidada.
     """
-    client = OpenCodeClient()
+    pipeline_run_id = str(uuid.uuid4())
+    client = OpenCodeClient(tracking={
+        "pipeline_run_id": pipeline_run_id,
+        "evaluacion_id": str(evaluacion_id),
+        "calificacion_id": None,  # se asigna después de crear la calificación
+    })
     try:
         # ── Paso 1: RAG (común para todos) ───────────────────────────
         rag_chunks = await build_context_for_grading(

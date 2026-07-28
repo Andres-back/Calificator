@@ -273,3 +273,61 @@ async def ai_confidence(
     """Distribución de confianza del modelo."""
     require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
     return await service.get_confidence(db, profesor_id=current_user.id, materia_id=materia_id, evaluacion_id=evaluacion_id, fecha_desde=fecha_desde, fecha_hasta=fecha_hasta)
+
+
+@router.get("/analytics/ai-quality/usage")
+async def ai_usage(
+    provider: str | None = Query(None),
+    model: str | None = Query(None),
+    feature: str | None = Query(None),
+    stage: str | None = Query(None),
+    status: str | None = Query(None),
+    evaluacion_id: UUID | None = Query(None),
+    fecha_desde: datetime | None = Query(None),
+    fecha_hasta: datetime | None = Query(None),
+    limit: int = Query(50, ge=1, le=500),
+    offset: int = Query(0, ge=0),
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    """Ledger de llamadas a proveedores de IA (solo admin ve todo, profesor solo suyo)."""
+    require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
+    # El profesor solo ve sus evaluaciones; el admin ve todo
+    from sqlalchemy import text
+    params: dict = {"limit": limit, "offset": offset}
+    where = []
+    if provider:
+        where.append("provider = :provider"); params["provider"] = provider
+    if model:
+        where.append("model = :model"); params["model"] = model
+    if feature:
+        where.append("feature = :feature"); params["feature"] = feature
+    if stage:
+        where.append("stage = :stage"); params["stage"] = stage
+    if status:
+        where.append("status = :status"); params["status"] = status
+    if evaluacion_id:
+        where.append("evaluacion_id = :evaluacion_id"); params["evaluacion_id"] = str(evaluacion_id)
+    if fecha_desde:
+        where.append("created_at >= :fecha_desde"); params["fecha_desde"] = fecha_desde
+    if fecha_hasta:
+        where.append("created_at <= :fecha_hasta"); params["fecha_hasta"] = fecha_hasta
+    where_clause = " AND ".join(where) if where else "TRUE"
+
+    count_sql = text(f"SELECT COUNT(*) FROM ai_usage_events WHERE {where_clause}")
+    total = await db.scalar(count_sql, params) or 0
+
+    query_sql = text(f"""
+        SELECT id, request_id, feature, stage, provider, model, attempt_number,
+               status, latency_ms, input_tokens, output_tokens, image_count,
+               error_code, started_at, completed_at
+        FROM ai_usage_events
+        WHERE {where_clause}
+        ORDER BY created_at DESC
+        LIMIT :limit OFFSET :offset
+    """)
+    rows = await db.execute(query_sql, params)
+    eventos = []
+    for row in rows:
+        eventos.append(dict(row._mapping))
+    return {"total": total, "limit": limit, "offset": offset, "eventos": eventos}

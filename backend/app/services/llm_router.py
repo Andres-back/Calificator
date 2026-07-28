@@ -11,6 +11,7 @@ from groq import AsyncGroq
 
 from app.core.config import settings
 from app.core.logging import get_logger
+from app.modules.analytics.usage_logger import log_ai_usage
 from app.services.ai_credentials_service import get_effective_ai_credentials
 from app.shared.enums import LLMProvider
 
@@ -22,6 +23,7 @@ class LLMRouter:
 
     def __init__(self, user_id: UUID | None = None) -> None:
         self._user_id = user_id
+        self._tracking: dict = {}
         self._credentials = {
             "open_code": getattr(settings, "OPEN_CODE_API_KEY", ""),
             "groq": getattr(settings, "GROQ_API_KEY", ""),
@@ -36,6 +38,10 @@ class LLMRouter:
     ) -> dict[str, Any]:
         raw = await self._generate_raw(task_type, prompt, json_mode=True)
         return self._parse_json(raw, task_type)
+
+    def set_tracking(self, **kwargs) -> None:
+        """Establece metadatos de tracking para logging de uso."""
+        self._tracking.update(kwargs)
 
     async def generate_text(self, task_type: str, prompt: str) -> str:
         return await self._generate_raw(task_type, prompt, json_mode=False)
@@ -156,8 +162,9 @@ class LLMRouter:
             "Authorization": f"Bearer {api_key}",
             "Content-Type": "application/json",
         }
+        model = config.get("model") or getattr(settings, "OPEN_CODE_MODEL", "deepseek-v4-flash")
         body: dict[str, Any] = {
-            "model": config.get("model") or getattr(settings, "OPEN_CODE_MODEL", "deepseek-v4-flash"),
+            "model": model,
             "messages": [{"role": "user", "content": prompt}],
             "temperature": 0.3,
         }
@@ -165,15 +172,37 @@ class LLMRouter:
             body["response_format"] = {"type": "json_object"}
         timeout = config.get("timeout_seconds") or getattr(settings, "OPEN_CODE_TIMEOUT_SECONDS", 45)
         base_url = str(config.get("base_url") or settings.OPEN_CODE_BASE_URL).rstrip("/")
-        async with httpx.AsyncClient(timeout=timeout) as client:
-            resp = await client.post(
-                f"{base_url}/chat/completions",
-                headers=headers,
-                json=body,
-            )
-            resp.raise_for_status()
-            data = resp.json()
-            return data["choices"][0]["message"]["content"]
+        start = time.monotonic()
+        try:
+            async with httpx.AsyncClient(timeout=timeout) as client:
+                resp = await client.post(
+                    f"{base_url}/chat/completions",
+                    headers=headers,
+                    json=body,
+                )
+                resp.raise_for_status()
+                data = resp.json()
+                ms = int((time.monotonic() - start) * 1000)
+                usage = data.get("usage", {}) or {}
+                await log_ai_usage(
+                    feature="content_generation",
+                    provider="opencode",
+                    model=model,
+                    status="success",
+                    latency_ms=ms,
+                    input_tokens=usage.get("input_tokens") or usage.get("prompt_tokens"),
+                    output_tokens=usage.get("output_tokens") or usage.get("completion_tokens"),
+                    **self._tracking,
+                )
+                return data["choices"][0]["message"]["content"]
+        except httpx.TimeoutException:
+            ms = int((time.monotonic() - start) * 1000)
+            await log_ai_usage(feature="content_generation", provider="opencode", model=model, status="timeout", latency_ms=ms, error_code="provider_timeout", **self._tracking)
+            raise
+        except Exception as exc:
+            ms = int((time.monotonic() - start) * 1000)
+            await log_ai_usage(feature="content_generation", provider="opencode", model=model, status="failed", latency_ms=ms, error_code=str(exc)[:60], **self._tracking)
+            raise
 
     async def _call_groq(self, prompt: str, json_mode: bool) -> str:
         api_key = self._credentials.get("groq", "")

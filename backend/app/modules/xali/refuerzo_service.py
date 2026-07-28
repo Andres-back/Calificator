@@ -67,6 +67,7 @@ async def generar_refuerzo(
     )
 
     llm = LLMRouter(user_id=profesor_id)
+    llm.set_tracking(feature="xali_reinforcement", evaluacion_id=str(materia_id))
     respuesta = await llm.generate_json(task_type="guia", prompt=prompt)
 
     contenido = respuesta.get("content", {})
