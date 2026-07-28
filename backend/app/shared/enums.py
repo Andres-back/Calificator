@@ -24,6 +24,13 @@ class MatriculaEstado(StrEnum):
     RECHAZADO = "rechazado"
 
 
+class AsistenciaEstado(StrEnum):
+    PRESENTE = "presente"
+    TARDE = "tarde"
+    AUSENTE = "ausente"
+    EXCUSA = "excusa"
+
+
 class EvaluacionTipoOrigen(StrEnum):
     NATIVA = "nativa"
     EXTERNA_DIGITALIZADA = "externa_digitalizada"

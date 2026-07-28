@@ -2,6 +2,7 @@ from fastapi import APIRouter
 
 from app.modules.admin_ai_config.router import router as admin_ai_config_router
 from app.modules.analytics.router import router as analytics_router
+from app.modules.asistencia.router import router as asistencia_router
 from app.modules.auth.router import router as auth_router
 from app.modules.calificaciones.router import router as calificaciones_router
 from app.modules.dba.router import custom_router as dba_custom_router
@@ -25,6 +26,7 @@ api_router = APIRouter()
 api_router.include_router(auth_router)
 api_router.include_router(users_router)
 api_router.include_router(materias_router)
+api_router.include_router(asistencia_router)
 api_router.include_router(matriculas_router)
 api_router.include_router(dba_router)
 api_router.include_router(dba_custom_router)

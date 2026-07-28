@@ -19,6 +19,7 @@ const MateriaDetailPage = lazy(() => import('@/modules/materias/MateriaDetailPag
 const MateriaVistaGeneral = lazy(() => import('@/modules/materias/MateriaVistaGeneral').then((m) => ({ default: m.MateriaVistaGeneral })));
 const MateriaEvaluaciones = lazy(() => import('@/modules/materias/MateriaEvaluaciones').then((m) => ({ default: m.MateriaEvaluaciones })));
 const MateriaCalificar = lazy(() => import('@/modules/materias/MateriaCalificar').then((m) => ({ default: m.MateriaCalificar })));
+const MateriaAsistencia = lazy(() => import('@/modules/materias/MateriaAsistencia').then((m) => ({ default: m.MateriaAsistencia })));
 const MateriaBoletin = lazy(() => import('@/modules/materias/MateriaBoletin').then((m) => ({ default: m.MateriaBoletin })));
 const MateriaDbaPage = lazy(() => import('@/modules/materias/MateriaDbaPage').then((m) => ({ default: m.MateriaDbaPage })));
 const UnirseMateriaPage = lazy(() => import('@/modules/materias/UnirseMateriaPage').then((m) => ({ default: m.UnirseMateriaPage })));
@@ -73,6 +74,7 @@ export const router = createBrowserRouter([
                 element: <RequireRole allow={['profesor', 'admin']} />,
                 children: [
                   { path: 'calificar', element: lazyPage(<MateriaCalificar />) },
+                  { path: 'asistencia', element: lazyPage(<MateriaAsistencia />) },
                   { path: 'dba', element: lazyPage(<MateriaDbaPage />) },
                 ],
               },

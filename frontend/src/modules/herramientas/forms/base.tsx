@@ -54,6 +54,28 @@ export function BaseFields({ base, set, tituloPlaceholder }: { base: BaseState; 
   const { data: materias = [], isLoading } = useMaterias();
   return (
     <div className="space-y-4">
+      <Field label="Materia" hint="Al elegirla completamos automáticamente el grado y el área. También mostraremos sus aprendizajes esperados.">
+        <Select
+          value={base.materia_id}
+          onChange={(e) => {
+            const materiaId = e.target.value;
+            const selected = materias.find((materia) => materia.id === materiaId);
+            set('materia_id', materiaId);
+            set('dba_ids', []);
+            set('dba_personalizado_ids', []);
+            if (selected?.grado) set('grado', selected.grado);
+            if (selected?.area) set('area', selected.area);
+          }}
+          disabled={isLoading}
+        >
+          <option value="">Selecciona una materia</option>
+          {materias.map((m) => (
+            <option key={m.id} value={m.id}>
+              {m.nombre}{m.grado ? ` - ${m.grado}` : ''}
+            </option>
+          ))}
+        </Select>
+      </Field>
       <Field label="Título" required>
         <Input value={base.titulo} onChange={(e) => set('titulo', e.target.value)} placeholder={tituloPlaceholder ?? 'Mi material'} required />
       </Field>
@@ -64,24 +86,6 @@ export function BaseFields({ base, set, tituloPlaceholder }: { base: BaseState; 
         <Field label="Grado"><Input value={base.grado} onChange={(e) => set('grado', e.target.value)} placeholder="4°" /></Field>
         <Field label="Área"><Input value={base.area} onChange={(e) => set('area', e.target.value)} placeholder="Ciencias Naturales" /></Field>
       </div>
-      <Field label="Materia" hint="Asigna el recurso a una materia para encontrarlo y filtrarlo luego.">
-        <Select
-          value={base.materia_id}
-          onChange={(e) => {
-            set('materia_id', e.target.value);
-            set('dba_ids', []);
-            set('dba_personalizado_ids', []);
-          }}
-          disabled={isLoading}
-        >
-          <option value="">Sin asignar</option>
-          {materias.map((m) => (
-            <option key={m.id} value={m.id}>
-              {m.nombre}{m.grado ? ` - ${m.grado}` : ''}
-            </option>
-          ))}
-        </Select>
-      </Field>
     </div>
   );
 }
@@ -107,9 +111,9 @@ export function DBAAlignmentSelector({
   }
 
   return (
-    <FormSection title="Alineación con DBA" hint="Selecciona al menos un DBA. La IA deberá demostrar su cobertura y citar el contexto recuperado.">
+    <FormSection title="Aprendizajes esperados (DBA del MEN)" hint="Elige al menos un aprendizaje que quieras trabajar. La IA usará el contenido oficial asociado a tu materia.">
       {!base.materia_id ? (
-        <p className="text-sm text-muted">Selecciona primero una materia.</p>
+        <p className="text-sm text-muted">Selecciona primero una materia para ver sus aprendizajes disponibles.</p>
       ) : isLoading ? (
         <Skeleton className="h-24" />
       ) : isError ? (
@@ -117,14 +121,20 @@ export function DBAAlignmentSelector({
       ) : !items?.length ? (
         <p className="text-sm text-muted">Esta materia todavía no tiene DBA disponibles.</p>
       ) : (
-        <div className="max-h-52 space-y-2 overflow-y-auto">
+        <div className="space-y-3">
+          <p className="text-sm font-semibold text-brand-700 dark:text-brand-200" aria-live="polite">
+            {base.dba_ids.length + base.dba_personalizado_ids.length === 0
+              ? 'Aún no has elegido un aprendizaje.'
+              : `${base.dba_ids.length + base.dba_personalizado_ids.length} aprendizaje${base.dba_ids.length + base.dba_personalizado_ids.length === 1 ? '' : 'es'} seleccionado${base.dba_ids.length + base.dba_personalizado_ids.length === 1 ? '' : 's'}.`}
+          </p>
+          <div className="max-h-60 space-y-2 overflow-y-auto pr-1">
           {items.map((item) => {
             const selected = item.fuente === 'personalizado'
               ? base.dba_personalizado_ids.includes(item.id)
               : base.dba_ids.includes(item.id);
             return (
               <label key={`${item.fuente}-${item.id}`} className="flex cursor-pointer gap-3 rounded-lg border border-border bg-surface p-3">
-                <input type="checkbox" checked={selected} onChange={() => toggle(item)} className="mt-1 h-4 w-4 accent-brand-500" />
+                <input type="checkbox" checked={selected} onChange={() => toggle(item)} className="mt-0.5 h-5 w-5 shrink-0 accent-brand-600" />
                 <span className="min-w-0">
                   <span className="flex flex-wrap items-center gap-2 text-sm font-semibold">
                     {item.codigo || 'DBA personalizado'}
@@ -137,6 +147,7 @@ export function DBAAlignmentSelector({
               </label>
             );
           })}
+          </div>
         </div>
       )}
     </FormSection>
@@ -165,8 +176,15 @@ export function FormSection({ title, hint, children }: { title: string; hint?: s
 
 export function GenerateButton({ loading, disabled, onClick }: { loading: boolean; disabled?: boolean; onClick: () => void }) {
   return (
-    <Button type="button" size="lg" loading={loading} disabled={disabled} onClick={onClick} className="w-full">
-      <Sparkles className="h-4 w-4" /> Generar con IA
-    </Button>
+    <div>
+      <Button type="button" size="lg" loading={loading} disabled={disabled} onClick={onClick} className="w-full">
+        <Sparkles className="h-5 w-5" /> Revisar antes de generar
+      </Button>
+      {disabled && !loading ? (
+        <p className="mt-2 text-center text-sm text-muted" role="status">
+          Completa los campos obligatorios y selecciona al menos un aprendizaje.
+        </p>
+      ) : null}
+    </div>
   );
 }

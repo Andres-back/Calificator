@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
-import { Plus, BookOpen, UserPlus } from 'lucide-react';
+import { Plus, BookOpen, UserPlus, CalendarCheck2, Camera, CircleArrowRight } from 'lucide-react';
 import { Button, Card, Badge, Skeleton, EmptyState, Modal, Input, Field, Textarea, QueryState } from '@/components/ui';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { listMaterias, createMateria } from './api';
@@ -11,6 +11,7 @@ import { queryClient } from '@/lib/queryClient';
 import { toApiError } from '@/lib/api';
 import { cn } from '@/lib/cn';
 import { useAuth } from '@/stores/auth';
+import { routes } from '@/config/routes';
 
 const COURSE_TONES = [
   { border: 'border-l-brand-500', icon: 'bg-brand-50 text-brand-600 dark:bg-brand-500/15 dark:text-brand-300' },
@@ -25,6 +26,7 @@ const LIMIT_MESSAGE = 'Has alcanzado el límite máximo de 6 materias.';
 
 export function MateriasListPage() {
   const user = useAuth((state) => state.user);
+  const [searchParams] = useSearchParams();
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ nombre: '', area: '', grado: '', descripcion: '' });
   const { data, isLoading, isError, error, refetch } = useQuery({ queryKey: ['materias'], queryFn: listMaterias });
@@ -33,8 +35,28 @@ export function MateriasListPage() {
   const canCreateMateria = !isStudent;
   const activeMateriaCount = data?.filter((materia) => materia.estado === 'activa').length ?? 0;
   const reachedMateriaLimit = isProfesor && activeMateriaCount >= MAX_ACTIVE_MATERIAS;
-  const subtitle = isProfesor
-    ? `Tus clases y sus estudiantes. Materias creadas: ${activeMateriaCount}/${MAX_ACTIVE_MATERIAS}.`
+  const requestedAction = isStudent ? null : searchParams.get('accion');
+  const actionGuide = requestedAction === 'asistencia'
+    ? {
+        title: 'Elige la materia para tomar asistencia',
+        description: 'Al abrirla verás directamente la lista de estudiantes del día.',
+        buttonLabel: 'Tomar asistencia',
+        destination: routes.materiaAsistencia,
+        icon: CalendarCheck2,
+      }
+    : requestedAction === 'calificar'
+      ? {
+          title: 'Elige la materia que vas a calificar',
+          description: 'Al abrirla podrás seleccionar la evaluación y cargar la fotografía.',
+          buttonLabel: 'Ir a calificar',
+          destination: routes.materiaCalificar,
+          icon: Camera,
+        }
+      : null;
+  const subtitle = actionGuide
+    ? actionGuide.description
+    : isProfesor
+      ? `Tus clases y sus estudiantes. Materias creadas: ${activeMateriaCount}/${MAX_ACTIVE_MATERIAS}.`
     : isStudent
       ? 'Consulta tus materias inscritas y únete a nuevas clases con el código de tu docente.'
       : 'Tus clases y sus estudiantes.';
@@ -56,8 +78,8 @@ export function MateriasListPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Materias"
-        eyebrow="Tus cursos"
+        title={actionGuide?.title ?? 'Materias'}
+        eyebrow={actionGuide ? 'Paso 1 de 2' : 'Tus cursos'}
         subtitle={subtitle}
         badge={isProfesor ? <Badge tone={reachedMateriaLimit ? 'warning' : 'neutral'}>{activeMateriaCount}/{MAX_ACTIVE_MATERIAS} activas</Badge> : undefined}
         action={
@@ -74,6 +96,20 @@ export function MateriasListPage() {
           )
         }
       />
+
+      {actionGuide && (
+        <Card className="flex items-start gap-4 border-brand-200 bg-brand-50/60 p-5 dark:border-brand-500/25 dark:bg-brand-500/10">
+          <span className="grid h-11 w-11 shrink-0 place-items-center rounded-lg bg-brand-700 text-white">
+            <actionGuide.icon className="h-5 w-5" aria-hidden="true" />
+          </span>
+          <div>
+            <p className="font-bold">Selecciona una de tus materias</p>
+            <p className="mt-1 text-sm leading-5 text-muted">
+              No necesitas buscar otra opción después: te llevaremos al lugar correcto.
+            </p>
+          </div>
+        </Card>
+      )}
 
       <QueryState
         isLoading={isLoading}
@@ -105,7 +141,7 @@ export function MateriasListPage() {
             const tone = COURSE_TONES[index % COURSE_TONES.length];
             return (
             <motion.div key={materia.id} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.05 }}>
-              <Link to={`/app/materias/${materia.id}`}>
+              <Link to={actionGuide ? actionGuide.destination(materia.id) : routes.materia(materia.id)}>
                 <Card interactive className={cn('group h-full border-l-4 p-5', tone.border)}>
                   <div className="flex items-start justify-between gap-3">
                     <div className={cn('grid h-10 w-10 place-items-center rounded-lg', tone.icon)}><BookOpen className="h-5 w-5" /></div>
@@ -115,12 +151,17 @@ export function MateriasListPage() {
                     <p className="line-clamp-1 font-display text-lg font-bold group-hover:text-brand-600">{materia.nombre}</p>
                     <p className="mt-1 text-sm text-muted">{[materia.area, materia.grado].filter(Boolean).join(' · ') || 'Sin área o grado definidos'}</p>
                     {materia.descripcion && <p className="mt-2 line-clamp-2 text-sm leading-5 text-muted">{materia.descripcion}</p>}
-                    {!isStudent && (
+                    {!isStudent && actionGuide ? (
+                      <div className="mt-4 flex items-center justify-between border-t border-border pt-4 font-semibold text-brand-700 dark:text-brand-200">
+                        <span>{actionGuide.buttonLabel}</span>
+                        <CircleArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
+                      </div>
+                    ) : !isStudent ? (
                       <div className="mt-4 border-t border-border pt-4">
                         <p className="text-[11px] font-semibold uppercase text-muted">Código de matrícula</p>
                         <span className="mt-1 block font-mono text-sm font-extrabold text-brand-700 dark:text-brand-200">{materia.codigo_matricula}</span>
                       </div>
-                    )}
+                    ) : null}
                   </div>
                 </Card>
               </Link>

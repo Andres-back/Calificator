@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import {
   ArrowRight,
   BookOpen,
+  CalendarCheck2,
   Camera,
   CheckCircle2,
   ClipboardCheck,
@@ -31,7 +32,7 @@ const fade = {
 
 const teacherActions = [
   {
-    to: routes.materias,
+    to: routes.materiasPara('calificar'),
     icon: Camera,
     title: 'Calificar por fotografía',
     description: 'Selecciona una materia y evaluación, luego sube o toma la foto de la evidencia.',
@@ -39,7 +40,15 @@ const teacherActions = [
     tone: 'bg-cyan-500/10 text-cyan-700 dark:text-cyan-300',
   },
   {
-    to: routes.materias,
+    to: routes.materiasPara('asistencia'),
+    icon: CalendarCheck2,
+    title: 'Tomar asistencia',
+    description: 'Elige la materia, marca a cada estudiante y guarda la lista del día.',
+    badge: 'Registro diario',
+    tone: 'bg-violet-500/10 text-violet-700 dark:text-violet-300',
+  },
+  {
+    to: routes.calificacionesWorkspace,
     icon: ListChecks,
     title: 'Revisar calificaciones sugeridas',
     description: 'Confirma o ajusta cada resultado antes de convertirlo en nota definitiva.',
@@ -99,10 +108,10 @@ function DashboardDocente() {
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.14em] text-brand-600 dark:text-brand-300">Centro de trabajo docente</p>
             <h1 className="mt-2 font-display text-3xl font-extrabold sm:text-4xl">Hola, {firstName}</h1>
-            <p className="mt-2 max-w-2xl text-muted">Selecciona una materia para comenzar a calificar, o crea nuevos recursos para tu clase.</p>
+            <p className="mt-2 max-w-2xl text-muted">Elige una tarea: calificar, tomar asistencia o crear recursos para tu clase.</p>
           </div>
           <Link
-            to={routes.materias}
+            to={routes.materiasPara('calificar')}
             className="focus-ring inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-brand-600 px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-700"
           >
             <Camera className="h-4 w-4" /> Calificar por foto

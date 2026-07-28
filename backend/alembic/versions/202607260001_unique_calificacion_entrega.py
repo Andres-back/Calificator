@@ -7,7 +7,6 @@ from __future__ import annotations
 
 from typing import Sequence
 
-import sqlalchemy as sa
 from alembic import op
 
 revision: str = "202607260001"
@@ -17,17 +16,14 @@ depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
-    op.create_index(
-        "uq_calificaciones_entrega_nonnull",
-        "calificaciones",
-        ["entrega_id"],
-        unique=True,
-        postgresql_where=sa.text("entrega_id IS NOT NULL"),
+    op.execute(
+        """
+        CREATE UNIQUE INDEX IF NOT EXISTS uq_calificaciones_entrega_nonnull
+        ON calificaciones (entrega_id)
+        WHERE entrega_id IS NOT NULL
+        """
     )
 
 
 def downgrade() -> None:
-    op.drop_index(
-        "uq_calificaciones_entrega_nonnull",
-        table_name="calificaciones",
-    )
+    op.execute("DROP INDEX IF EXISTS uq_calificaciones_entrega_nonnull")

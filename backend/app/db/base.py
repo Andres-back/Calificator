@@ -6,6 +6,7 @@ class Base(DeclarativeBase):
 
 
 def import_models() -> None:
+    from app.modules.asistencia import models as asistencia_models  # noqa: F401
     from app.modules.calificaciones import models as calificaciones_models  # noqa: F401
     from app.modules.dba import models as dba_models  # noqa: F401
     from app.modules.evaluaciones import models as evaluaciones_models  # noqa: F401
