@@ -48,7 +48,7 @@ const teacherActions = [
     tone: 'bg-violet-500/10 text-violet-700 dark:text-violet-300',
   },
   {
-    to: routes.calificacionesWorkspace,
+    to: routes.materiasPara('seguimiento'),
     icon: ListChecks,
     title: 'Revisar calificaciones sugeridas',
     description: 'Confirma o ajusta cada resultado antes de convertirlo en nota definitiva.',
@@ -56,7 +56,7 @@ const teacherActions = [
     tone: 'bg-amber-500/10 text-amber-700 dark:text-amber-300',
   },
   {
-    to: routes.evaluaciones,
+    to: routes.materiasPara('evaluar'),
     icon: ClipboardCheck,
     title: 'Preparar una evaluación',
     description: 'Organiza criterios, preguntas y nota máxima para evaluar en línea, papel o ambas.',

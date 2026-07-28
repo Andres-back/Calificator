@@ -119,6 +119,7 @@ describe('GenerationWizard', () => {
     expect(next).toBeDisabled();
 
     await user.type(screen.getByLabelText(/Nombre de la evaluación/i), 'Evaluación IA');
+    await user.click(screen.getByRole('radio', { name: /^En papel\b/i }));
     await user.click(next);
     expect(await screen.findByText('Selecciona los DBA')).toBeInTheDocument();
     expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '2');
@@ -133,6 +134,7 @@ describe('GenerationWizard', () => {
     await user.click(screen.getByRole('button', { name: 'Siguiente' }));
 
     await user.click(screen.getByRole('button', { name: 'Generar borrador' }));
+    expect(mocks.generate).toHaveBeenCalledWith(expect.objectContaining({ modalidad: 'fisica' }));
     expect(await screen.findByText('Revisa y edita las preguntas')).toBeInTheDocument();
     await user.clear(screen.getByLabelText(/Enunciado/i));
     await user.type(screen.getByLabelText(/Enunciado/i), 'Pregunta uno editada');
@@ -186,6 +188,6 @@ describe('GenerationWizard', () => {
 
     renderWizard();
     await user.click(await screen.findByRole('button', { name: 'Empezar de nuevo' }));
-    expect(screen.getByText('¿Para qué materia es la evaluación?')).toBeInTheDocument();
+    expect(screen.getByText('Datos básicos de la evaluación')).toBeInTheDocument();
   });
 });

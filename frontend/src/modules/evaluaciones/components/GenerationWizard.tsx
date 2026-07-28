@@ -3,7 +3,7 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import {
   AlertTriangle, ArrowDown, ArrowLeft, ArrowRight, ArrowUp, Bot, Check,
   ChevronDown, ChevronUp, Copy, FileImage, FileText, HelpCircle, ListChecks,
-  Minus, Plus, Send, Sparkles, Trash2, Type, X,
+  Minus, Monitor, Plus, Printer, Send, Sparkles, Trash2, Type, X, Blend,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Badge, Button, ConfirmDialog, Field, Input, Modal, Textarea } from '@/components/ui';
@@ -32,6 +32,12 @@ const TYPE_COPY: Record<QuestionType, { label: string; description: string; icon
   abierta: { label: 'Respuesta abierta', description: 'El estudiante desarrolla su respuesta', icon: FileText },
   completar: { label: 'Completar', description: 'Frases con espacios por resolver', icon: Type },
 };
+
+const MODALITY_OPTIONS = [
+  { value: 'fisica', label: 'En papel', description: 'El grupo responde una hoja y luego puedes calificarla por foto.', icon: Printer },
+  { value: 'online', label: 'En línea', description: 'Los estudiantes responden desde un dispositivo.', icon: Monitor },
+  { value: 'mixta', label: 'Mixta', description: 'Puedes usar la misma evaluación en papel y en línea.', icon: Blend },
+] as const;
 
 function QuestionCard({
   question, index, total, onChange, onDelete, onDuplicate, onMove,
@@ -391,7 +397,7 @@ export function GenerationWizard({
           <header className="sticky top-0 z-10 border-b border-border bg-surface/95 p-4 backdrop-blur sm:p-5">
             <div className="flex items-center gap-3">
               <span className="grid h-12 w-12 place-items-center rounded-xl bg-brand-100 text-brand-700"><Sparkles className="h-6 w-6" /></span>
-              <div className="min-w-0 flex-1"><h2 className="text-xl font-bold">Generar con IA</h2><p className="text-sm text-muted">Flujo guiado para docentes</p></div>
+              <div className="min-w-0 flex-1"><h2 className="text-xl font-bold">Crear evaluación paso a paso</h2><p className="text-sm text-muted">La IA prepara un borrador; tú revisas y decides.</p></div>
               <Button type="button" variant="ghost" size="icon" onClick={onClose} disabled={generate.isPending || confirm.isPending} aria-label="Cerrar wizard"><X className="h-5 w-5" /></Button>
             </div>
             <div className="mt-4"><PasosGuia currentStep={state.step} /></div>
@@ -413,10 +419,33 @@ export function GenerationWizard({
                 <main className="min-w-0 rounded-2xl border border-border bg-surface-2/50 p-4 sm:p-5">
                   {state.step === 1 && (
                     <section aria-labelledby="wizard-step-title" className="space-y-5">
-                      <div><h3 id="wizard-step-title" className="text-xl font-bold">¿Para qué materia es la evaluación?</h3><p className="mt-1 text-base text-muted">Selecciona el curso y dale un nombre fácil de reconocer.</p></div>
-                      <Field label="Materia" required><div className="[&_select]:min-h-12 [&_select]:max-w-none [&_select]:text-base"><MateriaSelect value={state.materiaId} materias={availableMaterias} onChange={(materiaId) => patch({ materiaId, dbaIds: [], dbaPersonalizadoIds: [], generatedEvaluationId: null, questions: [] })} /></div></Field>
+                      <div><h3 id="wizard-step-title" className="text-xl font-bold">Datos básicos de la evaluación</h3><p className="mt-1 text-base text-muted">Confirma la materia, escribe un nombre y elige cómo responderá el grupo.</p></div>
+                      <Field label="Materia" required>
+                        {availableMaterias.length === 1 ? (
+                          <div className="flex min-h-12 items-center rounded-xl border border-border bg-surface px-4 text-base font-semibold">
+                            {availableMaterias[0]?.nombre}
+                          </div>
+                        ) : (
+                          <div className="[&_select]:min-h-12 [&_select]:max-w-none [&_select]:text-base"><MateriaSelect value={state.materiaId} materias={availableMaterias} onChange={(materiaId) => patch({ materiaId, dbaIds: [], dbaPersonalizadoIds: [], generatedEvaluationId: null, questions: [] })} /></div>
+                        )}
+                      </Field>
                       <Field label="Nombre de la evaluación" required hint="Ejemplo: Evaluación de fracciones — período 2"><Input autoFocus value={state.nombre} onChange={(event) => patch({ nombre: event.target.value })} className="min-h-12 text-base" placeholder="Escribe un nombre claro" /></Field>
                       <Field label="Descripción breve" hint="Opcional"><Textarea value={state.descripcion} onChange={(event) => patch({ descripcion: event.target.value })} className="min-h-24 text-base" placeholder="¿Qué tema o unidad quieres evaluar?" /></Field>
+                      <fieldset className="space-y-3">
+                        <legend className="text-base font-semibold">¿Cómo responderán los estudiantes?</legend>
+                        <div className="grid gap-3 sm:grid-cols-3">
+                          {MODALITY_OPTIONS.map((option) => {
+                            const Icon = option.icon;
+                            const selected = state.modalidad === option.value;
+                            return (
+                              <label key={option.value} className={cn('focus-within:ring-2 focus-within:ring-focus flex min-h-32 cursor-pointer gap-3 rounded-xl border-2 p-4', selected ? 'border-brand-500 bg-brand-50 dark:bg-brand-500/10' : 'border-border bg-surface')}>
+                                <input type="radio" name="modalidad" value={option.value} checked={selected} onChange={() => patch({ modalidad: option.value })} className="mt-1 h-5 w-5 shrink-0 accent-brand-600" />
+                                <span><Icon className="h-6 w-6 text-brand-700" aria-hidden="true" /><span className="mt-2 block font-bold">{option.label}</span><span className="mt-1 block text-sm leading-5 text-muted">{option.description}</span></span>
+                              </label>
+                            );
+                          })}
+                        </div>
+                      </fieldset>
                     </section>
                   )}
 
