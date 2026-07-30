@@ -23,6 +23,27 @@ class ExplodingGraderClient:
         raise RuntimeError("provider secret must not become a score")
 
 
+class CapturingGraderClient:
+    def __init__(self) -> None:
+        self.timeout = None
+
+    async def chat(self, **kwargs):
+        self.timeout = kwargs.get("timeout")
+        return {
+            "choices": [
+                {
+                    "message": {
+                        "content": {
+                            "nota_sugerida": 4,
+                            "confianza": 0.9,
+                            "feedback_estudiante": "Bien.",
+                        }
+                    }
+                }
+            ]
+        }
+
+
 def _configure_orchestrator(monkeypatch) -> None:
     monkeypatch.setattr(
         orchestrator,
@@ -109,6 +130,7 @@ def test_both_failed_graders_return_no_score(monkeypatch) -> None:
         raise AssertionError("No se compara cuando ambos graders fallan")
 
     monkeypatch.setattr(orchestrator, "grader_agent", failed_grader)
+    monkeypatch.setattr(orchestrator, "router_grader_agent", failed_grader)
     monkeypatch.setattr(orchestrator, "comparator_agent", exploding_comparator)
 
     result = _run(monkeypatch, student_response_text="Respuesta válida")
@@ -116,6 +138,85 @@ def test_both_failed_graders_return_no_score(monkeypatch) -> None:
     assert result.nota_sugerida is None
     assert result.motivo_revision == "all_graders_failed"
     assert result.raw_model_output["grader_a_failed"] is True
+
+
+def test_configured_grader_router_recovers_when_opencode_fails(monkeypatch) -> None:
+    monkeypatch.setattr(
+        orchestrator.settings,
+        "PHOTO_GRADING_CROSS_PROVIDER_FALLBACK_ENABLED",
+        True,
+    )
+
+    async def failed_grader(*_args, **_kwargs):
+        return AgentResult(
+            nota_sugerida=None,
+            confianza=0,
+            feedback_estudiante="",
+            error="provider_failed",
+        )
+
+    async def configured_grader(*_args, **_kwargs):
+        return AgentResult(
+            nota_sugerida=4,
+            confianza=0.85,
+            feedback_estudiante="Buen trabajo; revisa la respuesta incompleta.",
+            proveedor="llm_router",
+            modelo="configured_cascade",
+        )
+
+    monkeypatch.setattr(orchestrator, "grader_agent", failed_grader)
+    monkeypatch.setattr(orchestrator, "router_grader_agent", configured_grader)
+
+    result = _run(monkeypatch, student_response_text="Respuesta válida")
+
+    assert result.nota_sugerida == Decimal("4.0")
+    assert result.motivo_revision is None
+
+
+def test_configured_vision_router_recovers_when_opencode_fails(monkeypatch) -> None:
+    monkeypatch.setattr(
+        orchestrator.settings,
+        "PHOTO_GRADING_CROSS_PROVIDER_FALLBACK_ENABLED",
+        True,
+    )
+
+    async def failed_vision(*_args, **_kwargs):
+        return AgentResult(
+            nota_sugerida=None,
+            confianza=0,
+            feedback_estudiante="",
+            error="provider_failed",
+        )
+
+    async def configured_vision(*_args, **_kwargs):
+        return AgentResult(
+            nota_sugerida=None,
+            confianza=0.9,
+            feedback_estudiante="",
+            raw_output={
+                "usable": True,
+                "texto_extraido": "1. B) 36",
+                "alertas": [],
+            },
+            proveedor="vision_router",
+            modelo="openai_groq_cascade",
+        )
+
+    async def successful_grader(*_args, **_kwargs):
+        return AgentResult(
+            nota_sugerida=5,
+            confianza=0.95,
+            feedback_estudiante="Respuesta correcta.",
+        )
+
+    monkeypatch.setattr(orchestrator, "vision_agent", failed_vision)
+    monkeypatch.setattr(orchestrator, "vision_router_agent", configured_vision)
+    monkeypatch.setattr(orchestrator, "grader_agent", successful_grader)
+
+    result = _run(monkeypatch, image_bytes=b"image")
+
+    assert result.nota_sugerida == Decimal("5.0")
+    assert result.motivo_revision is None
 
 
 def test_pipeline_exception_returns_sanitized_failure(monkeypatch) -> None:
@@ -187,6 +288,23 @@ def test_vision_prompt_keeps_json_example_literal() -> None:
     assert result.raw_output["texto_extraido"] == "1. B) 36"
     assert '"texto_extraido"' in client.prompt
     assert "¿Cuánto es 4 por 9?" in client.prompt
+
+
+def test_text_grader_uses_extended_timeout() -> None:
+    client = CapturingGraderClient()
+    context = AgentContext(
+        evaluacion_nombre="Prueba",
+        nota_maxima=5,
+        blueprint={},
+        student_response_text="36",
+    )
+
+    result = asyncio.run(grader_agent(context, client=client))
+
+    assert result.nota_sugerida == 4
+    assert client.timeout is not None
+    assert client.timeout >= 120
+
 
 def test_grader_exception_uses_none_instead_of_zero() -> None:
     context = AgentContext(

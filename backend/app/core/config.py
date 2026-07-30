@@ -51,6 +51,7 @@ class Settings(BaseSettings):
     OPEN_CODE_BASE_URL: str = "https://opencode.ai/zen/go/v1"
     OPEN_CODE_MODEL: str = "deepseek-v4-flash"
     OPEN_CODE_TIMEOUT_SECONDS: int = 45
+    PHOTO_GRADING_CROSS_PROVIDER_FALLBACK_ENABLED: bool = False
 
     GROQ_API_KEY: str = ""
     # llama-3.1-70b-versatile fue dado de baja por Groq; usar el sucesor vigente.

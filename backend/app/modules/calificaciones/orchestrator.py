@@ -20,12 +20,15 @@ from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import settings
 from app.core.logging import get_logger
 from app.modules.calificaciones.agents import (
     AgentContext,
     OpenCodeClient,
     vision_agent,
+    vision_router_agent,
     grader_agent,
+    router_grader_agent,
     comparator_agent,
     AgentResult,
 )
@@ -36,8 +39,8 @@ logger = get_logger(__name__)
 
 # ── Modelos por defecto (configurables) ─────────────────────────────────────────
 
-DEFAULT_VISION_MODEL = "mimo-v2.5"
-DEFAULT_GRADER_A_MODEL = "deepseek-v4-flash"
+DEFAULT_VISION_MODEL = "qwen3.6-plus"
+DEFAULT_GRADER_A_MODEL = "qwen3.6-plus"
 DEFAULT_GRADER_B_MODEL = "qwen3.7-plus"
 DEFAULT_COMPARATOR_MODEL = "deepseek-v4-flash"
 
@@ -98,8 +101,8 @@ async def orchestrate_grading(
         image_mime: MIME type de la imagen.
         student_response_text: Respuesta texto del estudiante (opcional).
         user_id: ID del usuario (para auditoría).
-        vision_model: Modelo para visión (default: mimo-v2.5).
-        grader_a_model: Modelo para calificador primario (default: deepseek-v4-flash).
+        vision_model: Modelo para visión (default: qwen3.6-plus).
+        grader_a_model: Modelo para calificador primario (default: qwen3.6-plus).
         grader_b_model: Modelo para re-calificador (default: qwen3.7-plus).
         comparator_model: Modelo para comparador (default: deepseek-v4-flash).
 
@@ -138,9 +141,28 @@ async def orchestrate_grading(
             vision_result = await vision_agent(ctx, model=vision_model, client=client)
 
             if vision_result.error:
-                # Si el vision agent falla, intentar con qwen3.6-plus como fallback
-                logger.warning("Vision agent %s failed, trying fallback", vision_model)
-                vision_result = await vision_agent(ctx, model="qwen3.6-plus", client=client)
+                fallback_vision_model = (
+                    "mimo-v2.5"
+                    if vision_model == "qwen3.6-plus"
+                    else "qwen3.6-plus"
+                )
+                logger.warning(
+                    "Vision agent %s failed, trying %s",
+                    vision_model,
+                    fallback_vision_model,
+                )
+                vision_result = await vision_agent(
+                    ctx,
+                    model=fallback_vision_model,
+                    client=client,
+                )
+
+            if (
+                vision_result.error
+                and settings.PHOTO_GRADING_CROSS_PROVIDER_FALLBACK_ENABLED
+            ):
+                logger.warning("OpenCode vision unavailable, trying configured vision router")
+                vision_result = await vision_router_agent(ctx)
 
             if vision_result.raw_output and not vision_result.error:
                 texto_extraido = (
@@ -195,18 +217,36 @@ async def orchestrate_grading(
             grading_a.nota_sugerida is None
             and grading_b.nota_sugerida is None
         ):
-            logger.error("Ambos calificadores fallaron sin producir una nota")
-            return _technical_failure_result(
-                blueprint,
-                "all_graders_failed",
-                "grading",
-                alertas=["Los evaluadores de IA no pudieron completar la calificacion."],
-                raw_output={
-                    "orchestrator": "both_graders_failed",
+            router_grading: AgentResult | None = None
+            if settings.PHOTO_GRADING_CROSS_PROVIDER_FALLBACK_ENABLED:
+                logger.warning("OpenCode graders unavailable, trying configured grader router")
+                router_grading = await router_grader_agent(ctx_grading)
+                if router_grading.nota_sugerida is not None:
+                    grading_a = router_grading
+                    grading_b = router_grading
+
+            if (
+                grading_a.nota_sugerida is None
+                and grading_b.nota_sugerida is None
+            ):
+                logger.error("Todos los calificadores habilitados fallaron sin producir una nota")
+                failure_details = {
+                    "orchestrator": "all_graders_failed",
                     "grader_a_failed": grading_a.error is not None,
                     "grader_b_failed": grading_b.error is not None,
-                },
-            )
+                    "cross_provider_fallback_enabled": (
+                        settings.PHOTO_GRADING_CROSS_PROVIDER_FALLBACK_ENABLED
+                    ),
+                }
+                if router_grading is not None:
+                    failure_details["router_grader_failed"] = router_grading.error is not None
+                return _technical_failure_result(
+                    blueprint,
+                    "all_graders_failed",
+                    "grading",
+                    alertas=["Los evaluadores de IA no pudieron completar la calificacion."],
+                    raw_output=failure_details,
+                )
 
         # ── Paso 4: Comparación ──────────────────────────────────────
         final = await comparator_agent(

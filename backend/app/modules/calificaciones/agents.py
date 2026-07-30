@@ -10,6 +10,8 @@ import httpx
 from app.core.config import settings
 from app.core.logging import get_logger
 from app.modules.analytics.usage_logger import log_ai_usage
+from app.services.llm_router import LLMRouter
+from app.services.vision_service import interpret_image
 
 logger = get_logger(__name__)
 
@@ -303,6 +305,67 @@ async def vision_agent(
             await client.close()
 
 
+async def vision_router_agent(ctx: AgentContext) -> AgentResult:
+    """Fallback de visión usando la cascada OpenAI/Groq configurada."""
+    if not ctx.image_bytes:
+        return AgentResult(
+            nota_sugerida=None,
+            confianza=0,
+            feedback_estudiante="",
+            proveedor="vision_router",
+            modelo="sin_imagen",
+            error="No hay imagen para procesar",
+        )
+
+    preguntas = ctx.blueprint.get("preguntas", []) if ctx.blueprint else []
+    context_hint = "Preguntas del examen:\n" + "\n".join(
+        f"{question.get('numero', index + 1)}. "
+        f"{question.get('texto', question.get('enunciado', '?'))}"
+        for index, question in enumerate(preguntas)
+    )
+    start = time.monotonic()
+    try:
+        parsed = await interpret_image(
+            ctx.image_bytes,
+            mime_type=ctx.image_mime,
+            context_hint=context_hint,
+        )
+        elapsed_ms = int((time.monotonic() - start) * 1000)
+        quality = parsed.get("image_quality") or {}
+        text = str(parsed.get("text_or_visual_content") or "").strip()
+        usable = bool(quality.get("is_usable", bool(text))) and bool(text)
+        warnings = list(parsed.get("warnings") or [])
+        normalized = {
+            "texto_extraido": text,
+            "preguntas_detectadas": parsed.get("detected_questions") or [],
+            "respuestas_detectadas": parsed.get("detected_answers") or [],
+            "calidad_imagen": quality,
+            "usable": usable,
+            "alertas": warnings,
+        }
+        return AgentResult(
+            nota_sugerida=None,
+            confianza=float(parsed.get("confidence") or (1.0 if usable else 0.0)),
+            feedback_estudiante="",
+            alertas=warnings,
+            requiere_revision_docente=not usable,
+            proveedor="vision_router",
+            modelo="openai_groq_cascade",
+            tiempo_ms=elapsed_ms,
+            raw_output=normalized,
+        )
+    except Exception as exc:
+        logger.error("Configured vision router failed: %s", exc)
+        return AgentResult(
+            nota_sugerida=None,
+            confianza=0,
+            feedback_estudiante="",
+            requiere_revision_docente=True,
+            proveedor="vision_router",
+            modelo="openai_groq_cascade",
+            error=type(exc).__name__,
+        )
+
 # ── Agentes de calificación ─────────────────────────────────────────────────────
 
 GRADER_PROMPT_TEMPLATE = """Eres el módulo de calificación de XCalificator.
@@ -379,6 +442,7 @@ async def grader_agent(
             raw = await client.chat(
                 model=model, messages=[{"role": "user", "content": prompt}],
                 json_mode=True, max_tokens=4096,
+                timeout=DEFAULT_MULTIMODAL_TIMEOUT,
             )
         ms = int((time.monotonic() - start) * 1000)
         content = raw["choices"][0]["message"]["content"]
@@ -414,6 +478,76 @@ async def grader_agent(
         if own_client:
             await client.close()
 
+
+async def router_grader_agent(ctx: AgentContext) -> AgentResult:
+    """Calificador de respaldo mediante la cascada configurada de proveedores."""
+    prompt = GRADER_PROMPT_TEMPLATE.format(
+        evaluacion_nombre=ctx.evaluacion_nombre,
+        nota_maxima=ctx.nota_maxima,
+        preguntas=json.dumps(ctx.blueprint.get("preguntas", []), ensure_ascii=False),
+        dba_text=json.dumps(ctx.blueprint.get("dba", []), ensure_ascii=False),
+        metas=json.dumps(ctx.blueprint.get("metas", []), ensure_ascii=False),
+        criterios=json.dumps(ctx.blueprint.get("criterios", []), ensure_ascii=False),
+        respuestas_esperadas=json.dumps(
+            ctx.blueprint.get("respuestas_esperadas", []),
+            ensure_ascii=False,
+        ),
+        errores_comunes=json.dumps(
+            ctx.blueprint.get("errores_comunes", []),
+            ensure_ascii=False,
+        ),
+        rag_context=ctx.rag_context or "(sin contexto adicional)",
+        student_response=ctx.student_response_text[:5000],
+    )
+    start = time.monotonic()
+    try:
+        router = LLMRouter()
+        parsed = await router.generate_json("grading_photo", prompt)
+        raw_score = parsed.get("nota_sugerida")
+        if raw_score is None:
+            return AgentResult(
+                nota_sugerida=None,
+                confianza=0,
+                feedback_estudiante="",
+                requiere_revision_docente=True,
+                proveedor="llm_router",
+                modelo="configured_cascade",
+                error="router_missing_score",
+                raw_output=parsed,
+            )
+        result = AgentResult(
+            nota_sugerida=float(raw_score),
+            confianza=float(parsed.get("confianza", 0.5)),
+            feedback_estudiante=parsed.get("feedback_estudiante", ""),
+            criterios=parsed.get("criterios", []),
+            alertas=parsed.get("alertas", []),
+            requiere_revision_docente=parsed.get(
+                "requiere_revision_docente",
+                True,
+            ),
+            proveedor="llm_router",
+            modelo="configured_cascade",
+            tiempo_ms=int((time.monotonic() - start) * 1000),
+            raw_output=parsed,
+        )
+        logger.info(
+            "Router grader OK: %dms nota=%.2f confianza=%.2f",
+            result.tiempo_ms,
+            result.nota_sugerida,
+            result.confianza,
+        )
+        return result
+    except Exception as exc:
+        logger.error("Configured grader router failed: %s", exc)
+        return AgentResult(
+            nota_sugerida=None,
+            confianza=0,
+            feedback_estudiante="",
+            requiere_revision_docente=True,
+            proveedor="llm_router",
+            modelo="configured_cascade",
+            error=type(exc).__name__,
+        )
 
 # ── Agente comparador ───────────────────────────────────────────────────────────
 
