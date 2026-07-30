@@ -21,6 +21,7 @@ export function ResolverEvaluacionPage() {
   const evaluacionId = id ?? '';
   const [respuesta, setRespuesta] = useState('');
   const [enviada, setEnviada] = useState(false);
+  const [submissionIssue, setSubmissionIssue] = useState<string | null>(null);
 
   const { data: evaluacion, isLoading, error } = useQuery({
     queryKey: ['evaluacion', evaluacionId],
@@ -37,7 +38,15 @@ export function ResolverEvaluacionPage() {
 
   const entregar = useMutation({
     mutationFn: () => crearEntregaOnline(evaluacionId, { respuesta_texto: respuesta.trim() }),
-    onSuccess: () => {
+    onSuccess: (delivery) => {
+      if (delivery.estado === 'requiere_reintento') {
+        setSubmissionIssue(
+          'Tu respuesta quedó guardada, pero la IA no pudo analizarla. Puedes reenviarla sin perder este intento.',
+        );
+        toast.error('La respuesta se guardó, pero necesita un nuevo intento de análisis.');
+        return;
+      }
+      setSubmissionIssue(null);
       setEnviada(true);
       toast.success('Entrega enviada.');
     },
@@ -55,6 +64,7 @@ export function ResolverEvaluacionPage() {
       return;
     }
     if (!evaluacion || estaCerrada || !permiteRespuestaOnline || enviada || entregar.isPending) return;
+    setSubmissionIssue(null);
     entregar.mutate();
   }
 
@@ -132,6 +142,15 @@ export function ResolverEvaluacionPage() {
         </section>
 
         <section className="space-y-4 lg:sticky lg:top-24 lg:self-start">
+          {submissionIssue && (
+            <Card className="flex items-start gap-3 border-amber-200 p-5 dark:border-amber-500/30">
+              <TriangleAlert className="mt-0.5 h-5 w-5 shrink-0 text-amber-500" />
+              <div>
+                <p className="font-semibold">La entrega está segura</p>
+                <p className="text-sm text-muted">{submissionIssue}</p>
+              </div>
+            </Card>
+          )}
           {enviada ? (
             <Card className="flex items-start gap-3 border-emerald-200 p-5 dark:border-emerald-500/30"><CheckCircle2 className="mt-0.5 h-5 w-5 text-emerald-500" /><div><p className="font-semibold">Entrega enviada</p><p className="text-sm text-muted">Tu respuesta fue recibida. El docente confirmará la calificación.</p></div></Card>
           ) : permiteRespuestaOnline && disponible && !estaCerrada ? (

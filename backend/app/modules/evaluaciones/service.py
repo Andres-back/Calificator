@@ -341,6 +341,7 @@ async def digitalize_external_evaluation(
         nombre=payload.nombre,
         descripcion=payload.descripcion,
         tipo_origen=EvaluacionTipoOrigen.EXTERNA_DIGITALIZADA,
+        modalidad=payload.modalidad,
         nota_maxima=payload.nota_maxima,
         dba_ids=payload.dba_ids,
         dba_personalizado_ids=payload.dba_personalizado_ids,

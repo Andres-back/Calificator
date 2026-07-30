@@ -48,6 +48,7 @@ beforeEach(() => {
         materia_id: 'materia-1',
         estado: 'borrador',
         tipo_origen: 'digitalizada',
+        modalidad: 'fisica',
         nota_maxima: 5,
         preguntas_count: 1,
         respuestas_count: 1,
@@ -96,6 +97,7 @@ describe('DigitalizarEvaluacionModal', () => {
     const form = mocks.post.mock.calls[0][1] as FormData;
     expect(form.get('materia_id')).toBe('materia-1');
     expect(form.get('nota_maxima')).toBe('5');
+    expect(form.get('modalidad')).toBe('fisica');
     expect(form.get('file')).toBe(file);
 
     expect(await screen.findByText('Borrador creado. La IA sugiere; revisa la clave antes de publicar.')).toBeInTheDocument();

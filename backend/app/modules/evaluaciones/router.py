@@ -24,6 +24,7 @@ from app.modules.evaluaciones.schemas import (
     EvaluacionUpdate,
 )
 from app.modules.users.models import User
+from app.shared.enums import EvaluacionModalidad
 
 router = APIRouter(tags=["evaluaciones"])
 
@@ -37,6 +38,7 @@ async def digitalize_from_file(
     nombre: str = Form(..., min_length=2, max_length=220),
     descripcion: str | None = Form(default=None),
     nota_maxima: Decimal = Form(default=Decimal("5.0"), gt=0),
+    modalidad: EvaluacionModalidad = Form(default=EvaluacionModalidad.FISICA),
     file: UploadFile = File(...),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
@@ -73,6 +75,7 @@ async def digitalize_from_file(
         nombre=nombre,
         descripcion=descripcion,
         nota_maxima=nota_maxima,
+        modalidad=modalidad,
         criterios=structure.get("criterios", []),
         estructura_detectada=structure,
     )
@@ -88,6 +91,7 @@ async def digitalize_from_file(
             "materia_id": str(evaluation.materia_id),
             "estado": evaluation.estado,
             "tipo_origen": evaluation.tipo_origen,
+            "modalidad": evaluation.modalidad,
             "nota_maxima": float(evaluation.nota_maxima),
             "preguntas_count": len(structure["preguntas"]),
             "respuestas_count": len(structure["respuestas_esperadas"]),

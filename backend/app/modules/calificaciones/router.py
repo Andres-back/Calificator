@@ -51,8 +51,8 @@ from app.modules.materias import service as materias_service
 from app.modules.users.models import User
 from app.services.storage_service import save_upload, validate_mime
 from app.shared.enums import (
-    CalificacionEstado, EntregaEstado, EntregaTipo, JobEstado, JobTipo,
-    PoliticaIntento, UserRole,
+    CalificacionEstado, EntregaEstado, EntregaTipo, EvaluacionModalidad,
+    JobEstado, JobTipo, PoliticaIntento, UserRole,
 )
 from app.workers.tasks_grading import grade_batch, resolve_upload_path
 
@@ -681,6 +681,17 @@ async def crear_entrega_online(
     require_role(current_user, [UserRole.ESTUDIANTE])
     evaluacion = await evaluaciones_service.get_evaluation_or_404(db, evaluacion_id)
     service.ensure_evaluation_accepts_grading(evaluacion)
+    if evaluacion.modalidad not in {
+        EvaluacionModalidad.ONLINE.value,
+        EvaluacionModalidad.MIXTA.value,
+    }:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=(
+                "Esta evaluacion es fisica y no acepta respuestas online. "
+                "Entrega la evidencia al docente para calificarla por foto."
+            ),
+        )
     if not await is_student_enrolled(db, evaluacion.materia_id, current_user.id):
         raise HTTPException(status_code=403, detail="No estas matriculado en esta materia")
 
@@ -719,6 +730,7 @@ async def crear_entrega_online(
                 select(func.count(Entrega.id)).where(
                     Entrega.evaluacion_id == evaluacion.id,
                     Entrega.estudiante_id == current_user.id,
+                    Entrega.estado != EntregaEstado.REQUIERE_REINTENTO.value,
                 )
             )
             if count is not None and count >= evaluacion.intentos_permitidos:
@@ -729,40 +741,52 @@ async def crear_entrega_online(
 
     respuesta_texto = payload.respuesta_texto
 
-    grading = await grade_submission(
-        db,
-        evaluacion_id=evaluacion.id,
-        materia_id=evaluacion.materia_id,
-        blueprint=evaluation_to_grading_blueprint(evaluacion),
-        student_response_text=respuesta_texto,
-        user_id=current_user.id,
-    )
-    service.validate_score_within_evaluation(grading.nota_sugerida, evaluacion, "nota_sugerida")
-    service.transition_to_grading_if_needed(evaluacion)
-
+    # Persist the student's evidence before invoking any external AI provider.
+    # A timeout must never erase an otherwise valid submission.
     entrega = Entrega(
         evaluacion_id=evaluacion.id,
         estudiante_id=current_user.id,
         materia_id=evaluacion.materia_id,
         tipo=EntregaTipo.ONLINE.value,
         respuesta_texto=respuesta_texto,
-        estado=EntregaEstado.CALIFICADA.value,
-        visual_text_json=grading.raw_model_output,
+        estado=EntregaEstado.PROCESANDO.value,
+        visual_text_json={},
     )
     db.add(entrega)
-    await db.flush()
+    await db.commit()
+    await db.refresh(entrega)
 
-    cal = Calificacion(
-        evaluacion_id=evaluacion.id,
-        entrega_id=entrega.id,
+    try:
+        grading = await grade_submission(
+            db,
+            evaluacion_id=evaluacion.id,
+            materia_id=evaluacion.materia_id,
+            blueprint=evaluation_to_grading_blueprint(evaluacion),
+            student_response_text=respuesta_texto,
+            user_id=current_user.id,
+        )
+        if grading.nota_sugerida is not None:
+            service.validate_score_within_evaluation(
+                grading.nota_sugerida,
+                evaluacion,
+                "nota_sugerida",
+            )
+    except Exception as exc:
+        grading = photo_service.technical_failure_result(
+            evaluacion,
+            motivo_revision="online_pipeline_error",
+            error_type=type(exc).__name__,
+        )
+
+    if grading.nota_sugerida is not None:
+        service.transition_to_grading_if_needed(evaluacion)
+
+    cal = photo_service.apply_grading_result(
+        entrega=entrega,
+        evaluacion=evaluacion,
         estudiante_id=current_user.id,
-        materia_id=evaluacion.materia_id,
         profesor_id=evaluacion.profesor_id,
-        nota_sugerida=grading.nota_sugerida,
-        confianza=Decimal(str(grading.confianza)),
-        feedback=grading.feedback_estudiante,
-        resultado_json=grading.raw_model_output,
-        estado=CalificacionEstado.SUGERIDA.value,
+        grading=grading,
     )
     db.add(cal)
     await db.commit()

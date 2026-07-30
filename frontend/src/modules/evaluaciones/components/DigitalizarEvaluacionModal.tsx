@@ -9,7 +9,7 @@ import {
   FileText,
   Upload,
 } from 'lucide-react';
-import { Button, Card, Field, Input, Modal, Textarea } from '@/components/ui';
+import { Button, Card, Field, Input, Modal, Select, Textarea } from '@/components/ui';
 import { api, toApiError } from '@/lib/api';
 
 interface EstructuraDetectada {
@@ -36,6 +36,7 @@ interface DigitalizarResponse {
     materia_id: string;
     estado: string;
     tipo_origen: string;
+    modalidad: 'fisica' | 'online' | 'mixta';
     nota_maxima: number;
     preguntas_count: number;
     respuestas_count: number;
@@ -66,6 +67,7 @@ function DigitalizarEvaluacionModal({ open, onClose, materiaId, onCompleted }: P
   const [nombre, setNombre] = useState('');
   const [descripcion, setDescripcion] = useState('');
   const [notaMaxima, setNotaMaxima] = useState('5');
+  const [modalidad, setModalidad] = useState<'fisica' | 'online' | 'mixta'>('fisica');
   const [result, setResult] = useState<DigitalizarResponse | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -75,6 +77,7 @@ function DigitalizarEvaluacionModal({ open, onClose, materiaId, onCompleted }: P
     setNombre('');
     setDescripcion('');
     setNotaMaxima('5');
+    setModalidad('fisica');
     if (fileRef.current) fileRef.current.value = '';
   };
 
@@ -108,6 +111,7 @@ function DigitalizarEvaluacionModal({ open, onClose, materiaId, onCompleted }: P
       form.append('materia_id', materiaId);
       form.append('nombre', nombre.trim());
       form.append('nota_maxima', notaMaxima);
+      form.append('modalidad', modalidad);
       if (descripcion.trim()) form.append('descripcion', descripcion.trim());
       form.append('file', file);
       const { data } = await api.post<DigitalizarResponse>(
@@ -141,7 +145,7 @@ function DigitalizarEvaluacionModal({ open, onClose, materiaId, onCompleted }: P
             y decides cuándo publicarla.
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-[1fr_9rem]">
+          <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_9rem_10rem]">
             <Field label="Nombre de la evaluación" required>
               <Input
                 value={nombre}
@@ -160,6 +164,17 @@ function DigitalizarEvaluacionModal({ open, onClose, materiaId, onCompleted }: P
                 onChange={(event) => setNotaMaxima(event.target.value)}
                 aria-label="Nota máxima"
               />
+            </Field>
+            <Field label="Cómo se responderá" required>
+              <Select
+                value={modalidad}
+                onChange={(event) => setModalidad(event.target.value as 'fisica' | 'online' | 'mixta')}
+                aria-label="Modalidad de respuesta"
+              >
+                <option value="fisica">En papel / foto</option>
+                <option value="online">En línea</option>
+                <option value="mixta">Mixta</option>
+              </Select>
             </Field>
           </div>
 
@@ -239,7 +254,7 @@ function DigitalizarEvaluacionModal({ open, onClose, materiaId, onCompleted }: P
             <div>
               <p className="font-semibold">{result.evaluacion.nombre}</p>
               <p className="text-xs text-muted">
-                {result.evaluacion.preguntas_count} preguntas · {result.evaluacion.respuestas_count} respuestas en la clave · Nota máxima {result.evaluacion.nota_maxima}
+                {result.evaluacion.preguntas_count} preguntas · {result.evaluacion.respuestas_count} respuestas en la clave · {result.evaluacion.modalidad === 'fisica' ? 'En papel / foto' : result.evaluacion.modalidad === 'mixta' ? 'Mixta' : 'En línea'} · Nota máxima {result.evaluacion.nota_maxima}
               </p>
               <p className="mt-1 text-xs font-medium text-emerald-700 dark:text-emerald-300">
                 Borrador creado. La IA sugiere; revisa la clave antes de publicar.

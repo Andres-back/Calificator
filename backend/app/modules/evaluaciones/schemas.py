@@ -99,6 +99,7 @@ class DigitalizarEvaluacionExternaRequest(BaseModel):
     nombre: str = Field(min_length=2, max_length=220)
     descripcion: str | None = None
     nota_maxima: Decimal = Field(default=Decimal("5.0"), gt=0)
+    modalidad: EvaluacionModalidad = EvaluacionModalidad.FISICA
     dba_ids: list[UUID] = Field(default_factory=list)
     dba_personalizado_ids: list[UUID] = Field(default_factory=list)
     metas_profesor: list[str] = Field(default_factory=list)

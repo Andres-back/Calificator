@@ -11,6 +11,8 @@ import pytest
 from fastapi import HTTPException
 
 from app.modules.evaluaciones import digitalize_service
+from app.modules.evaluaciones.schemas import DigitalizarEvaluacionExternaRequest
+from app.shared.enums import EvaluacionModalidad
 from app.services.llm_router import LLMRouter
 
 
@@ -40,6 +42,14 @@ def _structure(*, missing_answer: int | None = None) -> dict:
         "puntaje_total_declarado": 7,
     }
 
+
+def test_digitalized_evaluation_defaults_to_physical_modality() -> None:
+    request = DigitalizarEvaluacionExternaRequest(
+        materia_id=uuid4(),
+        nombre="Evaluación en papel",
+    )
+
+    assert request.modalidad == EvaluacionModalidad.FISICA
 
 def test_normalization_requires_full_key_and_scales_inconsistent_points() -> None:
     result = digitalize_service.normalize_detected_structure(
