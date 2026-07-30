@@ -15,7 +15,11 @@ logger = get_logger(__name__)
 
 # ── Tipos compartidos ──────────────────────────────────────────────────────────
 
+# Text grading calls are fast and fit in 60s. Multimodal calls (image +
+# long prompt) on qwen3.7-plus routinely need 90-120s, so we use a
+# separate timeout for the chat_multimodal path.
 DEFAULT_TIMEOUT = 60
+DEFAULT_MULTIMODAL_TIMEOUT = 180
 
 
 @dataclass
@@ -106,8 +110,13 @@ class OpenCodeClient:
         json_mode: bool = True,
         max_tokens: int = 2048,
         temperature: float = 0.3,
+        timeout: int | None = None,
     ) -> dict[str, Any]:
-        """Llamada chat completions. Devuelve el dict completo del response."""
+        """Llamada chat completions. Devuelve el dict completo del response.
+
+        Uses DEFAULT_TIMEOUT (60s) for text-only calls; multimodal callers
+        should pass ``timeout=DEFAULT_MULTIMODAL_TIMEOUT`` (180s).
+        """
         start = time.monotonic()
         body: dict[str, Any] = {
             "model": model,
@@ -118,6 +127,7 @@ class OpenCodeClient:
         if json_mode:
             body["response_format"] = {"type": "json_object"}
 
+        request_timeout = timeout if timeout is not None else DEFAULT_TIMEOUT
         try:
             resp = await self._client.post(
                 f"{self.base_url}/chat/completions",
@@ -126,6 +136,7 @@ class OpenCodeClient:
                     "Content-Type": "application/json",
                 },
                 json=body,
+                timeout=request_timeout,
             )
             if resp.status_code == 401:
                 raise RuntimeError("OpenCode API key invalid o expirada")
@@ -157,8 +168,13 @@ class OpenCodeClient:
         json_mode: bool = True,
         max_tokens: int = 2048,
         temperature: float = 0.3,
+        timeout: int | None = None,
     ) -> dict[str, Any]:
-        """Chat completions con imagen incluida (multimodal)."""
+        """Chat completions con imagen incluida (multimodal).
+
+        Uses DEFAULT_MULTIMODAL_TIMEOUT (180s) by default because qwen3.7-plus
+        takes 90-120s on real photos. Pass ``timeout`` to override.
+        """
         import base64
 
         b64 = base64.b64encode(image_bytes).decode()
@@ -181,6 +197,7 @@ class OpenCodeClient:
                 json_mode=json_mode,
                 max_tokens=max_tokens,
                 temperature=temperature,
+                timeout=timeout or DEFAULT_MULTIMODAL_TIMEOUT,
             )
             await self._log_call(
                 stage="vision",

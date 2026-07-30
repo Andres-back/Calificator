@@ -8,6 +8,8 @@ from uuid import UUID
 from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.logging import get_logger
+
 from app.modules.dba.service import (
     get_dba_personalizado_records_for_evaluation,
     get_dba_records,
@@ -48,7 +50,6 @@ from app.modules.herramientas.schemas import (
     QuizRapidoRequest,
     RubricaRequest,
     SopaLetrasRequest,
-    TallerRequest,
     UnirColumnasRequest,
 )
 from app.modules.users.models import User
@@ -56,6 +57,8 @@ from app.modules.imagenes import service as imagenes_service
 from app.services.image_router import generate_image
 from app.services.llm_router import LLMRouter
 from app.shared.enums import MaterialTipo
+
+logger = get_logger(__name__)
 
 
 async def _resolve_materia_id(db: AsyncSession, req: object, current_user: User) -> UUID | None:
@@ -708,6 +711,31 @@ async def convertir_a_evaluacion(
             status_code=422,
             detail="El material no contiene preguntas ni criterios para convertir",
         )
+
+    # ── Defensive: detect when the LLM upstream produced content that doesn't
+    # match the original material. This is a real failure mode observed when
+    # RAG context was stale or the model hallucinated generic content.
+    # We log a warning so the docente can verify before publishing.
+    material_titulo = (material.get("titulo") or "").lower()
+    sample_texto = " ".join(
+        str(p.get("enunciado") or p.get("descripcion") or "") for p in preguntas_raw[:3]
+    ).lower()
+    suspicious_unrelated = [
+        ("multiplic", "capital de francia"),
+        ("multiplic", "don quijote"),
+        ("multiplic", "fotosíntesis"),
+        ("suma", "capital de francia"),
+        ("fraccion", "don quijote"),
+    ]
+    for keyword, bad_phrase in suspicious_unrelated:
+        if keyword in material_titulo and bad_phrase in sample_texto:
+            logger.warning(
+                "convertir_a_evaluacion: contenido posiblemente incorrecto. "
+                "Material '%s' contiene '%s' que parece no relacionado con '%s'. "
+                "Docente debe revisar antes de publicar.",
+                material.get("titulo"), bad_phrase, material_titulo,
+            )
+            break
 
     # Build preguntas for evaluacion
     preguntas = []
