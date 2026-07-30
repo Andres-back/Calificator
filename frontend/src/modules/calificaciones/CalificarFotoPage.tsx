@@ -2,8 +2,9 @@ import { type DragEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
-import { ArrowLeft, ArrowRight, Camera, CheckCircle2, FileImage, ImageUp, HelpCircle, RotateCcw, ScanText, Smartphone, Trash2, TriangleAlert, UploadCloud } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Camera, CheckCircle2, FileImage, ImageUp, HelpCircle, RotateCcw, ScanText, Smartphone, Trash2, TriangleAlert, UploadCloud, ZoomIn } from 'lucide-react';
 import { Badge, Button, Card, EmptyState, Field, Select, Skeleton, GuidedTour, RichContent } from '@/components/ui';
+import { ImageCropper } from '@/components/ui/ImageCropper';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { useMaterias } from '@/modules/materias/MateriaSelect';
 import { useEstudiantes } from '@/modules/materias/hooks';
@@ -41,6 +42,8 @@ export function CalificarFotoPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [tourOpen, setTourOpen] = useState(false);
+  const [cropping, setCropping] = useState(false);
+  const [cropKey, setCropKey] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const submittingRef = useRef(false);
@@ -281,10 +284,27 @@ export function CalificarFotoPage() {
                   </div>
                 ) : (
                   <div>
-                    {previewUrl && <img src={previewUrl} alt={`Vista previa de ${foto.name}`} className="max-h-80 w-full bg-surface-2 object-contain" />}
+                    {previewUrl && !cropping && <img src={previewUrl} alt="Vista previa" className="max-h-80 w-full bg-surface-2 object-contain" />}
+                    {previewUrl && cropping && (
+                      <ImageCropper
+                        key={cropKey}
+                        imageUrl={previewUrl}
+                        onCrop={(blob) => {
+                          const newFile = new File([blob], foto.name.replace(/\.\w+$/, '_cropped.jpg'), { type: 'image/jpeg' });
+                          setFoto(newFile);
+                          setCropping(false);
+                          setCropKey((k) => k + 1);
+                        }}
+                        onCancel={() => setCropping(false)}
+                      />
+                    )}
                     <div className="flex flex-wrap items-center justify-between gap-3 bg-surface p-3">
                       <div className="flex min-w-0 items-center gap-3"><ImageUp className="h-5 w-5 shrink-0 text-brand-500" /><div className="min-w-0"><p className="truncate text-sm font-medium">{foto.name}</p><p className="text-xs text-muted">{(foto.size / 1024 / 1024).toFixed(2)} MB · lista para analizar</p></div></div>
-                      <div className="flex flex-wrap gap-2"><Button type="button" size="sm" variant="outline" onClick={() => fileInputRef.current?.click()} disabled={submissionPending}><UploadCloud className="h-4 w-4" /> Reemplazar</Button><Button type="button" size="sm" variant="ghost" onClick={clearPhoto} disabled={submissionPending}><Trash2 className="h-4 w-4" /> Quitar</Button></div>
+                      <div className="flex flex-wrap gap-2">
+                        {!cropping && <Button type="button" size="sm" variant="outline" onClick={() => fileInputRef.current?.click()} disabled={submissionPending}><UploadCloud className="h-4 w-4" /> Reemplazar</Button>}
+                        {!cropping && previewUrl && <Button type="button" size="sm" variant="outline" onClick={() => setCropping(true)} disabled={submissionPending}><ZoomIn className="h-4 w-4" /> Ajustar foto</Button>}
+                        {!cropping && <Button type="button" size="sm" variant="ghost" onClick={clearPhoto} disabled={submissionPending}><Trash2 className="h-4 w-4" /> Quitar</Button>}
+                      </div>
                     </div>
                   </div>
                 )}
@@ -319,6 +339,9 @@ export function CalificarFotoPage() {
                 {resultado.feedback && <div className="rounded-xl bg-surface-2 p-4 text-sm text-muted"><RichContent content={resultado.feedback} variant="feedback" /></div>}
                 <div className="flex items-start gap-2 rounded-xl border border-border p-3 text-sm text-muted"><CheckCircle2 className="mt-0.5 h-4 w-4 text-emerald-500" /><span>Confirma o ajusta esta nota desde la lista de calificaciones.</span></div>
                 <Link to={routes.calificacionesWorkspace} className="focus-ring inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 text-sm font-semibold text-white transition hover:bg-emerald-700">Revisar y confirmar <ArrowRight className="h-4 w-4" /></Link>
+                <button type="button" onClick={() => { setResultado(null); clearPhoto(); }} className="focus-ring inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg border border-border px-4 text-sm font-semibold text-fg transition hover:bg-surface-2">
+                  <RotateCcw className="h-4 w-4" /> Subir otra imagen
+                </button>
               </div>
             )}
           </Card>

@@ -1,11 +1,11 @@
-import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Download, FileCheck2, Trash2, Gamepad2, Printer, Share2, Sparkles } from 'lucide-react';
+import { useState, useCallback, useRef, useEffect } from 'react';
+import { ArrowLeft, Download, FileCheck2, Trash2, Gamepad2, Printer, Share2, Sparkles, Copy, ClipboardList, Pencil } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { Button, LoadingScreen, Badge, Card, ConfirmDialog, Select } from '@/components/ui';
-import { getMaterial, pdfUrl, deleteMaterial, updateMaterial } from './api';
+import { Button, LoadingScreen, Badge, Card, ConfirmDialog, Select, Input, Field, Modal } from '@/components/ui';
+import { getMaterial, pdfUrl, deleteMaterial, updateMaterial, editMaterial, duplicateMaterial, convertToEvaluacion } from './api';
 import { TOOL_BY_TIPO } from './meta';
 import { CrucigramaView, SopaLetrasView, MatchingView, ContenidoView } from './views';
 import { useMaterias } from '@/modules/materias/MateriaSelect';
@@ -14,23 +14,30 @@ import { cn } from '@/lib/cn';
 import { toApiError } from '@/lib/api';
 import { queryClient } from '@/lib/queryClient';
 import type { CrucigramaContenido, MatchingContenido, SopaContenido } from '@/types/api';
+import type { MaterialTipo } from '@/types/api';
 
 export function DetailPage() {
   const { id = '' } = useParams();
   const navigate = useNavigate();
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [editTitle, setEditTitle] = useState('');
+  const [editContent, setEditContent] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [duplicating, setDuplicating] = useState(false);
+  const [showConvert, setShowConvert] = useState(false);
+  const [convertMateria, setConvertMateria] = useState('');
+  const [convertNombre, setConvertNombre] = useState('');
+  const [convertNota, setConvertNota] = useState(5);
+  const [converting, setConverting] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [assigning, setAssigning] = useState(false);
   const { data: materias = [] } = useMaterias();
   const { data: material, isLoading } = useQuery({ queryKey: ['material', id], queryFn: () => getMaterial(id) });
-
-  if (isLoading) return <LoadingScreen />;
-  if (!material) return <p className="text-muted">Material no encontrado.</p>;
-
-  const meta = TOOL_BY_TIPO[material.tipo];
+  const meta = material ? TOOL_BY_TIPO[material.tipo] : undefined;
   const Icon = meta?.icon ?? Gamepad2;
-  const content = material.contenido_json;
-  const contentTitle = typeof content.titulo === 'string' ? content.titulo : material.titulo;
+  const content = material?.contenido_json ?? {};
+  const contentTitle = ((typeof content.titulo === 'string' ? content.titulo : material?.titulo) ?? '');
   const instructions = typeof content.instrucciones === 'string' ? content.instrucciones : null;
   const aiTrace = (
     content._xcalificator
@@ -89,6 +96,74 @@ export function DetailPage() {
       setAssigning(false);
     }
   };
+
+  const startEditing = useCallback(() => {
+    setEditTitle(contentTitle);
+    setEditContent(JSON.stringify(content, null, 2));
+    setEditing(true);
+  }, [contentTitle, content]);
+
+  const saveEdits = async () => {
+    if (saving) return;
+    setSaving(true);
+    try {
+      let parsed: Record<string, unknown>;
+      try {
+        parsed = JSON.parse(editContent);
+      } catch {
+        toast.error('El contenido no es JSON válido. Revisa la sintaxis.');
+        setSaving(false);
+        return;
+      }
+      await editMaterial(id, { titulo: editTitle, contenido_json: parsed });
+      await queryClient.invalidateQueries({ queryKey: ['material', id] });
+      setEditing(false);
+      toast.success('Material actualizado');
+    } catch (err) {
+      toast.error(toApiError(err).detail);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDuplicate = async () => {
+    if (duplicating) return;
+    setDuplicating(true);
+    try {
+      const newMaterial = await duplicateMaterial(id);
+      await queryClient.invalidateQueries({ queryKey: ['materials'] });
+      toast.success('Material duplicado');
+      navigate(`/app/herramientas/${newMaterial.id}`);
+    } catch (err) {
+      toast.error(toApiError(err).detail);
+    } finally {
+      setDuplicating(false);
+    }
+  };
+
+  const handleConvert = async () => {
+    if (converting) return;
+    setConverting(true);
+    try {
+      const result = await convertToEvaluacion(id, {
+        materia_id: convertMateria || undefined,
+        nombre: convertNombre || undefined,
+        nota_maxima: convertNota,
+      });
+      await queryClient.invalidateQueries({ queryKey: ['evaluaciones'] });
+      setShowConvert(false);
+      toast.success(`Evaluación creada: ${result.nombre} (${result.total_preguntas} preguntas)`);
+      navigate(`/app/evaluaciones`);
+    } catch (err) {
+      toast.error(toApiError(err).detail);
+    } finally {
+      setConverting(false);
+    }
+  };
+
+  const canConvert = material?.tipo === 'examen' || material?.tipo === 'quiz_rapido' || material?.tipo === 'rubrica';
+  if (isLoading) return <LoadingScreen />;
+  if (!material) return <p className="text-muted">Material no encontrado.</p>;
 
   const renderBody = () => {
     switch (material.tipo) {
@@ -165,6 +240,17 @@ export function DetailPage() {
             <Button size="icon" variant="ghost" onClick={handleShare} title="Compartir" aria-label="Compartir material">
               <Share2 className="h-4 w-4" />
             </Button>
+            <Button size="sm" variant="outline" onClick={startEditing} title="Editar contenido">
+              <Pencil className="h-4 w-4" /> Editar
+            </Button>
+            <Button size="sm" variant="outline" onClick={handleDuplicate} loading={duplicating} loadingLabel="Duplicando…" title="Duplicar material">
+              <Copy className="h-4 w-4" /> Duplicar
+            </Button>
+            {canConvert && (
+              <Button size="sm" variant="outline" onClick={() => setShowConvert(true)} title="Convertir a evaluación">
+                <ClipboardList className="h-4 w-4" /> Usar como evaluación
+              </Button>
+            )}
             <Button size="icon" variant="ghost" onClick={() => setConfirmDelete(true)} className="text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-500/10" title="Eliminar" aria-label="Eliminar material">
               <Trash2 className="h-4 w-4" />
             </Button>
@@ -209,7 +295,33 @@ export function DetailPage() {
       )}
 
       <Card className="p-5 sm:p-7 print:!p-0 print:!shadow-none print:!border-0 print:!bg-transparent">
-        {renderBody()}
+        {editing ? (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="font-display text-lg font-bold">Editando contenido</h3>
+              <div className="flex gap-2">
+                <Button size="sm" variant="ghost" onClick={() => setEditing(false)}>Cancelar</Button>
+                <Button size="sm" onClick={saveEdits} loading={saving} loadingLabel="Guardando…">Guardar cambios</Button>
+              </div>
+            </div>
+            <Field label="Título">
+              <Input value={editTitle} onChange={(e) => setEditTitle(e.target.value)} />
+            </Field>
+            <Field label="Contenido (JSON)">
+              <textarea
+                value={editContent}
+                onChange={(e) => setEditContent(e.target.value)}
+                className="focus-ring min-h-[400px] w-full rounded-lg border border-border bg-surface-2 p-3 font-mono text-xs"
+                spellCheck={false}
+              />
+            </Field>
+            <p className="text-xs text-muted">
+              Edita el contenido JSON directamente. Los cambios se guardan al pulsar "Guardar cambios".
+            </p>
+          </div>
+        ) : (
+          renderBody()
+        )}
       </Card>
       <ConfirmDialog
         open={confirmDelete}
@@ -221,6 +333,36 @@ export function DetailPage() {
         tone="danger"
         loading={isDeleting}
       />
+      {showConvert && (
+        <Modal open onClose={() => setShowConvert(false)} ariaLabel="Convertir a evaluación">
+          <div className="space-y-5 p-6">
+            <h2 className="font-display text-xl font-extrabold">Convertir a evaluación</h2>
+            <p className="text-sm text-muted">
+              Se creará una evaluación en estado <strong>borrador</strong> con las preguntas de este material.
+            </p>
+            <Field label="Nombre de la evaluación">
+              <Input value={convertNombre} onChange={(e) => setConvertNombre(e.target.value)} placeholder={contentTitle} />
+            </Field>
+            <Field label="Materia">
+              <Select value={convertMateria} onChange={(e) => setConvertMateria(e.target.value)}>
+                <option value="">Sin asignar</option>
+                {materias.map((m) => (
+                  <option key={m.id} value={m.id}>{m.nombre}{m.grado ? ` - ${m.grado}` : ''}</option>
+                ))}
+              </Select>
+            </Field>
+            <Field label="Nota máxima">
+              <Input type="number" min={1} max={100} step={0.5} value={convertNota} onChange={(e) => setConvertNota(Number(e.target.value))} />
+            </Field>
+            <div className="flex justify-end gap-2">
+              <Button variant="ghost" onClick={() => setShowConvert(false)}>Cancelar</Button>
+              <Button onClick={handleConvert} loading={converting} loadingLabel="Creando…">
+                <ClipboardList className="h-4 w-4" /> Crear evaluación
+              </Button>
+            </div>
+          </div>
+        </Modal>
+      )}
     </div>
   );
 }

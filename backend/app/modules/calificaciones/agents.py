@@ -203,9 +203,13 @@ class OpenCodeClient:
 # ── Agentes de visión ──────────────────────────────────────────────────────────
 
 VISION_PROMPT = """Eres un extractor de contenido de imágenes de respuestas de estudiantes.
+
+## Contexto de la evaluación
+{preguntas_context}
+
 Analiza la imagen y extrae:
 1. Todo el texto escrito visible
-2. Identifica preguntas y respuestas si es posible
+2. Identifica a qué pregunta corresponde cada respuesta
 3. Evalúa la calidad de la imagen
 
 Devuelve SOLO JSON con este formato:
@@ -226,6 +230,13 @@ async def vision_agent(
     client: OpenCodeClient | None = None,
 ) -> AgentResult:
     """Agente de visión: extrae texto estructurado de una imagen de respuesta."""
+    preguntas_context = ""
+    blueprint_preguntas = ctx.blueprint.get("preguntas", []) if ctx.blueprint else []
+    if blueprint_preguntas:
+        preguntas_context = "Preguntas del examen:\n" + "\n".join(
+            f"{p.get('numero', i+1)}. {p.get('texto', p.get('enunciado', '?'))}"
+            for i, p in enumerate(blueprint_preguntas)
+        )
     if not ctx.image_bytes:
         return AgentResult(
             nota_sugerida=0, confianza=0, feedback_estudiante="",
@@ -239,8 +250,9 @@ async def vision_agent(
 
     try:
         start = time.monotonic()
+        vision_text = VISION_PROMPT.format(preguntas_context=preguntas_context)
         raw = await client.chat_multimodal(
-            model=model, text=VISION_PROMPT,
+            model=model, text=vision_text,
             image_bytes=ctx.image_bytes, image_mime=ctx.image_mime,
             json_mode=True, max_tokens=1024,
         )
@@ -285,6 +297,7 @@ No evalúes contenidos que no estén en el Mapa de Evaluación.
 
 ## Evaluación
 Nombre: {evaluacion_nombre}
+Preguntas del examen: {preguntas}
 DBA: {dba_text}
 Metas del profesor: {metas}
 Criterios y pesos: {criterios}
@@ -323,6 +336,7 @@ async def grader_agent(
     prompt = GRADER_PROMPT_TEMPLATE.format(
         evaluacion_nombre=ctx.evaluacion_nombre,
         nota_maxima=nota_maxima,
+        preguntas=json.dumps(ctx.blueprint.get("preguntas", []), ensure_ascii=False),
         dba_text=json.dumps(ctx.blueprint.get("dba", []), ensure_ascii=False),
         metas=json.dumps(ctx.blueprint.get("metas", []), ensure_ascii=False),
         criterios=json.dumps(ctx.blueprint.get("criterios", []), ensure_ascii=False),

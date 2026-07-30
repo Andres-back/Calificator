@@ -295,10 +295,11 @@ async def delete_material(db: AsyncSession, material_id: UUID, profesor_id: UUID
 
 
 async def update_material(db: AsyncSession, material_id: UUID, profesor_id: UUID, payload: dict) -> dict:
-    """Actualiza campos de un material. Solo 'materia_id' y 'titulo' permitidos."""
+    """Actualiza campos de un material: titulo, materia_id, contenido_json."""
+    import json as _json
     from sqlalchemy import text
 
-    allowed = {"materia_id", "titulo"}
+    allowed = {"materia_id", "titulo", "contenido_json"}
     campos = {k: v for k, v in payload.items() if k in allowed and v is not None}
     if not campos:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No hay campos válidos para actualizar")
@@ -309,11 +310,13 @@ async def update_material(db: AsyncSession, material_id: UUID, profesor_id: UUID
         if k == "materia_id":
             sql_parts.append("materia_id = :materia_id")
             params["materia_id"] = str(UUID(v) if isinstance(v, str) else v)
+        elif k == "contenido_json":
+            sql_parts.append("contenido_json = CAST(:contenido_json AS jsonb)")
+            params["contenido_json"] = _json.dumps(v, ensure_ascii=False) if isinstance(v, (dict, list)) else v
         else:
             sql_parts.append(f"{k} = :{k}")
             params[k] = v
 
-    sql_parts.append("updated_at = now()")
     set_clause = ", ".join(sql_parts)
     result = await db.execute(
         text(f"UPDATE materiales_generados SET {set_clause} WHERE id = :id AND profesor_id = :p RETURNING id, tipo, titulo, materia_id, contenido_json, archivo_url, created_at"),
@@ -635,3 +638,229 @@ async def gen_plan_refuerzo(db: AsyncSession, req: PlanRefuerzoRequest, current_
         tipo=MaterialTipo.PLAN_REFUERZO, titulo=req.titulo,
         input_json=_request_input(req), contenido_json=result,
     )
+
+
+async def duplicar_material(db: AsyncSession, material_id: UUID, profesor_id: UUID) -> dict:
+    """Clona un material existente con un nuevo UUID."""
+    import json as _json
+    from sqlalchemy import text as _sql_text
+    from uuid import uuid4 as _uuid4
+
+    material = await get_material(db, material_id, profesor_id)
+    if material is None:
+        raise HTTPException(status_code=404, detail="Material no encontrado")
+
+    titulo_copia = f"{material['titulo']} (copia)"
+    contenido = material.get("contenido_json") or {}
+    inserted = await db.execute(
+        _sql_text(
+            "INSERT INTO materiales_generados "
+            "(profesor_id, materia_id, tipo, titulo, input_json, contenido_json) "
+            "VALUES (:p, :materia_id, :tipo, :titulo, '{}'::jsonb, CAST(:contenido_json AS jsonb)) "
+            "RETURNING id, tipo, titulo, materia_id, contenido_json, archivo_url, created_at"
+        ),
+        {
+            "p": str(profesor_id),
+            "materia_id": str(material["materia_id"]) if material.get("materia_id") else None,
+            "tipo": material["tipo"],
+            "titulo": titulo_copia,
+            "contenido_json": _json.dumps(contenido, ensure_ascii=False) if contenido else "{}",
+        },
+    )
+    await db.commit()
+    row = inserted.fetchone()
+    return {
+        "id": row[0], "tipo": row[1], "titulo": row[2],
+        "materia_id": row[3], "contenido_json": row[4],
+        "archivo_url": row[5], "created_at": row[6],
+    }
+
+
+async def convertir_a_evaluacion(
+    db: AsyncSession,
+    material_id: UUID,
+    profesor_id: UUID,
+    materia_id: UUID | None = None,
+    nombre: str | None = None,
+    nota_maxima: float = 5.0,
+) -> dict:
+    """Convierte un material (examen, quiz, rúbrica) en una evaluación BORRADOR."""
+    import json as _json
+    from uuid import uuid4 as _uuid4
+    from sqlalchemy import text as _sql_text
+
+    material = await get_material(db, material_id, profesor_id)
+    if material is None:
+        raise HTTPException(status_code=404, detail="Material no encontrado")
+
+    tipo = material["tipo"]
+    if tipo not in ("examen", "quiz_rapido", "rubrica"):
+        raise HTTPException(
+            status_code=422,
+            detail="Solo se pueden convertir examenes, quizzes y rubricas a evaluaciones",
+        )
+
+    content = material.get("contenido_json") or {}
+    preguntas_raw = content.get("preguntas") or content.get("criterios") or []
+
+    if not preguntas_raw:
+        raise HTTPException(
+            status_code=422,
+            detail="El material no contiene preguntas ni criterios para convertir",
+        )
+
+    # Build preguntas for evaluacion
+    preguntas = []
+    total_puntaje = 0.0
+    for i, p in enumerate(preguntas_raw):
+        raw_tipo = p.get("tipo", "") or ""
+        # Detect verdadero_falso from original material type
+        if raw_tipo == "verdadero_falso" or (p.get("opciones") is None and p.get("respuesta_correcta", "") and p.get("respuesta_correcta", "").lower() in ("verdadero", "falso", "v", "f")):
+            tipo_pregunta = "verdadero_falso"
+        elif "opciones" in p:
+            tipo_pregunta = "opcion_multiple"
+        else:
+            tipo_pregunta = "abierta"
+        opciones_raw = p.get("opciones") or []
+        respuesta = p.get("respuesta_correcta") or ""
+        puntaje = float(p.get("puntaje") or p.get("peso_porcentaje") or 1)
+        if tipo == "rubrica":
+            tipo_pregunta = "abierta"
+            puntaje = float(p.get("peso_porcentaje") or 1)
+
+        # Normalize opciones: strings -> objects with correcta flag
+        opciones = []
+        for o in opciones_raw:
+            if isinstance(o, dict):
+                texto = o.get("texto", "") or ""
+                # Preserve existing correcta if set, else match against respuesta_correcta
+                is_correct = o.get("correcta", False) or (respuesta and respuesta.lower() in texto.lower().split()[:2])
+                opciones.append({"texto": texto, "correcta": is_correct})
+            else:
+                texto = str(o)
+                # Match answer: check if respuesta matches text start or is contained
+                is_correct = respuesta and (
+                    texto.strip().lower().startswith(respuesta.strip().lower()) or
+                    respuesta.strip().lower() in texto.strip().lower().split()[:2] or
+                    texto.strip().lower() == respuesta.strip().lower()
+                )
+                opciones.append({"texto": texto, "correcta": is_correct})
+
+        # For verdadero/falso, ensure opciones exist
+        if tipo_pregunta in ("opcion_multiple",) and not opciones:
+            tipo_pregunta = "abierta"
+
+        # For verdadero_falso, add options if missing
+        if tipo_pregunta == "verdadero_falso" and not opciones:
+            opciones = [{"texto": "Verdadero", "correcta": respuesta.lower().startswith("v")},
+                        {"texto": "Falso", "correcta": respuesta.lower().startswith("f")}]
+
+        if not any(o["correcta"] for o in opciones) and respuesta:
+            resp_lower = respuesta.strip().lower()
+            for o in opciones:
+                txt = o["texto"].strip().lower()
+                if resp_lower in txt[:5] or txt in resp_lower:
+                    o["correcta"] = True
+
+        preguntas.append({
+            "numero": i + 1,
+            "texto": p.get("enunciado") or p.get("descripcion") or "",
+            "tipo": tipo_pregunta,
+            "puntaje": puntaje,
+            "opciones": opciones,
+            "respuesta_esperada": respuesta if tipo_pregunta == "abierta" else None,
+        })
+        total_puntaje += puntaje
+
+    # Normalize puntajes to fit nota_maxima
+    if total_puntaje > 0 and abs(total_puntaje - nota_maxima) > 0.01:
+        factor = nota_maxima / total_puntaje
+        for q in preguntas:
+            q["puntaje"] = round(q["puntaje"] * factor, 2)
+        total_puntaje = nota_maxima
+
+    eval_id = str(_uuid4())
+    eval_nombre = nombre or material.get("titulo", "Evaluacion")
+    ev_materia = str(materia_id) if materia_id else (str(material["materia_id"]) if material.get("materia_id") else None)
+
+    # Validate materia_id is required by evaluaciones table
+    if not ev_materia:
+        raise HTTPException(
+            status_code=422,
+            detail="El material debe estar asignado a una materia antes de convertir a evaluación. Asigna una materia primero.",
+        )
+
+    # Build criterios and respuestas_esperadas from preguntas
+    criterios = []
+    respuestas = []
+    for p in preguntas:
+        texto = p.get("texto", "")
+        puntaje = p.get("puntaje", 1)
+        # Find the correct answer
+        correcta = ""
+        for o in p.get("opciones", []):
+            if isinstance(o, dict) and o.get("correcta"):
+                correcta = o.get("texto", "")
+            elif isinstance(o, str):
+                correcta = o
+        resp_esperada = p.get("respuesta_esperada") or correcta or ""
+        criterios.append({
+            "id": i + 1,
+            "nombre": f"Pregunta {i + 1}",
+            "descripcion": texto[:100],
+            "puntaje_maximo": puntaje,
+        })
+        respuestas.append({
+            "pregunta_numero": i + 1,
+            "respuesta_correcta": resp_esperada,
+            "explicacion": "",
+        })
+
+    await db.execute(
+        _sql_text(
+            "INSERT INTO evaluaciones "
+            "(id, profesor_id, materia_id, nombre, tipo_origen, estado, "
+            "nota_maxima, tiempo_limite_minutos, preguntas, "
+            "dba_ids, metas_profesor, criterios, respuestas_esperadas) "
+            "VALUES (:id, :profesor, :materia, :nombre, 'externa_digitalizada', 'borrador', "
+            ":nota_max, NULL, CAST(:preguntas AS jsonb), "
+            "'[]'::jsonb, '[]'::jsonb, "
+            "CAST(:criterios AS jsonb), CAST(:respuestas AS jsonb))"
+        ),
+        {
+            "id": eval_id,
+            "profesor": str(profesor_id),
+            "materia": ev_materia or str(profesor_id),
+            "nombre": eval_nombre,
+            "nota_max": nota_maxima,
+            "preguntas": _json.dumps(preguntas, ensure_ascii=False),
+            "criterios": _json.dumps(criterios, ensure_ascii=False),
+            "respuestas": _json.dumps(respuestas, ensure_ascii=False),
+        },
+    )
+
+    # Create blueprint so the evaluation can be published and graded
+    blueprint_id = str(_uuid4())
+    await db.execute(
+        _sql_text(
+            "INSERT INTO evaluacion_blueprints "
+            "(id, evaluacion_id, nivel_contexto, dba, metas, criterios, "
+            "preguntas, respuestas_esperadas, errores_comunes, contexto_rag, reglas_feedback) "
+            "VALUES (:id, :eval_id, 'reconstruido', '[]'::jsonb, '[]'::jsonb, '[]'::jsonb, "
+            "CAST(:preguntas AS jsonb), CAST(:respuestas AS jsonb), '[]'::jsonb, '[]'::jsonb, '{}'::jsonb)"
+        ),
+        {"id": blueprint_id, "eval_id": eval_id,
+         "preguntas": _json.dumps(preguntas, ensure_ascii=False),
+         "respuestas": _json.dumps(respuestas, ensure_ascii=False)},
+    )
+
+    await db.commit()
+
+    return {
+        "evaluacion_id": eval_id,
+        "nombre": eval_nombre,
+        "tipo": tipo,
+        "estado": "borrador",
+        "nota_maxima": nota_maxima,
+        "total_preguntas": len(preguntas),
+    }

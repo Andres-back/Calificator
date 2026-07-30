@@ -27,6 +27,33 @@ export async function updateMaterial(id: string, payload: { materia_id?: string;
   return data;
 }
 
+export async function editMaterial(id: string, payload: { titulo?: string; contenido_json?: Record<string, unknown> }): Promise<Material> {
+  const { data } = await api.patch<Material>(`${BASE}/${id}`, payload);
+  return data;
+}
+
+export async function duplicateMaterial(id: string): Promise<Material> {
+  const { data } = await api.post<Material>(`${BASE}/${id}/duplicar`);
+  return data;
+}
+
+export interface ConvertirResponse {
+  evaluacion_id: string;
+  nombre: string;
+  tipo: string;
+  estado: string;
+  nota_maxima: number;
+  total_preguntas: number;
+}
+
+export async function convertToEvaluacion(
+  id: string,
+  payload: { materia_id?: string; nombre?: string; nota_maxima?: number },
+): Promise<ConvertirResponse> {
+  const { data } = await api.post<ConvertirResponse>(`${BASE}/${id}/convertir-evaluacion`, payload);
+  return data;
+}
+
 /** URL del PDF (estudiante o soluciones). El navegador envía la cookie de sesión. */
 export function pdfUrl(id: string, soluciones = false): string {
   const base = import.meta.env.VITE_API_URL ?? '/api';

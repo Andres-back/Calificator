@@ -1,12 +1,14 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Download, Trash2, Wrench, Gamepad2, ClipboardCheck, FileDown, Layers3 } from 'lucide-react';
+import { Plus, Download, Trash2, Wrench, Gamepad2, ClipboardCheck, FileDown, Layers3, Copy } from 'lucide-react';
 import { Button, Card, Badge, Skeleton, EmptyState, QueryState, ConfirmDialog } from '@/components/ui';
 import { PageHeader } from '@/components/layout/PageHeader';
-import { listMaterials, deleteMaterial, pdfUrl } from './api';
+import { listMaterials, deleteMaterial, pdfUrl, duplicateMaterial } from './api';
 import { TOOL_BY_TIPO } from './meta';
+import { queryClient } from '@/lib/queryClient';
+import toast from 'react-hot-toast';
 import { useDeleteConfirm } from '@/lib/hooks';
 import { formatDate } from '@/lib/dates';
 import { cn } from '@/lib/cn';
@@ -14,6 +16,7 @@ import { cn } from '@/lib/cn';
 const CATEGORIES = ['Todos', 'Juego', 'Evaluación', 'Material'] as const;
 
 export function ListPage() {
+  const navigate = useNavigate();
   const [cat, setCat] = useState<(typeof CATEGORIES)[number]>('Todos');
   const { target: deleteTarget, setTarget: setDeleteTarget, mutation: deleteMutation } = useDeleteConfirm({
     mutationFn: deleteMaterial,
@@ -113,6 +116,7 @@ export function ListPage() {
                       </Link>
                       <div className="mt-4 flex items-center gap-2 border-t border-border pt-3">
                         <a href={pdfUrl(material.id)} target="_blank" rel="noreferrer" className="flex-1"><Button size="sm" variant="outline" className="w-full"><Download className="h-4 w-4" /> PDF</Button></a>
+                        <Button size="icon" variant="ghost" onClick={async () => { try { const n = await duplicateMaterial(material.id); await queryClient.invalidateQueries({ queryKey: ['materials'] }); toast.success('Duplicado'); navigate(`/app/herramientas/${n.id}`); } catch { toast.error('Error al duplicar'); } }} title="Duplicar material" aria-label={`Duplicar ${material.titulo}`}><Copy className="h-4 w-4" /></Button>
                         <Button size="icon" variant="ghost" className="text-rose-700 hover:bg-rose-50 dark:text-rose-300 dark:hover:bg-rose-500/10" onClick={() => setDeleteTarget({ id: material.id, title: material.titulo })} aria-label={`Eliminar ${material.titulo}`} title="Eliminar material"><Trash2 className="h-4 w-4" /></Button>
                       </div>
                     </Card>

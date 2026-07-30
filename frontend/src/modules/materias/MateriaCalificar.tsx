@@ -1011,6 +1011,15 @@ export function MateriaCalificar() {
                               >
                                 Escribir otra nota
                               </Button>
+                               <Button
+                                 className="w-full"
+                                 variant="ghost"
+                                 onClick={() => { setResultado(null); setFoto(null); }}
+                                 disabled={isSubmitting}
+                               >
+                                 <RotateCcw className="h-4 w-4" aria-hidden="true" />
+                                 Subir otra imagen
+                               </Button>
                             </>
                           ) : (
                             <>
@@ -1032,6 +1041,15 @@ export function MateriaCalificar() {
                               >
                                 Modificar mi decisión
                               </Button>
+                               <Button
+                                 className="w-full"
+                                 variant="ghost"
+                                 onClick={() => { setResultado(null); setFoto(null); }}
+                                 disabled={isSubmitting}
+                               >
+                                 <RotateCcw className="h-4 w-4" aria-hidden="true" />
+                                 Subir otra imagen
+                               </Button>
                             </>
                           )}
                         </div>

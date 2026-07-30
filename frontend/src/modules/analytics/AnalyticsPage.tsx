@@ -38,6 +38,11 @@ function formatSegundos(s: number) {
   if (s < 3600) return `${Math.round(s / 60)}m`;
   return `${(s / 3600).toFixed(1)}h`;
 }
+function formatNumber(n: number) {
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
+  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
+  return String(n);
+}
 
 /* ─── MetricCard ─── */
 function MetricCard({ icon, label, value, sub, trend }: { icon: React.ReactNode; label: string; value: string; sub?: string; trend?: 'up' | 'down' }) {
@@ -260,11 +265,12 @@ function RendimientoTab({ materiaId }: { materiaId: string }) {
 }
 
 /* ═══════════════════════ CALIDAD DE IA ═══════════════════════ */
-type AiSubTab = 'concordancia' | 'rendimiento' | 'errores';
+type AiSubTab = 'concordancia' | 'rendimiento' | 'errores' | 'costos';
 const AI_TABS: { id: AiSubTab; label: string }[] = [
   { id: 'concordancia', label: 'Concordancia' },
   { id: 'rendimiento', label: 'Rendimiento' },
   { id: 'errores', label: 'Errores' },
+  { id: 'costos', label: 'Costos' },
 ];
 
 function CalidadIaTab({ materiaId }: { materiaId: string }) {
@@ -281,6 +287,7 @@ function CalidadIaTab({ materiaId }: { materiaId: string }) {
     {sub === 'concordancia' && <ConcordanciaTabBody materiaId={materiaId} />}
     {sub === 'rendimiento' && <RendimientoIaTab materiaId={materiaId} />}
     {sub === 'errores' && <ErroresIaTab materiaId={materiaId} />}
+    {sub === 'costos' && <CostosIaTab materiaId={materiaId} />}
   </>);
 }
 
@@ -469,6 +476,208 @@ function ErroresIaTab({ materiaId }: { materiaId: string }) {
         </div>
       ))}</div>
     </Card>}
+  </>);
+}
+
+/* ═══════════════════════ COSTOS (2C.3.2) ═══════════════════════ */
+function CostosIaTab({ materiaId }: { materiaId: string }) {
+  const costs = useQuery({
+    queryKey: ['ai-costs', materiaId],
+    queryFn: () => api.get('/analytics/ai-quality/costs', { params: materiaId ? { materia_id: materiaId } : {} }).then(r => r.data),
+  });
+  const comp = useQuery({
+    queryKey: ['ai-costs-compare'],
+    queryFn: () => api.get('/analytics/ai-quality/costs/provider-comparison').then(r => r.data),
+  });
+
+  if (costs.isLoading) return <div className="grid gap-4 sm:grid-cols-4">{Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-28" />)}</div>;
+  if (costs.error) return <EmptyState icon={BarChart3} title="Error" description={toApiError(costs.error).detail} />;
+  const d = costs.data as any;
+  if (!d || d.total.calls === 0) return <EmptyState icon={BarChart3} title="Sin costos registrados" description="Los costos aparecen cuando el pipeline de IA procese evaluaciones." />;
+
+  const compData = comp.data as any[] | undefined;
+
+  return (<>
+    {/* Metric cards */}
+    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <MetricCard icon={<BarChart3 className="h-5 w-5" />} label="Costo total estimado" value={`$${d.total.cost.toFixed(4)}`} sub={`${d.total.calls} llamadas`} />
+      <MetricCard icon={<Sparkles className="h-5 w-5" />} label="Tokens de entrada" value={formatNumber(d.total.input_tokens)} sub={`promedio ${d.total.calls > 0 ? Math.round(d.total.input_tokens / d.total.calls) : 0}/call`} />
+      <MetricCard icon={<Sparkles className="h-5 w-5" />} label="Tokens de salida" value={formatNumber(d.total.output_tokens)} sub={`promedio ${d.total.calls > 0 ? Math.round(d.total.output_tokens / d.total.calls) : 0}/call`} />
+      <MetricCard icon={<TrendingUp className="h-5 w-5" />} label="Costo promedio/call" value={`$${(d.total.cost / (d.total.calls || 1)).toFixed(6)}`} />
+    </div>
+
+    {/* Cost by provider */}
+    {d.by_provider?.length > 0 && (
+      <Card className="p-5">
+        <h3 className="mb-4 font-display font-bold">Costos por proveedor</h3>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-sm">
+            <thead>
+              <tr className="border-b border-border text-xs font-semibold text-muted">
+                <th className="pb-2 pr-4">Proveedor</th>
+                <th className="pb-2 pr-4 text-right">Llamadas</th>
+                <th className="pb-2 pr-4 text-right">Costo</th>
+                <th className="pb-2 pr-4 text-right">% del total</th>
+                <th className="pb-2 pr-4 text-right">Tokens in</th>
+                <th className="pb-2 pr-4 text-right">Tokens out</th>
+                <th className="pb-2 pr-4 text-right">Errores</th>
+              </tr>
+            </thead>
+            <tbody>
+              {d.by_provider.map((p: any) => (
+                <tr key={p.provider} className="border-b border-border/50 last:border-0">
+                  <td className="py-2.5 pr-4 font-medium capitalize">{p.provider.replace(/_/g, ' ')}</td>
+                  <td className="py-2.5 pr-4 text-right">{p.calls}</td>
+                  <td className="py-2.5 pr-4 text-right font-semibold">${p.cost.toFixed(4)}</td>
+                  <td className="py-2.5 pr-4 text-right">{d.total.cost > 0 ? ((p.cost / d.total.cost) * 100).toFixed(1) : '0'}%</td>
+                  <td className="py-2.5 pr-4 text-right">{formatNumber(p.input_tokens)}</td>
+                  <td className="py-2.5 pr-4 text-right">{formatNumber(p.output_tokens)}</td>
+                  <td className="py-2.5 pr-4 text-right text-rose-600">{p.errors}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </Card>
+    )}
+
+    {/* Cost by model */}
+    {d.by_model?.length > 0 && (
+      <Card className="p-5">
+        <h3 className="mb-4 font-display font-bold">Costos por modelo</h3>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-sm">
+            <thead>
+              <tr className="border-b border-border text-xs font-semibold text-muted">
+                <th className="pb-2 pr-4">Modelo / Proveedor</th>
+                <th className="pb-2 pr-4 text-right">Llamadas</th>
+                <th className="pb-2 pr-4 text-right">Costo</th>
+                <th className="pb-2 pr-4 text-right">Tokens in</th>
+                <th className="pb-2 pr-4 text-right">Tokens out</th>
+              </tr>
+            </thead>
+            <tbody>
+              {d.by_model.map((m: any, i: number) => (
+                <tr key={`${m.provider}-${m.model}-${i}`} className="border-b border-border/50 last:border-0">
+                  <td className="py-2.5 pr-4 font-medium">
+                    <span className="capitalize">{m.provider}</span>
+                    <span className="text-muted"> / {m.model}</span>
+                  </td>
+                  <td className="py-2.5 pr-4 text-right">{m.calls}</td>
+                  <td className="py-2.5 pr-4 text-right font-semibold">${m.cost.toFixed(4)}</td>
+                  <td className="py-2.5 pr-4 text-right">{formatNumber(m.input_tokens)}</td>
+                  <td className="py-2.5 pr-4 text-right">{formatNumber(m.output_tokens)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </Card>
+    )}
+
+    {/* Cost by feature */}
+    {d.by_feature?.length > 0 && (
+      <Card className="p-5">
+        <h3 className="mb-4 font-display font-bold">Costos por funcionalidad</h3>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-sm">
+            <thead>
+              <tr className="border-b border-border text-xs font-semibold text-muted">
+                <th className="pb-2 pr-4">Funcionalidad</th>
+                <th className="pb-2 pr-4 text-right">Llamadas</th>
+                <th className="pb-2 pr-4 text-right">Costo</th>
+                <th className="pb-2 pr-4 text-right">% del total</th>
+                <th className="pb-2 pr-4 text-right">Tokens in</th>
+                <th className="pb-2 pr-4 text-right">Tokens out</th>
+              </tr>
+            </thead>
+            <tbody>
+              {d.by_feature.map((f: any) => (
+                <tr key={f.feature} className="border-b border-border/50 last:border-0">
+                  <td className="py-2.5 pr-4 font-medium capitalize">{f.feature.replace(/_/g, ' ')}</td>
+                  <td className="py-2.5 pr-4 text-right">{f.calls}</td>
+                  <td className="py-2.5 pr-4 text-right font-semibold">${f.cost.toFixed(4)}</td>
+                  <td className="py-2.5 pr-4 text-right">{d.total.cost > 0 ? ((f.cost / d.total.cost) * 100).toFixed(1) : '0'}%</td>
+                  <td className="py-2.5 pr-4 text-right">{formatNumber(f.input_tokens)}</td>
+                  <td className="py-2.5 pr-4 text-right">{formatNumber(f.output_tokens)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </Card>
+    )}
+
+    {/* Monthly trend */}
+    {d.monthly?.length > 0 && (
+      <Card className="p-5">
+        <h3 className="mb-4 font-display font-bold">Tendencia mensual</h3>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-sm">
+            <thead>
+              <tr className="border-b border-border text-xs font-semibold text-muted">
+                <th className="pb-2 pr-4">Mes</th>
+                <th className="pb-2 pr-4 text-right">Llamadas</th>
+                <th className="pb-2 pr-4 text-right">Costo</th>
+              </tr>
+            </thead>
+            <tbody>
+              {d.monthly.map((m: any) => (
+                <tr key={m.month} className="border-b border-border/50 last:border-0">
+                  <td className="py-2.5 pr-4 font-medium">{new Date(m.month).toLocaleDateString('es-CO', { year: 'numeric', month: 'long' })}</td>
+                  <td className="py-2.5 pr-4 text-right">{m.calls}</td>
+                  <td className="py-2.5 pr-4 text-right font-semibold">${m.cost.toFixed(4)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </Card>
+    )}
+
+    {/* Provider comparison */}
+    {compData && compData.length > 1 && (
+      <Card className="p-5">
+        <h3 className="mb-4 font-display font-bold">Comparación entre proveedores</h3>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-sm">
+            <thead>
+              <tr className="border-b border-border text-xs font-semibold text-muted">
+                <th className="pb-2 pr-4">Proveedor</th>
+                <th className="pb-2 pr-4 text-right">Costo</th>
+                <th className="pb-2 pr-4 text-right">Llamadas</th>
+                <th className="pb-2 pr-4 text-right">Latencia prom.</th>
+                <th className="pb-2 pr-4 text-right">Errores</th>
+                <th className="pb-2 pr-4 text-right">Modelos</th>
+                <th className="pb-2 pr-4 text-right">Tokens in</th>
+                <th className="pb-2 pr-4 text-right">Tokens out</th>
+              </tr>
+            </thead>
+            <tbody>
+              {compData.map((p: any) => (
+                <tr key={p.provider} className="border-b border-border/50 last:border-0">
+                  <td className="py-2.5 pr-4 font-medium capitalize">{p.provider.replace(/_/g, ' ')}</td>
+                  <td className="py-2.5 pr-4 text-right font-semibold">${p.cost.toFixed(4)}</td>
+                  <td className="py-2.5 pr-4 text-right">{p.calls}</td>
+                  <td className="py-2.5 pr-4 text-right">{(p.avg_latency_ms / 1000).toFixed(2)}s</td>
+                  <td className="py-2.5 pr-4 text-right text-rose-600">{p.errors}</td>
+                  <td className="py-2.5 pr-4 text-right">{p.models_used}</td>
+                  <td className="py-2.5 pr-4 text-right">{formatNumber(p.total_input_tokens)}</td>
+                  <td className="py-2.5 pr-4 text-right">{formatNumber(p.total_output_tokens)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </Card>
+    )}
+
+    {/* Pricing version note */}
+    <Card className="bg-surface-2 p-4">
+      <p className="text-xs text-muted">
+        <span className="font-semibold">Catálogo de precios v1.0</span> — {d.pricing_note || 'Costos estimados según catálogo interno. Los valores pueden diferir de la factura real del proveedor.'}
+      </p>
+    </Card>
   </>);
 }
 

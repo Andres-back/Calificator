@@ -3,6 +3,7 @@ from __future__ import annotations
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Response, status
+from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.permissions import get_current_user, require_role
@@ -276,10 +277,44 @@ async def actualizar_material(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> dict:
-    """Actualiza campos del material (ej: materia_id, titulo). Solo profesor dueño o admin."""
+    """Actualiza campos del material (titulo, materia_id, contenido_json)."""
     require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
     material = await service.get_material(db, material_id, current_user.id)
     if material is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Material no encontrado")
     updated = await service.update_material(db, material_id, current_user.id, payload)
     return updated
+
+
+@router.post("/{material_id}/duplicar", status_code=status.HTTP_201_CREATED)
+async def duplicar_material(
+    material_id: UUID,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    """Clona un material existente como copia editable."""
+    require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
+    return await service.duplicar_material(db, material_id, current_user.id)
+
+
+class ConvertirEvaluacionRequest(BaseModel):
+    materia_id: UUID | None = None
+    nombre: str | None = None
+    nota_maxima: float = 5.0
+
+
+@router.post("/{material_id}/convertir-evaluacion", status_code=status.HTTP_201_CREATED)
+async def convertir_a_evaluacion(
+    material_id: UUID,
+    req: ConvertirEvaluacionRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    """Convierte un examen/quiz/rubrica en una evaluacion BORRADOR."""
+    require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
+    return await service.convertir_a_evaluacion(
+        db, material_id, current_user.id,
+        materia_id=req.materia_id,
+        nombre=req.nombre,
+        nota_maxima=req.nota_maxima,
+    )

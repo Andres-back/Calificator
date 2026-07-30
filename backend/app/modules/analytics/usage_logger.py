@@ -11,6 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.logging import get_logger
 from app.db.session import AsyncSessionLocal
+from app.services.ai_pricing import estimate_cost
 
 logger = get_logger(__name__)
 
@@ -50,6 +51,14 @@ async def log_ai_usage(
     if started_at is None:
         started_at = now
 
+    # Calculate estimated cost from token counts
+    estimated_cost = await estimate_cost(
+        provider=provider,
+        model=model,
+        input_tokens=input_tokens,
+        output_tokens=output_tokens,
+    )
+
     try:
         async with AsyncSessionLocal() as db:
             from sqlalchemy import text
@@ -58,19 +67,20 @@ async def log_ai_usage(
                     (id, request_id, pipeline_run_id, calificacion_id, evaluacion_id,
                      feature, stage, provider, model, attempt_number, status,
                      started_at, completed_at, latency_ms,
-                     input_tokens, output_tokens, image_count, error_code)
+                     input_tokens, output_tokens, image_count, error_code, cost)
                 VALUES
                     (:id, :request_id, :pipeline_run_id, :calificacion_id, :evaluacion_id,
                      :feature, :stage, :provider, :model, :attempt_number, :status,
                      :started_at, :completed_at, :latency_ms,
-                     :input_tokens, :output_tokens, :image_count, :error_code)
+                     :input_tokens, :output_tokens, :image_count, :error_code, :cost)
                 ON CONFLICT (request_id) DO UPDATE SET
                     status = :status,
                     completed_at = :completed_at,
                     latency_ms = :latency_ms,
                     input_tokens = COALESCE(:input_tokens, ai_usage_events.input_tokens),
                     output_tokens = COALESCE(:output_tokens, ai_usage_events.output_tokens),
-                    error_code = :error_code
+                    error_code = :error_code,
+                    cost = COALESCE(:cost, ai_usage_events.cost)
             """)
             await db.execute(stmt, {
                 "id": str(uuid.uuid4()),
@@ -91,6 +101,7 @@ async def log_ai_usage(
                 "output_tokens": output_tokens,
                 "image_count": image_count,
                 "error_code": error_code,
+                "cost": float(estimated_cost) if estimated_cost is not None else None,
             })
             await db.commit()
             logger.debug("ai_usage logged: %s %s/%s %s", rid, feature, stage, status)

@@ -1,0 +1,1034 @@
+[
+  {
+    "area": "Matemáticas",
+    "grado": "1",
+    "codigo": "DBA-MA-1-01",
+    "descripcion": "Identifica los usos de los números (como código, cardinal, medida, ordinal) y las operaciones (suma y resta) en contextos de juego, familiares, económicos, entre otros."
+  },
+  {
+    "area": "Matemáticas",
+    "grado": "1",
+    "codigo": "DBA-MA-1-02",
+    "descripcion": "Utiliza diferentes estrategias para contar, realizar operaciones (suma y resta) y resolver problemas aditivos."
+  },
+  {
+    "area": "Matemáticas",
+    "grado": "1",
+    "codigo": "DBA-MA-1-03",
+    "descripcion": "Utiliza las características posicionales del Sistema de Numeración Decimal (SND) para establecer relaciones entre cantidades y comparar números."
+  },
+  {
+    "area": "Matemáticas",
+    "grado": "1",
+    "codigo": "DBA-MA-1-04",
+    "descripcion": "Reconoce y compara los atributos medibles de los objetos (longitud, duración, rapidez, masa, peso, capacidad, cantidad de elementos de una colección, entre otros)."
+  },
+  {
+    "area": "Matemáticas",
+    "grado": "1",
+    "codigo": "DBA-MA-1-05",
+    "descripcion": "Compara objetos del entorno y establece semejanzas y diferencias empleando características geométricas de las formas bidimensionales y tridimensionales."
+  },
+  {
+    "area": "Matemáticas",
+    "grado": "1",
+    "codigo": "DBA-MA-1-06",
+    "descripcion": "Describe y representa trayectorias y posiciones de objetos y personas para orientar a otros o a sí mismo en el espacio circundante."
+  },
+  {
+    "area": "Matemáticas",
+    "grado": "2",
+    "codigo": "DBA-MA-2-01",
+    "descripcion": "Interpreta, propone y resuelve problemas aditivos (de composición, transformación y relación) que involucren la cantidad en una colección, la medida de magnitudes y problemas multiplicativos sencillos."
+  },
+  {
+    "area": "Matemáticas",
+    "grado": "2",
+    "codigo": "DBA-MA-2-02",
+    "descripcion": "Realiza y describe procesos de medición con patrones arbitrarios y algunos estandarizados, y estima resultados."
+  },
+  {
+    "area": "Matemáticas",
+    "grado": "2",
+    "codigo": "DBA-MA-2-03",
+    "descripcion": "Utiliza diferentes estrategias para comparar y ordenar secuencias de números con ayuda de diferentes recursos."
+  },
+  {
+    "area": "Matemáticas",
+    "grado": "2",
+    "codigo": "DBA-MA-2-04",
+    "descripcion": "Reconoce y describe regularidades en secuencias numéricas y geométricas."
+  },
+  {
+    "area": "Matemáticas",
+    "grado": "2",
+    "codigo": "DBA-MA-2-05",
+    "descripcion": "Describe desplazamientos y referencia la posición de un objeto mediante nociones de horizontalidad, verticalidad, paralelismo y perpendicularidad."
+  },
+  {
+    "area": "Matemáticas",
+    "grado": "2",
+    "codigo": "DBA-MA-2-06",
+    "descripcion": "Clasifica figuras planas y sólidos según sus atributos y propiedades."
+  },
+  {
+    "area": "Matemáticas",
+    "grado": "2",
+    "codigo": "DBA-MA-2-07",
+    "descripcion": "Reconoce la posibilidad de ocurrencia o no de un evento cotidiano y lo utiliza para predecir la ocurrencia de otros eventos."
+  },
+  {
+    "area": "Matemáticas",
+    "grado": "3",
+    "codigo": "DBA-MA-3-01",
+    "descripcion": "Interpreta las fracciones como razón, relación parte todo, cociente y operador en diferentes contextos."
+  },
+  {
+    "area": "Matemáticas",
+    "grado": "3",
+    "codigo": "DBA-MA-3-02",
+    "descripcion": "Interpreta, formula y resuelve problemas aditivos de composición, transformación y comparación; y multiplicativos, directos e inversos."
+  },
+  {
+    "area": "Matemáticas",
+    "grado": "3",
+    "codigo": "DBA-MA-3-03",
+    "descripcion": "Propone, desarrolla y justifica estrategias para hacer estimaciones y cálculos con operaciones básicas."
+  },
+  {
+    "area": "Matemáticas",
+    "grado": "3",
+    "codigo": "DBA-MA-3-04",
+    "descripcion": "Describe y representa formas bidimensionales y tridimensionales de acuerdo con las propiedades geométricas."
+  },
+  {
+    "area": "Matemáticas",
+    "grado": "3",
+    "codigo": "DBA-MA-3-05",
+    "descripcion": "Describe y argumenta relaciones entre magnitudes medibles (capacidad, longitud, área, peso, duración) como parte del proceso para resolver problemas."
+  },
+  {
+    "area": "Matemáticas",
+    "grado": "3",
+    "codigo": "DBA-MA-3-06",
+    "descripcion": "Reconoce y describe regularidades y patrones en secuencias y en otras situaciones de variación."
+  },
+  {
+    "area": "Matemáticas",
+    "grado": "3",
+    "codigo": "DBA-MA-3-07",
+    "descripcion": "Lee e interpreta información contenida en tablas de frecuencia, gráficos de barras y/o pictogramas con escala."
+  },
+  {
+    "area": "Matemáticas",
+    "grado": "3",
+    "codigo": "DBA-MA-3-08",
+    "descripcion": "Reconoce y describe la posibilidad de ocurrencia de situaciones aleatorias cotidianas."
+  },
+  {
+    "area": "Matemáticas",
+    "grado": "4",
+    "codigo": "DBA-MA-4-01",
+    "descripcion": "Reconoce y usa los números naturales en contextos de conteo, medición y comparación, realizando operaciones básicas."
+  },
+  {
+    "area": "Matemáticas",
+    "grado": "4",
+    "codigo": "DBA-MA-4-02",
+    "descripcion": "Identifica propiedades medibles de los objetos (densidad, dureza, viscosidad, masa, capacidad, temperatura) con respecto a procedimientos, instrumentos y unidades de medición."
+  },
+  {
+    "area": "Matemáticas",
+    "grado": "4",
+    "codigo": "DBA-MA-4-03",
+    "descripcion": "Identifica los movimientos realizados a una figura en el plano (rotación, traslación y simetría) y las modificaciones de formas (ampliación-reducción)."
+  },
+  {
+    "area": "Matemáticas",
+    "grado": "4",
+    "codigo": "DBA-MA-4-04",
+    "descripcion": "Identifica relaciones de dependencia entre cantidades en diferentes fenómenos y los representa por medio de gráficas."
+  },
+  {
+    "area": "Matemáticas",
+    "grado": "4",
+    "codigo": "DBA-MA-4-05",
+    "descripcion": "Organiza datos en tablas de doble entrada y los representa en gráficos de barras o de líneas, e interpreta la información."
+  },
+  {
+    "area": "Matemáticas",
+    "grado": "5",
+    "codigo": "DBA-MA-5-01",
+    "descripcion": "Interpreta y utiliza los números naturales y racionales en su representación fraccionaria para resolver problemas aditivos, multiplicativos y de potenciación."
+  },
+  {
+    "area": "Matemáticas",
+    "grado": "5",
+    "codigo": "DBA-MA-5-02",
+    "descripcion": "Realiza mediciones con unidades apropiadas según el tipo de medición, los instrumentos y los procedimientos."
+  },
+  {
+    "area": "Matemáticas",
+    "grado": "5",
+    "codigo": "DBA-MA-5-03",
+    "descripcion": "Identifica atributos de bidimensionalidad y tridimensionalidad y resuelve problemas de composición y descomposición de formas."
+  },
+  {
+    "area": "Matemáticas",
+    "grado": "5",
+    "codigo": "DBA-MA-5-04",
+    "descripcion": "Describe y localiza la posición y trayectoria de un objeto con referencia al plano cartesiano."
+  },
+  {
+    "area": "Matemáticas",
+    "grado": "5",
+    "codigo": "DBA-MA-5-05",
+    "descripcion": "Encuentra propiedades y resuelve ecuaciones en donde están involucradas."
+  },
+  {
+    "area": "Matemáticas",
+    "grado": "5",
+    "codigo": "DBA-MA-5-06",
+    "descripcion": "Resuelve problemas que requieren presentar o resumir el comportamiento de un conjunto de datos."
+  },
+  {
+    "area": "Matemáticas",
+    "grado": "6",
+    "codigo": "DBA-MA-6-01",
+    "descripcion": "Interpreta los números enteros y racionales con sus operaciones, en diferentes contextos, al resolver problemas de variación, repartos, particiones y estimaciones."
+  },
+  {
+    "area": "Matemáticas",
+    "grado": "6",
+    "codigo": "DBA-MA-6-02",
+    "descripcion": "Reconoce y establece diferentes relaciones de orden y equivalencia entre elementos y las utiliza para argumentar procedimientos."
+  },
+  {
+    "area": "Matemáticas",
+    "grado": "6",
+    "codigo": "DBA-MA-6-03",
+    "descripcion": "Realiza construcciones de figuras bidimensionales y tridimensionales con instrumentos de medida apropiados."
+  },
+  {
+    "area": "Matemáticas",
+    "grado": "6",
+    "codigo": "DBA-MA-6-04",
+    "descripcion": "Identifica y describe relaciones de proporcionalidad directa e inversa entre variables y las representa mediante gráficas."
+  },
+  {
+    "area": "Matemáticas",
+    "grado": "6",
+    "codigo": "DBA-MA-6-05",
+    "descripcion": "Encuentra las operaciones apropiadas al contexto para resolver problemas."
+  },
+  {
+    "area": "Matemáticas",
+    "grado": "6",
+    "codigo": "DBA-MA-6-06",
+    "descripcion": "Compara dos o más poblaciones o características usando muestras, representaciones gráficas y medidas de tendencia central y rango."
+  },
+  {
+    "area": "Matemáticas",
+    "grado": "7",
+    "codigo": "DBA-MA-7-01",
+    "descripcion": "Comprende y resuelve problemas que involucran los números racionales con las operaciones en contextos escolares y extraescolares."
+  },
+  {
+    "area": "Matemáticas",
+    "grado": "7",
+    "codigo": "DBA-MA-7-02",
+    "descripcion": "Utiliza diferentes relaciones y representaciones para analizar procesos infinitos y resolver problemas."
+  },
+  {
+    "area": "Matemáticas",
+    "grado": "7",
+    "codigo": "DBA-MA-7-03",
+    "descripcion": "Interpreta y elabora planos, mapas y maquetas con diferentes unidades y escalas."
+  },
+  {
+    "area": "Matemáticas",
+    "grado": "7",
+    "codigo": "DBA-MA-7-04",
+    "descripcion": "Identifica y describe relaciones entre magnitudes (áreas y perímetro) y explica el comportamiento de situaciones de la vida diaria."
+  },
+  {
+    "area": "Matemáticas",
+    "grado": "7",
+    "codigo": "DBA-MA-7-05",
+    "descripcion": "Representa información mediante histogramas, polígonos de frecuencia, gráficos de línea; identifica variaciones y tendencias."
+  },
+  {
+    "area": "Matemáticas",
+    "grado": "7",
+    "codigo": "DBA-MA-7-06",
+    "descripcion": "Plantea y resuelve ecuaciones, las describe verbalmente y representa situaciones de variación numérica, simbólica o gráfica."
+  },
+  {
+    "area": "Matemáticas",
+    "grado": "8",
+    "codigo": "DBA-MA-8-01",
+    "descripcion": "Reconoce la existencia de los números irracionales y los describe de acuerdo con sus características y propiedades."
+  },
+  {
+    "area": "Matemáticas",
+    "grado": "8",
+    "codigo": "DBA-MA-8-02",
+    "descripcion": "Utiliza los números reales para resolver problemas con expresiones polinómicas."
+  },
+  {
+    "area": "Matemáticas",
+    "grado": "8",
+    "codigo": "DBA-MA-8-03",
+    "descripcion": "Reconoce los usos de las operaciones y del signo igual para argumentar equivalencias entre expresiones algebraicas y resolver sistemas de ecuaciones."
+  },
+  {
+    "area": "Matemáticas",
+    "grado": "8",
+    "codigo": "DBA-MA-8-04",
+    "descripcion": "Describe atributos medibles de diferentes sólidos y explica relaciones entre ellos por medio del lenguaje algebraico."
+  },
+  {
+    "area": "Matemáticas",
+    "grado": "8",
+    "codigo": "DBA-MA-8-05",
+    "descripcion": "Encuentra el volumen de objetos regulares e irregulares en la solución de problemas."
+  },
+  {
+    "area": "Matemáticas",
+    "grado": "8",
+    "codigo": "DBA-MA-8-06",
+    "descripcion": "Interpreta y analiza las gráficas y propiedades de expresiones algebraicas y relaciona variación y covariación con comportamientos gráficos."
+  },
+  {
+    "area": "Matemáticas",
+    "grado": "8",
+    "codigo": "DBA-MA-8-07",
+    "descripcion": "Reconoce y determina la probabilidad de eventos compuestos usando propiedades básicas de la probabilidad."
+  },
+  {
+    "area": "Matemáticas",
+    "grado": "9",
+    "codigo": "DBA-MA-9-01",
+    "descripcion": "Utiliza las propiedades de los números reales para justificar procedimientos y representaciones de subconjuntos."
+  },
+  {
+    "area": "Matemáticas",
+    "grado": "9",
+    "codigo": "DBA-MA-9-02",
+    "descripcion": "Utiliza las propiedades de los números reales para analizar procesos infinitos y resolver problemas."
+  },
+  {
+    "area": "Matemáticas",
+    "grado": "9",
+    "codigo": "DBA-MA-9-03",
+    "descripcion": "Encuentra relaciones entre el área y la capacidad de cuerpos redondos (cilindro, cono, esfera)."
+  },
+  {
+    "area": "Matemáticas",
+    "grado": "9",
+    "codigo": "DBA-MA-9-04",
+    "descripcion": "Interpreta el espacio de manera analítica a partir de relaciones geométricas en trayectorias y desplazamientos de cuerpos."
+  },
+  {
+    "area": "Matemáticas",
+    "grado": "9",
+    "codigo": "DBA-MA-9-05",
+    "descripcion": "Usa lenguaje aritmético, geométrico o algebraico para formular y resolver conjeturas en problemas cotidianos."
+  },
+  {
+    "area": "Matemáticas",
+    "grado": "9",
+    "codigo": "DBA-MA-9-06",
+    "descripcion": "Compara distribuciones de datos usando diagramas de caja, medidas de tendencia central, variación y localización."
+  },
+  {
+    "area": "Matemáticas",
+    "grado": "9",
+    "codigo": "DBA-MA-9-07",
+    "descripcion": "Encuentra posibles resultados de experimentos aleatorios y probabilidad de eventos compuestos."
+  },
+  {
+    "area": "Matemáticas",
+    "grado": "10",
+    "codigo": "DBA-MA-10-01",
+    "descripcion": "Reconoce el significado de magnitudes relacionales (velocidad media, aceleración media) a partir de tablas, gráficas y expresiones algebraicas."
+  },
+  {
+    "area": "Matemáticas",
+    "grado": "10",
+    "codigo": "DBA-MA-10-02",
+    "descripcion": "Comprende y utiliza funciones para modelar fenómenos periódicos y justifica las soluciones."
+  },
+  {
+    "area": "Matemáticas",
+    "grado": "10",
+    "codigo": "DBA-MA-10-03",
+    "descripcion": "Usa el concepto de cambio para estudiar el cambio promedio y el cambio alrededor de un punto."
+  },
+  {
+    "area": "Matemáticas",
+    "grado": "10",
+    "codigo": "DBA-MA-10-04",
+    "descripcion": "Comprende y usa medidas de tendencia central y dispersión, y complementa una medida con otra para mejores lecturas de datos."
+  },
+  {
+    "area": "Matemáticas",
+    "grado": "11",
+    "codigo": "DBA-MA-11-01",
+    "descripcion": "Utiliza las propiedades de los números naturales, enteros, racionales y reales para construir y comparar sistemas numéricos."
+  },
+  {
+    "area": "Matemáticas",
+    "grado": "11",
+    "codigo": "DBA-MA-11-02",
+    "descripcion": "Aplica la noción de derivada como razón de cambio para resolver problemas, estimar cantidades y juzgar la pertinencia de soluciones."
+  },
+  {
+    "area": "Matemáticas",
+    "grado": "11",
+    "codigo": "DBA-MA-11-03",
+    "descripcion": "Diseña técnicas para mediciones con niveles crecientes de precisión."
+  },
+  {
+    "area": "Matemáticas",
+    "grado": "11",
+    "codigo": "DBA-MA-11-04",
+    "descripcion": "Comprende la derivada como pendiente de la tangente y desarrolla métodos para hallar derivadas de funciones básicas."
+  },
+  {
+    "area": "Matemáticas",
+    "grado": "11",
+    "codigo": "DBA-MA-11-05",
+    "descripcion": "Usa modelos funcionales para analizar situaciones y estudiar la variación en contextos intraescolares y extraescolares."
+  },
+  {
+    "area": "Matemáticas",
+    "grado": "11",
+    "codigo": "DBA-MA-11-06",
+    "descripcion": "Resuelve problemas que implican exploración de asociaciones o correlaciones entre variables."
+  },
+  {
+    "area": "Lenguaje",
+    "grado": "1",
+    "codigo": "DBA-LG-1-01",
+    "descripcion": "Identifica los diferentes medios de comunicación como una posibilidad para informarse, participar y acceder al universo cultural que los rodea."
+  },
+  {
+    "area": "Lenguaje",
+    "grado": "1",
+    "codigo": "DBA-LG-1-02",
+    "descripcion": "Reconoce en los textos literarios la posibilidad de desarrollar su capacidad creativa y lúdica."
+  },
+  {
+    "area": "Lenguaje",
+    "grado": "1",
+    "codigo": "DBA-LG-1-03",
+    "descripcion": "Interpreta textos literarios como parte de su iniciación en la comprensión de textos."
+  },
+  {
+    "area": "Lenguaje",
+    "grado": "1",
+    "codigo": "DBA-LG-1-04",
+    "descripcion": "Interpreta diversos textos a partir de la lectura de palabras sencillas y de las imágenes que contienen."
+  },
+  {
+    "area": "Lenguaje",
+    "grado": "1",
+    "codigo": "DBA-LG-1-05",
+    "descripcion": "Enuncia textos orales de diferente índole sobre temas de su interés o sugeridos por otros."
+  },
+  {
+    "area": "Lenguaje",
+    "grado": "1",
+    "codigo": "DBA-LG-1-06",
+    "descripcion": "Escribe palabras que le permiten comunicar sus ideas, preferencias y aprendizajes."
+  },
+  {
+    "area": "Lenguaje",
+    "grado": "2",
+    "codigo": "DBA-LG-2-01",
+    "descripcion": "Identifica las características de los medios de comunicación masiva a los que tiene acceso."
+  },
+  {
+    "area": "Lenguaje",
+    "grado": "2",
+    "codigo": "DBA-LG-2-02",
+    "descripcion": "Identifica la función que cumplen las señales y símbolos que aparecen en su entorno."
+  },
+  {
+    "area": "Lenguaje",
+    "grado": "2",
+    "codigo": "DBA-LG-2-03",
+    "descripcion": "Reconoce elementos de textos literarios como personajes, espacios y acciones."
+  },
+  {
+    "area": "Lenguaje",
+    "grado": "2",
+    "codigo": "DBA-LG-2-04",
+    "descripcion": "Comprende diversos textos literarios a partir de sus propias vivencias."
+  },
+  {
+    "area": "Lenguaje",
+    "grado": "2",
+    "codigo": "DBA-LG-2-05",
+    "descripcion": "Expresa sus ideas atendiendo a las características del contexto comunicativo (interlocutores, temas, lugares)."
+  },
+  {
+    "area": "Lenguaje",
+    "grado": "2",
+    "codigo": "DBA-LG-2-06",
+    "descripcion": "Produce diferentes tipos de textos para atender a un propósito comunicativo particular."
+  },
+  {
+    "area": "Lenguaje",
+    "grado": "3",
+    "codigo": "DBA-LG-3-01",
+    "descripcion": "Comprende las funciones que cumplen los medios de comunicación propios de su contexto."
+  },
+  {
+    "area": "Lenguaje",
+    "grado": "3",
+    "codigo": "DBA-LG-3-02",
+    "descripcion": "Reconoce elementos de textos narrativos como narrador y estructura narrativa."
+  },
+  {
+    "area": "Lenguaje",
+    "grado": "3",
+    "codigo": "DBA-LG-3-03",
+    "descripcion": "Escribe textos literarios coherentes, atendiendo a las características textuales e integrando sus saberes e intereses."
+  },
+  {
+    "area": "Lenguaje",
+    "grado": "3",
+    "codigo": "DBA-LG-3-04",
+    "descripcion": "Produce textos orales breves ajustando el volumen, el tono de la voz, los movimientos corporales y los gestos."
+  },
+  {
+    "area": "Lenguaje",
+    "grado": "4",
+    "codigo": "DBA-LG-4-01",
+    "descripcion": "Analiza la información presentada por los diferentes medios de comunicación con los cuales interactúa."
+  },
+  {
+    "area": "Lenguaje",
+    "grado": "4",
+    "codigo": "DBA-LG-4-02",
+    "descripcion": "Elabora hipótesis sobre la lectura a partir de lecturas previas e impresiones sobre un tema."
+  },
+  {
+    "area": "Lenguaje",
+    "grado": "4",
+    "codigo": "DBA-LG-4-03",
+    "descripcion": "Construye textos poéticos, empleando algunas figuras literarias."
+  },
+  {
+    "area": "Lenguaje",
+    "grado": "4",
+    "codigo": "DBA-LG-4-04",
+    "descripcion": "Produce textos orales y escritos adaptando sus emisiones a los requerimientos de la situación comunicativa."
+  },
+  {
+    "area": "Lenguaje",
+    "grado": "5",
+    "codigo": "DBA-LG-5-01",
+    "descripcion": "Utiliza la información de los medios de comunicación para participar en espacios discursivos de opinión."
+  },
+  {
+    "area": "Lenguaje",
+    "grado": "5",
+    "codigo": "DBA-LG-5-02",
+    "descripcion": "Interpreta mensajes directos e indirectos en imágenes, símbolos o gestos."
+  },
+  {
+    "area": "Lenguaje",
+    "grado": "5",
+    "codigo": "DBA-LG-5-03",
+    "descripcion": "Reconoce en la lectura de distintos géneros literarios diferentes posibilidades de recrear y ampliar su visión de mundo."
+  },
+  {
+    "area": "Lenguaje",
+    "grado": "5",
+    "codigo": "DBA-LG-5-04",
+    "descripcion": "Realiza inferencias a partir de la relación entre información explícita e implícita."
+  },
+  {
+    "area": "Lenguaje",
+    "grado": "5",
+    "codigo": "DBA-LG-5-05",
+    "descripcion": "Construye textos orales atendiendo a contextos de uso, interlocutores y propósito comunicativo."
+  },
+  {
+    "area": "Lenguaje",
+    "grado": "6",
+    "codigo": "DBA-LG-6-01",
+    "descripcion": "Utiliza la información de los medios de comunicación teniendo en cuenta el mensaje, los interlocutores, la intencionalidad y el contexto."
+  },
+  {
+    "area": "Lenguaje",
+    "grado": "6",
+    "codigo": "DBA-LG-6-02",
+    "descripcion": "Reconoce la literatura como posibilidad de circulación del conocimiento y desarrollo de la imaginación."
+  },
+  {
+    "area": "Lenguaje",
+    "grado": "6",
+    "codigo": "DBA-LG-6-03",
+    "descripcion": "Identifica expresiones de diferentes regiones en las obras literarias."
+  },
+  {
+    "area": "Lenguaje",
+    "grado": "6",
+    "codigo": "DBA-LG-6-04",
+    "descripcion": "Interpreta obras de la tradición popular propias de su entorno y diversos tipos de texto."
+  },
+  {
+    "area": "Lenguaje",
+    "grado": "6",
+    "codigo": "DBA-LG-6-05",
+    "descripcion": "Produce discursos orales adecuándolos a las circunstancias del contexto: público, intención comunicativa y tema."
+  },
+  {
+    "area": "Lenguaje",
+    "grado": "7",
+    "codigo": "DBA-LG-7-01",
+    "descripcion": "Clasifica la información de los medios de comunicación y la retoma como referente para sus producciones discursivas."
+  },
+  {
+    "area": "Lenguaje",
+    "grado": "7",
+    "codigo": "DBA-LG-7-02",
+    "descripcion": "Relaciona temas literarios con hechos históricos, culturales y sociales."
+  },
+  {
+    "area": "Lenguaje",
+    "grado": "7",
+    "codigo": "DBA-LG-7-03",
+    "descripcion": "Clasifica las producciones literarias a partir del análisis de su contenido y estructura en diferentes géneros."
+  },
+  {
+    "area": "Lenguaje",
+    "grado": "7",
+    "codigo": "DBA-LG-7-04",
+    "descripcion": "Interpreta textos informativos, expositivos, narrativos, líricos, argumentativos y descriptivos."
+  },
+  {
+    "area": "Lenguaje",
+    "grado": "7",
+    "codigo": "DBA-LG-7-05",
+    "descripcion": "Produce textos orales y escritos con un objetivo determinado en diversos contextos."
+  },
+  {
+    "area": "Lenguaje",
+    "grado": "7",
+    "codigo": "DBA-LG-7-06",
+    "descripcion": "Construye narraciones orales retomando características de los géneros y contextos de circulación."
+  },
+  {
+    "area": "Lenguaje",
+    "grado": "8",
+    "codigo": "DBA-LG-8-01",
+    "descripcion": "Caracteriza los discursos de los medios de comunicación atendiendo al contenido, la intención del autor y el contexto."
+  },
+  {
+    "area": "Lenguaje",
+    "grado": "8",
+    "codigo": "DBA-LG-8-02",
+    "descripcion": "Reconoce en cuentos, relatos, fábulas y novelas la estructura formal del género y la identidad cultural."
+  },
+  {
+    "area": "Lenguaje",
+    "grado": "8",
+    "codigo": "DBA-LG-8-03",
+    "descripcion": "Comprende el género lírico como construcción mediada por musicalidad, rima y figuras retóricas."
+  },
+  {
+    "area": "Lenguaje",
+    "grado": "8",
+    "codigo": "DBA-LG-8-04",
+    "descripcion": "Escucha activamente y predice los contenidos de la comunicación."
+  },
+  {
+    "area": "Lenguaje",
+    "grado": "8",
+    "codigo": "DBA-LG-8-05",
+    "descripcion": "Infiere múltiples sentidos en los textos y los relaciona con conceptos macro y contextos de producción."
+  },
+  {
+    "area": "Lenguaje",
+    "grado": "8",
+    "codigo": "DBA-LG-8-06",
+    "descripcion": "Produce diferentes tipos de texto considerando la temática, los interlocutores y el contexto histórico-cultural."
+  },
+  {
+    "area": "Lenguaje",
+    "grado": "9",
+    "codigo": "DBA-LG-9-01",
+    "descripcion": "Confronta los discursos de los medios de comunicación para afianzar su punto de vista particular."
+  },
+  {
+    "area": "Lenguaje",
+    "grado": "9",
+    "codigo": "DBA-LG-9-02",
+    "descripcion": "Comprende la literatura como manifestación artística que permite crear ficciones y expresar pensamientos."
+  },
+  {
+    "area": "Lenguaje",
+    "grado": "9",
+    "codigo": "DBA-LG-9-03",
+    "descripcion": "Compara formatos de obras literarias y producciones audiovisuales para analizar elementos narrativos."
+  },
+  {
+    "area": "Lenguaje",
+    "grado": "9",
+    "codigo": "DBA-LG-9-04",
+    "descripcion": "Produce discursos argumentativos sobre temas de actualidad social."
+  },
+  {
+    "area": "Lenguaje",
+    "grado": "9",
+    "codigo": "DBA-LG-9-05",
+    "descripcion": "Organiza sus intervenciones usando diversas estrategias para exponer sus argumentos."
+  },
+  {
+    "area": "Lenguaje",
+    "grado": "10",
+    "codigo": "DBA-LG-10-01",
+    "descripcion": "Asume una posición crítica y propositiva frente a los medios de comunicación masiva para analizar su influencia en la sociedad."
+  },
+  {
+    "area": "Lenguaje",
+    "grado": "10",
+    "codigo": "DBA-LG-10-02",
+    "descripcion": "Reconoce la literatura como forma de comprensión histórica a partir de exponentes, textos, temáticas y recursos estilísticos."
+  },
+  {
+    "area": "Lenguaje",
+    "grado": "10",
+    "codigo": "DBA-LG-10-03",
+    "descripcion": "Formula puntos de encuentro entre la literatura y las artes plásticas y visuales."
+  },
+  {
+    "area": "Lenguaje",
+    "grado": "10",
+    "codigo": "DBA-LG-10-04",
+    "descripcion": "Produce discursos como ponencias, comentarios, relatorías o entrevistas atendiendo a progresión temática e interlocutores."
+  },
+  {
+    "area": "Lenguaje",
+    "grado": "11",
+    "codigo": "DBA-LG-11-01",
+    "descripcion": "Participa en escenarios académicos, políticos y culturales asumiendo una posición crítica y propositiva frente a los discursos."
+  },
+  {
+    "area": "Lenguaje",
+    "grado": "11",
+    "codigo": "DBA-LG-11-02",
+    "descripcion": "Determina la manera de abordar la comprensión de textos según experiencias de formación e inclinaciones literarias."
+  },
+  {
+    "area": "Lenguaje",
+    "grado": "11",
+    "codigo": "DBA-LG-11-03",
+    "descripcion": "Produce discursos donde voces e interlocutores involucran procesos de comprensión, crítica y proposición."
+  },
+  {
+    "area": "Lenguaje",
+    "grado": "11",
+    "codigo": "DBA-LG-11-04",
+    "descripcion": "Desarrolla capacidad crítica y argumentativa para establecer relaciones entre temáticas, características y contextos."
+  },
+  {
+    "area": "Lenguaje",
+    "grado": "11",
+    "codigo": "DBA-LG-11-05",
+    "descripcion": "Expresa por medio de producciones orales el dominio de un tema, un texto o la obra de un autor."
+  },
+  {
+    "area": "Ciencias Naturales",
+    "grado": "1",
+    "codigo": "DBA-CN-1-01",
+    "descripcion": "Comprende que los sentidos le permiten percibir algunas características de los objetos que nos rodean (temperatura, sabor, sonidos, olor, color, texturas y formas)."
+  },
+  {
+    "area": "Ciencias Naturales",
+    "grado": "1",
+    "codigo": "DBA-CN-1-02",
+    "descripcion": "Comprende que existe una gran variedad de materiales y que estos se utilizan para distintos fines, según sus características."
+  },
+  {
+    "area": "Ciencias Naturales",
+    "grado": "1",
+    "codigo": "DBA-CN-1-03",
+    "descripcion": "Comprende que los seres vivos (plantas y animales) tienen características comunes (se alimentan, respiran, tienen un ciclo de vida, responden al entorno) y los diferencia de los objetos inertes."
+  },
+  {
+    "area": "Ciencias Naturales",
+    "grado": "1",
+    "codigo": "DBA-CN-1-04",
+    "descripcion": "Comprende que su cuerpo experimenta constantes cambios a lo largo del tiempo y reconoce características similares y diferentes a las de sus padres y compañeros."
+  },
+  {
+    "area": "Ciencias Naturales",
+    "grado": "2",
+    "codigo": "DBA-CN-2-01",
+    "descripcion": "Comprende que una acción mecánica (fuerza) puede producir distintas deformaciones en un objeto, y que este resiste a las fuerzas de diferente modo, de acuerdo con el material del que está hecho."
+  },
+  {
+    "area": "Ciencias Naturales",
+    "grado": "2",
+    "codigo": "DBA-CN-2-02",
+    "descripcion": "Comprende que las sustancias pueden encontrarse en distintos estados (sólido, líquido y gaseoso)."
+  },
+  {
+    "area": "Ciencias Naturales",
+    "grado": "2",
+    "codigo": "DBA-CN-2-03",
+    "descripcion": "Comprende la relación entre las características físicas de plantas y animales con los ambientes en donde viven (luz, agua, aire, suelo, nutrientes, desplazamiento y protección)."
+  },
+  {
+    "area": "Ciencias Naturales",
+    "grado": "2",
+    "codigo": "DBA-CN-2-04",
+    "descripcion": "Explica los procesos de cambios físicos que ocurren en el ciclo de vida de plantas y animales de su entorno."
+  },
+  {
+    "area": "Ciencias Naturales",
+    "grado": "3",
+    "codigo": "DBA-CN-3-01",
+    "descripcion": "Comprende la forma en que se propaga la luz a través de diferentes materiales (opacos, transparentes, translúcidos y reflectivos)."
+  },
+  {
+    "area": "Ciencias Naturales",
+    "grado": "3",
+    "codigo": "DBA-CN-3-02",
+    "descripcion": "Comprende la forma en que se produce la sombra y la relación de su tamaño con las distancias entre la fuente de luz, el objeto interpuesto y el lugar donde se produce la sombra."
+  },
+  {
+    "area": "Ciencias Naturales",
+    "grado": "3",
+    "codigo": "DBA-CN-3-03",
+    "descripcion": "Comprende la naturaleza (fenómeno de la vibración) y las características del sonido (altura, timbre, intensidad) y que este se propaga en distintos medios (sólidos, líquidos, gaseosos)."
+  },
+  {
+    "area": "Ciencias Naturales",
+    "grado": "3",
+    "codigo": "DBA-CN-3-04",
+    "descripcion": "Comprende la influencia de la variación de la temperatura en los cambios de estado de la materia, considerando como ejemplo el caso del agua."
+  },
+  {
+    "area": "Ciencias Naturales",
+    "grado": "3",
+    "codigo": "DBA-CN-3-05",
+    "descripcion": "Explica la influencia de los factores abióticos (luz, temperatura, suelo y aire) en el desarrollo de los factores bióticos (fauna y flora) de un ecosistema."
+  },
+  {
+    "area": "Ciencias Naturales",
+    "grado": "3",
+    "codigo": "DBA-CN-3-06",
+    "descripcion": "Comprende las relaciones de los seres vivos con otros organismos de su entorno (intra e interespecíficas) y las explica como esenciales para su supervivencia."
+  },
+  {
+    "area": "Ciencias Naturales",
+    "grado": "4",
+    "codigo": "DBA-CN-4-01",
+    "descripcion": "Comprende que la magnitud y la dirección en que se aplica una fuerza puede producir cambios en la forma como se mueve un objeto (dirección y rapidez)."
+  },
+  {
+    "area": "Ciencias Naturales",
+    "grado": "4",
+    "codigo": "DBA-CN-4-02",
+    "descripcion": "Comprende los efectos y las ventajas de utilizar máquinas simples en diferentes tareas que requieren la aplicación de una fuerza."
+  },
+  {
+    "area": "Ciencias Naturales",
+    "grado": "4",
+    "codigo": "DBA-CN-4-03",
+    "descripcion": "Comprende que el fenómeno del día y la noche se debe a que la Tierra rota sobre su eje y en consecuencia el sol solo ilumina la mitad de su superficie."
+  },
+  {
+    "area": "Ciencias Naturales",
+    "grado": "4",
+    "codigo": "DBA-CN-4-04",
+    "descripcion": "Comprende que las fases de la Luna se deben a la posición relativa del Sol, la Luna y la Tierra a lo largo del mes."
+  },
+  {
+    "area": "Ciencias Naturales",
+    "grado": "4",
+    "codigo": "DBA-CN-4-05",
+    "descripcion": "Comprende que existen distintos tipos de mezclas (homogéneas y heterogéneas) que pueden separarse mediante diferentes técnicas (filtración, tamizado, decantación, evaporación)."
+  },
+  {
+    "area": "Ciencias Naturales",
+    "grado": "4",
+    "codigo": "DBA-CN-4-06",
+    "descripcion": "Comprende que los organismos cumplen distintas funciones en cada uno de los niveles tróficos y que las relaciones entre ellos pueden representarse en cadenas y redes alimenticias."
+  },
+  {
+    "area": "Ciencias Naturales",
+    "grado": "4",
+    "codigo": "DBA-CN-4-07",
+    "descripcion": "Comprende que existen distintos tipos de ecosistemas (terrestres y acuáticos) y que sus características físicas permiten que habiten en ellos diferentes seres vivos."
+  },
+  {
+    "area": "Ciencias Naturales",
+    "grado": "5",
+    "codigo": "DBA-CN-5-01",
+    "descripcion": "Comprende que un circuito eléctrico básico está formado por un generador o fuente (pila), conductores (cables) y uno o más dispositivos (bombillos, motores, timbres)."
+  },
+  {
+    "area": "Ciencias Naturales",
+    "grado": "5",
+    "codigo": "DBA-CN-5-02",
+    "descripcion": "Comprende que algunos materiales son buenos conductores de la corriente eléctrica y otros no (denominados aislantes) y que el paso de la corriente siempre genera calor."
+  },
+  {
+    "area": "Ciencias Naturales",
+    "grado": "5",
+    "codigo": "DBA-CN-5-03",
+    "descripcion": "Comprende que los seres vivos están formados por órganos, tejidos y células y que la estructura de cada tipo de célula está relacionada con la función del tejido que forman."
+  },
+  {
+    "area": "Ciencias Naturales",
+    "grado": "5",
+    "codigo": "DBA-CN-5-04",
+    "descripcion": "Comprende que en los seres humanos la nutrición involucra el funcionamiento integrado de un conjunto de sistemas de órganos: digestivo, respiratorio y circulatorio."
+  },
+  {
+    "area": "Ciencias Naturales",
+    "grado": "6",
+    "codigo": "DBA-CN-6-01",
+    "descripcion": "Comprende las transformaciones térmicas (motores de combustión, refrigeración) por medio de las leyes de la termodinámica (primera y segunda ley)."
+  },
+  {
+    "area": "Ciencias Naturales",
+    "grado": "6",
+    "codigo": "DBA-CN-6-02",
+    "descripcion": "Comprende que el comportamiento de un gas ideal está determinado por las relaciones entre Temperatura (T), Presión (P), Volumen (V) y Cantidad de sustancia (n)."
+  },
+  {
+    "area": "Ciencias Naturales",
+    "grado": "6",
+    "codigo": "DBA-CN-6-03",
+    "descripcion": "Comprende las relaciones entre los diferentes niveles de organización ecológica (individuo, población, comunidad, ecosistema, bioma, biosfera)."
+  },
+  {
+    "area": "Ciencias Naturales",
+    "grado": "7",
+    "codigo": "DBA-CN-7-01",
+    "descripcion": "Comprende que el movimiento de un cuerpo en un marco de referencia inercial dado se puede describir con gráficos y predecir por medio de expresiones matemáticas."
+  },
+  {
+    "area": "Ciencias Naturales",
+    "grado": "7",
+    "codigo": "DBA-CN-7-02",
+    "descripcion": "Comprende los conceptos de solutos y solventes, así como los factores que afectan la formación de soluciones."
+  },
+  {
+    "area": "Ciencias Naturales",
+    "grado": "7",
+    "codigo": "DBA-CN-7-03",
+    "descripcion": "Comprende las relaciones entre los niveles de organización biológica y su funcionamiento integrado."
+  },
+  {
+    "area": "Ciencias Naturales",
+    "grado": "8",
+    "codigo": "DBA-CN-8-01",
+    "descripcion": "Comprende que los movimientos rectilíneo uniforme y uniformemente variado se presentan cuando las fuerzas aplicadas sobre el sistema se anulan, y que fuerzas resultantes no nulas producen cambios de velocidad."
+  },
+  {
+    "area": "Ciencias Naturales",
+    "grado": "8",
+    "codigo": "DBA-CN-8-02",
+    "descripcion": "Comprende que los tipos de reacción química (óxido-reducción, descomposición, neutralización y precipitación) posibilitan la formación de compuestos inorgánicos."
+  },
+  {
+    "area": "Ciencias Naturales",
+    "grado": "8",
+    "codigo": "DBA-CN-8-03",
+    "descripcion": "Comprende la relación entre la estructura atómica de la materia y las propiedades periódicas de los elementos químicos."
+  },
+  {
+    "area": "Ciencias Naturales",
+    "grado": "9",
+    "codigo": "DBA-CN-9-01",
+    "descripcion": "Comprende la naturaleza del sonido y de la luz como fenómenos ondulatorios (ondas mecánicas y electromagnéticas, respectivamente)."
+  },
+  {
+    "area": "Ciencias Naturales",
+    "grado": "9",
+    "codigo": "DBA-CN-9-02",
+    "descripcion": "Comprende las relaciones entre voltaje, corriente y resistencia en circuitos resistivos sencillos en serie, en paralelo y mixtos."
+  },
+  {
+    "area": "Ciencias Naturales",
+    "grado": "9",
+    "codigo": "DBA-CN-9-03",
+    "descripcion": "Analiza problemáticas ambientales como el calentamiento global, contaminación, tala de bosques y minería, desde una visión sistémica."
+  },
+  {
+    "area": "Ciencias Naturales",
+    "grado": "9",
+    "codigo": "DBA-CN-9-04",
+    "descripcion": "Comprende la relación entre la genética, la herencia biológica y la biodiversidad."
+  },
+  {
+    "area": "Ciencias Naturales",
+    "grado": "10",
+    "codigo": "DBA-CN-10-01",
+    "descripcion": "Comprende y aplica las leyes de Newton para explicar el movimiento de los cuerpos en diferentes situaciones."
+  },
+  {
+    "area": "Ciencias Naturales",
+    "grado": "10",
+    "codigo": "DBA-CN-10-02",
+    "descripcion": "Comprende las relaciones entre la energía, el trabajo mecánico y la potencia en sistemas físicos."
+  },
+  {
+    "area": "Ciencias Naturales",
+    "grado": "10",
+    "codigo": "DBA-CN-10-03",
+    "descripcion": "Comprende la estructura del ADN, la replicación y la síntesis de proteínas como base de la herencia genética."
+  },
+  {
+    "area": "Ciencias Naturales",
+    "grado": "11",
+    "codigo": "DBA-CN-11-01",
+    "descripcion": "Comprende las relaciones entre campos eléctricos y magnéticos y su aplicación en la generación de corriente eléctrica."
+  },
+  {
+    "area": "Ciencias Naturales",
+    "grado": "11",
+    "codigo": "DBA-CN-11-02",
+    "descripcion": "Comprende la relación entre la química orgánica y los procesos bioquímicos fundamentales para la vida."
+  },
+  {
+    "area": "Ciencias Naturales",
+    "grado": "11",
+    "codigo": "DBA-CN-11-03",
+    "descripcion": "Comprende la evolución como proceso que explica la diversidad de especies a partir de un ancestro común, mediante la selección natural."
+  },
+  {
+    "area": "Ciencias Naturales",
+    "grado": "11",
+    "codigo": "DBA-CN-11-04",
+    "descripcion": "Analiza problemáticas ambientales globales desde una perspectiva sistémica y propone alternativas de solución sostenibles."
+  },
+  {
+    "area": "Transición",
+    "grado": "0",
+    "codigo": "DBA-TR-0-01",
+    "descripcion": "Las niñas y los niños construyen su identidad en relación con los otros; se sienten queridos, y valoran positivamente pertenecer a una familia, cultura y mundo."
+  },
+  {
+    "area": "Transición",
+    "grado": "0",
+    "codigo": "DBA-TR-0-02",
+    "descripcion": "Las niñas y los niños son comunicadores activos de sus ideas, sentimientos y emociones; expresan, imaginan y representan su realidad."
+  },
+  {
+    "area": "Transición",
+    "grado": "0",
+    "codigo": "DBA-TR-0-03",
+    "descripcion": "Las niñas y los niños disfrutan aprender; exploran y se relacionan con el mundo para comprenderlo y construirlo."
+  }
+]

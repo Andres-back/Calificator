@@ -319,7 +319,7 @@ async def ai_usage(
 
     query_sql = text(f"""
         SELECT id, request_id, feature, stage, provider, model, attempt_number,
-               status, latency_ms, input_tokens, output_tokens, image_count,
+               status, latency_ms, input_tokens, output_tokens, image_count, cost,
                error_code, started_at, completed_at
         FROM ai_usage_events
         WHERE {where_clause}
@@ -331,3 +331,35 @@ async def ai_usage(
     for row in rows:
         eventos.append(dict(row._mapping))
     return {"total": total, "limit": limit, "offset": offset, "eventos": eventos}
+
+
+@router.get("/analytics/ai-quality/costs")
+async def ai_costs(
+    materia_id: UUID | None = Query(None),
+    evaluacion_id: UUID | None = Query(None),
+    fecha_desde: datetime | None = Query(None),
+    fecha_hasta: datetime | None = Query(None),
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    """Costos agregados de uso de IA: total, por proveedor, modelo, funcionalidad y serie mensual."""
+    require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
+    return await service.get_costs_summary(
+        db, profesor_id=current_user.id, materia_id=materia_id,
+        evaluacion_id=evaluacion_id, fecha_desde=fecha_desde, fecha_hasta=fecha_hasta,
+    )
+
+
+@router.get("/analytics/ai-quality/costs/provider-comparison")
+async def ai_costs_provider_comparison(
+    fecha_desde: datetime | None = Query(None),
+    fecha_hasta: datetime | None = Query(None),
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> list[dict]:
+    """Comparación de costos y métricas entre proveedores."""
+    require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
+    return await service.get_costs_by_provider_comparison(
+        db, profesor_id=current_user.id,
+        fecha_desde=fecha_desde, fecha_hasta=fecha_hasta,
+    )

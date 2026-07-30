@@ -13,7 +13,7 @@ export function CrucigramaForm({ loading, onSubmit }: ToolFormProps) {
     <div className="space-y-5">
       <BaseFields base={b.base} set={b.set} tituloPlaceholder="Crucigrama del ciclo del agua" />
       <DBAAlignmentSelector base={b.base} set={b.set} />
-      <FormSection title="Palabras del crucigrama" hint="La IA elige conceptos clave del tema y la grilla se arma sola.">
+      <FormSection title="Cantidad de palabras" hint="La IA elige conceptos clave del tema y arma la grilla automáticamente.">
         <Stepper value={n} onChange={setN} min={5} max={20} label="palabras" />
       </FormSection>
       <ExtraInstructions value={b.base.instrucciones_adicionales} onChange={(v) => b.set('instrucciones_adicionales', v)} />
@@ -26,20 +26,19 @@ export function SopaLetrasForm({ loading, onSubmit }: ToolFormProps) {
   const b = useBaseForm();
   const [words, setWords] = useState<string[]>([]);
   const [size, setSize] = useState(12);
-  const enough = words.length >= 5;
   return (
     <div className="space-y-5">
       <BaseFields base={b.base} set={b.set} tituloPlaceholder="Sopa de letras del agua" />
       <DBAAlignmentSelector base={b.base} set={b.set} />
-      <FormSection title="Palabras a buscar" hint="Escribe cada palabra y pulsa Enter. Mínimo 5.">
+      <FormSection title="Palabras a buscar (opcional)" hint="Si no escribes palabras, la IA las generará automáticamente según el tema.">
         <TagInput value={words} onChange={setWords} uppercase placeholder="LUZ, SOMBRA, ESPEJO…" />
-        <p className={`mt-2 text-xs ${enough ? 'text-emerald-600' : 'text-muted'}`}>{words.length}/5 palabras mínimas</p>
+        <p className="mt-2 text-xs text-muted">{words.length > 0 ? `${words.length} palabras seleccionadas` : 'La IA generará las palabras automáticamente'}</p>
       </FormSection>
       <FormSection title="Tamaño de la grilla">
         <Stepper value={size} onChange={setSize} min={10} max={20} label="× " />
       </FormSection>
       <ExtraInstructions value={b.base.instrucciones_adicionales} onChange={(v) => b.set('instrucciones_adicionales', v)} />
-      <GenerateButton loading={loading} disabled={!b.valid || !enough || b.base.dba_ids.length + b.base.dba_personalizado_ids.length === 0} onClick={() => onSubmit({ ...b.payload(), palabras_clave: words, tamanio_grilla: size })} />
+      <GenerateButton loading={loading} disabled={!b.valid || b.base.dba_ids.length + b.base.dba_personalizado_ids.length === 0} onClick={() => onSubmit({ ...b.payload(), palabras_clave: words, tamanio_grilla: size })} />
     </div>
   );
 }
@@ -51,7 +50,7 @@ function PairsForm({ loading, onSubmit, placeholder }: ToolFormProps & { placeho
     <div className="space-y-5">
       <BaseFields base={b.base} set={b.set} tituloPlaceholder={placeholder} />
       <DBAAlignmentSelector base={b.base} set={b.set} />
-      <FormSection title="Cantidad de parejas" hint="La IA genera los pares y baraja la columna derecha.">
+      <FormSection title="Cantidad de pares" hint="La IA genera los conceptos y sus relaciones. Tú solo defines cuántos.">
         <Stepper value={n} onChange={setN} min={3} max={12} label="pares" />
       </FormSection>
       <ExtraInstructions value={b.base.instrucciones_adicionales} onChange={(v) => b.set('instrucciones_adicionales', v)} />
@@ -76,10 +75,10 @@ export function ExamenForm({ loading, onSubmit }: ToolFormProps) {
     <div className="space-y-5">
       <BaseFields base={b.base} set={b.set} tituloPlaceholder="Examen corto del ciclo del agua" />
       <DBAAlignmentSelector base={b.base} set={b.set} />
-      <FormSection title="Número de preguntas">
+      <FormSection title="Número de preguntas" hint="Examen completo con tipos variados de pregunta. Para evaluaciones formales.">
         <Stepper value={n} onChange={setN} min={3} max={30} label="preguntas" />
       </FormSection>
-      <FormSection title="Tipos de pregunta" hint="Selecciona uno o varios.">
+      <FormSection title="Tipos de pregunta" hint="Selecciona uno o varios. Opción múltiple: el estudiante elige. Abierta: escribe la respuesta. Verdadero/Falso: afirmación para evaluar. Completar: completa la frase.">
         <OptionChips value={tipos} onChange={setTipos} options={TIPOS_PREGUNTA} />
       </FormSection>
       <ExtraInstructions value={b.base.instrucciones_adicionales} onChange={(v) => b.set('instrucciones_adicionales', v)} />
@@ -115,11 +114,11 @@ export function TallerForm({ loading, onSubmit }: ToolFormProps) {
     <div className="space-y-5">
       <BaseFields base={b.base} set={b.set} tituloPlaceholder="Taller de sombras" />
       <DBAAlignmentSelector base={b.base} set={b.set} />
-      <FormSection title="Cantidad de puntos" hint="Cada punto incluye espacio para responder.">
-        <Stepper value={n} onChange={setN} min={2} max={15} label="puntos" />
+      <FormSection title="Cantidad de ejercicios" hint="Cada ejercicio incluye enunciado y espacio para que el estudiante responda.">
+        <Stepper value={n} onChange={setN} min={2} max={15} label="ejercicios" />
       </FormSection>
       <ExtraInstructions value={b.base.instrucciones_adicionales} onChange={(v) => b.set('instrucciones_adicionales', v)} />
-      <GenerateButton loading={loading} disabled={!b.valid || b.base.dba_ids.length + b.base.dba_personalizado_ids.length === 0} onClick={() => onSubmit({ ...b.payload(), cantidad_puntos: n })} />
+      <GenerateButton loading={loading} disabled={!b.valid || b.base.dba_ids.length + b.base.dba_personalizado_ids.length === 0} onClick={() => onSubmit({ ...b.payload(), cantidad_puntos: n, cantidad_ejercicios: n })} />
     </div>
   );
 }
@@ -219,7 +218,7 @@ export function QuizRapidoForm({ loading, onSubmit }: ToolFormProps) {
     <div className="space-y-5">
       <BaseFields base={b.base} set={b.set} tituloPlaceholder="Quiz rápido: el ciclo del agua" />
       <DBAAlignmentSelector base={b.base} set={b.set} />
-      <FormSection title="Cantidad de preguntas">
+      <FormSection title="Cantidad de preguntas" hint="Evaluación corta de opción múltiple para repasar. Ideal para repaso rápido o diagnóstico. Diferente del examen: menos preguntas, sin tipos variados.">
         <Stepper value={n} onChange={setN} min={3} max={20} label="preguntas" />
       </FormSection>
       <ExtraInstructions value={b.base.instrucciones_adicionales} onChange={(v) => b.set('instrucciones_adicionales', v)} />

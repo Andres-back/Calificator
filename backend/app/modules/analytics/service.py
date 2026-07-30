@@ -1106,3 +1106,232 @@ async def get_confidence(
         "media": media,
         "baja": baja,
     }
+
+
+async def get_costs_summary(
+    db: AsyncSession,
+    profesor_id: UUID,
+    materia_id: UUID | None = None,
+    evaluacion_id: UUID | None = None,
+    fecha_desde: datetime | None = None,
+    fecha_hasta: datetime | None = None,
+) -> dict:
+    """Costos agregados de uso de IA.
+
+    Retorna total, por proveedor, por modelo, por funcionalidad,
+    y serie mensual.
+    """
+    desde, hasta = _default_date_range()
+    if fecha_desde: desde = fecha_desde
+    if fecha_hasta: hasta = fecha_hasta
+
+    from sqlalchemy import text
+
+    # ── Scope: profesor ve solo sus evaluaciones, admin ve todo ──
+    # We join through evaluaciones to filter by profesor
+
+    where_params: dict = {"desde": desde, "hasta": hasta}
+    where_clauses = ["e.created_at >= :desde", "e.created_at <= :hasta"]
+    if evaluacion_id:
+        where_clauses.append("e.evaluacion_id = :evaluacion_id")
+        where_params["evaluacion_id"] = str(evaluacion_id)
+    else:
+        # Filter by profesor's evaluations
+        where_clauses.append(
+            "e.evaluacion_id IN (SELECT ev.id FROM evaluaciones ev WHERE ev.profesor_id = :profesor_id)"
+        )
+        where_params["profesor_id"] = str(profesor_id)
+        if materia_id:
+            where_clauses.append(
+                "e.evaluacion_id IN (SELECT ev.id FROM evaluaciones ev WHERE ev.materia_id = :materia_id)"
+            )
+            where_params["materia_id"] = str(materia_id)
+
+    where_sql = " AND ".join(where_clauses)
+
+    # ── Total ──
+    total_row = await db.execute(
+        text(f"""
+            SELECT
+                COUNT(*) AS total_calls,
+                COALESCE(SUM(e.cost), 0) AS total_cost,
+                COALESCE(SUM(e.input_tokens), 0) AS total_input_tokens,
+                COALESCE(SUM(e.output_tokens), 0) AS total_output_tokens
+            FROM ai_usage_events e
+            WHERE {where_sql}
+        """),
+        where_params,
+    )
+    total = dict(total_row.mappings().first() or {})
+
+    # ── By provider ──
+    prov_rows = await db.execute(
+        text(f"""
+            SELECT
+                COALESCE(e.provider, 'unknown') AS provider,
+                COUNT(*) AS calls,
+                COALESCE(SUM(e.cost), 0) AS cost,
+                COALESCE(SUM(e.input_tokens), 0) AS input_tokens,
+                COALESCE(SUM(e.output_tokens), 0) AS output_tokens,
+                COUNT(*) FILTER (WHERE e.status = 'error') AS errors
+            FROM ai_usage_events e
+            WHERE {where_sql}
+            GROUP BY e.provider
+            ORDER BY cost DESC
+        """),
+        where_params,
+    )
+    by_provider = [dict(r) for r in prov_rows.mappings()]
+
+    # ── By model ──
+    model_rows = await db.execute(
+        text(f"""
+            SELECT
+                COALESCE(e.model, 'unknown') AS model,
+                COALESCE(e.provider, 'unknown') AS provider,
+                COUNT(*) AS calls,
+                COALESCE(SUM(e.cost), 0) AS cost,
+                COALESCE(SUM(e.input_tokens), 0) AS input_tokens,
+                COALESCE(SUM(e.output_tokens), 0) AS output_tokens
+            FROM ai_usage_events e
+            WHERE {where_sql}
+            GROUP BY e.model, e.provider
+            ORDER BY cost DESC
+        """),
+        where_params,
+    )
+    by_model = [dict(r) for r in model_rows.mappings()]
+
+    # ── By feature ──
+    feat_rows = await db.execute(
+        text(f"""
+            SELECT
+                e.feature,
+                COUNT(*) AS calls,
+                COALESCE(SUM(e.cost), 0) AS cost,
+                COALESCE(SUM(e.input_tokens), 0) AS input_tokens,
+                COALESCE(SUM(e.output_tokens), 0) AS output_tokens
+            FROM ai_usage_events e
+            WHERE {where_sql}
+            GROUP BY e.feature
+            ORDER BY cost DESC
+        """),
+        where_params,
+    )
+    by_feature = [dict(r) for r in feat_rows.mappings()]
+
+    # ── Monthly trend (last 12 months) ──
+    monthly_rows = await db.execute(
+        text(f"""
+            SELECT
+                DATE_TRUNC('month', e.created_at) AS month,
+                COUNT(*) AS calls,
+                COALESCE(SUM(e.cost), 0) AS cost
+            FROM ai_usage_events e
+            WHERE {where_sql}
+            GROUP BY DATE_TRUNC('month', e.created_at)
+            ORDER BY month ASC
+        """),
+        where_params,
+    )
+    monthly = [
+        {
+            "month": str(r.month),
+            "calls": r.calls,
+            "cost": float(r.cost) if r.cost else 0,
+        }
+        for r in monthly_rows
+    ]
+
+    # ── Cost versioning info ──
+    pricing_note = "Costos estimados según catálogo de precios v1.0. Los precios pueden diferir de la factura real del proveedor."
+
+    return {
+        "periodo": {"desde": desde.isoformat(), "hasta": hasta.isoformat()},
+        "total": {
+            "calls": int(total["total_calls"]),
+            "cost": float(total["total_cost"]),
+            "input_tokens": int(total["total_input_tokens"]),
+            "output_tokens": int(total["total_output_tokens"]),
+        },
+        "by_provider": [
+            {
+                "provider": r["provider"],
+                "calls": int(r["calls"]),
+                "cost": float(r["cost"]),
+                "input_tokens": int(r["input_tokens"]),
+                "output_tokens": int(r["output_tokens"]),
+                "errors": int(r["errors"]),
+            }
+            for r in by_provider
+        ],
+        "by_model": [
+            {
+                "model": r["model"],
+                "provider": r["provider"],
+                "calls": int(r["calls"]),
+                "cost": float(r["cost"]),
+                "input_tokens": int(r["input_tokens"]),
+                "output_tokens": int(r["output_tokens"]),
+            }
+            for r in by_model
+        ],
+        "by_feature": [
+            {
+                "feature": r["feature"],
+                "calls": int(r["calls"]),
+                "cost": float(r["cost"]),
+                "input_tokens": int(r["input_tokens"]),
+                "output_tokens": int(r["output_tokens"]),
+            }
+            for r in by_feature
+        ],
+        "monthly": monthly,
+        "pricing_note": pricing_note,
+    }
+
+
+async def get_costs_by_provider_comparison(
+    db: AsyncSession,
+    profesor_id: UUID,
+    fecha_desde: datetime | None = None,
+    fecha_hasta: datetime | None = None,
+) -> list[dict]:
+    """Comparación de costos entre proveedores para el mismo período."""
+    desde, hasta = _default_date_range()
+    if fecha_desde: desde = fecha_desde
+    if fecha_hasta: hasta = fecha_hasta
+
+    from sqlalchemy import text
+
+    rows = await db.execute(
+        text("""
+            SELECT
+                COALESCE(e.provider, 'unknown') AS provider,
+                COUNT(*) AS calls,
+                COALESCE(SUM(e.cost), 0) AS cost,
+                COALESCE(SUM(e.input_tokens), 0) AS total_input,
+                COALESCE(SUM(e.output_tokens), 0) AS total_output,
+                COALESCE(AVG(e.latency_ms), 0) AS avg_latency_ms,
+                COUNT(*) FILTER (WHERE e.status = 'error') AS errors,
+                COUNT(DISTINCT e.model) AS models_used
+            FROM ai_usage_events e
+            WHERE e.created_at >= :desde AND e.created_at <= :hasta
+            GROUP BY e.provider
+            ORDER BY cost DESC
+        """),
+        {"desde": desde, "hasta": hasta},
+    )
+    return [
+        {
+            "provider": r.provider,
+            "calls": int(r.calls),
+            "cost": float(r.cost),
+            "total_input_tokens": int(r.total_input),
+            "total_output_tokens": int(r.total_output),
+            "avg_latency_ms": float(r.avg_latency_ms),
+            "errors": int(r.errors),
+            "models_used": int(r.models_used),
+        }
+        for r in rows
+    ]

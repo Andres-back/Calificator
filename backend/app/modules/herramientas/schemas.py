@@ -22,7 +22,7 @@ class HerramientaBaseRequest(BaseModel):
 
 
 class SopaLetrasRequest(HerramientaBaseRequest):
-    palabras_clave: list[str] = Field(default_factory=list, min_length=5)
+    palabras_clave: list[str] = Field(default_factory=list)
     tamanio_grilla: int = Field(default=15, ge=10, le=20)
 
 
@@ -54,6 +54,8 @@ class GuiaRequest(HerramientaBaseRequest):
 
 class TallerRequest(HerramientaBaseRequest):
     cantidad_puntos: int = Field(default=5, ge=2, le=15)
+    # alias: cantidad_ejercicios accepts same value
+    cantidad_ejercicios: int | None = Field(default=None, ge=2, le=15)
 
 
 class ExamenRequest(HerramientaBaseRequest):
