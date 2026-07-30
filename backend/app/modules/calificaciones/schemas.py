@@ -39,14 +39,15 @@ class EntregaRead(BaseModel):
 # ── Calificaciones ──────────────────────────────────────────────────────────────
 
 class GradingResult(BaseModel):
-    nota_sugerida: Decimal
+    nota_sugerida: Decimal | None
     nota_maxima: Decimal
     confianza: float = Field(ge=0.0, le=1.0)
-    criterios: list[dict] = []
+    criterios: list[dict] = Field(default_factory=list)
     feedback_estudiante: str = ""
-    alertas: list[str] = []
+    alertas: list[str] = Field(default_factory=list)
     requiere_revision_docente: bool = True
-    raw_model_output: dict = {}
+    motivo_revision: str | None = None
+    raw_model_output: dict = Field(default_factory=dict)
 
 
 class CalificacionRead(BaseModel):

@@ -21,6 +21,10 @@ export async function calificarFoto(evaluacionId: string, estudianteId: string, 
   const { data } = await api.post<Calificacion>('/calificaciones/foto', formData);
   return data;
 }
+export async function reintentarCalificacionFoto(calificacionId: string): Promise<Calificacion> {
+  const { data } = await api.post<Calificacion>(`/calificaciones/${calificacionId}/reintentar-foto`);
+  return data;
+}
 export async function iniciarSalon(evaluacionId: string): Promise<SalonSesionRead> {
   const { data } = await api.post<SalonSesionRead>('/calificaciones/modo-salon/iniciar', null, {
     params: { evaluacion_id: evaluacionId },

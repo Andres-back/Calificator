@@ -42,6 +42,36 @@ DEFAULT_GRADER_B_MODEL = "qwen3.7-plus"
 DEFAULT_COMPARATOR_MODEL = "deepseek-v4-flash"
 
 
+def _technical_failure_result(
+    blueprint: dict,
+    motivo_revision: str,
+    failure_stage: str,
+    *,
+    pipeline_status: str = "requires_review",
+    alertas: list[str] | None = None,
+    raw_output: dict | None = None,
+) -> GradingResult:
+    payload = dict(raw_output or {})
+    payload.update({
+        "pipeline_status": pipeline_status,
+        "failure_stage": failure_stage,
+        "motivo_revision": motivo_revision,
+    })
+    return GradingResult(
+        nota_sugerida=None,
+        nota_maxima=Decimal(str(blueprint.get("nota_maxima", 5))),
+        confianza=0.0,
+        criterios=[],
+        alertas=alertas or [],
+        feedback_estudiante="",
+        requiere_revision_docente=True,
+        motivo_revision=motivo_revision,
+        raw_model_output=payload,
+    )
+
+
+
+
 async def orchestrate_grading(
     db: AsyncSession,
     *,
@@ -119,19 +149,21 @@ async def orchestrate_grading(
                     or ""
                 )
                 if not vision_result.raw_output.get("usable", True):
-                    return GradingResult(
-                        nota_sugerida=Decimal("0"),
-                        nota_maxima=Decimal(str(blueprint.get("nota_maxima", 5))),
-                        confianza=0.0,
-                        criterios=[],
+                    return _technical_failure_result(
+                        blueprint,
+                        "image_not_usable",
+                        "vision",
                         alertas=vision_result.alertas or ["Imagen no utilizable"],
-                        feedback_estudiante="La imagen no pudo procesarse. El docente debe revisar manualmente.",
-                        requiere_revision_docente=True,
-                        raw_model_output={
-                            "orchestrator": "vision_failed",
-                            "vision_result": vision_result.raw_output,
-                        },
+                        raw_output={"orchestrator": "vision_failed", "vision_result": vision_result.raw_output},
                     )
+
+        if image_bytes and not texto_extraido.strip():
+            return _technical_failure_result(
+                blueprint,
+                "vision_failed",
+                "extraction",
+                raw_output={"orchestrator": "vision_failed"},
+            )
 
         # ── Paso 3: Calificación dual (en paralelo) ──────────────────
         ctx_grading = AgentContext(
@@ -139,7 +171,7 @@ async def orchestrate_grading(
             nota_maxima=float(blueprint.get("nota_maxima", 5)),
             blueprint=blueprint,
             rag_context=rag_context,
-            student_response_text=texto_extraido or "(sin respuesta)",
+            student_response_text=texto_extraido.strip(),
             image_bytes=image_bytes,
             image_mime=image_mime,
         )
@@ -159,6 +191,23 @@ async def orchestrate_grading(
 
         grading_a, grading_b = await asyncio.gather(grader_a_task, grader_b_task)
 
+        if (
+            grading_a.nota_sugerida is None
+            and grading_b.nota_sugerida is None
+        ):
+            logger.error("Ambos calificadores fallaron sin producir una nota")
+            return _technical_failure_result(
+                blueprint,
+                "all_graders_failed",
+                "grading",
+                alertas=["Los evaluadores de IA no pudieron completar la calificacion."],
+                raw_output={
+                    "orchestrator": "both_graders_failed",
+                    "grader_a_failed": grading_a.error is not None,
+                    "grader_b_failed": grading_b.error is not None,
+                },
+            )
+
         # ── Paso 4: Comparación ──────────────────────────────────────
         final = await comparator_agent(
             grading_a,
@@ -167,32 +216,25 @@ async def orchestrate_grading(
         )
 
         # ── Paso 5: Armado del resultado final ───────────────────────
-        nota_sugerida = Decimal(str(final.nota_sugerida))
         nota_maxima = Decimal(str(blueprint.get("nota_maxima", 5)))
+        if final.nota_sugerida is None:
+            return _technical_failure_result(
+                blueprint,
+                "all_graders_failed",
+                "grading",
+                alertas=["No se obtuvo una nota automatica valida."],
+                raw_output={"orchestrator": "comparator_without_score"},
+            )
+        nota_sugerida = Decimal(str(final.nota_sugerida))
 
         # Si ambos fallaron, marcar revisión docente
         requiere_revision = (
             final.requiere_revision_docente
-            or (grading_a.error is not None and grading_b.error is not None)
+            or grading_a.nota_sugerida is None
+            or grading_b.nota_sugerida is None
         )
 
-        # Si ambos están en error, nota 0 con alertas
-        if grading_a.error and grading_b.error:
-            logger.error("Ambos calificadores fallaron: A=%s B=%s", grading_a.error, grading_b.error)
-            return GradingResult(
-                nota_sugerida=Decimal("0"),
-                nota_maxima=nota_maxima,
-                confianza=0.0,
-                alertas=["Ambos calificadores IA fallaron. Revisión docente requerida."],
-                feedback_estudiante="",
-                requiere_revision_docente=True,
-                raw_model_output={
-                    "orchestrator": "both_graders_failed",
-                    "grader_a_error": grading_a.error,
-                    "grader_b_error": grading_b.error,
-                },
-            )
-
+        # Los fallos dobles ya se manejaron antes del comparador.
         # Construir raw_model_output con trazabilidad completa
         raw_output = {
             "orchestrator": "multi_agent_v2",
@@ -207,7 +249,7 @@ async def orchestrate_grading(
                 "confianza": grading_a.confianza,
                 "tiempo_ms": grading_a.tiempo_ms,
                 "criterios": grading_a.criterios,
-                "error": grading_a.error,
+                "error_type": "grader_error" if grading_a.error else None,
             },
             "grader_b": {
                 "modelo": grading_b.modelo,
@@ -215,7 +257,7 @@ async def orchestrate_grading(
                 "confianza": grading_b.confianza,
                 "tiempo_ms": grading_b.tiempo_ms,
                 "criterios": grading_b.criterios,
-                "error": grading_b.error,
+                "error_type": "grader_error" if grading_b.error else None,
             },
             "comparator": {
                 "modelo": final.modelo,
@@ -238,14 +280,16 @@ async def orchestrate_grading(
 
     except Exception as exc:
         logger.exception("Orchestrator error: %s", exc)
-        return GradingResult(
-            nota_sugerida=Decimal("0"),
-            nota_maxima=Decimal(str(blueprint.get("nota_maxima", 5))),
-            confianza=0.0,
-            alertas=[f"Error en orquestador: {exc}"],
-            feedback_estudiante="",
-            requiere_revision_docente=True,
-            raw_model_output={"orchestrator": "error", "error": str(exc)},
+        return _technical_failure_result(
+            blueprint,
+            "pipeline_error",
+            "unknown",
+            pipeline_status="failed",
+            alertas=["Ocurrio un error tecnico durante el procesamiento."],
+            raw_output={
+                "orchestrator": "error",
+                "error_type": type(exc).__name__,
+            },
         )
     finally:
         await client.close()

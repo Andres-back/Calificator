@@ -219,6 +219,7 @@ export interface Calificacion {
   feedback: string | null;
   estado: string;
   revisado_por_docente: boolean;
+  motivo_revision?: string | null;
   resultado_json: Record<string, unknown>;
   created_at: string;
   updated_at: string;

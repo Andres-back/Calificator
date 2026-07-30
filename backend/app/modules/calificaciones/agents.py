@@ -39,7 +39,7 @@ class AgentContext:
 class AgentResult:
     """Resultado estructurado devuelto por un agente."""
 
-    nota_sugerida: float
+    nota_sugerida: float | None
     confianza: float
     feedback_estudiante: str
     criterios: list[dict] = field(default_factory=list)
@@ -256,7 +256,7 @@ async def vision_agent(
         )
     if not ctx.image_bytes:
         return AgentResult(
-            nota_sugerida=0, confianza=0, feedback_estudiante="",
+            nota_sugerida=None, confianza=0, feedback_estudiante="",
             proveedor="vision", modelo=model, error="No hay imagen para procesar",
         )
 
@@ -282,7 +282,7 @@ async def vision_agent(
 
         if not usable:
             return AgentResult(
-                nota_sugerida=0, confianza=0,
+                nota_sugerida=None, confianza=0,
                 feedback_estudiante="La imagen no pudo procesarse. Revisión docente requerida.",
                 alertas=alertas or ["Imagen no utilizable"],
                 proveedor="vision", modelo=model, tiempo_ms=ms,
@@ -290,14 +290,14 @@ async def vision_agent(
             )
         logger.info("Vision agent OK: modelo=%s %dms texto=%d chars", model, ms, len(texto))
         return AgentResult(
-            nota_sugerida=0, confianza=1.0, feedback_estudiante="",
+            nota_sugerida=None, confianza=1.0, feedback_estudiante="",
             alertas=alertas, proveedor="vision", modelo=model,
             tiempo_ms=ms, raw_output=parsed, requiere_revision_docente=False,
         )
 
     except Exception as exc:
         logger.error("Vision agent %s failed: %s", model, exc)
-        return AgentResult(nota_sugerida=0, confianza=0, feedback_estudiante="", proveedor="vision", modelo=model, error=str(exc))
+        return AgentResult(nota_sugerida=None, confianza=0, feedback_estudiante="", proveedor="vision", modelo=model, error=str(exc))
     finally:
         if own_client:
             await client.close()
@@ -360,7 +360,7 @@ async def grader_agent(
         respuestas_esperadas=json.dumps(ctx.blueprint.get("respuestas_esperadas", []), ensure_ascii=False),
         errores_comunes=json.dumps(ctx.blueprint.get("errores_comunes", []), ensure_ascii=False),
         rag_context=ctx.rag_context or "(sin contexto adicional)",
-        student_response=ctx.student_response_text[:5000] or "(sin respuesta)",
+        student_response=ctx.student_response_text[:5000],
     )
     own_client = False
     if client is None:
@@ -385,8 +385,17 @@ async def grader_agent(
         parsed = json.loads(content) if isinstance(content, str) else content
         reasoning = raw["choices"][0]["message"].get("reasoning_content", "")
 
+        raw_score = parsed.get("nota_sugerida")
+        if raw_score is None:
+            logger.error("Grader agent %s returned no score", model)
+            return AgentResult(
+                nota_sugerida=None, confianza=0, feedback_estudiante="",
+                proveedor="opencode", modelo=model,
+                error="grader_missing_score", requiere_revision_docente=True,
+            )
+
         result = AgentResult(
-            nota_sugerida=float(parsed.get("nota_sugerida", 0)),
+            nota_sugerida=float(raw_score),
             confianza=float(parsed.get("confianza", 0.5)),
             feedback_estudiante=parsed.get("feedback_estudiante", ""),
             criterios=parsed.get("criterios", []),
@@ -400,7 +409,7 @@ async def grader_agent(
 
     except Exception as exc:
         logger.error("Grader agent %s failed: %s", model, exc)
-        return AgentResult(nota_sugerida=0, confianza=0, feedback_estudiante="", proveedor="opencode", modelo=model, error=str(exc), requiere_revision_docente=True)
+        return AgentResult(nota_sugerida=None, confianza=0, feedback_estudiante="", proveedor="opencode", modelo=model, error=str(exc), requiere_revision_docente=True)
     finally:
         if own_client:
             await client.close()
@@ -443,10 +452,39 @@ async def comparator_agent(
     model: str = "deepseek-v4-flash",
 ) -> AgentResult:
     """Compara dos calificaciones independientes y produce una nota final."""
-    diff = abs(grading_a.nota_sugerida - grading_b.nota_sugerida)
+    score_a = grading_a.nota_sugerida
+    score_b = grading_b.nota_sugerida
+
+    if score_a is None and score_b is None:
+        return AgentResult(
+            nota_sugerida=None,
+            confianza=0,
+            feedback_estudiante="",
+            alertas=["Ningun evaluador automatico produjo una nota valida."],
+            requiere_revision_docente=True,
+            proveedor="comparator",
+            modelo="sin_resultado",
+            error="all_graders_failed",
+        )
+
+    if score_a is None or score_b is None:
+        valid = grading_b if score_a is None else grading_a
+        return AgentResult(
+            nota_sugerida=valid.nota_sugerida,
+            confianza=valid.confianza,
+            feedback_estudiante=valid.feedback_estudiante,
+            criterios=valid.criterios,
+            alertas=valid.alertas + ["Solo uno de los evaluadores produjo una nota."],
+            requiere_revision_docente=True,
+            proveedor="comparator",
+            modelo="resultado_parcial",
+            raw_output={"discrepancia": True, "resultado_parcial": True},
+        )
+
+    diff = abs(score_a - score_b)
 
     if not grading_a.error and not grading_b.error and diff < umbral:
-        nota_final = round((grading_a.nota_sugerida + grading_b.nota_sugerida) / 2, 2)
+        nota_final = round((score_a + score_b) / 2, 2)
         confianza = round((grading_a.confianza + grading_b.confianza) / 2, 2)
         feedbacks = [g for g in [grading_a.feedback_estudiante, grading_b.feedback_estudiante] if g]
         feedback = " | ".join(feedbacks) if feedbacks else ""
@@ -471,7 +509,7 @@ async def comparator_agent(
         ms = int((time.monotonic() - start) * 1000)
         content = raw["choices"][0]["message"]["content"]
         parsed = json.loads(content) if isinstance(content, str) else content
-        nota_final = float(parsed.get("nota_final", grading_a.nota_sugerida))
+        nota_final = float(parsed.get("nota_final", score_a))
         discrepancy = parsed.get("discrepancia", diff >= umbral)
         logger.info("Comparator via LLM: diff=%.2f nota=%.2f discrepancia=%s", diff, nota_final, discrepancy)
         return AgentResult(
@@ -487,7 +525,7 @@ async def comparator_agent(
         )
     except Exception as exc:
         logger.error("Comparator agent failed: %s", exc)
-        nota_final = round((grading_a.nota_sugerida + grading_b.nota_sugerida) / 2, 2)
+        nota_final = round((score_a + score_b) / 2, 2)
         return AgentResult(nota_sugerida=nota_final, confianza=0, feedback_estudiante="", proveedor="comparator", modelo="fallback", error=str(exc))
     finally:
         await client.close()

@@ -8,6 +8,7 @@ import {
   ChevronLeft,
   ChevronRight,
   FileImage,
+  Eye,
   ImageUp,
   RotateCcw,
   ScanText,
@@ -36,8 +37,13 @@ import {
   calificarFoto,
   confirmarNota,
   listCalificaciones,
+  reintentarCalificacionFoto,
 } from '@/modules/calificaciones/api';
 import { toApiError } from '@/lib/api';
+import {
+  getTechnicalFailureReason,
+  isTechnicalGradingFailure,
+} from '@/modules/calificaciones/gradingFailure';
 import { confidenceLabel } from '@/lib/utils';
 import type { Calificacion } from '@/types/api';
 import { useMateriaContext } from './MateriaContext';
@@ -112,6 +118,7 @@ export function MateriaCalificar() {
   const [pendingSelection, setPendingSelection] = useState<PendingSelection>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
+  const evidenceRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (evaluacionIdParam && evaluacionIdParam !== evaluacionId) {
@@ -337,7 +344,11 @@ export function MateriaCalificar() {
       setResultado(data);
       setError(null);
       void calificacionesQuery.refetch();
-      toast.success('Foto analizada. Ahora revisa la sugerencia.');
+      if (isTechnicalGradingFailure(data)) {
+        toast.error('La evidencia quedó guardada, pero la IA no produjo una nota.');
+      } else {
+        toast.success('Foto analizada. Ahora revisa la sugerencia.');
+      }
     },
     onError: (mutationError) => {
       const message =
@@ -348,6 +359,27 @@ export function MateriaCalificar() {
       toast.error(message);
     },
   });
+  const retryMutation = useMutation({
+    mutationFn: () => {
+      if (!resultado) {
+        throw new Error('No hay una calificación para reintentar.');
+      }
+      return reintentarCalificacionFoto(resultado.id);
+    },
+    onSuccess: (data) => {
+      setResultado(data);
+      setError(null);
+      void calificacionesQuery.refetch();
+      if (isTechnicalGradingFailure(data)) {
+        toast.error('El reintento terminó sin una nota. Puedes calificar manualmente.');
+      } else {
+        toast.success('Reintento completado. Revisa la nueva sugerencia.');
+      }
+    },
+    onError: (mutationError) =>
+      toast.error(toApiError(mutationError).detail),
+  });
+
 
   const confirmMutation = useMutation({
     mutationFn: (score: number) => {
@@ -433,11 +465,15 @@ export function MateriaCalificar() {
 
   const isSubmitting =
     gradeMutation.isPending ||
+    retryMutation.isPending ||
     confirmMutation.isPending ||
     adjustMutation.isPending;
 
   const confirmedScore =
     resultado?.nota_confirmada ?? resultado?.nota_sugerida ?? null;
+
+  const technicalFailure = isTechnicalGradingFailure(resultado);
+  const technicalFailureReason = getTechnicalFailureReason(resultado);
 
   return (
     <div className="space-y-5">
@@ -599,7 +635,7 @@ export function MateriaCalificar() {
               </Card>
 
               <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_380px]">
-                <Card className="space-y-4 p-5">
+                <Card ref={evidenceRef} className="space-y-4 p-5">
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
                       <h2 className="font-display text-lg font-bold">
@@ -845,6 +881,28 @@ export function MateriaCalificar() {
                     </div>
                   ) : (
                     <>
+                      {technicalFailure ? (
+                        <div
+                          className="flex items-start gap-3 rounded-xl border border-rose-300 bg-rose-50 p-4 text-rose-900 dark:border-rose-500/40 dark:bg-rose-500/10 dark:text-rose-100"
+                          role="alert"
+                        >
+                          <TriangleAlert
+                            className="mt-0.5 h-6 w-6 shrink-0"
+                            aria-hidden="true"
+                          />
+                          <div>
+                            <h3 className="font-display text-lg font-extrabold">
+                              No fue posible generar una nota
+                            </h3>
+                            <p className="mt-1 text-sm leading-6">
+                              La evidencia quedó guardada, pero el procesamiento automático no pudo completarse.
+                            </p>
+                            <p className="mt-2 text-sm font-semibold">{technicalFailureReason}</p>
+                          </div>
+                        </div>
+                      ) : null}
+                      {!technicalFailure ? (
+                        <>
                       <div
                         className={`rounded-xl p-5 text-white shadow-sm ${
                           decisionSaved ? 'bg-emerald-700' : 'bg-brand-700'
@@ -880,6 +938,8 @@ export function MateriaCalificar() {
                             : 'Pendiente de tu revisión'}
                         </Badge>
                       </div>
+                        </>
+                      ) : null}
 
                       {resultado.feedback ? (
                         <div className="rounded-xl bg-surface-2 p-4 text-sm text-muted">
@@ -1003,13 +1063,34 @@ export function MateriaCalificar() {
                                   {Number(resultado.nota_sugerida).toFixed(1)}
                                 </Button>
                               ) : null}
+                              {technicalFailure ? (
+                                <>
+                                  <Button
+                                    className="w-full"
+                                    onClick={() => retryMutation.mutate()}
+                                    loading={retryMutation.isPending}
+                                    loadingLabel="Reintentando con la evidencia guardada…"
+                                  >
+                                    <RotateCcw className="h-5 w-5" aria-hidden="true" />
+                                    Reintentar procesamiento
+                                  </Button>
+                                  <Button
+                                    className="w-full"
+                                    variant="outline"
+                                    onClick={() => evidenceRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+                                  >
+                                    <Eye className="h-5 w-5" aria-hidden="true" />
+                                    Ver evidencia guardada
+                                  </Button>
+                                </>
+                              ) : null}
                               <Button
                                 className="w-full"
                                 variant="outline"
                                 onClick={openAdjustment}
                                 disabled={isSubmitting}
                               >
-                                Escribir otra nota
+                                {technicalFailure ? 'Calificar manualmente' : 'Escribir otra nota'}
                               </Button>
                                <Button
                                  className="w-full"
@@ -1018,7 +1099,7 @@ export function MateriaCalificar() {
                                  disabled={isSubmitting}
                                >
                                  <RotateCcw className="h-4 w-4" aria-hidden="true" />
-                                 Subir otra imagen
+                                 {technicalFailure ? 'Cambiar la fotografía' : 'Subir otra imagen'}
                                </Button>
                             </>
                           ) : (

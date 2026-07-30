@@ -87,6 +87,8 @@ async def confirmar_nota(
     cal.nota_confirmada = payload.nota_confirmada
     cal.revisado_por_docente = True
     cal.estado = CalificacionEstado.CONFIRMADA.value
+    if cal.entrega and cal.entrega.estado == EntregaEstado.REQUIERE_REINTENTO.value:
+        cal.entrega.estado = EntregaEstado.REVISADA.value
     _append_timeline_event(
         cal, tipo="confirmada",
         nota_anterior=cal.nota_sugerida, nota_nueva=payload.nota_confirmada,
@@ -111,6 +113,8 @@ async def ajustar_nota(
         cal.feedback = payload.feedback
     cal.revisado_por_docente = True
     cal.estado = CalificacionEstado.AJUSTADA.value
+    if cal.entrega and cal.entrega.estado == EntregaEstado.REQUIERE_REINTENTO.value:
+        cal.entrega.estado = EntregaEstado.REVISADA.value
     _append_timeline_event(
         cal, tipo="ajustada",
         nota_anterior=nota_anterior, nota_nueva=payload.nota_confirmada,

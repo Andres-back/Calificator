@@ -5,13 +5,15 @@ from datetime import datetime, timezone
 from decimal import Decimal
 from uuid import UUID
 
+import aiofiles
+
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Response, UploadFile, status
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.permissions import get_current_user, is_student_enrolled, require_role
 from app.db.session import get_db
-from app.modules.calificaciones import service
+from app.modules.calificaciones import photo_service, service
 from app.modules.calificaciones.grading_service import grade_submission
 from app.modules.calificaciones.models import Calificacion, Entrega, SalonSesion, SalonSesionEstudiante
 from app.modules.calificaciones.salon_mode_service import (
@@ -52,7 +54,7 @@ from app.shared.enums import (
     CalificacionEstado, EntregaEstado, EntregaTipo, JobEstado, JobTipo,
     PoliticaIntento, UserRole,
 )
-from app.workers.tasks_grading import grade_batch
+from app.workers.tasks_grading import grade_batch, resolve_upload_path
 
 router = APIRouter(tags=["calificaciones"])
 MAX_ASYNC_BATCH_FILES = 50
@@ -75,17 +77,6 @@ async def calificar_foto(
 
     content = await foto.read()
     mime = validate_mime(content, foto.filename or "image.jpg")
-    grading = await grade_submission(
-        db,
-        evaluacion_id=evaluacion.id,
-        materia_id=evaluacion.materia_id,
-        blueprint=evaluation_to_grading_blueprint(evaluacion),
-        image_bytes=content,
-        image_mime=mime,
-        user_id=current_user.id,
-    )
-    service.validate_score_within_evaluation(grading.nota_sugerida, evaluacion, "nota_sugerida")
-    service.transition_to_grading_if_needed(evaluacion)
 
     archivo_url = await save_upload(content, foto.filename or "foto.jpg", subfolder="entregas")
     entrega = Entrega(
@@ -94,28 +85,86 @@ async def calificar_foto(
         materia_id=evaluacion.materia_id,
         tipo=EntregaTipo.FOTO.value,
         archivo_url=archivo_url,
-        estado=EntregaEstado.CALIFICADA.value,
-        visual_text_json=grading.raw_model_output,
+        estado=EntregaEstado.PROCESANDO.value,
+        visual_text_json={},
     )
     db.add(entrega)
-    await db.flush()
-
-    cal = Calificacion(
-        evaluacion_id=evaluacion.id,
-        entrega_id=entrega.id,
-        estudiante_id=estudiante_id,
-        materia_id=evaluacion.materia_id,
-        profesor_id=current_user.id,
-        nota_sugerida=grading.nota_sugerida,
-        confianza=Decimal(str(grading.confianza)),
-        feedback=grading.feedback_estudiante,
-        resultado_json=grading.raw_model_output,
-        estado=CalificacionEstado.SUGERIDA.value,
-    )
-    db.add(cal)
     await db.commit()
-    await db.refresh(cal)
-    return cal
+    await db.refresh(entrega)
+
+    return await photo_service.grade_persisted_photo(
+        db,
+        evaluacion=evaluacion,
+        entrega=entrega,
+        estudiante_id=estudiante_id,
+        profesor_id=current_user.id,
+        image_bytes=content,
+        image_mime=mime,
+    )
+
+
+@router.post(
+    "/calificaciones/{calificacion_id}/reintentar-foto",
+    response_model=CalificacionRead,
+)
+async def reintentar_calificacion_foto(
+    calificacion_id: UUID,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> object:
+    require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
+    calificacion = await service.get_calificacion_or_404(
+        db,
+        calificacion_id,
+    )
+    evaluacion = await evaluaciones_service.ensure_can_manage_evaluation(
+        db,
+        calificacion.evaluacion_id,
+        current_user,
+    )
+    service.ensure_evaluation_accepts_grading(evaluacion)
+
+    entrega = calificacion.entrega
+    if not entrega or not entrega.archivo_url:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="La calificacion no tiene una fotografia guardada para reintentar.",
+        )
+    if calificacion.revisado_por_docente:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="La calificacion ya tiene una decision docente y no puede reprocesarse.",
+        )
+    if entrega.estado != EntregaEstado.REQUIERE_REINTENTO.value:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="La entrega no requiere un reintento tecnico.",
+        )
+
+    try:
+        upload_path = resolve_upload_path(entrega.archivo_url)
+        async with aiofiles.open(upload_path, "rb") as saved_file:
+            content = await saved_file.read()
+        mime = validate_mime(content, upload_path.name)
+    except (OSError, ValueError) as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="La fotografia guardada no esta disponible para reprocesar.",
+        ) from exc
+
+    entrega.estado = EntregaEstado.PROCESANDO.value
+    await db.commit()
+
+    return await photo_service.grade_persisted_photo(
+        db,
+        evaluacion=evaluacion,
+        entrega=entrega,
+        estudiante_id=calificacion.estudiante_id,
+        profesor_id=current_user.id,
+        image_bytes=content,
+        image_mime=mime,
+        calificacion=calificacion,
+    )
 
 
 @router.post("/calificaciones/lote", status_code=status.HTTP_201_CREATED)
