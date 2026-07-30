@@ -17,9 +17,8 @@ logger = get_logger(__name__)
 
 # ── Tipos compartidos ──────────────────────────────────────────────────────────
 
-# Text grading calls are fast and fit in 60s. Multimodal calls (image +
-# long prompt) on qwen3.7-plus routinely need 90-120s, so we use a
-# separate timeout for the chat_multimodal path.
+# Short text calls use 60s. Grading and multimodal calls can need 90-120s,
+# so graders explicitly use the extended timeout.
 DEFAULT_TIMEOUT = 60
 DEFAULT_MULTIMODAL_TIMEOUT = 180
 
@@ -33,6 +32,7 @@ class AgentContext:
     blueprint: dict
     rag_context: str = ""
     student_response_text: str = ""
+    objective_validation: list[dict] = field(default_factory=list)
     image_bytes: bytes | None = None
     image_mime: str = "image/jpeg"
 
@@ -382,7 +382,15 @@ DBA: {dba_text}
 Metas del profesor: {metas}
 Criterios y pesos: {criterios}
 Respuestas esperadas: {respuestas_esperadas}
+Validación objetiva determinística: {objective_validation}
 Errores comunes: {errores_comunes}
+
+REGLAS OBLIGATORIAS:
+- La validación objetiva determinística ya comparó las respuestas detectadas contra la clave oficial.
+- Toda entrada con "correcta": true debe recibir el puntaje completo de esa pregunta; no la reinterpretes.
+- "Sí", "es igual" y "verdadero" son equivalentes en verdadero/falso; la letra o el valor correctos son equivalentes en opción múltiple.
+- Si no hay puntajes explícitos por pregunta, distribuye la nota máxima de forma uniforme entre las preguntas.
+- Evalúa las preguntas abiertas por separado y verifica toda operación aritmética antes de asignar la nota.
 
 ## Contexto adicional (RAG)
 {rag_context}
@@ -421,6 +429,7 @@ async def grader_agent(
         metas=json.dumps(ctx.blueprint.get("metas", []), ensure_ascii=False),
         criterios=json.dumps(ctx.blueprint.get("criterios", []), ensure_ascii=False),
         respuestas_esperadas=json.dumps(ctx.blueprint.get("respuestas_esperadas", []), ensure_ascii=False),
+        objective_validation=json.dumps(ctx.objective_validation, ensure_ascii=False),
         errores_comunes=json.dumps(ctx.blueprint.get("errores_comunes", []), ensure_ascii=False),
         rag_context=ctx.rag_context or "(sin contexto adicional)",
         student_response=ctx.student_response_text[:5000],
@@ -492,6 +501,7 @@ async def router_grader_agent(ctx: AgentContext) -> AgentResult:
             ctx.blueprint.get("respuestas_esperadas", []),
             ensure_ascii=False,
         ),
+        objective_validation=json.dumps(ctx.objective_validation, ensure_ascii=False),
         errores_comunes=json.dumps(
             ctx.blueprint.get("errores_comunes", []),
             ensure_ascii=False,

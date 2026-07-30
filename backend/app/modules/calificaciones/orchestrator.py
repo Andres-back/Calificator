@@ -12,6 +12,8 @@ from __future__ import annotations
 
 import asyncio
 import json
+import re
+import unicodedata
 import uuid
 from dataclasses import dataclass, field
 from decimal import Decimal
@@ -43,6 +45,119 @@ DEFAULT_VISION_MODEL = "qwen3.6-plus"
 DEFAULT_GRADER_A_MODEL = "qwen3.6-plus"
 DEFAULT_GRADER_B_MODEL = "qwen3.7-plus"
 DEFAULT_COMPARATOR_MODEL = "deepseek-v4-flash"
+
+
+def _normalize_answer(value: Any) -> str:
+    normalized = unicodedata.normalize("NFKD", str(value or ""))
+    without_accents = "".join(
+        char for char in normalized if not unicodedata.combining(char)
+    )
+    return re.sub(r"[^a-z0-9]+", " ", without_accents.lower()).strip()
+
+
+def _truth_value(value: Any) -> bool | None:
+    normalized = _normalize_answer(value)
+    if normalized.startswith(("verdadero", "true", "si", "es igual")):
+        return True
+    if normalized.startswith(("falso", "false", "no", "no es igual")):
+        return False
+    return None
+
+
+def _choice_matches(expected: Any, detected: Any) -> bool:
+    expected_normalized = _normalize_answer(expected)
+    detected_normalized = _normalize_answer(detected)
+    expected_match = re.match(r"^([a-z])(?:\s+|$)(.*)$", expected_normalized)
+    detected_match = re.match(r"^([a-z])(?:\s+|$)(.*)$", detected_normalized)
+    if expected_match and detected_match:
+        return expected_match.group(1) == detected_match.group(1)
+    expected_value = expected_match.group(2).strip() if expected_match else expected_normalized
+    detected_value = detected_match.group(2).strip() if detected_match else detected_normalized
+    if bool(expected_value) and expected_value == detected_value:
+        return True
+    if expected_value:
+        selected_pattern = rf"\b{re.escape(expected_value)}\b\s*(seleccionado|marcado|elegido)"
+        return re.search(selected_pattern, detected_normalized) is not None
+    return False
+
+
+def build_objective_validation(
+    blueprint: dict,
+    detected_answers: list[dict] | None,
+) -> list[dict]:
+    """Compara respuestas verificables contra la clave oficial sin delegarlo al LLM."""
+    questions = {
+        str(question.get("numero")): question
+        for question in blueprint.get("preguntas", [])
+        if question.get("numero") is not None
+    }
+    expected = {
+        str(answer.get("numero")): answer.get("respuesta")
+        for answer in blueprint.get("respuestas_esperadas", [])
+        if answer.get("numero") is not None
+    }
+    detected = {
+        str(answer.get("pregunta", answer.get("numero"))): answer.get("respuesta")
+        for answer in (detected_answers or [])
+        if answer.get("pregunta", answer.get("numero")) is not None
+    }
+    validation: list[dict] = []
+    for number, question in questions.items():
+        question_type = str(question.get("tipo") or "").lower()
+        if number not in expected or number not in detected:
+            continue
+        expected_answer = expected[number]
+        detected_answer = detected[number]
+        if question_type == "verdadero_falso":
+            expected_truth = _truth_value(expected_answer)
+            detected_truth = _truth_value(detected_answer)
+            correct = (
+                expected_truth is not None
+                and detected_truth is not None
+                and expected_truth == detected_truth
+            )
+        elif question_type == "opcion_multiple":
+            correct = _choice_matches(expected_answer, detected_answer)
+        else:
+            correct = _normalize_answer(expected_answer) == _normalize_answer(detected_answer)
+            if not correct:
+                continue
+        validation.append({
+            "numero": int(number) if number.isdigit() else number,
+            "tipo": question_type,
+            "respuesta_detectada": detected_answer,
+            "respuesta_esperada": expected_answer,
+            "correcta": correct,
+            "fuente": "clave_oficial",
+        })
+    return validation
+
+
+def objective_score_floor(blueprint: dict, validation: list[dict]) -> Decimal:
+    """Puntaje mínimo garantizado por respuestas verificadas como correctas."""
+    questions = blueprint.get("preguntas", [])
+    if not questions:
+        return Decimal("0")
+    nota_maxima = Decimal(str(blueprint.get("nota_maxima", 5)))
+    explicit_weights: dict[str, Decimal] = {}
+    try:
+        if all(question.get("puntaje") is not None for question in questions):
+            explicit_weights = {
+                str(question.get("numero")): Decimal(str(question["puntaje"]))
+                for question in questions
+            }
+    except (ArithmeticError, ValueError, TypeError):
+        explicit_weights = {}
+    equal_weight = nota_maxima / Decimal(len(questions))
+    floor = sum(
+        (
+            explicit_weights.get(str(item["numero"]), equal_weight)
+            for item in validation
+            if item.get("correcta") is True
+        ),
+        Decimal("0"),
+    )
+    return min(nota_maxima, floor).quantize(Decimal("0.01"))
 
 
 def _technical_failure_result(
@@ -127,6 +242,7 @@ async def orchestrate_grading(
 
         # ── Paso 2: Visión (si hay imagen) ───────────────────────────
         texto_extraido = student_response_text or ""
+        objective_validation: list[dict] = []
         vision_result: AgentResult | None = None
 
         if image_bytes:
@@ -170,6 +286,11 @@ async def orchestrate_grading(
                     or student_response_text
                     or ""
                 )
+                objective_validation = build_objective_validation(
+                    blueprint,
+                    vision_result.raw_output.get("respuestas_detectadas", []),
+                )
+
                 if not vision_result.raw_output.get("usable", True):
                     return _technical_failure_result(
                         blueprint,
@@ -194,6 +315,7 @@ async def orchestrate_grading(
             blueprint=blueprint,
             rag_context=rag_context,
             student_response_text=texto_extraido.strip(),
+            objective_validation=objective_validation,
             image_bytes=image_bytes,
             image_mime=image_mime,
         )
@@ -266,18 +388,30 @@ async def orchestrate_grading(
                 raw_output={"orchestrator": "comparator_without_score"},
             )
         nota_sugerida = Decimal(str(final.nota_sugerida))
+        deterministic_floor = objective_score_floor(blueprint, objective_validation)
+        objective_floor_applied = nota_sugerida < deterministic_floor
+        if objective_floor_applied:
+            nota_sugerida = deterministic_floor
+            final.alertas = [
+                *final.alertas,
+                "La nota se elevó al mínimo garantizado por respuestas verificadas como correctas.",
+            ]
 
         # Si ambos fallaron, marcar revisión docente
         requiere_revision = (
             final.requiere_revision_docente
             or grading_a.nota_sugerida is None
             or grading_b.nota_sugerida is None
+            or objective_floor_applied
         )
 
         # Los fallos dobles ya se manejaron antes del comparador.
         # Construir raw_model_output con trazabilidad completa
         raw_output = {
             "orchestrator": "multi_agent_v2",
+            "objective_validation": objective_validation,
+            "objective_score_floor": float(deterministic_floor),
+            "objective_floor_applied": objective_floor_applied,
             "vision": {
                 "modelo": vision_result.modelo if vision_result else None,
                 "tiempo_ms": vision_result.tiempo_ms if vision_result else 0,

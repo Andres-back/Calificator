@@ -117,6 +117,45 @@ def test_empty_extraction_never_grades_artificial_no_response(monkeypatch) -> No
     assert result.motivo_revision == "vision_failed"
 
 
+def test_objective_validation_accepts_equivalent_answers() -> None:
+    blueprint = {
+        "nota_maxima": 5,
+        "preguntas": [
+            {"numero": 1, "tipo": "opcion_multiple"},
+            {"numero": 2, "tipo": "abierta"},
+            {"numero": 3, "tipo": "verdadero_falso"},
+            {"numero": 4, "tipo": "opcion_multiple"},
+            {"numero": 5, "tipo": "abierta"},
+            {"numero": 6, "tipo": "verdadero_falso"},
+            {"numero": 7, "tipo": "opcion_multiple"},
+        ],
+        "respuestas_esperadas": [
+            {"numero": 1, "respuesta": "B) 36"},
+            {"numero": 3, "respuesta": "Verdadero"},
+            {"numero": 4, "respuesta": "B) 48"},
+            {"numero": 5, "respuesta": "24 lápices"},
+            {"numero": 6, "respuesta": "Verdadero"},
+            {"numero": 7, "respuesta": "C) 27"},
+        ],
+    }
+    detected = [
+        {
+            "pregunta": 1,
+            "respuesta": "¿Cuál es 4 por 9? A) 32, 36 (seleccionado), C) 40, D) 45",
+        },
+        {"pregunta": 3, "respuesta": "Sí es igual"},
+        {"pregunta": 4, "respuesta": "B 48"},
+        {"pregunta": 5, "respuesta": "24 lapices"},
+        {"pregunta": 6, "respuesta": "si"},
+        {"pregunta": 7, "respuesta": "C 27"},
+    ]
+
+    validation = orchestrator.build_objective_validation(blueprint, detected)
+
+    assert len(validation) == 6
+    assert all(item["correcta"] is True for item in validation)
+    assert orchestrator.objective_score_floor(blueprint, validation) == Decimal("4.29")
+
 def test_both_failed_graders_return_no_score(monkeypatch) -> None:
     async def failed_grader(*_args, **_kwargs):
         return AgentResult(
