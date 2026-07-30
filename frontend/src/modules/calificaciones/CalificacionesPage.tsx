@@ -14,6 +14,7 @@ import { calificacionesTour } from './tourSteps';
 import { queryClient } from '@/lib/queryClient';
 import { toApiError } from '@/lib/api';
 import { useAuth } from '@/stores/auth';
+import { routes } from '@/config/routes';
 import type { Calificacion } from '@/types/api';
 
 export function CalificacionesPage() {
@@ -88,7 +89,7 @@ export function CalificacionesPage() {
               <HelpCircle className="h-4 w-4" />
               ¿Cómo se usa?
             </Button>
-            <Link to="/app/calificaciones/foto" className="focus-ring inline-flex h-11 items-center justify-center gap-2 rounded-lg border border-border bg-surface px-5 text-sm font-semibold text-fg transition-colors hover:bg-surface-2">
+            <Link to={routes.materiasPara('calificar')} className="focus-ring inline-flex h-11 items-center justify-center gap-2 rounded-lg border border-border bg-surface px-5 text-sm font-semibold text-fg transition-colors hover:bg-surface-2">
               <Camera className="h-4 w-4" />
               Calificar foto
             </Link>

@@ -886,6 +886,7 @@ async def convertir_a_evaluacion(
 
     return {
         "evaluacion_id": eval_id,
+        "materia_id": ev_materia,
         "nombre": eval_nombre,
         "tipo": tipo,
         "estado": "borrador",

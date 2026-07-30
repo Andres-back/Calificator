@@ -17,6 +17,7 @@ import { queryClient } from '@/lib/queryClient';
 import { toApiError } from '@/lib/api';
 import { useAuth } from '@/stores/auth';
 import { trackEvent } from '@/lib/analytics';
+import { routes } from '@/config/routes';
 import {
   ajustarNota, ajustarNotaBatch, confirmarNota, confirmarNotaBatch,
   crearIncidencia, getCalificacionDetalle, listarIncidencias,
@@ -829,7 +830,7 @@ export function CalificacionesWorkspace() {
         action={
           <div className="flex flex-wrap gap-2">
             <Link
-              to="/app/calificaciones/foto"
+              to={routes.materiasPara('calificar')}
               className="focus-ring inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-border bg-surface px-4 text-sm font-semibold text-fg transition-colors hover:bg-surface-2"
             >
               <Camera className="h-4 w-4" /> Calificar foto

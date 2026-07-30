@@ -436,8 +436,18 @@ def _render_examen(c: dict, soluciones: bool) -> str:
         elif not q.get("opciones"):
             out.append('<div class="line"></div><div class="line"></div>')
         out.append("</div>")
-    if c.get("total_puntaje") is not None:
-        out.append(f'<p class="p" style="text-align:right"><b>Total: {_e(c["total_puntaje"])} puntos</b></p>')
+    questions = c.get("preguntas") or []
+    question_scores = [question.get("puntaje") for question in questions]
+    if questions and all(score is not None for score in question_scores):
+        try:
+            total_score = round(sum(float(score) for score in question_scores), 2)
+            total_label = f"{total_score:g}"
+        except (TypeError, ValueError):
+            total_label = c.get("total_puntaje")
+    else:
+        total_label = c.get("total_puntaje")
+    if total_label is not None:
+        out.append(f'<p class="p" style="text-align:right"><b>Total: {_e(total_label)} puntos</b></p>')
     return "".join(out)
 
 

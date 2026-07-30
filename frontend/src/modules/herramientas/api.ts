@@ -39,6 +39,7 @@ export async function duplicateMaterial(id: string): Promise<Material> {
 
 export interface ConvertirResponse {
   evaluacion_id: string;
+  materia_id: string;
   nombre: string;
   tipo: string;
   estado: string;

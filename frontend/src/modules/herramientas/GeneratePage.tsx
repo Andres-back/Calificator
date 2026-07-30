@@ -24,13 +24,15 @@ import {
 import { PageHeader } from '@/components/layout/PageHeader';
 import { TeachingCycle } from '@/components/business/TeachingCycle';
 import { cn } from '@/lib/cn';
-import { TOOLS, TOOL_BY_TIPO } from './meta';
+import { TOOL_BY_TIPO } from './meta';
 import { FORMS } from './forms';
 import { generateMaterial } from './api';
 import { toApiError } from '@/lib/api';
 import type { MaterialTipo } from '@/types/api';
+import { routes } from '@/config/routes';
 import {
   filterTools,
+  MATERIAL_CREATION_TOOLS,
   TOOL_GOALS,
   type ToolGoal,
 } from './toolPickerModel';
@@ -137,7 +139,7 @@ export function GeneratePage() {
   const submittingRef = useRef(false);
 
   const visibleTools = useMemo(
-    () => filterTools(TOOLS, { goal, search }),
+    () => filterTools(MATERIAL_CREATION_TOOLS, { goal, search }),
     [goal, search],
   );
 
@@ -156,7 +158,7 @@ export function GeneratePage() {
         <PageHeader
           title="Crear material"
           eyebrow="Asistente paso a paso"
-          subtitle="Primero dinos qué necesitas lograr. Después te mostraremos los formatos más útiles."
+          subtitle="Aquí creas recursos de práctica y apoyo. Los exámenes, quices y rúbricas calificables se crean dentro de cada materia."
         />
 
         <TeachingCycle compact />
@@ -185,7 +187,13 @@ export function GeneratePage() {
                   type="button"
                   role="radio"
                   aria-checked={selected}
-                  onClick={() => setGoal(option.id)}
+                  onClick={() => {
+                    if (option.id === 'evaluar') {
+                      navigate(routes.materiasPara('evaluar'));
+                      return;
+                    }
+                    setGoal(option.id);
+                  }}
                   className={cn(
                     'focus-ring min-h-24 rounded-xl border-2 p-4 text-left transition-colors',
                     selected
@@ -431,7 +439,7 @@ export function GeneratePage() {
               Cambiar rápidamente
             </p>
             <div className="grid grid-cols-5 gap-2">
-              {TOOLS.filter((item) => item.tipo !== tool.tipo)
+              {MATERIAL_CREATION_TOOLS.filter((item) => item.tipo !== tool.tipo)
                 .slice(0, 10)
                 .map((item) => (
                   <button

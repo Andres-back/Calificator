@@ -1,5 +1,5 @@
 import type { MaterialTipo } from '@/types/api';
-import type { ToolMeta } from './meta';
+import { TOOLS, type ToolMeta } from './meta';
 
 export type ToolGoal = 'todos' | 'evaluar' | 'practicar' | 'jugar' | 'explicar';
 
@@ -16,7 +16,7 @@ export const TOOL_GOALS: Array<{
   {
     id: 'evaluar',
     label: 'Evaluar',
-    description: 'Exámenes, quices y rúbricas.',
+    description: 'Crea y califica la evaluación dentro de una materia.',
   },
   {
     id: 'practicar',
@@ -34,6 +34,20 @@ export const TOOL_GOALS: Array<{
     description: 'Lecturas, cuentos y organizadores.',
   },
 ];
+
+export const GRADABLE_TOOL_TYPES = new Set<MaterialTipo>([
+  'examen',
+  'quiz_rapido',
+  'rubrica',
+]);
+
+export function isGradableTool(type: MaterialTipo): boolean {
+  return GRADABLE_TOOL_TYPES.has(type);
+}
+
+export const MATERIAL_CREATION_TOOLS = TOOLS.filter(
+  (tool) => !isGradableTool(tool.tipo),
+);
 
 const TOOL_GOAL_BY_TYPE: Record<MaterialTipo, Exclude<ToolGoal, 'todos'>> = {
   examen: 'evaluar',

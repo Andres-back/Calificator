@@ -86,6 +86,7 @@ export const router = createBrowserRouter([
           { path: 'evaluaciones', element: lazyPage(<EvaluacionesPage />) },
           { path: 'evaluaciones/:id/resolver', element: lazyPage(<ResolverEvaluacionPage />) },
           { path: 'calificaciones/boletin', element: lazyPage(<BoletinPage />) },
+          { path: 'calificaciones/foto', element: <Navigate to={routes.materiasPara('calificar')} replace /> },
           { path: 'xali', element: lazyPage(<XaliPage />) },
 
           /* ── Rutas solo admin ── */

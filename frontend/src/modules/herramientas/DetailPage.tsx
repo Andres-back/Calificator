@@ -13,6 +13,7 @@ import type { ToolContent } from './views/ContenidoView';
 import { cn } from '@/lib/cn';
 import { toApiError } from '@/lib/api';
 import { queryClient } from '@/lib/queryClient';
+import { routes } from '@/config/routes';
 import type { CrucigramaContenido, MatchingContenido, SopaContenido } from '@/types/api';
 import type { MaterialTipo } from '@/types/api';
 
@@ -153,7 +154,7 @@ export function DetailPage() {
       await queryClient.invalidateQueries({ queryKey: ['evaluaciones'] });
       setShowConvert(false);
       toast.success(`Evaluación creada: ${result.nombre} (${result.total_preguntas} preguntas)`);
-      navigate(`/app/evaluaciones`);
+      navigate(routes.materiaEvaluaciones(result.materia_id));
     } catch (err) {
       toast.error(toApiError(err).detail);
     } finally {
