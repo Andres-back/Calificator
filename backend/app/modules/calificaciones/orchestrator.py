@@ -376,6 +376,34 @@ async def orchestrate_grading(
             grading_b,
             model=comparator_model,
         )
+        comparator_failed = bool(final.error)
+        if comparator_failed and final.nota_sugerida is not None:
+            valid_graders = [
+                grader
+                for grader in (grading_a, grading_b)
+                if grader.nota_sugerida is not None
+            ]
+            final.confianza = round(
+                sum(grader.confianza for grader in valid_graders) / len(valid_graders),
+                2,
+            )
+            final.criterios = final.criterios or next(
+                (grader.criterios for grader in valid_graders if grader.criterios),
+                [],
+            )
+            final.feedback_estudiante = final.feedback_estudiante or next(
+                (
+                    grader.feedback_estudiante
+                    for grader in valid_graders
+                    if grader.feedback_estudiante
+                ),
+                "",
+            )
+            final.alertas = [
+                *final.alertas,
+                "El comparador no devolvió datos estructurados; se usó el promedio de los evaluadores.",
+            ]
+            final.requiere_revision_docente = True
 
         # ── Paso 5: Armado del resultado final ───────────────────────
         nota_maxima = Decimal(str(blueprint.get("nota_maxima", 5)))
@@ -436,8 +464,14 @@ async def orchestrate_grading(
             "comparator": {
                 "modelo": final.modelo,
                 "nota_final": final.nota_sugerida,
-                "discrepancia": final.raw_output.get("discrepancia", False) if final.raw_output else False,
+                "discrepancia": (
+                    final.raw_output.get("discrepancia", comparator_failed)
+                    if final.raw_output
+                    else comparator_failed
+                ),
                 "analisis": final.raw_output.get("analisis", "") if final.raw_output else "",
+                "fallback_applied": comparator_failed,
+                "error_type": "comparator_error" if comparator_failed else None,
             },
         }
 

@@ -128,6 +128,7 @@ def _feature_routing() -> list[dict[str, Any]]:
         {"feature": "grading_photo", "label": "Calificación por foto", "primary_provider": "groq", "fallback_provider": "template"},
         {"feature": "feedback", "label": "Generación de retroalimentación", "primary_provider": "groq", "fallback_provider": "template"},
         {"feature": "questions", "label": "Generación de preguntas", "primary_provider": "groq", "fallback_provider": "template"},
+        {"feature": "evaluacion_digitalizar", "label": "Digitalización de evaluaciones", "primary_provider": "open_code", "fallback_provider": None},
         {"feature": "tools", "label": "Herramientas educativas", "primary_provider": "groq", "fallback_provider": "template"},
         {"feature": "presentations", "label": "Presentaciones", "primary_provider": "groq", "fallback_provider": "template"},
         {"feature": "images", "label": "Generación de imágenes", "primary_provider": "openai_image", "fallback_provider": "cloudflare_image"},

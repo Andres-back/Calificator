@@ -9,6 +9,7 @@ import {
   Lock,
   Pencil,
   Plus,
+  Scan,
   Send,
   Sparkles,
 } from 'lucide-react';
@@ -33,6 +34,7 @@ import {
   updateEvaluacion,
   type EvaluacionUpdate,
 } from '@/modules/evaluaciones/api';
+import { DigitalizarEvaluacionModal } from '@/modules/evaluaciones/components/DigitalizarEvaluacionModal';
 import { GenerationWizard } from '@/modules/evaluaciones/components/GenerationWizard';
 import { useAuth } from '@/stores/auth';
 import { useMateriaContext } from './MateriaContext';
@@ -70,6 +72,7 @@ export function MateriaEvaluaciones() {
   const user = useAuth((state) => state.user);
   const [manualOpen, setManualOpen] = useState(false);
   const [wizardOpen, setWizardOpen] = useState(false);
+  const [digitalizeOpen, setDigitalizeOpen] = useState(false);
   const [editingEval, setEditingEval] = useState<Evaluacion | null>(null);
   const [form, setForm] = useState<EvaluationForm>(emptyForm);
 
@@ -210,6 +213,10 @@ export function MateriaEvaluaciones() {
               <Button onClick={() => setWizardOpen(true)} size="lg">
                 <Sparkles className="h-5 w-5" />
                 Crear paso a paso
+              </Button>
+              <Button variant="outline" onClick={() => setDigitalizeOpen(true)} size="lg">
+                <Scan className="h-5 w-5" />
+                Digitalizar de foto/PDF
               </Button>
               <Button variant="outline" onClick={openManualCreate} size="lg">
                 <FileCheck2 className="h-5 w-5" />
@@ -364,6 +371,18 @@ export function MateriaEvaluaciones() {
           icon={ClipboardCheck}
           title="Sin evaluaciones"
           description="Tu docente aún no ha creado evaluaciones para esta materia."
+        />
+      )}
+
+      {canManageMateria && (
+        <DigitalizarEvaluacionModal
+          open={digitalizeOpen}
+          onClose={() => setDigitalizeOpen(false)}
+          materiaId={materia.id}
+          onCompleted={() => {
+            refresh();
+            setDigitalizeOpen(false);
+          }}
         />
       )}
 

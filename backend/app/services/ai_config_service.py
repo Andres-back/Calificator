@@ -82,6 +82,7 @@ DEFAULT_FEATURES: list[dict[str, Any]] = [
     {"feature": "calificacion_foto", "label": "Calificación por foto", "primary_provider": "groq", "fallback_provider": "template", "active": True},
     {"feature": "retroalimentacion", "label": "Retroalimentación", "primary_provider": "groq", "fallback_provider": "template", "active": True},
     {"feature": "generacion_preguntas", "label": "Generación de preguntas", "primary_provider": "groq", "fallback_provider": "template", "active": True},
+    {"feature": "evaluacion_digitalizar", "label": "Digitalización de evaluaciones", "primary_provider": "open_code", "fallback_provider": None, "active": True},
     {"feature": "herramientas_educativas", "label": "Herramientas educativas", "primary_provider": "groq", "fallback_provider": "template", "active": True},
     {"feature": "presentaciones", "label": "Presentaciones", "primary_provider": "groq", "fallback_provider": "template", "active": True},
     {"feature": "generacion_imagenes", "label": "Generación de imágenes", "primary_provider": "openai_image", "fallback_provider": "cloudflare_image", "active": True},
@@ -248,6 +249,13 @@ class AIConfigService:
             for item in features:
                 if item["feature"] == candidate:
                     return item
+        if feature == "evaluacion_digitalizar":
+            return {
+                "feature": feature,
+                "primary_provider": "open_code",
+                "fallback_provider": None,
+                "active": True,
+            }
         return {"feature": feature, "primary_provider": "groq", "fallback_provider": "template", "active": True}
 
     async def get_provider_config(self, provider_id: str) -> dict[str, Any]:

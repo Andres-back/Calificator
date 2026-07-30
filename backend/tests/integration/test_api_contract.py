@@ -34,6 +34,7 @@ def test_phase_1_2_routes_are_registered() -> None:
         "/api/evaluaciones/{evaluacion_id}/publicar",
         "/api/evaluaciones/{evaluacion_id}/cerrar",
         "/api/evaluaciones/externa/digitalizar",
+        "/api/evaluaciones/externa/digitalizar-con-archivo",
         "/api/evaluaciones/{evaluacion_id}/validar-estructura",
         "/api/evaluaciones/sorpresa",
         "/api/presentaciones",

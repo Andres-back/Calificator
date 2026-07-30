@@ -50,6 +50,8 @@ class Settings(BaseSettings):
     OPEN_CODE_API_KEY: str = ""
     OPEN_CODE_BASE_URL: str = "https://opencode.ai/zen/go/v1"
     OPEN_CODE_MODEL: str = "deepseek-v4-flash"
+    OPEN_CODE_DIGITALIZATION_MODEL: str = "qwen3.6-plus"
+    OPEN_CODE_DIGITALIZATION_TIMEOUT_SECONDS: int = 180
     OPEN_CODE_TIMEOUT_SECONDS: int = 45
     PHOTO_GRADING_CROSS_PROVIDER_FALLBACK_ENABLED: bool = False
 

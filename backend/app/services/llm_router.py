@@ -66,12 +66,19 @@ class LLMRouter:
             except Exception as exc:  # noqa: BLE001
                 logger.warning("LLM provider %s failed: %s", provider, exc)
 
+        if task_type == "evaluacion_digitalizar":
+            raise RuntimeError("OpenCode no pudo completar la digitalización")
         logger.error("All LLM providers failed for task '%s'; using safe template", task_type)
         return self._safe_template(task_type)
 
     async def _load_providers(self, task_type: str) -> list[tuple[str, Any]]:
         """Load provider cascade dynamically from DB config, fallback to defaults."""
         ordered = []
+        if task_type == "evaluacion_digitalizar":
+            self._provider_configs[LLMProvider.OPEN_CODE.value] = {
+                "model": settings.OPEN_CODE_DIGITALIZATION_MODEL,
+                "timeout_seconds": settings.OPEN_CODE_DIGITALIZATION_TIMEOUT_SECONDS,
+            }
         try:
             from app.db.session import AsyncSessionLocal
             from app.services.ai_config_service import AIConfigService
@@ -86,6 +93,22 @@ class LLMRouter:
                     "groq": credentials.groq_key,
                 }
                 self._provider_configs = {str(item["id"]): item for item in text_providers}
+                if task_type == "evaluacion_digitalizar":
+                    document_provider = self._provider_configs.setdefault(
+                        LLMProvider.OPEN_CODE.value, {}
+                    )
+                    document_provider["model"] = settings.OPEN_CODE_DIGITALIZATION_MODEL
+                    document_provider[
+                        "timeout_seconds"
+                    ] = settings.OPEN_CODE_DIGITALIZATION_TIMEOUT_SECONDS
+
+                # Student/teacher documents are restricted to OpenCode only.
+                if task_type == "evaluacion_digitalizar":
+                    for provider in text_providers:
+                        if provider["id"] == LLMProvider.OPEN_CODE.value and provider["active"]:
+                            ordered.append((provider["id"], self._call_open_code))
+                            break
+                    return ordered
 
                 # Build ordered list from configured providers
                 seen = set()
@@ -111,8 +134,7 @@ class LLMRouter:
                                 ordered.append((tp["id"], f))
                                 seen.add(tp["id"])
                                 break
-
-                # Then remaining by priority
+                # Then remaining by priority.
                 for tp in text_providers:
                     if tp["id"] not in seen and tp["active"] and tp["id"] != "template":
                         f = self._call_for_provider(tp["id"])
@@ -132,11 +154,14 @@ class LLMRouter:
 
         # Fallback to hardcoded defaults
         if not ordered:
-            ordered = [
-                (LLMProvider.OPEN_CODE.value, self._call_open_code),
-                (LLMProvider.GROQ.value, self._call_groq),
-                (LLMProvider.OLLAMA.value, self._call_ollama),
-            ]
+            if task_type == "evaluacion_digitalizar":
+                ordered = [(LLMProvider.OPEN_CODE.value, self._call_open_code)]
+            else:
+                ordered = [
+                    (LLMProvider.OPEN_CODE.value, self._call_open_code),
+                    (LLMProvider.GROQ.value, self._call_groq),
+                    (LLMProvider.OLLAMA.value, self._call_ollama),
+                ]
         return ordered
 
     async def _template_call(self, prompt: str, json_mode: bool) -> str:

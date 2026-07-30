@@ -230,12 +230,17 @@ Analiza la imagen y extrae:
 1. Todo el texto escrito visible
 2. Identifica a qué pregunta corresponde cada respuesta
 3. Evalúa la calidad de la imagen
+4. Devuelve una entrada en respuestas_detectadas por cada respuesta numerada visible.
+5. En opción múltiple conserva la letra y el valor seleccionados; no califiques.
 
 Devuelve SOLO JSON con este formato:
 {
   "texto_extraido": "texto completo extraído de la imagen",
-  "preguntas_detectadas": [],
-  "respuestas_detectadas": [],
+  "preguntas_detectadas": [1, 2],
+  "respuestas_detectadas": [
+    {"pregunta": 1, "respuesta": "respuesta visible, incluyendo letra y valor si aplica"},
+    {"pregunta": 2, "respuesta": "respuesta visible"}
+  ],
   "calidad_imagen": {"borroso": "bajo|medio|alto", "iluminacion": "buena|mala", "recorte": "completo|parcial|cortado"},
   "usable": true,
   "alertas": []

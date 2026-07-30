@@ -4,7 +4,7 @@ import asyncio
 from decimal import Decimal
 from uuid import uuid4
 
-from app.modules.calificaciones import orchestrator
+from app.modules.calificaciones import agents, orchestrator
 from app.modules.calificaciones.agents import (
     AgentContext,
     AgentResult,
@@ -377,3 +377,42 @@ def test_legitimate_zero_remains_an_academic_score(monkeypatch) -> None:
     assert result.nota_sugerida == Decimal("0.0")
     assert result.motivo_revision is None
     assert result.requiere_revision_docente is False
+
+
+def test_vision_prompt_requires_numbered_structured_answers() -> None:
+    assert '"pregunta": 1' in agents.VISION_PROMPT
+    assert "por cada respuesta numerada visible" in agents.VISION_PROMPT
+
+
+def test_comparator_failure_preserves_grader_confidence_and_trace(monkeypatch) -> None:
+    async def successful_grader(*_args, **_kwargs):
+        return AgentResult(
+            nota_sugerida=4.0,
+            confianza=0.92,
+            feedback_estudiante="Buen trabajo.",
+            criterios=[{"nombre": "Exactitud", "puntaje": 4, "maximo": 5}],
+            requiere_revision_docente=False,
+            modelo="qwen",
+        )
+
+    async def failed_comparator(*_args, **_kwargs):
+        return AgentResult(
+            nota_sugerida=4.0,
+            confianza=0,
+            feedback_estudiante="",
+            proveedor="comparator",
+            modelo="fallback",
+            error="invalid_json",
+        )
+
+    monkeypatch.setattr(orchestrator, "grader_agent", successful_grader)
+    monkeypatch.setattr(orchestrator, "comparator_agent", failed_comparator)
+
+    result = _run(monkeypatch, student_response_text="Respuesta válida")
+
+    assert result.nota_sugerida == Decimal("4.0")
+    assert result.confianza == 0.92
+    assert result.requiere_revision_docente is True
+    assert result.feedback_estudiante == "Buen trabajo."
+    assert result.raw_model_output["comparator"]["fallback_applied"] is True
+    assert result.raw_model_output["comparator"]["error_type"] == "comparator_error"

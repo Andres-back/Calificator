@@ -1,11 +1,17 @@
+from decimal import Decimal
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.permissions import get_current_user
 from app.db.session import get_db
 from app.modules.evaluaciones import generation_service, service
+from app.modules.evaluaciones.digitalize_service import (
+    detectar_estructura_evaluacion,
+    detect_digitalization_mime,
+    extract_evaluation_text,
+)
 from app.modules.evaluaciones.schemas import (
     DigitalizarEvaluacionExternaRequest,
     EvaluacionBlueprintRead,
@@ -21,6 +27,74 @@ from app.modules.users.models import User
 
 router = APIRouter(tags=["evaluaciones"])
 
+
+@router.post(
+    "/evaluaciones/externa/digitalizar-con-archivo",
+    status_code=status.HTTP_201_CREATED,
+)
+async def digitalize_from_file(
+    materia_id: UUID = Form(...),
+    nombre: str = Form(..., min_length=2, max_length=220),
+    descripcion: str | None = Form(default=None),
+    nota_maxima: Decimal = Form(default=Decimal("5.0"), gt=0),
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    """Crea un borrador revisable desde PDF, DOCX o imagen con clave completa."""
+    from app.modules.materias.service import ensure_can_manage_materia
+
+    await ensure_can_manage_materia(db, materia_id, current_user)
+    content = await file.read()
+    try:
+        mime = detect_digitalization_mime(
+            content,
+            file.filename or "evaluacion",
+        )
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(exc),
+        ) from exc
+
+    extracted_text, extraction_warnings = await extract_evaluation_text(
+        content,
+        mime,
+        file.filename or nombre,
+    )
+    structure = await detectar_estructura_evaluacion(
+        user_id=current_user.id,
+        contenido_texto=extracted_text,
+        nota_maxima=nota_maxima,
+        initial_warnings=extraction_warnings,
+    )
+    payload = DigitalizarEvaluacionExternaRequest(
+        materia_id=materia_id,
+        nombre=nombre,
+        descripcion=descripcion,
+        nota_maxima=nota_maxima,
+        criterios=structure.get("criterios", []),
+        estructura_detectada=structure,
+    )
+    evaluation = await service.digitalize_external_evaluation(
+        db,
+        payload,
+        current_user,
+    )
+    return {
+        "evaluacion": {
+            "id": str(evaluation.id),
+            "nombre": evaluation.nombre,
+            "materia_id": str(evaluation.materia_id),
+            "estado": evaluation.estado,
+            "tipo_origen": evaluation.tipo_origen,
+            "nota_maxima": float(evaluation.nota_maxima),
+            "preguntas_count": len(structure["preguntas"]),
+            "respuestas_count": len(structure["respuestas_esperadas"]),
+            "clave_completa": structure["clave_completa"],
+        },
+        "estructura_detectada": structure,
+    }
 
 @router.post(
     "/evaluaciones/generar-borrador",
