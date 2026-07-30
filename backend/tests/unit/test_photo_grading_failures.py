@@ -9,6 +9,7 @@ from app.modules.calificaciones.agents import (
     AgentContext,
     AgentResult,
     grader_agent,
+    vision_agent,
 )
 
 
@@ -144,6 +145,48 @@ def test_pipeline_exception_returns_sanitized_failure(monkeypatch) -> None:
     assert result.raw_model_output["error_type"] == "RuntimeError"
     assert "sensitive prompt content" not in str(result.raw_model_output)
 
+
+class CapturingVisionClient:
+    def __init__(self) -> None:
+        self.prompt = ""
+
+    async def chat_multimodal(self, **kwargs):
+        self.prompt = kwargs["text"]
+        return {
+            "choices": [
+                {
+                    "message": {
+                        "content": {
+                            "texto_extraido": "1. B) 36",
+                            "usable": True,
+                            "alertas": [],
+                        }
+                    }
+                }
+            ]
+        }
+
+
+def test_vision_prompt_keeps_json_example_literal() -> None:
+    client = CapturingVisionClient()
+    context = AgentContext(
+        evaluacion_nombre="Multiplicación",
+        nota_maxima=5,
+        blueprint={
+            "preguntas": [
+                {"numero": 1, "texto": "¿Cuánto es 4 por 9?"},
+            ]
+        },
+        image_bytes=b"image",
+        image_mime="image/jpeg",
+    )
+
+    result = asyncio.run(vision_agent(context, client=client))
+
+    assert result.error is None
+    assert result.raw_output["texto_extraido"] == "1. B) 36"
+    assert '"texto_extraido"' in client.prompt
+    assert "¿Cuánto es 4 por 9?" in client.prompt
 
 def test_grader_exception_uses_none_instead_of_zero() -> None:
     context = AgentContext(
