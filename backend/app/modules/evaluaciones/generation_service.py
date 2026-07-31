@@ -17,6 +17,7 @@ from app.modules.dba.service import (
 )
 from app.modules.evaluaciones import service as evaluation_service
 from app.modules.evaluaciones.blueprint_service import normalize_dba_records
+from app.modules.evaluaciones.modality_service import normalize_question_modalities
 from app.modules.evaluaciones.models import Evaluacion
 from app.modules.evaluaciones.schemas import (
     EvaluacionContenidoIA,
@@ -104,6 +105,7 @@ def build_generation_prompt(
         f"Grado: {materia_grado}",
         f"Tema: {request.tema}",
         f"Nombre: {request.nombre}",
+        f"Modalidad: {request.modalidad.value}",
         f"Cantidad exacta de preguntas: {request.cantidad_preguntas}",
         f"Tipos permitidos: {', '.join(request.tipos_pregunta)}",
         f"Metas del docente: {json.dumps(request.metas_profesor, ensure_ascii=False)}",
@@ -272,6 +274,7 @@ async def generate_evaluation_draft(
             "respuesta": question.respuesta_esperada,
             "dba_ids": dba_ids,
         })
+    questions = normalize_question_modalities(questions, request.modalidad)
     criteria = [
         {
             "nombre": criterion.nombre,

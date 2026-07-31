@@ -176,8 +176,25 @@ class OpenCodeClient:
 
         Uses DEFAULT_MULTIMODAL_TIMEOUT (180s) by default because qwen3.7-plus
         takes 90-120s on real photos. Pass ``timeout`` to override.
+
+        Si el MIME es PDF, lo convierte a PNG automaticamente ya que los LLMs
+        no soportan application/pdf como image_url.
         """
         import base64
+        import io
+
+        if image_mime == "application/pdf":
+            try:
+                import fitz
+                doc = fitz.open(stream=image_bytes, filetype="pdf")
+                page = doc[0]
+                pix = page.get_pixmap(dpi=200)
+                img_bytes = pix.tobytes("png")
+                doc.close()
+                image_bytes = img_bytes
+                image_mime = "image/png"
+            except Exception as exc:
+                logger.warning("Error convirtiendo PDF a imagen: %s", exc)
 
         b64 = base64.b64encode(image_bytes).decode()
         start = time.monotonic()

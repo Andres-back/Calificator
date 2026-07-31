@@ -81,6 +81,49 @@ def _choice_matches(expected: Any, detected: Any) -> bool:
     return False
 
 
+def parse_numbered_answers(response_text: str | None) -> list[dict]:
+    """Extrae respuestas tipo ``P1: ...`` sin pedirle al LLM que las invente."""
+    if not response_text:
+        return []
+    pattern = re.compile(
+        r"(?im)^\s*(?:p(?:regunta)?\s*)?(\d+)\s*[\).:\-]\s*(.+?)\s*$"
+    )
+    return [
+        {"pregunta": int(match.group(1)), "respuesta": match.group(2).strip()}
+        for match in pattern.finditer(response_text)
+        if match.group(2).strip()
+    ]
+
+
+def merge_detected_answers(
+    blueprint: dict,
+    online_answers: list[dict],
+    physical_answers: list[dict],
+) -> list[dict]:
+    """Elige la evidencia correspondiente a la modalidad declarada por pregunta."""
+    online = {
+        str(item.get("pregunta", item.get("numero"))): item
+        for item in online_answers
+    }
+    physical = {
+        str(item.get("pregunta", item.get("numero"))): item
+        for item in physical_answers
+    }
+    merged: list[dict] = []
+    for question in blueprint.get("preguntas", []):
+        number = str(question.get("numero"))
+        mode = question.get("modalidad_respuesta")
+        if mode == "online":
+            item = online.get(number)
+        elif mode in {"fisica", "archivo"}:
+            item = physical.get(number)
+        else:
+            item = online.get(number) or physical.get(number)
+        if item:
+            merged.append(item)
+    return merged
+
+
 def build_objective_validation(
     blueprint: dict,
     detected_answers: list[dict] | None,
@@ -241,8 +284,14 @@ async def orchestrate_grading(
         rag_context = format_context_as_text(rag_chunks)
 
         # ── Paso 2: Visión (si hay imagen) ───────────────────────────
-        texto_extraido = student_response_text or ""
-        objective_validation: list[dict] = []
+        online_text = student_response_text or ""
+        texto_extraido = online_text
+        online_answers = parse_numbered_answers(online_text)
+        physical_answers: list[dict] = []
+        objective_validation = build_objective_validation(
+            blueprint,
+            online_answers,
+        )
         vision_result: AgentResult | None = None
 
         if image_bytes:
@@ -281,14 +330,27 @@ async def orchestrate_grading(
                 vision_result = await vision_router_agent(ctx)
 
             if vision_result.raw_output and not vision_result.error:
-                texto_extraido = (
-                    vision_result.raw_output.get("texto_extraido", "")
-                    or student_response_text
-                    or ""
+                physical_text = vision_result.raw_output.get("texto_extraido", "")
+                physical_answers = vision_result.raw_output.get(
+                    "respuestas_detectadas",
+                    [],
                 )
+                if online_text.strip() and physical_text.strip():
+                    texto_extraido = (
+                        "=== RESPUESTAS ONLINE ===\n"
+                        f"{online_text.strip()}\n\n"
+                        "=== EVIDENCIA FISICA INTERPRETADA ===\n"
+                        f"{physical_text.strip()}"
+                    )
+                else:
+                    texto_extraido = physical_text or online_text
                 objective_validation = build_objective_validation(
                     blueprint,
-                    vision_result.raw_output.get("respuestas_detectadas", []),
+                    merge_detected_answers(
+                        blueprint,
+                        online_answers,
+                        physical_answers,
+                    ),
                 )
 
                 if not vision_result.raw_output.get("usable", True):

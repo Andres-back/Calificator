@@ -25,6 +25,7 @@ function validQuestion(overrides: Partial<EditableQuestion> = {}): EditableQuest
     opciones: ['A', 'B', 'C'],
     respuestaEsperada: 'A',
     puntaje: 1,
+    modalidadRespuesta: 'online',
     dbaIds: ['dba-1'],
     expanded: true,
     ...overrides,
@@ -47,6 +48,22 @@ describe('generation wizard model', () => {
     expect(validateStep(state, 3)).toMatch(/entre 3 y 30/i);
   });
 
+  it('requires both response sections before confirming a mixed evaluation', () => {
+    const state = createEmptyWizardState('materia-1');
+    state.nombre = 'Evaluación mixta';
+    state.modalidad = 'mixta';
+    state.dbaIds = ['dba-1'];
+    state.generatedEvaluationId = 'evaluation-1';
+    state.questions = [
+      validQuestion(),
+      validQuestion({ clientId: 'question-2', numero: 2 }),
+    ];
+
+    expect(validateStep(state, 5)).toMatch(/online.*papel|papel.*online/i);
+    state.questions[1].modalidadRespuesta = 'fisica';
+    expect(validateStep(state, 5)).toBeNull();
+  });
+
   it('persists a versioned user draft without binary file contents and recovers it', () => {
     const state = createEmptyWizardState('materia-1');
     state.nombre = 'Borrador';
@@ -61,7 +78,7 @@ describe('generation wizard model', () => {
     persistWizardDraft(localStorage, 'profesor-1', state, 1_000);
     const raw = localStorage.getItem(wizardStorageKey('profesor-1')) ?? '';
 
-    expect(raw).toContain('"version":2');
+    expect(raw).toContain('"version":3');
     expect(raw).toContain('"userId":"profesor-1"');
     expect(raw).toContain('"needsReselection":true');
     expect(raw).not.toContain('data:');

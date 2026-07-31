@@ -104,6 +104,8 @@ async def grade_persisted_photo(
     profesor_id: UUID,
     image_bytes: bytes,
     image_mime: str,
+    student_response_text: str | None = None,
+    evidence_metadata: dict | None = None,
     calificacion: Calificacion | None = None,
 ) -> Calificacion:
     """Califica una entrega que ya sobrevivió a un commit previo."""
@@ -113,6 +115,7 @@ async def grade_persisted_photo(
             evaluacion_id=evaluacion.id,
             materia_id=evaluacion.materia_id,
             blueprint=evaluation_to_grading_blueprint(evaluacion),
+            student_response_text=student_response_text,
             image_bytes=image_bytes,
             image_mime=image_mime,
             user_id=profesor_id,
@@ -128,6 +131,12 @@ async def grade_persisted_photo(
             evaluacion,
             error_type=type(exc).__name__,
         )
+
+    if evidence_metadata:
+        grading.raw_model_output = {
+            **grading.raw_model_output,
+            "evidencia_consolidada": evidence_metadata,
+        }
 
     if grading.nota_sugerida is not None:
         service.transition_to_grading_if_needed(evaluacion)

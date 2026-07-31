@@ -30,8 +30,20 @@ export function ResolverEvaluacionPage() {
     retry: false,
   });
 
-  const preguntas = useMemo(() => evaluacion?.preguntas ?? [], [evaluacion?.preguntas]);
   const modalidad = evaluacion?.modalidad ?? 'online';
+  const preguntas = useMemo(() => evaluacion?.preguntas ?? [], [evaluacion?.preguntas]);
+  const preguntasOnline = useMemo(
+    () => preguntas.filter(
+      (question) => modalidad !== 'mixta' || question.modalidad_respuesta === 'online',
+    ),
+    [modalidad, preguntas],
+  );
+  const preguntasFisicas = useMemo(
+    () => preguntas.filter(
+      (question) => modalidad === 'mixta' && question.modalidad_respuesta !== 'online',
+    ),
+    [modalidad, preguntas],
+  );
   const permiteRespuestaOnline = modalidad === 'online' || modalidad === 'mixta';
   const estaCerrada = evaluacion?.estado === 'cerrada';
   const disponible = evaluacion?.estado === 'publicada' || evaluacion?.estado === 'en_calificacion';
@@ -48,7 +60,11 @@ export function ResolverEvaluacionPage() {
       }
       setSubmissionIssue(null);
       setEnviada(true);
-      toast.success('Entrega enviada.');
+      toast.success(
+        delivery.estado === 'recibida' && modalidad === 'mixta'
+          ? 'Parte online guardada.'
+          : 'Entrega enviada.',
+      );
     },
     onError: (submitError) => toast.error(toApiError(submitError).detail),
   });
@@ -127,16 +143,32 @@ export function ResolverEvaluacionPage() {
         </Card>
       )}
 
+      {modalidad === 'mixta' && (
+        <Card className="flex items-start gap-3 border-sky-200 p-5 dark:border-sky-500/30">
+          <ClipboardCheck className="mt-0.5 h-5 w-5 text-brand-500" />
+          <div>
+            <p className="font-semibold">Evaluación mixta</p>
+            <p className="text-sm text-muted">
+              Responde aquí {preguntasOnline.length} pregunta{preguntasOnline.length === 1 ? '' : 's'}.
+              Las otras {preguntasFisicas.length} se entregan en papel o archivo y el docente unirá ambas evidencias.
+            </p>
+          </div>
+        </Card>
+      )}
+
       <div className="grid gap-6 lg:grid-cols-2">
         <section className="space-y-4">
           <div><h2 className="font-display text-lg font-bold">Preguntas</h2><p className="text-sm text-muted">Lee cada enunciado y numera tus respuestas al escribir.</p></div>
-          {preguntas.length === 0 ? (
+          {preguntasOnline.length === 0 ? (
             <p className="text-sm text-muted">Esta evaluación no tiene preguntas visibles.</p>
           ) : (
             <div className="space-y-3">
-              {preguntas.map((pregunta, index) => (
-                <div key={index} id={`pregunta-${index + 1}`} className="rounded-lg border border-border bg-surface p-4 sm:p-5 scroll-mt-24"><p className="text-xs font-semibold uppercase text-muted">Pregunta {index + 1}</p><RichContent content={textFromQuestion(pregunta, index)} variant="evaluation" className="mt-2" /></div>
-              ))}
+              {preguntasOnline.map((pregunta, index) => {
+                const number = Number(pregunta.numero ?? index + 1);
+                return (
+                  <div key={number} id={`pregunta-${number}`} className="rounded-lg border border-border bg-surface p-4 sm:p-5 scroll-mt-24"><p className="text-xs font-semibold uppercase text-muted">Pregunta {number}</p><RichContent content={textFromQuestion(pregunta, index)} variant="evaluation" className="mt-2" /></div>
+                );
+              })}
             </div>
           )}
         </section>
@@ -152,7 +184,7 @@ export function ResolverEvaluacionPage() {
             </Card>
           )}
           {enviada ? (
-            <Card className="flex items-start gap-3 border-emerald-200 p-5 dark:border-emerald-500/30"><CheckCircle2 className="mt-0.5 h-5 w-5 text-emerald-500" /><div><p className="font-semibold">Entrega enviada</p><p className="text-sm text-muted">Tu respuesta fue recibida. El docente confirmará la calificación.</p></div></Card>
+            <Card className="flex items-start gap-3 border-emerald-200 p-5 dark:border-emerald-500/30"><CheckCircle2 className="mt-0.5 h-5 w-5 text-emerald-500" /><div><p className="font-semibold">{modalidad === 'mixta' ? 'Parte online guardada' : 'Entrega enviada'}</p><p className="text-sm text-muted">{modalidad === 'mixta' ? 'Ahora entrega la parte física. El docente subirá la foto y revisará una sola nota consolidada.' : 'Tu respuesta fue recibida. El docente confirmará la calificación.'}</p></div></Card>
           ) : permiteRespuestaOnline && disponible && !estaCerrada ? (
             <Card className="space-y-4 p-5">
               <div><h2 className="font-display text-lg font-bold">Tu respuesta</h2><p className="text-sm text-muted">Escribe tu respuesta numerando cada pregunta (ej: <strong>P1:</strong> ..., <strong>P2:</strong> ...).</p></div>

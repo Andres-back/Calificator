@@ -25,7 +25,7 @@ const MAX_IMAGE_SIZE_BYTES = MAX_IMAGE_SIZE_MB * 1024 * 1024;
 function gradingErrorMessage(error: unknown) {
   const apiError = toApiError(error);
   if (apiError.status === 403) return 'No tienes permiso para calificar esta evaluación o este estudiante.';
-  if (apiError.status === 409) return 'La evaluación está cerrada y ya no admite calificaciones.';
+  if (apiError.status === 409) return apiError.detail;
   if (apiError.status === 400 || apiError.status === 422) return 'La imagen o los datos de calificación no son válidos. Revisa la foto e intenta nuevamente.';
   return apiError.detail;
 }
@@ -71,18 +71,22 @@ export function CalificarFotoPage() {
   });
 
   const { estudiantes, isLoading: loadingEstudiantes } = useEstudiantes(materiaId);
+  const evaluacionesFoto = useMemo(
+    () => evaluaciones?.filter((evaluacion) => evaluacion.modalidad !== 'online') ?? [],
+    [evaluaciones],
+  );
   const evaluacionSeleccionada = useMemo(
-    () => evaluaciones?.find((evaluacion) => evaluacion.id === evaluacionId),
-    [evaluacionId, evaluaciones],
+    () => evaluacionesFoto.find((evaluacion) => evaluacion.id === evaluacionId),
+    [evaluacionId, evaluacionesFoto],
   );
   const evaluationClosed = evaluacionSeleccionada?.estado === 'cerrada';
 
   useEffect(() => {
-    if (evaluaciones && evaluaciones.length > 0 && !evaluaciones.find((evaluacion) => evaluacion.id === evaluacionId)) {
-      setEvaluacionId(evaluaciones[0].id);
+    if (evaluacionesFoto.length > 0 && !evaluacionesFoto.find((evaluacion) => evaluacion.id === evaluacionId)) {
+      setEvaluacionId(evaluacionesFoto[0].id);
     }
-    if (evaluaciones?.length === 0) setEvaluacionId('');
-  }, [evaluacionId, evaluaciones]);
+    if (evaluacionesFoto.length === 0) setEvaluacionId('');
+  }, [evaluacionId, evaluacionesFoto]);
 
   useEffect(() => {
     if (estudiantes.length > 0 && !estudiantes.find((estudiante) => estudiante.id === estudianteId)) {
@@ -216,9 +220,9 @@ export function CalificarFotoPage() {
               </Field>
               <Field label="Evaluación" required>
                 {loadingEvaluaciones ? <Skeleton className="h-11" /> : (
-                  <Select data-tour="foto-evaluacion" value={evaluacionId} onChange={(event) => { setEvaluacionId(event.target.value); setResultado(null); setSubmissionError(null); }} disabled={submissionPending || !materiaId || !evaluaciones?.length}>
-                    {(!evaluaciones || evaluaciones.length === 0) && <option value="">Sin evaluaciones</option>}
-                    {evaluaciones?.map((evaluacion) => <option key={evaluacion.id} value={evaluacion.id}>{evaluacion.nombre}</option>)}
+                  <Select data-tour="foto-evaluacion" value={evaluacionId} onChange={(event) => { setEvaluacionId(event.target.value); setResultado(null); setSubmissionError(null); }} disabled={submissionPending || !materiaId || evaluacionesFoto.length === 0}>
+                    {evaluacionesFoto.length === 0 && <option value="">Sin evaluaciones físicas o mixtas</option>}
+                    {evaluacionesFoto.map((evaluacion) => <option key={evaluacion.id} value={evaluacion.id}>{evaluacion.nombre}</option>)}
                   </Select>
                 )}
               </Field>
@@ -227,6 +231,12 @@ export function CalificarFotoPage() {
             {evaluationClosed && (
               <div className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-200">
                 Esta evaluación está cerrada. El backend rechazará nuevas calificaciones y el envío está bloqueado.
+              </div>
+            )}
+
+            {evaluacionSeleccionada?.modalidad === 'mixta' && (
+              <div className="rounded-xl border border-sky-200 bg-sky-50 p-3 text-sm text-sky-800 dark:border-sky-500/30 dark:bg-sky-500/10 dark:text-sky-200">
+                Esta foto completará la parte online ya guardada del estudiante. La IA generará una sola nota consolidada para revisión docente.
               </div>
             )}
 

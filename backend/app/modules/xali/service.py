@@ -48,6 +48,10 @@ POST_DELIVERY_BLOCKED_MESSAGE = (
     "Primero debes entregar la evaluacion y esperar la revision del docente. "
     "Despues de que tu docente confirme o ajuste la calificacion, podre ayudarte a revisar tus errores y explicarte como mejorar."
 )
+GENERAL_STUDENT_CHAT_BLOCKED_MESSAGE = (
+    "Xali para estudiantes solo esta disponible dentro de una evaluacion "
+    "ya entregada y confirmada por el docente."
+)
 XALI_VALIDATION_NOTICE = (
     "La IA te orienta, pero tu docente es quien valida y acompa\u00f1a tu proceso."
 )
@@ -147,6 +151,11 @@ async def chat(
     mensaje: str,
     is_teacher: bool = False,
 ) -> str:
+    if not is_teacher:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=GENERAL_STUDENT_CHAT_BLOCKED_MESSAGE,
+        )
     system_prompt = XALI_TEACHER_SYSTEM if is_teacher else XALI_STUDENT_SYSTEM
     if not is_teacher and is_direct_answer_request(mensaje):
         await _save_chat_exchange(
@@ -285,6 +294,9 @@ async def _get_confirmed_context_for_student(
                 Entrega.evaluacion_id == evaluacion_id,
                 Entrega.estudiante_id == estudiante_id,
                 Calificacion.estudiante_id == estudiante_id,
+                Calificacion.estado.in_(CONFIRMED_STATES),
+                Calificacion.revisado_por_docente.is_(True),
+                Calificacion.nota_confirmada.is_not(None),
             )
             .order_by(Calificacion.updated_at.desc())
         )

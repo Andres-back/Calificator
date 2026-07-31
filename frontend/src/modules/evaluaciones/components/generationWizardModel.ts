@@ -1,12 +1,13 @@
 import type { Evaluacion, EvaluacionModalidad } from '@/types/api';
 
-export const WIZARD_VERSION = 2;
+export const WIZARD_VERSION = 3;
 export const WIZARD_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 export const MIN_QUESTIONS = 3;
 export const MAX_QUESTIONS = 30;
 export const MAX_REFERENCE_FILE_BYTES = 10 * 1024 * 1024;
 
 export type QuestionType = 'opcion_multiple' | 'abierta' | 'verdadero_falso' | 'completar';
+export type QuestionResponseMode = 'online' | 'fisica' | 'archivo';
 
 export const QUESTION_TYPES: QuestionType[] = [
   'opcion_multiple',
@@ -38,6 +39,7 @@ export interface EditableQuestion {
   opciones: string[];
   respuestaEsperada: string;
   puntaje: number;
+  modalidadRespuesta: QuestionResponseMode;
   dbaIds: string[];
   justificacionAlineacion?: string;
   fuenteContextoIds?: string[];
@@ -128,7 +130,17 @@ export function validateStep(state: WizardState, step = state.step): string | nu
     const firstError = state.questions
       .map((question, index) => validateQuestion(question, index))
       .find(Boolean);
-    return firstError ?? null;
+    if (firstError) return firstError;
+    if (state.modalidad === 'mixta') {
+      const hasOnline = state.questions.some((question) => question.modalidadRespuesta === 'online');
+      const hasPhysical = state.questions.some(
+        (question) => question.modalidadRespuesta === 'fisica' || question.modalidadRespuesta === 'archivo',
+      );
+      if (!hasOnline || !hasPhysical) {
+        return 'Una evaluación mixta necesita preguntas online y preguntas en papel o archivo.';
+      }
+    }
+    return null;
   }
   if (step === 6 && (!state.generatedEvaluationId || state.questions.length === 0)) {
     return 'No hay un borrador para confirmar.';
@@ -170,6 +182,15 @@ export function evaluationToEditableQuestions(evaluation: Evaluacion): EditableQ
       opciones: options,
       respuestaEsperada: normalizeAnswer(rawAnswer.respuesta ?? rawAnswer.texto),
       puntaje: Number(question.puntaje ?? 1),
+      modalidadRespuesta: (
+        ['online', 'fisica', 'archivo'].includes(String(question.modalidad_respuesta))
+          ? String(question.modalidad_respuesta)
+          : evaluation.modalidad === 'fisica'
+            ? 'fisica'
+            : evaluation.modalidad === 'mixta' && tipo === 'abierta'
+              ? 'fisica'
+              : 'online'
+      ) as QuestionResponseMode,
       dbaIds: Array.isArray(question.dba_ids) ? question.dba_ids.map(String) : [],
       justificacionAlineacion: question.justificacion_alineacion
         ? String(question.justificacion_alineacion)
@@ -249,6 +270,7 @@ export function questionsToUpdatePayload(questions: EditableQuestion[]) {
       enunciado: question.enunciado.trim(),
       opciones: question.opciones.map((option) => option.trim()).filter(Boolean),
       puntaje: String(question.puntaje),
+      modalidad_respuesta: question.modalidadRespuesta,
       dba_ids: question.dbaIds,
       justificacion_alineacion: question.justificacionAlineacion,
       fuente_contexto_ids: question.fuenteContextoIds ?? [],

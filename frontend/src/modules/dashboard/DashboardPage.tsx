@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/stores/auth';
 import { TOOLS } from '@/modules/herramientas/meta';
+import { MATERIAL_CREATION_TOOLS } from '@/modules/herramientas/toolPickerModel';
 import { listMaterials } from '@/modules/herramientas/api';
 import { listMaterias } from '@/modules/materias/api';
 import { Badge, Card, Skeleton } from '@/components/ui';
@@ -199,7 +200,7 @@ function DashboardDocente() {
           </Link>
         </div>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
-          {TOOLS.slice(0, 6).map((tool, index) => (
+          {MATERIAL_CREATION_TOOLS.slice(0, 6).map((tool, index) => (
             <motion.div key={tool.tipo} custom={index} variants={fade} initial="hidden" animate="show">
               <Link to={routes.herramientaNueva(tool.tipo)}>
                 <Card interactive className="h-full p-4">

@@ -32,6 +32,7 @@ import type { MaterialTipo } from '@/types/api';
 import { routes } from '@/config/routes';
 import {
   filterTools,
+  isGradableTool,
   MATERIAL_CREATION_TOOLS,
   TOOL_GOALS,
   type ToolGoal,
@@ -128,7 +129,7 @@ export function GeneratePage() {
   const [params, setParams] = useSearchParams();
   const navigate = useNavigate();
   const type = params.get('tipo') as MaterialTipo | null;
-  const tool = type ? TOOL_BY_TIPO[type] : null;
+  const tool = type && !isGradableTool(type) ? TOOL_BY_TIPO[type] : null;
   const [loading, setLoading] = useState(false);
   const [goal, setGoal] = useState<ToolGoal>('todos');
   const [search, setSearch] = useState('');
@@ -142,6 +143,12 @@ export function GeneratePage() {
     () => filterTools(MATERIAL_CREATION_TOOLS, { goal, search }),
     [goal, search],
   );
+
+  useEffect(() => {
+    if (type && isGradableTool(type)) {
+      navigate(routes.materiasPara('evaluar'), { replace: true });
+    }
+  }, [navigate, type]);
 
   if (!tool) {
     return (

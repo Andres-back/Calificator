@@ -46,6 +46,10 @@ from app.modules.calificaciones.schemas import (
 )
 from app.modules.evaluaciones import service as evaluaciones_service
 from app.modules.evaluaciones.blueprint_service import evaluation_to_grading_blueprint
+from app.modules.evaluaciones.modality_service import (
+    normalize_question_modalities,
+    question_numbers_by_section,
+)
 from app.modules.jobs import service as jobs_service
 from app.modules.materias import service as materias_service
 from app.modules.users.models import User
@@ -61,6 +65,28 @@ MAX_ASYNC_BATCH_FILES = 50
 MAX_ASYNC_BATCH_BYTES = 100 * 1024 * 1024
 
 
+def _mixed_evidence_metadata(evaluacion: object, entrega: Entrega) -> dict:
+    questions = normalize_question_modalities(
+        getattr(evaluacion, "preguntas", []),
+        getattr(evaluacion, "modalidad", None),
+    )
+    sections = question_numbers_by_section(questions)
+    return {
+        "modalidad": EvaluacionModalidad.MIXTA.value,
+        "entrega_id": str(entrega.id),
+        "secciones": {
+            "online": {
+                "preguntas": sections["online"],
+                "respuesta_guardada": bool(entrega.respuesta_texto),
+            },
+            "fisica": {
+                "preguntas": sections["fisica"],
+                "archivo_url": entrega.archivo_url,
+            },
+        },
+    }
+
+
 @router.post("/calificaciones/foto", response_model=CalificacionRead, status_code=status.HTTP_201_CREATED)
 async def calificar_foto(
     evaluacion_id: UUID = Form(...),
@@ -72,26 +98,70 @@ async def calificar_foto(
     require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
     evaluacion = await evaluaciones_service.ensure_can_manage_evaluation(db, evaluacion_id, current_user)
     service.ensure_evaluation_accepts_grading(evaluacion)
+    if getattr(evaluacion, "modalidad", None) == EvaluacionModalidad.ONLINE.value:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Esta evaluacion es online y debe calificarse desde la entrega digital.",
+        )
     if not await is_student_enrolled(db, evaluacion.materia_id, estudiante_id):
         raise HTTPException(status_code=403, detail="El estudiante no esta matriculado en esta materia")
 
     content = await foto.read()
     mime = validate_mime(content, foto.filename or "image.jpg")
 
+    existing_calificacion: Calificacion | None = None
+    if getattr(evaluacion, "modalidad", None) == EvaluacionModalidad.MIXTA.value:
+        entrega = await db.scalar(
+            select(Entrega)
+            .where(
+                Entrega.evaluacion_id == evaluacion.id,
+                Entrega.estudiante_id == estudiante_id,
+                Entrega.tipo.in_([EntregaTipo.ONLINE.value, EntregaTipo.MIXTA.value]),
+                Entrega.respuesta_texto.is_not(None),
+                Entrega.archivo_url.is_(None),
+            )
+            .order_by(Entrega.created_at.desc())
+        )
+        if not entrega:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=(
+                    "Primero debe guardarse la parte online de esta evaluacion mixta. "
+                    "Despues carga la evidencia fisica."
+                ),
+            )
+        existing_calificacion = await db.scalar(
+            select(Calificacion).where(Calificacion.entrega_id == entrega.id)
+        )
+        if existing_calificacion and existing_calificacion.revisado_por_docente:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="La entrega mixta ya tiene una decision docente y no puede reprocesarse.",
+            )
+    else:
+        entrega = Entrega(
+            evaluacion_id=evaluacion.id,
+            estudiante_id=estudiante_id,
+            materia_id=evaluacion.materia_id,
+            tipo=EntregaTipo.FOTO.value,
+            estado=EntregaEstado.PROCESANDO.value,
+            visual_text_json={},
+        )
+        db.add(entrega)
+
     archivo_url = await save_upload(content, foto.filename or "foto.jpg", subfolder="entregas")
-    entrega = Entrega(
-        evaluacion_id=evaluacion.id,
-        estudiante_id=estudiante_id,
-        materia_id=evaluacion.materia_id,
-        tipo=EntregaTipo.FOTO.value,
-        archivo_url=archivo_url,
-        estado=EntregaEstado.PROCESANDO.value,
-        visual_text_json={},
-    )
-    db.add(entrega)
+    entrega.archivo_url = archivo_url
+    entrega.estado = EntregaEstado.PROCESANDO.value
+    if getattr(evaluacion, "modalidad", None) == EvaluacionModalidad.MIXTA.value:
+        entrega.tipo = EntregaTipo.MIXTA.value
     await db.commit()
     await db.refresh(entrega)
 
+    mixed_metadata = (
+        _mixed_evidence_metadata(evaluacion, entrega)
+        if getattr(evaluacion, "modalidad", None) == EvaluacionModalidad.MIXTA.value
+        else None
+    )
     return await photo_service.grade_persisted_photo(
         db,
         evaluacion=evaluacion,
@@ -100,8 +170,10 @@ async def calificar_foto(
         profesor_id=current_user.id,
         image_bytes=content,
         image_mime=mime,
+        student_response_text=entrega.respuesta_texto,
+        evidence_metadata=mixed_metadata,
+        calificacion=existing_calificacion,
     )
-
 
 @router.post(
     "/calificaciones/{calificacion_id}/reintentar-foto",
@@ -163,6 +235,16 @@ async def reintentar_calificacion_foto(
         profesor_id=current_user.id,
         image_bytes=content,
         image_mime=mime,
+        student_response_text=(
+            entrega.respuesta_texto
+            if entrega.tipo == EntregaTipo.MIXTA.value
+            else None
+        ),
+        evidence_metadata=(
+            _mixed_evidence_metadata(evaluacion, entrega)
+            if entrega.tipo == EntregaTipo.MIXTA.value
+            else None
+        ),
         calificacion=calificacion,
     )
 
@@ -742,19 +824,33 @@ async def crear_entrega_online(
     respuesta_texto = payload.respuesta_texto
 
     # Persist the student's evidence before invoking any external AI provider.
-    # A timeout must never erase an otherwise valid submission.
+    # A mixed submission waits for its physical section and is graded only once.
+    mixed_submission = getattr(evaluacion, "modalidad", None) == EvaluacionModalidad.MIXTA.value
     entrega = Entrega(
         evaluacion_id=evaluacion.id,
         estudiante_id=current_user.id,
         materia_id=evaluacion.materia_id,
-        tipo=EntregaTipo.ONLINE.value,
+        tipo=EntregaTipo.MIXTA.value if mixed_submission else EntregaTipo.ONLINE.value,
         respuesta_texto=respuesta_texto,
-        estado=EntregaEstado.PROCESANDO.value,
+        estado=(
+            EntregaEstado.RECIBIDA.value
+            if mixed_submission
+            else EntregaEstado.PROCESANDO.value
+        ),
         visual_text_json={},
     )
     db.add(entrega)
     await db.commit()
     await db.refresh(entrega)
+
+    if mixed_submission:
+        entrega.visual_text_json = {
+            "pipeline_status": "pending_physical_evidence",
+            **_mixed_evidence_metadata(evaluacion, entrega),
+        }
+        await db.commit()
+        await db.refresh(entrega)
+        return entrega
 
     try:
         grading = await grade_submission(

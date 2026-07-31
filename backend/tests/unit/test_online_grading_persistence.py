@@ -14,6 +14,7 @@ from app.modules.calificaciones.schemas import EntregaOnlineCreate, GradingResul
 from app.shared.enums import (
     CalificacionEstado,
     EntregaEstado,
+    EntregaTipo,
     EvaluacionEstado,
     EvaluacionModalidad,
     PoliticaIntento,
@@ -147,7 +148,7 @@ def test_online_evidence_is_committed_before_ai_and_survives_failure(monkeypatch
 
 
 def test_successful_online_submission_remains_a_teacher_reviewable_suggestion(monkeypatch) -> None:
-    evaluation = _evaluation(EvaluacionModalidad.MIXTA.value)
+    evaluation = _evaluation(EvaluacionModalidad.ONLINE.value)
     student = _student()
     db = FakeDB()
     _configure(monkeypatch, evaluation)
@@ -180,3 +181,34 @@ def test_successful_online_submission_remains_a_teacher_reviewable_suggestion(mo
     assert grade.estado == CalificacionEstado.SUGERIDA.value
     assert grade.revisado_por_docente is False
     assert grade.nota_confirmada is None
+
+def test_mixed_online_section_waits_for_physical_evidence(monkeypatch) -> None:
+    evaluation = _evaluation(EvaluacionModalidad.MIXTA.value)
+    evaluation.preguntas = [
+        {"numero": 1, "modalidad_respuesta": "online"},
+        {"numero": 2, "modalidad_respuesta": "fisica"},
+    ]
+    student = _student()
+    db = FakeDB()
+    _configure(monkeypatch, evaluation)
+
+    async def should_not_grade(*_args, **_kwargs):
+        raise AssertionError("La evaluacion mixta solo se califica al completar la foto")
+
+    monkeypatch.setattr(router, "grade_submission", should_not_grade)
+
+    delivery = asyncio.run(
+        router.crear_entrega_online(
+            evaluation.id,
+            EntregaOnlineCreate(respuesta_texto="P1: respuesta online conservada"),
+            current_user=student,
+            db=db,
+        )
+    )
+
+    assert delivery.tipo == EntregaTipo.MIXTA.value
+    assert delivery.estado == EntregaEstado.RECIBIDA.value
+    assert delivery.visual_text_json["pipeline_status"] == "pending_physical_evidence"
+    assert delivery.visual_text_json["secciones"]["online"]["preguntas"] == [1]
+    assert delivery.visual_text_json["secciones"]["fisica"]["preguntas"] == [2]
+    assert not any(isinstance(item, Calificacion) for item in db.added)

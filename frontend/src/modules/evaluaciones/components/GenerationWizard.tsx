@@ -14,7 +14,7 @@ import { cn } from '@/lib/cn';
 import { MateriaSelect } from '@/modules/materias/MateriaSelect';
 import { listDbaCombinado } from '@/modules/materias/dbaApi';
 import { sendMessage } from '@/modules/xali/api';
-import type { DBAUnifiedItem, Evaluacion, Materia } from '@/types/api';
+import type { DBAUnifiedItem, Evaluacion, EvaluacionModalidad, Materia } from '@/types/api';
 import { generarBorradorEvaluacion, updateEvaluacion, type EvaluacionGenerarRequest } from '../api';
 import { DBASelector } from './DBASelector';
 import { PasosGuia } from './PasosGuia';
@@ -40,11 +40,12 @@ const MODALITY_OPTIONS = [
 ] as const;
 
 function QuestionCard({
-  question, index, total, onChange, onDelete, onDuplicate, onMove,
+  question, index, total, evaluationModality, onChange, onDelete, onDuplicate, onMove,
 }: {
   question: EditableQuestion;
   index: number;
   total: number;
+  evaluationModality: EvaluacionModalidad;
   onChange: (patch: Partial<EditableQuestion>) => void;
   onDelete: () => void;
   onDuplicate: () => void;
@@ -83,6 +84,21 @@ function QuestionCard({
           <Field label="Enunciado" required>
             <Textarea value={question.enunciado} onChange={(event) => onChange({ enunciado: event.target.value })} className="min-h-24 text-base" />
           </Field>
+
+          {evaluationModality === 'mixta' && (
+            <Field label="Dónde responde el estudiante" required>
+              <select
+                value={question.modalidadRespuesta}
+                onChange={(event) => onChange({ modalidadRespuesta: event.target.value as EditableQuestion['modalidadRespuesta'] })}
+                className="focus-ring min-h-12 w-full rounded-lg border border-border bg-surface px-4 text-base text-fg"
+                aria-label={`Modalidad de respuesta de la pregunta ${index + 1}`}
+              >
+                <option value="online">En línea</option>
+                <option value="fisica">En papel / foto</option>
+                <option value="archivo">Archivo adjunto</option>
+              </select>
+            </Field>
+          )}
 
           {(question.tipo === 'opcion_multiple' || question.tipo === 'verdadero_falso') && (
             <div className="space-y-3">
@@ -513,6 +529,7 @@ export function GenerationWizard({
                               question={question}
                               index={index}
                               total={state.questions.length}
+                              evaluationModality={state.modalidad}
                               onChange={(questionPatch) => patch({ questions: state.questions.map((current, currentIndex) => currentIndex === index ? { ...current, ...questionPatch } : current) })}
                               onDelete={() => patch({ questions: renumberQuestions(state.questions.filter((_, currentIndex) => currentIndex !== index)) })}
                               onDuplicate={() => patch({ questions: duplicateQuestion(state.questions, index) })}

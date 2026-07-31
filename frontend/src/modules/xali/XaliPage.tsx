@@ -21,15 +21,6 @@ const TEACHER_SUGGESTIONS = [
   { icon: '🪜', text: 'Diseña una explicación paso a paso' },
 ];
 
-const STUDENT_SUGGESTIONS = [
-  { icon: '💡', text: 'Explícame con palabras sencillas' },
-  { icon: '📚', text: 'Ayúdame a estudiar' },
-  { icon: '🔍', text: '¿Qué debo repasar?' },
-  { icon: '👁️', text: 'Muéstrame un ejemplo parecido' },
-  { icon: '💬', text: 'Explícame mi retroalimentación' },
-  { icon: '🪜', text: 'Ayúdame a practicar paso a paso' },
-];
-
 const REVIEW_SUGGESTIONS = [
   { icon: '❌', text: '¿En qué me equivoqué?' },
   { icon: '✅', text: '¿Cómo podía responder mejor?' },
@@ -40,13 +31,13 @@ const REVIEW_SUGGESTIONS = [
 export function XaliPage() {
   const { user } = useAuth();
   const isStudent = user?.rol === 'estudiante';
-  const suggestions = isStudent ? STUDENT_SUGGESTIONS : TEACHER_SUGGESTIONS;
+  const suggestions = isStudent ? REVIEW_SUGGESTIONS : TEACHER_SUGGESTIONS;
 
   const theme = isStudent
     ? {
-        welcome: 'Pregúntame lo que necesites: dudas, repasos, ejemplos, retroalimentación.',
-        placeholder: 'Escribe tu duda o pide una explicación…',
-        security: 'Xali no resuelve evaluaciones por ti. Te ayuda a comprender.',
+        welcome: 'Selecciona una evaluación confirmada para comprender tus errores y saber qué repasar.',
+        placeholder: 'Pregunta sobre tu retroalimentación confirmada…',
+        security: 'Xali guía el aprendizaje después de la revisión docente y no entrega respuestas resueltas.',
       }
     : {
         welcome: 'Puedo ayudarte a organizar explicaciones, crear actividades y preparar respuestas fáciles de leer.',
@@ -59,7 +50,7 @@ export function XaliPage() {
   const { data: history, isLoading: loadingHistory, isError: historyError, error: historyQueryError, refetch: refetchHistory } = useQuery({
     queryKey: ['xali-history', user?.id ?? 'anon', materiaId],
     queryFn: () => getHistory(materiaId || undefined),
-    enabled: !!user?.id,
+    enabled: !!user?.id && !isStudent,
   });
   const { data: entregadas = [], isLoading: loadingEntregadas } = useQuery({
     queryKey: ['xali-evaluaciones-entregadas', user?.id ?? 'anon'],
@@ -76,21 +67,28 @@ export function XaliPage() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const reduceMotion = useReducedMotion();
 
-  const entregadasFiltradas = useMemo(
-    () => entregadas.filter((item) => !materiaId || item.materia_id === materiaId),
+  const evaluacionesConfirmadas = useMemo(
+    () => entregadas.filter(
+      (item) => item.puede_chatear && (!materiaId || item.materia_id === materiaId),
+    ),
     [entregadas, materiaId],
   );
   const evaluacionContextual = entregadas.find((item) => item.evaluacion_id === evaluacionContextualId);
   const materiaContextual = materias.find((item) => item.id === materiaId);
 
   useEffect(() => {
-    if (history) setMessages(history);
-  }, [history]);
+    if (!isStudent && history) setMessages(history);
+  }, [history, isStudent]);
   useEffect(() => {
-    if (evaluacionContextualId && !entregadasFiltradas.some((item) => item.evaluacion_id === evaluacionContextualId)) {
-      setEvaluacionContextualId('');
+    if (!isStudent) return;
+    if (!evaluacionesConfirmadas.some((item) => item.evaluacion_id === evaluacionContextualId)) {
+      const nextEvaluationId = evaluacionesConfirmadas[0]?.evaluacion_id ?? '';
+      if (nextEvaluationId !== evaluacionContextualId) {
+        setEvaluacionContextualId(nextEvaluationId);
+        setMessages([]);
+      }
     }
-  }, [entregadasFiltradas, evaluacionContextualId]);
+  }, [evaluacionesConfirmadas, evaluacionContextualId, isStudent]);
   const scrollToLatest = useCallback((behavior: ScrollBehavior = reduceMotion ? 'auto' : 'smooth') => {
     endRef.current?.scrollIntoView({ behavior, block: 'end' });
     setIsAtBottom(true);
@@ -103,8 +101,8 @@ export function XaliPage() {
   const send = async (text: string, appendUserMessage = true) => {
     const msg = text.trim();
     if (!msg || thinking) return;
-    if (evaluacionContextual && !evaluacionContextual.puede_chatear) {
-      toast.error('Primero debes esperar la confirmación del docente.');
+    if (isStudent && !evaluacionContextual?.puede_chatear) {
+      toast.error('Selecciona una evaluación ya confirmada por tu docente.');
       return;
     }
     setInput('');
@@ -115,8 +113,8 @@ export function XaliPage() {
     }
     setThinking(true);
     try {
-      const { respuesta } = evaluacionContextual?.puede_chatear
-        ? await sendEvaluationMessage(evaluacionContextual.evaluacion_id, msg)
+      const { respuesta } = isStudent
+        ? await sendEvaluationMessage(evaluacionContextual!.evaluacion_id, msg)
         : await sendMessage(msg, materiaId || undefined);
       setMessages((m) => [...m, { id: 'a' + Date.now(), role: 'assistant', mensaje: respuesta, created_at: new Date().toISOString() }]);
     } catch (error) {
@@ -129,11 +127,11 @@ export function XaliPage() {
   };
 
   const reset = async () => {
-    await clearHistory(materiaId || undefined);
+    if (!isStudent) await clearHistory(materiaId || undefined);
     setMessages([]);
-    toast.success('Historial borrado');
+    toast.success(isStudent ? 'Conversación reiniciada' : 'Historial borrado');
   };
-  const contextualBlocked = Boolean(evaluacionContextual && !evaluacionContextual.puede_chatear);
+  const contextualBlocked = isStudent && !evaluacionContextual?.puede_chatear;
   const inputPlaceholder = contextualBlocked
     ? 'Disponible después de la confirmación docente'
     : evaluacionContextual?.puede_chatear
@@ -159,7 +157,7 @@ export function XaliPage() {
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          {isStudent && entregadasFiltradas.length > 0 && (
+          {isStudent && (
             <Select
               id="xali-evaluation-context"
               aria-label="Contexto de evaluación"
@@ -171,8 +169,8 @@ export function XaliPage() {
               disabled={loadingEntregadas}
               className="w-56"
             >
-              <option value="">Chat general</option>
-              {entregadasFiltradas.map((item: XaliEvaluacionEntregada) => (
+              <option value="">Selecciona una evaluación confirmada</option>
+              {evaluacionesConfirmadas.map((item: XaliEvaluacionEntregada) => (
                 <option key={item.entrega_id} value={item.evaluacion_id}>
                   {item.evaluacion_nombre}
                 </option>
@@ -198,6 +196,12 @@ export function XaliPage() {
       {materiaContextual && (
         <div className="rounded-xl border border-sky-300 bg-sky-50 px-4 py-2.5 text-sm text-sky-900 dark:border-sky-500/40 dark:bg-sky-500/10 dark:text-sky-100" role="status">
           Xali está usando el contexto de <strong>{materiaContextual.nombre}</strong>.
+        </div>
+      )}
+
+      {isStudent && !loadingEntregadas && evaluacionesConfirmadas.length === 0 && (
+        <div className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-100" role="status">
+          Xali estará disponible cuando tu docente confirme una evaluación entregada.
         </div>
       )}
 
@@ -284,7 +288,7 @@ export function XaliPage() {
               )}
 
               {/* Sugerencias generales */}
-              {(!isStudent || !evaluacionContextual) && (
+              {!isStudent && (
                 <>
                   <p className="mt-6 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-muted">
                     <Bot className="h-3.5 w-3.5" /> Sugerencias

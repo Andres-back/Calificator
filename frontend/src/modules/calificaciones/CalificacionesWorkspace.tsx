@@ -358,6 +358,8 @@ function PanelDetalle({
   const graderA = pipeline?.grader_a as Record<string, unknown> | undefined;
   const graderB = pipeline?.grader_b as Record<string, unknown> | undefined;
   const comparator = pipeline?.comparator as Record<string, unknown> | undefined;
+  const evidenciaConsolidada = pipeline?.evidencia_consolidada as Record<string, unknown> | undefined;
+  const secciones = evidenciaConsolidada?.secciones as Record<string, Record<string, unknown>> | undefined;
   const criterios = (graderA?.criterios ?? []) as Array<Record<string, unknown>>;
   const alertas = (graderA?.alertas ?? []) as string[];
 
@@ -410,6 +412,20 @@ function PanelDetalle({
         })()}
 
         {/* Evidencia */}
+        {evidenciaConsolidada?.modalidad === 'mixta' && (
+          <div className="rounded-xl border border-sky-200 bg-sky-50 p-4 text-sm dark:border-sky-500/30 dark:bg-sky-500/10">
+            <p className="font-semibold text-sky-900 dark:text-sky-100">Calificación mixta consolidada</p>
+            <div className="mt-2 grid gap-2 sm:grid-cols-2">
+              <p className="rounded-lg bg-white/70 p-2 dark:bg-surface">
+                <strong>Online:</strong> preguntas {((secciones?.online?.preguntas as unknown[]) ?? []).join(', ') || 'sin identificar'}
+              </p>
+              <p className="rounded-lg bg-white/70 p-2 dark:bg-surface">
+                <strong>Física:</strong> preguntas {((secciones?.fisica?.preguntas as unknown[]) ?? []).join(', ') || 'sin identificar'}
+              </p>
+            </div>
+            <p className="mt-2 text-xs text-sky-800 dark:text-sky-200">Revisa el texto y la imagen por separado antes de confirmar la nota única.</p>
+          </div>
+        )}
         {(() => {
           if (!cal.entrega_archivo_url) return null;
           return (

@@ -9,6 +9,10 @@ from sqlalchemy.orm import selectinload
 from app.core.permissions import is_student_enrolled
 from app.modules.dba.service import get_dba_personalizado_records_for_evaluation, get_dba_records
 from app.modules.evaluaciones.blueprint_service import build_blueprint_payload
+from app.modules.evaluaciones.modality_service import (
+    normalize_question_modalities,
+    validate_mixed_question_modalities,
+)
 from app.modules.evaluaciones.models import Evaluacion, EvaluacionBlueprint
 from app.modules.evaluaciones.schemas import (
     DigitalizarEvaluacionExternaRequest,
@@ -106,7 +110,10 @@ def _student_safe_evaluation(evaluacion: Evaluacion) -> dict:
         "dba_personalizado_ids": evaluacion.dba_personalizado_ids,
         "metas_profesor": evaluacion.metas_profesor,
         "criterios": evaluacion.criterios,
-        "preguntas": evaluacion.preguntas,
+        "preguntas": normalize_question_modalities(
+            evaluacion.preguntas,
+            evaluacion.modalidad,
+        ),
         "respuestas_esperadas": [],
         "created_at": evaluacion.created_at,
         "updated_at": evaluacion.updated_at,
@@ -178,6 +185,7 @@ async def create_evaluation(
     current_user: User,
 ) -> Evaluacion:
     materia = await ensure_can_manage_materia(db, payload.materia_id, current_user)
+    questions = normalize_question_modalities(payload.preguntas, payload.modalidad)
     evaluacion = Evaluacion(
         materia_id=materia.id,
         profesor_id=materia.profesor_id,
@@ -194,7 +202,7 @@ async def create_evaluation(
         dba_personalizado_ids=_uuid_values(payload.dba_personalizado_ids),
         metas_profesor=payload.metas_profesor,
         criterios=payload.criterios,
-        preguntas=payload.preguntas,
+        preguntas=questions,
         respuestas_esperadas=payload.respuestas_esperadas,
     )
     db.add(evaluacion)
@@ -273,6 +281,13 @@ async def update_evaluation(
         elif value is not None or field == "descripcion":
             setattr(evaluacion, field, value)
 
+    if {"preguntas", "modalidad"}.intersection(data):
+        evaluacion.preguntas = normalize_question_modalities(
+            evaluacion.preguntas,
+            evaluacion.modalidad,
+        )
+        rebuild_blueprint = True
+
     if rebuild_blueprint:
         await _build_or_update_blueprint(db, evaluacion, dba_ids, dba_personalizado_ids)
 
@@ -297,6 +312,28 @@ async def publish_evaluation(db: AsyncSession, evaluacion: Evaluacion) -> Evalua
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="Evaluation must have a blueprint before publication",
+        )
+    normalized_questions = normalize_question_modalities(
+        evaluacion.preguntas,
+        evaluacion.modalidad,
+    )
+    try:
+        validate_mixed_question_modalities(
+            normalized_questions,
+            evaluacion.modalidad,
+        )
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=str(exc),
+        ) from exc
+    if normalized_questions != evaluacion.preguntas:
+        evaluacion.preguntas = normalized_questions
+        await _build_or_update_blueprint(
+            db,
+            evaluacion,
+            [UUID(value) for value in evaluacion.dba_ids],
+            [UUID(value) for value in evaluacion.dba_personalizado_ids],
         )
     transition_evaluation_state(evaluacion, EvaluacionEstado.PUBLICADA)
     evaluacion.fecha_publicacion = utcnow()
@@ -373,6 +410,10 @@ async def validate_structure(
     if payload.criterios is not None:
         evaluacion.criterios = payload.criterios
     if payload.preguntas is not None:
+        payload.preguntas = normalize_question_modalities(
+            payload.preguntas,
+            evaluacion.modalidad,
+        )
         evaluacion.preguntas = payload.preguntas
     if payload.respuestas_esperadas is not None:
         evaluacion.respuestas_esperadas = payload.respuestas_esperadas

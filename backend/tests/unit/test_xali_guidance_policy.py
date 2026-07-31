@@ -3,9 +3,13 @@ from __future__ import annotations
 import asyncio
 from uuid import uuid4
 
+import pytest
+from fastapi import HTTPException
+
 import app.modules.xali.service as xali_service
 from app.modules.xali.service import (
     DIRECT_ANSWER_REFUSAL,
+    GENERAL_STUDENT_CHAT_BLOCKED_MESSAGE,
     GUIDED_RESPONSE_FALLBACK,
     XALI_VALIDATION_NOTICE,
     enforce_guided_response,
@@ -58,7 +62,7 @@ def test_refusal_is_pedagogical_and_does_not_expose_an_answer() -> None:
     assert XALI_VALIDATION_NOTICE in DIRECT_ANSWER_REFUSAL
 
 
-def test_general_student_chat_blocks_direct_answer_before_calling_llm(monkeypatch) -> None:
+def test_general_student_chat_is_not_available_even_for_guided_requests(monkeypatch) -> None:
     events: list[str] = []
 
     class FakeDB:
@@ -70,22 +74,23 @@ def test_general_student_chat_blocks_direct_answer_before_calling_llm(monkeypatc
 
     class ExplodingRouter:
         def __init__(self, *_args, **_kwargs) -> None:
-            raise AssertionError("The LLM must not run for a direct-answer request")
+            raise AssertionError("The LLM must not run for general student chat")
 
     monkeypatch.setattr(xali_service, "LLMRouter", ExplodingRouter)
 
-    response = asyncio.run(
-        xali_service.chat(
-            FakeDB(),
-            estudiante_id=uuid4(),
-            materia_id=None,
-            mensaje="Dame la respuesta correcta del examen",
+    with pytest.raises(HTTPException) as exc:
+        asyncio.run(
+            xali_service.chat(
+                FakeDB(),
+                estudiante_id=uuid4(),
+                materia_id=None,
+                mensaje="Ayudame a estudiar fracciones",
+            )
         )
-    )
 
-    assert response == DIRECT_ANSWER_REFUSAL
-    assert events == ["execute", "execute", "commit"]
-
+    assert exc.value.status_code == 403
+    assert exc.value.detail == GENERAL_STUDENT_CHAT_BLOCKED_MESSAGE
+    assert events == []
 
 def test_post_delivery_chat_blocks_direct_answer_before_calling_llm(monkeypatch) -> None:
     async def fake_confirmed_context(*_args, **_kwargs) -> tuple[object, object, object, object]:

@@ -1,5 +1,6 @@
 from typing import Any
 
+from app.modules.evaluaciones.modality_service import normalize_question_modalities
 from app.shared.enums import BlueprintNivelContexto, EvaluacionTipoOrigen
 
 
@@ -75,13 +76,17 @@ def build_blueprint_payload(
 
 def evaluation_to_grading_blueprint(evaluacion: Any) -> dict[str, Any]:
     blueprint = evaluacion.blueprint
+    source_questions = blueprint.preguntas if blueprint else evaluacion.preguntas
     return {
         "nombre": evaluacion.nombre,
         "nota_maxima": float(evaluacion.nota_maxima),
         "dba": blueprint.dba if blueprint else [],
         "metas": blueprint.metas if blueprint else evaluacion.metas_profesor,
         "criterios": blueprint.criterios if blueprint else evaluacion.criterios,
-        "preguntas": blueprint.preguntas if blueprint else evaluacion.preguntas,
+        "preguntas": normalize_question_modalities(
+            source_questions,
+            getattr(evaluacion, "modalidad", None),
+        ),
         "respuestas_esperadas": (
             blueprint.respuestas_esperadas if blueprint else evaluacion.respuestas_esperadas
         ),
