@@ -75,6 +75,9 @@ class EvaluacionRead(BaseModel):
     descripcion: str | None
     tipo_origen: EvaluacionTipoOrigen
     modalidad: EvaluacionModalidad | None
+    material_origen_id: UUID | None = None
+    tipo_actividad: str | None = None
+    recepcion_habilitada: bool = False
     politica_intento: str | None
     intentos_permitidos: int | None
     nota_maxima: Decimal

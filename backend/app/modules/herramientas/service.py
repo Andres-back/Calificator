@@ -15,6 +15,9 @@ from app.modules.dba.service import (
     get_dba_records,
 )
 from app.modules.evaluaciones.blueprint_service import normalize_dba_records
+from app.modules.evaluaciones import service as evaluaciones_service
+from app.modules.evaluaciones.schemas import EvaluacionCreate, EvaluacionEstructuraValidacion
+from app.modules.herramientas.evaluation_adapter import build_evaluation_structure
 from app.modules.herramientas.generators import (
     crucigrama,
     cuento,
@@ -56,7 +59,9 @@ from app.modules.users.models import User
 from app.modules.imagenes import service as imagenes_service
 from app.services.image_router import generate_image
 from app.services.llm_router import LLMRouter
-from app.shared.enums import MaterialTipo
+from app.shared.enums import (
+    EvaluacionModalidad, EvaluacionTipoOrigen, MaterialTipo, PoliticaIntento,
+)
 
 logger = get_logger(__name__)
 
@@ -264,8 +269,11 @@ async def list_materials(
     where = " AND ".join(clauses)
     rows = await db.execute(
         text(
-            f"SELECT mg.id, mg.tipo, mg.titulo, mg.materia_id, m.nombre AS materia_nombre, mg.archivo_url, mg.created_at "
+            f"SELECT mg.id, mg.tipo, mg.titulo, mg.materia_id, m.nombre AS materia_nombre, "
+            f"mg.archivo_url, mg.created_at, e.id AS evaluacion_id, "
+            f"e.estado AS evaluacion_estado, e.modalidad AS evaluacion_modalidad "
             f"FROM materiales_generados mg LEFT JOIN materias m ON m.id = mg.materia_id "
+            f"LEFT JOIN evaluaciones e ON e.material_origen_id = mg.id "
             f"WHERE {where} "
             f"ORDER BY mg.created_at DESC LIMIT :limit OFFSET :offset"
         ),
@@ -279,6 +287,9 @@ async def list_materials(
             "materia_id": r.materia_id,
             "materia_nombre": r.materia_nombre,
             "archivo_url": r.archivo_url,
+            "evaluacion_id": r.evaluacion_id,
+            "evaluacion_estado": r.evaluacion_estado,
+            "evaluacion_modalidad": r.evaluacion_modalidad,
             "created_at": r.created_at,
         }
         for r in rows.fetchall()
@@ -297,22 +308,52 @@ async def delete_material(db: AsyncSession, material_id: UUID, profesor_id: UUID
     return (result.rowcount or 0) > 0
 
 
-async def update_material(db: AsyncSession, material_id: UUID, profesor_id: UUID, payload: dict) -> dict:
+async def update_material(
+    db: AsyncSession,
+    material_id: UUID,
+    current_user: User,
+    payload: dict,
+) -> dict:
     """Actualiza campos de un material: titulo, materia_id, contenido_json."""
     import json as _json
     from sqlalchemy import text
 
+    profesor_id = current_user.id
     allowed = {"materia_id", "titulo", "contenido_json"}
-    campos = {k: v for k, v in payload.items() if k in allowed and v is not None}
+    campos = {
+        key: value
+        for key, value in payload.items()
+        if key in allowed and (value is not None or key == "materia_id")
+    }
     if not campos:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No hay campos válidos para actualizar")
+
+    if "materia_id" in campos:
+        linked = await _linked_evaluation(db, material_id, profesor_id)
+        if linked is not None:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=(
+                    "La materia no puede cambiar porque el material ya esta vinculado "
+                    "a una evaluacion. Modifica la evaluacion en su flujo academico."
+                ),
+            )
+        if campos["materia_id"] is not None:
+            materia = await materias_service.ensure_can_manage_materia(
+                db,
+                UUID(str(campos["materia_id"])),
+                current_user,
+            )
+            campos["materia_id"] = materia.id
 
     sql_parts = []
     params: dict = {"id": str(material_id), "p": str(profesor_id)}
     for k, v in campos.items():
         if k == "materia_id":
             sql_parts.append("materia_id = :materia_id")
-            params["materia_id"] = str(UUID(v) if isinstance(v, str) else v)
+            params["materia_id"] = (
+                None if v is None else str(UUID(v) if isinstance(v, str) else v)
+            )
         elif k == "contenido_json":
             sql_parts.append("contenido_json = CAST(:contenido_json AS jsonb)")
             params["contenido_json"] = _json.dumps(v, ensure_ascii=False) if isinstance(v, (dict, list)) else v
@@ -322,22 +363,20 @@ async def update_material(db: AsyncSession, material_id: UUID, profesor_id: UUID
 
     set_clause = ", ".join(sql_parts)
     result = await db.execute(
-        text(f"UPDATE materiales_generados SET {set_clause} WHERE id = :id AND profesor_id = :p RETURNING id, tipo, titulo, materia_id, contenido_json, archivo_url, created_at"),
+        text(
+            f"UPDATE materiales_generados SET {set_clause} "
+            "WHERE id = :id AND profesor_id = :p RETURNING id"
+        ),
         params,
     )
-    await db.commit()
-    row = result.fetchone()
-    if row is None:
+    if result.scalar_one_or_none() is None:
+        await db.rollback()
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Material no encontrado")
-    return {
-        "id": row[0],
-        "tipo": row[1],
-        "titulo": row[2],
-        "materia_id": row[3],
-        "contenido_json": row[4],
-        "archivo_url": row[5],
-        "created_at": row[6],
-    }
+    await db.commit()
+    updated = await get_material(db, material_id, profesor_id)
+    if updated is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Material no encontrado")
+    return updated
 
 
 async def get_material(db: AsyncSession, material_id: UUID, profesor_id: UUID) -> dict | None:
@@ -347,8 +386,11 @@ async def get_material(db: AsyncSession, material_id: UUID, profesor_id: UUID) -
     row = await db.execute(
         text(
             "SELECT mg.id, mg.tipo, mg.titulo, mg.materia_id, m.nombre AS materia_nombre, "
-            "mg.contenido_json, mg.archivo_url, mg.created_at "
+            "mg.input_json, mg.contenido_json, mg.archivo_url, mg.created_at, "
+            "e.id AS evaluacion_id, e.estado AS evaluacion_estado, "
+            "e.modalidad AS evaluacion_modalidad "
             "FROM materiales_generados mg LEFT JOIN materias m ON m.id = mg.materia_id "
+            "LEFT JOIN evaluaciones e ON e.material_origen_id = mg.id "
             "WHERE mg.id = :id AND mg.profesor_id = :p"
         ),
         {"id": str(material_id), "p": str(profesor_id)},
@@ -362,8 +404,12 @@ async def get_material(db: AsyncSession, material_id: UUID, profesor_id: UUID) -
         "titulo": r.titulo,
         "materia_id": r.materia_id,
         "materia_nombre": r.materia_nombre,
+        "input_json": r.input_json,
         "contenido_json": r.contenido_json,
         "archivo_url": r.archivo_url,
+        "evaluacion_id": r.evaluacion_id,
+        "evaluacion_estado": r.evaluacion_estado,
+        "evaluacion_modalidad": r.evaluacion_modalidad,
         "created_at": r.created_at,
     }
 
@@ -679,217 +725,147 @@ async def duplicar_material(db: AsyncSession, material_id: UUID, profesor_id: UU
     }
 
 
-async def convertir_a_evaluacion(
+async def _linked_evaluation(
     db: AsyncSession,
     material_id: UUID,
     profesor_id: UUID,
-    materia_id: UUID | None = None,
-    nombre: str | None = None,
-    nota_maxima: float = 5.0,
-) -> dict:
-    """Convierte un material (examen, quiz, rúbrica) en una evaluación BORRADOR."""
-    import json as _json
-    from uuid import uuid4 as _uuid4
-    from sqlalchemy import text as _sql_text
+):
+    from sqlalchemy import select
 
-    material = await get_material(db, material_id, profesor_id)
+    from app.modules.evaluaciones.models import Evaluacion
+
+    evaluation_id = await db.scalar(
+        select(Evaluacion.id).where(
+            Evaluacion.material_origen_id == material_id,
+            Evaluacion.profesor_id == profesor_id,
+        )
+    )
+    if evaluation_id is None:
+        return None
+    return await evaluaciones_service.get_evaluation_or_404(db, evaluation_id)
+
+
+def _valid_uuid_list(values: object) -> list[UUID]:
+    if not isinstance(values, list):
+        return []
+    result: list[UUID] = []
+    for value in values:
+        try:
+            parsed = UUID(str(value))
+        except (TypeError, ValueError):
+            continue
+        if parsed not in result:
+            result.append(parsed)
+    return result
+
+
+async def list_evaluations_for_material(
+    db: AsyncSession,
+    material_id: UUID,
+    current_user: User,
+) -> list[object]:
+    material = await get_material(db, material_id, current_user.id)
+    if material is None:
+        raise HTTPException(status_code=404, detail="Material no encontrado")
+    linked = await _linked_evaluation(db, material_id, current_user.id)
+    return [linked] if linked is not None else []
+
+
+async def convertir_a_evaluacion(
+    db: AsyncSession,
+    material_id: UUID,
+    current_user: User,
+    request: object,
+):
+    """Asigna un material a la unica tuberia Evaluacion -> Entrega -> Calificacion."""
+    from sqlalchemy import text
+    from sqlalchemy.exc import IntegrityError
+
+    material = await get_material(db, material_id, current_user.id)
     if material is None:
         raise HTTPException(status_code=404, detail="Material no encontrado")
 
-    tipo = material["tipo"]
-    if tipo not in ("examen", "quiz_rapido", "rubrica"):
+    existing = await _linked_evaluation(db, material_id, current_user.id)
+    if existing is not None:
+        return existing
+
+    target_materia_id = getattr(request, "materia_id", None) or material.get("materia_id")
+    if target_materia_id is None:
         raise HTTPException(
-            status_code=422,
-            detail="Solo se pueden convertir examenes, quizzes y rubricas a evaluaciones",
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Selecciona una materia para asignar este material como evaluacion.",
         )
+    materia = await materias_service.ensure_can_manage_materia(
+        db,
+        UUID(str(target_materia_id)),
+        current_user,
+    )
 
-    content = material.get("contenido_json") or {}
-    preguntas_raw = content.get("preguntas") or content.get("criterios") or []
-
-    if not preguntas_raw:
+    try:
+        structure = build_evaluation_structure(
+            str(material["tipo"]),
+            material.get("contenido_json") or {},
+            note_max=getattr(request, "nota_maxima"),
+            modality=getattr(request, "modalidad"),
+        )
+    except ValueError as exc:
         raise HTTPException(
-            status_code=422,
-            detail="El material no contiene preguntas ni criterios para convertir",
-        )
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=str(exc),
+        ) from exc
 
-    # ── Defensive: detect when the LLM upstream produced content that doesn't
-    # match the original material. This is a real failure mode observed when
-    # RAG context was stale or the model hallucinated generic content.
-    # We log a warning so the docente can verify before publishing.
-    material_titulo = (material.get("titulo") or "").lower()
-    sample_texto = " ".join(
-        str(p.get("enunciado") or p.get("descripcion") or "") for p in preguntas_raw[:3]
-    ).lower()
-    suspicious_unrelated = [
-        ("multiplic", "capital de francia"),
-        ("multiplic", "don quijote"),
-        ("multiplic", "fotosíntesis"),
-        ("suma", "capital de francia"),
-        ("fraccion", "don quijote"),
-    ]
-    for keyword, bad_phrase in suspicious_unrelated:
-        if keyword in material_titulo and bad_phrase in sample_texto:
-            logger.warning(
-                "convertir_a_evaluacion: contenido posiblemente incorrecto. "
-                "Material '%s' contiene '%s' que parece no relacionado con '%s'. "
-                "Docente debe revisar antes de publicar.",
-                material.get("titulo"), bad_phrase, material_titulo,
-            )
-            break
+    source_input = material.get("input_json") or {}
+    dba_ids = _valid_uuid_list(source_input.get("dba_ids"))
+    custom_dba_ids = _valid_uuid_list(source_input.get("dba_personalizado_ids"))
+    create_payload = EvaluacionCreate(
+        materia_id=materia.id,
+        nombre=getattr(request, "nombre", None) or material["titulo"],
+        descripcion=structure.get("descripcion") or None,
+        tipo_origen=EvaluacionTipoOrigen.NATIVA,
+        modalidad=getattr(request, "modalidad"),
+        nota_maxima=getattr(request, "nota_maxima"),
+        politica_intento=getattr(request, "politica_intento", None),
+        intentos_permitidos=getattr(request, "intentos_permitidos", None),
+        tiempo_limite_minutos=getattr(request, "tiempo_limite_minutos", None),
+        dba_ids=dba_ids,
+        dba_personalizado_ids=custom_dba_ids,
+        metas_profesor=structure.get("metas", []),
+        criterios=structure["criterios"],
+        preguntas=structure["preguntas"],
+        respuestas_esperadas=structure["respuestas_esperadas"],
+    )
 
-    # Build preguntas for evaluacion
-    preguntas = []
-    total_puntaje = 0.0
-    for i, p in enumerate(preguntas_raw):
-        raw_tipo = p.get("tipo", "") or ""
-        # Detect verdadero_falso from original material type
-        if raw_tipo == "verdadero_falso" or (p.get("opciones") is None and p.get("respuesta_correcta", "") and p.get("respuesta_correcta", "").lower() in ("verdadero", "falso", "v", "f")):
-            tipo_pregunta = "verdadero_falso"
-        elif "opciones" in p:
-            tipo_pregunta = "opcion_multiple"
-        else:
-            tipo_pregunta = "abierta"
-        opciones_raw = p.get("opciones") or []
-        respuesta = p.get("respuesta_correcta") or ""
-        puntaje = float(p.get("puntaje") or p.get("peso_porcentaje") or 1)
-        if tipo == "rubrica":
-            tipo_pregunta = "abierta"
-            puntaje = float(p.get("peso_porcentaje") or 1)
-
-        # Normalize opciones: strings -> objects with correcta flag
-        opciones = []
-        for o in opciones_raw:
-            if isinstance(o, dict):
-                texto = o.get("texto", "") or ""
-                # Preserve existing correcta if set, else match against respuesta_correcta
-                is_correct = o.get("correcta", False) or (respuesta and respuesta.lower() in texto.lower().split()[:2])
-                opciones.append({"texto": texto, "correcta": is_correct})
-            else:
-                texto = str(o)
-                # Match answer: check if respuesta matches text start or is contained
-                is_correct = respuesta and (
-                    texto.strip().lower().startswith(respuesta.strip().lower()) or
-                    respuesta.strip().lower() in texto.strip().lower().split()[:2] or
-                    texto.strip().lower() == respuesta.strip().lower()
-                )
-                opciones.append({"texto": texto, "correcta": is_correct})
-
-        # For verdadero/falso, ensure opciones exist
-        if tipo_pregunta in ("opcion_multiple",) and not opciones:
-            tipo_pregunta = "abierta"
-
-        # For verdadero_falso, add options if missing
-        if tipo_pregunta == "verdadero_falso" and not opciones:
-            opciones = [{"texto": "Verdadero", "correcta": respuesta.lower().startswith("v")},
-                        {"texto": "Falso", "correcta": respuesta.lower().startswith("f")}]
-
-        if not any(o["correcta"] for o in opciones) and respuesta:
-            resp_lower = respuesta.strip().lower()
-            for o in opciones:
-                txt = o["texto"].strip().lower()
-                if resp_lower in txt[:5] or txt in resp_lower:
-                    o["correcta"] = True
-
-        preguntas.append({
-            "numero": i + 1,
-            "texto": p.get("enunciado") or p.get("descripcion") or "",
-            "tipo": tipo_pregunta,
-            "puntaje": puntaje,
-            "opciones": opciones,
-            "respuesta_esperada": respuesta if tipo_pregunta == "abierta" else None,
-        })
-        total_puntaje += puntaje
-
-    # Normalize puntajes to fit nota_maxima
-    if total_puntaje > 0 and abs(total_puntaje - nota_maxima) > 0.01:
-        factor = nota_maxima / total_puntaje
-        for q in preguntas:
-            q["puntaje"] = round(q["puntaje"] * factor, 2)
-        total_puntaje = nota_maxima
-
-    eval_id = str(_uuid4())
-    eval_nombre = nombre or material.get("titulo", "Evaluacion")
-    ev_materia = str(materia_id) if materia_id else (str(material["materia_id"]) if material.get("materia_id") else None)
-
-    # Validate materia_id is required by evaluaciones table
-    if not ev_materia:
-        raise HTTPException(
-            status_code=422,
-            detail="El material debe estar asignado a una materia antes de convertir a evaluación. Asigna una materia primero.",
-        )
-
-    # Build criterios and respuestas_esperadas from preguntas
-    criterios = []
-    respuestas = []
-    for p in preguntas:
-        texto = p.get("texto", "")
-        puntaje = p.get("puntaje", 1)
-        # Find the correct answer
-        correcta = ""
-        for o in p.get("opciones", []):
-            if isinstance(o, dict) and o.get("correcta"):
-                correcta = o.get("texto", "")
-            elif isinstance(o, str):
-                correcta = o
-        resp_esperada = p.get("respuesta_esperada") or correcta or ""
-        criterios.append({
-            "id": i + 1,
-            "nombre": f"Pregunta {i + 1}",
-            "descripcion": texto[:100],
-            "puntaje_maximo": puntaje,
-        })
-        respuestas.append({
-            "pregunta_numero": i + 1,
-            "respuesta_correcta": resp_esperada,
-            "explicacion": "",
-        })
-
+    # La materia del recurso y la evaluacion se actualizan en la misma
+    # transaccion; si crear la evaluacion falla, la asignacion no queda a medias.
     await db.execute(
-        _sql_text(
-            "INSERT INTO evaluaciones "
-            "(id, profesor_id, materia_id, nombre, tipo_origen, estado, "
-            "nota_maxima, tiempo_limite_minutos, preguntas, "
-            "dba_ids, metas_profesor, criterios, respuestas_esperadas) "
-            "VALUES (:id, :profesor, :materia, :nombre, 'externa_digitalizada', 'borrador', "
-            ":nota_max, NULL, CAST(:preguntas AS jsonb), "
-            "'[]'::jsonb, '[]'::jsonb, "
-            "CAST(:criterios AS jsonb), CAST(:respuestas AS jsonb))"
+        text(
+            "UPDATE materiales_generados SET materia_id = :materia_id "
+            "WHERE id = :material_id AND profesor_id = :profesor_id"
         ),
         {
-            "id": eval_id,
-            "profesor": str(profesor_id),
-            "materia": ev_materia or str(profesor_id),
-            "nombre": eval_nombre,
-            "nota_max": nota_maxima,
-            "preguntas": _json.dumps(preguntas, ensure_ascii=False),
-            "criterios": _json.dumps(criterios, ensure_ascii=False),
-            "respuestas": _json.dumps(respuestas, ensure_ascii=False),
+            "materia_id": str(materia.id),
+            "material_id": str(material_id),
+            "profesor_id": str(current_user.id),
         },
     )
+    try:
+        evaluation = await evaluaciones_service.create_evaluation(
+            db,
+            create_payload,
+            current_user,
+            material_origen_id=material_id,
+            tipo_actividad=str(material["tipo"]),
+        )
+    except IntegrityError:
+        await db.rollback()
+        existing = await _linked_evaluation(db, material_id, current_user.id)
+        if existing is not None:
+            return existing
+        raise
 
-    # Create blueprint so the evaluation can be published and graded
-    blueprint_id = str(_uuid4())
-    await db.execute(
-        _sql_text(
-            "INSERT INTO evaluacion_blueprints "
-            "(id, evaluacion_id, nivel_contexto, dba, metas, criterios, "
-            "preguntas, respuestas_esperadas, errores_comunes, contexto_rag, reglas_feedback) "
-            "VALUES (:id, :eval_id, 'reconstruido', '[]'::jsonb, '[]'::jsonb, '[]'::jsonb, "
-            "CAST(:preguntas AS jsonb), CAST(:respuestas AS jsonb), '[]'::jsonb, '[]'::jsonb, '{}'::jsonb)"
-        ),
-        {"id": blueprint_id, "eval_id": eval_id,
-         "preguntas": _json.dumps(preguntas, ensure_ascii=False),
-         "respuestas": _json.dumps(respuestas, ensure_ascii=False)},
+    validation = EvaluacionEstructuraValidacion(
+        errores_comunes=structure.get("errores_comunes", []),
+        contexto_rag=structure.get("contexto_rag", []),
+        reglas_feedback=structure.get("reglas_feedback", {}),
     )
-
-    await db.commit()
-
-    return {
-        "evaluacion_id": eval_id,
-        "materia_id": ev_materia,
-        "nombre": eval_nombre,
-        "tipo": tipo,
-        "estado": "borrador",
-        "nota_maxima": nota_maxima,
-        "total_preguntas": len(preguntas),
-    }
+    return await evaluaciones_service.validate_structure(db, evaluation, validation)

@@ -1,11 +1,21 @@
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { ArrowLeft, Download, FileCheck2, Trash2, Gamepad2, Printer, Share2, Sparkles, Copy, ClipboardList, Pencil } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Button, LoadingScreen, Badge, Card, ConfirmDialog, Select, Input, Field, Modal } from '@/components/ui';
-import { getMaterial, pdfUrl, deleteMaterial, updateMaterial, editMaterial, duplicateMaterial, convertToEvaluacion } from './api';
+import {
+  convertToEvaluacion,
+  deleteMaterial,
+  duplicateMaterial,
+  editMaterial,
+  getMaterial,
+  listMaterialEvaluaciones,
+  pdfUrl,
+  updateMaterial,
+  type IntentPolicy,
+} from './api';
 import { TOOL_BY_TIPO } from './meta';
 import { CrucigramaView, SopaLetrasView, MatchingView, ContenidoView } from './views';
 import { useMaterias } from '@/modules/materias/MateriaSelect';
@@ -14,8 +24,7 @@ import { cn } from '@/lib/cn';
 import { toApiError } from '@/lib/api';
 import { queryClient } from '@/lib/queryClient';
 import { routes } from '@/config/routes';
-import type { CrucigramaContenido, MatchingContenido, SopaContenido } from '@/types/api';
-import type { MaterialTipo } from '@/types/api';
+import type { CrucigramaContenido, EvaluacionModalidad, MatchingContenido, SopaContenido } from '@/types/api';
 
 export function DetailPage() {
   const { id = '' } = useParams();
@@ -30,6 +39,10 @@ export function DetailPage() {
   const [convertMateria, setConvertMateria] = useState('');
   const [convertNombre, setConvertNombre] = useState('');
   const [convertNota, setConvertNota] = useState(5);
+  const [convertModalidad, setConvertModalidad] = useState<EvaluacionModalidad>('fisica');
+  const [convertPolicy, setConvertPolicy] = useState<IntentPolicy>('un_intento');
+  const [convertAttempts, setConvertAttempts] = useState(2);
+  const [convertTimeLimit, setConvertTimeLimit] = useState('');
   const [converting, setConverting] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [assigning, setAssigning] = useState(false);
@@ -37,6 +50,11 @@ export function DetailPage() {
   const { data: material, isLoading } = useQuery({ queryKey: ['material', id], queryFn: () => getMaterial(id) });
   const meta = material ? TOOL_BY_TIPO[material.tipo] : undefined;
   const Icon = meta?.icon ?? Gamepad2;
+  const linkedEvaluationsQuery = useQuery({
+    queryKey: ['material-evaluations', id],
+    queryFn: () => listMaterialEvaluaciones(id),
+    enabled: Boolean(id),
+  });
   const content = material?.contenido_json ?? {};
   const contentTitle = ((typeof content.titulo === 'string' ? content.titulo : material?.titulo) ?? '');
   const instructions = typeof content.instrucciones === 'string' ? content.instrucciones : null;
@@ -46,6 +64,20 @@ export function DetailPage() {
     && !Array.isArray(content._xcalificator)
   ) ? content._xcalificator as Record<string, unknown> : null;
   const alignedDba = Array.isArray(aiTrace?.dba_seleccionados) ? aiTrace.dba_seleccionados.length : 0;
+
+  const linkedEvaluation = linkedEvaluationsQuery.data?.[0] ?? null;
+  const linkedEvaluationId = linkedEvaluation?.id ?? material?.evaluacion_id ?? null;
+  const linkedMateriaId = linkedEvaluation?.materia_id ?? material?.materia_id ?? null;
+
+  const openConvert = () => {
+    setConvertMateria(material?.materia_id ?? '');
+    setConvertNombre(material?.titulo ?? contentTitle);
+    setConvertModalidad(material?.evaluacion_modalidad ?? 'fisica');
+    setConvertPolicy('un_intento');
+    setConvertAttempts(2);
+    setConvertTimeLimit('');
+    setShowConvert(true);
+  };
 
   const remove = async () => {
     if (isDeleting) return;
@@ -85,9 +117,13 @@ export function DetailPage() {
   };
 
   const handleAssignMateria = async (materiaId: string) => {
+    if (linkedEvaluationId) {
+      toast.error('Cambia la materia desde el borrador de la evaluación vinculada.');
+      return;
+    }
     setAssigning(true);
     try {
-      await updateMaterial(id, { materia_id: materiaId || undefined });
+      await updateMaterial(id, { materia_id: materiaId || null });
       await queryClient.invalidateQueries({ queryKey: ['material', id] });
       await queryClient.invalidateQueries({ queryKey: ['materials'] });
       toast.success(materiaId ? 'Material asignado a la materia' : 'Materia desasignada');
@@ -144,16 +180,34 @@ export function DetailPage() {
 
   const handleConvert = async () => {
     if (converting) return;
+    if (!convertMateria) {
+      toast.error('Selecciona la materia donde se administrará la evaluación.');
+      return;
+    }
     setConverting(true);
     try {
+      const parsedTimeLimit = Number(convertTimeLimit);
+      const attempts = convertPolicy === 'un_intento'
+        ? 1
+        : convertPolicy === 'practica_libre'
+          ? undefined
+          : Math.max(2, Math.floor(convertAttempts || 2));
       const result = await convertToEvaluacion(id, {
-        materia_id: convertMateria || undefined,
-        nombre: convertNombre || undefined,
+        materia_id: convertMateria,
+        nombre: convertNombre.trim() || undefined,
         nota_maxima: convertNota,
+        modalidad: convertModalidad,
+        politica_intento: convertPolicy,
+        intentos_permitidos: attempts,
+        tiempo_limite_minutos: parsedTimeLimit > 0 ? parsedTimeLimit : undefined,
       });
-      await queryClient.invalidateQueries({ queryKey: ['evaluaciones'] });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['evaluaciones'] }),
+        queryClient.invalidateQueries({ queryKey: ['material-evaluations', id] }),
+        queryClient.invalidateQueries({ queryKey: ['material', id] }),
+      ]);
       setShowConvert(false);
-      toast.success(`Evaluación creada: ${result.nombre} (${result.total_preguntas} preguntas)`);
+      toast.success(`Evaluación creada: ${result.nombre} (${result.preguntas?.length ?? 0} preguntas)`);
       navigate(routes.materiaEvaluaciones(result.materia_id));
     } catch (err) {
       toast.error(toApiError(err).detail);
@@ -161,8 +215,6 @@ export function DetailPage() {
       setConverting(false);
     }
   };
-
-  const canConvert = material?.tipo === 'examen' || material?.tipo === 'quiz_rapido' || material?.tipo === 'rubrica';
   if (isLoading) return <LoadingScreen />;
   if (!material) return <p className="text-muted">Material no encontrado.</p>;
 
@@ -247,9 +299,15 @@ export function DetailPage() {
             <Button size="sm" variant="outline" onClick={handleDuplicate} loading={duplicating} loadingLabel="Duplicando…" title="Duplicar material">
               <Copy className="h-4 w-4" /> Duplicar
             </Button>
-            {canConvert && (
-              <Button size="sm" variant="outline" onClick={() => setShowConvert(true)} title="Convertir a evaluación">
-                <ClipboardList className="h-4 w-4" /> Usar como evaluación
+            {linkedEvaluationId ? (
+              <Link to={linkedMateriaId ? routes.materiaEvaluaciones(linkedMateriaId) : '/app/evaluaciones'}>
+                <Button size="sm" variant="outline" title="Abrir la actividad evaluable vinculada">
+                  <ClipboardList className="h-4 w-4" /> Abrir evaluación
+                </Button>
+              </Link>
+            ) : (
+              <Button size="sm" variant="outline" onClick={openConvert} title="Asignar como actividad evaluable">
+                <ClipboardList className="h-4 w-4" /> Asignar como actividad evaluable
               </Button>
             )}
             <Button size="icon" variant="ghost" onClick={() => setConfirmDelete(true)} className="text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-500/10" title="Eliminar" aria-label="Eliminar material">
@@ -262,19 +320,25 @@ export function DetailPage() {
             Asignado a: <span className="font-semibold text-brand-600">{materias.find((m) => m.id === material.materia_id)?.nombre ?? '—'}</span>
           </p>
         )}
-        <div className="mt-3 flex items-center gap-2 print:hidden">
-          <span className="text-xs text-muted">Materia:</span>
-          <Select
-            value={material?.materia_id ?? ''}
-            onChange={(e) => handleAssignMateria(e.target.value)}
-            disabled={assigning}
-            className="max-w-xs"
-          >
-            <option value="">Sin asignar</option>
-            {materias.map((m) => (
-              <option key={m.id} value={m.id}>{m.nombre}{m.grado ? ` - ${m.grado}` : ''}</option>
-            ))}
-          </Select>
+        <div className="mt-3 space-y-1.5 print:hidden">
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-muted">Organizar en materia:</span>
+            <Select
+              value={material.materia_id ?? ''}
+              onChange={(e) => handleAssignMateria(e.target.value)}
+              disabled={assigning || Boolean(linkedEvaluationId)}
+              className="max-w-xs"
+            >
+              <option value="">Sin asignar</option>
+              {materias.map((m) => (
+                <option key={m.id} value={m.id}>{m.nombre}{m.grado ? ` - ${m.grado}` : ''}</option>
+              ))}
+            </Select>
+          </div>
+          <p className="text-xs text-muted">Esta clasificación solo organiza el recurso; no lo publica ni habilita entregas.</p>
+          {linkedEvaluationId && (
+            <p className="text-xs font-medium text-brand-700 dark:text-brand-200">La materia se administra desde el borrador de la evaluación vinculada.</p>
+          )}
         </div>
       </motion.div>
 
@@ -335,30 +399,59 @@ export function DetailPage() {
         loading={isDeleting}
       />
       {showConvert && (
-        <Modal open onClose={() => setShowConvert(false)} ariaLabel="Convertir a evaluación">
+        <Modal open onClose={() => setShowConvert(false)} ariaLabel="Asignar como actividad evaluable">
           <div className="space-y-5 p-6">
-            <h2 className="font-display text-xl font-extrabold">Convertir a evaluación</h2>
-            <p className="text-sm text-muted">
-              Se creará una evaluación en estado <strong>borrador</strong> con las preguntas de este material.
-            </p>
+            <div>
+              <h2 className="font-display text-xl font-extrabold">Asignar como actividad evaluable</h2>
+              <p className="mt-1 text-sm text-muted">
+                XCalificator adaptará este recurso a una evaluación en estado <strong>borrador</strong>.
+                Podrás revisarla y publicarla desde la materia seleccionada.
+              </p>
+            </div>
             <Field label="Nombre de la evaluación">
               <Input value={convertNombre} onChange={(e) => setConvertNombre(e.target.value)} placeholder={contentTitle} />
             </Field>
-            <Field label="Materia">
-              <Select value={convertMateria} onChange={(e) => setConvertMateria(e.target.value)}>
-                <option value="">Sin asignar</option>
+            <Field label="Materia" required hint="Aquí se administrarán publicación, entregas y calificaciones.">
+              <Select value={convertMateria} onChange={(e) => setConvertMateria(e.target.value)} required>
+                <option value="">Selecciona una materia</option>
                 {materias.map((m) => (
                   <option key={m.id} value={m.id}>{m.nombre}{m.grado ? ` - ${m.grado}` : ''}</option>
                 ))}
               </Select>
             </Field>
-            <Field label="Nota máxima">
-              <Input type="number" min={1} max={100} step={0.5} value={convertNota} onChange={(e) => setConvertNota(Number(e.target.value))} />
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field label="Modalidad" required>
+                <Select value={convertModalidad} onChange={(e) => setConvertModalidad(e.target.value as EvaluacionModalidad)}>
+                  <option value="fisica">En papel o por foto</option>
+                  <option value="online">En línea</option>
+                  <option value="mixta">Mixta</option>
+                </Select>
+              </Field>
+              <Field label="Nota máxima" required>
+                <Input type="number" min={1} max={100} step={0.5} value={convertNota} onChange={(e) => setConvertNota(Number(e.target.value) || 5)} />
+              </Field>
+            </div>
+            <Field label="Política de intentos" required>
+              <Select value={convertPolicy} onChange={(e) => setConvertPolicy(e.target.value as IntentPolicy)}>
+                <option value="un_intento">Un intento</option>
+                <option value="multiples_intentos">Múltiples intentos</option>
+                <option value="mejor_puntaje">Conservar mejor puntaje</option>
+                <option value="ultimo_intento">Conservar último intento</option>
+                <option value="practica_libre">Práctica libre</option>
+              </Select>
+            </Field>
+            {convertPolicy !== 'un_intento' && convertPolicy !== 'practica_libre' && (
+              <Field label="Intentos permitidos" required>
+                <Input type="number" min={2} max={20} step={1} value={convertAttempts} onChange={(e) => setConvertAttempts(Math.max(2, Number(e.target.value) || 2))} />
+              </Field>
+            )}
+            <Field label="Tiempo límite (minutos)" hint="Opcional; déjalo vacío si no habrá límite.">
+              <Input type="number" min={1} max={600} step={1} value={convertTimeLimit} onChange={(e) => setConvertTimeLimit(e.target.value)} placeholder="Sin límite" />
             </Field>
             <div className="flex justify-end gap-2">
               <Button variant="ghost" onClick={() => setShowConvert(false)}>Cancelar</Button>
-              <Button onClick={handleConvert} loading={converting} loadingLabel="Creando…">
-                <ClipboardList className="h-4 w-4" /> Crear evaluación
+              <Button onClick={handleConvert} loading={converting} loadingLabel="Creando…" disabled={!convertMateria || converting}>
+                <ClipboardList className="h-4 w-4" /> Crear borrador evaluable
               </Button>
             </div>
           </div>

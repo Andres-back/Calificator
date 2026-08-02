@@ -71,9 +71,30 @@ export async function cerrarEvaluacion(id: string): Promise<Evaluacion> {
   const { data } = await api.post<Evaluacion>(`/evaluaciones/${id}/cerrar`);
   return data;
 }
+export async function activarRecepcionEvaluacion(id: string): Promise<Evaluacion> {
+  const { data } = await api.post<Evaluacion>(`/evaluaciones/${id}/activar-recepcion`);
+  return data;
+}
+export async function pausarRecepcionEvaluacion(id: string): Promise<Evaluacion> {
+  const { data } = await api.post<Evaluacion>(`/evaluaciones/${id}/pausar-recepcion`);
+  return data;
+}
+export async function deleteEvaluacion(id: string): Promise<void> {
+  await api.delete(`/evaluaciones/${id}`);
+}
 export async function crearEntregaOnline(evaluacionId: string, payload: EntregaOnlineCreate): Promise<EntregaRead> {
   const { data } = await api.post<EntregaRead>(`/evaluaciones/${evaluacionId}/entregas`, payload);
   return data;
+}
+export async function getMiEntrega(evaluacionId: string): Promise<EntregaRead | null> {
+  try {
+    const { data } = await api.get<EntregaRead>(`/evaluaciones/${evaluacionId}/mi-entrega`);
+    return data;
+  } catch (error) {
+    const status = (error as { response?: { status?: number } }).response?.status;
+    if (status === 404) return null;
+    throw error;
+  }
 }
 export async function listDBA(params?: ListDBAParams): Promise<DBARead[]> {
   const { data } = await api.get<DBARead[]>('/dba', { params });

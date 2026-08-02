@@ -1,7 +1,10 @@
+import asyncio
 import json
 import time
 import uuid
 from dataclasses import dataclass, field, asdict
+from datetime import datetime, timezone
+from email.utils import parsedate_to_datetime
 from typing import Any
 from uuid import UUID
 
@@ -21,6 +24,50 @@ logger = get_logger(__name__)
 # so graders explicitly use the extended timeout.
 DEFAULT_TIMEOUT = 60
 DEFAULT_MULTIMODAL_TIMEOUT = 180
+OPEN_CODE_MAX_ATTEMPTS = 3
+OPEN_CODE_RETRY_BASE_SECONDS = 0.5
+OPEN_CODE_RETRY_MAX_SECONDS = 10.0
+OPEN_CODE_RETRYABLE_STATUS_CODES = frozenset({408, 425, 429, 500, 502, 503, 504})
+
+
+def _bounded_retry_after_seconds(value: str | None) -> float | None:
+    """Parsea Retry-After (segundos o fecha HTTP) y limita la espera."""
+    if not value:
+        return None
+    try:
+        delay = float(value)
+    except ValueError:
+        try:
+            retry_at = parsedate_to_datetime(value)
+            if retry_at.tzinfo is None:
+                retry_at = retry_at.replace(tzinfo=timezone.utc)
+            delay = (retry_at - datetime.now(timezone.utc)).total_seconds()
+        except (TypeError, ValueError, OverflowError):
+            return None
+    return min(max(delay, 0.0), OPEN_CODE_RETRY_MAX_SECONDS)
+
+
+def _retry_delay_seconds(
+    attempt_number: int,
+    response: httpx.Response | None = None,
+) -> float:
+    if response is not None:
+        retry_after = _bounded_retry_after_seconds(response.headers.get("Retry-After"))
+        if retry_after is not None:
+            return retry_after
+    exponential = OPEN_CODE_RETRY_BASE_SECONDS * (2 ** max(attempt_number - 1, 0))
+    return min(exponential, OPEN_CODE_RETRY_MAX_SECONDS)
+
+
+def _is_retryable_transport_error(exc: Exception) -> bool:
+    return isinstance(
+        exc,
+        (
+            httpx.TimeoutException,
+            httpx.NetworkError,
+            httpx.RemoteProtocolError,
+        ),
+    )
 
 
 @dataclass
@@ -130,36 +177,78 @@ class OpenCodeClient:
             body["response_format"] = {"type": "json_object"}
 
         request_timeout = timeout if timeout is not None else DEFAULT_TIMEOUT
-        try:
-            resp = await self._client.post(
-                f"{self.base_url}/chat/completions",
-                headers={
-                    "Authorization": f"Bearer {self.api_key}",
-                    "Content-Type": "application/json",
-                },
-                json=body,
-                timeout=request_timeout,
-            )
-            if resp.status_code == 401:
-                raise RuntimeError("OpenCode API key invalid o expirada")
-            resp.raise_for_status()
-            data = resp.json()
-            usage = data.get("usage", {}) or {}
-            await self._log_call(
-                stage="text",
-                model=model,
-                status="success",
-                started_at=start,
-                input_tokens=usage.get("input_tokens") or usage.get("prompt_tokens"),
-                output_tokens=usage.get("output_tokens") or usage.get("completion_tokens"),
-            )
-            return data
-        except httpx.TimeoutException as exc:
-            await self._log_call(stage="text", model=model, status="timeout", started_at=start, error_code="provider_timeout")
-            raise
-        except Exception as exc:
-            await self._log_call(stage="text", model=model, status="failed", started_at=start, error_code=str(exc)[:60])
-            raise
+        for attempt_number in range(1, OPEN_CODE_MAX_ATTEMPTS + 1):
+            try:
+                response = await self._client.post(
+                    f"{self.base_url}/chat/completions",
+                    headers={
+                        "Authorization": f"Bearer {self.api_key}",
+                        "Content-Type": "application/json",
+                    },
+                    json=body,
+                    timeout=request_timeout,
+                )
+                if response.status_code == 401:
+                    raise RuntimeError("OpenCode API key invalid o expirada")
+                if (
+                    response.status_code in OPEN_CODE_RETRYABLE_STATUS_CODES
+                    and attempt_number < OPEN_CODE_MAX_ATTEMPTS
+                ):
+                    delay = _retry_delay_seconds(attempt_number, response)
+                    logger.warning(
+                        "OpenCode transitorio HTTP %s; reintento %s/%s en %.2fs",
+                        response.status_code,
+                        attempt_number + 1,
+                        OPEN_CODE_MAX_ATTEMPTS,
+                        delay,
+                    )
+                    await asyncio.sleep(delay)
+                    continue
+                response.raise_for_status()
+                data = response.json()
+                usage = data.get("usage", {}) or {}
+                await self._log_call(
+                    stage="text",
+                    model=model,
+                    status="success",
+                    started_at=start,
+                    input_tokens=usage.get("input_tokens") or usage.get("prompt_tokens"),
+                    output_tokens=usage.get("output_tokens") or usage.get("completion_tokens"),
+                )
+                return data
+            except Exception as exc:
+                if (
+                    _is_retryable_transport_error(exc)
+                    and attempt_number < OPEN_CODE_MAX_ATTEMPTS
+                ):
+                    delay = _retry_delay_seconds(attempt_number)
+                    logger.warning(
+                        "OpenCode error transitorio %s; reintento %s/%s en %.2fs",
+                        type(exc).__name__,
+                        attempt_number + 1,
+                        OPEN_CODE_MAX_ATTEMPTS,
+                        delay,
+                    )
+                    await asyncio.sleep(delay)
+                    continue
+                status_value = (
+                    "timeout" if isinstance(exc, httpx.TimeoutException) else "failed"
+                )
+                error_code = (
+                    "provider_timeout"
+                    if isinstance(exc, httpx.TimeoutException)
+                    else str(exc)[:60]
+                )
+                await self._log_call(
+                    stage="text",
+                    model=model,
+                    status=status_value,
+                    started_at=start,
+                    error_code=error_code,
+                )
+                raise
+
+        raise RuntimeError("OpenCode retry loop termino sin respuesta")
 
     async def chat_multimodal(
         self,

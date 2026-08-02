@@ -3,13 +3,14 @@ from __future__ import annotations
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Response, status
-from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.permissions import get_current_user, require_role
 from app.db.session import get_db
+from app.modules.evaluaciones.schemas import EvaluacionRead
 from app.modules.herramientas import service
 from app.modules.herramientas.schemas import (
+    ConvertirEvaluacionRequest,
     CrucigramaRequest,
     CuentoRequest,
     EmparejarRequest,
@@ -282,7 +283,7 @@ async def actualizar_material(
     material = await service.get_material(db, material_id, current_user.id)
     if material is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Material no encontrado")
-    updated = await service.update_material(db, material_id, current_user.id, payload)
+    updated = await service.update_material(db, material_id, current_user, payload)
     return updated
 
 
@@ -297,24 +298,27 @@ async def duplicar_material(
     return await service.duplicar_material(db, material_id, current_user.id)
 
 
-class ConvertirEvaluacionRequest(BaseModel):
-    materia_id: UUID | None = None
-    nombre: str | None = None
-    nota_maxima: float = 5.0
+@router.get("/{material_id}/evaluaciones", response_model=list[EvaluacionRead])
+async def listar_evaluaciones_del_material(
+    material_id: UUID,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> list[object]:
+    require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
+    return await service.list_evaluations_for_material(db, material_id, current_user)
 
 
-@router.post("/{material_id}/convertir-evaluacion", status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/{material_id}/convertir-evaluacion",
+    response_model=EvaluacionRead,
+    status_code=status.HTTP_201_CREATED,
+)
 async def convertir_a_evaluacion(
     material_id: UUID,
     req: ConvertirEvaluacionRequest,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> dict:
-    """Convierte un examen/quiz/rubrica en una evaluacion BORRADOR."""
+    """Asigna cualquier material evaluable al ciclo canonico de evaluaciones."""
     require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
-    return await service.convertir_a_evaluacion(
-        db, material_id, current_user.id,
-        materia_id=req.materia_id,
-        nombre=req.nombre,
-        nota_maxima=req.nota_maxima,
-    )
+    return await service.convertir_a_evaluacion(db, material_id, current_user, req)

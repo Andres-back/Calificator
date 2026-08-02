@@ -6,7 +6,7 @@ from decimal import Decimal
 from uuid import UUID
 
 from fastapi import HTTPException, status
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -21,7 +21,14 @@ from app.modules.materias.models import Materia
 from app.modules.matriculas.models import Matricula
 from app.modules.evaluaciones.state_machine import transition_evaluation_state
 from app.modules.users.models import User
-from app.shared.enums import CalificacionEstado, EntregaEstado, EvaluacionEstado, MatriculaEstado, UserRole
+from app.shared.enums import (
+    CalificacionEstado,
+    EntregaEstado,
+    EvaluacionEstado,
+    MatriculaEstado,
+    PoliticaIntento,
+    UserRole,
+)
 
 
 def validate_score_within_evaluation(score: Decimal, evaluacion: Evaluacion, field_name: str) -> None:
@@ -37,17 +44,61 @@ def validate_score_within_evaluation(score: Decimal, evaluacion: Evaluacion, fie
         )
 
 
+def ensure_evaluation_active(evaluacion: Evaluacion) -> None:
+    if evaluacion.estado not in {
+        EvaluacionEstado.PUBLICADA.value,
+        EvaluacionEstado.EN_CALIFICACION.value,
+        EvaluacionEstado.PENDIENTE_REVISION.value,
+    }:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="La evaluacion no esta activa para procesar evidencia.",
+        )
+
+
 def ensure_evaluation_accepts_grading(evaluacion: Evaluacion) -> None:
-    if evaluacion.estado == EvaluacionEstado.CERRADA.value:
+    ensure_evaluation_active(evaluacion)
+    if not getattr(evaluacion, "recepcion_habilitada", True):
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail="La evaluacion cerrada no acepta nuevas entregas ni calificaciones",
+            detail="La recepcion de entregas esta pausada para esta evaluacion.",
         )
-    if evaluacion.estado not in {EvaluacionEstado.PUBLICADA.value, EvaluacionEstado.EN_CALIFICACION.value}:
+
+
+async def ensure_student_can_submit_new_evidence(
+    db: AsyncSession,
+    evaluacion: Evaluacion,
+    estudiante_id: UUID,
+) -> None:
+    """Aplica la misma politica de intentos a evidencia online y fisica."""
+    policy = evaluacion.politica_intento or PoliticaIntento.UN_INTENTO.value
+    if policy == PoliticaIntento.PRACTICA_LIBRE.value:
+        return
+
+    attempts = await db.scalar(
+        select(func.count(Entrega.id)).where(
+            Entrega.evaluacion_id == evaluacion.id,
+            Entrega.estudiante_id == estudiante_id,
+            Entrega.estado != EntregaEstado.REQUIERE_REINTENTO.value,
+        )
+    )
+    attempt_count = int(attempts or 0)
+    if policy == PoliticaIntento.UN_INTENTO.value and attempt_count >= 1:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail="La evaluacion no esta disponible para entregas o calificaciones",
+            detail="El estudiante ya entrego esta evaluacion y solo tiene un intento.",
         )
+    if policy in {
+        PoliticaIntento.MULTIPLES_INTENTOS.value,
+        PoliticaIntento.MEJOR_PUNTAJE.value,
+        PoliticaIntento.ULTIMO_INTENTO.value,
+    }:
+        allowed = evaluacion.intentos_permitidos
+        if allowed is not None and attempt_count >= allowed:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=f"El estudiante alcanzo el limite de {allowed} intento(s).",
+            )
 
 
 def transition_to_grading_if_needed(evaluacion: Evaluacion) -> None:
@@ -87,7 +138,7 @@ async def confirmar_nota(
     cal.nota_confirmada = payload.nota_confirmada
     cal.revisado_por_docente = True
     cal.estado = CalificacionEstado.CONFIRMADA.value
-    if cal.entrega and cal.entrega.estado == EntregaEstado.REQUIERE_REINTENTO.value:
+    if cal.entrega:
         cal.entrega.estado = EntregaEstado.REVISADA.value
     _append_timeline_event(
         cal, tipo="confirmada",
@@ -113,7 +164,7 @@ async def ajustar_nota(
         cal.feedback = payload.feedback
     cal.revisado_por_docente = True
     cal.estado = CalificacionEstado.AJUSTADA.value
-    if cal.entrega and cal.entrega.estado == EntregaEstado.REQUIERE_REINTENTO.value:
+    if cal.entrega:
         cal.entrega.estado = EntregaEstado.REVISADA.value
     _append_timeline_event(
         cal, tipo="ajustada",
@@ -157,18 +208,53 @@ async def _update_salon_estudiante_estado(
         sse.estado = estado
 
 
+def _grade_score(calificacion: Calificacion) -> Decimal:
+    value = calificacion.nota_confirmada
+    if value is None:
+        value = calificacion.nota_sugerida
+    return Decimal(value or 0)
+
+
+def _official_report_rows(
+    rows: list[tuple[Calificacion, Evaluacion | None]],
+) -> list[tuple[Calificacion, Evaluacion]]:
+    grouped: dict[UUID, list[tuple[Calificacion, Evaluacion]]] = {}
+    for calificacion, evaluacion in rows:
+        if evaluacion is None:
+            continue
+        if evaluacion.politica_intento == PoliticaIntento.PRACTICA_LIBRE.value:
+            continue
+        grouped.setdefault(evaluacion.id, []).append((calificacion, evaluacion))
+
+    selected: list[tuple[Calificacion, Evaluacion]] = []
+    for attempts in grouped.values():
+        policy = attempts[0][1].politica_intento
+        if policy == PoliticaIntento.MEJOR_PUNTAJE.value:
+            official = max(
+                attempts,
+                key=lambda item: (
+                    _grade_score(item[0]),
+                    item[0].created_at.timestamp() if item[0].created_at else 0,
+                ),
+            )
+        else:
+            # ultimo_intento y multiples_intentos exponen el intento mas
+            # reciente; un_intento naturalmente solo contiene uno.
+            official = max(
+                attempts,
+                key=lambda item: item[0].created_at.timestamp() if item[0].created_at else 0,
+            )
+        selected.append(official)
+    return selected
+
+
 async def get_boletin(
     db: AsyncSession,
     estudiante_id: UUID,
     materia_id: UUID,
     publicada_only: bool = True,
 ) -> list[dict]:
-    """Return a report card with one joined query instead of one query per grade.
-
-    Args:
-        publicada_only: If True (default), only returns publicada calificaciones.
-                        Teachers/admins can pass False to see all.
-    """
+    """Devuelve una sola nota oficial por actividad segun su politica."""
     where_clauses = [
         Calificacion.estudiante_id == estudiante_id,
         Calificacion.materia_id == materia_id,
@@ -176,11 +262,13 @@ async def get_boletin(
     if publicada_only:
         where_clauses.append(Calificacion.estado == CalificacionEstado.PUBLICADA.value)
 
-    rows = await db.execute(
+    result = await db.execute(
         select(Calificacion, Evaluacion)
         .outerjoin(Evaluacion, Evaluacion.id == Calificacion.evaluacion_id)
         .where(*where_clauses)
     )
+    rows = list(result.all())
+    visible_rows = _official_report_rows(rows) if publicada_only else rows
     return [
         {
             "evaluacion_id": cal.evaluacion_id,
@@ -191,7 +279,7 @@ async def get_boletin(
             "estado": cal.estado,
             "feedback": cal.feedback,
         }
-        for cal, evaluacion in rows.all()
+        for cal, evaluacion in visible_rows
     ]
 
 
@@ -368,10 +456,14 @@ async def confirmar_nota_batch(
         try:
             cal = await get_calificacion_or_404(db, item.calificacion_id)
             evaluacion = await get_evaluation_for_calificacion(db, cal)
+            if profesor.rol != UserRole.ADMIN.value and evaluacion.profesor_id != profesor.id:
+                raise HTTPException(status_code=403, detail="No puedes modificar esta calificacion")
             validate_score_within_evaluation(item.nota_confirmada, evaluacion, "nota_confirmada")
             cal.nota_confirmada = item.nota_confirmada
             cal.revisado_por_docente = True
             cal.estado = CalificacionEstado.CONFIRMADA.value
+            if cal.entrega:
+                cal.entrega.estado = EntregaEstado.REVISADA.value
             _append_timeline_event(
                 cal, tipo="confirmada",
                 nota_anterior=cal.nota_sugerida, nota_nueva=item.nota_confirmada,
@@ -402,6 +494,8 @@ async def ajustar_nota_batch(
         try:
             cal = await get_calificacion_or_404(db, item.calificacion_id)
             evaluacion = await get_evaluation_for_calificacion(db, cal)
+            if profesor.rol != UserRole.ADMIN.value and evaluacion.profesor_id != profesor.id:
+                raise HTTPException(status_code=403, detail="No puedes modificar esta calificacion")
             validate_score_within_evaluation(item.nota_confirmada, evaluacion, "nota_confirmada")
             nota_anterior = cal.nota_confirmada or cal.nota_sugerida
             cal.nota_confirmada = item.nota_confirmada
@@ -409,6 +503,8 @@ async def ajustar_nota_batch(
                 cal.feedback = item.feedback
             cal.revisado_por_docente = True
             cal.estado = CalificacionEstado.AJUSTADA.value
+            if cal.entrega:
+                cal.entrega.estado = EntregaEstado.REVISADA.value
             _append_timeline_event(
                 cal, tipo="ajustada",
                 nota_anterior=nota_anterior, nota_nueva=item.nota_confirmada,
@@ -432,6 +528,48 @@ async def ajustar_nota_batch(
 # ── Publicar ─────────────────────────────────────────────────────────────────────
 
 
+def _restored_review_state(calificacion: Calificacion) -> str:
+    if (
+        calificacion.nota_confirmada is not None
+        and calificacion.nota_sugerida is not None
+        and calificacion.nota_confirmada != calificacion.nota_sugerida
+    ):
+        return CalificacionEstado.AJUSTADA.value
+    return CalificacionEstado.CONFIRMADA.value
+
+
+async def _prepare_grade_publication(
+    db: AsyncSession,
+    calificacion: Calificacion,
+    evaluacion: Evaluacion,
+) -> None:
+    policy = evaluacion.politica_intento or PoliticaIntento.UN_INTENTO.value
+    if policy == PoliticaIntento.PRACTICA_LIBRE.value:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Los intentos de practica libre no afectan la nota ni se publican en el boletin.",
+        )
+    previous = list(
+        await db.scalars(
+            select(Calificacion).where(
+                Calificacion.evaluacion_id == calificacion.evaluacion_id,
+                Calificacion.estudiante_id == calificacion.estudiante_id,
+                Calificacion.estado == CalificacionEstado.PUBLICADA.value,
+                Calificacion.id != calificacion.id,
+            )
+        )
+    )
+    if policy == PoliticaIntento.MEJOR_PUNTAJE.value and previous:
+        best_previous = max(previous, key=_grade_score)
+        if _grade_score(best_previous) > _grade_score(calificacion):
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Este intento no supera la mejor nota ya publicada.",
+            )
+    for prior in previous:
+        prior.estado = _restored_review_state(prior)
+
+
 async def publicar_nota(
     db: AsyncSession,
     cal: Calificacion,
@@ -442,6 +580,8 @@ async def publicar_nota(
             status_code=status.HTTP_409_CONFLICT,
             detail=f"Solo calificaciones confirmadas o ajustadas pueden publicarse. Estado actual: {cal.estado}",
         )
+    evaluacion = await get_evaluation_for_calificacion(db, cal)
+    await _prepare_grade_publication(db, cal, evaluacion)
     cal.estado = CalificacionEstado.PUBLICADA.value
     _append_timeline_event(
         cal, tipo="publicada",
@@ -456,17 +596,22 @@ async def publicar_nota(
 async def publicar_nota_batch(
     db: AsyncSession,
     calificacion_ids: list[UUID],
+    profesor: User,
 ) -> BatchResult:
     results: list[BatchResultItem] = []
     for cal_id in calificacion_ids:
         try:
             cal = await get_calificacion_or_404(db, cal_id)
+            evaluacion = await get_evaluation_for_calificacion(db, cal)
+            if profesor.rol != UserRole.ADMIN.value and evaluacion.profesor_id != profesor.id:
+                raise HTTPException(status_code=403, detail="No puedes publicar esta calificacion")
             if cal.estado not in (CalificacionEstado.CONFIRMADA.value, CalificacionEstado.AJUSTADA.value):
                 results.append(BatchResultItem(
                     calificacion_id=cal_id, success=False,
                     error=f"Estado {cal.estado} no permite publicación",
                 ))
                 continue
+            await _prepare_grade_publication(db, cal, evaluacion)
             cal.estado = CalificacionEstado.PUBLICADA.value
             _append_timeline_event(
                 cal, tipo="publicada",

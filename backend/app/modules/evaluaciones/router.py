@@ -179,7 +179,7 @@ async def rebuild_blueprint(
     return await service.rebuild_blueprint(db, evaluacion)
 
 
-@router.post("/evaluaciones/{evaluacion_id}/publicar", response_model=EvaluacionEstadoRead)
+@router.post("/evaluaciones/{evaluacion_id}/publicar", response_model=EvaluacionRead)
 async def publish_evaluation(
     evaluacion_id: UUID,
     current_user: User = Depends(get_current_user),
@@ -189,7 +189,7 @@ async def publish_evaluation(
     return await service.publish_evaluation(db, evaluacion)
 
 
-@router.post("/evaluaciones/{evaluacion_id}/cerrar", response_model=EvaluacionEstadoRead)
+@router.post("/evaluaciones/{evaluacion_id}/cerrar", response_model=EvaluacionRead)
 async def close_evaluation(
     evaluacion_id: UUID,
     current_user: User = Depends(get_current_user),
@@ -197,6 +197,36 @@ async def close_evaluation(
 ) -> object:
     evaluacion = await service.ensure_can_manage_evaluation(db, evaluacion_id, current_user)
     return await service.close_evaluation(db, evaluacion)
+
+
+@router.post("/evaluaciones/{evaluacion_id}/activar-recepcion", response_model=EvaluacionRead)
+async def activate_reception(
+    evaluacion_id: UUID,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> object:
+    evaluacion = await service.ensure_can_manage_evaluation(db, evaluacion_id, current_user)
+    return await service.activate_reception(db, evaluacion)
+
+
+@router.post("/evaluaciones/{evaluacion_id}/pausar-recepcion", response_model=EvaluacionRead)
+async def pause_reception(
+    evaluacion_id: UUID,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> object:
+    evaluacion = await service.ensure_can_manage_evaluation(db, evaluacion_id, current_user)
+    return await service.pause_reception(db, evaluacion)
+
+
+@router.delete("/evaluaciones/{evaluacion_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_evaluation(
+    evaluacion_id: UUID,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> None:
+    evaluacion = await service.ensure_can_manage_evaluation(db, evaluacion_id, current_user)
+    await service.delete_evaluation(db, evaluacion)
 
 
 @router.patch("/evaluaciones/{evaluacion_id}/validar-estructura", response_model=EvaluacionRead)

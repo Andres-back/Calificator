@@ -68,17 +68,36 @@ def _choice_matches(expected: Any, detected: Any) -> bool:
     expected_normalized = _normalize_answer(expected)
     detected_normalized = _normalize_answer(detected)
     expected_match = re.match(r"^([a-z])(?:\s+|$)(.*)$", expected_normalized)
-    detected_match = re.match(r"^([a-z])(?:\s+|$)(.*)$", detected_normalized)
-    if expected_match and detected_match:
-        return expected_match.group(1) == detected_match.group(1)
+    expected_letter = expected_match.group(1) if expected_match else None
     expected_value = expected_match.group(2).strip() if expected_match else expected_normalized
+
+    # OCR suele devolver toda la lista de opciones y marcar solo el valor
+    # elegido. Esa marca tiene prioridad sobre la primera letra de la lista.
+    raw_detected = str(detected or "")
+    marked_pattern = re.compile(
+        r"(?:^|[,;\n])\s*(?:([a-z])\s*[\)\].:\-]\s*)?"
+        r"([^,;\n]+?)\s*(?:\(|\[)?(?:seleccionado|marcado|elegido)\b",
+        re.IGNORECASE,
+    )
+    marked = list(marked_pattern.finditer(raw_detected))
+    if marked:
+        selected = marked[-1]
+        selected_letter = selected.group(1).lower() if selected.group(1) else None
+        selected_value = _normalize_answer(selected.group(2))
+        if expected_letter and selected_letter:
+            return expected_letter == selected_letter
+        return bool(expected_value) and (
+            selected_value == expected_value
+            or selected_value.endswith(f" {expected_value}")
+        )
+
+    detected_match = re.match(r"^([a-z])(?:\s+|$)(.*)$", detected_normalized)
+    option_labels = re.findall(r"(?:^|[,;\n])\s*[a-z]\s*[\)\].:\-]", raw_detected, re.I)
+    simple_selection = len(option_labels) <= 1 and not re.search(r"[,;\n]", raw_detected)
+    if expected_match and detected_match and simple_selection:
+        return expected_letter == detected_match.group(1)
     detected_value = detected_match.group(2).strip() if detected_match else detected_normalized
-    if bool(expected_value) and expected_value == detected_value:
-        return True
-    if expected_value:
-        selected_pattern = rf"\b{re.escape(expected_value)}\b\s*(seleccionado|marcado|elegido)"
-        return re.search(selected_pattern, detected_normalized) is not None
-    return False
+    return bool(expected_value) and expected_value == detected_value
 
 
 def parse_numbered_answers(response_text: str | None) -> list[dict]:

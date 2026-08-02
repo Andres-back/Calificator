@@ -12,10 +12,9 @@ import { Badge, Button, Card, ConfirmDialog, Field, Input, Modal, RichContent, S
 import { PageHeader } from '@/components/layout/PageHeader';
 import { useMaterias } from '@/modules/materias/MateriaSelect';
 import { useEstudiantes } from '@/modules/materias/hooks';
-import { listEvaluaciones } from '@/modules/evaluaciones/api';
+import { getEvaluacion, listEvaluaciones } from '@/modules/evaluaciones/api';
 import { queryClient } from '@/lib/queryClient';
 import { toApiError } from '@/lib/api';
-import { useAuth } from '@/stores/auth';
 import { trackEvent } from '@/lib/analytics';
 import { routes } from '@/config/routes';
 import {
@@ -684,7 +683,6 @@ function BatchActions({
 export function CalificacionesWorkspace() {
   const navigate = useNavigate();
   const { evaluacionId: evalIdParam } = useParams<{ evaluacionId: string }>();
-  const user = useAuth((state) => state.user);
   const [materiaId, setMateriaId] = useState('');
   const [evalId, setEvalId] = useState(evalIdParam ?? '');
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -698,7 +696,22 @@ export function CalificacionesWorkspace() {
   const detailPanelRef = useRef<HTMLDivElement>(null);
 
   const { data: materias } = useMaterias();
-  useEffect(() => { if (!materiaId && materias?.[0]) setMateriaId(materias[0].id); }, [materias, materiaId]);
+  const directEvaluation = useQuery({
+    queryKey: ['evaluacion', evalIdParam],
+    queryFn: () => getEvaluacion(evalIdParam!),
+    enabled: Boolean(evalIdParam),
+    retry: false,
+  });
+
+  useEffect(() => {
+    if (!directEvaluation.data) return;
+    setMateriaId(directEvaluation.data.materia_id);
+    setEvalId(directEvaluation.data.id);
+  }, [directEvaluation.data]);
+
+  useEffect(() => {
+    if (!materiaId && !evalIdParam && materias?.[0]) setMateriaId(materias[0].id);
+  }, [evalIdParam, materias, materiaId]);
 
   const { data: evals } = useQuery({
     queryKey: ['evaluaciones', materiaId],
@@ -706,11 +719,20 @@ export function CalificacionesWorkspace() {
     enabled: !!materiaId,
   });
   useEffect(() => {
-    if (evals && evals.length > 0 && !evals.find((e) => e.id === evalId)) {
+    if (evalIdParam && directEvaluation.data) {
+      if (directEvaluation.data.materia_id !== materiaId) return;
+      if (evals?.some((evaluation) => evaluation.id === evalIdParam)) {
+        setEvalId(evalIdParam);
+        return;
+      }
+    }
+    if (evalIdParam && directEvaluation.isLoading) return;
+
+    if (evals && evals.length > 0 && !evals.find((evaluation) => evaluation.id === evalId)) {
       setEvalId(evals[0].id);
     }
     if (evals?.length === 0) setEvalId('');
-  }, [evals, evalId]);
+  }, [directEvaluation.data, directEvaluation.isLoading, evalId, evalIdParam, evals, materiaId]);
 
   // Track workspace opened
   useEffect(() => {
@@ -858,12 +880,12 @@ export function CalificacionesWorkspace() {
       {/* Selectores */}
       <Card className="mx-4 mb-4 grid gap-4 p-4 sm:grid-cols-2">
         <Field label="Materia">
-          <Select value={materiaId} onChange={(e) => { setMateriaId(e.target.value); setSelectedId(null); setSelectedBatch(new Set()); }}>
+          <Select value={materiaId} onChange={(e) => { navigate(routes.calificacionesWorkspace, { replace: true }); setMateriaId(e.target.value); setEvalId(''); setSelectedId(null); setSelectedBatch(new Set()); }}>
             {materias?.map((m) => <option key={m.id} value={m.id}>{m.nombre}</option>)}
           </Select>
         </Field>
         <Field label="Evaluación">
-          <Select value={evalId} onChange={(e) => { setEvalId(e.target.value); setSelectedId(null); setSelectedBatch(new Set()); }}>
+          <Select value={evalId} onChange={(e) => { const id = e.target.value; setEvalId(id); navigate(id ? routes.calificacionesEvaluacion(id) : routes.calificacionesWorkspace, { replace: true }); setSelectedId(null); setSelectedBatch(new Set()); }}>
             {(!evals || evals.length === 0) && <option value="">Sin evaluaciones</option>}
             {evals?.map((ev) => <option key={ev.id} value={ev.id}>{ev.nombre}</option>)}
           </Select>

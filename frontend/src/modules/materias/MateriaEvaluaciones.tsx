@@ -5,18 +5,23 @@ import toast from 'react-hot-toast';
 import {
   ClipboardCheck,
   Clock,
+  Eye,
   FileCheck2,
   Lock,
+  PauseCircle,
   Pencil,
+  PlayCircle,
   Plus,
   Scan,
   Send,
   Sparkles,
+  Trash2,
 } from 'lucide-react';
 import {
   Badge,
   Button,
   Card,
+  ConfirmDialog,
   EmptyState,
   Field,
   Input,
@@ -27,9 +32,12 @@ import {
   Textarea,
 } from '@/components/ui';
 import {
+  activarRecepcionEvaluacion,
   cerrarEvaluacion,
   createEvaluacion,
+  deleteEvaluacion,
   listEvaluaciones,
+  pausarRecepcionEvaluacion,
   publicarEvaluacion,
   updateEvaluacion,
   type EvaluacionUpdate,
@@ -74,6 +82,7 @@ export function MateriaEvaluaciones() {
   const [wizardOpen, setWizardOpen] = useState(false);
   const [digitalizeOpen, setDigitalizeOpen] = useState(false);
   const [editingEval, setEditingEval] = useState<Evaluacion | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Evaluacion | null>(null);
   const [form, setForm] = useState<EvaluationForm>(emptyForm);
 
   const evaluationsQuery = useQuery({
@@ -137,6 +146,41 @@ export function MateriaEvaluaciones() {
       toast.success('Evaluación cerrada');
     },
     onError: (error) => toast.error(toApiError(error).detail),
+  });
+
+  const activateReception = useMutation({
+    mutationFn: (id: string) => activarRecepcionEvaluacion(id),
+    onSuccess: () => {
+      refresh();
+      toast.success('Recepci?n de entregas activada');
+    },
+    onError: (error) => toast.error(toApiError(error).detail),
+  });
+
+  const pauseReception = useMutation({
+    mutationFn: (id: string) => pausarRecepcionEvaluacion(id),
+    onSuccess: () => {
+      refresh();
+      toast.success('Recepci?n de entregas pausada');
+    },
+    onError: (error) => toast.error(toApiError(error).detail),
+  });
+
+  const removeEvaluation = useMutation({
+    mutationFn: (id: string) => deleteEvaluacion(id),
+    onSuccess: () => {
+      refresh();
+      setDeleteTarget(null);
+      toast.success('Evaluaci?n eliminada');
+    },
+    onError: (error) => {
+      const apiError = toApiError(error);
+      toast.error(
+        apiError.status === 409
+          ? 'No se puede eliminar porque ya tiene entregas o calificaciones.'
+          : apiError.detail,
+      );
+    },
   });
 
   function openManualCreate() {
@@ -256,9 +300,14 @@ export function MateriaEvaluaciones() {
         <div className="grid gap-3 md:grid-cols-2">
           {evaluations.map((evaluation) => {
             const modality = evaluation.modalidad ?? 'fisica';
-            const canPublish =
-              evaluation.estado === 'borrador' && modality !== 'fisica';
-            const canGrade = evaluation.estado !== 'cerrada';
+            const isDraft = evaluation.estado === 'borrador';
+            const isClosed = evaluation.estado === 'cerrada';
+            const isDeliveryState = ['publicada', 'en_calificacion', 'pendiente_revision'].includes(evaluation.estado);
+            const receptionEnabled = evaluation.recepcion_habilitada ?? isDeliveryState;
+            const canOpenOnline = (isDeliveryState || isClosed)
+              && (modality === 'online' || modality === 'mixta' || receptionEnabled);
+            const photoRoute = `${routes.materiaCalificar(materia.id)}?evaluacion=${evaluation.id}`;
+            const reviewRoute = routes.calificacionesEvaluacion(evaluation.id);
 
             return (
               <Card key={evaluation.id} className="p-5">
@@ -277,6 +326,11 @@ export function MateriaEvaluaciones() {
                       <Badge tone="brand">
                         {MODALITY_LABELS[modality]}
                       </Badge>
+                      {!isDraft && !isClosed && (
+                        <Badge tone={receptionEnabled ? 'success' : 'warning'}>
+                          {receptionEnabled ? 'Recepci?n activa' : 'Recepci?n pausada'}
+                        </Badge>
+                      )}
                       <span className="text-xs text-muted">
                         Nota máxima: {Number(evaluation.nota_maxima)}
                       </span>
@@ -301,36 +355,64 @@ export function MateriaEvaluaciones() {
                 </div>
 
                 <div className="mt-4 flex flex-wrap gap-2">
-                  {evaluation.estado === 'borrador' && canManageMateria && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => openEdit(evaluation)}
-                    >
-                      <Pencil className="h-4 w-4" /> Editar datos
-                    </Button>
-                  )}
-                  {canPublish && canManageMateria && (
-                    <Button
-                      size="sm"
-                      loading={publish.isPending}
-                      onClick={() => publish.mutate(evaluation.id)}
-                    >
-                      <Send className="h-4 w-4" /> Publicar
-                    </Button>
-                  )}
-                  {canGrade && canManageMateria && (
-                    <Link
-                      to={`${routes.materiaCalificar(materia.id)}?evaluacion=${evaluation.id}`}
-                    >
-                      <Button size="sm" variant="secondary">
-                        <ClipboardCheck className="h-4 w-4" /> Calificar
-                      </Button>
-                    </Link>
-                  )}
-                  {evaluation.estado !== 'borrador' &&
-                    evaluation.estado !== 'cerrada' &&
-                    canManageMateria && (
+                  {canManageMateria ? (
+                    <>
+                      {isDraft && (
+                        <>
+                          <Button size="sm" variant="outline" onClick={() => openEdit(evaluation)}>
+                            <Pencil className="h-4 w-4" /> Editar datos
+                          </Button>
+                          <Button
+                            size="sm"
+                            loading={publish.isPending}
+                            onClick={() => publish.mutate(evaluation.id)}
+                          >
+                            <Send className="h-4 w-4" /> Publicar
+                          </Button>
+                        </>
+                      )}
+
+                      {isDeliveryState && (
+                        <>
+                          {receptionEnabled ? (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => pauseReception.mutate(evaluation.id)}
+                              loading={pauseReception.isPending}
+                            >
+                              <PauseCircle className="h-4 w-4" /> Pausar entregas
+                            </Button>
+                          ) : (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => activateReception.mutate(evaluation.id)}
+                              loading={activateReception.isPending}
+                            >
+                              <PlayCircle className="h-4 w-4" /> Activar entregas
+                            </Button>
+                          )}
+
+                          {modality !== 'online' && (
+                            <Link to={photoRoute}>
+                              <Button size="sm" variant="secondary">
+                                <ClipboardCheck className="h-4 w-4" /> Calificar foto
+                              </Button>
+                            </Link>
+                          )}
+                        </>
+                      )}
+
+                      {!isDraft && (
+                        <Link to={reviewRoute}>
+                          <Button size="sm" variant={modality === 'online' ? 'secondary' : 'outline'}>
+                            <Eye className="h-4 w-4" /> Revisar notas
+                          </Button>
+                        </Link>
+                      )}
+
+                      {isDeliveryState && (
                       <Button
                         size="sm"
                         variant="outline"
@@ -339,10 +421,35 @@ export function MateriaEvaluaciones() {
                       >
                         <Lock className="h-4 w-4" /> Cerrar
                       </Button>
-                    )}
-                  {evaluation.estado === 'cerrada' && (
-                    <span className="flex min-h-9 items-center gap-1 text-xs text-muted">
-                      <Lock className="h-3 w-3" /> Cerrada
+                      )}
+
+                      {(isDraft || isClosed) && (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="text-rose-700 dark:text-rose-300"
+                          onClick={() => setDeleteTarget(evaluation)}
+                        >
+                          <Trash2 className="h-4 w-4" /> Eliminar
+                        </Button>
+                      )}
+
+                      {isClosed && (
+                        <span className="flex min-h-9 items-center gap-1 text-xs text-muted">
+                          <Lock className="h-3 w-3" /> Cierre final
+                        </span>
+                      )}
+                    </>
+                  ) : canOpenOnline ? (
+                    <Link to={routes.resolverEvaluacion(evaluation.id)}>
+                      <Button size="sm" variant="secondary">
+                        <Eye className="h-4 w-4" />
+                        {receptionEnabled && !isClosed ? 'Resolver' : 'Ver evaluaci?n'}
+                      </Button>
+                    </Link>
+                  ) : (
+                    <span className="text-xs text-muted">
+                      {isClosed ? 'Actividad cerrada' : 'Entrega en papel'}
                     </span>
                   )}
                 </div>
@@ -502,6 +609,20 @@ export function MateriaEvaluaciones() {
           </form>
         </Modal>
       )}
+      <ConfirmDialog
+        open={Boolean(deleteTarget)}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={() => {
+          if (deleteTarget) removeEvaluation.mutate(deleteTarget.id);
+        }}
+        title="Eliminar evaluaci?n"
+        description={<>Se eliminar? <strong>{deleteTarget?.nombre}</strong>. Solo es posible si no tiene entregas ni calificaciones.</>}
+        confirmLabel="Eliminar"
+        cancelLabel="Conservar"
+        tone="danger"
+        loading={removeEvaluation.isPending}
+      />
+
     </div>
   );
 }

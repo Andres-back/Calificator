@@ -40,6 +40,9 @@ export interface MaterialListItem {
   titulo: string;
   materia_id: string | null;
   materia_nombre: string | null;
+  evaluacion_id?: string | null;
+  evaluacion_estado?: EvaluacionEstado | null;
+  evaluacion_modalidad?: EvaluacionModalidad | null;
   archivo_url: string | null;
   created_at: string;
 }
@@ -50,6 +53,9 @@ export interface Material<T = Record<string, unknown>> {
   titulo: string;
   materia_id: string | null;
   materia_nombre: string | null;
+  evaluacion_id?: string | null;
+  evaluacion_estado?: EvaluacionEstado | null;
+  evaluacion_modalidad?: EvaluacionModalidad | null;
   contenido_json: T;
   archivo_url: string | null;
   created_at: string;
@@ -125,13 +131,18 @@ export interface Evaluacion {
   id: string;
   materia_id: string;
   profesor_id: string;
+  material_origen_id?: string | null;
+  tipo_actividad?: MaterialTipo | 'evaluacion' | string | null;
   nombre: string;
   descripcion: string | null;
   tipo_origen: string;
   modalidad: EvaluacionModalidad | null;
   nota_maxima: number;
   estado: EvaluacionEstado;
+  recepcion_habilitada?: boolean;
   tiempo_limite_minutos: number | null;
+  politica_intento?: 'un_intento' | 'multiples_intentos' | 'mejor_puntaje' | 'ultimo_intento' | 'practica_libre' | null;
+  intentos_permitidos?: number | null;
   fecha_publicacion: string | null;
   dba_ids: string[];
   dba_personalizado_ids: string[];

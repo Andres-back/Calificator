@@ -132,6 +132,10 @@ async def grade_student_photo(
         from fastapi import HTTPException
         raise HTTPException(status_code=403, detail="El estudiante no esta matriculado en esta materia")
 
+    await calificaciones_service.ensure_student_can_submit_new_evidence(
+        db, evaluacion, estudiante_id,
+    )
+
     if sesion_id:
         await update_estudiante_estado(
             db, sesion_id, estudiante_id,

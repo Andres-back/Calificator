@@ -3,7 +3,7 @@ from decimal import Decimal
 from uuid import uuid4
 from uuid import UUID as PyUUID
 
-from sqlalchemy import CheckConstraint, DateTime, ForeignKey, Index, Integer, Numeric, String, Text, UniqueConstraint, func, text
+from sqlalchemy import Boolean, CheckConstraint, DateTime, ForeignKey, Index, Integer, Numeric, String, Text, UniqueConstraint, func, text
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -58,6 +58,19 @@ class Evaluacion(Base):
     nota_maxima: Mapped[Decimal] = mapped_column(Numeric(6, 2), nullable=False, default=Decimal("5.0"))
     estado: Mapped[str] = mapped_column(String(40), nullable=False, default=EvaluacionEstado.BORRADOR.value)
     modalidad: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    # La tabla materiales_generados se administra con SQL/Alembic y no forma
+    # parte de Base.metadata; la FK real ON DELETE SET NULL vive en la migracion.
+    material_origen_id: Mapped[PyUUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        nullable=True,
+    )
+    tipo_actividad: Mapped[str | None] = mapped_column(String(60), nullable=True)
+    recepcion_habilitada: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        default=False,
+        server_default=text("false"),
+    )
     politica_intento: Mapped[str | None] = mapped_column(String(30), nullable=True)
     intentos_permitidos: Mapped[int | None] = mapped_column(
         Integer, nullable=True
@@ -99,6 +112,12 @@ class Evaluacion(Base):
 Index("idx_evaluaciones_materia", Evaluacion.materia_id)
 Index("idx_evaluaciones_profesor", Evaluacion.profesor_id)
 Index("idx_evaluaciones_estado", Evaluacion.estado)
+Index(
+    "uq_evaluaciones_material_origen_nonnull",
+    Evaluacion.material_origen_id,
+    unique=True,
+    postgresql_where=Evaluacion.material_origen_id.is_not(None),
+)
 
 
 class EvaluacionBlueprint(Base):

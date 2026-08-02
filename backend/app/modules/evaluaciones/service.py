@@ -28,6 +28,43 @@ from app.shared.enums import EvaluacionEstado, EvaluacionTipoOrigen, UserRole
 from app.shared.utils import utcnow
 
 
+STUDENT_VISIBLE_EVALUATION_STATES = {
+    EvaluacionEstado.PUBLICADA.value,
+    EvaluacionEstado.EN_CALIFICACION.value,
+    EvaluacionEstado.PENDIENTE_REVISION.value,
+    EvaluacionEstado.CERRADA.value,
+}
+
+ACTIVE_RECEPTION_STATES = {
+    EvaluacionEstado.PUBLICADA.value,
+    EvaluacionEstado.EN_CALIFICACION.value,
+    EvaluacionEstado.PENDIENTE_REVISION.value,
+}
+
+_STUDENT_FORBIDDEN_KEYS = {
+    "answer",
+    "answers",
+    "answerkey",
+    "clave",
+    "claverespuesta",
+    "claverespuestas",
+    "correct",
+    "correctanswer",
+    "correctoption",
+    "correcta",
+    "escorrecta",
+    "expectedanswer",
+    "iscorrect",
+    "opcioncorrecta",
+    "respuesta",
+    "respuestacorrecta",
+    "respuestaesperada",
+    "solucion",
+    "soluciones",
+    "valorcorrecto",
+}
+
+
 STRUCTURAL_FIELDS = {
     "dba_ids",
     "dba_personalizado_ids",
@@ -69,7 +106,7 @@ async def ensure_can_read_evaluation(
         return evaluacion
     if (
         current_user.rol == UserRole.ESTUDIANTE.value
-        and evaluacion.estado in {EvaluacionEstado.PUBLICADA.value, EvaluacionEstado.CERRADA.value}
+        and evaluacion.estado in STUDENT_VISIBLE_EVALUATION_STATES
         and await is_student_enrolled(db, evaluacion.materia_id, current_user.id)
     ):
         return _student_safe_evaluation(evaluacion)
@@ -91,7 +128,27 @@ def _uuid_values(ids: list[UUID]) -> list[str]:
     return [str(value) for value in ids]
 
 
+def _student_key(value: object) -> str:
+    return "".join(char for char in str(value).lower() if char.isalnum())
+
+
+def _sanitize_student_payload(value: object) -> object:
+    if isinstance(value, dict):
+        return {
+            key: _sanitize_student_payload(item)
+            for key, item in value.items()
+            if _student_key(key) not in _STUDENT_FORBIDDEN_KEYS
+        }
+    if isinstance(value, list):
+        return [_sanitize_student_payload(item) for item in value]
+    return value
+
+
 def _student_safe_evaluation(evaluacion: Evaluacion) -> dict:
+    safe_questions = normalize_question_modalities(
+        evaluacion.preguntas,
+        evaluacion.modalidad,
+    )
     return {
         "id": evaluacion.id,
         "materia_id": evaluacion.materia_id,
@@ -100,6 +157,9 @@ def _student_safe_evaluation(evaluacion: Evaluacion) -> dict:
         "descripcion": evaluacion.descripcion,
         "tipo_origen": evaluacion.tipo_origen,
         "modalidad": evaluacion.modalidad,
+        "material_origen_id": getattr(evaluacion, "material_origen_id", None),
+        "tipo_actividad": getattr(evaluacion, "tipo_actividad", None),
+        "recepcion_habilitada": getattr(evaluacion, "recepcion_habilitada", False),
         "nota_maxima": evaluacion.nota_maxima,
         "estado": evaluacion.estado,
         "fecha_publicacion": evaluacion.fecha_publicacion,
@@ -109,11 +169,8 @@ def _student_safe_evaluation(evaluacion: Evaluacion) -> dict:
         "dba_ids": evaluacion.dba_ids,
         "dba_personalizado_ids": evaluacion.dba_personalizado_ids,
         "metas_profesor": evaluacion.metas_profesor,
-        "criterios": evaluacion.criterios,
-        "preguntas": normalize_question_modalities(
-            evaluacion.preguntas,
-            evaluacion.modalidad,
-        ),
+        "criterios": _sanitize_student_payload(evaluacion.criterios),
+        "preguntas": _sanitize_student_payload(safe_questions),
         "respuestas_esperadas": [],
         "created_at": evaluacion.created_at,
         "updated_at": evaluacion.updated_at,
@@ -183,6 +240,9 @@ async def create_evaluation(
     db: AsyncSession,
     payload: EvaluacionCreate,
     current_user: User,
+    *,
+    material_origen_id: UUID | None = None,
+    tipo_actividad: str | None = None,
 ) -> Evaluacion:
     materia = await ensure_can_manage_materia(db, payload.materia_id, current_user)
     questions = normalize_question_modalities(payload.preguntas, payload.modalidad)
@@ -193,6 +253,9 @@ async def create_evaluation(
         descripcion=payload.descripcion,
         tipo_origen=payload.tipo_origen.value,
         modalidad=payload.modalidad.value,
+        material_origen_id=material_origen_id,
+        tipo_actividad=tipo_actividad,
+        recepcion_habilitada=False,
         nota_maxima=payload.nota_maxima,
         estado=EvaluacionEstado.BORRADOR.value,
         politica_intento=payload.politica_intento.value if payload.politica_intento else None,
@@ -226,7 +289,7 @@ async def list_evaluations_for_materia(
     )
     if current_user.rol == UserRole.ESTUDIANTE.value:
         stmt = stmt.where(
-            Evaluacion.estado.in_([EvaluacionEstado.PUBLICADA.value, EvaluacionEstado.CERRADA.value])
+            Evaluacion.estado.in_(STUDENT_VISIBLE_EVALUATION_STATES)
         )
     result = await db.scalars(stmt)
     evaluaciones = list(result)
@@ -307,6 +370,81 @@ async def rebuild_blueprint(
     return blueprint
 
 
+def validate_publication_structure(evaluacion: Evaluacion) -> None:
+    questions = evaluacion.preguntas or []
+    if not questions:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Agrega al menos una pregunta o evidencia evaluable antes de publicar.",
+        )
+    if not evaluacion.criterios:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Agrega criterios de calificacion antes de publicar.",
+        )
+    blueprint = evaluacion.blueprint
+    if not blueprint or not blueprint.criterios or not blueprint.preguntas:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="La estructura y su blueprint deben contener preguntas y criterios coherentes.",
+        )
+
+    numbers: list[object] = []
+    total = Decimal("0")
+    for index, question in enumerate(questions, start=1):
+        if not isinstance(question, dict):
+            raise HTTPException(status_code=409, detail=f"El punto {index} no tiene una estructura valida.")
+        number = question.get("numero", index)
+        if number in numbers:
+            raise HTTPException(status_code=409, detail=f"El numero de pregunta {number} esta repetido.")
+        numbers.append(number)
+        try:
+            score = Decimal(str(question.get("puntaje")))
+        except (ArithmeticError, TypeError, ValueError):
+            score = Decimal("0")
+        if score <= 0:
+            raise HTTPException(status_code=409, detail=f"El punto {number} debe tener un puntaje positivo.")
+        total += score
+
+    if abs(total - Decimal(evaluacion.nota_maxima)) > Decimal("0.01"):
+        raise HTTPException(
+            status_code=409,
+            detail=(
+                f"La suma de puntajes ({total}) debe coincidir con la nota maxima "
+                f"({evaluacion.nota_maxima})."
+            ),
+        )
+
+    answer_numbers = {
+        item.get("numero")
+        for item in (evaluacion.respuestas_esperadas or [])
+        if isinstance(item, dict) and item.get("respuesta") not in (None, "", [])
+    }
+    objective_types = {"opcion_multiple", "verdadero_falso", "completar"}
+    missing_answers = [
+        question.get("numero", index)
+        for index, question in enumerate(questions, start=1)
+        if str(question.get("tipo") or "").lower() in objective_types
+        and question.get("numero", index) not in answer_numbers
+    ]
+    if missing_answers:
+        raise HTTPException(
+            status_code=409,
+            detail=f"Falta la respuesta esperada de los puntos objetivos: {missing_answers}.",
+        )
+
+    blueprint_numbers = [
+        item.get("numero", index)
+        for index, item in enumerate(blueprint.preguntas or [], start=1)
+        if isinstance(item, dict)
+    ]
+    if blueprint_numbers != numbers:
+        raise HTTPException(
+            status_code=409,
+            detail="El blueprint no coincide con las preguntas actuales; reconstruyelo antes de publicar.",
+        )
+
+
 async def publish_evaluation(db: AsyncSession, evaluacion: Evaluacion) -> Evaluacion:
     if not evaluacion.blueprint:
         raise HTTPException(
@@ -335,16 +473,62 @@ async def publish_evaluation(db: AsyncSession, evaluacion: Evaluacion) -> Evalua
             [UUID(value) for value in evaluacion.dba_ids],
             [UUID(value) for value in evaluacion.dba_personalizado_ids],
         )
+    validate_publication_structure(evaluacion)
     transition_evaluation_state(evaluacion, EvaluacionEstado.PUBLICADA)
     evaluacion.fecha_publicacion = utcnow()
+    evaluacion.recepcion_habilitada = True
+    await db.commit()
+    return await get_evaluation_or_404(db, evaluacion.id)
+
+
+async def activate_reception(db: AsyncSession, evaluacion: Evaluacion) -> Evaluacion:
+    if evaluacion.estado not in ACTIVE_RECEPTION_STATES:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Solo una evaluacion publicada y activa puede recibir entregas.",
+        )
+    evaluacion.recepcion_habilitada = True
+    await db.commit()
+    return await get_evaluation_or_404(db, evaluacion.id)
+
+
+async def pause_reception(db: AsyncSession, evaluacion: Evaluacion) -> Evaluacion:
+    if evaluacion.estado not in ACTIVE_RECEPTION_STATES:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Solo una evaluacion publicada y activa puede pausar la recepcion.",
+        )
+    evaluacion.recepcion_habilitada = False
     await db.commit()
     return await get_evaluation_or_404(db, evaluacion.id)
 
 
 async def close_evaluation(db: AsyncSession, evaluacion: Evaluacion) -> Evaluacion:
     transition_evaluation_state(evaluacion, EvaluacionEstado.CERRADA)
+    evaluacion.recepcion_habilitada = False
     await db.commit()
     return await get_evaluation_or_404(db, evaluacion.id)
+
+
+async def delete_evaluation(db: AsyncSession, evaluacion: Evaluacion) -> None:
+    from app.modules.calificaciones.models import Calificacion, Entrega
+
+    entrega_id = await db.scalar(
+        select(Entrega.id).where(Entrega.evaluacion_id == evaluacion.id).limit(1)
+    )
+    calificacion_id = await db.scalar(
+        select(Calificacion.id).where(Calificacion.evaluacion_id == evaluacion.id).limit(1)
+    )
+    if entrega_id or calificacion_id:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=(
+                "No se puede eliminar una evaluacion con entregas o calificaciones. "
+                "Pausa la recepcion o cierrala para conservar la evidencia."
+            ),
+        )
+    await db.delete(evaluacion)
+    await db.commit()
 
 
 async def create_surprise_evaluation(

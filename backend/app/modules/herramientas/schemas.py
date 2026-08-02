@@ -1,11 +1,16 @@
 from __future__ import annotations
 
 from datetime import datetime
+from decimal import Decimal
 from uuid import UUID
 
 from pydantic import BaseModel, Field, PrivateAttr
 
-from app.shared.enums import MaterialTipo
+from app.shared.enums import (
+    EvaluacionModalidad,
+    MaterialTipo,
+    PoliticaIntento,
+)
 
 
 class HerramientaBaseRequest(BaseModel):
@@ -119,6 +124,9 @@ class MaterialRead(BaseModel):
     materia_nombre: str | None = None
     contenido_json: dict
     archivo_url: str | None
+    evaluacion_id: UUID | None = None
+    evaluacion_estado: str | None = None
+    evaluacion_modalidad: EvaluacionModalidad | None = None
     created_at: datetime
 
     model_config = {"from_attributes": True}
@@ -131,6 +139,19 @@ class MaterialListItem(BaseModel):
     materia_id: UUID | None = None
     materia_nombre: str | None = None
     archivo_url: str | None = None
+    evaluacion_id: UUID | None = None
+    evaluacion_estado: str | None = None
+    evaluacion_modalidad: EvaluacionModalidad | None = None
     created_at: datetime
 
     model_config = {"from_attributes": True}
+
+
+class ConvertirEvaluacionRequest(BaseModel):
+    materia_id: UUID | None = None
+    nombre: str | None = Field(default=None, min_length=2, max_length=220)
+    nota_maxima: Decimal = Field(default=Decimal("5.0"), gt=0)
+    modalidad: EvaluacionModalidad = EvaluacionModalidad.ONLINE
+    politica_intento: PoliticaIntento | None = PoliticaIntento.UN_INTENTO
+    intentos_permitidos: int | None = Field(default=None, gt=0)
+    tiempo_limite_minutos: int | None = Field(default=None, gt=0)

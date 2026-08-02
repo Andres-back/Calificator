@@ -1,5 +1,5 @@
 import { api } from '@/lib/api';
-import type { Material, MaterialListItem } from '@/types/api';
+import type { Evaluacion, EvaluacionModalidad, Material, MaterialListItem } from '@/types/api';
 
 const BASE = '/herramientas';
 
@@ -22,7 +22,7 @@ export async function deleteMaterial(id: string): Promise<void> {
   await api.delete(`${BASE}/${id}`);
 }
 
-export async function updateMaterial(id: string, payload: { materia_id?: string; titulo?: string }): Promise<Material> {
+export async function updateMaterial(id: string, payload: { materia_id?: string | null; titulo?: string }): Promise<Material> {
   const { data } = await api.patch<Material>(`${BASE}/${id}`, payload);
   return data;
 }
@@ -37,25 +37,32 @@ export async function duplicateMaterial(id: string): Promise<Material> {
   return data;
 }
 
-export interface ConvertirResponse {
-  evaluacion_id: string;
-  materia_id: string;
-  nombre: string;
-  tipo: string;
-  estado: string;
-  nota_maxima: number;
-  total_preguntas: number;
+export type IntentPolicy = 'un_intento' | 'multiples_intentos' | 'mejor_puntaje' | 'ultimo_intento' | 'practica_libre';
+
+export interface ConvertirEvaluacionPayload {
+  materia_id?: string;
+  nombre?: string;
+  nota_maxima?: number;
+  modalidad: EvaluacionModalidad;
+  politica_intento?: IntentPolicy;
+  intentos_permitidos?: number;
+  tiempo_limite_minutos?: number;
 }
 
 export async function convertToEvaluacion(
   id: string,
-  payload: { materia_id?: string; nombre?: string; nota_maxima?: number },
-): Promise<ConvertirResponse> {
-  const { data } = await api.post<ConvertirResponse>(`${BASE}/${id}/convertir-evaluacion`, payload);
+  payload: ConvertirEvaluacionPayload,
+): Promise<Evaluacion> {
+  const { data } = await api.post<Evaluacion>(`${BASE}/${id}/convertir-evaluacion`, payload);
   return data;
 }
 
+export async function listMaterialEvaluaciones(id: string): Promise<Evaluacion[]> {
+  const { data } = await api.get<Evaluacion[]>(`${BASE}/${id}/evaluaciones`);
+  return data;
+}
 /** URL del PDF (estudiante o soluciones). El navegador envía la cookie de sesión. */
+
 export function pdfUrl(id: string, soluciones = false): string {
   const base = import.meta.env.VITE_API_URL ?? '/api';
   return `${base}${BASE}/${id}/pdf${soluciones ? '?soluciones=true' : ''}`;

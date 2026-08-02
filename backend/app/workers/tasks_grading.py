@@ -273,7 +273,7 @@ async def _grade_batch_async(
             )
             if not evaluacion:
                 raise ValueError("Evaluacion no encontrada")
-            calificaciones_service.ensure_evaluation_accepts_grading(evaluacion)
+            calificaciones_service.ensure_evaluation_active(evaluacion)
             effective_profesor_id = profesor_id or evaluacion.profesor_id
             deliveries, missing = await _load_deliveries(
                 db,

@@ -664,13 +664,15 @@ export function EvaluacionesPage() {
                       </div>
                     </div>
                     <div className="flex w-full flex-wrap gap-2 sm:w-auto sm:justify-end">
-                      {isStudent && ev.estado === 'publicada' && (ev.modalidad === 'online' || ev.modalidad === 'mixta') && (
+                      {isStudent
+                        && ['publicada', 'en_calificacion', 'pendiente_revision', 'cerrada'].includes(ev.estado)
+                        && (ev.modalidad === 'online' || ev.modalidad === 'mixta') && (
                         <Link
                           to={`/app/evaluaciones/${ev.id}/resolver`}
                           className="focus-ring inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-brand-200 bg-brand-50 px-3.5 text-sm font-semibold text-brand-700 transition-colors hover:bg-brand-100 dark:border-brand-500/30 dark:bg-brand-500/10 dark:text-brand-200"
                         >
                           <Send className="h-4 w-4" />
-                          Resolver
+                          {ev.recepcion_habilitada === false || ev.estado === 'cerrada' ? 'Ver evaluaci?n' : 'Resolver'}
                         </Link>
                       )}
                       {!isStudent && ev.estado === 'borrador' && (

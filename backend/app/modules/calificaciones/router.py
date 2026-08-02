@@ -8,7 +8,7 @@ from uuid import UUID
 import aiofiles
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Response, UploadFile, status
-from sqlalchemy import func, select
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.permissions import get_current_user, is_student_enrolled, require_role
@@ -56,7 +56,7 @@ from app.modules.users.models import User
 from app.services.storage_service import save_upload, validate_mime
 from app.shared.enums import (
     CalificacionEstado, EntregaEstado, EntregaTipo, EvaluacionModalidad,
-    JobEstado, JobTipo, PoliticaIntento, UserRole,
+    JobEstado, JobTipo, UserRole,
 )
 from app.workers.tasks_grading import grade_batch, resolve_upload_path
 
@@ -105,6 +105,10 @@ async def calificar_foto(
         )
     if not await is_student_enrolled(db, evaluacion.materia_id, estudiante_id):
         raise HTTPException(status_code=403, detail="El estudiante no esta matriculado en esta materia")
+    if getattr(evaluacion, "modalidad", None) != EvaluacionModalidad.MIXTA.value:
+        await service.ensure_student_can_submit_new_evidence(
+            db, evaluacion, estudiante_id,
+        )
 
     content = await foto.read()
     mime = validate_mime(content, foto.filename or "image.jpg")
@@ -194,7 +198,7 @@ async def reintentar_calificacion_foto(
         calificacion.evaluacion_id,
         current_user,
     )
-    service.ensure_evaluation_accepts_grading(evaluacion)
+    service.ensure_evaluation_active(evaluacion)
 
     entrega = calificacion.entrega
     if not entrega or not entrega.archivo_url:
@@ -284,6 +288,10 @@ async def calificar_lote(
         sid_uuid = UUID(sid) if isinstance(sid, str) else sid
         if not await is_student_enrolled(db, evaluacion.materia_id, sid_uuid):
             raise HTTPException(status_code=403, detail=f"Estudiante {sid} no está matriculado en esta materia")
+
+        await service.ensure_student_can_submit_new_evidence(
+            db, evaluacion, sid_uuid,
+        )
 
     calificaciones_list: list[CalificacionRead] = []
     errores: list[dict] = []
@@ -395,6 +403,10 @@ async def calificar_lote_asincrono(
                 status_code=403,
                 detail=f"Estudiante {estudiante_id} no esta matriculado en esta materia",
             )
+
+        await service.ensure_student_can_submit_new_evidence(
+            db, evaluacion, estudiante_id,
+        )
 
     prepared_files: list[tuple[bytes, str]] = []
     total_bytes = 0
@@ -753,6 +765,29 @@ async def cerrar_salon(
 
 # ── Entregas ────────────────────────────────────────────────────────────────────
 
+@router.get("/evaluaciones/{evaluacion_id}/mi-entrega", response_model=EntregaRead | None)
+async def get_my_delivery(
+    evaluacion_id: UUID,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> Entrega | None:
+    require_role(current_user, [UserRole.ESTUDIANTE])
+    evaluacion = await evaluaciones_service.get_evaluation_or_404(db, evaluacion_id)
+    if not await is_student_enrolled(db, evaluacion.materia_id, current_user.id):
+        raise HTTPException(status_code=403, detail="No estas matriculado en esta materia")
+    if evaluacion.estado not in evaluaciones_service.STUDENT_VISIBLE_EVALUATION_STATES:
+        raise HTTPException(status_code=404, detail="Evaluacion no encontrada")
+    return await db.scalar(
+        select(Entrega)
+        .where(
+            Entrega.evaluacion_id == evaluacion.id,
+            Entrega.estudiante_id == current_user.id,
+        )
+        .order_by(Entrega.created_at.desc())
+        .limit(1)
+    )
+
+
 @router.post("/evaluaciones/{evaluacion_id}/entregas", response_model=EntregaRead, status_code=status.HTTP_201_CREATED)
 async def crear_entrega_online(
     evaluacion_id: UUID,
@@ -766,7 +801,7 @@ async def crear_entrega_online(
     if evaluacion.modalidad not in {
         EvaluacionModalidad.ONLINE.value,
         EvaluacionModalidad.MIXTA.value,
-    }:
+    } and not getattr(evaluacion, "recepcion_habilitada", False):
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail=(
@@ -786,40 +821,9 @@ async def crear_entrega_online(
                 detail=f"El tiempo límite de {evaluacion.tiempo_limite_minutos} minuto(s) para esta evaluación ha expirado.",
             )
 
-    politica = evaluacion.politica_intento
-    if politica is None or politica == PoliticaIntento.UN_INTENTO.value:
-        existing_entrega = await db.scalar(
-            select(Entrega.id).where(
-                Entrega.evaluacion_id == evaluacion.id,
-                Entrega.estudiante_id == current_user.id,
-                Entrega.estado != EntregaEstado.REQUIERE_REINTENTO.value,
-            )
-        )
-        if existing_entrega:
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail="Ya entregaste esta evaluacion. No puedes reenviarla.",
-            )
-    elif politica == PoliticaIntento.PRACTICA_LIBRE.value:
-        pass
-    elif politica in (
-        PoliticaIntento.MULTIPLES_INTENTOS.value,
-        PoliticaIntento.MEJOR_PUNTAJE.value,
-        PoliticaIntento.ULTIMO_INTENTO.value,
-    ):
-        if evaluacion.intentos_permitidos is not None:
-            count = await db.scalar(
-                select(func.count(Entrega.id)).where(
-                    Entrega.evaluacion_id == evaluacion.id,
-                    Entrega.estudiante_id == current_user.id,
-                    Entrega.estado != EntregaEstado.REQUIERE_REINTENTO.value,
-                )
-            )
-            if count is not None and count >= evaluacion.intentos_permitidos:
-                raise HTTPException(
-                    status_code=status.HTTP_409_CONFLICT,
-                    detail=f"Has alcanzado el límite de {evaluacion.intentos_permitidos} intento(s) para esta evaluación.",
-                )
+    await service.ensure_student_can_submit_new_evidence(
+        db, evaluacion, current_user.id,
+    )
 
     respuesta_texto = payload.respuesta_texto
 
@@ -928,7 +932,7 @@ async def publicar_lote(
     db: AsyncSession = Depends(get_db),
 ) -> object:
     require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
-    return await service.publicar_nota_batch(db, payload)
+    return await service.publicar_nota_batch(db, payload, current_user)
 
 
 @router.post("/calificaciones/lote/confirmar", response_model=BatchResult)
