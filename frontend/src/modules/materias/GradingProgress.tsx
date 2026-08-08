@@ -4,7 +4,7 @@ import { cn } from '@/lib/cn';
 const STEPS = [
   { number: 1, label: 'Evaluación', description: 'Qué vas a calificar' },
   { number: 2, label: 'Estudiante', description: 'De quién es la evidencia' },
-  { number: 3, label: 'Fotografía', description: 'Captura y análisis IA' },
+  { number: 3, label: 'Evidencia', description: 'Foto/PDF y análisis IA' },
   { number: 4, label: 'Decisión docente', description: 'Revisar y confirmar' },
 ] as const;
 

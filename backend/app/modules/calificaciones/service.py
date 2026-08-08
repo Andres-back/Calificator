@@ -17,6 +17,7 @@ from app.modules.calificaciones.schemas import (
     BoletinItem, ConfirmarNota,
 )
 from app.modules.evaluaciones.models import Evaluacion
+from app.modules.evaluaciones.blueprint_service import evaluation_to_grading_blueprint
 from app.modules.materias.models import Materia
 from app.modules.matriculas.models import Matricula
 from app.modules.evaluaciones.state_machine import transition_evaluation_state
@@ -71,7 +72,9 @@ async def ensure_student_can_submit_new_evidence(
     estudiante_id: UUID,
 ) -> None:
     """Aplica la misma politica de intentos a evidencia online y fisica."""
-    policy = evaluacion.politica_intento or PoliticaIntento.UN_INTENTO.value
+    policy = (
+        getattr(evaluacion, "politica_intento", None) or PoliticaIntento.UN_INTENTO.value
+    )
     if policy == PoliticaIntento.PRACTICA_LIBRE.value:
         return
 
@@ -93,7 +96,7 @@ async def ensure_student_can_submit_new_evidence(
         PoliticaIntento.MEJOR_PUNTAJE.value,
         PoliticaIntento.ULTIMO_INTENTO.value,
     }:
-        allowed = evaluacion.intentos_permitidos
+        allowed = getattr(evaluacion, "intentos_permitidos", None)
         if allowed is not None and attempt_count >= allowed:
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
@@ -180,10 +183,16 @@ async def ajustar_nota(
 async def list_calificaciones_for_evaluacion(
     db: AsyncSession, evaluacion_id: UUID
 ) -> list[Calificacion]:
+    evaluacion = await db.scalar(
+        select(Evaluacion).where(Evaluacion.id == evaluacion_id)
+    )
     result = await db.scalars(
         select(Calificacion).where(Calificacion.evaluacion_id == evaluacion_id)
     )
-    return list(result)
+    return _select_current_calificaciones(
+        list(result),
+        getattr(evaluacion, "politica_intento", None),
+    )
 
 
 async def _update_salon_estudiante_estado(
@@ -213,6 +222,119 @@ def _grade_score(calificacion: Calificacion) -> Decimal:
     if value is None:
         value = calificacion.nota_sugerida
     return Decimal(value or 0)
+
+
+def _created_timestamp(calificacion: Calificacion) -> float:
+    return calificacion.created_at.timestamp() if calificacion.created_at else 0
+
+
+def _select_current_calificaciones(
+    rows: list[Calificacion],
+    policy: str | None,
+) -> list[Calificacion]:
+    """Selecciona una sola calificacion visible por estudiante sin borrar el historial."""
+    grouped: dict[UUID, list[Calificacion]] = {}
+    for calificacion in rows:
+        if calificacion.estado == CalificacionEstado.ANULADA.value:
+            continue
+        grouped.setdefault(calificacion.estudiante_id, []).append(calificacion)
+
+    selected: list[Calificacion] = []
+    for attempts in grouped.values():
+        if policy == PoliticaIntento.MEJOR_PUNTAJE.value:
+            current = max(
+                attempts,
+                key=lambda item: (_grade_score(item), _created_timestamp(item)),
+            )
+        else:
+            current = max(attempts, key=_created_timestamp)
+        selected.append(current)
+    return sorted(selected, key=_created_timestamp, reverse=True)
+
+
+def _display_guide_value(value: object) -> str | None:
+    if value is None:
+        return None
+    if isinstance(value, bool):
+        return "Verdadero" if value else "Falso"
+    if isinstance(value, list):
+        parts = [_display_guide_value(item) for item in value]
+        return ", ".join(part for part in parts if part)
+    if isinstance(value, dict):
+        value = (
+            value.get("texto")
+            or value.get("label")
+            or value.get("respuesta")
+            or value.get("valor")
+        )
+        return str(value).strip() if value is not None else None
+    text = str(value).strip()
+    return text or None
+
+
+def _build_revision_guide(blueprint: dict) -> list[dict]:
+    """Combina preguntas y clave de respuestas en un formato accesible para revision."""
+    questions = blueprint.get("preguntas") or []
+    expected = blueprint.get("respuestas_esperadas") or []
+    answers_by_number: dict[str, object] = {}
+    for index, item in enumerate(expected, start=1):
+        if isinstance(item, dict):
+            number = item.get("numero", index)
+            answer = next(
+                (
+                    item[key]
+                    for key in ("respuesta", "respuesta_correcta", "texto", "answer")
+                    if item.get(key) is not None
+                ),
+                None,
+            )
+        else:
+            number, answer = index, item
+        answers_by_number[str(number)] = answer
+
+    guide: list[dict] = []
+    for index, question in enumerate(questions, start=1):
+        if not isinstance(question, dict):
+            question = {"enunciado": question}
+        number = question.get("numero", index)
+        raw_options = question.get("opciones") or []
+        if not isinstance(raw_options, list):
+            raw_options = [raw_options]
+        options = [
+            displayed
+            for option in raw_options
+            if (displayed := _display_guide_value(option)) is not None
+        ]
+        answer = answers_by_number.get(str(number))
+        if answer is None and index <= len(expected):
+            fallback = expected[index - 1]
+            if isinstance(fallback, dict):
+                answer = next(
+                    (
+                        fallback[key]
+                        for key in ("respuesta", "respuesta_correcta", "texto", "answer")
+                        if fallback.get(key) is not None
+                    ),
+                    None,
+                )
+            else:
+                answer = fallback
+        guide.append(
+            {
+                "numero": number,
+                "enunciado": _display_guide_value(
+                    question.get("enunciado")
+                    or question.get("texto")
+                    or question.get("pregunta")
+                )
+                or f"Pregunta {number}",
+                "tipo": _display_guide_value(question.get("tipo")),
+                "opciones": options,
+                "respuesta_correcta": _display_guide_value(answer),
+                "puntaje": question.get("puntaje"),
+            }
+        )
+    return guide
 
 
 def _official_report_rows(
@@ -260,7 +382,22 @@ async def get_boletin(
         Calificacion.materia_id == materia_id,
     ]
     if publicada_only:
-        where_clauses.append(Calificacion.estado == CalificacionEstado.PUBLICADA.value)
+        # Para el estudiante una nota se vuelve oficial en cuanto el docente
+        # la confirma o ajusta. "Publicada" sigue siendo un estado válido,
+        # pero ya no obliga a un segundo paso manual para que aparezca.
+        where_clauses.extend(
+            [
+                Calificacion.revisado_por_docente.is_(True),
+                Calificacion.nota_confirmada.is_not(None),
+                Calificacion.estado.in_(
+                    {
+                        CalificacionEstado.CONFIRMADA.value,
+                        CalificacionEstado.AJUSTADA.value,
+                        CalificacionEstado.PUBLICADA.value,
+                    }
+                ),
+            ]
+        )
 
     result = await db.execute(
         select(Calificacion, Evaluacion)
@@ -296,7 +433,18 @@ async def get_resumen_academico(
         Matricula.estado == MatriculaEstado.ACTIVO.value,
     ]
     if publicada_only:
-        where_clauses.append(Calificacion.estado == CalificacionEstado.PUBLICADA.value)
+        where_clauses.extend(
+            [
+                Calificacion.revisado_por_docente.is_(True),
+                Calificacion.estado.in_(
+                    {
+                        CalificacionEstado.CONFIRMADA.value,
+                        CalificacionEstado.AJUSTADA.value,
+                        CalificacionEstado.PUBLICADA.value,
+                    }
+                ),
+            ]
+        )
 
     rows = await db.execute(
         select(
@@ -405,7 +553,9 @@ async def get_calificacion_detalle(
         raise HTTPException(status_code=404, detail="Calificación no encontrada")
 
     evaluacion = await db.scalar(
-        select(Evaluacion).where(Evaluacion.id == cal.evaluacion_id)
+        select(Evaluacion)
+        .options(selectinload(Evaluacion.blueprint))
+        .where(Evaluacion.id == cal.evaluacion_id)
     )
     materia = await db.scalar(
         select(Materia).where(Materia.id == cal.materia_id)
@@ -438,6 +588,9 @@ async def get_calificacion_detalle(
         "entrega_respuesta_texto": cal.entrega.respuesta_texto if cal.entrega else None,
         "entrega_created_at": cal.entrega.created_at if cal.entrega else None,
         "timeline": timeline_raw,
+        "guia_revision": _build_revision_guide(
+            evaluation_to_grading_blueprint(evaluacion)
+        ) if evaluacion else [],
         "created_at": cal.created_at,
         "updated_at": cal.updated_at,
     }
@@ -650,6 +803,104 @@ async def crear_incidencia(
         "resuelto_por": inc.resuelto_por, "resolved_at": inc.resolved_at,
         "created_at": inc.created_at, "updated_at": inc.updated_at,
     }
+
+
+async def _calificacion_revisada_del_estudiante(
+    db: AsyncSession,
+    *,
+    evaluacion_id: UUID,
+    estudiante_id: UUID,
+) -> Calificacion:
+    calificacion = await db.scalar(
+        select(Calificacion)
+        .where(
+            Calificacion.evaluacion_id == evaluacion_id,
+            Calificacion.estudiante_id == estudiante_id,
+            Calificacion.revisado_por_docente.is_(True),
+            Calificacion.nota_confirmada.is_not(None),
+        )
+        .order_by(Calificacion.updated_at.desc())
+    )
+    if not calificacion:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Solo puedes solicitar revisión después de que el docente publique o confirme la calificación.",
+        )
+    return calificacion
+
+
+async def obtener_solicitud_revision_estudiante(
+    db: AsyncSession,
+    *,
+    evaluacion_id: UUID,
+    estudiante_id: UUID,
+) -> dict | None:
+    from app.modules.calificaciones.incidencia_models import CalificacionIncidencia
+
+    calificacion = await _calificacion_revisada_del_estudiante(
+        db,
+        evaluacion_id=evaluacion_id,
+        estudiante_id=estudiante_id,
+    )
+    incidencia = await db.scalar(
+        select(CalificacionIncidencia)
+        .where(
+            CalificacionIncidencia.calificacion_id == calificacion.id,
+            CalificacionIncidencia.tipo == "solicitud_revision",
+        )
+        .order_by(CalificacionIncidencia.created_at.desc())
+    )
+    if not incidencia:
+        return None
+    return {
+        "id": incidencia.id, "calificacion_id": incidencia.calificacion_id,
+        "tipo": incidencia.tipo, "descripcion": incidencia.descripcion,
+        "estado": incidencia.estado, "metadata_json": incidencia.metadata_json,
+        "resolucion": incidencia.resolucion, "resuelto_por": incidencia.resuelto_por,
+        "resolved_at": incidencia.resolved_at, "created_at": incidencia.created_at,
+        "updated_at": incidencia.updated_at,
+    }
+
+
+async def crear_solicitud_revision_estudiante(
+    db: AsyncSession,
+    *,
+    evaluacion_id: UUID,
+    estudiante_id: UUID,
+    motivo: str,
+    descripcion: str,
+) -> dict:
+    from app.modules.calificaciones.incidencia_models import CalificacionIncidencia
+
+    calificacion = await _calificacion_revisada_del_estudiante(
+        db,
+        evaluacion_id=evaluacion_id,
+        estudiante_id=estudiante_id,
+    )
+    abierta = await db.scalar(
+        select(CalificacionIncidencia).where(
+            CalificacionIncidencia.calificacion_id == calificacion.id,
+            CalificacionIncidencia.tipo == "solicitud_revision",
+            CalificacionIncidencia.estado == "abierta",
+        )
+    )
+    if abierta:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Ya tienes una solicitud de revisión abierta para esta calificación.",
+        )
+    return await crear_incidencia(
+        db,
+        calificacion.id,
+        "solicitud_revision",
+        descripcion.strip(),
+        {
+            "origen": "estudiante",
+            "estudiante_id": str(estudiante_id),
+            "evaluacion_id": str(evaluacion_id),
+            "motivo": motivo,
+        },
+    )
 
 
 async def listar_incidencias(db: AsyncSession, calificacion_id: UUID) -> list[dict]:

@@ -14,6 +14,8 @@ from app.modules.xali.schemas import (
     XaliEvaluationChatResponse,
     XaliMessage,
     XaliResponse,
+    XaliStudentResourceRequest,
+    XaliStudentResourceResponse,
 )
 from app.modules.users.models import User
 from app.shared.enums import UserRole
@@ -60,6 +62,42 @@ async def chat_evaluacion_entregada(
         estudiante_id=current_user.id,
         evaluacion_id=evaluacion_id,
         mensaje=payload.mensaje,
+    )
+
+
+@router.post(
+    "/evaluaciones/{evaluacion_id}/recursos",
+    response_model=XaliStudentResourceResponse,
+)
+async def generar_recurso_evaluacion_entregada(
+    evaluacion_id: UUID,
+    payload: XaliStudentResourceRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    require_role(current_user, [UserRole.ESTUDIANTE])
+    return await service.generate_student_resource(
+        db,
+        estudiante_id=current_user.id,
+        evaluacion_id=evaluacion_id,
+        resource_type=payload.tipo,
+    )
+
+
+@router.get(
+    "/evaluaciones/{evaluacion_id}/recursos",
+    response_model=list[XaliStudentResourceResponse],
+)
+async def listar_recursos_evaluacion_entregada(
+    evaluacion_id: UUID,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> list[dict]:
+    require_role(current_user, [UserRole.ESTUDIANTE])
+    return await service.list_student_resources(
+        db,
+        estudiante_id=current_user.id,
+        evaluacion_id=evaluacion_id,
     )
 
 

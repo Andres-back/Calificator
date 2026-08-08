@@ -4,6 +4,7 @@ from datetime import datetime
 from uuid import UUID
 
 from decimal import Decimal
+from typing import Literal
 
 from pydantic import BaseModel, Field
 
@@ -40,6 +41,24 @@ class XaliEvaluationChatContext(BaseModel):
 
 class XaliEvaluationChatResponse(BaseModel):
     respuesta: str
+    contexto_usado: XaliEvaluationChatContext
+
+
+XaliStudentResourceType = Literal["explicacion", "practica", "plan_estudio", "reto"]
+
+
+class XaliStudentResourceRequest(BaseModel):
+    tipo: XaliStudentResourceType
+
+
+class XaliStudentResourceResponse(BaseModel):
+    id: UUID
+    evaluacion_id: UUID
+    tipo: XaliStudentResourceType
+    titulo: str
+    contenido: str
+    created_at: datetime
+    updated_at: datetime
     contexto_usado: XaliEvaluationChatContext
 
 

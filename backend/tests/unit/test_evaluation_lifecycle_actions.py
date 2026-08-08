@@ -8,6 +8,7 @@ import pytest
 from fastapi import HTTPException
 
 from app.modules.evaluaciones import service
+from app.modules.evaluaciones.schemas import EvaluacionUpdate
 from app.shared.enums import EvaluacionEstado, EvaluacionModalidad
 
 
@@ -130,7 +131,7 @@ def test_pause_and_reactivate_preserve_the_workflow_state(monkeypatch, state: st
 
 @pytest.mark.parametrize(
     "state",
-    [EvaluacionEstado.BORRADOR.value, EvaluacionEstado.CERRADA.value],
+    [EvaluacionEstado.BORRADOR.value],
 )
 def test_reception_cannot_be_activated_outside_a_live_state(
     monkeypatch,
@@ -146,6 +147,57 @@ def test_reception_cannot_be_activated_outside_a_live_state(
     assert exc.value.status_code == 409
     assert evaluation.recepcion_habilitada is False
     assert db.commits == 0
+
+
+def test_closed_evaluation_can_be_reopened_by_the_teacher(monkeypatch) -> None:
+    evaluation = _evaluation(
+        state=EvaluacionEstado.CERRADA.value,
+        reception_enabled=False,
+    )
+    db = FakeDB()
+    _patch_reload(monkeypatch, evaluation)
+
+    result = asyncio.run(service.activate_reception(db, evaluation))
+
+    assert result is evaluation
+    assert evaluation.estado == EvaluacionEstado.EN_CALIFICACION.value
+    assert evaluation.recepcion_habilitada is True
+    assert db.commits == 1
+
+
+def test_assigned_evaluation_keeps_structural_editing_enabled(monkeypatch) -> None:
+    evaluation = _evaluation(
+        state=EvaluacionEstado.PUBLICADA.value,
+        reception_enabled=True,
+    )
+    db = FakeDB()
+    _patch_reload(monkeypatch, evaluation)
+
+    async def rebuild(_db, current, _dba_ids, _custom_dba_ids):
+        current.blueprint.preguntas = current.preguntas
+        current.blueprint.respuestas_esperadas = current.respuestas_esperadas
+        return current.blueprint
+
+    monkeypatch.setattr(service, "_build_or_update_blueprint", rebuild)
+    payload = EvaluacionUpdate(
+        preguntas=[{
+            "numero": 1,
+            "tipo": "opcion_multiple",
+            "enunciado": "Cuanto es 6 x 8?",
+            "opciones": ["A) 42", "B) 48", "C) 54"],
+            "puntaje": "5",
+            "modalidad_respuesta": "online",
+        }],
+        respuestas_esperadas=[{"numero": 1, "respuesta": "B) 48"}],
+    )
+
+    result = asyncio.run(service.update_evaluation(db, evaluation, payload))
+
+    assert result is evaluation
+    assert evaluation.preguntas[0]["enunciado"] == "Cuanto es 6 x 8?"
+    assert evaluation.respuestas_esperadas[0]["respuesta"] == "B) 48"
+    assert evaluation.estado == EvaluacionEstado.PUBLICADA.value
+    assert db.commits == 1
 
 
 @pytest.mark.parametrize(

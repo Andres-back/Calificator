@@ -7,14 +7,24 @@ import { ResolverEvaluacionPage } from './ResolverEvaluacionPage';
 
 const mocks = vi.hoisted(() => ({
   getEvaluation: vi.fn(),
+  getMyDelivery: vi.fn(),
   createDelivery: vi.fn(),
+  createFileDelivery: vi.fn(),
+  getStudentActivity: vi.fn(),
+  getMyReviewRequest: vi.fn(),
+  requestReview: vi.fn(),
   success: vi.fn(),
   error: vi.fn(),
 }));
 
 vi.mock('./api', () => ({
   getEvaluacion: mocks.getEvaluation,
+  getMiEntrega: mocks.getMyDelivery,
   crearEntregaOnline: mocks.createDelivery,
+  crearEntregaArchivo: mocks.createFileDelivery,
+  getActividadEstudiante: mocks.getStudentActivity,
+  getMiSolicitudRevision: mocks.getMyReviewRequest,
+  solicitarRevisionEvaluacion: mocks.requestReview,
 }));
 vi.mock('react-hot-toast', () => ({
   default: { success: mocks.success, error: mocks.error },
@@ -75,6 +85,22 @@ beforeEach(() => {
     archivo_url: null,
     created_at: '2026-07-30T00:00:00Z',
   });
+  mocks.getMyDelivery.mockResolvedValue(null);
+  mocks.getStudentActivity.mockResolvedValue(null);
+  mocks.getMyReviewRequest.mockResolvedValue(null);
+  mocks.requestReview.mockResolvedValue({
+    id: 'review-1',
+    calificacion_id: 'grade-1',
+    tipo: 'solicitud_revision',
+    descripcion: 'La pregunta 1 debería revisarse.',
+    estado: 'abierta',
+    metadata_json: { motivo: 'respuesta', origen: 'estudiante' },
+    resolucion: null,
+    resuelto_por: null,
+    resolved_at: null,
+    created_at: '2026-08-08T00:00:00Z',
+    updated_at: '2026-08-08T00:00:00Z',
+  });
 });
 
 describe('ResolverEvaluacionPage', () => {
@@ -82,8 +108,8 @@ describe('ResolverEvaluacionPage', () => {
     const user = userEvent.setup();
     renderPage();
 
-    const answer = await screen.findByPlaceholderText(/P1:/i);
-    await user.type(answer, 'P1: Mi procedimiento se conserva.');
+    const answer = await screen.findByLabelText(/Respuesta 1/i);
+    await user.type(answer, 'Mi procedimiento se conserva.');
     await user.click(screen.getByRole('button', { name: /Enviar respuesta/i }));
 
     await waitFor(() => expect(mocks.createDelivery).toHaveBeenCalledTimes(1));
@@ -141,10 +167,63 @@ describe('ResolverEvaluacionPage', () => {
     expect(screen.queryByText('Dibujo que se entrega en papel.')).not.toBeInTheDocument();
     expect(screen.getByText(/Las otras 1 se entregan en papel o archivo/i)).toBeInTheDocument();
 
-    await user.type(screen.getByPlaceholderText(/P1:/i), 'P1: respuesta online.');
+    await user.type(screen.getByLabelText(/Respuesta 1/i), 'respuesta online.');
     await user.click(screen.getByRole('button', { name: /Enviar respuesta/i }));
 
     expect(await screen.findByText('Parte online guardada')).toBeInTheDocument();
     expect(screen.getByText(/Ahora entrega la parte física/i)).toBeInTheDocument();
     expect(screen.queryByText(/docente confirmará la calificación/i)).not.toBeInTheDocument();
-  });});
+  });
+
+  it('never exposes the online form for a physical evaluation', async () => {
+    const currentEvaluation = await mocks.getEvaluation();
+    mocks.getEvaluation.mockResolvedValue({
+      ...currentEvaluation,
+      modalidad: 'fisica',
+      recepcion_habilitada: true,
+    });
+
+    renderPage();
+
+    expect(await screen.findByText(/sube una foto clara o un PDF/i)).toBeInTheDocument();
+    expect(screen.getByText('Foto o PDF de tu trabajo')).toBeInTheDocument();
+    expect(screen.queryByText('Tus respuestas')).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: /Enviar respuesta/i }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('lets a graded student request a teacher review', async () => {
+    const currentEvaluation = await mocks.getEvaluation();
+    mocks.getEvaluation.mockResolvedValue({
+      ...currentEvaluation,
+      entrega_realizada: true,
+      mi_nota_confirmada: 3.5,
+      mi_calificacion_estado: 'publicada',
+    });
+    mocks.getMyDelivery.mockResolvedValue({
+      id: 'delivery-1',
+      evaluacion_id: 'evaluation-1',
+      estudiante_id: 'student-1',
+      materia_id: 'materia-1',
+      tipo: 'online',
+      estado: 'revisada',
+      respuesta_texto: 'P1: Mi procedimiento.',
+    });
+    const user = userEvent.setup();
+    renderPage();
+
+    await user.click(await screen.findByRole('button', { name: 'Solicitar revisión' }));
+    await user.selectOptions(screen.getByLabelText(/Qué deseas que revisen/i), 'respuesta');
+    await user.type(screen.getByLabelText(/Explica lo que encontraste/i), 'La pregunta 1 tiene un procedimiento que considero correcto.');
+    await user.click(screen.getByRole('button', { name: 'Enviar solicitud' }));
+
+    await waitFor(() => {
+      expect(mocks.requestReview).toHaveBeenCalledWith('evaluation-1', {
+        motivo: 'respuesta',
+        descripcion: 'La pregunta 1 tiene un procedimiento que considero correcto.',
+      });
+    });
+    expect(mocks.success).toHaveBeenCalledWith('Solicitud de revisión enviada al docente.');
+  });
+});

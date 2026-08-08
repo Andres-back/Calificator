@@ -1,6 +1,6 @@
 import type { Evaluacion, EvaluacionModalidad } from '@/types/api';
 
-export const WIZARD_VERSION = 3;
+export const WIZARD_VERSION = 5;
 export const WIZARD_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 export const MIN_QUESTIONS = 3;
 export const MAX_QUESTIONS = 30;
@@ -55,11 +55,15 @@ export interface WizardState {
   notaMaxima: number;
   dbaIds: string[];
   dbaPersonalizadoIds: string[];
+  useDba: boolean;
+  useRubric: boolean;
+  rubricCriteria: string[];
   counts: QuestionCounts;
   referenceText: string;
   referenceFile: ReferenceFileMetadata | null;
   instruccionesAdicionales: string;
   generatedEvaluationId: string | null;
+  generatedCriteria: Record<string, unknown>[];
   questions: EditableQuestion[];
 }
 
@@ -80,6 +84,9 @@ export function createEmptyWizardState(materiaId = ''): WizardState {
     notaMaxima: 5,
     dbaIds: [],
     dbaPersonalizadoIds: [],
+    useDba: false,
+    useRubric: false,
+    rubricCriteria: [],
     counts: {
       opcion_multiple: 2,
       abierta: 1,
@@ -90,6 +97,7 @@ export function createEmptyWizardState(materiaId = ''): WizardState {
     referenceFile: null,
     instruccionesAdicionales: '',
     generatedEvaluationId: null,
+    generatedCriteria: [],
     questions: [],
   };
 }
@@ -111,8 +119,8 @@ export function validateStep(state: WizardState, step = state.step): string | nu
     if (!state.materiaId) return 'Selecciona una materia para continuar.';
     if (state.nombre.trim().length < 2) return 'Escribe un nombre de al menos 2 caracteres.';
   }
-  if (step === 2 && state.dbaIds.length + state.dbaPersonalizadoIds.length === 0) {
-    return 'Selecciona al menos un DBA para alinear la evaluación.';
+  if (step === 2 && state.useDba && state.dbaIds.length + state.dbaPersonalizadoIds.length === 0) {
+    return 'Seleccionaste alineación con DBA. Elige al menos uno o desactiva esa opción.';
   }
   if (step === 3) {
     const total = totalQuestionCount(state.counts);
@@ -120,8 +128,8 @@ export function validateStep(state: WizardState, step = state.step): string | nu
       return `Configura entre ${MIN_QUESTIONS} y ${MAX_QUESTIONS} preguntas en total.`;
     }
   }
-  if (step === 4 && state.referenceText.length > 4000) {
-    return 'El material de texto no puede superar 4.000 caracteres.';
+  if (step === 4 && state.referenceText.length > 12000) {
+    return 'El material de referencia no puede superar 12.000 caracteres.';
   }
   if (step === 5) {
     if (!state.generatedEvaluationId || state.questions.length === 0) {
@@ -233,6 +241,57 @@ export function validateQuestion(question: EditableQuestion, index = 0): string 
 
 export function renumberQuestions(questions: EditableQuestion[]) {
   return questions.map((question, index) => ({ ...question, numero: index + 1 }));
+}
+
+export function createBlankQuestion(
+  questions: EditableQuestion[],
+  evaluationModality: EvaluacionModalidad,
+): EditableQuestion[] {
+  const question: EditableQuestion = {
+    clientId: `new-question-${Date.now()}-${questions.length}`,
+    numero: questions.length + 1,
+    tipo: 'abierta',
+    enunciado: '',
+    opciones: [],
+    respuestaEsperada: '',
+    puntaje: 1,
+    modalidadRespuesta: evaluationModality === 'fisica' ? 'fisica' : 'online',
+    dbaIds: [],
+    fuenteContextoIds: [],
+    expanded: true,
+  };
+  return renumberQuestions([
+    ...questions.map((current) => ({ ...current, expanded: false })),
+    question,
+  ]);
+}
+
+export function evaluationToWizardState(evaluation: Evaluacion): WizardState {
+  const questions = evaluationToEditableQuestions(evaluation);
+  const criteria = (evaluation.criterios ?? []) as Record<string, unknown>[];
+  const counts = { opcion_multiple: 0, abierta: 0, verdadero_falso: 0, completar: 0 };
+  questions.forEach((question) => { counts[question.tipo] += 1; });
+  const hasRubric = criteria.some((criterion) => (
+    criterion.peso_porcentaje != null
+    || (criterion.niveles != null && Object.keys(criterion.niveles as object).length > 0)
+  ));
+  return {
+    ...createEmptyWizardState(evaluation.materia_id),
+    step: 5,
+    nombre: evaluation.nombre,
+    descripcion: evaluation.descripcion ?? '',
+    modalidad: evaluation.modalidad ?? 'online',
+    notaMaxima: Number(evaluation.nota_maxima),
+    dbaIds: evaluation.dba_ids ?? [],
+    dbaPersonalizadoIds: evaluation.dba_personalizado_ids ?? [],
+    useDba: Boolean((evaluation.dba_ids?.length ?? 0) + (evaluation.dba_personalizado_ids?.length ?? 0)),
+    useRubric: hasRubric,
+    rubricCriteria: criteria.map((criterion) => String(criterion.nombre ?? '')).filter(Boolean),
+    counts,
+    generatedEvaluationId: evaluation.id,
+    generatedCriteria: criteria,
+    questions,
+  };
 }
 
 export function duplicateQuestion(questions: EditableQuestion[], index: number) {

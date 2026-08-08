@@ -59,7 +59,14 @@ export const router = createBrowserRouter([
 
           /* ── Rutas compartidas (profesor + estudiante + admin cuando aplique) ── */
           { path: 'materias', element: lazyPage(<MateriasListPage />) },
-          { path: 'materias/unirse', element: lazyPage(<UnirseMateriaPage />) },
+          {
+            element: <RequireRole allow={['estudiante']} />,
+            children: [
+              { path: 'materias/unirse', element: lazyPage(<UnirseMateriaPage />) },
+              { path: 'evaluaciones/:id/resolver', element: lazyPage(<ResolverEvaluacionPage />) },
+              { path: 'calificaciones/boletin', element: lazyPage(<BoletinPage />) },
+            ],
+          },
 
           /* Detalle de materia (layout con tabs + <Outlet />) */
           {
@@ -84,9 +91,6 @@ export const router = createBrowserRouter([
           },
 
           { path: 'evaluaciones', element: lazyPage(<EvaluacionesPage />) },
-          { path: 'evaluaciones/:id/resolver', element: lazyPage(<ResolverEvaluacionPage />) },
-          { path: 'calificaciones/boletin', element: lazyPage(<BoletinPage />) },
-          { path: 'calificaciones/foto', element: <Navigate to={routes.materiasPara('calificar')} replace /> },
           { path: 'xali', element: lazyPage(<XaliPage />) },
 
           /* ── Rutas solo admin ── */
@@ -104,6 +108,7 @@ export const router = createBrowserRouter([
               { path: 'herramientas', element: lazyPage(<ListPage />) },
               { path: 'herramientas/nuevo', element: lazyPage(<GeneratePage />) },
               { path: 'herramientas/:id', element: lazyPage(<DetailPage />) },
+              { path: 'calificaciones/foto', element: <Navigate to={routes.materiasPara('calificar')} replace /> },
               // Nuevo workspace de revisión
               { path: 'calificaciones/workspace', element: lazyPage(<CalificacionesWorkspace />) },
               { path: 'calificaciones/workspace/:evaluacionId', element: lazyPage(<CalificacionesWorkspace />) },

@@ -6,9 +6,7 @@ import {
   BookOpen,
   CalendarCheck2,
   Camera,
-  CheckCircle2,
   ClipboardCheck,
-  GraduationCap,
   ListChecks,
   Plus,
   Wand2,
@@ -18,8 +16,7 @@ import { TOOLS } from '@/modules/herramientas/meta';
 import { MATERIAL_CREATION_TOOLS } from '@/modules/herramientas/toolPickerModel';
 import { listMaterials } from '@/modules/herramientas/api';
 import { listMaterias } from '@/modules/materias/api';
-import { Badge, Card, Skeleton } from '@/components/ui';
-import { QueryBoundary, QueryEmpty } from '@/components/ui/QueryState';
+import { Badge, Card } from '@/components/ui';
 import { DashboardEstudiante } from './DashboardEstudiante';
 import { DashboardAdmin } from './DashboardAdmin';
 import { cn } from '@/lib/cn';
@@ -73,142 +70,63 @@ export function DashboardPage() {
   return <DashboardDocente />;
 }
 
-function WorkspaceMetric({ loading, value, label, icon: Icon }: { loading: boolean; value: number; label: string; icon: React.ElementType }) {
-  return (
-    <Card className={`flex items-center gap-3 p-4 ${loading ? 'opacity-60' : ''}`}>
-      <span className="grid h-10 w-10 place-items-center rounded-lg bg-brand-50 text-brand-600 dark:bg-brand-500/15 dark:text-brand-300">
-        <Icon className="h-5 w-5" />
-      </span>
-      <div>
-        <p className="text-2xl font-extrabold">{loading ? '—' : value}</p>
-        <p className="text-xs text-muted">{label}</p>
-      </div>
-    </Card>
-  );
-}
-
 function DashboardDocente() {
   const { user } = useAuth();
   const materialsQuery = useQuery({ queryKey: ['materials', 'recent'], queryFn: () => listMaterials() });
   const materiasQuery = useQuery({ queryKey: ['materias'], queryFn: listMaterias });
   const firstName = user?.nombre?.split(' ')[0] ?? 'Docente';
 
+  const recentMaterials = (materialsQuery.data ?? []).slice(0, 3) as MaterialListItem[];
+  const metricValue = (loading: boolean, value: number | undefined) => loading ? '—' : String(value ?? 0);
+
   return (
-    <div className="space-y-7">
-      <header className="relative overflow-hidden border-b border-border pb-6 lg:flex-row lg:items-end lg:justify-between">
-        <div className="absolute inset-0 z-0">
-          <img
-            src="/branding/hero-classroom.png"
-            alt=""
-            className="h-full w-full object-cover opacity-15 dark:opacity-10"
-          />
-          <div className="absolute inset-0 bg-gradient-to-r from-surface via-surface/95 to-surface/80" />
-        </div>
-
-        <div className="relative z-10 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+    <div className="mx-auto max-w-7xl space-y-6">
+      <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-brand-800 via-indigo-700 to-sky-600 p-6 text-white shadow-xl shadow-brand-900/10 sm:p-8">
+        <img src="/branding/hero-classroom.png" alt="" className="absolute inset-0 h-full w-full object-cover opacity-15 mix-blend-screen" />
+        <div className="absolute -right-20 -top-24 h-72 w-72 rounded-full bg-cyan-300/20 blur-3xl" />
+        <div className="relative z-10 grid gap-7 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.14em] text-brand-600 dark:text-brand-300">Centro de trabajo docente</p>
-            <h1 className="mt-2 font-display text-3xl font-extrabold sm:text-4xl">Hola, {firstName}</h1>
-            <p className="mt-2 max-w-2xl text-muted">Elige una tarea: calificar, tomar asistencia o crear recursos para tu clase.</p>
+            <p className="text-xs font-bold uppercase tracking-[0.18em] text-cyan-100">Tu panel docente</p>
+            <h1 className="mt-2 font-display text-3xl font-extrabold sm:text-4xl">Buen día, {firstName}</h1>
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-indigo-50 sm:text-base">Califica, organiza tus evaluaciones y prepara la próxima clase desde un solo lugar.</p>
+            <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+              <Link to={routes.materiasPara('calificar')} className="focus-ring inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-white px-5 font-bold text-brand-800 shadow-sm transition hover:bg-cyan-50">
+                <Camera className="h-5 w-5" /> Calificar evidencia
+              </Link>
+              <Link to={routes.materiasPara('evaluar')} className="focus-ring inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-white/35 bg-white/10 px-5 font-semibold text-white backdrop-blur transition hover:bg-white/20">
+                <ClipboardCheck className="h-5 w-5" /> Crear evaluación
+              </Link>
+            </div>
           </div>
-          <Link
-            to={routes.materiasPara('calificar')}
-            className="focus-ring inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-brand-600 px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-700"
-          >
-            <Camera className="h-4 w-4" /> Calificar por foto
-          </Link>
+          <div className="grid grid-cols-2 gap-3 lg:w-72">
+            <div className="rounded-2xl border border-white/20 bg-white/10 p-4 backdrop-blur">
+              <BookOpen className="h-5 w-5 text-cyan-200" />
+              <p className="mt-3 text-3xl font-extrabold">{metricValue(materiasQuery.isLoading, materiasQuery.data?.length)}</p>
+              <p className="text-sm text-indigo-100">Materias</p>
+            </div>
+            <div className="rounded-2xl border border-white/20 bg-white/10 p-4 backdrop-blur">
+              <Wand2 className="h-5 w-5 text-amber-200" />
+              <p className="mt-3 text-3xl font-extrabold">{metricValue(materialsQuery.isLoading, materialsQuery.data?.length)}</p>
+              <p className="text-sm text-indigo-100">Recursos</p>
+            </div>
+          </div>
         </div>
-      </header>
-
-      <section className="grid items-start gap-5 xl:grid-cols-[minmax(0,1.35fr)_minmax(280px,0.65fr)]">
-        <Card className="p-5 sm:p-6">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-[0.12em] text-muted">Flujo recomendado</p>
-              <h2 className="mt-1 font-display text-xl font-bold">¿Qué necesitas hacer ahora?</h2>
-            </div>
-            <Badge tone="brand">IA con revisión</Badge>
-          </div>
-          <div className="mt-5 divide-y divide-border">
-            {teacherActions.map((action, index) => (
-              <motion.div key={action.title} custom={index} variants={fade} initial="hidden" animate="show">
-                <Link to={action.to} className="group flex items-start gap-3 py-4 first:pt-0 last:pb-0">
-                  <span className={cn('grid h-10 w-10 shrink-0 place-items-center rounded-lg', action.tone)}><action.icon className="h-5 w-5" /></span>
-                  <span className="min-w-0 flex-1">
-                    <span className="flex flex-wrap items-center gap-2">
-                      <span className="font-semibold">{action.title}</span>
-                      <span className="text-[11px] font-semibold text-muted">{action.badge}</span>
-                    </span>
-                    <span className="mt-1 block text-sm leading-5 text-muted">{action.description}</span>
-                  </span>
-                  <ArrowRight className="mt-2 h-4 w-4 shrink-0 text-muted transition group-hover:translate-x-0.5 group-hover:text-brand-600" />
-                </Link>
-              </motion.div>
-            ))}
-          </div>
-        </Card>
-
-        {/* Tu espacio de trabajo */}
-        <Card className="p-5 sm:p-6">
-          <div className="flex items-center gap-3">
-            <span className="grid h-10 w-10 place-items-center rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-300"><CheckCircle2 className="h-5 w-5" /></span>
-            <div>
-              <h2 className="font-display font-bold">Tu espacio de trabajo</h2>
-              <p className="text-sm text-muted">Información disponible hoy.</p>
-            </div>
-          </div>
-          <div className="mt-5 grid grid-cols-2 gap-3">
-            <QueryBoundary
-              query={materiasQuery}
-              loading={<Skeleton className="h-20" />}
-              empty={<WorkspaceMetric loading={false} value={0} label="Materias" icon={BookOpen} />}
-            >
-              {(materias) => (
-                <WorkspaceMetric loading={false} value={materias.length} label="Materias" icon={BookOpen} />
-              )}
-            </QueryBoundary>
-            <QueryBoundary
-              query={materialsQuery}
-              loading={<Skeleton className="h-20" />}
-              empty={<WorkspaceMetric loading={false} value={0} label="Recursos" icon={Wand2} />}
-            >
-              {(recent) => (
-                <WorkspaceMetric loading={false} value={recent.length} label="Recursos" icon={Wand2} />
-              )}
-            </QueryBoundary>
-          </div>
-          <div className="mt-5 rounded-lg border border-border bg-surface-2/60 p-4">
-            <div className="flex items-start gap-3">
-              <GraduationCap className="mt-0.5 h-5 w-5 shrink-0 text-brand-500" />
-              <div>
-                <p className="text-sm font-semibold">La IA sugiere. Tú decides.</p>
-                <p className="mt-1 text-xs leading-5 text-muted">Ninguna nota sugerida se considera definitiva hasta que la confirmas o ajustas.</p>
-              </div>
-            </div>
-          </div>
-        </Card>
       </section>
 
-      <section>
+      <section aria-labelledby="teacher-actions-title">
         <div className="mb-4 flex items-end justify-between gap-4">
-          <div>
-            <p className="text-xs font-bold uppercase tracking-[0.12em] text-muted">Recursos didácticos</p>
-            <h2 className="mt-1 font-display text-xl font-bold">Crear para la clase</h2>
-          </div>
-          <Link to={routes.herramientas} className="focus-ring inline-flex items-center gap-1 rounded-md text-sm font-semibold text-brand-600 hover:text-brand-700">
-            Ver herramientas <ArrowRight className="h-4 w-4" />
-          </Link>
+          <div><p className="text-xs font-bold uppercase tracking-[0.14em] text-brand-600">Acciones frecuentes</p><h2 id="teacher-actions-title" className="mt-1 font-display text-2xl font-bold">¿Qué quieres hacer?</h2></div>
+          <Badge tone="brand">Tú tienes el control</Badge>
         </div>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
-          {MATERIAL_CREATION_TOOLS.slice(0, 6).map((tool, index) => (
-            <motion.div key={tool.tipo} custom={index} variants={fade} initial="hidden" animate="show">
-              <Link to={routes.herramientaNueva(tool.tipo)}>
-                <Card interactive className="h-full p-4">
-                  <div className={cn('mb-3 grid h-10 w-10 place-items-center rounded-lg bg-gradient-to-br text-white shadow-sm', tool.gradient)}>
-                    <tool.icon className="h-5 w-5" />
-                  </div>
-                  <p className="text-sm font-semibold">{tool.label}</p>
-                  <p className="mt-1 line-clamp-2 text-xs leading-5 text-muted">{tool.description}</p>
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          {teacherActions.map((action, index) => (
+            <motion.div key={action.title} custom={index} variants={fade} initial="hidden" animate="show">
+              <Link to={action.to} className="group block h-full">
+                <Card interactive className="flex h-full min-h-44 flex-col p-5">
+                  <div className="flex items-start justify-between gap-3"><span className={cn('grid h-12 w-12 place-items-center rounded-2xl', action.tone)}><action.icon className="h-6 w-6" /></span><span className="text-xs font-bold text-muted">{action.badge}</span></div>
+                  <h3 className="mt-5 font-display text-lg font-bold">{action.title}</h3>
+                  <p className="mt-2 flex-1 text-sm leading-5 text-muted">{action.description}</p>
+                  <span className="mt-4 inline-flex items-center gap-1 text-sm font-bold text-brand-600">Abrir <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" /></span>
                 </Card>
               </Link>
             </motion.div>
@@ -216,61 +134,35 @@ function DashboardDocente() {
         </div>
       </section>
 
-      <section>
-        <div className="mb-4 flex items-end justify-between gap-4">
-          <div>
-            <p className="text-xs font-bold uppercase tracking-[0.12em] text-muted">Continuidad</p>
-            <h2 className="mt-1 font-display text-xl font-bold">Material reciente</h2>
+      <section className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
+        <Card className="p-5 sm:p-6">
+          <div className="flex items-center justify-between gap-3"><div><p className="text-xs font-bold uppercase tracking-[0.12em] text-muted">Para tu próxima clase</p><h2 className="mt-1 font-display text-xl font-bold">Crear un recurso</h2></div><Link to={routes.herramientas} className="text-sm font-bold text-brand-600">Ver todos</Link></div>
+          <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {MATERIAL_CREATION_TOOLS.slice(0, 4).map((tool) => (
+              <Link key={tool.tipo} to={routes.herramientaNueva(tool.tipo)} className="focus-ring rounded-2xl border border-border p-4 transition hover:border-brand-300 hover:bg-brand-50/60 dark:hover:bg-brand-500/10">
+                <span className={cn('grid h-10 w-10 place-items-center rounded-xl bg-gradient-to-br text-white', tool.gradient)}><tool.icon className="h-5 w-5" /></span>
+                <p className="mt-3 text-sm font-bold">{tool.label}</p>
+              </Link>
+            ))}
           </div>
-          <Link to={routes.herramientas + '?tipo=todos'} className="focus-ring inline-flex items-center gap-1 rounded-md text-sm font-semibold text-brand-600 hover:text-brand-700">
-            Crear <Plus className="h-4 w-4" />
-          </Link>
-        </div>
-        <QueryBoundary
-          query={materialsQuery}
-          loading={
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
-              {Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-24" />)}
-            </div>
-          }
-          empty={
-            <QueryEmpty
-              icon={Wand2}
-              title="Sin materiales todavía"
-              description="Crea tu primer material didáctico con la ayuda de la IA."
-              action={
-                <Link
-                  to={routes.herramientaNueva()}
-                  className="focus-ring inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-brand-600 px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-700"
-                >
-                  <Plus className="h-4 w-4" /> Crear material
+        </Card>
+
+        <Card className="p-5 sm:p-6">
+          <div className="flex items-center justify-between gap-3"><div><p className="text-xs font-bold uppercase tracking-[0.12em] text-muted">Continuar trabajando</p><h2 className="mt-1 font-display text-xl font-bold">Material reciente</h2></div><Link to={routes.herramientaNueva()} className="grid h-10 w-10 place-items-center rounded-xl bg-brand-600 text-white" aria-label="Crear material"><Plus className="h-5 w-5" /></Link></div>
+          {recentMaterials.length ? (
+            <div className="mt-4 space-y-2">
+              {recentMaterials.map((item) => { const meta = TOOLS.find((tool) => tool.tipo === item.tipo); const Icon = meta?.icon ?? Wand2; return (
+                <Link key={item.id} to={routes.herramienta(item.id)} className="focus-ring flex min-h-14 items-center gap-3 rounded-xl border border-border px-3 transition hover:bg-surface-2">
+                  <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-brand-50 text-brand-700 dark:bg-brand-500/15"><Icon className="h-4 w-4" /></span>
+                  <span className="min-w-0 flex-1"><span className="block truncate text-sm font-bold">{item.titulo ?? item.tipo}</span><span className="text-xs text-muted">{meta?.label ?? item.tipo}</span></span>
+                  <ArrowRight className="h-4 w-4 text-muted" />
                 </Link>
-              }
-            />
-          }
-        >
-          {(recent) => (
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
-              {recent.map((item: MaterialListItem, index: number) => {
-                const meta = TOOLS.find((t) => t.tipo === item.tipo);
-                const Icon = meta?.icon ?? Wand2;
-                return (
-                  <motion.div key={item.id} custom={index} variants={fade} initial="hidden" animate="show">
-                    <Link to={routes.herramienta(item.id)}>
-                      <Card interactive className="h-full p-4">
-                        <div className={cn('mb-3 grid h-10 w-10 place-items-center rounded-lg', meta?.gradient ? `bg-gradient-to-br ${meta.gradient} text-white shadow-sm` : 'bg-brand-50 text-brand-600')}>
-                          <Icon className="h-5 w-5" />
-                        </div>
-                        <p className="truncate text-sm font-semibold">{item.titulo ?? item.tipo}</p>
-                        <p className="mt-1 text-xs text-muted">{meta?.label ?? item.tipo}</p>
-                      </Card>
-                    </Link>
-                  </motion.div>
-                );
-              })}
+              ); })}
             </div>
+          ) : (
+            <div className="mt-4 rounded-2xl border border-dashed border-border bg-surface-2/60 p-5 text-center"><Wand2 className="mx-auto h-7 w-7 text-brand-500" /><p className="mt-2 font-bold">Aún no tienes materiales</p><p className="mt-1 text-sm text-muted">Crea uno desde las opciones de la izquierda.</p></div>
           )}
-        </QueryBoundary>
+        </Card>
       </section>
     </div>
   );

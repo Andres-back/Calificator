@@ -7,7 +7,14 @@ from uuid import uuid4
 
 from app.modules.calificaciones import router
 from app.modules.calificaciones.models import Entrega
-from app.shared.enums import EntregaEstado, EvaluacionEstado, JobEstado, JobTipo, UserRole
+from app.shared.enums import (
+    EntregaEstado,
+    EvaluacionEstado,
+    JobEstado,
+    JobTipo,
+    PoliticaIntento,
+    UserRole,
+)
 
 
 class FakeUpload:
@@ -45,6 +52,8 @@ def test_async_batch_endpoint_persists_then_enqueues_exact_deliveries(monkeypatc
         materia_id=materia_id,
         profesor_id=uuid4(),
         estado=EvaluacionEstado.PUBLICADA.value,
+        politica_intento=PoliticaIntento.PRACTICA_LIBRE.value,
+        intentos_permitidos=None,
     )
     teacher = SimpleNamespace(id=uuid4(), rol=UserRole.PROFESOR.value)
     student_ids = [uuid4(), uuid4()]

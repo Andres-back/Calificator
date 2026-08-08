@@ -19,6 +19,29 @@ from app.shared.enums import CalificacionEstado
 logger = get_logger(__name__)
 
 
+async def registrar_evento(
+    db: AsyncSession,
+    *,
+    tipo: str,
+    actor_id: UUID | None = None,
+    evaluacion_id: UUID | None = None,
+    calificacion_id: UUID | None = None,
+    metadata_json: dict | None = None,
+) -> AnalyticsEvento:
+    """Persiste un evento liviano emitido por la interfaz."""
+    evento = AnalyticsEvento(
+        tipo=tipo,
+        actor_id=actor_id,
+        evaluacion_id=evaluacion_id,
+        calificacion_id=calificacion_id,
+        metadata_json=metadata_json or {},
+    )
+    db.add(evento)
+    await db.commit()
+    await db.refresh(evento)
+    return evento
+
+
 def _default_date_range() -> tuple[datetime, datetime]:
     hasta = datetime.utcnow()
     desde = hasta - timedelta(days=30)

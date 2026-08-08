@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { CheckCircle2, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui';
 import { Confetti } from '@/components/ui/Confetti';
@@ -12,7 +12,13 @@ function cellKey(cell: Cell) {
   return `${cell.r}-${cell.c}`;
 }
 
-export function SopaLetrasView({ data }: { data: SopaContenido }) {
+export function SopaLetrasView({
+  data,
+  onFoundChange,
+}: {
+  data: SopaContenido;
+  onFoundChange?: (found: string[]) => void;
+}) {
   const grid = useMemo(() => data.grilla ?? [], [data.grilla]);
   const banco = useMemo(() => data.banco_palabras ?? [], [data.banco_palabras]);
   const rows = grid.length;
@@ -27,6 +33,10 @@ export function SopaLetrasView({ data }: { data: SopaContenido }) {
   const [end, setEnd] = useState<Cell | null>(null);
   const [focusedCell, setFocusedCell] = useState<Cell>({ r: 0, c: 0 });
   const [announcement, setAnnouncement] = useState('');
+
+  useEffect(() => {
+    onFoundChange?.(found);
+  }, [found, onFoundChange]);
 
   const norm = (value: string) => value
     .normalize('NFD')

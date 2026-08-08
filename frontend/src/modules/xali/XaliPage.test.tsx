@@ -10,6 +10,8 @@ const mocks = vi.hoisted(() => ({
   clearHistory: vi.fn(),
   listEvaluations: vi.fn(),
   sendEvaluationMessage: vi.fn(),
+  generateEvaluationResource: vi.fn(),
+  listEvaluationResources: vi.fn(),
   error: vi.fn(),
   success: vi.fn(),
 }));
@@ -20,6 +22,8 @@ vi.mock('./api', () => ({
   clearHistory: mocks.clearHistory,
   listEvaluacionesEntregadas: mocks.listEvaluations,
   sendEvaluationMessage: mocks.sendEvaluationMessage,
+  generateEvaluationResource: mocks.generateEvaluationResource,
+  listEvaluationResources: mocks.listEvaluationResources,
 }));
 vi.mock('@/modules/materias/MateriaSelect', () => ({
   useMaterias: () => ({ data: [] }),
@@ -61,6 +65,20 @@ beforeEach(() => {
       calificacion_confirmada: true,
     },
   });
+  mocks.generateEvaluationResource.mockResolvedValue({
+    id: 'resource-1',
+    evaluacion_id: 'evaluation-1',
+    tipo: 'practica',
+    titulo: 'Práctica personalizada',
+    contenido: '## Practica\n\n1. Resuelve un ejemplo nuevo con una pista.',
+    created_at: '2026-08-08T12:00:00Z',
+    updated_at: '2026-08-08T12:00:00Z',
+    contexto_usado: {
+      evaluacion_entregada: true,
+      calificacion_confirmada: true,
+    },
+  });
+  mocks.listEvaluationResources.mockResolvedValue([]);
 });
 
 describe('XaliPage student policy', () => {
@@ -103,5 +121,69 @@ describe('XaliPage student policy', () => {
       );
     });
     expect(mocks.sendMessage).not.toHaveBeenCalled();
+  });
+
+  it('generates a personal resource from the confirmed evaluation', async () => {
+    mocks.listEvaluations.mockResolvedValue([
+      {
+        evaluacion_id: 'evaluation-1',
+        materia_id: 'materia-1',
+        materia_nombre: 'Matemáticas',
+        evaluacion_nombre: 'Multiplicación',
+        entrega_id: 'delivery-1',
+        estado_calificacion: 'confirmada',
+        nota_confirmada: 4.5,
+        puede_chatear: true,
+      },
+    ]);
+    const user = userEvent.setup();
+    renderPage();
+
+    const practiceButton = await screen.findByRole('button', { name: /Práctica personalizada/i });
+    await waitFor(() => expect(practiceButton).toBeEnabled());
+    await user.click(practiceButton);
+
+    await waitFor(() => {
+      expect(mocks.generateEvaluationResource).toHaveBeenCalledWith('evaluation-1', 'practica');
+    });
+    expect(await screen.findByRole('dialog')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Práctica personalizada' })).toBeInTheDocument();
+    expect(screen.getByText(/Resuelve un ejemplo nuevo/i)).toBeInTheDocument();
+  });
+
+  it('loads only the saved resources for the selected evaluation', async () => {
+    mocks.listEvaluations.mockResolvedValue([
+      {
+        evaluacion_id: 'evaluation-1',
+        materia_id: 'materia-1',
+        materia_nombre: 'Matemáticas',
+        evaluacion_nombre: 'Multiplicación',
+        entrega_id: 'delivery-1',
+        estado_calificacion: 'confirmada',
+        nota_confirmada: 4.5,
+        puede_chatear: true,
+      },
+    ]);
+    mocks.listEvaluationResources.mockResolvedValue([
+      {
+        id: 'saved-resource-1',
+        evaluacion_id: 'evaluation-1',
+        tipo: 'explicacion',
+        titulo: 'Explicación paso a paso',
+        contenido: '## Recurso conservado',
+        created_at: '2026-08-08T12:00:00Z',
+        updated_at: '2026-08-08T12:00:00Z',
+        contexto_usado: { evaluacion_entregada: true, calificacion_confirmada: true },
+      },
+    ]);
+    const user = userEvent.setup();
+    renderPage();
+
+    const savedButton = await screen.findByRole('button', { name: /Abrir recurso guardado: Explicación paso a paso/i });
+    expect(mocks.listEvaluationResources).toHaveBeenCalledWith('evaluation-1');
+    await user.click(savedButton);
+
+    expect(await screen.findByRole('dialog')).toBeInTheDocument();
+    expect(screen.getByText(/Recurso conservado/i)).toBeInTheDocument();
   });
 });

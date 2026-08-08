@@ -3,7 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
-import { Plus, ClipboardCheck, Send, Lock, FileText, Trash2, BookOpen, UserPlus, Pencil, Sparkles } from 'lucide-react';
+import { Plus, ClipboardCheck, Send, Lock, FileText, Trash2, BookOpen, UserPlus, Pencil, Sparkles, Eye } from 'lucide-react';
 import { Button, Card, Badge, statusTone, Skeleton, EmptyState, Modal, Input, Field, Textarea, Select } from '@/components/ui';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { useMaterias, MateriaSelect } from '@/modules/materias/MateriaSelect';
@@ -24,8 +24,10 @@ import {
 } from './api';
 import { queryClient } from '@/lib/queryClient';
 import { toApiError } from '@/lib/api';
+import { cn } from '@/lib/cn';
 import { useAuth } from '@/stores/auth';
 import type { DBAUnifiedItem, Evaluacion, EvaluacionEstado, EvaluacionModalidad } from '@/types/api';
+import { getStudentEvaluationAction, getStudentEvaluationStatus } from './studentProgress';
 
 const ESTADO_LABEL: Record<EvaluacionEstado, string> = {
   borrador: 'Borrador',
@@ -301,7 +303,7 @@ function EvaluationFormModal({
             hint="¿Qué quieres que aprendan los estudiantes?"
           />
           <DynamicTextList
-            label="Criterios de evaluación"
+            label="Criterios de evaluación / rúbrica"
             placeholder="Ej. Procedimiento claro, uso de vocabulario técnico"
             values={form.criterios}
             pending={pending.criterios}
@@ -309,7 +311,7 @@ function EvaluationFormModal({
             onAdd={() => addListItem('criterios')}
             onChange={(index, value) => updateListItem('criterios', index, value)}
             onRemove={(index) => removeListItem('criterios', index)}
-            hint="¿Cómo vas a calificar? Define los criterios."
+            hint="Opcional. Si agregas criterios, la IA construirá una rúbrica con pesos y niveles."
           />
           <DynamicTextList
             label="Preguntas"
@@ -340,7 +342,7 @@ function EvaluationFormModal({
           <p className="mt-1">La IA calificará automáticamente según los criterios que definas. Si no agregas criterios, la calificación será más general.</p>
         </div>
 
-        <Field label="DBA" hint="Opcional para creación manual; obligatorio para generar con IA.">
+        <Field label="DBA" hint="Opcional. Puedes generar con DBA, con rúbrica, con ambos o sin ninguno.">
           <DBASelector
             items={dbaItems}
             selectedOfficial={form.dba_ids}
@@ -360,7 +362,7 @@ function EvaluationFormModal({
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-semibold text-fg">Borrador alineado con IA</p>
                 <p className="mt-1 text-xs text-muted">
-                  Usa los DBA, metas y criterios seleccionados. Se guarda como borrador: revísalo y edítalo antes de publicar.
+                  Usa el enfoque que elijas: DBA, criterios de rúbrica, ambos o generación libre. Se guarda como borrador para que lo revises.
                 </p>
                 <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-end">
                   <div className="sm:w-48">
@@ -412,6 +414,8 @@ export function EvaluacionesPage() {
     queryKey: queryKeys.evaluaciones.list(materiaId),
     queryFn: () => listEvaluaciones(materiaId),
     enabled: !!materiaId,
+    refetchInterval: user?.rol === 'estudiante' ? 10_000 : false,
+    refetchOnWindowFocus: true,
   });
 
   const { data: dbaItems, isLoading: loadingDBA, isError: dbaError } = useQuery({
@@ -546,10 +550,8 @@ export function EvaluacionesPage() {
 
   function buildGeneratePayload(): EvaluacionGenerarRequest | null {
     const nombre = form.nombre.trim();
-    const selectedDbaCount = form.dba_ids.length + form.dba_personalizado_ids.length;
     if (!form.materia_id) { toast.error('Selecciona una materia'); return null; }
     if (nombre.length < 2) { toast.error('Escribe un nombre para la evaluación'); return null; }
-    if (selectedDbaCount === 0) { toast.error('Selecciona al menos un DBA para generar con IA'); return null; }
     if (!Number.isInteger(form.cantidad_ia) || form.cantidad_ia < 3 || form.cantidad_ia > 30) {
       toast.error('La cantidad de preguntas debe estar entre 3 y 30'); return null;
     }
@@ -567,6 +569,7 @@ export function EvaluacionesPage() {
       tipos_pregunta: ['opcion_multiple', 'abierta'],
       dba_ids: form.dba_ids,
       dba_personalizado_ids: form.dba_personalizado_ids,
+      usar_rubrica: form.criterios.some((value) => Boolean(value.trim())),
       metas_profesor: form.metas.map((value) => value.trim()).filter(Boolean),
       criterios_docente: form.criterios.map((value) => value.trim()).filter(Boolean),
     };
@@ -622,9 +625,15 @@ export function EvaluacionesPage() {
       ) : (
         <>
           {materias && (
-            <Card className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
+            <Card className={cn(
+              'flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between',
+              isStudent && 'border-brand-100 bg-gradient-to-r from-surface to-brand-50/60 p-5 dark:border-brand-500/20 dark:to-brand-950/25',
+            )}>
               <div className="flex items-center gap-3">
-                <span className="grid h-9 w-9 place-items-center rounded-lg bg-brand-50 text-brand-600 dark:bg-brand-500/15 dark:text-brand-300"><BookOpen className="h-4 w-4" /></span>
+                <span className={cn(
+                  'grid place-items-center bg-brand-50 text-brand-600 dark:bg-brand-500/15 dark:text-brand-300',
+                  isStudent ? 'h-11 w-11 rounded-xl' : 'h-9 w-9 rounded-lg',
+                )}><BookOpen className={isStudent ? 'h-5 w-5' : 'h-4 w-4'} /></span>
                 <div><p className="text-sm font-semibold">Materia activa</p><p className="text-xs text-muted">Las evaluaciones se filtran por curso.</p></div>
               </div>
               <MateriaSelect value={materiaId} onChange={(id) => setParams({ materia: id })} materias={materias} />
@@ -645,14 +654,24 @@ export function EvaluacionesPage() {
             <div className="grid gap-3">
               {evals.map((ev, i) => (
                 <motion.div key={ev.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}>
-                  <Card className="flex flex-col gap-4 border-l-4 border-l-emerald-500 p-5 sm:flex-row sm:items-center">
-                    <div className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-emerald-50 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-300">
+                  <Card className={cn(
+                    'flex flex-col gap-4 p-5 sm:flex-row sm:items-center',
+                    isStudent
+                      ? 'group border-emerald-100 bg-gradient-to-r from-surface via-surface to-emerald-50/50 shadow-card transition duration-200 hover:-translate-y-0.5 hover:border-emerald-300 hover:shadow-card-hover dark:border-emerald-500/20 dark:to-emerald-950/20 sm:p-6'
+                      : 'border-l-4 border-l-emerald-500',
+                  )}>
+                    <div className={cn(
+                      'grid shrink-0 place-items-center bg-emerald-50 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-300',
+                      isStudent ? 'h-12 w-12 rounded-2xl shadow-sm' : 'h-10 w-10 rounded-lg',
+                    )}>
                       <FileText className="h-5 w-5" />
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
                         <p className="font-semibold">{ev.nombre}</p>
-                        <Badge tone={statusTone[ev.estado] ?? 'neutral'}>{ESTADO_LABEL[ev.estado]}</Badge>
+                        <Badge tone={isStudent ? getStudentEvaluationStatus(ev).tone : statusTone[ev.estado] ?? 'neutral'}>
+                          {isStudent ? getStudentEvaluationStatus(ev).label : ESTADO_LABEL[ev.estado]}
+                        </Badge>
                         {ev.blueprint?.reglas_feedback?.trazabilidad?.generada_por_ia && (
                           <Badge tone="violet"><Sparkles className="mr-1 h-3 w-3" /> Borrador IA</Badge>
                         )}
@@ -661,18 +680,20 @@ export function EvaluacionesPage() {
                         <Badge tone="neutral" className="capitalize">{ev.modalidad ?? 'online'}</Badge>
                         <Badge tone="neutral">Nota máx: {Number(ev.nota_maxima)}</Badge>
                         <Badge tone="neutral">{ev.preguntas?.length ?? 0} preguntas</Badge>
+                        {isStudent && (ev.intentos_realizados ?? 0) > 0 && (
+                          <Badge tone="neutral">Intento {ev.intentos_realizados}</Badge>
+                        )}
                       </div>
                     </div>
                     <div className="flex w-full flex-wrap gap-2 sm:w-auto sm:justify-end">
                       {isStudent
-                        && ['publicada', 'en_calificacion', 'pendiente_revision', 'cerrada'].includes(ev.estado)
-                        && (ev.modalidad === 'online' || ev.modalidad === 'mixta') && (
+                        && ['publicada', 'en_calificacion', 'pendiente_revision', 'cerrada'].includes(ev.estado) && (
                         <Link
                           to={`/app/evaluaciones/${ev.id}/resolver`}
-                          className="focus-ring inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-brand-200 bg-brand-50 px-3.5 text-sm font-semibold text-brand-700 transition-colors hover:bg-brand-100 dark:border-brand-500/30 dark:bg-brand-500/10 dark:text-brand-200"
+                          className="focus-ring inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-brand-600 bg-brand-600 px-4 text-sm font-bold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-brand-700 hover:shadow-md dark:border-brand-500 dark:bg-brand-600 sm:w-auto"
                         >
-                          <Send className="h-4 w-4" />
-                          {ev.recepcion_habilitada === false || ev.estado === 'cerrada' ? 'Ver evaluaci?n' : 'Resolver'}
+                          {ev.entrega_realizada ? <Eye className="h-4 w-4" /> : <Send className="h-4 w-4" />}
+                          {getStudentEvaluationAction(ev)}
                         </Link>
                       )}
                       {!isStudent && ev.estado === 'borrador' && (

@@ -1,7 +1,7 @@
 import { Check } from 'lucide-react';
 import { cn } from '@/lib/cn';
 
-const STEP_LABELS = ['Materia', 'DBA', 'Configurar', 'Material', 'Revisar', 'Confirmar'];
+const STEP_LABELS = ['Materia', 'Enfoque', 'Configurar', 'Material', 'Revisar', 'Confirmar'];
 
 export function PasosGuia({
   currentStep,

@@ -3,8 +3,11 @@ import { Outlet } from 'react-router-dom';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { Sidebar } from './Sidebar';
 import { Topbar } from './Topbar';
+import { useAuth } from '@/stores/auth';
+import { cn } from '@/lib/cn';
 
 export function AppShell() {
+  const isStudent = useAuth((state) => state.user?.rol === 'estudiante');
   const [mobileOpen, setMobileOpen] = useState(false);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
   const appContentRef = useRef<HTMLDivElement>(null);
@@ -33,7 +36,7 @@ export function AppShell() {
   }, [mobileOpen]);
 
   return (
-    <div className="flex min-h-dvh bg-bg lg:h-dvh">
+    <div className={cn('flex min-h-dvh bg-bg lg:h-dvh', isStudent && 'student-shell')}>
       <a
         href="#main-content"
         className="focus-ring fixed left-3 top-3 z-[100] -translate-y-24 rounded-lg bg-brand-700 px-4 py-3 text-sm font-semibold text-white shadow-lg transition-transform focus:translate-y-0"
@@ -78,7 +81,10 @@ export function AppShell() {
         <main
           id="main-content"
           tabIndex={-1}
-          className="safe-area-pb min-w-0 flex-1 px-4 py-5 outline-none sm:px-6 lg:min-h-0 lg:overflow-y-auto lg:px-8 lg:py-7"
+          className={cn(
+            'safe-area-pb min-w-0 flex-1 px-4 py-5 outline-none sm:px-6 lg:min-h-0 lg:overflow-y-auto lg:px-8 lg:py-7',
+            isStudent && 'sm:py-7 lg:px-10 lg:py-9',
+          )}
         >
           <div className="mx-auto max-w-7xl">
             <Outlet />

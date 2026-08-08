@@ -13,6 +13,8 @@ const mocks = vi.hoisted(() => ({
   update: vi.fn(),
   publish: vi.fn(),
   close: vi.fn(),
+  activate: vi.fn(),
+  pause: vi.fn(),
   context: {
     materia: null as MateriaConEstudiantes | null,
     canManageMateria: true,
@@ -26,6 +28,8 @@ vi.mock('@/modules/evaluaciones/api', () => ({
   updateEvaluacion: mocks.update,
   publicarEvaluacion: mocks.publish,
   cerrarEvaluacion: mocks.close,
+  activarRecepcionEvaluacion: mocks.activate,
+  pausarRecepcionEvaluacion: mocks.pause,
 }));
 vi.mock('@/modules/evaluaciones/components/GenerationWizard', () => ({
   GenerationWizard: ({
@@ -180,7 +184,7 @@ describe('MateriaEvaluaciones teacher creation flow', () => {
     );
   });
 
-  it('shows publishing and grading actions for an online draft', async () => {
+  it('shows publishing but not grading actions for an online draft', async () => {
     mocks.list.mockResolvedValue([evaluation]);
 
     renderPage();
@@ -192,10 +196,39 @@ describe('MateriaEvaluaciones teacher creation flow', () => {
       screen.getByRole('button', { name: 'Publicar' }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole('link', { name: /Calificar/i }),
-    ).toHaveAttribute(
-      'href',
-      '/app/materias/materia-1/calificar?evaluacion=evaluation-1',
-    );
+      screen.queryByRole('link', { name: /Calificar|Revisar notas/i }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('lets the teacher edit and control deliveries after assignment', async () => {
+    mocks.list.mockResolvedValue([{
+      ...evaluation,
+      estado: 'publicada',
+      recepcion_habilitada: true,
+    }]);
+    mocks.pause.mockResolvedValue({ ...evaluation, estado: 'publicada', recepcion_habilitada: false });
+    const user = userEvent.setup();
+
+    renderPage();
+
+    expect(await screen.findByRole('button', { name: 'Editar preguntas' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Editar datos' })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Cerrar entregas' }));
+    await waitFor(() => expect(mocks.pause).toHaveBeenCalledWith('evaluation-1'));
+  });
+
+  it('offers reopening for a previously closed evaluation', async () => {
+    mocks.list.mockResolvedValue([{
+      ...evaluation,
+      estado: 'cerrada',
+      recepcion_habilitada: false,
+    }]);
+    mocks.activate.mockResolvedValue({ ...evaluation, estado: 'en_calificacion', recepcion_habilitada: true });
+    const user = userEvent.setup();
+
+    renderPage();
+
+    await user.click(await screen.findByRole('button', { name: 'Abrir entregas' }));
+    await waitFor(() => expect(mocks.activate).toHaveBeenCalledWith('evaluation-1'));
   });
 });

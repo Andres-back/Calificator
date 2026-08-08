@@ -2,15 +2,33 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import toast from 'react-hot-toast';
-import { Send, Trash2, Bot, ArrowRight, ArrowDown, GraduationCap, RefreshCw } from 'lucide-react';
-import { Button, Card, RichContent, Select, QueryError, QueryLoading } from '@/components/ui';
-import { getHistory, sendMessage, clearHistory, listEvaluacionesEntregadas, sendEvaluationMessage } from './api';
+import {
+  Send,
+  Trash2,
+  Bot,
+  ArrowRight,
+  ArrowDown,
+  GraduationCap,
+  RefreshCw,
+  BookOpenText,
+  ListChecks,
+  Puzzle,
+  Clock3,
+  Copy,
+  Sparkles,
+  Search,
+  Lightbulb,
+  MessageCircleQuestion,
+  Maximize2,
+} from 'lucide-react';
+import { Button, Card, Modal, RichContent, Select, QueryError, QueryLoading } from '@/components/ui';
+import { getHistory, sendMessage, clearHistory, listEvaluacionesEntregadas, sendEvaluationMessage, generateEvaluationResource, listEvaluationResources } from './api';
 import { XaliAvatar } from './components/XaliAvatar';
 import { useMaterias } from '@/modules/materias/MateriaSelect';
 import { toApiError } from '@/lib/api';
 import { cn } from '@/lib/cn';
 import { useAuth } from '@/stores/auth';
-import type { ChatMessage, XaliEvaluacionEntregada } from '@/types/api';
+import type { ChatMessage, XaliEvaluacionEntregada, XaliStudentResource, XaliStudentResourceType } from '@/types/api';
 
 const TEACHER_SUGGESTIONS = [
   { icon: '📋', text: 'Organiza una explicación sobre fracciones' },
@@ -22,16 +40,28 @@ const TEACHER_SUGGESTIONS = [
 ];
 
 const REVIEW_SUGGESTIONS = [
-  { icon: '❌', text: '¿En qué me equivoqué?' },
-  { icon: '✅', text: '¿Cómo podía responder mejor?' },
-  { icon: '📖', text: '¿Qué debo repasar?' },
-  { icon: '💡', text: 'Explícame mi retroalimentación.' },
+  { icon: Search, text: '¿En qué me equivoqué?' },
+  { icon: Lightbulb, text: '¿Cómo podía responder mejor?' },
+  { icon: BookOpenText, text: '¿Qué debo repasar?' },
+  { icon: MessageCircleQuestion, text: 'Explícame mi retroalimentación.' },
+];
+
+const RESOURCE_OPTIONS: Array<{
+  type: XaliStudentResourceType;
+  title: string;
+  description: string;
+  icon: typeof BookOpenText;
+  tone: string;
+}> = [
+  { type: 'explicacion', title: 'Explicación paso a paso', description: 'Comprende el concepto con otro ejemplo.', icon: BookOpenText, tone: 'bg-sky-50 text-sky-700 dark:bg-sky-500/15 dark:text-sky-300' },
+  { type: 'practica', title: 'Práctica personalizada', description: 'Cinco ejercicios nuevos con pistas.', icon: ListChecks, tone: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300' },
+  { type: 'plan_estudio', title: 'Plan de estudio de 20 min', description: 'Una ruta breve para reforzar lo necesario.', icon: Clock3, tone: 'bg-amber-50 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300' },
+  { type: 'reto', title: 'Reto para practicar', description: 'Tres preguntas nuevas de dificultad gradual.', icon: Puzzle, tone: 'bg-violet-50 text-violet-700 dark:bg-violet-500/15 dark:text-violet-300' },
 ];
 
 export function XaliPage() {
   const { user } = useAuth();
   const isStudent = user?.rol === 'estudiante';
-  const suggestions = isStudent ? REVIEW_SUGGESTIONS : TEACHER_SUGGESTIONS;
 
   const theme = isStudent
     ? {
@@ -56,13 +86,20 @@ export function XaliPage() {
     queryKey: ['xali-evaluaciones-entregadas', user?.id ?? 'anon'],
     queryFn: listEvaluacionesEntregadas,
     enabled: isStudent && !!user?.id,
+    refetchInterval: isStudent ? 10_000 : false,
+    refetchOnWindowFocus: true,
   });
   const [evaluacionContextualId, setEvaluacionContextualId] = useState('');
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [thinking, setThinking] = useState(false);
   const [failedPrompt, setFailedPrompt] = useState<string | null>(null);
+  const [failedDetail, setFailedDetail] = useState('');
   const [isAtBottom, setIsAtBottom] = useState(true);
+  const [resource, setResource] = useState<XaliStudentResource | null>(null);
+  const [resourcePending, setResourcePending] = useState<XaliStudentResourceType | null>(null);
+  const [resourceError, setResourceError] = useState('');
+  const [resourceOpen, setResourceOpen] = useState(false);
   const endRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const reduceMotion = useReducedMotion();
@@ -75,6 +112,15 @@ export function XaliPage() {
   );
   const evaluacionContextual = entregadas.find((item) => item.evaluacion_id === evaluacionContextualId);
   const materiaContextual = materias.find((item) => item.id === materiaId);
+  const {
+    data: savedResources = [],
+    isLoading: loadingResources,
+    refetch: refetchResources,
+  } = useQuery({
+    queryKey: ['xali-evaluation-resources', user?.id ?? 'anon', evaluacionContextualId],
+    queryFn: () => listEvaluationResources(evaluacionContextualId),
+    enabled: isStudent && Boolean(user?.id) && Boolean(evaluacionContextualId) && Boolean(evaluacionContextual?.puede_chatear),
+  });
 
   useEffect(() => {
     if (!isStudent && history) setMessages(history);
@@ -86,16 +132,26 @@ export function XaliPage() {
       if (nextEvaluationId !== evaluacionContextualId) {
         setEvaluacionContextualId(nextEvaluationId);
         setMessages([]);
+        setResource(null);
+        setResourceError('');
+        setResourceOpen(false);
       }
     }
   }, [evaluacionesConfirmadas, evaluacionContextualId, isStudent]);
   const scrollToLatest = useCallback((behavior: ScrollBehavior = reduceMotion ? 'auto' : 'smooth') => {
-    endRef.current?.scrollIntoView({ behavior, block: 'end' });
+    const container = scrollRef.current;
+    if (container && typeof container.scrollTo === 'function') {
+      container.scrollTo({ top: container.scrollHeight, behavior });
+    } else if (container) {
+      container.scrollTop = container.scrollHeight;
+    } else {
+      endRef.current?.scrollIntoView({ behavior, block: 'end' });
+    }
     setIsAtBottom(true);
   }, [reduceMotion]);
 
   useEffect(() => {
-    if (isAtBottom || thinking) scrollToLatest();
+    if (isAtBottom || thinking || messages.at(-1)?.role === 'assistant') scrollToLatest();
   }, [isAtBottom, messages, scrollToLatest, thinking]);
 
   const send = async (text: string, appendUserMessage = true) => {
@@ -107,6 +163,7 @@ export function XaliPage() {
     }
     setInput('');
     setFailedPrompt(null);
+    setFailedDetail('');
     if (appendUserMessage) {
       const userMsg: ChatMessage = { id: 'u' + Date.now(), role: 'user', mensaje: msg, created_at: new Date().toISOString() };
       setMessages((current) => [...current, userMsg]);
@@ -116,14 +173,48 @@ export function XaliPage() {
       const { respuesta } = isStudent
         ? await sendEvaluationMessage(evaluacionContextual!.evaluacion_id, msg)
         : await sendMessage(msg, materiaId || undefined);
-      setMessages((m) => [...m, { id: 'a' + Date.now(), role: 'assistant', mensaje: respuesta, created_at: new Date().toISOString() }]);
+      const responseText = respuesta?.trim();
+      if (!responseText) throw new Error('Xali no devolvió una respuesta. Intenta nuevamente.');
+      setMessages((m) => [...m, { id: 'a' + Date.now(), role: 'assistant', mensaje: responseText, created_at: new Date().toISOString() }]);
     } catch (error) {
-      console.error('[Xali] No fue posible responder', toApiError(error).status);
-      toast.error('Xali no pudo responder en este momento. Puedes reintentar el último mensaje.');
+      const apiError = toApiError(error);
+      console.error('[Xali] No fue posible responder', apiError.status);
+      toast.error(apiError.detail);
+      setFailedDetail(apiError.detail);
       setFailedPrompt(msg);
     } finally {
       setThinking(false);
     }
+  };
+
+  const generateResource = async (type: XaliStudentResourceType) => {
+    if (!evaluacionContextual?.puede_chatear || resourcePending) {
+      if (!evaluacionContextual?.puede_chatear) {
+        toast.error('Selecciona una evaluación confirmada para generar recursos.');
+      }
+      return;
+    }
+    setResourcePending(type);
+    setResourceError('');
+    try {
+      const generated = await generateEvaluationResource(evaluacionContextual.evaluacion_id, type);
+      setResource(generated);
+      await refetchResources();
+      setResourceOpen(true);
+      toast.success('Recurso personalizado listo');
+    } catch (error) {
+      const apiError = toApiError(error);
+      setResourceError(apiError.detail);
+      toast.error(apiError.detail);
+    } finally {
+      setResourcePending(null);
+    }
+  };
+
+  const copyResource = async () => {
+    if (!resource) return;
+    await navigator.clipboard.writeText(`${resource.titulo}\n\n${resource.contenido}`);
+    toast.success('Recurso copiado');
   };
 
   const reset = async () => {
@@ -146,17 +237,33 @@ export function XaliPage() {
     .toUpperCase();
 
   return (
-    <div className="mx-auto flex w-full max-w-5xl flex-col gap-3 lg:gap-4">
-      {/* Simple header: solo título + filtros compactos */}
-      <div className="flex flex-wrap items-center justify-between gap-2">
+    <div className="mx-auto flex w-full max-w-7xl flex-col gap-4 lg:gap-5">
+      <motion.div
+        initial={reduceMotion ? false : { opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className={cn(
+          'flex flex-wrap items-center justify-between gap-3',
+          isStudent && 'relative overflow-hidden rounded-3xl border border-brand-400/30 bg-gradient-to-br from-brand-800 via-brand-600 to-sky-600 p-5 text-white shadow-glow-lg sm:p-7',
+        )}
+      >
+        {isStudent && (
+          <div className="absolute inset-0 opacity-10" aria-hidden="true">
+            <img src="/branding/hero-ai-brain.png" alt="" className="h-full w-full object-cover mix-blend-screen" />
+          </div>
+        )}
         <div className="flex items-center gap-3">
-          <XaliAvatar size="sm" mood={isStudent ? 'student' : 'teacher'} />
-          <div>
-            <h1 className="font-display text-xl font-bold">Xali</h1>
-            <p className="text-xs text-muted">{isStudent ? 'Tutor IA' : 'Copiloto IA'}</p>
+          <XaliAvatar size={isStudent ? 'md' : 'sm'} mood={isStudent ? 'student' : 'teacher'} className="relative" />
+          <div className="relative">
+            <p className={cn('text-xs font-bold uppercase tracking-[0.16em]', isStudent ? 'text-indigo-100' : 'text-brand-700 dark:text-brand-300')}>
+              {isStudent ? 'Tu apoyo personal' : 'Copiloto IA'}
+            </p>
+            <h1 className={cn('font-display font-extrabold', isStudent ? 'mt-1 text-2xl text-white sm:text-3xl' : 'text-xl')}>{isStudent ? 'Aprende con Xali' : 'Xali'}</h1>
+            <p className={cn('mt-1 text-sm', isStudent ? 'max-w-xl text-indigo-50' : 'text-muted')}>
+              {isStudent ? 'Revisa tus errores, pregunta con confianza y crea recursos para seguir practicando.' : 'Organiza ideas y prepara recursos pedagógicos.'}
+            </p>
           </div>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="relative flex w-full flex-wrap items-center gap-2 lg:w-auto">
           {isStudent && (
             <Select
               id="xali-evaluation-context"
@@ -165,9 +272,12 @@ export function XaliPage() {
               onChange={(e) => {
                 setEvaluacionContextualId(e.target.value);
                 setMessages([]);
+                setResource(null);
+                setResourceError('');
+                setResourceOpen(false);
               }}
               disabled={loadingEntregadas}
-              className="w-56"
+              className="w-full bg-white text-slate-900 sm:w-64 dark:bg-slate-950 dark:text-white"
             >
               <option value="">Selecciona una evaluación confirmada</option>
               {evaluacionesConfirmadas.map((item: XaliEvaluacionEntregada) => (
@@ -177,7 +287,7 @@ export function XaliPage() {
               ))}
             </Select>
           )}
-          <Select id="xali-subject-context" aria-label="Contexto de materia" value={materiaId} onChange={(e) => setMateriaId(e.target.value)} className="w-full sm:w-48">
+          <Select id="xali-subject-context" aria-label="Contexto de materia" value={materiaId} onChange={(e) => setMateriaId(e.target.value)} className={cn('w-full sm:w-48', isStudent && 'bg-white text-slate-900 dark:bg-slate-950 dark:text-white')}>
             <option value="">Todas</option>
             {materias.map((m) => (
               <option key={m.id} value={m.id}>
@@ -191,7 +301,7 @@ export function XaliPage() {
             </Button>
           )}
         </div>
-      </div>
+      </motion.div>
 
       {materiaContextual && (
         <div className="rounded-xl border border-sky-300 bg-sky-50 px-4 py-2.5 text-sm text-sky-900 dark:border-sky-500/40 dark:bg-sky-500/10 dark:text-sky-100" role="status">
@@ -246,8 +356,9 @@ export function XaliPage() {
         />
       )}
 
+      <div className={cn(isStudent && 'grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_23rem]')}>
       {/* ── Chat ── */}
-      <Card className="relative flex min-h-[480px] flex-1 flex-col overflow-hidden sm:min-h-[540px]">
+      <Card className="relative flex min-h-[480px] flex-1 flex-col overflow-hidden border-brand-100 bg-surface/95 sm:min-h-[540px] dark:border-brand-500/20">
         {/* Messages */}
         <div ref={scrollRef} className="flex-1 space-y-4 overflow-y-auto px-4 py-5 sm:px-6" role="log" aria-label="Historial de conversación con Xali" aria-live="polite" onScroll={(event) => { const element = event.currentTarget; setIsAtBottom(element.scrollHeight - element.scrollTop - element.clientHeight < 48); }}>
           {loadingHistory && messages.length === 0 && !thinking && (
@@ -263,9 +374,6 @@ export function XaliPage() {
                   alt="Xali te saluda"
                   className="h-32 w-32 object-contain"
                 />
-                <div className="absolute -bottom-1 left-1/2 -translate-x-1/2">
-                  <XaliAvatar size="md" mood={isStudent ? 'student' : 'teacher'} animated />
-                </div>
               </div>
               <h3 className="mt-5 font-display text-2xl font-bold">Hola, soy Xali 👋</h3>
               <p className="mt-2 max-w-md text-sm text-muted">{theme.welcome}</p>
@@ -279,9 +387,9 @@ export function XaliPage() {
                       type="button"
                       onClick={() => send(s.text)}
                       disabled={thinking}
-                      className="focus-ring inline-flex items-center gap-1.5 rounded-full border border-border bg-surface px-3.5 py-1.5 text-sm font-medium text-muted transition-all hover:border-brand-300 hover:bg-brand-50 hover:text-brand-700 disabled:cursor-not-allowed disabled:opacity-60 dark:hover:bg-brand-500/10 dark:hover:text-brand-300"
+                      className="focus-ring inline-flex min-h-11 items-center gap-2 rounded-xl border border-brand-100 bg-white px-4 py-2 text-sm font-semibold text-secondary shadow-sm transition-all hover:-translate-y-0.5 hover:border-brand-300 hover:bg-brand-50 hover:text-brand-700 disabled:cursor-not-allowed disabled:opacity-60 dark:border-brand-500/20 dark:bg-surface dark:hover:bg-brand-500/10 dark:hover:text-brand-300"
                     >
-                      <span>{s.icon}</span> {s.text}
+                      <s.icon className="h-4 w-4 shrink-0" aria-hidden="true" /> {s.text}
                     </button>
                   ))}
                 </div>
@@ -294,7 +402,7 @@ export function XaliPage() {
                     <Bot className="h-3.5 w-3.5" /> Sugerencias
                   </p>
                   <div className="mt-3 grid w-full grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                    {suggestions.map((s) => (
+                    {TEACHER_SUGGESTIONS.map((s) => (
                       <button
                         key={s.text}
                         onClick={() => send(s.text)}
@@ -348,7 +456,7 @@ export function XaliPage() {
             <div className="flex items-start gap-2.5" role="alert">
               <XaliAvatar size="xs" mood="thinking" />
               <div className="max-w-[90%] rounded-2xl rounded-bl-md border border-rose-300 bg-rose-50 px-4 py-3 text-sm text-rose-900 dark:border-rose-500/40 dark:bg-rose-500/10 dark:text-rose-100">
-                <p>No pude responder ese mensaje. Revisa tu conexión o vuelve a intentarlo.</p>
+                <p>{failedDetail || 'No pude responder ese mensaje. Revisa tu conexión o vuelve a intentarlo.'}</p>
                 <Button size="sm" variant="outline" className="mt-3" onClick={() => void send(failedPrompt, false)}>
                   <RefreshCw className="h-4 w-4" aria-hidden="true" /> Reintentar mensaje
                 </Button>
@@ -411,6 +519,145 @@ export function XaliPage() {
           </Button>
         </form>
       </Card>
+
+      {isStudent && (
+        <aside className="card overflow-hidden border-brand-100 bg-surface/95 dark:border-brand-500/20" aria-labelledby="xali-resources-title">
+          <div className="border-b border-brand-100 bg-gradient-to-r from-brand-50 to-sky-50 p-5 dark:border-brand-500/20 dark:from-brand-950/40 dark:to-sky-950/30">
+            <span className="grid h-11 w-11 place-items-center rounded-2xl bg-brand-600 text-white shadow-sm">
+              <Sparkles className="h-5 w-5" aria-hidden="true" />
+            </span>
+            <h2 id="xali-resources-title" className="mt-4 font-display text-xl font-extrabold">Recursos para practicar</h2>
+            <p className="mt-1 text-sm leading-6 text-secondary">
+              Xali los adapta a la evaluación que seleccionaste.
+            </p>
+          </div>
+
+          <div className="space-y-4 p-4 sm:p-5">
+            <div className="grid gap-2">
+              {RESOURCE_OPTIONS.map((option) => {
+                const Icon = option.icon;
+                const loading = resourcePending === option.type;
+                return (
+                  <button
+                    key={option.type}
+                    type="button"
+                    onClick={() => void generateResource(option.type)}
+                    disabled={contextualBlocked || Boolean(resourcePending)}
+                    className="focus-ring group flex min-h-16 items-center gap-3 rounded-xl border border-border bg-surface p-3 text-left transition hover:-translate-y-0.5 hover:border-brand-300 hover:shadow-sm disabled:cursor-not-allowed disabled:opacity-55"
+                  >
+                    <span className={cn('grid h-10 w-10 shrink-0 place-items-center rounded-xl', option.tone)}>
+                      {loading ? <RefreshCw className="h-5 w-5 animate-spin" aria-hidden="true" /> : <Icon className="h-5 w-5" aria-hidden="true" />}
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-sm font-bold text-fg">{loading ? 'Creando recurso…' : option.title}</span>
+                      <span className="mt-0.5 block text-xs leading-5 text-secondary">{option.description}</span>
+                    </span>
+                    <ArrowRight className="h-4 w-4 shrink-0 text-muted transition group-hover:translate-x-0.5" aria-hidden="true" />
+                  </button>
+                );
+              })}
+            </div>
+
+            {contextualBlocked && (
+              <p className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs leading-5 text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-100">
+                Selecciona una evaluación confirmada para habilitar los recursos.
+              </p>
+            )}
+
+            {resourceError && (
+              <div className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-900 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-100" role="alert">
+                {resourceError}
+              </div>
+            )}
+
+            {!contextualBlocked && evaluacionContextualId && (
+              <section className="border-t border-border pt-4" aria-labelledby="xali-saved-resources-title">
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <div>
+                    <h3 id="xali-saved-resources-title" className="text-sm font-extrabold text-fg">Guardados para esta evaluación</h3>
+                    <p className="mt-0.5 text-xs text-secondary">Se conservan al recargar y cambian con la evaluación seleccionada.</p>
+                  </div>
+                  {savedResources.length > 0 && (
+                    <span className="rounded-full bg-brand-100 px-2.5 py-1 text-xs font-bold text-brand-700 dark:bg-brand-500/15 dark:text-brand-300">
+                      {savedResources.length}/4
+                    </span>
+                  )}
+                </div>
+
+                {loadingResources ? (
+                  <div className="flex items-center gap-2 rounded-xl bg-surface-2 p-3 text-xs text-secondary" role="status">
+                    <RefreshCw className="h-4 w-4 animate-spin" aria-hidden="true" /> Cargando recursos guardados…
+                  </div>
+                ) : savedResources.length > 0 ? (
+                  <div className="grid gap-2">
+                    {savedResources.map((item) => {
+                      const option = RESOURCE_OPTIONS.find((candidate) => candidate.type === item.tipo);
+                      const Icon = option?.icon ?? BookOpenText;
+                      return (
+                        <motion.button
+                          key={item.id}
+                          type="button"
+                          initial={reduceMotion ? false : { opacity: 0, y: 6 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          onClick={() => {
+                            setResource(item);
+                            setResourceOpen(true);
+                          }}
+                          className="focus-ring flex w-full items-center gap-3 rounded-xl border border-brand-200 bg-brand-50/70 p-3 text-left transition hover:border-brand-400 hover:shadow-sm dark:border-brand-500/25 dark:bg-brand-500/10"
+                          aria-label={`Abrir recurso guardado: ${item.titulo}`}
+                        >
+                          <span className={cn('grid h-9 w-9 shrink-0 place-items-center rounded-lg', option?.tone ?? 'bg-brand-100 text-brand-700')}>
+                            <Icon className="h-4 w-4" aria-hidden="true" />
+                          </span>
+                          <span className="min-w-0 flex-1">
+                            <span className="block truncate text-sm font-bold text-fg">{item.titulo}</span>
+                            <span className="mt-0.5 block text-xs text-secondary">Abrir en pantalla amplia</span>
+                          </span>
+                          <Maximize2 className="h-4 w-4 shrink-0 text-brand-600" aria-hidden="true" />
+                        </motion.button>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <p className="rounded-xl border border-dashed border-border p-3 text-center text-xs leading-5 text-secondary">
+                    Aún no has guardado recursos para esta evaluación.
+                  </p>
+                )}
+              </section>
+            )}
+          </div>
+        </aside>
+      )}
+      </div>
+
+      {resource && (
+        <Modal
+          open={resourceOpen}
+          onClose={() => setResourceOpen(false)}
+          title={resource.titulo}
+          className="max-w-5xl"
+        >
+          <div className="space-y-4">
+            <div className="flex flex-col gap-3 rounded-2xl border border-brand-200 bg-gradient-to-r from-brand-50 to-sky-50 p-4 dark:border-brand-500/25 dark:from-brand-950/40 dark:to-sky-950/30 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-center gap-3">
+                <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-brand-600 text-white">
+                  <BookOpenText className="h-5 w-5" aria-hidden="true" />
+                </span>
+                <div>
+                  <p className="font-bold">Preparado para {evaluacionContextual?.evaluacion_nombre}</p>
+                  <p className="text-sm text-secondary">Puedes leerlo aquí o copiarlo para conservarlo.</p>
+                </div>
+              </div>
+              <Button type="button" variant="outline" onClick={() => void copyResource()}>
+                <Copy className="h-4 w-4" aria-hidden="true" /> Copiar recurso
+              </Button>
+            </div>
+            <div className="max-h-[68vh] overflow-y-auto rounded-2xl border border-border bg-surface p-5 sm:p-7">
+              <RichContent content={resource.contenido} variant="evaluation" className="mx-auto max-w-3xl text-base leading-7" />
+            </div>
+          </div>
+        </Modal>
+      )}
 
       {/* Footer sutil */}
       <p id="xali-input-help" className="text-center text-xs text-secondary">

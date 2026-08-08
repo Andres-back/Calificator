@@ -4,8 +4,8 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 import {
-  ArrowLeft, ArrowRight, Camera, CheckCircle2, ChevronDown, ChevronRight,
-  Clock, FileImage, GraduationCap, HelpCircle, Pencil, RotateCcw,
+  ArrowLeft, ArrowRight, BookOpenCheck, Camera, CheckCircle2, ChevronDown, ChevronRight,
+  Clock, ExternalLink, FileImage, FileText, GraduationCap, HelpCircle, Pencil, RotateCcw,
   ScanText, Search, ShieldAlert, Sparkles, X,
 } from 'lucide-react';
 import { Badge, Button, Card, ConfirmDialog, Field, Input, Modal, RichContent, Select, Skeleton, Textarea } from '@/components/ui';
@@ -15,6 +15,7 @@ import { useEstudiantes } from '@/modules/materias/hooks';
 import { getEvaluacion, listEvaluaciones } from '@/modules/evaluaciones/api';
 import { queryClient } from '@/lib/queryClient';
 import { toApiError } from '@/lib/api';
+import { cn } from '@/lib/cn';
 import { trackEvent } from '@/lib/analytics';
 import { routes } from '@/config/routes';
 import {
@@ -22,6 +23,7 @@ import {
   crearIncidencia, getCalificacionDetalle, listarIncidencias,
   listCalificaciones, publicarNota, publicarNotaBatch, resolverIncidencia,
 } from './api';
+import { RevisionGuide } from './RevisionGuide';
 import type { BatchResult, Calificacion, CalificacionDetalle, GradeFilter, IncidenciaRead } from '@/types/api';
 
 const CONFIRMADA = 'confirmada';
@@ -216,7 +218,7 @@ function IncidenciasSection({ calificacionId }: { calificacionId: string }) {
     <div className="rounded-xl border border-border">
       <div className="flex items-center justify-between border-b border-border px-4 py-2">
         <p className="flex items-center gap-2 text-xs font-semibold text-muted">
-          <ShieldAlert className="h-4 w-4" /> Incidencias {incidencias && incidencias.length > 0 && `(${incidencias.length})`}
+          <ShieldAlert className="h-4 w-4" /> Incidencias y solicitudes {incidencias && incidencias.length > 0 && `(${incidencias.length})`}
         </p>
         <button type="button" onClick={() => setShowCreate(!showCreate)} className="focus-ring text-xs font-semibold text-brand-600 hover:text-brand-700">
           + Nueva
@@ -255,16 +257,21 @@ function IncidenciasSection({ calificacionId }: { calificacionId: string }) {
       ) : (
         <div className="space-y-2 p-3">
           {incidencias.map((inc) => (
-            <div key={inc.id} className="rounded-lg border border-border bg-surface-2 p-3 text-xs">
+            <div key={inc.id} className={cn('rounded-lg border bg-surface-2 p-3 text-xs', inc.tipo === 'solicitud_revision' ? 'border-amber-300 dark:border-amber-500/35' : 'border-border')}>
               <div className="flex items-start justify-between gap-2">
                 <div>
                   <Badge tone={inc.estado === 'abierta' ? 'warning' : 'success'}>{inc.estado === 'abierta' ? 'Abierta' : 'Resuelta'}</Badge>
-                  <span className="ml-2 font-semibold text-fg">{inc.tipo.replace(/_/g, ' ')}</span>
+                  <span className="ml-2 font-semibold text-fg">{inc.tipo === 'solicitud_revision' ? 'Solicitud del estudiante' : inc.tipo.replace(/_/g, ' ')}</span>
                 </div>
                 {inc.estado === 'abierta' && (
                   <button type="button" onClick={() => setResolveId(inc.id)} className="focus-ring shrink-0 text-brand-600 hover:text-brand-700">Resolver</button>
                 )}
               </div>
+              {inc.tipo === 'solicitud_revision' && (
+                <p className="mt-2 text-[11px] font-bold uppercase tracking-wide text-amber-700 dark:text-amber-300">
+                  Motivo: {String(inc.metadata_json?.motivo ?? 'revisión general').replace(/_/g, ' ')}
+                </p>
+              )}
               <p className="mt-1 text-muted">{inc.descripcion}</p>
               {inc.resolucion && <p className="mt-1 italic text-muted">Resolución: {inc.resolucion}</p>}
 
@@ -361,6 +368,11 @@ function PanelDetalle({
   const secciones = evidenciaConsolidada?.secciones as Record<string, Record<string, unknown>> | undefined;
   const criterios = (graderA?.criterios ?? []) as Array<Record<string, unknown>>;
   const alertas = (graderA?.alertas ?? []) as string[];
+  const evidenceUrl = cal.entrega_archivo_url;
+  const isPdfEvidence = Boolean(evidenceUrl) && (
+    cal.entrega_tipo?.toLowerCase() === 'pdf'
+    || /\.pdf(?:$|[?#])/i.test(evidenceUrl ?? '')
+  );
 
   function submitAjuste() {
     const n = Number(adjNota);
@@ -425,30 +437,55 @@ function PanelDetalle({
             <p className="mt-2 text-xs text-sky-800 dark:text-sky-200">Revisa el texto y la imagen por separado antes de confirmar la nota única.</p>
           </div>
         )}
-        {(() => {
-          if (!cal.entrega_archivo_url) return null;
-          return (
-          <div className="rounded-xl border border-border bg-surface-2">
-            <p className="flex items-center gap-2 border-b border-border px-4 py-2 text-xs font-semibold text-muted">
-              <FileImage className="h-4 w-4" /> Evidencia
-            </p>
-            <img
-              src={cal.entrega_archivo_url}
-              alt="Evidencia del estudiante"
-              className="max-h-80 w-full bg-white object-contain p-2"
-            />
+        <div className="grid gap-4 xl:grid-cols-[minmax(0,1.15fr)_minmax(22rem,0.85fr)] xl:items-start">
+          <div className="space-y-4">
+            {evidenceUrl ? (
+              <section aria-labelledby="evidence-title" className="rounded-xl border border-border bg-surface-2">
+                <div className="flex items-center justify-between border-b border-border px-4 py-3 text-sm font-semibold text-muted">
+                  <h2 id="evidence-title" className="flex items-center gap-2 text-base font-bold text-fg">
+                    {isPdfEvidence ? <FileText className="h-5 w-5" /> : <FileImage className="h-5 w-5" />}
+                    Evidencia del estudiante
+                  </h2>
+                  <a
+                    href={evidenceUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="focus-ring inline-flex items-center gap-2 rounded-lg px-2 py-1 text-brand-600 hover:bg-brand-50 hover:text-brand-700"
+                  >
+                    Abrir en grande <ExternalLink className="h-4 w-4" />
+                  </a>
+                </div>
+                {isPdfEvidence ? (
+                  <iframe
+                    src={evidenceUrl}
+                    title="Evidencia PDF del estudiante"
+                    className="h-[34rem] w-full bg-white"
+                  />
+                ) : (
+                  <img
+                    src={evidenceUrl}
+                    alt="Evidencia del estudiante"
+                    className="max-h-[34rem] w-full bg-white object-contain p-2"
+                  />
+                )}
+              </section>
+            ) : (
+              <section className="rounded-xl border border-border bg-surface-2 p-5">
+                <h2 className="text-base font-bold text-fg">Evidencia del estudiante</h2>
+                <p className="mt-2 text-base text-muted">Esta entrega no tiene una foto o PDF asociado.</p>
+              </section>
+            )}
+
+            {cal.entrega_respuesta_texto && (
+              <section className="rounded-xl border border-border bg-surface-2 p-4">
+                <h2 className="mb-2 text-base font-bold text-fg">Respuesta escrita del estudiante</h2>
+                <p className="whitespace-pre-wrap text-base leading-7 text-fg">{cal.entrega_respuesta_texto}</p>
+              </section>
+            )}
           </div>
-          );
-        })()}
-        {(() => {
-          if (!cal.entrega_respuesta_texto) return null;
-          return (
-          <div className="rounded-xl border border-border bg-surface-2 p-4">
-            <p className="mb-2 text-xs font-semibold text-muted">Respuesta del estudiante</p>
-            <p className="whitespace-pre-wrap text-sm text-fg">{cal.entrega_respuesta_texto}</p>
-          </div>
-          );
-        })()}
+
+          <RevisionGuide items={cal.guia_revision ?? []} />
+        </div>
 
         {/* Pipeline — resumen colapsable */}
         {!!pipeline?.orchestrator && (
@@ -867,6 +904,14 @@ export function CalificacionesWorkspace() {
         subtitle="Revisa, confirma o ajusta las calificaciones sugeridas por la IA."
         action={
           <div className="flex flex-wrap gap-2">
+            {materiaId && (
+              <Link
+                to={routes.materiaBoletin(materiaId)}
+                className="focus-ring inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-border bg-surface px-4 text-sm font-semibold text-fg transition-colors hover:bg-surface-2"
+              >
+                <BookOpenCheck className="h-4 w-4" /> Libro de notas
+              </Link>
+            )}
             <Link
               to={routes.materiasPara('calificar')}
               className="focus-ring inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-border bg-surface px-4 text-sm font-semibold text-fg transition-colors hover:bg-surface-2"
@@ -887,7 +932,11 @@ export function CalificacionesWorkspace() {
         <Field label="Evaluación">
           <Select value={evalId} onChange={(e) => { const id = e.target.value; setEvalId(id); navigate(id ? routes.calificacionesEvaluacion(id) : routes.calificacionesWorkspace, { replace: true }); setSelectedId(null); setSelectedBatch(new Set()); }}>
             {(!evals || evals.length === 0) && <option value="">Sin evaluaciones</option>}
-            {evals?.map((ev) => <option key={ev.id} value={ev.id}>{ev.nombre}</option>)}
+            {evals?.map((ev) => (
+              <option key={ev.id} value={ev.id}>
+                {ev.tipo_actividad ? `${ev.tipo_actividad} · ` : ''}{ev.nombre}
+              </option>
+            ))}
           </Select>
         </Field>
       </Card>

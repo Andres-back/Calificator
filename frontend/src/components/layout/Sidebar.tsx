@@ -32,7 +32,7 @@ export function Sidebar({
   const roleMessage = user?.rol === 'admin'
     ? { title: 'IA bajo control', detail: 'Credenciales, modelos y rutas.', icon: ShieldCheck }
     : user?.rol === 'estudiante'
-      ? { title: 'Tu proceso importa', detail: 'Actividades y avances.', icon: GraduationCap }
+      ? { title: 'Tu espacio de aprendizaje', detail: 'Materias, actividades y ayuda.', icon: GraduationCap }
       : { title: 'La IA sugiere', detail: 'Tú revisas y decides.', icon: Bot };
   const RoleIcon = roleMessage.icon;
 
@@ -42,7 +42,10 @@ export function Sidebar({
       aria-label="Navegación principal"
       role={mobile ? 'dialog' : undefined}
       aria-modal={mobile || undefined}
-      className="safe-area-pb safe-area-pt relative flex h-full w-72 max-w-[86vw] flex-col gap-5 overflow-hidden border-r border-border bg-surface px-3 py-5 lg:w-64"
+      className={cn(
+        'safe-area-pb safe-area-pt relative flex h-full w-72 max-w-[86vw] flex-col gap-5 overflow-hidden border-r border-border bg-surface px-3 py-5 lg:w-64',
+        user?.rol === 'estudiante' && 'border-r-brand-100 bg-gradient-to-b from-white via-white to-brand-50/70 dark:border-r-brand-500/20 dark:from-surface dark:via-surface dark:to-brand-950/30',
+      )}
     >
       <div className="absolute inset-0 z-0" aria-hidden="true">
         <img src="/branding/pattern-subtle.png" alt="" className="h-full w-full object-cover opacity-[0.04] dark:opacity-[0.03]" />
@@ -63,7 +66,9 @@ export function Sidebar({
           )}
         </div>
         <nav className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto pr-1" aria-label="Secciones de la aplicación">
-          <p className="px-3 pb-1 text-xs font-semibold uppercase tracking-wide text-muted">Menú</p>
+          <p className="px-3 pb-1 text-xs font-semibold uppercase tracking-[0.14em] text-muted">
+            {user?.rol === 'estudiante' ? 'Tu recorrido' : 'Menú'}
+          </p>
           {navItems.map((item) => (
             <NavLink
               key={item.to}
@@ -71,7 +76,7 @@ export function Sidebar({
               end={item.to === '/app'}
               onClick={item.soon ? (event) => event.preventDefault() : onNavigate}
               className={({ isActive }) => cn(
-                'focus-ring group relative flex min-h-11 items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
+                'focus-ring group relative flex min-h-12 items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition-colors',
                 item.soon
                   ? 'cursor-not-allowed text-disabled'
                   : isActive
@@ -84,7 +89,7 @@ export function Sidebar({
                   {isActive && !item.soon && (
                     <motion.span
                       layoutId="nav-active"
-                      className="absolute inset-0 rounded-lg border border-brand-300 bg-brand-50 dark:border-brand-500/40 dark:bg-brand-500/20"
+                      className="absolute inset-0 rounded-xl border border-brand-300 bg-brand-50 shadow-sm dark:border-brand-500/40 dark:bg-brand-500/20"
                       transition={reduceMotion ? { duration: 0 } : { type: 'spring', stiffness: 350, damping: 30 }}
                     />
                   )}
@@ -96,11 +101,17 @@ export function Sidebar({
             </NavLink>
           ))}
         </nav>
-        <div className="flex items-start gap-3 rounded-lg border border-border bg-surface-2 p-3.5">
+        <div className={cn(
+          'flex items-start gap-3 rounded-xl border border-border bg-surface-2 p-3.5',
+          user?.rol === 'estudiante' && 'relative overflow-hidden border-brand-200 bg-white/80 pr-16 shadow-sm dark:border-brand-500/25 dark:bg-surface-2/80',
+        )}>
+          {user?.rol === 'estudiante' && (
+            <img src="/branding/xali-studying.png" alt="" className="absolute -bottom-2 -right-2 h-20 w-20 object-contain opacity-90" />
+          )}
           <span className="grid h-8 w-8 shrink-0 place-items-center rounded-md bg-brand-50 text-brand-700 dark:bg-brand-500/15 dark:text-brand-300">
             <RoleIcon className="h-4 w-4" aria-hidden="true" />
           </span>
-          <div className="min-w-0">
+          <div className="relative min-w-0">
             <p className="font-display text-sm font-bold text-fg">{roleMessage.title}</p>
             <p className="mt-0.5 text-xs text-secondary">{roleMessage.detail}</p>
           </div>

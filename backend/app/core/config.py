@@ -27,6 +27,8 @@ class Settings(BaseSettings):
     UPLOAD_DIR: str | None = None
     PUBLIC_UPLOADS_BASE_URL: str = "/uploads"
     MAX_IMAGE_SIZE_MB: int = 10
+    MAX_GRADING_PDF_PAGES: int = 20
+    GRADING_PDF_RENDER_DPI: int = 150
 
     CORS_ORIGINS: str = (
         "http://localhost:5173,http://localhost:3000,http://127.0.0.1:5173"
@@ -53,6 +55,8 @@ class Settings(BaseSettings):
     OPEN_CODE_DIGITALIZATION_MODEL: str = "qwen3.6-plus"
     OPEN_CODE_DIGITALIZATION_TIMEOUT_SECONDS: int = 180
     OPEN_CODE_TIMEOUT_SECONDS: int = 45
+    PHOTO_GRADING_FAST_VISION_ENABLED: bool = True
+    PHOTO_GRADING_FAST_GRADERS_ENABLED: bool = True
     PHOTO_GRADING_CROSS_PROVIDER_FALLBACK_ENABLED: bool = False
 
     GROQ_API_KEY: str = ""

@@ -15,7 +15,7 @@ class CalificacionIncidencia(Base):
     __tablename__ = "calificacion_incidencias"
     __table_args__ = (
         CheckConstraint(
-            "tipo IN ('imagen_no_usable','vision_failed','grader_error','discrepancia_alta','confianza_baja','docente_rechazo')",
+            "tipo IN ('imagen_no_usable','vision_failed','grader_error','discrepancia_alta','confianza_baja','docente_rechazo','solicitud_revision')",
             name="ck_incidencias_tipo",
         ),
         CheckConstraint(

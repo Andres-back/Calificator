@@ -93,6 +93,17 @@ class EvaluacionRead(BaseModel):
     created_at: datetime
     updated_at: datetime
     blueprint: EvaluacionBlueprintRead | None = None
+    # Contexto privado del estudiante. Solo se completa en los listados que
+    # consulta el propio alumno; permite que la interfaz no ofrezca entregar
+    # nuevamente una actividad que ya fue recibida.
+    mi_entrega_id: UUID | None = None
+    mi_entrega_estado: str | None = None
+    mi_entrega_tipo: str | None = None
+    mi_entrega_created_at: datetime | None = None
+    intentos_realizados: int = 0
+    entrega_realizada: bool = False
+    mi_nota_confirmada: Decimal | None = None
+    mi_calificacion_estado: str | None = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -159,17 +170,17 @@ class EvaluacionGenerarRequest(BaseModel):
     )
     dba_ids: list[UUID] = Field(default_factory=list)
     dba_personalizado_ids: list[UUID] = Field(default_factory=list)
+    usar_rubrica: bool = False
     metas_profesor: list[str] = Field(default_factory=list)
     criterios_docente: list[str] = Field(default_factory=list)
     instrucciones_adicionales: str | None = Field(default=None, max_length=2000)
+    material_referencia: str | None = Field(default=None, max_length=12000)
     politica_intento: PoliticaIntento | None = None
     intentos_permitidos: int | None = Field(default=None, gt=0)
     tiempo_limite_minutos: int | None = Field(default=None, gt=0)
 
     @model_validator(mode="after")
-    def require_dba_alignment(self) -> "EvaluacionGenerarRequest":
-        if not self.dba_ids and not self.dba_personalizado_ids:
-            raise ValueError("Selecciona al menos un DBA para generar la evaluacion")
+    def validate_optional_alignment(self) -> "EvaluacionGenerarRequest":
         if len(set(self.dba_ids)) != len(self.dba_ids):
             raise ValueError("No repitas DBA oficiales")
         if len(set(self.dba_personalizado_ids)) != len(self.dba_personalizado_ids):
@@ -180,7 +191,9 @@ class EvaluacionGenerarRequest(BaseModel):
 class CriterioGeneradoIA(BaseModel):
     nombre: str = Field(min_length=3)
     descripcion: str = Field(min_length=5)
-    dba_ids: list[UUID] = Field(min_length=1)
+    dba_ids: list[UUID] = Field(default_factory=list)
+    peso_porcentaje: Decimal | None = Field(default=None, gt=0)
+    niveles: dict[str, str] = Field(default_factory=dict)
 
 
 class PreguntaGeneradaIA(BaseModel):
@@ -190,7 +203,7 @@ class PreguntaGeneradaIA(BaseModel):
     opciones: list[str] = Field(default_factory=list)
     respuesta_esperada: Any
     puntaje_relativo: Decimal = Field(default=Decimal("1"), gt=0)
-    dba_ids: list[UUID] = Field(min_length=1)
+    dba_ids: list[UUID] = Field(default_factory=list)
     justificacion_alineacion: str = Field(min_length=5)
     fuente_contexto_ids: list[UUID] = Field(default_factory=list)
 

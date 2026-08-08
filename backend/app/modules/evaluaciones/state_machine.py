@@ -16,7 +16,8 @@ VALID_TRANSITIONS: dict[str, set[str]] = {
         EvaluacionEstado.CERRADA.value,
     },
     EvaluacionEstado.PENDIENTE_REVISION.value: {EvaluacionEstado.CERRADA.value},
-    EvaluacionEstado.CERRADA.value: set(),
+    # El docente conserva la autoridad para reabrir entregas después de un cierre.
+    EvaluacionEstado.CERRADA.value: {EvaluacionEstado.EN_CALIFICACION.value},
 }
 
 

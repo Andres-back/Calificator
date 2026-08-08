@@ -1,6 +1,6 @@
 import { api } from '@/lib/api';
 import { useQuery } from '@tanstack/react-query';
-import type { DBARead, EntregaOnlineCreate, EntregaRead, Evaluacion, EvaluacionModalidad } from '@/types/api';
+import type { Calificacion, DBARead, EntregaOnlineCreate, EntregaRead, Evaluacion, EvaluacionModalidad, IncidenciaRead, SolicitudRevisionMotivo, StudentActivity } from '@/types/api';
 
 export interface EvaluacionCreate {
   materia_id: string;
@@ -28,9 +28,11 @@ export interface EvaluacionGenerarRequest {
   tipos_pregunta: Array<'opcion_multiple' | 'abierta' | 'verdadero_falso' | 'completar'>;
   dba_ids: string[];
   dba_personalizado_ids: string[];
+  usar_rubrica: boolean;
   metas_profesor: string[];
   criterios_docente: string[];
   instrucciones_adicionales?: string;
+  material_referencia?: string;
   politica_intento?: 'un_intento' | 'multiples_intentos' | 'mejor_puntaje' | 'ultimo_intento' | 'practica_libre' | null;
   intentos_permitidos?: number;
   tiempo_limite_minutos?: number;
@@ -57,6 +59,20 @@ export async function createEvaluacion(payload: EvaluacionCreate): Promise<Evalu
 }
 export async function generarBorradorEvaluacion(payload: EvaluacionGenerarRequest): Promise<Evaluacion> {
   const { data } = await api.post<Evaluacion>('/evaluaciones/generar-borrador', payload);
+  return data;
+}
+export interface ReferenciaExtraida {
+  texto: string;
+  nombre_archivo: string;
+  mime: string;
+  caracteres: number;
+  advertencias: string[];
+}
+export async function extraerReferenciaEvaluacion(materiaId: string, file: File): Promise<ReferenciaExtraida> {
+  const formData = new FormData();
+  formData.append('materia_id', materiaId);
+  formData.append('file', file);
+  const { data } = await api.post<ReferenciaExtraida>('/evaluaciones/referencia/extraer', formData);
   return data;
 }
 export async function updateEvaluacion(id: string, payload: EvaluacionUpdate): Promise<Evaluacion> {
@@ -95,6 +111,27 @@ export async function getMiEntrega(evaluacionId: string): Promise<EntregaRead | 
     if (status === 404) return null;
     throw error;
   }
+}
+export async function getActividadEstudiante(evaluacionId: string): Promise<StudentActivity | null> {
+  const { data } = await api.get<StudentActivity | null>(`/evaluaciones/${evaluacionId}/actividad`);
+  return data;
+}
+export async function getMiSolicitudRevision(evaluacionId: string): Promise<IncidenciaRead | null> {
+  const { data } = await api.get<IncidenciaRead | null>(`/evaluaciones/${evaluacionId}/mi-solicitud-revision`);
+  return data;
+}
+export async function solicitarRevisionEvaluacion(
+  evaluacionId: string,
+  payload: { motivo: SolicitudRevisionMotivo; descripcion: string },
+): Promise<IncidenciaRead> {
+  const { data } = await api.post<IncidenciaRead>(`/evaluaciones/${evaluacionId}/solicitud-revision`, payload);
+  return data;
+}
+export async function crearEntregaArchivo(evaluacionId: string, archivo: File): Promise<Calificacion> {
+  const formData = new FormData();
+  formData.append('archivo', archivo);
+  const { data } = await api.post<Calificacion>(`/evaluaciones/${evaluacionId}/entregas/archivo`, formData);
+  return data;
 }
 export async function listDBA(params?: ListDBAParams): Promise<DBARead[]> {
   const { data } = await api.get<DBARead[]>('/dba', { params });

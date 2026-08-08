@@ -23,8 +23,11 @@ VISION_SYSTEM_PROMPT = (
 
 VISION_JSON_SCHEMA = """{
   "text_or_visual_content": "contenido interpretado",
-  "detected_questions": [],
-  "detected_answers": [],
+  "detected_questions": [1, 2],
+  "detected_answers": [
+    {"pregunta": 1, "respuesta": "respuesta visible completa"},
+    {"pregunta": 2, "respuesta": "respuesta visible completa"}
+  ],
   "image_quality": {
     "is_usable": true,
     "blur": "low|medium|high",
