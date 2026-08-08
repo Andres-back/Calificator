@@ -13,6 +13,7 @@ from zipfile import BadZipFile, ZipFile
 
 from fastapi import HTTPException, status
 
+from app.core.config import settings
 from app.core.logging import get_logger
 from app.modules.calificaciones.agents import AgentContext, OpenCodeClient, vision_agent
 from app.modules.dba.document_service import extraer_texto_docx, extraer_texto_pdf
@@ -194,9 +195,10 @@ async def _extract_image_text(
     try:
         result = await vision_agent(
             context,
-            model="qwen3.6-plus",
+            model=settings.OPEN_CODE_DIGITALIZATION_VISION_MODEL,
             client=client,
             prompt_override=DIGITALIZATION_VISION_PROMPT,
+            timeout=settings.OPEN_CODE_DIGITALIZATION_VISION_TIMEOUT_SECONDS,
         )
     finally:
         await client.close()
@@ -395,15 +397,32 @@ def _local_reference_answer(question: dict[str, Any]) -> str:
             if any(word in normalized_statement for word in ("más pequeño", "menor")):
                 return min(evaluated, key=lambda item: item[0])[1]
 
+    pi_number_words = {
+        "un": 1,
+        "uno": 1,
+        "dos": 2,
+        "tres": 3,
+        "cuatro": 4,
+        "cinco": 5,
+        "seis": 6,
+        "siete": 7,
+        "ocho": 8,
+        "nueve": 9,
+        "diez": 10,
+        "once": 11,
+        "doce": 12,
+    }
     pi_match = re.search(
-        r"primeros?\s+(\d+)\s+decimales?\s+de\s+(?:π|pi)",
+        r"primeros?\s+(\d+|un|uno|dos|tres|cuatro|cinco|seis|siete|ocho|nueve|diez|once|doce)"
+        r"\s+decimales?\s+de\s+(?:\u03c0|pi)",
         normalized_statement,
     )
     if pi_match:
-        decimals = min(max(int(pi_match.group(1)), 1), 12)
+        decimal_token = pi_match.group(1)
+        decimals = int(decimal_token) if decimal_token.isdigit() else pi_number_words[decimal_token]
+        decimals = min(max(decimals, 1), 12)
         pi_digits = f"{math.pi:.15f}"
         return pi_digits[: decimals + 2]
-
     value = _extract_math_value(statement)
     if value is not None:
         return _format_math_value(value)
@@ -485,6 +504,46 @@ def _build_local_digitalization_structure(
         "reglas_feedback": {},
         "puntaje_total_declarado": None,
     }
+
+
+def _apply_locally_verified_answers(
+    structure: dict[str, Any],
+    content: str,
+) -> dict[str, Any]:
+    """Corrige respuestas objetivas que pueden resolverse de forma determinista."""
+    local_structure = _build_local_digitalization_structure(content)
+    if not local_structure:
+        return structure
+
+    verified_answers = {
+        int(item["numero"]): str(item["respuesta"])
+        for item in local_structure.get("respuestas_esperadas") or []
+        if isinstance(item, dict)
+        and item.get("numero") is not None
+        and item.get("respuesta")
+        and "pendiente de validaciÃ³n docente" not in str(item["respuesta"]).lower()
+    }
+    if not verified_answers:
+        return structure
+
+    answer_map: dict[int, dict[str, Any]] = {}
+    for answer in structure.get("respuestas_esperadas") or []:
+        if not isinstance(answer, dict):
+            continue
+        try:
+            answer_map[int(answer.get("numero"))] = dict(answer)
+        except (TypeError, ValueError):
+            continue
+    for number, answer in verified_answers.items():
+        answer_map[number] = {"numero": number, "respuesta": answer}
+
+    verified = dict(structure)
+    verified["respuestas_esperadas"] = list(answer_map.values())
+    logger.info(
+        "Clave objetiva verificada localmente para preguntas: %s",
+        ", ".join(str(number) for number in sorted(verified_answers)),
+    )
+    return verified
 
 
 def _decimal(value: Any) -> Decimal | None:
@@ -765,6 +824,7 @@ async def detectar_estructura_evaluacion(
             status_code=status.HTTP_502_BAD_GATEWAY,
             detail="El proveedor de IA no devolvió una estructura válida.",
         )
+    result = _apply_locally_verified_answers(result, contenido_texto)
     result = await _repair_missing_answers(llm, result, contenido_texto)
     normalized = normalize_detected_structure(
         result,

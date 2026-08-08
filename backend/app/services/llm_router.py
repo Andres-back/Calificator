@@ -22,6 +22,23 @@ OPEN_CODE_MAX_ATTEMPTS = 3
 OPEN_CODE_RETRYABLE_STATUS_CODES = frozenset({408, 425, 429, 500, 502, 503, 504})
 OPEN_CODE_RETRY_BASE_SECONDS = 0.5
 OPEN_CODE_RETRY_MAX_SECONDS = 10.0
+OPEN_CODE_ANTHROPIC_MODEL_PREFIXES = ("qwen", "minimax-m")
+
+
+def _open_code_uses_messages_api(model: str) -> bool:
+    model_id = model.rsplit("/", 1)[-1].lower()
+    return model_id.startswith(OPEN_CODE_ANTHROPIC_MODEL_PREFIXES)
+
+
+def _messages_response_text(data: dict[str, Any]) -> str:
+    content = data.get("content") or []
+    if isinstance(content, str):
+        return content
+    return "".join(
+        str(block.get("text") or "")
+        for block in content
+        if isinstance(block, dict) and block.get("type") == "text"
+    )
 
 
 def _open_code_retry_delay_seconds(
@@ -222,10 +239,24 @@ class LLMRouter:
         body: dict[str, Any] = {
             "model": model,
             "messages": [{"role": "user", "content": prompt}],
-            "temperature": 0.3,
+            "temperature": 0.1 if json_mode else 0.3,
         }
-        if json_mode:
-            body["response_format"] = {"type": "json_object"}
+        use_messages_api = _open_code_uses_messages_api(model)
+        if use_messages_api:
+            body["max_tokens"] = int(
+                config.get("max_tokens")
+                or getattr(settings, "OPEN_CODE_DIGITALIZATION_MAX_TOKENS", 3072)
+            )
+            headers = {
+                "x-api-key": api_key,
+                "anthropic-version": "2023-06-01",
+                "Content-Type": "application/json",
+            }
+            endpoint = "messages"
+        else:
+            if json_mode:
+                body["response_format"] = {"type": "json_object"}
+            endpoint = "chat/completions"
         timeout = config.get("timeout_seconds") or getattr(settings, "OPEN_CODE_TIMEOUT_SECONDS", 45)
         base_url = str(config.get("base_url") or settings.OPEN_CODE_BASE_URL).rstrip("/")
         start = time.monotonic()
@@ -233,7 +264,7 @@ class LLMRouter:
             async with httpx.AsyncClient(timeout=timeout) as client:
                 for attempt in range(1, OPEN_CODE_MAX_ATTEMPTS + 1):
                     resp = await client.post(
-                        f"{base_url}/chat/completions",
+                        f"{base_url}/{endpoint}",
                         headers=headers,
                         json=body,
                     )
@@ -267,6 +298,8 @@ class LLMRouter:
                     output_tokens=usage.get("output_tokens") or usage.get("completion_tokens"),
                     **self._tracking,
                 )
+                if use_messages_api:
+                    return _messages_response_text(data)
                 return data["choices"][0]["message"]["content"]
         except httpx.TimeoutException:
             ms = int((time.monotonic() - start) * 1000)

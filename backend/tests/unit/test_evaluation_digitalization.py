@@ -111,8 +111,10 @@ class _FakeVisionClient:
 def test_image_extraction_accepts_meaningful_text_when_flagged_unusable(monkeypatch) -> None:
     captured: dict[str, str] = {}
 
-    async def fake_vision(context, model, client, prompt_override=None):
+    async def fake_vision(context, model, client, prompt_override=None, timeout=None):
         captured["prompt"] = prompt_override
+        captured["model"] = model
+        captured["timeout"] = timeout
         return AgentResult(
             nota_sugerida=None,
             confianza=0.4,
@@ -140,11 +142,13 @@ def test_image_extraction_accepts_meaningful_text_when_flagged_unusable(monkeypa
 
     assert "Seleccione el número" in text
     assert "HOJA DE PREGUNTAS" in captured["prompt"]
+    assert captured["model"] == "mimo-v2.5"
+    assert captured["timeout"] == 60
     assert any("parcialmente legible" in warning for warning in warnings)
 
 
 def test_image_extraction_uses_document_fallback_on_provider_error(monkeypatch) -> None:
-    async def failed_primary(context, model, client, prompt_override=None):
+    async def failed_primary(context, model, client, prompt_override=None, timeout=None):
         return AgentResult(
             nota_sugerida=None,
             confianza=0,
@@ -177,7 +181,7 @@ def test_image_extraction_uses_document_fallback_on_provider_error(monkeypatch) 
 
 
 def test_image_extraction_reports_provider_outage_without_blaming_photo(monkeypatch) -> None:
-    async def failed_primary(context, model, client, prompt_override=None):
+    async def failed_primary(context, model, client, prompt_override=None, timeout=None):
         return AgentResult(
             nota_sugerida=None,
             confianza=0,
@@ -277,6 +281,33 @@ D) 1+50-20x3÷2
     assert any("recuperación local" in warning for warning in result["advertencias"])
 
 
+def test_local_verification_corrects_objective_math_answers() -> None:
+    structure = {
+        "preguntas": [
+            {"numero": 1, "enunciado": "Cuanto es 6 x 7?"},
+            {"numero": 2, "enunciado": "Resuelve 18 / 3 + 4."},
+            {"numero": 3, "enunciado": "Escribe los primeros tres decimales de pi."},
+        ],
+        "respuestas_esperadas": [
+            {"numero": 1, "respuesta": "41"},
+            {"numero": 2, "respuesta": "9"},
+            {"numero": 3, "respuesta": "141"},
+        ],
+    }
+    content = """1. Cuanto es 6 x 7?
+2. Resuelve 18 / 3 + 4.
+3. Escribe los primeros tres decimales de pi.
+"""
+
+    verified = digitalize_service._apply_locally_verified_answers(structure, content)
+    answers = {
+        item["numero"]: item["respuesta"]
+        for item in verified["respuestas_esperadas"]
+    }
+
+    assert answers == {1: "42", 2: "10", 3: "3.141"}
+
+
 def test_document_routing_never_falls_through_to_other_providers(monkeypatch) -> None:
     class FakeSession:
         async def __aenter__(self):
@@ -316,11 +347,16 @@ def test_document_routing_never_falls_through_to_other_providers(monkeypatch) ->
     providers = asyncio.run(router._load_providers("evaluacion_digitalizar"))
 
     assert [provider for provider, _call in providers] == ["open_code"]
-    assert router._provider_configs["open_code"]["model"] == "qwen3.6-plus"
+    assert router._provider_configs["open_code"]["model"] == "mimo-v2.5"
     assert router._provider_configs["open_code"]["timeout_seconds"] == 180
 
+
+def test_digitalization_defaults_to_mimo_fast_path() -> None:
+    assert digitalize_service.settings.OPEN_CODE_DIGITALIZATION_VISION_MODEL == "mimo-v2.5"
+    assert digitalize_service.settings.OPEN_CODE_DIGITALIZATION_MODEL == "mimo-v2.5"
+
 def test_opencode_text_router_retries_rate_limit(monkeypatch) -> None:
-    request = httpx.Request("POST", "https://example.test/chat/completions")
+    request = httpx.Request("POST", "https://example.test/messages")
     responses = [
         httpx.Response(
             429,
@@ -330,7 +366,7 @@ def test_opencode_text_router_retries_rate_limit(monkeypatch) -> None:
         httpx.Response(
             200,
             json={
-                "choices": [{"message": {"content": "{\"preguntas\": []}"}}],
+                "content": [{"type": "text", "text": "{\"preguntas\": []}"}],
                 "usage": {},
             },
             request=request,
@@ -339,6 +375,9 @@ def test_opencode_text_router_retries_rate_limit(monkeypatch) -> None:
 
     class FakeHTTPClient:
         calls = 0
+        last_url = ""
+        last_headers: dict = {}
+        last_json: dict = {}
 
         def __init__(self, timeout):
             self.timeout = timeout
@@ -351,6 +390,9 @@ def test_opencode_text_router_retries_rate_limit(monkeypatch) -> None:
 
         async def post(self, url, headers, json):
             type(self).calls += 1
+            type(self).last_url = url
+            type(self).last_headers = headers
+            type(self).last_json = json
             return responses.pop(0)
 
     async def fake_usage_log(**kwargs):
@@ -371,3 +413,7 @@ def test_opencode_text_router_retries_rate_limit(monkeypatch) -> None:
 
     assert result == "{\"preguntas\": []}"
     assert FakeHTTPClient.calls == 2
+    assert FakeHTTPClient.last_url.endswith("/messages")
+    assert FakeHTTPClient.last_headers["x-api-key"] == "test-key"
+    assert "response_format" not in FakeHTTPClient.last_json
+    assert FakeHTTPClient.last_json["max_tokens"] == 3072
