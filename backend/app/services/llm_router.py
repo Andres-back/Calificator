@@ -1,6 +1,7 @@
 """LLM router with provider cascade and structured local fallbacks."""
 from __future__ import annotations
 
+import asyncio
 import json
 import time
 from typing import Any
@@ -16,6 +17,30 @@ from app.services.ai_credentials_service import get_effective_ai_credentials
 from app.shared.enums import LLMProvider
 
 logger = get_logger(__name__)
+
+OPEN_CODE_MAX_ATTEMPTS = 3
+OPEN_CODE_RETRYABLE_STATUS_CODES = frozenset({408, 425, 429, 500, 502, 503, 504})
+OPEN_CODE_RETRY_BASE_SECONDS = 0.5
+OPEN_CODE_RETRY_MAX_SECONDS = 10.0
+
+
+def _open_code_retry_delay_seconds(
+    attempt_number: int,
+    response: httpx.Response,
+) -> float:
+    retry_after = response.headers.get("Retry-After")
+    if retry_after:
+        try:
+            return min(
+                max(float(retry_after), 0.0),
+                OPEN_CODE_RETRY_MAX_SECONDS,
+            )
+        except ValueError:
+            pass
+    exponential = OPEN_CODE_RETRY_BASE_SECONDS * (
+        2 ** max(attempt_number - 1, 0)
+    )
+    return min(exponential, OPEN_CODE_RETRY_MAX_SECONDS)
 
 
 class LLMRouter:
@@ -206,12 +231,29 @@ class LLMRouter:
         start = time.monotonic()
         try:
             async with httpx.AsyncClient(timeout=timeout) as client:
-                resp = await client.post(
-                    f"{base_url}/chat/completions",
-                    headers=headers,
-                    json=body,
-                )
-                resp.raise_for_status()
+                for attempt in range(1, OPEN_CODE_MAX_ATTEMPTS + 1):
+                    resp = await client.post(
+                        f"{base_url}/chat/completions",
+                        headers=headers,
+                        json=body,
+                    )
+                    should_retry = (
+                        resp.status_code in OPEN_CODE_RETRYABLE_STATUS_CODES
+                        and attempt < OPEN_CODE_MAX_ATTEMPTS
+                    )
+                    if should_retry:
+                        delay = _open_code_retry_delay_seconds(attempt, resp)
+                        logger.warning(
+                            "OpenCode transient HTTP %s; retry %d/%d in %.2fs",
+                            resp.status_code,
+                            attempt + 1,
+                            OPEN_CODE_MAX_ATTEMPTS,
+                            delay,
+                        )
+                        await asyncio.sleep(delay)
+                        continue
+                    resp.raise_for_status()
+                    break
                 data = resp.json()
                 ms = int((time.monotonic() - start) * 1000)
                 usage = data.get("usage", {}) or {}

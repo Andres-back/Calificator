@@ -523,6 +523,7 @@ async def vision_agent(
     ctx: AgentContext,
     model: str = "mimo-v2.5",
     client: OpenCodeClient | None = None,
+    prompt_override: str | None = None,
 ) -> AgentResult:
     """Agente de visión: extrae texto estructurado de una imagen de respuesta."""
     preguntas_context = ""
@@ -545,7 +546,10 @@ async def vision_agent(
 
     try:
         start = time.monotonic()
-        vision_text = VISION_PROMPT.replace("{preguntas_context}", preguntas_context)
+        vision_text = prompt_override or VISION_PROMPT.replace(
+            "{preguntas_context}",
+            preguntas_context,
+        )
         raw = await client.chat_multimodal(
             model=model, text=vision_text,
             image_bytes=ctx.image_bytes, image_mime=ctx.image_mime,

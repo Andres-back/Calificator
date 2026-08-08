@@ -1,7 +1,10 @@
 """Digitalización segura de evaluaciones desde PDF, DOCX o imagen."""
 from __future__ import annotations
 
+import ast
 import json
+import re
+import math
 from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 from io import BytesIO
 from typing import Any
@@ -15,6 +18,7 @@ from app.modules.calificaciones.agents import AgentContext, OpenCodeClient, visi
 from app.modules.dba.document_service import extraer_texto_docx, extraer_texto_pdf
 from app.services.llm_router import LLMRouter
 from app.services.storage_service import validate_mime
+from app.services.vision_service import interpret_image
 
 logger = get_logger(__name__)
 
@@ -93,6 +97,31 @@ Contenido original:
 {contenido}
 """
 
+DIGITALIZATION_VISION_PROMPT = """Eres un extractor OCR de evaluaciones escolares.
+La imagen contiene una HOJA DE PREGUNTAS que el docente quiere digitalizar; no es una
+entrega ni una hoja de respuestas de un estudiante.
+
+Transcribe todo el contenido educativo visible:
+- título e instrucciones;
+- cada pregunta con su número;
+- todas las opciones de respuesta;
+- expresiones matemáticas preservando +, -, ×, ÷, =, paréntesis y decimales.
+
+Devuelve SOLO JSON válido con este formato:
+{
+  "texto_extraido": "transcripción completa y ordenada",
+  "preguntas_detectadas": [1, 2],
+  "respuestas_detectadas": [],
+  "calidad_imagen": {"borroso": "bajo|medio|alto", "iluminacion": "buena|mala", "recorte": "completo|parcial|cortado"},
+  "usable": true,
+  "alertas": []
+}
+
+Marca usable=true si puedes reconstruir al menos una pregunta, incluso cuando el texto sea
+manuscrito, la hoja esté inclinada o existan imperfecciones menores. Usa false únicamente
+si no hay contenido educativo recuperable. No inventes texto que no esté visible.
+"""
+
 
 def detect_digitalization_mime(content: bytes, filename: str) -> str:
     """Detecta PDF/imágenes con magic bytes y DOCX por su estructura ZIP interna."""
@@ -115,7 +144,45 @@ def detect_digitalization_mime(content: bytes, filename: str) -> str:
         ) from image_error
 
 
-async def _extract_image_text(content: bytes, mime: str, name: str) -> str:
+
+def _has_meaningful_evaluation_text(text: str) -> bool:
+    """Acepta OCR parcial suficiente aunque el proveedor sea conservador con `usable`."""
+    normalized = " ".join(text.split())
+    alphanumeric = sum(character.isalnum() for character in normalized)
+    words = re.findall(r"\w+", normalized, flags=re.UNICODE)
+    has_question_signal = bool(
+        re.search(r"(?:^|\s)\d+\s*[.)-]", normalized)
+        or re.search(
+            r"\d\s*[-+x×*/÷=]\s*\d",
+            normalized,
+            flags=re.IGNORECASE,
+        )
+        or "?" in normalized
+    )
+    return alphanumeric >= 12 and (len(words) >= 4 or has_question_signal)
+
+
+def _declared_usable(value: Any, *, default: bool) -> bool:
+    if isinstance(value, str):
+        normalized = value.strip().lower()
+        if normalized in {"false", "0", "no", "inutilizable", "ilegible"}:
+            return False
+        if normalized in {"true", "1", "si", "sí", "usable", "legible"}:
+            return True
+    return default if value is None else bool(value)
+
+
+def _clean_warnings(values: Any) -> list[str]:
+    if not isinstance(values, list):
+        return []
+    return [str(value).strip() for value in values if str(value).strip()]
+
+
+async def _extract_image_text(
+    content: bytes,
+    mime: str,
+    name: str,
+) -> tuple[str, list[str]]:
     context = AgentContext(
         evaluacion_nombre=name,
         nota_maxima=5.0,
@@ -129,17 +196,74 @@ async def _extract_image_text(content: bytes, mime: str, name: str) -> str:
             context,
             model="qwen3.6-plus",
             client=client,
+            prompt_override=DIGITALIZATION_VISION_PROMPT,
         )
     finally:
         await client.close()
+
     raw = result.raw_output or {}
     text = str(raw.get("texto_extraido") or "").strip()
-    if result.error or not raw.get("usable", bool(text)) or not text:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail="No se pudo extraer texto de la imagen. Prueba con una foto más clara.",
+    primary_usable = _declared_usable(raw.get("usable"), default=bool(text))
+    if text and (primary_usable or _has_meaningful_evaluation_text(text)):
+        warnings = _clean_warnings(raw.get("alertas"))
+        if not primary_usable:
+            warnings.append(
+                "La imagen fue marcada como parcialmente legible, pero se recuperó "
+                "texto suficiente. Revisa cuidadosamente el borrador."
+            )
+        return text, warnings
+
+    if result.error:
+        logger.warning(
+            "OpenCode vision failed during evaluation digitalization: %s",
+            result.error,
         )
-    return text
+    else:
+        logger.info(
+            "Primary vision did not recover usable evaluation text; trying fallback"
+        )
+
+    fallback = await interpret_image(
+        content,
+        mime_type=mime,
+        context_hint=f"Nombre del archivo: {name}",
+        purpose="evaluation_document",
+    )
+    fallback_text = str(fallback.get("text_or_visual_content") or "").strip()
+    quality = fallback.get("image_quality") or {}
+    fallback_usable = _declared_usable(
+        quality.get("is_usable") if isinstance(quality, dict) else None,
+        default=bool(fallback_text),
+    )
+    if fallback_text and (
+        fallback_usable or _has_meaningful_evaluation_text(fallback_text)
+    ):
+        warnings = _clean_warnings(fallback.get("warnings"))
+        warnings.append(
+            "Se utilizó el proveedor alternativo de visión. Revisa la transcripción "
+            "antes de publicar."
+        )
+        return fallback_text, warnings
+
+    fallback_warnings = _clean_warnings(fallback.get("warnings"))
+    providers_unavailable = bool(result.error) and any(
+        "ningún proveedor" in warning.lower() for warning in fallback_warnings
+    )
+    if providers_unavailable:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=(
+                "Los proveedores de visión no respondieron en este momento. "
+                "La foto no fue rechazada por su calidad; intenta nuevamente en unos minutos."
+            ),
+        )
+    raise HTTPException(
+        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        detail=(
+            "No se encontró texto educativo suficiente en la imagen. Verifica que la "
+            "hoja completa esté dentro del encuadre y vuelve a intentarlo."
+        ),
+    )
 
 
 async def _extract_scanned_pdf(content: bytes, name: str) -> tuple[str, list[str]]:
@@ -150,18 +274,21 @@ async def _extract_scanned_pdf(content: bytes, name: str) -> tuple[str, list[str
         page_count = len(document)
         pages_to_process = min(page_count, MAX_SCANNED_PDF_PAGES)
         parts: list[str] = []
+        warnings: list[str] = []
         for index in range(pages_to_process):
             pixmap = document[index].get_pixmap(dpi=180, alpha=False)
-            parts.append(
-                await _extract_image_text(
-                    pixmap.tobytes("png"),
-                    "image/png",
-                    f"{name} - página {index + 1}",
-                )
+            page_text, page_warnings = await _extract_image_text(
+                pixmap.tobytes("png"),
+                "image/png",
+                f"{name} - página {index + 1}",
+            )
+            parts.append(page_text)
+            warnings.extend(
+                f"Página {index + 1}: {warning}"
+                for warning in page_warnings
             )
     finally:
         document.close()
-    warnings: list[str] = []
     if page_count > MAX_SCANNED_PDF_PAGES:
         warnings.append(
             f"El PDF escaneado tiene {page_count} páginas; se analizaron las primeras "
@@ -184,11 +311,180 @@ async def extract_evaluation_text(
     if mime == DOCX_MIME:
         return extraer_texto_docx(content).strip(), []
     if mime.startswith("image/"):
-        return await _extract_image_text(content, mime, filename), []
+        return await _extract_image_text(content, mime, filename)
     raise HTTPException(
         status_code=status.HTTP_400_BAD_REQUEST,
         detail=f"Tipo de archivo no soportado: {mime}",
     )
+_CIRCLED_QUESTION_NUMBERS = {
+    character: index
+    for index, character in enumerate("①②③④⑤⑥⑦⑧⑨⑩", start=1)
+}
+_NUMBERED_QUESTION_RE = re.compile(
+    r"^\s*(\d{1,3})\s*(?:[.)-]\s*|\s+)(.+?)\s*$"
+)
+_OPTION_LINE_RE = re.compile(r"^\s*([A-Ha-h])\s*[).:-]\s*(.+?)\s*$")
+
+
+def _evaluate_math_node(node: ast.AST) -> float:
+    if isinstance(node, ast.Constant) and type(node.value) in {int, float}:
+        return float(node.value)
+    if isinstance(node, ast.UnaryOp) and isinstance(node.op, (ast.UAdd, ast.USub)):
+        value = _evaluate_math_node(node.operand)
+        return value if isinstance(node.op, ast.UAdd) else -value
+    if isinstance(node, ast.BinOp):
+        left = _evaluate_math_node(node.left)
+        right = _evaluate_math_node(node.right)
+        if isinstance(node.op, ast.Add):
+            return left + right
+        if isinstance(node.op, ast.Sub):
+            return left - right
+        if isinstance(node.op, ast.Mult):
+            return left * right
+        if isinstance(node.op, ast.Div):
+            if right == 0:
+                raise ValueError("División por cero")
+            return left / right
+        if isinstance(node.op, ast.Pow) and abs(right) <= 10:
+            return left**right
+    raise ValueError("Expresión matemática no permitida")
+
+
+def _extract_math_value(text: str) -> float | None:
+    for candidate in re.findall(r"\d[\d\s.,()+\-xX×*/÷^]*", text):
+        if not any(operator in candidate for operator in "+-xX×*/÷^"):
+            continue
+        expression = (
+            candidate.strip(" .,")
+            .replace("×", "*")
+            .replace("x", "*")
+            .replace("X", "*")
+            .replace("÷", "/")
+            .replace("^", "**")
+            .replace(",", ".")
+        )
+        try:
+            parsed = ast.parse(expression, mode="eval")
+            value = _evaluate_math_node(parsed.body)
+        except (SyntaxError, ValueError, OverflowError, ZeroDivisionError):
+            continue
+        if math.isfinite(value):
+            return value
+    return None
+
+
+def _format_math_value(value: float) -> str:
+    if abs(value - round(value)) < 1e-9:
+        return str(int(round(value)))
+    return f"{value:.6f}".rstrip("0").rstrip(".")
+
+
+def _local_reference_answer(question: dict[str, Any]) -> str:
+    statement = str(question["enunciado"])
+    normalized_statement = statement.lower()
+    options = question.get("opciones") or []
+    if options:
+        evaluated: list[tuple[float, str]] = []
+        for option in options:
+            value = _extract_math_value(str(option))
+            if value is not None:
+                evaluated.append((value, str(option)))
+        if len(evaluated) == len(options):
+            if any(word in normalized_statement for word in ("más grande", "mayor")):
+                return max(evaluated, key=lambda item: item[0])[1]
+            if any(word in normalized_statement for word in ("más pequeño", "menor")):
+                return min(evaluated, key=lambda item: item[0])[1]
+
+    pi_match = re.search(
+        r"primeros?\s+(\d+)\s+decimales?\s+de\s+(?:π|pi)",
+        normalized_statement,
+    )
+    if pi_match:
+        decimals = min(max(int(pi_match.group(1)), 1), 12)
+        pi_digits = f"{math.pi:.15f}"
+        return pi_digits[: decimals + 2]
+
+    value = _extract_math_value(statement)
+    if value is not None:
+        return _format_math_value(value)
+    return "Respuesta de referencia pendiente de validación docente."
+
+
+def _build_local_digitalization_structure(
+    content: str,
+) -> dict[str, Any] | None:
+    """Reconstruye localmente hojas numeradas cuando el proveedor está limitado."""
+    questions: list[dict[str, Any]] = []
+    current: dict[str, Any] | None = None
+
+    def save_current() -> None:
+        nonlocal current
+        if not current:
+            return
+        statement = " ".join(current.pop("_statement_parts", [])).strip()
+        if not statement:
+            current = None
+            return
+        options = current.get("opciones") or []
+        current["enunciado"] = statement
+        current["tipo"] = "opcion_multiple" if options else "abierta"
+        current["puntaje"] = None
+        if not options:
+            current.pop("opciones", None)
+        questions.append(current)
+        current = None
+
+    for raw_line in content.splitlines():
+        line = " ".join(raw_line.split()).strip()
+        if not line:
+            continue
+        number: int | None = None
+        statement = ""
+        if line[0] in _CIRCLED_QUESTION_NUMBERS:
+            number = _CIRCLED_QUESTION_NUMBERS[line[0]]
+            statement = line[1:].lstrip(" .)-")
+        else:
+            numbered = _NUMBERED_QUESTION_RE.match(line)
+            if numbered:
+                number = int(numbered.group(1))
+                statement = numbered.group(2).strip()
+        if number is not None:
+            save_current()
+            current = {
+                "numero": number,
+                "_statement_parts": [statement],
+                "opciones": [],
+            }
+            continue
+        option = _OPTION_LINE_RE.match(line)
+        if option and current:
+            current["opciones"].append(
+                f"{option.group(1).upper()}) {option.group(2).strip()}"
+            )
+            continue
+        if current:
+            current["_statement_parts"].append(line)
+    save_current()
+
+    if not questions:
+        return None
+    numbers = [int(question["numero"]) for question in questions]
+    if len(numbers) != len(set(numbers)):
+        return None
+    return {
+        "preguntas": questions,
+        "respuestas_esperadas": [
+            {
+                "numero": question["numero"],
+                "respuesta": _local_reference_answer(question),
+            }
+            for question in questions
+        ],
+        "criterios": [dict(item) for item in DEFAULT_CRITERIA],
+        "errores_comunes": [],
+        "reglas_feedback": {},
+        "puntaje_total_declarado": None,
+    }
 
 
 def _decimal(value: Any) -> Decimal | None:
@@ -438,9 +734,31 @@ async def detectar_estructura_evaluacion(
         result = await llm.generate_json("evaluacion_digitalizar", prompt)
     except Exception as exc:
         logger.warning("OpenCode no pudo digitalizar la evaluación: %s", type(exc).__name__)
+        local_structure = _build_local_digitalization_structure(contenido_texto)
+        if local_structure:
+            fallback_warnings = [
+                *(initial_warnings or []),
+                (
+                    "OpenCode no respondió; se utilizó recuperación local. "
+                    "Revisa preguntas y respuestas antes de publicar."
+                ),
+            ]
+            normalized = normalize_detected_structure(
+                local_structure,
+                nota_maxima=nota_maxima,
+                initial_warnings=fallback_warnings,
+            )
+            logger.info(
+                "Evaluación recuperada localmente: %d preguntas",
+                len(normalized["preguntas"]),
+            )
+            return normalized
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
-            detail="OpenCode no pudo analizar el archivo. Intenta de nuevo en unos segundos.",
+            detail=(
+                "OpenCode no pudo analizar el archivo y no fue posible reconstruir "
+                "localmente las preguntas. Intenta de nuevo en unos minutos."
+            ),
         ) from exc
     if not isinstance(result, dict) or result.get("error"):
         raise HTTPException(

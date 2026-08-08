@@ -4,7 +4,7 @@ from __future__ import annotations
 import base64
 import time
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 import httpx
 from openai import AsyncOpenAI
@@ -19,6 +19,13 @@ VISION_SYSTEM_PROMPT = (
     "Eres un asistente que interpreta imágenes de respuestas de estudiantes. "
     "Extrae el texto escrito, identifica preguntas y respuestas, y evalúa la calidad de imagen. "
     "Responde siempre en JSON válido con los campos indicados."
+)
+
+EVALUATION_DOCUMENT_SYSTEM_PROMPT = (
+    "Eres un extractor OCR de evaluaciones escolares impresas o manuscritas. "
+    "La imagen contiene preguntas para digitalizar, no respuestas de un estudiante. "
+    "Transcribe fielmente títulos, instrucciones, preguntas, opciones y expresiones "
+    "matemáticas. Responde siempre en JSON válido con los campos indicados."
 )
 
 VISION_JSON_SCHEMA = """{
@@ -51,6 +58,7 @@ async def interpret_image(
     image_bytes: bytes,
     mime_type: str = "image/jpeg",
     context_hint: str = "",
+    purpose: Literal["student_response", "evaluation_document"] = "student_response",
 ) -> dict[str, Any]:
     """
     Interpreta una imagen con cascada:
@@ -58,11 +66,25 @@ async def interpret_image(
       2. Groq llama-4-scout (vision)
       3. Fallback con aviso de revisión docente
     """
-    prompt = (
-        f"Analiza esta imagen de una respuesta de estudiante.\n"
-        f"{f'Contexto: {context_hint}' if context_hint else ''}\n"
-        f"Devuelve JSON con este esquema:\n{VISION_JSON_SCHEMA}"
-    )
+    if purpose == "evaluation_document":
+        system_prompt = EVALUATION_DOCUMENT_SYSTEM_PROMPT
+        prompt = (
+            "Analiza esta imagen de una hoja de evaluación. No busques respuestas del "
+            "estudiante: recupera el contenido que el docente desea digitalizar.\n"
+            "Conserva numeración, opciones y operadores matemáticos (+, -, ×, ÷, =). "
+            "Marca image_quality.is_usable=true si al menos una pregunta puede "
+            "reconstruirse, aunque la hoja sea manuscrita, esté inclinada o tenga "
+            "imperfecciones menores.\n"
+            f"{f'Contexto: {context_hint}' if context_hint else ''}\n"
+            f"Devuelve JSON con este esquema:\n{VISION_JSON_SCHEMA}"
+        )
+    else:
+        system_prompt = VISION_SYSTEM_PROMPT
+        prompt = (
+            "Analiza esta imagen de una respuesta de estudiante.\n"
+            f"{f'Contexto: {context_hint}' if context_hint else ''}\n"
+            f"Devuelve JSON con este esquema:\n{VISION_JSON_SCHEMA}"
+        )
 
     providers = [
         ("openai_vision", _call_openai_vision),
@@ -72,7 +94,12 @@ async def interpret_image(
     for provider_name, fn in providers:
         try:
             start = time.monotonic()
-            result = await fn(image_bytes, mime_type, prompt)
+            result = await fn(
+                image_bytes,
+                mime_type,
+                prompt,
+                system_prompt=system_prompt,
+            )
             ms = int((time.monotonic() - start) * 1000)
             logger.info("Vision ok via %s (%dms)", provider_name, ms)
             return result
@@ -86,6 +113,8 @@ async def _call_openai_vision(
     image_bytes: bytes,
     mime_type: str,
     prompt: str,
+    *,
+    system_prompt: str = VISION_SYSTEM_PROMPT,
 ) -> dict[str, Any]:
     credentials = await get_effective_ai_credentials()
     if not credentials.openai_key:
@@ -97,7 +126,7 @@ async def _call_openai_vision(
         model="gpt-4o-mini",
         response_format={"type": "json_object"},
         messages=[
-            {"role": "system", "content": VISION_SYSTEM_PROMPT},
+            {"role": "system", "content": system_prompt},
             {
                 "role": "user",
                 "content": [
@@ -120,6 +149,8 @@ async def _call_groq_vision(
     image_bytes: bytes,
     mime_type: str,
     prompt: str,
+    *,
+    system_prompt: str = VISION_SYSTEM_PROMPT,
 ) -> dict[str, Any]:
     credentials = await get_effective_ai_credentials()
     if not credentials.groq_key:
@@ -134,6 +165,7 @@ async def _call_groq_vision(
     resp = await client.chat.completions.create(
         model=model,
         messages=[
+            {"role": "system", "content": system_prompt},
             {
                 "role": "user",
                 "content": [

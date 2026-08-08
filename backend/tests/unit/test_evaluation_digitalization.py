@@ -7,13 +7,16 @@ from types import SimpleNamespace
 from uuid import uuid4
 from zipfile import ZipFile
 
+import httpx
 import pytest
 from fastapi import HTTPException
 
 from app.modules.evaluaciones import digitalize_service
+from app.modules.calificaciones.agents import AgentResult
 from app.modules.evaluaciones.schemas import DigitalizarEvaluacionExternaRequest
 from app.shared.enums import EvaluacionModalidad
 from app.services.llm_router import LLMRouter
+from app.services import llm_router as llm_router_module
 
 
 def _structure(*, missing_answer: int | None = None) -> dict:
@@ -100,6 +103,114 @@ def test_detect_mime_rejects_empty_and_unknown_files() -> None:
         digitalize_service.detect_digitalization_mime(b"plain text", "fake.pdf")
 
 
+class _FakeVisionClient:
+    async def close(self) -> None:
+        return None
+
+
+def test_image_extraction_accepts_meaningful_text_when_flagged_unusable(monkeypatch) -> None:
+    captured: dict[str, str] = {}
+
+    async def fake_vision(context, model, client, prompt_override=None):
+        captured["prompt"] = prompt_override
+        return AgentResult(
+            nota_sugerida=None,
+            confianza=0.4,
+            feedback_estudiante="",
+            raw_output={
+                "usable": False,
+                "texto_extraido": (
+                    "Evaluación grado 5. 1. ¿Cuánto es 1+2-3×4÷5? "
+                    "2. Seleccione el número más grande."
+                ),
+                "alertas": ["Texto manuscrito"],
+            },
+        )
+
+    monkeypatch.setattr(digitalize_service, "OpenCodeClient", _FakeVisionClient)
+    monkeypatch.setattr(digitalize_service, "vision_agent", fake_vision)
+
+    text, warnings = asyncio.run(
+        digitalize_service._extract_image_text(
+            b"image",
+            "image/png",
+            "evaluacion.png",
+        )
+    )
+
+    assert "Seleccione el número" in text
+    assert "HOJA DE PREGUNTAS" in captured["prompt"]
+    assert any("parcialmente legible" in warning for warning in warnings)
+
+
+def test_image_extraction_uses_document_fallback_on_provider_error(monkeypatch) -> None:
+    async def failed_primary(context, model, client, prompt_override=None):
+        return AgentResult(
+            nota_sugerida=None,
+            confianza=0,
+            feedback_estudiante="",
+            error="HTTP 500",
+        )
+
+    async def successful_fallback(content, mime_type, context_hint, purpose):
+        assert purpose == "evaluation_document"
+        return {
+            "text_or_visual_content": "1. Calcule 8+4. 2. Escriba los decimales de pi.",
+            "image_quality": {"is_usable": True},
+            "warnings": [],
+        }
+
+    monkeypatch.setattr(digitalize_service, "OpenCodeClient", _FakeVisionClient)
+    monkeypatch.setattr(digitalize_service, "vision_agent", failed_primary)
+    monkeypatch.setattr(digitalize_service, "interpret_image", successful_fallback)
+
+    text, warnings = asyncio.run(
+        digitalize_service._extract_image_text(
+            b"image",
+            "image/png",
+            "evaluacion.png",
+        )
+    )
+
+    assert "Calcule 8+4" in text
+    assert any("proveedor alternativo" in warning for warning in warnings)
+
+
+def test_image_extraction_reports_provider_outage_without_blaming_photo(monkeypatch) -> None:
+    async def failed_primary(context, model, client, prompt_override=None):
+        return AgentResult(
+            nota_sugerida=None,
+            confianza=0,
+            feedback_estudiante="",
+            error="provider timeout",
+        )
+
+    async def failed_fallback(content, mime_type, context_hint, purpose):
+        return {
+            "text_or_visual_content": "",
+            "image_quality": {"is_usable": False},
+            "warnings": [
+                "No se pudo interpretar la imagen con ningún proveedor de visión."
+            ],
+        }
+
+    monkeypatch.setattr(digitalize_service, "OpenCodeClient", _FakeVisionClient)
+    monkeypatch.setattr(digitalize_service, "vision_agent", failed_primary)
+    monkeypatch.setattr(digitalize_service, "interpret_image", failed_fallback)
+
+    with pytest.raises(HTTPException) as exc:
+        asyncio.run(
+            digitalize_service._extract_image_text(
+                b"image",
+                "image/png",
+                "evaluacion.png",
+            )
+        )
+
+    assert exc.value.status_code == 503
+    assert "no fue rechazada por su calidad" in str(exc.value.detail)
+
+
 def test_detector_repairs_missing_answers_before_normalizing(monkeypatch) -> None:
     first = _structure(missing_answer=5)
     calls: list[str] = []
@@ -126,6 +237,44 @@ def test_detector_repairs_missing_answers_before_normalizing(monkeypatch) -> Non
     assert calls == ["evaluacion_digitalizar", "evaluacion_digitalizar"]
     assert len(result["respuestas_esperadas"]) == 7
     assert result["respuestas_esperadas"][4]["respuesta"] == "24 lápices"
+
+
+def test_detector_uses_local_math_fallback_when_opencode_is_limited(monkeypatch) -> None:
+    class FailingRouter:
+        def __init__(self, user_id=None) -> None:
+            pass
+
+        async def generate_json(self, task_type, prompt):
+            raise RuntimeError("rate limited")
+
+    monkeypatch.setattr(digitalize_service, "LLMRouter", FailingRouter)
+    extracted_text = """Evaluación Grado 5.º
+1. ¿Cuánto es 1+2-3x4÷5?
+2. Seleccione el número más grande
+A) 1+30-15x2÷3
+B) 30-1+15÷9
+C) 10+10-10
+D) 1+50-20x3÷2
+3. Escriba los primeros 3 decimales de pi (3...)
+"""
+
+    result = asyncio.run(
+        digitalize_service.detectar_estructura_evaluacion(
+            uuid4(),
+            extracted_text,
+            nota_maxima=Decimal("5"),
+        )
+    )
+
+    answers = {
+        item["numero"]: item["respuesta"]
+        for item in result["respuestas_esperadas"]
+    }
+    assert len(result["preguntas"]) == 3
+    assert answers[1] == "0.6"
+    assert answers[2].startswith("B)")
+    assert answers[3] == "3.141"
+    assert any("recuperación local" in warning for warning in result["advertencias"])
 
 
 def test_document_routing_never_falls_through_to_other_providers(monkeypatch) -> None:
@@ -169,3 +318,56 @@ def test_document_routing_never_falls_through_to_other_providers(monkeypatch) ->
     assert [provider for provider, _call in providers] == ["open_code"]
     assert router._provider_configs["open_code"]["model"] == "qwen3.6-plus"
     assert router._provider_configs["open_code"]["timeout_seconds"] == 180
+
+def test_opencode_text_router_retries_rate_limit(monkeypatch) -> None:
+    request = httpx.Request("POST", "https://example.test/chat/completions")
+    responses = [
+        httpx.Response(
+            429,
+            headers={"Retry-After": "0"},
+            request=request,
+        ),
+        httpx.Response(
+            200,
+            json={
+                "choices": [{"message": {"content": "{\"preguntas\": []}"}}],
+                "usage": {},
+            },
+            request=request,
+        ),
+    ]
+
+    class FakeHTTPClient:
+        calls = 0
+
+        def __init__(self, timeout):
+            self.timeout = timeout
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, exc_type, exc, traceback):
+            return False
+
+        async def post(self, url, headers, json):
+            type(self).calls += 1
+            return responses.pop(0)
+
+    async def fake_usage_log(**kwargs):
+        return None
+
+    monkeypatch.setattr(llm_router_module.httpx, "AsyncClient", FakeHTTPClient)
+    monkeypatch.setattr(llm_router_module, "log_ai_usage", fake_usage_log)
+
+    router = LLMRouter()
+    router._credentials["open_code"] = "test-key"
+    router._provider_configs["open_code"] = {
+        "base_url": "https://example.test",
+        "model": "qwen3.6-plus",
+        "timeout_seconds": 5,
+    }
+
+    result = asyncio.run(router._call_open_code("Digitaliza", json_mode=True))
+
+    assert result == "{\"preguntas\": []}"
+    assert FakeHTTPClient.calls == 2
