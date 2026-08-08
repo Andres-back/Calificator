@@ -1,5 +1,6 @@
 import asyncio
 import json
+import re
 import time
 import uuid
 from dataclasses import dataclass, field, asdict
@@ -28,6 +29,156 @@ OPEN_CODE_MAX_ATTEMPTS = 3
 OPEN_CODE_RETRY_BASE_SECONDS = 0.5
 OPEN_CODE_RETRY_MAX_SECONDS = 10.0
 OPEN_CODE_RETRYABLE_STATUS_CODES = frozenset({408, 425, 429, 500, 502, 503, 504})
+OPEN_CODE_ANTHROPIC_MODEL_PREFIXES = ("qwen", "minimax-m")
+
+
+def _opencode_protocol(model: str) -> str:
+    """Return the wire protocol documented for an OpenCode Go model."""
+    model_id = model.rsplit("/", 1)[-1].lower()
+    if model_id.startswith(OPEN_CODE_ANTHROPIC_MODEL_PREFIXES):
+        return "messages"
+    return "chat_completions"
+
+
+def _to_anthropic_content(content: Any) -> Any:
+    if isinstance(content, str):
+        return content
+    blocks: list[dict[str, Any]] = []
+    for block in content if isinstance(content, list) else [content]:
+        if not isinstance(block, dict):
+            blocks.append({"type": "text", "text": str(block)})
+            continue
+        if block.get("type") == "text":
+            text_value = str(block.get("text") or "")
+            if text_value:
+                blocks.append({"type": "text", "text": text_value})
+            continue
+        if block.get("type") == "image":
+            blocks.append(block)
+            continue
+        if block.get("type") != "image_url":
+            continue
+        image_url = block.get("image_url")
+        url = image_url.get("url") if isinstance(image_url, dict) else image_url
+        if not isinstance(url, str):
+            continue
+        if url.startswith("data:") and ";base64," in url:
+            header, encoded = url.split(",", 1)
+            blocks.append({
+                "type": "image",
+                "source": {
+                    "type": "base64",
+                    "media_type": header[5:].split(";", 1)[0],
+                    "data": encoded,
+                },
+            })
+        else:
+            blocks.append({
+                "type": "image",
+                "source": {"type": "url", "url": url},
+            })
+    return blocks
+
+
+def _to_anthropic_messages(messages: list[dict]) -> tuple[str | None, list[dict]]:
+    system_parts: list[str] = []
+    normalized: list[dict] = []
+    for message in messages:
+        role = str(message.get("role") or "user")
+        content = message.get("content", "")
+        if role == "system":
+            if isinstance(content, str) and content:
+                system_parts.append(content)
+            continue
+        normalized.append({
+            "role": "assistant" if role == "assistant" else "user",
+            "content": _to_anthropic_content(content),
+        })
+    return ("\n\n".join(system_parts) or None), normalized
+
+
+def _normalize_anthropic_response(data: dict[str, Any]) -> dict[str, Any]:
+    content = data.get("content") or []
+    if isinstance(content, str):
+        text_value = content
+        reasoning = ""
+    else:
+        text_value = "".join(
+            str(block.get("text") or "")
+            for block in content
+            if isinstance(block, dict) and block.get("type") == "text"
+        )
+        reasoning = "\n".join(
+            str(block.get("thinking") or block.get("text") or "")
+            for block in content
+            if isinstance(block, dict) and block.get("type") == "thinking"
+        )
+    usage = data.get("usage") or {}
+    message = {"role": "assistant", "content": text_value}
+    if reasoning:
+        message["reasoning_content"] = reasoning
+    return {
+        "id": data.get("id"),
+        "model": data.get("model"),
+        "choices": [{
+            "message": message,
+            "finish_reason": data.get("stop_reason"),
+        }],
+        "usage": {
+            "input_tokens": usage.get("input_tokens"),
+            "output_tokens": usage.get("output_tokens"),
+        },
+        "_opencode_protocol": "messages",
+    }
+
+
+def _prepare_multimodal_images(
+    file_bytes: bytes,
+    mime_type: str,
+) -> list[tuple[bytes, str, int]]:
+    if mime_type != "application/pdf":
+        return [(file_bytes, mime_type, 1)]
+    try:
+        import fitz
+        images: list[tuple[bytes, str, int]] = []
+        with fitz.open(stream=file_bytes, filetype="pdf") as document:
+            page_count = len(document)
+            if page_count == 0:
+                raise ValueError("El PDF no contiene paginas")
+            max_pages = max(1, int(settings.MAX_GRADING_PDF_PAGES))
+            if page_count > max_pages:
+                raise ValueError(
+                    f"El PDF tiene {page_count} paginas; el maximo permitido es {max_pages}"
+                )
+            dpi = max(72, int(settings.GRADING_PDF_RENDER_DPI))
+            for page_number, page in enumerate(document, start=1):
+                pixmap = page.get_pixmap(dpi=dpi, alpha=False)
+                images.append((pixmap.tobytes("png"), "image/png", page_number))
+        return images
+    except Exception as exc:
+        logger.warning("Error convirtiendo PDF a imagenes: %s", exc)
+        raise ValueError("No fue posible preparar el PDF para calificar") from exc
+
+
+def _parse_json_content(content: Any) -> dict[str, Any]:
+    if isinstance(content, dict):
+        return content
+    if not isinstance(content, str):
+        raise ValueError("El proveedor no devolvio un objeto JSON")
+    candidate = content.strip()
+    if candidate.startswith("```"):
+        first_newline = candidate.find("\n")
+        candidate = candidate[first_newline + 1:] if first_newline >= 0 else candidate
+        if candidate.rstrip().endswith("```"):
+            candidate = candidate.rstrip()[:-3]
+    start = candidate.find("{")
+    end = candidate.rfind("}")
+    if start < 0 or end < start:
+        raise ValueError("El proveedor no devolvio JSON valido")
+    parsed = json.loads(candidate[start:end + 1])
+    if not isinstance(parsed, dict):
+        raise ValueError("La respuesta JSON no es un objeto")
+    return parsed
 
 
 def _bounded_retry_after_seconds(value: str | None) -> float | None:
@@ -167,24 +318,44 @@ class OpenCodeClient:
         should pass ``timeout=DEFAULT_MULTIMODAL_TIMEOUT`` (180s).
         """
         start = time.monotonic()
-        body: dict[str, Any] = {
-            "model": model,
-            "messages": messages,
-            "max_tokens": max_tokens,
-            "temperature": temperature,
-        }
-        if json_mode:
-            body["response_format"] = {"type": "json_object"}
+        protocol = _opencode_protocol(model)
+        if protocol == "messages":
+            system_prompt, normalized_messages = _to_anthropic_messages(messages)
+            body: dict[str, Any] = {
+                "model": model,
+                "messages": normalized_messages,
+                "max_tokens": max_tokens,
+                "temperature": temperature,
+            }
+            if system_prompt:
+                body["system"] = system_prompt
+            endpoint = "messages"
+            headers = {
+                "x-api-key": self.api_key,
+                "anthropic-version": "2023-06-01",
+                "Content-Type": "application/json",
+            }
+        else:
+            body = {
+                "model": model,
+                "messages": messages,
+                "max_tokens": max_tokens,
+                "temperature": temperature,
+            }
+            if json_mode:
+                body["response_format"] = {"type": "json_object"}
+            endpoint = "chat/completions"
+            headers = {
+                "Authorization": f"Bearer {self.api_key}",
+                "Content-Type": "application/json",
+            }
 
         request_timeout = timeout if timeout is not None else DEFAULT_TIMEOUT
         for attempt_number in range(1, OPEN_CODE_MAX_ATTEMPTS + 1):
             try:
                 response = await self._client.post(
-                    f"{self.base_url}/chat/completions",
-                    headers={
-                        "Authorization": f"Bearer {self.api_key}",
-                        "Content-Type": "application/json",
-                    },
+                    f"{self.base_url}/{endpoint}",
+                    headers=headers,
                     json=body,
                     timeout=request_timeout,
                 )
@@ -206,6 +377,8 @@ class OpenCodeClient:
                     continue
                 response.raise_for_status()
                 data = response.json()
+                if protocol == "messages":
+                    data = _normalize_anthropic_response(data)
                 usage = data.get("usage", {}) or {}
                 await self._log_call(
                     stage="text",
@@ -266,37 +439,29 @@ class OpenCodeClient:
         Uses DEFAULT_MULTIMODAL_TIMEOUT (180s) by default because qwen3.7-plus
         takes 90-120s on real photos. Pass ``timeout`` to override.
 
-        Si el MIME es PDF, lo convierte a PNG automaticamente ya que los LLMs
-        no soportan application/pdf como image_url.
+        Si el MIME es PDF, renderiza y envia cada pagina como una imagen
+        numerada para que ninguna respuesta quede fuera del analisis.
         """
         import base64
-        import io
-
-        if image_mime == "application/pdf":
-            try:
-                import fitz
-                doc = fitz.open(stream=image_bytes, filetype="pdf")
-                page = doc[0]
-                pix = page.get_pixmap(dpi=200)
-                img_bytes = pix.tobytes("png")
-                doc.close()
-                image_bytes = img_bytes
-                image_mime = "image/png"
-            except Exception as exc:
-                logger.warning("Error convirtiendo PDF a imagen: %s", exc)
-
-        b64 = base64.b64encode(image_bytes).decode()
+        images = _prepare_multimodal_images(image_bytes, image_mime)
         start = time.monotonic()
+        content: list[dict[str, Any]] = [{"type": "text", "text": text}]
+        total_pages = len(images)
+        for image_data, mime_type, page_number in images:
+            if total_pages > 1:
+                content.append({
+                    "type": "text",
+                    "text": f"Pagina {page_number} de {total_pages}",
+                })
+            b64 = base64.b64encode(image_data).decode()
+            content.append({
+                "type": "image_url",
+                "image_url": {"url": f"data:{mime_type};base64,{b64}"},
+            })
 
         msg: dict = {
             "role": "user",
-            "content": [
-                {"type": "text", "text": text},
-                {
-                    "type": "image_url",
-                    "image_url": {"url": f"data:{image_mime};base64,{b64}"},
-                },
-            ],
+            "content": content,
         }
         try:
             data = await self.chat(
@@ -312,7 +477,7 @@ class OpenCodeClient:
                 model=model,
                 status="success",
                 started_at=start,
-                image_count=1,
+                image_count=total_pages,
                 input_tokens=(data.get("usage") or {}).get("input_tokens"),
                 output_tokens=(data.get("usage") or {}).get("output_tokens"),
             )
@@ -388,7 +553,7 @@ async def vision_agent(
         )
         ms = int((time.monotonic() - start) * 1000)
         content = raw["choices"][0]["message"]["content"]
-        parsed = json.loads(content) if isinstance(content, str) else content
+        parsed = _parse_json_content(content)
         usable = parsed.get("usable", True)
         alertas = parsed.get("alertas", [])
         texto = parsed.get("texto_extraido", "")
@@ -446,10 +611,42 @@ async def vision_router_agent(ctx: AgentContext) -> AgentResult:
         text = str(parsed.get("text_or_visual_content") or "").strip()
         usable = bool(quality.get("is_usable", bool(text))) and bool(text)
         warnings = list(parsed.get("warnings") or [])
+        detected_answers = parsed.get("detected_answers") or []
+        normalized_answers: list[dict[str, Any]] = []
+        if isinstance(detected_answers, dict):
+            detected_answers = [
+                {"pregunta": key, "respuesta": value}
+                for key, value in detected_answers.items()
+            ]
+        for index, answer in enumerate(detected_answers, start=1):
+            if isinstance(answer, dict):
+                question_number = (
+                    answer.get("pregunta")
+                    or answer.get("numero")
+                    or answer.get("question")
+                    or index
+                )
+                response_value = (
+                    answer.get("respuesta")
+                    or answer.get("answer")
+                    or answer.get("texto")
+                    or answer.get("text")
+                    or ""
+                )
+            else:
+                response_value = str(answer)
+                numbered = re.match(r"^\s*(\d+)\s*[.):-]?\s*(.*)$", response_value)
+                question_number = int(numbered.group(1)) if numbered else index
+                response_value = numbered.group(2) if numbered else response_value
+            normalized_answers.append({
+                "pregunta": question_number,
+                "respuesta": str(response_value).strip(),
+            })
+
         normalized = {
             "texto_extraido": text,
             "preguntas_detectadas": parsed.get("detected_questions") or [],
-            "respuestas_detectadas": parsed.get("detected_answers") or [],
+            "respuestas_detectadas": normalized_answers,
             "calidad_imagen": quality,
             "usable": usable,
             "alertas": warnings,
@@ -566,7 +763,7 @@ async def grader_agent(
             )
         ms = int((time.monotonic() - start) * 1000)
         content = raw["choices"][0]["message"]["content"]
-        parsed = json.loads(content) if isinstance(content, str) else content
+        parsed = _parse_json_content(content)
         reasoning = raw["choices"][0]["message"].get("reasoning_content", "")
 
         raw_score = parsed.get("nota_sugerida")
@@ -763,7 +960,7 @@ async def comparator_agent(
         raw = await client.chat(model=model, messages=[{"role": "user", "content": prompt}], json_mode=True, max_tokens=1024)
         ms = int((time.monotonic() - start) * 1000)
         content = raw["choices"][0]["message"]["content"]
-        parsed = json.loads(content) if isinstance(content, str) else content
+        parsed = _parse_json_content(content)
         nota_final = float(parsed.get("nota_final", score_a))
         discrepancy = parsed.get("discrepancia", diff >= umbral)
         logger.info("Comparator via LLM: diff=%.2f nota=%.2f discrepancia=%s", diff, nota_final, discrepancy)

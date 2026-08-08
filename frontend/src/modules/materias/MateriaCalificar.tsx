@@ -8,6 +8,7 @@ import {
   ChevronLeft,
   ChevronRight,
   FileImage,
+  FileText,
   Eye,
   ImageUp,
   RotateCcw,
@@ -56,7 +57,13 @@ import {
   validateAdjustedScore,
 } from './gradingFlowModel';
 
-const ACCEPTED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+const ACCEPTED_TYPES = [
+  'image/jpeg',
+  'image/jpg',
+  'image/png',
+  'image/webp',
+  'application/pdf',
+];
 const MAX_MB = 10;
 const MAX_BYTES = MAX_MB * 1024 * 1024;
 
@@ -226,7 +233,7 @@ export function MateriaCalificar() {
   }, [calificacionesQuery.data, estudianteId, foto]);
 
   useEffect(() => {
-    if (!foto) {
+    if (!foto || foto.type === 'application/pdf') {
       setPreviewUrl(null);
       return;
     }
@@ -236,6 +243,7 @@ export function MateriaCalificar() {
   }, [foto]);
 
   const hasUnsavedWork = Boolean((foto && !resultado) || editingNota);
+  const isPdfEvidence = foto?.type === 'application/pdf';
   const blocker = useBlocker(
     ({ currentLocation, nextLocation }) =>
       hasUnsavedWork && currentLocation.pathname !== nextLocation.pathname,
@@ -313,11 +321,11 @@ export function MateriaCalificar() {
     setError(null);
     if (!file) return;
     if (!ACCEPTED_TYPES.includes(file.type)) {
-      setError('Selecciona una imagen JPG, PNG o WebP.');
+      setError('Selecciona una imagen JPG, PNG o WebP, o un archivo PDF.');
       return;
     }
     if (file.size > MAX_BYTES) {
-      setError(`La imagen supera el límite de ${MAX_MB} MB.`);
+      setError(`El archivo supera el límite de ${MAX_MB} MB.`);
       return;
     }
     setResultado(null);
@@ -336,7 +344,7 @@ export function MateriaCalificar() {
   const gradeMutation = useMutation({
     mutationFn: () => {
       if (!evaluacionId || !estudianteId || !foto) {
-        throw new Error('Selecciona evaluación, estudiante y fotografía.');
+        throw new Error('Selecciona evaluación, estudiante y evidencia.');
       }
       return calificarFoto(evaluacionId, estudianteId, foto);
     },
@@ -347,7 +355,7 @@ export function MateriaCalificar() {
       if (isTechnicalGradingFailure(data)) {
         toast.error('La evidencia quedó guardada, pero la IA no produjo una nota.');
       } else {
-        toast.success('Foto analizada. Ahora revisa la sugerencia.');
+        toast.success('Evidencia analizada. Ahora revisa la sugerencia.');
       }
     },
     onError: (mutationError) => {
@@ -497,7 +505,7 @@ export function MateriaCalificar() {
                   Calificar una evaluación en papel
                 </h1>
                 <p className="mt-1 max-w-3xl text-sm leading-6 text-muted">
-                  Sigue los cuatro pasos. La IA analiza la fotografía y sugiere
+                  Sigue los cuatro pasos. La IA analiza la foto o el PDF y sugiere
                   una nota; tú siempre revisas y tomas la decisión final.
                 </p>
               </div>
@@ -510,7 +518,7 @@ export function MateriaCalificar() {
             <div className="grid gap-5 lg:grid-cols-[minmax(260px,420px)_1fr] lg:items-end">
               <Field
                 label="1. Selecciona la evaluación"
-                hint="Una evaluación cerrada no admite nuevas fotos, pero sí permite revisar decisiones existentes."
+                hint="Una evaluación cerrada no admite nueva evidencia, pero sí permite revisar decisiones existentes."
               >
                 {loadingEval ? (
                   <Skeleton className="h-11" />
@@ -541,7 +549,7 @@ export function MateriaCalificar() {
                 >
                   <div className="rounded-xl bg-surface-2 p-3 text-center">
                     <strong className="block text-xl">{summary.pendientes}</strong>
-                    <span className="text-xs text-muted">Sin foto</span>
+                    <span className="text-xs text-muted">Sin evidencia</span>
                   </div>
                   <div className="rounded-xl bg-amber-50 p-3 text-center dark:bg-amber-500/10">
                     <strong className="block text-xl text-amber-800 dark:text-amber-200">
@@ -566,7 +574,7 @@ export function MateriaCalificar() {
               role="status"
             >
               <strong>Evaluación cerrada.</strong> Ya no puedes enviar nuevas
-              fotografías. Todavía puedes revisar, confirmar o corregir las
+              evidencias. Todavía puedes revisar, confirmar o corregir las
               calificaciones existentes.
             </div>
           ) : null}
@@ -609,7 +617,7 @@ export function MateriaCalificar() {
                             ? 'Decisión guardada'
                             : student.calificacion
                               ? 'Sugerencia pendiente de revisión'
-                              : 'Sin fotografía'
+                              : 'Sin evidencia'
                         }`}
                         className={`flex min-h-12 min-w-[150px] items-center gap-2 rounded-xl border px-3 py-2 text-left text-sm transition-colors focus-ring ${
                           selected
@@ -639,7 +647,7 @@ export function MateriaCalificar() {
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
                       <h2 className="font-display text-lg font-bold">
-                        3. Fotografía de la respuesta
+                        3. Evidencia de la respuesta
                       </h2>
                       <p className="mt-1 text-sm text-muted">
                         Estudiante: <strong>{estudianteActual?.nombre}</strong>
@@ -672,7 +680,7 @@ export function MateriaCalificar() {
 
                   {!resultado && !foto ? (
                     <div className="rounded-xl border border-sky-200 bg-sky-50 p-4 text-sm dark:border-sky-500/30 dark:bg-sky-500/10">
-                      <p className="font-bold">Antes de tomar la foto:</p>
+                      <p className="font-bold">Antes de agregar la evidencia:</p>
                       <ul className="mt-2 space-y-1 text-muted">
                         <li>• Incluye la hoja completa y enfócala bien.</li>
                         <li>• Evita sombras, reflejos y dedos sobre la respuesta.</li>
@@ -691,7 +699,7 @@ export function MateriaCalificar() {
                           Agrega la evidencia de {firstName(estudianteActual?.nombre ?? '')}
                         </p>
                         <p className="mt-1 max-w-md text-sm text-muted">
-                          Puedes tomar la foto ahora o elegir una que ya guardaste.
+                          Puedes tomar una foto o elegir una imagen o PDF guardado.
                         </p>
                         {!evaluationClosed ? (
                           <div className="mt-4 flex flex-wrap justify-center gap-2">
@@ -713,7 +721,7 @@ export function MateriaCalificar() {
                           </div>
                         ) : null}
                         <p className="mt-3 text-xs text-muted">
-                          JPG, PNG o WebP · máximo {MAX_MB} MB
+                          JPG, PNG, WebP o PDF · máximo {MAX_MB} MB
                         </p>
                       </div>
                     ) : foto ? (
@@ -724,6 +732,16 @@ export function MateriaCalificar() {
                             alt={`Vista previa de la respuesta de ${estudianteActual?.nombre ?? 'el estudiante'}`}
                             className="max-h-96 w-full bg-surface-2 object-contain"
                           />
+                        ) : isPdfEvidence ? (
+                          <div className="flex min-h-52 flex-col items-center justify-center bg-surface-2 p-6 text-center">
+                            <span className="grid h-14 w-14 place-items-center rounded-xl bg-rose-500/10 text-rose-700 dark:text-rose-300">
+                              <FileText className="h-7 w-7" aria-hidden="true" />
+                            </span>
+                            <p className="mt-3 font-bold">PDF listo para analizar</p>
+                            <p className="mt-1 text-sm text-muted">
+                              La IA procesará sus páginas en orden.
+                            </p>
+                          </div>
                         ) : null}
                         <div className="flex flex-wrap items-center justify-between gap-3 bg-surface p-3">
                           <div className="flex min-w-0 items-center gap-3">
@@ -758,7 +776,7 @@ export function MateriaCalificar() {
                                 variant="ghost"
                                 onClick={restoreExistingGrade}
                                 disabled={isSubmitting}
-                                aria-label="Quitar fotografía"
+                                aria-label="Quitar evidencia"
                               >
                                 <Trash2 className="h-5 w-5" aria-hidden="true" />
                               </Button>
@@ -774,7 +792,7 @@ export function MateriaCalificar() {
                         <div>
                           <p className="font-bold">Evidencia analizada</p>
                           <p className="mt-1 text-sm text-muted">
-                            La fotografía ya fue procesada. Revisa el resultado
+                            La evidencia ya fue procesada. Revisa el resultado
                             en el paso 4.
                           </p>
                         </div>
@@ -785,7 +803,7 @@ export function MateriaCalificar() {
                   <input
                     ref={fileInputRef}
                     type="file"
-                    accept="image/jpeg,image/png,image/webp"
+                    accept="image/jpeg,image/png,image/webp,application/pdf"
                     className="sr-only"
                     onChange={(event) => {
                       handleFile(event.target.files?.[0]);
@@ -853,7 +871,7 @@ export function MateriaCalificar() {
                       <Button
                         onClick={() => gradeMutation.mutate()}
                         loading={gradeMutation.isPending}
-                        loadingLabel="Analizando fotografía…"
+                        loadingLabel="Analizando evidencia…"
                       >
                         <ScanText className="h-5 w-5" aria-hidden="true" />
                         Analizar y sugerir nota
@@ -876,8 +894,8 @@ export function MateriaCalificar() {
                   {!resultado ? (
                     <div className="rounded-xl border border-dashed border-border p-5 text-center text-sm text-muted">
                       {foto
-                        ? 'La fotografía está lista. Pulsa “Analizar y sugerir nota”.'
-                        : 'Primero agrega una fotografía de la respuesta.'}
+                        ? 'La evidencia está lista. Pulsa “Analizar y sugerir nota”.'
+                        : 'Primero agrega una foto o PDF de la respuesta.'}
                     </div>
                   ) : (
                     <>
@@ -1099,7 +1117,7 @@ export function MateriaCalificar() {
                                  disabled={isSubmitting}
                                >
                                  <RotateCcw className="h-4 w-4" aria-hidden="true" />
-                                 {technicalFailure ? 'Cambiar la fotografía' : 'Subir otra imagen'}
+                                 {technicalFailure ? 'Cambiar la evidencia' : 'Subir otra evidencia'}
                                </Button>
                             </>
                           ) : (
@@ -1129,7 +1147,7 @@ export function MateriaCalificar() {
                                  disabled={isSubmitting}
                                >
                                  <RotateCcw className="h-4 w-4" aria-hidden="true" />
-                                 Subir otra imagen
+                                 Subir otra evidencia
                                </Button>
                             </>
                           )}
@@ -1207,7 +1225,7 @@ export function MateriaCalificar() {
       <ConfirmDialog
         open={pendingSelection != null}
         title="Hay trabajo sin guardar"
-        description="Si cambias ahora, perderás la fotografía sin analizar o el ajuste de nota que estabas escribiendo."
+        description="Si cambias ahora, perderás la evidencia sin analizar o el ajuste de nota que estabas escribiendo."
         confirmLabel={
           pendingSelection?.kind === 'evaluation'
             ? 'Cambiar de evaluación'
@@ -1222,7 +1240,7 @@ export function MateriaCalificar() {
       <ConfirmDialog
         open={blocker.state === 'blocked'}
         title="Hay trabajo sin guardar"
-        description="Si sales ahora, perderás la fotografía sin analizar o el ajuste de nota que estabas escribiendo."
+        description="Si sales ahora, perderás la evidencia sin analizar o el ajuste de nota que estabas escribiendo."
         confirmLabel="Salir sin guardar"
         cancelLabel="Seguir calificando"
         tone="danger"

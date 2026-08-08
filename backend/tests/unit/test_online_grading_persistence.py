@@ -92,6 +92,7 @@ def _configure(monkeypatch, evaluation: SimpleNamespace) -> None:
 
 def test_physical_evaluation_rejects_online_submission(monkeypatch) -> None:
     evaluation = _evaluation(EvaluacionModalidad.FISICA.value)
+    evaluation.recepcion_habilitada = True
     student = _student()
     db = FakeDB()
     _configure(monkeypatch, evaluation)
@@ -178,7 +179,7 @@ def test_successful_online_submission_remains_a_teacher_reviewable_suggestion(mo
     grade = next(item for item in db.added if isinstance(item, Calificacion))
     assert delivery.estado == EntregaEstado.CALIFICADA.value
     assert grade.nota_sugerida == Decimal("4.2")
-    assert grade.estado == CalificacionEstado.SUGERIDA.value
+    assert grade.estado == CalificacionEstado.REQUIERE_REVISION.value
     assert grade.revisado_por_docente is False
     assert grade.nota_confirmada is None
 

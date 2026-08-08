@@ -43,6 +43,7 @@ from app.modules.calificaciones.schemas import (
     SalonResumen,
     SalonSesionRead,
     ResumenAcademico,
+    SolicitudRevisionCreate,
 )
 from app.modules.evaluaciones import service as evaluaciones_service
 from app.modules.evaluaciones.blueprint_service import evaluation_to_grading_blueprint
@@ -105,11 +106,6 @@ async def calificar_foto(
         )
     if not await is_student_enrolled(db, evaluacion.materia_id, estudiante_id):
         raise HTTPException(status_code=403, detail="El estudiante no esta matriculado en esta materia")
-    if getattr(evaluacion, "modalidad", None) != EvaluacionModalidad.MIXTA.value:
-        await service.ensure_student_can_submit_new_evidence(
-            db, evaluacion, estudiante_id,
-        )
-
     content = await foto.read()
     mime = validate_mime(content, foto.filename or "image.jpg")
 
@@ -122,9 +118,9 @@ async def calificar_foto(
                 Entrega.estudiante_id == estudiante_id,
                 Entrega.tipo.in_([EntregaTipo.ONLINE.value, EntregaTipo.MIXTA.value]),
                 Entrega.respuesta_texto.is_not(None),
-                Entrega.archivo_url.is_(None),
             )
             .order_by(Entrega.created_at.desc())
+            .limit(1)
         )
         if not entrega:
             raise HTTPException(
@@ -137,27 +133,43 @@ async def calificar_foto(
         existing_calificacion = await db.scalar(
             select(Calificacion).where(Calificacion.entrega_id == entrega.id)
         )
-        if existing_calificacion and existing_calificacion.revisado_por_docente:
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail="La entrega mixta ya tiene una decision docente y no puede reprocesarse.",
-            )
     else:
-        entrega = Entrega(
-            evaluacion_id=evaluacion.id,
-            estudiante_id=estudiante_id,
-            materia_id=evaluacion.materia_id,
-            tipo=EntregaTipo.FOTO.value,
-            estado=EntregaEstado.PROCESANDO.value,
-            visual_text_json={},
+        # Esta es una accion del docente: reemplaza la evidencia vigente sin
+        # consumir otro intento del estudiante ni crear calificaciones duplicadas.
+        entrega = await db.scalar(
+            select(Entrega)
+            .where(
+                Entrega.evaluacion_id == evaluacion.id,
+                Entrega.estudiante_id == estudiante_id,
+            )
+            .order_by(Entrega.created_at.desc())
+            .limit(1)
         )
-        db.add(entrega)
+        if entrega:
+            existing_calificacion = await db.scalar(
+                select(Calificacion).where(Calificacion.entrega_id == entrega.id)
+            )
+            entrega.respuesta_texto = None
+        else:
+            entrega = Entrega(
+                evaluacion_id=evaluacion.id,
+                estudiante_id=estudiante_id,
+                materia_id=evaluacion.materia_id,
+                visual_text_json={},
+            )
+            db.add(entrega)
 
     archivo_url = await save_upload(content, foto.filename or "foto.jpg", subfolder="entregas")
     entrega.archivo_url = archivo_url
+    entrega.tipo = (
+        EntregaTipo.MIXTA.value
+        if getattr(evaluacion, "modalidad", None) == EvaluacionModalidad.MIXTA.value
+        else EntregaTipo.PDF.value
+        if mime == "application/pdf"
+        else EntregaTipo.FOTO.value
+    )
     entrega.estado = EntregaEstado.PROCESANDO.value
-    if getattr(evaluacion, "modalidad", None) == EvaluacionModalidad.MIXTA.value:
-        entrega.tipo = EntregaTipo.MIXTA.value
+    entrega.visual_text_json = {}
     await db.commit()
     await db.refresh(entrega)
 
@@ -302,48 +314,41 @@ async def calificar_lote(
         try:
             content = await foto.read()
             mime = validate_mime(content, foto.filename or "image.jpg")
-            grading = await grade_submission(
-                db,
-                evaluacion_id=evaluacion.id,
-                materia_id=evaluacion.materia_id,
-                blueprint=evaluation_to_grading_blueprint(evaluacion),
-                image_bytes=content,
-                image_mime=mime,
-                user_id=current_user.id,
+            archivo_url = await save_upload(
+                content,
+                foto.filename or f"lote_{i}.jpg",
+                subfolder="entregas",
             )
-            service.validate_score_within_evaluation(grading.nota_sugerida, evaluacion, "nota_sugerida")
-
-            archivo_url = await save_upload(content, foto.filename or f"lote_{i}.jpg", subfolder="entregas")
             entrega = Entrega(
                 evaluacion_id=evaluacion.id,
                 estudiante_id=sid_uuid,
                 materia_id=evaluacion.materia_id,
-                tipo=EntregaTipo.FOTO.value,
+                tipo=(
+                    EntregaTipo.PDF.value
+                    if mime == "application/pdf"
+                    else EntregaTipo.FOTO.value
+                ),
                 archivo_url=archivo_url,
-                estado=EntregaEstado.CALIFICADA.value,
-                visual_text_json=grading.raw_model_output,
+                estado=EntregaEstado.PROCESANDO.value,
+                visual_text_json={},
             )
             db.add(entrega)
-            await db.flush()
+            await db.commit()
+            await db.refresh(entrega)
 
-            cal = Calificacion(
-                evaluacion_id=evaluacion.id,
-                entrega_id=entrega.id,
+            cal = await photo_service.grade_persisted_photo(
+                db,
+                evaluacion=evaluacion,
+                entrega=entrega,
                 estudiante_id=sid_uuid,
-                materia_id=evaluacion.materia_id,
                 profesor_id=current_user.id,
-                nota_sugerida=grading.nota_sugerida,
-                confianza=Decimal(str(grading.confianza)),
-                feedback=grading.feedback_estudiante,
-                resultado_json=grading.raw_model_output,
-                estado=CalificacionEstado.SUGERIDA.value,
+                image_bytes=content,
+                image_mime=mime,
             )
-            db.add(cal)
             calificaciones_list.append(CalificacionRead.model_validate(cal))
         except Exception as e:
             errores.append({"estudiante_id": str(sid), "filename": foto.filename or f"lote_{i}", "error": str(e)})
 
-    service.transition_to_grading_if_needed(evaluacion)
     await db.commit()
 
     return {"calificaciones": [c.model_dump() for c in calificaciones_list], "errores": errores}
@@ -408,12 +413,12 @@ async def calificar_lote_asincrono(
             db, evaluacion, estudiante_id,
         )
 
-    prepared_files: list[tuple[bytes, str]] = []
+    prepared_files: list[tuple[bytes, str, str]] = []
     total_bytes = 0
     for index, foto in enumerate(files):
         content = await foto.read()
         try:
-            validate_mime(content, foto.filename or "image.jpg")
+            mime = validate_mime(content, foto.filename or "image.jpg")
         except ValueError as exc:
             raise HTTPException(
                 status_code=400,
@@ -425,11 +430,11 @@ async def calificar_lote_asincrono(
                 status_code=413,
                 detail="El tamano total del lote supera 100 MB",
             )
-        prepared_files.append((content, foto.filename or f"lote_{index}.jpg"))
+        prepared_files.append((content, foto.filename or f"lote_{index}.jpg", mime))
 
     entregas: list[Entrega] = []
     try:
-        for estudiante_id, (content, filename) in zip(
+        for estudiante_id, (content, filename, mime) in zip(
             estudiante_ids, prepared_files, strict=True,
         ):
             archivo_url = await save_upload(content, filename, subfolder="entregas")
@@ -437,7 +442,11 @@ async def calificar_lote_asincrono(
                 evaluacion_id=evaluacion.id,
                 estudiante_id=estudiante_id,
                 materia_id=evaluacion.materia_id,
-                tipo=EntregaTipo.FOTO.value,
+                tipo=(
+                    EntregaTipo.PDF.value
+                    if mime == "application/pdf"
+                    else EntregaTipo.FOTO.value
+                ),
                 archivo_url=archivo_url,
                 estado=EntregaEstado.RECIBIDA.value,
             )
@@ -801,7 +810,7 @@ async def crear_entrega_online(
     if evaluacion.modalidad not in {
         EvaluacionModalidad.ONLINE.value,
         EvaluacionModalidad.MIXTA.value,
-    } and not getattr(evaluacion, "recepcion_habilitada", False):
+    }:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail=(
@@ -894,6 +903,111 @@ async def crear_entrega_online(
     return entrega
 
 
+@router.post(
+    "/evaluaciones/{evaluacion_id}/entregas/archivo",
+    response_model=CalificacionRead,
+    status_code=status.HTTP_201_CREATED,
+)
+async def crear_entrega_archivo_estudiante(
+    evaluacion_id: UUID,
+    archivo: UploadFile = File(...),
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> object:
+    """Permite al estudiante entregar una foto o PDF en evaluaciones fisicas/mixtas."""
+    require_role(current_user, [UserRole.ESTUDIANTE])
+    evaluacion = await evaluaciones_service.get_evaluation_or_404(db, evaluacion_id)
+    service.ensure_evaluation_accepts_grading(evaluacion)
+    if evaluacion.modalidad not in {
+        EvaluacionModalidad.FISICA.value,
+        EvaluacionModalidad.MIXTA.value,
+    }:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Esta evaluacion es online y solo acepta respuestas en pantalla.",
+        )
+    if not await is_student_enrolled(db, evaluacion.materia_id, current_user.id):
+        raise HTTPException(status_code=403, detail="No estas matriculado en esta materia")
+
+    content = await archivo.read()
+    if len(content) > 15 * 1024 * 1024:
+        raise HTTPException(status_code=413, detail="El archivo supera el limite de 15 MB")
+    try:
+        mime = validate_mime(content, archivo.filename or "evidencia.jpg")
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=400,
+            detail="Solo puedes subir una foto JPG/PNG/WEBP o un archivo PDF.",
+        ) from exc
+
+    latest = await db.scalar(
+        select(Entrega)
+        .where(
+            Entrega.evaluacion_id == evaluacion.id,
+            Entrega.estudiante_id == current_user.id,
+        )
+        .order_by(Entrega.created_at.desc())
+        .limit(1)
+    )
+    mixed_submission = evaluacion.modalidad == EvaluacionModalidad.MIXTA.value
+    if mixed_submission:
+        if not latest or not latest.respuesta_texto:
+            raise HTTPException(
+                status_code=409,
+                detail="Primero completa y envia la parte online; despues adjunta la foto o PDF.",
+            )
+        if latest.archivo_url and latest.estado != EntregaEstado.REQUIERE_REINTENTO.value:
+            raise HTTPException(status_code=409, detail="Ya entregaste la evidencia fisica de esta evaluacion.")
+        entrega = latest
+    else:
+        if latest and latest.estado == EntregaEstado.REQUIERE_REINTENTO.value:
+            entrega = latest
+        else:
+            await service.ensure_student_can_submit_new_evidence(db, evaluacion, current_user.id)
+            entrega = Entrega(
+                evaluacion_id=evaluacion.id,
+                estudiante_id=current_user.id,
+                materia_id=evaluacion.materia_id,
+                visual_text_json={},
+            )
+            db.add(entrega)
+
+    archivo_url = await save_upload(
+        content,
+        archivo.filename or "evidencia.jpg",
+        subfolder="entregas",
+    )
+    entrega.archivo_url = archivo_url
+    entrega.tipo = (
+        EntregaTipo.MIXTA.value
+        if mixed_submission
+        else EntregaTipo.PDF.value
+        if mime == "application/pdf"
+        else EntregaTipo.FOTO.value
+    )
+    entrega.estado = EntregaEstado.PROCESANDO.value
+    entrega.visual_text_json = {}
+    await db.commit()
+    await db.refresh(entrega)
+
+    existing_calificacion = await db.scalar(
+        select(Calificacion).where(Calificacion.entrega_id == entrega.id)
+    )
+    mixed_metadata = _mixed_evidence_metadata(evaluacion, entrega) if mixed_submission else None
+    return await photo_service.grade_persisted_photo(
+        db,
+        evaluacion=evaluacion,
+        entrega=entrega,
+        estudiante_id=current_user.id,
+        profesor_id=evaluacion.profesor_id,
+        image_bytes=content,
+        image_mime=mime,
+        student_response_text=entrega.respuesta_texto,
+        evidence_metadata=mixed_metadata,
+        calificacion=existing_calificacion,
+    )
+
+
 # ── Detalle ──────────────────────────────────────────────────────────────────────
 
 
@@ -956,6 +1070,44 @@ async def ajustar_lote(
 
 
 # ── Incidencias ───────────────────────────────────────────────────────────────────
+
+
+@router.get(
+    "/evaluaciones/{evaluacion_id}/mi-solicitud-revision",
+    response_model=IncidenciaRead | None,
+)
+async def obtener_mi_solicitud_revision(
+    evaluacion_id: UUID,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> object:
+    require_role(current_user, [UserRole.ESTUDIANTE])
+    return await service.obtener_solicitud_revision_estudiante(
+        db,
+        evaluacion_id=evaluacion_id,
+        estudiante_id=current_user.id,
+    )
+
+
+@router.post(
+    "/evaluaciones/{evaluacion_id}/solicitud-revision",
+    response_model=IncidenciaRead,
+    status_code=status.HTTP_201_CREATED,
+)
+async def solicitar_revision_calificacion(
+    evaluacion_id: UUID,
+    payload: SolicitudRevisionCreate,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> object:
+    require_role(current_user, [UserRole.ESTUDIANTE])
+    return await service.crear_solicitud_revision_estudiante(
+        db,
+        evaluacion_id=evaluacion_id,
+        estudiante_id=current_user.id,
+        motivo=payload.motivo,
+        descripcion=payload.descripcion,
+    )
 
 
 @router.post("/calificaciones/{calificacion_id}/incidencias", response_model=IncidenciaRead, status_code=status.HTTP_201_CREATED)

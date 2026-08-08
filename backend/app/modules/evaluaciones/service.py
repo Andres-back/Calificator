@@ -2,7 +2,7 @@ from decimal import Decimal
 from uuid import UUID
 
 from fastapi import HTTPException, status
-from sqlalchemy import select
+from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -14,6 +14,7 @@ from app.modules.evaluaciones.modality_service import (
     validate_mixed_question_modalities,
 )
 from app.modules.evaluaciones.models import Evaluacion, EvaluacionBlueprint
+from app.modules.calificaciones.models import Calificacion, Entrega
 from app.modules.evaluaciones.schemas import (
     DigitalizarEvaluacionExternaRequest,
     EvaluacionCreate,
@@ -24,7 +25,14 @@ from app.modules.evaluaciones.schemas import (
 from app.modules.evaluaciones.state_machine import transition_evaluation_state
 from app.modules.materias.service import ensure_can_manage_materia, ensure_can_read_materia
 from app.modules.users.models import User
-from app.shared.enums import EvaluacionEstado, EvaluacionTipoOrigen, UserRole
+from app.shared.enums import (
+    CalificacionEstado,
+    EntregaEstado,
+    EvaluacionEstado,
+    EvaluacionTipoOrigen,
+    MaterialTipo,
+    UserRole,
+)
 from app.shared.utils import utcnow
 
 
@@ -76,11 +84,6 @@ STRUCTURAL_FIELDS = {
     "modalidad",
 }
 
-STRUCTURE_LOCKED_MESSAGE = (
-    "No se puede modificar la estructura academica de una evaluacion publicada o en proceso."
-)
-
-
 async def _select_evaluation(db: AsyncSession, evaluacion_id: UUID) -> Evaluacion | None:
     return await db.scalar(
         select(Evaluacion)
@@ -109,7 +112,8 @@ async def ensure_can_read_evaluation(
         and evaluacion.estado in STUDENT_VISIBLE_EVALUATION_STATES
         and await is_student_enrolled(db, evaluacion.materia_id, current_user.id)
     ):
-        return _student_safe_evaluation(evaluacion)
+        progress = await _student_progress_by_evaluation(db, [evaluacion], current_user.id)
+        return _student_safe_evaluation(evaluacion, progress.get(evaluacion.id))
     raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not enough permissions")
 
 
@@ -144,12 +148,12 @@ def _sanitize_student_payload(value: object) -> object:
     return value
 
 
-def _student_safe_evaluation(evaluacion: Evaluacion) -> dict:
+def _student_safe_evaluation(evaluacion: Evaluacion, progress: dict | None = None) -> dict:
     safe_questions = normalize_question_modalities(
         evaluacion.preguntas,
         evaluacion.modalidad,
     )
-    return {
+    payload = {
         "id": evaluacion.id,
         "materia_id": evaluacion.materia_id,
         "profesor_id": evaluacion.profesor_id,
@@ -176,6 +180,197 @@ def _student_safe_evaluation(evaluacion: Evaluacion) -> dict:
         "updated_at": evaluacion.updated_at,
         "blueprint": None,
     }
+    payload.update(progress or {})
+    return payload
+
+
+async def _student_progress_by_evaluation(
+    db: AsyncSession,
+    evaluaciones: list[Evaluacion],
+    estudiante_id: UUID,
+) -> dict[UUID, dict]:
+    """Construye el estado de entrega/nota para todas las tarjetas en dos consultas."""
+    if not evaluaciones:
+        return {}
+
+    evaluation_ids = [evaluacion.id for evaluacion in evaluaciones]
+    deliveries = list(
+        (
+            await db.scalars(
+                select(Entrega)
+                .where(
+                    Entrega.evaluacion_id.in_(evaluation_ids),
+                    Entrega.estudiante_id == estudiante_id,
+                )
+                .order_by(Entrega.created_at.desc())
+            )
+        )
+    )
+    grades = list(
+        (
+            await db.scalars(
+                select(Calificacion)
+                .where(
+                    Calificacion.evaluacion_id.in_(evaluation_ids),
+                    Calificacion.estudiante_id == estudiante_id,
+                    Calificacion.revisado_por_docente.is_(True),
+                    Calificacion.nota_confirmada.is_not(None),
+                    Calificacion.estado.in_(
+                        {
+                            CalificacionEstado.CONFIRMADA.value,
+                            CalificacionEstado.AJUSTADA.value,
+                            CalificacionEstado.PUBLICADA.value,
+                        }
+                    ),
+                )
+                .order_by(Calificacion.created_at.desc())
+            )
+        )
+    )
+
+    latest_delivery: dict[UUID, Entrega] = {}
+    attempt_counts: dict[UUID, int] = {}
+    for delivery in deliveries:
+        latest_delivery.setdefault(delivery.evaluacion_id, delivery)
+        if delivery.estado != EntregaEstado.REQUIERE_REINTENTO.value:
+            attempt_counts[delivery.evaluacion_id] = attempt_counts.get(delivery.evaluacion_id, 0) + 1
+
+    latest_grade: dict[UUID, Calificacion] = {}
+    for grade in grades:
+        latest_grade.setdefault(grade.evaluacion_id, grade)
+
+    progress: dict[UUID, dict] = {}
+    for evaluacion in evaluaciones:
+        delivery = latest_delivery.get(evaluacion.id)
+        grade = latest_grade.get(evaluacion.id)
+        delivered = bool(
+            delivery
+            and delivery.estado != EntregaEstado.REQUIERE_REINTENTO.value
+        )
+        progress[evaluacion.id] = {
+            "mi_entrega_id": delivery.id if delivery else None,
+            "mi_entrega_estado": delivery.estado if delivery else None,
+            "mi_entrega_tipo": delivery.tipo if delivery else None,
+            "mi_entrega_created_at": delivery.created_at if delivery else None,
+            "intentos_realizados": attempt_counts.get(evaluacion.id, 0),
+            "entrega_realizada": delivered,
+            "mi_nota_confirmada": grade.nota_confirmada if grade else None,
+            "mi_calificacion_estado": grade.estado if grade else None,
+        }
+    return progress
+
+
+def _safe_crossword_content(content: dict) -> dict:
+    nested = content.get("crucigrama") if isinstance(content.get("crucigrama"), dict) else {}
+    grid = nested.get("grid") or content.get("grid") or []
+    horizontal = content.get("preguntas_horizontales") or nested.get("pistas_horizontal") or []
+    vertical = content.get("preguntas_verticales") or nested.get("pistas_vertical") or []
+
+    def safe_clues(values: object, direction: str, start: int) -> list[dict]:
+        if not isinstance(values, list):
+            return []
+        clues: list[dict] = []
+        for offset, item in enumerate(values):
+            if not isinstance(item, dict):
+                continue
+            clues.append({
+                "numero": item.get("numero", offset + 1),
+                "numero_evaluacion": start + len(clues),
+                "pista": str(item.get("pista") or item.get("definicion") or "").strip(),
+                "fila": int(item.get("fila") or 0),
+                "columna": int(item.get("columna") or 0),
+                "longitud": int(item.get("longitud") or len(str(item.get("respuesta") or item.get("palabra") or ""))),
+                "direccion": direction,
+            })
+        return clues
+
+    safe_horizontal = safe_clues(horizontal, "horizontal", 1)
+    safe_vertical = safe_clues(vertical, "vertical", len(safe_horizontal) + 1)
+    return {
+        "grid_mascara": [
+            [bool(str(cell).strip()) for cell in row]
+            for row in grid
+            if isinstance(row, list)
+        ],
+        "pistas_horizontales": safe_horizontal,
+        "pistas_verticales": safe_vertical,
+    }
+
+
+def _safe_word_search_content(content: dict) -> dict:
+    nested = content.get("sopa_letras") if isinstance(content.get("sopa_letras"), dict) else {}
+    grid = content.get("grilla") or nested.get("grilla") or []
+    words = content.get("banco_palabras") or nested.get("banco_palabras") or []
+    return {
+        "grilla": grid if isinstance(grid, list) else [],
+        "banco_palabras": [str(word) for word in words] if isinstance(words, list) else [],
+    }
+
+
+def _safe_matching_content(content: dict) -> dict:
+    left = content.get("columna_izquierda") or []
+    right = content.get("columna_derecha") or []
+    return {
+        "columna_izquierda": [
+            {"numero": item.get("numero", index), "texto": str(item.get("texto") or "")}
+            for index, item in enumerate(left, start=1)
+            if isinstance(item, dict)
+        ],
+        "columna_derecha": [
+            {"letra": str(item.get("letra") or ""), "texto": str(item.get("texto") or "")}
+            for item in right
+            if isinstance(item, dict)
+        ],
+    }
+
+
+def build_student_activity_payload(material_type: str, title: str, content: dict) -> dict | None:
+    """Expone solo lo necesario para jugar; nunca incluye claves o soluciones."""
+    if material_type == MaterialTipo.CRUCIGRAMA.value:
+        safe_content = _safe_crossword_content(content)
+    elif material_type == MaterialTipo.SOPA_LETRAS.value:
+        safe_content = _safe_word_search_content(content)
+    elif material_type in {MaterialTipo.UNIR_COLUMNAS.value, MaterialTipo.EMPAREJAR.value}:
+        safe_content = _safe_matching_content(content)
+    else:
+        return None
+    return {"tipo": material_type, "titulo": title, "contenido": safe_content}
+
+
+async def get_student_activity(
+    db: AsyncSession,
+    evaluacion_id: UUID,
+    current_user: User,
+) -> dict | None:
+    if current_user.rol != UserRole.ESTUDIANTE.value:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Solo disponible para estudiantes")
+    evaluacion = await get_evaluation_or_404(db, evaluacion_id)
+    if (
+        evaluacion.estado not in STUDENT_VISIBLE_EVALUATION_STATES
+        or not await is_student_enrolled(db, evaluacion.materia_id, current_user.id)
+    ):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No tienes acceso a esta actividad")
+    if not evaluacion.material_origen_id:
+        return None
+    row = (
+        await db.execute(
+            text(
+                "SELECT tipo, titulo, contenido_json FROM materiales_generados "
+                "WHERE id = :material_id AND profesor_id = :profesor_id"
+            ),
+            {
+                "material_id": str(evaluacion.material_origen_id),
+                "profesor_id": str(evaluacion.profesor_id),
+            },
+        )
+    ).mappings().first()
+    if not row:
+        return None
+    return build_student_activity_payload(
+        str(row["tipo"]),
+        str(row["titulo"]),
+        row["contenido_json"] if isinstance(row["contenido_json"], dict) else {},
+    )
 
 
 async def _build_or_update_blueprint(
@@ -294,7 +489,11 @@ async def list_evaluations_for_materia(
     result = await db.scalars(stmt)
     evaluaciones = list(result)
     if current_user.rol == UserRole.ESTUDIANTE.value:
-        return [_student_safe_evaluation(evaluacion) for evaluacion in evaluaciones]
+        progress = await _student_progress_by_evaluation(db, evaluaciones, current_user.id)
+        return [
+            _student_safe_evaluation(evaluacion, progress.get(evaluacion.id))
+            for evaluacion in evaluaciones
+        ]
     return evaluaciones
 
 
@@ -309,11 +508,7 @@ async def update_evaluation(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="El estado de una evaluacion solo puede cambiar mediante endpoints dedicados.",
         )
-    if evaluacion.estado != EvaluacionEstado.BORRADOR.value and STRUCTURAL_FIELDS.intersection(data):
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail=STRUCTURE_LOCKED_MESSAGE,
-        )
+    structural_update = bool(STRUCTURAL_FIELDS.intersection(data))
 
     rebuild_blueprint = False
     dba_ids = [UUID(value) for value in evaluacion.dba_ids]
@@ -353,6 +548,11 @@ async def update_evaluation(
 
     if rebuild_blueprint:
         await _build_or_update_blueprint(db, evaluacion, dba_ids, dba_personalizado_ids)
+
+    # Una evaluación asignada continúa siendo editable por su profesor, pero
+    # debe conservar una estructura válida mientras siga visible al estudiante.
+    if structural_update and evaluacion.estado != EvaluacionEstado.BORRADOR.value:
+        validate_publication_structure(evaluacion)
 
     await db.commit()
     return await get_evaluation_or_404(db, evaluacion.id)
@@ -482,10 +682,12 @@ async def publish_evaluation(db: AsyncSession, evaluacion: Evaluacion) -> Evalua
 
 
 async def activate_reception(db: AsyncSession, evaluacion: Evaluacion) -> Evaluacion:
-    if evaluacion.estado not in ACTIVE_RECEPTION_STATES:
+    if evaluacion.estado == EvaluacionEstado.CERRADA.value:
+        transition_evaluation_state(evaluacion, EvaluacionEstado.EN_CALIFICACION)
+    elif evaluacion.estado not in ACTIVE_RECEPTION_STATES:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail="Solo una evaluacion publicada y activa puede recibir entregas.",
+            detail="Publica la evaluacion antes de abrir entregas.",
         )
     evaluacion.recepcion_habilitada = True
     await db.commit()

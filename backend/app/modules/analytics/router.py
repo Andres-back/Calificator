@@ -21,7 +21,7 @@ class EventoCreate(BaseModel):
     tipo: str = Field(..., min_length=1, max_length=60)
     evaluacion_id: UUID | None = None
     calificacion_id: UUID | None = None
-    metadata_json: dict = {}
+    metadata_json: dict = Field(default_factory=dict)
 
 
 @router.post("/analytics/evento", status_code=201)

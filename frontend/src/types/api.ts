@@ -158,6 +158,14 @@ export interface Evaluacion {
       };
     };
   } | null;
+  mi_entrega_id?: string | null;
+  mi_entrega_estado?: string | null;
+  mi_entrega_tipo?: string | null;
+  mi_entrega_created_at?: string | null;
+  intentos_realizados?: number;
+  entrega_realizada?: boolean;
+  mi_nota_confirmada?: number | null;
+  mi_calificacion_estado?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -249,6 +257,15 @@ export interface CalificacionTimelineEvent {
   detalle: string | null;
 }
 
+export interface GuiaRevisionItem {
+  numero: number | string;
+  enunciado: string;
+  tipo: string | null;
+  opciones: string[];
+  respuesta_correcta: string | null;
+  puntaje: number | string | null;
+}
+
 export interface CalificacionDetalle extends Calificacion {
   evaluacion_nombre: string;
   materia_nombre: string;
@@ -260,6 +277,7 @@ export interface CalificacionDetalle extends Calificacion {
   entrega_respuesta_texto: string | null;
   entrega_created_at: string | null;
   timeline: CalificacionTimelineEvent[];
+  guia_revision: GuiaRevisionItem[];
 }
 
 export interface BatchResultItem {
@@ -297,6 +315,8 @@ export interface IncidenciaCreate {
   metadata_json?: Record<string, unknown>;
 }
 
+export type SolicitudRevisionMotivo = 'nota' | 'respuesta' | 'evidencia' | 'retroalimentacion' | 'otro';
+
 export type GradeFilter = 'todas' | 'pendientes' | 'confirmadas' | 'incidencias';
 
 export interface EntregaRead {
@@ -313,6 +333,12 @@ export interface EntregaRead {
 
 export interface EntregaOnlineCreate {
   respuesta_texto: string;
+}
+
+export interface StudentActivity {
+  tipo: 'crucigrama' | 'sopa_letras' | 'unir_columnas' | 'emparejar';
+  titulo: string;
+  contenido: Record<string, unknown>;
 }
 
 export interface BoletinItem {
@@ -373,6 +399,22 @@ export interface XaliEvaluacionEntregada {
 
 export interface XaliEvaluationChatResponse {
   respuesta: string;
+  contexto_usado: {
+    evaluacion_entregada: boolean;
+    calificacion_confirmada: boolean;
+  };
+}
+
+export type XaliStudentResourceType = 'explicacion' | 'practica' | 'plan_estudio' | 'reto';
+
+export interface XaliStudentResource {
+  id: string;
+  evaluacion_id: string;
+  tipo: XaliStudentResourceType;
+  titulo: string;
+  contenido: string;
+  created_at: string;
+  updated_at: string;
   contexto_usado: {
     evaluacion_entregada: boolean;
     calificacion_confirmada: boolean;

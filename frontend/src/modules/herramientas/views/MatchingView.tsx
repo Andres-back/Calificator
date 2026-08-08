@@ -7,7 +7,15 @@ import type { MatchingContenido } from '@/types/api';
 
 const CABLES = ['#6366F1', '#8B5CF6', '#EC4899', '#F59E0B', '#10B981', '#06B6D4', '#EF4444', '#84CC16', '#F97316', '#14B8A6'];
 
-export function MatchingView({ data }: { data: MatchingContenido }) {
+export function MatchingView({
+  data,
+  allowCheck = true,
+  onMatchesChange,
+}: {
+  data: MatchingContenido;
+  allowCheck?: boolean;
+  onMatchesChange?: (matches: Record<number, string>) => void;
+}) {
   const left = data.columna_izquierda ?? [];
   const right = data.columna_derecha ?? [];
   const solution: Record<number, string> = Object.fromEntries((data.soluciones ?? []).map((s) => [s.numero, s.letra]));
@@ -40,6 +48,7 @@ export function MatchingView({ data }: { data: MatchingContenido }) {
   }, []);
 
   useLayoutEffect(() => { recalc(); }, [recalc, matches, checked]);
+  useEffect(() => { onMatchesChange?.(matches); }, [matches, onMatchesChange]);
   useEffect(() => {
     window.addEventListener('resize', recalc);
     return () => window.removeEventListener('resize', recalc);
@@ -154,7 +163,7 @@ export function MatchingView({ data }: { data: MatchingContenido }) {
           Conectadas: <span className="font-bold text-brand-600">{Object.keys(matches).length}/{left.length}</span>
         </p>
         <div className="flex gap-2">
-          {!checked && allDone && (
+          {allowCheck && !checked && allDone && (
             <Button size="sm" onClick={() => setChecked(true)}><Sparkles className="h-4 w-4" /> Verificar</Button>
           )}
           {(Object.keys(matches).length > 0 || checked) && (

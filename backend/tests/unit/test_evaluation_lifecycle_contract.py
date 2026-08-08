@@ -169,8 +169,19 @@ def test_enrolled_student_detail_visibility_follows_the_lifecycle(
         assert student_id == student.id
         return True
 
+    async def student_progress(_db, evaluations, student_id):
+        assert evaluations == [evaluation]
+        assert student_id == student.id
+        return {
+            evaluation.id: {
+                "entrega_realizada": True,
+                "intentos_realizados": 1,
+            }
+        }
+
     monkeypatch.setattr(evaluation_service, "get_evaluation_or_404", get_evaluation)
     monkeypatch.setattr(evaluation_service, "is_student_enrolled", enrolled)
+    monkeypatch.setattr(evaluation_service, "_student_progress_by_evaluation", student_progress)
 
     if visible:
         result = asyncio.run(
@@ -180,6 +191,7 @@ def test_enrolled_student_detail_visibility_follows_the_lifecycle(
         )
         assert isinstance(result, dict)
         assert result["estado"] == state
+        assert result["entrega_realizada"] is True
         return
 
     with pytest.raises(HTTPException) as exc:

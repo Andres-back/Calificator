@@ -7,8 +7,6 @@ import {
   Clock,
   Eye,
   FileCheck2,
-  Lock,
-  PauseCircle,
   Pencil,
   PlayCircle,
   Plus,
@@ -33,7 +31,6 @@ import {
 } from '@/components/ui';
 import {
   activarRecepcionEvaluacion,
-  cerrarEvaluacion,
   createEvaluacion,
   deleteEvaluacion,
   listEvaluaciones,
@@ -44,6 +41,7 @@ import {
 } from '@/modules/evaluaciones/api';
 import { DigitalizarEvaluacionModal } from '@/modules/evaluaciones/components/DigitalizarEvaluacionModal';
 import { GenerationWizard } from '@/modules/evaluaciones/components/GenerationWizard';
+import { getStudentEvaluationAction, getStudentEvaluationStatus } from '@/modules/evaluaciones/studentProgress';
 import { useAuth } from '@/stores/auth';
 import { useMateriaContext } from './MateriaContext';
 import { toApiError } from '@/lib/api';
@@ -82,6 +80,7 @@ export function MateriaEvaluaciones() {
   const [wizardOpen, setWizardOpen] = useState(false);
   const [digitalizeOpen, setDigitalizeOpen] = useState(false);
   const [editingEval, setEditingEval] = useState<Evaluacion | null>(null);
+  const [contentEditingEval, setContentEditingEval] = useState<Evaluacion | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Evaluacion | null>(null);
   const [form, setForm] = useState<EvaluationForm>(emptyForm);
 
@@ -89,6 +88,8 @@ export function MateriaEvaluaciones() {
     queryKey: ['evaluaciones', materia.id],
     queryFn: () => listEvaluaciones(materia.id),
     enabled: Boolean(materia.id),
+    refetchInterval: !canManageMateria ? 10_000 : false,
+    refetchOnWindowFocus: true,
   });
 
   const refresh = () =>
@@ -139,20 +140,11 @@ export function MateriaEvaluaciones() {
     onError: (error) => toast.error(toApiError(error).detail),
   });
 
-  const closeEvaluation = useMutation({
-    mutationFn: (id: string) => cerrarEvaluacion(id),
-    onSuccess: () => {
-      refresh();
-      toast.success('Evaluación cerrada');
-    },
-    onError: (error) => toast.error(toApiError(error).detail),
-  });
-
   const activateReception = useMutation({
     mutationFn: (id: string) => activarRecepcionEvaluacion(id),
     onSuccess: () => {
       refresh();
-      toast.success('Recepci?n de entregas activada');
+      toast.success('Entregas abiertas para los estudiantes');
     },
     onError: (error) => toast.error(toApiError(error).detail),
   });
@@ -161,7 +153,7 @@ export function MateriaEvaluaciones() {
     mutationFn: (id: string) => pausarRecepcionEvaluacion(id),
     onSuccess: () => {
       refresh();
-      toast.success('Recepci?n de entregas pausada');
+      toast.success('Entregas cerradas. Puedes volver a abrirlas cuando quieras.');
     },
     onError: (error) => toast.error(toApiError(error).detail),
   });
@@ -247,8 +239,8 @@ export function MateriaEvaluaciones() {
                   ¿Cómo quieres empezar?
                 </h2>
                 <p className="mt-1 max-w-2xl text-sm leading-6 text-muted">
-                  El asistente paso a paso crea preguntas alineadas con los DBA.
-                  Si ya tienes una prueba impresa, solo regístrala para
+                  El asistente permite generar libremente o combinar DBA y rúbrica.
+                  Si ya tienes una prueba impresa, también puedes registrarla para
                   calificarla por foto.
                 </p>
               </div>
@@ -305,7 +297,7 @@ export function MateriaEvaluaciones() {
             const isDeliveryState = ['publicada', 'en_calificacion', 'pendiente_revision'].includes(evaluation.estado);
             const receptionEnabled = evaluation.recepcion_habilitada ?? isDeliveryState;
             const canOpenOnline = (isDeliveryState || isClosed)
-              && (modality === 'online' || modality === 'mixta' || receptionEnabled);
+              && (Boolean(evaluation.entrega_realizada) || modality === 'online' || modality === 'mixta' || receptionEnabled);
             const photoRoute = `${routes.materiaCalificar(materia.id)}?evaluacion=${evaluation.id}`;
             const reviewRoute = routes.calificacionesEvaluacion(evaluation.id);
 
@@ -326,9 +318,14 @@ export function MateriaEvaluaciones() {
                       <Badge tone="brand">
                         {MODALITY_LABELS[modality]}
                       </Badge>
-                      {!isDraft && !isClosed && (
+                      {!canManageMateria && (
+                        <Badge tone={getStudentEvaluationStatus(evaluation).tone}>
+                          {getStudentEvaluationStatus(evaluation).label}
+                        </Badge>
+                      )}
+                      {canManageMateria && !isDraft && (
                         <Badge tone={receptionEnabled ? 'success' : 'warning'}>
-                          {receptionEnabled ? 'Recepci?n activa' : 'Recepci?n pausada'}
+                          {receptionEnabled ? 'Entregas abiertas' : 'Entregas cerradas'}
                         </Badge>
                       )}
                       <span className="text-xs text-muted">
@@ -350,6 +347,9 @@ export function MateriaEvaluaciones() {
                     <p className="mt-2 text-xs text-muted">
                       {evaluation.preguntas?.length ?? 0} pregunta
                       {(evaluation.preguntas?.length ?? 0) === 1 ? '' : 's'}
+                      {!canManageMateria && (evaluation.intentos_realizados ?? 0) > 0
+                        ? ` · Intento ${evaluation.intentos_realizados}`
+                        : ''}
                     </p>
                   </div>
                 </div>
@@ -357,22 +357,24 @@ export function MateriaEvaluaciones() {
                 <div className="mt-4 flex flex-wrap gap-2">
                   {canManageMateria ? (
                     <>
+                      <Button size="sm" variant="outline" onClick={() => openEdit(evaluation)}>
+                        <Pencil className="h-4 w-4" /> Editar datos
+                      </Button>
+                      <Button size="sm" variant="secondary" onClick={() => { setContentEditingEval(evaluation); setWizardOpen(true); }}>
+                        <ClipboardCheck className="h-4 w-4" /> Editar preguntas
+                      </Button>
+
                       {isDraft && (
-                        <>
-                          <Button size="sm" variant="outline" onClick={() => openEdit(evaluation)}>
-                            <Pencil className="h-4 w-4" /> Editar datos
-                          </Button>
-                          <Button
-                            size="sm"
-                            loading={publish.isPending}
-                            onClick={() => publish.mutate(evaluation.id)}
-                          >
-                            <Send className="h-4 w-4" /> Publicar
-                          </Button>
-                        </>
+                        <Button
+                          size="sm"
+                          loading={publish.isPending}
+                          onClick={() => publish.mutate(evaluation.id)}
+                        >
+                          <Send className="h-4 w-4" /> Publicar
+                        </Button>
                       )}
 
-                      {isDeliveryState && (
+                      {!isDraft && (
                         <>
                           {receptionEnabled ? (
                             <Button
@@ -381,16 +383,16 @@ export function MateriaEvaluaciones() {
                               onClick={() => pauseReception.mutate(evaluation.id)}
                               loading={pauseReception.isPending}
                             >
-                              <PauseCircle className="h-4 w-4" /> Pausar entregas
+                              <Eye className="h-4 w-4" /> Cerrar entregas
                             </Button>
                           ) : (
                             <Button
                               size="sm"
-                              variant="outline"
+                              variant="secondary"
                               onClick={() => activateReception.mutate(evaluation.id)}
                               loading={activateReception.isPending}
                             >
-                              <PlayCircle className="h-4 w-4" /> Activar entregas
+                              <PlayCircle className="h-4 w-4" /> Abrir entregas
                             </Button>
                           )}
 
@@ -412,17 +414,6 @@ export function MateriaEvaluaciones() {
                         </Link>
                       )}
 
-                      {isDeliveryState && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => closeEvaluation.mutate(evaluation.id)}
-                        loading={closeEvaluation.isPending}
-                      >
-                        <Lock className="h-4 w-4" /> Cerrar
-                      </Button>
-                      )}
-
                       {(isDraft || isClosed) && (
                         <Button
                           size="sm"
@@ -434,17 +425,12 @@ export function MateriaEvaluaciones() {
                         </Button>
                       )}
 
-                      {isClosed && (
-                        <span className="flex min-h-9 items-center gap-1 text-xs text-muted">
-                          <Lock className="h-3 w-3" /> Cierre final
-                        </span>
-                      )}
                     </>
                   ) : canOpenOnline ? (
                     <Link to={routes.resolverEvaluacion(evaluation.id)}>
                       <Button size="sm" variant="secondary">
                         <Eye className="h-4 w-4" />
-                        {receptionEnabled && !isClosed ? 'Resolver' : 'Ver evaluaci?n'}
+                        {getStudentEvaluationAction(evaluation)}
                       </Button>
                     </Link>
                   ) : (
@@ -496,14 +482,16 @@ export function MateriaEvaluaciones() {
       {canManageMateria && user && (
         <GenerationWizard
           open={wizardOpen}
-          onClose={() => setWizardOpen(false)}
+          onClose={() => { setWizardOpen(false); setContentEditingEval(null); }}
           userId={user.id}
           materias={[materia as Materia]}
           initialMateriaId={materia.id}
+          initialEvaluation={contentEditingEval}
           onCompleted={() => {
             refresh();
-            toast.success('Evaluación creada como borrador');
+            toast.success(contentEditingEval ? 'Preguntas actualizadas' : 'Evaluación creada como borrador');
             setWizardOpen(false);
+            setContentEditingEval(null);
           }}
         />
       )}
@@ -530,6 +518,12 @@ export function MateriaEvaluaciones() {
                 Usa esta opción cuando ya tienes la evaluación preparada. La
                 registraremos como <strong>evaluación en papel</strong> para que
                 luego puedas calificar las fotos.
+              </div>
+            )}
+
+            {editingEval && editingEval.estado !== 'borrador' && (
+              <div className="rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm leading-6 text-amber-950 dark:bg-amber-500/10 dark:text-amber-100">
+                <strong>Evaluación asignada.</strong> Los cambios se aplicarán de inmediato. Las entregas y notas existentes no se eliminan.
               </div>
             )}
 

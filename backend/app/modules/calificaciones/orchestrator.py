@@ -42,8 +42,8 @@ logger = get_logger(__name__)
 # ── Modelos por defecto (configurables) ─────────────────────────────────────────
 
 DEFAULT_VISION_MODEL = "qwen3.6-plus"
-DEFAULT_GRADER_A_MODEL = "qwen3.6-plus"
-DEFAULT_GRADER_B_MODEL = "qwen3.7-plus"
+DEFAULT_GRADER_A_MODEL = "deepseek-v4-flash"
+DEFAULT_GRADER_B_MODEL = "deepseek-v4-flash"
 DEFAULT_COMPARATOR_MODEL = "deepseek-v4-flash"
 
 
@@ -322,7 +322,29 @@ async def orchestrate_grading(
                 image_bytes=image_bytes,
                 image_mime=image_mime,
             )
-            vision_result = await vision_agent(ctx, model=vision_model, client=client)
+            if settings.PHOTO_GRADING_FAST_VISION_ENABLED:
+                vision_result = await vision_router_agent(ctx)
+                fast_vision_usable = bool(
+                    vision_result.raw_output
+                    and vision_result.raw_output.get("usable")
+                    and vision_result.raw_output.get("texto_extraido", "").strip()
+                )
+                if vision_result.error or not fast_vision_usable:
+                    logger.warning(
+                        "Fast vision unavailable, trying OpenCode vision model %s",
+                        vision_model,
+                    )
+                    vision_result = await vision_agent(
+                        ctx,
+                        model=vision_model,
+                        client=client,
+                    )
+            else:
+                vision_result = await vision_agent(
+                    ctx,
+                    model=vision_model,
+                    client=client,
+                )
 
             if vision_result.error:
                 fallback_vision_model = (
@@ -401,18 +423,22 @@ async def orchestrate_grading(
             image_mime=image_mime,
         )
 
-        grader_a_task = grader_agent(
-            ctx_grading,
-            model=grader_a_model,
-            multimodal=False,
-            client=client,
-        )
-        grader_b_task = grader_agent(
-            ctx_grading,
-            model=grader_b_model,
-            multimodal=True,  # Qwen recibe la imagen directo
-            client=client,
-        )
+        if settings.PHOTO_GRADING_FAST_GRADERS_ENABLED:
+            grader_a_task = router_grader_agent(ctx_grading)
+            grader_b_task = router_grader_agent(ctx_grading)
+        else:
+            grader_a_task = grader_agent(
+                ctx_grading,
+                model=grader_a_model,
+                multimodal=False,
+                client=client,
+            )
+            grader_b_task = grader_agent(
+                ctx_grading,
+                model=grader_b_model,
+                multimodal=False,
+                client=client,
+            )
 
         grading_a, grading_b = await asyncio.gather(grader_a_task, grader_b_task)
 

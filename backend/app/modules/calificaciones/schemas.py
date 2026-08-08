@@ -184,6 +184,15 @@ class CalificacionTimelineEvent(BaseModel):
     detalle: str | None = None
 
 
+class GuiaRevisionItem(BaseModel):
+    numero: int | str
+    enunciado: str
+    tipo: str | None = None
+    opciones: list[str] = Field(default_factory=list)
+    respuesta_correcta: str | None = None
+    puntaje: Decimal | str | None = None
+
+
 # ── Detalle de calificación ──────────────────────────────────────────────────────
 
 class CalificacionDetalleRead(BaseModel):
@@ -208,6 +217,7 @@ class CalificacionDetalleRead(BaseModel):
     entrega_respuesta_texto: str | None = None
     entrega_created_at: datetime | None = None
     timeline: list[CalificacionTimelineEvent] = []
+    guia_revision: list[GuiaRevisionItem] = Field(default_factory=list)
     created_at: datetime
     updated_at: datetime
 
@@ -251,7 +261,7 @@ class BatchResult(BaseModel):
 # ── Incidencias ──────────────────────────────────────────────────────────────────
 
 class IncidenciaCreate(BaseModel):
-    tipo: str = Field(..., pattern=r'^(imagen_no_usable|vision_failed|grader_error|discrepancia_alta|confianza_baja|docente_rechazo)$')
+    tipo: str = Field(..., pattern=r'^(imagen_no_usable|vision_failed|grader_error|discrepancia_alta|confianza_baja|docente_rechazo|solicitud_revision)$')
     descripcion: str = Field(..., min_length=1, max_length=2000)
     metadata_json: dict = {}
 
@@ -274,3 +284,8 @@ class IncidenciaRead(BaseModel):
 
 class ResolverIncidencia(BaseModel):
     resolucion: str = Field(..., min_length=1, max_length=2000)
+
+
+class SolicitudRevisionCreate(BaseModel):
+    motivo: str = Field(..., pattern=r'^(nota|respuesta|evidencia|retroalimentacion|otro)$')
+    descripcion: str = Field(..., min_length=10, max_length=2000)

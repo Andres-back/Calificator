@@ -16,3 +16,5 @@ def import_models() -> None:
     from app.modules.presentaciones import models as presentaciones_models  # noqa: F401
     from app.modules.rag import models as rag_models  # noqa: F401
     from app.modules.users import models as users_models  # noqa: F401
+    from app.modules.xali import refuerzo_models as xali_refuerzo_models  # noqa: F401
+    from app.modules.xali import student_resource_models as xali_student_resource_models  # noqa: F401

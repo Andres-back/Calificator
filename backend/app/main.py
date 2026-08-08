@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
+from fastapi.staticfiles import StaticFiles
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 
 from app.api import api_router
@@ -49,6 +50,13 @@ def create_app() -> FastAPI:
         return RedirectResponse(url=f"{settings.API_PREFIX}/openapi.json")
 
     app.include_router(api_router, prefix=settings.API_PREFIX)
+
+    uploads_path = "/" + settings.PUBLIC_UPLOADS_BASE_URL.strip("/")
+    app.mount(
+        uploads_path,
+        StaticFiles(directory=settings.UPLOADS_DIR, check_dir=False),
+        name="uploads",
+    )
     return app
 
 

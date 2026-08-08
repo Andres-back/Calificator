@@ -46,6 +46,16 @@ class CapturingGraderClient:
 
 def _configure_orchestrator(monkeypatch) -> None:
     monkeypatch.setattr(
+        orchestrator.settings,
+        "PHOTO_GRADING_FAST_VISION_ENABLED",
+        False,
+    )
+    monkeypatch.setattr(
+        orchestrator.settings,
+        "PHOTO_GRADING_FAST_GRADERS_ENABLED",
+        False,
+    )
+    monkeypatch.setattr(
         orchestrator,
         "OpenCodeClient",
         lambda **_kwargs: FakeClient(),
@@ -256,6 +266,33 @@ def test_configured_vision_router_recovers_when_opencode_fails(monkeypatch) -> N
 
     assert result.nota_sugerida == Decimal("5.0")
     assert result.motivo_revision is None
+
+
+def test_vision_router_normalizes_text_answers(monkeypatch) -> None:
+    async def interpreted_image(*_args, **_kwargs):
+        return {
+            "text_or_visual_content": "1. B) 36\n2. 24 lápices",
+            "detected_questions": [1, 2],
+            "detected_answers": ["1. B) 36", "2: 24 lápices"],
+            "image_quality": {"is_usable": True},
+            "confidence": 0.9,
+        }
+
+    monkeypatch.setattr(agents, "interpret_image", interpreted_image)
+    context = AgentContext(
+        evaluacion_nombre="Multiplicación",
+        nota_maxima=5,
+        blueprint={},
+        image_bytes=b"image",
+    )
+
+    result = asyncio.run(agents.vision_router_agent(context))
+
+    assert result.error is None
+    assert result.raw_output["respuestas_detectadas"] == [
+        {"pregunta": 1, "respuesta": "B) 36"},
+        {"pregunta": 2, "respuesta": "24 lápices"},
+    ]
 
 
 def test_pipeline_exception_returns_sanitized_failure(monkeypatch) -> None:

@@ -49,37 +49,45 @@ export function DashboardEstudiante() {
       <motion.div
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
-        className="relative overflow-hidden border-b border-border pb-6"
+        className="relative overflow-hidden rounded-3xl border border-brand-400/40 bg-gradient-to-br from-brand-800 via-brand-600 to-sky-600 p-6 text-white shadow-glow-lg sm:p-8 lg:p-10"
       >
         {/* Hero Image Background */}
         <div className="absolute inset-0 z-0">
           <img 
             src="/branding/hero-ai-brain.png" 
             alt="" 
-            className="h-full w-full object-cover opacity-15 dark:opacity-10"
+            className="h-full w-full object-cover opacity-10 mix-blend-screen"
           />
-          <div className="absolute inset-0 bg-gradient-to-r from-surface via-surface/95 to-surface/80" />
+          <div className="absolute inset-0 bg-gradient-to-r from-brand-950/40 via-brand-700/20 to-sky-500/10" />
         </div>
         
-        <div className="relative z-10 flex items-start gap-4">
+        <div className="relative z-10 grid items-center gap-8 lg:grid-cols-[1fr_18rem]">
           <div className="min-w-0 flex-1">
-            <span className="inline-flex items-center gap-1.5 rounded-md border border-brand-500/20 bg-brand-500/10 px-2.5 py-1 text-xs font-semibold text-brand-700 dark:text-brand-200">
-              <GraduationCap className="h-3.5 w-3.5" /> Tu espacio de aprendizaje
+            <span className="inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/15 px-3 py-1.5 text-sm font-semibold text-white backdrop-blur-sm">
+              <GraduationCap className="h-4 w-4" /> Tu espacio de aprendizaje
             </span>
-            <h1 className="mt-3 font-display text-3xl font-extrabold">Hola, {firstName}</h1>
-            <p className="mt-2 max-w-2xl text-muted">
-              Este es tu espacio para revisar tus avances y seguir mejorando.
+            <h1 className="mt-5 font-display text-3xl font-extrabold leading-tight tracking-tight text-white sm:text-4xl lg:text-5xl">Hola, {firstName}</h1>
+            <p className="mt-4 max-w-2xl text-base leading-7 text-indigo-50 sm:text-lg">
+              Encuentra tus materias, continúa tus actividades y revisa cada avance en un solo lugar.
             </p>
-            <p className="mt-4 flex max-w-2xl items-start gap-2 border-l-2 border-brand-300 pl-3 text-sm text-muted">
-              <Sparkles className="mr-1.5 inline h-4 w-4 text-brand-500" />
+            <p className="mt-4 flex max-w-2xl items-start gap-2 border-l-2 border-white/50 pl-3 text-sm leading-6 text-indigo-50">
+              <Sparkles className="mr-1.5 inline h-4 w-4 text-amber-200" />
               La constancia mejora tus resultados. Revisa tus materias, atiende la retroalimentación y sigue avanzando.
             </p>
+            <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+              <Link to="/app/evaluaciones" className="focus-ring inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-white px-5 text-sm font-bold text-brand-800 shadow-lg transition hover:-translate-y-0.5 hover:bg-brand-50">
+                <ClipboardCheck className="h-5 w-5" /> Ver mis actividades
+              </Link>
+              <Link to="/app/materias" className="focus-ring inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-white/30 bg-white/10 px-5 text-sm font-bold text-white backdrop-blur-sm transition hover:bg-white/20">
+                <BookOpen className="h-5 w-5" /> Ir a mis materias
+              </Link>
+            </div>
           </div>
-          <div className="hidden shrink-0 sm:block">
+          <div className="relative hidden min-h-56 items-center justify-center rounded-3xl border border-white/20 bg-white/10 p-5 backdrop-blur-sm lg:flex">
             <img
               src="/branding/xali-hello.png"
-              alt="Xali"
-              className="h-24 w-24 object-contain"
+              alt="Xali, tu asistente de aprendizaje"
+              className="h-48 w-48 rounded-[2rem] object-contain mix-blend-multiply drop-shadow-2xl"
             />
           </div>
         </div>
@@ -87,8 +95,9 @@ export function DashboardEstudiante() {
 
       <section aria-labelledby="student-next-title">
         <div className="mb-4">
-          <p className="text-xs font-bold uppercase tracking-wide text-brand-700 dark:text-brand-300">Prioridad</p>
-          <h2 id="student-next-title" className="section-title mt-1">¿Qué actividad tienes pendiente?</h2>
+          <p className="text-xs font-bold uppercase tracking-[0.16em] text-brand-700 dark:text-brand-300">Empieza por aquí</p>
+          <h2 id="student-next-title" className="section-title mt-1">Continúa con tu aprendizaje</h2>
+          <p className="mt-1 text-sm text-secondary">Elige una opción para avanzar sin perderte.</p>
         </div>
         <div className="grid gap-3 sm:grid-cols-2">
           <ActionCard

@@ -171,7 +171,7 @@ def test_grade_delivery_creates_only_a_teacher_pending_suggestion(monkeypatch) -
     ))
 
     assert created is True
-    assert grade.estado == CalificacionEstado.SUGERIDA.value
+    assert grade.estado == CalificacionEstado.REQUIERE_REVISION.value
     assert grade.revisado_por_docente is False
     assert grade.nota_confirmada is None
     assert delivery.estado == EntregaEstado.CALIFICADA.value

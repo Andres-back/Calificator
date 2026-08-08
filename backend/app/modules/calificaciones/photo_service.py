@@ -89,7 +89,7 @@ def apply_grading_result(
     calificacion.revisado_por_docente = False
     calificacion.estado = (
         CalificacionEstado.REQUIERE_REVISION.value
-        if technical_failure
+        if technical_failure or grading.requiere_revision_docente
         else CalificacionEstado.SUGERIDA.value
     )
     return calificacion

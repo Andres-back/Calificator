@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef, useState, type RefObject } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { LogOut, Menu, ChevronDown } from 'lucide-react';
+import { LogOut, Menu, ChevronDown, Sparkles } from 'lucide-react';
 import { ThemeToggle } from '@/components/ui';
 import { useAuth } from '@/stores/auth';
 
@@ -51,7 +51,16 @@ export function Topbar({
       >
         <Menu className="h-5 w-5" aria-hidden="true" />
       </button>
-      <div className="flex-1" />
+      <div className="min-w-0 flex-1">
+        {user?.rol === 'estudiante' && (
+          <div className="hidden items-center gap-2 text-sm font-semibold text-secondary lg:flex">
+            <span className="grid h-8 w-8 place-items-center rounded-full bg-brand-50 text-brand-600 dark:bg-brand-500/15 dark:text-brand-300">
+              <Sparkles className="h-4 w-4" aria-hidden="true" />
+            </span>
+            Aprende a tu ritmo
+          </div>
+        )}
+      </div>
       <ThemeToggle />
       <div className="relative">
         <button

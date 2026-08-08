@@ -218,15 +218,15 @@ function TeacherGradebook() {
   });
 
   const evaluations = evaluationsQuery.data ?? [];
-  const openEvaluations = evaluations.filter(
-    (evaluation) => evaluation.estado !== 'cerrada',
+  const trackedEvaluations = evaluations.filter(
+    (evaluation) => evaluation.estado !== 'borrador',
   );
-  const closedEvaluations = evaluations.filter(
-    (evaluation) => evaluation.estado === 'cerrada',
+  const openEvaluations = trackedEvaluations.filter(
+    (evaluation) => evaluation.estado !== 'cerrada',
   );
 
   const gradeQueries = useQueries({
-    queries: closedEvaluations.map((evaluation) => ({
+    queries: trackedEvaluations.map((evaluation) => ({
       queryKey: ['calificaciones', evaluation.id],
       queryFn: () => listCalificaciones(evaluation.id),
       enabled: Boolean(evaluation.id) && canManageMateria,
@@ -235,21 +235,21 @@ function TeacherGradebook() {
 
   const gradesByEvaluation = useMemo(() => {
     const grades = new Map<string, Calificacion[]>();
-    closedEvaluations.forEach((evaluation, index) => {
+    trackedEvaluations.forEach((evaluation, index) => {
       const data = gradeQueries[index]?.data;
       if (data) grades.set(evaluation.id, data);
     });
     return grades;
-  }, [closedEvaluations, gradeQueries]);
+  }, [trackedEvaluations, gradeQueries]);
 
   const rows = useMemo(
     () =>
       buildFollowUpRows({
         students,
-        evaluations: closedEvaluations,
+        evaluations: trackedEvaluations,
         gradesByEvaluation,
       }),
-    [closedEvaluations, gradesByEvaluation, students],
+    [trackedEvaluations, gradesByEvaluation, students],
   );
   const summary = useMemo(() => summarizeFollowUp(rows), [rows]);
 
@@ -314,7 +314,7 @@ function TeacherGradebook() {
     );
   }
 
-  if (closedEvaluations.length === 0) {
+  if (trackedEvaluations.length === 0) {
     return (
       <div className="space-y-4">
         {openEvaluations.length > 0 ? (
@@ -332,8 +332,8 @@ function TeacherGradebook() {
         ) : null}
         <EmptyState
           icon={BookOpenCheck}
-          title="Todavía no hay seguimiento"
-          description="Cierra una evaluación cuando termines de revisar las notas. Después podrás comparar avances y detectar quién necesita acompañamiento."
+          title="Todavía no hay evaluaciones publicadas"
+          description="Publica una evaluación o taller para organizar aquí las notas y el seguimiento de cada estudiante."
         />
       </div>
     );
@@ -358,7 +358,7 @@ function TeacherGradebook() {
           </span>
           <div>
             <h2 className="font-display text-xl font-extrabold">
-              Seguimiento del grupo
+              Libro de notas por evaluación
             </h2>
             <p className="mt-1 max-w-3xl text-sm leading-6 text-muted">
               Empieza por quienes aparecen primero. La prioridad es una
@@ -378,10 +378,7 @@ function TeacherGradebook() {
               : 'evaluaciones siguen activas'}
           </strong>
           <span className="mt-1 block">
-            Este resumen usa únicamente las {closedEvaluations.length}{' '}
-            {closedEvaluations.length === 1
-              ? 'evaluación cerrada'
-              : 'evaluaciones cerradas'}.
+            Sus notas ya aparecen en este libro y pueden cambiar hasta que cierres cada evaluación.
           </span>
         </div>
       ) : null}
@@ -523,8 +520,8 @@ function TeacherGradebook() {
                           : `${row.averagePercent.toFixed(0)}%`}
                       </p>
                       <p className="text-xs text-muted">
-                        {row.decided} de {closedEvaluations.length}{' '}
-                        {closedEvaluations.length === 1
+                        {row.decided} de {trackedEvaluations.length}{' '}
+                        {trackedEvaluations.length === 1
                           ? 'decisión'
                           : 'decisiones'}
                       </p>
@@ -597,6 +594,8 @@ function StudentGradebook({ materiaId }: { materiaId: string }) {
     queryKey: ['boletin', studentId, materiaId],
     queryFn: () => getBoletin(studentId, materiaId),
     enabled: Boolean(studentId) && Boolean(materiaId),
+    refetchInterval: 10_000,
+    refetchOnWindowFocus: true,
   });
 
   if (isLoading) {

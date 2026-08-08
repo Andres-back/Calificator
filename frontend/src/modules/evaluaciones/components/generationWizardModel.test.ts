@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   createEmptyWizardState,
+  createBlankQuestion,
   discardWizardDraft,
   duplicateQuestion,
   loadWizardDraft,
@@ -41,8 +42,10 @@ describe('generation wizard model', () => {
     state.materiaId = 'materia-1';
     state.nombre = 'Evaluación';
     expect(validateStep(state, 1)).toBeNull();
-    expect(validateStep(state, 2)).toMatch(/DBA/i);
+    expect(validateStep(state, 2)).toBeNull();
 
+    state.useDba = true;
+    expect(validateStep(state, 2)).toMatch(/DBA/i);
     state.dbaIds = ['dba-1'];
     state.counts = { opcion_multiple: 31, abierta: 0, verdadero_falso: 0, completar: 0 };
     expect(validateStep(state, 3)).toMatch(/entre 3 y 30/i);
@@ -78,7 +81,7 @@ describe('generation wizard model', () => {
     persistWizardDraft(localStorage, 'profesor-1', state, 1_000);
     const raw = localStorage.getItem(wizardStorageKey('profesor-1')) ?? '';
 
-    expect(raw).toContain('"version":3');
+    expect(raw).toContain('"version":5');
     expect(raw).toContain('"userId":"profesor-1"');
     expect(raw).toContain('"needsReselection":true');
     expect(raw).not.toContain('data:');
@@ -136,5 +139,10 @@ describe('generation wizard model', () => {
     const moved = moveQuestion(questions, 1, -1);
     expect(moved[0].clientId).toBe('question-2');
     expect(moved.map((question) => question.numero)).toEqual([1, 2]);
+
+    const withBlank = createBlankQuestion(questions, 'online');
+    expect(withBlank).toHaveLength(3);
+    expect(withBlank[2]).toMatchObject({ numero: 3, tipo: 'abierta', expanded: true });
+    expect(withBlank.slice(0, 2).every((question) => !question.expanded)).toBe(true);
   });
 });

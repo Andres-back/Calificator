@@ -12,14 +12,19 @@ from app.shared.enums import (
     CalificacionEstado,
     EntregaEstado,
     EvaluacionEstado,
+    PoliticaIntento,
     UserRole,
 )
 
 
 class FakeDB:
-    def __init__(self) -> None:
+    def __init__(self, scalar_values: list[object] | None = None) -> None:
         self.added: list[object] = []
         self.events: list[str] = []
+        self.scalar_values = list(scalar_values or [])
+
+    async def scalar(self, _query):
+        return self.scalar_values.pop(0) if self.scalar_values else None
 
     def add(self, value: object) -> None:
         self.added.append(value)
@@ -49,6 +54,8 @@ def evaluation_fixture():
         criterios=[],
         preguntas=[],
         respuestas_esperadas=[],
+        politica_intento=PoliticaIntento.PRACTICA_LIBRE.value,
+        intentos_permitidos=None,
     )
 
 
@@ -214,3 +221,83 @@ def test_endpoint_commits_delivery_before_invoking_grading(
     assert delivery.archivo_url == "/uploads/entregas/persistida.jpg"
     assert delivery.evaluacion_id == evaluation.id
     assert delivery.estudiante_id == student_id
+
+
+def test_teacher_replaces_existing_delivery_without_consuming_student_attempt(
+    monkeypatch,
+) -> None:
+    evaluation = evaluation_fixture()
+    evaluation.politica_intento = PoliticaIntento.UN_INTENTO.value
+    student_id = uuid4()
+    teacher = SimpleNamespace(
+        id=evaluation.profesor_id,
+        rol=UserRole.PROFESOR.value,
+    )
+    delivery = delivery_fixture(evaluation, student_id)
+    delivery.archivo_url = "/uploads/entregas/anterior.jpg"
+    existing_grade = SimpleNamespace(
+        id=uuid4(),
+        entrega_id=delivery.id,
+        revisado_por_docente=True,
+    )
+    db = FakeDB([delivery, existing_grade])
+    sentinel = object()
+
+    async def ensure_manage(*_args, **_kwargs):
+        return evaluation
+
+    async def enrolled(*_args, **_kwargs):
+        return True
+
+    async def save(*_args, **_kwargs):
+        return "/uploads/entregas/reemplazo.pdf"
+
+    async def grade_replacement(_db, **kwargs):
+        assert kwargs["entrega"] is delivery
+        assert kwargs["calificacion"] is existing_grade
+        assert kwargs["student_response_text"] is None
+        assert delivery.archivo_url == "/uploads/entregas/reemplazo.pdf"
+        assert delivery.tipo == "pdf"
+        return sentinel
+
+    async def forbidden_attempt_check(*_args, **_kwargs):
+        raise AssertionError("La politica de intentos no aplica al reemplazo docente")
+
+    class FakeUpload:
+        filename = "reemplazo.pdf"
+
+        async def read(self):
+            return b"%PDF-1.7"
+
+    monkeypatch.setattr(
+        router.evaluaciones_service,
+        "ensure_can_manage_evaluation",
+        ensure_manage,
+    )
+    monkeypatch.setattr(router, "is_student_enrolled", enrolled)
+    monkeypatch.setattr(router, "validate_mime", lambda *_args: "application/pdf")
+    monkeypatch.setattr(router, "save_upload", save)
+    monkeypatch.setattr(
+        router.service,
+        "ensure_student_can_submit_new_evidence",
+        forbidden_attempt_check,
+    )
+    monkeypatch.setattr(
+        router.photo_service,
+        "grade_persisted_photo",
+        grade_replacement,
+    )
+
+    result = asyncio.run(
+        router.calificar_foto(
+            evaluacion_id=evaluation.id,
+            estudiante_id=student_id,
+            foto=FakeUpload(),
+            current_user=teacher,
+            db=db,
+        )
+    )
+
+    assert result is sentinel
+    assert db.added == []
+    assert db.events == ["commit", "refresh:Entrega"]

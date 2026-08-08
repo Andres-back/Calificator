@@ -29,6 +29,45 @@ from app.shared.enums import EvaluacionModalidad
 router = APIRouter(tags=["evaluaciones"])
 
 
+@router.post("/evaluaciones/referencia/extraer")
+async def extract_generation_reference(
+    materia_id: UUID = Form(...),
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    """Extrae texto de un PDF o imagen para orientar una generación posterior."""
+    from app.modules.materias.service import ensure_can_manage_materia
+
+    await ensure_can_manage_materia(db, materia_id, current_user)
+    content = await file.read()
+    filename = file.filename or "material-referencia"
+    try:
+        mime = detect_digitalization_mime(content, filename)
+        if mime not in {"application/pdf", "image/jpeg", "image/png", "image/webp"}:
+            raise ValueError("Selecciona un PDF o una imagen JPG, PNG o WebP")
+        extracted_text, warnings = await extract_evaluation_text(content, mime, filename)
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+
+    clean_text = extracted_text.strip()
+    if not clean_text:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="No fue posible extraer texto legible del archivo",
+        )
+    if len(clean_text) > 12000:
+        clean_text = clean_text[:12000]
+        warnings = [*warnings, "El texto extraído se limitó a 12.000 caracteres."]
+    return {
+        "texto": clean_text,
+        "nombre_archivo": filename,
+        "mime": mime,
+        "caracteres": len(clean_text),
+        "advertencias": warnings,
+    }
+
+
 @router.post(
     "/evaluaciones/externa/digitalizar-con-archivo",
     status_code=status.HTTP_201_CREATED,
@@ -156,6 +195,15 @@ async def get_evaluation(
     db: AsyncSession = Depends(get_db),
 ) -> object:
     return await service.ensure_can_read_evaluation(db, evaluacion_id, current_user)
+
+
+@router.get("/evaluaciones/{evaluacion_id}/actividad", response_model=dict | None)
+async def get_student_activity(
+    evaluacion_id: UUID,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> dict | None:
+    return await service.get_student_activity(db, evaluacion_id, current_user)
 
 
 @router.patch("/evaluaciones/{evaluacion_id}", response_model=EvaluacionRead)

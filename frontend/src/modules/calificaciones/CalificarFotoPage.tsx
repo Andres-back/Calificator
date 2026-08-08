@@ -2,7 +2,7 @@ import { type DragEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
-import { ArrowLeft, ArrowRight, Camera, CheckCircle2, FileImage, ImageUp, HelpCircle, RotateCcw, ScanText, Smartphone, Trash2, TriangleAlert, UploadCloud, ZoomIn } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Camera, CheckCircle2, FileImage, FileText, ImageUp, HelpCircle, RotateCcw, ScanText, Smartphone, Trash2, TriangleAlert, UploadCloud, ZoomIn } from 'lucide-react';
 import { Badge, Button, Card, EmptyState, Field, Select, Skeleton, GuidedTour, RichContent } from '@/components/ui';
 import { ImageCropper } from '@/components/ui/ImageCropper';
 import { PageHeader } from '@/components/layout/PageHeader';
@@ -17,7 +17,7 @@ import { calificarFoto } from './api';
 import { fotoTour } from './tourSteps';
 import type { Calificacion } from '@/types/api';
 
-const ACCEPTED_IMAGE_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+const ACCEPTED_EVIDENCE_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'application/pdf'];
 // Mirrors backend/app/core/config.py -> MAX_IMAGE_SIZE_MB (default 10).
 const MAX_IMAGE_SIZE_MB = 10;
 const MAX_IMAGE_SIZE_BYTES = MAX_IMAGE_SIZE_MB * 1024 * 1024;
@@ -47,6 +47,7 @@ export function CalificarFotoPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const submittingRef = useRef(false);
+  const isPdf = foto?.type === 'application/pdf';
 
   useEffect(() => {
     if (!foto) {
@@ -127,9 +128,9 @@ export function CalificarFotoPage() {
       clearPhoto();
       return;
     }
-    if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) {
+    if (!ACCEPTED_EVIDENCE_TYPES.includes(file.type)) {
       clearPhoto();
-      setSubmissionError('Selecciona una imagen JPG, PNG o WebP.');
+      setSubmissionError('Selecciona una imagen JPG, PNG, WebP o un PDF.');
       return;
     }
     if (file.size > MAX_IMAGE_SIZE_BYTES) {
@@ -168,7 +169,7 @@ export function CalificarFotoPage() {
       return;
     }
     if (!foto) {
-      setSubmissionError('Selecciona una foto.');
+      setSubmissionError('Selecciona una foto o un PDF.');
       return;
     }
 
@@ -186,7 +187,7 @@ export function CalificarFotoPage() {
       <PageHeader
         title="Calificar por foto"
         eyebrow="Calificación asistida"
-        subtitle="Sube una foto de la respuesta para recibir una nota sugerida y comentarios claros."
+        subtitle="Sube fotos o un PDF de la respuesta para recibir una nota sugerida y comentarios claros."
         action={
           <div className="flex flex-wrap gap-2">
             <Button variant="outline" onClick={() => setTourOpen(true)}><HelpCircle className="h-4 w-4" /> ¿Cómo se usa?</Button>
@@ -252,16 +253,16 @@ export function CalificarFotoPage() {
             <div>
               <div className="mb-1.5 flex items-center justify-between gap-3">
                 <p className="text-sm font-medium">Evidencia del estudiante <span className="text-brand-500">*</span></p>
-                <span className="text-xs text-muted">JPG, PNG o WebP · {MAX_IMAGE_SIZE_MB} MB</span>
+                <span className="text-xs text-muted">JPG, PNG, WebP o PDF · {MAX_IMAGE_SIZE_MB} MB</span>
               </div>
               <input
                 ref={fileInputRef}
                 type="file"
-                accept="image/jpeg,image/png,image/webp"
+                accept="image/jpeg,image/png,image/webp,application/pdf"
                 className="sr-only"
                 onChange={(event) => handleFileChange(event.target.files?.[0])}
                 disabled={submissionPending || evaluationClosed}
-                aria-label="Subir foto desde el dispositivo"
+                aria-label="Subir foto o PDF desde el dispositivo"
               />
               <input
                 ref={cameraInputRef}
@@ -284,18 +285,25 @@ export function CalificarFotoPage() {
                 {!foto ? (
                   <div className="flex min-h-48 flex-col items-center justify-center p-6 text-center">
                     <span className="grid h-12 w-12 place-items-center rounded-xl bg-brand-500/10 text-brand-600 dark:text-brand-300"><FileImage className="h-6 w-6" /></span>
-                    <p className="mt-3 font-semibold">Añade una foto clara de la respuesta</p>
-                    <p className="mt-1 max-w-md text-sm text-muted">Incluye toda la hoja, evita sombras y procura que el texto esté enfocado.</p>
+                    <p className="mt-3 font-semibold">Añade una foto clara o un PDF</p>
+                    <p className="mt-1 max-w-md text-sm text-muted">Incluye todas las hojas; en fotos evita sombras y procura que el texto esté enfocado.</p>
                     <div className="mt-4 flex flex-wrap justify-center gap-2">
                       <Button type="button" size="sm" onClick={() => cameraInputRef.current?.click()} disabled={submissionPending || evaluationClosed}><Smartphone className="h-4 w-4" /> Tomar foto</Button>
                       <Button type="button" size="sm" variant="outline" onClick={() => fileInputRef.current?.click()} disabled={submissionPending || evaluationClosed}><UploadCloud className="h-4 w-4" /> Subir archivo</Button>
                     </div>
-                    <p className="mt-3 hidden text-xs text-muted sm:block">También puedes arrastrar la imagen aquí.</p>
+                    <p className="mt-3 hidden text-xs text-muted sm:block">También puedes arrastrar la imagen o el PDF aquí.</p>
                   </div>
                 ) : (
                   <div>
-                    {previewUrl && !cropping && <img src={previewUrl} alt="Vista previa" className="max-h-80 w-full bg-surface-2 object-contain" />}
-                    {previewUrl && cropping && (
+                    {previewUrl && !cropping && !isPdf && <img src={previewUrl} alt="Vista previa" className="max-h-80 w-full bg-surface-2 object-contain" />}
+                    {previewUrl && !cropping && isPdf && (
+                      <div className="flex min-h-48 flex-col items-center justify-center gap-3 bg-surface-2 p-6 text-center">
+                        <FileText className="h-12 w-12 text-brand-500" aria-hidden="true" />
+                        <p className="font-semibold">PDF listo para procesar</p>
+                        <p className="text-sm text-muted">Se analizarán todas sus páginas, hasta el límite configurado por el servidor.</p>
+                      </div>
+                    )}
+                    {previewUrl && cropping && !isPdf && (
                       <ImageCropper
                         key={cropKey}
                         imageUrl={previewUrl}
@@ -309,10 +317,10 @@ export function CalificarFotoPage() {
                       />
                     )}
                     <div className="flex flex-wrap items-center justify-between gap-3 bg-surface p-3">
-                      <div className="flex min-w-0 items-center gap-3"><ImageUp className="h-5 w-5 shrink-0 text-brand-500" /><div className="min-w-0"><p className="truncate text-sm font-medium">{foto.name}</p><p className="text-xs text-muted">{(foto.size / 1024 / 1024).toFixed(2)} MB · lista para analizar</p></div></div>
+                      <div className="flex min-w-0 items-center gap-3">{isPdf ? <FileText className="h-5 w-5 shrink-0 text-brand-500" /> : <ImageUp className="h-5 w-5 shrink-0 text-brand-500" />}<div className="min-w-0"><p className="truncate text-sm font-medium">{foto.name}</p><p className="text-xs text-muted">{(foto.size / 1024 / 1024).toFixed(2)} MB · listo para analizar</p></div></div>
                       <div className="flex flex-wrap gap-2">
                         {!cropping && <Button type="button" size="sm" variant="outline" onClick={() => fileInputRef.current?.click()} disabled={submissionPending}><UploadCloud className="h-4 w-4" /> Reemplazar</Button>}
-                        {!cropping && previewUrl && <Button type="button" size="sm" variant="outline" onClick={() => setCropping(true)} disabled={submissionPending}><ZoomIn className="h-4 w-4" /> Ajustar foto</Button>}
+                        {!cropping && previewUrl && !isPdf && <Button type="button" size="sm" variant="outline" onClick={() => setCropping(true)} disabled={submissionPending}><ZoomIn className="h-4 w-4" /> Ajustar foto</Button>}
                         {!cropping && <Button type="button" size="sm" variant="ghost" onClick={clearPhoto} disabled={submissionPending}><Trash2 className="h-4 w-4" /> Quitar</Button>}
                       </div>
                     </div>

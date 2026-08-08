@@ -192,8 +192,8 @@ export function MateriasListPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title={actionGuide?.title ?? 'Materias'}
-        eyebrow={actionGuide ? 'Paso 1 de 2' : 'Tus cursos'}
+        title={actionGuide?.title ?? (isStudent ? 'Mis materias' : 'Materias')}
+        eyebrow={actionGuide ? 'Paso 1 de 2' : (isStudent ? 'Tu aprendizaje' : 'Tus cursos')}
         subtitle={subtitle}
         badge={
           isProfesor ? (
@@ -221,6 +221,23 @@ export function MateriasListPage() {
           ) : undefined
         }
       />
+
+      {isStudent && !!data?.length && (
+        <Card className="relative overflow-hidden border-brand-100 bg-gradient-to-r from-white via-brand-50/70 to-sky-50 p-5 dark:border-brand-500/20 dark:from-slate-950 dark:via-brand-950/40 dark:to-sky-950/30 sm:p-6">
+          <div className="relative z-10 max-w-2xl pr-20 sm:pr-28">
+            <p className="text-xs font-bold uppercase tracking-[0.16em] text-brand-700 dark:text-brand-300">Tus cursos inscritos</p>
+            <p className="mt-2 font-display text-xl font-extrabold text-fg">Todo listo para continuar</p>
+            <p className="mt-1 text-sm leading-6 text-secondary">
+              Abre una materia para consultar sus actividades, evaluaciones y recursos de aprendizaje.
+            </p>
+          </div>
+          <img
+            src="/branding/xali-studying.png"
+            alt=""
+            className="absolute -bottom-3 right-2 h-24 w-24 object-contain sm:right-6 sm:h-28 sm:w-28"
+          />
+        </Card>
+      )}
 
       {actionGuide && ActionGuideIcon && (
         <Card className="flex items-start gap-4 border-brand-200 bg-brand-50/60 p-5 dark:border-brand-500/25 dark:bg-brand-500/10">
@@ -304,14 +321,18 @@ export function MateriasListPage() {
                   <Card
                     interactive
                     className={cn(
-                      'group h-full border-l-4 p-5',
-                      tone.border,
+                      'group h-full p-5',
+                      isStudent
+                        ? 'relative overflow-hidden border-brand-100 bg-gradient-to-br from-surface via-surface to-brand-50/55 shadow-card hover:-translate-y-1 hover:border-brand-300 hover:shadow-card-hover dark:to-brand-950/30 sm:p-6'
+                        : 'border-l-4',
+                      !isStudent && tone.border,
                     )}
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div
                         className={cn(
-                          'grid h-10 w-10 place-items-center rounded-lg',
+                          'grid place-items-center',
+                          isStudent ? 'h-12 w-12 rounded-2xl shadow-sm' : 'h-10 w-10 rounded-lg',
                           tone.icon,
                         )}
                       >
@@ -325,7 +346,7 @@ export function MateriasListPage() {
                         }
                         className="capitalize"
                       >
-                        {materia.estado}
+                        {isStudent && materia.estado === 'activa' ? 'Inscrita' : materia.estado}
                       </Badge>
                     </div>
                     <div className="mt-4">
@@ -359,7 +380,15 @@ export function MateriasListPage() {
                             {materia.codigo_matricula}
                           </span>
                         </div>
-                      ) : null}
+                      ) : (
+                        <div className="mt-5 flex items-center justify-between border-t border-brand-100 pt-4 font-semibold text-brand-700 dark:border-brand-500/20 dark:text-brand-200">
+                          <span>Entrar a la materia</span>
+                          <CircleArrowRight
+                            className="h-5 w-5 transition-transform group-hover:translate-x-1"
+                            aria-hidden="true"
+                          />
+                        </div>
+                      )}
                     </div>
                   </Card>
                 </Link>

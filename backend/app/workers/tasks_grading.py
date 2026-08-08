@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import asyncio
 from collections.abc import Callable
-from decimal import Decimal
 from pathlib import Path
 from urllib.parse import unquote, urlparse
 from uuid import UUID
@@ -17,14 +16,14 @@ from sqlalchemy.orm import selectinload
 from app.core.config import settings
 from app.core.logging import get_logger
 from app.db.session import AsyncSessionLocal, engine
-from app.modules.calificaciones import service as calificaciones_service
+from app.modules.calificaciones import photo_service, service as calificaciones_service
 from app.modules.calificaciones.grading_service import grade_submission
 from app.modules.calificaciones.models import Calificacion, Entrega
 from app.modules.evaluaciones.blueprint_service import evaluation_to_grading_blueprint
 from app.modules.evaluaciones.models import Evaluacion
 from app.modules.jobs import service as jobs_service
 from app.services.storage_service import validate_mime
-from app.shared.enums import CalificacionEstado, EntregaEstado, JobEstado
+from app.shared.enums import EntregaEstado, JobEstado
 from app.workers.worker import celery_app
 
 logger = get_logger(__name__)
@@ -119,8 +118,13 @@ async def _grade_delivery(
 ) -> tuple[Calificacion, bool]:
     existing = await _existing_grade(db, entrega.id)
     if existing:
-        if entrega.estado != EntregaEstado.CALIFICADA.value:
-            entrega.estado = EntregaEstado.CALIFICADA.value
+        expected_state = (
+            EntregaEstado.REQUIERE_REINTENTO.value
+            if getattr(existing, "nota_sugerida", 0) is None
+            else EntregaEstado.CALIFICADA.value
+        )
+        if entrega.estado != expected_state:
+            entrega.estado = expected_state
             await db.commit()
         return existing, False
 
@@ -137,24 +141,17 @@ async def _grade_delivery(
         image_mime=submission["image_mime"],
         user_id=profesor_id,
     )
-    calificaciones_service.validate_score_within_evaluation(
-        grading.nota_sugerida, evaluacion, "nota_sugerida",
-    )
-    calificaciones_service.transition_to_grading_if_needed(evaluacion)
-    entrega.estado = EntregaEstado.CALIFICADA.value
-    entrega.visual_text_json = grading.raw_model_output
-    calificacion = Calificacion(
-        evaluacion_id=evaluacion.id,
-        entrega_id=entrega.id,
+    if grading.nota_sugerida is not None:
+        calificaciones_service.validate_score_within_evaluation(
+            grading.nota_sugerida, evaluacion, "nota_sugerida",
+        )
+        calificaciones_service.transition_to_grading_if_needed(evaluacion)
+    calificacion = photo_service.apply_grading_result(
+        entrega=entrega,
+        evaluacion=evaluacion,
         estudiante_id=entrega.estudiante_id,
-        materia_id=evaluacion.materia_id,
         profesor_id=profesor_id,
-        nota_sugerida=grading.nota_sugerida,
-        confianza=Decimal(str(grading.confianza)),
-        feedback=grading.feedback_estudiante,
-        resultado_json=grading.raw_model_output,
-        estado=CalificacionEstado.SUGERIDA.value,
-        revisado_por_docente=False,
+        grading=grading,
     )
     db.add(calificacion)
     try:

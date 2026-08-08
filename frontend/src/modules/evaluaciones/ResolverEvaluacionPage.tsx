@@ -1,12 +1,14 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
-import { ArrowLeft, CheckCircle2, ClipboardCheck, PauseCircle, Send, TriangleAlert } from 'lucide-react';
-import { Badge, Button, Card, EmptyState, Field, Input, RichContent, Skeleton, statusTone, Textarea } from '@/components/ui';
+import { ArrowLeft, CheckCircle2, ClipboardCheck, Clock3, FileUp, MessageSquareWarning, PauseCircle, Send, TriangleAlert } from 'lucide-react';
+import { Badge, Button, Card, EmptyState, Field, Input, Modal, RichContent, Select, Skeleton, statusTone, Textarea } from '@/components/ui';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { toApiError } from '@/lib/api';
-import { crearEntregaOnline, getEvaluacion, getMiEntrega } from './api';
+import { crearEntregaArchivo, crearEntregaOnline, getActividadEstudiante, getEvaluacion, getMiEntrega, getMiSolicitudRevision, solicitarRevisionEvaluacion } from './api';
+import { StudentActivityPlayer } from './StudentActivityPlayer';
+import type { SolicitudRevisionMotivo } from '@/types/api';
 
 function textFromQuestion(question: Record<string, unknown>, index: number): string {
   for (const key of ['enunciado', 'pregunta', 'texto', 'descripcion', 'nombre']) {
@@ -63,12 +65,18 @@ export function ResolverEvaluacionPage() {
   const [enviada, setEnviada] = useState(false);
   const [startingNewAttempt, setStartingNewAttempt] = useState(false);
   const [submissionIssue, setSubmissionIssue] = useState<string | null>(null);
+  const [evidenceFile, setEvidenceFile] = useState<File | null>(null);
+  const [reviewOpen, setReviewOpen] = useState(false);
+  const [reviewReason, setReviewReason] = useState<SolicitudRevisionMotivo>('nota');
+  const [reviewDetail, setReviewDetail] = useState('');
 
   const { data: evaluacion, isLoading, error } = useQuery({
     queryKey: ['evaluacion', evaluacionId],
     queryFn: () => getEvaluacion(evaluacionId),
     enabled: Boolean(evaluacionId),
     retry: false,
+    refetchInterval: 10_000,
+    refetchOnWindowFocus: true,
   });
 
   const myDelivery = useQuery({
@@ -78,7 +86,23 @@ export function ResolverEvaluacionPage() {
     retry: false,
   });
 
+  const activityQuery = useQuery({
+    queryKey: ['evaluacion-actividad', evaluacionId],
+    queryFn: () => getActividadEstudiante(evaluacionId),
+    enabled: Boolean(evaluacionId),
+    retry: false,
+  });
+
+  const reviewRequest = useQuery({
+    queryKey: ['mi-solicitud-revision', evaluacionId],
+    queryFn: () => getMiSolicitudRevision(evaluacionId),
+    enabled: Boolean(evaluacionId && evaluacion?.mi_nota_confirmada != null),
+    retry: false,
+    refetchOnWindowFocus: true,
+  });
+
   const modalidad = evaluacion?.modalidad ?? 'online';
+  const interactiveActivity = modalidad === 'online' ? activityQuery.data ?? null : null;
   const preguntas = useMemo(() => evaluacion?.preguntas ?? [], [evaluacion?.preguntas]);
   const preguntasOnline = useMemo(
     () => preguntas.filter(
@@ -92,10 +116,10 @@ export function ResolverEvaluacionPage() {
     ),
     [modalidad, preguntas],
   );
-  const permiteRespuestaOnline = modalidad !== 'fisica' || recepcionHabilitada;
+  const recepcionHabilitada = evaluacion?.recepcion_habilitada !== false;
+  const permiteRespuestaOnline = modalidad === 'online' || modalidad === 'mixta';
   const estaCerrada = evaluacion?.estado === 'cerrada';
   const estadoVisible = ['publicada', 'en_calificacion', 'pendiente_revision'].includes(evaluacion?.estado ?? '');
-  const recepcionHabilitada = evaluacion?.recepcion_habilitada !== false;
   const disponible = estadoVisible && recepcionHabilitada;
   const existingDelivery = myDelivery.data ?? null;
   const deliveryRequiresRetry = existingDelivery?.estado === 'requiere_reintento';
@@ -112,6 +136,17 @@ export function ResolverEvaluacionPage() {
     && !enviada
     && (!existingDelivery || needsRetry || (allowsMultipleAttempts && startingNewAttempt));
   const serializedAnswers = serializeAnswers(preguntasOnline, answers);
+  const handleActivityAnswers = useCallback((next: Record<number, string>) => setAnswers(next), []);
+  const physicalSubmitted = Boolean(existingDelivery?.archivo_url)
+    && existingDelivery?.estado !== 'requiere_reintento';
+  const onlinePartReady = modalidad === 'fisica'
+    || Boolean(existingDelivery?.respuesta_texto)
+    || enviada;
+  const canUploadPhysical = (modalidad === 'fisica' || modalidad === 'mixta')
+    && disponible
+    && !estaCerrada
+    && onlinePartReady
+    && !physicalSubmitted;
 
   useEffect(() => {
     if (!deliveryRequiresRetry || !existingDelivery) return;
@@ -152,6 +187,32 @@ export function ResolverEvaluacionPage() {
     onError: (submitError) => toast.error(toApiError(submitError).detail),
   });
 
+  const entregarArchivo = useMutation({
+    mutationFn: () => crearEntregaArchivo(evaluacionId, evidenceFile!),
+    onSuccess: () => {
+      setEvidenceFile(null);
+      setEnviada(true);
+      setSubmissionIssue(null);
+      void myDelivery.refetch();
+      toast.success('Evidencia entregada. Tu docente revisará la calificación.');
+    },
+    onError: (submitError) => toast.error(toApiError(submitError).detail),
+  });
+
+  const requestReview = useMutation({
+    mutationFn: () => solicitarRevisionEvaluacion(evaluacionId, {
+      motivo: reviewReason,
+      descripcion: reviewDetail.trim(),
+    }),
+    onSuccess: () => {
+      void reviewRequest.refetch();
+      setReviewOpen(false);
+      setReviewDetail('');
+      toast.success('Solicitud de revisión enviada al docente.');
+    },
+    onError: (requestError) => toast.error(toApiError(requestError).detail),
+  });
+
   function submit() {
     const missing = preguntasOnline
       .map((question, index) => numberFromQuestion(question, index))
@@ -172,6 +233,23 @@ export function ResolverEvaluacionPage() {
     if (!evaluacion || !answerFormEnabled || entregar.isPending) return;
     setSubmissionIssue(null);
     entregar.mutate();
+  }
+
+  function submitEvidence() {
+    if (!evidenceFile) {
+      toast.error('Selecciona una foto o un archivo PDF.');
+      return;
+    }
+    if (!canUploadPhysical || entregarArchivo.isPending) return;
+    entregarArchivo.mutate();
+  }
+
+  function submitReviewRequest() {
+    if (reviewDetail.trim().length < 10) {
+      toast.error('Explica la inconsistencia con al menos 10 caracteres.');
+      return;
+    }
+    requestReview.mutate();
   }
 
   if (!evaluacionId) {
@@ -198,8 +276,8 @@ export function ResolverEvaluacionPage() {
     <div className="space-y-6">
       <PageHeader
         title={evaluacion.nombre}
-        eyebrow="Evaluación online"
-        subtitle="Lee los enunciados con calma y envía tu respuesta para revisión docente."
+        eyebrow={modalidad === 'fisica' ? 'Entrega con foto o PDF' : modalidad === 'mixta' ? 'Evaluación mixta' : 'Evaluación online'}
+        subtitle="Resuelve únicamente tu actividad y entrégala para revisión docente."
         breadcrumbs={[{ label: 'Evaluaciones', to: '/app/evaluaciones' }, { label: evaluacion.nombre }]}
         backAction={<Link to="/app/evaluaciones" className="focus-ring inline-flex h-11 items-center justify-center gap-2 rounded-lg border border-border bg-surface px-5 text-sm font-semibold text-fg transition-colors hover:bg-surface-2"><ArrowLeft className="h-4 w-4" aria-hidden="true" /> Volver</Link>}
       />
@@ -236,7 +314,7 @@ export function ResolverEvaluacionPage() {
       {modalidad === 'fisica' && (
         <Card className="flex items-start gap-3 border-sky-200 p-5 dark:border-sky-500/30">
           <ClipboardCheck className="mt-0.5 h-5 w-5 text-brand-500" />
-          <div><p className="font-semibold">Evaluación física</p><p className="text-sm text-muted">Esta evaluación está marcada como física. Debe ser entregada o calificada por el docente.</p></div>
+          <div><p className="font-semibold">Evaluación con evidencia física</p><p className="text-sm text-muted">Resuélvela en papel y sube una foto clara o un PDF. Solo podrás hacer una entrega, salvo que exista un error técnico.</p></div>
         </Card>
       )}
 
@@ -255,6 +333,9 @@ export function ResolverEvaluacionPage() {
 
       <div className="grid gap-6 lg:grid-cols-2">
         <section className="space-y-4">
+          {interactiveActivity ? (
+            <StudentActivityPlayer activity={interactiveActivity} onAnswersChange={handleActivityAnswers} />
+          ) : <>
           <div><h2 className="font-display text-lg font-bold">Preguntas</h2><p className="text-sm text-muted">Lee cada enunciado y numera tus respuestas al escribir.</p></div>
           {preguntasOnline.length === 0 ? (
             <p className="text-sm text-muted">Esta evaluación no tiene preguntas visibles.</p>
@@ -268,6 +349,7 @@ export function ResolverEvaluacionPage() {
               })}
             </div>
           )}
+          </>}
         </section>
 
         <section className="space-y-4 lg:sticky lg:top-24 lg:self-start">
@@ -280,9 +362,71 @@ export function ResolverEvaluacionPage() {
               </div>
             </Card>
           )}
+          {(modalidad === 'fisica' || modalidad === 'mixta') && (
+            <Card className="space-y-4 border-sky-200 p-5 dark:border-sky-500/30">
+              <div className="flex items-start gap-3">
+                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-sky-100 text-sky-700 dark:bg-sky-500/20 dark:text-sky-200"><FileUp className="h-5 w-5" /></span>
+                <div>
+                  <h2 className="font-display text-lg font-bold">Foto o PDF de tu trabajo</h2>
+                  <p className="mt-1 text-sm leading-6 text-muted">
+                    {physicalSubmitted
+                      ? 'La evidencia ya fue entregada y quedó guardada.'
+                      : modalidad === 'mixta' && !onlinePartReady
+                        ? 'Primero envía la parte online. Después podrás adjuntar la evidencia física.'
+                        : 'Usa buena iluminación y procura que todo el contenido sea legible. Máximo 15 MB.'}
+                  </p>
+                </div>
+              </div>
+              {physicalSubmitted ? (
+                <div className="flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm font-semibold text-emerald-800 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-200">
+                  <CheckCircle2 className="h-5 w-5" /> Evidencia recibida
+                </div>
+              ) : (
+                <>
+                  <label className="block">
+                    <span className="mb-2 block text-sm font-semibold">Seleccionar archivo</span>
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp,application/pdf"
+                      disabled={!canUploadPhysical || entregarArchivo.isPending}
+                      onChange={(event) => setEvidenceFile(event.target.files?.[0] ?? null)}
+                      className="focus-ring block w-full rounded-lg border border-border bg-surface p-3 text-sm file:mr-3 file:rounded-md file:border-0 file:bg-brand-50 file:px-3 file:py-2 file:font-semibold file:text-brand-700"
+                    />
+                  </label>
+                  {evidenceFile && <p className="text-sm text-muted">Archivo listo: <strong className="text-fg">{evidenceFile.name}</strong></p>}
+                  <Button className="w-full" onClick={submitEvidence} loading={entregarArchivo.isPending} disabled={!canUploadPhysical || !evidenceFile || entregarArchivo.isPending}>
+                    <FileUp className="h-4 w-4" /> Entregar evidencia
+                  </Button>
+                </>
+              )}
+            </Card>
+          )}
           {showDeliverySummary ? (
             <Card className="space-y-4 border-emerald-200 p-5 dark:border-emerald-500/30">
-              <div className="flex items-start gap-3"><CheckCircle2 className="mt-0.5 h-5 w-5 text-emerald-500" /><div><p className="font-semibold">{modalidad === 'mixta' ? 'Parte online guardada' : 'Entrega enviada'}</p><p className="text-sm text-muted">{modalidad === 'mixta' ? 'Ahora entrega la parte física. El docente subirá la foto y revisará una sola nota consolidada.' : 'Tu respuesta fue recibida. El docente confirmará la calificación.'}</p></div></div>
+              <div className="flex items-start gap-3">
+                <CheckCircle2 className="mt-0.5 h-5 w-5 text-emerald-500" />
+                <div>
+                  <p className="font-semibold">
+                    {evaluacion?.mi_nota_confirmada != null
+                      ? 'Calificación confirmada'
+                      : modalidad === 'mixta' && !physicalSubmitted
+                        ? 'Parte online guardada'
+                        : 'Entrega enviada'}
+                  </p>
+                  <p className="text-sm text-muted">
+                    {evaluacion?.mi_nota_confirmada != null
+                      ? `Tu nota es ${Number(evaluacion.mi_nota_confirmada).toFixed(1)} de ${Number(evaluacion.nota_maxima).toFixed(1)}.`
+                      : modalidad === 'mixta' && !physicalSubmitted
+                        ? 'Ahora entrega la parte física adjuntando una foto o PDF.'
+                        : 'Tu respuesta fue recibida y está pendiente de revisión docente.'}
+                  </p>
+                  {evaluacion?.mi_nota_confirmada != null && (
+                    <Link to="/app/calificaciones/boletin" className="mt-2 inline-flex text-sm font-semibold text-brand-700 hover:underline dark:text-brand-300">
+                      Ver nota y retroalimentación
+                    </Link>
+                  )}
+                </div>
+              </div>
               {allowsMultipleAttempts && disponible && !estaCerrada && (
                 <Button
                   variant="outline"
@@ -296,11 +440,52 @@ export function ResolverEvaluacionPage() {
                   Nuevo intento
                 </Button>
               )}
+              {evaluacion?.mi_nota_confirmada != null && (
+                <div className="border-t border-emerald-200 pt-4 dark:border-emerald-500/25">
+                  {reviewRequest.isLoading ? (
+                    <Skeleton className="h-20" />
+                  ) : reviewRequest.data?.estado === 'abierta' ? (
+                    <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-500/30 dark:bg-amber-500/10">
+                      <div className="flex items-start gap-3">
+                        <Clock3 className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" aria-hidden="true" />
+                        <div>
+                          <p className="font-bold text-amber-950 dark:text-amber-100">Revisión solicitada</p>
+                          <p className="mt-1 text-sm leading-6 text-amber-900 dark:text-amber-100">Tu docente recibió el reclamo y debe revisarlo.</p>
+                          <p className="mt-2 text-xs text-amber-800 dark:text-amber-200">{reviewRequest.data.descripcion}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ) : reviewRequest.data?.estado === 'resuelta' ? (
+                    <div className="space-y-3 rounded-xl border border-sky-200 bg-sky-50 p-4 dark:border-sky-500/30 dark:bg-sky-500/10">
+                      <div className="flex items-start gap-3">
+                        <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-sky-600" aria-hidden="true" />
+                        <div>
+                          <p className="font-bold text-sky-950 dark:text-sky-100">El docente respondió tu solicitud</p>
+                          <p className="mt-1 text-sm leading-6 text-sky-900 dark:text-sky-100">{reviewRequest.data.resolucion || 'La solicitud fue marcada como resuelta.'}</p>
+                        </div>
+                      </div>
+                      <Button type="button" variant="outline" size="sm" onClick={() => setReviewOpen(true)}>
+                        <MessageSquareWarning className="h-4 w-4" aria-hidden="true" /> Solicitar una nueva revisión
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col gap-3 rounded-xl border border-brand-200 bg-brand-50/60 p-4 dark:border-brand-500/30 dark:bg-brand-500/10 sm:flex-row sm:items-center sm:justify-between">
+                      <div>
+                        <p className="font-bold">¿Notas alguna inconsistencia?</p>
+                        <p className="mt-1 text-sm leading-6 text-secondary">Puedes pedir al docente que revise la nota, una respuesta o la evidencia.</p>
+                      </div>
+                      <Button type="button" variant="outline" className="shrink-0" onClick={() => setReviewOpen(true)}>
+                        <MessageSquareWarning className="h-4 w-4" aria-hidden="true" /> Solicitar revisión
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              )}
             </Card>
           ) : answerFormEnabled ? (
             <Card className="space-y-4 p-5">
               <div><h2 className="font-display text-lg font-bold">Tus respuestas</h2><p className="text-sm text-muted">Responde cada pregunta. XCalificator conservará la numeración al enviar.</p></div>
-              <div className="max-h-[55vh] space-y-4 overflow-y-auto pr-1">
+              {!interactiveActivity && <div className="max-h-[55vh] space-y-4 overflow-y-auto pr-1">
                 {preguntasOnline.map((question, index) => {
                   const number = numberFromQuestion(question, index);
                   const options = optionsFromQuestion(question);
@@ -330,7 +515,7 @@ export function ResolverEvaluacionPage() {
                     </div>
                   );
                 })}
-              </div>
+              </div>}
               <div className="flex flex-col gap-3 border-t border-border pt-4 sm:flex-row sm:items-center sm:justify-between">
                 <p className="text-xs text-muted">{Object.values(answers).filter((answer) => answer.trim()).length} de {preguntasOnline.length} respondidas</p>
                 <Button onClick={submit} loading={entregar.isPending} disabled={entregar.isPending} className="w-full sm:w-auto"><Send className="h-4 w-4" /> {needsRetry ? 'Reenviar respuestas' : 'Enviar respuestas'}</Button>
@@ -339,6 +524,49 @@ export function ResolverEvaluacionPage() {
           ) : null}
         </section>
       </div>
+
+      <Modal
+        open={reviewOpen}
+        onClose={() => !requestReview.isPending && setReviewOpen(false)}
+        title="Solicitar revisión de la calificación"
+        className="max-w-2xl"
+        closeOnBackdrop={!requestReview.isPending}
+        closeOnEscape={!requestReview.isPending}
+      >
+        <div className="space-y-5">
+          <div className="flex items-start gap-3 rounded-xl border border-brand-200 bg-brand-50 p-4 dark:border-brand-500/30 dark:bg-brand-500/10">
+            <MessageSquareWarning className="mt-0.5 h-5 w-5 shrink-0 text-brand-700 dark:text-brand-300" aria-hidden="true" />
+            <div>
+              <p className="font-bold">Tu solicitud llegará al docente</p>
+              <p className="mt-1 text-sm leading-6 text-secondary">Describe con respeto qué parte debería revisar. La nota no cambia automáticamente.</p>
+            </div>
+          </div>
+          <Field label="¿Qué deseas que revisen?" required>
+            <Select value={reviewReason} onChange={(event) => setReviewReason(event.target.value as SolicitudRevisionMotivo)}>
+              <option value="nota">La nota asignada</option>
+              <option value="respuesta">Una respuesta específica</option>
+              <option value="evidencia">La foto, PDF o evidencia</option>
+              <option value="retroalimentacion">La retroalimentación</option>
+              <option value="otro">Otra inconsistencia</option>
+            </Select>
+          </Field>
+          <Field label="Explica lo que encontraste" hint="Menciona la pregunta o parte de la evidencia y por qué consideras que debe revisarse." required>
+            <Textarea
+              value={reviewDetail}
+              onChange={(event) => setReviewDetail(event.target.value)}
+              placeholder="Ejemplo: En la pregunta 3 mi procedimiento aparece correcto, pero el criterio figura sin puntaje…"
+              className="min-h-36"
+              maxLength={2000}
+            />
+          </Field>
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <Button type="button" variant="ghost" onClick={() => setReviewOpen(false)} disabled={requestReview.isPending}>Cancelar</Button>
+            <Button type="button" onClick={submitReviewRequest} loading={requestReview.isPending} disabled={reviewDetail.trim().length < 10 || requestReview.isPending}>
+              <Send className="h-4 w-4" aria-hidden="true" /> Enviar solicitud
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }
