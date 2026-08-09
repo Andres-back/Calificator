@@ -1,6 +1,5 @@
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { motion } from 'framer-motion';
 import {
   ArrowRight,
   BookOpen,
@@ -22,11 +21,6 @@ import { DashboardAdmin } from './DashboardAdmin';
 import { cn } from '@/lib/cn';
 import { routes } from '@/config/routes';
 import type { MaterialListItem } from '@/types/api';
-
-const fade = {
-  hidden: { opacity: 0, y: 10 },
-  show: (index: number) => ({ opacity: 1, y: 0, transition: { delay: index * 0.035, ease: [0.22, 1, 0.36, 1] } }),
-};
 
 const teacherActions = [
   {
@@ -81,19 +75,19 @@ function DashboardDocente() {
 
   return (
     <div className="mx-auto max-w-7xl space-y-6">
-      <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-brand-800 via-indigo-700 to-sky-600 p-6 text-white shadow-xl shadow-brand-900/10 sm:p-8">
+      <section className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-brand-800 via-indigo-700 to-sky-600 p-5 text-white shadow-xl shadow-brand-900/10 sm:rounded-3xl sm:p-8">
         <img src="/branding/hero-classroom.png" alt="" className="absolute inset-0 h-full w-full object-cover opacity-15 mix-blend-screen" />
         <div className="absolute -right-20 -top-24 h-72 w-72 rounded-full bg-cyan-300/20 blur-3xl" />
         <div className="relative z-10 grid gap-7 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.18em] text-cyan-100">Tu panel docente</p>
-            <h1 className="mt-2 font-display text-3xl font-extrabold sm:text-4xl">Buen día, {firstName}</h1>
-            <p className="mt-3 max-w-2xl text-sm leading-6 text-indigo-50 sm:text-base">Califica, organiza tus evaluaciones y prepara la próxima clase desde un solo lugar.</p>
-            <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-              <Link to={routes.materiasPara('calificar')} className="focus-ring inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-white px-5 font-bold text-brand-800 shadow-sm transition hover:bg-cyan-50">
+            <h1 className="mt-2 font-display text-2xl font-extrabold sm:text-4xl">Buen día, {firstName}</h1>
+            <p className="mt-2 max-w-2xl text-sm leading-5 text-indigo-50 sm:mt-3 sm:text-base sm:leading-6">Califica y prepara tu próxima clase desde un solo lugar.</p>
+            <div className="mt-5 grid grid-cols-2 gap-2 sm:mt-6 sm:flex sm:gap-3">
+              <Link to={routes.materiasPara('calificar')} className="focus-ring inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-white px-3 text-center text-sm font-bold text-brand-800 sm:px-5 sm:text-base shadow-sm transition hover:bg-cyan-50">
                 <Camera className="h-5 w-5" /> Calificar evidencia
               </Link>
-              <Link to={routes.materiasPara('evaluar')} className="focus-ring inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-white/35 bg-white/10 px-5 font-semibold text-white backdrop-blur transition hover:bg-white/20">
+              <Link to={routes.materiasPara('evaluar')} className="focus-ring inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-white/35 bg-white/10 px-3 text-center text-sm font-semibold text-white sm:px-5 sm:text-base backdrop-blur transition hover:bg-white/20">
                 <ClipboardCheck className="h-5 w-5" /> Crear evaluación
               </Link>
             </div>
@@ -116,27 +110,27 @@ function DashboardDocente() {
       <section aria-labelledby="teacher-actions-title">
         <div className="mb-4 flex items-end justify-between gap-4">
           <div><p className="text-xs font-bold uppercase tracking-[0.14em] text-brand-600">Acciones frecuentes</p><h2 id="teacher-actions-title" className="mt-1 font-display text-2xl font-bold">¿Qué quieres hacer?</h2></div>
-          <Badge tone="brand">Tú tienes el control</Badge>
+          <Badge tone="brand" className="hidden sm:inline-flex">Tú tienes el control</Badge>
         </div>
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          {teacherActions.map((action, index) => (
-            <motion.div key={action.title} custom={index} variants={fade} initial="hidden" animate="show">
+          {teacherActions.map((action) => (
+            <div key={action.title}>
               <Link to={action.to} className="group block h-full">
-                <Card interactive className="flex h-full min-h-44 flex-col p-5">
-                  <div className="flex items-start justify-between gap-3"><span className={cn('grid h-12 w-12 place-items-center rounded-2xl', action.tone)}><action.icon className="h-6 w-6" /></span><span className="text-xs font-bold text-muted">{action.badge}</span></div>
-                  <h3 className="mt-5 font-display text-lg font-bold">{action.title}</h3>
-                  <p className="mt-2 flex-1 text-sm leading-5 text-muted">{action.description}</p>
-                  <span className="mt-4 inline-flex items-center gap-1 text-sm font-bold text-brand-600">Abrir <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" /></span>
+                <Card interactive className="flex h-full min-h-0 items-center gap-3 p-4 sm:min-h-44 sm:flex-col sm:items-stretch sm:gap-0 sm:p-5">
+                  <div className="flex shrink-0 items-start justify-between gap-3"><span className={cn('grid h-11 w-11 place-items-center rounded-xl sm:h-12 sm:w-12 sm:rounded-2xl', action.tone)}><action.icon className="h-5 w-5 sm:h-6 sm:w-6" /></span><span className="hidden text-xs font-bold text-muted sm:inline">{action.badge}</span></div>
+                  <div className="min-w-0 flex-1 sm:contents"><h3 className="font-display text-base font-bold leading-snug sm:mt-5 sm:text-lg">{action.title}</h3>
+                  <p className="mt-2 hidden flex-1 text-sm leading-5 text-muted sm:block">{action.description}</p></div>
+                  <span className="ml-auto inline-flex shrink-0 items-center gap-1 text-sm font-bold text-brand-600 sm:ml-0 sm:mt-4">Abrir <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" /></span>
                 </Card>
               </Link>
-            </motion.div>
+            </div>
           ))}
         </div>
       </section>
 
       <section className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
         <Card className="p-5 sm:p-6">
-          <div className="flex items-center justify-between gap-3"><div><p className="text-xs font-bold uppercase tracking-[0.12em] text-muted">Para tu próxima clase</p><h2 className="mt-1 font-display text-xl font-bold">Crear un recurso</h2></div><Link to={routes.herramientas} className="text-sm font-bold text-brand-600">Ver todos</Link></div>
+          <div className="flex items-center justify-between gap-3"><div><p className="text-xs font-bold uppercase tracking-[0.12em] text-muted">Para tu próxima clase</p><h2 className="mt-1 font-display text-xl font-bold">Crear un recurso</h2></div><Link to={routes.herramientas} className="inline-flex min-h-10 items-center text-sm font-bold text-brand-600">Ver todos</Link></div>
           <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
             {MATERIAL_CREATION_TOOLS.slice(0, 4).map((tool) => (
               <Link key={tool.tipo} to={routes.herramientaNueva(tool.tipo)} className="focus-ring rounded-2xl border border-border p-4 transition hover:border-brand-300 hover:bg-brand-50/60 dark:hover:bg-brand-500/10">
@@ -160,7 +154,7 @@ function DashboardDocente() {
               ); })}
             </div>
           ) : (
-            <div className="mt-4 rounded-2xl border border-dashed border-border bg-surface-2/60 p-5 text-center"><Wand2 className="mx-auto h-7 w-7 text-brand-500" /><p className="mt-2 font-bold">Aún no tienes materiales</p><p className="mt-1 text-sm text-muted">Crea uno desde las opciones de la izquierda.</p></div>
+            <div className="mt-4 rounded-2xl border border-dashed border-border bg-surface-2/60 p-5 text-center"><Wand2 className="mx-auto h-7 w-7 text-brand-500" /><p className="mt-2 font-bold">Aún no tienes materiales</p><p className="mt-1 text-sm text-muted">Crea uno desde Recursos.</p></div>
           )}
         </Card>
       </section>

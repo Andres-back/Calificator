@@ -58,8 +58,10 @@ Disena una presentacion de clase clara, visual, editable cuando convenga y pedag
 
 CONTEXTO
 - Tema: {tema}
+- Materia: {materia}
 - Area: {area}
 - Grado: {grado}
+- Contexto de la materia: {contexto_materia}
 - Titulo: {titulo}
 - Nivel: {nivel}
 - Tono: {tono}
@@ -168,11 +170,21 @@ def _is_estudiante(user: User) -> bool:
     return user.rol == UserRole.ESTUDIANTE.value
 
 
-async def _resolve_profesor_id(db: AsyncSession, payload: PresentacionCreate, current_user: User) -> UUID:
+async def _resolve_presentacion_context(
+    db: AsyncSession, payload: PresentacionCreate, current_user: User
+) -> tuple[UUID, PresentacionCreate]:
     if payload.materia_id:
         materia = await materias_service.ensure_can_manage_materia(db, payload.materia_id, current_user)
-        return materia.profesor_id
-    return current_user.id
+        enriched = payload.model_copy(
+            update={
+                "materia_nombre": materia.nombre,
+                "area": payload.area or materia.area,
+                "grado": payload.grado or materia.grado,
+                "contexto_materia": materia.descripcion or payload.contexto_materia,
+            }
+        )
+        return materia.profesor_id, enriched
+    return current_user.id, payload
 
 
 async def create_presentacion(
@@ -180,7 +192,7 @@ async def create_presentacion(
     payload: PresentacionCreate,
     current_user: User,
 ) -> Presentacion:
-    profesor_id = await _resolve_profesor_id(db, payload, current_user)
+    profesor_id, payload = await _resolve_presentacion_context(db, payload, current_user)
     input_data = payload.model_dump(mode="json")
     slides_json = {
         "input": input_data,
@@ -278,8 +290,10 @@ async def _generate_slides(payload: PresentacionCreate, profesor_id: UUID) -> li
     llm = LLMRouter(user_id=profesor_id)
     prompt = SLIDES_PROMPT.format(
         tema=payload.tema,
+        materia=payload.materia_nombre or "General",
         area=payload.area or "",
         grado=payload.grado or "",
+        contexto_materia=payload.contexto_materia or "sin contexto adicional",
         titulo=payload.titulo,
         nivel=getattr(payload, "nivel", "primaria"),
         tono=getattr(payload, "tono", "divulgativo"),

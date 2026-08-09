@@ -6,11 +6,10 @@ import {
   GraduationCap, HelpCircle, Sparkles, TrendingDown, TrendingUp,
   Users, ShieldAlert, Search,
 } from 'lucide-react';
-import { Badge, Button, Card, EmptyState, Field, Select, Skeleton } from '@/components/ui';
+import { Badge, Card, EmptyState, Field, Select, Skeleton } from '@/components/ui';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { useMaterias } from '@/modules/materias/MateriaSelect';
 import { api, toApiError } from '@/lib/api';
-import { useAuth } from '@/stores/auth';
 import { XaliRefuerzoModal } from './XaliRefuerzoModal';
 
 /* ─── Types ─── */
@@ -24,6 +23,53 @@ interface Overview {
 interface EvalRow { id: string; nombre: string; estado: string; total_entregas: number; pendientes: number; confirmadas: number; publicadas: number; promedio: number; tasa_aprobacion: number; }
 interface CriterioRow { nombre: string; porcentaje_logro: number; estudiantes_evaluados: number; estudiantes_con_dificultad: number; nivel_atencion: string; }
 interface EstudianteRow { estudiante_id: string; nombre: string; email: string; promedio_pct: number; total_evaluaciones: number; pendientes: number; bajo_rendimiento: number; senales: string[]; nivel_atencion: string; }
+interface PreguntaRow { texto: string; tipo?: string | null; evaluacion_nombre: string; total_respuestas: number; puntaje_maximo: number; }
+interface SintesisItem {
+  titulo: string;
+  porcentaje_logro: number;
+  evidencia: { estudiantes_evaluados: number; estudiantes_con_dificultad: number };
+}
+interface SintesisData {
+  contexto: { evaluaciones_analizadas: number; estudiantes_analizados: number; calificaciones_analizadas: number };
+  alertas: { mensaje: string }[];
+  fortalezas: SintesisItem[];
+  dificultades: SintesisItem[];
+}
+interface ConcordanciaEvaluacion { evaluacion_id: string; nombre: string; total: number; coincidencia_exacta: number; mae: number; }
+interface ConcordanciaData {
+  total_calificaciones: number;
+  coincidencia_exacta: number;
+  coincidencia_tolerancia: number;
+  mae_normalizado: number;
+  kappa: { simple: number; ponderado: number; muestra: number; categorias: string[] };
+  overrides: { sin_cambio: number; aumentadas: number; disminuidas: number };
+  por_evaluacion: ConcordanciaEvaluacion[];
+}
+interface LatencyStage { stage: string; average_ms: number; p50_ms: number; p90_ms: number; p95_ms: number; percentage_of_total: number; }
+interface LatencyData { total?: { p50_ms: number; p95_ms: number; sample_size: number }; stages: LatencyStage[]; }
+interface ConfidenceData { promedio: number; sample_size: number; alta: number; media: number; baja: number; }
+interface ErrorsData { total_runs: number; tasa_incidencias: number; total_incidencias: number; por_tipo?: Record<string, number>; alertas_modelo?: Record<string, number>; }
+interface CostTotal { calls: number; cost: number; input_tokens: number; output_tokens: number; }
+interface ProviderCost extends CostTotal { provider: string; errors: number; }
+interface ModelCost extends CostTotal { provider: string; model: string; }
+interface FeatureCost extends CostTotal { feature: string; }
+interface MonthlyCost { month: string; calls: number; cost: number; }
+interface CostsData {
+  total: CostTotal;
+  by_provider: ProviderCost[];
+  by_model: ModelCost[];
+  by_feature: FeatureCost[];
+  monthly: MonthlyCost[];
+  pricing_note?: string;
+}
+interface ProviderComparison extends ProviderCost { avg_latency_ms: number; models_used: number; total_input_tokens: number; total_output_tokens: number; }
+interface EstudianteDetalle {
+  promedio_general?: number;
+  total_evaluaciones: number;
+  tendencia?: string | null;
+  criterios?: { nombre: string; promedio_pct: number }[];
+  evaluaciones?: { nombre: string; nota: number; nota_maxima: number; porcentaje: number }[];
+}
 type Tab = 'resumen' | 'rendimiento' | 'estudiantes' | 'calidad_ia';
 
 const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
@@ -114,13 +160,13 @@ function ResumenTab({ materiaId }: { materiaId: string }) {
 /* ═══════════════════════ RENDIMIENTO ═══════════════════════ */
 function RendimientoTab({ materiaId }: { materiaId: string }) {
   const crit = useQuery({ queryKey: ['analytics-criterios', materiaId], queryFn: () => api.get('/analytics/criterios', { params: materiaId ? { materia_id: materiaId } : {} }).then(r => r.data) });
-  const pregs = useQuery({ queryKey: ['analytics-preguntas', materiaId], queryFn: () => api.get('/analytics/preguntas', { params: materiaId ? { materia_id: materiaId } : {} }).then(r => r.data) });
-  const sint = useQuery({ queryKey: ['analytics-sintesis', materiaId], queryFn: () => api.get('/analytics/sintesis', { params: materiaId ? { materia_id: materiaId } : {} }).then(r => r.data) });
+  const pregs = useQuery<PreguntaRow[]>({ queryKey: ['analytics-preguntas', materiaId], queryFn: () => api.get<PreguntaRow[]>('/analytics/preguntas', { params: materiaId ? { materia_id: materiaId } : {} }).then(r => r.data) });
+  const sint = useQuery<SintesisData>({ queryKey: ['analytics-sintesis', materiaId], queryFn: () => api.get<SintesisData>('/analytics/sintesis', { params: materiaId ? { materia_id: materiaId } : {} }).then(r => r.data) });
   const [refuerzoCriterio, setRefuerzoCriterio] = useState<CriterioRow | null>(null);
 
   const cData = crit.data as CriterioRow[] | undefined;
-  const pData = pregs.data as any[] | undefined;
-  const sData = sint.data as any;
+  const pData = pregs.data;
+  const sData = sint.data;
 
   if (crit.isLoading) return <div className="grid gap-4 sm:grid-cols-3">{Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-24" />)}</div>;
 
@@ -192,7 +238,7 @@ function RendimientoTab({ materiaId }: { materiaId: string }) {
         {/* Alertas */}
         {sData.alertas?.length > 0 && (
           <div className="space-y-2">
-            {sData.alertas.map((a: any, i: number) => (
+            {sData.alertas.map((a, i) => (
               <div key={i} className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
                 <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
                 <span>{a.mensaje}</span>
@@ -206,7 +252,7 @@ function RendimientoTab({ materiaId }: { materiaId: string }) {
           {sData.fortalezas?.length > 0 && (
             <div className="space-y-3">
               <p className="flex items-center gap-2 text-xs font-semibold text-emerald-600"><CheckCircle2 className="h-4 w-4" /> Fortalezas del grupo</p>
-              {sData.fortalezas.map((f: any, i: number) => (
+              {sData.fortalezas.map((f, i) => (
                 <div key={i} className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 dark:border-emerald-500/20 dark:bg-emerald-500/5">
                   <p className="text-sm font-semibold text-emerald-800 dark:text-emerald-200">{f.titulo}</p>
                   <p className="text-xs text-emerald-600 dark:text-emerald-300">{f.porcentaje_logro.toFixed(0)}% logro · {f.evidencia.estudiantes_evaluados} estudiantes</p>
@@ -219,7 +265,7 @@ function RendimientoTab({ materiaId }: { materiaId: string }) {
           {sData.dificultades?.length > 0 && (
             <div className="space-y-3">
               <p className="flex items-center gap-2 text-xs font-semibold text-rose-600"><AlertTriangle className="h-4 w-4" /> Aspectos para reforzar</p>
-              {sData.dificultades.map((d: any, i: number) => (
+              {sData.dificultades.map((d, i) => (
                 <div key={i} className="rounded-lg border border-rose-200 bg-rose-50 p-3 dark:border-rose-500/20 dark:bg-rose-500/5">
                   <p className="text-sm font-semibold text-rose-800 dark:text-rose-200">{d.titulo}</p>
                   <p className="text-xs text-rose-600 dark:text-rose-300">{d.porcentaje_logro.toFixed(0)}% logro · {d.evidencia.estudiantes_con_dificultad}/{d.evidencia.estudiantes_evaluados} con dificultad</p>
@@ -292,11 +338,11 @@ function CalidadIaTab({ materiaId }: { materiaId: string }) {
 }
 
 function ConcordanciaTabBody({ materiaId }: { materiaId: string }) {
-  const conc = useQuery({ queryKey: ['ai-concordancia', materiaId], queryFn: () => api.get('/analytics/ai-quality/concordancia', { params: materiaId ? { materia_id: materiaId } : {} }).then(r => r.data) });
+  const conc = useQuery<ConcordanciaData>({ queryKey: ['ai-concordancia', materiaId], queryFn: () => api.get<ConcordanciaData>('/analytics/ai-quality/concordancia', { params: materiaId ? { materia_id: materiaId } : {} }).then(r => r.data) });
 
   if (conc.isLoading) return <div className="grid gap-4 sm:grid-cols-4">{Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-28" />)}</div>;
   if (conc.error) return <EmptyState icon={Sparkles} title="Error" description={toApiError(conc.error).detail} />;
-  const d = conc.data as any;
+  const d = conc.data;
   if (!d || d.total_calificaciones === 0) return <EmptyState icon={Sparkles} title="Sin datos aún" description="Las métricas de concordancia aparecen cuando hay calificaciones confirmadas por el docente." />;
 
   const interpretKappa = (v: number) => v >= 0.81 ? 'Casi perfecta' : v >= 0.61 ? 'Sustancial' : v >= 0.41 ? 'Moderada' : v >= 0.21 ? 'Regular' : 'Baja';
@@ -332,7 +378,7 @@ function ConcordanciaTabBody({ materiaId }: { materiaId: string }) {
       <Card className="p-5">
         <h3 className="mb-4 font-display font-bold">Concordancia por evaluación</h3>
         <div className="overflow-x-auto"><table className="w-full text-left text-sm"><thead><tr className="border-b border-border text-xs font-semibold text-muted"><th className="pb-2 pr-4">Evaluación</th><th className="pb-2 pr-4 text-right">Total</th><th className="pb-2 pr-4 text-right">Coincidencia</th><th className="pb-2 pr-4 text-right">MAE</th></tr></thead>
-          <tbody>{d.por_evaluacion.map((ev: any) => <tr key={ev.evaluacion_id} className="border-b border-border/50 last:border-0"><td className="py-2.5 pr-4 font-medium">{ev.nombre}</td><td className="py-2.5 pr-4 text-right">{ev.total}</td><td className="py-2.5 pr-4 text-right">{(ev.coincidencia_exacta * 100).toFixed(0)}%</td><td className="py-2.5 pr-4 text-right font-semibold">{ev.mae.toFixed(2)}</td></tr>)}</tbody></table></div>
+          <tbody>{d.por_evaluacion.map((ev) => <tr key={ev.evaluacion_id} className="border-b border-border/50 last:border-0"><td className="py-2.5 pr-4 font-medium">{ev.nombre}</td><td className="py-2.5 pr-4 text-right">{ev.total}</td><td className="py-2.5 pr-4 text-right">{(ev.coincidencia_exacta * 100).toFixed(0)}%</td><td className="py-2.5 pr-4 text-right font-semibold">{ev.mae.toFixed(2)}</td></tr>)}</tbody></table></div>
       </Card>
     )}
   </>);
@@ -347,9 +393,9 @@ function EstudiantesTab({ materiaId }: { materiaId: string }) {
   const eData = est.data as EstudianteRow[] | undefined;
   const filtered = eData?.filter(e => !search || e.nombre?.toLowerCase().includes(search.toLowerCase())) ?? [];
 
-  const detalleQuery = useQuery({
+  const detalleQuery = useQuery<EstudianteDetalle>({
     queryKey: ['analytics-estudiante', selected],
-    queryFn: () => api.get(`/analytics/estudiantes/${selected}`).then(r => r.data),
+    queryFn: () => api.get<EstudianteDetalle>(`/analytics/estudiantes/${selected}`).then(r => r.data),
     enabled: !!selected,
   });
 
@@ -415,11 +461,11 @@ function EstudiantesTab({ materiaId }: { materiaId: string }) {
 
 /* ── Sub-tab: Rendimiento (latencia + confianza) ── */
 function RendimientoIaTab({ materiaId }: { materiaId: string }) {
-  const lat = useQuery({ queryKey: ['ai-latency', materiaId], queryFn: () => api.get('/analytics/ai-quality/latency', { params: materiaId ? { materia_id: materiaId } : {} }).then(r => r.data) });
-  const conf = useQuery({ queryKey: ['ai-confidence', materiaId], queryFn: () => api.get('/analytics/ai-quality/confidence', { params: materiaId ? { materia_id: materiaId } : {} }).then(r => r.data) });
+  const lat = useQuery<LatencyData>({ queryKey: ['ai-latency', materiaId], queryFn: () => api.get<LatencyData>('/analytics/ai-quality/latency', { params: materiaId ? { materia_id: materiaId } : {} }).then(r => r.data) });
+  const conf = useQuery<ConfidenceData>({ queryKey: ['ai-confidence', materiaId], queryFn: () => api.get<ConfidenceData>('/analytics/ai-quality/confidence', { params: materiaId ? { materia_id: materiaId } : {} }).then(r => r.data) });
 
   if (lat.isLoading || conf.isLoading) return <div className="grid gap-4 sm:grid-cols-4">{Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-28" />)}</div>;
-  const ld = lat.data as any; const cd = conf.data as any;
+  const ld = lat.data; const cd = conf.data;
   return (<>
     <div className="grid gap-4 sm:grid-cols-4">
       {ld?.total ? (<>
@@ -433,9 +479,9 @@ function RendimientoIaTab({ materiaId }: { materiaId: string }) {
     </div>
 
     {/* Etapas */}
-    {ld?.stages?.length > 0 && <Card className="p-5"><h3 className="mb-4 font-display font-bold">Latencia por etapa</h3>
+    {ld && ld.stages.length > 0 && <Card className="p-5"><h3 className="mb-4 font-display font-bold">Latencia por etapa</h3>
       <div className="overflow-x-auto"><table className="w-full text-left text-sm"><thead><tr className="border-b border-border text-xs font-semibold text-muted"><th className="pb-2 pr-4">Etapa</th><th className="pb-2 pr-4 text-right">Promedio</th><th className="pb-2 pr-4 text-right">P50</th><th className="pb-2 pr-4 text-right">P90</th><th className="pb-2 pr-4 text-right">P95</th><th className="pb-2 pr-4 text-right">% del total</th></tr></thead>
-        <tbody>{ld.stages.map((s: any) => <tr key={s.stage} className="border-b border-border/50 last:border-0"><td className="py-2.5 pr-4 font-medium capitalize">{s.stage.replace(/_/g, ' ')}</td><td className="py-2.5 pr-4 text-right">{(s.average_ms / 1000).toFixed(1)}s</td><td className="py-2.5 pr-4 text-right">{(s.p50_ms / 1000).toFixed(1)}s</td><td className="py-2.5 pr-4 text-right">{(s.p90_ms / 1000).toFixed(1)}s</td><td className="py-2.5 pr-4 text-right">{(s.p95_ms / 1000).toFixed(1)}s</td><td className="py-2.5 pr-4 text-right">{s.percentage_of_total.toFixed(0)}%</td></tr>)}</tbody></table></div>
+        <tbody>{ld.stages.map((s) => <tr key={s.stage} className="border-b border-border/50 last:border-0"><td className="py-2.5 pr-4 font-medium capitalize">{s.stage.replace(/_/g, ' ')}</td><td className="py-2.5 pr-4 text-right">{(s.average_ms / 1000).toFixed(1)}s</td><td className="py-2.5 pr-4 text-right">{(s.p50_ms / 1000).toFixed(1)}s</td><td className="py-2.5 pr-4 text-right">{(s.p90_ms / 1000).toFixed(1)}s</td><td className="py-2.5 pr-4 text-right">{(s.p95_ms / 1000).toFixed(1)}s</td><td className="py-2.5 pr-4 text-right">{s.percentage_of_total.toFixed(0)}%</td></tr>)}</tbody></table></div>
     </Card>}
 
     {/* Confianza */}
@@ -451,9 +497,9 @@ function RendimientoIaTab({ materiaId }: { materiaId: string }) {
 
 /* ── Sub-tab: Errores ── */
 function ErroresIaTab({ materiaId }: { materiaId: string }) {
-  const err = useQuery({ queryKey: ['ai-errors', materiaId], queryFn: () => api.get('/analytics/ai-quality/errors', { params: materiaId ? { materia_id: materiaId } : {} }).then(r => r.data) });
+  const err = useQuery<ErrorsData>({ queryKey: ['ai-errors', materiaId], queryFn: () => api.get<ErrorsData>('/analytics/ai-quality/errors', { params: materiaId ? { materia_id: materiaId } : {} }).then(r => r.data) });
   if (err.isLoading) return <div className="grid gap-4 sm:grid-cols-4">{Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-28" />)}</div>;
-  const d = err.data as any;
+  const d = err.data;
   if (!d || d.total_runs === 0) return <EmptyState icon={AlertTriangle} title="Sin datos" description="No hay ejecuciones registradas." />;
   return (<>
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -483,19 +529,19 @@ function ErroresIaTab({ materiaId }: { materiaId: string }) {
 function CostosIaTab({ materiaId }: { materiaId: string }) {
   const costs = useQuery({
     queryKey: ['ai-costs', materiaId],
-    queryFn: () => api.get('/analytics/ai-quality/costs', { params: materiaId ? { materia_id: materiaId } : {} }).then(r => r.data),
+    queryFn: () => api.get<CostsData>('/analytics/ai-quality/costs', { params: materiaId ? { materia_id: materiaId } : {} }).then(r => r.data),
   });
   const comp = useQuery({
     queryKey: ['ai-costs-compare'],
-    queryFn: () => api.get('/analytics/ai-quality/costs/provider-comparison').then(r => r.data),
+    queryFn: () => api.get<ProviderComparison[]>('/analytics/ai-quality/costs/provider-comparison').then(r => r.data),
   });
 
   if (costs.isLoading) return <div className="grid gap-4 sm:grid-cols-4">{Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-28" />)}</div>;
   if (costs.error) return <EmptyState icon={BarChart3} title="Error" description={toApiError(costs.error).detail} />;
-  const d = costs.data as any;
+  const d = costs.data;
   if (!d || d.total.calls === 0) return <EmptyState icon={BarChart3} title="Sin costos registrados" description="Los costos aparecen cuando el pipeline de IA procese evaluaciones." />;
 
-  const compData = comp.data as any[] | undefined;
+  const compData = comp.data;
 
   return (<>
     {/* Metric cards */}
@@ -524,7 +570,7 @@ function CostosIaTab({ materiaId }: { materiaId: string }) {
               </tr>
             </thead>
             <tbody>
-              {d.by_provider.map((p: any) => (
+              {d.by_provider.map((p) => (
                 <tr key={p.provider} className="border-b border-border/50 last:border-0">
                   <td className="py-2.5 pr-4 font-medium capitalize">{p.provider.replace(/_/g, ' ')}</td>
                   <td className="py-2.5 pr-4 text-right">{p.calls}</td>
@@ -557,7 +603,7 @@ function CostosIaTab({ materiaId }: { materiaId: string }) {
               </tr>
             </thead>
             <tbody>
-              {d.by_model.map((m: any, i: number) => (
+              {d.by_model.map((m, i) => (
                 <tr key={`${m.provider}-${m.model}-${i}`} className="border-b border-border/50 last:border-0">
                   <td className="py-2.5 pr-4 font-medium">
                     <span className="capitalize">{m.provider}</span>
@@ -592,7 +638,7 @@ function CostosIaTab({ materiaId }: { materiaId: string }) {
               </tr>
             </thead>
             <tbody>
-              {d.by_feature.map((f: any) => (
+              {d.by_feature.map((f) => (
                 <tr key={f.feature} className="border-b border-border/50 last:border-0">
                   <td className="py-2.5 pr-4 font-medium capitalize">{f.feature.replace(/_/g, ' ')}</td>
                   <td className="py-2.5 pr-4 text-right">{f.calls}</td>
@@ -622,7 +668,7 @@ function CostosIaTab({ materiaId }: { materiaId: string }) {
               </tr>
             </thead>
             <tbody>
-              {d.monthly.map((m: any) => (
+              {d.monthly.map((m) => (
                 <tr key={m.month} className="border-b border-border/50 last:border-0">
                   <td className="py-2.5 pr-4 font-medium">{new Date(m.month).toLocaleDateString('es-CO', { year: 'numeric', month: 'long' })}</td>
                   <td className="py-2.5 pr-4 text-right">{m.calls}</td>
@@ -654,7 +700,7 @@ function CostosIaTab({ materiaId }: { materiaId: string }) {
               </tr>
             </thead>
             <tbody>
-              {compData.map((p: any) => (
+              {compData.map((p) => (
                 <tr key={p.provider} className="border-b border-border/50 last:border-0">
                   <td className="py-2.5 pr-4 font-medium capitalize">{p.provider.replace(/_/g, ' ')}</td>
                   <td className="py-2.5 pr-4 text-right font-semibold">${p.cost.toFixed(4)}</td>
@@ -681,8 +727,8 @@ function CostosIaTab({ materiaId }: { materiaId: string }) {
   </>);
 }
 
-function DetalleEstudiante({ data }: { data: any }) {
-  const d = data as any;
+function DetalleEstudiante({ data }: { data: EstudianteDetalle }) {
+  const d = data;
   return (
     <div className="space-y-4">
       <div>
@@ -695,7 +741,7 @@ function DetalleEstudiante({ data }: { data: any }) {
         <div>
           <p className="mb-2 text-xs font-semibold text-muted">Rendimiento por criterio</p>
           <div className="space-y-2">
-            {d.criterios.map((c: any, i: number) => {
+            {d.criterios.map((c, i) => {
               const color = c.promedio_pct >= 80 ? 'bg-emerald-500' : c.promedio_pct >= 60 ? 'bg-amber-500' : 'bg-rose-500';
               return (<div key={i}>
                 <div className="flex items-center justify-between text-xs"><span>{c.nombre}</span><span>{c.promedio_pct.toFixed(0)}%</span></div>
@@ -710,7 +756,7 @@ function DetalleEstudiante({ data }: { data: any }) {
         <div>
           <p className="mb-2 text-xs font-semibold text-muted">Evaluaciones</p>
           <div className="space-y-1">
-            {d.evaluaciones.map((ev: any, i: number) => (
+            {d.evaluaciones.map((ev, i) => (
               <div key={i} className="flex items-center justify-between rounded-lg border border-border bg-surface-2 px-3 py-2 text-xs">
                 <span className="font-medium text-fg">{ev.nombre}</span>
                 <span className="text-muted">{ev.nota.toFixed(1)}/{ev.nota_maxima.toFixed(1)} ({ev.porcentaje.toFixed(0)}%)</span>

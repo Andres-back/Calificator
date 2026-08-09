@@ -194,8 +194,8 @@ export function PresentacionesPage() {
         </div>
       )}
 
-      <Modal open={open} onClose={() => setOpen(false)} title="Nueva presentación" className="max-w-xl">
-        <div className="max-h-[70vh] overflow-y-auto pr-1">
+      <Modal open={open} onClose={() => setOpen(false)} title="Nueva presentación" className="max-w-2xl">
+        <div className="max-h-[calc(100dvh-10rem)] overflow-y-auto pr-1 sm:max-h-[75vh]">
           <PresentacionForm loading={create.isPending} materias={materias.data ?? []} onSubmit={(payload) => create.mutate(payload)} />
         </div>
       </Modal>

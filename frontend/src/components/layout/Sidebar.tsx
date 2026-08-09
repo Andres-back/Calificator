@@ -1,5 +1,4 @@
 import { NavLink } from 'react-router-dom';
-import { motion, useReducedMotion } from 'framer-motion';
 import { Bot, GraduationCap, ShieldCheck, X } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { adminNav, estudianteNav, profesorNav } from '@/config/nav';
@@ -27,7 +26,6 @@ export function Sidebar({
   mobile?: boolean;
 }) {
   const user = useAuth((state) => state.user);
-  const reduceMotion = useReducedMotion();
   const navItems = user?.rol === 'admin' ? adminNav : user?.rol === 'estudiante' ? estudianteNav : profesorNav;
   const roleMessage = user?.rol === 'admin'
     ? { title: 'IA bajo control', detail: 'Credenciales, modelos y rutas.', icon: ShieldCheck }
@@ -87,10 +85,8 @@ export function Sidebar({
               {({ isActive }) => (
                 <>
                   {isActive && !item.soon && (
-                    <motion.span
-                      layoutId="nav-active"
+                    <span
                       className="absolute inset-0 rounded-xl border border-brand-300 bg-brand-50 shadow-sm dark:border-brand-500/40 dark:bg-brand-500/20"
-                      transition={reduceMotion ? { duration: 0 } : { type: 'spring', stiffness: 350, damping: 30 }}
                     />
                   )}
                   <item.icon aria-hidden="true" className={cn('relative h-[18px] w-[18px] shrink-0', isActive && !item.soon && 'text-brand-700 dark:text-brand-300')} />

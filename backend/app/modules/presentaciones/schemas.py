@@ -14,6 +14,8 @@ class PresentacionCreate(BaseModel):
     tema: str
     grado: str | None = None
     area: str | None = None
+    materia_nombre: str | None = None
+    contexto_materia: str | None = None
     cantidad_slides: int = Field(default=8, ge=3, le=20)
     instrucciones: str | None = None
     incluir_imagenes: bool = True

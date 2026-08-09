@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { CheckCircle2, Sparkles, Loader2 } from 'lucide-react';
-import { Badge, Button, Card, Field, Modal, Select, Textarea } from '@/components/ui';
+import { Badge, Button, Card, Field, Modal, Select } from '@/components/ui';
 import { api, toApiError } from '@/lib/api';
 
 const TIPOS = [
@@ -11,6 +11,24 @@ const TIPOS = [
   { value: 'ejercicio', label: 'Ejercicio de verificación' },
   { value: 'plan_clase', label: 'Mini planificación de clase' },
 ];
+
+interface RefuerzoContenido {
+  titulo?: string;
+  objetivo?: string;
+  duracion_minutos?: number;
+  materiales?: string[];
+  instrucciones?: string;
+  actividad_principal?: string;
+  evidencia_aprendizaje?: string;
+  adaptacion_nivel?: string;
+  [key: string]: unknown;
+}
+
+interface RefuerzoResultado {
+  id: string;
+  modelo?: string | null;
+  contenido_json?: RefuerzoContenido;
+}
 
 interface Props {
   open: boolean;
@@ -27,7 +45,7 @@ export function XaliRefuerzoModal({
   porcentajeLogro, estudiantesConDificultad, totalEstudiantes,
 }: Props) {
   const [tipo, setTipo] = useState('actividad');
-  const [resultado, setResultado] = useState<any>(null);
+  const [resultado, setResultado] = useState<RefuerzoResultado | null>(null);
   const [editando, setEditando] = useState(false);
   const [editContent, setEditContent] = useState('');
 
@@ -52,6 +70,7 @@ export function XaliRefuerzoModal({
 
   const guardarMut = useMutation({
     mutationFn: () => {
+      if (!resultado) throw new Error('No hay un refuerzo para guardar.');
       const parsed = JSON.parse(editContent);
       return api.patch(`/xali/refuerzos/${resultado.id}`, { contenido_json: parsed }).then(r => r.data);
     },

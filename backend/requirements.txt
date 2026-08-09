@@ -37,4 +37,4 @@ python-pptx==1.0.2
 # PDF de herramientas con look de la app (HTML/CSS -> PDF)
 weasyprint==69.0
 # Crypto para claves almacenadas
-cryptography==49.0.0
+cryptography==50.0.0

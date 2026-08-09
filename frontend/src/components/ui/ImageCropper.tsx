@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { motion } from 'framer-motion';
 import { Check, RotateCcw, ZoomIn, X } from 'lucide-react';
 import { Button } from '@/components/ui';
 
@@ -22,7 +21,7 @@ interface Point {
 export function ImageCropper({ imageUrl, onCrop, onCancel }: ImageCropperProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const imgRef = useRef<HTMLImageElement | null>(null);
-  const [imgSize, setImgSize] = useState({ w: 0, h: 0 });
+
   const [dragging, setDragging] = useState<number | null>(null);
   const [showCrop, setShowCrop] = useState(false);
   const [zoom, setZoom] = useState(1);
@@ -235,7 +234,7 @@ export function ImageCropper({ imageUrl, onCrop, onCancel }: ImageCropperProps) 
           className="hidden"
           onLoad={() => {
             if (imgRef.current) {
-              setImgSize({ w: imgRef.current.naturalWidth, h: imgRef.current.naturalHeight });
+
               setShowCrop(true);
             }
           }}

@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { Baby, BookOpen, GraduationCap, School, Sparkles, FlaskConical, Smile, Leaf, Wallet, Scale, Gem } from 'lucide-react';
+import { Baby, BookOpen, GraduationCap, School, Sparkles, FlaskConical, Smile, Leaf, Wallet, Scale, Gem, CheckCircle2 } from 'lucide-react';
 import { Field, Input, Select, Textarea } from '@/components/ui';
 import { Stepper, Segmented } from '@/modules/herramientas/forms/widgets';
 import { FormSection, GenerateButton } from '@/modules/herramientas/forms/base';
 import type { Materia } from '@/types/api';
 import type { PresentacionCreate } from './api';
+import { inferNivelFromGrado } from './presentationContext';
 
 type Nivel = 'preescolar' | 'primaria' | 'secundaria' | 'media';
 type Tono = 'divulgativo' | 'academico' | 'ludico';
@@ -31,6 +32,18 @@ export function PresentacionForm({
   });
   const set = <K extends keyof typeof f>(k: K, v: (typeof f)[K]) => setF((p) => ({ ...p, [k]: v }));
   const valid = f.titulo.trim().length > 0 && f.tema.trim().length > 0;
+  const selectedMateria = materias.find((materia) => materia.id === f.materia_id);
+
+  const selectMateria = (materiaId: string) => {
+    const materia = materias.find((item) => item.id === materiaId);
+    setF((previous) => ({
+      ...previous,
+      materia_id: materiaId,
+      area: materia?.area?.trim() ?? '',
+      grado: materia?.grado?.trim() ?? '',
+      nivel: inferNivelFromGrado(materia?.grado) ?? previous.nivel,
+    }));
+  };
 
   const submit = () =>
     onSubmit({
@@ -55,11 +68,28 @@ export function PresentacionForm({
           <Input value={f.titulo} onChange={(e) => set('titulo', e.target.value)} placeholder="El ciclo del agua" required />
         </Field>
         <Field label="Materia">
-          <Select value={f.materia_id} onChange={(e) => set('materia_id', e.target.value)}>
+          <Select value={f.materia_id} onChange={(e) => selectMateria(e.target.value)}>
             <option value="">Sin materia</option>
-            {materias.map((m) => <option key={m.id} value={m.id}>{m.nombre}</option>)}
+            {materias.map((m) => <option key={m.id} value={m.id}>{m.nombre}{m.grado ? ` · ${m.grado}` : ''}</option>)}
           </Select>
         </Field>
+        {selectedMateria && (
+          <div className="rounded-2xl border border-emerald-200 bg-emerald-50/80 p-4 dark:border-emerald-500/30 dark:bg-emerald-500/10" role="status">
+            <div className="flex items-start gap-3">
+              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-200">
+                <CheckCircle2 className="h-5 w-5" aria-hidden="true" />
+              </span>
+              <div className="min-w-0">
+                <p className="font-semibold text-emerald-950 dark:text-emerald-100">Contexto detectado</p>
+                <p className="mt-0.5 text-sm text-emerald-800 dark:text-emerald-200">
+                  {selectedMateria.nombre}{selectedMateria.area ? ` · ${selectedMateria.area}` : ''}{selectedMateria.grado ? ` · ${selectedMateria.grado}` : ''}
+                </p>
+                {selectedMateria.descripcion && <p className="mt-1 text-xs leading-5 text-emerald-700 dark:text-emerald-300">{selectedMateria.descripcion}</p>}
+              </div>
+            </div>
+            <p className="mt-3 text-xs leading-5 text-emerald-700 dark:text-emerald-300">Área, grado y nivel se completaron desde la materia. Puedes ajustarlos solo para esta presentación.</p>
+          </div>
+        )}
         <Field label="Tema" required>
           <Input value={f.tema} onChange={(e) => set('tema', e.target.value)} placeholder="Las fases del ciclo del agua" required />
         </Field>
@@ -77,6 +107,7 @@ export function PresentacionForm({
         <Segmented
           value={f.nivel}
           onChange={(v) => set('nivel', v as Nivel)}
+          className="grid-cols-2 sm:grid-cols-4"
           options={[
             { value: 'preescolar', label: 'Preescolar', icon: <Baby className="h-4 w-4" /> },
             { value: 'primaria', label: 'Primaria', icon: <BookOpen className="h-4 w-4" /> },
@@ -98,7 +129,7 @@ export function PresentacionForm({
         />
       </FormSection>
 
-      <FormSection title="Imágenes" hint="OpenAI gpt-image low para todas las imagenes de presentaciones.">
+      <FormSection title="Imágenes" hint="Añade apoyo visual adaptado al tema, el área y el grado.">
         <Segmented
           value={f.incluir_imagenes ? 'si' : 'no'}
           onChange={(v) => set('incluir_imagenes', v === 'si')}
@@ -138,7 +169,7 @@ export function PresentacionForm({
         <Textarea value={f.instrucciones} onChange={(e) => set('instrucciones', e.target.value)} placeholder="Incluye una actividad de cierre y ejemplos cotidianos." />
       </Field>
 
-      <GenerateButton loading={loading} disabled={!valid} onClick={submit} />
+      <GenerateButton loading={loading} disabled={!valid} onClick={submit} label="Generar presentación" disabledHint="Escribe el título y el tema para continuar." />
     </div>
   );
 }

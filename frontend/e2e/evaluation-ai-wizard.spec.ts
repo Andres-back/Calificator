@@ -138,6 +138,7 @@ async function reachReviewStep(page: Page) {
   await page.getByRole('button', { name: 'Generar con IA' }).first().click();
   await page.getByLabel(/Nombre de la evaluación/i).fill('Evaluación IA E2E');
   await page.getByRole('button', { name: 'Siguiente' }).click();
+  await page.getByRole('checkbox', { name: /Alinear con DBA/i }).check();
   await page.getByRole('button', { name: /DBA-1/i }).click();
   await page.getByRole('button', { name: 'Siguiente' }).click();
   await page.getByRole('button', { name: 'Siguiente' }).click();

@@ -1,7 +1,6 @@
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronRight } from 'lucide-react';
-import { motion, useReducedMotion } from 'framer-motion';
 
 export interface BreadcrumbItem {
   label: string;
@@ -31,16 +30,12 @@ export function PageHeader({
   eyebrow?: string;
   badge?: ReactNode;
 }) {
-  const reduceMotion = useReducedMotion();
+
   const supportingText = description ?? subtitle;
   const mainAction = primaryAction ?? action;
 
   return (
-    <motion.header
-      initial={reduceMotion ? false : { opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="flex flex-col gap-4 border-b border-border pb-5 sm:flex-row sm:items-end sm:justify-between"
-    >
+    <header className="flex flex-col gap-4 border-b border-border pb-5 sm:flex-row sm:items-end sm:justify-between">
       <div className="min-w-0 flex-1">
         {breadcrumbs && breadcrumbs.length > 0 && (
           <nav aria-label="Migas de pan" className="mb-3 max-w-full overflow-x-auto pb-1">
@@ -51,7 +46,7 @@ export function PageHeader({
                   <li key={`${item.label}-${index}`} className="flex items-center gap-1">
                     {index > 0 && <ChevronRight className="h-4 w-4 text-muted" aria-hidden="true" />}
                     {item.to && !current ? (
-                      <Link className="focus-ring rounded px-1 py-0.5 font-medium hover:text-interactive" to={item.to}>
+                      <Link className="focus-ring inline-flex min-h-10 items-center rounded px-2 font-medium hover:text-interactive" to={item.to}>
                         {item.label}
                       </Link>
                     ) : (
@@ -79,6 +74,6 @@ export function PageHeader({
           {mainAction}
         </div>
       )}
-    </motion.header>
+    </header>
   );
 }

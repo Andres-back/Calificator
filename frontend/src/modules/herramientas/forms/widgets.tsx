@@ -102,13 +102,15 @@ export function Segmented<T extends string>({
   value,
   onChange,
   options,
+  className,
 }: {
   value: T;
   onChange: (v: T) => void;
   options: { value: T; label: string; icon?: React.ReactNode }[];
+  className?: string;
 }) {
   return (
-    <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${options.length}, minmax(0,1fr))` }} role="radiogroup">
+    <div className={cn('grid gap-2', className)} style={className ? undefined : { gridTemplateColumns: `repeat(${options.length}, minmax(0,1fr))` }} role="radiogroup">
       {options.map((o) => (
         <button
           key={o.value}

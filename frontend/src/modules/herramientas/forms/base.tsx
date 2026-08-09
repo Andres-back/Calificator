@@ -174,15 +174,27 @@ export function FormSection({ title, hint, children }: { title: string; hint?: s
   );
 }
 
-export function GenerateButton({ loading, disabled, onClick }: { loading: boolean; disabled?: boolean; onClick: () => void }) {
+export function GenerateButton({
+  loading,
+  disabled,
+  onClick,
+  label = 'Revisar antes de generar',
+  disabledHint = 'Completa los campos obligatorios y selecciona al menos un aprendizaje.',
+}: {
+  loading: boolean;
+  disabled?: boolean;
+  onClick: () => void;
+  label?: string;
+  disabledHint?: string;
+}) {
   return (
     <div>
       <Button type="button" size="lg" loading={loading} disabled={disabled} onClick={onClick} className="w-full">
-        <Sparkles className="h-5 w-5" /> Revisar antes de generar
+        <Sparkles className="h-5 w-5" /> {label}
       </Button>
       {disabled && !loading ? (
         <p className="mt-2 text-center text-sm text-muted" role="status">
-          Completa los campos obligatorios y selecciona al menos un aprendizaje.
+          {disabledHint}
         </p>
       ) : null}
     </div>

@@ -1,7 +1,7 @@
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { ArrowLeft, Download, FileCheck2, Trash2, Gamepad2, Printer, Share2, Sparkles, Copy, ClipboardList, Pencil } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Button, LoadingScreen, Badge, Card, ConfirmDialog, Select, Input, Field, Modal } from '@/components/ui';
@@ -55,7 +55,7 @@ export function DetailPage() {
     queryFn: () => listMaterialEvaluaciones(id),
     enabled: Boolean(id),
   });
-  const content = material?.contenido_json ?? {};
+  const content = useMemo(() => material?.contenido_json ?? {}, [material?.contenido_json]);
   const contentTitle = ((typeof content.titulo === 'string' ? content.titulo : material?.titulo) ?? '');
   const instructions = typeof content.instrucciones === 'string' ? content.instrucciones : null;
   const aiTrace = (

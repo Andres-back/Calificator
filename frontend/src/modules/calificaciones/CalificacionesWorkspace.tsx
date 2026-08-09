@@ -4,11 +4,11 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 import {
-  ArrowLeft, ArrowRight, BookOpenCheck, Camera, CheckCircle2, ChevronDown, ChevronRight,
-  Clock, ExternalLink, FileImage, FileText, GraduationCap, HelpCircle, Pencil, RotateCcw,
-  ScanText, Search, ShieldAlert, Sparkles, X,
+  ArrowLeft, BookOpenCheck, Camera, CheckCircle2, ChevronDown, ChevronRight,
+  Clock, ExternalLink, FileImage, FileText, GraduationCap, Pencil, RotateCcw,
+  Search, ShieldAlert, Sparkles, X,
 } from 'lucide-react';
-import { Badge, Button, Card, ConfirmDialog, Field, Input, Modal, RichContent, Select, Skeleton, Textarea } from '@/components/ui';
+import { Badge, Button, Card, ConfirmDialog, Field, Input, Select, Skeleton, Textarea } from '@/components/ui';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { useMaterias } from '@/modules/materias/MateriaSelect';
 import { useEstudiantes } from '@/modules/materias/hooks';
@@ -24,12 +24,12 @@ import {
   listCalificaciones, publicarNota, publicarNotaBatch, resolverIncidencia,
 } from './api';
 import { RevisionGuide } from './RevisionGuide';
-import type { BatchResult, Calificacion, CalificacionDetalle, GradeFilter, IncidenciaRead } from '@/types/api';
+import type { BatchResult, Calificacion, CalificacionDetalle, GradeFilter } from '@/types/api';
 
 const CONFIRMADA = 'confirmada';
 const AJUSTADA = 'ajustada';
 const PUBLICADA = 'publicada';
-const SUGERIDA = 'sugerida';
+
 
 /* States considered "teacher approved" */
 const DONE_STATES = new Set([CONFIRMADA, AJUSTADA, PUBLICADA]);
@@ -1078,7 +1078,7 @@ export function CalificacionesWorkspace() {
                   notaMaxima={notaMaxima}
                   studentMap={studentMap}
                   onClose={() => { setSelectedId(null); }}
-                  onConfirm={(id, nota) => {
+                  onConfirm={(id, _nota) => {
                     const cal = cals?.find((c) => c.id === id);
                     if (cal) { setConfirmingSingle(cal); }
                   }}

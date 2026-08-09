@@ -2,11 +2,27 @@ name: CI
 
 on:
   push:
+    branches: [main]
   pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  NODE_VERSION: '22'
+  PYTHON_VERSION: '3.11'
 
 jobs:
   backend:
-    runs-on: ubuntu-latest
+    name: Backend quality and tests
+    runs-on: ubuntu-22.04
+    timeout-minutes: 20
     services:
       postgres:
         image: pgvector/pgvector:pg16
@@ -38,49 +54,105 @@ jobs:
       SECRET_KEY: ci-secret-key-with-at-least-32-characters
       DATABASE_URL: postgresql+asyncpg://xcalificator:test-password@127.0.0.1:5432/xcalificator_test
       REDIS_URL: redis://127.0.0.1:6379/0
-      RUN_DB_SMOKE: "1"
+      RUN_DB_SMOKE: '1'
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: ${{ env.PYTHON_VERSION }}
           cache: pip
           cache-dependency-path: |
             backend/requirements.txt
             backend/requirements-dev.txt
-      - run: pip install -r requirements.txt -r requirements-dev.txt
-      - run: pip-audit -r requirements.txt
-      - run: python -m compileall app tests
-      - run: alembic upgrade head
-      - run: python -m pytest tests/unit -v
-      - run: python -m pytest tests/integration -v
+
+      - name: Install dependencies
+        run: python -m pip install -r requirements.txt -r requirements-dev.txt
+
+      - name: Audit production dependencies
+        run: python -m pip_audit -r requirements.txt
+
+      - name: Compile Python sources
+        run: python -m compileall -q app tests
+
+      - name: Apply database migrations
+        run: alembic upgrade head
+
+      - name: Run backend unit tests
+        run: python -m pytest tests/unit -v
+
+      - name: Run backend integration tests
+        run: python -m pytest tests/integration -v
 
   frontend:
-    runs-on: ubuntu-latest
+    name: Frontend quality, build and E2E
+    runs-on: ubuntu-22.04
+    timeout-minutes: 25
     defaults:
       run:
         working-directory: frontend
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
         with:
-          node-version: "22"
+          node-version: ${{ env.NODE_VERSION }}
           cache: npm
           cache-dependency-path: frontend/package-lock.json
-      - run: npm ci
-      - run: npm audit --audit-level=high --omit=dev
-      - run: npm run typecheck
-      - run: npm run lint:strict
-      - run: npm run test:run
-      - run: npm run build
-      - run: npx playwright install --with-deps chromium
-      - run: npm run test:e2e
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Audit production dependencies
+        run: npm audit --audit-level=high --omit=dev
+
+      - name: Type-check
+        run: npm run typecheck
+
+      - name: Lint with zero warnings
+        run: npm run lint:strict
+
+      - name: Run unit tests
+        run: npm run test:run
+
+      - name: Build production bundle
+        run: npm run build
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Run mocked end-to-end tests
+        run: npm run test:e2e
+
+      - name: Upload E2E diagnostics on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-diagnostics
+          if-no-files-found: ignore
+          retention-days: 7
+          path: |
+            frontend/test-results/
+            frontend/playwright-report/
+            output/playwright/
 
   containers:
-    runs-on: ubuntu-latest
+    name: Container builds
+    runs-on: ubuntu-22.04
+    timeout-minutes: 25
     steps:
-      - uses: actions/checkout@v4
-      - run: cp .env.example .env
-      - run: docker compose --profile production config --quiet
-      - run: docker build -t xcalificator-backend ./backend
-      - run: docker build -f frontend/Dockerfile -t xcalificator-web .
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Validate Compose configuration
+        run: cp .env.example .env && docker compose --profile production config --quiet
+
+      - name: Build backend image
+        run: docker build -t xcalificator-backend ./backend
+
+      - name: Build frontend image
+        run: docker build -f frontend/Dockerfile -t xcalificator-web .
