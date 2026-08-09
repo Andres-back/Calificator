@@ -136,16 +136,24 @@ function DigitalizarEvaluacionModal({ open, onClose, materiaId, onCompleted }: P
   const validMaxScore = Number(notaMaxima) > 0;
 
   return (
-    <Modal open={open} onClose={handleClose} title="Digitalizar evaluación desde archivo">
+    <Modal open={open} onClose={handleClose} title="Digitalizar evaluación desde archivo" className="max-w-2xl">
       {!result ? (
         <div className="space-y-5">
-          <div className="rounded-xl border border-brand-200 bg-brand-50/50 p-4 text-sm leading-6 text-brand-900 dark:border-brand-500/30 dark:bg-brand-500/10 dark:text-brand-100">
-            Sube una foto, PDF o Word de una evaluación impresa. La IA reconstruirá
-            preguntas, puntajes y una clave completa. Se creará como borrador: tú revisas
-            y decides cuándo publicarla.
+          <div className="rounded-2xl border border-brand-200 bg-brand-50/60 p-4 text-sm leading-6 text-brand-900 dark:border-brand-500/30 dark:bg-brand-500/10 dark:text-brand-100">
+            <p className="font-semibold">Convierte una evaluación impresa en borrador editable.</p>
+            <p className="mt-1">
+              Sube una foto, PDF o Word. La IA reconstruye preguntas, puntajes y clave; tú revisas antes de publicar.
+            </p>
+            <div className="mt-3 grid gap-2 sm:grid-cols-3">
+              <span className="rounded-lg bg-white/70 px-3 py-2 text-xs font-medium dark:bg-white/10">1. Datos básicos</span>
+              <span className="rounded-lg bg-white/70 px-3 py-2 text-xs font-medium dark:bg-white/10">2. Archivo</span>
+              <span className="rounded-lg bg-white/70 px-3 py-2 text-xs font-medium dark:bg-white/10">3. Revisar borrador</span>
+            </div>
           </div>
 
-          <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_9rem_10rem]">
+          <div>
+            <p className="mb-3 text-sm font-semibold text-foreground">Datos básicos</p>
+            <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_9rem_12rem]">
             <Field label="Nombre de la evaluación" required>
               <Input
                 value={nombre}
@@ -176,6 +184,7 @@ function DigitalizarEvaluacionModal({ open, onClose, materiaId, onCompleted }: P
                 <option value="mixta">Mixta</option>
               </Select>
             </Field>
+            </div>
           </div>
 
           <Field label="Descripción" hint="Opcional">
@@ -186,8 +195,10 @@ function DigitalizarEvaluacionModal({ open, onClose, materiaId, onCompleted }: P
             />
           </Field>
 
-          <div
-            className="flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-border bg-surface-2/50 p-8 text-center transition hover:border-brand-400 hover:bg-brand-50/30"
+          <div>
+            <p className="mb-3 text-sm font-semibold text-foreground">Archivo de la evaluación</p>
+            <div
+            className="flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-border bg-surface-2/50 p-6 text-center transition hover:border-brand-400 hover:bg-brand-50/30 sm:p-8"
             onClick={() => fileRef.current?.click()}
             onKeyDown={(event) => {
               if (event.key === 'Enter' || event.key === ' ') fileRef.current?.click();
@@ -206,16 +217,17 @@ function DigitalizarEvaluacionModal({ open, onClose, materiaId, onCompleted }: P
               <span className="flex items-center gap-1"><FileText className="h-4 w-4" /> PDF</span>
               <span className="flex items-center gap-1"><FileText className="h-4 w-4" /> Word</span>
             </div>
-            <input
-              ref={fileRef}
-              type="file"
-              accept=".pdf,.docx,.jpg,.jpeg,.png,.webp,application/pdf,image/*"
-              className="hidden"
-              onChange={(event) => {
-                const selected = event.target.files?.[0];
-                if (selected) handleSelect(selected);
-              }}
-            />
+              <input
+                ref={fileRef}
+                type="file"
+                accept=".pdf,.docx,.jpg,.jpeg,.png,.webp,application/pdf,image/*"
+                className="hidden"
+                onChange={(event) => {
+                  const selected = event.target.files?.[0];
+                  if (selected) handleSelect(selected);
+                }}
+              />
+            </div>
           </div>
 
           {file && (
