@@ -44,17 +44,17 @@ export function StudentResourcePage() {
           <div className="flex items-start gap-4">
             <div className={cn('grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-gradient-to-br text-white shadow-md', meta?.gradient ?? 'from-sky-500 to-indigo-600')}><Icon className="h-7 w-7" /></div>
             <div>
-              <div className="flex flex-wrap gap-2"><Badge tone="sky">Material de apoyo</Badge>{meta?.interactive && <Badge tone="violet"><Gamepad2 className="h-3 w-3" /> Interactivo</Badge>}</div>
+              <div className="flex flex-wrap gap-2"><Badge tone={material.asignacion_tipo === 'actividad' ? 'violet' : 'sky'}>{material.asignacion_tipo === 'actividad' ? 'Actividad asignada' : 'Material de apoyo'}</Badge>{meta?.interactive && <Badge tone="violet"><Gamepad2 className="h-3 w-3" /> Interactivo</Badge>}</div>
               <h1 className="mt-2 font-display text-2xl font-extrabold sm:text-3xl">{title}</h1>
               <p className="mt-1 text-sm text-muted">{material.materia_nombre}</p>
             </div>
           </div>
-          <a href={pdfUrl(material.id)} target="_blank" rel="noreferrer"><Button variant="outline"><Download className="h-4 w-4" /> Descargar PDF</Button></a>
+          <div className="flex flex-col gap-2 sm:flex-row">{material.asignacion_tipo === 'actividad' && material.evaluacion_id && <Link to={'/app/evaluaciones/' + material.evaluacion_id + '/resolver'}><Button className="w-full"><BookOpenCheck className="h-4 w-4" /> Ir a entregar</Button></Link>}<a href={pdfUrl(material.id, false, true)}><Button variant="outline" className="w-full"><Download className="h-4 w-4" /> Descargar PDF</Button></a></div>
         </div>
       </section>
       <div className="flex gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-100">
         <BookOpenCheck className="mt-0.5 h-5 w-5 shrink-0" />
-        <p><strong>Recurso para aprender y practicar.</strong> No requiere entrega y no afecta tu nota. Las actividades que sí se califican aparecen en Evaluaciones.</p>
+        <p>{material.asignacion_tipo === 'actividad' ? <><strong>Este es el material que debes resolver.</strong> Puedes trabajarlo aquí o descargarlo. Cuando termines, usa “Ir a entregar” para enviar tus respuestas o la foto/PDF solicitado.</> : <><strong>Recurso para aprender y practicar.</strong> No requiere entrega y no afecta tu nota. Las actividades que sí se califican aparecen en Evaluaciones.</>}</p>
       </div>
       <Card className="p-5 sm:p-7">{renderBody()}</Card>
     </div>

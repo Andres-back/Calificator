@@ -11,6 +11,7 @@ import {
   FileText,
   Eye,
   ImageUp,
+  LoaderCircle,
   RotateCcw,
   ScanText,
   Smartphone,
@@ -47,6 +48,7 @@ import {
 } from '@/modules/calificaciones/gradingFailure';
 import { confidenceLabel } from '@/lib/utils';
 import type { Calificacion } from '@/types/api';
+import { addPendingGrading } from '@/modules/calificaciones/gradingJobs';
 import { useMateriaContext } from './MateriaContext';
 import { GradingProgress } from './GradingProgress';
 import {
@@ -95,6 +97,10 @@ function firstName(name: string): string {
   return name.trim().split(/\s+/)[0] || 'Estudiante';
 }
 
+function isQueuedGrading(grade: Calificacion | null | undefined): boolean {
+  const status = grade?.resultado_json?.pipeline_status;
+  return status === 'queued' || status === 'running';
+}
 function initials(name: string): string {
   return name
     .trim()
@@ -164,6 +170,7 @@ export function MateriaCalificar() {
     queryKey: ['calificaciones', evaluacionId],
     queryFn: () => listCalificaciones(evaluacionId),
     enabled: Boolean(evaluacionId) && canManageMateria,
+    refetchInterval: 3000,
   });
 
   const estudiantesConEstado = useMemo<EstudianteStatus[]>(
@@ -350,15 +357,21 @@ export function MateriaCalificar() {
     },
     onSuccess: (data) => {
       setResultado(data);
+      setFoto(null);
       setError(null);
       void calificacionesQuery.refetch();
-      if (isTechnicalGradingFailure(data)) {
-        toast.error('La evidencia quedó guardada, pero la IA no produjo una nota.');
-      } else {
-        toast.success('Evidencia analizada. Ahora revisa la sugerencia.');
+      const jobId = data.resultado_json?.job_id;
+      if (typeof jobId === 'string') {
+        addPendingGrading({
+          jobId,
+          evaluacionId: data.evaluacion_id,
+          materiaId: data.materia_id,
+          estudianteId: data.estudiante_id,
+          estudianteNombre: estudianteActual?.nombre ?? 'Estudiante',
+        });
       }
-    },
-    onError: (mutationError) => {
+      toast.success('Evidencia guardada y añadida a la cola. Puedes continuar con otro estudiante.');
+    },    onError: (mutationError) => {
       const message =
         mutationError instanceof Error && !('response' in mutationError)
           ? mutationError.message
@@ -378,13 +391,18 @@ export function MateriaCalificar() {
       setResultado(data);
       setError(null);
       void calificacionesQuery.refetch();
-      if (isTechnicalGradingFailure(data)) {
-        toast.error('El reintento terminó sin una nota. Puedes calificar manualmente.');
-      } else {
-        toast.success('Reintento completado. Revisa la nueva sugerencia.');
+      const jobId = data.resultado_json?.job_id;
+      if (typeof jobId === 'string') {
+        addPendingGrading({
+          jobId,
+          evaluacionId: data.evaluacion_id,
+          materiaId: data.materia_id,
+          estudianteId: data.estudiante_id,
+          estudianteNombre: estudianteActual?.nombre ?? 'Estudiante',
+        });
       }
-    },
-    onError: (mutationError) =>
+      toast.success('Reintento añadido a la cola. Puedes seguir trabajando.');
+    },    onError: (mutationError) =>
       toast.error(toApiError(mutationError).detail),
   });
 
@@ -480,7 +498,8 @@ export function MateriaCalificar() {
   const confirmedScore =
     resultado?.nota_confirmada ?? resultado?.nota_sugerida ?? null;
 
-  const technicalFailure = isTechnicalGradingFailure(resultado);
+  const gradingQueued = isQueuedGrading(resultado);
+  const technicalFailure = !gradingQueued && isTechnicalGradingFailure(resultado);
   const technicalFailureReason = getTechnicalFailureReason(resultado);
 
   return (
@@ -790,10 +809,13 @@ export function MateriaCalificar() {
                           <CheckCircle2 className="h-6 w-6" aria-hidden="true" />
                         </span>
                         <div>
-                          <p className="font-bold">Evidencia analizada</p>
+                          <p className="font-bold">
+                            {gradingQueued ? 'Evidencia en cola' : 'Evidencia analizada'}
+                          </p>
                           <p className="mt-1 text-sm text-muted">
-                            La evidencia ya fue procesada. Revisa el resultado
-                            en el paso 4.
+                            {gradingQueued
+                              ? 'Puedes continuar con otro estudiante mientras la procesamos.'
+                              : 'La evidencia ya fue procesada. Revisa el resultado en el paso 4.'}
                           </p>
                         </div>
                       </div>
@@ -899,7 +921,20 @@ export function MateriaCalificar() {
                     </div>
                   ) : (
                     <>
-                      {technicalFailure ? (
+                      {gradingQueued ? (
+                        <div
+                          className="flex items-start gap-3 rounded-xl border border-cyan-200 bg-cyan-50 p-4 text-cyan-900 dark:border-cyan-500/30 dark:bg-cyan-500/10 dark:text-cyan-100"
+                          role="status"
+                        >
+                          <LoaderCircle className="mt-0.5 h-6 w-6 shrink-0 animate-spin" aria-hidden="true" />
+                          <div>
+                            <h3 className="font-display text-lg font-extrabold">Calificación en cola</h3>
+                            <p className="mt-1 text-sm leading-6">
+                              La evidencia está segura. Puedes seleccionar otro estudiante o salir de esta página; te avisaremos cuando la sugerencia esté lista.
+                            </p>
+                          </div>
+                        </div>
+                      ) : null}                      {technicalFailure ? (
                         <div
                           className="flex items-start gap-3 rounded-xl border border-rose-300 bg-rose-50 p-4 text-rose-900 dark:border-rose-500/40 dark:bg-rose-500/10 dark:text-rose-100"
                           role="alert"
@@ -919,7 +954,7 @@ export function MateriaCalificar() {
                           </div>
                         </div>
                       ) : null}
-                      {!technicalFailure ? (
+                      {!technicalFailure && !gradingQueued ? (
                         <>
                       <div
                         className={`rounded-xl p-5 text-white shadow-sm ${
@@ -1063,7 +1098,7 @@ export function MateriaCalificar() {
                         </div>
                       ) : null}
 
-                      {!editingNota ? (
+                      {!editingNota && !gradingQueued ? (
                         <div className="space-y-2 pt-1">
                           {!decisionSaved ? (
                             <>
@@ -1081,7 +1116,20 @@ export function MateriaCalificar() {
                                   {Number(resultado.nota_sugerida).toFixed(1)}
                                 </Button>
                               ) : null}
-                              {technicalFailure ? (
+                              {gradingQueued ? (
+                        <div
+                          className="flex items-start gap-3 rounded-xl border border-cyan-200 bg-cyan-50 p-4 text-cyan-900 dark:border-cyan-500/30 dark:bg-cyan-500/10 dark:text-cyan-100"
+                          role="status"
+                        >
+                          <LoaderCircle className="mt-0.5 h-6 w-6 shrink-0 animate-spin" aria-hidden="true" />
+                          <div>
+                            <h3 className="font-display text-lg font-extrabold">Calificación en cola</h3>
+                            <p className="mt-1 text-sm leading-6">
+                              La evidencia está segura. Puedes seleccionar otro estudiante o salir de esta página; te avisaremos cuando la sugerencia esté lista.
+                            </p>
+                          </div>
+                        </div>
+                      ) : null}                      {technicalFailure ? (
                                 <>
                                   <Button
                                     className="w-full"

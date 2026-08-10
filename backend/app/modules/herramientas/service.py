@@ -758,7 +758,7 @@ async def get_material_for_user(
     material_id: UUID,
     current_user: User,
 ) -> dict | None:
-    """Permite al autor administrar y al estudiante matriculado leer apoyos publicados."""
+    """Permite al autor administrar y al estudiante leer todo material asignado."""
     from sqlalchemy import text
 
     if current_user.rol != UserRole.ESTUDIANTE.value:
@@ -774,8 +774,10 @@ async def get_material_for_user(
             "FROM materiales_generados mg "
             "JOIN materias m ON m.id = mg.materia_id "
             "LEFT JOIN evaluaciones e ON e.material_origen_id = mg.id "
-            "WHERE mg.id = :material_id AND mg.asignacion_tipo = 'apoyo' "
-            "AND mg.publicado_estudiantes = true"
+            "WHERE mg.id = :material_id AND ("
+            "(mg.asignacion_tipo = 'apoyo' AND mg.publicado_estudiantes = true) OR "
+            "(mg.asignacion_tipo = 'actividad' AND e.estado IN "
+            "('publicada', 'en_calificacion', 'pendiente_revision', 'cerrada')))"
         ),
         {"material_id": str(material_id)},
     )
@@ -783,7 +785,12 @@ async def get_material_for_user(
     if row is None:
         return None
     await materias_service.ensure_can_read_materia(db, row.materia_id, current_user)
-    return _material_row(row)
+    material = _material_row(row)
+    if row.asignacion_tipo == "actividad":
+        material["contenido_json"] = evaluaciones_service.sanitize_student_payload(
+            material["contenido_json"] if isinstance(material["contenido_json"], dict) else {}
+        )
+    return material
 
 
 async def assign_material_as_support(

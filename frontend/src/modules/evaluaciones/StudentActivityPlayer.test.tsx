@@ -8,6 +8,8 @@ describe('StudentActivityPlayer', () => {
   it('permite completar un crucigrama sin revelar la solución', async () => {
     const onAnswersChange = vi.fn();
     const activity: StudentActivity = {
+      material_id: 'material-1',
+      interactivo: true,
       tipo: 'crucigrama',
       titulo: 'Conceptos del espacio',
       contenido: {

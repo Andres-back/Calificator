@@ -95,6 +95,46 @@ def apply_grading_result(
     return calificacion
 
 
+def prepare_queued_grading(
+    *,
+    entrega: Entrega,
+    evaluacion: Evaluacion,
+    estudiante_id: UUID,
+    profesor_id: UUID,
+    job_id: UUID,
+    evidence_metadata: dict | None = None,
+    calificacion: Calificacion | None = None,
+) -> Calificacion:
+    """Persiste un marcador visible mientras Celery procesa la evidencia."""
+    payload = {
+        "pipeline_status": "queued",
+        "job_id": str(job_id),
+        "requiere_revision_docente": True,
+    }
+    if evidence_metadata:
+        payload["evidencia_consolidada"] = evidence_metadata
+
+    entrega.estado = EntregaEstado.RECIBIDA.value
+    entrega.visual_text_json = payload
+
+    if calificacion is None:
+        calificacion = Calificacion(
+            evaluacion_id=evaluacion.id,
+            entrega_id=entrega.id,
+            estudiante_id=estudiante_id,
+            materia_id=evaluacion.materia_id,
+            profesor_id=profesor_id,
+        )
+
+    calificacion.nota_sugerida = None
+    calificacion.nota_confirmada = None
+    calificacion.confianza = None
+    calificacion.feedback = None
+    calificacion.resultado_json = payload
+    calificacion.revisado_por_docente = False
+    calificacion.estado = CalificacionEstado.REQUIERE_REVISION.value
+    return calificacion
+
 async def grade_persisted_photo(
     db: AsyncSession,
     *,

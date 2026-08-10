@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
-import { ArrowLeft, Camera, CheckCircle2, DoorClosed, HelpCircle, ImageUp, Play, SkipForward, Users } from 'lucide-react';
+import { ArrowLeft, Camera, CheckCircle2, DoorClosed, HelpCircle, ImageUp, LoaderCircle, Play, SkipForward, Users } from 'lucide-react';
 import { Badge, Button, Card, ConfirmDialog, EmptyState, Field, Input, Select, Skeleton, GuidedTour, RichContent } from '@/components/ui';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { useMaterias } from '@/modules/materias/MateriaSelect';
@@ -15,6 +15,7 @@ import { queryClient } from '@/lib/queryClient';
 import { cerrarSalon, getSalonSesion, iniciarSalon, listCalificaciones, salonFoto } from './api';
 import { salonTour } from './tourSteps';
 import type { Calificacion, User } from '@/types/api';
+import { addPendingGrading } from './gradingJobs';
 
 const ACCEPTED_IMAGE_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
 
@@ -221,9 +222,23 @@ export function SalonPage() {
       setProcessedIds((current) => Array.from(new Set([...current, data.estudiante_id])));
       setFoto(null);
       void queryClient.invalidateQueries({ queryKey: ['calificaciones', evaluacionId] });
-      toast.success('Foto calificada.');
-    },
-    onError: (error) => {
+      const studentName = estudiantes.find((item) => item.id === data.estudiante_id)?.nombre ?? 'Estudiante';
+      const jobId = data.resultado_json?.job_id;
+      if (typeof jobId === 'string') {
+        addPendingGrading({
+          jobId,
+          evaluacionId: data.evaluacion_id,
+          materiaId: data.materia_id,
+          estudianteId: data.estudiante_id,
+          estudianteNombre: studentName,
+        });
+      }
+      const next = estudiantes.find((item) => (
+        item.id !== data.estudiante_id && !processedIds.includes(item.id)
+      ));
+      if (next) setEstudianteId(next.id);
+      toast.success('Foto guardada en la cola. Ya puedes continuar con el siguiente estudiante.');
+    },    onError: (error) => {
       const apiError = toApiError(error);
       if (apiError.status === 404 || apiError.status === 409) {
         clearActiveSession();
@@ -294,6 +309,9 @@ export function SalonPage() {
     const next = pendingStudents.find((student) => student.id !== estudianteId) ?? pendingStudents[0];
     if (next) setEstudianteId(next.id);
   }
+
+  const gradingQueued = resultado?.resultado_json?.pipeline_status === 'queued'
+    || resultado?.resultado_json?.pipeline_status === 'running';
 
   const noMaterias = !loadingMaterias && (!materias || materias.length === 0);
 
@@ -487,7 +505,11 @@ export function SalonPage() {
               <div className="rounded-xl border border-dashed border-border p-5 text-center text-sm text-muted">Aún no hay resultado en esta sesión.</div>
             ) : (
               <div className="space-y-4">
-                <div className="rounded-lg border border-amber-200 bg-amber-50 p-5 dark:border-amber-500/30 dark:bg-amber-500/10"><p className="text-sm font-semibold text-amber-800 dark:text-amber-200">Nota sugerida por IA</p><p className="mt-1 font-display text-4xl font-extrabold text-fg">{Number(resultado.nota_sugerida ?? 0).toFixed(1)}</p><p className="mt-1 text-xs text-muted">Requiere confirmación docente.</p></div>
+                {gradingQueued ? (
+                  <div className="flex items-start gap-3 rounded-xl border border-cyan-200 bg-cyan-50 p-4 text-cyan-900 dark:border-cyan-500/30 dark:bg-cyan-500/10 dark:text-cyan-100"><LoaderCircle className="mt-0.5 h-6 w-6 shrink-0 animate-spin" /><div><p className="font-bold">Calificación en cola</p><p className="mt-1 text-sm">Continúa fotografiando estudiantes; te avisaremos cuando esté lista.</p></div></div>
+                ) : (
+                  <div className="rounded-lg border border-amber-200 bg-amber-50 p-5 dark:border-amber-500/30 dark:bg-amber-500/10"><p className="text-sm font-semibold text-amber-800 dark:text-amber-200">Nota sugerida por IA</p><p className="mt-1 font-display text-4xl font-extrabold text-fg">{Number(resultado.nota_sugerida ?? 0).toFixed(1)}</p><p className="mt-1 text-xs text-muted">Requiere confirmación docente.</p></div>
+                )}
                 <div className="flex flex-wrap gap-2"><Badge tone="neutral">Confianza {confidenceLabel(resultado.confianza)}</Badge><Badge tone={resultado.estado === 'sugerida' ? 'warning' : 'brand'}>{resultado.estado}</Badge><Badge tone="warning">Pendiente de confirmación docente</Badge></div>
                 {resultado.feedback && <div className="rounded-xl bg-surface-2 p-4 text-sm text-muted"><RichContent content={resultado.feedback} variant="feedback" /></div>}
               </div>

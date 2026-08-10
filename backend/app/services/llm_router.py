@@ -204,12 +204,7 @@ class LLMRouter:
                     (LLMProvider.GROQ.value, self._call_groq),
                     (LLMProvider.OLLAMA.value, self._call_ollama),
                 ]
-        if task_type == "grading_photo":
-            ordered.sort(
-                key=lambda item: 0
-                if item[0] == LLMProvider.GROQ.value
-                else 1
-            )
+
         return ordered
 
     async def _template_call(self, prompt: str, json_mode: bool) -> str:

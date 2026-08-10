@@ -1,7 +1,7 @@
 from decimal import Decimal
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Response, UploadFile, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.permissions import get_current_user
@@ -30,7 +30,7 @@ from app.services.storage_service import (
     resolve_private_upload_path,
     save_private_upload,
 )
-from app.shared.enums import EvaluacionModalidad, JobEstado, JobTipo
+from app.shared.enums import EvaluacionModalidad, JobEstado, JobTipo, UserRole
 from app.workers.tasks_digitalization import digitalize_evaluation
 
 router = APIRouter(tags=["evaluaciones"])
@@ -239,6 +239,83 @@ async def get_student_activity(
 ) -> dict | None:
     return await service.get_student_activity(db, evaluacion_id, current_user)
 
+
+@router.get("/evaluaciones/{evaluacion_id}/pdf")
+async def download_evaluation_pdf(
+    evaluacion_id: UUID,
+    soluciones: bool = False,
+    descargar: bool = False,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> Response:
+    """Muestra o descarga la evaluación/material asignado sin filtrar soluciones."""
+    await service.ensure_can_read_evaluation(db, evaluacion_id, current_user)
+    evaluacion = await service.get_evaluation_or_404(db, evaluacion_id)
+    if current_user.rol == UserRole.ESTUDIANTE.value and soluciones:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Las soluciones son exclusivas del docente",
+        )
+
+    if evaluacion.material_origen_id:
+        from app.modules.herramientas import service as materiales_service
+
+        material = await materiales_service.get_material(
+            db, evaluacion.material_origen_id, evaluacion.profesor_id
+        )
+        if material is None:
+            raise HTTPException(status_code=404, detail="Material asignado no encontrado")
+    else:
+        expected_by_number: dict[object, object] = {}
+        for index, answer in enumerate(evaluacion.respuestas_esperadas or [], start=1):
+            if not isinstance(answer, dict):
+                continue
+            number = answer.get("numero", index)
+            expected_by_number[number] = next(
+                (
+                    answer.get(key)
+                    for key in ("respuesta", "texto", "respuesta_esperada", "valor")
+                    if answer.get(key) not in (None, "", [])
+                ),
+                None,
+            )
+        questions: list[dict] = []
+        for index, question in enumerate(evaluacion.preguntas or [], start=1):
+            if not isinstance(question, dict):
+                continue
+            printable = dict(question)
+            number = printable.get("numero", index)
+            if soluciones and expected_by_number.get(number) is not None:
+                printable["respuesta_correcta"] = expected_by_number[number]
+            questions.append(printable)
+        material = {
+            "tipo": "examen",
+            "titulo": evaluacion.nombre,
+            "contenido_json": {
+                "titulo": evaluacion.nombre,
+                "instrucciones": evaluacion.descripcion or "Lee y responde cada punto.",
+                "preguntas": questions,
+                "total_puntaje": evaluacion.nota_maxima,
+            },
+            "created_at": evaluacion.created_at,
+        }
+
+    from app.modules.herramientas.pdf_render import render_material_pdf
+
+    pdf = render_material_pdf(material, soluciones=soluciones)
+    safe_name = "".join(
+        char for char in evaluacion.nombre if char.isalnum() or char in {" ", "-", "_"}
+    ).strip()[:100] or "evaluacion"
+    disposition = "attachment" if descargar else "inline"
+    return Response(
+        content=pdf,
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": f'{disposition}; filename="{safe_name}.pdf"',
+            "Cache-Control": "private, no-store",
+            "X-Content-Type-Options": "nosniff",
+        },
+    )
 
 @router.patch("/evaluaciones/{evaluacion_id}", response_model=EvaluacionRead)
 async def update_evaluation(

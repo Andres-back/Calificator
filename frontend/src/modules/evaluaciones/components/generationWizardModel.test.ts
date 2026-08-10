@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest';
+import type { Evaluacion } from '@/types/api';
 import {
   createEmptyWizardState,
   createBlankQuestion,
   discardWizardDraft,
+  evaluationToEditableQuestions,
   duplicateQuestion,
   loadWizardDraft,
   MAX_REFERENCE_FILE_BYTES,
@@ -119,6 +121,39 @@ describe('generation wizard model', () => {
     expect(validateReferenceFile({ name: 'notas.txt', type: 'text/plain', size: 10 })).toMatch(/PDF o una imagen/i);
     expect(validateReferenceFile({ name: 'grande.pdf', type: 'application/pdf', size: MAX_REFERENCE_FILE_BYTES + 1 })).toMatch(/10 MB/i);
     expect(validateReferenceFile({ name: 'vacio.pdf', type: 'application/pdf', size: 0 })).toMatch(/vacío/i);
+  });
+
+  it("maps answer keys by question number and selects canonical options automatically", () => {
+    const evaluation = {
+      id: "evaluation-1",
+      preguntas: [
+        {
+          numero: 7,
+          tipo: "opcion_multiple",
+          enunciado: "Cuanto es 6 por 6?",
+          opciones: ["A) 12", "B) 36", "C) 42"],
+          puntaje: 2.5,
+        },
+        {
+          numero: 2,
+          tipo: "verdadero_falso",
+          enunciado: "Seis por seis es treinta y seis.",
+          puntaje: 2.5,
+        },
+      ],
+      respuestas_esperadas: [
+        { numero: 2, respuesta: "true" },
+        { numero: 7, respuesta: "B" },
+      ],
+      modalidad: "online",
+    } as unknown as Evaluacion;
+
+    const questions = evaluationToEditableQuestions(evaluation);
+
+    expect(questions[0].respuestaEsperada).toBe("B) 36");
+    expect(questions[1].respuestaEsperada).toBe("Verdadero");
+    expect(validateQuestion(questions[0])).toBeNull();
+    expect(validateQuestion(questions[1])).toBeNull();
   });
 
   it('validates and edits generated questions without drag and drop', () => {

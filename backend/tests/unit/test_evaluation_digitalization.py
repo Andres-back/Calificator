@@ -32,7 +32,7 @@ def _structure(*, missing_answer: int | None = None) -> dict:
         for number in range(1, 8)
     ]
     answers = [
-        {"numero": number, "respuesta": f"Respuesta {number}"}
+        {"numero": number, "respuesta": "B" if number in {1, 4, 7} else f"Respuesta {number}"}
         for number in range(1, 8)
         if number != missing_answer
     ]
@@ -67,6 +67,66 @@ def test_normalization_requires_full_key_and_scales_inconsistent_points() -> Non
     assert any("no coincide" in warning for warning in result["advertencias"])
     assert result["reglas_feedback"]["requiere_validacion_docente"] is True
     assert result["reglas_feedback"]["orientar_sin_dar_respuesta"] is True
+
+
+def test_normalization_canonicalizes_objective_answers_to_existing_options() -> None:
+    structure = {
+        "preguntas": [
+            {
+                "numero": 7,
+                "tipo": "opcion_multiple",
+                "enunciado": "Cuanto es 6 por 6?",
+                "opciones": ["A) 12", "B) 36", "C) 42"],
+                "puntaje": 1,
+            },
+            {
+                "numero": 9,
+                "tipo": "verdadero_falso",
+                "enunciado": "Seis por seis es treinta y seis.",
+                "opciones": ["Verdadero", "Falso"],
+                "puntaje": 1,
+            },
+        ],
+        "respuestas_esperadas": [
+            {"numero": 9, "respuesta": "true"},
+            {"numero": 7, "respuesta": "B"},
+        ],
+    }
+
+    result = digitalize_service.normalize_detected_structure(
+        structure,
+        nota_maxima=Decimal("5"),
+    )
+
+    assert result["respuestas_esperadas"] == [
+        {"numero": 7, "respuesta": "B) 36"},
+        {"numero": 9, "respuesta": "Verdadero"},
+    ]
+
+
+def test_normalization_rejects_generic_answer_markers() -> None:
+    structure = {
+        "preguntas": [
+            {
+                "numero": 1,
+                "tipo": "abierta",
+                "enunciado": "Explica la propiedad conmutativa.",
+                "puntaje": 1,
+            },
+        ],
+        "respuestas_esperadas": [
+            {"numero": 1, "respuesta": "Respuesta de referencia pendiente de validacion docente."},
+        ],
+    }
+
+    with pytest.raises(HTTPException) as exc:
+        digitalize_service.normalize_detected_structure(
+            structure,
+            nota_maxima=Decimal("5"),
+        )
+
+    assert exc.value.status_code == 502
+    assert "1" in str(exc.value.detail)
 
 
 def test_normalization_rejects_incomplete_key() -> None:

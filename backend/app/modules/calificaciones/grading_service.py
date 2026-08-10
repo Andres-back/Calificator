@@ -5,7 +5,6 @@ Mantiene la misma interfaz pública para compatibilidad con los routers.
 """
 from __future__ import annotations
 
-from decimal import Decimal
 from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -32,10 +31,10 @@ async def grade_submission(
     Califica una entrega usando orquestación multi-agente.
 
     Pipeline:
-      1. Vision Agent (mimo-v2.5) → extrae texto de imagen
-      2. Grader A (deepseek-v4-flash) → califica por texto
-      3. Grader B (qwen3.7-plus, multimodal) → califica viendo imagen directo
-      4. Comparator → compara A vs B, produce nota final con doble verificación
+      1. Foto/PDF: Qwen 3.7+ extrae la evidencia (Qwen 3.6+/MiMo como respaldo)
+      2. Foto/PDF: Qwen 3.7+ y Qwen 3.6+ califican la evidencia visual
+      3. Online: DeepSeek V4 califica el texto; Qwen actúa como contingencia
+      4. Comparator → compara A vs B y produce la nota final
 
     Args:
         db: Sesión de BD.

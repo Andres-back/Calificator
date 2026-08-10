@@ -116,6 +116,10 @@ export async function getActividadEstudiante(evaluacionId: string): Promise<Stud
   const { data } = await api.get<StudentActivity | null>(`/evaluaciones/${evaluacionId}/actividad`);
   return data;
 }
+export function evaluationPdfUrl(evaluacionId: string, descargar = false): string {
+  const base = import.meta.env.VITE_API_URL ?? '/api';
+  return base + '/evaluaciones/' + evaluacionId + '/pdf' + (descargar ? '?descargar=true' : '');
+}
 export async function getMiSolicitudRevision(evaluacionId: string): Promise<IncidenciaRead | null> {
   const { data } = await api.get<IncidenciaRead | null>(`/evaluaciones/${evaluacionId}/mi-solicitud-revision`);
   return data;

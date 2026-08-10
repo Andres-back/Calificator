@@ -45,16 +45,7 @@ class CapturingGraderClient:
 
 
 def _configure_orchestrator(monkeypatch) -> None:
-    monkeypatch.setattr(
-        orchestrator.settings,
-        "PHOTO_GRADING_FAST_VISION_ENABLED",
-        False,
-    )
-    monkeypatch.setattr(
-        orchestrator.settings,
-        "PHOTO_GRADING_FAST_GRADERS_ENABLED",
-        False,
-    )
+
     monkeypatch.setattr(
         orchestrator,
         "OpenCodeClient",
@@ -453,3 +444,176 @@ def test_comparator_failure_preserves_grader_confidence_and_trace(monkeypatch) -
     assert result.feedback_estudiante == "Buen trabajo."
     assert result.raw_model_output["comparator"]["fallback_applied"] is True
     assert result.raw_model_output["comparator"]["error_type"] == "comparator_error"
+
+
+def test_photo_pipeline_prefers_opencode_go_models(monkeypatch) -> None:
+    _configure_orchestrator(monkeypatch)
+
+    vision_models: list[str] = []
+    grader_calls: list[tuple[str, bool]] = []
+
+    async def open_code_vision(*_args, model: str, **_kwargs):
+        vision_models.append(model)
+        return AgentResult(
+            nota_sugerida=None,
+            confianza=0.95,
+            feedback_estudiante="",
+            proveedor="opencode",
+            modelo=model,
+            raw_output={
+                "usable": True,
+                "texto_extraido": "1. B) 36",
+                "respuestas_detectadas": [
+                    {"pregunta": 1, "respuesta": "B) 36"},
+                ],
+            },
+            requiere_revision_docente=False,
+        )
+
+    async def open_code_grader(
+        *_args,
+        model: str,
+        multimodal: bool,
+        **_kwargs,
+    ):
+        grader_calls.append((model, multimodal))
+        return AgentResult(
+            nota_sugerida=5,
+            confianza=0.95,
+            feedback_estudiante="Correcto.",
+            proveedor="opencode",
+            modelo=model,
+            requiere_revision_docente=False,
+        )
+
+    async def forbidden_external_router(*_args, **_kwargs):
+        raise AssertionError("Groq/OpenAI no debe ejecutarse cuando OpenCode responde")
+
+    monkeypatch.setattr(orchestrator, "vision_agent", open_code_vision)
+    monkeypatch.setattr(orchestrator, "grader_agent", open_code_grader)
+    monkeypatch.setattr(
+        orchestrator,
+        "vision_router_agent",
+        forbidden_external_router,
+    )
+    monkeypatch.setattr(
+        orchestrator,
+        "router_grader_agent",
+        forbidden_external_router,
+    )
+
+    result = asyncio.run(
+        orchestrator.orchestrate_grading(
+            object(),
+            evaluacion_id=uuid4(),
+            materia_id=uuid4(),
+            blueprint={"nombre": "Prueba", "nota_maxima": 5},
+            image_bytes=b"image",
+        )
+    )
+
+    assert vision_models == ["qwen3.7-plus"]
+    assert grader_calls == [
+        ("qwen3.7-plus", True),
+        ("qwen3.6-plus", True),
+    ]
+    assert result.raw_model_output["provider_policy"] == "opencode_go_primary"
+    assert result.raw_model_output["vision"]["proveedor"] == "opencode"
+    assert result.raw_model_output["grader_a"]["proveedor"] == "opencode"
+    assert result.raw_model_output["grader_b"]["proveedor"] == "opencode"
+
+
+def test_online_pipeline_uses_deepseek_without_vision(monkeypatch) -> None:
+    _configure_orchestrator(monkeypatch)
+    grader_calls: list[tuple[str, bool]] = []
+
+    async def forbidden_vision(*_args, **_kwargs):
+        raise AssertionError("Una entrega online no debe enviar imagen")
+
+    async def open_code_grader(
+        *_args,
+        model: str,
+        multimodal: bool,
+        **_kwargs,
+    ):
+        grader_calls.append((model, multimodal))
+        return AgentResult(
+            nota_sugerida=4.5,
+            confianza=0.9,
+            feedback_estudiante="Buen trabajo.",
+            proveedor="opencode",
+            modelo=model,
+            requiere_revision_docente=False,
+        )
+
+    monkeypatch.setattr(orchestrator, "vision_agent", forbidden_vision)
+    monkeypatch.setattr(orchestrator, "grader_agent", open_code_grader)
+
+    result = asyncio.run(
+        orchestrator.orchestrate_grading(
+            object(),
+            evaluacion_id=uuid4(),
+            materia_id=uuid4(),
+            blueprint={"nombre": "Prueba online", "nota_maxima": 5},
+            student_response_text="1. 36",
+        )
+    )
+
+    assert grader_calls == [
+        ("deepseek-v4-flash", False),
+        ("deepseek-v4-pro", False),
+    ]
+    assert result.raw_model_output["evidence_mode"] == "digital_text"
+    assert result.raw_model_output["vision"] is None
+
+
+def test_opencode_vision_fallback_keeps_provider_boundary(monkeypatch) -> None:
+    _configure_orchestrator(monkeypatch)
+    vision_models: list[str] = []
+
+    async def open_code_vision(*_args, model: str, **_kwargs):
+        vision_models.append(model)
+        if model == "qwen3.7-plus":
+            return AgentResult(
+                nota_sugerida=None,
+                confianza=0,
+                feedback_estudiante="",
+                proveedor="opencode",
+                modelo=model,
+                error="temporary_failure",
+            )
+        return AgentResult(
+            nota_sugerida=None,
+            confianza=0.9,
+            feedback_estudiante="",
+            proveedor="opencode",
+            modelo=model,
+            raw_output={"usable": True, "texto_extraido": "1. 36"},
+            requiere_revision_docente=False,
+        )
+
+    async def successful_grader(*_args, model: str, **_kwargs):
+        return AgentResult(
+            nota_sugerida=5,
+            confianza=0.9,
+            feedback_estudiante="Correcto.",
+            proveedor="opencode",
+            modelo=model,
+            requiere_revision_docente=False,
+        )
+
+    monkeypatch.setattr(orchestrator, "vision_agent", open_code_vision)
+    monkeypatch.setattr(orchestrator, "grader_agent", successful_grader)
+
+    result = asyncio.run(
+        orchestrator.orchestrate_grading(
+            object(),
+            evaluacion_id=uuid4(),
+            materia_id=uuid4(),
+            blueprint={"nombre": "Prueba", "nota_maxima": 5},
+            image_bytes=b"image",
+        )
+    )
+
+    assert vision_models == ["qwen3.7-plus", "qwen3.6-plus"]
+    assert result.raw_model_output["vision"]["modelo"] == "qwen3.6-plus"

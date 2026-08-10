@@ -179,6 +179,56 @@ def test_grade_delivery_creates_only_a_teacher_pending_suggestion(monkeypatch) -
     assert evaluation.estado == EvaluacionEstado.EN_CALIFICACION.value
 
 
+def test_grade_delivery_processes_existing_queued_placeholder(monkeypatch) -> None:
+    evaluation = evaluation_fixture()
+    delivery = delivery_fixture()
+    delivery.evaluacion_id = evaluation.id
+    delivery.materia_id = evaluation.materia_id
+    delivery.visual_text_json = {"pipeline_status": "queued", "job_id": "job-1"}
+    existing = SimpleNamespace(
+        id=uuid4(),
+        nota_sugerida=None,
+        revisado_por_docente=False,
+        resultado_json={"pipeline_status": "queued", "job_id": "job-1"},
+    )
+    db = FakeDB()
+
+    async def fake_existing(_db, _entrega_id):
+        return existing
+
+    async def fake_submission(_delivery):
+        return {
+            "student_response_text": "Mi procedimiento",
+            "image_bytes": None,
+            "image_mime": "image/jpeg",
+        }
+
+    async def fake_grade(*_args, **_kwargs):
+        return GradingResult(
+            nota_sugerida=Decimal("4.5"),
+            nota_maxima=Decimal("5"),
+            confianza=0.93,
+            feedback_estudiante="Buen trabajo.",
+            raw_model_output={"source": "queue-test"},
+        )
+
+    monkeypatch.setattr(tasks_grading, "_existing_grade", fake_existing)
+    monkeypatch.setattr(tasks_grading, "_load_submission", fake_submission)
+    monkeypatch.setattr(tasks_grading, "grade_submission", fake_grade)
+
+    grade, processed = asyncio.run(tasks_grading._grade_delivery(
+        db,
+        evaluacion=evaluation,
+        entrega=delivery,
+        profesor_id=evaluation.profesor_id,
+    ))
+
+    assert processed is True
+    assert grade is existing
+    assert existing.nota_sugerida == Decimal("4.5")
+    assert existing.resultado_json["source"] == "queue-test"
+    assert delivery.estado == EntregaEstado.CALIFICADA.value
+
 def test_batch_continues_after_one_delivery_fails(monkeypatch) -> None:
     evaluation = evaluation_fixture()
     deliveries = [delivery_fixture(), delivery_fixture()]

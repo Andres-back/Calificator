@@ -1,21 +1,19 @@
 """Orquestador de calificación multi-agente.
 
 Pipeline:
-  1. Vision Agent (mimo-v2.5)       → extrae texto de la imagen
-  2. Grader A  (deepseek-v4-flash)  → califica basado en texto extraído + blueprint
-  3. Grader B  (qwen3.7-plus, multimodal) → recibe imagen directo + blueprint y califica
-  4. Comparator → compara A vs B, produce nota final con doble verificación
+  1. Vision Agent (qwen3.7-plus; fallbacks qwen3.6-plus/mimo-v2.5) → extrae evidencia
+  2. Entrega visual: Qwen 3.7+ y Qwen 3.6+ califican viendo la evidencia original
+  3. Entrega digital: DeepSeek V4 califica el texto; Qwen actúa como contingencia
+  4. Comparator → compara A vs B y produce la nota final
 
 Los graders A y B corren en paralelo via asyncio.gather para minimizar latencia.
 """
 from __future__ import annotations
 
 import asyncio
-import json
 import re
 import unicodedata
 import uuid
-from dataclasses import dataclass, field
 from decimal import Decimal
 from typing import Any
 from uuid import UUID
@@ -41,10 +39,62 @@ logger = get_logger(__name__)
 
 # ── Modelos por defecto (configurables) ─────────────────────────────────────────
 
-DEFAULT_VISION_MODEL = "qwen3.6-plus"
-DEFAULT_GRADER_A_MODEL = "deepseek-v4-flash"
-DEFAULT_GRADER_B_MODEL = "deepseek-v4-flash"
-DEFAULT_COMPARATOR_MODEL = "deepseek-v4-flash"
+DEFAULT_VISION_MODEL = settings.PHOTO_GRADING_VISION_MODEL
+DEFAULT_GRADER_A_MODEL = settings.PHOTO_GRADING_TEXT_MODEL
+DEFAULT_GRADER_B_MODEL = settings.PHOTO_GRADING_TEXT_REVIEW_MODEL
+DEFAULT_COMPARATOR_MODEL = settings.PHOTO_GRADING_COMPARATOR_MODEL
+
+
+def _ordered_unique_models(*models: str) -> list[str]:
+    """Conserva el orden de contingencia sin repetir modelos."""
+    ordered: list[str] = []
+    for model in models:
+        candidate = str(model or "").strip()
+        if candidate and candidate not in ordered:
+            ordered.append(candidate)
+    return ordered
+
+
+def _vision_result_is_usable(result: AgentResult | None) -> bool:
+    if result is None or result.error or not result.raw_output:
+        return False
+    return bool(
+        result.raw_output.get("usable")
+        and str(result.raw_output.get("texto_extraido") or "").strip()
+    )
+
+
+async def _run_grader_cascade(
+    ctx: AgentContext,
+    *,
+    models: list[str],
+    multimodal: bool,
+    client: OpenCodeClient,
+) -> AgentResult:
+    """Ejecuta una cascada dentro de OpenCode sin cambiar de proveedor."""
+    last_result: AgentResult | None = None
+    for model in _ordered_unique_models(*models):
+        last_result = await grader_agent(
+            ctx,
+            model=model,
+            multimodal=multimodal,
+            client=client,
+        )
+        if last_result.nota_sugerida is not None:
+            return last_result
+        logger.warning(
+            "OpenCode grader %s no produjo una nota; probando contingencia",
+            model,
+        )
+    return last_result or AgentResult(
+        nota_sugerida=None,
+        confianza=0,
+        feedback_estudiante="",
+        proveedor="opencode",
+        modelo="sin_modelo",
+        error="grader_cascade_empty",
+        requiere_revision_docente=True,
+    )
 
 
 def _normalize_answer(value: Any) -> str:
@@ -278,9 +328,9 @@ async def orchestrate_grading(
         image_mime: MIME type de la imagen.
         student_response_text: Respuesta texto del estudiante (opcional).
         user_id: ID del usuario (para auditoría).
-        vision_model: Modelo para visión (default: qwen3.6-plus).
-        grader_a_model: Modelo para calificador primario (default: qwen3.6-plus).
-        grader_b_model: Modelo para re-calificador (default: qwen3.7-plus).
+        vision_model: Modelo OpenCode Go para visión (default: qwen3.7-plus).
+        grader_a_model: Modelo textual OpenCode Go (default: deepseek-v4-flash).
+        grader_b_model: Segundo modelo textual OpenCode Go (default: deepseek-v4-pro).
         comparator_model: Modelo para comparador (default: deepseek-v4-flash).
 
     Returns:
@@ -322,54 +372,34 @@ async def orchestrate_grading(
                 image_bytes=image_bytes,
                 image_mime=image_mime,
             )
-            if settings.PHOTO_GRADING_FAST_VISION_ENABLED:
-                vision_result = await vision_router_agent(ctx)
-                fast_vision_usable = bool(
-                    vision_result.raw_output
-                    and vision_result.raw_output.get("usable")
-                    and vision_result.raw_output.get("texto_extraido", "").strip()
-                )
-                if vision_result.error or not fast_vision_usable:
-                    logger.warning(
-                        "Fast vision unavailable, trying OpenCode vision model %s",
-                        vision_model,
-                    )
-                    vision_result = await vision_agent(
-                        ctx,
-                        model=vision_model,
-                        client=client,
-                    )
-            else:
+            vision_models = _ordered_unique_models(
+                vision_model,
+                settings.PHOTO_GRADING_VISION_FALLBACK_MODEL,
+                settings.PHOTO_GRADING_VISION_LAST_RESORT_MODEL,
+            )
+            for candidate_model in vision_models:
                 vision_result = await vision_agent(
                     ctx,
-                    model=vision_model,
+                    model=candidate_model,
                     client=client,
                 )
-
-            if vision_result.error:
-                fallback_vision_model = (
-                    "mimo-v2.5"
-                    if vision_model == "qwen3.6-plus"
-                    else "qwen3.6-plus"
-                )
+                if _vision_result_is_usable(vision_result):
+                    break
                 logger.warning(
-                    "Vision agent %s failed, trying %s",
-                    vision_model,
-                    fallback_vision_model,
-                )
-                vision_result = await vision_agent(
-                    ctx,
-                    model=fallback_vision_model,
-                    client=client,
+                    "OpenCode vision model %s did not produce usable evidence",
+                    candidate_model,
                 )
 
             if (
-                vision_result.error
+                not _vision_result_is_usable(vision_result)
                 and settings.PHOTO_GRADING_CROSS_PROVIDER_FALLBACK_ENABLED
             ):
-                logger.warning("OpenCode vision unavailable, trying configured vision router")
-                vision_result = await vision_router_agent(ctx)
-
+                logger.warning(
+                    "OpenCode Go vision exhausted; trying explicit cross-provider fallback"
+                )
+                cross_provider_result = await vision_router_agent(ctx)
+                if _vision_result_is_usable(cross_provider_result):
+                    vision_result = cross_provider_result
             if vision_result.raw_output and not vision_result.error:
                 physical_text = vision_result.raw_output.get("texto_extraido", "")
                 physical_answers = vision_result.raw_output.get(
@@ -423,23 +453,42 @@ async def orchestrate_grading(
             image_mime=image_mime,
         )
 
-        if settings.PHOTO_GRADING_FAST_GRADERS_ENABLED:
-            grader_a_task = router_grader_agent(ctx_grading)
-            grader_b_task = router_grader_agent(ctx_grading)
+        if image_bytes:
+            # Una foto/PDF se califica completamente con modelos visuales.
+            # Ambos evaluadores reciben la evidencia original.
+            grader_a_models = [
+                vision_model,
+                settings.PHOTO_GRADING_VISION_LAST_RESORT_MODEL,
+            ]
+            grader_b_models = [
+                settings.PHOTO_GRADING_VISION_FALLBACK_MODEL,
+                settings.PHOTO_GRADING_VISION_LAST_RESORT_MODEL,
+            ]
+            graders_are_multimodal = True
+            selected_comparator_model = vision_model
         else:
-            grader_a_task = grader_agent(
-                ctx_grading,
-                model=grader_a_model,
-                multimodal=False,
-                client=client,
-            )
-            grader_b_task = grader_agent(
-                ctx_grading,
-                model=grader_b_model,
-                multimodal=False,
-                client=client,
-            )
+            # DeepSeek se reserva para respuestas ya digitalizadas. Si su salida
+            # estructurada falla, Qwen mantiene la calificación disponible.
+            grader_a_models = [grader_a_model, vision_model]
+            grader_b_models = [
+                grader_b_model,
+                settings.PHOTO_GRADING_VISION_FALLBACK_MODEL,
+            ]
+            graders_are_multimodal = False
+            selected_comparator_model = comparator_model
 
+        grader_a_task = _run_grader_cascade(
+            ctx_grading,
+            models=grader_a_models,
+            multimodal=graders_are_multimodal,
+            client=client,
+        )
+        grader_b_task = _run_grader_cascade(
+            ctx_grading,
+            models=grader_b_models,
+            multimodal=graders_are_multimodal,
+            client=client,
+        )
         grading_a, grading_b = await asyncio.gather(grader_a_task, grader_b_task)
 
         if (
@@ -481,7 +530,7 @@ async def orchestrate_grading(
         final = await comparator_agent(
             grading_a,
             grading_b,
-            model=comparator_model,
+            model=selected_comparator_model,
         )
         comparator_failed = bool(final.error)
         if comparator_failed and final.nota_sugerida is not None:
@@ -544,15 +593,19 @@ async def orchestrate_grading(
         # Construir raw_model_output con trazabilidad completa
         raw_output = {
             "orchestrator": "multi_agent_v2",
+            "provider_policy": "opencode_go_primary",
+            "evidence_mode": "multimodal" if image_bytes else "digital_text",
             "objective_validation": objective_validation,
             "objective_score_floor": float(deterministic_floor),
             "objective_floor_applied": objective_floor_applied,
             "vision": {
+                "proveedor": vision_result.proveedor if vision_result else None,
                 "modelo": vision_result.modelo if vision_result else None,
                 "tiempo_ms": vision_result.tiempo_ms if vision_result else 0,
                 "usable": vision_result.raw_output.get("usable") if vision_result and vision_result.raw_output else None,
             } if vision_result and not vision_result.error else None,
             "grader_a": {
+                "proveedor": grading_a.proveedor,
                 "modelo": grading_a.modelo,
                 "nota": grading_a.nota_sugerida,
                 "confianza": grading_a.confianza,
@@ -561,6 +614,7 @@ async def orchestrate_grading(
                 "error_type": "grader_error" if grading_a.error else None,
             },
             "grader_b": {
+                "proveedor": grading_b.proveedor,
                 "modelo": grading_b.modelo,
                 "nota": grading_b.nota_sugerida,
                 "confianza": grading_b.confianza,
@@ -569,6 +623,7 @@ async def orchestrate_grading(
                 "error_type": "grader_error" if grading_b.error else None,
             },
             "comparator": {
+                "proveedor": final.proveedor,
                 "modelo": final.modelo,
                 "nota_final": final.nota_sugerida,
                 "discrepancia": (

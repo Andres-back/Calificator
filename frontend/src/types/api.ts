@@ -344,9 +344,11 @@ export interface EntregaOnlineCreate {
 }
 
 export interface StudentActivity {
-  tipo: 'crucigrama' | 'sopa_letras' | 'unir_columnas' | 'emparejar';
+  material_id: string;
+  tipo: MaterialTipo;
   titulo: string;
   contenido: Record<string, unknown>;
+  interactivo: boolean;
 }
 
 export interface BoletinItem {

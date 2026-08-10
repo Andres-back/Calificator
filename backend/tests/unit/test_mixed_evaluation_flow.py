@@ -136,6 +136,9 @@ def test_photo_endpoint_reuses_online_delivery_and_grades_both_mixed_sections(mo
         def add(self, value: object) -> None:
             self.added.append(value)
 
+        async def flush(self) -> None:
+            return None
+
         async def commit(self) -> None:
             return None
 
@@ -162,7 +165,7 @@ def test_photo_endpoint_reuses_online_delivery_and_grades_both_mixed_sections(mo
     monkeypatch.setattr(router, "is_student_enrolled", enrolled)
     monkeypatch.setattr(router, "validate_mime", lambda _content, _filename: "image/jpeg")
     monkeypatch.setattr(router, "save_upload", save)
-    monkeypatch.setattr(router.photo_service, "grade_persisted_photo", grade)
+    monkeypatch.setattr(router, "_enqueue_persisted_grading", grade)
 
     result = asyncio.run(
         router.calificar_foto(
@@ -178,6 +181,5 @@ def test_photo_endpoint_reuses_online_delivery_and_grades_both_mixed_sections(mo
     assert delivery.tipo == EntregaTipo.MIXTA.value
     assert delivery.archivo_url == "/uploads/entregas/mixed.jpg"
     assert calls["entrega"] is delivery
-    assert calls["student_response_text"] == "P1: respuesta online"
     assert calls["evidence_metadata"]["secciones"]["online"]["preguntas"] == [1]
     assert calls["evidence_metadata"]["secciones"]["fisica"]["preguntas"] == [2]

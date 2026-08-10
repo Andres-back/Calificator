@@ -2,12 +2,10 @@ import asyncio
 import json
 import re
 import time
-import uuid
-from dataclasses import dataclass, field, asdict
+from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from email.utils import parsedate_to_datetime
 from typing import Any
-from uuid import UUID
 
 import httpx
 
@@ -256,7 +254,7 @@ class AgentResult:
 
 
 class OpenCodeClient:
-    """Cliente HTTP para la API de OpenCode (compatible con OpenAI chat format).
+    """Cliente HTTP de OpenCode Go con sus protocolos Chat Completions y Messages.
 
     Registra automáticamente cada llamada en ai_usage_events.
     """
@@ -537,7 +535,7 @@ async def vision_agent(
     if not ctx.image_bytes:
         return AgentResult(
             nota_sugerida=None, confianza=0, feedback_estudiante="",
-            proveedor="vision", modelo=model, error="No hay imagen para procesar",
+            proveedor="opencode", modelo=model, error="No hay imagen para procesar",
         )
 
     own_client = False
@@ -568,19 +566,19 @@ async def vision_agent(
                 nota_sugerida=None, confianza=0,
                 feedback_estudiante="La imagen no pudo procesarse. Revisión docente requerida.",
                 alertas=alertas or ["Imagen no utilizable"],
-                proveedor="vision", modelo=model, tiempo_ms=ms,
+                proveedor="opencode", modelo=model, tiempo_ms=ms,
                 raw_output=parsed, requiere_revision_docente=True,
             )
         logger.info("Vision agent OK: modelo=%s %dms texto=%d chars", model, ms, len(texto))
         return AgentResult(
             nota_sugerida=None, confianza=1.0, feedback_estudiante="",
-            alertas=alertas, proveedor="vision", modelo=model,
+            alertas=alertas, proveedor="opencode", modelo=model,
             tiempo_ms=ms, raw_output=parsed, requiere_revision_docente=False,
         )
 
     except Exception as exc:
         logger.error("Vision agent %s failed: %s", model, exc)
-        return AgentResult(nota_sugerida=None, confianza=0, feedback_estudiante="", proveedor="vision", modelo=model, error=str(exc))
+        return AgentResult(nota_sugerida=None, confianza=0, feedback_estudiante="", proveedor="opencode", modelo=model, error=str(exc))
     finally:
         if own_client:
             await client.close()
@@ -883,10 +881,10 @@ Tu tarea es:
 3. Si hay discrepancia, proponer una nota final razonada
 4. Si están cerca (< umbral), promediar
 
-## Calificación A (DeepSeek V4 Flash)
+## Calificación A ({model_a})
 {grading_a}
 
-## Calificación B (Qwen 3.7 Plus)
+## Calificación B ({model_b})
 {grading_b}
 
 Devuelve SOLO JSON válido:
@@ -960,7 +958,13 @@ async def comparator_agent(
     try:
         grading_a_str = json.dumps({"nota_sugerida": grading_a.nota_sugerida, "confianza": grading_a.confianza, "feedback": grading_a.feedback_estudiante[:300], "criterios": grading_a.criterios, "alertas": grading_a.alertas, "error": grading_a.error}, ensure_ascii=False)
         grading_b_str = json.dumps({"nota_sugerida": grading_b.nota_sugerida, "confianza": grading_b.confianza, "feedback": grading_b.feedback_estudiante[:300], "criterios": grading_b.criterios, "alertas": grading_b.alertas, "error": grading_b.error}, ensure_ascii=False)
-        prompt = COMPARATOR_PROMPT.format(umbral=umbral, grading_a=grading_a_str, grading_b=grading_b_str)
+        prompt = COMPARATOR_PROMPT.format(
+            umbral=umbral,
+            model_a=grading_a.modelo,
+            model_b=grading_b.modelo,
+            grading_a=grading_a_str,
+            grading_b=grading_b_str,
+        )
         start = time.monotonic()
         raw = await client.chat(model=model, messages=[{"role": "user", "content": prompt}], json_mode=True, max_tokens=1024)
         ms = int((time.monotonic() - start) * 1000)

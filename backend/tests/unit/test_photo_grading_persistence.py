@@ -29,6 +29,12 @@ class FakeDB:
     def add(self, value: object) -> None:
         self.added.append(value)
 
+    async def flush(self) -> None:
+        for value in self.added:
+            if getattr(value, "id", None) is None:
+                value.id = uuid4()
+        self.events.append("flush")
+
     async def commit(self) -> None:
         self.events.append("commit")
 
@@ -124,6 +130,26 @@ def test_zero_result_marks_successful_suggestion() -> None:
     assert grade.estado == CalificacionEstado.SUGERIDA.value
 
 
+def test_prepare_queued_grading_resets_previous_decision_and_keeps_job() -> None:
+    evaluation = evaluation_fixture()
+    student_id = uuid4()
+    delivery = delivery_fixture(evaluation, student_id)
+    job_id = uuid4()
+
+    grade = photo_service.prepare_queued_grading(
+        entrega=delivery,
+        evaluacion=evaluation,
+        estudiante_id=student_id,
+        profesor_id=evaluation.profesor_id,
+        job_id=job_id,
+    )
+
+    assert delivery.estado == EntregaEstado.RECIBIDA.value
+    assert delivery.visual_text_json["pipeline_status"] == "queued"
+    assert grade.nota_sugerida is None
+    assert grade.resultado_json["job_id"] == str(job_id)
+    assert grade.estado == CalificacionEstado.REQUIERE_REVISION.value
+
 def test_provider_exception_keeps_persisted_delivery_and_creates_review_grade(
     monkeypatch,
 ) -> None:
@@ -181,9 +207,9 @@ def test_endpoint_commits_delivery_before_invoking_grading(
         return "/uploads/entregas/persistida.jpg"
 
     async def grade_after_commit(_db, **kwargs):
-        assert db.events[:2] == ["commit", "refresh:Entrega"]
+        assert db.events == ["flush"]
         assert kwargs["entrega"] in db.added
-        assert kwargs["entrega"].estado == EntregaEstado.PROCESANDO.value
+        assert kwargs["entrega"].estado == EntregaEstado.RECIBIDA.value
         return sentinel
 
     class FakeUpload:
@@ -204,8 +230,8 @@ def test_endpoint_commits_delivery_before_invoking_grading(
     monkeypatch.setattr(router, "validate_mime", lambda *_args: "image/jpeg")
     monkeypatch.setattr(router, "save_upload", save)
     monkeypatch.setattr(
-        router.photo_service,
-        "grade_persisted_photo",
+        router,
+        "_enqueue_persisted_grading",
         grade_after_commit,
     )
 
@@ -258,7 +284,6 @@ def test_teacher_replaces_existing_delivery_without_consuming_student_attempt(
     async def grade_replacement(_db, **kwargs):
         assert kwargs["entrega"] is delivery
         assert kwargs["calificacion"] is existing_grade
-        assert kwargs["student_response_text"] is None
         assert delivery.archivo_url == "/uploads/entregas/reemplazo.pdf"
         assert delivery.tipo == "pdf"
         return sentinel
@@ -289,8 +314,8 @@ def test_teacher_replaces_existing_delivery_without_consuming_student_attempt(
         forbidden_attempt_check,
     )
     monkeypatch.setattr(
-        router.photo_service,
-        "grade_persisted_photo",
+        router,
+        "_enqueue_persisted_grading",
         grade_replacement,
     )
 
@@ -306,4 +331,4 @@ def test_teacher_replaces_existing_delivery_without_consuming_student_attempt(
 
     assert result is sentinel
     assert db.added == []
-    assert db.events == ["commit", "refresh:Entrega"]
+    assert db.events == ["flush"]

@@ -18,6 +18,7 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock('./api', () => ({
+  evaluationPdfUrl: (id: string, descargar = false) => '/api/evaluaciones/' + id + '/pdf' + (descargar ? '?descargar=true' : ''),
   getEvaluacion: mocks.getEvaluation,
   getMiEntrega: mocks.getMyDelivery,
   crearEntregaOnline: mocks.createDelivery,
@@ -226,4 +227,39 @@ describe('ResolverEvaluacionPage', () => {
     });
     expect(mocks.success).toHaveBeenCalledWith('Solicitud de revisión enviada al docente.');
   });
-});
+
+  it('muestra y permite descargar el material antes de subir una entrega física', async () => {
+    const currentEvaluation = await mocks.getEvaluation();
+    mocks.getEvaluation.mockResolvedValue({
+      ...currentEvaluation,
+      modalidad: 'fisica',
+      material_origen_id: 'material-1',
+      tipo_actividad: 'sopa_letras',
+      recepcion_habilitada: true,
+    });
+    mocks.getStudentActivity.mockResolvedValue({
+      material_id: 'material-1',
+      tipo: 'sopa_letras',
+      titulo: 'Sopa de multiplicación',
+      interactivo: true,
+      contenido: {
+        grilla: [['S', 'U', 'M', 'A'], ['R', 'E', 'S', 'T']],
+        banco_palabras: ['SUMA', 'RESTA'],
+      },
+    });
+
+    renderPage();
+
+    expect(await screen.findByText('Material que debes resolver')).toBeInTheDocument();
+    expect(screen.getByText('Sopa de multiplicación')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Ver material' })).toHaveAttribute(
+      'href',
+      '/app/recursos/material-1',
+    );
+    expect(screen.getByRole('link', { name: 'Descargar PDF' })).toHaveAttribute(
+      'href',
+      '/api/evaluaciones/evaluation-1/pdf?descargar=true',
+    );
+    expect(screen.getByText('Foto o PDF de tu trabajo')).toBeInTheDocument();
+    expect(screen.queryByText('Tus respuestas')).not.toBeInTheDocument();
+  });});

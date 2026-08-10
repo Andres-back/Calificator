@@ -2,15 +2,7 @@ import type { Evaluacion } from '@/types/api';
 
 export function getStudentEvaluationAction(evaluation: Evaluacion): string {
   if (evaluation.entrega_realizada) return 'Ver entrega';
-  if (evaluation.mi_entrega_estado === 'requiere_reintento') {
-    return evaluation.modalidad === 'fisica' ? 'Volver a subir' : 'Volver a intentar';
-  }
-  if (evaluation.recepcion_habilitada === false || evaluation.estado === 'cerrada') {
-    return 'Ver actividad';
-  }
-  if (evaluation.modalidad === 'fisica') return 'Subir foto o PDF';
-  if (evaluation.modalidad === 'mixta') return 'Resolver y adjuntar';
-  return 'Resolver en línea';
+  return evaluation.material_origen_id ? 'Ver actividad' : 'Ver evaluación';
 }
 
 export function getStudentEvaluationStatus(evaluation: Evaluacion): {

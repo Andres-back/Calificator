@@ -18,11 +18,17 @@ from app.db.session import AsyncSessionLocal, engine
 from app.modules.calificaciones import photo_service, service as calificaciones_service
 from app.modules.calificaciones.grading_service import grade_submission
 from app.modules.calificaciones.models import Calificacion, Entrega
+from app.modules.calificaciones.salon_mode_service import update_estudiante_estado
 from app.modules.evaluaciones.blueprint_service import evaluation_to_grading_blueprint
 from app.modules.evaluaciones.models import Evaluacion
 from app.modules.jobs import service as jobs_service
 from app.services.storage_service import resolve_upload_path, validate_mime
-from app.shared.enums import EntregaEstado, JobEstado
+from app.shared.enums import (
+    CalificacionEstado,
+    EntregaEstado,
+    JobEstado,
+    SalonEstudianteEstado,
+)
 from app.workers.worker import celery_app
 
 logger = get_logger(__name__)
@@ -103,7 +109,20 @@ async def _grade_delivery(
     profesor_id: UUID,
 ) -> tuple[Calificacion, bool]:
     existing = await _existing_grade(db, entrega.id)
-    if existing:
+    queued_payload = (
+        entrega.visual_text_json
+        if isinstance(entrega.visual_text_json, dict)
+        else {}
+    )
+    raw_existing_payload = getattr(existing, "resultado_json", None)
+    existing_payload = (
+        raw_existing_payload if isinstance(raw_existing_payload, dict) else {}
+    )
+    queued_marker = (
+        queued_payload.get("pipeline_status") in {"queued", "running"}
+        or existing_payload.get("pipeline_status") in {"queued", "running"}
+    )
+    if existing and not queued_marker:
         expected_state = (
             EntregaEstado.REQUIERE_REINTENTO.value
             if getattr(existing, "nota_sugerida", 0) is None
@@ -114,8 +133,16 @@ async def _grade_delivery(
             await db.commit()
         return existing, False
 
+    running_payload = {
+        **queued_payload,
+        "pipeline_status": "running",
+    }
     entrega.estado = EntregaEstado.PROCESANDO.value
+    entrega.visual_text_json = running_payload
+    if existing:
+        existing.resultado_json = running_payload
     await db.commit()
+
     submission = await _load_submission(entrega)
     grading = await grade_submission(
         db,
@@ -127,6 +154,12 @@ async def _grade_delivery(
         image_mime=submission["image_mime"],
         user_id=profesor_id,
     )
+    evidence_metadata = queued_payload.get("evidencia_consolidada")
+    if isinstance(evidence_metadata, dict):
+        grading.raw_model_output = {
+            **grading.raw_model_output,
+            "evidencia_consolidada": evidence_metadata,
+        }
     if grading.nota_sugerida is not None:
         calificaciones_service.validate_score_within_evaluation(
             grading.nota_sugerida, evaluacion, "nota_sugerida",
@@ -138,16 +171,32 @@ async def _grade_delivery(
         estudiante_id=entrega.estudiante_id,
         profesor_id=profesor_id,
         grading=grading,
+        calificacion=existing,
     )
-    db.add(calificacion)
+    if existing is None:
+        db.add(calificacion)
+
+    salon_session_id = (
+        evidence_metadata.get("salon_sesion_id")
+        if isinstance(evidence_metadata, dict)
+        else None
+    )
+    if salon_session_id:
+        await update_estudiante_estado(
+            db,
+            salon_session_id,
+            entrega.estudiante_id,
+            SalonEstudianteEstado.CALIFICADO.value,
+        )
+
     try:
         await db.commit()
     except IntegrityError:
         await db.rollback()
-        existing = await _existing_grade(db, entrega.id)
-        if not existing:
+        current = await _existing_grade(db, entrega.id)
+        if not current:
             raise
-        return existing, False
+        return current, False
     await db.refresh(calificacion)
     return calificacion, True
 
@@ -159,11 +208,31 @@ async def _mark_delivery_for_retry(db: AsyncSession, entrega_id: UUID, error: st
         return
     entrega.estado = EntregaEstado.REQUIERE_REINTENTO.value
     current = entrega.visual_text_json if isinstance(entrega.visual_text_json, dict) else {}
-    entrega.visual_text_json = {
+    failed_payload = {
         **current,
+        "pipeline_status": "failed",
         "batch_error": error[:500],
         "requiere_revision_docente": True,
     }
+    entrega.visual_text_json = failed_payload
+    existing = await _existing_grade(db, entrega_id)
+    if existing and not existing.revisado_por_docente:
+        existing.resultado_json = failed_payload
+        existing.estado = CalificacionEstado.REQUIERE_REVISION.value
+    evidence_metadata = current.get("evidencia_consolidada")
+    salon_session_id = (
+        evidence_metadata.get("salon_sesion_id")
+        if isinstance(evidence_metadata, dict)
+        else None
+    )
+    if salon_session_id:
+        await update_estudiante_estado(
+            db,
+            salon_session_id,
+            entrega.estudiante_id,
+            SalonEstudianteEstado.ERROR.value,
+            error[:500],
+        )
     await db.commit()
 
 

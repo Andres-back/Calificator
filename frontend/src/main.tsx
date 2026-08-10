@@ -41,7 +41,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
       <Toaster
         position="top-right"
         toastOptions={{
-          className: '!bg-surface-elevated !text-fg !border !border-border !shadow-glow',
+          className: 'pointer-events-none !bg-surface-elevated !text-fg !border !border-border !shadow-glow',
           duration: 5000,
           ariaProps: {
             role: 'status',

@@ -170,10 +170,68 @@ function normalizeAnswer(value: unknown): string {
   return String(value);
 }
 
+function normalizeComparable(value: unknown): string {
+  return String(value ?? '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim()
+    .toLocaleLowerCase();
+}
+
+function optionParts(option: string): { label: string | null; body: string } {
+  const match = option.match(/^\s*([A-H])\s*[).:-]\s*(.*?)\s*$/i);
+  return match
+    ? { label: match[1].toUpperCase(), body: match[2].trim() }
+    : { label: null, body: option.trim() };
+}
+
+function canonicalEditableAnswer(
+  rawAnswer: unknown,
+  tipo: QuestionType,
+  options: string[],
+): string {
+  const answer = normalizeAnswer(rawAnswer).trim();
+  if (!answer) return '';
+  const normalized = normalizeComparable(answer);
+
+  if (tipo === 'verdadero_falso') {
+    if (['verdadero', 'true', 'v', 'si', 'cierto'].includes(normalized)) return 'Verdadero';
+    if (['falso', 'false', 'f', 'no'].includes(normalized)) return 'Falso';
+    return answer;
+  }
+
+  if (tipo !== 'opcion_multiple') return answer;
+  const exact = options.find((option) => {
+    const parts = optionParts(option);
+    return normalized === normalizeComparable(option)
+      || normalized === normalizeComparable(parts.body);
+  });
+  if (exact) return exact;
+
+  const letterMatch = normalized.match(
+    /(?:^|\b)(?:opcion\s+|respuesta\s+(?:correcta\s+)?(?:es\s+)?)?([a-h])(?:\b|\s*[).:-])/i,
+  );
+  if (!letterMatch) return answer;
+  const requested = letterMatch[1].toUpperCase();
+  return options.find((option, index) => {
+    const { label } = optionParts(option);
+    return label === requested || (label == null && index === requested.charCodeAt(0) - 65);
+  }) ?? answer;
+}
+
 export function evaluationToEditableQuestions(evaluation: Evaluacion): EditableQuestion[] {
+  const answersByNumber = new Map<number, Record<string, unknown>>();
+  (evaluation.respuestas_esperadas ?? []).forEach((rawAnswer, index) => {
+    const answer = rawAnswer as Record<string, unknown>;
+    const number = Number(answer.numero ?? index + 1);
+    if (Number.isFinite(number)) answersByNumber.set(number, answer);
+  });
+
   return (evaluation.preguntas ?? []).map((rawQuestion, index) => {
     const question = rawQuestion as Record<string, unknown>;
-    const rawAnswer = (evaluation.respuestas_esperadas?.[index] ?? {}) as Record<string, unknown>;
+    const sourceNumber = Number(question.numero ?? index + 1);
+    const rawAnswer = answersByNumber.get(sourceNumber)
+      ?? ((evaluation.respuestas_esperadas?.[index] ?? {}) as Record<string, unknown>);
     const tipo = QUESTION_TYPES.includes(question.tipo as QuestionType)
       ? (question.tipo as QuestionType)
       : 'abierta';
@@ -188,7 +246,11 @@ export function evaluationToEditableQuestions(evaluation: Evaluacion): EditableQ
       tipo,
       enunciado: String(question.enunciado ?? ''),
       opciones: options,
-      respuestaEsperada: normalizeAnswer(rawAnswer.respuesta ?? rawAnswer.texto),
+      respuestaEsperada: canonicalEditableAnswer(
+        rawAnswer.respuesta ?? rawAnswer.texto ?? rawAnswer.respuesta_correcta,
+        tipo,
+        options,
+      ),
       puntaje: Number(question.puntaje ?? 1),
       modalidadRespuesta: (
         ['online', 'fisica', 'archivo'].includes(String(question.modalidad_respuesta))

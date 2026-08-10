@@ -2,7 +2,7 @@ import { type DragEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
-import { ArrowLeft, ArrowRight, Camera, CheckCircle2, FileImage, FileText, ImageUp, HelpCircle, RotateCcw, ScanText, Smartphone, Trash2, TriangleAlert, UploadCloud, ZoomIn } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Camera, CheckCircle2, FileImage, FileText, ImageUp, HelpCircle, LoaderCircle, RotateCcw, ScanText, Smartphone, Trash2, TriangleAlert, UploadCloud, ZoomIn } from 'lucide-react';
 import { Badge, Button, Card, EmptyState, Field, Select, Skeleton, GuidedTour, RichContent } from '@/components/ui';
 import { ImageCropper } from '@/components/ui/ImageCropper';
 import { PageHeader } from '@/components/layout/PageHeader';
@@ -16,6 +16,7 @@ import { useAuth } from '@/stores/auth';
 import { calificarFoto } from './api';
 import { fotoTour } from './tourSteps';
 import type { Calificacion } from '@/types/api';
+import { addPendingGrading } from './gradingJobs';
 
 const ACCEPTED_EVIDENCE_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'application/pdf'];
 // Mirrors backend/app/core/config.py -> MAX_IMAGE_SIZE_MB (default 10).
@@ -101,9 +102,19 @@ export function CalificarFotoPage() {
     onSuccess: (data) => {
       setResultado(data);
       setSubmissionError(null);
-      toast.success('Foto analizada. Revisa la sugerencia antes de confirmar la nota.');
-    },
-    onError: (error) => {
+      clearPhoto();
+      const jobId = data.resultado_json?.job_id;
+      if (typeof jobId === 'string') {
+        addPendingGrading({
+          jobId,
+          evaluacionId: data.evaluacion_id,
+          materiaId: data.materia_id,
+          estudianteId: data.estudiante_id,
+          estudianteNombre: estudiantes.find((item) => item.id === data.estudiante_id)?.nombre ?? 'Estudiante',
+        });
+      }
+      toast.success('Evidencia añadida a la cola. Puedes cargar la siguiente mientras la calificamos.');
+    },    onError: (error) => {
       const message = gradingErrorMessage(error);
       setSubmissionError(message);
       toast.error(message);
@@ -181,6 +192,8 @@ export function CalificarFotoPage() {
   const noMaterias = !loadingMaterias && (!materias || materias.length === 0);
   const submissionPending = isSubmitting || calificar.isPending;
   const contextReady = Boolean(materiaId && evaluacionId && estudianteId && !evaluationClosed);
+  const gradingQueued = resultado?.resultado_json?.pipeline_status === 'queued'
+    || resultado?.resultado_json?.pipeline_status === 'running';
 
   return (
     <div className="space-y-6">
@@ -352,11 +365,22 @@ export function CalificarFotoPage() {
               <div className="rounded-xl border border-dashed border-border p-5 text-center text-sm text-muted">Aún no hay resultado.</div>
             ) : (
               <div className="space-y-4">
-                <div className="rounded-xl bg-brand-600 p-5 text-white shadow-sm"><p className="text-sm text-white/80">Nota sugerida</p><p className="font-display text-4xl font-extrabold">{Number(resultado.nota_sugerida ?? 0).toFixed(1)}{evaluacionSeleccionada?.nota_maxima != null && <span className="ml-2 text-lg font-semibold text-white/70">/ {Number(evaluacionSeleccionada.nota_maxima).toFixed(1)}</span>}</p></div>
-                <div className="flex flex-wrap gap-2"><Badge tone="neutral">Confianza {confidenceLabel(resultado.confianza)}</Badge><Badge tone={resultado.estado === 'sugerida' ? 'warning' : 'brand'}>{resultado.estado}</Badge></div>
+                {gradingQueued ? (
+                  <div className="flex items-start gap-3 rounded-xl border border-cyan-200 bg-cyan-50 p-4 text-cyan-900 dark:border-cyan-500/30 dark:bg-cyan-500/10 dark:text-cyan-100">
+                    <LoaderCircle className="mt-0.5 h-6 w-6 shrink-0 animate-spin" />
+                    <div><p className="font-bold">Calificación en cola</p><p className="mt-1 text-sm">Puedes seguir navegando o cargar otra evidencia. Te avisaremos cuando esté lista.</p></div>
+                  </div>
+                ) : (
+                  <div className="rounded-xl bg-brand-600 p-5 text-white shadow-sm"><p className="text-sm text-white/80">Nota sugerida</p><p className="font-display text-4xl font-extrabold">{Number(resultado.nota_sugerida ?? 0).toFixed(1)}{evaluacionSeleccionada?.nota_maxima != null && <span className="ml-2 text-lg font-semibold text-white/70">/ {Number(evaluacionSeleccionada.nota_maxima).toFixed(1)}</span>}</p></div>
+                )}
+                {!gradingQueued && <div className="flex flex-wrap gap-2"><Badge tone="neutral">Confianza {confidenceLabel(resultado.confianza)}</Badge><Badge tone={resultado.estado === 'sugerida' ? 'warning' : 'brand'}>{resultado.estado}</Badge></div>}
                 {resultado.feedback && <div className="rounded-xl bg-surface-2 p-4 text-sm text-muted"><RichContent content={resultado.feedback} variant="feedback" /></div>}
-                <div className="flex items-start gap-2 rounded-xl border border-border p-3 text-sm text-muted"><CheckCircle2 className="mt-0.5 h-4 w-4 text-emerald-500" /><span>Confirma o ajusta esta nota desde la lista de calificaciones.</span></div>
-                <Link to={routes.calificacionesWorkspace} className="focus-ring inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 text-sm font-semibold text-white transition hover:bg-emerald-700">Revisar y confirmar <ArrowRight className="h-4 w-4" /></Link>
+                {!gradingQueued && (
+                  <>
+                    <div className="flex items-start gap-2 rounded-xl border border-border p-3 text-sm text-muted"><CheckCircle2 className="mt-0.5 h-4 w-4 text-emerald-500" /><span>Confirma o ajusta esta nota desde la lista de calificaciones.</span></div>
+                    <Link to={routes.calificacionesWorkspace} className="focus-ring inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 text-sm font-semibold text-white transition hover:bg-emerald-700">Revisar y confirmar <ArrowRight className="h-4 w-4" /></Link>
+                  </>
+                )}
                 <button type="button" onClick={() => { setResultado(null); clearPhoto(); }} className="focus-ring inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg border border-border px-4 text-sm font-semibold text-fg transition hover:bg-surface-2">
                   <RotateCcw className="h-4 w-4" /> Subir otra imagen
                 </button>

@@ -3,7 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
-import { Plus, ClipboardCheck, Send, Lock, FileText, Trash2, BookOpen, UserPlus, Pencil, Sparkles, Eye } from 'lucide-react';
+import { Plus, ClipboardCheck, Send, Lock, FileText, Trash2, BookOpen, BookOpenCheck, UserPlus, Pencil, Sparkles, Eye } from 'lucide-react';
 import { Button, Card, Badge, statusTone, Skeleton, EmptyState, Modal, Input, Field, Textarea, Select } from '@/components/ui';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { useMaterias, MateriaSelect } from '@/modules/materias/MateriaSelect';
@@ -680,6 +680,7 @@ export function EvaluacionesPage() {
                         <Badge tone="neutral" className="capitalize">{ev.modalidad ?? 'online'}</Badge>
                         <Badge tone="neutral">Nota máx: {Number(ev.nota_maxima)}</Badge>
                         <Badge tone="neutral">{ev.preguntas?.length ?? 0} preguntas</Badge>
+                        {isStudent && ev.material_origen_id && <Badge tone="violet">Material incluido</Badge>}
                         {isStudent && (ev.intentos_realizados ?? 0) > 0 && (
                           <Badge tone="neutral">Intento {ev.intentos_realizados}</Badge>
                         )}
@@ -692,7 +693,9 @@ export function EvaluacionesPage() {
                           to={`/app/evaluaciones/${ev.id}/resolver`}
                           className="focus-ring inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-brand-600 bg-brand-600 px-4 text-sm font-bold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-brand-700 hover:shadow-md dark:border-brand-500 dark:bg-brand-600 sm:w-auto"
                         >
-                          {ev.entrega_realizada ? <Eye className="h-4 w-4" /> : <Send className="h-4 w-4" />}
+                          {ev.entrega_realizada || !ev.material_origen_id
+                            ? <Eye className="h-4 w-4" />
+                            : <BookOpenCheck className="h-4 w-4" />}
                           {getStudentEvaluationAction(ev)}
                         </Link>
                       )}

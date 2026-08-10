@@ -7,8 +7,6 @@ from datetime import datetime, timezone
 from decimal import Decimal
 from uuid import UUID
 
-import aiofiles
-
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Response, UploadFile, status
 from fastapi.responses import FileResponse
 from sqlalchemy import select
@@ -23,7 +21,6 @@ from app.modules.calificaciones.salon_mode_service import (
     create_sesion_id,
     get_pending_students,
     get_sesion_summary,
-    grade_student_photo,
     init_sesion_estudiantes,
     update_estudiante_estado,
 )
@@ -110,7 +107,77 @@ def _mixed_evidence_metadata(evaluacion: object, entrega: Entrega) -> dict:
     }
 
 
-@router.post("/calificaciones/foto", response_model=CalificacionRead, status_code=status.HTTP_201_CREATED)
+async def _enqueue_persisted_grading(
+    db: AsyncSession,
+    *,
+    evaluacion: object,
+    entrega: Entrega,
+    estudiante_id: UUID,
+    profesor_id: UUID,
+    evidence_metadata: dict | None = None,
+    calificacion: Calificacion | None = None,
+) -> Calificacion:
+    """Crea un trabajo persistente y devuelve sin esperar a los modelos."""
+    job_id = await jobs_service.create_job(
+        db,
+        user_id=profesor_id,
+        tipo=JobTipo.CALIFICACION_LOTE.value,
+        input_json={
+            "evaluacion_id": str(evaluacion.id),
+            "entrega_ids": [str(entrega.id)],
+            "estudiante_ids": [str(estudiante_id)],
+            "modalidad": "vision",
+        },
+    )
+    queued_grade = photo_service.prepare_queued_grading(
+        entrega=entrega,
+        evaluacion=evaluacion,
+        estudiante_id=estudiante_id,
+        profesor_id=profesor_id,
+        job_id=job_id,
+        evidence_metadata=evidence_metadata,
+        calificacion=calificacion,
+    )
+    if calificacion is None:
+        db.add(queued_grade)
+    await db.commit()
+    await db.refresh(queued_grade)
+
+    try:
+        grade_batch.apply_async(kwargs={
+            "evaluacion_id": str(evaluacion.id),
+            "estudiante_ids": [],
+            "entrega_ids": [str(entrega.id)],
+            "job_id": str(job_id),
+            "profesor_id": str(profesor_id),
+        })
+    except Exception as exc:  # noqa: BLE001
+        entrega.estado = EntregaEstado.REQUIERE_REINTENTO.value
+        failed_payload = {
+            **(queued_grade.resultado_json or {}),
+            "pipeline_status": "failed",
+            "error_type": "queue_unavailable",
+        }
+        entrega.visual_text_json = failed_payload
+        queued_grade.resultado_json = failed_payload
+        await jobs_service.finish_job(
+            db,
+            job_id,
+            estado=JobEstado.FAILED.value,
+            resultado_json={"entrega_ids": [str(entrega.id)]},
+            error=str(exc),
+        )
+        await db.commit()
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=(
+                "La evidencia quedó guardada, pero la cola no está disponible. "
+                "Puedes reintentar sin subir el archivo nuevamente."
+            ),
+        ) from exc
+    return queued_grade
+
+@router.post("/calificaciones/foto", response_model=CalificacionRead, status_code=status.HTTP_202_ACCEPTED)
 async def calificar_foto(
     evaluacion_id: UUID = Form(...),
     estudiante_id: UUID = Form(...),
@@ -190,25 +257,21 @@ async def calificar_foto(
         if mime == "application/pdf"
         else EntregaTipo.FOTO.value
     )
-    entrega.estado = EntregaEstado.PROCESANDO.value
+    entrega.estado = EntregaEstado.RECIBIDA.value
     entrega.visual_text_json = {}
-    await db.commit()
-    await db.refresh(entrega)
+    await db.flush()
 
     mixed_metadata = (
         _mixed_evidence_metadata(evaluacion, entrega)
         if getattr(evaluacion, "modalidad", None) == EvaluacionModalidad.MIXTA.value
         else None
     )
-    return await photo_service.grade_persisted_photo(
+    return await _enqueue_persisted_grading(
         db,
         evaluacion=evaluacion,
         entrega=entrega,
         estudiante_id=estudiante_id,
         profesor_id=current_user.id,
-        image_bytes=content,
-        image_mime=mime,
-        student_response_text=entrega.respuesta_texto,
         evidence_metadata=mixed_metadata,
         calificacion=existing_calificacion,
     )
@@ -253,31 +316,20 @@ async def reintentar_calificacion_foto(
 
     try:
         upload_path = resolve_upload_path(entrega.archivo_url)
-        async with aiofiles.open(upload_path, "rb") as saved_file:
-            content = await saved_file.read()
-        mime = validate_mime(content, upload_path.name)
+        if not upload_path.is_file():
+            raise OSError("Archivo no encontrado")
     except (OSError, ValueError) as exc:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="La fotografia guardada no esta disponible para reprocesar.",
         ) from exc
 
-    entrega.estado = EntregaEstado.PROCESANDO.value
-    await db.commit()
-
-    return await photo_service.grade_persisted_photo(
+    return await _enqueue_persisted_grading(
         db,
         evaluacion=evaluacion,
         entrega=entrega,
         estudiante_id=calificacion.estudiante_id,
         profesor_id=current_user.id,
-        image_bytes=content,
-        image_mime=mime,
-        student_response_text=(
-            entrega.respuesta_texto
-            if entrega.tipo == EntregaTipo.MIXTA.value
-            else None
-        ),
         evidence_metadata=(
             _mixed_evidence_metadata(evaluacion, entrega)
             if entrega.tipo == EntregaTipo.MIXTA.value
@@ -737,7 +789,11 @@ async def salon_actualizar_estudiante(
     }
 
 
-@router.post("/calificaciones/modo-salon/{sesion_id}/foto", response_model=CalificacionRead)
+@router.post(
+    "/calificaciones/modo-salon/{sesion_id}/foto",
+    response_model=CalificacionRead,
+    status_code=status.HTTP_202_ACCEPTED,
+)
 async def salon_foto(
     sesion_id: str,
     estudiante_id: UUID = Form(...),
@@ -758,16 +814,47 @@ async def salon_foto(
     if not await is_student_enrolled(db, evaluacion.materia_id, estudiante_id):
         raise HTTPException(status_code=403, detail="El estudiante no esta matriculado en esta materia")
 
+    await service.ensure_student_can_submit_new_evidence(
+        db,
+        evaluacion,
+        estudiante_id,
+    )
     content = await read_upload_limited(foto, MAX_EVIDENCE_BYTES)
     mime = validate_mime(content, foto.filename or "foto.jpg")
-    return await grade_student_photo(
+    archivo_url = await save_upload(
+        content,
+        foto.filename or "foto.jpg",
+        subfolder="entregas",
+        max_size_bytes=MAX_EVIDENCE_BYTES,
+    )
+    entrega = Entrega(
+        evaluacion_id=evaluacion.id,
+        estudiante_id=estudiante_id,
+        materia_id=evaluacion.materia_id,
+        tipo=(
+            EntregaTipo.PDF.value
+            if mime == "application/pdf"
+            else EntregaTipo.FOTO.value
+        ),
+        archivo_url=archivo_url,
+        estado=EntregaEstado.RECIBIDA.value,
+        visual_text_json={},
+    )
+    db.add(entrega)
+    await db.flush()
+    await update_estudiante_estado(
+        db,
+        sesion_id,
+        estudiante_id,
+        "fotografiado",
+    )
+    return await _enqueue_persisted_grading(
         db,
         evaluacion=evaluacion,
+        entrega=entrega,
         estudiante_id=estudiante_id,
-        image_bytes=content,
-        image_mime=mime,
         profesor_id=current_user.id,
-        sesion_id=sesion_id,
+        evidence_metadata={"salon_sesion_id": sesion_id},
     )
 
 

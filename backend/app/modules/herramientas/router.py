@@ -260,6 +260,7 @@ async def borrar_material(
 async def material_pdf(
     material_id: UUID,
     soluciones: bool = False,
+    descargar: bool = False,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> Response:
@@ -274,10 +275,15 @@ async def material_pdf(
 
     pdf = render_material_pdf(material, soluciones=soluciones)
     slug = (material.get("titulo") or "material").strip().replace('"', "")
+    disposition = "attachment" if descargar else "inline"
     return Response(
         content=pdf,
         media_type="application/pdf",
-        headers={"Content-Disposition": f'inline; filename="{slug}.pdf"'},
+        headers={
+            "Content-Disposition": f'{disposition}; filename="{slug}.pdf"',
+            "Cache-Control": "private, no-store",
+            "X-Content-Type-Options": "nosniff",
+        },
     )
 
 

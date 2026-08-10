@@ -24,6 +24,7 @@ import {
   listCalificaciones, publicarNota, publicarNotaBatch, resolverIncidencia,
 } from './api';
 import { RevisionGuide } from './RevisionGuide';
+import { formatAIModelSource } from './aiPipelineLabels';
 import type { BatchResult, Calificacion, CalificacionDetalle, GradeFilter } from '@/types/api';
 
 const CONFIRMADA = 'confirmada';
@@ -153,7 +154,7 @@ function AIPipelineSummary({
         <div className="space-y-2 border-t border-border px-4 py-3 text-xs">
           {vision && (
             <div className="flex items-center justify-between">
-              <span>Visión ({String(vision.modelo ?? '—')})</span>
+              <span>Visión ({formatAIModelSource(vision)})</span>
               <span className={vision.usable !== false ? 'text-emerald-600' : 'text-rose-600'}>
                 {vision.usable !== false ? '✓' : '✗'} {vision.tiempo_ms ? `${vision.tiempo_ms}ms` : ''}
               </span>
@@ -161,7 +162,7 @@ function AIPipelineSummary({
           )}
           {graderA && (
             <div className="flex items-center justify-between">
-              <span>Evaluador A ({String(graderA.modelo ?? '')})</span>
+              <span>Evaluador A ({formatAIModelSource(graderA)})</span>
               <span className={graderA.error ? 'text-rose-600' : 'text-fg'}>
                 {graderA.nota != null ? Number(graderA.nota).toFixed(1) : '—'}
               </span>
@@ -169,7 +170,7 @@ function AIPipelineSummary({
           )}
           {graderB && (
             <div className="flex items-center justify-between">
-              <span>Evaluador B ({String(graderB.modelo ?? '')})</span>
+              <span>Evaluador B ({formatAIModelSource(graderB)})</span>
               <span className={graderB.error ? 'text-rose-600' : 'text-fg'}>
                 {graderB.nota != null ? Number(graderB.nota).toFixed(1) : '—'}
               </span>

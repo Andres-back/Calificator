@@ -9,6 +9,7 @@ import pytest
 from fastapi import HTTPException
 
 from app.modules.herramientas import service
+from app.modules.evaluaciones import service as evaluaciones_service
 
 
 class FakeDB:
@@ -19,7 +20,10 @@ class FakeDB:
 
     async def execute(self, statement, params):
         self.executions.append((statement, params))
-        return SimpleNamespace(fetchall=lambda: self.rows)
+        return SimpleNamespace(
+            fetchall=lambda: self.rows,
+            fetchone=lambda: self.rows[0] if self.rows else None,
+        )
 
     async def commit(self) -> None:
         self.commits += 1
@@ -138,6 +142,76 @@ def test_student_subject_resources_are_filtered_to_published_support(monkeypatch
     sql = str(db.executions[0][0])
     assert "mg.asignacion_tipo = 'apoyo'" in sql
     assert "mg.publicado_estudiantes = true" in sql
+
+def test_student_can_open_assigned_activity_without_receiving_solution_keys(monkeypatch) -> None:
+    subject_id = uuid4()
+    material_id = uuid4()
+    student = SimpleNamespace(id=uuid4(), rol="estudiante")
+    now = datetime.now()
+    row = SimpleNamespace(
+        id=material_id,
+        tipo="sopa_letras",
+        titulo="Sopa de multiplicación",
+        materia_id=subject_id,
+        materia_nombre="Matemáticas",
+        contenido_json={
+            "titulo": "Sopa de multiplicación",
+            "banco_palabras": ["PRODUCTO"],
+            "respuesta_correcta": "PRODUCTO",
+            "soluciones": [{"palabra": "PRODUCTO", "fila": 1}],
+        },
+        archivo_url=None,
+        created_at=now,
+        updated_at=now,
+        asignacion_tipo="actividad",
+        publicado_estudiantes=False,
+        fecha_publicacion=now,
+        evaluacion_id=uuid4(),
+        evaluacion_estado="publicada",
+        evaluacion_modalidad="fisica",
+    )
+
+    async def can_read(_db, selected_subject_id, user):
+        assert selected_subject_id == subject_id
+        assert user is student
+
+    monkeypatch.setattr(service.materias_service, "ensure_can_read_materia", can_read)
+    db = FakeDB([row])
+
+    result = asyncio.run(service.get_material_for_user(db, material_id, student))
+
+    assert result is not None
+    assert result["asignacion_tipo"] == "actividad"
+    assert result["contenido_json"]["banco_palabras"] == ["PRODUCTO"]
+    assert "respuesta_correcta" not in result["contenido_json"]
+    assert "soluciones" not in result["contenido_json"]
+    sql = str(db.executions[0][0])
+    assert "mg.asignacion_tipo = 'actividad'" in sql
+    assert "e.estado IN" in sql
+
+
+def test_activity_payload_keeps_material_metadata_and_sanitizes_generic_content() -> None:
+    material_id = uuid4()
+    payload = evaluaciones_service.build_student_activity_payload(
+        "taller",
+        "Taller de fracciones",
+        {
+            "puntos": [
+                {
+                    "numero": 1,
+                    "enunciado": "Representa un medio.",
+                    "respuesta_esperada": "1/2",
+                }
+            ]
+        },
+        material_id=material_id,
+    )
+
+    assert payload["material_id"] == material_id
+    assert payload["tipo"] == "taller"
+    assert payload["interactivo"] is False
+    assert payload["contenido"]["puntos"][0]["enunciado"] == "Representa un medio."
+    assert "respuesta_esperada" not in payload["contenido"]["puntos"][0]
 
 def test_editing_word_search_rebuilds_grid_and_removes_stale_words() -> None:
     rebuilt = service._rebuild_edited_puzzle(

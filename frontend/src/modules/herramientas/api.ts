@@ -78,7 +78,11 @@ export async function listMaterialEvaluaciones(id: string): Promise<Evaluacion[]
 }
 /** URL del PDF (estudiante o soluciones). El navegador envía la cookie de sesión. */
 
-export function pdfUrl(id: string, soluciones = false): string {
+export function pdfUrl(id: string, soluciones = false, descargar = false): string {
   const base = import.meta.env.VITE_API_URL ?? '/api';
-  return `${base}${BASE}/${id}/pdf${soluciones ? '?soluciones=true' : ''}`;
+  const params = new URLSearchParams();
+  if (soluciones) params.set('soluciones', 'true');
+  if (descargar) params.set('descargar', 'true');
+  const query = params.toString();
+  return base + BASE + '/' + id + '/pdf' + (query ? '?' + query : '');
 }

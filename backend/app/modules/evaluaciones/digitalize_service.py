@@ -5,6 +5,7 @@ import ast
 import json
 import re
 import math
+import unicodedata
 from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 from io import BytesIO
 from typing import Any
@@ -69,9 +70,11 @@ REGLAS OBLIGATORIAS:
 - Incluye TODAS las preguntas y conserva su numeración.
 - Genera exactamente UNA respuesta esperada para CADA pregunta, incluso si el documento
   no trae una clave impresa. Resuelve las operaciones y, para preguntas abiertas, redacta
-  una respuesta de referencia breve o una rúbrica observable. Nunca dejes la clave incompleta.
-- En opción múltiple devuelve la letra y el valor correctos. En verdadero/falso devuelve
-  "Verdadero" o "Falso". No copies todas las opciones como respuesta.
+  una solucion especifica, breve y verificable. Nunca uses marcadores como "pendiente de
+  validacion", "respuesta argumentada" o "el docente debe definirla".
+- En opcion multiple devuelve EXACTAMENTE una de las opciones existentes, incluyendo letra
+  y texto (por ejemplo, "B) 36"). En verdadero/falso devuelve "Verdadero" o "Falso".
+- Razona la solucion; no copies todas las opciones ni inventes una respuesta fuera de ellas.
 - Extrae el puntaje de cada pregunta cuando aparezca. Usa null si realmente no está visible.
 - Extrae puntaje_total_declarado solo si el documento lo muestra; en otro caso usa null.
 - Las preguntas abiertas no tienen opciones. Verdadero/falso usa ["Verdadero", "Falso"].
@@ -89,7 +92,7 @@ Contenido extraído:
 REPAIR_KEY_PROMPT = """Completa la clave de respuestas de esta evaluación.
 Devuelve SOLO JSON con {{"respuestas_esperadas": [{{"numero": 1, "respuesta": "..."}}]}}.
 Debe existir una respuesta correcta o de referencia no vacía para cada número: {numeros}.
-Resuelve operaciones y preguntas objetivas; para abiertas redacta una referencia breve.
+Resuelve cada pregunta de nuevo. Para opcion multiple devuelve exactamente una opcion existente con letra y texto; para abiertas redacta una respuesta especifica y verificable. No uses marcadores ni pidas al docente definir la respuesta.
 
 Preguntas:
 {preguntas}
@@ -521,7 +524,7 @@ def _apply_locally_verified_answers(
         if isinstance(item, dict)
         and item.get("numero") is not None
         and item.get("respuesta")
-        and "pendiente de validaciÃ³n docente" not in str(item["respuesta"]).lower()
+        and not _is_placeholder_answer(item["respuesta"])
     }
     if not verified_answers:
         return structure
@@ -544,6 +547,79 @@ def _apply_locally_verified_answers(
         ", ".join(str(number) for number in sorted(verified_answers)),
     )
     return verified
+
+
+_GENERIC_ANSWER_MARKERS = (
+    "pendiente de validacion",
+    "pendiente de definir",
+    "por definir",
+    "no registrada",
+    "no disponible",
+    "respuesta argumentada",
+    "respuesta de referencia",
+    "el docente debe",
+    "seleccionar respuesta",
+)
+
+
+def _answer_key(value: Any) -> str:
+    text = unicodedata.normalize("NFKD", str(value or ""))
+    text = "".join(character for character in text if not unicodedata.combining(character))
+    return " ".join(text.casefold().split())
+
+
+def _is_placeholder_answer(value: Any) -> bool:
+    normalized = _answer_key(value)
+    return not normalized or any(marker in normalized for marker in _GENERIC_ANSWER_MARKERS)
+
+
+def _option_label_and_body(option: str) -> tuple[str | None, str]:
+    match = re.match(r"^\s*([A-Ha-h])\s*[).:\-]\s*(.*?)\s*$", option)
+    if not match:
+        return None, option.strip()
+    return match.group(1).upper(), match.group(2).strip()
+
+
+def _canonical_answer_for_question(question: dict[str, Any], value: Any) -> str | None:
+    """Convierte letras o textos parciales en la opcion exacta que consume el editor."""
+    if _is_placeholder_answer(value):
+        return None
+    answer = str(value).strip()
+    question_type = str(question.get("tipo") or "abierta").strip().lower()
+    options = [str(item).strip() for item in (question.get("opciones") or []) if str(item).strip()]
+
+    if question_type in {"verdadero_falso", "true_false", "vf"}:
+        normalized = _answer_key(answer)
+        if normalized in {"verdadero", "true", "v", "si", "cierto"}:
+            return "Verdadero"
+        if normalized in {"falso", "false", "f", "no"}:
+            return "Falso"
+        return None
+
+    if question_type in {"opcion_multiple", "multiple_choice", "seleccion_multiple"} or options:
+        if not options:
+            return None
+        answer_key = _answer_key(answer)
+        for option in options:
+            label, body = _option_label_and_body(option)
+            if answer_key in {_answer_key(option), _answer_key(body)}:
+                return option
+            if label and answer_key in {label.casefold(), f"opcion {label.casefold()}"}:
+                return option
+        letter_match = re.search(
+            r"(?:^|\b)(?:opci[o\u00f3]n\s+|respuesta\s+(?:correcta\s+)?(?:es\s+)?)?([A-Ha-h])(?:\b|\s*[).:\-])",
+            answer,
+            flags=re.IGNORECASE,
+        )
+        if letter_match:
+            requested = letter_match.group(1).upper()
+            for index, option in enumerate(options):
+                label, _body = _option_label_and_body(option)
+                if label == requested or (label is None and index == ord(requested) - ord("A")):
+                    return option
+        return None
+
+    return answer
 
 
 def _decimal(value: Any) -> Decimal | None:
@@ -642,6 +718,7 @@ def normalize_detected_structure(
         )
     questions.sort(key=lambda item: item["numero"])
 
+    questions_by_number = {int(question["numero"]): question for question in questions}
     answer_map: dict[int, str] = {}
     for answer in structure.get("respuestas_esperadas") or []:
         if not isinstance(answer, dict):
@@ -650,8 +727,11 @@ def normalize_detected_structure(
             number = int(answer.get("numero"))
         except (TypeError, ValueError):
             continue
-        value = str(answer.get("respuesta") or "").strip()
-        if value:
+        question = questions_by_number.get(number)
+        if not question:
+            continue
+        value = _canonical_answer_for_question(question, answer.get("respuesta"))
+        if value is not None:
             answer_map[number] = value
     missing = [number for number in numbers if number not in answer_map]
     if missing:
@@ -732,14 +812,25 @@ async def _repair_missing_answers(
         except (TypeError, ValueError):
             continue
 
-    present: set[int] = set()
-    for answer in structure.get("respuestas_esperadas") or []:
-        if not isinstance(answer, dict) or not answer.get("respuesta"):
+    questions_by_number: dict[int, dict[str, Any]] = {}
+    for index, question in enumerate(questions, start=1):
+        if not isinstance(question, dict):
             continue
         try:
-            present.add(int(answer.get("numero")))
+            questions_by_number[int(question.get("numero", index))] = question
         except (TypeError, ValueError):
             continue
+    present: set[int] = set()
+    for answer in structure.get("respuestas_esperadas") or []:
+        if not isinstance(answer, dict):
+            continue
+        try:
+            number = int(answer.get("numero"))
+        except (TypeError, ValueError):
+            continue
+        question = questions_by_number.get(number)
+        if question and _canonical_answer_for_question(question, answer.get("respuesta")) is not None:
+            present.add(number)
     missing = [number for number in numbers if number not in present]
     if not missing:
         return structure

@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Puzzle } from 'lucide-react';
 
-import { MatchingView, SopaLetrasView } from '@/modules/herramientas/views';
+import { ContenidoView, MatchingView, SopaLetrasView } from '@/modules/herramientas/views';
+import type { ToolContent } from '@/modules/herramientas/views/ContenidoView';
 import type { MatchingContenido, SopaContenido, StudentActivity } from '@/types/api';
 
 type Answers = Record<number, string>;
@@ -16,7 +17,7 @@ interface CrosswordClue {
   direccion: 'horizontal' | 'vertical';
 }
 
-function CrosswordPlayer({ activity, onAnswersChange }: { activity: StudentActivity; onAnswersChange: (answers: Answers) => void }) {
+function CrosswordPlayer({ activity, onAnswersChange, readOnly }: { activity: StudentActivity; onAnswersChange: (answers: Answers) => void; readOnly: boolean }) {
   const content = activity.contenido as {
     grid_mascara?: boolean[][];
     pistas_horizontales?: CrosswordClue[];
@@ -65,6 +66,7 @@ function CrosswordPlayer({ activity, onAnswersChange }: { activity: StudentActiv
                 <input
                   aria-label={`Fila ${rowIndex + 1}, columna ${columnIndex + 1}`}
                   value={entries[key] ?? ''}
+                  disabled={readOnly}
                   maxLength={1}
                   onChange={(event) => setEntries((current) => ({ ...current, [key]: event.target.value.slice(-1).toUpperCase() }))}
                   className="focus-ring h-10 w-10 rounded-md border border-border bg-surface text-center text-lg font-bold uppercase"
@@ -91,7 +93,7 @@ function CrosswordPlayer({ activity, onAnswersChange }: { activity: StudentActiv
   );
 }
 
-export function StudentActivityPlayer({ activity, onAnswersChange }: { activity: StudentActivity; onAnswersChange: (answers: Answers) => void }) {
+export function StudentActivityPlayer({ activity, onAnswersChange, readOnly = false }: { activity: StudentActivity; onAnswersChange: (answers: Answers) => void; readOnly?: boolean }) {
   const normalized = useCallback((value: string) => value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase().replace(/[^A-ZÑ]/g, ''), []);
 
   const handleFound = useCallback((found: string[]) => {
@@ -113,11 +115,12 @@ export function StudentActivityPlayer({ activity, onAnswersChange }: { activity:
     <section aria-labelledby="interactive-activity-title" className="rounded-xl border border-border bg-surface p-5">
       <div className="mb-5 flex items-center gap-3 border-b border-border pb-4">
         <span className="grid h-11 w-11 place-items-center rounded-xl bg-violet-100 text-violet-700 dark:bg-violet-500/20 dark:text-violet-200"><Puzzle className="h-6 w-6" /></span>
-        <div><p className="text-xs font-bold uppercase tracking-wide text-violet-700 dark:text-violet-300">Actividad interactiva</p><h2 id="interactive-activity-title" className="font-display text-xl font-bold">{activity.titulo}</h2></div>
+        <div><p className="text-xs font-bold uppercase tracking-wide text-violet-700 dark:text-violet-300">{readOnly ? 'Material asignado' : 'Actividad interactiva'}</p><h2 id="interactive-activity-title" className="font-display text-xl font-bold">{activity.titulo}</h2></div>
       </div>
-      {activity.tipo === 'crucigrama' && <CrosswordPlayer activity={activity} onAnswersChange={onAnswersChange} />}
-      {activity.tipo === 'sopa_letras' && <SopaLetrasView data={activity.contenido as unknown as SopaContenido} onFoundChange={handleFound} />}
-      {(activity.tipo === 'emparejar' || activity.tipo === 'unir_columnas') && <MatchingView data={activity.contenido as unknown as MatchingContenido} allowCheck={false} onMatchesChange={handleMatches} />}
+      {activity.tipo === 'crucigrama' && <CrosswordPlayer activity={activity} onAnswersChange={onAnswersChange} readOnly={readOnly} />}
+      {activity.tipo === 'sopa_letras' && <SopaLetrasView data={activity.contenido as unknown as SopaContenido} onFoundChange={readOnly ? undefined : handleFound} />}
+      {(activity.tipo === 'emparejar' || activity.tipo === 'unir_columnas') && <MatchingView data={activity.contenido as unknown as MatchingContenido} allowCheck={false} onMatchesChange={readOnly ? undefined : handleMatches} />}
+      {!activity.interactivo && <ContenidoView tipo={activity.tipo} data={activity.contenido as unknown as ToolContent} />}
     </section>
   );
 }

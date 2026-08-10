@@ -2,11 +2,11 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
-import { ArrowLeft, CheckCircle2, ClipboardCheck, Clock3, FileUp, MessageSquareWarning, PauseCircle, Send, TriangleAlert } from 'lucide-react';
+import { ArrowLeft, BookOpenCheck, CheckCircle2, ClipboardCheck, Clock3, Download, FileUp, MessageSquareWarning, PauseCircle, Send, TriangleAlert } from 'lucide-react';
 import { Badge, Button, Card, EmptyState, Field, Input, Modal, RichContent, Select, Skeleton, statusTone, Textarea } from '@/components/ui';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { toApiError } from '@/lib/api';
-import { crearEntregaArchivo, crearEntregaOnline, getActividadEstudiante, getEvaluacion, getMiEntrega, getMiSolicitudRevision, solicitarRevisionEvaluacion } from './api';
+import { crearEntregaArchivo, crearEntregaOnline, evaluationPdfUrl, getActividadEstudiante, getEvaluacion, getMiEntrega, getMiSolicitudRevision, solicitarRevisionEvaluacion } from './api';
 import { StudentActivityPlayer } from './StudentActivityPlayer';
 import type { SolicitudRevisionMotivo } from '@/types/api';
 
@@ -102,7 +102,7 @@ export function ResolverEvaluacionPage() {
   });
 
   const modalidad = evaluacion?.modalidad ?? 'online';
-  const interactiveActivity = modalidad === 'online' ? activityQuery.data ?? null : null;
+  const assignedMaterial = activityQuery.data ?? null;
   const preguntas = useMemo(() => evaluacion?.preguntas ?? [], [evaluacion?.preguntas]);
   const preguntasOnline = useMemo(
     () => preguntas.filter(
@@ -137,6 +137,7 @@ export function ResolverEvaluacionPage() {
     && (!existingDelivery || needsRetry || (allowsMultipleAttempts && startingNewAttempt));
   const serializedAnswers = serializeAnswers(preguntasOnline, answers);
   const handleActivityAnswers = useCallback((next: Record<number, string>) => setAnswers(next), []);
+  const ignoreActivityAnswers = useCallback(() => undefined, []);
   const physicalSubmitted = Boolean(existingDelivery?.archivo_url)
     && existingDelivery?.estado !== 'requiere_reintento';
   const onlinePartReady = modalidad === 'fisica'
@@ -280,6 +281,7 @@ export function ResolverEvaluacionPage() {
         subtitle="Resuelve únicamente tu actividad y entrégala para revisión docente."
         breadcrumbs={[{ label: 'Evaluaciones', to: '/app/evaluaciones' }, { label: evaluacion.nombre }]}
         backAction={<Link to="/app/evaluaciones" className="focus-ring inline-flex h-11 items-center justify-center gap-2 rounded-lg border border-border bg-surface px-5 text-sm font-semibold text-fg transition-colors hover:bg-surface-2"><ArrowLeft className="h-4 w-4" aria-hidden="true" /> Volver</Link>}
+        action={<a href={evaluationPdfUrl(evaluacionId, true)}><Button variant="outline"><Download className="h-4 w-4" /> {assignedMaterial ? 'Descargar material' : 'Descargar evaluación'}</Button></a>}
       />
 
       <Card className="space-y-4 border-l-4 border-l-brand-500 p-5">
@@ -331,11 +333,28 @@ export function ResolverEvaluacionPage() {
         </Card>
       )}
 
+      {assignedMaterial && (
+        <Card id="material-asignado" className="flex flex-col gap-4 border-violet-200 p-5 dark:border-violet-500/30 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-start gap-3">
+            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-violet-100 text-violet-700 dark:bg-violet-500/20 dark:text-violet-200"><BookOpenCheck className="h-5 w-5" /></span>
+            <div><p className="font-display text-lg font-bold">Material que debes resolver</p><p className="mt-1 text-sm text-muted">Abre el recurso completo aquí o descárgalo para imprimirlo y resolverlo a mano.</p></div>
+          </div>
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <Link to={'/app/recursos/' + assignedMaterial.material_id}><Button variant="outline" className="w-full"><BookOpenCheck className="h-4 w-4" /> Ver material</Button></Link>
+            <a href={evaluationPdfUrl(evaluacionId, true)}><Button className="w-full"><Download className="h-4 w-4" /> Descargar PDF</Button></a>
+          </div>
+        </Card>
+      )}
       <div className="grid gap-6 lg:grid-cols-2">
         <section className="space-y-4">
-          {interactiveActivity ? (
-            <StudentActivityPlayer activity={interactiveActivity} onAnswersChange={handleActivityAnswers} />
-          ) : <>
+          {assignedMaterial && (
+            <StudentActivityPlayer
+              activity={assignedMaterial}
+              onAnswersChange={modalidad === 'online' && assignedMaterial.interactivo ? handleActivityAnswers : ignoreActivityAnswers}
+              readOnly={modalidad !== 'online' || !assignedMaterial.interactivo}
+            />
+          )}
+          {!(assignedMaterial?.interactivo && modalidad === 'online') && <>
           <div><h2 className="font-display text-lg font-bold">Preguntas</h2><p className="text-sm text-muted">Lee cada enunciado y numera tus respuestas al escribir.</p></div>
           {preguntasOnline.length === 0 ? (
             <p className="text-sm text-muted">Esta evaluación no tiene preguntas visibles.</p>
@@ -485,7 +504,7 @@ export function ResolverEvaluacionPage() {
           ) : answerFormEnabled ? (
             <Card className="space-y-4 p-5">
               <div><h2 className="font-display text-lg font-bold">Tus respuestas</h2><p className="text-sm text-muted">Responde cada pregunta. XCalificator conservará la numeración al enviar.</p></div>
-              {!interactiveActivity && <div className="max-h-[55vh] space-y-4 overflow-y-auto pr-1">
+              {!(assignedMaterial?.interactivo && modalidad === 'online') && <div className="max-h-[55vh] space-y-4 overflow-y-auto pr-1">
                 {preguntasOnline.map((question, index) => {
                   const number = numberFromQuestion(question, index);
                   const options = optionsFromQuestion(question);

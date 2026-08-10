@@ -11,7 +11,6 @@ from __future__ import annotations
 
 import hashlib
 import json
-from datetime import datetime, timezone
 from typing import Any
 from uuid import UUID
 
@@ -78,15 +77,15 @@ DEFAULT_PROVIDERS: list[dict[str, Any]] = [
 
 DEFAULT_FEATURES: list[dict[str, Any]] = [
     {"feature": "xali", "label": "Chatbot Xali", "primary_provider": "groq", "fallback_provider": "template", "active": True},
-    {"feature": "calificacion_texto", "label": "Calificación de texto", "primary_provider": "groq", "fallback_provider": "template", "active": True},
-    {"feature": "calificacion_foto", "label": "Calificación por foto", "primary_provider": "groq", "fallback_provider": "template", "active": True},
+    {"feature": "calificacion_texto", "label": "Calificación de texto", "primary_provider": "open_code", "fallback_provider": None, "active": True},
+    {"feature": "calificacion_foto", "label": "Calificación por foto", "primary_provider": "open_code", "fallback_provider": None, "active": True},
     {"feature": "retroalimentacion", "label": "Retroalimentación", "primary_provider": "groq", "fallback_provider": "template", "active": True},
     {"feature": "generacion_preguntas", "label": "Generación de preguntas", "primary_provider": "groq", "fallback_provider": "template", "active": True},
     {"feature": "evaluacion_digitalizar", "label": "Digitalización de evaluaciones", "primary_provider": "open_code", "fallback_provider": None, "active": True},
     {"feature": "herramientas_educativas", "label": "Herramientas educativas", "primary_provider": "groq", "fallback_provider": "template", "active": True},
     {"feature": "presentaciones", "label": "Presentaciones", "primary_provider": "groq", "fallback_provider": "template", "active": True},
     {"feature": "generacion_imagenes", "label": "Generación de imágenes", "primary_provider": "openai_image", "fallback_provider": "cloudflare_image", "active": True},
-    {"feature": "vision_ocr", "label": "Visión/OCR", "primary_provider": "groq", "fallback_provider": "template", "active": True},
+    {"feature": "vision_ocr", "label": "Visión/OCR", "primary_provider": "open_code", "fallback_provider": None, "active": True},
     {"feature": "rag", "label": "RAG (embeddings)", "primary_provider": "openai", "fallback_provider": None, "active": True},
     {"feature": "embeddings", "label": "Embeddings", "primary_provider": "openai", "fallback_provider": None, "active": True},
 ]
@@ -109,6 +108,8 @@ def _feature_candidates(feature: str) -> tuple[str, ...]:
     """Map runtime task names to the capabilities exposed in the admin UI."""
     aliases: dict[str, tuple[str, ...]] = {
         "grading": ("calificacion_texto", "calificacion_foto", "grading_text", "grading_photo"),
+        "grading_text": ("calificacion_texto",),
+        "grading_photo": ("calificacion_foto",),
         "presentacion": ("presentaciones", "presentations"),
         "xali_chat": ("xali",),
         "xali_evaluacion_post_entrega": ("xali",),

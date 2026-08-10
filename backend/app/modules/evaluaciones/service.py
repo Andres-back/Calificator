@@ -136,15 +136,15 @@ def _student_key(value: object) -> str:
     return "".join(char for char in str(value).lower() if char.isalnum())
 
 
-def _sanitize_student_payload(value: object) -> object:
+def sanitize_student_payload(value: object) -> object:
     if isinstance(value, dict):
         return {
-            key: _sanitize_student_payload(item)
+            key: sanitize_student_payload(item)
             for key, item in value.items()
             if _student_key(key) not in _STUDENT_FORBIDDEN_KEYS
         }
     if isinstance(value, list):
-        return [_sanitize_student_payload(item) for item in value]
+        return [sanitize_student_payload(item) for item in value]
     return value
 
 
@@ -173,8 +173,8 @@ def _student_safe_evaluation(evaluacion: Evaluacion, progress: dict | None = Non
         "dba_ids": evaluacion.dba_ids,
         "dba_personalizado_ids": evaluacion.dba_personalizado_ids,
         "metas_profesor": evaluacion.metas_profesor,
-        "criterios": _sanitize_student_payload(evaluacion.criterios),
-        "preguntas": _sanitize_student_payload(safe_questions),
+        "criterios": sanitize_student_payload(evaluacion.criterios),
+        "preguntas": sanitize_student_payload(safe_questions),
         "respuestas_esperadas": [],
         "created_at": evaluacion.created_at,
         "updated_at": evaluacion.updated_at,
@@ -324,8 +324,13 @@ def _safe_matching_content(content: dict) -> dict:
     }
 
 
-def build_student_activity_payload(material_type: str, title: str, content: dict) -> dict | None:
-    """Expone solo lo necesario para jugar; nunca incluye claves o soluciones."""
+def build_student_activity_payload(
+    material_type: str,
+    title: str,
+    content: dict,
+    material_id: UUID | None = None,
+) -> dict:
+    """Expone el material asignado sin incluir claves ni soluciones."""
     if material_type == MaterialTipo.CRUCIGRAMA.value:
         safe_content = _safe_crossword_content(content)
     elif material_type == MaterialTipo.SOPA_LETRAS.value:
@@ -333,8 +338,19 @@ def build_student_activity_payload(material_type: str, title: str, content: dict
     elif material_type in {MaterialTipo.UNIR_COLUMNAS.value, MaterialTipo.EMPAREJAR.value}:
         safe_content = _safe_matching_content(content)
     else:
-        return None
-    return {"tipo": material_type, "titulo": title, "contenido": safe_content}
+        safe_content = sanitize_student_payload(content)
+    return {
+        "material_id": material_id,
+        "tipo": material_type,
+        "titulo": title,
+        "contenido": safe_content,
+        "interactivo": material_type in {
+            MaterialTipo.CRUCIGRAMA.value,
+            MaterialTipo.SOPA_LETRAS.value,
+            MaterialTipo.UNIR_COLUMNAS.value,
+            MaterialTipo.EMPAREJAR.value,
+        },
+    }
 
 
 async def get_student_activity(
@@ -370,6 +386,7 @@ async def get_student_activity(
         str(row["tipo"]),
         str(row["titulo"]),
         row["contenido_json"] if isinstance(row["contenido_json"], dict) else {},
+        material_id=evaluacion.material_origen_id,
     )
 
 
