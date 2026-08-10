@@ -64,6 +64,14 @@ export function DetailPage() {
     && !Array.isArray(content._xcalificator)
   ) ? content._xcalificator as Record<string, unknown> : null;
   const alignedDba = Array.isArray(aiTrace?.dba_seleccionados) ? aiTrace.dba_seleccionados.length : 0;
+  const pedagogicalApproach = aiTrace?.enfoque_pedagogico;
+  const approachLabel = pedagogicalApproach === 'dba_rubrica'
+    ? `Alineado con ${alignedDba} DBA${alignedDba === 1 ? '' : 's'} y criterios de rúbrica`
+    : pedagogicalApproach === 'dba'
+      ? `Alineado con ${alignedDba} DBA${alignedDba === 1 ? '' : 's'}`
+      : pedagogicalApproach === 'rubrica'
+        ? 'Orientado por criterios de rúbrica'
+        : 'Generado libremente a partir del tema y el grado';
 
   const linkedEvaluation = linkedEvaluationsQuery.data?.[0] ?? null;
   const linkedEvaluationId = linkedEvaluation?.id ?? material?.evaluacion_id ?? null;
@@ -346,7 +354,7 @@ export function DetailPage() {
         <div className="flex gap-3 rounded-xl border border-violet-200 bg-violet-50 px-4 py-3 text-sm text-violet-900 dark:border-violet-500/30 dark:bg-violet-500/10 dark:text-violet-100 print:hidden">
           <Sparkles className="mt-0.5 h-4 w-4 shrink-0" />
           <div>
-            <p className="font-semibold">Borrador IA alineado con {alignedDba} DBA{alignedDba === 1 ? '' : 's'}</p>
+            <p className="font-semibold">Borrador IA · {approachLabel}</p>
             <p className="mt-0.5 text-xs opacity-80">La IA propone. Revisa el contenido y valida que sea apropiado para tu grupo antes de imprimir, descargar o compartir.</p>
           </div>
         </div>

@@ -26,6 +26,35 @@ export interface AsistenciaDia {
   resumen: AsistenciaResumen;
 }
 
+export interface AsistenciaReporteResumen {
+  total_registros: number;
+  presentes: number;
+  tarde: number;
+  ausentes: number;
+  excusas: number;
+  porcentaje_asistencia: number;
+}
+
+export interface AsistenciaReporteEstudiante extends AsistenciaReporteResumen {
+  estudiante_id: string;
+  estudiante_nombre: string;
+  estudiante_email: string;
+}
+
+export interface AsistenciaReporteDia extends AsistenciaReporteResumen {
+  fecha: string;
+}
+
+export interface AsistenciaReporte {
+  materia_id: string;
+  fecha_desde: string;
+  fecha_hasta: string;
+  jornadas_registradas: number;
+  resumen: AsistenciaReporteResumen;
+  estudiantes: AsistenciaReporteEstudiante[];
+  jornadas: AsistenciaReporteDia[];
+}
+
 export interface AsistenciaRegistroInput {
   estudiante_id: string;
   estado: AsistenciaEstado;
@@ -41,6 +70,18 @@ export async function getAsistenciaDia(materiaId: string, fecha: string): Promis
   const { data } = await api.get<AsistenciaDia>(`/materias/${materiaId}/asistencia`, {
     params: { fecha },
   });
+  return data;
+}
+
+export async function getAsistenciaReporte(
+  materiaId: string,
+  fechaDesde: string,
+  fechaHasta: string,
+): Promise<AsistenciaReporte> {
+  const { data } = await api.get<AsistenciaReporte>(
+    `/materias/${materiaId}/asistencia/reporte`,
+    { params: { fecha_desde: fechaDesde, fecha_hasta: fechaHasta } },
+  );
   return data;
 }
 

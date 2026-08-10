@@ -176,13 +176,84 @@
     animation: scan 1.8s ease-in-out infinite;
   }
 
+  .teacher-shell #main-content {
+    position: relative;
+    background-image:
+      radial-gradient(circle at 8% 2%, rgb(99 102 241 / 0.10), transparent 24rem),
+      radial-gradient(circle at 94% 14%, rgb(14 165 233 / 0.09), transparent 25rem),
+      linear-gradient(180deg, rgb(248 250 252 / 0.88), transparent 30rem);
+  }
+
+  .teacher-shell #main-content::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    opacity: 0.24;
+    background-image:
+      linear-gradient(rgb(99 102 241 / 0.055) 1px, transparent 1px),
+      linear-gradient(90deg, rgb(99 102 241 / 0.055) 1px, transparent 1px);
+    background-size: 34px 34px;
+    mask-image: linear-gradient(to bottom, black, transparent 26rem);
+  }
+
+  .teacher-shell .card {
+    border-radius: 1rem;
+    box-shadow:
+      0 1px 2px rgb(15 23 42 / 0.03),
+      0 18px 44px -30px rgb(67 56 202 / 0.34);
+  }
+
+  .teacher-shell .teacher-page-header {
+    box-shadow:
+      0 1px 2px rgb(15 23 42 / 0.03),
+      0 24px 55px -38px rgb(79 70 229 / 0.40);
+  }
+
+  .teacher-shell .teacher-scroll-region {
+    overscroll-behavior-inline: contain;
+    scrollbar-color: rgb(var(--muted) / 0.45) transparent;
+    scrollbar-width: thin;
+  }
+
+  .teacher-shell .teacher-scroll-region::-webkit-scrollbar {
+    height: 7px;
+  }
+
+  .teacher-shell .teacher-scroll-region::-webkit-scrollbar-thumb {
+    background-color: rgb(var(--muted) / 0.38);
+  }
+
+  .dark .teacher-shell .card {
+    box-shadow:
+      0 1px 2px rgb(0 0 0 / 0.22),
+      0 20px 48px -34px rgb(99 102 241 / 0.38);
+  }
+  .dark .teacher-shell #main-content {
+    background-image:
+      radial-gradient(circle at 8% 2%, rgb(99 102 241 / 0.15), transparent 24rem),
+      radial-gradient(circle at 94% 14%, rgb(14 165 233 / 0.09), transparent 25rem);
+  }
   .student-shell #main-content {
+    position: relative;
     background-image:
       radial-gradient(circle at 8% 5%, rgb(99 102 241 / 0.09), transparent 24rem),
       radial-gradient(circle at 92% 18%, rgb(14 165 233 / 0.08), transparent 22rem),
       linear-gradient(180deg, rgb(248 250 252 / 0.72), transparent 28rem);
   }
 
+  .student-shell #main-content::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    opacity: 0.18;
+    background-image: radial-gradient(circle, rgb(14 165 233 / 0.18) 1px, transparent 1.5px);
+    background-size: 28px 28px;
+    mask-image: linear-gradient(to bottom, black, transparent 22rem);
+  }
   .student-shell .card {
     border-radius: 1rem;
     box-shadow: 0 1px 2px rgb(15 23 42 / 0.03), 0 16px 38px -26px rgb(79 70 229 / 0.34);
@@ -192,6 +263,11 @@
     letter-spacing: -0.035em;
   }
 
+  .student-shell .student-page-header {
+    box-shadow:
+      0 1px 2px rgb(15 23 42 / 0.03),
+      0 24px 55px -38px rgb(8 145 178 / 0.42);
+  }
   .dark .student-shell #main-content {
     background-image:
       radial-gradient(circle at 8% 5%, rgb(99 102 241 / 0.13), transparent 24rem),

@@ -155,6 +155,15 @@ export function SopaLetrasView({
     if (selectionMode === 'keyboard') completeSelection(start, cell);
   }
 
+  if (rows === 0 || cols === 0 || banco.length === 0) {
+    return (
+      <div className="rounded-xl border border-dashed border-amber-300 bg-amber-50 p-5 text-sm text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-100" role="status">
+        <p className="font-bold">Esta sopa de letras necesita revisión</p>
+        <p className="mt-1">La grilla o el banco de palabras está vacío. Intenta generarla nuevamente.</p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-5">
       <Confetti fire={complete} />

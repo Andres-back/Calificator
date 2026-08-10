@@ -172,7 +172,7 @@ function DocumentUploader({
   return (
     <div className="space-y-4">
       <div
-        className="flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-border bg-surface-2/50 p-8 text-center transition hover:border-brand-400 hover:bg-brand-50/30"
+        className="flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-border bg-surface-2/50 p-8 text-center transition hover:border-brand-400 hover:bg-brand-50/30 dark:hover:border-brand-400 dark:hover:bg-brand-500/10"
         onClick={() => fileRef.current?.click()}
         onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') fileRef.current?.click(); }}
         tabIndex={0}

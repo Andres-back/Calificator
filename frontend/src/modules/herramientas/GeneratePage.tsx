@@ -40,7 +40,7 @@ import {
 
 const GEN_MESSAGES = [
   'Leyendo el contexto pedagógico',
-  'Alineando tema, grado y aprendizajes',
+  'Aplicando el enfoque que elegiste',
   'Armando la actividad imprimible',
   'Preparando la revisión docente',
   'Casi listo',
@@ -335,6 +335,14 @@ export function GeneratePage() {
     (Array.isArray(pendingPayload?.dba_personalizado_ids)
       ? pendingPayload.dba_personalizado_ids.length
       : 0);
+  const usesRubric = pendingPayload?.usar_rubrica === true;
+  const pedagogicalApproach = selectedLearningCount > 0 && usesRubric
+    ? 'DBA + rúbrica'
+    : selectedLearningCount > 0
+      ? 'Alineación con DBA'
+      : usesRubric
+        ? 'Criterios de rúbrica'
+        : 'Generación libre con IA';
 
   return (
     <div className="space-y-6">
@@ -355,7 +363,7 @@ export function GeneratePage() {
       >
         {[
           ['1', 'Contexto de la clase'],
-          ['2', 'Aprendizajes esperados'],
+          ['2', 'Enfoque opcional'],
           ['3', 'Revisar y generar'],
         ].map(([number, label]) => (
           <div
@@ -412,7 +420,7 @@ export function GeneratePage() {
                   className="mt-0.5 h-4 w-4 shrink-0 text-brand-600"
                   aria-hidden="true"
                 />
-                Un primer borrador alineado con los aprendizajes que elegiste.
+                Un borrador adaptado al tema, grado y enfoque pedagógico que elegiste.
               </p>
               {tool.interactive ? (
                 <p className="flex items-start gap-2">
@@ -498,11 +506,8 @@ export function GeneratePage() {
             </dd>
           </div>
           <div className="grid gap-1 p-3 sm:grid-cols-[110px_1fr]">
-            <dt className="font-bold">Aprendizajes</dt>
-            <dd className="text-muted">
-              {selectedLearningCount} seleccionado
-              {selectedLearningCount === 1 ? '' : 's'}
-            </dd>
+            <dt className="font-bold">Enfoque</dt>
+            <dd className="text-muted">{pedagogicalApproach}</dd>
           </div>
         </dl>
         <div className="rounded-xl bg-amber-50 p-3 text-sm text-amber-900 dark:bg-amber-500/10 dark:text-amber-100">

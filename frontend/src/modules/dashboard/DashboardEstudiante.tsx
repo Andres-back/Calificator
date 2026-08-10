@@ -20,9 +20,7 @@ import { getResumenAcademico } from '@/modules/calificaciones/api';
 import { cn } from '@/lib/cn';
 
 const QUICK_LINKS = [
-  { to: '/app/materias', label: 'Mis materias', desc: 'Tus cursos inscritos', icon: BookOpen, tone: 'bg-sky-50 text-sky-600 dark:bg-sky-500/15 dark:text-sky-300' },
   { to: '/app/materias/unirse', label: 'Unirme a materia', desc: 'Con el código del docente', icon: UserPlus, tone: 'bg-violet-50 text-violet-600 dark:bg-violet-500/15 dark:text-violet-300' },
-  { to: '/app/evaluaciones', label: 'Evaluaciones', desc: 'Resuelve y envía', icon: ClipboardCheck, tone: 'bg-emerald-50 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-300' },
   { to: '/app/calificaciones/boletin', label: 'Mi boletín', desc: 'Tus notas confirmadas', icon: FileText, tone: 'bg-amber-50 text-amber-600 dark:bg-amber-500/15 dark:text-amber-300' },
   { to: '/app/xali', label: 'Asistente Xali', desc: 'Xali te ayuda a entender, practicar y mejorar', icon: Sparkles, tone: 'bg-brand-50 text-brand-600 dark:bg-brand-500/15 dark:text-brand-300', xali: true },
 ];
@@ -49,7 +47,7 @@ export function DashboardEstudiante() {
       <motion.div
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
-        className="relative overflow-hidden rounded-3xl border border-brand-400/40 bg-gradient-to-br from-brand-800 via-brand-600 to-sky-600 p-6 text-white shadow-glow-lg sm:p-8 lg:p-10"
+        className="relative overflow-hidden rounded-3xl border border-brand-400/40 bg-gradient-to-br from-brand-800 via-brand-600 to-sky-600 p-6 text-white shadow-glow-lg sm:p-8 lg:p-9"
       >
         {/* Hero Image Background */}
         <div className="absolute inset-0 z-0">
@@ -61,8 +59,13 @@ export function DashboardEstudiante() {
           <div className="absolute inset-0 bg-gradient-to-r from-brand-950/40 via-brand-700/20 to-sky-500/10" />
         </div>
         
-        <div className="relative z-10 grid items-center gap-8 lg:grid-cols-[1fr_18rem]">
-          <div className="min-w-0 flex-1">
+        <img
+          src="/branding/xali-hello.png"
+          alt=""
+          className="pointer-events-none absolute -bottom-4 -right-4 z-10 h-32 w-32 object-contain opacity-55 sm:h-40 sm:w-40 lg:hidden"
+        />
+        <div className="relative z-10 grid items-center gap-8 lg:grid-cols-[1fr_17rem]">
+          <div className="min-w-0 flex-1 sm:pr-24 lg:pr-0">
             <span className="inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/15 px-3 py-1.5 text-sm font-semibold text-white backdrop-blur-sm">
               <GraduationCap className="h-4 w-4" /> Tu espacio de aprendizaje
             </span>
@@ -70,10 +73,7 @@ export function DashboardEstudiante() {
             <p className="mt-4 max-w-2xl text-base leading-7 text-indigo-50 sm:text-lg">
               Encuentra tus materias, continúa tus actividades y revisa cada avance en un solo lugar.
             </p>
-            <p className="mt-4 flex max-w-2xl items-start gap-2 border-l-2 border-white/50 pl-3 text-sm leading-6 text-indigo-50">
-              <Sparkles className="mr-1.5 inline h-4 w-4 text-amber-200" />
-              La constancia mejora tus resultados. Revisa tus materias, atiende la retroalimentación y sigue avanzando.
-            </p>
+
             <div className="mt-6 flex flex-col gap-3 sm:flex-row">
               <Link to="/app/evaluaciones" className="focus-ring inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-white px-5 text-sm font-bold text-brand-800 shadow-lg transition hover:-translate-y-0.5 hover:bg-brand-50">
                 <ClipboardCheck className="h-5 w-5" /> Ver mis actividades
@@ -83,11 +83,11 @@ export function DashboardEstudiante() {
               </Link>
             </div>
           </div>
-          <div className="relative hidden min-h-56 items-center justify-center rounded-3xl border border-white/20 bg-white/10 p-5 backdrop-blur-sm lg:flex">
+          <div className="relative hidden min-h-52 items-center justify-center rounded-3xl border border-white/20 bg-white/10 p-5 backdrop-blur-sm lg:flex">
             <img
               src="/branding/xali-hello.png"
               alt="Xali, tu asistente de aprendizaje"
-              className="h-48 w-48 rounded-[2rem] object-contain mix-blend-multiply drop-shadow-2xl"
+              className="h-44 w-44 rounded-[2rem] object-contain mix-blend-multiply drop-shadow-2xl"
             />
           </div>
         </div>
@@ -224,9 +224,12 @@ export function DashboardEstudiante() {
         )}
       </section>
 
-      {/* Accesos rápidos */}
+      {/* Accesos complementarios */}
       <section>
-        <h2 className="mb-4 font-display text-xl font-bold">Accesos rápidos</h2>
+        <div className="mb-4">
+          <p className="text-xs font-bold uppercase tracking-[0.16em] text-brand-700 dark:text-brand-300">Cuando lo necesites</p>
+          <h2 className="mt-1 font-display text-xl font-bold">Más opciones para ti</h2>
+        </div>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {QUICK_LINKS.map((link, i) => (
             <motion.div key={link.to} className="min-w-0" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}>

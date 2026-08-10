@@ -13,10 +13,12 @@ interface GeneratedImageContent {
 
 interface ExamQuestionContent {
   numero?: string | number;
+  tipo?: string;
   enunciado?: string;
   puntaje?: number;
-  opciones: string[];
+  opciones?: string[];
   respuesta_correcta?: string;
+  respuesta_esperada?: string;
 }
 
 interface RubricCriterionContent {
@@ -45,6 +47,28 @@ interface ReinforcementWeekContent {
   recursos: unknown[];
 }
 
+interface WorksheetExerciseContent {
+  numero?: string | number;
+  tipo?: string;
+  enunciado?: string;
+  opciones?: string[];
+  respuesta_esperada?: string;
+  espacio_respuesta?: boolean;
+}
+
+interface ConceptNodeContent {
+  id?: string;
+  concepto?: string;
+  descripcion_breve?: string;
+  nivel?: number;
+}
+
+interface ConceptRelationContent {
+  origen?: string;
+  destino?: string;
+  etiqueta?: string;
+}
+
 export interface ToolContent {
   titulo?: string;
   instrucciones?: string;
@@ -53,31 +77,31 @@ export interface ToolContent {
   escala?: string[];
   criterios?: RubricCriterionContent[];
   imagen?: GeneratedImageContent;
-  personajes: string[];
+  personajes?: string[];
   parrafos?: string[];
   moraleja?: string;
-  preguntas_comprension: unknown[];
-  uso_docente: unknown[];
-  objetivos: unknown[];
+  preguntas_comprension?: unknown[];
+  uso_docente?: unknown[];
+  objetivos?: unknown[];
   introduccion?: string;
   secciones?: GuideSectionContent[];
-  evaluacion_formativa: unknown[];
+  evaluacion_formativa?: unknown[];
   objetivo?: string;
   puntos?: WorkshopPointContent[];
   estudiante?: string;
   objetivo_general?: string;
   semanas?: ReinforcementWeekContent[];
-  estrategias_apoyo: unknown[];
-  indicadores_mejora: unknown[];
+  estrategias_apoyo?: unknown[];
+  indicadores_mejora?: unknown[];
   // ficha
-  ejercicios?: { numero: number; tipo: string; enunciado: string; opciones?: string[]; respuesta_esperada?: string; espacio_respuesta?: boolean }[];
+  ejercicios?: WorksheetExerciseContent[];
   // lectura_comprensiva
   texto?: string;
   // mapa_conceptual
   concepto_principal?: string;
   descripcion?: string;
-  nodos?: { id: string; concepto: string; descripcion_breve?: string; nivel: number }[];
-  relaciones?: { origen: string; destino: string; etiqueta?: string }[];
+  nodos?: ConceptNodeContent[];
+  relaciones?: ConceptRelationContent[];
   // flashcards
   tarjetas?: { numero: number; anverso: string; reverso: string }[];
 }
@@ -94,7 +118,22 @@ function Block({ i, children, className }: { i: number; children: React.ReactNod
     </motion.div>
   );
 }
-const bullets = (arr: unknown[]) => <ul className="ml-5 list-disc space-y-1 text-sm">{(arr ?? []).map((x, i) => <li key={i}>{String(x)}</li>)}</ul>;
+const readableItem = (value: unknown): string => {
+  if (typeof value === 'string' || typeof value === 'number') return String(value);
+  if (!value || typeof value !== 'object') return '';
+  const item = value as Record<string, unknown>;
+  const primary = item.titulo ?? item.enunciado ?? item.nombre ?? item.actividad ?? item.descripcion ?? item.texto;
+  if (primary != null) return String(primary);
+  return Object.values(item)
+    .filter((entry) => typeof entry === 'string' || typeof entry === 'number')
+    .map(String)
+    .join(' · ');
+};
+const bullets = (arr: unknown[]) => {
+  const values = (Array.isArray(arr) ? arr : []).map(readableItem).filter(Boolean);
+  if (values.length === 0) return null;
+  return <ul className="ml-5 list-disc space-y-1.5 text-sm leading-6">{values.map((value, i) => <li key={`${value}-${i}`}>{value}</li>)}</ul>;
+};
 const stripPrefix = (value: unknown) => String(value ?? '').replace(/^\s*[A-Ha-h]\)\s*/, '');
 const imageSrc = (image?: GeneratedImageContent) => {
   if (!image || image.is_placeholder) return null;
@@ -122,19 +161,21 @@ function ImageFrame({ image, alt, className }: { image?: GeneratedImageContent; 
 /* ───────────────── Examen (con revelar respuestas) ───────────────── */
 function ExamenContent({ data }: { data: ToolContent }) {
   const [reveal, setReveal] = useState(false);
+  const questions = data.preguntas ?? [];
   const matchLetter = (q: ExamQuestionContent, j: number) => {
     const rc = String(q.respuesta_correcta ?? '').trim().toUpperCase();
     return rc === String.fromCharCode(65 + j) || stripPrefix(q.opciones?.[j]).toUpperCase() === stripPrefix(rc).toUpperCase();
   };
+  if (questions.length === 0) return <EmptyMaterial message="No se generaron preguntas. Puedes editar el contenido o intentar una nueva generación." />;
   return (
     <div className="space-y-3">
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         {data.instrucciones && <p className="flex-1 rounded-xl border border-brand-200 bg-brand-50 px-4 py-3 text-sm text-brand-800 dark:border-brand-500/30 dark:bg-brand-500/10 dark:text-brand-200">{data.instrucciones}</p>}
         <Button size="sm" variant={reveal ? 'secondary' : 'primary'} onClick={() => setReveal((v) => !v)}>
           {reveal ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />} {reveal ? 'Ocultar' : 'Ver respuestas'}
         </Button>
       </div>
-      {(data.preguntas ?? []).map((q, i) => (
+      {questions.map((q, i) => (
         <Block key={i} i={i}>
           <p className="font-semibold">
             <span className="text-brand-600">{q.numero}.</span> {q.enunciado}
@@ -142,7 +183,7 @@ function ExamenContent({ data }: { data: ToolContent }) {
           </p>
           {(q.opciones ?? []).length > 0 ? (
             <div className="mt-2 space-y-1">
-              {q.opciones.map((op: string, j: number) => {
+              {(q.opciones ?? []).map((op: string, j: number) => {
                 const ok = reveal && matchLetter(q, j);
                 return (
                   <p key={j} className={cn('flex items-center gap-1.5 rounded-lg px-2 py-1 text-sm', ok && 'bg-emerald-50 font-semibold text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300')}>
@@ -168,9 +209,33 @@ function ExamenContent({ data }: { data: ToolContent }) {
 /* ───────────────── Rúbrica (con niveles) ───────────────── */
 function RubricaContent({ data }: { data: ToolContent }) {
   const escala: string[] = data.escala ?? [];
+  const criterios = data.criterios ?? [];
+  if (criterios.length === 0) return <EmptyMaterial message="La rúbrica no contiene criterios todavía. Edítala o vuelve a generarla." />;
   return (
-    <div className="overflow-x-auto rounded-lg border border-border">
-      <table className="w-full text-sm">
+    <div>
+      <div className="grid gap-3 md:hidden">
+        {criterios.map((criterion, index) => (
+          <Block key={`${criterion.nombre}-${index}`} i={index}>
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="font-display font-bold">{criterion.nombre || `Criterio ${index + 1}`}</p>
+                {criterion.descripcion && <p className="mt-1 text-sm text-muted">{criterion.descripcion}</p>}
+              </div>
+              {criterion.peso_porcentaje != null && <Badge tone="brand">{criterion.peso_porcentaje}%</Badge>}
+            </div>
+            <dl className="mt-3 space-y-2">
+              {escala.map((level) => (
+                <div key={level} className="rounded-lg bg-surface-2 p-3">
+                  <dt className="text-xs font-bold uppercase tracking-wide text-violet-600 dark:text-violet-300">{level}</dt>
+                  <dd className="mt-1 text-sm leading-5 text-muted">{criterion.niveles?.[level] || 'Sin descriptor'}</dd>
+                </div>
+              ))}
+            </dl>
+          </Block>
+        ))}
+      </div>
+      <div className="hidden overflow-x-auto rounded-lg border border-border md:block">
+      <table className="w-full min-w-[720px] text-sm">
         <thead className="bg-brand-50 text-brand-800 dark:bg-brand-500/10 dark:text-brand-200">
           <tr>
             <th className="p-3 text-left">Criterio</th>
@@ -179,7 +244,7 @@ function RubricaContent({ data }: { data: ToolContent }) {
           </tr>
         </thead>
         <tbody>
-          {(data.criterios ?? []).map((c, i) => (
+          {criterios.map((c, i) => (
             <tr key={i} className="border-t border-border align-top">
               <td className="p-3"><p className="font-semibold">{c.nombre}</p><p className="mt-0.5 text-xs text-muted">{c.descripcion}</p></td>
               <td className="p-3 font-semibold text-brand-600">{c.peso_porcentaje != null ? `${c.peso_porcentaje}%` : ''}</td>
@@ -188,17 +253,30 @@ function RubricaContent({ data }: { data: ToolContent }) {
           ))}
         </tbody>
       </table>
+      </div>
+    </div>
+  );
+}
+
+function EmptyMaterial({ message }: { message: string }) {
+  return (
+    <div className="rounded-xl border border-dashed border-amber-300 bg-amber-50 p-5 text-sm text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-100" role="status">
+      <p className="font-bold">Este borrador necesita revisión</p>
+      <p className="mt-1 leading-6">{message}</p>
     </div>
   );
 }
 
 function CuentoContent({ data }: { data: ToolContent }) {
+  if ((data.parrafos ?? []).length === 0 && !imageSrc(data.imagen)) {
+    return <EmptyMaterial message="El cuento no contiene narración ni ilustración todavía." />;
+  }
   return (
     <div className="space-y-5">
       <div className="grid gap-5 lg:grid-cols-[minmax(260px,0.8fr)_minmax(0,1.2fr)]">
         <ImageFrame image={data.imagen} alt={data.titulo ?? 'Ilustracion del cuento'} />
         <div className="rounded-lg border border-amber-200 bg-amber-50 p-5 dark:border-amber-500/30 dark:bg-amber-500/10">
-          {data.personajes?.length > 0 && <p className="text-xs font-semibold uppercase tracking-wide text-amber-700 dark:text-amber-300">Personajes: {data.personajes.join(', ')}</p>}
+          {(data.personajes ?? []).length > 0 && <p className="text-xs font-semibold uppercase tracking-wide text-amber-700 dark:text-amber-300">Personajes: {(data.personajes ?? []).join(', ')}</p>}
           <div className="mt-3 space-y-4">
             {(data.parrafos ?? []).map((p: string, i: number) => (
               <p key={i} className="text-[15px] leading-7 text-fg">{p}</p>
@@ -207,7 +285,7 @@ function CuentoContent({ data }: { data: ToolContent }) {
         </div>
       </div>
       {data.moraleja && <div className="rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm dark:bg-amber-500/10"><b>Moraleja:</b> {data.moraleja}</div>}
-      {data.preguntas_comprension?.length > 0 && <><Section title="Preguntas de comprension" />{bullets(data.preguntas_comprension)}</>}
+      {(data.preguntas_comprension ?? []).length > 0 && <><Section title="Preguntas de comprensión" />{bullets(data.preguntas_comprension ?? [])}</>}
     </div>
   );
 }
@@ -217,7 +295,7 @@ function ParaColorearContent({ data }: { data: ToolContent }) {
     <div className="space-y-5">
       <ImageFrame image={data.imagen} alt={data.titulo ?? 'Dibujo para colorear'} className="bg-white" />
       {data.instrucciones && <div className="rounded-xl border border-brand-200 bg-brand-50 px-4 py-3 text-sm text-brand-800 dark:border-brand-500/30 dark:bg-brand-500/10 dark:text-brand-200">{data.instrucciones}</div>}
-      {data.uso_docente?.length > 0 && <><Section title="Uso docente" />{bullets(data.uso_docente)}</>}
+      {(data.uso_docente ?? []).length > 0 && <><Section title="Uso docente" />{bullets(data.uso_docente ?? [])}</>}
     </div>
   );
 }
@@ -236,6 +314,8 @@ function FlashcardsContent({ data }: { data: ToolContent }) {
     setFlipped({});
     setKnown({});
   };
+
+  if (tarjetas.length === 0) return <EmptyMaterial message="No se generaron tarjetas de estudio." />;
 
   return (
     <div className="space-y-5">
@@ -344,6 +424,157 @@ function FlashcardsContent({ data }: { data: ToolContent }) {
   );
 }
 
+function FichaContent({ data }: { data: ToolContent }) {
+  const [reveal, setReveal] = useState(false);
+  const exercises = data.ejercicios ?? [];
+  if (exercises.length === 0) return <EmptyMaterial message="La ficha no contiene ejercicios todavía. Edítala o vuelve a generarla." />;
+
+  return (
+    <div className="space-y-5">
+      <div className="flex flex-col gap-3 rounded-xl border border-border bg-surface-2/60 p-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          {data.objetivo && <p className="font-semibold">{data.objetivo}</p>}
+          {data.instrucciones && <p className="mt-1 text-sm text-muted">{data.instrucciones}</p>}
+        </div>
+        <Button size="sm" variant={reveal ? 'secondary' : 'outline'} onClick={() => setReveal((value) => !value)}>
+          {reveal ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+          {reveal ? 'Ocultar soluciones' : 'Ver soluciones'}
+        </Button>
+      </div>
+      {exercises.map((exercise, index) => (
+        <Block key={`${exercise.numero}-${index}`} i={index}>
+          <div className="flex items-start gap-3">
+            <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-brand-50 text-xs font-bold text-brand-600 dark:bg-brand-500/15 dark:text-brand-300">
+              {exercise.numero ?? index + 1}
+            </span>
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <p className="font-semibold leading-6">{exercise.enunciado || 'Ejercicio sin enunciado'}</p>
+                {exercise.tipo && <Badge tone="neutral">{exercise.tipo.replace(/_/g, ' ')}</Badge>}
+              </div>
+              {(exercise.opciones ?? []).length > 0 && (
+                <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                  {(exercise.opciones ?? []).map((option, optionIndex) => (
+                    <p key={`${option}-${optionIndex}`} className="rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm text-muted">
+                      <span className="mr-1 font-bold text-brand-500">{String.fromCharCode(65 + optionIndex)})</span>
+                      {stripPrefix(option)}
+                    </p>
+                  ))}
+                </div>
+              )}
+              {exercise.espacio_respuesta && !reveal && (
+                <div className="mt-4 space-y-4" aria-label="Espacio para responder">
+                  {[0, 1].map((line) => <div key={line} className="border-b border-dashed border-border" />)}
+                </div>
+              )}
+              {reveal && exercise.respuesta_esperada && (
+                <p className="mt-3 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300">
+                  <b>Solución:</b> {exercise.respuesta_esperada}
+                </p>
+              )}
+            </div>
+          </div>
+        </Block>
+      ))}
+    </div>
+  );
+}
+
+function LecturaContent({ data }: { data: ToolContent }) {
+  const [reveal, setReveal] = useState(false);
+  const questions = data.preguntas ?? [];
+  return (
+    <div className="space-y-5">
+      {data.texto ? (
+        <article className="rounded-xl border border-blue-200 bg-blue-50 p-5 dark:border-blue-500/30 dark:bg-blue-500/10">
+          <p className="whitespace-pre-line text-[15px] leading-7 text-fg">{data.texto}</p>
+        </article>
+      ) : (
+        <EmptyMaterial message="La lectura no contiene el texto principal." />
+      )}
+      <div className="flex items-center justify-between gap-3">
+        <Section title="Preguntas de comprensión" />
+        {questions.some((question) => question.respuesta_esperada || question.respuesta_correcta) && (
+          <Button size="sm" variant={reveal ? 'secondary' : 'outline'} onClick={() => setReveal((value) => !value)}>
+            {reveal ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            {reveal ? 'Ocultar respuestas' : 'Ver respuestas'}
+          </Button>
+        )}
+      </div>
+      {questions.length === 0 ? (
+        <EmptyMaterial message="No se generaron preguntas de comprensión." />
+      ) : questions.map((question, index) => (
+        <Block key={`${question.numero}-${index}`} i={index}>
+          <div className="flex flex-wrap items-start gap-2">
+            <p className="font-semibold leading-6">
+              <span className="text-brand-600">{question.numero ?? index + 1}.</span> {question.enunciado}
+            </p>
+            {question.tipo && <Badge tone="violet">{question.tipo}</Badge>}
+          </div>
+          {reveal && (question.respuesta_esperada || question.respuesta_correcta) && (
+            <p className="mt-3 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300">
+              <b>Respuesta:</b> {question.respuesta_esperada || question.respuesta_correcta}
+            </p>
+          )}
+        </Block>
+      ))}
+    </div>
+  );
+}
+
+function MapaConceptualContent({ data }: { data: ToolContent }) {
+  const nodes = data.nodos ?? [];
+  const relations = data.relaciones ?? [];
+  const names = new Map(nodes.map((node) => [node.id, node.concepto || node.id || 'Concepto']));
+  const levels = Array.from(new Set(nodes.map((node) => Number(node.nivel) || 1))).sort((a, b) => a - b);
+  if (nodes.length === 0 && !data.concepto_principal) {
+    return <EmptyMaterial message="El mapa no contiene conceptos. Edítalo o vuelve a generarlo." />;
+  }
+
+  return (
+    <div className="space-y-5">
+      {data.concepto_principal && (
+        <div className="mx-auto max-w-xl rounded-xl border-2 border-brand-300 bg-brand-50 px-5 py-4 text-center shadow-sm dark:border-brand-500/40 dark:bg-brand-500/10">
+          <p className="text-xs font-semibold uppercase tracking-wide text-brand-600 dark:text-brand-300">Concepto principal</p>
+          <p className="mt-1 font-display text-xl font-extrabold text-brand-800 dark:text-brand-200">{data.concepto_principal}</p>
+          {data.descripcion && <p className="mt-2 text-sm leading-6 text-muted">{data.descripcion}</p>}
+        </div>
+      )}
+      {levels.map((level) => (
+        <section key={level} aria-label={`Nivel ${level}`}>
+          <div className="mb-2 flex items-center gap-3">
+            <span className="h-px flex-1 bg-border" />
+            <Badge tone="brand">Nivel {level}</Badge>
+            <span className="h-px flex-1 bg-border" />
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {nodes.filter((node) => (Number(node.nivel) || 1) === level).map((node, index) => (
+              <Block key={node.id || `${level}-${index}`} i={index} className="text-center">
+                <p className="font-display font-bold">{node.concepto || `Concepto ${index + 1}`}</p>
+                {node.descripcion_breve && <p className="mt-1 text-sm leading-5 text-muted">{node.descripcion_breve}</p>}
+              </Block>
+            ))}
+          </div>
+        </section>
+      ))}
+      {relations.length > 0 && (
+        <section>
+          <Section title="Cómo se relacionan" />
+          <div className="grid gap-2 sm:grid-cols-2">
+            {relations.map((relation, index) => (
+              <div key={`${relation.origen}-${relation.destino}-${index}`} className="flex flex-wrap items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2 text-sm">
+                <span className="font-semibold">{names.get(relation.origen) || relation.origen || 'Concepto'}</span>
+                <span className="text-muted">— {relation.etiqueta || 'se relaciona con'} →</span>
+                <span className="font-semibold">{names.get(relation.destino) || relation.destino || 'Concepto'}</span>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+    </div>
+  );
+}
+
 export function ContenidoView({ tipo, data }: { tipo: MaterialTipo; data: ToolContent }) {
   if (tipo === 'examen') return <ExamenContent data={data} />;
   if (tipo === 'rubrica') return <RubricaContent data={data} />;
@@ -351,9 +582,12 @@ export function ContenidoView({ tipo, data }: { tipo: MaterialTipo; data: ToolCo
   if (tipo === 'para_colorear') return <ParaColorearContent data={data} />;
 
   if (tipo === 'guia') {
+    if ((data.secciones ?? []).length === 0 && (data.objetivos ?? []).length === 0 && !data.introduccion) {
+      return <EmptyMaterial message="La guía no contiene objetivos, explicación ni actividades todavía." />;
+    }
     return (
       <div className="space-y-3">
-        {data.objetivos?.length > 0 && <Block i={0}><b className="text-sm">Objetivos</b>{bullets(data.objetivos)}</Block>}
+        {(data.objetivos ?? []).length > 0 && <Block i={0}><b className="text-sm">Objetivos</b>{bullets(data.objetivos ?? [])}</Block>}
         {data.introduccion && <div className="rounded-xl border border-brand-200 bg-brand-50 px-4 py-3 text-sm dark:border-brand-500/30 dark:bg-brand-500/10">{data.introduccion}</div>}
         {(data.secciones ?? []).map((s, i) => (
           <Block key={i} i={i + 1}>
@@ -362,12 +596,13 @@ export function ContenidoView({ tipo, data }: { tipo: MaterialTipo; data: ToolCo
             {s.actividades?.length > 0 && bullets(s.actividades)}
           </Block>
         ))}
-        {data.evaluacion_formativa?.length > 0 && <><Section title="Evaluación formativa" />{bullets(data.evaluacion_formativa)}</>}
+        {(data.evaluacion_formativa ?? []).length > 0 && <><Section title="Evaluación formativa" />{bullets(data.evaluacion_formativa ?? [])}</>}
       </div>
     );
   }
 
   if (tipo === 'taller') {
+    if ((data.puntos ?? []).length === 0) return <EmptyMaterial message="El taller no contiene ejercicios todavía." />;
     return (
       <div className="space-y-3">
         {data.objetivo && <div className="rounded-xl border border-brand-200 bg-brand-50 px-4 py-3 text-sm dark:border-brand-500/30 dark:bg-brand-500/10">{data.objetivo}</div>}
@@ -382,6 +617,7 @@ export function ContenidoView({ tipo, data }: { tipo: MaterialTipo; data: ToolCo
   }
 
   if (tipo === 'plan_refuerzo') {
+    if ((data.semanas ?? []).length === 0) return <EmptyMaterial message="El plan no contiene semanas o actividades de refuerzo todavía." />;
     return (
       <div className="space-y-3">
         {data.estudiante && <p className="text-sm text-muted">Estudiante: <b className="text-fg">{data.estudiante}</b></p>}
@@ -397,115 +633,19 @@ export function ContenidoView({ tipo, data }: { tipo: MaterialTipo; data: ToolCo
             {w.recursos?.length > 0 && <><p className="mt-2 text-sm font-semibold">Recursos</p>{bullets(w.recursos)}</>}
           </Block>
         ))}
-        {data.estrategias_apoyo?.length > 0 && <><Section title="Estrategias de apoyo" />{bullets(data.estrategias_apoyo)}</>}
-        {data.indicadores_mejora?.length > 0 && <><Section title="Indicadores de mejora" />{bullets(data.indicadores_mejora)}</>}
+        {(data.estrategias_apoyo ?? []).length > 0 && <><Section title="Estrategias de apoyo" />{bullets(data.estrategias_apoyo ?? [])}</>}
+        {(data.indicadores_mejora ?? []).length > 0 && <><Section title="Indicadores de mejora" />{bullets(data.indicadores_mejora ?? [])}</>}
       </div>
     );
   }
 
   if (tipo === 'quiz_rapido') return <ExamenContent data={data} />;
 
-  if (tipo === 'ficha') {
-    return (
-      <div className="space-y-5">
-        {data.objetivo && <div className="rounded-xl border border-brand-200 bg-brand-50 px-4 py-3 text-sm dark:border-brand-500/30 dark:bg-brand-500/10">{data.objetivo}</div>}
-        {data.instrucciones && <p className="text-sm text-muted">{data.instrucciones}</p>}
-        {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-        {(data.ejercicios ?? []).map((ex: any, i: number) => (
-          <Block key={i} i={i}>
-            <div className="flex items-start gap-2">
-              <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-brand-50 text-xs font-bold text-brand-600 dark:bg-brand-500/15 dark:text-brand-300">{ex.numero}</span>
-              <div className="min-w-0 flex-1">
-                <div className="flex flex-wrap items-center gap-2">
-                  <p className="font-semibold">{ex.enunciado}</p>
-                  <Badge tone="neutral">{ex.tipo}</Badge>
-                </div>
-                {ex.opciones?.length > 0 && (
-                  <div className="mt-2 space-y-1">
-                    {ex.opciones.map((op: string, j: number) => (
-                      <p key={j} className="flex items-center gap-1.5 text-sm text-muted">
-                        <span className="font-bold text-brand-500">{String.fromCharCode(65 + j)})</span> {op}
-                      </p>
-                    ))}
-                  </div>
-                )}
-                {ex.espacio_respuesta && <div className="mt-3 border-b border-dashed border-border" style={{ height: 1 }} />}
-              </div>
-            </div>
-          </Block>
-        ))}
-      </div>
-    );
-  }
+  if (tipo === 'ficha') return <FichaContent data={data} />;
 
-  if (tipo === 'lectura_comprensiva') {
-    return (
-      <div className="space-y-5">
-        {data.texto && (
-          <div className="rounded-xl border border-blue-200 bg-blue-50 p-5 dark:border-blue-500/30 dark:bg-blue-500/10">
-            <p className="text-[15px] leading-7 text-fg">{data.texto}</p>
-          </div>
-        )}
-        <Section title="Preguntas de comprensión" />
-        {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-        {(data.preguntas ?? []).map((q: any, i: number) => (
-          <Block key={i} i={i}>
-            <div className="flex flex-wrap items-start gap-2">
-              <p className="font-semibold">
-                <span className="text-brand-600">{q.numero}.</span> {q.enunciado}
-              </p>
-              {q.tipo && <Badge tone="violet">{q.tipo}</Badge>}
-            </div>
-            {q.respuesta_esperada && (
-              <p className="mt-2 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300">
-                <b>Respuesta:</b> {q.respuesta_esperada}
-              </p>
-            )}
-          </Block>
-        ))}
-      </div>
-    );
-  }
+  if (tipo === 'lectura_comprensiva') return <LecturaContent data={data} />;
 
-  if (tipo === 'mapa_conceptual') {
-    return (
-      <div className="space-y-5">
-        {data.concepto_principal && (
-          <div className="rounded-xl border border-brand-200 bg-brand-50 px-5 py-4 text-center dark:border-brand-500/30 dark:bg-brand-500/10">
-            <p className="text-xs font-semibold uppercase tracking-wide text-brand-600 dark:text-brand-300">Concepto principal</p>
-            <p className="mt-1 font-display text-lg font-extrabold text-brand-800 dark:text-brand-200">{data.concepto_principal}</p>
-            {data.descripcion && <p className="mt-2 text-sm text-muted">{data.descripcion}</p>}
-          </div>
-        )}
-        <Section title="Nodos" />
-        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-          {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-          {(data.nodos ?? []).map((n: any, i: number) => (
-            <div key={n.id ?? i} className="rounded-lg border border-border bg-surface p-3">
-              <Badge tone="brand">Nivel {n.nivel}</Badge>
-              <p className="mt-2 font-semibold">{n.concepto}</p>
-              {n.descripcion_breve && <p className="mt-1 text-xs text-muted">{n.descripcion_breve}</p>}
-            </div>
-          ))}
-        </div>
-        {data.relaciones && data.relaciones.length > 0 && (
-          <>
-            <Section title="Relaciones" />
-            <div className="space-y-1">
-              {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-              {data.relaciones.map((r: any, i: number) => (
-                <div key={i} className="flex items-center gap-2 text-sm">
-                  <span className="rounded bg-surface-2 px-2 py-0.5 font-semibold">{r.origen}</span>
-                  <span className="text-muted">—{r.etiqueta ? ` [${r.etiqueta}] ` : ' '}&rarr;</span>
-                  <span className="rounded bg-surface-2 px-2 py-0.5 font-semibold">{r.destino}</span>
-                </div>
-              ))}
-            </div>
-          </>
-        )}
-      </div>
-    );
-  }
+  if (tipo === 'mapa_conceptual') return <MapaConceptualContent data={data} />;
 
   if (tipo === 'flashcards') {
     return (

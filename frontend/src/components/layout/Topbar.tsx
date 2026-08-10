@@ -1,8 +1,27 @@
 import { useEffect, useId, useRef, useState, type RefObject } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { LogOut, Menu, ChevronDown, Sparkles } from 'lucide-react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { BookOpen, ChevronDown, ClipboardCheck, FileBarChart2, GraduationCap, Home, LogOut, Menu, Plus, Presentation, Sparkles, UserPlus, Wand2 } from 'lucide-react';
 import { ThemeToggle } from '@/components/ui';
 import { useAuth } from '@/stores/auth';
+
+const TEACHER_CONTEXTS = [
+  { match: '/app/materias', label: 'Materias y grupos', icon: BookOpen },
+  { match: '/app/calificaciones', label: 'Revisi\u00f3n de calificaciones', icon: ClipboardCheck },
+  { match: '/app/evaluaciones', label: 'Evaluaciones', icon: ClipboardCheck },
+  { match: '/app/analytics', label: 'Anal\u00edtica de aprendizaje', icon: FileBarChart2 },
+  { match: '/app/herramientas', label: 'Recursos de clase', icon: Wand2 },
+  { match: '/app/presentaciones', label: 'Presentaciones', icon: Presentation },
+  { match: '/app/reportes', label: 'Reportes y progreso', icon: FileBarChart2 },
+  { match: '/app/xali', label: 'Asistente Xali', icon: Sparkles },
+];
+
+const STUDENT_CONTEXTS = [
+  { match: '/app/materias/unirse', label: 'Unirme a una materia', icon: UserPlus },
+  { match: '/app/materias', label: 'Mis materias', icon: BookOpen },
+  { match: '/app/evaluaciones', label: 'Mis actividades', icon: ClipboardCheck },
+  { match: '/app/calificaciones', label: 'Mis resultados', icon: GraduationCap },
+  { match: '/app/xali', label: 'Ayuda con Xali', icon: Sparkles },
+];
 
 export function Topbar({
   onMenu,
@@ -15,6 +34,7 @@ export function Topbar({
 }) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [open, setOpen] = useState(false);
   const accountButtonRef = useRef<HTMLButtonElement>(null);
   const accountMenuId = useId();
@@ -24,6 +44,12 @@ export function Topbar({
     .slice(0, 2)
     .join('')
     .toUpperCase();
+  const teacherContext = TEACHER_CONTEXTS.find((item) => location.pathname.startsWith(item.match))
+    ?? { label: 'Inicio docente', icon: Sparkles };
+  const TeacherContextIcon = teacherContext.icon;
+  const studentContext = STUDENT_CONTEXTS.find((item) => location.pathname.startsWith(item.match))
+    ?? { label: 'Mi inicio', icon: Home };
+  const StudentContextIcon = studentContext.icon;
 
   useEffect(() => {
     if (!open) return;
@@ -52,15 +78,45 @@ export function Topbar({
         <Menu className="h-5 w-5" aria-hidden="true" />
       </button>
       <div className="min-w-0 flex-1">
-        {user?.rol === 'estudiante' && (
-          <div className="hidden items-center gap-2 text-sm font-semibold text-secondary lg:flex">
-            <span className="grid h-8 w-8 place-items-center rounded-full bg-brand-50 text-brand-600 dark:bg-brand-500/15 dark:text-brand-300">
-              <Sparkles className="h-4 w-4" aria-hidden="true" />
+        {user?.rol === 'profesor' && (
+          <div className="flex min-w-0 items-center gap-2.5">
+            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-brand-600 to-sky-500 text-white shadow-sm">
+              <TeacherContextIcon className="h-4 w-4" aria-hidden="true" />
             </span>
-            Aprende a tu ritmo
+            <div className="hidden min-w-0 sm:block">
+              <p className="text-[10px] font-extrabold uppercase tracking-[0.16em] text-brand-600 dark:text-brand-300">Espacio docente</p>
+              <p className="truncate text-sm font-bold text-fg">{teacherContext.label}</p>
+            </div>
+          </div>
+        )}
+        {user?.rol === 'estudiante' && (
+          <div className="flex min-w-0 items-center gap-2.5">
+            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-cyan-500 to-brand-600 text-white shadow-sm">
+              <StudentContextIcon className="h-4 w-4" aria-hidden="true" />
+            </span>
+            <div className="hidden min-w-0 sm:block">
+              <p className="text-[10px] font-extrabold uppercase tracking-[0.16em] text-cyan-700 dark:text-cyan-300">Tu aprendizaje</p>
+              <p className="truncate text-sm font-bold text-fg">{studentContext.label}</p>
+            </div>
           </div>
         )}
       </div>
+      {user?.rol === 'profesor' && (
+        <Link
+          to="/app/herramientas/nuevo"
+          className="focus-ring hidden min-h-10 items-center gap-2 rounded-xl bg-brand-600 px-3 text-sm font-bold text-white shadow-sm transition hover:bg-brand-700 md:inline-flex"
+        >
+          <Plus className="h-4 w-4" aria-hidden="true" /> Crear recurso
+        </Link>
+      )}
+      {user?.rol === 'estudiante' && !location.pathname.startsWith('/app/evaluaciones') && (
+        <Link
+          to="/app/evaluaciones"
+          className="focus-ring hidden min-h-10 items-center gap-2 rounded-xl border border-brand-200 bg-brand-50 px-3 text-sm font-bold text-brand-700 transition hover:border-brand-300 hover:bg-brand-100 dark:border-brand-500/25 dark:bg-brand-500/10 dark:text-brand-200 md:inline-flex"
+        >
+          <ClipboardCheck className="h-4 w-4" aria-hidden="true" /> Mis actividades
+        </Link>
+      )}
       <ThemeToggle />
       <div className="relative">
         <button

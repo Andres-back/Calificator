@@ -24,4 +24,7 @@ def build_base_context(req: object) -> str:
     pedagogical_context = getattr(req, "_contexto_dba_rag", "")
     if pedagogical_context:
         parts.append(pedagogical_context)
+    rubric_context = getattr(req, "_contexto_rubrica", "")
+    if rubric_context:
+        parts.append(rubric_context)
     return "\n".join(parts)

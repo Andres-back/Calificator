@@ -88,6 +88,15 @@ export function CrucigramaView({ data }: { data: CrucigramaContenido }) {
     if (e.key === 'Backspace' && !entries[`${r}-${c}`]) focusRelative(r, c, direction, -1);
   };
 
+  if (grid.length === 0 || cols === 0 || horiz.length + vert.length === 0) {
+    return (
+      <div className="rounded-xl border border-dashed border-amber-300 bg-amber-50 p-5 text-sm text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-100" role="status">
+        <p className="font-bold">Este crucigrama necesita revisión</p>
+        <p className="mt-1">No fue posible construir una grilla y sus pistas. Intenta generarlo nuevamente.</p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center gap-2">

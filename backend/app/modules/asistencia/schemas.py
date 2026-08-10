@@ -46,3 +46,32 @@ class AsistenciaDiaRead(BaseModel):
     fecha: date
     registros: list[AsistenciaEstudianteRead]
     resumen: AsistenciaResumenRead
+
+
+class AsistenciaReporteResumenRead(BaseModel):
+    total_registros: int
+    presentes: int
+    tarde: int
+    ausentes: int
+    excusas: int
+    porcentaje_asistencia: float
+
+
+class AsistenciaReporteEstudianteRead(AsistenciaReporteResumenRead):
+    estudiante_id: UUID
+    estudiante_nombre: str
+    estudiante_email: str
+
+
+class AsistenciaReporteDiaRead(AsistenciaReporteResumenRead):
+    fecha: date
+
+
+class AsistenciaReporteRead(BaseModel):
+    materia_id: UUID
+    fecha_desde: date
+    fecha_hasta: date
+    jornadas_registradas: int
+    resumen: AsistenciaReporteResumenRead
+    estudiantes: list[AsistenciaReporteEstudianteRead]
+    jornadas: list[AsistenciaReporteDiaRead]

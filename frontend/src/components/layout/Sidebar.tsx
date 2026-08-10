@@ -43,6 +43,7 @@ export function Sidebar({
       className={cn(
         'safe-area-pb safe-area-pt relative flex h-full w-72 max-w-[86vw] flex-col gap-5 overflow-hidden border-r border-border bg-surface px-3 py-5 lg:w-64',
         user?.rol === 'estudiante' && 'border-r-brand-100 bg-gradient-to-b from-white via-white to-brand-50/70 dark:border-r-brand-500/20 dark:from-surface dark:via-surface dark:to-brand-950/30',
+        user?.rol === 'profesor' && 'border-r-indigo-100 bg-gradient-to-b from-white via-white to-indigo-50/65 dark:border-r-indigo-500/20 dark:from-surface dark:via-surface dark:to-indigo-950/30',
       )}
     >
       <div className="absolute inset-0 z-0" aria-hidden="true">
@@ -63,6 +64,26 @@ export function Sidebar({
             </button>
           )}
         </div>
+        {user?.rol === 'profesor' && (
+          <div className="relative overflow-hidden rounded-2xl border border-indigo-200/80 bg-gradient-to-br from-brand-600 to-sky-500 px-4 py-3 text-white shadow-lg shadow-brand-900/10 dark:border-indigo-400/20">
+            <div className="absolute -right-5 -top-7 h-20 w-20 rounded-full bg-white/15 blur-xl" aria-hidden="true" />
+            <p className="relative text-[10px] font-extrabold uppercase tracking-[0.18em] text-indigo-100">
+              Centro docente
+            </p>
+            <p className="relative mt-1 font-display text-sm font-extrabold">Todo para tu clase</p>
+            <p className="relative mt-0.5 max-w-[9rem] text-[11px] leading-4 text-indigo-50">
+              {'Planifica, eval\u00faa y acompa\u00f1a.'}
+            </p>
+          </div>
+        )}
+        {user?.rol === 'estudiante' && (
+          <div className="relative overflow-hidden rounded-2xl border border-cyan-200/80 bg-gradient-to-br from-cyan-500 via-sky-500 to-brand-600 px-4 py-3 text-white shadow-lg shadow-cyan-900/10 dark:border-cyan-400/20">
+            <div className="absolute -right-5 -top-7 h-20 w-20 rounded-full bg-white/20 blur-xl" aria-hidden="true" />
+            <p className="relative text-[10px] font-extrabold uppercase tracking-[0.18em] text-cyan-50">Tu ruta</p>
+            <p className="relative mt-1 font-display text-sm font-extrabold">Aprende a tu ritmo</p>
+            <p className="relative mt-0.5 max-w-[10rem] text-[11px] leading-4 text-cyan-50">Practica, revisa y sigue avanzando.</p>
+          </div>
+        )}
         <nav className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto pr-1" aria-label="Secciones de la aplicación">
           <p className="px-3 pb-1 text-xs font-semibold uppercase tracking-[0.14em] text-muted">
             {user?.rol === 'estudiante' ? 'Tu recorrido' : 'Menú'}
@@ -100,9 +121,13 @@ export function Sidebar({
         <div className={cn(
           'flex items-start gap-3 rounded-xl border border-border bg-surface-2 p-3.5',
           user?.rol === 'estudiante' && 'relative overflow-hidden border-brand-200 bg-white/80 pr-16 shadow-sm dark:border-brand-500/25 dark:bg-surface-2/80',
+          user?.rol === 'profesor' && 'relative overflow-hidden border-indigo-200 bg-gradient-to-br from-white to-indigo-50 pr-16 shadow-sm dark:border-indigo-500/25 dark:from-surface-2 dark:to-indigo-950/50',
         )}>
           {user?.rol === 'estudiante' && (
             <img src="/branding/xali-studying.png" alt="" className="absolute -bottom-2 -right-2 h-20 w-20 object-contain opacity-90" />
+          )}
+          {user?.rol === 'profesor' && (
+            <img src="/branding/xali-hello.png" alt="" className="absolute -bottom-2 -right-3 h-20 w-20 object-contain opacity-95" />
           )}
           <span className="grid h-8 w-8 shrink-0 place-items-center rounded-md bg-brand-50 text-brand-700 dark:bg-brand-500/15 dark:text-brand-300">
             <RoleIcon className="h-4 w-4" aria-hidden="true" />

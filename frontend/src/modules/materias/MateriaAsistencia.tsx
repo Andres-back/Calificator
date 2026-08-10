@@ -7,6 +7,7 @@ import {
   CheckCircle2,
   Clock3,
   FileCheck2,
+  FileBarChart2,
   Save,
   ShieldCheck,
   UserCheck,
@@ -40,6 +41,7 @@ import {
   summarizeAttendanceDraft,
   type AttendanceDraft,
 } from './attendanceModel';
+import { MateriaAsistenciaReporte } from './MateriaAsistenciaReporte';
 
 const STATUS_OPTIONS: {
   value: AsistenciaEstado;
@@ -175,6 +177,7 @@ export function MateriaAsistencia() {
     },
     onSuccess: (savedDay) => {
       queryClient.setQueryData(['asistencia', materia.id, selectedDate], savedDay);
+      void queryClient.invalidateQueries({ queryKey: ['asistencia-reporte', materia.id] });
       const savedDraft = createAttendanceDraft(savedDay);
       setDraft(savedDraft);
       setBaseline(savedDraft);
@@ -228,6 +231,16 @@ export function MateriaAsistencia() {
   if (!canManageMateria) return null;
 
   return (
+    <>
+      <div className='mb-6 flex justify-end'>
+        <a
+          href='#reporte-asistencia'
+          className='focus-ring inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-border bg-surface px-4 text-sm font-semibold text-fg transition-colors hover:bg-surface-2'
+        >
+          <FileBarChart2 className='h-4 w-4' aria-hidden='true' />
+          Crear reporte de asistencia
+        </a>
+      </div>
     <div className="space-y-6">
       <Card className="overflow-hidden border-brand-200 bg-brand-50/60 p-5 dark:border-brand-500/25 dark:bg-brand-500/10 sm:p-6">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
@@ -482,6 +495,12 @@ export function MateriaAsistencia() {
         </>
       ) : null}
 
+      <MateriaAsistenciaReporte
+        materiaId={materia.id}
+        materiaNombre={materia.nombre}
+        today={today}
+      />
+
       <ConfirmDialog
         open={blocker.state === 'blocked'}
         title="Hay cambios sin guardar"
@@ -493,5 +512,6 @@ export function MateriaAsistencia() {
         onConfirm={() => blocker.proceed?.()}
       />
     </div>
+    </>
   );
 }

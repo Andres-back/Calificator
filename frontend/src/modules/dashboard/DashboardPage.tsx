@@ -30,6 +30,7 @@ const teacherActions = [
     description: 'Selecciona una materia y evaluación, luego sube o toma la foto de la evidencia.',
     badge: 'Visión IA',
     tone: 'bg-cyan-500/10 text-cyan-700 dark:text-cyan-300',
+    accent: 'border-t-cyan-500',
   },
   {
     to: routes.materiasPara('asistencia'),
@@ -38,6 +39,7 @@ const teacherActions = [
     description: 'Elige la materia, marca a cada estudiante y guarda la lista del día.',
     badge: 'Registro diario',
     tone: 'bg-violet-500/10 text-violet-700 dark:text-violet-300',
+    accent: 'border-t-violet-500',
   },
   {
     to: routes.materiasPara('seguimiento'),
@@ -46,6 +48,7 @@ const teacherActions = [
     description: 'Confirma o ajusta cada resultado antes de convertirlo en nota definitiva.',
     badge: 'Decisión docente',
     tone: 'bg-amber-500/10 text-amber-700 dark:text-amber-300',
+    accent: 'border-t-amber-500',
   },
   {
     to: routes.materiasPara('evaluar'),
@@ -54,6 +57,7 @@ const teacherActions = [
     description: 'Organiza criterios, preguntas y nota máxima para evaluar en línea, papel o ambas.',
     badge: 'Evaluaciones',
     tone: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300',
+    accent: 'border-t-emerald-500',
   },
 ];
 
@@ -69,18 +73,30 @@ function DashboardDocente() {
   const materialsQuery = useQuery({ queryKey: ['materials', 'recent'], queryFn: () => listMaterials() });
   const materiasQuery = useQuery({ queryKey: ['materias'], queryFn: listMaterias });
   const firstName = user?.nombre?.split(' ')[0] ?? 'Docente';
+  const todayLabel = new Intl.DateTimeFormat('es-CO', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+  }).format(new Date());
 
   const recentMaterials = (materialsQuery.data ?? []).slice(0, 3) as MaterialListItem[];
   const metricValue = (loading: boolean, value: number | undefined) => loading ? '—' : String(value ?? 0);
 
   return (
     <div className="mx-auto max-w-7xl space-y-6">
-      <section className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-brand-800 via-indigo-700 to-sky-600 p-5 text-white shadow-xl shadow-brand-900/10 sm:rounded-3xl sm:p-8">
+      <section className="relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-brand-900 via-indigo-700 to-sky-600 p-5 text-white shadow-2xl shadow-brand-900/15 sm:rounded-3xl sm:p-8">
         <img src="/branding/hero-classroom.png" alt="" className="absolute inset-0 h-full w-full object-cover opacity-15 mix-blend-screen" />
         <div className="absolute -right-20 -top-24 h-72 w-72 rounded-full bg-cyan-300/20 blur-3xl" />
         <div className="relative z-10 grid gap-7 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.18em] text-cyan-100">Tu panel docente</p>
+            <div className="flex flex-wrap items-center gap-2 text-[11px] font-bold">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-cyan-50 backdrop-blur">
+                <Wand2 className="h-3.5 w-3.5" aria-hidden="true" /> Centro docente
+              </span>
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-slate-950/10 px-3 py-1.5 capitalize text-indigo-50">
+                <CalendarCheck2 className="h-3.5 w-3.5" aria-hidden="true" /> {todayLabel}
+              </span>
+            </div>
             <h1 className="mt-2 font-display text-2xl font-extrabold sm:text-4xl">Buen día, {firstName}</h1>
             <p className="mt-2 max-w-2xl text-sm leading-5 text-indigo-50 sm:mt-3 sm:text-base sm:leading-6">Califica y prepara tu próxima clase desde un solo lugar.</p>
             <div className="mt-5 grid grid-cols-2 gap-2 sm:mt-6 sm:flex sm:gap-3">
@@ -103,6 +119,13 @@ function DashboardDocente() {
               <p className="mt-3 text-3xl font-extrabold">{metricValue(materialsQuery.isLoading, materialsQuery.data?.length)}</p>
               <p className="text-sm text-indigo-100">Recursos</p>
             </div>
+            <div className="col-span-2 flex items-center gap-3 rounded-2xl border border-white/20 bg-slate-950/10 px-3 py-2.5 backdrop-blur">
+              <img src="/branding/xali-hello.png" alt="" className="h-12 w-12 shrink-0 object-contain" />
+              <div>
+                <p className="text-xs font-extrabold text-white">Tu clase, bien organizada</p>
+                <p className="mt-0.5 text-[11px] leading-4 text-indigo-100">{'Planifica, eval\u00faa y acompa\u00f1a desde el mismo lugar.'}</p>
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -116,7 +139,7 @@ function DashboardDocente() {
           {teacherActions.map((action) => (
             <div key={action.title}>
               <Link to={action.to} className="group block h-full">
-                <Card interactive className="flex h-full min-h-0 items-center gap-3 p-4 sm:min-h-44 sm:flex-col sm:items-stretch sm:gap-0 sm:p-5">
+                <Card interactive className={cn('relative flex h-full min-h-0 items-center gap-3 overflow-hidden border-t-4 p-4 transition-transform duration-200 hover:-translate-y-1 sm:min-h-44 sm:flex-col sm:items-stretch sm:gap-0 sm:p-5', action.accent)}>
                   <div className="flex shrink-0 items-start justify-between gap-3"><span className={cn('grid h-11 w-11 place-items-center rounded-xl sm:h-12 sm:w-12 sm:rounded-2xl', action.tone)}><action.icon className="h-5 w-5 sm:h-6 sm:w-6" /></span><span className="hidden text-xs font-bold text-muted sm:inline">{action.badge}</span></div>
                   <div className="min-w-0 flex-1 sm:contents"><h3 className="font-display text-base font-bold leading-snug sm:mt-5 sm:text-lg">{action.title}</h3>
                   <p className="mt-2 hidden flex-1 text-sm leading-5 text-muted sm:block">{action.description}</p></div>

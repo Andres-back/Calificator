@@ -99,7 +99,7 @@ function MetricCard({ icon, label, value, sub, trend }: { icon: React.ReactNode;
         <p className="text-2xl font-extrabold text-fg">{value}</p>
         <p className="text-xs text-muted">{label}</p>
         {sub && <p className="mt-0.5 text-xs text-muted">{sub}</p>}
-        {trend && <span className={`mt-1 inline-flex items-center gap-0.5 text-xs font-semibold ${trend === 'up' ? 'text-emerald-600' : 'text-rose-600'}`}>{trend === 'up' ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}{trend === 'up' ? 'Mejorando' : 'Atención'}</span>}
+        {trend && <span className={`mt-1 inline-flex items-center gap-0.5 text-xs font-semibold ${trend === 'up' ? 'text-emerald-700 dark:text-emerald-300' : 'text-rose-700 dark:text-rose-300'}`}>{trend === 'up' ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}{trend === 'up' ? 'Mejorando' : 'Atención'}</span>}
       </div>
     </Card>
   );
@@ -143,7 +143,7 @@ function ResumenTab({ materiaId }: { materiaId: string }) {
         <ProgressBar label="Pendientes de revisión" value={totalPendientes} max={data.entregas.total || 1} color="bg-amber-500" />
         <ProgressBar label="Confirmadas (sin publicar)" value={sinPublicar} max={data.entregas.total || 1} color="bg-sky-500" />
         <ProgressBar label="Publicadas al estudiante" value={data.entregas.publicadas} max={data.entregas.total || 1} color="bg-emerald-500" />
-        {data.ia.incidencias_abiertas > 0 && <div className="flex items-start gap-2 rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-700"><AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />{data.ia.incidencias_abiertas} incidencia(s) abierta(s).</div>}
+        {data.ia.incidencias_abiertas > 0 && <div className="flex items-start gap-2 rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-200"><AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />{data.ia.incidencias_abiertas} incidencia(s) abierta(s).</div>}
       </Card>
       <Card className="space-y-4 p-5">
         <h3 className="font-display font-bold">Tiempo de revisión</h3>
@@ -151,9 +151,9 @@ function ResumenTab({ materiaId }: { materiaId: string }) {
       </Card>
     </div>
     {evs && evs.length > 0 && <Card className="p-5"><h3 className="mb-4 font-display font-bold">Evaluaciones recientes</h3>
-      <div className="overflow-x-auto"><table className="w-full text-left text-sm"><thead><tr className="border-b border-border text-xs font-semibold text-muted"><th className="pb-2 pr-4">Evaluación</th><th className="pb-2 pr-4">Estado</th><th className="pb-2 pr-4 text-right">Total</th><th className="pb-2 pr-4 text-right">Pend.</th><th className="pb-2 pr-4 text-right">Pub.</th><th className="pb-2 pr-4 text-right">Prom.</th><th className="pb-2 pr-4 text-right">Aprob.</th></tr></thead>
-        <tbody>{evs.slice(0, 10).map((ev: EvalRow) => <tr key={ev.id} className="border-b border-border/50 last:border-0"><td className="py-2.5 pr-4 font-medium">{ev.nombre}</td><td className="py-2.5 pr-4"><Badge tone={ev.estado === 'publicada' ? 'success' : 'warning'}>{ev.estado}</Badge></td><td className="py-2.5 pr-4 text-right">{ev.total_entregas}</td><td className="py-2.5 pr-4 text-right text-amber-600">{ev.pendientes}</td><td className="py-2.5 pr-4 text-right text-emerald-600">{ev.publicadas}</td><td className="py-2.5 pr-4 text-right font-semibold">{ev.promedio.toFixed(1)}</td><td className="py-2.5 pr-4 text-right">{(ev.tasa_aprobacion * 100).toFixed(0)}%</td></tr>)}</tbody></table></div></Card>}
-    {necesitaAtencion > 0 && <Card className="space-y-4 p-5"><h3 className="flex items-center gap-2 font-display font-bold"><AlertTriangle className="h-5 w-5 text-amber-500" />Casos que requieren atención</h3><div className="grid gap-3 sm:grid-cols-3">{[totalPendientes > 0 && <div className="rounded-xl border border-amber-200 bg-amber-50 p-4"><p className="text-2xl font-extrabold text-amber-700">{totalPendientes}</p><p className="text-xs text-amber-700">Pendientes de revisión</p></div>, sinPublicar > 0 && <div className="rounded-xl border border-sky-200 bg-sky-50 p-4"><p className="text-2xl font-extrabold text-sky-700">{sinPublicar}</p><p className="text-xs text-sky-700">Confirmadas sin publicar</p></div>, data.ia.incidencias_abiertas > 0 && <div className="rounded-xl border border-rose-200 bg-rose-50 p-4"><p className="text-2xl font-extrabold text-rose-700">{data.ia.incidencias_abiertas}</p><p className="text-xs text-rose-700">Incidencias abiertas</p></div>].filter(Boolean)}</div></Card>}
+      <div className="teacher-scroll-region min-w-0 max-w-full overflow-x-auto"><table className="w-full text-left text-sm"><thead><tr className="border-b border-border text-xs font-semibold text-muted"><th className="pb-2 pr-4">Evaluación</th><th className="pb-2 pr-4">Estado</th><th className="pb-2 pr-4 text-right">Total</th><th className="pb-2 pr-4 text-right">Pend.</th><th className="pb-2 pr-4 text-right">Pub.</th><th className="pb-2 pr-4 text-right">Prom.</th><th className="pb-2 pr-4 text-right">Aprob.</th></tr></thead>
+        <tbody>{evs.slice(0, 10).map((ev: EvalRow) => <tr key={ev.id} className="border-b border-border/50 last:border-0"><td className="py-2.5 pr-4 font-medium">{ev.nombre}</td><td className="py-2.5 pr-4"><Badge tone={ev.estado === 'publicada' ? 'success' : 'warning'}>{ev.estado}</Badge></td><td className="py-2.5 pr-4 text-right">{ev.total_entregas}</td><td className="py-2.5 pr-4 text-right text-amber-700 dark:text-amber-300">{ev.pendientes}</td><td className="py-2.5 pr-4 text-right text-emerald-700 dark:text-emerald-300">{ev.publicadas}</td><td className="py-2.5 pr-4 text-right font-semibold">{ev.promedio.toFixed(1)}</td><td className="py-2.5 pr-4 text-right">{(ev.tasa_aprobacion * 100).toFixed(0)}%</td></tr>)}</tbody></table></div></Card>}
+    {necesitaAtencion > 0 && <Card className="space-y-4 p-5"><h3 className="flex items-center gap-2 font-display font-bold"><AlertTriangle className="h-5 w-5 text-amber-500" />Casos que requieren atención</h3><div className="grid gap-3 sm:grid-cols-3">{[totalPendientes > 0 && <div key="pendientes" className="rounded-xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-500/30 dark:bg-amber-500/10"><p className="text-2xl font-extrabold text-amber-700 dark:text-amber-300">{totalPendientes}</p><p className="text-xs text-amber-700 dark:text-amber-300">Pendientes de revisión</p></div>, sinPublicar > 0 && <div key="sin-publicar" className="rounded-xl border border-sky-200 bg-sky-50 p-4 dark:border-sky-500/30 dark:bg-sky-500/10"><p className="text-2xl font-extrabold text-sky-700 dark:text-sky-300">{sinPublicar}</p><p className="text-xs text-sky-700 dark:text-sky-300">Confirmadas sin publicar</p></div>, data.ia.incidencias_abiertas > 0 && <div key="incidencias" className="rounded-xl border border-rose-200 bg-rose-50 p-4 dark:border-rose-500/30 dark:bg-rose-500/10"><p className="text-2xl font-extrabold text-rose-700 dark:text-rose-300">{data.ia.incidencias_abiertas}</p><p className="text-xs text-rose-700 dark:text-rose-300">Incidencias abiertas</p></div>].filter(Boolean)}</div></Card>}
   </>);
 }
 
@@ -239,7 +239,7 @@ function RendimientoTab({ materiaId }: { materiaId: string }) {
         {sData.alertas?.length > 0 && (
           <div className="space-y-2">
             {sData.alertas.map((a, i) => (
-              <div key={i} className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
+              <div key={i} className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200">
                 <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
                 <span>{a.mensaje}</span>
               </div>
@@ -251,7 +251,7 @@ function RendimientoTab({ materiaId }: { materiaId: string }) {
           {/* Fortalezas */}
           {sData.fortalezas?.length > 0 && (
             <div className="space-y-3">
-              <p className="flex items-center gap-2 text-xs font-semibold text-emerald-600"><CheckCircle2 className="h-4 w-4" /> Fortalezas del grupo</p>
+              <p className="flex items-center gap-2 text-xs font-semibold text-emerald-700 dark:text-emerald-300"><CheckCircle2 className="h-4 w-4" /> Fortalezas del grupo</p>
               {sData.fortalezas.map((f, i) => (
                 <div key={i} className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 dark:border-emerald-500/20 dark:bg-emerald-500/5">
                   <p className="text-sm font-semibold text-emerald-800 dark:text-emerald-200">{f.titulo}</p>
@@ -264,7 +264,7 @@ function RendimientoTab({ materiaId }: { materiaId: string }) {
           {/* Dificultades */}
           {sData.dificultades?.length > 0 && (
             <div className="space-y-3">
-              <p className="flex items-center gap-2 text-xs font-semibold text-rose-600"><AlertTriangle className="h-4 w-4" /> Aspectos para reforzar</p>
+              <p className="flex items-center gap-2 text-xs font-semibold text-rose-700 dark:text-rose-300"><AlertTriangle className="h-4 w-4" /> Aspectos para reforzar</p>
               {sData.dificultades.map((d, i) => (
                 <div key={i} className="rounded-lg border border-rose-200 bg-rose-50 p-3 dark:border-rose-500/20 dark:bg-rose-500/5">
                   <p className="text-sm font-semibold text-rose-800 dark:text-rose-200">{d.titulo}</p>
@@ -322,10 +322,10 @@ const AI_TABS: { id: AiSubTab; label: string }[] = [
 function CalidadIaTab({ materiaId }: { materiaId: string }) {
   const [sub, setSub] = useState<AiSubTab>('concordancia');
   return (<>
-    <div className="flex gap-1 rounded-lg bg-surface-2 p-1">
+    <div className="teacher-scroll-region flex max-w-full gap-1 overflow-x-auto rounded-xl bg-surface-2 p-1">
       {AI_TABS.map(t => (
         <button key={t.id} type="button" onClick={() => setSub(t.id)}
-          className={`focus-ring flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition ${sub === t.id ? 'bg-surface text-fg shadow-sm' : 'text-muted hover:text-fg'}`}>
+          className={`focus-ring flex min-h-10 shrink-0 items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition ${sub === t.id ? 'bg-surface text-fg shadow-sm' : 'text-muted hover:text-fg'}`}>
           {t.label}
         </button>
       ))}
@@ -358,9 +358,9 @@ function ConcordanciaTabBody({ materiaId }: { materiaId: string }) {
     <Card className="space-y-4 p-5">
       <h3 className="font-display font-bold">Ajustes del docente</h3>
       <div className="grid gap-4 sm:grid-cols-3">
-        <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4"><p className="text-2xl font-extrabold text-emerald-700">{d.overrides.sin_cambio}</p><p className="text-xs text-emerald-700">Sin cambios (coincidencia exacta)</p></div>
-        <div className="rounded-xl border border-amber-200 bg-amber-50 p-4"><p className="text-2xl font-extrabold text-amber-700">{d.overrides.aumentadas}</p><p className="text-xs text-amber-700">Aumentadas por docente</p></div>
-        <div className="rounded-xl border border-rose-200 bg-rose-50 p-4"><p className="text-2xl font-extrabold text-rose-700">{d.overrides.disminuidas}</p><p className="text-xs text-rose-700">Disminuidas por docente</p></div>
+        <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-500/30 dark:bg-emerald-500/10"><p className="text-2xl font-extrabold text-emerald-700 dark:text-emerald-300">{d.overrides.sin_cambio}</p><p className="text-xs text-emerald-700 dark:text-emerald-300">Sin cambios (coincidencia exacta)</p></div>
+        <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-500/30 dark:bg-amber-500/10"><p className="text-2xl font-extrabold text-amber-700 dark:text-amber-300">{d.overrides.aumentadas}</p><p className="text-xs text-amber-700 dark:text-amber-300">Aumentadas por docente</p></div>
+        <div className="rounded-xl border border-rose-200 bg-rose-50 p-4 dark:border-rose-500/30 dark:bg-rose-500/10"><p className="text-2xl font-extrabold text-rose-700 dark:text-rose-300">{d.overrides.disminuidas}</p><p className="text-xs text-rose-700 dark:text-rose-300">Disminuidas por docente</p></div>
       </div>
     </Card>
 
@@ -377,7 +377,7 @@ function ConcordanciaTabBody({ materiaId }: { materiaId: string }) {
     {d.por_evaluacion?.length > 0 && (
       <Card className="p-5">
         <h3 className="mb-4 font-display font-bold">Concordancia por evaluación</h3>
-        <div className="overflow-x-auto"><table className="w-full text-left text-sm"><thead><tr className="border-b border-border text-xs font-semibold text-muted"><th className="pb-2 pr-4">Evaluación</th><th className="pb-2 pr-4 text-right">Total</th><th className="pb-2 pr-4 text-right">Coincidencia</th><th className="pb-2 pr-4 text-right">MAE</th></tr></thead>
+        <div className="teacher-scroll-region min-w-0 max-w-full overflow-x-auto"><table className="w-full text-left text-sm"><thead><tr className="border-b border-border text-xs font-semibold text-muted"><th className="pb-2 pr-4">Evaluación</th><th className="pb-2 pr-4 text-right">Total</th><th className="pb-2 pr-4 text-right">Coincidencia</th><th className="pb-2 pr-4 text-right">MAE</th></tr></thead>
           <tbody>{d.por_evaluacion.map((ev) => <tr key={ev.evaluacion_id} className="border-b border-border/50 last:border-0"><td className="py-2.5 pr-4 font-medium">{ev.nombre}</td><td className="py-2.5 pr-4 text-right">{ev.total}</td><td className="py-2.5 pr-4 text-right">{(ev.coincidencia_exacta * 100).toFixed(0)}%</td><td className="py-2.5 pr-4 text-right font-semibold">{ev.mae.toFixed(2)}</td></tr>)}</tbody></table></div>
       </Card>
     )}
@@ -427,8 +427,8 @@ function EstudiantesTab({ materiaId }: { materiaId: string }) {
           : <div className="space-y-2 max-h-[500px] overflow-y-auto">
               {filtered.map((e) => (
                 <button key={e.estudiante_id} type="button" onClick={() => setSelected(e.estudiante_id)}
-                  className={`focus-ring flex w-full items-center gap-3 rounded-xl border p-3 text-left transition ${selected === e.estudiante_id ? 'border-brand-300 bg-brand-50' : 'border-border bg-surface hover:bg-surface-2'}`}>
-                  <div className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-sky-50 text-sky-600"><GraduationCap className="h-5 w-5" /></div>
+                  className={`focus-ring flex w-full items-center gap-3 rounded-xl border p-3 text-left transition ${selected === e.estudiante_id ? 'border-brand-300 bg-brand-50 dark:border-brand-500/40 dark:bg-brand-500/15' : 'border-border bg-surface hover:bg-surface-2'}`}>
+                  <div className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-sky-50 text-sky-600 dark:bg-sky-500/15 dark:text-sky-300"><GraduationCap className="h-5 w-5" /></div>
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-semibold">{e.nombre || 'Sin nombre'}</p>
                     <div className="flex flex-wrap gap-1">
@@ -437,7 +437,7 @@ function EstudiantesTab({ materiaId }: { materiaId: string }) {
                       {e.senales.includes('dificultad_generalizada') && <Badge tone="error">Dificultad gral.</Badge>}
                     </div>
                   </div>
-                  <span className={`shrink-0 font-display text-lg font-extrabold ${e.nivel_atencion === 'atencion' ? 'text-rose-600' : e.nivel_atencion === 'seguimiento' ? 'text-amber-600' : 'text-emerald-600'}`}>{e.promedio_pct.toFixed(0)}%</span>
+                  <span className={`shrink-0 font-display text-lg font-extrabold ${e.nivel_atencion === 'atencion' ? 'text-rose-700 dark:text-rose-300' : e.nivel_atencion === 'seguimiento' ? 'text-amber-700 dark:text-amber-300' : 'text-emerald-700 dark:text-emerald-300'}`}>{e.promedio_pct.toFixed(0)}%</span>
                 </button>
               ))}
             </div>}
@@ -480,16 +480,16 @@ function RendimientoIaTab({ materiaId }: { materiaId: string }) {
 
     {/* Etapas */}
     {ld && ld.stages.length > 0 && <Card className="p-5"><h3 className="mb-4 font-display font-bold">Latencia por etapa</h3>
-      <div className="overflow-x-auto"><table className="w-full text-left text-sm"><thead><tr className="border-b border-border text-xs font-semibold text-muted"><th className="pb-2 pr-4">Etapa</th><th className="pb-2 pr-4 text-right">Promedio</th><th className="pb-2 pr-4 text-right">P50</th><th className="pb-2 pr-4 text-right">P90</th><th className="pb-2 pr-4 text-right">P95</th><th className="pb-2 pr-4 text-right">% del total</th></tr></thead>
+      <div className="teacher-scroll-region min-w-0 max-w-full overflow-x-auto"><table className="w-full text-left text-sm"><thead><tr className="border-b border-border text-xs font-semibold text-muted"><th className="pb-2 pr-4">Etapa</th><th className="pb-2 pr-4 text-right">Promedio</th><th className="pb-2 pr-4 text-right">P50</th><th className="pb-2 pr-4 text-right">P90</th><th className="pb-2 pr-4 text-right">P95</th><th className="pb-2 pr-4 text-right">% del total</th></tr></thead>
         <tbody>{ld.stages.map((s) => <tr key={s.stage} className="border-b border-border/50 last:border-0"><td className="py-2.5 pr-4 font-medium capitalize">{s.stage.replace(/_/g, ' ')}</td><td className="py-2.5 pr-4 text-right">{(s.average_ms / 1000).toFixed(1)}s</td><td className="py-2.5 pr-4 text-right">{(s.p50_ms / 1000).toFixed(1)}s</td><td className="py-2.5 pr-4 text-right">{(s.p90_ms / 1000).toFixed(1)}s</td><td className="py-2.5 pr-4 text-right">{(s.p95_ms / 1000).toFixed(1)}s</td><td className="py-2.5 pr-4 text-right">{s.percentage_of_total.toFixed(0)}%</td></tr>)}</tbody></table></div>
     </Card>}
 
     {/* Confianza */}
     {cd && cd.sample_size > 0 && <Card className="space-y-4 p-5"><h3 className="font-display font-bold">Distribución de confianza</h3>
       <div className="grid gap-4 sm:grid-cols-3">
-        <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4"><p className="text-2xl font-extrabold text-emerald-700">{cd.alta}</p><p className="text-xs text-emerald-700">Alta (≥80%)</p></div>
-        <div className="rounded-xl border border-amber-200 bg-amber-50 p-4"><p className="text-2xl font-extrabold text-amber-700">{cd.media}</p><p className="text-xs text-amber-700">Media (60-79%)</p></div>
-        <div className="rounded-xl border border-rose-200 bg-rose-50 p-4"><p className="text-2xl font-extrabold text-rose-700">{cd.baja}</p><p className="text-xs text-rose-700">Baja (&lt;60%)</p></div>
+        <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-500/30 dark:bg-emerald-500/10"><p className="text-2xl font-extrabold text-emerald-700 dark:text-emerald-300">{cd.alta}</p><p className="text-xs text-emerald-700 dark:text-emerald-300">Alta (≥80%)</p></div>
+        <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-500/30 dark:bg-amber-500/10"><p className="text-2xl font-extrabold text-amber-700 dark:text-amber-300">{cd.media}</p><p className="text-xs text-amber-700 dark:text-amber-300">Media (60-79%)</p></div>
+        <div className="rounded-xl border border-rose-200 bg-rose-50 p-4 dark:border-rose-500/30 dark:bg-rose-500/10"><p className="text-2xl font-extrabold text-rose-700 dark:text-rose-300">{cd.baja}</p><p className="text-xs text-rose-700 dark:text-rose-300">Baja (&lt;60%)</p></div>
       </div>
     </Card>}
   </>);
@@ -556,7 +556,7 @@ function CostosIaTab({ materiaId }: { materiaId: string }) {
     {d.by_provider?.length > 0 && (
       <Card className="p-5">
         <h3 className="mb-4 font-display font-bold">Costos por proveedor</h3>
-        <div className="overflow-x-auto">
+        <div className="teacher-scroll-region min-w-0 max-w-full overflow-x-auto">
           <table className="w-full text-left text-sm">
             <thead>
               <tr className="border-b border-border text-xs font-semibold text-muted">
@@ -578,7 +578,7 @@ function CostosIaTab({ materiaId }: { materiaId: string }) {
                   <td className="py-2.5 pr-4 text-right">{d.total.cost > 0 ? ((p.cost / d.total.cost) * 100).toFixed(1) : '0'}%</td>
                   <td className="py-2.5 pr-4 text-right">{formatNumber(p.input_tokens)}</td>
                   <td className="py-2.5 pr-4 text-right">{formatNumber(p.output_tokens)}</td>
-                  <td className="py-2.5 pr-4 text-right text-rose-600">{p.errors}</td>
+                  <td className="py-2.5 pr-4 text-right text-rose-700 dark:text-rose-300">{p.errors}</td>
                 </tr>
               ))}
             </tbody>
@@ -591,7 +591,7 @@ function CostosIaTab({ materiaId }: { materiaId: string }) {
     {d.by_model?.length > 0 && (
       <Card className="p-5">
         <h3 className="mb-4 font-display font-bold">Costos por modelo</h3>
-        <div className="overflow-x-auto">
+        <div className="teacher-scroll-region min-w-0 max-w-full overflow-x-auto">
           <table className="w-full text-left text-sm">
             <thead>
               <tr className="border-b border-border text-xs font-semibold text-muted">
@@ -625,7 +625,7 @@ function CostosIaTab({ materiaId }: { materiaId: string }) {
     {d.by_feature?.length > 0 && (
       <Card className="p-5">
         <h3 className="mb-4 font-display font-bold">Costos por funcionalidad</h3>
-        <div className="overflow-x-auto">
+        <div className="teacher-scroll-region min-w-0 max-w-full overflow-x-auto">
           <table className="w-full text-left text-sm">
             <thead>
               <tr className="border-b border-border text-xs font-semibold text-muted">
@@ -658,7 +658,7 @@ function CostosIaTab({ materiaId }: { materiaId: string }) {
     {d.monthly?.length > 0 && (
       <Card className="p-5">
         <h3 className="mb-4 font-display font-bold">Tendencia mensual</h3>
-        <div className="overflow-x-auto">
+        <div className="teacher-scroll-region min-w-0 max-w-full overflow-x-auto">
           <table className="w-full text-left text-sm">
             <thead>
               <tr className="border-b border-border text-xs font-semibold text-muted">
@@ -685,7 +685,7 @@ function CostosIaTab({ materiaId }: { materiaId: string }) {
     {compData && compData.length > 1 && (
       <Card className="p-5">
         <h3 className="mb-4 font-display font-bold">Comparación entre proveedores</h3>
-        <div className="overflow-x-auto">
+        <div className="teacher-scroll-region min-w-0 max-w-full overflow-x-auto">
           <table className="w-full text-left text-sm">
             <thead>
               <tr className="border-b border-border text-xs font-semibold text-muted">
@@ -706,7 +706,7 @@ function CostosIaTab({ materiaId }: { materiaId: string }) {
                   <td className="py-2.5 pr-4 text-right font-semibold">${p.cost.toFixed(4)}</td>
                   <td className="py-2.5 pr-4 text-right">{p.calls}</td>
                   <td className="py-2.5 pr-4 text-right">{(p.avg_latency_ms / 1000).toFixed(2)}s</td>
-                  <td className="py-2.5 pr-4 text-right text-rose-600">{p.errors}</td>
+                  <td className="py-2.5 pr-4 text-right text-rose-700 dark:text-rose-300">{p.errors}</td>
                   <td className="py-2.5 pr-4 text-right">{p.models_used}</td>
                   <td className="py-2.5 pr-4 text-right">{formatNumber(p.total_input_tokens)}</td>
                   <td className="py-2.5 pr-4 text-right">{formatNumber(p.total_output_tokens)}</td>
@@ -782,14 +782,14 @@ export function AnalyticsPage() {
 
       {/* Filtros + Tabs */}
       <Card className="p-4">
-        <div className="flex flex-wrap items-end gap-4">
-          <Field label="Materia"><div className="min-w-[200px]"><Select value={materiaId} onChange={e => setMateriaId(e.target.value)}><option value="">Todas</option>{materias?.map(m => <option key={m.id} value={m.id}>{m.nombre}</option>)}</Select></div></Field>
-          <p className="text-xs text-muted">Período: últimos 30 días</p>
+        <div className="grid gap-4 sm:grid-cols-[minmax(200px,320px)_1fr] sm:items-end">
+          <Field label="Materia"><div className="w-full"><Select value={materiaId} onChange={e => setMateriaId(e.target.value)}><option value="">Todas</option>{materias?.map(m => <option key={m.id} value={m.id}>{m.nombre}</option>)}</Select></div></Field>
+          <p className="text-xs text-muted sm:pb-3">Período: últimos 30 días</p>
         </div>
-        <div className="mt-4 flex gap-1 rounded-lg bg-surface-2 p-1">
+        <div className="teacher-scroll-region -mx-1 mt-4 flex max-w-[calc(100%+0.5rem)] gap-1 overflow-x-auto rounded-xl bg-surface-2 p-1">
           {TABS.map(t => (
             <button key={t.id} type="button" onClick={() => setTab(t.id)}
-              className={`focus-ring flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition ${tab === t.id ? 'bg-surface text-fg shadow-sm' : 'text-muted hover:text-fg'}`}>
+              className={`focus-ring flex min-h-10 shrink-0 items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition ${tab === t.id ? 'bg-surface text-fg shadow-sm' : 'text-muted hover:text-fg'}`}>
               {t.icon}{t.label}
             </button>
           ))}

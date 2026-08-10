@@ -1,10 +1,12 @@
 import { useState, type ReactNode } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Sparkles } from 'lucide-react';
+import { BookCheck, ListChecks, Sparkles } from 'lucide-react';
 import { Input, Field, Textarea, Button, Select, Badge, Skeleton } from '@/components/ui';
 import { useMaterias } from '@/modules/materias/MateriaSelect';
 import { listDbaCombinado } from '@/modules/materias/dbaApi';
 import type { DBAUnifiedItem } from '@/types/api';
+import { cn } from '@/lib/cn';
+import { TagInput } from './widgets';
 
 export interface ToolFormProps {
   loading: boolean;
@@ -18,6 +20,9 @@ export interface BaseState {
   area: string;
   materia_id: string;
   instrucciones_adicionales: string;
+  usar_dba: boolean;
+  usar_rubrica: boolean;
+  criterios_rubrica: string[];
   dba_ids: string[];
   dba_personalizado_ids: string[];
 }
@@ -29,6 +34,9 @@ const EMPTY: BaseState = {
   area: '',
   materia_id: '',
   instrucciones_adicionales: '',
+  usar_dba: false,
+  usar_rubrica: false,
+  criterios_rubrica: [],
   dba_ids: [],
   dba_personalizado_ids: [],
 };
@@ -36,7 +44,10 @@ const EMPTY: BaseState = {
 export function useBaseForm(initial?: Partial<BaseState>) {
   const [base, setBase] = useState<BaseState>({ ...EMPTY, ...initial });
   const set = <K extends keyof BaseState>(k: K, v: BaseState[K]) => setBase((p) => ({ ...p, [k]: v }));
-  const valid = base.titulo.trim().length > 0 && base.tema.trim().length > 0;
+  const selectedDbaCount = base.dba_ids.length + base.dba_personalizado_ids.length;
+  const requiredFieldsValid = base.titulo.trim().length > 0 && base.tema.trim().length > 0;
+  const alignmentValid = !base.usar_dba || selectedDbaCount > 0;
+  const valid = requiredFieldsValid && alignmentValid;
   const payload = () => ({
     titulo: base.titulo.trim(),
     tema: base.tema.trim(),
@@ -44,10 +55,13 @@ export function useBaseForm(initial?: Partial<BaseState>) {
     grado: base.grado.trim() || undefined,
     area: base.area.trim() || undefined,
     instrucciones_adicionales: base.instrucciones_adicionales.trim() || undefined,
+    usar_dba: base.usar_dba,
+    usar_rubrica: base.usar_rubrica,
+    criterios_rubrica: base.usar_rubrica ? base.criterios_rubrica : [],
     dba_ids: base.dba_ids,
     dba_personalizado_ids: base.dba_personalizado_ids,
   });
-  return { base, set, valid, payload };
+  return { base, set, valid, requiredFieldsValid, alignmentValid, selectedDbaCount, payload };
 }
 
 export function BaseFields({ base, set, tituloPlaceholder }: { base: BaseState; set: ReturnType<typeof useBaseForm>['set']; tituloPlaceholder?: string }) {
@@ -63,6 +77,7 @@ export function BaseFields({ base, set, tituloPlaceholder }: { base: BaseState; 
             set('materia_id', materiaId);
             set('dba_ids', []);
             set('dba_personalizado_ids', []);
+            if (!materiaId) set('usar_dba', false);
             if (selected?.grado) set('grado', selected.grado);
             if (selected?.area) set('area', selected.area);
           }}
@@ -90,7 +105,7 @@ export function BaseFields({ base, set, tituloPlaceholder }: { base: BaseState; 
   );
 }
 
-export function DBAAlignmentSelector({
+export function PedagogicalApproachSelector({
   base,
   set,
 }: {
@@ -110,44 +125,125 @@ export function DBAAlignmentSelector({
     set(field, current.includes(item.id) ? current.filter((id) => id !== item.id) : [...current, item.id]);
   }
 
+  const selectedCount = base.dba_ids.length + base.dba_personalizado_ids.length;
+  const approachLabel = base.usar_dba && base.usar_rubrica
+    ? 'DBA + rúbrica'
+    : base.usar_dba
+      ? 'DBA'
+      : base.usar_rubrica
+        ? 'Rúbrica'
+        : 'Generación libre';
+
   return (
-    <FormSection title="Aprendizajes esperados (DBA del MEN)" hint="Elige al menos un aprendizaje que quieras trabajar. La IA usará el contenido oficial asociado a tu materia.">
-      {!base.materia_id ? (
-        <p className="text-sm text-muted">Selecciona primero una materia para ver sus aprendizajes disponibles.</p>
-      ) : isLoading ? (
-        <Skeleton className="h-24" />
-      ) : isError ? (
-        <p className="text-sm text-danger">No se pudieron cargar los DBA de la materia.</p>
-      ) : !items?.length ? (
-        <p className="text-sm text-muted">Esta materia todavía no tiene DBA disponibles.</p>
-      ) : (
-        <div className="space-y-3">
-          <p className="text-sm font-semibold text-brand-700 dark:text-brand-200" aria-live="polite">
-            {base.dba_ids.length + base.dba_personalizado_ids.length === 0
-              ? 'Aún no has elegido un aprendizaje.'
-              : `${base.dba_ids.length + base.dba_personalizado_ids.length} aprendizaje${base.dba_ids.length + base.dba_personalizado_ids.length === 1 ? '' : 'es'} seleccionado${base.dba_ids.length + base.dba_personalizado_ids.length === 1 ? '' : 's'}.`}
-          </p>
-          <div className="max-h-60 space-y-2 overflow-y-auto pr-1">
-          {items.map((item) => {
-            const selected = item.fuente === 'personalizado'
-              ? base.dba_personalizado_ids.includes(item.id)
-              : base.dba_ids.includes(item.id);
-            return (
-              <label key={`${item.fuente}-${item.id}`} className="flex cursor-pointer gap-3 rounded-lg border border-border bg-surface p-3">
-                <input type="checkbox" checked={selected} onChange={() => toggle(item)} className="mt-0.5 h-5 w-5 shrink-0 accent-brand-600" />
-                <span className="min-w-0">
-                  <span className="flex flex-wrap items-center gap-2 text-sm font-semibold">
-                    {item.codigo || 'DBA personalizado'}
-                    <Badge tone={item.fuente === 'personalizado' ? 'violet' : 'brand'}>
-                      {item.fuente === 'personalizado' ? 'Personalizado' : 'Oficial MEN'}
-                    </Badge>
-                  </span>
-                  <span className="mt-1 block text-xs text-muted">{item.descripcion}</span>
-                </span>
-              </label>
-            );
-          })}
-          </div>
+    <FormSection
+      title="Enfoque pedagógico"
+      hint="Opcional. Puedes generar libremente, alinear con DBA, usar criterios de rúbrica o combinar ambos."
+    >
+      <div className="mb-3 flex items-center justify-between gap-3 rounded-xl border border-border bg-surface px-3 py-2">
+        <span className="text-sm text-muted">Enfoque actual</span>
+        <Badge tone={base.usar_dba || base.usar_rubrica ? 'brand' : 'neutral'}>{approachLabel}</Badge>
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-2">
+        <label className={cn(
+          'flex cursor-pointer gap-3 rounded-xl border-2 bg-surface p-4 transition-colors',
+          base.usar_dba ? 'border-brand-500 bg-brand-50/60 dark:bg-brand-500/10' : 'border-border hover:border-brand-300',
+          !base.materia_id && 'cursor-not-allowed opacity-60',
+        )}>
+          <input
+            type="checkbox"
+            checked={base.usar_dba}
+            disabled={!base.materia_id}
+            onChange={(event) => {
+              set('usar_dba', event.target.checked);
+              if (!event.target.checked) {
+                set('dba_ids', []);
+                set('dba_personalizado_ids', []);
+              }
+            }}
+            className="mt-0.5 h-5 w-5 shrink-0 accent-brand-600"
+          />
+          <span>
+            <span className="flex items-center gap-2 font-semibold"><BookCheck className="h-5 w-5 text-brand-600" /> Alinear con DBA</span>
+            <span className="mt-1 block text-xs leading-5 text-muted">Usa aprendizajes oficiales o personalizados de la materia.</span>
+          </span>
+        </label>
+
+        <label className={cn(
+          'flex cursor-pointer gap-3 rounded-xl border-2 bg-surface p-4 transition-colors',
+          base.usar_rubrica ? 'border-violet-500 bg-violet-50/60 dark:bg-violet-500/10' : 'border-border hover:border-violet-300',
+        )}>
+          <input
+            type="checkbox"
+            checked={base.usar_rubrica}
+            onChange={(event) => {
+              set('usar_rubrica', event.target.checked);
+              if (!event.target.checked) set('criterios_rubrica', []);
+            }}
+            className="mt-0.5 h-5 w-5 shrink-0 accent-violet-600"
+          />
+          <span>
+            <span className="flex items-center gap-2 font-semibold"><ListChecks className="h-5 w-5 text-violet-600" /> Usar criterios de rúbrica</span>
+            <span className="mt-1 block text-xs leading-5 text-muted">Orienta la actividad con criterios observables de calidad.</span>
+          </span>
+        </label>
+      </div>
+
+      {!base.materia_id && (
+        <p className="mt-3 text-xs text-muted">Selecciona una materia solo si deseas usar DBA. La generación libre y la rúbrica no la requieren.</p>
+      )}
+
+      {base.usar_dba && (
+        <div className="mt-4 rounded-xl border border-brand-200 bg-brand-50/40 p-4 dark:border-brand-500/30 dark:bg-brand-500/10">
+          <p className="mb-3 text-sm font-bold">Aprendizajes esperados</p>
+          {isLoading ? (
+            <Skeleton className="h-24" />
+          ) : isError ? (
+            <p className="text-sm text-danger">No se pudieron cargar los DBA. Puedes desactivar esta opción y generar libremente.</p>
+          ) : !items?.length ? (
+            <p className="text-sm text-muted">Esta materia no tiene DBA disponibles. Desactiva esta opción o crea un DBA personalizado.</p>
+          ) : (
+            <div className="space-y-3">
+              <p className="text-sm font-semibold text-brand-700 dark:text-brand-200" aria-live="polite">
+                {selectedCount === 0
+                  ? 'Selecciona al menos un aprendizaje para usar este enfoque.'
+                  : `${selectedCount} aprendizaje${selectedCount === 1 ? '' : 's'} seleccionado${selectedCount === 1 ? '' : 's'}.`}
+              </p>
+              <div className="max-h-60 space-y-2 overflow-y-auto pr-1">
+                {items.map((item) => {
+                  const selected = item.fuente === 'personalizado'
+                    ? base.dba_personalizado_ids.includes(item.id)
+                    : base.dba_ids.includes(item.id);
+                  return (
+                    <label key={`${item.fuente}-${item.id}`} className="flex cursor-pointer gap-3 rounded-lg border border-border bg-surface p-3">
+                      <input type="checkbox" checked={selected} onChange={() => toggle(item)} className="mt-0.5 h-5 w-5 shrink-0 accent-brand-600" />
+                      <span className="min-w-0">
+                        <span className="flex flex-wrap items-center gap-2 text-sm font-semibold">
+                          {item.codigo || 'DBA personalizado'}
+                          <Badge tone={item.fuente === 'personalizado' ? 'violet' : 'brand'}>
+                            {item.fuente === 'personalizado' ? 'Personalizado' : 'Oficial MEN'}
+                          </Badge>
+                        </span>
+                        <span className="mt-1 block text-xs text-muted">{item.descripcion}</span>
+                      </span>
+                    </label>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {base.usar_rubrica && (
+        <div className="mt-4 rounded-xl border border-violet-200 bg-violet-50/40 p-4 dark:border-violet-500/30 dark:bg-violet-500/10">
+          <p className="text-sm font-bold">Criterios de rúbrica</p>
+          <p className="mb-3 mt-1 text-xs text-muted">Opcional. Escribe un criterio y pulsa Enter. Si lo dejas vacío, la IA propondrá criterios apropiados.</p>
+          <TagInput
+            value={base.criterios_rubrica}
+            onChange={(value) => set('criterios_rubrica', value)}
+            placeholder="Claridad, aplicación del concepto…"
+          />
         </div>
       )}
     </FormSection>
@@ -157,7 +253,7 @@ export function DBAAlignmentSelector({
 export function ExtraInstructions({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   return (
     <Field label="Instrucciones adicionales (opcional)">
-      <Textarea value={value} onChange={(e) => onChange(e.target.value)} placeholder="Lenguaje sencillo, alinear con DBA…" />
+      <Textarea value={value} onChange={(e) => onChange(e.target.value)} placeholder="Ejemplo: lenguaje sencillo y ejemplos cercanos al contexto del grupo…" />
     </Field>
   );
 }
@@ -179,7 +275,7 @@ export function GenerateButton({
   disabled,
   onClick,
   label = 'Revisar antes de generar',
-  disabledHint = 'Completa los campos obligatorios y selecciona al menos un aprendizaje.',
+  disabledHint = 'Completa los campos obligatorios. Si activaste DBA, selecciona al menos uno.',
 }: {
   loading: boolean;
   disabled?: boolean;

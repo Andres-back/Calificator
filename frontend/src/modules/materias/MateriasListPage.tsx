@@ -528,7 +528,7 @@ export function MateriasListPage() {
             </div>
 
             {reachedMateriaLimit && (
-              <p className="text-sm text-amber-700">{LIMIT_MESSAGE}</p>
+              <p className="text-sm text-amber-700 dark:text-amber-300">{LIMIT_MESSAGE}</p>
             )}
 
             <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">

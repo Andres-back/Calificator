@@ -30,6 +30,19 @@ const evaluacion = {
   criterios: [], preguntas: [], respuestas_esperadas: [], created_at: '2026-07-01T00:00:00Z', updated_at: '2026-07-20T00:00:00Z',
 };
 
+const material = {
+  id: 'h1', tipo: 'guia', titulo: 'Guía de fracciones', materia_id: 'm1', materia_nombre: materia.nombre,
+  evaluacion_id: null, evaluacion_estado: null, evaluacion_modalidad: null, archivo_url: null,
+  contenido_json: { titulo: 'Guía de fracciones', instrucciones: 'Resuelve paso a paso.', secciones: [] },
+  created_at: '2026-07-20T00:00:00Z',
+};
+
+const analyticsOverview = {
+  periodo: { desde: '2026-07-01', hasta: '2026-07-31' }, evaluaciones_activas: 1,
+  entregas: { total: 2, pendientes_revision: 1, confirmadas: 1, publicadas: 1 },
+  ia: { coincidencia_exacta: 0.85, tasa_ajustes: 0.1, confianza_promedio: 0.88, incidencias_abiertas: 0 },
+  productividad: { tiempo_revision_segundos: 180, tiempo_promedio_por_entrega: 90, tiempo_estimado_ahorrado_segundos: 180, entregas_con_tiempo: 2 },
+};
 const aiSettings = {
   providers: [{
     id: 'openai', name: 'openai', tipo: 'texto', label: 'OpenAI', base_url: null, model: 'gpt-4.1-mini', active: true,
@@ -65,14 +78,28 @@ async function installApiMocks(page: Page, targetRole: Role) {
     if (path === '/materias/m1') return fulfillJson(route, materia);
     if (path === '/materias/m1/estudiantes') return fulfillJson(route, { ...materia, estudiantes: [users.estudiante] });
     if (path === '/materias/m1/evaluaciones') return fulfillJson(route, [evaluacion]);
+    if (path === '/materias/m1/asistencia') return fulfillJson(route, {
+      materia_id: 'm1', fecha: url.searchParams.get('fecha') ?? '2026-08-09', registros: [],
+      resumen: { total: 0, presentes: 0, tarde: 0, ausentes: 0, excusas: 0, pendientes: 0 },
+    });
+    if (path === '/materias/m1/asistencia/reporte') return fulfillJson(route, {
+      materia_id: 'm1', fecha_desde: url.searchParams.get('fecha_desde') ?? '2026-08-01',
+      fecha_hasta: url.searchParams.get('fecha_hasta') ?? '2026-08-09', jornadas_registradas: 0,
+      resumen: { total_registros: 0, presentes: 0, tarde: 0, ausentes: 0, excusas: 0, porcentaje_asistencia: 0 },
+      estudiantes: [], jornadas: [],
+    });
     if (path === '/materias/m1/dba' || path === '/materias/m1/dba-personalizados') return fulfillJson(route, []);
     if (path === '/evaluaciones/e1' && method === 'GET') return fulfillJson(route, evaluacion);
     if (path === '/evaluaciones/e1/calificaciones') return fulfillJson(route, []);
     if (path.startsWith('/estudiantes/') && path.endsWith('/resumen-academico')) return fulfillJson(route, { mejor: { materia_id: 'm1', materia_nombre: materia.nombre, promedio: 4.4, total_notas: 2 }, por_mejorar: null, promedio_general: 4.4, total_materias: 1, total_notas: 2 });
     if (path.startsWith('/estudiantes/') && path.endsWith('/boletin')) return fulfillJson(route, []);
-    if (path === '/herramientas') return fulfillJson(route, []);
+    if (path === '/herramientas') return fulfillJson(route, [material]);
+    if (path === '/herramientas/h1') return fulfillJson(route, material);
+    if (path === '/herramientas/h1/evaluaciones') return fulfillJson(route, []);
     if (path === '/presentaciones') return fulfillJson(route, []);
     if (path === '/reportes/profesor/resumen') return fulfillJson(route, { profesor_id: users.profesor.id, materias: [{ nombre: materia.nombre, total_calificaciones: 2, promedio: 4.4 }] });
+    if (path === '/analytics/overview') return fulfillJson(route, analyticsOverview);
+    if (path === '/analytics/evaluaciones') return fulfillJson(route, [{ id: 'e1', nombre: evaluacion.nombre, estado: 'publicada', total_entregas: 2, pendientes: 1, confirmadas: 1, publicadas: 1, promedio: 4.2, tasa_aprobacion: 0.8 }]);
     if (path === '/xali/history' || path === '/xali/evaluaciones-entregadas') return fulfillJson(route, []);
     if (path === '/admin/ai-settings') return fulfillJson(route, aiSettings);
     if (path === '/admin/ai-config-hash') return fulfillJson(route, { backend_hash: 'abc', worker_hash: 'abc', consistent: true, backend_source: 'database', worker_source: 'database', worker_error: null });
@@ -85,7 +112,12 @@ async function installApiMocks(page: Page, targetRole: Role) {
 }
 
 const routesByRole: Record<Role, string[]> = {
-  profesor: ['/app', '/app/materias', '/app/evaluaciones', '/app/materias/m1/calificar', '/app/herramientas', '/app/presentaciones', '/app/reportes', '/app/xali'],
+  profesor: [
+    '/app', '/app/materias', '/app/evaluaciones', '/app/materias/m1', '/app/materias/m1/evaluaciones',
+    '/app/materias/m1/calificar', '/app/materias/m1/asistencia', '/app/materias/m1/boletin', '/app/materias/m1/dba',
+    '/app/herramientas', '/app/herramientas/nuevo', '/app/herramientas/h1', '/app/calificaciones/workspace',
+    '/app/analytics', '/app/presentaciones', '/app/reportes', '/app/xali',
+  ],
   estudiante: ['/app', '/app/materias', '/app/evaluaciones', '/app/calificaciones/boletin', '/app/materias/m1', '/app/xali'],
   admin: ['/app', '/app/admin/configuracion-ia', '/app/presentaciones', '/app/reportes', '/app/xali'],
 };
@@ -149,4 +181,28 @@ for (const role of ['profesor', 'estudiante', 'admin'] as const) {
       expect(errors, errors.join('\n')).toEqual([]);
     });
   }
+}
+for (const viewport of [viewports[1], viewports[4]]) {
+  test(`profesor mantiene modo oscuro y responsive en todas sus vistas en ${viewport.name}`, async ({ page }) => {
+    test.setTimeout(90_000);
+    await page.setViewportSize({ width: viewport.width, height: viewport.height });
+    await installApiMocks(page, 'profesor');
+
+    await page.goto('/login');
+    await page.getByLabel(/Correo/i).fill(users.profesor.email);
+    await page.locator('input[type="password"]').fill('password-for-test');
+    await page.getByRole('button', { name: /Iniciar sesión/i }).click();
+    await page.getByRole('button', { name: 'Cambiar tema' }).click();
+    await expect(page.locator('html')).toHaveClass(/dark/);
+
+    for (const route of routesByRole.profesor) {
+      await page.goto(route);
+      await expect(page.locator('main#main-content')).toBeVisible();
+      await expect(page.locator('html')).toHaveClass(/dark/);
+      await expect.poll(
+        () => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1),
+        { message: `profesor oscuro ${viewport.name} presenta overflow horizontal en ${route}` },
+      ).toBe(true);
+    }
+  });
 }

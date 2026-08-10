@@ -457,13 +457,13 @@ export function MateriaCalificar() {
     if (hasTeacherDecision(student.calificacion)) {
       return (
         <CheckCircle2
-          className="h-5 w-5 text-emerald-600"
+          className="h-5 w-5 text-emerald-700 dark:text-emerald-300"
           aria-label="Decisión guardada"
         />
       );
     }
     return (
-      <span className="text-xs font-extrabold text-amber-700">
+      <span className="text-xs font-extrabold text-amber-700 dark:text-amber-300">
         {student.calificacion.nota_sugerida != null
           ? Number(student.calificacion.nota_sugerida).toFixed(1)
           : '?'}
@@ -692,7 +692,7 @@ export function MateriaCalificar() {
                   <div className="overflow-hidden rounded-xl border-2 border-dashed border-border bg-surface-2/50">
                     {!foto && !resultado ? (
                       <div className="flex min-h-52 flex-col items-center justify-center p-6 text-center">
-                        <span className="grid h-14 w-14 place-items-center rounded-xl bg-brand-500/10 text-brand-700">
+                        <span className="grid h-14 w-14 place-items-center rounded-xl bg-brand-500/10 text-brand-700 dark:text-brand-300">
                           <FileImage className="h-7 w-7" aria-hidden="true" />
                         </span>
                         <p className="mt-3 font-bold">
@@ -992,7 +992,7 @@ export function MateriaCalificar() {
                                     <strong>{details.nota_grader_b}</strong>
                                   </span>
                                   {details.discrepancia ? (
-                                    <span className="flex items-center gap-1 text-amber-700">
+                                    <span className="flex items-center gap-1 text-amber-700 dark:text-amber-300">
                                       <TriangleAlert
                                         className="h-3 w-3"
                                         aria-hidden="true"

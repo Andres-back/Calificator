@@ -29,6 +29,50 @@ def test_base_context_includes_private_dba_rag_evidence_but_dump_does_not() -> N
     assert "_alineacion_esperada" not in dumped
 
 
+def test_free_generation_needs_neither_dba_nor_rubric() -> None:
+    request = GuiaRequest(
+        titulo="Guía libre",
+        tema="El agua",
+    )
+
+    service._attach_rubric_context(request)
+
+    assert request.dba_ids == []
+    assert request.dba_personalizado_ids == []
+    assert request._contexto_dba_rag == ""
+    assert request._contexto_rubrica == ""
+    assert "El agua" in build_base_context(request)
+
+
+def test_rubric_context_uses_teacher_criteria_without_dba() -> None:
+    request = GuiaRequest(
+        titulo="Guía por criterios",
+        tema="El agua",
+        usar_rubrica=True,
+        criterios_rubrica=["Explica con claridad", "Aplica el concepto"],
+    )
+
+    service._attach_rubric_context(request)
+    context = build_base_context(request)
+
+    assert "Criterios de rúbrica definidos por el docente" in context
+    assert "Explica con claridad" in context
+    assert "Aplica el concepto" in context
+    assert request.dba_ids == []
+
+
+def test_rubric_context_can_be_generated_by_ai() -> None:
+    request = GuiaRequest(
+        titulo="Guía con rúbrica sugerida",
+        tema="El agua",
+        usar_rubrica=True,
+    )
+
+    service._attach_rubric_context(request)
+
+    assert "Propón criterios observables" in build_base_context(request)
+
+
 def test_material_alignment_adds_teacher_review_trace() -> None:
     dba_ids = [str(uuid4()), str(uuid4())]
     rag_id = str(uuid4())
@@ -56,6 +100,34 @@ def test_material_alignment_adds_teacher_review_trace() -> None:
     assert result["_xcalificator"]["generado_por_ia"] is True
     assert result["_xcalificator"]["requiere_validacion_docente"] is True
     assert result["_xcalificator"]["dba_seleccionados"] == sorted(dba_ids)
+
+
+def test_server_rebuilds_alignment_lost_by_deterministic_builder() -> None:
+    dba_id = str(uuid4())
+    rag_id = str(uuid4())
+    request = GuiaRequest(
+        titulo="Guía",
+        tema="Agua",
+        dba_ids=[dba_id],
+    )
+    request._alineacion_esperada = {
+        "dba_ids": [dba_id],
+        "fuente_contexto_ids": [rag_id],
+    }
+
+    rebuilt = service._ensure_alignment_metadata(
+        {"titulo": "Guía", "secciones": [{"titulo": "Explora"}]},
+        request,
+        service.MaterialTipo.GUIA,
+    )
+    validated = service._validate_material_alignment(
+        rebuilt,
+        request._alineacion_esperada,
+    )
+
+    assert rebuilt["_alineacion"]["dba_ids"] == [dba_id]
+    assert rebuilt["_alineacion"]["fuente_contexto_ids"] == [rag_id]
+    assert validated["_xcalificator"]["alineacion_reconstruida"] is True
 
 
 @pytest.mark.parametrize("alignment", [None, {"dba_ids": [], "fuente_contexto_ids": []}])

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
-import { BookOpenCheck, Eye, EyeOff, LockKeyhole, Mail, ShieldCheck, Sparkles } from 'lucide-react';
+import { BookOpenCheck, Eye, EyeOff, GraduationCap, LockKeyhole, Mail, School2, ShieldCheck, Sparkles } from 'lucide-react';
 import { Button, Card, Field, Input, LoadingScreen, ThemeToggle } from '@/components/ui';
 import { toApiError } from '@/lib/api';
 import { useAuth } from '@/stores/auth';
@@ -17,8 +17,7 @@ type FieldErrors = {
   general?: string;
 };
 
-function getLandingPath(role?: UserRole) {
-  if (role === 'estudiante') return '/app/materias';
+function getLandingPath(_role?: UserRole) {
   return '/app';
 }
 
@@ -241,8 +240,8 @@ export function LoginPage() {
                       setLoading(true);
                       setErrors({});
                       try {
-                        const loggedUser = await login('profesor@test.com', 'Test1234!');
-                        localStorage.setItem(LAST_EMAIL_KEY, 'profesor@test.com');
+                        const loggedUser = await login('profesor@demo.com', 'demo1234');
+                        localStorage.setItem(LAST_EMAIL_KEY, 'profesor@demo.com');
                         toast.success('Bienvenido a XCalificator');
                         navigate(getLandingPath(loggedUser.rol), { replace: true });
                       } catch (error) {
@@ -254,7 +253,7 @@ export function LoginPage() {
                     disabled={loading}
                     className="flex-1 rounded-lg border border-violet-200 bg-violet-50 px-3 py-2 text-xs font-medium text-violet-700 transition-colors hover:bg-violet-100 dark:border-violet-500/30 dark:bg-violet-500/10 dark:text-violet-300"
                   >
-                    👨‍🏫 Profesor
+                    <School2 className="mr-1.5 inline h-4 w-4" aria-hidden="true" /> Profesor
                   </button>
                   <button
                     type="button"
@@ -262,8 +261,8 @@ export function LoginPage() {
                       setLoading(true);
                       setErrors({});
                       try {
-                        const loggedUser = await login('estudiante@test.com', 'Test1234!');
-                        localStorage.setItem(LAST_EMAIL_KEY, 'estudiante@test.com');
+                        const loggedUser = await login('estudiante@demo.com', 'demo1234');
+                        localStorage.setItem(LAST_EMAIL_KEY, 'estudiante@demo.com');
                         toast.success('Bienvenido a XCalificator');
                         navigate(getLandingPath(loggedUser.rol), { replace: true });
                       } catch (error) {
@@ -275,7 +274,7 @@ export function LoginPage() {
                     disabled={loading}
                     className="flex-1 rounded-lg border border-cyan-200 bg-cyan-50 px-3 py-2 text-xs font-medium text-cyan-700 transition-colors hover:bg-cyan-100 dark:border-cyan-500/30 dark:bg-cyan-500/10 dark:text-cyan-300"
                   >
-                    🎓 Estudiante
+                    <GraduationCap className="mr-1.5 inline h-4 w-4" aria-hidden="true" /> Estudiante
                   </button>
                 </div>
               </div>

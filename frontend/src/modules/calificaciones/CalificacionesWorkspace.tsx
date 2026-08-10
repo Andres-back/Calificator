@@ -450,7 +450,7 @@ function PanelDetalle({
                     href={evidenceUrl}
                     target="_blank"
                     rel="noreferrer"
-                    className="focus-ring inline-flex items-center gap-2 rounded-lg px-2 py-1 text-brand-600 hover:bg-brand-50 hover:text-brand-700"
+                    className="focus-ring inline-flex min-h-11 items-center gap-2 rounded-lg px-3 py-2 text-brand-700 hover:bg-brand-50 hover:text-brand-800 dark:text-brand-200 dark:hover:bg-brand-500/10 dark:hover:text-brand-100"
                   >
                     Abrir en grande <ExternalLink className="h-4 w-4" />
                   </a>

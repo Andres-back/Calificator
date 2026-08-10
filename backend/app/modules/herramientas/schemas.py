@@ -4,7 +4,7 @@ from datetime import datetime
 from decimal import Decimal
 from uuid import UUID
 
-from pydantic import BaseModel, Field, PrivateAttr
+from pydantic import BaseModel, Field, PrivateAttr, model_validator
 
 from app.shared.enums import (
     EvaluacionModalidad,
@@ -20,10 +20,26 @@ class HerramientaBaseRequest(BaseModel):
     area: str | None = None
     tema: str
     instrucciones_adicionales: str | None = None
+    usar_dba: bool = False
+    usar_rubrica: bool = False
+    criterios_rubrica: list[str] = Field(default_factory=list)
     dba_ids: list[UUID] = Field(default_factory=list)
     dba_personalizado_ids: list[UUID] = Field(default_factory=list)
     _contexto_dba_rag: str = PrivateAttr(default="")
+    _contexto_rubrica: str = PrivateAttr(default="")
     _alineacion_esperada: dict = PrivateAttr(default_factory=dict)
+
+    @model_validator(mode="after")
+    def validate_optional_approach(self) -> "HerramientaBaseRequest":
+        has_dba = bool(self.dba_ids or self.dba_personalizado_ids)
+        if self.usar_dba and not has_dba:
+            raise ValueError("Selecciona al menos un DBA o desactiva la alineación DBA")
+        if has_dba:
+            self.usar_dba = True
+        self.criterios_rubrica = [
+            value.strip() for value in self.criterios_rubrica if value.strip()
+        ]
+        return self
 
 
 class SopaLetrasRequest(HerramientaBaseRequest):

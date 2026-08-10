@@ -6,7 +6,9 @@ import { useAuth } from '@/stores/auth';
 import { cn } from '@/lib/cn';
 
 export function AppShell() {
-  const isStudent = useAuth((state) => state.user?.rol === 'estudiante');
+  const role = useAuth((state) => state.user?.rol);
+  const isStudent = role === 'estudiante';
+  const isTeacher = role === 'profesor';
   const [mobileOpen, setMobileOpen] = useState(false);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
   const appContentRef = useRef<HTMLDivElement>(null);
@@ -34,7 +36,13 @@ export function AppShell() {
   }, [mobileOpen]);
 
   return (
-    <div className={cn('flex min-h-dvh bg-bg lg:h-dvh', isStudent && 'student-shell')}>
+    <div
+      className={cn(
+        'flex min-h-dvh bg-bg lg:h-dvh',
+        isStudent && 'student-shell',
+        isTeacher && 'teacher-shell',
+      )}
+    >
       <a
         href="#main-content"
         className="focus-ring fixed left-3 top-3 z-[100] -translate-y-24 rounded-lg bg-brand-700 px-4 py-3 text-sm font-semibold text-white shadow-lg transition-transform focus:translate-y-0"

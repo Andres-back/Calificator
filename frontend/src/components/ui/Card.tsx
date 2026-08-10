@@ -6,7 +6,7 @@ export const Card = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement> & 
     <div
       ref={ref}
       className={cn(
-        'card',
+        'card min-w-0',
         interactive &&
           'uiverse-card cursor-pointer transition-[border-color,box-shadow] duration-200 hover:border-brand-300 hover:shadow-md',
         className,

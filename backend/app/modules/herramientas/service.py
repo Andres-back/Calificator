@@ -18,6 +18,7 @@ from app.modules.evaluaciones.blueprint_service import normalize_dba_records
 from app.modules.evaluaciones import service as evaluaciones_service
 from app.modules.evaluaciones.schemas import EvaluacionCreate, EvaluacionEstructuraValidacion
 from app.modules.herramientas.evaluation_adapter import build_evaluation_structure
+from app.modules.herramientas.content_quality import normalize_material_content
 from app.modules.herramientas.generators import (
     crucigrama,
     cuento,
@@ -66,6 +67,92 @@ from app.shared.enums import (
 logger = get_logger(__name__)
 
 
+def _ensure_alignment_metadata(
+    content: dict[str, Any],
+    req: object,
+    tipo: MaterialTipo,
+) -> dict[str, Any]:
+    """Conserva la trazabilidad cuando un builder local reconstruye el JSON.
+
+    Algunos generadores usan la IA solo para obtener conceptos y luego Python
+    arma una grilla o estructura válida. Esa reconstrucción no debe perder los
+    DBA y fuentes que sí estuvieron presentes en el prompt.
+    """
+    expectation = getattr(req, "_alineacion_esperada", {})
+    if not expectation or isinstance(content.get("_alineacion"), dict):
+        return content
+    dba_ids = list(expectation.get("dba_ids", []))
+    source_ids = list(expectation.get("fuente_contexto_ids", []))
+    content["_alineacion"] = {
+        "dba_ids": dba_ids,
+        "fuente_contexto_ids": source_ids,
+        "justificacion": (
+            f"El contenido de {tipo.value} se generó con el contexto pedagógico "
+            "seleccionado y después fue estructurado por el servidor."
+        ),
+        "cobertura": [
+            {
+                "dba_id": dba_id,
+                "evidencia_en_material": (
+                    f"El tema, las consignas y actividades de {tipo.value} "
+                    "se construyeron usando este aprendizaje seleccionado."
+                ),
+            }
+            for dba_id in dba_ids
+        ],
+        "reconstruida_por_servidor": True,
+    }
+    return content
+
+
+async def _generate_with_quality(
+    *,
+    tipo: MaterialTipo,
+    req: object,
+    generator: Any,
+) -> dict[str, Any]:
+    """Genera, normaliza y reintenta una vez si el modelo omite contenido."""
+    original_instructions = getattr(req, "instrucciones_adicionales", None)
+    last_issues: list[str] = []
+    try:
+        for attempt in range(2):
+            result = await generator()
+            normalized, issues = normalize_material_content(
+                tipo,
+                result,
+                fallback_title=str(getattr(req, "titulo", "Material")),
+            )
+            if not issues:
+                return _ensure_alignment_metadata(normalized, req, tipo)
+            last_issues = issues
+            logger.warning(
+                "Material %s incompleto en intento %d: %s",
+                tipo.value,
+                attempt + 1,
+                "; ".join(issues),
+            )
+            setattr(
+                req,
+                "instrucciones_adicionales",
+                " ".join(
+                    part for part in (
+                        str(original_instructions or "").strip(),
+                        "La respuesta anterior quedó incompleta. Devuelve todas las secciones solicitadas, sin elementos repetidos.",
+                    ) if part
+                ),
+            )
+    finally:
+        setattr(req, "instrucciones_adicionales", original_instructions)
+
+    raise HTTPException(
+        status_code=status.HTTP_502_BAD_GATEWAY,
+        detail=(
+            "La IA no logró construir un recurso completo después de dos intentos: "
+            + "; ".join(last_issues)
+        ),
+    )
+
+
 async def _resolve_materia_id(db: AsyncSession, req: object, current_user: User) -> UUID | None:
     materia_id = getattr(req, "materia_id", None)
     if not materia_id:
@@ -74,10 +161,39 @@ async def _resolve_materia_id(db: AsyncSession, req: object, current_user: User)
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Selecciona una materia para usar alineacion DBA",
             )
+        _attach_rubric_context(req)
         return None
     materia = await materias_service.ensure_can_manage_materia(db, materia_id, current_user)
     await _attach_dba_rag_context(db, req, materia)
+    _attach_rubric_context(req)
     return materia.id
+
+
+def _attach_rubric_context(req: object) -> None:
+    """Añade criterios docentes sin convertirlos en una dependencia obligatoria.
+
+    Una rúbrica puede orientar cualquier recurso (guía, taller, juego, ficha),
+    pero si el profesor no la selecciona la generación sigue siendo libre.
+    """
+    if not getattr(req, "usar_rubrica", False):
+        return
+    criterios = [
+        str(value).strip()
+        for value in getattr(req, "criterios_rubrica", [])
+        if str(value).strip()
+    ]
+    if criterios:
+        detail = "\n".join(f"- {item}" for item in criterios)
+        instruction = (
+            "Criterios de rúbrica definidos por el docente:\n"
+            f"{detail}\nIntegra todos estos criterios de forma observable en el material."
+        )
+    else:
+        instruction = (
+            "El docente solicitó orientación por rúbrica, pero no fijó criterios. "
+            "Propón criterios observables, apropiados para el grado y coherentes con el tema."
+        )
+    setattr(req, "_contexto_rubrica", instruction)
 
 
 async def _attach_dba_rag_context(db: AsyncSession, req: object, materia: object) -> None:
@@ -193,6 +309,7 @@ def _validate_material_alignment(
         "requiere_validacion_docente": True,
         "dba_seleccionados": sorted(expected_dba),
         "fuentes_rag_usadas": sorted(actual_rag),
+        "alineacion_reconstruida": bool(alignment.get("reconstruida_por_servidor")),
     }
     return content
 
@@ -210,6 +327,24 @@ async def _save_material(
     from sqlalchemy import text
     expectation = input_json.pop("_alineacion_esperada", {})
     contenido_json = _validate_material_alignment(contenido_json, expectation)
+    uses_dba = bool(expectation.get("dba_ids"))
+    uses_rubric = bool(input_json.get("usar_rubrica"))
+    approach = (
+        "dba_rubrica" if uses_dba and uses_rubric
+        else "dba" if uses_dba
+        else "rubrica" if uses_rubric
+        else "libre"
+    )
+    trace = contenido_json.setdefault("_xcalificator", {})
+    if isinstance(trace, dict):
+        trace.update(
+            {
+                "generado_por_ia": True,
+                "requiere_validacion_docente": True,
+                "enfoque_pedagogico": approach,
+                "criterios_rubrica": input_json.get("criterios_rubrica", []) if uses_rubric else [],
+            }
+        )
     inserted = await db.execute(
         text(
             "INSERT INTO materiales_generados "
@@ -417,7 +552,10 @@ async def get_material(db: AsyncSession, material_id: UUID, profesor_id: UUID) -
 async def gen_sopa_letras(db: AsyncSession, req: SopaLetrasRequest, current_user: User) -> dict:
     materia_id = await _resolve_materia_id(db, req, current_user)
     llm = LLMRouter(user_id=current_user.id)
-    result = await sopa_letras.generate(req, llm)
+    result = await _generate_with_quality(
+        tipo=MaterialTipo.SOPA_LETRAS, req=req,
+        generator=lambda: sopa_letras.generate(req, llm),
+    )
     return await _save_material(
         db, profesor_id=current_user.id, materia_id=materia_id,
         tipo=MaterialTipo.SOPA_LETRAS, titulo=req.titulo,
@@ -428,7 +566,10 @@ async def gen_sopa_letras(db: AsyncSession, req: SopaLetrasRequest, current_user
 async def gen_crucigrama(db: AsyncSession, req: CrucigramaRequest, current_user: User) -> dict:
     materia_id = await _resolve_materia_id(db, req, current_user)
     llm = LLMRouter(user_id=current_user.id)
-    result = await crucigrama.generate(req, llm)
+    result = await _generate_with_quality(
+        tipo=MaterialTipo.CRUCIGRAMA, req=req,
+        generator=lambda: crucigrama.generate(req, llm),
+    )
     return await _save_material(
         db, profesor_id=current_user.id, materia_id=materia_id,
         tipo=MaterialTipo.CRUCIGRAMA, titulo=req.titulo,
@@ -439,7 +580,10 @@ async def gen_crucigrama(db: AsyncSession, req: CrucigramaRequest, current_user:
 async def gen_unir_columnas(db: AsyncSession, req: UnirColumnasRequest, current_user: User) -> dict:
     materia_id = await _resolve_materia_id(db, req, current_user)
     llm = LLMRouter(user_id=current_user.id)
-    result = await unir_columnas.generate(req, llm)
+    result = await _generate_with_quality(
+        tipo=MaterialTipo.UNIR_COLUMNAS, req=req,
+        generator=lambda: unir_columnas.generate(req, llm),
+    )
     return await _save_material(
         db, profesor_id=current_user.id, materia_id=materia_id,
         tipo=MaterialTipo.UNIR_COLUMNAS, titulo=req.titulo,
@@ -450,7 +594,10 @@ async def gen_unir_columnas(db: AsyncSession, req: UnirColumnasRequest, current_
 async def gen_emparejar(db: AsyncSession, req: EmparejarRequest, current_user: User) -> dict:
     materia_id = await _resolve_materia_id(db, req, current_user)
     llm = LLMRouter(user_id=current_user.id)
-    result = await emparejar.generate(req, llm)
+    result = await _generate_with_quality(
+        tipo=MaterialTipo.EMPAREJAR, req=req,
+        generator=lambda: emparejar.generate(req, llm),
+    )
     return await _save_material(
         db, profesor_id=current_user.id, materia_id=materia_id,
         tipo=MaterialTipo.EMPAREJAR, titulo=req.titulo,
@@ -461,7 +608,10 @@ async def gen_emparejar(db: AsyncSession, req: EmparejarRequest, current_user: U
 async def gen_cuento(db: AsyncSession, req: CuentoRequest, current_user: User) -> dict:
     materia_id = await _resolve_materia_id(db, req, current_user)
     llm = LLMRouter(user_id=current_user.id)
-    result = await cuento.generate(req, llm)
+    result = await _generate_with_quality(
+        tipo=MaterialTipo.CUENTO, req=req,
+        generator=lambda: cuento.generate(req, llm),
+    )
     image_prompt = cuento.build_image_prompt(req, result)
     image = await generate_image(prompt=image_prompt, image_type="educativa_profesional", size="1024x1024")
     await imagenes_service.register_imagen_generada(
@@ -542,6 +692,7 @@ async def gen_para_colorear(db: AsyncSession, req: ParaColorearRequest, current_
             "prompt": prompt,
         },
     )
+    result = _ensure_alignment_metadata(result, req, MaterialTipo.PARA_COLOREAR)
     return await _save_material(
         db,
         profesor_id=current_user.id,
@@ -556,7 +707,10 @@ async def gen_para_colorear(db: AsyncSession, req: ParaColorearRequest, current_
 async def gen_guia(db: AsyncSession, req: GuiaRequest, current_user: User) -> dict:
     materia_id = await _resolve_materia_id(db, req, current_user)
     llm = LLMRouter(user_id=current_user.id)
-    result = await guia.generate(req, llm)
+    result = await _generate_with_quality(
+        tipo=MaterialTipo.GUIA, req=req,
+        generator=lambda: guia.generate(req, llm),
+    )
     return await _save_material(
         db, profesor_id=current_user.id, materia_id=materia_id,
         tipo=MaterialTipo.GUIA, titulo=req.titulo,
@@ -565,15 +719,21 @@ async def gen_guia(db: AsyncSession, req: GuiaRequest, current_user: User) -> di
 
 
 async def gen_taller(db: AsyncSession, req: TallerRequest, current_user: User) -> dict:
-    # Taller usa el mismo generador que guía con ajuste
+    # Taller usa un prompt especializado y el mismo control de calidad común.
     from app.modules.herramientas.generators.base import TOOLS_SYSTEM, build_base_context
     materia_id = await _resolve_materia_id(db, req, current_user)
     llm = LLMRouter(user_id=current_user.id)
-    ctx = build_base_context(req)
-    prompt = f"""{TOOLS_SYSTEM}\n\n{ctx}\nCantidad de puntos: {req.cantidad_puntos}\n
+    async def generate_taller_content() -> dict[str, Any]:
+        ctx = build_base_context(req)
+        prompt = f"""{TOOLS_SYSTEM}\n\n{ctx}\nCantidad de puntos: {req.cantidad_puntos}\n
 Genera un taller pedagógico práctico. Devuelve JSON:
 {{"titulo":"...","objetivo":"...","puntos":[{{"numero":1,"enunciado":"...","espacio_respuesta":"..."}}]}}"""
-    result = await llm.generate_json("taller", prompt)
+        return await llm.generate_json("taller", prompt)
+
+    result = await _generate_with_quality(
+        tipo=MaterialTipo.TALLER, req=req,
+        generator=generate_taller_content,
+    )
     return await _save_material(
         db, profesor_id=current_user.id, materia_id=materia_id,
         tipo=MaterialTipo.TALLER, titulo=req.titulo,
@@ -604,7 +764,10 @@ async def gen_examen_from_chat(
 async def gen_examen(db: AsyncSession, req: ExamenRequest, current_user: User) -> dict:
     materia_id = await _resolve_materia_id(db, req, current_user)
     llm = LLMRouter(user_id=current_user.id)
-    result = await examen.generate(req, llm)
+    result = await _generate_with_quality(
+        tipo=MaterialTipo.EXAMEN, req=req,
+        generator=lambda: examen.generate(req, llm),
+    )
     return await _save_material(
         db, profesor_id=current_user.id, materia_id=materia_id,
         tipo=MaterialTipo.EXAMEN, titulo=req.titulo,
@@ -615,7 +778,10 @@ async def gen_examen(db: AsyncSession, req: ExamenRequest, current_user: User) -
 async def gen_rubrica(db: AsyncSession, req: RubricaRequest, current_user: User) -> dict:
     materia_id = await _resolve_materia_id(db, req, current_user)
     llm = LLMRouter(user_id=current_user.id)
-    result = await rubrica.generate(req, llm)
+    result = await _generate_with_quality(
+        tipo=MaterialTipo.RUBRICA, req=req,
+        generator=lambda: rubrica.generate(req, llm),
+    )
     return await _save_material(
         db, profesor_id=current_user.id, materia_id=materia_id,
         tipo=MaterialTipo.RUBRICA, titulo=req.titulo,
@@ -626,7 +792,10 @@ async def gen_rubrica(db: AsyncSession, req: RubricaRequest, current_user: User)
 async def gen_ficha(db: AsyncSession, req: FichaRequest, current_user: User) -> dict:
     materia_id = await _resolve_materia_id(db, req, current_user)
     llm = LLMRouter(user_id=current_user.id)
-    result = await ficha.generate(req, llm)
+    result = await _generate_with_quality(
+        tipo=MaterialTipo.FICHA, req=req,
+        generator=lambda: ficha.generate(req, llm),
+    )
     return await _save_material(
         db, profesor_id=current_user.id, materia_id=materia_id,
         tipo=MaterialTipo.FICHA, titulo=req.titulo,
@@ -637,7 +806,10 @@ async def gen_ficha(db: AsyncSession, req: FichaRequest, current_user: User) -> 
 async def gen_quiz_rapido(db: AsyncSession, req: QuizRapidoRequest, current_user: User) -> dict:
     materia_id = await _resolve_materia_id(db, req, current_user)
     llm = LLMRouter(user_id=current_user.id)
-    result = await quiz_rapido.generate(req, llm)
+    result = await _generate_with_quality(
+        tipo=MaterialTipo.QUIZ_RAPIDO, req=req,
+        generator=lambda: quiz_rapido.generate(req, llm),
+    )
     return await _save_material(
         db, profesor_id=current_user.id, materia_id=materia_id,
         tipo=MaterialTipo.QUIZ_RAPIDO, titulo=req.titulo,
@@ -648,7 +820,10 @@ async def gen_quiz_rapido(db: AsyncSession, req: QuizRapidoRequest, current_user
 async def gen_lectura_comprensiva(db: AsyncSession, req: LecturaComprensivaRequest, current_user: User) -> dict:
     materia_id = await _resolve_materia_id(db, req, current_user)
     llm = LLMRouter(user_id=current_user.id)
-    result = await lectura_comprensiva.generate(req, llm)
+    result = await _generate_with_quality(
+        tipo=MaterialTipo.LECTURA_COMPRENSIVA, req=req,
+        generator=lambda: lectura_comprensiva.generate(req, llm),
+    )
     return await _save_material(
         db, profesor_id=current_user.id, materia_id=materia_id,
         tipo=MaterialTipo.LECTURA_COMPRENSIVA, titulo=req.titulo,
@@ -659,7 +834,10 @@ async def gen_lectura_comprensiva(db: AsyncSession, req: LecturaComprensivaReque
 async def gen_mapa_conceptual(db: AsyncSession, req: MapaConceptualRequest, current_user: User) -> dict:
     materia_id = await _resolve_materia_id(db, req, current_user)
     llm = LLMRouter(user_id=current_user.id)
-    result = await mapa_conceptual.generate(req, llm)
+    result = await _generate_with_quality(
+        tipo=MaterialTipo.MAPA_CONCEPTUAL, req=req,
+        generator=lambda: mapa_conceptual.generate(req, llm),
+    )
     return await _save_material(
         db, profesor_id=current_user.id, materia_id=materia_id,
         tipo=MaterialTipo.MAPA_CONCEPTUAL, titulo=req.titulo,
@@ -670,7 +848,10 @@ async def gen_mapa_conceptual(db: AsyncSession, req: MapaConceptualRequest, curr
 async def gen_flashcards(db: AsyncSession, req: FlashcardsRequest, current_user: User) -> dict:
     materia_id = await _resolve_materia_id(db, req, current_user)
     llm = LLMRouter(user_id=current_user.id)
-    result = await flashcards.generate(req, llm)
+    result = await _generate_with_quality(
+        tipo=MaterialTipo.FLASHCARDS, req=req,
+        generator=lambda: flashcards.generate(req, llm),
+    )
     return await _save_material(
         db, profesor_id=current_user.id, materia_id=materia_id,
         tipo=MaterialTipo.FLASHCARDS, titulo=req.titulo,
@@ -681,7 +862,10 @@ async def gen_flashcards(db: AsyncSession, req: FlashcardsRequest, current_user:
 async def gen_plan_refuerzo(db: AsyncSession, req: PlanRefuerzoRequest, current_user: User) -> dict:
     materia_id = await _resolve_materia_id(db, req, current_user)
     llm = LLMRouter(user_id=current_user.id)
-    result = await plan_refuerzo.generate(req, llm)
+    result = await _generate_with_quality(
+        tipo=MaterialTipo.PLAN_REFUERZO, req=req,
+        generator=lambda: plan_refuerzo.generate(req, llm),
+    )
     return await _save_material(
         db, profesor_id=current_user.id, materia_id=materia_id,
         tipo=MaterialTipo.PLAN_REFUERZO, titulo=req.titulo,
