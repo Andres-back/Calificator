@@ -149,7 +149,7 @@ def test_photo_endpoint_reuses_online_delivery_and_grades_both_mixed_sections(mo
     async def enrolled(_db, materia_id, requested_student_id):
         return materia_id == evaluation.materia_id and requested_student_id == student_id
 
-    async def save(_content, _filename, *, subfolder):
+    async def save(_content, _filename, *, subfolder, **_kwargs):
         assert subfolder == "entregas"
         return "/uploads/entregas/mixed.jpg"
 

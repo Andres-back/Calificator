@@ -10,6 +10,7 @@ from app.db.session import get_db
 from app.modules.evaluaciones.schemas import EvaluacionRead
 from app.modules.herramientas import service
 from app.modules.herramientas.schemas import (
+    AsignarMaterialApoyoRequest,
     ConvertirEvaluacionRequest,
     CrucigramaRequest,
     CuentoRequest,
@@ -23,6 +24,7 @@ from app.modules.herramientas.schemas import (
     MapaConceptualRequest,
     MaterialListItem,
     MaterialRead,
+    MaterialUpdate,
     ParaColorearRequest,
     PlanRefuerzoRequest,
     QuizRapidoRequest,
@@ -221,14 +223,21 @@ async def plan_refuerzo(
     return await service.gen_plan_refuerzo(db, req, current_user)
 
 
+@router.get("/materias/{materia_id}/recursos", response_model=list[MaterialListItem])
+async def listar_recursos_de_materia(
+    materia_id: UUID,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> list[dict]:
+    return await service.list_materials_for_materia(db, materia_id, current_user)
+
 @router.get("/{material_id}", response_model=MaterialRead)
 async def ver_material(
     material_id: UUID,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> dict:
-    require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
-    material = await service.get_material(db, material_id, current_user.id)
+    material = await service.get_material_for_user(db, material_id, current_user)
     if material is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Material no encontrado")
     return material
@@ -255,10 +264,11 @@ async def material_pdf(
     db: AsyncSession = Depends(get_db),
 ) -> Response:
     """Devuelve el material renderizado como PDF (estética de la app)."""
-    require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
     from app.modules.herramientas.pdf_render import render_material_pdf
 
-    material = await service.get_material(db, material_id, current_user.id)
+    if current_user.rol == UserRole.ESTUDIANTE.value and soluciones:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Las soluciones son exclusivas del docente")
+    material = await service.get_material_for_user(db, material_id, current_user)
     if material is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Material no encontrado")
 
@@ -274,7 +284,7 @@ async def material_pdf(
 @router.patch("/{material_id}", status_code=status.HTTP_200_OK)
 async def actualizar_material(
     material_id: UUID,
-    payload: dict,
+    payload: MaterialUpdate,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> dict:
@@ -283,9 +293,33 @@ async def actualizar_material(
     material = await service.get_material(db, material_id, current_user.id)
     if material is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Material no encontrado")
-    updated = await service.update_material(db, material_id, current_user, payload)
+    updated = await service.update_material(
+        db, material_id, current_user, payload.model_dump(exclude_unset=True)
+    )
     return updated
 
+
+@router.post("/{material_id}/asignar-apoyo", response_model=MaterialRead)
+async def asignar_como_apoyo(
+    material_id: UUID,
+    req: AsignarMaterialApoyoRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
+    return await service.assign_material_as_support(
+        db, material_id, current_user, req.materia_id
+    )
+
+
+@router.post("/{material_id}/retirar-apoyo", response_model=MaterialRead)
+async def retirar_apoyo(
+    material_id: UUID,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
+    return await service.withdraw_support_material(db, material_id, current_user)
 
 @router.post("/{material_id}/duplicar", status_code=status.HTTP_201_CREATED)
 async def duplicar_material(

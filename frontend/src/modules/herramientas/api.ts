@@ -8,6 +8,11 @@ export async function listMaterials(tipo?: string): Promise<MaterialListItem[]> 
   return data;
 }
 
+export async function listMateriaResources(materiaId: string): Promise<MaterialListItem[]> {
+  const { data } = await api.get<MaterialListItem[]>(`${BASE}/materias/${materiaId}/recursos`);
+  return data;
+}
+
 export async function getMaterial(id: string): Promise<Material> {
   const { data } = await api.get<Material>(`${BASE}/${id}`);
   return data;
@@ -29,6 +34,16 @@ export async function updateMaterial(id: string, payload: { materia_id?: string 
 
 export async function editMaterial(id: string, payload: { titulo?: string; contenido_json?: Record<string, unknown> }): Promise<Material> {
   const { data } = await api.patch<Material>(`${BASE}/${id}`, payload);
+  return data;
+}
+
+export async function assignMaterialAsSupport(id: string, materiaId: string): Promise<Material> {
+  const { data } = await api.post<Material>(`${BASE}/${id}/asignar-apoyo`, { materia_id: materiaId });
+  return data;
+}
+
+export async function withdrawSupportMaterial(id: string): Promise<Material> {
+  const { data } = await api.post<Material>(`${BASE}/${id}/retirar-apoyo`);
   return data;
 }
 

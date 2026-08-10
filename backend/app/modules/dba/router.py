@@ -19,6 +19,7 @@ from app.modules.dba.schemas import (
 from app.modules.dba import document_service
 from app.modules.materias import service as materias_service
 from app.modules.users.models import User
+from app.services.storage_service import read_upload_limited
 from app.shared.enums import UserRole
 
 router = APIRouter(prefix="/dba", tags=["dba"])
@@ -159,7 +160,7 @@ async def upload_document_for_dba(
     """Sube un PDF o DOCX, extrae texto, genera sugerencias de DBA vía RAG+LLM."""
     materia = await materias_service.ensure_can_manage_materia(db, materia_id, current_user)
 
-    contenido = await file.read()
+    contenido = await read_upload_limited(file, 20 * 1024 * 1024)
     mime = file.content_type or ""
 
     if mime not in document_service.MIMES_PERMITIDOS:

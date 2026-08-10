@@ -22,6 +22,7 @@ export const routes = {
     `/app/materias?accion=${accion}` as const,
   materia: (id: string) => `/app/materias/${id}` as const,
   materiaEvaluaciones: (id: string) => `/app/materias/${id}/evaluaciones` as const,
+  materiaRecursos: (id: string) => `/app/materias/${id}/recursos` as const,
   materiaCalificar: (id: string) => `/app/materias/${id}/calificar` as const,
   materiaAsistencia: (id: string) => `/app/materias/${id}/asistencia` as const,
   materiaBoletin: (id: string) => `/app/materias/${id}/boletin` as const,
@@ -41,6 +42,7 @@ export const routes = {
   herramientaNueva: (tipo?: string) =>
     tipo ? (`/app/herramientas/nuevo?tipo=${encodeURIComponent(tipo)}` as const) : '/app/herramientas/nuevo',
   herramienta: (id: string) => `/app/herramientas/${id}` as const,
+  recursoEstudiante: (id: string) => `/app/recursos/${id}` as const,
 
   /* ── Otros ── */
   xali: '/app/xali',

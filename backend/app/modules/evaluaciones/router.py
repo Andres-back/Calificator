@@ -5,10 +5,10 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, s
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.permissions import get_current_user
+from app.core.rate_limit import rate_limit
 from app.db.session import get_db
 from app.modules.evaluaciones import generation_service, service
 from app.modules.evaluaciones.digitalize_service import (
-    detectar_estructura_evaluacion,
     detect_digitalization_mime,
     extract_evaluation_text,
 )
@@ -23,8 +23,15 @@ from app.modules.evaluaciones.schemas import (
     EvaluacionSorpresaCreate,
     EvaluacionUpdate,
 )
+from app.modules.jobs import service as jobs_service
 from app.modules.users.models import User
-from app.shared.enums import EvaluacionModalidad
+from app.services.storage_service import (
+    read_upload_limited,
+    resolve_private_upload_path,
+    save_private_upload,
+)
+from app.shared.enums import EvaluacionModalidad, JobEstado, JobTipo
+from app.workers.tasks_digitalization import digitalize_evaluation
 
 router = APIRouter(tags=["evaluaciones"])
 
@@ -40,7 +47,7 @@ async def extract_generation_reference(
     from app.modules.materias.service import ensure_can_manage_materia
 
     await ensure_can_manage_materia(db, materia_id, current_user)
-    content = await file.read()
+    content = await read_upload_limited(file, 20 * 1024 * 1024)
     filename = file.filename or "material-referencia"
     try:
         mime = detect_digitalization_mime(content, filename)
@@ -70,7 +77,7 @@ async def extract_generation_reference(
 
 @router.post(
     "/evaluaciones/externa/digitalizar-con-archivo",
-    status_code=status.HTTP_201_CREATED,
+    status_code=status.HTTP_202_ACCEPTED,
 )
 async def digitalize_from_file(
     materia_id: UUID = Form(...),
@@ -81,16 +88,26 @@ async def digitalize_from_file(
     file: UploadFile = File(...),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
+    _: None = Depends(
+        rate_limit(
+            limit=10,
+            window_seconds=3600,
+            scope="evaluation-digitalization",
+        ),
+    ),
 ) -> dict:
-    """Crea un borrador revisable desde PDF, DOCX o imagen con clave completa."""
+    """Valida y encola una digitalización persistente; no bloquea la navegación."""
     from app.modules.materias.service import ensure_can_manage_materia
 
     await ensure_can_manage_materia(db, materia_id, current_user)
-    content = await file.read()
+    content = await read_upload_limited(file, 20 * 1024 * 1024)
+    filename = file.filename or "evaluacion"
     try:
-        mime = detect_digitalization_mime(
+        mime = detect_digitalization_mime(content, filename)
+        file_key = await save_private_upload(
             content,
-            file.filename or "evaluacion",
+            mime,
+            subfolder="digitalizaciones",
         )
     except ValueError as exc:
         raise HTTPException(
@@ -98,45 +115,62 @@ async def digitalize_from_file(
             detail=str(exc),
         ) from exc
 
-    extracted_text, extraction_warnings = await extract_evaluation_text(
-        content,
-        mime,
-        file.filename or nombre,
-    )
-    structure = await detectar_estructura_evaluacion(
-        user_id=current_user.id,
-        contenido_texto=extracted_text,
-        nota_maxima=nota_maxima,
-        initial_warnings=extraction_warnings,
-    )
-    payload = DigitalizarEvaluacionExternaRequest(
-        materia_id=materia_id,
-        nombre=nombre,
-        descripcion=descripcion,
-        nota_maxima=nota_maxima,
-        modalidad=modalidad,
-        criterios=structure.get("criterios", []),
-        estructura_detectada=structure,
-    )
-    evaluation = await service.digitalize_external_evaluation(
-        db,
-        payload,
-        current_user,
-    )
+    job_id: UUID | None = None
+    try:
+        job_id = await jobs_service.create_job(
+            db,
+            user_id=current_user.id,
+            tipo=JobTipo.EVALUACION_DIGITALIZACION.value,
+            input_json={
+                "materia_id": str(materia_id),
+                "nombre": nombre,
+                "filename": filename,
+            },
+        )
+        await db.commit()
+        digitalize_evaluation.apply_async(kwargs={
+            "job_id": str(job_id),
+            "user_id": str(current_user.id),
+            "materia_id": str(materia_id),
+            "file_key": file_key,
+            "filename": filename,
+            "nombre": nombre,
+            "descripcion": descripcion,
+            "nota_maxima": str(nota_maxima),
+            "modalidad": modalidad.value,
+        })
+    except Exception as exc:
+        await db.rollback()
+        if job_id is not None:
+            await jobs_service.finish_job(
+                db,
+                job_id,
+                estado=JobEstado.FAILED.value,
+                resultado_json={
+                    "status": JobEstado.FAILED.value,
+                    "materia_id": str(materia_id),
+                    "nombre": nombre,
+                },
+                error="No fue posible iniciar la digitalización",
+            )
+            await db.commit()
+        try:
+            resolve_private_upload_path(file_key).unlink(missing_ok=True)
+        except OSError:
+            pass
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=(
+                "No fue posible iniciar la digitalización. "
+                "Intenta nuevamente en unos momentos."
+            ),
+        ) from exc
+
     return {
-        "evaluacion": {
-            "id": str(evaluation.id),
-            "nombre": evaluation.nombre,
-            "materia_id": str(evaluation.materia_id),
-            "estado": evaluation.estado,
-            "tipo_origen": evaluation.tipo_origen,
-            "modalidad": evaluation.modalidad,
-            "nota_maxima": float(evaluation.nota_maxima),
-            "preguntas_count": len(structure["preguntas"]),
-            "respuestas_count": len(structure["respuestas_esperadas"]),
-            "clave_completa": structure["clave_completa"],
-        },
-        "estructura_detectada": structure,
+        "job_id": job_id,
+        "estado": JobEstado.QUEUED.value,
+        "materia_id": materia_id,
+        "nombre": nombre,
     }
 
 @router.post(

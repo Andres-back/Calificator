@@ -189,8 +189,11 @@ def test_endpoint_commits_delivery_before_invoking_grading(
     class FakeUpload:
         filename = "respuesta.jpg"
 
-        async def read(self):
-            return b"jpeg"
+        async def read(self, _size: int = -1):
+                if getattr(self, "_consumed", False):
+                    return b""
+                self._consumed = True
+                return b"jpeg"
 
     monkeypatch.setattr(
         router.evaluaciones_service,
@@ -266,8 +269,11 @@ def test_teacher_replaces_existing_delivery_without_consuming_student_attempt(
     class FakeUpload:
         filename = "reemplazo.pdf"
 
-        async def read(self):
-            return b"%PDF-1.7"
+        async def read(self, _size: int = -1):
+                if getattr(self, "_consumed", False):
+                    return b""
+                self._consumed = True
+                return b"%PDF-1.7"
 
     monkeypatch.setattr(
         router.evaluaciones_service,

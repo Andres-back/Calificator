@@ -1,11 +1,12 @@
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
-import { useState, useCallback, useMemo } from 'react';
-import { ArrowLeft, Download, FileCheck2, Trash2, Gamepad2, Printer, Share2, Sparkles, Copy, ClipboardList, Pencil } from 'lucide-react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
+import { ArrowLeft, BookOpenCheck, Download, FileCheck2, Trash2, Gamepad2, Printer, Share2, Sparkles, Copy, ClipboardList, Pencil, Send } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Button, LoadingScreen, Badge, Card, ConfirmDialog, Select, Input, Field, Modal } from '@/components/ui';
 import {
+  assignMaterialAsSupport,
   convertToEvaluacion,
   deleteMaterial,
   duplicateMaterial,
@@ -13,10 +14,11 @@ import {
   getMaterial,
   listMaterialEvaluaciones,
   pdfUrl,
-  updateMaterial,
+  withdrawSupportMaterial,
   type IntentPolicy,
 } from './api';
 import { TOOL_BY_TIPO } from './meta';
+import { MaterialContentEditor } from './MaterialContentEditor';
 import { CrucigramaView, SopaLetrasView, MatchingView, ContenidoView } from './views';
 import { useMaterias } from '@/modules/materias/MateriaSelect';
 import type { ToolContent } from './views/ContenidoView';
@@ -29,13 +31,18 @@ import type { CrucigramaContenido, EvaluacionModalidad, MatchingContenido, SopaC
 export function DetailPage() {
   const { id = '' } = useParams();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const [handledAction, setHandledAction] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [editing, setEditing] = useState(false);
   const [editTitle, setEditTitle] = useState('');
-  const [editContent, setEditContent] = useState('');
+  const [editContent, setEditContent] = useState<Record<string, unknown>>({});
   const [saving, setSaving] = useState(false);
   const [duplicating, setDuplicating] = useState(false);
+  const [showAssignment, setShowAssignment] = useState(false);
   const [showConvert, setShowConvert] = useState(false);
+  const [supportMateria, setSupportMateria] = useState('');
+  const [publishingSupport, setPublishingSupport] = useState(false);
   const [convertMateria, setConvertMateria] = useState('');
   const [convertNombre, setConvertNombre] = useState('');
   const [convertNota, setConvertNota] = useState(5);
@@ -45,7 +52,6 @@ export function DetailPage() {
   const [convertTimeLimit, setConvertTimeLimit] = useState('');
   const [converting, setConverting] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [assigning, setAssigning] = useState(false);
   const { data: materias = [] } = useMaterias();
   const { data: material, isLoading } = useQuery({ queryKey: ['material', id], queryFn: () => getMaterial(id) });
   const meta = material ? TOOL_BY_TIPO[material.tipo] : undefined;
@@ -78,7 +84,7 @@ export function DetailPage() {
   const linkedMateriaId = linkedEvaluation?.materia_id ?? material?.materia_id ?? null;
 
   const openConvert = () => {
-    setConvertMateria(material?.materia_id ?? '');
+    setConvertMateria(supportMateria || material?.materia_id || '');
     setConvertNombre(material?.titulo ?? contentTitle);
     setConvertModalidad(material?.evaluacion_modalidad ?? 'fisica');
     setConvertPolicy('un_intento');
@@ -124,27 +130,9 @@ export function DetailPage() {
     }
   };
 
-  const handleAssignMateria = async (materiaId: string) => {
-    if (linkedEvaluationId) {
-      toast.error('Cambia la materia desde el borrador de la evaluación vinculada.');
-      return;
-    }
-    setAssigning(true);
-    try {
-      await updateMaterial(id, { materia_id: materiaId || null });
-      await queryClient.invalidateQueries({ queryKey: ['material', id] });
-      await queryClient.invalidateQueries({ queryKey: ['materials'] });
-      toast.success(materiaId ? 'Material asignado a la materia' : 'Materia desasignada');
-    } catch (err) {
-      toast.error(toApiError(err).detail);
-    } finally {
-      setAssigning(false);
-    }
-  };
-
   const startEditing = useCallback(() => {
     setEditTitle(contentTitle);
-    setEditContent(JSON.stringify(content, null, 2));
+    setEditContent(structuredClone(content));
     setEditing(true);
   }, [contentTitle, content]);
 
@@ -152,15 +140,8 @@ export function DetailPage() {
     if (saving) return;
     setSaving(true);
     try {
-      let parsed: Record<string, unknown>;
-      try {
-        parsed = JSON.parse(editContent);
-      } catch {
-        toast.error('El contenido no es JSON válido. Revisa la sintaxis.');
-        setSaving(false);
-        return;
-      }
-      await editMaterial(id, { titulo: editTitle, contenido_json: parsed });
+      const parsed = { ...editContent, titulo: editTitle.trim() || contentTitle };
+      await editMaterial(id, { titulo: editTitle.trim() || contentTitle, contenido_json: parsed });
       await queryClient.invalidateQueries({ queryKey: ['material', id] });
       setEditing(false);
       toast.success('Material actualizado');
@@ -168,6 +149,55 @@ export function DetailPage() {
       toast.error(toApiError(err).detail);
     } finally {
       setSaving(false);
+    }
+  };
+
+  const openAssignment = useCallback(() => {
+    setSupportMateria(material?.materia_id ?? '');
+    setShowAssignment(true);
+  }, [material?.materia_id]);
+
+  useEffect(() => {
+    if (!material || handledAction) return;
+    const action = searchParams.get('action');
+    if (action === 'edit') startEditing();
+    if (action === 'assign' && !linkedEvaluationId) openAssignment();
+    if (action === 'edit' || action === 'assign') setHandledAction(true);
+  }, [handledAction, linkedEvaluationId, material, openAssignment, searchParams, startEditing]);
+  const handlePublishSupport = async () => {
+    if (!supportMateria || publishingSupport) return;
+    setPublishingSupport(true);
+    try {
+      await assignMaterialAsSupport(id, supportMateria);
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['material', id] }),
+        queryClient.invalidateQueries({ queryKey: ['materials'] }),
+        queryClient.invalidateQueries({ queryKey: ['materia-resources', supportMateria] }),
+      ]);
+      setShowAssignment(false);
+      toast.success('Material publicado como apoyo para el salón');
+    } catch (err) {
+      toast.error(toApiError(err).detail);
+    } finally {
+      setPublishingSupport(false);
+    }
+  };
+
+  const handleWithdrawSupport = async () => {
+    if (publishingSupport) return;
+    setPublishingSupport(true);
+    try {
+      await withdrawSupportMaterial(id);
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['material', id] }),
+        queryClient.invalidateQueries({ queryKey: ['materials'] }),
+        queryClient.invalidateQueries({ queryKey: ['materia-resources', material?.materia_id] }),
+      ]);
+      toast.success('El recurso ya no está visible para los estudiantes');
+    } catch (err) {
+      toast.error(toApiError(err).detail);
+    } finally {
+      setPublishingSupport(false);
     }
   };
 
@@ -213,6 +243,8 @@ export function DetailPage() {
         queryClient.invalidateQueries({ queryKey: ['evaluaciones'] }),
         queryClient.invalidateQueries({ queryKey: ['material-evaluations', id] }),
         queryClient.invalidateQueries({ queryKey: ['material', id] }),
+        queryClient.invalidateQueries({ queryKey: ['materials'] }),
+        queryClient.invalidateQueries({ queryKey: ['materia-resources', convertMateria] }),
       ]);
       setShowConvert(false);
       toast.success(`Evaluación creada: ${result.nombre} (${result.preguntas?.length ?? 0} preguntas)`);
@@ -301,8 +333,8 @@ export function DetailPage() {
             <Button size="icon" variant="ghost" onClick={handleShare} title="Compartir" aria-label="Compartir material">
               <Share2 className="h-4 w-4" />
             </Button>
-            <Button size="sm" variant="outline" onClick={startEditing} title="Editar contenido">
-              <Pencil className="h-4 w-4" /> Editar
+            <Button size="sm" onClick={startEditing} title="Editar contenido">
+              <Pencil className="h-4 w-4" /> Editar contenido
             </Button>
             <Button size="sm" variant="outline" onClick={handleDuplicate} loading={duplicating} loadingLabel="Duplicando…" title="Duplicar material">
               <Copy className="h-4 w-4" /> Duplicar
@@ -310,12 +342,12 @@ export function DetailPage() {
             {linkedEvaluationId ? (
               <Link to={linkedMateriaId ? routes.materiaEvaluaciones(linkedMateriaId) : '/app/evaluaciones'}>
                 <Button size="sm" variant="outline" title="Abrir la actividad evaluable vinculada">
-                  <ClipboardList className="h-4 w-4" /> Abrir evaluación
+                  <ClipboardList className="h-4 w-4" /> Abrir actividad
                 </Button>
               </Link>
             ) : (
-              <Button size="sm" variant="outline" onClick={openConvert} title="Asignar como actividad evaluable">
-                <ClipboardList className="h-4 w-4" /> Asignar como actividad evaluable
+              <Button size="sm" variant="outline" onClick={openAssignment} title="Asignar este recurso a una clase">
+                <Send className="h-4 w-4" /> Asignar a clase
               </Button>
             )}
             <Button size="icon" variant="ghost" onClick={() => setConfirmDelete(true)} className="text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-500/10" title="Eliminar" aria-label="Eliminar material">
@@ -323,31 +355,31 @@ export function DetailPage() {
             </Button>
           </div>
         </div>
-        {material.materia_id && (
-          <p className="mt-3 text-xs text-muted">
-            Asignado a: <span className="font-semibold text-brand-600">{materias.find((m) => m.id === material.materia_id)?.nombre ?? '—'}</span>
-          </p>
-        )}
-        <div className="mt-3 space-y-1.5 print:hidden">
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-muted">Organizar en materia:</span>
-            <Select
-              value={material.materia_id ?? ''}
-              onChange={(e) => handleAssignMateria(e.target.value)}
-              disabled={assigning || Boolean(linkedEvaluationId)}
-              className="max-w-xs"
-            >
-              <option value="">Sin asignar</option>
-              {materias.map((m) => (
-                <option key={m.id} value={m.id}>{m.nombre}{m.grado ? ` - ${m.grado}` : ''}</option>
-              ))}
-            </Select>
+        {material.publicado_estudiantes ? (
+          <div className="mt-5 flex flex-col gap-3 rounded-xl border border-emerald-200 bg-emerald-50/80 px-4 py-3 text-sm dark:border-emerald-500/30 dark:bg-emerald-500/10 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-start gap-3">
+              <BookOpenCheck className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600 dark:text-emerald-300" />
+              <div>
+                <p className="font-bold text-emerald-900 dark:text-emerald-100">Visible como material de apoyo</p>
+                <p className="text-emerald-800/80 dark:text-emerald-100/70">Los estudiantes de {material.materia_nombre ?? 'la materia'} pueden consultarlo y descargarlo. No genera nota.</p>
+              </div>
+            </div>
+            <Button size="sm" variant="outline" onClick={handleWithdrawSupport} loading={publishingSupport} loadingLabel="Retirando…">Retirar del salón</Button>
           </div>
-          <p className="text-xs text-muted">Esta clasificación solo organiza el recurso; no lo publica ni habilita entregas.</p>
-          {linkedEvaluationId && (
-            <p className="text-xs font-medium text-brand-700 dark:text-brand-200">La materia se administra desde el borrador de la evaluación vinculada.</p>
-          )}
-        </div>
+        ) : linkedEvaluationId ? (
+          <div className="mt-5 flex items-start gap-3 rounded-xl border border-violet-200 bg-violet-50/80 px-4 py-3 text-sm dark:border-violet-500/30 dark:bg-violet-500/10">
+            <ClipboardList className="mt-0.5 h-5 w-5 shrink-0 text-violet-600 dark:text-violet-300" />
+            <div>
+              <p className="font-bold text-violet-900 dark:text-violet-100">Actividad evaluable vinculada</p>
+              <p className="text-violet-800/80 dark:text-violet-100/70">Las entregas, intentos y notas se administran con Calificator desde {material.materia_nombre ?? 'la materia'}.</p>
+            </div>
+          </div>
+        ) : (
+          <div className="mt-5 flex items-start gap-3 rounded-xl border border-border bg-surface/70 px-4 py-3 text-sm">
+            <Send className="mt-0.5 h-5 w-5 shrink-0 text-brand-600" />
+            <div><p className="font-bold">Aún no está asignado</p><p className="text-muted">Puedes publicarlo para repasar o convertirlo en una actividad calificable.</p></div>
+          </div>
+        )}
       </motion.div>
 
       {aiTrace && (
@@ -367,30 +399,28 @@ export function DetailPage() {
         </div>
       )}
 
-      <Card className="p-5 sm:p-7 print:!p-0 print:!shadow-none print:!border-0 print:!bg-transparent">
+      <Card className="p-5 sm:p-7 print:!border-0 print:!bg-transparent print:!p-0 print:!shadow-none">
         {editing ? (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="font-display text-lg font-bold">Editando contenido</h3>
-              <div className="flex gap-2">
+          <div className="space-y-5">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <h3 className="font-display text-lg font-bold">Editor visual del recurso</h3>
+                <p className="mt-1 text-sm text-muted">Cambia textos, preguntas, respuestas y opciones sin editar código.</p>
+              </div>
+              <div className="flex gap-2 self-end sm:self-auto">
                 <Button size="sm" variant="ghost" onClick={() => setEditing(false)}>Cancelar</Button>
                 <Button size="sm" onClick={saveEdits} loading={saving} loadingLabel="Guardando…">Guardar cambios</Button>
               </div>
             </div>
-            <Field label="Título">
-              <Input value={editTitle} onChange={(e) => setEditTitle(e.target.value)} />
+            <Field label="Título del recurso">
+              <Input value={editTitle} onChange={(event) => setEditTitle(event.target.value)} />
             </Field>
-            <Field label="Contenido (JSON)">
-              <textarea
-                value={editContent}
-                onChange={(e) => setEditContent(e.target.value)}
-                className="focus-ring min-h-[400px] w-full rounded-lg border border-border bg-surface-2 p-3 font-mono text-xs"
-                spellCheck={false}
-              />
-            </Field>
-            <p className="text-xs text-muted">
-              Edita el contenido JSON directamente. Los cambios se guardan al pulsar "Guardar cambios".
-            </p>
+            <MaterialContentEditor value={editContent} onChange={setEditContent} />
+            {material.publicado_estudiantes && (
+              <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-100">
+                Al guardar, los estudiantes verán inmediatamente la versión actualizada del material.
+              </p>
+            )}
           </div>
         ) : (
           renderBody()
@@ -406,6 +436,47 @@ export function DetailPage() {
         tone="danger"
         loading={isDeleting}
       />
+      {showAssignment && (
+        <Modal open onClose={() => setShowAssignment(false)} ariaLabel="Asignar recurso a una clase">
+          <div className="space-y-5 p-6">
+            <div>
+              <h2 className="font-display text-xl font-extrabold">Asignar a una clase</h2>
+              <p className="mt-1 text-sm text-muted">Elige qué harán tus estudiantes con este recurso.</p>
+            </div>
+            <Field label="Materia o salón" required>
+              <Select value={supportMateria} onChange={(event) => setSupportMateria(event.target.value)} required>
+                <option value="">Selecciona una materia</option>
+                {materias.map((materia) => (
+                  <option key={materia.id} value={materia.id}>{materia.nombre}{materia.grado ? ` - ${materia.grado}` : ''}</option>
+                ))}
+              </Select>
+            </Field>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <button
+                type="button"
+                disabled={!supportMateria || publishingSupport}
+                onClick={() => void handlePublishSupport()}
+                className="focus-ring rounded-2xl border border-emerald-200 bg-emerald-50/70 p-4 text-left transition hover:border-emerald-400 disabled:cursor-not-allowed disabled:opacity-50 dark:border-emerald-500/30 dark:bg-emerald-500/10"
+              >
+                <BookOpenCheck className="h-6 w-6 text-emerald-600 dark:text-emerald-300" />
+                <span className="mt-3 block font-bold">Material de apoyo</span>
+                <span className="mt-1 block text-sm text-muted">Queda disponible para leer, practicar o descargar. No requiere entrega ni genera nota.</span>
+              </button>
+              <button
+                type="button"
+                disabled={!supportMateria}
+                onClick={() => { setShowAssignment(false); setConvertMateria(supportMateria); openConvert(); }}
+                className="focus-ring rounded-2xl border border-violet-200 bg-violet-50/70 p-4 text-left transition hover:border-violet-400 disabled:cursor-not-allowed disabled:opacity-50 dark:border-violet-500/30 dark:bg-violet-500/10"
+              >
+                <ClipboardList className="h-6 w-6 text-violet-600 dark:text-violet-300" />
+                <span className="mt-3 block font-bold">Taller o actividad evaluable</span>
+                <span className="mt-1 block text-sm text-muted">Crea un borrador editable con entregas, intentos y calificación dentro de Calificator.</span>
+              </button>
+            </div>
+            <div className="flex justify-end"><Button variant="ghost" onClick={() => setShowAssignment(false)}>Cancelar</Button></div>
+          </div>
+        </Modal>
+      )}
       {showConvert && (
         <Modal open onClose={() => setShowConvert(false)} ariaLabel="Asignar como actividad evaluable">
           <div className="space-y-5 p-6">

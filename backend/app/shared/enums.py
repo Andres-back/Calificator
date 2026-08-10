@@ -108,6 +108,7 @@ class JobTipo(StrEnum):
     CALIFICACION_LOTE = "calificacion_lote"
     RAG_INGEST = "rag_ingest"
     REPORTE_EXPORT = "reporte_export"
+    EVALUACION_DIGITALIZACION = "evaluacion_digitalizacion"
 
 
 class MaterialTipo(StrEnum):

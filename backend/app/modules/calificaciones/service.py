@@ -584,7 +584,11 @@ async def get_calificacion_detalle(
         "revisado_por_docente": cal.revisado_por_docente,
         "resultado_json": cal.resultado_json or {},
         "entrega_tipo": cal.entrega.tipo if cal.entrega else None,
-        "entrega_archivo_url": cal.entrega.archivo_url if cal.entrega else None,
+        "entrega_archivo_url": (
+            f"/api/calificaciones/entregas/{cal.entrega.id}/evidencia"
+            if cal.entrega and cal.entrega.archivo_url
+            else None
+        ),
         "entrega_respuesta_texto": cal.entrega.respuesta_texto if cal.entrega else None,
         "entrega_created_at": cal.entrega.created_at if cal.entrega else None,
         "timeline": timeline_raw,

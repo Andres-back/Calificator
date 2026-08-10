@@ -3,6 +3,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { DigitalizarEvaluacionModal } from './DigitalizarEvaluacionModal';
+import { readPendingDigitalizations } from '@/modules/evaluaciones/digitalizationJobs';
 
 const mocks = vi.hoisted(() => ({
   post: vi.fn(),
@@ -40,44 +41,19 @@ function renderModal(onCompleted = vi.fn()) {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  window.localStorage.clear();
   mocks.post.mockResolvedValue({
     data: {
-      evaluacion: {
-        id: 'evaluation-1',
-        nombre: 'Prueba multiplicación',
-        materia_id: 'materia-1',
-        estado: 'borrador',
-        tipo_origen: 'digitalizada',
-        modalidad: 'fisica',
-        nota_maxima: 5,
-        preguntas_count: 1,
-        respuestas_count: 1,
-        clave_completa: true,
-      },
-      estructura_detectada: {
-        preguntas: [
-          {
-            numero: 1,
-            tipo: 'opcion_multiple',
-            enunciado: '¿Cuánto es 4 por 9?',
-            opciones: ['A) 32', 'B) 36'],
-            puntaje: '5.00',
-          },
-        ],
-        respuestas_esperadas: [{ numero: 1, respuesta: 'B) 36' }],
-        criterios: [],
-        errores_comunes: [],
-        reglas_feedback: {},
-        clave_completa: true,
-        advertencias: ['Los puntajes visibles fueron escalados a 5.'],
-        nota_maxima: '5',
-      },
+      job_id: 'job-1',
+      estado: 'queued',
+      materia_id: 'materia-1',
+      nombre: 'Prueba multiplicación',
     },
   });
 });
 
 describe('DigitalizarEvaluacionModal', () => {
-  it('uploads FormData without overriding the multipart boundary and shows the draft key', async () => {
+  it('queues FormData, persists the job and lets the teacher continue navigating', async () => {
     const user = userEvent.setup();
     const { container } = renderModal();
     const fileInput = container.querySelector<HTMLInputElement>('input[type="file"]');
@@ -86,7 +62,10 @@ describe('DigitalizarEvaluacionModal', () => {
     const file = new File(['%PDF-1.7'], 'prueba.pdf', { type: 'application/pdf' });
     await user.upload(fileInput as HTMLInputElement, file);
     await user.clear(screen.getByLabelText(/Nombre de la evaluación/i));
-    await user.type(screen.getByLabelText(/Nombre de la evaluación/i), 'Prueba multiplicación');
+    await user.type(
+      screen.getByLabelText(/Nombre de la evaluación/i),
+      'Prueba multiplicación',
+    );
     await user.click(screen.getByRole('button', { name: 'Digitalizar' }));
 
     await waitFor(() => expect(mocks.post).toHaveBeenCalledTimes(1));
@@ -100,8 +79,23 @@ describe('DigitalizarEvaluacionModal', () => {
     expect(form.get('modalidad')).toBe('fisica');
     expect(form.get('file')).toBe(file);
 
-    expect(await screen.findByText('Borrador creado. La IA sugiere; revisa la clave antes de publicar.')).toBeInTheDocument();
-    expect(screen.getAllByText('B) 36')).toHaveLength(2);
-    expect(screen.getByText('Los puntajes visibles fueron escalados a 5.')).toBeInTheDocument();
+    expect(
+      await screen.findByRole('heading', {
+        name: 'Estamos trabajando en tu documento',
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/Puedes continuar navegando; te avisaremos/i),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Continuar navegando' }),
+    ).toBeEnabled();
+    expect(readPendingDigitalizations()).toEqual([
+      expect.objectContaining({
+        jobId: 'job-1',
+        materiaId: 'materia-1',
+        nombre: 'Prueba multiplicación',
+      }),
+    ]);
   });
 });

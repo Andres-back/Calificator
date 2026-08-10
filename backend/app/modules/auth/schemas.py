@@ -1,6 +1,6 @@
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
-from app.modules.users.schemas import UserCreate, UserRead
+from app.modules.users.schemas import UserRead
 
 
 class LoginRequest(BaseModel):
@@ -8,8 +8,14 @@ class LoginRequest(BaseModel):
     password: str = Field(min_length=1, max_length=128)
 
 
-class RegisterRequest(UserCreate):
-    pass
+class RegisterRequest(BaseModel):
+    """Public registration never accepts a privileged role from the client."""
+
+    nombre: str = Field(min_length=2, max_length=160)
+    email: EmailStr
+    password: str = Field(min_length=8, max_length=128)
+
+    model_config = ConfigDict(extra="forbid")
 
 
 class AuthResponse(BaseModel):

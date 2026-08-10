@@ -20,8 +20,12 @@ from app.shared.enums import (
 class FakeUpload:
     def __init__(self, filename: str) -> None:
         self.filename = filename
+        self._consumed = False
 
-    async def read(self) -> bytes:
+    async def read(self, _size: int = -1) -> bytes:
+        if self._consumed:
+            return b""
+        self._consumed = True
         return b"\x89PNG\r\n\x1a\nimage-data"
 
 
@@ -68,7 +72,7 @@ def test_async_batch_endpoint_persists_then_enqueues_exact_deliveries(monkeypatc
     async def enrolled(_db, _materia_id, _student_id):
         return True
 
-    async def save(_content, filename, subfolder):
+    async def save(_content, filename, subfolder, **_kwargs):
         return f"/uploads/{subfolder}/{filename}"
 
     async def create_job(_db, **kwargs):

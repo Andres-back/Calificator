@@ -3,8 +3,7 @@ from __future__ import annotations
 
 import asyncio
 from collections.abc import Callable
-from pathlib import Path
-from urllib.parse import unquote, urlparse
+
 from uuid import UUID
 
 import aiofiles
@@ -13,7 +12,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.core.config import settings
+
 from app.core.logging import get_logger
 from app.db.session import AsyncSessionLocal, engine
 from app.modules.calificaciones import photo_service, service as calificaciones_service
@@ -22,26 +21,13 @@ from app.modules.calificaciones.models import Calificacion, Entrega
 from app.modules.evaluaciones.blueprint_service import evaluation_to_grading_blueprint
 from app.modules.evaluaciones.models import Evaluacion
 from app.modules.jobs import service as jobs_service
-from app.services.storage_service import validate_mime
+from app.services.storage_service import resolve_upload_path, validate_mime
 from app.shared.enums import EntregaEstado, JobEstado
 from app.workers.worker import celery_app
 
 logger = get_logger(__name__)
 ProgressCallback = Callable[[int, dict], None]
 
-
-def resolve_upload_path(public_url: str) -> Path:
-    """Resolve an internal upload URL without allowing traversal outside UPLOADS_DIR."""
-    uploads_root = Path(settings.UPLOADS_DIR).resolve()
-    public_prefix = urlparse(settings.PUBLIC_UPLOADS_BASE_URL).path.rstrip("/")
-    parsed_path = unquote(urlparse(public_url).path)
-    expected_prefix = f"{public_prefix}/" if public_prefix else "/"
-    if not parsed_path.startswith(expected_prefix):
-        raise ValueError("La entrega no apunta al almacenamiento interno permitido")
-    candidate = (uploads_root / parsed_path[len(expected_prefix):]).resolve()
-    if candidate == uploads_root or uploads_root not in candidate.parents:
-        raise ValueError("Ruta de entrega fuera del almacenamiento permitido")
-    return candidate
 
 
 async def _load_submission(entrega: Entrega) -> dict:

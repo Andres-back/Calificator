@@ -1,7 +1,7 @@
 import { Link, Outlet, useLocation, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
-import { ArrowLeft, BookOpen, ClipboardCheck, Camera, BarChart3, BookMarked, CalendarCheck2, LayoutGrid, Users } from 'lucide-react';
+import { ArrowLeft, BookOpen, ClipboardCheck, Camera, BarChart3, BookMarked, CalendarCheck2, LayoutGrid, Library, Users } from 'lucide-react';
 import { Badge, LoadingScreen, QueryError } from '@/components/ui';
 import { getMateria, getMateriaEstudiantes } from './api';
 import { toApiError } from '@/lib/api';
@@ -11,6 +11,7 @@ import { cn } from '@/lib/cn';
 const ALL_TABS = [
   { label: 'Vista general', to: '', icon: LayoutGrid },
   { label: 'Evaluaciones', to: 'evaluaciones', icon: ClipboardCheck },
+  { label: 'Recursos', to: 'recursos', icon: Library },
   { label: 'Calificar', to: 'calificar', icon: Camera, profesorOnly: true },
   { label: 'Asistencia', to: 'asistencia', icon: CalendarCheck2, profesorOnly: true },
   { label: 'Boletín', to: 'boletin', icon: BarChart3 },

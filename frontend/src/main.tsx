@@ -36,7 +36,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     <MotionConfig reducedMotion="user">
     <QueryClientProvider client={queryClient}>
       <AuthBootstrap>
-        <RouterProvider router={router} future={{ v7_startTransition: true }} />
+        <RouterProvider router={router} />
       </AuthBootstrap>
       <Toaster
         position="top-right"

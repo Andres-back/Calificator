@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import json
+from copy import copy
+import mimetypes
 from datetime import datetime, timezone
 from decimal import Decimal
 from uuid import UUID
@@ -8,6 +10,7 @@ from uuid import UUID
 import aiofiles
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Response, UploadFile, status
+from fastapi.responses import FileResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -54,16 +57,35 @@ from app.modules.evaluaciones.modality_service import (
 from app.modules.jobs import service as jobs_service
 from app.modules.materias import service as materias_service
 from app.modules.users.models import User
-from app.services.storage_service import save_upload, validate_mime
+from app.services.storage_service import (
+    read_upload_limited,
+    resolve_upload_path,
+    save_upload,
+    validate_mime,
+)
 from app.shared.enums import (
     CalificacionEstado, EntregaEstado, EntregaTipo, EvaluacionModalidad,
     JobEstado, JobTipo, UserRole,
 )
-from app.workers.tasks_grading import grade_batch, resolve_upload_path
+from app.workers.tasks_grading import grade_batch
 
 router = APIRouter(tags=["calificaciones"])
 MAX_ASYNC_BATCH_FILES = 50
 MAX_ASYNC_BATCH_BYTES = 100 * 1024 * 1024
+MAX_EVIDENCE_BYTES = 15 * 1024 * 1024
+
+
+def _evidence_url(entrega: Entrega | None) -> str | None:
+    if not entrega or not entrega.archivo_url:
+        return None
+    return f"/api/calificaciones/entregas/{entrega.id}/evidencia"
+
+
+def _entrega_read(entrega: Entrega) -> Entrega:
+    """Devuelve una copia serializable sin exponer la ruta persistida interna."""
+    safe_entrega = copy(entrega)
+    safe_entrega.archivo_url = _evidence_url(entrega)
+    return safe_entrega
 
 
 def _mixed_evidence_metadata(evaluacion: object, entrega: Entrega) -> dict:
@@ -106,7 +128,7 @@ async def calificar_foto(
         )
     if not await is_student_enrolled(db, evaluacion.materia_id, estudiante_id):
         raise HTTPException(status_code=403, detail="El estudiante no esta matriculado en esta materia")
-    content = await foto.read()
+    content = await read_upload_limited(foto, MAX_EVIDENCE_BYTES)
     mime = validate_mime(content, foto.filename or "image.jpg")
 
     existing_calificacion: Calificacion | None = None
@@ -159,7 +181,7 @@ async def calificar_foto(
             )
             db.add(entrega)
 
-    archivo_url = await save_upload(content, foto.filename or "foto.jpg", subfolder="entregas")
+    archivo_url = await save_upload(content, foto.filename or "foto.jpg", subfolder="entregas", max_size_bytes=MAX_EVIDENCE_BYTES)
     entrega.archivo_url = archivo_url
     entrega.tipo = (
         EntregaTipo.MIXTA.value
@@ -278,8 +300,6 @@ async def calificar_lote(
     - files: lista de archivos de imagen (mismo orden que estudiantes).
     - estudiantes: JSON array de UUIDs de estudiantes ["id1", "id2", ...].
     """
-    import json
-
     require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
     evaluacion = await evaluaciones_service.ensure_can_manage_evaluation(db, evaluacion_id, current_user)
     service.ensure_evaluation_accepts_grading(evaluacion)
@@ -312,12 +332,13 @@ async def calificar_lote(
         sid = estudiante_ids[i]
         sid_uuid = UUID(sid) if isinstance(sid, str) else sid
         try:
-            content = await foto.read()
+            content = await read_upload_limited(foto, MAX_EVIDENCE_BYTES)
             mime = validate_mime(content, foto.filename or "image.jpg")
             archivo_url = await save_upload(
                 content,
                 foto.filename or f"lote_{i}.jpg",
                 subfolder="entregas",
+                max_size_bytes=MAX_EVIDENCE_BYTES,
             )
             entrega = Entrega(
                 evaluacion_id=evaluacion.id,
@@ -416,7 +437,7 @@ async def calificar_lote_asincrono(
     prepared_files: list[tuple[bytes, str, str]] = []
     total_bytes = 0
     for index, foto in enumerate(files):
-        content = await foto.read()
+        content = await read_upload_limited(foto, MAX_EVIDENCE_BYTES)
         try:
             mime = validate_mime(content, foto.filename or "image.jpg")
         except ValueError as exc:
@@ -437,7 +458,7 @@ async def calificar_lote_asincrono(
         for estudiante_id, (content, filename, mime) in zip(
             estudiante_ids, prepared_files, strict=True,
         ):
-            archivo_url = await save_upload(content, filename, subfolder="entregas")
+            archivo_url = await save_upload(content, filename, subfolder="entregas", max_size_bytes=MAX_EVIDENCE_BYTES)
             entrega = Entrega(
                 evaluacion_id=evaluacion.id,
                 estudiante_id=estudiante_id,
@@ -737,7 +758,7 @@ async def salon_foto(
     if not await is_student_enrolled(db, evaluacion.materia_id, estudiante_id):
         raise HTTPException(status_code=403, detail="El estudiante no esta matriculado en esta materia")
 
-    content = await foto.read()
+    content = await read_upload_limited(foto, MAX_EVIDENCE_BYTES)
     mime = validate_mime(content, foto.filename or "foto.jpg")
     return await grade_student_photo(
         db,
@@ -786,7 +807,7 @@ async def get_my_delivery(
         raise HTTPException(status_code=403, detail="No estas matriculado en esta materia")
     if evaluacion.estado not in evaluaciones_service.STUDENT_VISIBLE_EVALUATION_STATES:
         raise HTTPException(status_code=404, detail="Evaluacion no encontrada")
-    return await db.scalar(
+    entrega = await db.scalar(
         select(Entrega)
         .where(
             Entrega.evaluacion_id == evaluacion.id,
@@ -795,6 +816,7 @@ async def get_my_delivery(
         .order_by(Entrega.created_at.desc())
         .limit(1)
     )
+    return _entrega_read(entrega) if entrega else None
 
 
 @router.post("/evaluaciones/{evaluacion_id}/entregas", response_model=EntregaRead, status_code=status.HTTP_201_CREATED)
@@ -863,7 +885,7 @@ async def crear_entrega_online(
         }
         await db.commit()
         await db.refresh(entrega)
-        return entrega
+        return _entrega_read(entrega)
 
     try:
         grading = await grade_submission(
@@ -900,7 +922,7 @@ async def crear_entrega_online(
     db.add(cal)
     await db.commit()
     await db.refresh(entrega)
-    return entrega
+    return _entrega_read(entrega)
 
 
 @router.post(
@@ -929,9 +951,7 @@ async def crear_entrega_archivo_estudiante(
     if not await is_student_enrolled(db, evaluacion.materia_id, current_user.id):
         raise HTTPException(status_code=403, detail="No estas matriculado en esta materia")
 
-    content = await archivo.read()
-    if len(content) > 15 * 1024 * 1024:
-        raise HTTPException(status_code=413, detail="El archivo supera el limite de 15 MB")
+    content = await read_upload_limited(archivo, MAX_EVIDENCE_BYTES)
     try:
         mime = validate_mime(content, archivo.filename or "evidencia.jpg")
     except ValueError as exc:
@@ -976,6 +996,7 @@ async def crear_entrega_archivo_estudiante(
         content,
         archivo.filename or "evidencia.jpg",
         subfolder="entregas",
+        max_size_bytes=MAX_EVIDENCE_BYTES,
     )
     entrega.archivo_url = archivo_url
     entrega.tipo = (
@@ -1011,6 +1032,46 @@ async def crear_entrega_archivo_estudiante(
 # ── Detalle ──────────────────────────────────────────────────────────────────────
 
 
+@router.get("/calificaciones/entregas/{entrega_id}/evidencia")
+async def get_entrega_evidencia(
+    entrega_id: UUID,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> FileResponse:
+    entrega = await db.scalar(select(Entrega).where(Entrega.id == entrega_id))
+    if not entrega:
+        raise HTTPException(status_code=404, detail="Entrega no encontrada")
+
+    if current_user.rol == UserRole.ESTUDIANTE.value:
+        if entrega.estudiante_id != current_user.id:
+            raise HTTPException(status_code=403, detail="No autorizado")
+    else:
+        require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
+        await evaluaciones_service.ensure_can_manage_evaluation(
+            db, entrega.evaluacion_id, current_user,
+        )
+
+    if not entrega.archivo_url:
+        raise HTTPException(status_code=404, detail="La entrega no tiene evidencia adjunta")
+    try:
+        evidence_path = resolve_upload_path(entrega.archivo_url)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail="Evidencia no encontrada") from exc
+    if not evidence_path.is_file():
+        raise HTTPException(status_code=404, detail="Evidencia no encontrada")
+
+    media_type = mimetypes.guess_type(evidence_path.name)[0] or "application/octet-stream"
+    return FileResponse(
+        evidence_path,
+        media_type=media_type,
+        headers={
+            "Cache-Control": "private, no-store",
+            "Content-Disposition": f'inline; filename="evidencia{evidence_path.suffix}"',
+            "X-Content-Type-Options": "nosniff",
+        },
+    )
+
+
 @router.get("/calificaciones/{calificacion_id}/detalle", response_model=CalificacionDetalleRead)
 async def get_calificacion_detalle(
     calificacion_id: UUID,
@@ -1018,6 +1079,10 @@ async def get_calificacion_detalle(
     db: AsyncSession = Depends(get_db),
 ) -> object:
     require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
+    cal = await service.get_calificacion_or_404(db, calificacion_id)
+    await evaluaciones_service.ensure_can_manage_evaluation(
+        db, cal.evaluacion_id, current_user,
+    )
     return await service.get_calificacion_detalle(db, calificacion_id)
 
 

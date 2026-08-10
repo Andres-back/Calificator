@@ -25,6 +25,15 @@ const pendingRequestControllers = new Set<AbortController>();
 let refreshPromise: Promise<void> | null = null;
 let sessionExpiredHandler: SessionExpiredHandler | null = null;
 let sessionExpiryHandled = false;
+const CSRF_COOKIE_NAME = 'xcalificator_csrf';
+const SAFE_METHODS = new Set(['get', 'head', 'options']);
+
+function readCookie(name: string) {
+  if (typeof document === 'undefined') return undefined;
+  const prefix = encodeURIComponent(name) + '=';
+  const item = document.cookie.split('; ').find((cookie) => cookie.startsWith(prefix));
+  return item ? decodeURIComponent(item.slice(prefix.length)) : undefined;
+}
 
 export function setSessionExpiredHandler(handler: SessionExpiredHandler) {
   sessionExpiredHandler = handler;
@@ -94,6 +103,11 @@ function refreshAccessToken() {
 
 api.interceptors.request.use((config) => {
   const sessionConfig = config as SessionRequestConfig;
+  const method = (sessionConfig.method ?? 'get').toLowerCase();
+  if (!SAFE_METHODS.has(method)) {
+    const csrfToken = readCookie(CSRF_COOKIE_NAME);
+    if (csrfToken) sessionConfig.headers.set('X-CSRF-Token', csrfToken);
+  }
   if (!sessionConfig.signal) {
     const controller = new AbortController();
     sessionConfig.signal = controller.signal;

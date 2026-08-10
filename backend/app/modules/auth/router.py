@@ -2,6 +2,7 @@ from fastapi import APIRouter, Cookie, Depends, HTTPException, Response, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.permissions import get_current_user
+from app.core.rate_limit import rate_limit
 from app.db.session import get_db
 from app.modules.auth import service
 from app.modules.auth.schemas import AuthResponse, LoginRequest, RegisterRequest
@@ -16,6 +17,7 @@ async def login(
     payload: LoginRequest,
     response: Response,
     db: AsyncSession = Depends(get_db),
+    _: None = Depends(rate_limit(limit=10, window_seconds=60, scope="auth-login")),
 ) -> AuthResponse:
     user = await service.authenticate_user(db, payload.email, payload.password)
     if not user:
@@ -32,6 +34,7 @@ async def register(
     payload: RegisterRequest,
     response: Response,
     db: AsyncSession = Depends(get_db),
+    _: None = Depends(rate_limit(limit=5, window_seconds=3600, scope="auth-register")),
 ) -> AuthResponse:
     user = await service.register_public_user(db, payload)
     service.set_auth_cookies(response, user)
@@ -43,6 +46,7 @@ async def refresh(
     response: Response,
     refresh_token: str | None = Cookie(default=None, alias=COOKIE_REFRESH_NAME),
     db: AsyncSession = Depends(get_db),
+    _: None = Depends(rate_limit(limit=30, window_seconds=60, scope="auth-refresh")),
 ) -> AuthResponse:
     if not refresh_token:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing refresh token")

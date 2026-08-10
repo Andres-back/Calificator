@@ -1,12 +1,15 @@
+import secrets
+
 from fastapi import HTTPException, Response, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
 from app.core.security import create_access_token, create_refresh_token, decode_token, verify_password
+from app.modules.auth.schemas import RegisterRequest
 from app.modules.users import service as user_service
 from app.modules.users.models import User
 from app.modules.users.schemas import UserCreate
-from app.shared.constants import COOKIE_ACCESS_NAME, COOKIE_REFRESH_NAME
+from app.shared.constants import COOKIE_ACCESS_NAME, COOKIE_CSRF_NAME, COOKIE_REFRESH_NAME
 from app.shared.enums import UserRole
 
 
@@ -17,13 +20,15 @@ async def authenticate_user(db: AsyncSession, email: str, password: str) -> User
     return user
 
 
-async def register_public_user(db: AsyncSession, payload: UserCreate) -> User:
-    if payload.rol == UserRole.ADMIN:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Admin users must be created by another admin",
-        )
-    return await user_service.create_user(db, payload)
+async def register_public_user(db: AsyncSession, payload: RegisterRequest) -> User:
+    # SEC-001: privilege is assigned server-side; public input cannot choose a role.
+    student = UserCreate(
+        nombre=payload.nombre,
+        email=payload.email,
+        password=payload.password,
+        rol=UserRole.ESTUDIANTE,
+    )
+    return await user_service.create_user(db, student)
 
 
 def set_auth_cookies(response: Response, user: User) -> None:
@@ -45,6 +50,14 @@ def set_auth_cookies(response: Response, user: User) -> None:
         refresh_token,
         max_age=settings.JWT_REFRESH_EXPIRE_DAYS * 24 * 60 * 60,
         **cookie_kwargs,
+    )
+    response.set_cookie(
+        COOKIE_CSRF_NAME,
+        secrets.token_urlsafe(32),
+        max_age=settings.JWT_REFRESH_EXPIRE_DAYS * 24 * 60 * 60,
+        httponly=False,
+        secure=settings.cookie_secure,
+        samesite="lax",
     )
 
 
@@ -72,3 +85,10 @@ def clear_auth_cookies(response: Response) -> None:
     }
     response.delete_cookie(COOKIE_ACCESS_NAME, **cookie_kwargs)
     response.delete_cookie(COOKIE_REFRESH_NAME, **cookie_kwargs)
+    response.delete_cookie(
+        COOKIE_CSRF_NAME,
+        path="/",
+        secure=settings.cookie_secure,
+        httponly=False,
+        samesite="lax",
+    )

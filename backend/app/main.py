@@ -1,12 +1,14 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import RedirectResponse
-from fastapi.staticfiles import StaticFiles
+from fastapi.responses import JSONResponse, RedirectResponse
+
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 
 from app.api import api_router
 from app.core.config import settings
+from app.core.csrf import CSRFMiddleware
 from app.core.logging import configure_logging
+from app.services.storage_service import UploadTooLargeError
 
 
 def create_app() -> FastAPI:
@@ -18,7 +20,15 @@ def create_app() -> FastAPI:
         redoc_url=f"{settings.API_PREFIX}/redoc" if docs_enabled else None,
         openapi_url=f"{settings.API_PREFIX}/openapi.json" if docs_enabled else None,
     )
+    @app.exception_handler(UploadTooLargeError)
+    async def upload_too_large_handler(
+        _request: Request,
+        exc: UploadTooLargeError,
+    ) -> JSONResponse:
+        return JSONResponse(status_code=413, content={"detail": str(exc)})
+
     app.add_middleware(TrustedHostMiddleware, allowed_hosts=settings.trusted_hosts)
+    app.add_middleware(CSRFMiddleware)
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.cors_origins,
@@ -51,12 +61,7 @@ def create_app() -> FastAPI:
 
     app.include_router(api_router, prefix=settings.API_PREFIX)
 
-    uploads_path = "/" + settings.PUBLIC_UPLOADS_BASE_URL.strip("/")
-    app.mount(
-        uploads_path,
-        StaticFiles(directory=settings.UPLOADS_DIR, check_dir=False),
-        name="uploads",
-    )
+
     return app
 
 

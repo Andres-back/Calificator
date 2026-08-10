@@ -43,6 +43,10 @@ export interface MaterialListItem {
   evaluacion_id?: string | null;
   evaluacion_estado?: EvaluacionEstado | null;
   evaluacion_modalidad?: EvaluacionModalidad | null;
+  asignacion_tipo?: 'apoyo' | 'actividad' | null;
+  publicado_estudiantes?: boolean;
+  fecha_publicacion?: string | null;
+  updated_at?: string | null;
   archivo_url: string | null;
   created_at: string;
 }
@@ -56,6 +60,10 @@ export interface Material<T = Record<string, unknown>> {
   evaluacion_id?: string | null;
   evaluacion_estado?: EvaluacionEstado | null;
   evaluacion_modalidad?: EvaluacionModalidad | null;
+  asignacion_tipo?: 'apoyo' | 'actividad' | null;
+  publicado_estudiantes?: boolean;
+  fecha_publicacion?: string | null;
+  updated_at?: string | null;
   contenido_json: T;
   archivo_url: string | null;
   created_at: string;

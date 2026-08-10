@@ -14,10 +14,12 @@ const DashboardPage = lazy(() => import('@/modules/dashboard/DashboardPage').the
 const ListPage = lazy(() => import('@/modules/herramientas/ListPage').then((m) => ({ default: m.ListPage })));
 const GeneratePage = lazy(() => import('@/modules/herramientas/GeneratePage').then((m) => ({ default: m.GeneratePage })));
 const DetailPage = lazy(() => import('@/modules/herramientas/DetailPage').then((m) => ({ default: m.DetailPage })));
+const StudentResourcePage = lazy(() => import('@/modules/herramientas/StudentResourcePage').then((m) => ({ default: m.StudentResourcePage })));
 const MateriasListPage = lazy(() => import('@/modules/materias/MateriasListPage').then((m) => ({ default: m.MateriasListPage })));
 const MateriaDetailPage = lazy(() => import('@/modules/materias/MateriaDetailPage').then((m) => ({ default: m.MateriaDetailPage })));
 const MateriaVistaGeneral = lazy(() => import('@/modules/materias/MateriaVistaGeneral').then((m) => ({ default: m.MateriaVistaGeneral })));
 const MateriaEvaluaciones = lazy(() => import('@/modules/materias/MateriaEvaluaciones').then((m) => ({ default: m.MateriaEvaluaciones })));
+const MateriaRecursos = lazy(() => import('@/modules/materias/MateriaRecursos').then((m) => ({ default: m.MateriaRecursos })));
 const MateriaCalificar = lazy(() => import('@/modules/materias/MateriaCalificar').then((m) => ({ default: m.MateriaCalificar })));
 const MateriaAsistencia = lazy(() => import('@/modules/materias/MateriaAsistencia').then((m) => ({ default: m.MateriaAsistencia })));
 const MateriaBoletin = lazy(() => import('@/modules/materias/MateriaBoletin').then((m) => ({ default: m.MateriaBoletin })));
@@ -65,6 +67,7 @@ export const router = createBrowserRouter([
               { path: 'materias/unirse', element: lazyPage(<UnirseMateriaPage />) },
               { path: 'evaluaciones/:id/resolver', element: lazyPage(<ResolverEvaluacionPage />) },
               { path: 'calificaciones/boletin', element: lazyPage(<BoletinPage />) },
+              { path: 'recursos/:id', element: lazyPage(<StudentResourcePage />) },
             ],
           },
 
@@ -76,6 +79,7 @@ export const router = createBrowserRouter([
               { index: true, element: lazyPage(<MateriaVistaGeneral />) },
               // Todas las rutas compartidas — cada componente interno verifica rol
               { path: 'evaluaciones', element: lazyPage(<MateriaEvaluaciones />) },
+              { path: 'recursos', element: lazyPage(<MateriaRecursos />) },
               // Solo docente/admin
               {
                 element: <RequireRole allow={['profesor', 'admin']} />,

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from decimal import Decimal
+from typing import Literal
 from uuid import UUID
 
 from pydantic import BaseModel, Field, PrivateAttr, model_validator
@@ -143,6 +144,10 @@ class MaterialRead(BaseModel):
     evaluacion_id: UUID | None = None
     evaluacion_estado: str | None = None
     evaluacion_modalidad: EvaluacionModalidad | None = None
+    asignacion_tipo: Literal["apoyo", "actividad"] | None = None
+    publicado_estudiantes: bool = False
+    fecha_publicacion: datetime | None = None
+    updated_at: datetime | None = None
     created_at: datetime
 
     model_config = {"from_attributes": True}
@@ -158,9 +163,23 @@ class MaterialListItem(BaseModel):
     evaluacion_id: UUID | None = None
     evaluacion_estado: str | None = None
     evaluacion_modalidad: EvaluacionModalidad | None = None
+    asignacion_tipo: Literal["apoyo", "actividad"] | None = None
+    publicado_estudiantes: bool = False
+    fecha_publicacion: datetime | None = None
+    updated_at: datetime | None = None
     created_at: datetime
 
     model_config = {"from_attributes": True}
+
+
+class MaterialUpdate(BaseModel):
+    titulo: str | None = Field(default=None, min_length=2, max_length=220)
+    materia_id: UUID | None = None
+    contenido_json: dict | None = None
+
+
+class AsignarMaterialApoyoRequest(BaseModel):
+    materia_id: UUID
 
 
 class ConvertirEvaluacionRequest(BaseModel):

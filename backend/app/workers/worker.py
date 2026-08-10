@@ -17,6 +17,7 @@ celery_app = Celery(
         "app.workers.tasks_images",
         "app.workers.tasks_reports",
         "app.workers.tasks_ai_config",
+        "app.workers.tasks_digitalization",
     ],
 )
 

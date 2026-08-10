@@ -4,6 +4,7 @@ import { Sidebar } from './Sidebar';
 import { Topbar } from './Topbar';
 import { useAuth } from '@/stores/auth';
 import { cn } from '@/lib/cn';
+import { DigitalizationJobMonitor } from '@/modules/evaluaciones/components/DigitalizationJobMonitor';
 
 export function AppShell() {
   const role = useAuth((state) => state.user?.rol);
@@ -86,6 +87,7 @@ export function AppShell() {
           </div>
         </main>
       </div>
+      {isTeacher && <DigitalizationJobMonitor />}
     </div>
   );
 }

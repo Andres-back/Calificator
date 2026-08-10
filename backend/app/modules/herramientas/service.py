@@ -18,6 +18,12 @@ from app.modules.evaluaciones.blueprint_service import normalize_dba_records
 from app.modules.evaluaciones import service as evaluaciones_service
 from app.modules.evaluaciones.schemas import EvaluacionCreate, EvaluacionEstructuraValidacion
 from app.modules.herramientas.evaluation_adapter import build_evaluation_structure
+from app.modules.herramientas.puzzle_builder import (
+    build_crossword,
+    build_matching,
+    build_word_search,
+    normalize_word,
+)
 from app.modules.herramientas.content_quality import normalize_material_content
 from app.modules.herramientas.generators import (
     crucigrama,
@@ -61,7 +67,11 @@ from app.modules.imagenes import service as imagenes_service
 from app.services.image_router import generate_image
 from app.services.llm_router import LLMRouter
 from app.shared.enums import (
-    EvaluacionModalidad, EvaluacionTipoOrigen, MaterialTipo, PoliticaIntento,
+    EvaluacionModalidad,
+    EvaluacionTipoOrigen,
+    MaterialTipo,
+    PoliticaIntento,
+    UserRole,
 )
 
 logger = get_logger(__name__)
@@ -406,7 +416,8 @@ async def list_materials(
         text(
             f"SELECT mg.id, mg.tipo, mg.titulo, mg.materia_id, m.nombre AS materia_nombre, "
             f"mg.archivo_url, mg.created_at, e.id AS evaluacion_id, "
-            f"e.estado AS evaluacion_estado, e.modalidad AS evaluacion_modalidad "
+            f"e.estado AS evaluacion_estado, e.modalidad AS evaluacion_modalidad, "
+            f"mg.asignacion_tipo, mg.publicado_estudiantes, mg.fecha_publicacion, mg.updated_at "
             f"FROM materiales_generados mg LEFT JOIN materias m ON m.id = mg.materia_id "
             f"LEFT JOIN evaluaciones e ON e.material_origen_id = mg.id "
             f"WHERE {where} "
@@ -425,6 +436,10 @@ async def list_materials(
             "evaluacion_id": r.evaluacion_id,
             "evaluacion_estado": r.evaluacion_estado,
             "evaluacion_modalidad": r.evaluacion_modalidad,
+            "asignacion_tipo": r.asignacion_tipo,
+            "publicado_estudiantes": r.publicado_estudiantes,
+            "fecha_publicacion": r.fecha_publicacion,
+            "updated_at": r.updated_at,
             "created_at": r.created_at,
         }
         for r in rows.fetchall()
@@ -443,6 +458,105 @@ async def delete_material(db: AsyncSession, material_id: UUID, profesor_id: UUID
     return (result.rowcount or 0) > 0
 
 
+def _rebuild_edited_puzzle(tipo: str, content: dict[str, Any]) -> dict[str, Any]:
+    """Regenera estructuras derivadas para que un juego editado siga siendo válido."""
+    rebuilt = dict(content)
+
+    if tipo == MaterialTipo.SOPA_LETRAS.value:
+        bank = content.get("banco")
+        entries = bank if isinstance(bank, list) else []
+        words = [
+            str(item.get("palabra") or "")
+            for item in entries
+            if isinstance(item, dict) and item.get("palabra")
+        ]
+        if not words:
+            words = [str(word) for word in content.get("banco_palabras", [])]
+        if not words:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="La sopa de letras necesita al menos una palabra válida.",
+            )
+        nested = content.get("sopa_letras")
+        nested_size = nested.get("size") if isinstance(nested, dict) else None
+        current_grid = content.get("grilla")
+        grid_size = len(current_grid) if isinstance(current_grid, list) else 15
+        puzzle = build_word_search(words, size=int(nested_size or grid_size or 15))
+        clues = {
+            normalize_word(str(item.get("palabra") or "")): str(
+                item.get("pista") or ""
+            ).strip()
+            for item in entries
+            if isinstance(item, dict)
+        }
+        rebuilt_bank = []
+        for word in puzzle["banco_palabras"]:
+            item = {"palabra": word}
+            if clues.get(word):
+                item["pista"] = clues[word]
+            rebuilt_bank.append(item)
+        rebuilt.update(
+            {
+                "grilla": puzzle["grid"],
+                "palabras": puzzle["palabras"],
+                "banco_palabras": puzzle["banco_palabras"],
+                "banco": rebuilt_bank,
+                "sopa_letras": {
+                    "grid": puzzle["grid"],
+                    "palabras": puzzle["palabras"],
+                    "size": puzzle["size"],
+                },
+                "palabras_sin_ubicar": puzzle["palabras_sin_ubicar"],
+            }
+        )
+
+    elif tipo == MaterialTipo.CRUCIGRAMA.value:
+        entries = []
+        for key in ("preguntas_horizontales", "preguntas_verticales"):
+            values = content.get(key)
+            if isinstance(values, list):
+                entries.extend(item for item in values if isinstance(item, dict))
+        crossword = build_crossword(entries, max_size=17)
+        if crossword is None:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="El crucigrama necesita al menos una respuesta y una pista válidas.",
+            )
+        rebuilt.update(
+            {
+                "preguntas_horizontales": crossword["pistas_horizontal"],
+                "preguntas_verticales": crossword["pistas_vertical"],
+                "crucigrama": {
+                    "grid": crossword["grid"],
+                    "size": crossword["size"],
+                    "filas": crossword["filas"],
+                    "columnas": crossword["columnas"],
+                    "pistas_horizontal": crossword["pistas_horizontal"],
+                    "pistas_vertical": crossword["pistas_vertical"],
+                },
+                "palabras_sin_ubicar": crossword["palabras_sin_ubicar"],
+            }
+        )
+
+    elif tipo in {
+        MaterialTipo.UNIR_COLUMNAS.value,
+        MaterialTipo.EMPAREJAR.value,
+    }:
+        pairs = content.get("pares")
+        if not isinstance(pairs, list):
+            pairs = []
+        matching = build_matching(
+            item for item in pairs if isinstance(item, dict)
+        )
+        if not matching["pares"]:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="La actividad necesita al menos un par completo.",
+            )
+        rebuilt.update(matching)
+
+    return rebuilt
+
 async def update_material(
     db: AsyncSession,
     material_id: UUID,
@@ -454,6 +568,12 @@ async def update_material(
     from sqlalchemy import text
 
     profesor_id = current_user.id
+    existing = await get_material(db, material_id, profesor_id)
+    if existing is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Material no encontrado",
+        )
     allowed = {"materia_id", "titulo", "contenido_json"}
     campos = {
         key: value
@@ -462,6 +582,11 @@ async def update_material(
     }
     if not campos:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No hay campos válidos para actualizar")
+
+    if "contenido_json" in campos and isinstance(campos["contenido_json"], dict):
+        campos["contenido_json"] = _rebuild_edited_puzzle(
+            str(existing["tipo"]), campos["contenido_json"]
+        )
 
     if "materia_id" in campos:
         linked = await _linked_evaluation(db, material_id, profesor_id)
@@ -486,6 +611,9 @@ async def update_material(
     for k, v in campos.items():
         if k == "materia_id":
             sql_parts.append("materia_id = :materia_id")
+            sql_parts.append("asignacion_tipo = NULL")
+            sql_parts.append("publicado_estudiantes = false")
+            sql_parts.append("fecha_publicacion = NULL")
             params["materia_id"] = (
                 None if v is None else str(UUID(v) if isinstance(v, str) else v)
             )
@@ -496,6 +624,7 @@ async def update_material(
             sql_parts.append(f"{k} = :{k}")
             params[k] = v
 
+    sql_parts.append("updated_at = NOW()")
     set_clause = ", ".join(sql_parts)
     result = await db.execute(
         text(
@@ -523,7 +652,8 @@ async def get_material(db: AsyncSession, material_id: UUID, profesor_id: UUID) -
             "SELECT mg.id, mg.tipo, mg.titulo, mg.materia_id, m.nombre AS materia_nombre, "
             "mg.input_json, mg.contenido_json, mg.archivo_url, mg.created_at, "
             "e.id AS evaluacion_id, e.estado AS evaluacion_estado, "
-            "e.modalidad AS evaluacion_modalidad "
+            "e.modalidad AS evaluacion_modalidad, mg.asignacion_tipo, "
+            "mg.publicado_estudiantes, mg.fecha_publicacion, mg.updated_at "
             "FROM materiales_generados mg LEFT JOIN materias m ON m.id = mg.materia_id "
             "LEFT JOIN evaluaciones e ON e.material_origen_id = mg.id "
             "WHERE mg.id = :id AND mg.profesor_id = :p"
@@ -545,9 +675,179 @@ async def get_material(db: AsyncSession, material_id: UUID, profesor_id: UUID) -
         "evaluacion_id": r.evaluacion_id,
         "evaluacion_estado": r.evaluacion_estado,
         "evaluacion_modalidad": r.evaluacion_modalidad,
+        "asignacion_tipo": r.asignacion_tipo,
+        "publicado_estudiantes": r.publicado_estudiantes,
+        "fecha_publicacion": r.fecha_publicacion,
+        "updated_at": r.updated_at,
         "created_at": r.created_at,
     }
 
+
+def _material_row(row: object) -> dict:
+    return {
+        "id": row.id,
+        "tipo": row.tipo,
+        "titulo": row.titulo,
+        "materia_id": row.materia_id,
+        "materia_nombre": row.materia_nombre,
+        "contenido_json": row.contenido_json,
+        "archivo_url": row.archivo_url,
+        "evaluacion_id": row.evaluacion_id,
+        "evaluacion_estado": row.evaluacion_estado,
+        "evaluacion_modalidad": row.evaluacion_modalidad,
+        "asignacion_tipo": row.asignacion_tipo,
+        "publicado_estudiantes": row.publicado_estudiantes,
+        "fecha_publicacion": row.fecha_publicacion,
+        "updated_at": row.updated_at,
+        "created_at": row.created_at,
+    }
+
+
+async def list_materials_for_materia(
+    db: AsyncSession,
+    materia_id: UUID,
+    current_user: User,
+) -> list[dict]:
+    """Lista apoyos de una materia; estudiantes solo reciben los publicados."""
+    from sqlalchemy import text
+
+    if current_user.rol == UserRole.ESTUDIANTE.value:
+        await materias_service.ensure_can_read_materia(db, materia_id, current_user)
+        visibility = "AND mg.publicado_estudiantes = true"
+    else:
+        await materias_service.ensure_can_manage_materia(db, materia_id, current_user)
+        visibility = ""
+
+    rows = await db.execute(
+        text(
+            "SELECT mg.id, mg.tipo, mg.titulo, mg.materia_id, m.nombre AS materia_nombre, "
+            "mg.archivo_url, mg.created_at, mg.updated_at, mg.asignacion_tipo, "
+            "mg.publicado_estudiantes, mg.fecha_publicacion, e.id AS evaluacion_id, "
+            "e.estado AS evaluacion_estado, e.modalidad AS evaluacion_modalidad "
+            "FROM materiales_generados mg "
+            "JOIN materias m ON m.id = mg.materia_id "
+            "LEFT JOIN evaluaciones e ON e.material_origen_id = mg.id "
+            "WHERE mg.materia_id = :materia_id AND mg.asignacion_tipo = 'apoyo' "
+            f"{visibility} ORDER BY COALESCE(mg.fecha_publicacion, mg.updated_at, mg.created_at) DESC"
+        ),
+        {"materia_id": str(materia_id)},
+    )
+    return [
+        {
+            "id": row.id,
+            "tipo": row.tipo,
+            "titulo": row.titulo,
+            "materia_id": row.materia_id,
+            "materia_nombre": row.materia_nombre,
+            "archivo_url": row.archivo_url,
+            "evaluacion_id": row.evaluacion_id,
+            "evaluacion_estado": row.evaluacion_estado,
+            "evaluacion_modalidad": row.evaluacion_modalidad,
+            "asignacion_tipo": row.asignacion_tipo,
+            "publicado_estudiantes": row.publicado_estudiantes,
+            "fecha_publicacion": row.fecha_publicacion,
+            "updated_at": row.updated_at,
+            "created_at": row.created_at,
+        }
+        for row in rows.fetchall()
+    ]
+
+
+async def get_material_for_user(
+    db: AsyncSession,
+    material_id: UUID,
+    current_user: User,
+) -> dict | None:
+    """Permite al autor administrar y al estudiante matriculado leer apoyos publicados."""
+    from sqlalchemy import text
+
+    if current_user.rol != UserRole.ESTUDIANTE.value:
+        return await get_material(db, material_id, current_user.id)
+
+    result = await db.execute(
+        text(
+            "SELECT mg.id, mg.tipo, mg.titulo, mg.materia_id, m.nombre AS materia_nombre, "
+            "mg.contenido_json, mg.archivo_url, mg.created_at, mg.updated_at, "
+            "mg.asignacion_tipo, mg.publicado_estudiantes, mg.fecha_publicacion, "
+            "e.id AS evaluacion_id, e.estado AS evaluacion_estado, "
+            "e.modalidad AS evaluacion_modalidad "
+            "FROM materiales_generados mg "
+            "JOIN materias m ON m.id = mg.materia_id "
+            "LEFT JOIN evaluaciones e ON e.material_origen_id = mg.id "
+            "WHERE mg.id = :material_id AND mg.asignacion_tipo = 'apoyo' "
+            "AND mg.publicado_estudiantes = true"
+        ),
+        {"material_id": str(material_id)},
+    )
+    row = result.fetchone()
+    if row is None:
+        return None
+    await materias_service.ensure_can_read_materia(db, row.materia_id, current_user)
+    return _material_row(row)
+
+
+async def assign_material_as_support(
+    db: AsyncSession,
+    material_id: UUID,
+    current_user: User,
+    materia_id: UUID,
+) -> dict:
+    """Publica el recurso como apoyo, sin crear entregas ni calificaciones."""
+    from sqlalchemy import text
+
+    material = await get_material(db, material_id, current_user.id)
+    if material is None:
+        raise HTTPException(status_code=404, detail="Material no encontrado")
+    if await _linked_evaluation(db, material_id, current_user.id) is not None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Este recurso ya es una actividad evaluable. Adminístralo desde Evaluaciones.",
+        )
+    materia = await materias_service.ensure_can_manage_materia(db, materia_id, current_user)
+    await db.execute(
+        text(
+            "UPDATE materiales_generados SET materia_id = :materia_id, "
+            "asignacion_tipo = 'apoyo', publicado_estudiantes = true, "
+            "fecha_publicacion = NOW(), updated_at = NOW() "
+            "WHERE id = :material_id AND profesor_id = :profesor_id"
+        ),
+        {
+            "materia_id": str(materia.id),
+            "material_id": str(material_id),
+            "profesor_id": str(current_user.id),
+        },
+    )
+    await db.commit()
+    updated = await get_material(db, material_id, current_user.id)
+    if updated is None:
+        raise HTTPException(status_code=404, detail="Material no encontrado")
+    return updated
+
+
+async def withdraw_support_material(
+    db: AsyncSession,
+    material_id: UUID,
+    current_user: User,
+) -> dict:
+    """Oculta un apoyo del salón conservándolo editable en la biblioteca docente."""
+    from sqlalchemy import text
+
+    material = await get_material(db, material_id, current_user.id)
+    if material is None:
+        raise HTTPException(status_code=404, detail="Material no encontrado")
+    await db.execute(
+        text(
+            "UPDATE materiales_generados SET publicado_estudiantes = false, "
+            "fecha_publicacion = NULL, updated_at = NOW() "
+            "WHERE id = :material_id AND profesor_id = :profesor_id"
+        ),
+        {"material_id": str(material_id), "profesor_id": str(current_user.id)},
+    )
+    await db.commit()
+    updated = await get_material(db, material_id, current_user.id)
+    if updated is None:
+        raise HTTPException(status_code=404, detail="Material no encontrado")
+    return updated
 
 async def gen_sopa_letras(db: AsyncSession, req: SopaLetrasRequest, current_user: User) -> dict:
     materia_id = await _resolve_materia_id(db, req, current_user)
@@ -1023,7 +1323,9 @@ async def convertir_a_evaluacion(
     # transaccion; si crear la evaluacion falla, la asignacion no queda a medias.
     await db.execute(
         text(
-            "UPDATE materiales_generados SET materia_id = :materia_id "
+            "UPDATE materiales_generados SET materia_id = :materia_id, "
+            "asignacion_tipo = 'actividad', publicado_estudiantes = false, "
+            "fecha_publicacion = NULL, updated_at = NOW() "
             "WHERE id = :material_id AND profesor_id = :profesor_id"
         ),
         {

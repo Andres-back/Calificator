@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Download, Trash2, Wrench, Gamepad2, ClipboardCheck, FileDown, Layers3, Copy } from 'lucide-react';
+import { Plus, Download, Trash2, Wrench, Gamepad2, ClipboardCheck, FileDown, Layers3, Copy, Pencil, Send } from 'lucide-react';
 import { Button, Card, Badge, Skeleton, EmptyState, QueryState, ConfirmDialog } from '@/components/ui';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { listMaterials, deleteMaterial, pdfUrl, duplicateMaterial } from './api';
@@ -127,13 +127,25 @@ export function ListPage() {
                     <Card interactive className="group flex h-full flex-col p-5">
                       <Link to={`/app/herramientas/${material.id}`} className="flex-1">
                         <div className={cn('mb-3 grid h-11 w-11 place-items-center rounded-lg bg-gradient-to-br text-white shadow-sm', meta?.gradient ?? 'from-slate-400 to-slate-600')}><Icon className="h-5 w-5" /></div>
-                        <div className="flex flex-wrap items-center gap-2"><Badge tone="neutral">{meta?.label ?? material.tipo}</Badge>{meta?.category === 'Evaluación' ? <Badge tone="warning">Borrador · convertir para calificar</Badge> : null}{meta?.interactive && <Badge tone="violet"><Gamepad2 className="h-3 w-3" /> Interactivo</Badge>}</div>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <Badge tone="neutral">{meta?.label ?? material.tipo}</Badge>
+                          {material.publicado_estudiantes && <Badge tone="success">Apoyo publicado</Badge>}
+                          {material.asignacion_tipo === 'actividad' && <Badge tone="violet">Actividad calificable</Badge>}
+                          {!material.asignacion_tipo && meta?.category === 'Evaluación' ? <Badge tone="warning">Borrador · convertir para calificar</Badge> : null}
+                          {meta?.interactive && <Badge tone="violet"><Gamepad2 className="h-3 w-3" /> Interactivo</Badge>}
+                        </div>
                         {material.materia_nombre && <p className="mt-2 text-xs font-semibold text-brand-600">{material.materia_nombre}</p>}
                         <p className="mt-2 font-semibold line-clamp-2">{material.titulo}</p>
                         <p className="mt-1 text-xs text-muted">{formatDate(material.created_at)}</p>
                       </Link>
-                      <div className="mt-4 flex items-center gap-2 border-t border-border pt-3">
-                        <a href={pdfUrl(material.id)} target="_blank" rel="noreferrer" className="flex-1"><Button size="sm" variant="outline" className="w-full"><Download className="h-4 w-4" /> PDF</Button></a>
+                      <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-border pt-3">
+                        <Link to={`/app/herramientas/${material.id}?action=edit`} className="min-w-[7rem] flex-1">
+                          <Button size="sm" variant="outline" className="w-full"><Pencil className="h-4 w-4" /> Editar</Button>
+                        </Link>
+                        <Link to={material.evaluacion_id && material.materia_id ? routes.materiaEvaluaciones(material.materia_id) : `/app/herramientas/${material.id}?action=assign`} className="min-w-[7rem] flex-1">
+                          <Button size="sm" className="w-full"><Send className="h-4 w-4" /> {material.evaluacion_id ? 'Abrir actividad' : 'Asignar'}</Button>
+                        </Link>
+                        <a href={pdfUrl(material.id)} target="_blank" rel="noreferrer"><Button size="icon" variant="ghost" title="Descargar PDF" aria-label={`Descargar ${material.titulo} en PDF`}><Download className="h-4 w-4" /></Button></a>
                         <Button size="icon" variant="ghost" onClick={async () => { try { const n = await duplicateMaterial(material.id); await queryClient.invalidateQueries({ queryKey: ['materials'] }); toast.success('Duplicado'); navigate(`/app/herramientas/${n.id}`); } catch { toast.error('Error al duplicar'); } }} title="Duplicar material" aria-label={`Duplicar ${material.titulo}`}><Copy className="h-4 w-4" /></Button>
                         <Button size="icon" variant="ghost" className="text-rose-700 hover:bg-rose-50 dark:text-rose-300 dark:hover:bg-rose-500/10" onClick={() => setDeleteTarget({ id: material.id, title: material.titulo })} aria-label={`Eliminar ${material.titulo}`} title="Eliminar material"><Trash2 className="h-4 w-4" /></Button>
                       </div>

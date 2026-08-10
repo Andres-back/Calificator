@@ -17,6 +17,7 @@ from app.shared.enums import (
     JobEstado,
 )
 from app.workers import tasks_grading
+from app.services import storage_service
 
 
 class FakeDB:
@@ -83,8 +84,8 @@ def delivery_fixture() -> Entrega:
 
 
 def test_resolve_upload_path_stays_inside_upload_root(tmp_path, monkeypatch) -> None:
-    monkeypatch.setattr(tasks_grading.settings, "UPLOADS_DIR", str(tmp_path))
-    monkeypatch.setattr(tasks_grading.settings, "PUBLIC_UPLOADS_BASE_URL", "/uploads")
+    monkeypatch.setattr(storage_service.settings, "UPLOADS_DIR", str(tmp_path))
+    monkeypatch.setattr(storage_service.settings, "PUBLIC_UPLOADS_BASE_URL", "/uploads")
 
     resolved = tasks_grading.resolve_upload_path("/uploads/entregas/foto.png")
 
@@ -98,8 +99,8 @@ def test_resolve_upload_path_stays_inside_upload_root(tmp_path, monkeypatch) -> 
 def test_resolve_upload_path_rejects_traversal_and_external_urls(
     tmp_path, monkeypatch, url: str,
 ) -> None:
-    monkeypatch.setattr(tasks_grading.settings, "UPLOADS_DIR", str(tmp_path))
-    monkeypatch.setattr(tasks_grading.settings, "PUBLIC_UPLOADS_BASE_URL", "/uploads")
+    monkeypatch.setattr(storage_service.settings, "UPLOADS_DIR", str(tmp_path))
+    monkeypatch.setattr(storage_service.settings, "PUBLIC_UPLOADS_BASE_URL", "/uploads")
 
     with pytest.raises(ValueError):
         tasks_grading.resolve_upload_path(url)
