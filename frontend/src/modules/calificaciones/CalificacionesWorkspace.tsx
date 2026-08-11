@@ -408,7 +408,7 @@ function PanelDetalle({
 
   return (
     <>
-    <div className="flex h-full flex-col">
+    <div className="flex h-full min-h-0 flex-col">
       {/* Header */}
       <div className="flex items-center justify-between border-b border-border px-5 py-4">
         <div className="min-w-0 flex-1">
@@ -423,7 +423,7 @@ function PanelDetalle({
         </button>
       </div>
 
-      <div className="flex-1 space-y-5 overflow-y-auto p-5">
+      <div className="min-h-0 flex-1 space-y-5 overflow-y-auto overscroll-contain p-5">
         {/* Nota principal */}
         <div className="flex items-center justify-between">
           <div>
@@ -915,6 +915,15 @@ export function CalificacionesWorkspace() {
   }, [requestedCalificacionId]);
 
   useEffect(() => {
+    if (!selectedId || window.innerWidth >= 1024) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [selectedId]);
+
+  useEffect(() => {
     if (!materiaId && !evalIdParam && materias?.[0]) setMateriaId(materias[0].id);
   }, [evalIdParam, materias, materiaId]);
 
@@ -1251,46 +1260,48 @@ export function CalificacionesWorkspace() {
         {/* Right panel — detail */}
         <div
           ref={detailPanelRef}
-          className={`flex-1 overflow-hidden ${
+          className={`min-h-0 flex-1 overflow-hidden ${
             selectedId
-              ? 'fixed inset-0 z-30 bg-surface lg:static lg:z-auto'
+              ? 'fixed inset-0 z-30 flex flex-col bg-surface lg:static lg:z-auto'
               : 'hidden lg:flex lg:items-center lg:justify-center'
           }`}
         >
           {selectedId ? (
             <>
               {/* Mobile overlay close */}
-              <div className="sticky top-0 z-10 flex items-center justify-between border-b border-border bg-surface px-4 py-2 lg:hidden">
+              <div className="sticky top-0 z-10 flex shrink-0 items-center justify-between border-b border-border bg-surface px-4 py-2 lg:hidden">
                 <button type="button" onClick={() => { if (mobileDirty) setMobileDirtyConfirm(true); else setSelectedId(null); }} className="flex items-center gap-2 text-sm font-semibold text-muted">
                   <ArrowLeft className="h-4 w-4" /> Volver a lista
                 </button>
                 {mobileDirty && <span className="text-[10px] font-semibold text-amber-600">Sin guardar</span>}
               </div>
-              {detalleQuery.isLoading ? (
-                <div className="space-y-4 p-5">{Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-20" />)}</div>
-              ) : detalleQuery.error ? (
-                <div className="p-5 text-sm text-rose-600">Error al cargar detalle.</div>
-              ) : detalleQuery.data ? (
-                <PanelDetalle
-                  cal={detalleQuery.data}
-                  notaMaxima={notaMaxima}
-                  studentMap={studentMap}
-                  onClose={() => { setSelectedId(null); }}
-                  onConfirm={(id, _nota) => {
-                    const cal = cals?.find((c) => c.id === id);
-                    if (cal) { setConfirmingSingle(cal); }
-                  }}
-                  onAjustar={(id, nota, feedback) => ajustarMut.mutate({ id, nota, feedback })}
-                  onPublish={(id) => publishMut.mutate(id)}
-                  onRechazar={(id) => setRejectId(id)}
-                  onDirtyChange={setMobileDirty}
-                  confirmPending={confirmarMut.isPending}
-                  adjustPending={ajustarMut.isPending}
-                  publishPending={publishMut.isPending}
-                />
-              ) : (
-                <div className="flex items-center justify-center p-5 text-sm text-muted">Sin datos.</div>
-              )}
+              <div className="min-h-0 flex-1 overflow-hidden">
+                {detalleQuery.isLoading ? (
+                  <div className="h-full space-y-4 overflow-y-auto p-5">{Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-20" />)}</div>
+                ) : detalleQuery.error ? (
+                  <div className="p-5 text-sm text-rose-600">Error al cargar detalle.</div>
+                ) : detalleQuery.data ? (
+                  <PanelDetalle
+                    cal={detalleQuery.data}
+                    notaMaxima={notaMaxima}
+                    studentMap={studentMap}
+                    onClose={() => { setSelectedId(null); }}
+                    onConfirm={(id, _nota) => {
+                      const cal = cals?.find((c) => c.id === id);
+                      if (cal) { setConfirmingSingle(cal); }
+                    }}
+                    onAjustar={(id, nota, feedback) => ajustarMut.mutate({ id, nota, feedback })}
+                    onPublish={(id) => publishMut.mutate(id)}
+                    onRechazar={(id) => setRejectId(id)}
+                    onDirtyChange={setMobileDirty}
+                    confirmPending={confirmarMut.isPending}
+                    adjustPending={ajustarMut.isPending}
+                    publishPending={publishMut.isPending}
+                  />
+                ) : (
+                  <div className="flex h-full items-center justify-center p-5 text-sm text-muted">Sin datos.</div>
+                )}
+              </div>
             </>
           ) : (
             <div className="hidden items-center justify-center p-5 text-sm text-muted lg:flex">
