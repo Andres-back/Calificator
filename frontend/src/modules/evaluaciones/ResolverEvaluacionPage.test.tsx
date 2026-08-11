@@ -105,7 +105,7 @@ beforeEach(() => {
 });
 
 describe('ResolverEvaluacionPage', () => {
-  it('tells the student their answer was saved when AI analysis fails', async () => {
+  it('confirms the saved delivery and does not ask the student to resend it', async () => {
     const user = userEvent.setup();
     renderPage();
 
@@ -117,14 +117,13 @@ describe('ResolverEvaluacionPage', () => {
     expect(mocks.createDelivery).toHaveBeenCalledWith('evaluation-1', {
       respuesta_texto: 'P1: Mi procedimiento se conserva.',
     });
-    expect(await screen.findByText('La entrega está segura')).toBeInTheDocument();
-    expect(
-      screen.getByText(/Tu respuesta quedó guardada, pero la IA no pudo analizarla/i),
-    ).toBeInTheDocument();
-    expect(screen.queryByText('Entrega enviada')).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Enviar respuesta/i })).toBeEnabled();
+    expect(await screen.findByText('Entrega recibida')).toBeInTheDocument();
+    expect(screen.getByText(/no necesitas volver a enviarla/i)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Enviar respuesta/i })).not.toBeInTheDocument();
+    expect(mocks.success).toHaveBeenCalledWith(
+      'Entrega realizada. Quedó pendiente de calificación docente.',
+    );
   });
-
   it('shows only online questions and waits for the physical section in mixed mode', async () => {
     mocks.getEvaluation.mockResolvedValue({
       id: 'evaluation-1',
@@ -262,4 +261,96 @@ describe('ResolverEvaluacionPage', () => {
     );
     expect(screen.getByText('Foto o PDF de tu trabajo')).toBeInTheDocument();
     expect(screen.queryByText('Tus respuestas')).not.toBeInTheDocument();
-  });});
+  });
+  it('confirms a physical file immediately while grading continues in background', async () => {
+    const currentEvaluation = await mocks.getEvaluation();
+    mocks.getEvaluation.mockResolvedValue({
+      ...currentEvaluation,
+      modalidad: 'fisica',
+      recepcion_habilitada: true,
+    });
+    mocks.createFileDelivery.mockResolvedValue({
+      id: 'delivery-photo-1',
+      evaluacion_id: 'evaluation-1',
+      estudiante_id: 'student-1',
+      materia_id: 'materia-1',
+      tipo: 'foto',
+      estado: 'recibida',
+      respuesta_texto: null,
+      archivo_url: '/api/calificaciones/entregas/delivery-photo-1/evidencia',
+      created_at: '2026-08-10T00:00:00Z',
+    });
+    const user = userEvent.setup();
+    renderPage();
+
+    const file = new File(['imagen'], 'taller.jpg', { type: 'image/jpeg' });
+    await screen.findByRole('button', { name: /Elegir fotos o PDF/ });
+    const fileInput = document.querySelector('input[type="file"][multiple]') as HTMLInputElement;
+    await user.upload(fileInput, file);
+    await user.click(screen.getByRole('button', { name: 'Revisar y entregar 1 hoja' }));
+    await user.click(screen.getByRole('button', { name: 'Entregar 1 hoja' }));
+
+    await waitFor(() => expect(mocks.createFileDelivery).toHaveBeenCalledWith('evaluation-1', [file], [0]));
+    expect(await screen.findByText(/Evidencia recibida/)).toBeInTheDocument();
+    expect(screen.getByText('Entrega realizada')).toBeInTheDocument();
+    expect(screen.getByText(/pendiente de calificación docente/i)).toBeInTheDocument();
+    expect(mocks.success).toHaveBeenCalledWith(
+      'Entrega realizada. Tu evidencia quedó pendiente de calificación docente.',
+    );
+  });
+  it('allows resending the complete package when the teacher requests replacement', async () => {
+    mocks.getEvaluation.mockResolvedValue({
+      ...(await mocks.getEvaluation()),
+      modalidad: 'fisica',
+      preguntas: [{ numero: 1, enunciado: 'Resuelve en papel.' }],
+    });
+    mocks.getMyDelivery.mockResolvedValue({
+      id: 'delivery-old',
+      evaluacion_id: 'evaluation-1',
+      estudiante_id: 'student-1',
+      materia_id: 'materia-1',
+      tipo: 'pdf',
+      estado: 'requiere_reintento',
+      respuesta_texto: null,
+      archivo_url: '/api/calificaciones/entregas/delivery-old/evidencia',
+      evidencia_paginas: 2,
+      evidencia_tipo: 'fotos',
+      reemplazo_solicitado: true,
+      motivo_reemplazo: 'Falta la hoja donde termina el ejercicio 3.',
+      created_at: '2026-08-10T00:00:00Z',
+    });
+    mocks.createFileDelivery.mockResolvedValue({
+      id: 'delivery-old',
+      evaluacion_id: 'evaluation-1',
+      estudiante_id: 'student-1',
+      materia_id: 'materia-1',
+      tipo: 'pdf',
+      estado: 'recibida',
+      respuesta_texto: null,
+      archivo_url: '/api/calificaciones/entregas/delivery-old/evidencia',
+      evidencia_paginas: 2,
+      evidencia_tipo: 'fotos',
+      reemplazo_solicitado: false,
+      created_at: '2026-08-11T00:00:00Z',
+    });
+    const user = userEvent.setup();
+    renderPage();
+
+    expect(await screen.findByText('El docente solicitó reemplazar la entrega completa')).toBeInTheDocument();
+    expect(screen.getByText(/Falta la hoja donde termina el ejercicio 3/)).toBeInTheDocument();
+    const input = document.querySelector('input[type="file"][multiple]') as HTMLInputElement;
+    const pages = [
+      new File(['uno'], 'hoja-1.jpg', { type: 'image/jpeg', lastModified: 1 }),
+      new File(['dos'], 'hoja-2.jpg', { type: 'image/jpeg', lastModified: 2 }),
+    ];
+    await user.upload(input, pages);
+    await user.click(screen.getByRole('button', { name: 'Revisar y entregar 2 hojas' }));
+    await user.click(screen.getByRole('button', { name: 'Entregar 2 hojas' }));
+
+    await waitFor(() => expect(mocks.createFileDelivery).toHaveBeenCalledWith(
+      'evaluation-1',
+      pages,
+      [0, 0],
+    ));
+  });
+});

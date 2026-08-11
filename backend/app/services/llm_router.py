@@ -222,15 +222,20 @@ class LLMRouter:
         return None
 
     async def _call_open_code(self, prompt: str, json_mode: bool) -> str:
-        api_key = self._credentials.get("open_code", "")
-        config = self._provider_configs.get(LLMProvider.OPEN_CODE.value, {})
-        if not api_key:
+        configured_key = str(self._credentials.get("open_code", "") or "").strip()
+        environment_key = str(
+            getattr(settings, "OPEN_CODE_API_KEY", "") or ""
+        ).strip()
+        api_keys = [configured_key] if configured_key else []
+        if environment_key and environment_key not in api_keys:
+            api_keys.append(environment_key)
+        if not api_keys:
             raise ValueError("OPEN_CODE_API_KEY not configured")
-        headers = {
-            "Authorization": f"Bearer {api_key}",
-            "Content-Type": "application/json",
-        }
-        model = config.get("model") or getattr(settings, "OPEN_CODE_MODEL", "deepseek-v4-flash")
+
+        config = self._provider_configs.get(LLMProvider.OPEN_CODE.value, {})
+        model = config.get("model") or getattr(
+            settings, "OPEN_CODE_MODEL", "deepseek-v4-flash"
+        )
         body: dict[str, Any] = {
             "model": model,
             "messages": [{"role": "user", "content": prompt}],
@@ -242,69 +247,112 @@ class LLMRouter:
                 config.get("max_tokens")
                 or getattr(settings, "OPEN_CODE_DIGITALIZATION_MAX_TOKENS", 3072)
             )
-            headers = {
-                "x-api-key": api_key,
-                "anthropic-version": "2023-06-01",
-                "Content-Type": "application/json",
-            }
             endpoint = "messages"
         else:
             if json_mode:
                 body["response_format"] = {"type": "json_object"}
             endpoint = "chat/completions"
-        timeout = config.get("timeout_seconds") or getattr(settings, "OPEN_CODE_TIMEOUT_SECONDS", 45)
-        base_url = str(config.get("base_url") or settings.OPEN_CODE_BASE_URL).rstrip("/")
+
+        timeout = config.get("timeout_seconds") or getattr(
+            settings, "OPEN_CODE_TIMEOUT_SECONDS", 45
+        )
+        base_url = str(
+            config.get("base_url") or settings.OPEN_CODE_BASE_URL
+        ).rstrip("/")
         start = time.monotonic()
         try:
             async with httpx.AsyncClient(timeout=timeout) as client:
-                for attempt in range(1, OPEN_CODE_MAX_ATTEMPTS + 1):
-                    resp = await client.post(
-                        f"{base_url}/{endpoint}",
-                        headers=headers,
-                        json=body,
+                for credential_index, api_key in enumerate(api_keys):
+                    headers = (
+                        {
+                            "x-api-key": api_key,
+                            "anthropic-version": "2023-06-01",
+                            "Content-Type": "application/json",
+                        }
+                        if use_messages_api
+                        else {
+                            "Authorization": f"Bearer {api_key}",
+                            "Content-Type": "application/json",
+                        }
                     )
-                    should_retry = (
-                        resp.status_code in OPEN_CODE_RETRYABLE_STATUS_CODES
-                        and attempt < OPEN_CODE_MAX_ATTEMPTS
-                    )
-                    if should_retry:
-                        delay = _open_code_retry_delay_seconds(attempt, resp)
-                        logger.warning(
-                            "OpenCode transient HTTP %s; retry %d/%d in %.2fs",
-                            resp.status_code,
-                            attempt + 1,
-                            OPEN_CODE_MAX_ATTEMPTS,
-                            delay,
+                    for attempt in range(1, OPEN_CODE_MAX_ATTEMPTS + 1):
+                        resp = await client.post(
+                            f"{base_url}/{endpoint}",
+                            headers=headers,
+                            json=body,
                         )
-                        await asyncio.sleep(delay)
-                        continue
-                    resp.raise_for_status()
-                    break
-                data = resp.json()
-                ms = int((time.monotonic() - start) * 1000)
-                usage = data.get("usage", {}) or {}
-                await log_ai_usage(
-                    feature="content_generation",
-                    provider="opencode",
-                    model=model,
-                    status="success",
-                    latency_ms=ms,
-                    input_tokens=usage.get("input_tokens") or usage.get("prompt_tokens"),
-                    output_tokens=usage.get("output_tokens") or usage.get("completion_tokens"),
-                    **self._tracking,
-                )
-                if use_messages_api:
-                    return _messages_response_text(data)
-                return data["choices"][0]["message"]["content"]
+                        has_credential_fallback = credential_index < len(api_keys) - 1
+                        if resp.status_code == 401 and has_credential_fallback:
+                            logger.warning(
+                                "OpenCode rejected the stored credential; "
+                                "retrying with the environment credential"
+                            )
+                            break
+                        should_retry = (
+                            resp.status_code in OPEN_CODE_RETRYABLE_STATUS_CODES
+                            and attempt < OPEN_CODE_MAX_ATTEMPTS
+                        )
+                        if should_retry:
+                            delay = _open_code_retry_delay_seconds(attempt, resp)
+                            logger.warning(
+                                "OpenCode transient HTTP %s; retry %d/%d in %.2fs",
+                                resp.status_code,
+                                attempt + 1,
+                                OPEN_CODE_MAX_ATTEMPTS,
+                                delay,
+                            )
+                            await asyncio.sleep(delay)
+                            continue
+
+                        resp.raise_for_status()
+                        data = resp.json()
+                        ms = int((time.monotonic() - start) * 1000)
+                        usage = data.get("usage", {}) or {}
+                        await log_ai_usage(
+                            feature="content_generation",
+                            provider="opencode",
+                            model=model,
+                            status="success",
+                            latency_ms=ms,
+                            input_tokens=(
+                                usage.get("input_tokens")
+                                or usage.get("prompt_tokens")
+                            ),
+                            output_tokens=(
+                                usage.get("output_tokens")
+                                or usage.get("completion_tokens")
+                            ),
+                            **self._tracking,
+                        )
+                        if use_messages_api:
+                            return _messages_response_text(data)
+                        return data["choices"][0]["message"]["content"]
+
+            raise RuntimeError("OpenCode rechazó las credenciales configuradas")
         except httpx.TimeoutException:
             ms = int((time.monotonic() - start) * 1000)
-            await log_ai_usage(feature="content_generation", provider="opencode", model=model, status="timeout", latency_ms=ms, error_code="provider_timeout", **self._tracking)
+            await log_ai_usage(
+                feature="content_generation",
+                provider="opencode",
+                model=model,
+                status="timeout",
+                latency_ms=ms,
+                error_code="provider_timeout",
+                **self._tracking,
+            )
             raise
         except Exception as exc:
             ms = int((time.monotonic() - start) * 1000)
-            await log_ai_usage(feature="content_generation", provider="opencode", model=model, status="failed", latency_ms=ms, error_code=str(exc)[:60], **self._tracking)
+            await log_ai_usage(
+                feature="content_generation",
+                provider="opencode",
+                model=model,
+                status="failed",
+                latency_ms=ms,
+                error_code=str(exc)[:60],
+                **self._tracking,
+            )
             raise
-
     async def _call_groq(self, prompt: str, json_mode: bool) -> str:
         api_key = self._credentials.get("groq", "")
         config = self._provider_configs.get(LLMProvider.GROQ.value, {})

@@ -495,20 +495,26 @@ VISION_PROMPT = """Eres un extractor de contenido de imágenes de respuestas de 
 ## Contexto de la evaluación
 {preguntas_context}
 
+Antes de extraer, identifica si la hoja está girada y léela en la orientación correcta. La foto puede contener un taller impreso ya resuelto y respuestas manuscritas.
+
 Analiza la imagen y extrae:
 1. Todo el texto escrito visible
 2. Identifica a qué pregunta corresponde cada respuesta
 3. Evalúa la calidad de la imagen
-4. Devuelve una entrada en respuestas_detectadas por cada respuesta numerada visible.
-5. En opción múltiple conserva la letra y el valor seleccionados; no califiques.
+4. Si recibes varias páginas, léelas en el orden indicado y trátalas como un solo trabajo.
+5. Une preguntas o procedimientos que continúan en la página siguiente.
+6. Si una pregunta aparece solapada en dos páginas, devuélvela una sola vez usando la versión más completa.
+7. Devuelve una entrada en respuestas_detectadas por cada respuesta numerada visible e indica su página.
+8. En opción múltiple conserva la letra y el valor seleccionados; no califiques.
 
 Devuelve SOLO JSON con este formato:
 {
   "texto_extraido": "texto completo extraído de la imagen",
+  "paginas_detectadas": [1, 2],
   "preguntas_detectadas": [1, 2],
   "respuestas_detectadas": [
-    {"pregunta": 1, "respuesta": "respuesta visible, incluyendo letra y valor si aplica"},
-    {"pregunta": 2, "respuesta": "respuesta visible"}
+    {"pregunta": 1, "pagina": 1, "respuesta": "respuesta visible, incluyendo letra y valor si aplica"},
+    {"pregunta": 2, "pagina": 2, "respuesta": "respuesta visible"}
   ],
   "calidad_imagen": {"borroso": "bajo|medio|alto", "iluminacion": "buena|mala", "recorte": "completo|parcial|cortado"},
   "usable": true,
@@ -552,7 +558,7 @@ async def vision_agent(
         raw = await client.chat_multimodal(
             model=model, text=vision_text,
             image_bytes=ctx.image_bytes, image_mime=ctx.image_mime,
-            json_mode=True, max_tokens=1024, timeout=timeout,
+            json_mode=True, max_tokens=4096, timeout=timeout,
         )
         ms = int((time.monotonic() - start) * 1000)
         content = raw["choices"][0]["message"]["content"]
@@ -702,6 +708,9 @@ REGLAS OBLIGATORIAS:
 - "Sí", "es igual" y "verdadero" son equivalentes en verdadero/falso; la letra o el valor correctos son equivalentes en opción múltiple.
 - Si no hay puntajes explícitos por pregunta, distribuye la nota máxima de forma uniforme entre las preguntas.
 - Evalúa las preguntas abiertas por separado y verifica toda operación aritmética antes de asignar la nota.
+- Si recibes varias páginas, califica el trabajo completo en conjunto y respeta su orden.
+- Une procedimientos que continúan en otra página y no dupliques preguntas visibles en fotografías solapadas.
+- Si recibes una imagen girada, oriéntala mentalmente antes de leer y distingue siempre el ejercicio impreso de la respuesta manuscrita.
 
 ## Contexto adicional (RAG)
 {rag_context}

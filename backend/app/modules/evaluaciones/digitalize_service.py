@@ -18,6 +18,7 @@ from app.core.config import settings
 from app.core.logging import get_logger
 from app.modules.calificaciones.agents import AgentContext, OpenCodeClient, vision_agent
 from app.modules.dba.document_service import extraer_texto_docx, extraer_texto_pdf
+from app.services.image_preprocessing import prepare_orientation_variants
 from app.services.llm_router import LLMRouter
 from app.services.storage_service import validate_mime
 from app.services.vision_service import interpret_image
@@ -67,7 +68,8 @@ Devuelve SOLO JSON válido con esta estructura exacta:
 }}
 
 REGLAS OBLIGATORIAS:
-- Incluye TODAS las preguntas y conserva su numeración.
+- Incluye TODAS las preguntas y conserva su numeración. Si el OCR numeró una lista de ejercicios originalmente sin número, conserva esa numeración secuencial.
+- El contenido puede incluir etiquetas [RESPUESTA DEL ESTUDIANTE: ...]. No copies esas respuestas en la clave ni las mezcles con el enunciado: resuelve cada ejercicio de forma independiente.
 - Genera exactamente UNA respuesta esperada para CADA pregunta, incluso si el documento
   no trae una clave impresa. Resuelve las operaciones y, para preguntas abiertas, redacta
   una solucion especifica, breve y verificable. Nunca uses marcadores como "pendiente de
@@ -92,7 +94,7 @@ Contenido extraído:
 REPAIR_KEY_PROMPT = """Completa la clave de respuestas de esta evaluación.
 Devuelve SOLO JSON con {{"respuestas_esperadas": [{{"numero": 1, "respuesta": "..."}}]}}.
 Debe existir una respuesta correcta o de referencia no vacía para cada número: {numeros}.
-Resuelve cada pregunta de nuevo. Para opcion multiple devuelve exactamente una opcion existente con letra y texto; para abiertas redacta una respuesta especifica y verificable. No uses marcadores ni pidas al docente definir la respuesta.
+Resuelve cada pregunta de nuevo e ignora cualquier texto etiquetado como RESPUESTA DEL ESTUDIANTE. Para opcion multiple devuelve exactamente una opcion existente con letra y texto; para abiertas redacta una respuesta especifica y verificable. No uses marcadores ni pidas al docente definir la respuesta.
 
 Preguntas:
 {preguntas}
@@ -102,20 +104,24 @@ Contenido original:
 """
 
 DIGITALIZATION_VISION_PROMPT = """Eres un extractor OCR de evaluaciones escolares.
-La imagen contiene una HOJA DE PREGUNTAS que el docente quiere digitalizar; no es una
-entrega ni una hoja de respuestas de un estudiante.
+La imagen contiene una hoja de preguntas que el docente quiere digitalizar. Puede estar
+vacía o ya resuelta por un estudiante.
 
 Transcribe todo el contenido educativo visible:
 - título e instrucciones;
 - cada pregunta con su número;
 - todas las opciones de respuesta;
-- expresiones matemáticas preservando +, -, ×, ÷, =, paréntesis y decimales.
+- expresiones matemáticas preservando +, -, ×, ÷, =, paréntesis y decimales;
+- antes de leer, identifica la orientación y gira mentalmente la hoja 0°, 90°, 180° o 270°;
+- separa el enunciado impreso de la respuesta manuscrita del estudiante;
+- si hay una lista de ejercicios sin número, numérala secuencialmente sin omitir filas;
+- no confundas números decorativos de dibujos para colorear con preguntas.
 
 Devuelve SOLO JSON válido con este formato:
 {
   "texto_extraido": "transcripción completa y ordenada",
   "preguntas_detectadas": [1, 2],
-  "respuestas_detectadas": [],
+  "respuestas_detectadas": [{"pregunta": 1, "respuesta": "respuesta manuscrita visible"}],
   "calidad_imagen": {"borroso": "bajo|medio|alto", "iluminacion": "buena|mala", "recorte": "completo|parcial|cortado"},
   "usable": true,
   "alertas": []
@@ -124,8 +130,8 @@ Devuelve SOLO JSON válido con este formato:
 Marca usable=true si puedes reconstruir al menos una pregunta, incluso cuando el texto sea
 manuscrito, la hoja esté inclinada o existan imperfecciones menores. Usa false únicamente
 si no hay contenido educativo recuperable. No inventes texto que no esté visible.
+En texto_extraido etiqueta las respuestas realizadas como [RESPUESTA DEL ESTUDIANTE: ...].
 """
-
 
 def detect_digitalization_mime(content: bytes, filename: str) -> str:
     """Detecta PDF/imágenes con magic bytes y DOCX por su estructura ZIP interna."""
@@ -163,7 +169,17 @@ def _has_meaningful_evaluation_text(text: str) -> bool:
         )
         or "?" in normalized
     )
-    return alphanumeric >= 12 and (len(words) >= 4 or has_question_signal)
+    has_instruction_signal = bool(
+        re.search(
+            r"\b(?:calcula|calcule|resuelve|responda|responde|explica|selecciona|"
+            r"seleccione|escribe|completa|marca|indica)\b",
+            normalized,
+            flags=re.IGNORECASE,
+        )
+    )
+    return alphanumeric >= 12 and len(words) >= 3 and (
+        has_question_signal or has_instruction_signal
+    )
 
 
 def _declared_usable(value: Any, *, default: bool) -> bool:
@@ -187,71 +203,92 @@ async def _extract_image_text(
     mime: str,
     name: str,
 ) -> tuple[str, list[str]]:
-    context = AgentContext(
-        evaluacion_nombre=name,
-        nota_maxima=5.0,
-        blueprint={},
-        image_bytes=content,
-        image_mime=mime,
-    )
+    variants = prepare_orientation_variants(content, mime)
+    last_result = None
     client = OpenCodeClient()
     try:
-        result = await vision_agent(
-            context,
-            model=settings.OPEN_CODE_DIGITALIZATION_VISION_MODEL,
-            client=client,
-            prompt_override=DIGITALIZATION_VISION_PROMPT,
-            timeout=settings.OPEN_CODE_DIGITALIZATION_VISION_TIMEOUT_SECONDS,
-        )
+        for variant in variants:
+            context = AgentContext(
+                evaluacion_nombre=name,
+                nota_maxima=5.0,
+                blueprint={},
+                image_bytes=variant.data,
+                image_mime=variant.mime,
+            )
+            result = await vision_agent(
+                context,
+                model=settings.OPEN_CODE_DIGITALIZATION_VISION_MODEL,
+                client=client,
+                prompt_override=DIGITALIZATION_VISION_PROMPT,
+                timeout=settings.OPEN_CODE_DIGITALIZATION_VISION_TIMEOUT_SECONDS,
+            )
+            last_result = result
+            raw = result.raw_output or {}
+            text = str(raw.get("texto_extraido") or "").strip()
+            primary_usable = _declared_usable(raw.get("usable"), default=bool(text))
+            if text and (
+                primary_usable or _has_meaningful_evaluation_text(text)
+            ):
+                warnings = _clean_warnings(raw.get("alertas"))
+                if variant.rotation_degrees:
+                    warnings.append(
+                        "Se corrigió automáticamente la orientación de la foto "
+                        f"({variant.rotation_degrees:+d}°)."
+                    )
+                if not primary_usable:
+                    warnings.append(
+                        "La imagen fue marcada como parcialmente legible, pero se recuperó "
+                        "texto suficiente. Revisa cuidadosamente el borrador."
+                    )
+                return text, warnings
     finally:
         await client.close()
 
-    raw = result.raw_output or {}
-    text = str(raw.get("texto_extraido") or "").strip()
-    primary_usable = _declared_usable(raw.get("usable"), default=bool(text))
-    if text and (primary_usable or _has_meaningful_evaluation_text(text)):
-        warnings = _clean_warnings(raw.get("alertas"))
-        if not primary_usable:
-            warnings.append(
-                "La imagen fue marcada como parcialmente legible, pero se recuperó "
-                "texto suficiente. Revisa cuidadosamente el borrador."
-            )
-        return text, warnings
-
-    if result.error:
+    if last_result and last_result.error:
         logger.warning(
             "OpenCode vision failed during evaluation digitalization: %s",
-            result.error,
+            last_result.error,
         )
     else:
         logger.info(
-            "Primary vision did not recover usable evaluation text; trying fallback"
+            "Primary vision did not recover usable evaluation text after orientation retries; "
+            "trying fallback"
         )
 
-    fallback = await interpret_image(
-        content,
-        mime_type=mime,
-        context_hint=f"Nombre del archivo: {name}",
-        purpose="evaluation_document",
-    )
-    fallback_text = str(fallback.get("text_or_visual_content") or "").strip()
-    quality = fallback.get("image_quality") or {}
-    fallback_usable = _declared_usable(
-        quality.get("is_usable") if isinstance(quality, dict) else None,
-        default=bool(fallback_text),
-    )
-    if fallback_text and (
-        fallback_usable or _has_meaningful_evaluation_text(fallback_text)
-    ):
-        warnings = _clean_warnings(fallback.get("warnings"))
-        warnings.append(
-            "Se utilizó el proveedor alternativo de visión. Revisa la transcripción "
-            "antes de publicar."
+    fallback_warnings: list[str] = []
+    for variant in variants:
+        fallback = await interpret_image(
+            variant.data,
+            mime_type=variant.mime,
+            context_hint=(
+                f"Nombre del archivo: {name}. Rotación aplicada: "
+                f"{variant.rotation_degrees:+d} grados."
+            ),
+            purpose="evaluation_document",
         )
-        return fallback_text, warnings
+        fallback_text = str(fallback.get("text_or_visual_content") or "").strip()
+        quality = fallback.get("image_quality") or {}
+        fallback_usable = _declared_usable(
+            quality.get("is_usable") if isinstance(quality, dict) else None,
+            default=bool(fallback_text),
+        )
+        fallback_warnings.extend(_clean_warnings(fallback.get("warnings")))
+        if fallback_text and (
+            fallback_usable or _has_meaningful_evaluation_text(fallback_text)
+        ):
+            warnings = _clean_warnings(fallback.get("warnings"))
+            if variant.rotation_degrees:
+                warnings.append(
+                    "Se corrigió automáticamente la orientación de la foto "
+                    f"({variant.rotation_degrees:+d}°)."
+                )
+            warnings.append(
+                "Se utilizó el proveedor alternativo de visión. Revisa la transcripción "
+                "antes de publicar."
+            )
+            return fallback_text, warnings
 
-    fallback_warnings = _clean_warnings(fallback.get("warnings"))
-    providers_unavailable = bool(result.error) and any(
+    providers_unavailable = bool(last_result and last_result.error) and any(
         "ningún proveedor" in warning.lower() for warning in fallback_warnings
     )
     if providers_unavailable:
@@ -265,11 +302,10 @@ async def _extract_image_text(
     raise HTTPException(
         status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
         detail=(
-            "No se encontró texto educativo suficiente en la imagen. Verifica que la "
-            "hoja completa esté dentro del encuadre y vuelve a intentarlo."
+            "No se encontró texto educativo suficiente en la imagen, incluso después de "
+            "corregir su orientación. Verifica el encuadre y vuelve a intentarlo."
         ),
     )
-
 
 async def _extract_scanned_pdf(content: bytes, name: str) -> tuple[str, list[str]]:
     import fitz

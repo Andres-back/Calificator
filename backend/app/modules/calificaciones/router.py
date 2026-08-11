@@ -4,7 +4,6 @@ import json
 from copy import copy
 import mimetypes
 from datetime import datetime, timezone
-from decimal import Decimal
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Response, UploadFile, status
@@ -15,11 +14,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.permissions import get_current_user, is_student_enrolled, require_role
 from app.db.session import get_db
 from app.modules.calificaciones import photo_service, service
-from app.modules.calificaciones.grading_service import grade_submission
-from app.modules.calificaciones.models import Calificacion, Entrega, SalonSesion, SalonSesionEstudiante
+from app.modules.calificaciones.models import Calificacion, Entrega, SalonSesion
 from app.modules.calificaciones.salon_mode_service import (
     create_sesion_id,
-    get_pending_students,
     get_sesion_summary,
     init_sesion_estudiantes,
     update_estudiante_estado,
@@ -38,6 +35,7 @@ from app.modules.calificaciones.schemas import (
     IncidenciaRead,
     LoteAsincronoRead,
     ResolverIncidencia,
+    ReemplazoEvidenciaCreate,
     SalonEstudianteRead,
     SalonEstudianteUpdate,
     SalonResumen,
@@ -46,7 +44,6 @@ from app.modules.calificaciones.schemas import (
     SolicitudRevisionCreate,
 )
 from app.modules.evaluaciones import service as evaluaciones_service
-from app.modules.evaluaciones.blueprint_service import evaluation_to_grading_blueprint
 from app.modules.evaluaciones.modality_service import (
     normalize_question_modalities,
     question_numbers_by_section,
@@ -54,6 +51,11 @@ from app.modules.evaluaciones.modality_service import (
 from app.modules.jobs import service as jobs_service
 from app.modules.materias import service as materias_service
 from app.modules.users.models import User
+from app.services.evidence_bundle_service import (
+    EvidenceBundle,
+    EvidenceBundleError,
+    build_evidence_bundle,
+)
 from app.services.storage_service import (
     read_upload_limited,
     resolve_upload_path,
@@ -70,7 +72,52 @@ router = APIRouter(tags=["calificaciones"])
 MAX_ASYNC_BATCH_FILES = 50
 MAX_ASYNC_BATCH_BYTES = 100 * 1024 * 1024
 MAX_EVIDENCE_BYTES = 15 * 1024 * 1024
+MAX_EVIDENCE_TOTAL_BYTES = 40 * 1024 * 1024
 
+
+def _parse_evidence_rotations(raw: object) -> list[int] | None:
+    if not isinstance(raw, str) or not raw.strip():
+        return None
+    try:
+        parsed = json.loads(raw)
+    except json.JSONDecodeError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="La información de rotación no es válida",
+        ) from exc
+    if not isinstance(parsed, list) or any(
+        not isinstance(value, int) for value in parsed
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="La información de rotación no es válida",
+        )
+    return parsed
+
+
+def _evidence_bundle_metadata(
+    evaluacion: object,
+    entrega: Entrega,
+    bundle: EvidenceBundle,
+) -> dict:
+    document = dict(bundle.metadata)
+    if getattr(evaluacion, "modalidad", None) == EvaluacionModalidad.MIXTA.value:
+        metadata = _mixed_evidence_metadata(evaluacion, entrega)
+        metadata["documento"] = document
+        return metadata
+    return {
+        "modalidad": getattr(evaluacion, "modalidad", EvaluacionModalidad.FISICA.value),
+        **document,
+    }
+
+
+def _delete_replaced_evidence(public_url: str | None) -> None:
+    if not public_url:
+        return
+    try:
+        resolve_upload_path(public_url).unlink(missing_ok=True)
+    except (OSError, ValueError):
+        pass
 
 def _evidence_url(entrega: Entrega | None) -> str | None:
     if not entrega or not entrega.archivo_url:
@@ -181,12 +228,15 @@ async def _enqueue_persisted_grading(
 async def calificar_foto(
     evaluacion_id: UUID = Form(...),
     estudiante_id: UUID = Form(...),
-    foto: UploadFile = File(...),
+    foto: list[UploadFile] = File(...),
+    rotaciones: str | None = Form(default=None),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> object:
     require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
-    evaluacion = await evaluaciones_service.ensure_can_manage_evaluation(db, evaluacion_id, current_user)
+    evaluacion = await evaluaciones_service.ensure_can_manage_evaluation(
+        db, evaluacion_id, current_user
+    )
     service.ensure_evaluation_accepts_grading(evaluacion)
     if getattr(evaluacion, "modalidad", None) == EvaluacionModalidad.ONLINE.value:
         raise HTTPException(
@@ -194,9 +244,21 @@ async def calificar_foto(
             detail="Esta evaluacion es online y debe calificarse desde la entrega digital.",
         )
     if not await is_student_enrolled(db, evaluacion.materia_id, estudiante_id):
-        raise HTTPException(status_code=403, detail="El estudiante no esta matriculado en esta materia")
-    content = await read_upload_limited(foto, MAX_EVIDENCE_BYTES)
-    mime = validate_mime(content, foto.filename or "image.jpg")
+        raise HTTPException(
+            status_code=403,
+            detail="El estudiante no esta matriculado en esta materia",
+        )
+
+    try:
+        bundle = await build_evidence_bundle(
+            foto,
+            rotations=_parse_evidence_rotations(rotaciones),
+        )
+    except EvidenceBundleError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(exc),
+        ) from exc
 
     existing_calificacion: Calificacion | None = None
     if getattr(evaluacion, "modalidad", None) == EvaluacionModalidad.MIXTA.value:
@@ -223,8 +285,7 @@ async def calificar_foto(
             select(Calificacion).where(Calificacion.entrega_id == entrega.id)
         )
     else:
-        # Esta es una accion del docente: reemplaza la evidencia vigente sin
-        # consumir otro intento del estudiante ni crear calificaciones duplicadas.
+        # El docente reemplaza el paquete completo sin consumir otro intento.
         entrega = await db.scalar(
             select(Entrega)
             .where(
@@ -248,33 +309,55 @@ async def calificar_foto(
             )
             db.add(entrega)
 
-    archivo_url = await save_upload(content, foto.filename or "foto.jpg", subfolder="entregas", max_size_bytes=MAX_EVIDENCE_BYTES)
-    entrega.archivo_url = archivo_url
+    previous_url = entrega.archivo_url
+    new_url = await save_upload(
+        bundle.content,
+        bundle.filename,
+        subfolder="entregas",
+        max_size_bytes=MAX_EVIDENCE_TOTAL_BYTES,
+    )
+    entrega.archivo_url = new_url
     entrega.tipo = (
         EntregaTipo.MIXTA.value
         if getattr(evaluacion, "modalidad", None) == EvaluacionModalidad.MIXTA.value
         else EntregaTipo.PDF.value
-        if mime == "application/pdf"
+        if bundle.mime == "application/pdf"
         else EntregaTipo.FOTO.value
     )
     entrega.estado = EntregaEstado.RECIBIDA.value
     entrega.visual_text_json = {}
-    await db.flush()
+    try:
+        await db.flush()
+        evidence_metadata = _evidence_bundle_metadata(evaluacion, entrega, bundle)
+    except Exception:
+        await db.rollback()
+        _delete_replaced_evidence(new_url)
+        raise
 
-    mixed_metadata = (
-        _mixed_evidence_metadata(evaluacion, entrega)
-        if getattr(evaluacion, "modalidad", None) == EvaluacionModalidad.MIXTA.value
-        else None
-    )
-    return await _enqueue_persisted_grading(
-        db,
-        evaluacion=evaluacion,
-        entrega=entrega,
-        estudiante_id=estudiante_id,
-        profesor_id=current_user.id,
-        evidence_metadata=mixed_metadata,
-        calificacion=existing_calificacion,
-    )
+    try:
+        result = await _enqueue_persisted_grading(
+            db,
+            evaluacion=evaluacion,
+            entrega=entrega,
+            estudiante_id=estudiante_id,
+            profesor_id=current_user.id,
+            evidence_metadata=evidence_metadata,
+            calificacion=existing_calificacion,
+        )
+    except HTTPException as exc:
+        if exc.status_code == status.HTTP_503_SERVICE_UNAVAILABLE:
+            _delete_replaced_evidence(previous_url)
+        else:
+            await db.rollback()
+            _delete_replaced_evidence(new_url)
+        raise
+    except Exception:
+        await db.rollback()
+        _delete_replaced_evidence(new_url)
+        raise
+
+    _delete_replaced_evidence(previous_url)
+    return result
 
 @router.post(
     "/calificaciones/{calificacion_id}/reintentar-foto",
@@ -337,6 +420,51 @@ async def reintentar_calificacion_foto(
         ),
         calificacion=calificacion,
     )
+
+
+@router.post(
+    "/calificaciones/{calificacion_id}/solicitar-reemplazo",
+    response_model=EntregaRead,
+)
+async def solicitar_reemplazo_evidencia(
+    calificacion_id: UUID,
+    payload: ReemplazoEvidenciaCreate,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> object:
+    """Permite al docente reabrir una entrega para reenviar el paquete completo."""
+    require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
+    calificacion = await service.get_calificacion_or_404(db, calificacion_id)
+    await evaluaciones_service.ensure_can_manage_evaluation(
+        db,
+        calificacion.evaluacion_id,
+        current_user,
+    )
+    entrega = calificacion.entrega
+    if not entrega or not entrega.archivo_url:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="La calificacion no tiene evidencia para reemplazar.",
+        )
+
+    current_payload = (
+        dict(entrega.visual_text_json)
+        if isinstance(entrega.visual_text_json, dict)
+        else {}
+    )
+    entrega.visual_text_json = {
+        **current_payload,
+        "pipeline_status": "replacement_requested",
+        "reemplazo_solicitado": True,
+        "motivo_reemplazo": payload.motivo.strip(),
+    }
+    entrega.estado = EntregaEstado.REQUIERE_REINTENTO.value
+    calificacion.estado = CalificacionEstado.REQUIERE_REVISION.value
+    calificacion.revisado_por_docente = False
+    calificacion.nota_confirmada = None
+    await db.commit()
+    await db.refresh(entrega)
+    return _entrega_read(entrega)
 
 
 @router.post("/calificaciones/lote", status_code=status.HTTP_201_CREATED)
@@ -954,11 +1082,7 @@ async def crear_entrega_online(
         materia_id=evaluacion.materia_id,
         tipo=EntregaTipo.MIXTA.value if mixed_submission else EntregaTipo.ONLINE.value,
         respuesta_texto=respuesta_texto,
-        estado=(
-            EntregaEstado.RECIBIDA.value
-            if mixed_submission
-            else EntregaEstado.PROCESANDO.value
-        ),
+        estado=EntregaEstado.RECIBIDA.value,
         visual_text_json={},
     )
     db.add(entrega)
@@ -975,55 +1099,34 @@ async def crear_entrega_online(
         return _entrega_read(entrega)
 
     try:
-        grading = await grade_submission(
+        await _enqueue_persisted_grading(
             db,
-            evaluacion_id=evaluacion.id,
-            materia_id=evaluacion.materia_id,
-            blueprint=evaluation_to_grading_blueprint(evaluacion),
-            student_response_text=respuesta_texto,
-            user_id=current_user.id,
+            evaluacion=evaluacion,
+            entrega=entrega,
+            estudiante_id=current_user.id,
+            profesor_id=evaluacion.profesor_id,
         )
-        if grading.nota_sugerida is not None:
-            service.validate_score_within_evaluation(
-                grading.nota_sugerida,
-                evaluacion,
-                "nota_sugerida",
-            )
-    except Exception as exc:
-        grading = photo_service.technical_failure_result(
-            evaluacion,
-            motivo_revision="online_pipeline_error",
-            error_type=type(exc).__name__,
-        )
-
-    if grading.nota_sugerida is not None:
-        service.transition_to_grading_if_needed(evaluacion)
-
-    cal = photo_service.apply_grading_result(
-        entrega=entrega,
-        evaluacion=evaluacion,
-        estudiante_id=current_user.id,
-        profesor_id=evaluacion.profesor_id,
-        grading=grading,
-    )
-    db.add(cal)
-    await db.commit()
-    await db.refresh(entrega)
+    except HTTPException as exc:
+        if exc.status_code != status.HTTP_503_SERVICE_UNAVAILABLE:
+            raise
+        # La evidencia ya fue persistida. El estudiante no debe repetir la entrega
+        # por una indisponibilidad interna; el docente podrá reprocesarla.
+        await db.refresh(entrega)
     return _entrega_read(entrega)
-
 
 @router.post(
     "/evaluaciones/{evaluacion_id}/entregas/archivo",
-    response_model=CalificacionRead,
-    status_code=status.HTTP_201_CREATED,
+    response_model=EntregaRead,
+    status_code=status.HTTP_202_ACCEPTED,
 )
 async def crear_entrega_archivo_estudiante(
     evaluacion_id: UUID,
-    archivo: UploadFile = File(...),
+    archivo: list[UploadFile] = File(...),
+    rotaciones: str | None = Form(default=None),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> object:
-    """Permite al estudiante entregar una foto o PDF en evaluaciones fisicas/mixtas."""
+    """Entrega atómica de una o varias hojas para evaluaciones físicas/mixtas."""
     require_role(current_user, [UserRole.ESTUDIANTE])
     evaluacion = await evaluaciones_service.get_evaluation_or_404(db, evaluacion_id)
     service.ensure_evaluation_accepts_grading(evaluacion)
@@ -1038,13 +1141,15 @@ async def crear_entrega_archivo_estudiante(
     if not await is_student_enrolled(db, evaluacion.materia_id, current_user.id):
         raise HTTPException(status_code=403, detail="No estas matriculado en esta materia")
 
-    content = await read_upload_limited(archivo, MAX_EVIDENCE_BYTES)
     try:
-        mime = validate_mime(content, archivo.filename or "evidencia.jpg")
-    except ValueError as exc:
+        bundle = await build_evidence_bundle(
+            archivo,
+            rotations=_parse_evidence_rotations(rotaciones),
+        )
+    except EvidenceBundleError as exc:
         raise HTTPException(
-            status_code=400,
-            detail="Solo puedes subir una foto JPG/PNG/WEBP o un archivo PDF.",
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(exc),
         ) from exc
 
     latest = await db.scalar(
@@ -1061,16 +1166,21 @@ async def crear_entrega_archivo_estudiante(
         if not latest or not latest.respuesta_texto:
             raise HTTPException(
                 status_code=409,
-                detail="Primero completa y envia la parte online; despues adjunta la foto o PDF.",
+                detail="Primero completa y envia la parte online; despues adjunta las hojas.",
             )
         if latest.archivo_url and latest.estado != EntregaEstado.REQUIERE_REINTENTO.value:
-            raise HTTPException(status_code=409, detail="Ya entregaste la evidencia fisica de esta evaluacion.")
+            raise HTTPException(
+                status_code=409,
+                detail="Ya entregaste la evidencia fisica de esta evaluacion.",
+            )
         entrega = latest
     else:
         if latest and latest.estado == EntregaEstado.REQUIERE_REINTENTO.value:
             entrega = latest
         else:
-            await service.ensure_student_can_submit_new_evidence(db, evaluacion, current_user.id)
+            await service.ensure_student_can_submit_new_evidence(
+                db, evaluacion, current_user.id
+            )
             entrega = Entrega(
                 evaluacion_id=evaluacion.id,
                 estudiante_id=current_user.id,
@@ -1079,42 +1189,55 @@ async def crear_entrega_archivo_estudiante(
             )
             db.add(entrega)
 
-    archivo_url = await save_upload(
-        content,
-        archivo.filename or "evidencia.jpg",
+    previous_url = entrega.archivo_url
+    new_url = await save_upload(
+        bundle.content,
+        bundle.filename,
         subfolder="entregas",
-        max_size_bytes=MAX_EVIDENCE_BYTES,
+        max_size_bytes=MAX_EVIDENCE_TOTAL_BYTES,
     )
-    entrega.archivo_url = archivo_url
+    entrega.archivo_url = new_url
     entrega.tipo = (
         EntregaTipo.MIXTA.value
         if mixed_submission
         else EntregaTipo.PDF.value
-        if mime == "application/pdf"
+        if bundle.mime == "application/pdf"
         else EntregaTipo.FOTO.value
     )
-    entrega.estado = EntregaEstado.PROCESANDO.value
-    entrega.visual_text_json = {}
-    await db.commit()
+    entrega.estado = EntregaEstado.RECIBIDA.value
+    try:
+        evidence_metadata = _evidence_bundle_metadata(evaluacion, entrega, bundle)
+        entrega.visual_text_json = {
+            "pipeline_status": "received",
+            "evidencia_consolidada": evidence_metadata,
+        }
+        await db.commit()
+    except Exception:
+        await db.rollback()
+        _delete_replaced_evidence(new_url)
+        raise
     await db.refresh(entrega)
+    _delete_replaced_evidence(previous_url)
 
     existing_calificacion = await db.scalar(
         select(Calificacion).where(Calificacion.entrega_id == entrega.id)
     )
-    mixed_metadata = _mixed_evidence_metadata(evaluacion, entrega) if mixed_submission else None
-    return await photo_service.grade_persisted_photo(
-        db,
-        evaluacion=evaluacion,
-        entrega=entrega,
-        estudiante_id=current_user.id,
-        profesor_id=evaluacion.profesor_id,
-        image_bytes=content,
-        image_mime=mime,
-        student_response_text=entrega.respuesta_texto,
-        evidence_metadata=mixed_metadata,
-        calificacion=existing_calificacion,
-    )
-
+    try:
+        await _enqueue_persisted_grading(
+            db,
+            evaluacion=evaluacion,
+            entrega=entrega,
+            estudiante_id=current_user.id,
+            profesor_id=evaluacion.profesor_id,
+            evidence_metadata=evidence_metadata,
+            calificacion=existing_calificacion,
+        )
+    except HTTPException as exc:
+        if exc.status_code != status.HTTP_503_SERVICE_UNAVAILABLE:
+            raise
+        # El paquete completo ya quedó guardado; el docente puede reprocesarlo.
+        await db.refresh(entrega)
+    return _entrega_read(entrega)
 
 # ── Detalle ──────────────────────────────────────────────────────────────────────
 

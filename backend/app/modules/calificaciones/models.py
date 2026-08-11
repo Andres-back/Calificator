@@ -13,7 +13,7 @@ from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
-from app.shared.enums import CalificacionEstado, EntregaEstado, EntregaTipo
+from app.shared.enums import CalificacionEstado, EntregaEstado
 
 
 class Entrega(Base):
@@ -47,6 +47,43 @@ class Entrega(Base):
     calificacion: Mapped["Calificacion | None"] = relationship(
         "Calificacion", back_populates="entrega", uselist=False
     )
+
+    def _evidence_document_metadata(self) -> dict:
+        payload = self.visual_text_json if isinstance(self.visual_text_json, dict) else {}
+        evidence = payload.get("evidencia_consolidada")
+        if not isinstance(evidence, dict):
+            return {}
+        document = evidence.get("documento")
+        return document if isinstance(document, dict) else evidence
+
+    @property
+    def reemplazo_solicitado(self) -> bool:
+        payload = self.visual_text_json if isinstance(self.visual_text_json, dict) else {}
+        return bool(payload.get("reemplazo_solicitado"))
+
+    @property
+    def motivo_reemplazo(self) -> str | None:
+        payload = self.visual_text_json if isinstance(self.visual_text_json, dict) else {}
+        value = payload.get("motivo_reemplazo")
+        return value if isinstance(value, str) and value.strip() else None
+
+    @property
+    def evidencia_paginas(self) -> int:
+        metadata = self._evidence_document_metadata()
+        value = metadata.get("paginas")
+        if isinstance(value, int) and value > 0:
+            return value
+        return 1 if self.archivo_url else 0
+
+    @property
+    def evidencia_tipo(self) -> str | None:
+        metadata = self._evidence_document_metadata()
+        value = metadata.get("tipo")
+        if isinstance(value, str) and value:
+            return value
+        if not self.archivo_url:
+            return None
+        return "pdf" if self.tipo == "pdf" else "foto"
 
 
 Index("idx_entregas_evaluacion", Entrega.evaluacion_id)

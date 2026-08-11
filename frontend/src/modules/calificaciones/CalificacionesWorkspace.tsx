@@ -21,7 +21,7 @@ import { routes } from '@/config/routes';
 import {
   ajustarNota, ajustarNotaBatch, confirmarNota, confirmarNotaBatch,
   crearIncidencia, getCalificacionDetalle, listarIncidencias,
-  listCalificaciones, publicarNota, publicarNotaBatch, resolverIncidencia,
+  listCalificaciones, publicarNota, publicarNotaBatch, resolverIncidencia, solicitarReemplazoEvidencia,
 } from './api';
 import { RevisionGuide } from './RevisionGuide';
 import { formatAIModelSource } from './aiPipelineLabels';
@@ -329,7 +329,21 @@ function PanelDetalle({
   const [showAjustar, setShowAjustar] = useState(false);
   const [adjError, setAdjError] = useState('');
   const [showDirtyWarning, setShowDirtyWarning] = useState(false);
+  const [replacementOpen, setReplacementOpen] = useState(false);
+  const [replacementReason, setReplacementReason] = useState('');
   const pendingClose = useRef<(() => void) | null>(null);
+
+  const replacementMutation = useMutation({
+    mutationFn: () => solicitarReemplazoEvidencia(cal.id, replacementReason.trim()),
+    onSuccess: () => {
+      setReplacementOpen(false);
+      setReplacementReason('');
+      void queryClient.invalidateQueries({ queryKey: ['calificacion-detalle', cal.id] });
+      void queryClient.invalidateQueries({ queryKey: ['calificaciones', cal.evaluacion_id] });
+      toast.success('Reemplazo solicitado. El estudiante deberá reenviar todas las hojas.');
+    },
+    onError: (error) => toast.error(toApiError(error).detail),
+  });
 
   const done = DONE_STATES.has(cal.estado);
   const published = cal.estado === PUBLICADA;
@@ -370,8 +384,10 @@ function PanelDetalle({
   const criterios = (graderA?.criterios ?? []) as Array<Record<string, unknown>>;
   const alertas = (graderA?.alertas ?? []) as string[];
   const evidenceUrl = cal.entrega_archivo_url;
+  const evidencePages = Math.max(1, cal.entrega_evidencia_paginas || 1);
   const isPdfEvidence = Boolean(evidenceUrl) && (
-    cal.entrega_tipo?.toLowerCase() === 'pdf'
+    cal.entrega_evidencia_tipo?.toLowerCase() === 'pdf'
+    || cal.entrega_tipo?.toLowerCase() === 'pdf'
     || /\.pdf(?:$|[?#])/i.test(evidenceUrl ?? '')
   );
 
@@ -446,6 +462,7 @@ function PanelDetalle({
                   <h2 id="evidence-title" className="flex items-center gap-2 text-base font-bold text-fg">
                     {isPdfEvidence ? <FileText className="h-5 w-5" /> : <FileImage className="h-5 w-5" />}
                     Evidencia del estudiante
+                    <Badge tone="neutral">{evidencePages} {evidencePages === 1 ? 'hoja' : 'hojas'}</Badge>
                   </h2>
                   <a
                     href={evidenceUrl}
@@ -469,6 +486,12 @@ function PanelDetalle({
                     className="max-h-[34rem] w-full bg-white object-contain p-2"
                   />
                 )}
+                <div className="flex flex-col gap-2 border-t border-border p-3 sm:flex-row sm:items-center sm:justify-between">
+                  <p className="text-xs leading-5 text-muted">Si falta una página o no corresponde, solicita el paquete completo otra vez.</p>
+                  <Button type="button" size="sm" variant="outline" onClick={() => setReplacementOpen(true)}>
+                    <RotateCcw className="h-4 w-4" /> Solicitar reemplazo
+                  </Button>
+                </div>
               </section>
             ) : (
               <section className="rounded-xl border border-border bg-surface-2 p-5">
@@ -622,6 +645,26 @@ function PanelDetalle({
           Guardar cambios
         </Button>
       </div>
+    </ConfirmDialog>
+    <ConfirmDialog
+      open={replacementOpen}
+      onClose={() => !replacementMutation.isPending && setReplacementOpen(false)}
+      onConfirm={() => replacementMutation.mutate()}
+      loading={replacementMutation.isPending}
+      title="Solicitar reemplazo de toda la entrega"
+      description="El estudiante deberá volver a seleccionar y enviar el paquete completo. La evidencia actual se conservará hasta que llegue la nueva."
+      confirmLabel="Solicitar reemplazo"
+    >
+      <Field label="Motivo para el estudiante" required hint="Indica qué hoja falta o qué debe corregir.">
+        <Textarea
+          value={replacementReason}
+          onChange={(event) => setReplacementReason(event.target.value)}
+          placeholder="Ejemplo: Falta la hoja 2 donde continúa el ejercicio 4."
+          className="min-h-28"
+          maxLength={1000}
+        />
+      </Field>
+      {replacementReason.trim().length < 10 && <p className="text-xs text-amber-700 dark:text-amber-300">Escribe al menos 10 caracteres para explicar el reemplazo.</p>}
     </ConfirmDialog>
     </>
   );

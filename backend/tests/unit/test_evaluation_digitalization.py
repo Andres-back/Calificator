@@ -9,6 +9,7 @@ from zipfile import ZipFile
 
 import httpx
 import pytest
+from PIL import Image
 from fastapi import HTTPException
 
 from app.modules.evaluaciones import digitalize_service
@@ -201,7 +202,7 @@ def test_image_extraction_accepts_meaningful_text_when_flagged_unusable(monkeypa
     )
 
     assert "Seleccione el número" in text
-    assert "HOJA DE PREGUNTAS" in captured["prompt"]
+    assert "hoja de preguntas" in captured["prompt"].lower()
     assert captured["model"] == "mimo-v2.5"
     assert captured["timeout"] == 60
     assert any("parcialmente legible" in warning for warning in warnings)
@@ -477,3 +478,125 @@ def test_opencode_text_router_retries_rate_limit(monkeypatch) -> None:
     assert FakeHTTPClient.last_headers["x-api-key"] == "test-key"
     assert "response_format" not in FakeHTTPClient.last_json
     assert FakeHTTPClient.last_json["max_tokens"] == 3072
+
+
+def test_opencode_retries_with_environment_key_after_stored_key_401(monkeypatch) -> None:
+    request = httpx.Request("POST", "https://example.test/chat/completions")
+    responses = [
+        httpx.Response(401, request=request),
+        httpx.Response(
+            200,
+            json={
+                "choices": [
+                    {"message": {"content": '{"preguntas": [{"numero": 1}]}'}}
+                ],
+                "usage": {},
+            },
+            request=request,
+        ),
+    ]
+
+    class FakeHTTPClient:
+        authorization_headers: list[str] = []
+
+        def __init__(self, timeout):
+            self.timeout = timeout
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, exc_type, exc, traceback):
+            return False
+
+        async def post(self, url, headers, json):
+            type(self).authorization_headers.append(headers["Authorization"])
+            return responses.pop(0)
+
+    async def fake_usage_log(**kwargs):
+        return None
+
+    monkeypatch.setattr(llm_router_module.httpx, "AsyncClient", FakeHTTPClient)
+    monkeypatch.setattr(llm_router_module, "log_ai_usage", fake_usage_log)
+    monkeypatch.setattr(llm_router_module.settings, "OPEN_CODE_API_KEY", "valid-env-key")
+
+    router = LLMRouter()
+    router._credentials["open_code"] = "expired-database-key"
+    router._provider_configs["open_code"] = {
+        "base_url": "https://example.test",
+        "model": "mimo-v2.5",
+        "timeout_seconds": 5,
+    }
+
+    result = asyncio.run(router._call_open_code("Digitaliza", json_mode=True))
+
+    assert result == '{"preguntas": [{"numero": 1}]}'
+    assert FakeHTTPClient.authorization_headers == [
+        "Bearer expired-database-key",
+        "Bearer valid-env-key",
+    ]
+
+def test_image_preprocessing_builds_readable_orientation_variants() -> None:
+    source = Image.new("RGB", (320, 180), "white")
+    buffer = BytesIO()
+    source.save(buffer, format="PNG")
+
+    variants = digitalize_service.prepare_orientation_variants(
+        buffer.getvalue(),
+        "image/png",
+    )
+
+    assert [variant.rotation_degrees for variant in variants] == [0, 90, -90]
+    assert Image.open(BytesIO(variants[0].data)).size == (320, 180)
+    assert Image.open(BytesIO(variants[1].data)).size == (180, 320)
+
+
+def test_image_extraction_retries_rotated_photo_before_rejecting(monkeypatch) -> None:
+    source = Image.new("RGB", (320, 180), "white")
+    buffer = BytesIO()
+    source.save(buffer, format="PNG")
+    seen_sizes: list[tuple[int, int]] = []
+
+    async def orientation_sensitive_vision(
+        context, model, client, prompt_override=None, timeout=None,
+    ):
+        size = Image.open(BytesIO(context.image_bytes)).size
+        seen_sizes.append(size)
+        if len(seen_sizes) == 1:
+            return AgentResult(
+                nota_sugerida=None,
+                confianza=0,
+                feedback_estudiante="",
+                raw_output={"usable": False, "texto_extraido": "", "alertas": []},
+            )
+        return AgentResult(
+            nota_sugerida=None,
+            confianza=0.9,
+            feedback_estudiante="",
+            raw_output={
+                "usable": True,
+                "texto_extraido": "1. Calcula 32,37 + 41,32.",
+                "respuestas_detectadas": [
+                    {"pregunta": 1, "respuesta": "73,69"},
+                ],
+                "alertas": [],
+            },
+        )
+
+    async def forbidden_fallback(*_args, **_kwargs):
+        raise AssertionError("No debe usarse otro proveedor si la rotación recupera el texto")
+
+    monkeypatch.setattr(digitalize_service, "OpenCodeClient", _FakeVisionClient)
+    monkeypatch.setattr(digitalize_service, "vision_agent", orientation_sensitive_vision)
+    monkeypatch.setattr(digitalize_service, "interpret_image", forbidden_fallback)
+
+    text, warnings = asyncio.run(
+        digitalize_service._extract_image_text(
+            buffer.getvalue(),
+            "image/png",
+            "taller-decimales.png",
+        )
+    )
+
+    assert seen_sizes == [(320, 180), (180, 320)]
+    assert "32,37 + 41,32" in text
+    assert any("orientación" in warning for warning in warnings)

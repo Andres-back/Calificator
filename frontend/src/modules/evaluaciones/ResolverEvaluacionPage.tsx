@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { ArrowLeft, BookOpenCheck, CheckCircle2, ClipboardCheck, Clock3, Download, FileUp, MessageSquareWarning, PauseCircle, Send, TriangleAlert } from 'lucide-react';
-import { Badge, Button, Card, EmptyState, Field, Input, Modal, RichContent, Select, Skeleton, statusTone, Textarea } from '@/components/ui';
+import { Badge, Button, Card, ConfirmDialog, EmptyState, Field, Input, Modal, RichContent, Select, Skeleton, statusTone, Textarea } from '@/components/ui';
+import { MultiPageEvidencePicker } from '@/components/evidence/MultiPageEvidencePicker';
+import { evidenceFiles, evidenceRotations, type EvidencePage } from '@/components/evidence/evidencePayload';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { toApiError } from '@/lib/api';
 import { crearEntregaArchivo, crearEntregaOnline, evaluationPdfUrl, getActividadEstudiante, getEvaluacion, getMiEntrega, getMiSolicitudRevision, solicitarRevisionEvaluacion } from './api';
@@ -41,17 +43,6 @@ function serializeAnswers(
 }
 
 
-function parseSerializedAnswers(value?: string | null): Record<number, string> {
-  if (!value) return {};
-  const parsed: Record<number, string> = {};
-  const matches = value.matchAll(/^P(\d+):\s*([\s\S]*?)(?=^P\d+:|$)/gm);
-  for (const match of matches) {
-    const number = Number(match[1]);
-    if (Number.isFinite(number)) parsed[number] = match[2].trim();
-  }
-  return parsed;
-}
-
 const MULTIPLE_ATTEMPT_POLICIES = new Set([
   'multiples_intentos',
   'mejor_puntaje',
@@ -61,11 +52,13 @@ const MULTIPLE_ATTEMPT_POLICIES = new Set([
 export function ResolverEvaluacionPage() {
   const { id } = useParams();
   const evaluacionId = id ?? '';
+  const queryClient = useQueryClient();
   const [answers, setAnswers] = useState<Record<number, string>>({});
   const [enviada, setEnviada] = useState(false);
   const [startingNewAttempt, setStartingNewAttempt] = useState(false);
   const [submissionIssue, setSubmissionIssue] = useState<string | null>(null);
-  const [evidenceFile, setEvidenceFile] = useState<File | null>(null);
+  const [evidencePages, setEvidencePages] = useState<EvidencePage[]>([]);
+  const [evidenceConfirmOpen, setEvidenceConfirmOpen] = useState(false);
   const [reviewOpen, setReviewOpen] = useState(false);
   const [reviewReason, setReviewReason] = useState<SolicitudRevisionMotivo>('nota');
   const [reviewDetail, setReviewDetail] = useState('');
@@ -122,8 +115,9 @@ export function ResolverEvaluacionPage() {
   const estadoVisible = ['publicada', 'en_calificacion', 'pendiente_revision'].includes(evaluacion?.estado ?? '');
   const disponible = estadoVisible && recepcionHabilitada;
   const existingDelivery = myDelivery.data ?? null;
-  const deliveryRequiresRetry = existingDelivery?.estado === 'requiere_reintento';
-  const needsRetry = deliveryRequiresRetry || Boolean(submissionIssue && !enviada);
+  const replacementRequested = Boolean(existingDelivery?.reemplazo_solicitado);
+  const deliveryRequiresTeacherAttention = existingDelivery?.estado === 'requiere_reintento' && !replacementRequested;
+  const needsRetry = Boolean(submissionIssue && !enviada);
   const allowsMultipleAttempts = MULTIPLE_ATTEMPT_POLICIES.has(
     evaluacion?.politica_intento ?? 'un_intento',
   );
@@ -138,8 +132,7 @@ export function ResolverEvaluacionPage() {
   const serializedAnswers = serializeAnswers(preguntasOnline, answers);
   const handleActivityAnswers = useCallback((next: Record<number, string>) => setAnswers(next), []);
   const ignoreActivityAnswers = useCallback(() => undefined, []);
-  const physicalSubmitted = Boolean(existingDelivery?.archivo_url)
-    && existingDelivery?.estado !== 'requiere_reintento';
+  const physicalSubmitted = Boolean(existingDelivery?.archivo_url && !replacementRequested);
   const onlinePartReady = modalidad === 'fisica'
     || Boolean(existingDelivery?.respuesta_texto)
     || enviada;
@@ -150,52 +143,49 @@ export function ResolverEvaluacionPage() {
     && !physicalSubmitted;
 
   useEffect(() => {
-    if (!deliveryRequiresRetry || !existingDelivery) return;
-    setAnswers((current) => (
-      Object.values(current).some((answer) => answer.trim())
-        ? current
-        : parseSerializedAnswers(existingDelivery.respuesta_texto)
-    ));
-    setEnviada(false);
+    if (!deliveryRequiresTeacherAttention || !existingDelivery) return;
+    setEnviada(true);
     setStartingNewAttempt(false);
     setSubmissionIssue(
-      'Tu respuesta quedó guardada, pero la IA no pudo analizarla. Puedes reenviarla sin perder este intento.',
+      'Tu entrega fue recibida. El docente fue notificado para revisarla o reprocesarla; no necesitas volver a enviarla.',
     );
-  }, [deliveryRequiresRetry, existingDelivery]);
+  }, [deliveryRequiresTeacherAttention, existingDelivery]);
 
   const entregar = useMutation({
     mutationFn: () => crearEntregaOnline(evaluacionId, { respuesta_texto: serializedAnswers }),
     onSuccess: (delivery) => {
-      void myDelivery.refetch();
-      if (delivery.estado === 'requiere_reintento') {
-        setEnviada(false);
-        setStartingNewAttempt(false);
-        setSubmissionIssue(
-          'Tu respuesta quedó guardada, pero la IA no pudo analizarla. Puedes reenviarla sin perder este intento.',
-        );
-        toast.error('La respuesta se guardó, pero necesita un nuevo intento de análisis.');
-        return;
-      }
-      setSubmissionIssue(null);
+      queryClient.setQueryData(['mi-entrega', evaluacionId], delivery);
       setEnviada(true);
       setStartingNewAttempt(false);
+      if (delivery.estado === 'requiere_reintento') {
+        setSubmissionIssue(
+          'Tu entrega fue recibida. El docente fue notificado para revisarla o reprocesarla; no necesitas volver a enviarla.',
+        );
+      } else {
+        setSubmissionIssue(null);
+      }
       toast.success(
-        delivery.estado === 'recibida' && modalidad === 'mixta'
+        modalidad === 'mixta'
           ? 'Parte online guardada.'
-          : 'Entrega enviada.',
+          : 'Entrega realizada. Quedó pendiente de calificación docente.',
       );
     },
     onError: (submitError) => toast.error(toApiError(submitError).detail),
   });
 
   const entregarArchivo = useMutation({
-    mutationFn: () => crearEntregaArchivo(evaluacionId, evidenceFile!),
-    onSuccess: () => {
-      setEvidenceFile(null);
+    mutationFn: () => crearEntregaArchivo(evaluacionId, evidenceFiles(evidencePages), evidenceRotations(evidencePages)),
+    onSuccess: (delivery) => {
+      queryClient.setQueryData(['mi-entrega', evaluacionId], delivery);
+      setEvidencePages([]);
+      setEvidenceConfirmOpen(false);
       setEnviada(true);
-      setSubmissionIssue(null);
-      void myDelivery.refetch();
-      toast.success('Evidencia entregada. Tu docente revisará la calificación.');
+      setSubmissionIssue(
+        delivery.estado === 'requiere_reintento'
+          ? 'Tu entrega fue recibida. El docente fue notificado para revisarla o reprocesarla; no necesitas volver a enviarla.'
+          : null,
+      );
+      toast.success('Entrega realizada. Tu evidencia quedó pendiente de calificación docente.');
     },
     onError: (submitError) => toast.error(toApiError(submitError).detail),
   });
@@ -237,14 +227,13 @@ export function ResolverEvaluacionPage() {
   }
 
   function submitEvidence() {
-    if (!evidenceFile) {
+    if (evidencePages.length === 0) {
       toast.error('Selecciona una foto o un archivo PDF.');
       return;
     }
     if (!canUploadPhysical || entregarArchivo.isPending) return;
-    entregarArchivo.mutate();
+    setEvidenceConfirmOpen(true);
   }
-
   function submitReviewRequest() {
     if (reviewDetail.trim().length < 10) {
       toast.error('Explica la inconsistencia con al menos 10 caracteres.');
@@ -372,7 +361,7 @@ export function ResolverEvaluacionPage() {
         </section>
 
         <section className="space-y-4 lg:sticky lg:top-24 lg:self-start">
-          {submissionIssue && (
+          {submissionIssue && !showDeliverySummary && (
             <Card className="flex items-start gap-3 border-amber-200 p-5 dark:border-amber-500/30">
               <TriangleAlert className="mt-0.5 h-5 w-5 shrink-0 text-amber-500" />
               <div>
@@ -396,25 +385,29 @@ export function ResolverEvaluacionPage() {
                   </p>
                 </div>
               </div>
+              {replacementRequested && (
+                <div className="rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm leading-6 text-amber-950 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-100">
+                  <p className="font-bold">El docente solicitó reemplazar la entrega completa</p>
+                  <p className="mt-1">{existingDelivery?.motivo_reemplazo || 'Falta una hoja o la evidencia necesita corregirse.'} Vuelve a seleccionar todas las hojas, no solo la faltante.</p>
+                  {existingDelivery?.archivo_url && <a href={existingDelivery.archivo_url} target="_blank" rel="noreferrer" className="mt-2 inline-flex font-semibold underline underline-offset-2">Ver paquete anterior</a>}
+                </div>
+              )}
               {physicalSubmitted ? (
                 <div className="flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm font-semibold text-emerald-800 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-200">
-                  <CheckCircle2 className="h-5 w-5" /> Evidencia recibida
+                  <CheckCircle2 className="h-5 w-5 shrink-0" />
+                  <span>Evidencia recibida · {existingDelivery?.evidencia_paginas ?? 1} {(existingDelivery?.evidencia_paginas ?? 1) === 1 ? 'hoja' : 'hojas'}</span>
+                  {existingDelivery?.archivo_url && <a href={existingDelivery.archivo_url} target="_blank" rel="noreferrer" className="ml-auto underline underline-offset-2">Ver entrega completa</a>}
                 </div>
               ) : (
                 <>
-                  <label className="block">
-                    <span className="mb-2 block text-sm font-semibold">Seleccionar archivo</span>
-                    <input
-                      type="file"
-                      accept="image/jpeg,image/png,image/webp,application/pdf"
-                      disabled={!canUploadPhysical || entregarArchivo.isPending}
-                      onChange={(event) => setEvidenceFile(event.target.files?.[0] ?? null)}
-                      className="focus-ring block w-full rounded-lg border border-border bg-surface p-3 text-sm file:mr-3 file:rounded-md file:border-0 file:bg-brand-50 file:px-3 file:py-2 file:font-semibold file:text-brand-700"
-                    />
-                  </label>
-                  {evidenceFile && <p className="text-sm text-muted">Archivo listo: <strong className="text-fg">{evidenceFile.name}</strong></p>}
-                  <Button className="w-full" onClick={submitEvidence} loading={entregarArchivo.isPending} disabled={!canUploadPhysical || !evidenceFile || entregarArchivo.isPending}>
-                    <FileUp className="h-4 w-4" /> Entregar evidencia
+                  <MultiPageEvidencePicker
+                    pages={evidencePages}
+                    onChange={(pages) => { setEvidencePages(pages); setSubmissionIssue(null); }}
+                    disabled={!canUploadPhysical || entregarArchivo.isPending}
+                    onError={(message) => toast.error(message)}
+                  />
+                  <Button className="w-full" onClick={submitEvidence} loading={entregarArchivo.isPending} disabled={!canUploadPhysical || evidencePages.length === 0 || entregarArchivo.isPending}>
+                    <FileUp className="h-4 w-4" /> Revisar y entregar {evidencePages.length === 1 ? '1 hoja' : `${evidencePages.length} hojas`}
                   </Button>
                 </>
               )}
@@ -430,14 +423,18 @@ export function ResolverEvaluacionPage() {
                       ? 'Calificación confirmada'
                       : modalidad === 'mixta' && !physicalSubmitted
                         ? 'Parte online guardada'
-                        : 'Entrega enviada'}
+                        : deliveryRequiresTeacherAttention
+                          ? 'Entrega recibida'
+                          : 'Entrega realizada'}
                   </p>
                   <p className="text-sm text-muted">
                     {evaluacion?.mi_nota_confirmada != null
                       ? `Tu nota es ${Number(evaluacion.mi_nota_confirmada).toFixed(1)} de ${Number(evaluacion.nota_maxima).toFixed(1)}.`
                       : modalidad === 'mixta' && !physicalSubmitted
                         ? 'Ahora entrega la parte física adjuntando una foto o PDF.'
-                        : 'Tu respuesta fue recibida y está pendiente de revisión docente.'}
+                        : deliveryRequiresTeacherAttention
+                          ? 'Tu evidencia está segura. El docente debe revisarla o reprocesarla; no necesitas volver a enviarla.'
+                          : 'Tu respuesta fue recibida y está pendiente de calificación docente.'}
                   </p>
                   {evaluacion?.mi_nota_confirmada != null && (
                     <Link to="/app/calificaciones/boletin" className="mt-2 inline-flex text-sm font-semibold text-brand-700 hover:underline dark:text-brand-300">
@@ -543,6 +540,20 @@ export function ResolverEvaluacionPage() {
           ) : null}
         </section>
       </div>
+
+      <ConfirmDialog
+        open={evidenceConfirmOpen}
+        onClose={() => !entregarArchivo.isPending && setEvidenceConfirmOpen(false)}
+        onConfirm={() => entregarArchivo.mutate()}
+        loading={entregarArchivo.isPending}
+        title={`Vas a entregar ${evidencePages.length === 1 ? '1 hoja' : `${evidencePages.length} hojas`}`}
+        description="Se enviarán en el orden mostrado como una sola entrega. Después de confirmar no podrás anexar más hojas."
+        confirmLabel={`Entregar ${evidencePages.length === 1 ? '1 hoja' : `${evidencePages.length} hojas`}`}
+      >
+        <div className="rounded-xl border border-sky-200 bg-sky-50 p-4 text-sm leading-6 text-sky-900 dark:border-sky-500/30 dark:bg-sky-500/10 dark:text-sky-100">
+          Revisa que ninguna hoja esté repetida, girada o fuera de orden. Si falta una página, cancela y agrégala ahora.
+        </div>
+      </ConfirmDialog>
 
       <Modal
         open={reviewOpen}

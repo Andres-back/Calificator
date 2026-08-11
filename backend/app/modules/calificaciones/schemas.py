@@ -6,7 +6,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from app.shared.enums import CalificacionEstado, EntregaTipo
+from app.shared.enums import EntregaTipo
 
 
 # ── Entregas ────────────────────────────────────────────────────────────────────
@@ -21,6 +21,9 @@ class EntregaCreate(BaseModel):
 class EntregaOnlineCreate(BaseModel):
     respuesta_texto: str = Field(..., min_length=1)
 
+class ReemplazoEvidenciaCreate(BaseModel):
+    motivo: str = Field(..., min_length=10, max_length=1000)
+
 
 class EntregaRead(BaseModel):
     id: UUID
@@ -31,6 +34,10 @@ class EntregaRead(BaseModel):
     estado: str
     respuesta_texto: str | None
     archivo_url: str | None
+    evidencia_paginas: int = 0
+    evidencia_tipo: str | None = None
+    reemplazo_solicitado: bool = False
+    motivo_reemplazo: str | None = None
     created_at: datetime
 
     model_config = {"from_attributes": True}
@@ -214,6 +221,8 @@ class CalificacionDetalleRead(BaseModel):
     resultado_json: dict = {}
     entrega_tipo: str | None = None
     entrega_archivo_url: str | None = None
+    entrega_evidencia_paginas: int = 0
+    entrega_evidencia_tipo: str | None = None
     entrega_respuesta_texto: str | None = None
     entrega_created_at: datetime | None = None
     timeline: list[CalificacionTimelineEvent] = []

@@ -1,10 +1,11 @@
-import { type DragEvent, useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
-import { ArrowLeft, ArrowRight, Camera, CheckCircle2, FileImage, FileText, ImageUp, HelpCircle, LoaderCircle, RotateCcw, ScanText, Smartphone, Trash2, TriangleAlert, UploadCloud, ZoomIn } from 'lucide-react';
-import { Badge, Button, Card, EmptyState, Field, Select, Skeleton, GuidedTour, RichContent } from '@/components/ui';
-import { ImageCropper } from '@/components/ui/ImageCropper';
+import { ArrowLeft, ArrowRight, Camera, CheckCircle2, HelpCircle, LoaderCircle, RotateCcw, ScanText, TriangleAlert } from 'lucide-react';
+import { Badge, Button, Card, ConfirmDialog, EmptyState, Field, Select, Skeleton, GuidedTour, RichContent } from '@/components/ui';
+import { MultiPageEvidencePicker } from '@/components/evidence/MultiPageEvidencePicker';
+import { evidenceFiles, evidenceRotations, type EvidencePage } from '@/components/evidence/evidencePayload';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { useMaterias } from '@/modules/materias/MateriaSelect';
 import { useEstudiantes } from '@/modules/materias/hooks';
@@ -18,10 +19,6 @@ import { fotoTour } from './tourSteps';
 import type { Calificacion } from '@/types/api';
 import { addPendingGrading } from './gradingJobs';
 
-const ACCEPTED_EVIDENCE_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'application/pdf'];
-// Mirrors backend/app/core/config.py -> MAX_IMAGE_SIZE_MB (default 10).
-const MAX_IMAGE_SIZE_MB = 10;
-const MAX_IMAGE_SIZE_BYTES = MAX_IMAGE_SIZE_MB * 1024 * 1024;
 
 function gradingErrorMessage(error: unknown) {
   const apiError = toApiError(error);
@@ -36,29 +33,13 @@ export function CalificarFotoPage() {
   const [materiaId, setMateriaId] = useState('');
   const [evaluacionId, setEvaluacionId] = useState('');
   const [estudianteId, setEstudianteId] = useState('');
-  const [foto, setFoto] = useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [evidencePages, setEvidencePages] = useState<EvidencePage[]>([]);
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const [resultado, setResultado] = useState<Calificacion | null>(null);
   const [submissionError, setSubmissionError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isDragging, setIsDragging] = useState(false);
   const [tourOpen, setTourOpen] = useState(false);
-  const [cropping, setCropping] = useState(false);
-  const [cropKey, setCropKey] = useState(0);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const cameraInputRef = useRef<HTMLInputElement>(null);
   const submittingRef = useRef(false);
-  const isPdf = foto?.type === 'application/pdf';
-
-  useEffect(() => {
-    if (!foto) {
-      setPreviewUrl(null);
-      return;
-    }
-    const objectUrl = URL.createObjectURL(foto);
-    setPreviewUrl(objectUrl);
-    return () => URL.revokeObjectURL(objectUrl);
-  }, [foto]);
 
   const { data: materias, isLoading: loadingMaterias } = useMaterias();
 
@@ -98,11 +79,11 @@ export function CalificarFotoPage() {
   }, [estudianteId, estudiantes]);
 
   const calificar = useMutation({
-    mutationFn: () => calificarFoto(evaluacionId, estudianteId, foto!),
+    mutationFn: () => calificarFoto(evaluacionId, estudianteId, evidenceFiles(evidencePages), evidenceRotations(evidencePages)),
     onSuccess: (data) => {
       setResultado(data);
       setSubmissionError(null);
-      clearPhoto();
+      clearEvidence();
       const jobId = data.resultado_json?.job_id;
       if (typeof jobId === 'string') {
         addPendingGrading({
@@ -125,38 +106,10 @@ export function CalificarFotoPage() {
     },
   });
 
-  function clearPhoto() {
-    setFoto(null);
+  function clearEvidence() {
+    setEvidencePages([]);
+    setConfirmOpen(false);
     setSubmissionError(null);
-    if (fileInputRef.current) fileInputRef.current.value = '';
-    if (cameraInputRef.current) cameraInputRef.current.value = '';
-  }
-
-  function handleFileChange(file: File | undefined) {
-    setResultado(null);
-    setSubmissionError(null);
-    if (!file) {
-      clearPhoto();
-      return;
-    }
-    if (!ACCEPTED_EVIDENCE_TYPES.includes(file.type)) {
-      clearPhoto();
-      setSubmissionError('Selecciona una imagen JPG, PNG, WebP o un PDF.');
-      return;
-    }
-    if (file.size > MAX_IMAGE_SIZE_BYTES) {
-      clearPhoto();
-      setSubmissionError(`La imagen supera el límite de ${MAX_IMAGE_SIZE_MB} MB permitido por el servidor.`);
-      return;
-    }
-    setFoto(file);
-  }
-
-  function handleDrop(event: DragEvent<HTMLDivElement>) {
-    event.preventDefault();
-    setIsDragging(false);
-    if (submissionPending || evaluationClosed) return;
-    handleFileChange(event.dataTransfer.files?.[0]);
   }
 
   function submit() {
@@ -179,11 +132,16 @@ export function CalificarFotoPage() {
       setSubmissionError('Selecciona un estudiante.');
       return;
     }
-    if (!foto) {
+    if (evidencePages.length === 0) {
       setSubmissionError('Selecciona una foto o un PDF.');
       return;
     }
 
+    setConfirmOpen(true);
+  }
+
+  function confirmSubmission() {
+    if (submittingRef.current || calificar.isPending) return;
     submittingRef.current = true;
     setIsSubmitting(true);
     calificar.mutate();
@@ -215,7 +173,7 @@ export function CalificarFotoPage() {
         <EmptyState icon={Camera} title="Primero crea una materia" description="Necesitas una materia con evaluaciones y estudiantes matriculados." />
       ) : (
         <>
-          <GradingSteps contextReady={contextReady} hasPhoto={Boolean(foto)} isAnalyzing={submissionPending} hasResult={Boolean(resultado)} />
+          <GradingSteps contextReady={contextReady} hasPhoto={evidencePages.length > 0} isAnalyzing={submissionPending} hasResult={Boolean(resultado)} />
           <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_380px]">
           <Card className="space-y-5 p-5">
             <div className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200">
@@ -263,89 +221,23 @@ export function CalificarFotoPage() {
               )}
             </Field>
 
-            <div>
-              <div className="mb-1.5 flex items-center justify-between gap-3">
+            <div data-tour="foto-upload" className="space-y-3">
+              <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
                 <p className="text-sm font-medium">Evidencia del estudiante <span className="text-brand-500">*</span></p>
-                <span className="text-xs text-muted">JPG, PNG, WebP o PDF · {MAX_IMAGE_SIZE_MB} MB</span>
+                <span className="text-xs text-muted">Hasta 10 fotos · 10 MB cada una · 40 MB total · o un PDF</span>
               </div>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/jpeg,image/png,image/webp,application/pdf"
-                className="sr-only"
-                onChange={(event) => handleFileChange(event.target.files?.[0])}
+              <MultiPageEvidencePicker
+                pages={evidencePages}
+                onChange={(pages) => { setEvidencePages(pages); setResultado(null); setSubmissionError(null); }}
                 disabled={submissionPending || evaluationClosed}
-                aria-label="Subir foto o PDF desde el dispositivo"
+                onError={(message) => { setSubmissionError(message); toast.error(message); }}
               />
-              <input
-                ref={cameraInputRef}
-                type="file"
-                accept="image/*"
-                capture="environment"
-                className="sr-only"
-                onChange={(event) => handleFileChange(event.target.files?.[0])}
-                disabled={submissionPending || evaluationClosed}
-                aria-label="Tomar foto con la cámara"
-              />
-              <div
-                data-tour="foto-upload"
-                onDragEnter={(event) => { event.preventDefault(); if (!submissionPending && !evaluationClosed) setIsDragging(true); }}
-                onDragOver={(event) => event.preventDefault()}
-                onDragLeave={(event) => { if (!event.currentTarget.contains(event.relatedTarget as Node)) setIsDragging(false); }}
-                onDrop={handleDrop}
-                className={`overflow-hidden rounded-xl border-2 border-dashed transition ${isDragging ? 'border-brand-500 bg-brand-50 dark:bg-brand-500/10' : 'border-border bg-surface-2/50'}`}
-              >
-                {!foto ? (
-                  <div className="flex min-h-48 flex-col items-center justify-center p-6 text-center">
-                    <span className="grid h-12 w-12 place-items-center rounded-xl bg-brand-500/10 text-brand-600 dark:text-brand-300"><FileImage className="h-6 w-6" /></span>
-                    <p className="mt-3 font-semibold">Añade una foto clara o un PDF</p>
-                    <p className="mt-1 max-w-md text-sm text-muted">Incluye todas las hojas; en fotos evita sombras y procura que el texto esté enfocado.</p>
-                    <div className="mt-4 flex flex-wrap justify-center gap-2">
-                      <Button type="button" size="sm" onClick={() => cameraInputRef.current?.click()} disabled={submissionPending || evaluationClosed}><Smartphone className="h-4 w-4" /> Tomar foto</Button>
-                      <Button type="button" size="sm" variant="outline" onClick={() => fileInputRef.current?.click()} disabled={submissionPending || evaluationClosed}><UploadCloud className="h-4 w-4" /> Subir archivo</Button>
-                    </div>
-                    <p className="mt-3 hidden text-xs text-muted sm:block">También puedes arrastrar la imagen o el PDF aquí.</p>
-                  </div>
-                ) : (
-                  <div>
-                    {previewUrl && !cropping && !isPdf && <img src={previewUrl} alt="Vista previa" className="max-h-80 w-full bg-surface-2 object-contain" />}
-                    {previewUrl && !cropping && isPdf && (
-                      <div className="flex min-h-48 flex-col items-center justify-center gap-3 bg-surface-2 p-6 text-center">
-                        <FileText className="h-12 w-12 text-brand-500" aria-hidden="true" />
-                        <p className="font-semibold">PDF listo para procesar</p>
-                        <p className="text-sm text-muted">Se analizarán todas sus páginas, hasta el límite configurado por el servidor.</p>
-                      </div>
-                    )}
-                    {previewUrl && cropping && !isPdf && (
-                      <ImageCropper
-                        key={cropKey}
-                        imageUrl={previewUrl}
-                        onCrop={(blob) => {
-                          const newFile = new File([blob], foto.name.replace(/\.\w+$/, '_cropped.jpg'), { type: 'image/jpeg' });
-                          setFoto(newFile);
-                          setCropping(false);
-                          setCropKey((k) => k + 1);
-                        }}
-                        onCancel={() => setCropping(false)}
-                      />
-                    )}
-                    <div className="flex flex-wrap items-center justify-between gap-3 bg-surface p-3">
-                      <div className="flex min-w-0 items-center gap-3">{isPdf ? <FileText className="h-5 w-5 shrink-0 text-brand-500" /> : <ImageUp className="h-5 w-5 shrink-0 text-brand-500" />}<div className="min-w-0"><p className="truncate text-sm font-medium">{foto.name}</p><p className="text-xs text-muted">{(foto.size / 1024 / 1024).toFixed(2)} MB · listo para analizar</p></div></div>
-                      <div className="flex flex-wrap gap-2">
-                        {!cropping && <Button type="button" size="sm" variant="outline" onClick={() => fileInputRef.current?.click()} disabled={submissionPending}><UploadCloud className="h-4 w-4" /> Reemplazar</Button>}
-                        {!cropping && previewUrl && !isPdf && <Button type="button" size="sm" variant="outline" onClick={() => setCropping(true)} disabled={submissionPending}><ZoomIn className="h-4 w-4" /> Ajustar foto</Button>}
-                        {!cropping && <Button type="button" size="sm" variant="ghost" onClick={clearPhoto} disabled={submissionPending}><Trash2 className="h-4 w-4" /> Quitar</Button>}
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
             </div>
 
             {submissionError && (
               <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-200" role="alert">
                 <span>{submissionError}</span>
-                {foto && !evaluationClosed && <Button size="sm" variant="outline" onClick={submit} disabled={submissionPending}><RotateCcw className="h-4 w-4" /> Reintentar</Button>}
+                {evidencePages.length > 0 && !evaluationClosed && <Button size="sm" variant="outline" onClick={submit} disabled={submissionPending}><RotateCcw className="h-4 w-4" /> Reintentar</Button>}
               </div>
             )}
 
@@ -381,8 +273,8 @@ export function CalificarFotoPage() {
                     <Link to={routes.calificacionesWorkspace} className="focus-ring inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 text-sm font-semibold text-white transition hover:bg-emerald-700">Revisar y confirmar <ArrowRight className="h-4 w-4" /></Link>
                   </>
                 )}
-                <button type="button" onClick={() => { setResultado(null); clearPhoto(); }} className="focus-ring inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg border border-border px-4 text-sm font-semibold text-fg transition hover:bg-surface-2">
-                  <RotateCcw className="h-4 w-4" /> Subir otra imagen
+                <button type="button" onClick={() => { setResultado(null); clearEvidence(); }} className="focus-ring inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg border border-border px-4 text-sm font-semibold text-fg transition hover:bg-surface-2">
+                  <RotateCcw className="h-4 w-4" /> Cargar otra entrega
                 </button>
               </div>
             )}
@@ -390,6 +282,20 @@ export function CalificarFotoPage() {
           </div>
         </>
       )}
+
+      <ConfirmDialog
+        open={confirmOpen}
+        onClose={() => !submissionPending && setConfirmOpen(false)}
+        onConfirm={confirmSubmission}
+        loading={submissionPending}
+        title={`Calificar ${evidencePages.length === 1 ? '1 hoja' : `${evidencePages.length} hojas`}`}
+        description="Las páginas se unirán y se analizarán como una sola entrega del estudiante."
+        confirmLabel="Añadir a la cola de calificación"
+      >
+        <div className="rounded-xl border border-sky-200 bg-sky-50 p-4 text-sm leading-6 text-sky-900 dark:border-sky-500/30 dark:bg-sky-500/10 dark:text-sky-100">
+          Confirma que el orden de las hojas sea correcto. Podrás seguir navegando y cargar otra entrega mientras esta se procesa.
+        </div>
+      </ConfirmDialog>
     </div>
   );
 }

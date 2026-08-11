@@ -15,6 +15,7 @@ from app.modules.calificaciones.orchestrator import (
     merge_detected_answers,
     parse_numbered_answers,
 )
+from app.services.evidence_bundle_service import EvidenceBundle
 from app.modules.evaluaciones.modality_service import (
     normalize_question_modalities,
     question_numbers_by_section,
@@ -160,10 +161,21 @@ def test_photo_endpoint_reuses_online_delivery_and_grades_both_mixed_sections(mo
         calls.update(kwargs)
         return "calificacion-consolidada"
 
+    async def build_bundle(_uploads, *, rotations=None):
+        assert rotations is None
+        return EvidenceBundle(
+            content=b"imagen-normalizada",
+            filename="evidencia.jpg",
+            mime="image/jpeg",
+            page_count=1,
+            evidence_type="foto",
+            metadata={"tipo": "foto", "paginas": 1, "archivos": [{"nombre": "evidencia.jpg"}]},
+        )
+
     monkeypatch.setattr(router.evaluaciones_service, "ensure_can_manage_evaluation", manage)
     monkeypatch.setattr(router.service, "ensure_evaluation_accepts_grading", lambda _evaluation: None)
     monkeypatch.setattr(router, "is_student_enrolled", enrolled)
-    monkeypatch.setattr(router, "validate_mime", lambda _content, _filename: "image/jpeg")
+    monkeypatch.setattr(router, "build_evidence_bundle", build_bundle)
     monkeypatch.setattr(router, "save_upload", save)
     monkeypatch.setattr(router, "_enqueue_persisted_grading", grade)
 

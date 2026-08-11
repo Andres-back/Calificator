@@ -1,6 +1,6 @@
 import { api } from '@/lib/api';
 import { useQuery } from '@tanstack/react-query';
-import type { Calificacion, DBARead, EntregaOnlineCreate, EntregaRead, Evaluacion, EvaluacionModalidad, IncidenciaRead, SolicitudRevisionMotivo, StudentActivity } from '@/types/api';
+import type { DBARead, EntregaOnlineCreate, EntregaRead, Evaluacion, EvaluacionModalidad, IncidenciaRead, SolicitudRevisionMotivo, StudentActivity } from '@/types/api';
 
 export interface EvaluacionCreate {
   materia_id: string;
@@ -131,10 +131,18 @@ export async function solicitarRevisionEvaluacion(
   const { data } = await api.post<IncidenciaRead>(`/evaluaciones/${evaluacionId}/solicitud-revision`, payload);
   return data;
 }
-export async function crearEntregaArchivo(evaluacionId: string, archivo: File): Promise<Calificacion> {
+export async function crearEntregaArchivo(
+  evaluacionId: string,
+  evidence: File | File[],
+  rotations: number[] = [],
+): Promise<EntregaRead> {
   const formData = new FormData();
-  formData.append('archivo', archivo);
-  const { data } = await api.post<Calificacion>(`/evaluaciones/${evaluacionId}/entregas/archivo`, formData);
+  const files = Array.isArray(evidence) ? evidence : [evidence];
+  files.forEach((file) => formData.append('archivo', file));
+  formData.append('rotaciones', JSON.stringify(
+    rotations.length ? rotations : files.map(() => 0),
+  ));
+  const { data } = await api.post<EntregaRead>(`/evaluaciones/${evaluacionId}/entregas/archivo`, formData);
   return data;
 }
 export async function listDBA(params?: ListDBAParams): Promise<DBARead[]> {

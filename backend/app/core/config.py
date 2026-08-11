@@ -27,6 +27,9 @@ class Settings(BaseSettings):
     UPLOAD_DIR: str | None = None
     PUBLIC_UPLOADS_BASE_URL: str = "/uploads"
     MAX_IMAGE_SIZE_MB: int = 10
+    MAX_EVIDENCE_FILES: int = 10
+    MAX_EVIDENCE_FILE_MB: int = 10
+    MAX_EVIDENCE_TOTAL_MB: int = 40
     MAX_GRADING_PDF_PAGES: int = 20
     GRADING_PDF_RENDER_DPI: int = 150
 

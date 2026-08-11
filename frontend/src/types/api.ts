@@ -282,6 +282,8 @@ export interface CalificacionDetalle extends Calificacion {
   nota_maxima: number | null;
   entrega_tipo: string | null;
   entrega_archivo_url: string | null;
+  entrega_evidencia_paginas: number;
+  entrega_evidencia_tipo: string | null;
   entrega_respuesta_texto: string | null;
   entrega_created_at: string | null;
   timeline: CalificacionTimelineEvent[];
@@ -336,6 +338,10 @@ export interface EntregaRead {
   estado: string;
   respuesta_texto?: string | null;
   archivo_url?: string | null;
+  evidencia_paginas: number;
+  evidencia_tipo: string | null;
+  reemplazo_solicitado?: boolean;
+  motivo_reemplazo?: string | null;
   created_at?: string;
 }
 

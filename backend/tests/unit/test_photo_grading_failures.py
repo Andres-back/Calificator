@@ -2,7 +2,10 @@ from __future__ import annotations
 
 import asyncio
 from decimal import Decimal
+from io import BytesIO
 from uuid import uuid4
+
+from PIL import Image
 
 from app.modules.calificaciones import agents, orchestrator
 from app.modules.calificaciones.agents import (
@@ -522,6 +525,76 @@ def test_photo_pipeline_prefers_opencode_go_models(monkeypatch) -> None:
     assert result.raw_model_output["grader_a"]["proveedor"] == "opencode"
     assert result.raw_model_output["grader_b"]["proveedor"] == "opencode"
 
+
+def test_photo_pipeline_reuses_the_orientation_that_restored_readability(monkeypatch) -> None:
+    _configure_orchestrator(monkeypatch)
+    source = Image.new("RGB", (320, 180), "white")
+    buffer = BytesIO()
+    source.save(buffer, format="PNG")
+    vision_sizes: list[tuple[int, int]] = []
+    grader_sizes: list[tuple[int, int]] = []
+
+    async def orientation_sensitive_vision(context, model: str, **_kwargs):
+        size = Image.open(BytesIO(context.image_bytes)).size
+        vision_sizes.append(size)
+        if size == (320, 180):
+            return AgentResult(
+                nota_sugerida=None,
+                confianza=0,
+                feedback_estudiante="",
+                proveedor="opencode",
+                modelo=model,
+                raw_output={"usable": False, "texto_extraido": ""},
+            )
+        return AgentResult(
+            nota_sugerida=None,
+            confianza=0.94,
+            feedback_estudiante="",
+            proveedor="opencode",
+            modelo=model,
+            raw_output={
+                "usable": True,
+                "texto_extraido": "1. 32,37 + 41,32 = 73,69",
+                "respuestas_detectadas": [
+                    {"pregunta": 1, "respuesta": "73,69"},
+                ],
+            },
+            requiere_revision_docente=False,
+        )
+
+    async def successful_grader(context, model: str, **_kwargs):
+        grader_sizes.append(Image.open(BytesIO(context.image_bytes)).size)
+        return AgentResult(
+            nota_sugerida=5,
+            confianza=0.94,
+            feedback_estudiante="Correcto.",
+            proveedor="opencode",
+            modelo=model,
+            requiere_revision_docente=False,
+        )
+
+    async def comparator(first, _second, **_kwargs):
+        return first
+
+    monkeypatch.setattr(orchestrator, "vision_agent", orientation_sensitive_vision)
+    monkeypatch.setattr(orchestrator, "grader_agent", successful_grader)
+    monkeypatch.setattr(orchestrator, "comparator_agent", comparator)
+
+    result = asyncio.run(
+        orchestrator.orchestrate_grading(
+            object(),
+            evaluacion_id=uuid4(),
+            materia_id=uuid4(),
+            blueprint={"nombre": "Decimales", "nota_maxima": 5},
+            image_bytes=buffer.getvalue(),
+            image_mime="image/png",
+        )
+    )
+
+    assert vision_sizes == [(320, 180), (180, 320)]
+    assert grader_sizes == [(180, 320), (180, 320)]
+    assert result.nota_sugerida == Decimal("5")
+    assert result.raw_model_output["vision"]["rotation_applied"] == 90
 
 def test_online_pipeline_uses_deepseek_without_vision(monkeypatch) -> None:
     _configure_orchestrator(monkeypatch)

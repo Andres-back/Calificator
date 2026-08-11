@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useEffect, useMemo, useState } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import {
@@ -83,6 +83,15 @@ export function MateriaEvaluaciones() {
   const [contentEditingEval, setContentEditingEval] = useState<Evaluacion | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Evaluacion | null>(null);
   const [form, setForm] = useState<EvaluationForm>(emptyForm);
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  useEffect(() => {
+    if (!canManageMateria || searchParams.get('digitalizar') !== '1') return;
+    setDigitalizeOpen(true);
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.delete('digitalizar');
+    setSearchParams(nextParams, { replace: true });
+  }, [canManageMateria, searchParams, setSearchParams]);
 
   const evaluationsQuery = useQuery({
     queryKey: ['evaluaciones', materia.id],

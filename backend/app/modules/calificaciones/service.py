@@ -14,7 +14,7 @@ from app.modules.calificaciones.models import Calificacion, Entrega, SalonSesion
 from app.modules.calificaciones.schemas import (
     AjustarNota, BatchAjustarItem, BatchConfirmItem,
     BatchResult, BatchResultItem,
-    BoletinItem, ConfirmarNota,
+    ConfirmarNota,
 )
 from app.modules.evaluaciones.models import Evaluacion
 from app.modules.evaluaciones.blueprint_service import evaluation_to_grading_blueprint
@@ -588,6 +588,12 @@ async def get_calificacion_detalle(
             f"/api/calificaciones/entregas/{cal.entrega.id}/evidencia"
             if cal.entrega and cal.entrega.archivo_url
             else None
+        ),
+        "entrega_evidencia_paginas": (
+            cal.entrega.evidencia_paginas if cal.entrega else 0
+        ),
+        "entrega_evidencia_tipo": (
+            cal.entrega.evidencia_tipo if cal.entrega else None
         ),
         "entrega_respuesta_texto": cal.entrega.respuesta_texto if cal.entrega else None,
         "entrega_created_at": cal.entrega.created_at if cal.entrega else None,

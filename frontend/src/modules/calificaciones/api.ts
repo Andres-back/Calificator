@@ -1,5 +1,5 @@
 import { api } from '@/lib/api';
-import type { BatchResult, BoletinItem, Calificacion, CalificacionDetalle, IncidenciaRead, ResumenAcademico, SalonSesionRead } from '@/types/api';
+import type { BatchResult, BoletinItem, Calificacion, CalificacionDetalle, EntregaRead, IncidenciaRead, ResumenAcademico, SalonSesionRead } from '@/types/api';
 
 export async function listCalificaciones(evaluacionId: string): Promise<Calificacion[]> {
   const { data } = await api.get<Calificacion[]>(`/evaluaciones/${evaluacionId}/calificaciones`);
@@ -13,14 +13,28 @@ export async function ajustarNota(id: string, nota: number, feedback?: string): 
   const { data } = await api.patch<Calificacion>(`/calificaciones/${id}/ajustar`, { nota_confirmada: nota, feedback });
   return data;
 }
-export async function calificarFoto(evaluacionId: string, estudianteId: string, file: File): Promise<Calificacion> {
+export async function calificarFoto(
+  evaluacionId: string,
+  estudianteId: string,
+  evidence: File | File[],
+  rotations: number[] = [],
+): Promise<Calificacion> {
   const formData = new FormData();
   formData.append('evaluacion_id', evaluacionId);
   formData.append('estudiante_id', estudianteId);
-  formData.append('foto', file);
+  const files = Array.isArray(evidence) ? evidence : [evidence];
+  files.forEach((file) => formData.append('foto', file));
+  formData.append('rotaciones', JSON.stringify(
+    rotations.length ? rotations : files.map(() => 0),
+  ));
   const { data } = await api.post<Calificacion>('/calificaciones/foto', formData);
   return data;
 }
+export async function solicitarReemplazoEvidencia(calificacionId: string, motivo: string): Promise<EntregaRead> {
+  const { data } = await api.post<EntregaRead>(`/calificaciones/${calificacionId}/solicitar-reemplazo`, { motivo });
+  return data;
+}
+
 export async function reintentarCalificacionFoto(calificacionId: string): Promise<Calificacion> {
   const { data } = await api.post<Calificacion>(`/calificaciones/${calificacionId}/reintentar-foto`);
   return data;
