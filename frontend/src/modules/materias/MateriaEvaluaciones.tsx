@@ -6,10 +6,8 @@ import {
   ClipboardCheck,
   Clock,
   Eye,
-  FileCheck2,
   Pencil,
   PlayCircle,
-  Plus,
   Scan,
   Send,
   Sparkles,
@@ -31,7 +29,6 @@ import {
 } from '@/components/ui';
 import {
   activarRecepcionEvaluacion,
-  createEvaluacion,
   deleteEvaluacion,
   listEvaluaciones,
   pausarRecepcionEvaluacion,
@@ -64,6 +61,7 @@ interface EvaluationForm {
   descripcion: string;
   nota_maxima: number;
   modalidad: EvaluacionModalidad;
+  fecha_limite_entrega: string;
 }
 
 const emptyForm = (): EvaluationForm => ({
@@ -71,6 +69,7 @@ const emptyForm = (): EvaluationForm => ({
   descripcion: '',
   nota_maxima: 5,
   modalidad: 'fisica',
+  fecha_limite_entrega: '',
 });
 
 export function MateriaEvaluaciones() {
@@ -105,24 +104,6 @@ export function MateriaEvaluaciones() {
     queryClient.invalidateQueries({
       queryKey: ['evaluaciones', materia.id],
     });
-
-  const create = useMutation({
-    mutationFn: () =>
-      createEvaluacion({
-        materia_id: materia.id,
-        nombre: form.nombre.trim(),
-        descripcion: form.descripcion.trim() || undefined,
-        nota_maxima: form.nota_maxima,
-        modalidad: form.modalidad,
-        tipo_origen: 'manual',
-      }),
-    onSuccess: () => {
-      refresh();
-      toast.success('Evaluación registrada como borrador');
-      closeManual();
-    },
-    onError: (error) => toast.error(toApiError(error).detail),
-  });
 
   const update = useMutation({
     mutationFn: ({
@@ -172,23 +153,10 @@ export function MateriaEvaluaciones() {
     onSuccess: () => {
       refresh();
       setDeleteTarget(null);
-      toast.success('Evaluaci?n eliminada');
+      toast.success('Evaluación eliminada de la materia');
     },
-    onError: (error) => {
-      const apiError = toApiError(error);
-      toast.error(
-        apiError.status === 409
-          ? 'No se puede eliminar porque ya tiene entregas o calificaciones.'
-          : apiError.detail,
-      );
-    },
+    onError: (error) => toast.error(toApiError(error).detail),
   });
-
-  function openManualCreate() {
-    setEditingEval(null);
-    setForm(emptyForm());
-    setManualOpen(true);
-  }
 
   function openEdit(evaluation: Evaluacion) {
     setEditingEval(evaluation);
@@ -197,6 +165,7 @@ export function MateriaEvaluaciones() {
       descripcion: evaluation.descripcion ?? '',
       nota_maxima: Number(evaluation.nota_maxima),
       modalidad: evaluation.modalidad ?? 'fisica',
+      fecha_limite_entrega: evaluation.fecha_limite_entrega ? (() => { const date = new Date(evaluation.fecha_limite_entrega); date.setMinutes(date.getMinutes() - date.getTimezoneOffset()); return date.toISOString().slice(0, 16); })() : '',
     });
     setManualOpen(true);
   }
@@ -208,19 +177,17 @@ export function MateriaEvaluaciones() {
   }
 
   function handleSubmit() {
-    if (editingEval) {
-      update.mutate({
-        id: editingEval.id,
-        payload: {
-          nombre: form.nombre.trim(),
-          descripcion: form.descripcion.trim() || undefined,
-          nota_maxima: form.nota_maxima,
-          modalidad: form.modalidad,
-        },
-      });
-      return;
-    }
-    create.mutate();
+    if (!editingEval) return;
+    update.mutate({
+      id: editingEval.id,
+      payload: {
+        nombre: form.nombre.trim(),
+        descripcion: form.descripcion.trim() || undefined,
+        nota_maxima: form.nota_maxima,
+        modalidad: form.modalidad,
+        fecha_limite_entrega: form.fecha_limite_entrega ? new Date(form.fecha_limite_entrega).toISOString() : null,
+      },
+    });
   }
 
   const evaluations = evaluationsQuery.data;
@@ -248,9 +215,8 @@ export function MateriaEvaluaciones() {
                   ¿Cómo quieres empezar?
                 </h2>
                 <p className="mt-1 max-w-2xl text-sm leading-6 text-muted">
-                  El asistente permite generar libremente o combinar DBA y rúbrica.
-                  Si ya tienes una prueba impresa, también puedes registrarla para
-                  calificarla por foto.
+                  Crea una evaluación guiada o convierte directamente una prueba
+                  que ya tengas en foto o PDF.
                 </p>
               </div>
             </div>
@@ -263,10 +229,6 @@ export function MateriaEvaluaciones() {
                 <Scan className="h-5 w-5" />
                 Digitalizar de foto/PDF
               </Button>
-              <Button variant="outline" onClick={openManualCreate} size="lg">
-                <FileCheck2 className="h-5 w-5" />
-                Registrar prueba existente
-              </Button>
             </div>
           </div>
           <p className="mt-3 text-xs font-semibold text-brand-700 dark:text-brand-200 lg:text-right">
@@ -276,13 +238,10 @@ export function MateriaEvaluaciones() {
       )}
 
       {canManageMateria && (
-        <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
           <p className="text-sm text-muted">
             {evaluations?.length ?? 0} evaluaciones · {closedCount} cerradas
           </p>
-          <Button variant="ghost" onClick={() => setWizardOpen(true)}>
-            <Plus className="h-4 w-4" /> Nueva evaluación
-          </Button>
         </div>
       )}
 
@@ -340,6 +299,11 @@ export function MateriaEvaluaciones() {
                       <span className="text-xs text-muted">
                         Nota máxima: {Number(evaluation.nota_maxima)}
                       </span>
+                      {evaluation.fecha_limite_entrega && (
+                        <span className="flex items-center gap-1 text-xs font-semibold text-amber-700 dark:text-amber-300">
+                          <Clock className="h-3 w-3" /> Vence {new Date(evaluation.fecha_limite_entrega).toLocaleString()}
+                        </span>
+                      )}
                       {evaluation.tiempo_limite_minutos != null && (
                         <span className="flex items-center gap-1 text-xs text-muted">
                           <Clock className="h-3 w-3" />{' '}
@@ -423,16 +387,14 @@ export function MateriaEvaluaciones() {
                         </Link>
                       )}
 
-                      {(isDraft || isClosed) && (
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className="text-rose-700 dark:text-rose-300"
-                          onClick={() => setDeleteTarget(evaluation)}
-                        >
-                          <Trash2 className="h-4 w-4" /> Eliminar
-                        </Button>
-                      )}
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="text-rose-700 dark:text-rose-300"
+                        onClick={() => setDeleteTarget(evaluation)}
+                      >
+                        <Trash2 className="h-4 w-4" /> Eliminar
+                      </Button>
 
                     </>
                   ) : canOpenOnline ? (
@@ -456,17 +418,7 @@ export function MateriaEvaluaciones() {
         <EmptyState
           icon={ClipboardCheck}
           title="Aún no hay evaluaciones"
-          description="Empieza con el asistente guiado o registra una prueba que ya tengas en papel."
-          action={
-            <div className="flex flex-col justify-center gap-2 sm:flex-row">
-              <Button onClick={() => setWizardOpen(true)}>
-                <Sparkles className="h-4 w-4" /> Crear paso a paso
-              </Button>
-              <Button variant="outline" onClick={openManualCreate}>
-                <FileCheck2 className="h-4 w-4" /> Registrar prueba existente
-              </Button>
-            </div>
-          }
+          description="Usa las opciones de arriba para crearla paso a paso o digitalizar una foto o PDF."
         />
       ) : (
         <EmptyState
@@ -509,11 +461,7 @@ export function MateriaEvaluaciones() {
         <Modal
           open={manualOpen}
           onClose={closeManual}
-          title={
-            editingEval
-              ? 'Editar datos de la evaluación'
-              : 'Registrar una prueba existente'
-          }
+          title="Editar datos de la evaluación"
         >
           <form
             onSubmit={(event) => {
@@ -522,13 +470,6 @@ export function MateriaEvaluaciones() {
             }}
             className="space-y-5"
           >
-            {!editingEval && (
-              <div className="rounded-xl border border-sky-200 bg-sky-50 p-4 text-sm leading-6 text-sky-900 dark:border-sky-500/30 dark:bg-sky-500/10 dark:text-sky-100">
-                Usa esta opción cuando ya tienes la evaluación preparada. La
-                registraremos como <strong>evaluación en papel</strong> para que
-                luego puedas calificar las fotos.
-              </div>
-            )}
 
             {editingEval && editingEval.estado !== 'borrador' && (
               <div className="rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm leading-6 text-amber-950 dark:bg-amber-500/10 dark:text-amber-100">
@@ -558,23 +499,29 @@ export function MateriaEvaluaciones() {
               />
             </Field>
 
-            {editingEval ? (
-              <Field label="Modalidad" required>
-                <Select
-                  value={form.modalidad}
-                  onChange={(event) =>
-                    setForm({
-                      ...form,
-                      modalidad: event.target.value as EvaluacionModalidad,
-                    })
-                  }
-                >
-                  <option value="fisica">En papel</option>
-                  <option value="online">En línea</option>
-                  <option value="mixta">Mixta</option>
-                </Select>
-              </Field>
-            ) : null}
+            <Field label="Modalidad" required>
+              <Select
+                value={form.modalidad}
+                onChange={(event) =>
+                  setForm({
+                    ...form,
+                    modalidad: event.target.value as EvaluacionModalidad,
+                  })
+                }
+              >
+                <option value="fisica">En papel</option>
+                <option value="online">En línea</option>
+                <option value="mixta">Mixta</option>
+              </Select>
+            </Field>
+
+            <Field label="Fecha límite de entrega" hint="Opcional. Después de esta fecha, las ausencias se registran con 0.">
+              <Input
+                type="datetime-local"
+                value={form.fecha_limite_entrega}
+                onChange={(event) => setForm({ ...form, fecha_limite_entrega: event.target.value })}
+              />
+            </Field>
 
             <Field
               label="Nota máxima"
@@ -603,10 +550,10 @@ export function MateriaEvaluaciones() {
               </Button>
               <Button
                 type="submit"
-                loading={create.isPending || update.isPending}
+                loading={update.isPending}
                 disabled={!form.nombre.trim()}
               >
-                {editingEval ? 'Guardar cambios' : 'Registrar evaluación'}
+                Guardar cambios
               </Button>
             </div>
           </form>
@@ -618,8 +565,8 @@ export function MateriaEvaluaciones() {
         onConfirm={() => {
           if (deleteTarget) removeEvaluation.mutate(deleteTarget.id);
         }}
-        title="Eliminar evaluaci?n"
-        description={<>Se eliminar? <strong>{deleteTarget?.nombre}</strong>. Solo es posible si no tiene entregas ni calificaciones.</>}
+        title="Eliminar evaluación"
+        description={<>Se quitará <strong>{deleteTarget?.nombre}</strong> de la materia y se cerrarán sus entregas. El historial académico se conservará de forma segura.</>}
         confirmLabel="Eliminar"
         cancelLabel="Conservar"
         tone="danger"

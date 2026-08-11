@@ -1,6 +1,6 @@
 import type { Evaluacion, EvaluacionModalidad } from '@/types/api';
 
-export const WIZARD_VERSION = 5;
+export const WIZARD_VERSION = 6;
 export const WIZARD_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 export const MIN_QUESTIONS = 3;
 export const MAX_QUESTIONS = 30;
@@ -53,6 +53,7 @@ export interface WizardState {
   descripcion: string;
   modalidad: EvaluacionModalidad;
   notaMaxima: number;
+  fechaLimiteEntrega: string;
   dbaIds: string[];
   dbaPersonalizadoIds: string[];
   useDba: boolean;
@@ -82,6 +83,7 @@ export function createEmptyWizardState(materiaId = ''): WizardState {
     descripcion: '',
     modalidad: 'online',
     notaMaxima: 5,
+    fechaLimiteEntrega: '',
     dbaIds: [],
     dbaPersonalizadoIds: [],
     useDba: false,
@@ -328,6 +330,14 @@ export function createBlankQuestion(
   ]);
 }
 
+function toDatetimeLocalValue(value: string | null | undefined): string {
+  if (!value) return '';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  date.setMinutes(date.getMinutes() - date.getTimezoneOffset());
+  return date.toISOString().slice(0, 16);
+}
+
 export function evaluationToWizardState(evaluation: Evaluacion): WizardState {
   const questions = evaluationToEditableQuestions(evaluation);
   const criteria = (evaluation.criterios ?? []) as Record<string, unknown>[];
@@ -344,6 +354,7 @@ export function evaluationToWizardState(evaluation: Evaluacion): WizardState {
     descripcion: evaluation.descripcion ?? '',
     modalidad: evaluation.modalidad ?? 'online',
     notaMaxima: Number(evaluation.nota_maxima),
+    fechaLimiteEntrega: toDatetimeLocalValue(evaluation.fecha_limite_entrega),
     dbaIds: evaluation.dba_ids ?? [],
     dbaPersonalizadoIds: evaluation.dba_personalizado_ids ?? [],
     useDba: Boolean((evaluation.dba_ids?.length ?? 0) + (evaluation.dba_personalizado_ids?.length ?? 0)),

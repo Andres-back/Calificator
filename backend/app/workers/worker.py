@@ -18,6 +18,7 @@ celery_app = Celery(
         "app.workers.tasks_reports",
         "app.workers.tasks_ai_config",
         "app.workers.tasks_digitalization",
+        "app.workers.tasks_deadlines",
     ],
 )
 
@@ -30,6 +31,12 @@ celery_app.conf.update(
     task_track_started=True,
     worker_prefetch_multiplier=1,
     broker_connection_retry_on_startup=True,
+    beat_schedule={
+        "assign-overdue-grades-every-minute": {
+            "task": "tasks.assign_overdue_grades",
+            "schedule": 60.0,
+        },
+    },
 )
 
 

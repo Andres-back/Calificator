@@ -1,10 +1,32 @@
 import { api } from '@/lib/api';
-import type { BatchResult, BoletinItem, Calificacion, CalificacionDetalle, EntregaRead, IncidenciaRead, ResumenAcademico, SalonSesionRead } from '@/types/api';
+import type { BandejaDocenteRead, BatchResult, BoletinItem, Calificacion, CalificacionDetalle, EntregaRead, IncidenciaRead, ResumenAcademico, SalonSesionRead } from '@/types/api';
+
+export async function getBandejaDocente(): Promise<BandejaDocenteRead> {
+  const { data } = await api.get<BandejaDocenteRead>('/calificaciones/bandeja-docente');
+  return data;
+}
 
 export async function listCalificaciones(evaluacionId: string): Promise<Calificacion[]> {
   const { data } = await api.get<Calificacion[]>(`/evaluaciones/${evaluacionId}/calificaciones`);
   return data;
 }
+
+export async function establecerNotaManual(
+  evaluacionId: string,
+  payload: {
+    estudiante_id: string;
+    nota_confirmada: number;
+    motivo: string;
+    feedback?: string;
+  },
+): Promise<Calificacion> {
+  const { data } = await api.post<Calificacion>(
+    `/evaluaciones/${evaluacionId}/calificaciones/manual`,
+    payload,
+  );
+  return data;
+}
+
 export async function confirmarNota(id: string, nota: number): Promise<Calificacion> {
   const { data } = await api.patch<Calificacion>(`/calificaciones/${id}/confirmar`, { nota_confirmada: nota });
   return data;

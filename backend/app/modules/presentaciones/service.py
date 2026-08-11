@@ -6,6 +6,7 @@ Presenton queda como editor opcional bajo demanda.
 from __future__ import annotations
 
 import asyncio
+import json
 from typing import Any
 from uuid import UUID
 
@@ -106,6 +107,18 @@ REGLAS DE CONTENIDO
 - Para slides editables, deja image_text_expected como [].
 - "image" puede repetirse como alias legacy de visual_concept para compatibilidad.
 
+CALIDAD PEDAGOGICA OBLIGATORIA
+- Escribe contenido que el estudiante pueda aprender directamente, no instrucciones para fabricar la clase.
+- Cada slide de contenido debe incluir hechos, definiciones, clasificaciones, procesos o ejemplos especificos del tema.
+- Los titulos deben anticipar una idea concreta; evita titulos vacios como "Conceptos clave" o "Actividad".
+- El ejemplo debe estar resuelto o explicado. La actividad debe indicar una accion y un producto observable.
+- La comprobacion debe contener una pregunta que pueda responderse con lo enseñado en las slides anteriores.
+- No repitas el mismo key_message entre slides.
+- Prohibido usar frases genericas como "reconocer el tema central", "conectar con situaciones conocidas",
+  "comprender que se espera aprender", "relacionar el tema con la clase", "identificar vocabulario esencial",
+  "registrar evidencias y dudas" o "ajusta ejemplos al contexto".
+- Las notas del docente pueden orientar la clase, pero los bullets visibles siempre deben contener conocimiento util.
+
 ESQUEMA JSON OBLIGATORIO:
 {{
   "title": "Titulo general",
@@ -137,6 +150,19 @@ ESQUEMA JSON OBLIGATORIO:
 }}
 
 Devuelve SOLO JSON valido. No incluyas texto fuera del JSON."""
+
+GENERIC_PRESENTATION_MARKERS = (
+    "reconocer el tema central",
+    "conectar con situaciones conocidas",
+    "comprender que se espera aprender",
+    "relacionar el tema con la clase",
+    "recordar ideas que ya conocemos",
+    "plantear preguntas iniciales",
+    "identificar vocabulario esencial",
+    "registrar evidencias y dudas",
+    "ajusta ejemplos al contexto",
+)
+
 
 PEDAGOGICAL_ROLES = {
     "cover",
@@ -288,7 +314,7 @@ async def _run_generation(db: AsyncSession, pres: Presentacion) -> None:
 
 async def _generate_slides(payload: PresentacionCreate, profesor_id: UUID) -> list[dict]:
     llm = LLMRouter(user_id=profesor_id)
-    prompt = SLIDES_PROMPT.format(
+    base_prompt = SLIDES_PROMPT.format(
         tema=payload.tema,
         materia=payload.materia_nombre or "General",
         area=payload.area or "",
@@ -300,14 +326,69 @@ async def _generate_slides(payload: PresentacionCreate, profesor_id: UUID) -> li
         cantidad=payload.cantidad_slides,
         instrucciones=payload.instrucciones or "ninguna",
     )
-    raw = await llm.generate_json("presentacion", prompt)
-    slides_raw: Any = raw.get("slides", [])
-    if not slides_raw and isinstance(raw, list):
-        slides_raw = raw
-    if not slides_raw or not isinstance(slides_raw, list):
-        slides_raw = _fallback_slides(payload)
-    polished = _polish_slides_for_presenton(normalize_presentation(slides_raw), topic=payload.tema)
-    return _apply_pedagogical_slide_defaults(polished, payload)
+    prompt = base_prompt
+    last_issues = ["La IA no devolvio una lista de diapositivas."]
+    for attempt in range(1, 4):
+        raw = await llm.generate_json("presentacion", prompt)
+        if isinstance(raw, dict):
+            slides_raw: Any = raw.get("slides", [])
+        elif isinstance(raw, list):
+            slides_raw = raw
+        else:
+            slides_raw = []
+        if isinstance(slides_raw, list) and slides_raw:
+            polished = _polish_slides_for_presenton(normalize_presentation(slides_raw), topic=payload.tema)
+            candidate = _apply_pedagogical_slide_defaults(polished, payload)
+            last_issues = _presentation_quality_issues(candidate, payload)
+            if not last_issues:
+                return candidate
+        else:
+            candidate = []
+            last_issues = ["La respuesta no contiene el arreglo slides."]
+        logger.warning("Presentation content rejected on attempt %d: %s", attempt, "; ".join(last_issues[:8]))
+        previous = json.dumps(candidate, ensure_ascii=False)[:9000]
+        prompt = (
+            base_prompt
+            + "\n\nCORRECCION OBLIGATORIA\n"
+            + "El borrador anterior fue rechazado por estas razones:\n- "
+            + "\n- ".join(last_issues[:12])
+            + "\nReescribe TODA la presentacion, conserva la cantidad exacta y devuelve solo JSON."
+            + (f"\nBORRADOR RECHAZADO:\n{previous}" if previous else "")
+        )
+    raise RuntimeError(
+        "La IA no produjo contenido pedagogico suficientemente completo: "
+        + "; ".join(last_issues[:5])
+    )
+
+
+def _presentation_quality_issues(slides: list[dict], payload: PresentacionCreate) -> list[str]:
+    issues: list[str] = []
+    if len(slides) != payload.cantidad_slides:
+        issues.append(f"Se esperaban {payload.cantidad_slides} diapositivas y llegaron {len(slides)}.")
+    messages: dict[str, int] = {}
+    for index, slide in enumerate(slides):
+        role = str(slide.get("role") or "concept")
+        bullets = _clean_text_list(slide.get("bullets"), max_items=4, max_chars=120)
+        visible = " ".join(str(slide.get(field) or "") for field in ("title", "key_message", "example", "activity", "question")) + " " + " ".join(bullets)
+        normalized = " ".join(visible.lower().split())
+        if role != "cover" and len(bullets) < 2:
+            issues.append(f"La diapositiva {index + 1} tiene menos de dos ideas visibles.")
+        if role != "cover" and len(normalized.split()) < 16:
+            issues.append(f"La diapositiva {index + 1} no desarrolla contenido suficiente.")
+        for marker in GENERIC_PRESENTATION_MARKERS:
+            if marker in normalized:
+                issues.append(f"La diapositiva {index + 1} usa contenido generico: {marker}.")
+                break
+        if role == "activity" and not str(slide.get("activity") or "").strip():
+            issues.append(f"La diapositiva {index + 1} no define una actividad concreta.")
+        if role in {"comprehension_check", "assessment"} and not str(slide.get("question") or "").strip():
+            issues.append(f"La diapositiva {index + 1} no incluye una pregunta comprobable.")
+        message = " ".join(str(slide.get("key_message") or "").lower().split())
+        if message:
+            messages[message] = messages.get(message, 0) + 1
+    if any(count > max(2, len(slides) // 3) for count in messages.values()):
+        issues.append("El mismo mensaje central se repite en demasiadas diapositivas.")
+    return issues[:20]
 
 
 def _eligible_image_indices(n: int, densidad: str) -> set[int]:
@@ -465,7 +546,7 @@ def _apply_pedagogical_slide_defaults(slides: list[dict], payload: PresentacionC
         if visual_concept:
             enriched["image"] = visual_concept
         normalized.append(enriched)
-    return _apply_role_sequence(normalized)
+    return _merge_structured_content_into_bullets(_apply_role_sequence(normalized))
 
 
 def _role_sequence_for_count(count: int) -> dict[int, str]:
@@ -551,6 +632,28 @@ def _apply_role_sequence(slides: list[dict]) -> list[dict]:
             slide["question"] = "Que idea clave puedes explicar con tus propias palabras?"
         if target_role == "activity" and not slide.get("activity"):
             slide["activity"] = "Aplica la idea principal en una situacion cercana al grupo."
+    return slides
+
+
+def _merge_structured_content_into_bullets(slides: list[dict]) -> list[dict]:
+    """Hace visibles ejemplos, actividades y preguntas en los archivos exportados."""
+    for slide in slides:
+        bullets = _clean_text_list(slide.get("bullets"), max_items=4, max_chars=120)
+        role = str(slide.get("role") or "")
+        additions: list[tuple[str, str]] = []
+        if role == "example":
+            additions.append(("Ejemplo", str(slide.get("example") or "")))
+        if role == "activity":
+            additions.append(("Actividad", str(slide.get("activity") or "")))
+        if role in {"comprehension_check", "assessment"}:
+            additions.append(("Pregunta", str(slide.get("question") or "")))
+        combined = " ".join(bullets).lower()
+        for label, value in additions:
+            clean_value = _clip_text(value, 105).strip()
+            if clean_value and clean_value.lower() not in combined and len(bullets) < 4:
+                bullets.append(f"{label}: {clean_value}")
+                combined += " " + clean_value.lower()
+        slide["bullets"] = bullets
     return slides
 
 

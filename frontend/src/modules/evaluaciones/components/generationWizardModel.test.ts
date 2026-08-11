@@ -15,6 +15,7 @@ import {
   validateReferenceFile,
   validateStep,
   WIZARD_TTL_MS,
+  WIZARD_VERSION,
   wizardStorageKey,
   type EditableQuestion,
 } from './generationWizardModel';
@@ -83,7 +84,7 @@ describe('generation wizard model', () => {
     persistWizardDraft(localStorage, 'profesor-1', state, 1_000);
     const raw = localStorage.getItem(wizardStorageKey('profesor-1')) ?? '';
 
-    expect(raw).toContain('"version":5');
+    expect(raw).toContain(`"version":${WIZARD_VERSION}`);
     expect(raw).toContain('"userId":"profesor-1"');
     expect(raw).toContain('"needsReselection":true');
     expect(raw).not.toContain('data:');

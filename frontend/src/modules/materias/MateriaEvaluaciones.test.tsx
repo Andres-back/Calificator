@@ -9,7 +9,6 @@ import type { Evaluacion, MateriaConEstudiantes } from '@/types/api';
 
 const mocks = vi.hoisted(() => ({
   list: vi.fn(),
-  create: vi.fn(),
   update: vi.fn(),
   publish: vi.fn(),
   close: vi.fn(),
@@ -24,7 +23,6 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock('@/modules/evaluaciones/api', () => ({
   listEvaluaciones: mocks.list,
-  createEvaluacion: mocks.create,
   updateEvaluacion: mocks.update,
   publicarEvaluacion: mocks.publish,
   cerrarEvaluacion: mocks.close,
@@ -80,6 +78,7 @@ const evaluation: Evaluacion = {
   estado: 'borrador',
   tiempo_limite_minutos: null,
   fecha_publicacion: null,
+  fecha_limite_entrega: null,
   dba_ids: [],
   dba_personalizado_ids: [],
   metas_profesor: [],
@@ -113,10 +112,6 @@ beforeEach(() => {
   mocks.context.canManageMateria = true;
   mocks.context.isStudent = false;
   mocks.list.mockResolvedValue([]);
-  mocks.create.mockResolvedValue({
-    ...evaluation,
-    modalidad: 'fisica',
-  });
   useAuth.setState({
     user: {
       id: 'profesor-1',
@@ -143,46 +138,18 @@ describe('MateriaEvaluaciones teacher creation flow', () => {
       ),
     ).toBeInTheDocument();
 
-    await user.click(
-      screen.getAllByRole('button', { name: /Crear paso a paso/i })[0],
-    );
+    expect(screen.getAllByRole('button', { name: /Crear paso a paso/i })).toHaveLength(1);
+    expect(screen.getAllByRole('button', { name: /Digitalizar de foto\/PDF/i })).toHaveLength(1);
+    expect(screen.queryByRole('button', { name: /Registrar prueba existente/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Nueva evaluación/i })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: /Crear paso a paso/i }));
 
     expect(
       screen.getByRole('dialog', { name: 'Asistente de evaluación' }),
     ).toHaveTextContent('Materia fijada: materia-1');
   });
 
-  it('registers an existing paper test with a simple focused form', async () => {
-    const user = userEvent.setup();
-    renderPage();
-
-    await screen.findByRole('heading', { name: '¿Cómo quieres empezar?' });
-    await user.click(
-      screen.getAllByRole('button', {
-        name: /Registrar prueba existente/i,
-      })[0],
-    );
-
-    expect(
-      screen.getByText('evaluación en papel'),
-    ).toBeInTheDocument();
-    await user.type(
-      screen.getByLabelText(/Nombre de la evaluación/i),
-      'Prueba impresa',
-    );
-    await user.click(
-      screen.getByRole('button', { name: 'Registrar evaluación' }),
-    );
-
-    await waitFor(() => expect(mocks.create).toHaveBeenCalledTimes(1));
-    expect(mocks.create).toHaveBeenCalledWith(
-      expect.objectContaining({
-        materia_id: 'materia-1',
-        nombre: 'Prueba impresa',
-        modalidad: 'fisica',
-      }),
-    );
-  });
 
   it('shows publishing but not grading actions for an online draft', async () => {
     mocks.list.mockResolvedValue([evaluation]);

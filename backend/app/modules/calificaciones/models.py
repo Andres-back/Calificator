@@ -133,6 +133,13 @@ Index(
     unique=True,
     postgresql_where=Calificacion.entrega_id.is_not(None),
 )
+Index(
+    "uq_calificaciones_manual_evaluacion_estudiante",
+    Calificacion.evaluacion_id,
+    Calificacion.estudiante_id,
+    unique=True,
+    postgresql_where=Calificacion.entrega_id.is_(None),
+)
 
 
 class SalonSesion(Base):

@@ -56,6 +56,7 @@ const evaluation: Evaluacion = {
   estado: 'borrador',
   tiempo_limite_minutos: null,
   fecha_publicacion: null,
+  fecha_limite_entrega: null,
   dba_ids: ['dba-1'],
   dba_personalizado_ids: [],
   metas_profesor: [],

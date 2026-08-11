@@ -35,6 +35,7 @@ import { toApiError } from '@/lib/api';
 import { cn } from '@/lib/cn';
 import { useAuth } from '@/stores/auth';
 import { routes } from '@/config/routes';
+import { JoinMateriaModal } from './UnirseMateriaPage';
 import {
   getPostCreateDestination,
   getTeacherActionGuide,
@@ -117,8 +118,9 @@ const ACTION_ICONS = {
 export function MateriasListPage() {
   const user = useAuth((state) => state.user);
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [open, setOpen] = useState(false);
+  const [joinOpen, setJoinOpen] = useState(searchParams.get('unirse') === '1');
   const [form, setForm] = useState(EMPTY_FORM);
   const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['materias'],
@@ -189,6 +191,15 @@ export function MateriasListPage() {
     setForm(EMPTY_FORM);
   }
 
+  function closeJoinModal() {
+    setJoinOpen(false);
+    if (searchParams.has('unirse')) {
+      const next = new URLSearchParams(searchParams);
+      next.delete('unirse');
+      setSearchParams(next, { replace: true });
+    }
+  }
+
   return (
     <div className="space-y-6">
       <PageHeader
@@ -204,13 +215,10 @@ export function MateriasListPage() {
         }
         action={
           isStudent ? (
-            <Link
-              to={routes.materiasUnirse}
-              className="focus-ring inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg border border-brand-600 bg-brand-600 px-5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-brand-700 sm:w-auto"
-            >
+            <Button type="button" onClick={() => setJoinOpen(true)}>
               <UserPlus className="h-4 w-4" />
               Unirme a materia
-            </Link>
+            </Button>
           ) : canCreateMateria ? (
             <Button
               onClick={() => setOpen(true)}
@@ -283,12 +291,9 @@ export function MateriasListPage() {
             }
             action={
               isStudent ? (
-                <Link
-                  to={routes.materiasUnirse}
-                  className="focus-ring inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg border border-brand-600 bg-brand-600 px-5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-brand-700 sm:w-auto"
-                >
+                <Button type="button" onClick={() => setJoinOpen(true)}>
                   <UserPlus className="h-4 w-4" /> Unirme a materia
-                </Link>
+                </Button>
               ) : canCreateMateria ? (
                 <Button
                   onClick={() => setOpen(true)}
@@ -397,6 +402,10 @@ export function MateriasListPage() {
           })}
         </div>
       </QueryState>
+
+      {isStudent && (
+        <JoinMateriaModal open={joinOpen} onClose={closeJoinModal} />
+      )}
 
       {canCreateMateria && (
         <Modal

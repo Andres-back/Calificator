@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate, useParams, Link } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams, Link } from 'react-router-dom';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
@@ -8,7 +8,7 @@ import {
   Clock, ExternalLink, FileImage, FileText, GraduationCap, Pencil, RotateCcw,
   Search, ShieldAlert, Sparkles, X,
 } from 'lucide-react';
-import { Badge, Button, Card, ConfirmDialog, Field, Input, Select, Skeleton, Textarea } from '@/components/ui';
+import { Badge, Button, Card, ConfirmDialog, Field, Input, Modal, Select, Skeleton, Textarea } from '@/components/ui';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { useMaterias } from '@/modules/materias/MateriaSelect';
 import { useEstudiantes } from '@/modules/materias/hooks';
@@ -20,8 +20,9 @@ import { trackEvent } from '@/lib/analytics';
 import { routes } from '@/config/routes';
 import {
   ajustarNota, ajustarNotaBatch, confirmarNota, confirmarNotaBatch,
-  crearIncidencia, getCalificacionDetalle, listarIncidencias,
-  listCalificaciones, publicarNota, publicarNotaBatch, resolverIncidencia, solicitarReemplazoEvidencia,
+  crearIncidencia, getBandejaDocente, getCalificacionDetalle, listarIncidencias,
+  establecerNotaManual, listCalificaciones, publicarNota, publicarNotaBatch,
+  resolverIncidencia, solicitarReemplazoEvidencia,
 } from './api';
 import { RevisionGuide } from './RevisionGuide';
 import { formatAIModelSource } from './aiPipelineLabels';
@@ -211,7 +212,13 @@ function IncidenciasSection({ calificacionId }: { calificacionId: string }) {
   });
   const resolveMut = useMutation({
     mutationFn: () => resolverIncidencia(resolveId!, resolveText),
-    onSuccess: () => { refetch(); setResolveId(null); setResolveText(''); toast.success('Incidencia resuelta'); },
+    onSuccess: () => {
+      refetch();
+      queryClient.invalidateQueries({ queryKey: ['bandeja-docente'] });
+      setResolveId(null);
+      setResolveText('');
+      toast.success('Incidencia resuelta');
+    },
     onError: (e) => toast.error(toApiError(e).detail),
   });
 
@@ -760,13 +767,125 @@ function BatchActions({
   );
 }
 
+function ManualGradeModal({
+  open,
+  students,
+  grades,
+  notaMaxima,
+  loading,
+  onClose,
+  onSubmit,
+}: {
+  open: boolean;
+  students: { id: string; nombre: string; email?: string }[];
+  grades: Calificacion[];
+  notaMaxima: number;
+  loading: boolean;
+  onClose: () => void;
+  onSubmit: (payload: {
+    estudiante_id: string;
+    nota_confirmada: number;
+    motivo: string;
+    feedback?: string;
+  }) => void;
+}) {
+  const gradedIds = useMemo(
+    () => new Set(grades.map((grade) => grade.estudiante_id)),
+    [grades],
+  );
+  const [studentId, setStudentId] = useState('');
+  const [score, setScore] = useState(0);
+  const [reason, setReason] = useState('No presentó la actividad');
+  const [feedback, setFeedback] = useState('');
+
+  useEffect(() => {
+    if (!open) return;
+    const preferred = students.find((student) => !gradedIds.has(student.id)) ?? students[0];
+    setStudentId(preferred?.id ?? '');
+    setScore(0);
+    setReason('No presentó la actividad');
+    setFeedback('');
+  }, [gradedIds, open, students]);
+
+  return (
+    <Modal open={open} onClose={onClose} title="Establecer nota sin documento" className="max-w-xl">
+      <form
+        className="space-y-4"
+        onSubmit={(event) => {
+          event.preventDefault();
+          if (!studentId || score < 0 || score > notaMaxima) return;
+          onSubmit({
+            estudiante_id: studentId,
+            nota_confirmada: score,
+            motivo: reason,
+            feedback: feedback.trim() || undefined,
+          });
+        }}
+      >
+        <div className="rounded-xl border border-sky-200 bg-sky-50 p-4 text-sm leading-6 text-sky-950 dark:border-sky-500/30 dark:bg-sky-500/10 dark:text-sky-100">
+          Úsalo cuando el estudiante no entregó, presentó fuera de plazo o la valoración se realizó directamente. No necesitas subir una foto o PDF.
+        </div>
+        <Field label="Estudiante" required>
+          <Select value={studentId} onChange={(event) => setStudentId(event.target.value)} required>
+            {students.map((student) => (
+              <option key={student.id} value={student.id}>
+                {student.nombre}{gradedIds.has(student.id) ? ' · ya tiene nota' : ' · sin nota'}
+              </option>
+            ))}
+          </Select>
+        </Field>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field label={`Nota (máximo ${notaMaxima})`} required>
+            <Input
+              type="number"
+              min={0}
+              max={notaMaxima}
+              step="0.1"
+              value={score}
+              onChange={(event) => setScore(Number(event.target.value))}
+              required
+            />
+          </Field>
+          <Field label="Motivo" required>
+            <Select value={reason} onChange={(event) => setReason(event.target.value)} required>
+              <option value="No presentó la actividad">No presentó</option>
+              <option value="Entrega presentada fuera de plazo">Fuera de plazo</option>
+              <option value="Valoración directa del docente">Valoración directa</option>
+              <option value="Acuerdo o ajuste pedagógico">Ajuste pedagógico</option>
+            </Select>
+          </Field>
+        </div>
+        <Field label="Retroalimentación" hint="Opcional; será visible inmediatamente para el estudiante.">
+          <Textarea
+            value={feedback}
+            onChange={(event) => setFeedback(event.target.value)}
+            placeholder="Explica brevemente la razón o el acuerdo realizado."
+          />
+        </Field>
+        <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          <Button type="button" variant="outline" onClick={onClose}>Cancelar</Button>
+          <Button
+            type="submit"
+            loading={loading}
+            disabled={!studentId || score < 0 || score > notaMaxima}
+          >
+            Guardar nota
+          </Button>
+        </div>
+      </form>
+    </Modal>
+  );
+}
+
 /* ─── Componente principal ─── */
 export function CalificacionesWorkspace() {
   const navigate = useNavigate();
   const { evaluacionId: evalIdParam } = useParams<{ evaluacionId: string }>();
+  const [searchParams] = useSearchParams();
+  const requestedCalificacionId = searchParams.get('calificacion');
   const [materiaId, setMateriaId] = useState('');
   const [evalId, setEvalId] = useState(evalIdParam ?? '');
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(requestedCalificacionId);
   const [selectedBatch, setSelectedBatch] = useState<Set<string>>(new Set());
   const [searchTerm, setSearchTerm] = useState('');
   const [gradeFilter, setGradeFilter] = useState<GradeFilter>('todas');
@@ -774,6 +893,7 @@ export function CalificacionesWorkspace() {
   const [rejectId, setRejectId] = useState<string | null>(null);
   const [mobileDirty, setMobileDirty] = useState(false);
   const [mobileDirtyConfirm, setMobileDirtyConfirm] = useState(false);
+  const [manualGradeOpen, setManualGradeOpen] = useState(false);
   const detailPanelRef = useRef<HTMLDivElement>(null);
 
   const { data: materias } = useMaterias();
@@ -789,6 +909,10 @@ export function CalificacionesWorkspace() {
     setMateriaId(directEvaluation.data.materia_id);
     setEvalId(directEvaluation.data.id);
   }, [directEvaluation.data]);
+
+  useEffect(() => {
+    if (requestedCalificacionId) setSelectedId(requestedCalificacionId);
+  }, [requestedCalificacionId]);
 
   useEffect(() => {
     if (!materiaId && !evalIdParam && materias?.[0]) setMateriaId(materias[0].id);
@@ -825,6 +949,14 @@ export function CalificacionesWorkspace() {
     queryFn: () => listCalificaciones(evalId),
     enabled: !!evalId,
   });
+  const { data: teacherInbox } = useQuery({
+    queryKey: ['bandeja-docente'],
+    queryFn: getBandejaDocente,
+  });
+  const openClaimGradeIds = useMemo(
+    () => new Set((teacherInbox?.reclamos ?? []).map((item) => item.calificacion_id)),
+    [teacherInbox],
+  );
   const selectedEval = evals?.find((e) => e.id === evalId);
   const notaMaxima = selectedEval?.nota_maxima != null ? Number(selectedEval.nota_maxima) : undefined;
 
@@ -844,6 +976,7 @@ export function CalificacionesWorkspace() {
 
   const invalidate = useCallback(() => {
     queryClient.invalidateQueries({ queryKey: ['calificaciones', evalId] });
+    queryClient.invalidateQueries({ queryKey: ['bandeja-docente'] });
     if (selectedId) queryClient.invalidateQueries({ queryKey: ['calificacion-detalle', selectedId] });
   }, [evalId, selectedId]);
 
@@ -897,6 +1030,22 @@ export function CalificacionesWorkspace() {
     onError: (e) => toast.error(toApiError(e).detail),
   });
 
+  const manualGradeMut = useMutation({
+    mutationFn: (payload: {
+      estudiante_id: string;
+      nota_confirmada: number;
+      motivo: string;
+      feedback?: string;
+    }) => establecerNotaManual(evalId, payload),
+    onSuccess: (calificacion) => {
+      invalidate();
+      setManualGradeOpen(false);
+      setSelectedId(calificacion.id);
+      toast.success('Nota guardada y publicada al estudiante');
+    },
+    onError: (error) => toast.error(toApiError(error).detail),
+  });
+
   // Derived
   const displayedCals = useMemo(() => {
     const items = [...(cals ?? [])].sort((a, b) => {
@@ -910,7 +1059,7 @@ export function CalificacionesWorkspace() {
       : gradeFilter === 'confirmadas'
         ? items.filter((c) => DONE_STATES.has(c.estado))
         : gradeFilter === 'incidencias'
-          ? items.filter((c) => c.estado === 'requiere_revision')
+          ? items.filter((c) => c.estado === 'requiere_revision' || openClaimGradeIds.has(c.id))
         : items;
     if (!searchTerm) return filtered;
     const q = searchTerm.toLowerCase();
@@ -918,7 +1067,7 @@ export function CalificacionesWorkspace() {
       const s = studentMap.get(c.estudiante_id);
       return s?.nombre?.toLowerCase().includes(q) || s?.email?.toLowerCase().includes(q) || c.estudiante_id.includes(q);
     });
-  }, [cals, gradeFilter, searchTerm, studentMap]);
+  }, [cals, gradeFilter, openClaimGradeIds, searchTerm, studentMap]);
 
   const gradeSummary = useMemo(() => {
     const items = cals ?? [];
@@ -955,6 +1104,11 @@ export function CalificacionesWorkspace() {
               >
                 <BookOpenCheck className="h-4 w-4" /> Libro de notas
               </Link>
+            )}
+            {evalId && estudiantes.length > 0 && (
+              <Button type="button" variant="outline" onClick={() => setManualGradeOpen(true)}>
+                <Pencil className="h-4 w-4" /> Establecer nota
+              </Button>
             )}
             <Link
               to={routes.materiasPara('calificar')}
@@ -1155,6 +1309,16 @@ export function CalificacionesWorkspace() {
         onPublishBatch={(ids) => publishBatchMut.mutate(ids)}
         onClear={() => setSelectedBatch(new Set())}
         batchPending={confirmBatchMut.isPending || ajustarBatchMut.isPending || publishBatchMut.isPending}
+      />
+
+      <ManualGradeModal
+        open={manualGradeOpen}
+        students={estudiantes}
+        grades={cals ?? []}
+        notaMaxima={notaMaxima ?? 5}
+        loading={manualGradeMut.isPending}
+        onClose={() => setManualGradeOpen(false)}
+        onSubmit={(payload) => manualGradeMut.mutate(payload)}
       />
 
       {/* Confirm dialog */}

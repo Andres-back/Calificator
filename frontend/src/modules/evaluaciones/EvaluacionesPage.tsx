@@ -617,7 +617,7 @@ export function EvaluacionesPage() {
           title={isStudent ? 'Aún no tienes materias inscritas' : 'Primero crea una materia'}
           description={isStudent ? 'Únete a una materia con el código que te compartió tu docente para consultar sus evaluaciones.' : 'Las evaluaciones pertenecen a una materia.'}
           action={isStudent ? (
-            <Link to="/app/materias/unirse" className="focus-ring inline-flex h-11 items-center justify-center gap-2 rounded-lg border border-brand-600 bg-brand-600 px-5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-brand-700">
+            <Link to="/app/materias?unirse=1" className="focus-ring inline-flex h-11 items-center justify-center gap-2 rounded-lg border border-brand-600 bg-brand-600 px-5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-brand-700">
               <UserPlus className="h-4 w-4" /> Unirme a materia
             </Link>
           ) : undefined}

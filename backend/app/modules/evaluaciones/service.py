@@ -88,7 +88,10 @@ async def _select_evaluation(db: AsyncSession, evaluacion_id: UUID) -> Evaluacio
     return await db.scalar(
         select(Evaluacion)
         .options(selectinload(Evaluacion.blueprint))
-        .where(Evaluacion.id == evaluacion_id)
+        .where(
+            Evaluacion.id == evaluacion_id,
+            Evaluacion.deleted_at.is_(None),
+        )
     )
 
 
@@ -167,6 +170,7 @@ def _student_safe_evaluation(evaluacion: Evaluacion, progress: dict | None = Non
         "nota_maxima": evaluacion.nota_maxima,
         "estado": evaluacion.estado,
         "fecha_publicacion": evaluacion.fecha_publicacion,
+        "fecha_limite_entrega": getattr(evaluacion, "fecha_limite_entrega", None),
         "politica_intento": evaluacion.politica_intento,
         "intentos_permitidos": evaluacion.intentos_permitidos,
         "tiempo_limite_minutos": evaluacion.tiempo_limite_minutos,
@@ -473,6 +477,7 @@ async def create_evaluation(
         politica_intento=payload.politica_intento.value if payload.politica_intento else None,
         intentos_permitidos=payload.intentos_permitidos,
         tiempo_limite_minutos=payload.tiempo_limite_minutos,
+        fecha_limite_entrega=payload.fecha_limite_entrega,
         dba_ids=_uuid_values(payload.dba_ids),
         dba_personalizado_ids=_uuid_values(payload.dba_personalizado_ids),
         metas_profesor=payload.metas_profesor,
@@ -496,7 +501,10 @@ async def list_evaluations_for_materia(
     stmt = (
         select(Evaluacion)
         .options(selectinload(Evaluacion.blueprint))
-        .where(Evaluacion.materia_id == materia_id)
+        .where(
+            Evaluacion.materia_id == materia_id,
+            Evaluacion.deleted_at.is_(None),
+        )
         .order_by(Evaluacion.created_at.desc())
     )
     if current_user.rol == UserRole.ESTUDIANTE.value:
@@ -553,6 +561,8 @@ async def update_evaluation(
             evaluacion.intentos_permitidos = int(value)
         elif field == "tiempo_limite_minutos" and value is not None:
             evaluacion.tiempo_limite_minutos = int(value)
+        elif field == "fecha_limite_entrega":
+            evaluacion.fecha_limite_entrega = value
         elif value is not None or field == "descripcion":
             setattr(evaluacion, field, value)
 
@@ -730,23 +740,8 @@ async def close_evaluation(db: AsyncSession, evaluacion: Evaluacion) -> Evaluaci
 
 
 async def delete_evaluation(db: AsyncSession, evaluacion: Evaluacion) -> None:
-    from app.modules.calificaciones.models import Calificacion, Entrega
-
-    entrega_id = await db.scalar(
-        select(Entrega.id).where(Entrega.evaluacion_id == evaluacion.id).limit(1)
-    )
-    calificacion_id = await db.scalar(
-        select(Calificacion.id).where(Calificacion.evaluacion_id == evaluacion.id).limit(1)
-    )
-    if entrega_id or calificacion_id:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail=(
-                "No se puede eliminar una evaluacion con entregas o calificaciones. "
-                "Pausa la recepcion o cierrala para conservar la evidencia."
-            ),
-        )
-    await db.delete(evaluacion)
+    evaluacion.recepcion_habilitada = False
+    evaluacion.deleted_at = utcnow()
     await db.commit()
 
 

@@ -75,6 +75,20 @@ services:
       start_period: 45s
     restart: unless-stopped
 
+  beat:
+    build: *backend-build
+    command: celery -A app.workers.worker.celery_app beat --loglevel=info
+    env_file:
+      - .env
+    volumes:
+      - ./uploads:/app/uploads
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
   postgres:
     image: pgvector/pgvector:pg16@sha256:131dcf7ff6a900545df8e7e092c270aa8c6db2f2c818e408cb45ec21316b74e6
     environment:

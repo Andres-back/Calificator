@@ -24,6 +24,7 @@ class EvaluacionCreate(BaseModel):
     politica_intento: PoliticaIntento | None = None
     intentos_permitidos: int | None = Field(default=None, gt=0)
     tiempo_limite_minutos: int | None = Field(default=None, gt=0)
+    fecha_limite_entrega: datetime | None = None
     dba_ids: list[UUID] = Field(default_factory=list)
     dba_personalizado_ids: list[UUID] = Field(default_factory=list)
     metas_profesor: list[str] = Field(default_factory=list)
@@ -40,6 +41,7 @@ class EvaluacionUpdate(BaseModel):
     politica_intento: PoliticaIntento | None = None
     intentos_permitidos: int | None = Field(default=None, gt=0)
     tiempo_limite_minutos: int | None = Field(default=None, gt=0)
+    fecha_limite_entrega: datetime | None = None
     dba_ids: list[UUID] | None = None
     dba_personalizado_ids: list[UUID] | None = None
     metas_profesor: list[str] | None = None
@@ -83,6 +85,7 @@ class EvaluacionRead(BaseModel):
     nota_maxima: Decimal
     estado: EvaluacionEstado
     fecha_publicacion: datetime | None
+    fecha_limite_entrega: datetime | None = None
     tiempo_limite_minutos: int | None
     dba_ids: list[str]
     dba_personalizado_ids: list[str]
@@ -178,6 +181,7 @@ class EvaluacionGenerarRequest(BaseModel):
     politica_intento: PoliticaIntento | None = None
     intentos_permitidos: int | None = Field(default=None, gt=0)
     tiempo_limite_minutos: int | None = Field(default=None, gt=0)
+    fecha_limite_entrega: datetime | None = None
 
     @model_validator(mode="after")
     def validate_optional_alignment(self) -> "EvaluacionGenerarRequest":

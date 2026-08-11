@@ -10,11 +10,13 @@ import type { Materia } from '@/types/api';
 const mocks = vi.hoisted(() => ({
   list: vi.fn(),
   create: vi.fn(),
+  join: vi.fn(),
 }));
 
 vi.mock('./api', () => ({
   listMaterias: mocks.list,
   createMateria: mocks.create,
+  unirseMateria: mocks.join,
 }));
 vi.mock('react-hot-toast', () => ({
   default: { success: vi.fn(), error: vi.fn() },
@@ -75,6 +77,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   mocks.list.mockResolvedValue([]);
   mocks.create.mockResolvedValue(createdMateria);
+  mocks.join.mockResolvedValue({ estado: 'activa' });
   useAuth.setState({
     user: {
       id: 'profesor-1',
@@ -157,5 +160,33 @@ describe('MateriasListPage guided creation', () => {
         name: 'Preparar evaluación contextual',
       }),
     ).toBeInTheDocument();
+  });
+});
+
+
+describe('MateriasListPage student enrollment', () => {
+  it('allows joining from Mis materias without leaving the page', async () => {
+    const user = userEvent.setup();
+    useAuth.setState({
+      user: {
+        id: 'student-1',
+        nombre: 'Estudiante',
+        email: 'estudiante@example.com',
+        rol: 'estudiante',
+        estado: 'activo',
+      },
+      status: 'authenticated',
+    });
+
+    renderPage('/app/materias?unirse=1');
+
+    expect(await screen.findByRole('heading', { name: 'Mis materias' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Unirme a una materia' })).toBeInTheDocument();
+    await user.type(screen.getByLabelText(/Código de matrícula/i), 'abc123');
+    await user.click(screen.getByRole('button', { name: 'Unirme a la materia' }));
+
+    await waitFor(() => expect(mocks.join).toHaveBeenCalledWith('ABC123'));
+    expect(await screen.findByText('Materia agregada correctamente. Ya aparece en tu lista.')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Mis materias' })).toBeInTheDocument();
   });
 });

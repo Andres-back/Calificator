@@ -8,7 +8,6 @@ import {
   Presentation,
   FileText,
   ClipboardCheck,
-  UserPlus,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -39,7 +38,6 @@ export const adminNav: NavItem[] = [
 export const estudianteNav: NavItem[] = [
   { label: 'Inicio', to: '/app', icon: LayoutDashboard },
   { label: 'Mis materias', to: '/app/materias', icon: BookOpen },
-  { label: 'Unirme a materia', to: '/app/materias/unirse', icon: UserPlus },
   { label: 'Mis actividades', to: '/app/evaluaciones', icon: ClipboardCheck },
   { label: 'Mis resultados', to: '/app/calificaciones/boletin', icon: FileText },
   { label: 'Ayuda con Xali', to: '/app/xali', icon: Sparkles },

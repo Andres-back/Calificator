@@ -76,6 +76,7 @@ class Evaluacion(Base):
         Integer, nullable=True
     )
     fecha_publicacion: Mapped[datetime | None] = mapped_column(DateTime)
+    fecha_limite_entrega: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     tiempo_limite_minutos: Mapped[int | None] = mapped_column(
         Integer, nullable=True
     )
@@ -90,6 +91,7 @@ class Evaluacion(Base):
     criterios: Mapped[list[dict]] = mapped_column(JSONB, nullable=False, default=list)
     preguntas: Mapped[list[dict]] = mapped_column(JSONB, nullable=False, default=list)
     respuestas_esperadas: Mapped[list[dict]] = mapped_column(JSONB, nullable=False, default=list)
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(
         DateTime,
@@ -112,6 +114,8 @@ class Evaluacion(Base):
 Index("idx_evaluaciones_materia", Evaluacion.materia_id)
 Index("idx_evaluaciones_profesor", Evaluacion.profesor_id)
 Index("idx_evaluaciones_estado", Evaluacion.estado)
+Index("idx_evaluaciones_deleted_at", Evaluacion.deleted_at)
+Index("idx_evaluaciones_fecha_limite_entrega", Evaluacion.fecha_limite_entrega)
 Index(
     "uq_evaluaciones_material_origen_nonnull",
     Evaluacion.material_origen_id,

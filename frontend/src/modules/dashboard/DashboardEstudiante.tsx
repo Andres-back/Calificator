@@ -20,7 +20,7 @@ import { getResumenAcademico } from '@/modules/calificaciones/api';
 import { cn } from '@/lib/cn';
 
 const QUICK_LINKS = [
-  { to: '/app/materias/unirse', label: 'Unirme a materia', desc: 'Con el código del docente', icon: UserPlus, tone: 'bg-violet-50 text-violet-600 dark:bg-violet-500/15 dark:text-violet-300' },
+  { to: '/app/materias?unirse=1', label: 'Unirme a materia', desc: 'Con el código del docente', icon: UserPlus, tone: 'bg-violet-50 text-violet-600 dark:bg-violet-500/15 dark:text-violet-300' },
   { to: '/app/calificaciones/boletin', label: 'Mi boletín', desc: 'Tus notas confirmadas', icon: FileText, tone: 'bg-amber-50 text-amber-600 dark:bg-amber-500/15 dark:text-amber-300' },
   { to: '/app/xali', label: 'Asistente Xali', desc: 'Xali te ayuda a entender, practicar y mejorar', icon: Sparkles, tone: 'bg-brand-50 text-brand-600 dark:bg-brand-500/15 dark:text-brand-300', xali: true },
 ];

@@ -152,6 +152,7 @@ export interface Evaluacion {
   politica_intento?: 'un_intento' | 'multiples_intentos' | 'mejor_puntaje' | 'ultimo_intento' | 'practica_libre' | null;
   intentos_permitidos?: number | null;
   fecha_publicacion: string | null;
+  fecha_limite_entrega: string | null;
   dba_ids: string[];
   dba_personalizado_ids: string[];
   metas_profesor: string[];
@@ -326,6 +327,29 @@ export interface IncidenciaCreate {
 }
 
 export type SolicitudRevisionMotivo = 'nota' | 'respuesta' | 'evidencia' | 'retroalimentacion' | 'otro';
+
+export interface BandejaDocenteItem {
+  id: string;
+  tipo: 'solicitud_revision' | 'calificacion_pendiente';
+  calificacion_id: string;
+  evaluacion_id: string;
+  evaluacion_nombre: string;
+  materia_id: string;
+  materia_nombre: string;
+  estudiante_id: string;
+  estudiante_nombre: string;
+  estado: string;
+  motivo: string | null;
+  descripcion: string | null;
+  created_at: string;
+}
+
+export interface BandejaDocenteRead {
+  reclamos_abiertos: number;
+  pendientes_revision: number;
+  reclamos: BandejaDocenteItem[];
+  pendientes: BandejaDocenteItem[];
+}
 
 export type GradeFilter = 'todas' | 'pendientes' | 'confirmadas' | 'incidencias';
 

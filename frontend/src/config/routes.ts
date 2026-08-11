@@ -17,7 +17,7 @@ export const routes = {
 
   /* ── Materias ── */
   materias: '/app/materias',
-  materiasUnirse: '/app/materias/unirse',
+  materiasUnirse: '/app/materias?unirse=1',
   materiasPara: (accion: 'calificar' | 'asistencia' | 'evaluar' | 'seguimiento') =>
     `/app/materias?accion=${accion}` as const,
   materia: (id: string) => `/app/materias/${id}` as const,
@@ -36,6 +36,8 @@ export const routes = {
   calificacionesBoletin: '/app/calificaciones/boletin',
   calificacionesWorkspace: '/app/calificaciones/workspace',
   calificacionesEvaluacion: (id: string) => `/app/calificaciones/workspace/${id}` as const,
+  calificacionesRevision: (evaluacionId: string, calificacionId: string) =>
+    `/app/calificaciones/workspace/${evaluacionId}?calificacion=${encodeURIComponent(calificacionId)}` as const,
 
   /* ── Herramientas ── */
   herramientas: '/app/herramientas',

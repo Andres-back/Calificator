@@ -26,7 +26,9 @@ from app.modules.calificaciones.schemas import (
     BatchAjustarRequest,
     BatchConfirmRequest,
     BatchResult,
+    BandejaDocenteRead,
     CalificacionDetalleRead,
+    CalificacionManualCreate,
     CalificacionRead,
     ConfirmarNota,
     EntregaOnlineCreate,
@@ -728,6 +730,20 @@ async def ajustar(
     return await service.ajustar_nota(db, cal, payload)
 
 
+@router.post("/evaluaciones/{evaluacion_id}/calificaciones/manual", response_model=CalificacionRead)
+async def establecer_nota_manual(
+    evaluacion_id: UUID,
+    payload: CalificacionManualCreate,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> object:
+    require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
+    evaluacion = await evaluaciones_service.ensure_can_manage_evaluation(
+        db, evaluacion_id, current_user
+    )
+    return await service.set_manual_grade(db, evaluacion, payload, current_user)
+
+
 @router.get("/evaluaciones/{evaluacion_id}/calificaciones", response_model=list[CalificacionRead])
 async def list_calificaciones(
     evaluacion_id: UUID,
@@ -735,7 +751,8 @@ async def list_calificaciones(
     db: AsyncSession = Depends(get_db),
 ) -> list:
     require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
-    await evaluaciones_service.ensure_can_manage_evaluation(db, evaluacion_id, current_user)
+    evaluacion = await evaluaciones_service.ensure_can_manage_evaluation(db, evaluacion_id, current_user)
+    await service.assign_overdue_zero_grades(db, evaluacion)
     return await service.list_calificaciones_for_evaluacion(db, evaluacion_id)
 
 
@@ -1345,6 +1362,19 @@ async def ajustar_lote(
 
 
 # ── Incidencias ───────────────────────────────────────────────────────────────────
+
+
+@router.get("/calificaciones/bandeja-docente", response_model=BandejaDocenteRead)
+async def obtener_bandeja_docente(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> object:
+    require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
+    profesor_id = None if current_user.rol == UserRole.ADMIN.value else current_user.id
+    return await service.obtener_bandeja_docente(
+        db,
+        profesor_id=profesor_id,
+    )
 
 
 @router.get(

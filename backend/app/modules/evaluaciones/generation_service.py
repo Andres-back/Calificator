@@ -415,6 +415,7 @@ async def generate_evaluation_draft(
         politica_intento=request.politica_intento.value if request.politica_intento else None,
         intentos_permitidos=request.intentos_permitidos,
         tiempo_limite_minutos=request.tiempo_limite_minutos,
+        fecha_limite_entrega=request.fecha_limite_entrega,
         dba_ids=_uuid_strings(request.dba_ids),
         dba_personalizado_ids=_uuid_strings(request.dba_personalizado_ids),
         metas_profesor=request.metas_profesor or content.metas_aprendizaje,

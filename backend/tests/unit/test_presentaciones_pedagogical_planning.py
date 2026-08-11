@@ -213,3 +213,45 @@ def test_openai_modelo_calidad_y_hash_no_cambian() -> None:
     assert modelo == "gpt-image-2"
     assert calidad == "low"
     assert h1 == h2
+
+
+def test_contenido_generico_del_demo_se_rechaza() -> None:
+    payload = PresentacionCreate(
+        titulo="Tipos de alimentacion animal",
+        tema="Tipos de alimentacion animal",
+        area="Ciencias Naturales",
+        grado="5",
+        cantidad_slides=8,
+    )
+    slides = service._apply_pedagogical_slide_defaults(
+        service._polish_slides_for_presenton(
+            service.normalize_presentation(service._fallback_slides(payload)),
+            topic=payload.tema,
+        ),
+        payload,
+    )
+
+    issues = service._presentation_quality_issues(slides, payload)
+
+    assert issues
+    assert any("generico" in issue or "repite" in issue for issue in issues)
+
+
+def test_actividad_y_pregunta_quedan_visibles_en_la_exportacion() -> None:
+    slides = service._merge_structured_content_into_bullets(
+        [
+            {
+                "role": "activity",
+                "bullets": ["Coloca una moneda sobre una tarjeta.", "Retira la tarjeta con rapidez."],
+                "activity": "Describe por que la moneda cae dentro del vaso.",
+            },
+            {
+                "role": "comprehension_check",
+                "bullets": ["Relaciona fuerza y cambio de movimiento.", "Usa el experimento como evidencia."],
+                "question": "Que propiedad explica que la moneda conserve su posicion?",
+            },
+        ]
+    )
+
+    assert any("Actividad:" in bullet for bullet in slides[0]["bullets"])
+    assert any("Pregunta:" in bullet for bullet in slides[1]["bullets"])

@@ -84,6 +84,13 @@ class AjustarNota(BaseModel):
     feedback: str | None = None
 
 
+class CalificacionManualCreate(BaseModel):
+    estudiante_id: UUID
+    nota_confirmada: Decimal = Field(ge=0)
+    motivo: str = Field(default="Valoración directa del docente", min_length=3, max_length=160)
+    feedback: str | None = Field(default=None, max_length=2000)
+
+
 # ── Lote ───────────────────────────────────────────────────────────────────────
 
 class LoteFotoEntry(BaseModel):
@@ -298,3 +305,26 @@ class ResolverIncidencia(BaseModel):
 class SolicitudRevisionCreate(BaseModel):
     motivo: str = Field(..., pattern=r'^(nota|respuesta|evidencia|retroalimentacion|otro)$')
     descripcion: str = Field(..., min_length=10, max_length=2000)
+
+
+class BandejaDocenteItem(BaseModel):
+    id: UUID
+    tipo: str
+    calificacion_id: UUID
+    evaluacion_id: UUID
+    evaluacion_nombre: str
+    materia_id: UUID
+    materia_nombre: str
+    estudiante_id: UUID
+    estudiante_nombre: str
+    estado: str
+    motivo: str | None = None
+    descripcion: str | None = None
+    created_at: datetime
+
+
+class BandejaDocenteRead(BaseModel):
+    reclamos_abiertos: int = 0
+    pendientes_revision: int = 0
+    reclamos: list[BandejaDocenteItem] = Field(default_factory=list)
+    pendientes: list[BandejaDocenteItem] = Field(default_factory=list)

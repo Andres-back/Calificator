@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef, useState, type RefObject } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { BookOpen, ChevronDown, ClipboardCheck, FileBarChart2, GraduationCap, Home, LogOut, Menu, Plus, Presentation, Sparkles, UserPlus, Wand2 } from 'lucide-react';
+import { BookOpen, ChevronDown, ClipboardCheck, FileBarChart2, GraduationCap, Home, LogOut, Menu, Plus, Presentation, Sparkles, Wand2 } from 'lucide-react';
 import { ThemeToggle } from '@/components/ui';
 import { useAuth } from '@/stores/auth';
 
@@ -16,7 +16,6 @@ const TEACHER_CONTEXTS = [
 ];
 
 const STUDENT_CONTEXTS = [
-  { match: '/app/materias/unirse', label: 'Unirme a una materia', icon: UserPlus },
   { match: '/app/materias', label: 'Mis materias', icon: BookOpen },
   { match: '/app/evaluaciones', label: 'Mis actividades', icon: ClipboardCheck },
   { match: '/app/calificaciones', label: 'Mis resultados', icon: GraduationCap },
@@ -50,6 +49,7 @@ export function Topbar({
   const studentContext = STUDENT_CONTEXTS.find((item) => location.pathname.startsWith(item.match))
     ?? { label: 'Mi inicio', icon: Home };
   const StudentContextIcon = studentContext.icon;
+  const isInsideMateria = /^\/app\/materias\/[^/]+(?:\/|$)/.test(location.pathname);
 
   useEffect(() => {
     if (!open) return;
@@ -101,7 +101,7 @@ export function Topbar({
           </div>
         )}
       </div>
-      {user?.rol === 'profesor' && (
+      {user?.rol === 'profesor' && !isInsideMateria && (
         <Link
           to="/app/herramientas/nuevo"
           className="focus-ring hidden min-h-10 items-center gap-2 rounded-xl bg-brand-600 px-3 text-sm font-bold text-white shadow-sm transition hover:bg-brand-700 md:inline-flex"

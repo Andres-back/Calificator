@@ -18,6 +18,7 @@ import { listMaterias } from '@/modules/materias/api';
 import { Badge, Card } from '@/components/ui';
 import { DashboardEstudiante } from './DashboardEstudiante';
 import { DashboardAdmin } from './DashboardAdmin';
+import { TeacherInbox } from './TeacherInbox';
 import { cn } from '@/lib/cn';
 import { routes } from '@/config/routes';
 import type { MaterialListItem } from '@/types/api';
@@ -129,6 +130,8 @@ function DashboardDocente() {
           </div>
         </div>
       </section>
+
+      <TeacherInbox />
 
       <section aria-labelledby="teacher-actions-title">
         <div className="mb-4 flex items-end justify-between gap-4">

@@ -14,6 +14,7 @@ from app.modules.calificaciones.models import Calificacion, Entrega, SalonSesion
 from app.modules.calificaciones.schemas import (
     AjustarNota, BatchAjustarItem, BatchConfirmItem,
     BatchResult, BatchResultItem,
+    CalificacionManualCreate,
     ConfirmarNota,
 )
 from app.modules.evaluaciones.models import Evaluacion
@@ -178,6 +179,160 @@ async def ajustar_nota(
     await db.commit()
     await db.refresh(cal)
     return cal
+
+
+def evaluation_deadline(evaluacion: Evaluacion) -> datetime | None:
+    """Fecha de entrega institucional; no confundir con la duración del intento."""
+    deadline = getattr(evaluacion, "fecha_limite_entrega", None)
+    if deadline is None:
+        return None
+    if deadline.tzinfo is None:
+        deadline = deadline.replace(tzinfo=timezone.utc)
+    return deadline
+
+
+async def set_manual_grade(
+    db: AsyncSession,
+    evaluacion: Evaluacion,
+    payload: CalificacionManualCreate,
+    current_user: User,
+) -> Calificacion:
+    enrollment = await db.scalar(
+        select(Matricula.id).where(
+            Matricula.materia_id == evaluacion.materia_id,
+            Matricula.estudiante_id == payload.estudiante_id,
+            Matricula.estado == MatriculaEstado.ACTIVO.value,
+        )
+    )
+    if not enrollment:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="El estudiante no está matriculado activamente en esta materia.",
+        )
+    validate_score_within_evaluation(payload.nota_confirmada, evaluacion, "nota_confirmada")
+
+    cal = await db.scalar(
+        select(Calificacion)
+        .where(
+            Calificacion.evaluacion_id == evaluacion.id,
+            Calificacion.estudiante_id == payload.estudiante_id,
+        )
+        .order_by(Calificacion.updated_at.desc(), Calificacion.created_at.desc())
+    )
+    previous_score = None
+    if cal is None:
+        cal = Calificacion(
+            evaluacion_id=evaluacion.id,
+            entrega_id=None,
+            estudiante_id=payload.estudiante_id,
+            materia_id=evaluacion.materia_id,
+            profesor_id=current_user.id,
+            nota_sugerida=None,
+            resultado_json={},
+        )
+        db.add(cal)
+    else:
+        previous_score = cal.nota_confirmada or cal.nota_sugerida
+
+    reason = payload.motivo.strip()
+    feedback = (payload.feedback or "").strip() or reason
+    result = dict(cal.resultado_json or {})
+    result.update({
+        "origen_nota": "manual_docente",
+        "motivo_nota_manual": reason,
+        "sin_documento": cal.entrega_id is None,
+    })
+    cal.resultado_json = result
+    cal.nota_confirmada = payload.nota_confirmada
+    cal.feedback = feedback
+    cal.revisado_por_docente = True
+    cal.estado = CalificacionEstado.PUBLICADA.value
+    _append_timeline_event(
+        cal,
+        tipo="publicada",
+        nota_anterior=previous_score,
+        nota_nueva=payload.nota_confirmada,
+        feedback=feedback,
+        actor_id=current_user.id,
+        actor_nombre=current_user.nombre,
+        detalle=f"Nota establecida directamente por el docente: {reason}",
+    )
+    await db.commit()
+    await db.refresh(cal)
+    return cal
+
+
+async def assign_overdue_zero_grades(
+    db: AsyncSession,
+    evaluacion: Evaluacion,
+    *,
+    now: datetime | None = None,
+) -> list[Calificacion]:
+    deadline = evaluation_deadline(evaluacion)
+    current_time = now or datetime.now(timezone.utc)
+    if (
+        deadline is None
+        or current_time <= deadline
+        or getattr(evaluacion, "estado", EvaluacionEstado.PUBLICADA.value)
+        == EvaluacionEstado.BORRADOR.value
+    ):
+        return []
+
+    # Serializa el cierre de una misma evaluación para evitar ceros duplicados
+    # cuando el beat y una consulta docente coinciden en el mismo instante.
+    await db.scalar(
+        select(Evaluacion.id).where(Evaluacion.id == evaluacion.id).with_for_update()
+    )
+
+    enrolled_ids = set(await db.scalars(
+        select(Matricula.estudiante_id).where(
+            Matricula.materia_id == evaluacion.materia_id,
+            Matricula.estado == MatriculaEstado.ACTIVO.value,
+        )
+    ))
+    delivered_ids = set(await db.scalars(
+        select(Entrega.estudiante_id).where(Entrega.evaluacion_id == evaluacion.id)
+    ))
+    graded_ids = set(await db.scalars(
+        select(Calificacion.estudiante_id).where(Calificacion.evaluacion_id == evaluacion.id)
+    ))
+    missing_ids = enrolled_ids - delivered_ids - graded_ids
+    if not missing_ids:
+        await db.commit()
+        return []
+
+    feedback = "No se registró una entrega antes del vencimiento de la evaluación."
+    created: list[Calificacion] = []
+    for estudiante_id in missing_ids:
+        cal = Calificacion(
+            evaluacion_id=evaluacion.id,
+            entrega_id=None,
+            estudiante_id=estudiante_id,
+            materia_id=evaluacion.materia_id,
+            profesor_id=evaluacion.profesor_id,
+            nota_sugerida=Decimal("0"),
+            nota_confirmada=Decimal("0"),
+            confianza=None,
+            feedback=feedback,
+            resultado_json={
+                "origen_nota": "vencimiento_automatico",
+                "sin_entrega": True,
+                "fecha_limite": deadline.isoformat(),
+            },
+            revisado_por_docente=True,
+            estado=CalificacionEstado.PUBLICADA.value,
+        )
+        _append_timeline_event(
+            cal,
+            tipo="publicada",
+            nota_nueva=Decimal("0"),
+            feedback=feedback,
+            detalle="Cero automático por ausencia de entrega dentro del plazo.",
+        )
+        db.add(cal)
+        created.append(cal)
+    await db.commit()
+    return created
 
 
 async def list_calificaciones_for_evaluacion(
@@ -926,6 +1081,111 @@ async def listar_incidencias(db: AsyncSession, calificacion_id: UUID) -> list[di
          "resolved_at": inc.resolved_at, "created_at": inc.created_at, "updated_at": inc.updated_at}
         for inc in result.all()
     ]
+
+
+async def obtener_bandeja_docente(
+    db: AsyncSession,
+    *,
+    profesor_id: UUID | None,
+    limite: int = 6,
+) -> dict:
+    """Agrupa solicitudes abiertas y notas que esperan decisi?n docente."""
+    from app.modules.calificaciones.incidencia_models import CalificacionIncidencia
+
+    teacher_filter = [] if profesor_id is None else [Calificacion.profesor_id == profesor_id]
+    active_evaluation = [Evaluacion.deleted_at.is_(None)]
+
+    reclamos_base = (
+        select(CalificacionIncidencia, Calificacion, Evaluacion, Materia, User)
+        .join(Calificacion, CalificacionIncidencia.calificacion_id == Calificacion.id)
+        .join(Evaluacion, Calificacion.evaluacion_id == Evaluacion.id)
+        .join(Materia, Calificacion.materia_id == Materia.id)
+        .join(User, Calificacion.estudiante_id == User.id)
+        .where(
+            CalificacionIncidencia.tipo == "solicitud_revision",
+            CalificacionIncidencia.estado == "abierta",
+            *active_evaluation,
+            *teacher_filter,
+        )
+    )
+    pendientes_base = (
+        select(Calificacion, Evaluacion, Materia, User)
+        .join(Evaluacion, Calificacion.evaluacion_id == Evaluacion.id)
+        .join(Materia, Calificacion.materia_id == Materia.id)
+        .join(User, Calificacion.estudiante_id == User.id)
+        .where(
+            Calificacion.estado.in_([
+                CalificacionEstado.SUGERIDA.value,
+                CalificacionEstado.REQUIERE_REVISION.value,
+            ]),
+            *active_evaluation,
+            *teacher_filter,
+        )
+    )
+
+    reclamos_total = await db.scalar(
+        select(func.count()).select_from(reclamos_base.subquery())
+    )
+    pendientes_total = await db.scalar(
+        select(func.count()).select_from(pendientes_base.subquery())
+    )
+    reclamos_rows = (
+        await db.execute(
+            reclamos_base.order_by(CalificacionIncidencia.created_at.desc()).limit(limite)
+        )
+    ).all()
+    pendientes_rows = (
+        await db.execute(
+            pendientes_base.order_by(Calificacion.updated_at.desc()).limit(limite)
+        )
+    ).all()
+
+    reclamos = [
+        {
+            "id": incidencia.id,
+            "tipo": "solicitud_revision",
+            "calificacion_id": calificacion.id,
+            "evaluacion_id": evaluacion.id,
+            "evaluacion_nombre": evaluacion.nombre,
+            "materia_id": materia.id,
+            "materia_nombre": materia.nombre,
+            "estudiante_id": estudiante.id,
+            "estudiante_nombre": estudiante.nombre,
+            "estado": incidencia.estado,
+            "motivo": str((incidencia.metadata_json or {}).get("motivo") or "otro"),
+            "descripcion": incidencia.descripcion,
+            "created_at": incidencia.created_at,
+        }
+        for incidencia, calificacion, evaluacion, materia, estudiante in reclamos_rows
+    ]
+    pendientes = [
+        {
+            "id": calificacion.id,
+            "tipo": "calificacion_pendiente",
+            "calificacion_id": calificacion.id,
+            "evaluacion_id": evaluacion.id,
+            "evaluacion_nombre": evaluacion.nombre,
+            "materia_id": materia.id,
+            "materia_nombre": materia.nombre,
+            "estudiante_id": estudiante.id,
+            "estudiante_nombre": estudiante.nombre,
+            "estado": calificacion.estado,
+            "motivo": (
+                str((calificacion.resultado_json or {}).get("motivo_revision"))
+                if (calificacion.resultado_json or {}).get("motivo_revision")
+                else None
+            ),
+            "descripcion": None,
+            "created_at": calificacion.updated_at,
+        }
+        for calificacion, evaluacion, materia, estudiante in pendientes_rows
+    ]
+    return {
+        "reclamos_abiertos": int(reclamos_total or 0),
+        "pendientes_revision": int(pendientes_total or 0),
+        "reclamos": reclamos,
+        "pendientes": pendientes,
+    }
 
 
 async def resolver_incidencia(db: AsyncSession, incidencia_id: UUID, resolucion: str, resuelto_por: UUID) -> dict | None:

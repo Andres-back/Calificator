@@ -9,6 +9,7 @@ export interface EvaluacionCreate {
   tipo_origen?: string;
   modalidad?: EvaluacionModalidad;
   nota_maxima?: number;
+  fecha_limite_entrega?: string | null;
   dba_ids?: string[];
   dba_personalizado_ids?: string[];
   metas_profesor?: string[];
@@ -36,6 +37,7 @@ export interface EvaluacionGenerarRequest {
   politica_intento?: 'un_intento' | 'multiples_intentos' | 'mejor_puntaje' | 'ultimo_intento' | 'practica_libre' | null;
   intentos_permitidos?: number;
   tiempo_limite_minutos?: number;
+  fecha_limite_entrega?: string | null;
 }
 
 export type EvaluacionUpdate = Partial<Omit<EvaluacionCreate, 'materia_id' | 'tipo_origen'>>;

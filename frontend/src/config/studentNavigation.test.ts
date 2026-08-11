@@ -7,7 +7,6 @@ describe('navegación del estudiante', () => {
     expect(estudianteNav.map((item) => item.label)).toEqual([
       'Inicio',
       'Mis materias',
-      'Unirme a materia',
       'Mis actividades',
       'Mis resultados',
       'Ayuda con Xali',

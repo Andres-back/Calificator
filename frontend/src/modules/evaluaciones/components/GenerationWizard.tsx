@@ -417,6 +417,7 @@ export function GenerationWizard({
       descripcion: state.descripcion.trim() || undefined,
       modalidad: state.modalidad,
       nota_maxima: state.notaMaxima,
+      fecha_limite_entrega: state.fechaLimiteEntrega ? new Date(state.fechaLimiteEntrega).toISOString() : null,
       cantidad_preguntas: totalQuestionCount(state.counts),
       tipos_pregunta: selectedQuestionTypes(state.counts),
       dba_ids: state.useDba ? state.dbaIds : [],
@@ -441,6 +442,7 @@ export function GenerationWizard({
         descripcion: state.descripcion.trim() || undefined,
         modalidad: state.modalidad,
         nota_maxima: state.notaMaxima,
+        fecha_limite_entrega: state.fechaLimiteEntrega ? new Date(state.fechaLimiteEntrega).toISOString() : null,
         dba_ids: state.useDba ? state.dbaIds : [],
         dba_personalizado_ids: state.useDba ? state.dbaPersonalizadoIds : [],
         criterios: state.generatedCriteria,
@@ -526,6 +528,9 @@ export function GenerationWizard({
                       </Field>
                       <Field label="Nombre de la evaluación" required hint="Ejemplo: Evaluación de fracciones — período 2"><Input autoFocus value={state.nombre} onChange={(event) => patch({ nombre: event.target.value })} className="min-h-12 text-base" placeholder="Escribe un nombre claro" /></Field>
                       <Field label="Descripción breve" hint="Opcional"><Textarea value={state.descripcion} onChange={(event) => patch({ descripcion: event.target.value })} className="min-h-24 text-base" placeholder="¿Qué tema o unidad quieres evaluar?" /></Field>
+                      <Field label="Fecha límite de entrega" hint="Opcional. Al vencer, quien no haya entregado recibirá 0.">
+                        <Input type="datetime-local" value={state.fechaLimiteEntrega} onChange={(event) => patch({ fechaLimiteEntrega: event.target.value })} className="min-h-12 text-base" />
+                      </Field>
                       <fieldset className="space-y-3">
                         <legend className="text-base font-semibold">¿Cómo responderán los estudiantes?</legend>
                         <div className="grid gap-3 sm:grid-cols-3">
