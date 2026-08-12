@@ -412,6 +412,59 @@ def test_document_routing_never_falls_through_to_other_providers(monkeypatch) ->
     assert router._provider_configs["open_code"]["timeout_seconds"] == 180
 
 
+def test_template_fallback_stays_after_real_text_providers(monkeypatch) -> None:
+    class FakeSession:
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, exc_type, exc, traceback):
+            return False
+
+    class FakeConfigService:
+        def __init__(self, db):
+            pass
+
+        async def init(self):
+            pass
+
+        async def get_feature_config(self, task_type):
+            return {
+                "primary_provider": "open_code",
+                "fallback_provider": "template",
+            }
+
+        async def get_text_providers(self):
+            return [
+                {"id": "open_code", "active": True},
+                {"id": "groq", "active": True},
+                {"id": "ollama", "active": True},
+                {"id": "template", "active": True},
+            ]
+
+    async def fake_credentials(_db):
+        return SimpleNamespace(open_code_key="open-code", groq_key="groq")
+
+    monkeypatch.setattr("app.db.session.AsyncSessionLocal", lambda: FakeSession())
+    monkeypatch.setattr(
+        "app.services.ai_config_service.AIConfigService",
+        FakeConfigService,
+    )
+    monkeypatch.setattr(
+        "app.services.llm_router.get_effective_ai_credentials",
+        fake_credentials,
+    )
+
+    router = LLMRouter()
+    providers = asyncio.run(router._load_providers("presentacion"))
+
+    assert [provider for provider, _call in providers] == [
+        "open_code",
+        "groq",
+        "ollama",
+        "template",
+    ]
+
+
 def test_digitalization_defaults_to_mimo_fast_path() -> None:
     assert digitalize_service.settings.OPEN_CODE_DIGITALIZATION_VISION_MODEL == "mimo-v2.5"
     assert digitalize_service.settings.OPEN_CODE_DIGITALIZATION_MODEL == "mimo-v2.5"
@@ -534,6 +587,63 @@ def test_opencode_retries_with_environment_key_after_stored_key_401(monkeypatch)
         "Bearer expired-database-key",
         "Bearer valid-env-key",
     ]
+
+
+def test_opencode_retries_with_environment_key_after_stored_key_403(monkeypatch) -> None:
+    request = httpx.Request("POST", "https://example.test/chat/completions")
+    responses = [
+        httpx.Response(403, request=request),
+        httpx.Response(
+            200,
+            json={
+                "choices": [
+                    {"message": {"content": '{"slides": [{"title": "Factoriza"}]}'}}
+                ],
+                "usage": {},
+            },
+            request=request,
+        ),
+    ]
+
+    class FakeHTTPClient:
+        authorization_headers: list[str] = []
+
+        def __init__(self, timeout):
+            self.timeout = timeout
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, exc_type, exc, traceback):
+            return False
+
+        async def post(self, url, headers, json):
+            type(self).authorization_headers.append(headers["Authorization"])
+            return responses.pop(0)
+
+    async def fake_usage_log(**kwargs):
+        return None
+
+    monkeypatch.setattr(llm_router_module.httpx, "AsyncClient", FakeHTTPClient)
+    monkeypatch.setattr(llm_router_module, "log_ai_usage", fake_usage_log)
+    monkeypatch.setattr(llm_router_module.settings, "OPEN_CODE_API_KEY", "valid-env-key")
+
+    router = LLMRouter()
+    router._credentials["open_code"] = "forbidden-database-key"
+    router._provider_configs["open_code"] = {
+        "base_url": "https://example.test",
+        "model": "deepseek-v4-flash",
+        "timeout_seconds": 5,
+    }
+
+    result = asyncio.run(router._call_open_code("Crea diapositivas", json_mode=True))
+
+    assert result == '{"slides": [{"title": "Factoriza"}]}'
+    assert FakeHTTPClient.authorization_headers == [
+        "Bearer forbidden-database-key",
+        "Bearer valid-env-key",
+    ]
+
 
 def test_image_preprocessing_builds_readable_orientation_variants() -> None:
     source = Image.new("RGB", (320, 180), "white")

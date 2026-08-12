@@ -157,10 +157,16 @@ class LLMRouter:
                 primary = feature.get("primary_provider", "")
                 fallback = feature.get("fallback_provider", "")
 
-                # Primary first
+                # Real providers first. The local template is deliberately
+                # deferred until every configured provider has been tried;
+                # otherwise it short-circuits the cascade with generic data.
                 if primary:
                     for tp in text_providers:
-                        if tp["id"] == primary and tp["active"]:
+                        if (
+                            tp["id"] == primary
+                            and tp["active"]
+                            and tp["id"] != "template"
+                        ):
                             f = self._call_for_provider(tp["id"])
                             if f:
                                 ordered.append((tp["id"], f))
@@ -170,7 +176,12 @@ class LLMRouter:
                 # Then fallback
                 if fallback:
                     for tp in text_providers:
-                        if tp["id"] == fallback and tp["id"] not in seen and tp["active"]:
+                        if (
+                            tp["id"] == fallback
+                            and tp["id"] not in seen
+                            and tp["active"]
+                            and tp["id"] != "template"
+                        ):
                             f = self._call_for_provider(tp["id"])
                             if f:
                                 ordered.append((tp["id"], f))
@@ -282,7 +293,7 @@ class LLMRouter:
                             json=body,
                         )
                         has_credential_fallback = credential_index < len(api_keys) - 1
-                        if resp.status_code == 401 and has_credential_fallback:
+                        if resp.status_code in {401, 403} and has_credential_fallback:
                             logger.warning(
                                 "OpenCode rejected the stored credential; "
                                 "retrying with the environment credential"
