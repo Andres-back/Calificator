@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import re
 from typing import Any
 from uuid import UUID
 
@@ -85,6 +86,9 @@ ESTRUCTURA PEDAGOGICA POR CANTIDAD
 
 ADAPTACION POR AREA
 - Matematicas: concepto, procedimiento paso a paso, ejemplo resuelto, practica, comprobacion.
+- En Matematicas, toda operacion, cantidad exacta, arreglo de objetos, grafica con valores o procedimiento
+  debe ir en una slide EDITABLE como texto o elementos verificables. Nunca delegues cantidades exactas,
+  formulas, grupos de puntos ni arreglos rectangulares a una imagen generativa.
 - Ciencias: concepto, proceso, fenomeno observable, aplicacion, cuidado o seguridad cuando aplique.
 - Lenguaje: definicion, ejemplo, comprension, produccion, actividad.
 - Sociales: contexto, causas, consecuencias, comparacion, reflexion.
@@ -96,6 +100,8 @@ POLITICA EDITABLE VS FULL_IMAGE
 - Usa editable preferentemente para objective, prior_knowledge, activity, comprehension_check, assessment, instrucciones, preguntas y ejercicios.
 - Decide usando role, layout_hint, valor visual, cantidad de texto y necesidad de edicion. La posicion solo es secundaria.
 - Una slide intermedia puede ser full_image. La ultima puede ser editable si es activity, comprehension_check, assessment o ejercicio.
+- Si una slide de Matematicas contiene numeros, operaciones, equivalencias, medidas o conteos exactos,
+  usa layout_hint "editable" e image_text_expected []. La exactitud matematica nunca depende de la imagen IA.
 
 REGLAS DE CONTENIDO
 - Cada title: maximo 7 palabras.
@@ -470,6 +476,60 @@ def _visible_words(lines: list[str]) -> int:
     return sum(len(str(line).split()) for line in lines)
 
 
+_EXACT_MATH_PATTERN = re.compile(
+    r"(?:\d+(?:[.,]\d+)?\s*(?:=|[+\-*/]|x)\s*(?:\d+(?:[.,]\d+)?|\?))"
+    r"|(?:\?\s*(?:=|[+\-*/]|x)\s*\?)",
+    re.IGNORECASE,
+)
+_MATH_CONTEXT_MARKERS = (
+    "matematic",
+    "aritmetic",
+    "algebra",
+    "geometr",
+    "calculo",
+    "factor",
+    "multiplica",
+    "division",
+    "fraccion",
+    "decimal",
+    "ecuacion",
+)
+
+
+def _slide_has_exact_math_content(
+    slide: dict,
+    *,
+    area: str | None = None,
+    topic: str | None = None,
+) -> bool:
+    """Evita usar imagen generativa como fuente de verdad matematica.
+
+    Los modelos de imagen pueden dibujar cinco objetos cuando el texto pide
+    seis. Las operaciones y cantidades exactas se mantienen en layouts
+    editables, donde el contenido visible procede del texto validado.
+    """
+    bullets = slide.get("bullets") if isinstance(slide.get("bullets"), list) else []
+    tags = slide.get("tags") if isinstance(slide.get("tags"), list) else []
+    content = " ".join(
+        str(value or "")
+        for value in [
+            area,
+            topic,
+            slide.get("title"),
+            slide.get("key_message"),
+            slide.get("example"),
+            slide.get("activity"),
+            slide.get("question"),
+            *bullets,
+            *tags,
+        ]
+    ).lower()
+    if not any(marker in content for marker in _MATH_CONTEXT_MARKERS):
+        return False
+    normalized_content = content.replace(chr(0x00D7), "x").replace(chr(0x00F7), "/")
+    return bool(_EXACT_MATH_PATTERN.search(normalized_content))
+
+
 def _default_image_text(slide: dict, *, role: str) -> list[str]:
     title = str(slide.get("title") or "").strip()
     key_message = str(slide.get("key_message") or "").strip()
@@ -506,14 +566,24 @@ def _apply_pedagogical_slide_defaults(slides: list[dict], payload: PresentacionC
         legacy = not any(slide.get(key) for key in ("role", "layout_hint", "visual_concept", "key_message"))
         role = _normalize_role(slide.get("role"), index=index, title=str(slide.get("title") or ""))
         layout_hint = _normalize_layout_hint(slide.get("layout_hint"), role=role, index=index, legacy=legacy)
+        exact_math_content = _slide_has_exact_math_content(
+            slide,
+            area=payload.area,
+            topic=payload.tema,
+        )
         visual_concept = str(slide.get("visual_concept") or "").strip()
         legacy_image = str(slide.get("image") or "").strip()
         if not visual_concept and legacy_image and not legacy_image.startswith("/static/"):
             visual_concept = legacy_image
         if not visual_concept and layout_hint == "full_image":
             visual_concept = f"Escena educativa clara sobre {slide.get('title') or payload.tema}"
+        if exact_math_content:
+            layout_hint = "editable"
+            visual_concept = ""
 
         image_text_expected = _clean_text_list(slide.get("image_text_expected"), max_items=4, max_chars=90)
+        if exact_math_content:
+            image_text_expected = []
         if layout_hint == "full_image" and not image_text_expected:
             image_text_expected = _default_image_text(slide, role=role)
         if layout_hint != "full_image" and role in EDITABLE_ROLES:
@@ -543,7 +613,12 @@ def _apply_pedagogical_slide_defaults(slides: list[dict], payload: PresentacionC
             "image_text_expected": image_text_expected,
             "tags": _default_tags(payload, slide, role),
         }
-        if visual_concept:
+        if exact_math_content:
+            enriched.pop("image_asset", None)
+            enriched.pop("slide_type", None)
+            enriched.pop("layout", None)
+            enriched["image"] = "/static/placeholder_educational.svg"
+        elif visual_concept:
             enriched["image"] = visual_concept
         normalized.append(enriched)
     return _merge_structured_content_into_bullets(_apply_role_sequence(normalized))
@@ -664,6 +739,8 @@ def _has_pedagogical_intent(slide: dict) -> bool:
 
 
 def _should_be_full_image(slide: dict, *, index: int, legacy_full_idx: int | None) -> bool:
+    if _slide_has_exact_math_content(slide):
+        return False
     if not _has_pedagogical_intent(slide):
         return index == legacy_full_idx
     role = _normalize_role(slide.get("role"), index=index, title=str(slide.get("title") or ""))
@@ -709,11 +786,16 @@ async def _attach_slide_images(
         return
     densidad = getattr(payload, "densidad_imagenes", "alta") or "alta"
     estrategia = getattr(payload, "proveedor_imagenes", "mixto") or "mixto"
-    eligible = _eligible_image_indices(len(slides), densidad)
     legacy_full_idx = _full_image_index(slides)
+    eligible = _eligible_image_indices(len(slides), densidad)
     for index, slide in enumerate(slides):
         if _should_be_full_image(slide, index=index, legacy_full_idx=legacy_full_idx):
             eligible.add(index)
+    eligible = {
+        index
+        for index in eligible
+        if not _slide_has_exact_math_content(slides[index])
+    }
     if not eligible:
         return
     eligible_order = {slide_index: order for order, slide_index in enumerate(sorted(eligible))}

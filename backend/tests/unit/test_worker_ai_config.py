@@ -25,8 +25,8 @@ def test_worker_ai_config_disposes_async_engine(monkeypatch) -> None:
             return "config-hash"
 
     class FakeEngine:
-        async def dispose(self) -> None:
-            events.append("engine-dispose")
+        async def dispose(self, close: bool = True) -> None:
+            events.append("engine-close" if close else "engine-detach")
 
     monkeypatch.setattr(tasks_ai_config, "AsyncSessionLocal", SessionContext)
     monkeypatch.setattr(tasks_ai_config, "AIConfigService", FakeService)
@@ -36,5 +36,6 @@ def test_worker_ai_config_disposes_async_engine(monkeypatch) -> None:
     second = asyncio.run(tasks_ai_config._get_config_hash_and_dispose())
 
     assert first == second == "config-hash"
-    assert events.count("engine-dispose") == 2
-    assert events[-1] == "engine-dispose"
+    assert events.count("engine-detach") == 2
+    assert events.count("engine-close") == 2
+    assert events[-1] == "engine-close"

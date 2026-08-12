@@ -8,7 +8,11 @@ from uuid import uuid4
 import pytest
 
 from app.modules.calificaciones import service
-from app.modules.calificaciones.schemas import AjustarNota, ConfirmarNota
+from app.modules.calificaciones.schemas import (
+    AjustarNota,
+    ConfirmarNota,
+    RevisionManualCreate,
+)
 from app.shared.enums import CalificacionEstado, EntregaEstado
 
 
@@ -88,5 +92,34 @@ def test_teacher_decision_marks_the_persisted_delivery_as_reviewed(
         "confirmada",
         "ajustada",
     }
+    assert db.commits == 1
+    assert db.refreshes == 1
+
+
+def test_marking_manual_review_preserves_suggestion_and_opens_teacher_work() -> None:
+    grade = _grade()
+    db = FakeDB()
+    actor = SimpleNamespace(id=uuid4(), nombre="Profesor Demo")
+
+    result = asyncio.run(
+        service.marcar_revision_manual(
+            db,
+            grade,
+            RevisionManualCreate(motivo="Verificar personalmente el procedimiento."),
+            actor,
+        )
+    )
+
+    assert result is grade
+    assert grade.estado == CalificacionEstado.REQUIERE_REVISION.value
+    assert grade.nota_sugerida == Decimal("4.0")
+    assert grade.nota_confirmada is None
+    assert grade.revisado_por_docente is False
+    assert grade.entrega.estado == EntregaEstado.CALIFICADA.value
+    assert (
+        grade.resultado_json["revision_manual"]["motivo"]
+        == "Verificar personalmente el procedimiento."
+    )
+    assert grade.resultado_json["_timeline"][-1]["tipo"] == "revision_manual"
     assert db.commits == 1
     assert db.refreshes == 1

@@ -1,5 +1,9 @@
 from app.modules.imagenes import service as imagenes_service
+from io import BytesIO
+
 from app.modules.presentaciones import service
+from app.modules.presentaciones.editable_pptx_service import build_editable_pptx
+from app.modules.presentaciones.local_export import _render_slide, _role_theme
 from app.modules.presentaciones.image_prompts import build_presentation_image_prompt
 from app.modules.presentaciones.presentation_schema import normalize_to_canonical
 from app.modules.presentaciones.schemas import PresentacionCreate
@@ -36,6 +40,7 @@ def test_slides_prompt_solicita_esquema_pedagogico_enriquecido() -> None:
         assert field in prompt
     for role in ["cover", "objective", "prior_knowledge", "concept", "activity", "assessment", "closing"]:
         assert role in prompt
+    assert "exactitud matematica nunca depende de la imagen IA" in prompt
 
 
 def test_roles_validos_se_conservan_y_roles_invalidos_tienen_fallback() -> None:
@@ -79,6 +84,151 @@ def test_slide_intermedia_puede_ser_full_image_y_ultima_editable() -> None:
     assert service._image_kind_for_slide(slides[2], index=2, legacy_full_idx=legacy_full_idx) == "full_image"
     assert service._should_be_full_image(slides[3], index=3, legacy_full_idx=legacy_full_idx) is False
     assert slides[3]["layout_hint"] == "editable"
+
+
+def test_exact_math_content_never_depends_on_generated_image() -> None:
+    payload = PresentacionCreate(
+        titulo="Pares de factores",
+        tema="Factores y productos",
+        area="Matematicas",
+        grado="4",
+        cantidad_slides=3,
+        incluir_imagenes=True,
+        densidad_imagenes="alta",
+    )
+    slides = service._apply_pedagogical_slide_defaults(
+        [
+            {
+                "role": "concept",
+                "title": "Dos formas de multiplicar",
+                "key_message": "12 = 2 x 6",
+                "bullets": ["12 = 2 x 6", "18 = 3 x 6"],
+                "visual_concept": "Arreglos de circulos con cantidades exactas",
+                "layout_hint": "full_image",
+                "image_text_expected": ["12 = 2 x 6", "18 = 3 x 6"],
+                "image_asset": "/app_data/images/incorrecta.png",
+                "slide_type": "full_image",
+                "layout": "full_image",
+            }
+        ],
+        payload,
+    )
+
+    slide = slides[0]
+    assert service._slide_has_exact_math_content(slide)
+    assert slide["layout_hint"] == "editable"
+    assert slide["image_text_expected"] == []
+    assert slide["image"] == "/static/placeholder_educational.svg"
+    assert "image_asset" not in slide
+    assert "slide_type" not in slide
+    assert "layout" not in slide
+    assert service._should_be_full_image(slide, index=0, legacy_full_idx=0) is False
+
+
+def test_text_only_slides_use_colorful_role_aware_layouts() -> None:
+    from PIL import Image
+    from pptx import Presentation
+
+    canonical = {
+        "slides": [
+            {
+                "tipo": "portada",
+                "role": "cover",
+                "layout": "cover",
+                "titulo": "Factores",
+                "bullets": [],
+                "imagen": {},
+            },
+            {
+                "tipo": "objetivo",
+                "role": "objective",
+                "layout": "text",
+                "titulo": "Nuestra meta de hoy",
+                "bullets": [
+                    {"texto": "Reconocer factores y productos."},
+                    {"texto": "Encontrar pares de factores."},
+                ],
+                "imagen": {},
+            },
+        ]
+    }
+
+    deck = Presentation(BytesIO(build_editable_pptx(canonical)))
+    slide = deck.slides[1]
+    fills = set()
+    for shape in slide.shapes:
+        try:
+            rgb = shape.fill.fore_color.rgb
+        except TypeError:
+            continue
+        if rgb is not None:
+            fills.add(str(rgb))
+
+    assert "2563EB" in fills
+    assert "FFFFFF" in fills
+    assert len(fills) >= 2
+
+    rendered = Image.open(
+        BytesIO(
+            _render_slide(
+                "Factores",
+                {
+                    "title": "Nuestra meta de hoy",
+                    "role": "objective",
+                    "bullets": [
+                        "Reconocer factores y productos.",
+                        "Encontrar pares de factores.",
+                    ],
+                },
+                1,
+                8,
+            )
+        )
+    ).convert("RGB")
+    assert rendered.getpixel((40, 400)) == (37, 99, 235)
+    assert rendered.getpixel((1550, 400)) == (239, 246, 255)
+
+    dark_deck_theme = ("#0b1220", "#f1f5f9", "#cbd5e1", "#94a3b8", "#a5b4fc", "#18233b")
+    safe_example_theme = _role_theme("example", dark_deck_theme)
+    assert safe_example_theme[0] == "#eef2ff"
+    assert safe_example_theme[1] == "#1e1b4b"
+
+
+def test_editable_pptx_preserves_six_dots_per_math_array_row() -> None:
+    from pptx import Presentation
+
+    dot = chr(0x25CF)
+    times = chr(0x00D7)
+    row = " ".join([dot] * 6)
+    canonical = {
+        "slides": [
+            {
+                "tipo": "concepto",
+                "layout": "math-arrays",
+                "titulo": "Arreglos exactos",
+                "bullets": [
+                    {"texto": f"12 = 2 {times} 6"},
+                    {"texto": f"{row}\n{row}"},
+                    {"texto": f"18 = 3 {times} 6"},
+                    {"texto": f"{row}\n{row}\n{row}"},
+                ],
+                "imagen": {},
+            }
+        ]
+    }
+
+    deck = Presentation(BytesIO(build_editable_pptx(canonical)))
+    texts = [
+        paragraph.text
+        for shape in deck.slides[0].shapes
+        if hasattr(shape, "text_frame")
+        for paragraph in shape.text_frame.paragraphs
+        if paragraph.text
+    ]
+    rows = [text for text in texts if dot in text]
+
+    assert len(rows) == 5
+    assert all(row_text.count(dot) == 6 for row_text in rows)
 
 
 def test_activity_y_assessment_son_editables_por_defecto() -> None:

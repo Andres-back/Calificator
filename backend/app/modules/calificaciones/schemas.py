@@ -11,6 +11,7 @@ from app.shared.enums import EntregaTipo
 
 # ── Entregas ────────────────────────────────────────────────────────────────────
 
+
 class EntregaCreate(BaseModel):
     evaluacion_id: UUID
     tipo: EntregaTipo
@@ -20,6 +21,7 @@ class EntregaCreate(BaseModel):
 
 class EntregaOnlineCreate(BaseModel):
     respuesta_texto: str = Field(..., min_length=1)
+
 
 class ReemplazoEvidenciaCreate(BaseModel):
     motivo: str = Field(..., min_length=10, max_length=1000)
@@ -44,6 +46,7 @@ class EntregaRead(BaseModel):
 
 
 # ── Calificaciones ──────────────────────────────────────────────────────────────
+
 
 class GradingResult(BaseModel):
     nota_sugerida: Decimal | None
@@ -84,14 +87,25 @@ class AjustarNota(BaseModel):
     feedback: str | None = None
 
 
+class RevisionManualCreate(BaseModel):
+    motivo: str = Field(
+        default="El docente desea comprobar personalmente la sugerencia de IA.",
+        min_length=3,
+        max_length=500,
+    )
+
+
 class CalificacionManualCreate(BaseModel):
     estudiante_id: UUID
     nota_confirmada: Decimal = Field(ge=0)
-    motivo: str = Field(default="Valoración directa del docente", min_length=3, max_length=160)
+    motivo: str = Field(
+        default="Valoración directa del docente", min_length=3, max_length=160
+    )
     feedback: str | None = Field(default=None, max_length=2000)
 
 
 # ── Lote ───────────────────────────────────────────────────────────────────────
+
 
 class LoteFotoEntry(BaseModel):
     estudiante_id: UUID
@@ -111,6 +125,7 @@ class LoteFotoRead(BaseModel):
 
 
 # ── Modo Salón ──────────────────────────────────────────────────────────────────
+
 
 class LoteAsincronoRead(BaseModel):
     job_id: UUID
@@ -187,6 +202,7 @@ class ResumenAcademico(BaseModel):
 
 # ── Timeline / Auditoría ─────────────────────────────────────────────────────────
 
+
 class CalificacionTimelineEvent(BaseModel):
     tipo: str  # 'confirmada' | 'ajustada' | 'rechazada' | 'sugerida' | 'anulada'
     nota_anterior: Decimal | None = None
@@ -208,6 +224,7 @@ class GuiaRevisionItem(BaseModel):
 
 
 # ── Detalle de calificación ──────────────────────────────────────────────────────
+
 
 class CalificacionDetalleRead(BaseModel):
     id: UUID
@@ -241,6 +258,7 @@ class CalificacionDetalleRead(BaseModel):
 
 
 # ── Batch ────────────────────────────────────────────────────────────────────────
+
 
 class BatchConfirmItem(BaseModel):
     calificacion_id: UUID
@@ -276,8 +294,12 @@ class BatchResult(BaseModel):
 
 # ── Incidencias ──────────────────────────────────────────────────────────────────
 
+
 class IncidenciaCreate(BaseModel):
-    tipo: str = Field(..., pattern=r'^(imagen_no_usable|vision_failed|grader_error|discrepancia_alta|confianza_baja|docente_rechazo|solicitud_revision)$')
+    tipo: str = Field(
+        ...,
+        pattern=r"^(imagen_no_usable|vision_failed|grader_error|discrepancia_alta|confianza_baja|docente_rechazo|solicitud_revision)$",
+    )
     descripcion: str = Field(..., min_length=1, max_length=2000)
     metadata_json: dict = {}
 
@@ -303,7 +325,9 @@ class ResolverIncidencia(BaseModel):
 
 
 class SolicitudRevisionCreate(BaseModel):
-    motivo: str = Field(..., pattern=r'^(nota|respuesta|evidencia|retroalimentacion|otro)$')
+    motivo: str = Field(
+        ..., pattern=r"^(nota|respuesta|evidencia|retroalimentacion|otro)$"
+    )
     descripcion: str = Field(..., min_length=10, max_length=2000)
 
 

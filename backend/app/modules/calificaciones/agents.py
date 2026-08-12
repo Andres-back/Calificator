@@ -909,6 +909,32 @@ Devuelve SOLO JSON válido:
 """
 
 
+def _select_consensus_feedback(
+    grading_a: AgentResult,
+    grading_b: AgentResult,
+) -> str:
+    """Return one clear feedback message instead of concatenating both graders."""
+    candidates: list[tuple[str, float, int]] = []
+    seen: set[str] = set()
+    for index, grading in enumerate((grading_a, grading_b)):
+        feedback = " ".join((grading.feedback_estudiante or "").split()).strip()
+        normalized = feedback.casefold()
+        if not feedback or normalized in seen:
+            continue
+        seen.add(normalized)
+        candidates.append((feedback, float(grading.confianza or 0), index))
+
+    if not candidates:
+        return ""
+
+    # Prefer the most reliable evaluator. On equal confidence, keep the more
+    # complete message, while preserving evaluator A as the final tie-breaker.
+    return max(
+        candidates,
+        key=lambda item: (item[1], min(len(item[0]), 1600), -item[2]),
+    )[0]
+
+
 async def comparator_agent(
     grading_a: AgentResult,
     grading_b: AgentResult,
@@ -950,8 +976,7 @@ async def comparator_agent(
     if not grading_a.error and not grading_b.error and diff < umbral:
         nota_final = round((score_a + score_b) / 2, 2)
         confianza = round((grading_a.confianza + grading_b.confianza) / 2, 2)
-        feedbacks = [g for g in [grading_a.feedback_estudiante, grading_b.feedback_estudiante] if g]
-        feedback = " | ".join(feedbacks) if feedbacks else ""
+        feedback = _select_consensus_feedback(grading_a, grading_b)
         logger.info("Comparator: consenso automatico diff=%.2f nota=%.2f", diff, nota_final)
         return AgentResult(
             nota_sugerida=nota_final, confianza=confianza, feedback_estudiante=feedback,

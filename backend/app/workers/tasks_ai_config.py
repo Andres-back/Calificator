@@ -1,4 +1,5 @@
 """Celery task that verifies the effective AI configuration in a worker."""
+
 from __future__ import annotations
 
 import asyncio
@@ -12,6 +13,7 @@ logger = get_logger(__name__)
 
 
 async def _get_config_hash_and_dispose() -> str:
+    await engine.dispose(close=False)
     try:
         async with AsyncSessionLocal() as db:
             service = AIConfigService(db=db)

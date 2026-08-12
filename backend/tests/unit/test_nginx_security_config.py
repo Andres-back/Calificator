@@ -9,6 +9,8 @@ def test_production_nginx_enforces_csp_and_blocks_upload_directory() -> None:
 
     assert "Content-Security-Policy" in config
     assert "script-src 'self'" in config
+    assert "https://static.cloudflareinsights.com" in config
+    assert "https://cloudflareinsights.com" in config
     assert "object-src 'none'" in config
     assert "frame-ancestors 'self'" in config
     assert "'unsafe-eval'" not in config

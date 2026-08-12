@@ -1,4 +1,5 @@
 """Servicio principal de calificaciones."""
+
 from __future__ import annotations
 
 from datetime import datetime, timezone
@@ -10,12 +11,21 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.modules.calificaciones.models import Calificacion, Entrega, SalonSesion, SalonSesionEstudiante
+from app.modules.calificaciones.models import (
+    Calificacion,
+    Entrega,
+    SalonSesion,
+    SalonSesionEstudiante,
+)
 from app.modules.calificaciones.schemas import (
-    AjustarNota, BatchAjustarItem, BatchConfirmItem,
-    BatchResult, BatchResultItem,
+    AjustarNota,
+    BatchAjustarItem,
+    BatchConfirmItem,
+    BatchResult,
+    BatchResultItem,
     CalificacionManualCreate,
     ConfirmarNota,
+    RevisionManualCreate,
 )
 from app.modules.evaluaciones.models import Evaluacion
 from app.modules.evaluaciones.blueprint_service import evaluation_to_grading_blueprint
@@ -33,7 +43,9 @@ from app.shared.enums import (
 )
 
 
-def validate_score_within_evaluation(score: Decimal, evaluacion: Evaluacion, field_name: str) -> None:
+def validate_score_within_evaluation(
+    score: Decimal, evaluacion: Evaluacion, field_name: str
+) -> None:
     if score < 0:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -74,7 +86,8 @@ async def ensure_student_can_submit_new_evidence(
 ) -> None:
     """Aplica la misma politica de intentos a evidencia online y fisica."""
     policy = (
-        getattr(evaluacion, "politica_intento", None) or PoliticaIntento.UN_INTENTO.value
+        getattr(evaluacion, "politica_intento", None)
+        or PoliticaIntento.UN_INTENTO.value
     )
     if policy == PoliticaIntento.PRACTICA_LIBRE.value:
         return
@@ -110,7 +123,9 @@ def transition_to_grading_if_needed(evaluacion: Evaluacion) -> None:
         transition_evaluation_state(evaluacion, EvaluacionEstado.EN_CALIFICACION)
 
 
-async def get_evaluation_for_calificacion(db: AsyncSession, cal: Calificacion) -> Evaluacion:
+async def get_evaluation_for_calificacion(
+    db: AsyncSession, cal: Calificacion
+) -> Evaluacion:
     evaluacion = await db.scalar(
         select(Evaluacion)
         .options(selectinload(Evaluacion.blueprint))
@@ -121,7 +136,9 @@ async def get_evaluation_for_calificacion(db: AsyncSession, cal: Calificacion) -
     return evaluacion
 
 
-async def get_calificacion_or_404(db: AsyncSession, calificacion_id: UUID) -> Calificacion:
+async def get_calificacion_or_404(
+    db: AsyncSession, calificacion_id: UUID
+) -> Calificacion:
     cal = await db.scalar(
         select(Calificacion)
         .options(selectinload(Calificacion.entrega))
@@ -138,15 +155,19 @@ async def confirmar_nota(
     payload: ConfirmarNota,
 ) -> Calificacion:
     evaluacion = await get_evaluation_for_calificacion(db, cal)
-    validate_score_within_evaluation(payload.nota_confirmada, evaluacion, "nota_confirmada")
+    validate_score_within_evaluation(
+        payload.nota_confirmada, evaluacion, "nota_confirmada"
+    )
     cal.nota_confirmada = payload.nota_confirmada
     cal.revisado_por_docente = True
     cal.estado = CalificacionEstado.CONFIRMADA.value
     if cal.entrega:
         cal.entrega.estado = EntregaEstado.REVISADA.value
     _append_timeline_event(
-        cal, tipo="confirmada",
-        nota_anterior=cal.nota_sugerida, nota_nueva=payload.nota_confirmada,
+        cal,
+        tipo="confirmada",
+        nota_anterior=cal.nota_sugerida,
+        nota_nueva=payload.nota_confirmada,
         detalle="Confirmada por docente",
     )
     await _update_salon_estudiante_estado(db, cal, "confirmado")
@@ -161,7 +182,9 @@ async def ajustar_nota(
     payload: AjustarNota,
 ) -> Calificacion:
     evaluacion = await get_evaluation_for_calificacion(db, cal)
-    validate_score_within_evaluation(payload.nota_confirmada, evaluacion, "nota_confirmada")
+    validate_score_within_evaluation(
+        payload.nota_confirmada, evaluacion, "nota_confirmada"
+    )
     nota_anterior = cal.nota_confirmada or cal.nota_sugerida
     cal.nota_confirmada = payload.nota_confirmada
     if payload.feedback:
@@ -171,11 +194,53 @@ async def ajustar_nota(
     if cal.entrega:
         cal.entrega.estado = EntregaEstado.REVISADA.value
     _append_timeline_event(
-        cal, tipo="ajustada",
-        nota_anterior=nota_anterior, nota_nueva=payload.nota_confirmada,
-        feedback=payload.feedback, detalle="Ajustada por docente",
+        cal,
+        tipo="ajustada",
+        nota_anterior=nota_anterior,
+        nota_nueva=payload.nota_confirmada,
+        feedback=payload.feedback,
+        detalle="Ajustada por docente",
     )
     await _update_salon_estudiante_estado(db, cal, "confirmado")
+    await db.commit()
+    await db.refresh(cal)
+    return cal
+
+
+async def marcar_revision_manual(
+    db: AsyncSession,
+    cal: Calificacion,
+    payload: RevisionManualCreate,
+    actor: User,
+) -> Calificacion:
+    if cal.estado == CalificacionEstado.REQUIERE_REVISION.value:
+        return cal
+    if cal.estado != CalificacionEstado.SUGERIDA.value:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Solo una nota sugerida y no publicada puede enviarse a revision manual.",
+        )
+
+    motivo = payload.motivo.strip()
+    cal.estado = CalificacionEstado.REQUIERE_REVISION.value
+    cal.revisado_por_docente = False
+    cal.nota_confirmada = None
+    result = dict(cal.resultado_json or {})
+    result["revision_manual"] = {
+        "motivo": motivo,
+        "actor_id": str(actor.id),
+        "actor_nombre": actor.nombre,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+    }
+    cal.resultado_json = result
+    _append_timeline_event(
+        cal,
+        tipo="revision_manual",
+        nota_anterior=cal.nota_sugerida,
+        actor_id=actor.id,
+        actor_nombre=actor.nombre,
+        detalle=motivo,
+    )
     await db.commit()
     await db.refresh(cal)
     return cal
@@ -209,7 +274,9 @@ async def set_manual_grade(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="El estudiante no está matriculado activamente en esta materia.",
         )
-    validate_score_within_evaluation(payload.nota_confirmada, evaluacion, "nota_confirmada")
+    validate_score_within_evaluation(
+        payload.nota_confirmada, evaluacion, "nota_confirmada"
+    )
 
     cal = await db.scalar(
         select(Calificacion)
@@ -237,11 +304,13 @@ async def set_manual_grade(
     reason = payload.motivo.strip()
     feedback = (payload.feedback or "").strip() or reason
     result = dict(cal.resultado_json or {})
-    result.update({
-        "origen_nota": "manual_docente",
-        "motivo_nota_manual": reason,
-        "sin_documento": cal.entrega_id is None,
-    })
+    result.update(
+        {
+            "origen_nota": "manual_docente",
+            "motivo_nota_manual": reason,
+            "sin_documento": cal.entrega_id is None,
+        }
+    )
     cal.resultado_json = result
     cal.nota_confirmada = payload.nota_confirmada
     cal.feedback = feedback
@@ -284,18 +353,26 @@ async def assign_overdue_zero_grades(
         select(Evaluacion.id).where(Evaluacion.id == evaluacion.id).with_for_update()
     )
 
-    enrolled_ids = set(await db.scalars(
-        select(Matricula.estudiante_id).where(
-            Matricula.materia_id == evaluacion.materia_id,
-            Matricula.estado == MatriculaEstado.ACTIVO.value,
+    enrolled_ids = set(
+        await db.scalars(
+            select(Matricula.estudiante_id).where(
+                Matricula.materia_id == evaluacion.materia_id,
+                Matricula.estado == MatriculaEstado.ACTIVO.value,
+            )
         )
-    ))
-    delivered_ids = set(await db.scalars(
-        select(Entrega.estudiante_id).where(Entrega.evaluacion_id == evaluacion.id)
-    ))
-    graded_ids = set(await db.scalars(
-        select(Calificacion.estudiante_id).where(Calificacion.evaluacion_id == evaluacion.id)
-    ))
+    )
+    delivered_ids = set(
+        await db.scalars(
+            select(Entrega.estudiante_id).where(Entrega.evaluacion_id == evaluacion.id)
+        )
+    )
+    graded_ids = set(
+        await db.scalars(
+            select(Calificacion.estudiante_id).where(
+                Calificacion.evaluacion_id == evaluacion.id
+            )
+        )
+    )
     missing_ids = enrolled_ids - delivered_ids - graded_ids
     if not missing_ids:
         await db.commit()
@@ -351,7 +428,9 @@ async def list_calificaciones_for_evaluacion(
 
 
 async def _update_salon_estudiante_estado(
-    db: AsyncSession, cal: Calificacion, estado: str,
+    db: AsyncSession,
+    cal: Calificacion,
+    estado: str,
 ) -> None:
     """Si hay una sesión activa de Modo Salón, actualiza el estado del estudiante."""
     sesion = await db.scalar(
@@ -467,7 +546,12 @@ def _build_revision_guide(blueprint: dict) -> list[dict]:
                 answer = next(
                     (
                         fallback[key]
-                        for key in ("respuesta", "respuesta_correcta", "texto", "answer")
+                        for key in (
+                            "respuesta",
+                            "respuesta_correcta",
+                            "texto",
+                            "answer",
+                        )
                         if fallback.get(key) is not None
                     ),
                     None,
@@ -519,7 +603,9 @@ def _official_report_rows(
             # reciente; un_intento naturalmente solo contiene uno.
             official = max(
                 attempts,
-                key=lambda item: item[0].created_at.timestamp() if item[0].created_at else 0,
+                key=lambda item: item[0].created_at.timestamp()
+                if item[0].created_at
+                else 0,
             )
         selected.append(official)
     return selected
@@ -647,7 +733,9 @@ async def get_resumen_academico(
     ]
     materias.sort(key=lambda materia: materia["promedio"], reverse=True)
     total_notas = sum(materia["total_notas"] for materia in materias)
-    total_sum = sum(materia["promedio"] * materia["total_notas"] for materia in materias)
+    total_sum = sum(
+        materia["promedio"] * materia["total_notas"] for materia in materias
+    )
 
     return {
         "mejor": materias[0] if materias else None,
@@ -663,7 +751,9 @@ async def get_resumen_academico(
 
 def _ensure_timeline(cal: Calificacion) -> list[dict]:
     """Get or initialize the _timeline array inside resultado_json."""
-    if "_timeline" not in cal.resultado_json or not isinstance(cal.resultado_json["_timeline"], list):
+    if "_timeline" not in cal.resultado_json or not isinstance(
+        cal.resultado_json["_timeline"], list
+    ):
         cal.resultado_json["_timeline"] = []
     return cal.resultado_json["_timeline"]
 
@@ -678,17 +768,24 @@ def _append_timeline_event(
     actor_nombre: str | None = None,
     detalle: str | None = None,
 ) -> None:
-    timeline = _ensure_timeline(cal)
-    timeline.append({
-        "tipo": tipo,
-        "nota_anterior": float(nota_anterior) if nota_anterior is not None else None,
-        "nota_nueva": float(nota_nueva) if nota_nueva is not None else None,
-        "feedback": feedback,
-        "actor_id": str(actor_id) if actor_id else None,
-        "actor_nombre": actor_nombre,
-        "timestamp": datetime.now(timezone.utc).isoformat(),
-        "detalle": detalle,
-    })
+    result = dict(cal.resultado_json or {})
+    timeline = list(result.get("_timeline") or [])
+    timeline.append(
+        {
+            "tipo": tipo,
+            "nota_anterior": float(nota_anterior)
+            if nota_anterior is not None
+            else None,
+            "nota_nueva": float(nota_nueva) if nota_nueva is not None else None,
+            "feedback": feedback,
+            "actor_id": str(actor_id) if actor_id else None,
+            "actor_nombre": actor_nombre,
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "detalle": detalle,
+        }
+    )
+    result["_timeline"] = timeline
+    cal.resultado_json = result
 
 
 # ── Detalle de calificación ───────────────────────────────────────────────────────
@@ -712,12 +809,8 @@ async def get_calificacion_detalle(
         .options(selectinload(Evaluacion.blueprint))
         .where(Evaluacion.id == cal.evaluacion_id)
     )
-    materia = await db.scalar(
-        select(Materia).where(Materia.id == cal.materia_id)
-    )
-    estudiante = await db.scalar(
-        select(User).where(User.id == cal.estudiante_id)
-    )
+    materia = await db.scalar(select(Materia).where(Materia.id == cal.materia_id))
+    estudiante = await db.scalar(select(User).where(User.id == cal.estudiante_id))
 
     timeline_raw = cal.resultado_json.get("_timeline", []) if cal.resultado_json else []
 
@@ -747,15 +840,15 @@ async def get_calificacion_detalle(
         "entrega_evidencia_paginas": (
             cal.entrega.evidencia_paginas if cal.entrega else 0
         ),
-        "entrega_evidencia_tipo": (
-            cal.entrega.evidencia_tipo if cal.entrega else None
-        ),
+        "entrega_evidencia_tipo": (cal.entrega.evidencia_tipo if cal.entrega else None),
         "entrega_respuesta_texto": cal.entrega.respuesta_texto if cal.entrega else None,
         "entrega_created_at": cal.entrega.created_at if cal.entrega else None,
         "timeline": timeline_raw,
         "guia_revision": _build_revision_guide(
             evaluation_to_grading_blueprint(evaluacion)
-        ) if evaluacion else [],
+        )
+        if evaluacion
+        else [],
         "created_at": cal.created_at,
         "updated_at": cal.updated_at,
     }
@@ -774,29 +867,56 @@ async def confirmar_nota_batch(
         try:
             cal = await get_calificacion_or_404(db, item.calificacion_id)
             evaluacion = await get_evaluation_for_calificacion(db, cal)
-            if profesor.rol != UserRole.ADMIN.value and evaluacion.profesor_id != profesor.id:
-                raise HTTPException(status_code=403, detail="No puedes modificar esta calificacion")
-            validate_score_within_evaluation(item.nota_confirmada, evaluacion, "nota_confirmada")
+            if (
+                profesor.rol != UserRole.ADMIN.value
+                and evaluacion.profesor_id != profesor.id
+            ):
+                raise HTTPException(
+                    status_code=403, detail="No puedes modificar esta calificacion"
+                )
+            validate_score_within_evaluation(
+                item.nota_confirmada, evaluacion, "nota_confirmada"
+            )
             cal.nota_confirmada = item.nota_confirmada
             cal.revisado_por_docente = True
             cal.estado = CalificacionEstado.CONFIRMADA.value
             if cal.entrega:
                 cal.entrega.estado = EntregaEstado.REVISADA.value
             _append_timeline_event(
-                cal, tipo="confirmada",
-                nota_anterior=cal.nota_sugerida, nota_nueva=item.nota_confirmada,
-                actor_id=profesor.id, actor_nombre=profesor.nombre,
+                cal,
+                tipo="confirmada",
+                nota_anterior=cal.nota_sugerida,
+                nota_nueva=item.nota_confirmada,
+                actor_id=profesor.id,
+                actor_nombre=profesor.nombre,
                 detalle="Confirmada en lote",
             )
             await _update_salon_estudiante_estado(db, cal, "confirmado")
-            results.append(BatchResultItem(calificacion_id=item.calificacion_id, success=True))
+            results.append(
+                BatchResultItem(calificacion_id=item.calificacion_id, success=True)
+            )
         except HTTPException as exc:
-            results.append(BatchResultItem(calificacion_id=item.calificacion_id, success=False, error=exc.detail))
+            results.append(
+                BatchResultItem(
+                    calificacion_id=item.calificacion_id,
+                    success=False,
+                    error=exc.detail,
+                )
+            )
         except Exception as exc:
-            results.append(BatchResultItem(calificacion_id=item.calificacion_id, success=False, error=str(exc)))
+            results.append(
+                BatchResultItem(
+                    calificacion_id=item.calificacion_id, success=False, error=str(exc)
+                )
+            )
     await db.commit()
     exitosos = sum(1 for r in results if r.success)
-    return BatchResult(results=results, total=len(results), exitosos=exitosos, fallidos=len(results) - exitosos)
+    return BatchResult(
+        results=results,
+        total=len(results),
+        exitosos=exitosos,
+        fallidos=len(results) - exitosos,
+    )
 
 
 # ── Incidencias ───────────────────────────────────────────────────────────────────
@@ -812,9 +932,16 @@ async def ajustar_nota_batch(
         try:
             cal = await get_calificacion_or_404(db, item.calificacion_id)
             evaluacion = await get_evaluation_for_calificacion(db, cal)
-            if profesor.rol != UserRole.ADMIN.value and evaluacion.profesor_id != profesor.id:
-                raise HTTPException(status_code=403, detail="No puedes modificar esta calificacion")
-            validate_score_within_evaluation(item.nota_confirmada, evaluacion, "nota_confirmada")
+            if (
+                profesor.rol != UserRole.ADMIN.value
+                and evaluacion.profesor_id != profesor.id
+            ):
+                raise HTTPException(
+                    status_code=403, detail="No puedes modificar esta calificacion"
+                )
+            validate_score_within_evaluation(
+                item.nota_confirmada, evaluacion, "nota_confirmada"
+            )
             nota_anterior = cal.nota_confirmada or cal.nota_sugerida
             cal.nota_confirmada = item.nota_confirmada
             if item.feedback:
@@ -824,20 +951,41 @@ async def ajustar_nota_batch(
             if cal.entrega:
                 cal.entrega.estado = EntregaEstado.REVISADA.value
             _append_timeline_event(
-                cal, tipo="ajustada",
-                nota_anterior=nota_anterior, nota_nueva=item.nota_confirmada,
-                feedback=item.feedback, actor_id=profesor.id, actor_nombre=profesor.nombre,
+                cal,
+                tipo="ajustada",
+                nota_anterior=nota_anterior,
+                nota_nueva=item.nota_confirmada,
+                feedback=item.feedback,
+                actor_id=profesor.id,
+                actor_nombre=profesor.nombre,
                 detalle="Ajustada en lote",
             )
             await _update_salon_estudiante_estado(db, cal, "confirmado")
-            results.append(BatchResultItem(calificacion_id=item.calificacion_id, success=True))
+            results.append(
+                BatchResultItem(calificacion_id=item.calificacion_id, success=True)
+            )
         except HTTPException as exc:
-            results.append(BatchResultItem(calificacion_id=item.calificacion_id, success=False, error=exc.detail))
+            results.append(
+                BatchResultItem(
+                    calificacion_id=item.calificacion_id,
+                    success=False,
+                    error=exc.detail,
+                )
+            )
         except Exception as exc:
-            results.append(BatchResultItem(calificacion_id=item.calificacion_id, success=False, error=str(exc)))
+            results.append(
+                BatchResultItem(
+                    calificacion_id=item.calificacion_id, success=False, error=str(exc)
+                )
+            )
     await db.commit()
     exitosos = sum(1 for r in results if r.success)
-    return BatchResult(results=results, total=len(results), exitosos=exitosos, fallidos=len(results) - exitosos)
+    return BatchResult(
+        results=results,
+        total=len(results),
+        exitosos=exitosos,
+        fallidos=len(results) - exitosos,
+    )
 
 
 # ── Incidencias ───────────────────────────────────────────────────────────────────
@@ -893,7 +1041,10 @@ async def publicar_nota(
     cal: Calificacion,
 ) -> Calificacion:
     """Cambia estado a publicada. La calificación debe estar confirmada o ajustada."""
-    if cal.estado not in (CalificacionEstado.CONFIRMADA.value, CalificacionEstado.AJUSTADA.value):
+    if cal.estado not in (
+        CalificacionEstado.CONFIRMADA.value,
+        CalificacionEstado.AJUSTADA.value,
+    ):
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail=f"Solo calificaciones confirmadas o ajustadas pueden publicarse. Estado actual: {cal.estado}",
@@ -902,8 +1053,10 @@ async def publicar_nota(
     await _prepare_grade_publication(db, cal, evaluacion)
     cal.estado = CalificacionEstado.PUBLICADA.value
     _append_timeline_event(
-        cal, tipo="publicada",
-        nota_anterior=cal.nota_confirmada, nota_nueva=cal.nota_confirmada,
+        cal,
+        tipo="publicada",
+        nota_anterior=cal.nota_confirmada,
+        nota_nueva=cal.nota_confirmada,
         detalle="Resultados publicados al estudiante",
     )
     await db.commit()
@@ -921,29 +1074,51 @@ async def publicar_nota_batch(
         try:
             cal = await get_calificacion_or_404(db, cal_id)
             evaluacion = await get_evaluation_for_calificacion(db, cal)
-            if profesor.rol != UserRole.ADMIN.value and evaluacion.profesor_id != profesor.id:
-                raise HTTPException(status_code=403, detail="No puedes publicar esta calificacion")
-            if cal.estado not in (CalificacionEstado.CONFIRMADA.value, CalificacionEstado.AJUSTADA.value):
-                results.append(BatchResultItem(
-                    calificacion_id=cal_id, success=False,
-                    error=f"Estado {cal.estado} no permite publicación",
-                ))
+            if (
+                profesor.rol != UserRole.ADMIN.value
+                and evaluacion.profesor_id != profesor.id
+            ):
+                raise HTTPException(
+                    status_code=403, detail="No puedes publicar esta calificacion"
+                )
+            if cal.estado not in (
+                CalificacionEstado.CONFIRMADA.value,
+                CalificacionEstado.AJUSTADA.value,
+            ):
+                results.append(
+                    BatchResultItem(
+                        calificacion_id=cal_id,
+                        success=False,
+                        error=f"Estado {cal.estado} no permite publicación",
+                    )
+                )
                 continue
             await _prepare_grade_publication(db, cal, evaluacion)
             cal.estado = CalificacionEstado.PUBLICADA.value
             _append_timeline_event(
-                cal, tipo="publicada",
-                nota_anterior=cal.nota_confirmada, nota_nueva=cal.nota_confirmada,
+                cal,
+                tipo="publicada",
+                nota_anterior=cal.nota_confirmada,
+                nota_nueva=cal.nota_confirmada,
                 detalle="Resultados publicados en lote",
             )
             results.append(BatchResultItem(calificacion_id=cal_id, success=True))
         except HTTPException as exc:
-            results.append(BatchResultItem(calificacion_id=cal_id, success=False, error=exc.detail))
+            results.append(
+                BatchResultItem(calificacion_id=cal_id, success=False, error=exc.detail)
+            )
         except Exception as exc:
-            results.append(BatchResultItem(calificacion_id=cal_id, success=False, error=str(exc)))
+            results.append(
+                BatchResultItem(calificacion_id=cal_id, success=False, error=str(exc))
+            )
     await db.commit()
     exitosos = sum(1 for r in results if r.success)
-    return BatchResult(results=results, total=len(results), exitosos=exitosos, fallidos=len(results) - exitosos)
+    return BatchResult(
+        results=results,
+        total=len(results),
+        exitosos=exitosos,
+        fallidos=len(results) - exitosos,
+    )
 
 
 # ── Incidencias ───────────────────────────────────────────────────────────────────
@@ -957,16 +1132,28 @@ async def crear_incidencia(
     metadata_json: dict | None = None,
 ) -> dict:
     from app.modules.calificaciones.incidencia_models import CalificacionIncidencia
-    inc = CalificacionIncidencia(calificacion_id=calificacion_id, tipo=tipo, descripcion=descripcion, metadata_json=metadata_json or {})
+
+    inc = CalificacionIncidencia(
+        calificacion_id=calificacion_id,
+        tipo=tipo,
+        descripcion=descripcion,
+        metadata_json=metadata_json or {},
+    )
     db.add(inc)
     await db.commit()
     await db.refresh(inc)
     return {
-        "id": inc.id, "calificacion_id": inc.calificacion_id, "tipo": inc.tipo,
-        "descripcion": inc.descripcion, "estado": inc.estado,
-        "metadata_json": inc.metadata_json, "resolucion": inc.resolucion,
-        "resuelto_por": inc.resuelto_por, "resolved_at": inc.resolved_at,
-        "created_at": inc.created_at, "updated_at": inc.updated_at,
+        "id": inc.id,
+        "calificacion_id": inc.calificacion_id,
+        "tipo": inc.tipo,
+        "descripcion": inc.descripcion,
+        "estado": inc.estado,
+        "metadata_json": inc.metadata_json,
+        "resolucion": inc.resolucion,
+        "resuelto_por": inc.resuelto_por,
+        "resolved_at": inc.resolved_at,
+        "created_at": inc.created_at,
+        "updated_at": inc.updated_at,
     }
 
 
@@ -1018,11 +1205,16 @@ async def obtener_solicitud_revision_estudiante(
     if not incidencia:
         return None
     return {
-        "id": incidencia.id, "calificacion_id": incidencia.calificacion_id,
-        "tipo": incidencia.tipo, "descripcion": incidencia.descripcion,
-        "estado": incidencia.estado, "metadata_json": incidencia.metadata_json,
-        "resolucion": incidencia.resolucion, "resuelto_por": incidencia.resuelto_por,
-        "resolved_at": incidencia.resolved_at, "created_at": incidencia.created_at,
+        "id": incidencia.id,
+        "calificacion_id": incidencia.calificacion_id,
+        "tipo": incidencia.tipo,
+        "descripcion": incidencia.descripcion,
+        "estado": incidencia.estado,
+        "metadata_json": incidencia.metadata_json,
+        "resolucion": incidencia.resolucion,
+        "resuelto_por": incidencia.resuelto_por,
+        "resolved_at": incidencia.resolved_at,
+        "created_at": incidencia.created_at,
         "updated_at": incidencia.updated_at,
     }
 
@@ -1070,15 +1262,26 @@ async def crear_solicitud_revision_estudiante(
 
 async def listar_incidencias(db: AsyncSession, calificacion_id: UUID) -> list[dict]:
     from app.modules.calificaciones.incidencia_models import CalificacionIncidencia
+
     result = await db.scalars(
-        select(CalificacionIncidencia).where(CalificacionIncidencia.calificacion_id == calificacion_id)
+        select(CalificacionIncidencia)
+        .where(CalificacionIncidencia.calificacion_id == calificacion_id)
         .order_by(CalificacionIncidencia.created_at.desc())
     )
     return [
-        {"id": inc.id, "calificacion_id": inc.calificacion_id, "tipo": inc.tipo,
-         "descripcion": inc.descripcion, "estado": inc.estado, "metadata_json": inc.metadata_json,
-         "resolucion": inc.resolucion, "resuelto_por": inc.resuelto_por,
-         "resolved_at": inc.resolved_at, "created_at": inc.created_at, "updated_at": inc.updated_at}
+        {
+            "id": inc.id,
+            "calificacion_id": inc.calificacion_id,
+            "tipo": inc.tipo,
+            "descripcion": inc.descripcion,
+            "estado": inc.estado,
+            "metadata_json": inc.metadata_json,
+            "resolucion": inc.resolucion,
+            "resuelto_por": inc.resuelto_por,
+            "resolved_at": inc.resolved_at,
+            "created_at": inc.created_at,
+            "updated_at": inc.updated_at,
+        }
         for inc in result.all()
     ]
 
@@ -1092,7 +1295,9 @@ async def obtener_bandeja_docente(
     """Agrupa solicitudes abiertas y notas que esperan decisi?n docente."""
     from app.modules.calificaciones.incidencia_models import CalificacionIncidencia
 
-    teacher_filter = [] if profesor_id is None else [Calificacion.profesor_id == profesor_id]
+    teacher_filter = (
+        [] if profesor_id is None else [Calificacion.profesor_id == profesor_id]
+    )
     active_evaluation = [Evaluacion.deleted_at.is_(None)]
 
     reclamos_base = (
@@ -1114,10 +1319,12 @@ async def obtener_bandeja_docente(
         .join(Materia, Calificacion.materia_id == Materia.id)
         .join(User, Calificacion.estudiante_id == User.id)
         .where(
-            Calificacion.estado.in_([
-                CalificacionEstado.SUGERIDA.value,
-                CalificacionEstado.REQUIERE_REVISION.value,
-            ]),
+            Calificacion.estado.in_(
+                [
+                    CalificacionEstado.SUGERIDA.value,
+                    CalificacionEstado.REQUIERE_REVISION.value,
+                ]
+            ),
             *active_evaluation,
             *teacher_filter,
         )
@@ -1131,7 +1338,9 @@ async def obtener_bandeja_docente(
     )
     reclamos_rows = (
         await db.execute(
-            reclamos_base.order_by(CalificacionIncidencia.created_at.desc()).limit(limite)
+            reclamos_base.order_by(CalificacionIncidencia.created_at.desc()).limit(
+                limite
+            )
         )
     ).all()
     pendientes_rows = (
@@ -1188,20 +1397,35 @@ async def obtener_bandeja_docente(
     }
 
 
-async def resolver_incidencia(db: AsyncSession, incidencia_id: UUID, resolucion: str, resuelto_por: UUID) -> dict | None:
+async def resolver_incidencia(
+    db: AsyncSession, incidencia_id: UUID, resolucion: str, resuelto_por: UUID
+) -> dict | None:
     from app.modules.calificaciones.incidencia_models import CalificacionIncidencia
-    inc = await db.scalar(select(CalificacionIncidencia).where(CalificacionIncidencia.id == incidencia_id))
+
+    inc = await db.scalar(
+        select(CalificacionIncidencia).where(CalificacionIncidencia.id == incidencia_id)
+    )
     if not inc:
         return None
     inc.estado = "resuelta"
     inc.resolucion = resolucion
     inc.resuelto_por = resuelto_por
-    inc.resolved_at = datetime.now(timezone.utc)
+    # La columna es `TIMESTAMP WITHOUT TIME ZONE`. asyncpg rechaza un
+    # datetime con zona horaria para ese tipo (offset-aware vs. offset-naive).
+    # Conservamos UTC como convención de almacenamiento, pero sin tzinfo.
+    inc.resolved_at = datetime.now(timezone.utc).replace(tzinfo=None)
     await db.commit()
     await db.refresh(inc)
     return {
-        "id": inc.id, "calificacion_id": inc.calificacion_id, "tipo": inc.tipo,
-        "descripcion": inc.descripcion, "estado": inc.estado, "metadata_json": inc.metadata_json,
-        "resolucion": inc.resolucion, "resuelto_por": inc.resuelto_por,
-        "resolved_at": inc.resolved_at, "created_at": inc.created_at, "updated_at": inc.updated_at,
+        "id": inc.id,
+        "calificacion_id": inc.calificacion_id,
+        "tipo": inc.tipo,
+        "descripcion": inc.descripcion,
+        "estado": inc.estado,
+        "metadata_json": inc.metadata_json,
+        "resolucion": inc.resolucion,
+        "resuelto_por": inc.resuelto_por,
+        "resolved_at": inc.resolved_at,
+        "created_at": inc.created_at,
+        "updated_at": inc.updated_at,
     }

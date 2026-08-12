@@ -136,7 +136,15 @@ export function TeacherInbox() {
   }
 
   const inbox = inboxQuery.data;
-  const total = inbox.reclamos_abiertos + inbox.pendientes_revision;
+  const claims = Array.isArray(inbox.reclamos) ? inbox.reclamos : [];
+  const pending = Array.isArray(inbox.pendientes) ? inbox.pendientes : [];
+  const openClaims = Number.isFinite(inbox.reclamos_abiertos)
+    ? inbox.reclamos_abiertos
+    : claims.length;
+  const pendingReviews = Number.isFinite(inbox.pendientes_revision)
+    ? inbox.pendientes_revision
+    : pending.length;
+  const total = openClaims + pendingReviews;
 
   return (
     <section aria-labelledby="teacher-inbox-title">
@@ -158,16 +166,16 @@ export function TeacherInbox() {
         <CaseList
           title="Reclamos y solicitudes"
           description="Solicitudes de revisión enviadas por estudiantes."
-          items={inbox.reclamos}
-          total={inbox.reclamos_abiertos}
+          items={claims}
+          total={openClaims}
           emptyText="No tienes reclamos abiertos"
           kind="claim"
         />
         <CaseList
           title="Entregas por revisar"
           description="Notas sugeridas o casos marcados para revisión."
-          items={inbox.pendientes}
-          total={inbox.pendientes_revision}
+          items={pending}
+          total={pendingReviews}
           emptyText="No tienes entregas pendientes"
           kind="pending"
         />

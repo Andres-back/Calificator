@@ -35,6 +35,10 @@ export async function ajustarNota(id: string, nota: number, feedback?: string): 
   const { data } = await api.patch<Calificacion>(`/calificaciones/${id}/ajustar`, { nota_confirmada: nota, feedback });
   return data;
 }
+export async function marcarRevisionManual(id: string, motivo: string): Promise<Calificacion> {
+  const { data } = await api.patch<Calificacion>(`/calificaciones/${id}/revision-manual`, { motivo });
+  return data;
+}
 export async function calificarFoto(
   evaluacionId: string,
   estudianteId: string,

@@ -1,4 +1,5 @@
 """Digitalización persistente de evaluaciones en segundo plano."""
+
 from __future__ import annotations
 
 import asyncio
@@ -62,8 +63,12 @@ async def _digitalize_async(
             state = await jobs_service.get_job_state(db, job_id)
             if state == JobEstado.CANCELLED.value:
                 await jobs_service.finish_cancelled_job(
-                    db, job_id, progreso=0, resultado_json={
-                        **result, "status": JobEstado.CANCELLED.value,
+                    db,
+                    job_id,
+                    progreso=0,
+                    resultado_json={
+                        **result,
+                        "status": JobEstado.CANCELLED.value,
                     },
                 )
                 await db.commit()
@@ -75,25 +80,35 @@ async def _digitalize_async(
             await db.commit()
             user = await db.get(User, user_id)
             if not user:
-                raise ValueError("El profesor que inició la digitalización ya no existe")
+                raise ValueError(
+                    "El profesor que inició la digitalización ya no existe"
+                )
 
             async with aiofiles.open(private_path, "rb") as source:
                 content = await source.read()
             mime = detect_digitalization_mime(content, filename)
             result["progreso"] = 15
             await jobs_service.update_job_progress(
-                db, job_id, progreso=15, resultado_json=result,
+                db,
+                job_id,
+                progreso=15,
+                resultado_json=result,
             )
             await db.commit()
             if await _cancel_if_requested(db, job_id, result):
                 return {**result, "status": JobEstado.CANCELLED.value}
 
             extracted_text, warnings = await extract_evaluation_text(
-                content, mime, filename or nombre,
+                content,
+                mime,
+                filename or nombre,
             )
             result["progreso"] = 50
             await jobs_service.update_job_progress(
-                db, job_id, progreso=50, resultado_json=result,
+                db,
+                job_id,
+                progreso=50,
+                resultado_json=result,
             )
             await db.commit()
             if await _cancel_if_requested(db, job_id, result):
@@ -108,7 +123,10 @@ async def _digitalize_async(
             )
             result["progreso"] = 80
             await jobs_service.update_job_progress(
-                db, job_id, progreso=80, resultado_json=result,
+                db,
+                job_id,
+                progreso=80,
+                resultado_json=result,
             )
             await db.commit()
             if await _cancel_if_requested(db, job_id, result):
@@ -124,7 +142,9 @@ async def _digitalize_async(
                 estructura_detectada=structure,
             )
             evaluation = await evaluaciones_service.digitalize_external_evaluation(
-                db, payload, user,
+                db,
+                payload,
+                user,
             )
             result = {
                 "status": JobEstado.SUCCESS.value,
@@ -172,6 +192,7 @@ async def _digitalize_async(
 
 
 async def _run_and_dispose(**kwargs) -> dict:
+    await engine.dispose(close=False)
     try:
         return await _digitalize_async(**kwargs)
     finally:
@@ -182,17 +203,19 @@ async def _run_and_dispose(**kwargs) -> dict:
 def digitalize_evaluation(self, **kwargs) -> dict:
     try:
         self.update_state(state="PROGRESS", meta={"progreso": 5})
-        result = asyncio.run(_run_and_dispose(
-            job_id=UUID(kwargs["job_id"]),
-            user_id=UUID(kwargs["user_id"]),
-            materia_id=UUID(kwargs["materia_id"]),
-            file_key=kwargs["file_key"],
-            filename=kwargs["filename"],
-            nombre=kwargs["nombre"],
-            descripcion=kwargs.get("descripcion"),
-            nota_maxima=kwargs["nota_maxima"],
-            modalidad=kwargs["modalidad"],
-        ))
+        result = asyncio.run(
+            _run_and_dispose(
+                job_id=UUID(kwargs["job_id"]),
+                user_id=UUID(kwargs["user_id"]),
+                materia_id=UUID(kwargs["materia_id"]),
+                file_key=kwargs["file_key"],
+                filename=kwargs["filename"],
+                nombre=kwargs["nombre"],
+                descripcion=kwargs.get("descripcion"),
+                nota_maxima=kwargs["nota_maxima"],
+                modalidad=kwargs["modalidad"],
+            )
+        )
         self.update_state(
             state="PROGRESS",
             meta={"progreso": int(result.get("progreso", 100))},

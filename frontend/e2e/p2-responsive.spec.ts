@@ -91,6 +91,9 @@ async function installApiMocks(page: Page, targetRole: Role) {
     if (path === '/materias/m1/dba' || path === '/materias/m1/dba-personalizados') return fulfillJson(route, []);
     if (path === '/evaluaciones/e1' && method === 'GET') return fulfillJson(route, evaluacion);
     if (path === '/evaluaciones/e1/calificaciones') return fulfillJson(route, []);
+    if (path === '/calificaciones/bandeja-docente') return fulfillJson(route, {
+      reclamos_abiertos: 0, pendientes_revision: 0, reclamos: [], pendientes: [],
+    });
     if (path.startsWith('/estudiantes/') && path.endsWith('/resumen-academico')) return fulfillJson(route, { mejor: { materia_id: 'm1', materia_nombre: materia.nombre, promedio: 4.4, total_notas: 2 }, por_mejorar: null, promedio_general: 4.4, total_materias: 1, total_notas: 2 });
     if (path.startsWith('/estudiantes/') && path.endsWith('/boletin')) return fulfillJson(route, []);
     if (path === '/herramientas') return fulfillJson(route, [material]);

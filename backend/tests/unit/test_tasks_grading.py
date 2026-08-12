@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import asyncio
 from decimal import Decimal
-from pathlib import Path
 from types import SimpleNamespace
 from uuid import uuid4
 
@@ -97,7 +96,9 @@ def test_resolve_upload_path_stays_inside_upload_root(tmp_path, monkeypatch) -> 
     ["/uploads/../secreto.txt", "/otro/foto.png", "/uploads"],
 )
 def test_resolve_upload_path_rejects_traversal_and_external_urls(
-    tmp_path, monkeypatch, url: str,
+    tmp_path,
+    monkeypatch,
+    url: str,
 ) -> None:
     monkeypatch.setattr(storage_service.settings, "UPLOADS_DIR", str(tmp_path))
     monkeypatch.setattr(storage_service.settings, "PUBLIC_UPLOADS_BASE_URL", "/uploads")
@@ -121,12 +122,14 @@ def test_grade_delivery_is_idempotent_when_grade_exists(monkeypatch) -> None:
     monkeypatch.setattr(tasks_grading, "_existing_grade", fake_existing)
     monkeypatch.setattr(tasks_grading, "grade_submission", exploding_grade)
 
-    grade, created = asyncio.run(tasks_grading._grade_delivery(
-        db,
-        evaluacion=evaluation_fixture(),
-        entrega=delivery,
-        profesor_id=uuid4(),
-    ))
+    grade, created = asyncio.run(
+        tasks_grading._grade_delivery(
+            db,
+            evaluacion=evaluation_fixture(),
+            entrega=delivery,
+            profesor_id=uuid4(),
+        )
+    )
 
     assert grade is existing
     assert created is False
@@ -164,12 +167,14 @@ def test_grade_delivery_creates_only_a_teacher_pending_suggestion(monkeypatch) -
     monkeypatch.setattr(tasks_grading, "_load_submission", fake_submission)
     monkeypatch.setattr(tasks_grading, "grade_submission", fake_grade)
 
-    grade, created = asyncio.run(tasks_grading._grade_delivery(
-        db,
-        evaluacion=evaluation,
-        entrega=delivery,
-        profesor_id=evaluation.profesor_id,
-    ))
+    grade, created = asyncio.run(
+        tasks_grading._grade_delivery(
+            db,
+            evaluacion=evaluation,
+            entrega=delivery,
+            profesor_id=evaluation.profesor_id,
+        )
+    )
 
     assert created is True
     assert grade.estado == CalificacionEstado.REQUIERE_REVISION.value
@@ -216,18 +221,21 @@ def test_grade_delivery_processes_existing_queued_placeholder(monkeypatch) -> No
     monkeypatch.setattr(tasks_grading, "_load_submission", fake_submission)
     monkeypatch.setattr(tasks_grading, "grade_submission", fake_grade)
 
-    grade, processed = asyncio.run(tasks_grading._grade_delivery(
-        db,
-        evaluacion=evaluation,
-        entrega=delivery,
-        profesor_id=evaluation.profesor_id,
-    ))
+    grade, processed = asyncio.run(
+        tasks_grading._grade_delivery(
+            db,
+            evaluacion=evaluation,
+            entrega=delivery,
+            profesor_id=evaluation.profesor_id,
+        )
+    )
 
     assert processed is True
     assert grade is existing
     assert existing.nota_sugerida == Decimal("4.5")
     assert existing.resultado_json["source"] == "queue-test"
     assert delivery.estado == EntregaEstado.CALIFICADA.value
+
 
 def test_batch_continues_after_one_delivery_fails(monkeypatch) -> None:
     evaluation = evaluation_fixture()
@@ -265,19 +273,23 @@ def test_batch_continues_after_one_delivery_fails(monkeypatch) -> None:
         return True
 
     monkeypatch.setattr(tasks_grading.jobs_service, "get_job_state", running_state)
-    monkeypatch.setattr(tasks_grading.jobs_service, "update_job_progress", fake_progress)
+    monkeypatch.setattr(
+        tasks_grading.jobs_service, "update_job_progress", fake_progress
+    )
     monkeypatch.setattr(tasks_grading.jobs_service, "finish_job", fake_finish)
     monkeypatch.setattr(tasks_grading, "_load_deliveries", fake_load)
     monkeypatch.setattr(tasks_grading, "_grade_delivery", fake_grade)
     monkeypatch.setattr(tasks_grading, "_mark_delivery_for_retry", fake_retry)
 
-    result = asyncio.run(tasks_grading._grade_batch_async(
-        evaluacion_id=evaluation.id,
-        estudiante_ids=[],
-        entrega_ids=[item.id for item in deliveries],
-        job_id=job_id,
-        profesor_id=evaluation.profesor_id,
-    ))
+    result = asyncio.run(
+        tasks_grading._grade_batch_async(
+            evaluacion_id=evaluation.id,
+            estudiante_ids=[],
+            entrega_ids=[item.id for item in deliveries],
+            job_id=job_id,
+            profesor_id=evaluation.profesor_id,
+        )
+    )
 
     assert result["status"] == JobEstado.SUCCESS.value
     assert result["processed"] == 1
@@ -314,28 +326,34 @@ def test_batch_honors_cancellation_before_next_delivery(monkeypatch) -> None:
     monkeypatch.setattr(tasks_grading, "_load_deliveries", fake_load)
     monkeypatch.setattr(tasks_grading, "_grade_delivery", exploding_grade)
 
-    result = asyncio.run(tasks_grading._grade_batch_async(
-        evaluacion_id=evaluation.id,
-        estudiante_ids=[],
-        entrega_ids=[delivery.id],
-        job_id=uuid4(),
-        profesor_id=evaluation.profesor_id,
-    ))
+    result = asyncio.run(
+        tasks_grading._grade_batch_async(
+            evaluacion_id=evaluation.id,
+            estudiante_ids=[],
+            entrega_ids=[delivery.id],
+            job_id=uuid4(),
+            profesor_id=evaluation.profesor_id,
+        )
+    )
 
     assert result["status"] == JobEstado.CANCELLED.value
     assert result["processed"] == 0
     assert cancelled[0]["progreso"] == 0
 
 
-def test_batch_records_completed_work_when_cancelled_during_grading(monkeypatch) -> None:
+def test_batch_records_completed_work_when_cancelled_during_grading(
+    monkeypatch,
+) -> None:
     evaluation = evaluation_fixture()
     delivery = delivery_fixture()
     db = FakeDB(scalar_value=evaluation)
-    states = iter([
-        JobEstado.RUNNING.value,
-        JobEstado.RUNNING.value,
-        JobEstado.CANCELLED.value,
-    ])
+    states = iter(
+        [
+            JobEstado.RUNNING.value,
+            JobEstado.RUNNING.value,
+            JobEstado.CANCELLED.value,
+        ]
+    )
     cancelled: list[dict] = []
 
     monkeypatch.setattr(tasks_grading, "AsyncSessionLocal", lambda: SessionContext(db))
@@ -358,13 +376,15 @@ def test_batch_records_completed_work_when_cancelled_during_grading(monkeypatch)
     monkeypatch.setattr(tasks_grading, "_load_deliveries", fake_load)
     monkeypatch.setattr(tasks_grading, "_grade_delivery", fake_grade)
 
-    result = asyncio.run(tasks_grading._grade_batch_async(
-        evaluacion_id=evaluation.id,
-        estudiante_ids=[],
-        entrega_ids=[delivery.id],
-        job_id=uuid4(),
-        profesor_id=evaluation.profesor_id,
-    ))
+    result = asyncio.run(
+        tasks_grading._grade_batch_async(
+            evaluacion_id=evaluation.id,
+            estudiante_ids=[],
+            entrega_ids=[delivery.id],
+            job_id=uuid4(),
+            profesor_id=evaluation.profesor_id,
+        )
+    )
 
     assert result["status"] == JobEstado.CANCELLED.value
     assert result["processed"] == 1
@@ -379,8 +399,8 @@ def test_run_and_dispose_always_releases_async_engine(monkeypatch) -> None:
         raise RuntimeError("boom")
 
     class FakeEngine:
-        async def dispose(self) -> None:
-            events.append("disposed")
+        async def dispose(self, close: bool = True) -> None:
+            events.append("disposed-close" if close else "disposed-detach")
 
     monkeypatch.setattr(tasks_grading, "_grade_batch_async", failing_batch)
     monkeypatch.setattr(tasks_grading, "engine", FakeEngine())
@@ -388,4 +408,4 @@ def test_run_and_dispose_always_releases_async_engine(monkeypatch) -> None:
     with pytest.raises(RuntimeError, match="boom"):
         asyncio.run(tasks_grading._run_and_dispose())
 
-    assert events == ["disposed"]
+    assert events == ["disposed-detach", "disposed-close"]

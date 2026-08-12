@@ -22,7 +22,7 @@ import {
   ajustarNota, ajustarNotaBatch, confirmarNota, confirmarNotaBatch,
   crearIncidencia, getBandejaDocente, getCalificacionDetalle, listarIncidencias,
   establecerNotaManual, listCalificaciones, publicarNota, publicarNotaBatch,
-  resolverIncidencia, solicitarReemplazoEvidencia,
+  marcarRevisionManual, resolverIncidencia, solicitarReemplazoEvidencia,
 } from './api';
 import { RevisionGuide } from './RevisionGuide';
 import { formatAIModelSource } from './aiPipelineLabels';
@@ -333,7 +333,7 @@ function PanelDetalle({
 }) {
   const [adjNota, setAdjNota] = useState(Number(cal.nota_confirmada ?? cal.nota_sugerida ?? 0));
   const [adjFeedback, setAdjFeedback] = useState(cal.feedback ?? '');
-  const [showAjustar, setShowAjustar] = useState(false);
+  const [showAjustar, setShowAjustar] = useState(cal.estado === 'requiere_revision');
   const [adjError, setAdjError] = useState('');
   const [showDirtyWarning, setShowDirtyWarning] = useState(false);
   const [replacementOpen, setReplacementOpen] = useState(false);
@@ -362,11 +362,11 @@ function PanelDetalle({
   useEffect(() => {
     setAdjNota(Number(cal.nota_confirmada ?? cal.nota_sugerida ?? 0));
     setAdjFeedback(cal.feedback ?? '');
-    setShowAjustar(false);
+    setShowAjustar(cal.estado === 'requiere_revision');
     setAdjError('');
     setShowDirtyWarning(false);
     pendingClose.current = null;
-  }, [cal.id, cal.nota_confirmada, cal.nota_sugerida, cal.feedback]);
+  }, [cal.id, cal.estado, cal.nota_confirmada, cal.nota_sugerida, cal.feedback]);
 
   // Notify parent about dirty state
   useEffect(() => {
@@ -397,6 +397,7 @@ function PanelDetalle({
     || cal.entrega_tipo?.toLowerCase() === 'pdf'
     || /\.pdf(?:$|[?#])/i.test(evidenceUrl ?? '')
   );
+  const manualReview = cal.estado === 'requiere_revision';
 
   function submitAjuste() {
     const n = Number(adjNota);
@@ -436,9 +437,21 @@ function PanelDetalle({
             </p>
           </div>
           <Badge tone={done ? (published ? 'brand' : 'success') : 'warning'}>
-            {published ? 'Publicada' : done ? 'Confirmada' : 'Por revisar'}
+            {published ? 'Publicada' : done ? 'Confirmada' : manualReview ? 'Revisión manual' : 'Por revisar'}
           </Badge>
         </div>
+
+        {manualReview && (
+          <Card className="flex items-start gap-3 border-amber-200 bg-amber-50 p-4 dark:border-amber-500/30 dark:bg-amber-500/10">
+            <ShieldAlert className="mt-0.5 h-5 w-5 shrink-0 text-amber-600 dark:text-amber-300" />
+            <div>
+              <p className="font-semibold text-amber-900 dark:text-amber-100">Sugerencia de IA pendiente de revisión manual</p>
+              <p className="mt-1 text-sm leading-6 text-amber-800 dark:text-amber-200">
+                No se asignó cero ni se publicó la nota. Comprueba la evidencia y guarda abajo la nota correcta.
+              </p>
+            </div>
+          </Card>
+        )}
 
         {/* Confianza */}
         {(() => {
@@ -578,9 +591,11 @@ function PanelDetalle({
             <Button variant="outline" onClick={() => setShowAjustar(!showAjustar)}>
               <Pencil className="h-4 w-4" /> Ajustar
             </Button>
-            <Button variant="ghost" onClick={() => onRechazar(cal.id)}>
-              <RotateCcw className="h-4 w-4" /> Rechazar → revisión
-            </Button>
+            {!manualReview && (
+              <Button variant="ghost" onClick={() => onRechazar(cal.id)}>
+                <RotateCcw className="h-4 w-4" /> Revisar manualmente
+              </Button>
+            )}
           </div>
         )}
         {done && !published && (
@@ -1000,6 +1015,17 @@ export function CalificacionesWorkspace() {
     onSuccess: () => { invalidate(); toast.success('Nota ajustada'); trackEvent('grade_adjusted', { evaluacion_id: evalId }); },
     onError: (e) => toast.error(toApiError(e).detail),
   });
+  const revisionMut = useMutation({
+    mutationFn: (args: { id: string; motivo: string }) => marcarRevisionManual(args.id, args.motivo),
+    onSuccess: (cal) => {
+      setRejectId(null);
+      invalidate();
+      void queryClient.invalidateQueries({ queryKey: ['calificacion-detalle', cal.id] });
+      toast.success('Sugerencia de IA descartada. Revisa y guarda la nota correcta.');
+      trackEvent('grade_marked_manual_review', { evaluacion_id: evalId });
+    },
+    onError: (e) => toast.error(toApiError(e).detail),
+  });
   const confirmBatchMut = useMutation({
     mutationFn: (items: { calificacion_id: string; nota_confirmada: number }[]) => confirmarNotaBatch(items),
     onSuccess: (res) => {
@@ -1348,24 +1374,18 @@ export function CalificacionesWorkspace() {
         }
       />
 
-      {/* Reject -> requiere_revision — currently just toasts, backend supports it */}
       <ConfirmDialog
         open={!!rejectId}
         onClose={() => setRejectId(null)}
-        onConfirm={() => {
-          const cal = cals?.find((c) => c.id === rejectId);
-          if (cal) {
-            // Marcar como requiere_revision via ajustar con estado
-            ajustarMut.mutate({ id: cal.id, nota: 0, feedback: 'Rechazada — requiere revisión manual.' });
-          }
-          setRejectId(null);
-          toast.success('Calificación marcada para revisión manual.');
-        }}
-        title="Rechazar calificación"
-        confirmLabel="Marcar para revisión"
-        tone="danger"
-        loading={ajustarMut.isPending}
-        description="Esta calificación se marcará para revisión manual. El docente deberá evaluarla personalmente."
+        onConfirm={() => rejectId && revisionMut.mutate({
+          id: rejectId,
+          motivo: 'El docente descartó la sugerencia automática para comprobar la evidencia personalmente.',
+        })}
+        title="Revisar la nota manualmente"
+        confirmLabel="Abrir revisión manual"
+        tone="primary"
+        loading={revisionMut.isPending}
+        description="La sugerencia de IA se conservará como referencia. No se asignará cero ni se publicará nada; se abrirá la edición para que verifiques y guardes la nota correcta."
       />
 
       {/* Mobile dirty state confirm */}

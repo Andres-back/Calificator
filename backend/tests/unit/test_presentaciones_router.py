@@ -1,3 +1,4 @@
+import asyncio
 from datetime import datetime, timezone
 from types import SimpleNamespace
 from uuid import uuid4
@@ -19,8 +20,31 @@ from app.modules.presentaciones.local_export import (
 )
 from app.modules.presentaciones import presenton_service
 from app.modules.presentaciones import service
+from app.workers import tasks_presentations
 from app.modules.users.models import User
 from app.shared.enums import ImageProvider
+
+
+def test_presentation_worker_detaches_stale_pool_before_generation(monkeypatch) -> None:
+    events: list[str] = []
+
+    class FakeEngine:
+        async def dispose(self, close: bool = True) -> None:
+            events.append("close" if close else "detach")
+
+    async def fake_generate(_presentation_id) -> None:
+        events.append("generate")
+
+    monkeypatch.setattr("app.db.session.engine", FakeEngine())
+    monkeypatch.setattr(
+        tasks_presentations,
+        "generate_presentacion_assets",
+        fake_generate,
+    )
+
+    asyncio.run(tasks_presentations._run_and_dispose(uuid4()))
+
+    assert events == ["detach", "generate", "close"]
 
 
 @pytest.fixture
@@ -77,11 +101,16 @@ def test_unauthenticated_user_cannot_access_presentaciones() -> None:
 
 def test_profesor_creates_presentacion(monkeypatch) -> None:
     from unittest.mock import MagicMock
+
     fake_task = MagicMock()
-    monkeypatch.setattr("app.modules.presentaciones.router.generate_presentation", fake_task)
+    monkeypatch.setattr(
+        "app.modules.presentaciones.router.generate_presentation", fake_task
+    )
 
     profesor = _user("profesor")
-    pres = _presentation(profesor_id=profesor.id, estado="queued", pptx_url=None, presenton_id=None)
+    pres = _presentation(
+        profesor_id=profesor.id, estado="queued", pptx_url=None, presenton_id=None
+    )
 
     async def create_presentacion(*args, **kwargs):
         return pres
@@ -90,7 +119,9 @@ def test_profesor_creates_presentacion(monkeypatch) -> None:
         return None
 
     monkeypatch.setattr(service, "create_presentacion", create_presentacion)
-    monkeypatch.setattr(service, "generate_presentacion_assets", generate_presentacion_assets)
+    monkeypatch.setattr(
+        service, "generate_presentacion_assets", generate_presentacion_assets
+    )
 
     client = _client_with_user(profesor)
     response = client.post(
@@ -110,7 +141,9 @@ def test_student_cannot_create_or_export_presentacion(monkeypatch) -> None:
         "/api/presentaciones",
         json={"titulo": "Ciclo del agua", "tema": "Evaporacion", "cantidad_slides": 5},
     )
-    export_response = client.post(f"/api/presentaciones/{uuid4()}/exportar", json={"format": "pptx"})
+    export_response = client.post(
+        f"/api/presentaciones/{uuid4()}/exportar", json={"format": "pptx"}
+    )
 
     assert create_response.status_code == 403
     assert export_response.status_code == 403
@@ -126,16 +159,22 @@ def test_profesor_gets_editor_url_and_exports(monkeypatch) -> None:
     async def export_presentacion(*args, **kwargs):
         return pres
 
-    monkeypatch.setattr(service, "ensure_can_manage_presentacion", ensure_can_manage_presentacion)
+    monkeypatch.setattr(
+        service, "ensure_can_manage_presentacion", ensure_can_manage_presentacion
+    )
     monkeypatch.setattr(service, "export_presentacion", export_presentacion)
 
     client = _client_with_user(profesor)
 
     editor_response = client.post(f"/api/presentaciones/{pres.id}/editor-url")
-    export_response = client.post(f"/api/presentaciones/{pres.id}/exportar", json={"format": "pptx"})
+    export_response = client.post(
+        f"/api/presentaciones/{pres.id}/exportar", json={"format": "pptx"}
+    )
 
     assert editor_response.status_code == 200, editor_response.text
-    assert editor_response.json()["url"].startswith(f"/api/presentaciones/{pres.id}/editor")
+    assert editor_response.json()["url"].startswith(
+        f"/api/presentaciones/{pres.id}/editor"
+    )
     assert export_response.status_code == 200, export_response.text
     assert export_response.json()["pptx_url"]
 
@@ -173,7 +212,10 @@ def test_presenton_direct_slides_use_modern_image_layout() -> None:
     assert direct[0]["layout_group"] == "modern"
     assert direct[0]["layout"] == "modern:image-and-description"
     assert set(direct[0]["content"]) == {"title", "content", "image"}
-    assert direct[0]["content"]["image"]["__image_url__"] == "/app_data/images/xcal/test.png"
+    assert (
+        direct[0]["content"]["image"]["__image_url__"]
+        == "/app_data/images/xcal/test.png"
+    )
 
 
 def test_local_export_builds_valid_files_from_xcal_slides() -> None:
@@ -209,7 +251,9 @@ async def test_export_presentacion_uses_editable_pptx_as_primary(monkeypatch) ->
     pres = _presentation(
         presenton_id=None,
         slides_json={
-            "slides": [{"title": "Ecosistemas", "bullets": ["Idea clave"], "image": ""}],
+            "slides": [
+                {"title": "Ecosistemas", "bullets": ["Idea clave"], "image": ""}
+            ],
         },
     )
     saved: dict[str, object] = {}
@@ -253,11 +297,15 @@ async def test_export_presentacion_uses_editable_pptx_as_primary(monkeypatch) ->
 
 
 @pytest.mark.anyio
-async def test_export_presentacion_falls_back_to_local_export_when_editable_fails(monkeypatch) -> None:
+async def test_export_presentacion_falls_back_to_local_export_when_editable_fails(
+    monkeypatch,
+) -> None:
     pres = _presentation(
         presenton_id=None,
         slides_json={
-            "slides": [{"title": "Ecosistemas", "bullets": ["Idea clave"], "image": ""}],
+            "slides": [
+                {"title": "Ecosistemas", "bullets": ["Idea clave"], "image": ""}
+            ],
         },
     )
     saved: dict[str, object] = {}

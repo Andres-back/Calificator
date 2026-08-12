@@ -87,3 +87,43 @@ def test_student_cannot_duplicate_an_open_review_request(monkeypatch) -> None:
 
     assert exc.value.status_code == 409
     assert "solicitud de revisión abierta" in exc.value.detail
+
+
+def test_resolve_review_request_uses_naive_utc_for_database(monkeypatch) -> None:
+    incidencia = SimpleNamespace(
+        id=uuid4(),
+        calificacion_id=uuid4(),
+        tipo="solicitud_revision",
+        descripcion="Revisar el puntaje de la pregunta 2.",
+        estado="abierta",
+        metadata_json={},
+        resolucion=None,
+        resuelto_por=None,
+        resolved_at=None,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
+    )
+
+    class FakeDB:
+        async def scalar(self, _statement):
+            return incidencia
+
+        async def commit(self):
+            assert incidencia.resolved_at is not None
+            assert incidencia.resolved_at.tzinfo is None
+
+        async def refresh(self, _instance):
+            return None
+
+    result = asyncio.run(
+        service.resolver_incidencia(
+            FakeDB(),
+            incidencia_id=incidencia.id,
+            resolucion="Se verificó y ajustó la calificación.",
+            resuelto_por=uuid4(),
+        )
+    )
+
+    assert result is not None
+    assert result["estado"] == "resuelta"
+    assert result["resolved_at"].tzinfo is None

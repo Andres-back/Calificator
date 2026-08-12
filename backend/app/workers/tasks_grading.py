@@ -1,4 +1,5 @@
 """Celery task for persistent, idempotent batch grading."""
+
 from __future__ import annotations
 
 import asyncio
@@ -35,7 +36,6 @@ logger = get_logger(__name__)
 ProgressCallback = Callable[[int, dict], None]
 
 
-
 async def _load_submission(entrega: Entrega) -> dict:
     payload = {
         "student_response_text": entrega.respuesta_texto or None,
@@ -63,42 +63,60 @@ async def _load_deliveries(
     entrega_ids: list[UUID],
 ) -> tuple[list[Entrega], list[dict]]:
     if entrega_ids:
-        rows = list(await db.scalars(select(Entrega).where(
-            Entrega.evaluacion_id == evaluacion_id,
-            Entrega.id.in_(entrega_ids),
-        )))
+        rows = list(
+            await db.scalars(
+                select(Entrega).where(
+                    Entrega.evaluacion_id == evaluacion_id,
+                    Entrega.id.in_(entrega_ids),
+                )
+            )
+        )
         by_id = {row.id: row for row in rows}
-        missing = [{
-            "entrega_id": str(item_id),
-            "estudiante_id": None,
-            "error": "Entrega no encontrada para la evaluacion",
-        } for item_id in entrega_ids if item_id not in by_id]
+        missing = [
+            {
+                "entrega_id": str(item_id),
+                "estudiante_id": None,
+                "error": "Entrega no encontrada para la evaluacion",
+            }
+            for item_id in entrega_ids
+            if item_id not in by_id
+        ]
         return [by_id[item_id] for item_id in entrega_ids if item_id in by_id], missing
 
     if not estudiante_ids:
         return [], []
-    rows = list(await db.scalars(
-        select(Entrega)
-        .where(
-            Entrega.evaluacion_id == evaluacion_id,
-            Entrega.estudiante_id.in_(estudiante_ids),
+    rows = list(
+        await db.scalars(
+            select(Entrega)
+            .where(
+                Entrega.evaluacion_id == evaluacion_id,
+                Entrega.estudiante_id.in_(estudiante_ids),
+            )
+            .order_by(Entrega.created_at.desc())
         )
-        .order_by(Entrega.created_at.desc())
-    ))
+    )
     latest_by_student: dict[UUID, Entrega] = {}
     for row in rows:
         latest_by_student.setdefault(row.estudiante_id, row)
-    missing = [{
-        "entrega_id": None,
-        "estudiante_id": str(student_id),
-        "error": "El estudiante no tiene una entrega para esta evaluacion",
-    } for student_id in estudiante_ids if student_id not in latest_by_student]
-    deliveries = [latest_by_student[item] for item in estudiante_ids if item in latest_by_student]
+    missing = [
+        {
+            "entrega_id": None,
+            "estudiante_id": str(student_id),
+            "error": "El estudiante no tiene una entrega para esta evaluacion",
+        }
+        for student_id in estudiante_ids
+        if student_id not in latest_by_student
+    ]
+    deliveries = [
+        latest_by_student[item] for item in estudiante_ids if item in latest_by_student
+    ]
     return deliveries, missing
 
 
 async def _existing_grade(db: AsyncSession, entrega_id: UUID) -> Calificacion | None:
-    return await db.scalar(select(Calificacion).where(Calificacion.entrega_id == entrega_id))
+    return await db.scalar(
+        select(Calificacion).where(Calificacion.entrega_id == entrega_id)
+    )
 
 
 async def _grade_delivery(
@@ -110,18 +128,16 @@ async def _grade_delivery(
 ) -> tuple[Calificacion, bool]:
     existing = await _existing_grade(db, entrega.id)
     queued_payload = (
-        entrega.visual_text_json
-        if isinstance(entrega.visual_text_json, dict)
-        else {}
+        entrega.visual_text_json if isinstance(entrega.visual_text_json, dict) else {}
     )
     raw_existing_payload = getattr(existing, "resultado_json", None)
     existing_payload = (
         raw_existing_payload if isinstance(raw_existing_payload, dict) else {}
     )
-    queued_marker = (
-        queued_payload.get("pipeline_status") in {"queued", "running"}
-        or existing_payload.get("pipeline_status") in {"queued", "running"}
-    )
+    queued_marker = queued_payload.get("pipeline_status") in {
+        "queued",
+        "running",
+    } or existing_payload.get("pipeline_status") in {"queued", "running"}
     if existing and not queued_marker:
         expected_state = (
             EntregaEstado.REQUIERE_REINTENTO.value
@@ -162,7 +178,9 @@ async def _grade_delivery(
         }
     if grading.nota_sugerida is not None:
         calificaciones_service.validate_score_within_evaluation(
-            grading.nota_sugerida, evaluacion, "nota_sugerida",
+            grading.nota_sugerida,
+            evaluacion,
+            "nota_sugerida",
         )
         calificaciones_service.transition_to_grading_if_needed(evaluacion)
     calificacion = photo_service.apply_grading_result(
@@ -201,13 +219,17 @@ async def _grade_delivery(
     return calificacion, True
 
 
-async def _mark_delivery_for_retry(db: AsyncSession, entrega_id: UUID, error: str) -> None:
+async def _mark_delivery_for_retry(
+    db: AsyncSession, entrega_id: UUID, error: str
+) -> None:
     await db.rollback()
     entrega = await db.scalar(select(Entrega).where(Entrega.id == entrega_id))
     if not entrega:
         return
     entrega.estado = EntregaEstado.REQUIERE_REINTENTO.value
-    current = entrega.visual_text_json if isinstance(entrega.visual_text_json, dict) else {}
+    current = (
+        entrega.visual_text_json if isinstance(entrega.visual_text_json, dict) else {}
+    )
     failed_payload = {
         **current,
         "pipeline_status": "failed",
@@ -237,8 +259,13 @@ async def _mark_delivery_for_retry(db: AsyncSession, entrega_id: UUID, error: st
 
 
 def _build_result(
-    *, evaluacion_id: UUID, status_value: str, processed: int, skipped: int,
-    errors: list[dict], calificacion_ids: list[str],
+    *,
+    evaluacion_id: UUID,
+    status_value: str,
+    processed: int,
+    skipped: int,
+    errors: list[dict],
+    calificacion_ids: list[str],
 ) -> dict:
     return {
         "status": status_value,
@@ -252,7 +279,9 @@ def _build_result(
     }
 
 
-def _emit_progress(callback: ProgressCallback | None, progreso: int, result: dict) -> None:
+def _emit_progress(
+    callback: ProgressCallback | None, progreso: int, result: dict
+) -> None:
     if not callback:
         return
     try:
@@ -281,7 +310,10 @@ async def _cancelled_result(
         calificacion_ids=calificacion_ids,
     )
     await jobs_service.finish_cancelled_job(
-        db, job_id, progreso=progreso, resultado_json=result,
+        db,
+        job_id,
+        progreso=progreso,
+        resultado_json=result,
     )
     await db.commit()
     return result
@@ -306,13 +338,23 @@ async def _grade_batch_async(
                 state = await jobs_service.get_job_state(db, job_id)
                 if state == JobEstado.CANCELLED.value:
                     return await _cancelled_result(
-                        db, job_id=job_id, evaluacion_id=evaluacion_id, progreso=0,
-                        processed=0, skipped=0, errors=[], calificacion_ids=[],
+                        db,
+                        job_id=job_id,
+                        evaluacion_id=evaluacion_id,
+                        progreso=0,
+                        processed=0,
+                        skipped=0,
+                        errors=[],
+                        calificacion_ids=[],
                     )
                 if state in {JobEstado.SUCCESS.value, JobEstado.FAILED.value}:
                     return _build_result(
-                        evaluacion_id=evaluacion_id, status_value=state,
-                        processed=0, skipped=0, errors=[], calificacion_ids=[],
+                        evaluacion_id=evaluacion_id,
+                        status_value=state,
+                        processed=0,
+                        skipped=0,
+                        errors=[],
+                        calificacion_ids=[],
                     )
                 if state == JobEstado.QUEUED.value:
                     await jobs_service.mark_job_running(db, job_id)
@@ -337,18 +379,33 @@ async def _grade_batch_async(
             total = len(deliveries) + len(missing)
 
             for index, entrega in enumerate(deliveries, start=1):
-                if job_id and await jobs_service.get_job_state(db, job_id) == JobEstado.CANCELLED.value:
-                    progreso = round(((index - 1 + len(missing)) / total) * 100) if total else 0
+                if (
+                    job_id
+                    and await jobs_service.get_job_state(db, job_id)
+                    == JobEstado.CANCELLED.value
+                ):
+                    progreso = (
+                        round(((index - 1 + len(missing)) / total) * 100)
+                        if total
+                        else 0
+                    )
                     result = await _cancelled_result(
-                        db, job_id=job_id, evaluacion_id=evaluacion_id, progreso=progreso,
-                        processed=processed, skipped=skipped, errors=errors,
+                        db,
+                        job_id=job_id,
+                        evaluacion_id=evaluacion_id,
+                        progreso=progreso,
+                        processed=processed,
+                        skipped=skipped,
+                        errors=errors,
                         calificacion_ids=calificacion_ids,
                     )
                     _emit_progress(progress_callback, progreso, result)
                     return result
                 try:
                     calificacion, created = await _grade_delivery(
-                        db, evaluacion=evaluacion, entrega=entrega,
+                        db,
+                        evaluacion=evaluacion,
+                        entrega=entrega,
                         profesor_id=effective_profesor_id,
                     )
                     calificacion_ids.append(str(calificacion.id))
@@ -360,33 +417,55 @@ async def _grade_batch_async(
                     safe_error = str(exc)[:500] or exc.__class__.__name__
                     logger.exception(
                         "Batch grading failed for delivery",
-                        extra={"entrega_id": str(entrega.id), "evaluacion_id": str(evaluacion_id)},
+                        extra={
+                            "entrega_id": str(entrega.id),
+                            "evaluacion_id": str(evaluacion_id),
+                        },
                     )
                     await _mark_delivery_for_retry(db, entrega.id, safe_error)
-                    errors.append({
-                        "entrega_id": str(entrega.id),
-                        "estudiante_id": str(entrega.estudiante_id),
-                        "error": safe_error,
-                    })
+                    errors.append(
+                        {
+                            "entrega_id": str(entrega.id),
+                            "estudiante_id": str(entrega.estudiante_id),
+                            "error": safe_error,
+                        }
+                    )
 
-                progreso = round(((index + len(missing)) / total) * 100) if total else 100
-                if job_id and await jobs_service.get_job_state(db, job_id) == JobEstado.CANCELLED.value:
+                progreso = (
+                    round(((index + len(missing)) / total) * 100) if total else 100
+                )
+                if (
+                    job_id
+                    and await jobs_service.get_job_state(db, job_id)
+                    == JobEstado.CANCELLED.value
+                ):
                     result = await _cancelled_result(
-                        db, job_id=job_id, evaluacion_id=evaluacion_id,
-                        progreso=progreso, processed=processed, skipped=skipped,
-                        errors=errors, calificacion_ids=calificacion_ids,
+                        db,
+                        job_id=job_id,
+                        evaluacion_id=evaluacion_id,
+                        progreso=progreso,
+                        processed=processed,
+                        skipped=skipped,
+                        errors=errors,
+                        calificacion_ids=calificacion_ids,
                     )
                     _emit_progress(progress_callback, progreso, result)
                     return result
 
                 interim = _build_result(
-                    evaluacion_id=evaluacion_id, status_value=JobEstado.RUNNING.value,
-                    processed=processed, skipped=skipped, errors=errors,
+                    evaluacion_id=evaluacion_id,
+                    status_value=JobEstado.RUNNING.value,
+                    processed=processed,
+                    skipped=skipped,
+                    errors=errors,
                     calificacion_ids=calificacion_ids,
                 )
                 if job_id:
                     await jobs_service.update_job_progress(
-                        db, job_id, progreso=progreso, resultado_json=interim,
+                        db,
+                        job_id,
+                        progreso=progreso,
+                        resultado_json=interim,
                     )
                     await db.commit()
                 _emit_progress(progress_callback, progreso, interim)
@@ -397,24 +476,40 @@ async def _grade_batch_async(
                 else JobEstado.SUCCESS.value
             )
             result = _build_result(
-                evaluacion_id=evaluacion_id, status_value=final_state,
-                processed=processed, skipped=skipped, errors=errors,
+                evaluacion_id=evaluacion_id,
+                status_value=final_state,
+                processed=processed,
+                skipped=skipped,
+                errors=errors,
                 calificacion_ids=calificacion_ids,
             )
             if job_id:
-                error_summary = f"{len(errors)} entrega(s) no pudieron calificarse" if errors else None
+                error_summary = (
+                    f"{len(errors)} entrega(s) no pudieron calificarse"
+                    if errors
+                    else None
+                )
                 finished = await jobs_service.finish_job(
-                    db, job_id, estado=final_state,
-                    resultado_json=result, error=error_summary,
+                    db,
+                    job_id,
+                    estado=final_state,
+                    resultado_json=result,
+                    error=error_summary,
                 )
                 if (
                     not finished
-                    and await jobs_service.get_job_state(db, job_id) == JobEstado.CANCELLED.value
+                    and await jobs_service.get_job_state(db, job_id)
+                    == JobEstado.CANCELLED.value
                 ):
                     result = await _cancelled_result(
-                        db, job_id=job_id, evaluacion_id=evaluacion_id,
-                        progreso=100, processed=processed, skipped=skipped,
-                        errors=errors, calificacion_ids=calificacion_ids,
+                        db,
+                        job_id=job_id,
+                        evaluacion_id=evaluacion_id,
+                        progreso=100,
+                        processed=processed,
+                        skipped=skipped,
+                        errors=errors,
+                        calificacion_ids=calificacion_ids,
                     )
                     _emit_progress(progress_callback, 100, result)
                     return result
@@ -425,20 +520,33 @@ async def _grade_batch_async(
             await db.rollback()
             if job_id:
                 result = _build_result(
-                    evaluacion_id=evaluacion_id, status_value=JobEstado.FAILED.value,
-                    processed=processed, skipped=skipped,
-                    errors=[*errors, {"entrega_id": None, "estudiante_id": None, "error": str(exc)[:500]}],
+                    evaluacion_id=evaluacion_id,
+                    status_value=JobEstado.FAILED.value,
+                    processed=processed,
+                    skipped=skipped,
+                    errors=[
+                        *errors,
+                        {
+                            "entrega_id": None,
+                            "estudiante_id": None,
+                            "error": str(exc)[:500],
+                        },
+                    ],
                     calificacion_ids=calificacion_ids,
                 )
                 await jobs_service.finish_job(
-                    db, job_id, estado=JobEstado.FAILED.value,
-                    resultado_json=result, error=str(exc),
+                    db,
+                    job_id,
+                    estado=JobEstado.FAILED.value,
+                    resultado_json=result,
+                    error=str(exc),
                 )
                 await db.commit()
             raise
 
 
 async def _run_and_dispose(**kwargs) -> dict:
+    await engine.dispose(close=False)
     try:
         return await _grade_batch_async(**kwargs)
     finally:
@@ -460,22 +568,27 @@ def grade_batch(
     raw_deliveries = entrega_ids or []
 
     def publish(progreso: int, result: dict) -> None:
-        self.update_state(state="PROGRESS", meta={
-            "progreso": progreso,
-            "processed": result["processed"],
-            "skipped": result["skipped"],
-            "failed": result["failed"],
-        })
+        self.update_state(
+            state="PROGRESS",
+            meta={
+                "progreso": progreso,
+                "processed": result["processed"],
+                "skipped": result["skipped"],
+                "failed": result["failed"],
+            },
+        )
 
     try:
-        return asyncio.run(_run_and_dispose(
-            evaluacion_id=UUID(evaluacion_id),
-            estudiante_ids=[UUID(value) for value in raw_students],
-            entrega_ids=[UUID(value) for value in raw_deliveries],
-            job_id=UUID(job_id) if job_id else None,
-            profesor_id=UUID(profesor_id) if profesor_id else None,
-            progress_callback=publish,
-        ))
+        return asyncio.run(
+            _run_and_dispose(
+                evaluacion_id=UUID(evaluacion_id),
+                estudiante_ids=[UUID(value) for value in raw_students],
+                entrega_ids=[UUID(value) for value in raw_deliveries],
+                job_id=UUID(job_id) if job_id else None,
+                profesor_id=UUID(profesor_id) if profesor_id else None,
+                progress_callback=publish,
+            )
+        )
     except Exception as exc:  # noqa: BLE001
         logger.exception(
             "Batch grading task failed",

@@ -20,9 +20,7 @@ def build_editable_pptx(canonical: dict[str, Any]) -> bytes:
     generation reliable without blocking editable slide content.
     """
     from pptx import Presentation
-    from pptx.dml.color import RGBColor
-    from pptx.enum.text import PP_ALIGN
-    from pptx.util import Inches, Pt
+    from pptx.util import Inches
 
     prs = Presentation()
     prs.slide_width = Inches(SLIDE_W_IN)
@@ -45,7 +43,9 @@ def build_editable_pptx(canonical: dict[str, Any]) -> bytes:
                 _add_full_image_slide(slide, slide_data, image_path)
             else:
                 # Fallback editable si la imagen no está disponible.
-                _add_text_slide(slide, slide_data)
+                _add_text_slide(slide, slide_data, index=index)
+        elif layout == "math-arrays":
+            _add_math_arrays_slide(slide, slide_data)
         elif index == 0 or slide_type == "portada" or layout == "cover":
             _add_cover_slide(slide, slide_data, image_path)
         elif slide_type == "cierre":
@@ -53,7 +53,7 @@ def build_editable_pptx(canonical: dict[str, Any]) -> bytes:
         elif layout in {"split-left", "split-right"} or image_path:
             _add_split_slide(slide, slide_data, image_path, image_left=(layout == "split-left"))
         else:
-            _add_text_slide(slide, slide_data)
+            _add_text_slide(slide, slide_data, index=index)
 
     out = BytesIO()
     prs.save(out)
@@ -74,13 +74,11 @@ def _empty_slide(canonical: dict[str, Any]) -> dict[str, Any]:
 
 def _paint_background(slide: Any, prs: Any) -> None:
     from pptx.dml.color import RGBColor
-    from pptx.enum.shapes import MSO_SHAPE
-    from pptx.util import Inches
 
-    bg = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, 0, 0, prs.slide_width, prs.slide_height)
-    bg.fill.solid()
-    bg.fill.fore_color.rgb = RGBColor(248, 250, 252)
-    bg.line.fill.background()
+    fill = slide.background.fill
+    fill.solid()
+    fill.fore_color.rgb = RGBColor(248, 250, 252)
+
 
 
 def _add_cover_slide(slide: Any, data: dict[str, Any], image_path: Path | None) -> None:
@@ -104,14 +102,244 @@ def _add_cover_slide(slide: Any, data: dict[str, Any], image_path: Path | None) 
     footer.text_frame.paragraphs[0].alignment = PP_ALIGN.LEFT
 
 
-def _add_text_slide(slide: Any, data: dict[str, Any]) -> None:
+def _add_text_slide(slide: Any, data: dict[str, Any], *, index: int = 0) -> None:
+    """Layout editable, colorido y legible para estudiantes."""
     from pptx.dml.color import RGBColor
+    from pptx.enum.shapes import MSO_SHAPE
+    from pptx.enum.text import PP_ALIGN
     from pptx.util import Inches, Pt
 
+    role = str(data.get("role") or data.get("tipo") or "concept").lower()
+    background, accent, soft, ink = _role_palette(role)
+    _fill_slide_background(slide, background)
+
+    bullets = _bullet_texts(data)[:4]
+    title = _text(data.get("titulo"))
+    label = _role_label(role)
+
+    if role in {"activity", "actividad"}:
+        header = slide.shapes.add_shape(
+            MSO_SHAPE.RECTANGLE, Inches(0), Inches(0), Inches(13.333), Inches(2.18)
+        )
+        header.fill.solid()
+        header.fill.fore_color.rgb = accent
+        header.line.fill.background()
+        _add_textbox(
+            slide, label, Inches(0.85), Inches(0.48), Inches(2.5), Inches(0.4),
+            Pt(13), bold=True, color=RGBColor(255, 255, 255),
+        )
+        _add_textbox(
+            slide, title, Inches(0.85), Inches(1.0), Inches(11.5), Inches(0.9),
+            Pt(36), bold=True, color=RGBColor(255, 255, 255),
+        )
+        _add_statement_tiles(
+            slide, bullets, x=0.85, y=2.65, w=11.65, h=3.85,
+            accent=accent, soft=soft, ink=ink, columns=2,
+        )
+    elif role in {"comprehension_check", "assessment", "pregunta", "evaluacion"}:
+        rail = slide.shapes.add_shape(
+            MSO_SHAPE.RECTANGLE, Inches(0), Inches(0), Inches(4.15), Inches(7.5)
+        )
+        rail.fill.solid()
+        rail.fill.fore_color.rgb = accent
+        rail.line.fill.background()
+        question = _add_textbox(
+            slide, "?", Inches(0.7), Inches(0.65), Inches(2.7), Inches(2.1),
+            Pt(92), bold=True, color=RGBColor(255, 255, 255),
+        )
+        question.text_frame.paragraphs[0].alignment = PP_ALIGN.CENTER
+        _add_textbox(
+            slide, label, Inches(0.75), Inches(3.0), Inches(2.9), Inches(0.45),
+            Pt(13), bold=True, color=RGBColor(255, 255, 255),
+        )
+        _add_textbox(
+            slide, title, Inches(0.75), Inches(3.65), Inches(2.9), Inches(1.7),
+            Pt(28), bold=True, color=RGBColor(255, 255, 255),
+        )
+        _add_statement_tiles(
+            slide, bullets, x=4.7, y=1.15, w=7.75, h=5.35,
+            accent=accent, soft=soft, ink=ink, columns=1,
+        )
+    else:
+        rail = slide.shapes.add_shape(
+            MSO_SHAPE.RECTANGLE, Inches(0), Inches(0), Inches(3.78), Inches(7.5)
+        )
+        rail.fill.solid()
+        rail.fill.fore_color.rgb = accent
+        rail.line.fill.background()
+        _add_textbox(
+            slide, f"{index + 1:02d}", Inches(0.72), Inches(0.62),
+            Inches(1.35), Inches(0.7), Pt(30), bold=True,
+            color=RGBColor(255, 255, 255),
+        )
+        _add_textbox(
+            slide, label, Inches(0.72), Inches(1.55), Inches(2.45), Inches(0.5),
+            Pt(13), bold=True, color=RGBColor(255, 255, 255),
+        )
+        _add_textbox(
+            slide, title, Inches(0.72), Inches(2.2), Inches(2.55), Inches(2.25),
+            Pt(29), bold=True, color=RGBColor(255, 255, 255),
+        )
+        _add_statement_tiles(
+            slide, bullets, x=4.28, y=1.12, w=8.25, h=5.55,
+            accent=accent, soft=soft, ink=ink, columns=1,
+        )
+
+
+def _role_palette(role: str):
+    from pptx.dml.color import RGBColor
+
+    if role in {"objective", "objetivo"}:
+        return RGBColor(239, 246, 255), RGBColor(37, 99, 235), RGBColor(219, 234, 254), RGBColor(30, 58, 138)
+    if role in {"prior_knowledge", "saberes_previos"}:
+        return RGBColor(255, 247, 237), RGBColor(234, 88, 12), RGBColor(255, 237, 213), RGBColor(124, 45, 18)
+    if role in {"activity", "actividad"}:
+        return RGBColor(236, 253, 245), RGBColor(5, 150, 105), RGBColor(209, 250, 229), RGBColor(6, 78, 59)
+    if role in {"comprehension_check", "assessment", "pregunta", "evaluacion"}:
+        return RGBColor(245, 243, 255), RGBColor(124, 58, 237), RGBColor(237, 233, 254), RGBColor(76, 29, 149)
+    return RGBColor(238, 242, 255), RGBColor(79, 70, 229), RGBColor(224, 231, 255), RGBColor(49, 46, 129)
+
+
+def _role_label(role: str) -> str:
+    labels = {
+        "objective": "NUESTRA META",
+        "objetivo": "NUESTRA META",
+        "prior_knowledge": "LO QUE YA SABEMOS",
+        "saberes_previos": "LO QUE YA SABEMOS",
+        "activity": "RETO EN CLASE",
+        "actividad": "RETO EN CLASE",
+        "comprehension_check": "PIENSA Y RESPONDE",
+        "assessment": "DEMUESTRA LO APRENDIDO",
+        "pregunta": "PIENSA Y RESPONDE",
+        "evaluacion": "DEMUESTRA LO APRENDIDO",
+    }
+    return labels.get(role, "IDEA IMPORTANTE")
+
+
+def _fill_slide_background(slide: Any, color: Any) -> None:
+    background = slide.background
+    background.fill.solid()
+    background.fill.fore_color.rgb = color
+
+
+def _add_statement_tiles(
+    slide: Any,
+    bullets: list[str],
+    *,
+    x: float,
+    y: float,
+    w: float,
+    h: float,
+    accent: Any,
+    soft: Any,
+    ink: Any,
+    columns: int,
+) -> None:
+    from pptx.dml.color import RGBColor
+    from pptx.enum.shapes import MSO_SHAPE
+    from pptx.util import Inches, Pt
+
+    visible = bullets or ["Descubre la idea principal y explicala con tus palabras."]
+    columns = max(1, min(columns, 2))
+    rows = (len(visible) + columns - 1) // columns
+    gap = 0.28
+    tile_w = (w - gap * (columns - 1)) / columns
+    tile_h = min(1.55, (h - gap * max(0, rows - 1)) / max(1, rows))
+
+    for position, text in enumerate(visible):
+        column = position % columns
+        row = position // columns
+        tile_x = x + column * (tile_w + gap)
+        tile_y = y + row * (tile_h + gap)
+        panel = slide.shapes.add_shape(
+            MSO_SHAPE.ROUNDED_RECTANGLE,
+            Inches(tile_x), Inches(tile_y), Inches(tile_w), Inches(tile_h),
+        )
+        panel.fill.solid()
+        panel.fill.fore_color.rgb = RGBColor(255, 255, 255)
+        panel.line.color.rgb = soft
+        panel.line.width = Pt(1.5)
+
+        badge = slide.shapes.add_shape(
+            MSO_SHAPE.OVAL,
+            Inches(tile_x + 0.28), Inches(tile_y + 0.32), Inches(0.54), Inches(0.54),
+        )
+        badge.fill.solid()
+        badge.fill.fore_color.rgb = accent
+        badge.line.fill.background()
+        number = _add_textbox(
+            slide, str(position + 1), Inches(tile_x + 0.28), Inches(tile_y + 0.34),
+            Inches(0.54), Inches(0.42), Pt(14), bold=True,
+            color=RGBColor(255, 255, 255),
+        )
+        number.text_frame.paragraphs[0].alignment = 2
+        _add_textbox(
+            slide, _clip(text, 135), Inches(tile_x + 1.02), Inches(tile_y + 0.27),
+            Inches(tile_w - 1.27), Inches(tile_h - 0.42), Pt(20),
+            color=ink,
+        )
+
+
+
+def _add_math_arrays_slide(slide: Any, data: dict[str, Any]) -> None:
+    """Muestra conteos como texto editable, nunca como imagen generativa."""
+    from pptx.dml.color import RGBColor
+    from pptx.enum.text import PP_ALIGN
+    from pptx.util import Inches, Pt
+
+    dot = chr(0x25CF)
+    bullets = _bullet_texts(data)
+    groups: list[tuple[str, list[str]]] = []
+    equation = ""
+    rows: list[str] = []
+    for bullet in bullets:
+        for line in str(bullet).splitlines():
+            clean = line.strip()
+            if not clean:
+                continue
+            if "=" in clean and not clean.startswith(dot):
+                if equation:
+                    groups.append((equation, rows))
+                equation, rows = clean, []
+            elif dot in clean:
+                rows.append(clean)
+    if equation:
+        groups.append((equation, rows))
+
     _add_accent_bar(slide, Inches(0), Inches(0), Inches(0.12), Inches(7.5))
-    _add_label(slide, "CLASE", Inches(0.85), Inches(0.75), Inches(1.45))
-    _add_textbox(slide, _text(data.get("titulo")), Inches(0.85), Inches(1.35), Inches(11.6), Inches(1.15), Pt(34), bold=True, color=RGBColor(15, 23, 42))
-    _add_bullets(slide, _bullet_texts(data), Inches(1.0), Inches(2.85), Inches(11.15), Inches(3.7), Pt(20))
+    _add_label(slide, "MATEMATICAS EXACTAS", Inches(0.85), Inches(0.72), Inches(2.45))
+    _add_textbox(
+        slide, _text(data.get("titulo")), Inches(0.85), Inches(1.25),
+        Inches(11.6), Inches(0.85), Pt(32), bold=True,
+        color=RGBColor(15, 23, 42),
+    )
+
+    if not groups:
+        _add_bullets(slide, bullets, Inches(1.0), Inches(2.45), Inches(11.15), Inches(3.9), Pt(20))
+        return
+
+    width = 5.55 if len(groups) > 1 else 11.15
+    for index, (label, count_rows) in enumerate(groups[:2]):
+        x = 0.95 + (index * 6.05)
+        _add_textbox(
+            slide, label, Inches(x), Inches(2.45), Inches(width),
+            Inches(0.7), Pt(24), bold=True, color=RGBColor(13, 148, 136),
+        )
+        shape = slide.shapes.add_textbox(
+            Inches(x), Inches(3.25), Inches(width), Inches(2.75),
+        )
+        frame = shape.text_frame
+        frame.clear()
+        frame.word_wrap = False
+        for row_index, row in enumerate(count_rows):
+            paragraph = frame.paragraphs[0] if row_index == 0 else frame.add_paragraph()
+            paragraph.text = row
+            paragraph.alignment = PP_ALIGN.CENTER
+            paragraph.font.name = "Arial"
+            paragraph.font.size = Pt(24)
+            paragraph.font.bold = True
+            paragraph.font.color.rgb = RGBColor(30, 41, 59)
+            paragraph.space_after = Pt(10)
 
 
 def _add_split_slide(slide: Any, data: dict[str, Any], image_path: Path | None, *, image_left: bool) -> None:

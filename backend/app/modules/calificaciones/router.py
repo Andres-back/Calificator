@@ -6,7 +6,16 @@ import mimetypes
 from datetime import datetime, timezone
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, Response, UploadFile, status
+from fastapi import (
+    APIRouter,
+    Depends,
+    File,
+    Form,
+    HTTPException,
+    Response,
+    UploadFile,
+    status,
+)
 from fastapi.responses import FileResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -38,6 +47,7 @@ from app.modules.calificaciones.schemas import (
     LoteAsincronoRead,
     ResolverIncidencia,
     ReemplazoEvidenciaCreate,
+    RevisionManualCreate,
     SalonEstudianteRead,
     SalonEstudianteUpdate,
     SalonResumen,
@@ -65,8 +75,13 @@ from app.services.storage_service import (
     validate_mime,
 )
 from app.shared.enums import (
-    CalificacionEstado, EntregaEstado, EntregaTipo, EvaluacionModalidad,
-    JobEstado, JobTipo, UserRole,
+    CalificacionEstado,
+    EntregaEstado,
+    EntregaTipo,
+    EvaluacionModalidad,
+    JobEstado,
+    JobTipo,
+    UserRole,
 )
 from app.workers.tasks_grading import grade_batch
 
@@ -120,6 +135,7 @@ def _delete_replaced_evidence(public_url: str | None) -> None:
         resolve_upload_path(public_url).unlink(missing_ok=True)
     except (OSError, ValueError):
         pass
+
 
 def _evidence_url(entrega: Entrega | None) -> str | None:
     if not entrega or not entrega.archivo_url:
@@ -193,13 +209,15 @@ async def _enqueue_persisted_grading(
     await db.refresh(queued_grade)
 
     try:
-        grade_batch.apply_async(kwargs={
-            "evaluacion_id": str(evaluacion.id),
-            "estudiante_ids": [],
-            "entrega_ids": [str(entrega.id)],
-            "job_id": str(job_id),
-            "profesor_id": str(profesor_id),
-        })
+        grade_batch.apply_async(
+            kwargs={
+                "evaluacion_id": str(evaluacion.id),
+                "estudiante_ids": [],
+                "entrega_ids": [str(entrega.id)],
+                "job_id": str(job_id),
+                "profesor_id": str(profesor_id),
+            }
+        )
     except Exception as exc:  # noqa: BLE001
         entrega.estado = EntregaEstado.REQUIERE_REINTENTO.value
         failed_payload = {
@@ -226,7 +244,12 @@ async def _enqueue_persisted_grading(
         ) from exc
     return queued_grade
 
-@router.post("/calificaciones/foto", response_model=CalificacionRead, status_code=status.HTTP_202_ACCEPTED)
+
+@router.post(
+    "/calificaciones/foto",
+    response_model=CalificacionRead,
+    status_code=status.HTTP_202_ACCEPTED,
+)
 async def calificar_foto(
     evaluacion_id: UUID = Form(...),
     estudiante_id: UUID = Form(...),
@@ -361,6 +384,7 @@ async def calificar_foto(
     _delete_replaced_evidence(previous_url)
     return result
 
+
 @router.post(
     "/calificaciones/{calificacion_id}/reintentar-foto",
     response_model=CalificacionRead,
@@ -483,13 +507,17 @@ async def calificar_lote(
     - estudiantes: JSON array de UUIDs de estudiantes ["id1", "id2", ...].
     """
     require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
-    evaluacion = await evaluaciones_service.ensure_can_manage_evaluation(db, evaluacion_id, current_user)
+    evaluacion = await evaluaciones_service.ensure_can_manage_evaluation(
+        db, evaluacion_id, current_user
+    )
     service.ensure_evaluation_accepts_grading(evaluacion)
 
     try:
         estudiante_ids = json.loads(estudiantes)
     except (json.JSONDecodeError, TypeError):
-        raise HTTPException(status_code=400, detail="'estudiantes' debe ser un JSON array de UUIDs")
+        raise HTTPException(
+            status_code=400, detail="'estudiantes' debe ser un JSON array de UUIDs"
+        )
 
     if len(files) != len(estudiante_ids):
         raise HTTPException(
@@ -501,10 +529,15 @@ async def calificar_lote(
     for sid in estudiante_ids:
         sid_uuid = UUID(sid) if isinstance(sid, str) else sid
         if not await is_student_enrolled(db, evaluacion.materia_id, sid_uuid):
-            raise HTTPException(status_code=403, detail=f"Estudiante {sid} no está matriculado en esta materia")
+            raise HTTPException(
+                status_code=403,
+                detail=f"Estudiante {sid} no está matriculado en esta materia",
+            )
 
         await service.ensure_student_can_submit_new_evidence(
-            db, evaluacion, sid_uuid,
+            db,
+            evaluacion,
+            sid_uuid,
         )
 
     calificaciones_list: list[CalificacionRead] = []
@@ -550,11 +583,20 @@ async def calificar_lote(
             )
             calificaciones_list.append(CalificacionRead.model_validate(cal))
         except Exception as e:
-            errores.append({"estudiante_id": str(sid), "filename": foto.filename or f"lote_{i}", "error": str(e)})
+            errores.append(
+                {
+                    "estudiante_id": str(sid),
+                    "filename": foto.filename or f"lote_{i}",
+                    "error": str(e),
+                }
+            )
 
     await db.commit()
 
-    return {"calificaciones": [c.model_dump() for c in calificaciones_list], "errores": errores}
+    return {
+        "calificaciones": [c.model_dump() for c in calificaciones_list],
+        "errores": errores,
+    }
 
 
 @router.post(
@@ -572,7 +614,9 @@ async def calificar_lote_asincrono(
     """Persist photos first, then grade them in a cancellable background job."""
     require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
     evaluacion = await evaluaciones_service.ensure_can_manage_evaluation(
-        db, evaluacion_id, current_user,
+        db,
+        evaluacion_id,
+        current_user,
     )
     service.ensure_evaluation_accepts_grading(evaluacion)
 
@@ -588,7 +632,9 @@ async def calificar_lote_asincrono(
         ) from exc
 
     if not files:
-        raise HTTPException(status_code=400, detail="El lote debe contener al menos una foto")
+        raise HTTPException(
+            status_code=400, detail="El lote debe contener al menos una foto"
+        )
     if len(files) > MAX_ASYNC_BATCH_FILES:
         raise HTTPException(
             status_code=413,
@@ -613,7 +659,9 @@ async def calificar_lote_asincrono(
             )
 
         await service.ensure_student_can_submit_new_evidence(
-            db, evaluacion, estudiante_id,
+            db,
+            evaluacion,
+            estudiante_id,
         )
 
     prepared_files: list[tuple[bytes, str, str]] = []
@@ -638,9 +686,16 @@ async def calificar_lote_asincrono(
     entregas: list[Entrega] = []
     try:
         for estudiante_id, (content, filename, mime) in zip(
-            estudiante_ids, prepared_files, strict=True,
+            estudiante_ids,
+            prepared_files,
+            strict=True,
         ):
-            archivo_url = await save_upload(content, filename, subfolder="entregas", max_size_bytes=MAX_EVIDENCE_BYTES)
+            archivo_url = await save_upload(
+                content,
+                filename,
+                subfolder="entregas",
+                max_size_bytes=MAX_EVIDENCE_BYTES,
+            )
             entrega = Entrega(
                 evaluacion_id=evaluacion.id,
                 estudiante_id=estudiante_id,
@@ -674,13 +729,15 @@ async def calificar_lote_asincrono(
         raise
 
     try:
-        grade_batch.apply_async(kwargs={
-            "evaluacion_id": str(evaluacion.id),
-            "estudiante_ids": [],
-            "entrega_ids": [str(value) for value in entrega_ids],
-            "job_id": str(job_id),
-            "profesor_id": str(current_user.id),
-        })
+        grade_batch.apply_async(
+            kwargs={
+                "evaluacion_id": str(evaluacion.id),
+                "estudiante_ids": [],
+                "entrega_ids": [str(value) for value in entrega_ids],
+                "job_id": str(job_id),
+                "profesor_id": str(current_user.id),
+            }
+        )
     except Exception as exc:  # noqa: BLE001
         for entrega in entregas:
             entrega.estado = EntregaEstado.REQUIERE_REINTENTO.value
@@ -704,7 +761,9 @@ async def calificar_lote_asincrono(
     }
 
 
-@router.patch("/calificaciones/{calificacion_id}/confirmar", response_model=CalificacionRead)
+@router.patch(
+    "/calificaciones/{calificacion_id}/confirmar", response_model=CalificacionRead
+)
 async def confirmar(
     calificacion_id: UUID,
     payload: ConfirmarNota,
@@ -713,11 +772,15 @@ async def confirmar(
 ) -> object:
     require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
     cal = await service.get_calificacion_or_404(db, calificacion_id)
-    await evaluaciones_service.ensure_can_manage_evaluation(db, cal.evaluacion_id, current_user)
+    await evaluaciones_service.ensure_can_manage_evaluation(
+        db, cal.evaluacion_id, current_user
+    )
     return await service.confirmar_nota(db, cal, payload)
 
 
-@router.patch("/calificaciones/{calificacion_id}/ajustar", response_model=CalificacionRead)
+@router.patch(
+    "/calificaciones/{calificacion_id}/ajustar", response_model=CalificacionRead
+)
 async def ajustar(
     calificacion_id: UUID,
     payload: AjustarNota,
@@ -726,11 +789,33 @@ async def ajustar(
 ) -> object:
     require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
     cal = await service.get_calificacion_or_404(db, calificacion_id)
-    await evaluaciones_service.ensure_can_manage_evaluation(db, cal.evaluacion_id, current_user)
+    await evaluaciones_service.ensure_can_manage_evaluation(
+        db, cal.evaluacion_id, current_user
+    )
     return await service.ajustar_nota(db, cal, payload)
 
 
-@router.post("/evaluaciones/{evaluacion_id}/calificaciones/manual", response_model=CalificacionRead)
+@router.patch(
+    "/calificaciones/{calificacion_id}/revision-manual", response_model=CalificacionRead
+)
+async def marcar_revision_manual(
+    calificacion_id: UUID,
+    payload: RevisionManualCreate,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> object:
+    require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
+    cal = await service.get_calificacion_or_404(db, calificacion_id)
+    await evaluaciones_service.ensure_can_manage_evaluation(
+        db, cal.evaluacion_id, current_user
+    )
+    return await service.marcar_revision_manual(db, cal, payload, current_user)
+
+
+@router.post(
+    "/evaluaciones/{evaluacion_id}/calificaciones/manual",
+    response_model=CalificacionRead,
+)
 async def establecer_nota_manual(
     evaluacion_id: UUID,
     payload: CalificacionManualCreate,
@@ -744,19 +829,26 @@ async def establecer_nota_manual(
     return await service.set_manual_grade(db, evaluacion, payload, current_user)
 
 
-@router.get("/evaluaciones/{evaluacion_id}/calificaciones", response_model=list[CalificacionRead])
+@router.get(
+    "/evaluaciones/{evaluacion_id}/calificaciones",
+    response_model=list[CalificacionRead],
+)
 async def list_calificaciones(
     evaluacion_id: UUID,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> list:
     require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
-    evaluacion = await evaluaciones_service.ensure_can_manage_evaluation(db, evaluacion_id, current_user)
+    evaluacion = await evaluaciones_service.ensure_can_manage_evaluation(
+        db, evaluacion_id, current_user
+    )
     await service.assign_overdue_zero_grades(db, evaluacion)
     return await service.list_calificaciones_for_evaluacion(db, evaluacion_id)
 
 
-@router.get("/estudiantes/{estudiante_id}/resumen-academico", response_model=ResumenAcademico)
+@router.get(
+    "/estudiantes/{estudiante_id}/resumen-academico", response_model=ResumenAcademico
+)
 async def get_resumen_academico(
     estudiante_id: UUID,
     current_user: User = Depends(get_current_user),
@@ -769,7 +861,9 @@ async def get_resumen_academico(
         raise HTTPException(status_code=403, detail="No autorizado")
 
     publicada_only = current_user.rol == UserRole.ESTUDIANTE.value
-    return await service.get_resumen_academico(db, estudiante_id, publicada_only=publicada_only)
+    return await service.get_resumen_academico(
+        db, estudiante_id, publicada_only=publicada_only
+    )
 
 
 @router.get("/estudiantes/{estudiante_id}/boletin")
@@ -792,12 +886,17 @@ async def get_boletin(
         raise HTTPException(status_code=403, detail="No autorizado")
 
     if not await is_student_enrolled(db, materia_id, estudiante_id):
-        raise HTTPException(status_code=403, detail="El estudiante no esta matriculado en esta materia")
+        raise HTTPException(
+            status_code=403, detail="El estudiante no esta matriculado en esta materia"
+        )
     publicada_only = current_user.rol == UserRole.ESTUDIANTE.value
-    return await service.get_boletin(db, estudiante_id, materia_id, publicada_only=publicada_only)
+    return await service.get_boletin(
+        db, estudiante_id, materia_id, publicada_only=publicada_only
+    )
 
 
 # ── Modo Salón ─────────────────────────────────────────────────────────────────
+
 
 @router.post("/calificaciones/modo-salon/iniciar", response_model=SalonSesionRead)
 async def iniciar_salon(
@@ -806,7 +905,9 @@ async def iniciar_salon(
     db: AsyncSession = Depends(get_db),
 ) -> dict:
     require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
-    evaluacion = await evaluaciones_service.ensure_can_manage_evaluation(db, evaluacion_id, current_user)
+    evaluacion = await evaluaciones_service.ensure_can_manage_evaluation(
+        db, evaluacion_id, current_user
+    )
     service.ensure_evaluation_accepts_grading(evaluacion)
 
     sesion = await db.scalar(
@@ -849,7 +950,9 @@ async def obtener_salon(
     if not sesion:
         raise HTTPException(status_code=404, detail="Sesión no encontrada")
     await evaluaciones_service.ensure_can_manage_evaluation(
-        db, sesion.evaluacion_id, current_user,
+        db,
+        sesion.evaluacion_id,
+        current_user,
     )
     _, _total, pendientes, _c, _cf, _o = await get_sesion_summary(db, sesion_id)
     return {
@@ -874,10 +977,19 @@ async def salon_estudiantes(
     if not sesion:
         raise HTTPException(status_code=404, detail="Sesión no encontrada")
     await evaluaciones_service.ensure_can_manage_evaluation(
-        db, sesion.evaluacion_id, current_user,
+        db,
+        sesion.evaluacion_id,
+        current_user,
     )
 
-    estudiantes, total, pendientes, calificados, confirmados, omitidos = await get_sesion_summary(db, sesion_id)
+    (
+        estudiantes,
+        total,
+        pendientes,
+        calificados,
+        confirmados,
+        omitidos,
+    ) = await get_sesion_summary(db, sesion_id)
     return {
         "sesion_id": sesion_id,
         "evaluacion_id": sesion.evaluacion_id,
@@ -915,11 +1027,17 @@ async def salon_actualizar_estudiante(
     if sesion.estado != "activa":
         raise HTTPException(status_code=409, detail="La sesión está cerrada")
     await evaluaciones_service.ensure_can_manage_evaluation(
-        db, sesion.evaluacion_id, current_user,
+        db,
+        sesion.evaluacion_id,
+        current_user,
     )
 
     sse = await update_estudiante_estado(
-        db, sesion_id, estudiante_id, payload.estado, payload.error_msg,
+        db,
+        sesion_id,
+        estudiante_id,
+        payload.estado,
+        payload.error_msg,
     )
     if not sse:
         raise HTTPException(
@@ -951,13 +1069,19 @@ async def salon_foto(
     if not sesion:
         raise HTTPException(status_code=404, detail="Sesion no encontrada")
     if sesion.estado != "activa":
-        raise HTTPException(status_code=409, detail="La sesión de Modo Salón está cerrada")
+        raise HTTPException(
+            status_code=409, detail="La sesión de Modo Salón está cerrada"
+        )
     evaluacion = await evaluaciones_service.ensure_can_manage_evaluation(
-        db, sesion.evaluacion_id, current_user,
+        db,
+        sesion.evaluacion_id,
+        current_user,
     )
     service.ensure_evaluation_accepts_grading(evaluacion)
     if not await is_student_enrolled(db, evaluacion.materia_id, estudiante_id):
-        raise HTTPException(status_code=403, detail="El estudiante no esta matriculado en esta materia")
+        raise HTTPException(
+            status_code=403, detail="El estudiante no esta matriculado en esta materia"
+        )
 
     await service.ensure_student_can_submit_new_evidence(
         db,
@@ -1018,7 +1142,9 @@ async def cerrar_salon(
     if not sesion:
         raise HTTPException(status_code=404, detail="Sesion no encontrada")
     await evaluaciones_service.ensure_can_manage_evaluation(
-        db, sesion.evaluacion_id, current_user,
+        db,
+        sesion.evaluacion_id,
+        current_user,
     )
     sesion.estado = "cerrada"
     await db.commit()
@@ -1027,7 +1153,10 @@ async def cerrar_salon(
 
 # ── Entregas ────────────────────────────────────────────────────────────────────
 
-@router.get("/evaluaciones/{evaluacion_id}/mi-entrega", response_model=EntregaRead | None)
+
+@router.get(
+    "/evaluaciones/{evaluacion_id}/mi-entrega", response_model=EntregaRead | None
+)
 async def get_my_delivery(
     evaluacion_id: UUID,
     current_user: User = Depends(get_current_user),
@@ -1036,7 +1165,9 @@ async def get_my_delivery(
     require_role(current_user, [UserRole.ESTUDIANTE])
     evaluacion = await evaluaciones_service.get_evaluation_or_404(db, evaluacion_id)
     if not await is_student_enrolled(db, evaluacion.materia_id, current_user.id):
-        raise HTTPException(status_code=403, detail="No estas matriculado en esta materia")
+        raise HTTPException(
+            status_code=403, detail="No estas matriculado en esta materia"
+        )
     if evaluacion.estado not in evaluaciones_service.STUDENT_VISIBLE_EVALUATION_STATES:
         raise HTTPException(status_code=404, detail="Evaluacion no encontrada")
     entrega = await db.scalar(
@@ -1051,7 +1182,11 @@ async def get_my_delivery(
     return _entrega_read(entrega) if entrega else None
 
 
-@router.post("/evaluaciones/{evaluacion_id}/entregas", response_model=EntregaRead, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/evaluaciones/{evaluacion_id}/entregas",
+    response_model=EntregaRead,
+    status_code=status.HTTP_201_CREATED,
+)
 async def crear_entrega_online(
     evaluacion_id: UUID,
     payload: EntregaOnlineCreate,
@@ -1073,10 +1208,16 @@ async def crear_entrega_online(
             ),
         )
     if not await is_student_enrolled(db, evaluacion.materia_id, current_user.id):
-        raise HTTPException(status_code=403, detail="No estas matriculado en esta materia")
+        raise HTTPException(
+            status_code=403, detail="No estas matriculado en esta materia"
+        )
 
     if evaluacion.tiempo_limite_minutos and evaluacion.fecha_publicacion:
-        deadline = evaluacion.fecha_publicacion.replace(tzinfo=timezone.utc) if evaluacion.fecha_publicacion.tzinfo is None else evaluacion.fecha_publicacion
+        deadline = (
+            evaluacion.fecha_publicacion.replace(tzinfo=timezone.utc)
+            if evaluacion.fecha_publicacion.tzinfo is None
+            else evaluacion.fecha_publicacion
+        )
         elapsed = (datetime.now(timezone.utc) - deadline).total_seconds() / 60
         if elapsed > evaluacion.tiempo_limite_minutos:
             raise HTTPException(
@@ -1085,14 +1226,18 @@ async def crear_entrega_online(
             )
 
     await service.ensure_student_can_submit_new_evidence(
-        db, evaluacion, current_user.id,
+        db,
+        evaluacion,
+        current_user.id,
     )
 
     respuesta_texto = payload.respuesta_texto
 
     # Persist the student's evidence before invoking any external AI provider.
     # A mixed submission waits for its physical section and is graded only once.
-    mixed_submission = getattr(evaluacion, "modalidad", None) == EvaluacionModalidad.MIXTA.value
+    mixed_submission = (
+        getattr(evaluacion, "modalidad", None) == EvaluacionModalidad.MIXTA.value
+    )
     entrega = Entrega(
         evaluacion_id=evaluacion.id,
         estudiante_id=current_user.id,
@@ -1131,6 +1276,7 @@ async def crear_entrega_online(
         await db.refresh(entrega)
     return _entrega_read(entrega)
 
+
 @router.post(
     "/evaluaciones/{evaluacion_id}/entregas/archivo",
     response_model=EntregaRead,
@@ -1156,7 +1302,9 @@ async def crear_entrega_archivo_estudiante(
             detail="Esta evaluacion es online y solo acepta respuestas en pantalla.",
         )
     if not await is_student_enrolled(db, evaluacion.materia_id, current_user.id):
-        raise HTTPException(status_code=403, detail="No estas matriculado en esta materia")
+        raise HTTPException(
+            status_code=403, detail="No estas matriculado en esta materia"
+        )
 
     try:
         bundle = await build_evidence_bundle(
@@ -1185,7 +1333,10 @@ async def crear_entrega_archivo_estudiante(
                 status_code=409,
                 detail="Primero completa y envia la parte online; despues adjunta las hojas.",
             )
-        if latest.archivo_url and latest.estado != EntregaEstado.REQUIERE_REINTENTO.value:
+        if (
+            latest.archivo_url
+            and latest.estado != EntregaEstado.REQUIERE_REINTENTO.value
+        ):
             raise HTTPException(
                 status_code=409,
                 detail="Ya entregaste la evidencia fisica de esta evaluacion.",
@@ -1256,6 +1407,7 @@ async def crear_entrega_archivo_estudiante(
         await db.refresh(entrega)
     return _entrega_read(entrega)
 
+
 # ── Detalle ──────────────────────────────────────────────────────────────────────
 
 
@@ -1275,11 +1427,15 @@ async def get_entrega_evidencia(
     else:
         require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
         await evaluaciones_service.ensure_can_manage_evaluation(
-            db, entrega.evaluacion_id, current_user,
+            db,
+            entrega.evaluacion_id,
+            current_user,
         )
 
     if not entrega.archivo_url:
-        raise HTTPException(status_code=404, detail="La entrega no tiene evidencia adjunta")
+        raise HTTPException(
+            status_code=404, detail="La entrega no tiene evidencia adjunta"
+        )
     try:
         evidence_path = resolve_upload_path(entrega.archivo_url)
     except ValueError as exc:
@@ -1287,7 +1443,9 @@ async def get_entrega_evidencia(
     if not evidence_path.is_file():
         raise HTTPException(status_code=404, detail="Evidencia no encontrada")
 
-    media_type = mimetypes.guess_type(evidence_path.name)[0] or "application/octet-stream"
+    media_type = (
+        mimetypes.guess_type(evidence_path.name)[0] or "application/octet-stream"
+    )
     return FileResponse(
         evidence_path,
         media_type=media_type,
@@ -1299,7 +1457,9 @@ async def get_entrega_evidencia(
     )
 
 
-@router.get("/calificaciones/{calificacion_id}/detalle", response_model=CalificacionDetalleRead)
+@router.get(
+    "/calificaciones/{calificacion_id}/detalle", response_model=CalificacionDetalleRead
+)
 async def get_calificacion_detalle(
     calificacion_id: UUID,
     current_user: User = Depends(get_current_user),
@@ -1308,7 +1468,9 @@ async def get_calificacion_detalle(
     require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
     cal = await service.get_calificacion_or_404(db, calificacion_id)
     await evaluaciones_service.ensure_can_manage_evaluation(
-        db, cal.evaluacion_id, current_user,
+        db,
+        cal.evaluacion_id,
+        current_user,
     )
     return await service.get_calificacion_detalle(db, calificacion_id)
 
@@ -1316,7 +1478,9 @@ async def get_calificacion_detalle(
 # ── Publicar ─────────────────────────────────────────────────────────────────────
 
 
-@router.patch("/calificaciones/{calificacion_id}/publicar", response_model=CalificacionRead)
+@router.patch(
+    "/calificaciones/{calificacion_id}/publicar", response_model=CalificacionRead
+)
 async def publicar(
     calificacion_id: UUID,
     current_user: User = Depends(get_current_user),
@@ -1324,7 +1488,9 @@ async def publicar(
 ) -> object:
     require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
     cal = await service.get_calificacion_or_404(db, calificacion_id)
-    await evaluaciones_service.ensure_can_manage_evaluation(db, cal.evaluacion_id, current_user)
+    await evaluaciones_service.ensure_can_manage_evaluation(
+        db, cal.evaluacion_id, current_user
+    )
     return await service.publicar_nota(db, cal)
 
 
@@ -1415,7 +1581,11 @@ async def solicitar_revision_calificacion(
     )
 
 
-@router.post("/calificaciones/{calificacion_id}/incidencias", response_model=IncidenciaRead, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/calificaciones/{calificacion_id}/incidencias",
+    response_model=IncidenciaRead,
+    status_code=status.HTTP_201_CREATED,
+)
 async def crear_incidencia(
     calificacion_id: UUID,
     payload: IncidenciaCreate,
@@ -1424,11 +1594,17 @@ async def crear_incidencia(
 ) -> object:
     require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
     cal = await service.get_calificacion_or_404(db, calificacion_id)
-    await evaluaciones_service.ensure_can_manage_evaluation(db, cal.evaluacion_id, current_user)
-    return await service.crear_incidencia(db, calificacion_id, payload.tipo, payload.descripcion, payload.metadata_json)
+    await evaluaciones_service.ensure_can_manage_evaluation(
+        db, cal.evaluacion_id, current_user
+    )
+    return await service.crear_incidencia(
+        db, calificacion_id, payload.tipo, payload.descripcion, payload.metadata_json
+    )
 
 
-@router.get("/calificaciones/{calificacion_id}/incidencias", response_model=list[IncidenciaRead])
+@router.get(
+    "/calificaciones/{calificacion_id}/incidencias", response_model=list[IncidenciaRead]
+)
 async def listar_incidencias(
     calificacion_id: UUID,
     current_user: User = Depends(get_current_user),
@@ -1436,7 +1612,9 @@ async def listar_incidencias(
 ) -> object:
     require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
     cal = await service.get_calificacion_or_404(db, calificacion_id)
-    await evaluaciones_service.ensure_can_manage_evaluation(db, cal.evaluacion_id, current_user)
+    await evaluaciones_service.ensure_can_manage_evaluation(
+        db, cal.evaluacion_id, current_user
+    )
     return await service.listar_incidencias(db, calificacion_id)
 
 
@@ -1448,7 +1626,9 @@ async def resolver_incidencia(
     db: AsyncSession = Depends(get_db),
 ) -> object:
     require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
-    result = await service.resolver_incidencia(db, incidencia_id, payload.resolucion, current_user.id)
+    result = await service.resolver_incidencia(
+        db, incidencia_id, payload.resolucion, current_user.id
+    )
     if not result:
         raise HTTPException(status_code=404, detail="Incidencia no encontrada")
     return result

@@ -102,6 +102,8 @@ def _normalize_xcal_slide(slide: Any, index: int) -> dict[str, Any]:
         "image": str(slide.get("image") or ""),
         "image_asset": str(slide.get("image_asset") or ""),
         "notes": str(slide.get("notes") or ""),
+        "role": str(slide.get("role") or ""),
+        "layout": str(slide.get("layout") or slide.get("layout_hint") or ""),
     }
     if str(slide.get("slide_type") or slide.get("layout") or "").lower() == "full_image":
         normalized["slide_type"] = "full_image"
@@ -161,7 +163,8 @@ def _page(draw: ImageDraw.ImageDraw, x: int, y: int, index: int, total: int, the
 
 
 def _render_slide(deck_title: str, slide: dict[str, Any], index: int, total: int = 1) -> bytes:
-    theme = _deck_theme(deck_title)
+    role = str(slide.get("role") or "").lower()
+    theme = _role_theme(role, _deck_theme(deck_title))
     canvas = Image.new("RGB", (SLIDE_W, SLIDE_H), theme[0])
     draw = ImageDraw.Draw(canvas)
 
@@ -175,6 +178,8 @@ def _render_slide(deck_title: str, slide: dict[str, Any], index: int, total: int
 
     if str(slide.get("slide_type") or "").lower() == "full_image" and photo is not None:
         _layout_full_image(canvas, photo)
+    elif str(slide.get("layout") or "").lower() == "math-arrays":
+        _layout_math_arrays(canvas, draw, title, bullets, theme, index=index, total=total)
     elif index == 0:
         _layout_cover(canvas, draw, deck_title, title, bullets, photo, theme)
     elif photo is not None:
@@ -255,30 +260,105 @@ def _layout_split(canvas, draw, title, bullets, photo, theme, *, index, total, i
     _page(draw, tx0, SLIDE_H - 64, index, total, theme)
 
 
+def _role_theme(role: str, fallback):
+    palettes = {
+        "objective": ("#eff6ff", "#172554", "#1e3a8a", "#3b82f6", "#2563eb", "#dbeafe"),
+        "objetivo": ("#eff6ff", "#172554", "#1e3a8a", "#3b82f6", "#2563eb", "#dbeafe"),
+        "prior_knowledge": ("#fff7ed", "#431407", "#7c2d12", "#f97316", "#ea580c", "#ffedd5"),
+        "saberes_previos": ("#fff7ed", "#431407", "#7c2d12", "#f97316", "#ea580c", "#ffedd5"),
+        "activity": ("#ecfdf5", "#022c22", "#065f46", "#10b981", "#059669", "#d1fae5"),
+        "actividad": ("#ecfdf5", "#022c22", "#065f46", "#10b981", "#059669", "#d1fae5"),
+        "comprehension_check": ("#f5f3ff", "#2e1065", "#4c1d95", "#8b5cf6", "#7c3aed", "#ede9fe"),
+        "assessment": ("#f5f3ff", "#2e1065", "#4c1d95", "#8b5cf6", "#7c3aed", "#ede9fe"),
+        "pregunta": ("#f5f3ff", "#2e1065", "#4c1d95", "#8b5cf6", "#7c3aed", "#ede9fe"),
+    }
+    safe_light = ("#eef2ff", "#1e1b4b", "#312e81", "#6366f1", "#4f46e5", "#e0e7ff")
+    return palettes.get(role, safe_light)
+
+
+def _layout_math_arrays(canvas, draw, title, bullets, theme, *, index, total) -> None:
+    ink = "#1e1b4b"
+    body = "#312e81"
+    muted = "#64748b"
+    accent = "#4f46e5"
+    soft = "#e0e7ff"
+    readable_theme = ("#eef2ff", ink, body, muted, accent, soft)
+    dot = chr(0x25CF)
+    groups = []
+    equation = ""
+    rows = []
+    for bullet in bullets:
+        for raw_line in str(bullet).splitlines():
+            line = raw_line.strip()
+            if not line:
+                continue
+            if "=" in line and not line.startswith(dot):
+                if equation:
+                    groups.append((equation, rows))
+                equation, rows = line, []
+            elif dot in line:
+                rows.append(line)
+    if equation:
+        groups.append((equation, rows))
+
+    draw.rectangle((0, 0, SLIDE_W, SLIDE_H), fill="#eef2ff")
+    draw.rectangle((0, 0, 22, SLIDE_H), fill="#4f46e5")
+    _kicker(draw, 100, 82, "MATEMATICAS EXACTAS", readable_theme)
+    tfont, tlines = _fit_lines(draw, title, max_width=1360, max_lines=1, sizes=[60, 54, 48], bold=True)
+    draw.text((100, 155), tlines[0], font=tfont, fill=ink)
+    for group_index, (label, count_rows) in enumerate(groups[:2]):
+        x0 = 92 + group_index * 760
+        draw.rounded_rectangle((x0, 260, x0 + 670, 760), radius=42, fill="#ffffff", outline="#c7d2fe", width=4)
+        draw.text((x0 + 50, 310), label, font=_font(34, bold=True), fill="#4f46e5")
+        y = 405
+        for row in count_rows:
+            draw.text((x0 + 335, y), row, font=_font(38, bold=True), fill=ink, anchor="ma")
+            y += 82
+    _page(draw, 100, SLIDE_H - 64, index, total, readable_theme)
+
+
 def _layout_text(canvas, draw, title, bullets, theme, *, index, total) -> None:
     bg, ink, body, muted, accent, soft = theme
-    draw.rectangle((0, 0, 20, SLIDE_H), fill=accent)
-    draw.text((SLIDE_W - 64, -30), f"{index + 1:02d}", font=_font(340, bold=True), fill=soft, anchor="ra")
+    draw.rectangle((0, 0, 500, SLIDE_H), fill=accent)
+    draw.text((82, 74), f"{index + 1:02d}", font=_font(46, bold=True), fill="#ffffff")
+    draw.text((84, 151), "APRENDEMOS JUNTOS", font=_font(22, bold=True), fill="#ffffff")
 
-    pad = 124
-    _kicker(draw, pad, 132, f"{index + 1:02d}", theme)
-    y = 204
-    tfont, tlines = _fit_lines(draw, title, max_width=SLIDE_W - 2 * pad, max_lines=2, sizes=[76, 64, 56, 48], bold=True)
-    for line in tlines:
-        draw.text((pad, y), line, font=tfont, fill=ink)
-        y += _line_height(tfont) + 12
-    y += 10
-    draw.rounded_rectangle((pad, y, pad + 132, y + 11), radius=5, fill=accent)
-    y += 52
-    bfont, items = _fit_bullet_lines(draw, bullets, max_width=SLIDE_W - 2 * pad - 60, max_lines=8)
-    for marker, line in items:
-        lh = _line_height(bfont)
-        if marker:
-            cy = y + lh // 2
-            draw.ellipse((pad, cy - 8, pad + 16, cy + 8), fill=accent)
-        draw.text((pad + 44, y), line, font=bfont, fill=body)
-        y += lh + 16
-    _page(draw, pad, SLIDE_H - 64, index, total, theme)
+    title_font, title_lines = _fit_lines(
+        draw, title, max_width=340, max_lines=5,
+        sizes=[54, 48, 42, 36], bold=True,
+    )
+    y = 228
+    for line in title_lines:
+        draw.text((84, y), line, font=title_font, fill="#ffffff")
+        y += _line_height(title_font) + 10
+
+    visible = bullets[:4] or ["Descubre la idea principal y explicala con tus palabras."]
+    x0, x1 = 575, 1508
+    gap = 24
+    tile_h = min(154, (690 - gap * (len(visible) - 1)) // max(1, len(visible)))
+    y = 86
+    for bullet_index, bullet in enumerate(visible):
+        draw.rounded_rectangle(
+            (x0, y, x1, y + tile_h), radius=30,
+            fill="#ffffff", outline=soft, width=4,
+        )
+        cy = y + tile_h // 2
+        draw.ellipse((x0 + 28, cy - 30, x0 + 88, cy + 30), fill=accent)
+        draw.text(
+            (x0 + 58, cy), str(bullet_index + 1),
+            font=_font(24, bold=True), fill="#ffffff", anchor="mm",
+        )
+        bfont, lines = _fit_lines(
+            draw, str(bullet), max_width=x1 - x0 - 155,
+            max_lines=3, sizes=[32, 29, 26, 24],
+        )
+        text_y = cy - (len(lines) * (_line_height(bfont) + 5)) // 2
+        for line in lines:
+            draw.text((x0 + 120, text_y), line, font=bfont, fill=ink)
+            text_y += _line_height(bfont) + 5
+        y += tile_h + gap
+    _page(draw, 84, SLIDE_H - 64, index, total, theme)
+
 
 
 def _draw_glyph(canvas, draw, box, title, theme) -> None:

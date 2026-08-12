@@ -7,17 +7,11 @@ import {
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
-  FileImage,
-  FileText,
   Eye,
-  ImageUp,
   LoaderCircle,
   RotateCcw,
   ScanText,
-  Smartphone,
-  Trash2,
   TriangleAlert,
-  UploadCloud,
   Users,
 } from 'lucide-react';
 import {
@@ -34,6 +28,12 @@ import {
   Textarea,
 } from '@/components/ui';
 import { listEvaluaciones } from '@/modules/evaluaciones/api';
+import { MultiPageEvidencePicker } from '@/components/evidence/MultiPageEvidencePicker';
+import {
+  evidenceFiles,
+  evidenceRotations,
+  type EvidencePage,
+} from '@/components/evidence/evidencePayload';
 import {
   ajustarNota,
   calificarFoto,
@@ -58,16 +58,6 @@ import {
   summarizeGradingStudents,
   validateAdjustedScore,
 } from './gradingFlowModel';
-
-const ACCEPTED_TYPES = [
-  'image/jpeg',
-  'image/jpg',
-  'image/png',
-  'image/webp',
-  'application/pdf',
-];
-const MAX_MB = 10;
-const MAX_BYTES = MAX_MB * 1024 * 1024;
 
 type EstudianteStatus = {
   id: string;
@@ -119,18 +109,16 @@ export function MateriaCalificar() {
 
   const [evaluacionId, setEvaluacionId] = useState(evaluacionIdParam);
   const [estudianteId, setEstudianteId] = useState(estudianteIdParam);
-  const [foto, setFoto] = useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [evidencePages, setEvidencePages] = useState<EvidencePage[]>([]);
   const [resultado, setResultado] = useState<Calificacion | null>(null);
   const [editingNota, setEditingNota] = useState(false);
   const [ajusteNota, setAjusteNota] = useState('');
   const [ajusteFeedback, setAjusteFeedback] = useState('');
   const [ajusteError, setAjusteError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [confirmingEvidence, setConfirmingEvidence] = useState(false);
   const [confirmingSuggestion, setConfirmingSuggestion] = useState(false);
   const [pendingSelection, setPendingSelection] = useState<PendingSelection>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const cameraInputRef = useRef<HTMLInputElement>(null);
   const evidenceRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -223,7 +211,7 @@ export function MateriaCalificar() {
   }, [estudianteId, estudiantesList, evaluacionId, pendientes]);
 
   useEffect(() => {
-    setFoto(null);
+    setEvidencePages([]);
     setResultado(null);
     setEditingNota(false);
     setAjusteNota('');
@@ -233,24 +221,15 @@ export function MateriaCalificar() {
   }, [estudianteId, evaluacionId]);
 
   useEffect(() => {
-    if (!estudianteId || foto) return;
+    if (!estudianteId || evidencePages.length > 0) return;
     setResultado(
       latestGradeForStudent(calificacionesQuery.data, estudianteId) ?? null,
     );
-  }, [calificacionesQuery.data, estudianteId, foto]);
+  }, [calificacionesQuery.data, estudianteId, evidencePages.length]);
 
-  useEffect(() => {
-    if (!foto || foto.type === 'application/pdf') {
-      setPreviewUrl(null);
-      return;
-    }
-    const url = URL.createObjectURL(foto);
-    setPreviewUrl(url);
-    return () => URL.revokeObjectURL(url);
-  }, [foto]);
-
-  const hasUnsavedWork = Boolean((foto && !resultado) || editingNota);
-  const isPdfEvidence = foto?.type === 'application/pdf';
+  const hasUnsavedWork = Boolean(
+    (evidencePages.length > 0 && !resultado) || editingNota,
+  );
   const blocker = useBlocker(
     ({ currentLocation, nextLocation }) =>
       hasUnsavedWork && currentLocation.pathname !== nextLocation.pathname,
@@ -279,7 +258,7 @@ export function MateriaCalificar() {
       setEstudianteId('');
       setSearchParams(id ? { evaluacion: id } : {});
       setResultado(null);
-      setFoto(null);
+      setEvidencePages([]);
       setError(null);
     },
     [setSearchParams],
@@ -324,40 +303,23 @@ export function MateriaCalificar() {
     }
   };
 
-  const handleFile = useCallback((file: File | undefined) => {
-    setError(null);
-    if (!file) return;
-    if (!ACCEPTED_TYPES.includes(file.type)) {
-      setError('Selecciona una imagen JPG, PNG o WebP, o un archivo PDF.');
-      return;
-    }
-    if (file.size > MAX_BYTES) {
-      setError(`El archivo supera el límite de ${MAX_MB} MB.`);
-      return;
-    }
-    setResultado(null);
-    setEditingNota(false);
-    setFoto(file);
-  }, []);
-
-  const restoreExistingGrade = () => {
-    setFoto(null);
-    setResultado(
-      latestGradeForStudent(calificacionesQuery.data, estudianteId) ?? null,
-    );
-    setError(null);
-  };
 
   const gradeMutation = useMutation({
     mutationFn: () => {
-      if (!evaluacionId || !estudianteId || !foto) {
+      if (!evaluacionId || !estudianteId || evidencePages.length === 0) {
         throw new Error('Selecciona evaluación, estudiante y evidencia.');
       }
-      return calificarFoto(evaluacionId, estudianteId, foto);
+      return calificarFoto(
+        evaluacionId,
+        estudianteId,
+        evidenceFiles(evidencePages),
+        evidenceRotations(evidencePages),
+      );
     },
     onSuccess: (data) => {
       setResultado(data);
-      setFoto(null);
+      setEvidencePages([]);
+      setConfirmingEvidence(false);
       setError(null);
       void calificacionesQuery.refetch();
       const jobId = data.resultado_json?.job_id;
@@ -372,6 +334,7 @@ export function MateriaCalificar() {
       }
       toast.success('Evidencia guardada y añadida a la cola. Puedes continuar con otro estudiante.');
     },    onError: (mutationError) => {
+      setConfirmingEvidence(false);
       const message =
         mutationError instanceof Error && !('response' in mutationError)
           ? mutationError.message
@@ -697,154 +660,59 @@ export function MateriaCalificar() {
                     </div>
                   </div>
 
-                  {!resultado && !foto ? (
+                  {!resultado && evidencePages.length === 0 ? (
                     <div className="rounded-xl border border-sky-200 bg-sky-50 p-4 text-sm dark:border-sky-500/30 dark:bg-sky-500/10">
                       <p className="font-bold">Antes de agregar la evidencia:</p>
                       <ul className="mt-2 space-y-1 text-muted">
-                        <li>• Incluye la hoja completa y enfócala bien.</li>
-                        <li>• Evita sombras, reflejos y dedos sobre la respuesta.</li>
-                        <li>• Revisa que corresponda al estudiante seleccionado.</li>
+                        <li>- Incluye todas las hojas completas y bien enfocadas.</li>
+                        <li>- Evita sombras, reflejos y dedos sobre la respuesta.</li>
+                        <li>- Ordena las hojas como debe leerlas la IA.</li>
                       </ul>
                     </div>
                   ) : null}
 
-                  <div className="overflow-hidden rounded-xl border-2 border-dashed border-border bg-surface-2/50">
-                    {!foto && !resultado ? (
-                      <div className="flex min-h-52 flex-col items-center justify-center p-6 text-center">
-                        <span className="grid h-14 w-14 place-items-center rounded-xl bg-brand-500/10 text-brand-700 dark:text-brand-300">
-                          <FileImage className="h-7 w-7" aria-hidden="true" />
-                        </span>
-                        <p className="mt-3 font-bold">
-                          Agrega la evidencia de {firstName(estudianteActual?.nombre ?? '')}
-                        </p>
-                        <p className="mt-1 max-w-md text-sm text-muted">
-                          Puedes tomar una foto o elegir una imagen o PDF guardado.
-                        </p>
-                        {!evaluationClosed ? (
-                          <div className="mt-4 flex flex-wrap justify-center gap-2">
-                            <Button
-                              type="button"
-                              onClick={() => cameraInputRef.current?.click()}
-                            >
-                              <Smartphone className="h-5 w-5" aria-hidden="true" />
-                              Tomar foto
-                            </Button>
-                            <Button
-                              type="button"
-                              variant="outline"
-                              onClick={() => fileInputRef.current?.click()}
-                            >
-                              <UploadCloud className="h-5 w-5" aria-hidden="true" />
-                              Elegir archivo
-                            </Button>
-                          </div>
-                        ) : null}
-                        <p className="mt-3 text-xs text-muted">
-                          JPG, PNG, WebP o PDF · máximo {MAX_MB} MB
-                        </p>
-                      </div>
-                    ) : foto ? (
+                  {!resultado ? (
+                    <div className="space-y-3 rounded-xl border border-border bg-surface-2/30 p-4">
                       <div>
-                        {previewUrl ? (
-                          <img
-                            src={previewUrl}
-                            alt={`Vista previa de la respuesta de ${estudianteActual?.nombre ?? 'el estudiante'}`}
-                            className="max-h-96 w-full bg-surface-2 object-contain"
-                          />
-                        ) : isPdfEvidence ? (
-                          <div className="flex min-h-52 flex-col items-center justify-center bg-surface-2 p-6 text-center">
-                            <span className="grid h-14 w-14 place-items-center rounded-xl bg-rose-500/10 text-rose-700 dark:text-rose-300">
-                              <FileText className="h-7 w-7" aria-hidden="true" />
-                            </span>
-                            <p className="mt-3 font-bold">PDF listo para analizar</p>
-                            <p className="mt-1 text-sm text-muted">
-                              La IA procesará sus páginas en orden.
-                            </p>
-                          </div>
-                        ) : null}
-                        <div className="flex flex-wrap items-center justify-between gap-3 bg-surface p-3">
-                          <div className="flex min-w-0 items-center gap-3">
-                            <ImageUp
-                              className="h-5 w-5 shrink-0 text-brand-600"
-                              aria-hidden="true"
-                            />
-                            <div className="min-w-0">
-                              <p className="truncate text-sm font-semibold">
-                                {foto.name}
-                              </p>
-                              <p className="text-xs text-muted">
-                                {(foto.size / 1024 / 1024).toFixed(2)} MB
-                              </p>
-                            </div>
-                          </div>
-                          {!evaluationClosed ? (
-                            <div className="flex flex-wrap gap-2">
-                              <Button
-                                type="button"
-                                size="sm"
-                                variant="outline"
-                                onClick={() => fileInputRef.current?.click()}
-                                disabled={isSubmitting}
-                              >
-                                <UploadCloud className="h-4 w-4" aria-hidden="true" />
-                                Reemplazar
-                              </Button>
-                              <Button
-                                type="button"
-                                size="sm"
-                                variant="ghost"
-                                onClick={restoreExistingGrade}
-                                disabled={isSubmitting}
-                                aria-label="Quitar evidencia"
-                              >
-                                <Trash2 className="h-5 w-5" aria-hidden="true" />
-                              </Button>
-                            </div>
-                          ) : null}
-                        </div>
+                        <p className="font-bold">
+                          Evidencia de {firstName(estudianteActual?.nombre ?? '')}
+                        </p>
+                        <p className="mt-1 text-sm text-muted">
+                          Selecciona hasta 10 fotos ordenadas o un solo PDF.
+                        </p>
                       </div>
-                    ) : (
-                      <div className="flex min-h-32 items-center gap-3 p-5">
-                        <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-200">
-                          <CheckCircle2 className="h-6 w-6" aria-hidden="true" />
-                        </span>
-                        <div>
-                          <p className="font-bold">
-                            {gradingQueued ? 'Evidencia en cola' : 'Evidencia analizada'}
-                          </p>
-                          <p className="mt-1 text-sm text-muted">
-                            {gradingQueued
-                              ? 'Puedes continuar con otro estudiante mientras la procesamos.'
-                              : 'La evidencia ya fue procesada. Revisa el resultado en el paso 4.'}
-                          </p>
-                        </div>
+                      <MultiPageEvidencePicker
+                        pages={evidencePages}
+                        onChange={(pages) => {
+                          setEvidencePages(pages);
+                          setResultado(null);
+                          setEditingNota(false);
+                          setError(null);
+                        }}
+                        disabled={isSubmitting || evaluationClosed}
+                        onError={(message) => {
+                          setError(message);
+                          toast.error(message);
+                        }}
+                      />
+                    </div>
+                  ) : (
+                    <div className="flex min-h-32 items-center gap-3 rounded-xl border border-border bg-surface-2/50 p-5">
+                      <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-200">
+                        <CheckCircle2 className="h-6 w-6" aria-hidden="true" />
+                      </span>
+                      <div>
+                        <p className="font-bold">
+                          {gradingQueued ? 'Evidencia en cola' : 'Evidencia analizada'}
+                        </p>
+                        <p className="mt-1 text-sm text-muted">
+                          {gradingQueued
+                            ? 'Puedes continuar con otro estudiante mientras la procesamos.'
+                            : 'La evidencia ya fue procesada. Revisa el resultado en el paso 4.'}
+                        </p>
                       </div>
-                    )}
-                  </div>
-
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/jpeg,image/png,image/webp,application/pdf"
-                    className="sr-only"
-                    onChange={(event) => {
-                      handleFile(event.target.files?.[0]);
-                      event.currentTarget.value = '';
-                    }}
-                    disabled={isSubmitting || evaluationClosed}
-                  />
-                  <input
-                    ref={cameraInputRef}
-                    type="file"
-                    accept="image/*"
-                    capture="environment"
-                    className="sr-only"
-                    onChange={(event) => {
-                      handleFile(event.target.files?.[0]);
-                      event.currentTarget.value = '';
-                    }}
-                    disabled={isSubmitting || evaluationClosed}
-                  />
+                    </div>
+                  )}
 
                   {error ? (
                     <div
@@ -852,11 +720,11 @@ export function MateriaCalificar() {
                       role="alert"
                     >
                       <span>{error}</span>
-                      {foto && !evaluationClosed ? (
+                      {evidencePages.length > 0 && !evaluationClosed ? (
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => gradeMutation.mutate()}
+                          onClick={() => setConfirmingEvidence(true)}
                           disabled={isSubmitting}
                         >
                           <RotateCcw className="h-4 w-4" aria-hidden="true" />
@@ -885,13 +753,13 @@ export function MateriaCalificar() {
                     </div>
                   ) : null}
 
-                  {foto &&
+                  {evidencePages.length > 0 &&
                   !resultado &&
                   !gradeMutation.isPending &&
                   !evaluationClosed ? (
                     <div className="flex justify-end">
                       <Button
-                        onClick={() => gradeMutation.mutate()}
+                        onClick={() => setConfirmingEvidence(true)}
                         loading={gradeMutation.isPending}
                         loadingLabel="Analizando evidencia…"
                       >
@@ -915,9 +783,9 @@ export function MateriaCalificar() {
 
                   {!resultado ? (
                     <div className="rounded-xl border border-dashed border-border p-5 text-center text-sm text-muted">
-                      {foto
+                      {evidencePages.length > 0
                         ? 'La evidencia está lista. Pulsa “Analizar y sugerir nota”.'
-                        : 'Primero agrega una foto o PDF de la respuesta.'}
+                        : 'Primero agrega una o varias fotos, o un PDF de la respuesta.'}
                     </div>
                   ) : (
                     <>
@@ -1161,7 +1029,7 @@ export function MateriaCalificar() {
                                <Button
                                  className="w-full"
                                  variant="ghost"
-                                 onClick={() => { setResultado(null); setFoto(null); }}
+                                 onClick={() => { setResultado(null); setEvidencePages([]); }}
                                  disabled={isSubmitting}
                                >
                                  <RotateCcw className="h-4 w-4" aria-hidden="true" />
@@ -1191,7 +1059,7 @@ export function MateriaCalificar() {
                                <Button
                                  className="w-full"
                                  variant="ghost"
-                                 onClick={() => { setResultado(null); setFoto(null); }}
+                                 onClick={() => { setResultado(null); setEvidencePages([]); }}
                                  disabled={isSubmitting}
                                >
                                  <RotateCcw className="h-4 w-4" aria-hidden="true" />
@@ -1240,6 +1108,22 @@ export function MateriaCalificar() {
           )}
         </>
       )}
+
+      <ConfirmDialog
+        open={confirmingEvidence}
+        title={`Calificar ${evidencePages.length === 1 ? '1 hoja' : `${evidencePages.length} hojas`}`}
+        description="Las páginas se unirán y analizarán como una sola entrega del estudiante."
+        confirmLabel="Añadir a la cola de calificación"
+        cancelLabel="Revisar hojas"
+        loading={gradeMutation.isPending}
+        onClose={() => !gradeMutation.isPending && setConfirmingEvidence(false)}
+        onConfirm={() => gradeMutation.mutate()}
+      >
+        <div className="rounded-xl border border-sky-200 bg-sky-50 p-4 text-sm leading-6 text-sky-900 dark:border-sky-500/30 dark:bg-sky-500/10 dark:text-sky-100">
+          Confirma que las {evidencePages.length} {evidencePages.length === 1 ? 'hoja esté completa' : 'hojas estén completas y ordenadas'}.
+          Podrás seguir navegando y cargar otra entrega mientras esta se procesa.
+        </div>
+      </ConfirmDialog>
 
       <ConfirmDialog
         open={confirmingSuggestion}
