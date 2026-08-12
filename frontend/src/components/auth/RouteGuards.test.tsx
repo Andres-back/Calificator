@@ -1,7 +1,7 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter, Outlet, Route, Routes, useOutletContext } from 'react-router-dom';
-import { RequireAuth } from './RequireAuth';
+import { AuthBootstrap, RequireAuth } from './RequireAuth';
 import { RequireRole } from './RequireRole';
 import { useAuth } from '@/stores/auth';
 import type { User, UserRole } from '@/types/api';
@@ -18,8 +18,21 @@ function userFor(role: UserRole): User {
 
 beforeEach(() => {
   useAuth.setState({ user: null, status: 'unauthenticated' });
+  window.history.replaceState({}, '', '/');
 });
 
+describe('auth bootstrap', () => {
+  it('does not request /auth/me on the public login route', () => {
+    const fetchMe = vi.fn().mockResolvedValue(undefined);
+    window.history.replaceState({}, '', '/login?reason=session-expired');
+    useAuth.setState({ user: null, status: 'idle', fetchMe });
+
+    render(<AuthBootstrap><p>Login available</p></AuthBootstrap>);
+
+    expect(screen.getByText('Login available')).toBeInTheDocument();
+    expect(fetchMe).not.toHaveBeenCalled();
+  });
+});
 describe('route guards', () => {
   it('redirects an unauthenticated visitor to login', () => {
     render(

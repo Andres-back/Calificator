@@ -6,11 +6,13 @@ import { LoadingScreen } from '@/components/ui';
 /** Dispara la verificación de sesión una vez al montar la app. */
 export function AuthBootstrap({ children }: { children: React.ReactNode }) {
   const { status, fetchMe } = useAuth();
-  useEffect(() => {
-    if (status === 'idle') void fetchMe();
-  }, [status, fetchMe]);
+  const isPublicLogin = typeof window !== 'undefined' && window.location.pathname === '/login';
 
-  if (status === 'idle' || status === 'loading') {
+  useEffect(() => {
+    if (status === 'idle' && !isPublicLogin) void fetchMe();
+  }, [status, fetchMe, isPublicLogin]);
+
+  if (!isPublicLogin && (status === 'idle' || status === 'loading')) {
     return (
       <div className="grid min-h-screen place-items-center">
         <LoadingScreen label="Iniciando XCalificator…" />
