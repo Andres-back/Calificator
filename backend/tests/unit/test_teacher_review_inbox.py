@@ -1,5 +1,5 @@
 import asyncio
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from types import SimpleNamespace
 from uuid import uuid4
 
@@ -32,7 +32,11 @@ class FakeDB:
 def test_teacher_inbox_groups_open_claims_and_pending_grades() -> None:
     teacher_id = uuid4()
     now = datetime.now(timezone.utc)
-    evaluation = SimpleNamespace(id=uuid4(), nombre="Prueba de fracciones")
+    evaluation = SimpleNamespace(
+        id=uuid4(),
+        nombre="Prueba de fracciones",
+        politica_intento="un_intento",
+    )
     subject = SimpleNamespace(id=uuid4(), nombre="Matematicas")
     student = SimpleNamespace(id=uuid4(), nombre="Estudiante Uno")
     claim_grade = SimpleNamespace(id=uuid4())
@@ -45,12 +49,17 @@ def test_teacher_inbox_groups_open_claims_and_pending_grades() -> None:
     )
     pending_grade = SimpleNamespace(
         id=uuid4(),
+        evaluacion_id=evaluation.id,
+        estudiante_id=student.id,
         estado="requiere_revision",
+        nota_confirmada=None,
+        nota_sugerida=None,
         resultado_json={"motivo_revision": "confianza_baja"},
+        created_at=now,
         updated_at=now,
     )
     db = FakeDB(
-        scalar_values=[1, 1],
+        scalar_values=[1],
         execute_values=[
             [(claim, claim_grade, evaluation, subject, student)],
             [(pending_grade, evaluation, subject, student)],
@@ -69,3 +78,31 @@ def test_teacher_inbox_groups_open_claims_and_pending_grades() -> None:
     assert inbox["pendientes"][0]["estado"] == "requiere_revision"
     assert inbox["pendientes"][0]["motivo"] == "confianza_baja"
     assert any("calificaciones.profesor_id" in str(statement) for statement in db.statements)
+
+
+def test_teacher_inbox_ignores_a_failed_attempt_replaced_by_a_confirmed_grade() -> None:
+    evaluation_id = uuid4()
+    student_id = uuid4()
+    evaluation = SimpleNamespace(id=evaluation_id, politica_intento="un_intento")
+    subject = SimpleNamespace(id=uuid4())
+    student = SimpleNamespace(id=student_id)
+    failed_at = datetime.now(timezone.utc) - timedelta(minutes=5)
+    confirmed_at = datetime.now(timezone.utc)
+    failed = SimpleNamespace(
+        id=uuid4(), evaluacion_id=evaluation_id, estudiante_id=student_id,
+        estado="requiere_revision", nota_sugerida=None, nota_confirmada=None,
+        created_at=failed_at, updated_at=failed_at,
+    )
+    confirmed = SimpleNamespace(
+        id=uuid4(), evaluacion_id=evaluation_id, estudiante_id=student_id,
+        estado="confirmada", nota_sugerida=4.2, nota_confirmada=4.2,
+        created_at=confirmed_at, updated_at=confirmed_at,
+    )
+
+    selected = service._select_current_inbox_rows([
+        (failed, evaluation, subject, student),
+        (confirmed, evaluation, subject, student),
+    ])
+
+    assert [row[0].id for row in selected] == [confirmed.id]
+    assert all(row[0].estado != "requiere_revision" for row in selected)

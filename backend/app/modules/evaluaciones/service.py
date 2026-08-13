@@ -8,7 +8,10 @@ from sqlalchemy.orm import selectinload
 
 from app.core.permissions import is_student_enrolled
 from app.modules.dba.service import get_dba_personalizado_records_for_evaluation, get_dba_records
-from app.modules.evaluaciones.blueprint_service import build_blueprint_payload
+from app.modules.evaluaciones.blueprint_service import (
+    build_blueprint_payload,
+    grading_answer_key_status,
+)
 from app.modules.evaluaciones.modality_service import (
     normalize_question_modalities,
     validate_mixed_question_modalities,
@@ -642,23 +645,39 @@ def validate_publication_structure(evaluacion: Evaluacion) -> None:
             ),
         )
 
-    answer_numbers = {
-        item.get("numero")
-        for item in (evaluacion.respuestas_esperadas or [])
-        if isinstance(item, dict) and item.get("respuesta") not in (None, "", [])
-    }
+    feedback_rules = blueprint.reglas_feedback or {}
+    grading_strategy = str(feedback_rules.get("estrategia_calificacion") or "").lower()
     objective_types = {"opcion_multiple", "verdadero_falso", "completar"}
-    missing_answers = [
-        question.get("numero", index)
-        for index, question in enumerate(questions, start=1)
-        if str(question.get("tipo") or "").lower() in objective_types
-        and question.get("numero", index) not in answer_numbers
-    ]
-    if missing_answers:
-        raise HTTPException(
-            status_code=409,
-            detail=f"Falta la respuesta esperada de los puntos objetivos: {missing_answers}.",
+    requires_full_digitalized_key = (
+        getattr(evaluacion, "tipo_origen", None)
+        == EvaluacionTipoOrigen.EXTERNA_DIGITALIZADA.value
+        and grading_strategy != "manual"
+    )
+    key_questions = (
+        []
+        if grading_strategy == "manual"
+        else [
+            question
+            for question in questions
+            if requires_full_digitalized_key
+            or str(question.get("tipo") or "").lower() in objective_types
+        ]
+    )
+    if key_questions:
+        key_complete, missing_answers = grading_answer_key_status(
+            {
+                "preguntas": key_questions,
+                "respuestas_esperadas": evaluacion.respuestas_esperadas or [],
+            }
         )
+        if not key_complete:
+            raise HTTPException(
+                status_code=409,
+                detail=(
+                    "La IA debe completar una respuesta esperada especifica para cada pregunta "
+                    f"antes de publicar. Revisa los puntos: {missing_answers}."
+                ),
+            )
 
     blueprint_numbers = [
         item.get("numero", index)

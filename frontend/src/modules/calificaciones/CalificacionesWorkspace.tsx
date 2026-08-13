@@ -26,6 +26,7 @@ import {
 } from './api';
 import { RevisionGuide } from './RevisionGuide';
 import { formatAIModelSource } from './aiPipelineLabels';
+import { formatTimelineScore } from './timeline';
 import type { BatchResult, Calificacion, CalificacionDetalle, GradeFilter } from '@/types/api';
 
 const CONFIRMADA = 'confirmada';
@@ -46,7 +47,7 @@ function studentLabel(
 }
 
 /* ─── Sub-componente: Timeline ─── */
-function Timeline({ events }: { events: CalificacionDetalle['timeline'] }) {
+export function Timeline({ events }: { events: CalificacionDetalle['timeline'] }) {
   const [open, setOpen] = useState(false);
   if (!events || events.length === 0) return null;
   return (
@@ -74,8 +75,8 @@ function Timeline({ events }: { events: CalificacionDetalle['timeline'] }) {
               <div className="min-w-0">
                 <p className="font-medium text-fg">
                   {ev.tipo === 'confirmada' ? 'Confirmada' : ev.tipo === 'ajustada' ? 'Ajustada' : ev.tipo}
-                  {ev.nota_anterior != null && ev.nota_nueva != null && (
-                    <>: {ev.nota_anterior.toFixed(1)} → {ev.nota_nueva.toFixed(1)}</>
+                  {formatTimelineScore(ev.nota_anterior) != null && formatTimelineScore(ev.nota_nueva) != null && (
+                    <>: {formatTimelineScore(ev.nota_anterior)} → {formatTimelineScore(ev.nota_nueva)}</>
                   )}
                 </p>
                 {ev.detalle && <p className="text-muted">{ev.detalle}</p>}
@@ -100,12 +101,14 @@ function AIPipelineSummary({
   graderB,
   comparator,
   vision,
+  answerKeyIncomplete,
 }: {
   confianza: number | null;
   graderA: Record<string, unknown> | undefined;
   graderB: Record<string, unknown> | undefined;
   comparator: Record<string, unknown> | undefined;
   vision: Record<string, unknown> | undefined;
+  answerKeyIncomplete: boolean;
 }) {
   const [expanded, setExpanded] = useState(false);
 
@@ -116,7 +119,9 @@ function AIPipelineSummary({
   const confianzaMedia = confianza != null && confianza >= 0.4 && confianza < 0.7;
 
   let summary: { label: string; tone: string; icon: string };
-  if (graderAError && graderBError) {
+  if (answerKeyIncomplete) {
+    summary = { label: 'La clave de respuestas está incompleta. Valida las respuestas antes de confirmar.', tone: 'rose', icon: '⚠' };
+  } else if (graderAError && graderBError) {
     summary = { label: 'Error en análisis automático. Se requiere revisión docente.', tone: 'rose', icon: '⚠️' };
   } else if (discrepancia) {
     summary = { label: 'Los evaluadores de IA tuvieron diferencias significativas. Revisa los criterios.', tone: 'amber', icon: '⚡' };
@@ -386,6 +391,8 @@ function PanelDetalle({
   const graderA = pipeline?.grader_a as Record<string, unknown> | undefined;
   const graderB = pipeline?.grader_b as Record<string, unknown> | undefined;
   const comparator = pipeline?.comparator as Record<string, unknown> | undefined;
+  const answerKey = pipeline?.answer_key as Record<string, unknown> | undefined;
+  const answerKeyIncomplete = answerKey?.complete === false;
   const evidenciaConsolidada = pipeline?.evidencia_consolidada as Record<string, unknown> | undefined;
   const secciones = evidenciaConsolidada?.secciones as Record<string, Record<string, unknown>> | undefined;
   const criterios = (graderA?.criterios ?? []) as Array<Record<string, unknown>>;
@@ -440,6 +447,18 @@ function PanelDetalle({
             {published ? 'Publicada' : done ? 'Confirmada' : manualReview ? 'Revisión manual' : 'Por revisar'}
           </Badge>
         </div>
+
+        {answerKeyIncomplete && (
+          <Card className="flex items-start gap-3 border-rose-200 bg-rose-50 p-4 dark:border-rose-500/30 dark:bg-rose-500/10">
+            <ShieldAlert className="mt-0.5 h-5 w-5 shrink-0 text-rose-600 dark:text-rose-300" />
+            <div>
+              <p className="font-semibold text-rose-900 dark:text-rose-100">Clave de respuestas incompleta</p>
+              <p className="mt-1 text-sm leading-6 text-rose-800 dark:text-rose-200">
+                Faltan respuestas de referencia para las preguntas {((answerKey?.missing_questions as unknown[]) ?? []).join(', ') || 'indicadas'}. La confianza automática se limita y debes validar la clave antes de confirmar.
+              </p>
+            </div>
+          </Card>
+        )}
 
         {manualReview && (
           <Card className="flex items-start gap-3 border-amber-200 bg-amber-50 p-4 dark:border-amber-500/30 dark:bg-amber-500/10">
@@ -539,6 +558,7 @@ function PanelDetalle({
             graderB={graderB}
             comparator={comparator}
             vision={vision}
+            answerKeyIncomplete={answerKeyIncomplete}
           />
         )}
 

@@ -257,8 +257,8 @@ export type CalificacionEstado = 'sugerida' | 'confirmada' | 'ajustada' | 'requi
 
 export interface CalificacionTimelineEvent {
   tipo: string;
-  nota_anterior: number | null;
-  nota_nueva: number | null;
+  nota_anterior: number | string | null;
+  nota_nueva: number | string | null;
   feedback: string | null;
   actor_id: string | null;
   actor_nombre: string | null;

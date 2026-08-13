@@ -129,6 +129,10 @@ async def descargar_archivo(
         path,
         media_type=media_type,
         filename=f"{pres.titulo}.{fmt}",
+        headers={
+            "Cache-Control": "private, no-store",
+            "X-Content-Type-Options": "nosniff",
+        },
     )
 
 

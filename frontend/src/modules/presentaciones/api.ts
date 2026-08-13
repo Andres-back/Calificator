@@ -34,36 +34,9 @@ export async function exportPresentacion(id: string, format: 'pptx' | 'pdf'): Pr
   return data;
 }
 
-export async function downloadPresentacionFile(id: string, format: 'pptx' | 'pdf', title?: string): Promise<void> {
-  const mime =
-    format === 'pptx'
-      ? 'application/vnd.openxmlformats-officedocument.presentationml.presentation'
-      : 'application/pdf';
-  const { data, headers } = await api.get<Blob>(`/presentaciones/${id}/archivo/${format}`, {
-    responseType: 'blob',
-    headers: { Accept: mime },
-  });
-
-  const contentType = String(headers['content-type'] ?? data.type ?? '');
-  const validType =
-    format === 'pptx'
-      ? contentType.includes('presentation') || contentType.includes('octet-stream')
-      : contentType.includes('pdf') || contentType.includes('octet-stream');
-  if (!validType) {
-    const message = await data.text().catch(() => '');
-    throw new Error(message || 'El backend no devolvió un archivo válido.');
-  }
-
-  const disposition = String(headers['content-disposition'] ?? '');
-  const filename = filenameFromDisposition(disposition) ?? `${sanitizeFilename(title || 'presentacion')}.${format}`;
-  const url = URL.createObjectURL(data);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = filename;
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+export function presentacionFileUrl(id: string, format: 'pptx' | 'pdf'): string {
+  const apiBase = String(import.meta.env.VITE_API_URL ?? '/api').replace(/\/$/, '');
+  return `${apiBase}/presentaciones/${encodeURIComponent(id)}/archivo/${format}`;
 }
 
 export async function getPresentacionEditorUrl(id: string): Promise<{ url: string; expires_in: number }> {
@@ -73,21 +46,4 @@ export async function getPresentacionEditorUrl(id: string): Promise<{ url: strin
 
 export async function deletePresentacion(id: string): Promise<void> {
   await api.delete(`/presentaciones/${id}`);
-}
-
-function filenameFromDisposition(disposition: string): string | null {
-  const utf8 = disposition.match(/filename\*=UTF-8''([^;]+)/i);
-  if (utf8?.[1]) return decodeURIComponent(utf8[1].trim().replace(/^"|"$/g, ''));
-  const plain = disposition.match(/filename="?([^";]+)"?/i);
-  return plain?.[1]?.trim() || null;
-}
-
-function sanitizeFilename(value: string): string {
-  return value
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[\\/:*?"<>|]+/g, '-')
-    .replace(/\s+/g, ' ')
-    .trim()
-    .slice(0, 90) || 'presentacion';
 }

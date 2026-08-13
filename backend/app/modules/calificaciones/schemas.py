@@ -205,8 +205,10 @@ class ResumenAcademico(BaseModel):
 
 class CalificacionTimelineEvent(BaseModel):
     tipo: str  # 'confirmada' | 'ajustada' | 'rechazada' | 'sugerida' | 'anulada'
-    nota_anterior: Decimal | None = None
-    nota_nueva: Decimal | None = None
+    # El timeline vive dentro de JSON y debe salir como número, no como texto
+    # Decimal. Esto mantiene estable el contrato para clientes web y móviles.
+    nota_anterior: float | None = None
+    nota_nueva: float | None = None
     feedback: str | None = None
     actor_id: UUID | None = None
     actor_nombre: str | None = None

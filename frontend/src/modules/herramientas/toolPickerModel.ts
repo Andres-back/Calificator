@@ -46,8 +46,14 @@ export function isGradableTool(type: MaterialTipo): boolean {
 }
 
 export const MATERIAL_CREATION_TOOLS = TOOLS.filter(
-  (tool) => !isGradableTool(tool.tipo),
+  // `unir_columnas` se conserva para abrir materiales y enlaces antiguos,
+  // pero `emparejar` es la única opción canónica para nuevas creaciones.
+  (tool) => !isGradableTool(tool.tipo) && tool.tipo !== 'unir_columnas',
 );
+
+export function canonicalCreationTool(type: MaterialTipo): MaterialTipo {
+  return type === 'unir_columnas' ? 'emparejar' : type;
+}
 
 const TOOL_GOAL_BY_TYPE: Record<MaterialTipo, Exclude<ToolGoal, 'todos'>> = {
   examen: 'evaluar',

@@ -8,7 +8,11 @@ import pytest
 from fastapi import HTTPException
 
 from app.modules.evaluaciones import service
-from app.shared.enums import EvaluacionEstado, EvaluacionModalidad
+from app.shared.enums import (
+    EvaluacionEstado,
+    EvaluacionModalidad,
+    EvaluacionTipoOrigen,
+)
 
 
 class FakeDB:
@@ -126,3 +130,28 @@ def test_publish_allows_manual_evidence_without_an_answer_key_and_opens_receptio
     assert evaluation.recepcion_habilitada is True
     assert evaluation.fecha_publicacion is not None
     assert db.commits == 1
+
+
+def test_publish_rejects_a_digitalized_evaluation_with_a_generic_answer() -> None:
+    evaluation = _evaluation(
+        questions=[
+            {
+                "numero": 1,
+                "tipo": "abierta",
+                "enunciado": "Explica el procedimiento.",
+            }
+        ],
+        expected_answers=[
+            {
+                "numero": 1,
+                "respuesta": "Respuesta de referencia pendiente de validación docente.",
+            }
+        ],
+    )
+    evaluation.tipo_origen = EvaluacionTipoOrigen.EXTERNA_DIGITALIZADA.value
+
+    with pytest.raises(HTTPException) as exc:
+        service.validate_publication_structure(evaluation)
+
+    assert exc.value.status_code == 409
+    assert "puntos: [1]" in exc.value.detail

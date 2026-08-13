@@ -58,8 +58,9 @@ function PairsForm({ loading, onSubmit, placeholder }: ToolFormProps & { placeho
     </div>
   );
 }
-export const UnirColumnasForm = (p: ToolFormProps) => <PairsForm {...p} placeholder="Unir columnas: fases del ciclo" />;
-export const EmparejarForm = (p: ToolFormProps) => <PairsForm {...p} placeholder="Emparejar estados del agua" />;
+export const EmparejarForm = (p: ToolFormProps) => <PairsForm {...p} placeholder="Relacionar pares: estados del agua" />;
+// Compatibilidad con recursos y enlaces creados antes de consolidar ambas opciones.
+export const UnirColumnasForm = EmparejarForm;
 
 const TIPOS_PREGUNTA = [
   { value: 'opcion_multiple', label: 'Opción múltiple' },

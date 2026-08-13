@@ -3,13 +3,15 @@ import { Link, useParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { ArrowLeft, BookOpenCheck, CheckCircle2, ClipboardCheck, Clock3, Download, FileUp, MessageSquareWarning, PauseCircle, Send, TriangleAlert } from 'lucide-react';
-import { Badge, Button, Card, ConfirmDialog, EmptyState, Field, Input, Modal, RichContent, Select, Skeleton, statusTone, Textarea } from '@/components/ui';
+import { Badge, Button, Card, ConfirmDialog, EmptyState, Field, Modal, RichContent, Select, Skeleton, statusTone, Textarea } from '@/components/ui';
 import { MultiPageEvidencePicker } from '@/components/evidence/MultiPageEvidencePicker';
 import { evidenceFiles, evidenceRotations, type EvidencePage } from '@/components/evidence/evidencePayload';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { toApiError } from '@/lib/api';
+import { useAuth } from '@/stores/auth';
 import { crearEntregaArchivo, crearEntregaOnline, evaluationPdfUrl, getActividadEstudiante, getEvaluacion, getMiEntrega, getMiSolicitudRevision, solicitarRevisionEvaluacion } from './api';
 import { StudentActivityPlayer } from './StudentActivityPlayer';
+import { StudentAnswerSheet } from './StudentAnswerSheet';
 import type { SolicitudRevisionMotivo } from '@/types/api';
 
 function textFromQuestion(question: Record<string, unknown>, index: number): string {
@@ -23,11 +25,6 @@ function textFromQuestion(question: Record<string, unknown>, index: number): str
 function numberFromQuestion(question: Record<string, unknown>, index: number): number {
   const parsed = Number(question.numero ?? index + 1);
   return Number.isFinite(parsed) ? parsed : index + 1;
-}
-
-function optionsFromQuestion(question: Record<string, unknown>): string[] {
-  if (Array.isArray(question.opciones)) return question.opciones.map(String).filter(Boolean);
-  return question.tipo === 'verdadero_falso' ? ['Verdadero', 'Falso'] : [];
 }
 
 function serializeAnswers(
@@ -53,6 +50,7 @@ export function ResolverEvaluacionPage() {
   const { id } = useParams();
   const evaluacionId = id ?? '';
   const queryClient = useQueryClient();
+  const studentId = useAuth((state) => state.user?.id ?? 'anonymous');
   const [answers, setAnswers] = useState<Record<number, string>>({});
   const [enviada, setEnviada] = useState(false);
   const [startingNewAttempt, setStartingNewAttempt] = useState(false);
@@ -62,6 +60,9 @@ export function ResolverEvaluacionPage() {
   const [reviewOpen, setReviewOpen] = useState(false);
   const [reviewReason, setReviewReason] = useState<SolicitudRevisionMotivo>('nota');
   const [reviewDetail, setReviewDetail] = useState('');
+  const [firstIncomplete, setFirstIncomplete] = useState<number | null>(null);
+  const [onlineConfirmOpen, setOnlineConfirmOpen] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const { data: evaluacion, isLoading, error } = useQuery({
     queryKey: ['evaluacion', evaluacionId],
@@ -130,7 +131,18 @@ export function ResolverEvaluacionPage() {
     && !enviada
     && (!existingDelivery || needsRetry || (allowsMultipleAttempts && startingNewAttempt));
   const serializedAnswers = serializeAnswers(preguntasOnline, answers);
-  const handleActivityAnswers = useCallback((next: Record<number, string>) => setAnswers(next), []);
+  const answeredCount = Object.values(answers).filter((answer) => answer.trim()).length;
+  const draftKey = 'xcalificator:evaluacion:draft:' + studentId + ':' + evaluacionId;
+  const handleAnswerChange = useCallback((number: number, value: string) => {
+    setAnswers((current) => ({ ...current, [number]: value }));
+    setFirstIncomplete((current) => current === number ? null : current);
+    setSubmitError(null);
+  }, []);
+  const handleActivityAnswers = useCallback((next: Record<number, string>) => {
+    setAnswers(next);
+    setFirstIncomplete(null);
+    setSubmitError(null);
+  }, []);
   const ignoreActivityAnswers = useCallback(() => undefined, []);
   const physicalSubmitted = Boolean(existingDelivery?.archivo_url && !replacementRequested);
   const onlinePartReady = modalidad === 'fisica'
@@ -141,6 +153,34 @@ export function ResolverEvaluacionPage() {
     && !estaCerrada
     && onlinePartReady
     && !physicalSubmitted;
+  useEffect(() => {
+    setAnswers({});
+    setFirstIncomplete(null);
+    setSubmitError(null);
+    try {
+      const saved = sessionStorage.getItem(draftKey);
+      if (!saved) return;
+      const parsed = JSON.parse(saved) as Record<string, unknown>;
+      const restored = Object.fromEntries(
+        Object.entries(parsed)
+          .filter(([, value]) => typeof value === 'string')
+          .map(([number, value]) => [Number(number), String(value)]),
+      );
+      setAnswers(restored);
+    } catch {
+      sessionStorage.removeItem(draftKey);
+    }
+  }, [draftKey]);
+
+  useEffect(() => {
+    if (enviada || existingDelivery) return;
+    if (!Object.values(answers).some((answer) => answer.trim())) return;
+    try {
+      sessionStorage.setItem(draftKey, JSON.stringify(answers));
+    } catch {
+      // El navegador puede bloquear el almacenamiento; la resolución continúa normalmente.
+    }
+  }, [answers, draftKey, enviada, existingDelivery]);
 
   useEffect(() => {
     if (!deliveryRequiresTeacherAttention || !existingDelivery) return;
@@ -157,6 +197,10 @@ export function ResolverEvaluacionPage() {
       queryClient.setQueryData(['mi-entrega', evaluacionId], delivery);
       setEnviada(true);
       setStartingNewAttempt(false);
+      setOnlineConfirmOpen(false);
+      setFirstIncomplete(null);
+      setSubmitError(null);
+      sessionStorage.removeItem(draftKey);
       if (delivery.estado === 'requiere_reintento') {
         setSubmissionIssue(
           'Tu entrega fue recibida. El docente fue notificado para revisarla o reprocesarla; no necesitas volver a enviarla.',
@@ -170,7 +214,12 @@ export function ResolverEvaluacionPage() {
           : 'Entrega realizada. Quedó pendiente de calificación docente.',
       );
     },
-    onError: (submitError) => toast.error(toApiError(submitError).detail),
+    onError: (error) => {
+      const detail = toApiError(error).detail;
+      setOnlineConfirmOpen(false);
+      setSubmitError(detail);
+      toast.error(detail);
+    },
   });
 
   const entregarArchivo = useMutation({
@@ -180,6 +229,7 @@ export function ResolverEvaluacionPage() {
       setEvidencePages([]);
       setEvidenceConfirmOpen(false);
       setEnviada(true);
+      setSubmitError(null);
       setSubmissionIssue(
         delivery.estado === 'requiere_reintento'
           ? 'Tu entrega fue recibida. El docente fue notificado para revisarla o reprocesarla; no necesitas volver a enviarla.'
@@ -187,7 +237,12 @@ export function ResolverEvaluacionPage() {
       );
       toast.success('Entrega realizada. Tu evidencia quedó pendiente de calificación docente.');
     },
-    onError: (submitError) => toast.error(toApiError(submitError).detail),
+    onError: (error) => {
+      const detail = toApiError(error).detail;
+      setEvidenceConfirmOpen(false);
+      setSubmitError(detail);
+      toast.error(detail);
+    },
   });
 
   const requestReview = useMutation({
@@ -209,21 +264,18 @@ export function ResolverEvaluacionPage() {
       .map((question, index) => numberFromQuestion(question, index))
       .filter((number) => !(answers[number] ?? '').trim());
     if (missing.length > 0) {
-      toast.error(`Completa ${missing.length === 1 ? `la pregunta ${missing[0]}` : `las preguntas ${missing.join(', ')}`}.`);
-      return;
-    }
-    const value = serializedAnswers;
-    if (!value) {
-      toast.error('La respuesta es obligatoria.');
-      return;
-    }
-    if (value.length < 10) {
-      toast.error('La respuesta debe tener al menos 10 caracteres.');
+      const first = missing[0];
+      setFirstIncomplete(first);
+      toast.error(missing.length === 1 ? 'Completa la respuesta pendiente.' : 'Te faltan ' + missing.length + ' respuestas.');
+      window.setTimeout(() => {
+        document.getElementById('respuesta-' + first)?.scrollIntoView?.({ behavior: 'smooth', block: 'center' });
+      }, 0);
       return;
     }
     if (!evaluacion || !answerFormEnabled || entregar.isPending) return;
-    setSubmissionIssue(null);
-    entregar.mutate();
+    setFirstIncomplete(null);
+    setSubmitError(null);
+    setOnlineConfirmOpen(true);
   }
 
   function submitEvidence() {
@@ -334,8 +386,8 @@ export function ResolverEvaluacionPage() {
           </div>
         </Card>
       )}
-      <div className="grid gap-6 lg:grid-cols-2">
-        <section className="space-y-4">
+      <div className="mx-auto flex max-w-5xl flex-col gap-6">
+        <section className={'space-y-4 ' + (modalidad === 'fisica' ? 'order-2' : '')}>
           {assignedMaterial && (
             <StudentActivityPlayer
               activity={assignedMaterial}
@@ -343,7 +395,7 @@ export function ResolverEvaluacionPage() {
               readOnly={modalidad !== 'online' || !assignedMaterial.interactivo}
             />
           )}
-          {!(assignedMaterial?.interactivo && modalidad === 'online') && <>
+          {!answerFormEnabled && !(assignedMaterial?.interactivo && modalidad === 'online') && <>
           <div><h2 className="font-display text-lg font-bold">Preguntas</h2><p className="text-sm text-muted">Lee cada enunciado y numera tus respuestas al escribir.</p></div>
           {preguntasOnline.length === 0 ? (
             <p className="text-sm text-muted">Esta evaluación no tiene preguntas visibles.</p>
@@ -360,7 +412,17 @@ export function ResolverEvaluacionPage() {
           </>}
         </section>
 
-        <section className="space-y-4 lg:sticky lg:top-24 lg:self-start">
+        <section className={'space-y-4 ' + (modalidad === 'fisica' ? 'order-1' : '')}>
+          {submitError && (
+            <Card className="flex items-start gap-3 border-rose-200 p-5 dark:border-rose-500/30">
+              <TriangleAlert className="mt-0.5 h-5 w-5 shrink-0 text-rose-500" />
+              <div>
+                <p className="font-semibold">No pudimos enviar todavía</p>
+                <p className="mt-1 text-sm text-muted">{submitError}</p>
+                <p className="mt-2 text-xs font-semibold text-secondary">Tus respuestas siguen guardadas. Revisa tu conexión e inténtalo otra vez.</p>
+              </div>
+            </Card>
+          )}
           {submissionIssue && !showDeliverySummary && (
             <Card className="flex items-start gap-3 border-amber-200 p-5 dark:border-amber-500/30">
               <TriangleAlert className="mt-0.5 h-5 w-5 shrink-0 text-amber-500" />
@@ -381,7 +443,7 @@ export function ResolverEvaluacionPage() {
                       ? 'La evidencia ya fue entregada y quedó guardada.'
                       : modalidad === 'mixta' && !onlinePartReady
                         ? 'Primero envía la parte online. Después podrás adjuntar la evidencia física.'
-                        : 'Usa buena iluminación y procura que todo el contenido sea legible. Máximo 15 MB.'}
+                        : 'Puedes subir hasta 10 fotos de 10 MB cada una, o un PDF. El paquete completo admite hasta 40 MB.'}
                   </p>
                 </div>
               </div>
@@ -402,7 +464,7 @@ export function ResolverEvaluacionPage() {
                 <>
                   <MultiPageEvidencePicker
                     pages={evidencePages}
-                    onChange={(pages) => { setEvidencePages(pages); setSubmissionIssue(null); }}
+                    onChange={(pages) => { setEvidencePages(pages); setSubmissionIssue(null); setSubmitError(null); }}
                     disabled={!canUploadPhysical || entregarArchivo.isPending}
                     onError={(message) => toast.error(message)}
                   />
@@ -443,6 +505,11 @@ export function ResolverEvaluacionPage() {
                   )}
                 </div>
               </div>
+              {evaluacion?.mi_nota_confirmada == null && !(modalidad === 'mixta' && !physicalSubmitted) && (
+                <Link to="/app/evaluaciones" className="focus-ring inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg border border-border bg-surface px-4 text-sm font-semibold text-fg transition hover:bg-surface-2 sm:w-auto">
+                  <ArrowLeft className="h-4 w-4" aria-hidden="true" /> Volver a mis evaluaciones
+                </Link>
+              )}
               {allowsMultipleAttempts && disponible && !estaCerrada && (
                 <Button
                   variant="outline"
@@ -499,47 +566,46 @@ export function ResolverEvaluacionPage() {
               )}
             </Card>
           ) : answerFormEnabled ? (
-            <Card className="space-y-4 p-5">
-              <div><h2 className="font-display text-lg font-bold">Tus respuestas</h2><p className="text-sm text-muted">Responde cada pregunta. XCalificator conservará la numeración al enviar.</p></div>
-              {!(assignedMaterial?.interactivo && modalidad === 'online') && <div className="max-h-[55vh] space-y-4 overflow-y-auto pr-1">
-                {preguntasOnline.map((question, index) => {
-                  const number = numberFromQuestion(question, index);
-                  const options = optionsFromQuestion(question);
-                  const type = String(question.tipo ?? 'abierta');
-                  return (
-                    <div key={number} className="rounded-xl border border-border bg-surface-2/50 p-4">
-                      <p className="mb-3 text-sm font-bold">Pregunta {number}</p>
-                      {options.length > 0 ? (
-                        <fieldset className="space-y-2" disabled={entregar.isPending}>
-                          <legend className="sr-only">Respuesta de la pregunta {number}</legend>
-                          {options.map((option) => (
-                            <label key={option} className="flex min-h-11 cursor-pointer items-center gap-3 rounded-lg border border-border bg-surface px-3 py-2 text-sm">
-                              <input type="radio" name={`question-${number}`} value={option} checked={answers[number] === option} onChange={() => setAnswers((current) => ({ ...current, [number]: option }))} />
-                              <span>{option}</span>
-                            </label>
-                          ))}
-                        </fieldset>
-                      ) : type === 'completar' ? (
-                        <Field label={`Respuesta ${number}`}>
-                          <Input value={answers[number] ?? ''} onChange={(event) => setAnswers((current) => ({ ...current, [number]: event.target.value }))} disabled={entregar.isPending} />
-                        </Field>
-                      ) : (
-                        <Field label={`Respuesta ${number}`}>
-                          <Textarea value={answers[number] ?? ''} onChange={(event) => setAnswers((current) => ({ ...current, [number]: event.target.value }))} className="min-h-28" disabled={entregar.isPending} />
-                        </Field>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>}
-              <div className="flex flex-col gap-3 border-t border-border pt-4 sm:flex-row sm:items-center sm:justify-between">
-                <p className="text-xs text-muted">{Object.values(answers).filter((answer) => answer.trim()).length} de {preguntasOnline.length} respondidas</p>
-                <Button onClick={submit} loading={entregar.isPending} disabled={entregar.isPending} className="w-full sm:w-auto"><Send className="h-4 w-4" /> {needsRetry ? 'Reenviar respuestas' : 'Enviar respuestas'}</Button>
-              </div>
-            </Card>
+            assignedMaterial?.interactivo && modalidad === 'online' ? (
+              <Card className="flex flex-col gap-4 border-brand-200 p-5 dark:border-brand-500/30 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <h2 className="font-display text-lg font-bold">Entrega tu actividad interactiva</h2>
+                  <p className="mt-1 text-sm leading-6 text-muted">Tus avances se guardan en esta pestaña. Cuando termines el juego o ejercicio, revisa y confirma la entrega.</p>
+                  <p className="mt-2 text-xs font-semibold text-brand-700 dark:text-brand-300">{answeredCount} respuestas preparadas</p>
+                </div>
+                <Button onClick={submit} loading={entregar.isPending} disabled={entregar.isPending} className="min-h-12 w-full shrink-0 sm:w-auto">
+                  <Send className="h-4 w-4" /> Revisar actividad y entregar
+                </Button>
+              </Card>
+            ) : (
+            <StudentAnswerSheet
+              questions={preguntasOnline}
+              answers={answers}
+              onAnswerChange={handleAnswerChange}
+              onSubmit={submit}
+              submitting={entregar.isPending}
+              retry={needsRetry}
+              firstIncomplete={firstIncomplete}
+              draftSaved={answeredCount > 0}
+            />
+            )
           ) : null}
         </section>
       </div>
+
+      <ConfirmDialog
+        open={onlineConfirmOpen}
+        onClose={() => !entregar.isPending && setOnlineConfirmOpen(false)}
+        onConfirm={() => entregar.mutate()}
+        loading={entregar.isPending}
+        title="¿Entregar la evaluación?"
+        description={'Completaste ' + answeredCount + ' de ' + preguntasOnline.length + ' respuestas. Después de confirmar no podrás cambiarlas, salvo que la evaluación permita otro intento.'}
+        confirmLabel="Sí, entregar ahora"
+      >
+        <div className="rounded-xl border border-brand-200 bg-brand-50 p-4 text-sm leading-6 text-brand-950 dark:border-brand-500/30 dark:bg-brand-500/10 dark:text-brand-100">
+          Revisa con calma tus respuestas. Al confirmar, el docente recibirá la entrega y podrás seguir navegando mientras espera calificación.
+        </div>
+      </ConfirmDialog>
 
       <ConfirmDialog
         open={evidenceConfirmOpen}

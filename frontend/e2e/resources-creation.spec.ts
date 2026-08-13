@@ -26,7 +26,6 @@ const materia = {
 const resourceTypes = [
   'crucigrama',
   'sopa_letras',
-  'unir_columnas',
   'emparejar',
   'guia',
   'taller',
@@ -78,6 +77,21 @@ async function fillBaseFields(page: Page, type: string) {
 
 test.beforeEach(async ({ page }) => {
   await mockApplication(page);
+});
+
+test('el selector ofrece una sola herramienta para relacionar pares', async ({ page }) => {
+  await page.goto('/app/herramientas/nuevo');
+
+  await expect(page.getByRole('button', { name: /Elegir Relacionar pares/i })).toHaveCount(1);
+  await expect(page.getByText('Unir columnas', { exact: true })).toHaveCount(0);
+  await expect(page.getByText('Emparejar', { exact: true })).toHaveCount(0);
+});
+
+test('un enlace anterior de unir columnas abre la herramienta consolidada', async ({ page }) => {
+  await page.goto('/app/herramientas/nuevo?tipo=unir_columnas');
+
+  await expect(page.getByRole('heading', { name: 'Crear recurso: Relacionar pares' })).toBeVisible();
+  await expect(page.getByPlaceholder('Relacionar pares: estados del agua')).toBeVisible();
 });
 
 test('todos los recursos permiten llegar a revisión con generación libre', async ({ page }) => {

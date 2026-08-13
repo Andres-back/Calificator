@@ -165,7 +165,7 @@ export function SopaLetrasView({
   }
 
   return (
-    <div className="space-y-5">
+    <div className="min-w-0 max-w-full space-y-5">
       <Confetti fire={complete} />
       <p className="sr-only" role="status" aria-live="polite">{announcement}</p>
       <div className="flex items-center justify-between gap-3">
@@ -177,7 +177,12 @@ export function SopaLetrasView({
         En computador, selecciona desde una letra hasta otra. En móvil, toca y desliza. Con teclado, usa las flechas y pulsa Espacio o Enter para iniciar y terminar.
       </p>
 
-      <div className="overflow-x-auto pb-1">
+      <div
+        className="max-w-full overflow-x-auto overscroll-x-contain pb-2"
+        role="region"
+        aria-label="Tablero de sopa de letras. Desliza horizontalmente si es necesario."
+        tabIndex={0}
+      >
         <div
           ref={boardRef}
           className="inline-block select-none rounded-2xl border-2 border-brand-200 bg-surface p-2 dark:border-brand-500/30"
@@ -210,7 +215,7 @@ export function SopaLetrasView({
                     aria-selected={selected || highlightedCell}
                     aria-label={`Fila ${rowIndex + 1}, columna ${columnIndex + 1}, letra ${String(character).toUpperCase()}${highlightedCell ? ', parte de una palabra encontrada' : selected ? ', selección actual' : ''}`}
                     className={cn(
-                      'grid h-11 w-11 touch-none place-items-center font-mono text-sm font-bold transition-colors focus-visible:z-10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-focus',
+                      'grid h-8 w-8 touch-none place-items-center font-mono text-xs font-bold transition-colors focus-visible:z-10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-focus sm:h-10 sm:w-10 sm:text-sm lg:h-11 lg:w-11',
                       highlightedCell
                         ? 'rounded-full bg-emerald-200 text-emerald-800 dark:bg-emerald-500/30 dark:text-emerald-200'
                         : selected

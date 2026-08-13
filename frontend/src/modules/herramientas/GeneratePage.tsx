@@ -31,6 +31,7 @@ import { toApiError } from '@/lib/api';
 import type { MaterialTipo } from '@/types/api';
 import { routes } from '@/config/routes';
 import {
+  canonicalCreationTool,
   filterTools,
   isGradableTool,
   MATERIAL_CREATION_TOOLS,
@@ -128,7 +129,8 @@ function GeneratingOverlay() {
 export function GeneratePage() {
   const [params, setParams] = useSearchParams();
   const navigate = useNavigate();
-  const type = params.get('tipo') as MaterialTipo | null;
+  const requestedType = params.get('tipo') as MaterialTipo | null;
+  const type = requestedType ? canonicalCreationTool(requestedType) : null;
   const tool = type && !isGradableTool(type) ? TOOL_BY_TIPO[type] : null;
   const [loading, setLoading] = useState(false);
   const [goal, setGoal] = useState<ToolGoal>('todos');
@@ -391,7 +393,7 @@ export function GeneratePage() {
             </div>
             <div>
               <h1 className="font-display text-xl font-extrabold">
-                Crear {tool.label.toLocaleLowerCase('es')}
+                Crear recurso: {tool.label}
               </h1>
               <p className="mt-1 text-sm text-muted">{tool.description}</p>
             </div>

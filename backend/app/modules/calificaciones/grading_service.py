@@ -12,6 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.logging import get_logger
 from app.modules.calificaciones.orchestrator import orchestrate_grading
 from app.modules.calificaciones.schemas import GradingResult
+from app.modules.evaluaciones.blueprint_service import grading_answer_key_status
 
 logger = get_logger(__name__)
 
@@ -49,7 +50,7 @@ async def grade_submission(
     Returns:
         GradingResult con nota final consolidada.
     """
-    return await orchestrate_grading(
+    result = await orchestrate_grading(
         db,
         evaluacion_id=evaluacion_id,
         materia_id=materia_id,
@@ -59,3 +60,20 @@ async def grade_submission(
         student_response_text=student_response_text,
         user_id=user_id,
     )
+    key_complete, missing_answers = grading_answer_key_status(blueprint)
+    if not key_complete:
+        result.confianza = min(result.confianza, 0.39)
+        result.requiere_revision_docente = True
+        warning = (
+            "La evaluacion no tiene una clave completa para las preguntas "
+            f"{', '.join(map(str, missing_answers))}; la nota requiere revision docente."
+        )
+        if warning not in result.alertas:
+            result.alertas.append(warning)
+        raw_output = dict(result.raw_model_output or {})
+        raw_output["answer_key"] = {
+            "complete": False,
+            "missing_questions": missing_answers,
+        }
+        result.raw_model_output = raw_output
+    return result

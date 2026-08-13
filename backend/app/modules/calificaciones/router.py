@@ -1626,9 +1626,24 @@ async def resolver_incidencia(
     db: AsyncSession = Depends(get_db),
 ) -> object:
     require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
-    result = await service.resolver_incidencia(
-        db, incidencia_id, payload.resolucion, current_user.id
+    from app.modules.calificaciones.incidencia_models import CalificacionIncidencia
+
+    incidencia = await db.scalar(
+        select(CalificacionIncidencia).where(CalificacionIncidencia.id == incidencia_id)
     )
-    if not result:
+    if not incidencia:
         raise HTTPException(status_code=404, detail="Incidencia no encontrada")
-    return result
+    # Autorizacion por objeto: conocer el UUID de la incidencia no concede acceso.
+    calificacion = await service.get_calificacion_or_404(
+        db, incidencia.calificacion_id
+    )
+    await evaluaciones_service.ensure_can_manage_evaluation(
+        db, calificacion.evaluacion_id, current_user
+    )
+    return await service.resolver_incidencia(
+        db,
+        incidencia_id,
+        payload.resolucion,
+        current_user.id,
+        incidencia=incidencia,
+    )

@@ -8,7 +8,9 @@ from uuid import uuid4
 import pytest
 from fastapi import HTTPException
 
-from app.modules.calificaciones import service
+from app.modules.calificaciones import router, service
+from app.modules.calificaciones.schemas import ResolverIncidencia
+from app.shared.enums import UserRole
 
 
 def test_student_review_request_is_attached_to_their_confirmed_grade(monkeypatch) -> None:
@@ -127,3 +129,81 @@ def test_resolve_review_request_uses_naive_utc_for_database(monkeypatch) -> None
     assert result is not None
     assert result["estado"] == "resuelta"
     assert result["resolved_at"].tzinfo is None
+
+
+def test_teacher_cannot_resolve_another_teachers_review_request(monkeypatch) -> None:
+    teacher = SimpleNamespace(id=uuid4(), rol=UserRole.PROFESOR.value)
+    incidence = SimpleNamespace(id=uuid4(), calificacion_id=uuid4())
+    grade = SimpleNamespace(evaluacion_id=uuid4())
+
+    class FakeDB:
+        async def scalar(self, _statement):
+            return incidence
+
+    async def fake_grade(*_args, **_kwargs):
+        return grade
+
+    async def deny_management(*_args, **_kwargs):
+        raise HTTPException(status_code=403, detail="No puedes administrar esta evaluación")
+
+    async def must_not_resolve(*_args, **_kwargs):
+        raise AssertionError("Una incidencia ajena no debe resolverse")
+
+    monkeypatch.setattr(router.service, "get_calificacion_or_404", fake_grade)
+    monkeypatch.setattr(
+        router.evaluaciones_service,
+        "ensure_can_manage_evaluation",
+        deny_management,
+    )
+    monkeypatch.setattr(router.service, "resolver_incidencia", must_not_resolve)
+
+    with pytest.raises(HTTPException) as exc:
+        asyncio.run(
+            router.resolver_incidencia(
+                incidence.id,
+                ResolverIncidencia(resolucion="Se revisó la solicitud."),
+                current_user=teacher,
+                db=FakeDB(),
+            )
+        )
+
+    assert exc.value.status_code == 403
+
+def test_owner_teacher_can_resolve_their_review_request(monkeypatch) -> None:
+    teacher = SimpleNamespace(id=uuid4(), rol=UserRole.PROFESOR.value)
+    incidence = SimpleNamespace(id=uuid4(), calificacion_id=uuid4())
+    grade = SimpleNamespace(evaluacion_id=uuid4())
+    expected = {"id": incidence.id, "estado": "resuelta"}
+
+    class FakeDB:
+        async def scalar(self, _statement):
+            return incidence
+
+    async def fake_grade(*_args, **_kwargs):
+        return grade
+
+    async def allow_management(*_args, **_kwargs):
+        return SimpleNamespace(id=grade.evaluacion_id)
+
+    async def fake_resolve(*_args, **kwargs):
+        assert kwargs["incidencia"] is incidence
+        return expected
+
+    monkeypatch.setattr(router.service, "get_calificacion_or_404", fake_grade)
+    monkeypatch.setattr(
+        router.evaluaciones_service,
+        "ensure_can_manage_evaluation",
+        allow_management,
+    )
+    monkeypatch.setattr(router.service, "resolver_incidencia", fake_resolve)
+
+    result = asyncio.run(
+        router.resolver_incidencia(
+            incidence.id,
+            ResolverIncidencia(resolucion="Se revisó y respondió la solicitud."),
+            current_user=teacher,
+            db=FakeDB(),
+        )
+    )
+
+    assert result == expected

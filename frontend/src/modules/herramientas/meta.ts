@@ -72,9 +72,9 @@ export const TOOLS: ToolMeta[] = [
   {
     tipo: 'unir_columnas',
     endpoint: 'unir-columnas',
-    label: 'Unir columnas',
+    label: 'Relacionar pares',
     category: 'Juego',
-    description: 'Actividad imprimible para conectar columna A con columna B mediante lineas.',
+    description: 'Actividad para relacionar conceptos, ejemplos o definiciones.',
     icon: Link2,
     gradient: 'from-violet-500 to-fuchsia-600',
     interactive: true,
@@ -83,9 +83,9 @@ export const TOOLS: ToolMeta[] = [
   {
     tipo: 'emparejar',
     endpoint: 'emparejar',
-    label: 'Emparejar',
+    label: 'Relacionar pares',
     category: 'Juego',
-    description: 'Crea pares de tarjetas para relacionar conceptos, ejemplos o categorias.',
+    description: 'Relaciona conceptos, ejemplos o definiciones de forma interactiva o imprimible.',
     icon: ArrowLeftRight,
     gradient: 'from-fuchsia-500 to-pink-600',
     interactive: true,

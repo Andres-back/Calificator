@@ -28,7 +28,10 @@ from app.modules.calificaciones.schemas import (
     RevisionManualCreate,
 )
 from app.modules.evaluaciones.models import Evaluacion
-from app.modules.evaluaciones.blueprint_service import evaluation_to_grading_blueprint
+from app.modules.evaluaciones.blueprint_service import (
+    evaluation_to_grading_blueprint,
+    grading_answer_key_status,
+)
 from app.modules.materias.models import Materia
 from app.modules.matriculas.models import Matricula
 from app.modules.evaluaciones.state_machine import transition_evaluation_state
@@ -486,6 +489,52 @@ def _select_current_calificaciones(
     return sorted(selected, key=_created_timestamp, reverse=True)
 
 
+def _select_current_inbox_rows(
+    rows: list[tuple[Calificacion, Evaluacion, Materia, User]],
+) -> list[tuple[Calificacion, Evaluacion, Materia, User]]:
+    """Conserva solo el intento oficial de cada estudiante y evaluacion.
+
+    La bandeja debe aplicar la misma politica que el libro de notas. De lo
+    contrario, un intento fallido reemplazado puede seguir apareciendo como
+    pendiente aunque ya exista una calificacion posterior confirmada.
+    """
+    grouped: dict[
+        tuple[UUID, UUID],
+        list[tuple[Calificacion, Evaluacion, Materia, User]],
+    ] = {}
+    for row in rows:
+        calificacion, evaluacion, _materia, _estudiante = row
+        if calificacion.estado == CalificacionEstado.ANULADA.value:
+            continue
+        grouped.setdefault(
+            (calificacion.evaluacion_id, calificacion.estudiante_id), []
+        ).append(row)
+
+    selected: list[tuple[Calificacion, Evaluacion, Materia, User]] = []
+    for attempts in grouped.values():
+        policy = attempts[0][1].politica_intento
+        if policy == PoliticaIntento.MEJOR_PUNTAJE.value:
+            current = max(
+                attempts,
+                key=lambda item: (
+                    _grade_score(item[0]),
+                    _created_timestamp(item[0]),
+                ),
+            )
+        else:
+            current = max(attempts, key=lambda item: _created_timestamp(item[0]))
+        selected.append(current)
+    return sorted(
+        selected,
+        key=lambda item: (
+            item[0].updated_at.timestamp()
+            if item[0].updated_at
+            else _created_timestamp(item[0])
+        ),
+        reverse=True,
+    )
+
+
 def _display_guide_value(value: object) -> str | None:
     if value is None:
         return None
@@ -813,6 +862,19 @@ async def get_calificacion_detalle(
     estudiante = await db.scalar(select(User).where(User.id == cal.estudiante_id))
 
     timeline_raw = cal.resultado_json.get("_timeline", []) if cal.resultado_json else []
+    grading_blueprint = evaluation_to_grading_blueprint(evaluacion) if evaluacion else {}
+    revision_guide = _build_revision_guide(grading_blueprint) if evaluacion else []
+    key_complete, missing_answers = (
+        grading_answer_key_status(grading_blueprint) if evaluacion else (False, [])
+    )
+    result_payload = dict(cal.resultado_json or {})
+    result_payload["answer_key"] = {
+        "complete": key_complete,
+        "missing_questions": missing_answers,
+    }
+    displayed_confidence = cal.confianza
+    if not key_complete and displayed_confidence is not None:
+        displayed_confidence = min(Decimal(displayed_confidence), Decimal("0.39"))
 
     return {
         "id": cal.id,
@@ -826,11 +888,11 @@ async def get_calificacion_detalle(
         "nota_sugerida": cal.nota_sugerida,
         "nota_confirmada": cal.nota_confirmada,
         "nota_maxima": evaluacion.nota_maxima if evaluacion else None,
-        "confianza": cal.confianza,
+        "confianza": displayed_confidence,
         "feedback": cal.feedback,
         "estado": cal.estado,
         "revisado_por_docente": cal.revisado_por_docente,
-        "resultado_json": cal.resultado_json or {},
+        "resultado_json": result_payload,
         "entrega_tipo": cal.entrega.tipo if cal.entrega else None,
         "entrega_archivo_url": (
             f"/api/calificaciones/entregas/{cal.entrega.id}/evidencia"
@@ -844,11 +906,7 @@ async def get_calificacion_detalle(
         "entrega_respuesta_texto": cal.entrega.respuesta_texto if cal.entrega else None,
         "entrega_created_at": cal.entrega.created_at if cal.entrega else None,
         "timeline": timeline_raw,
-        "guia_revision": _build_revision_guide(
-            evaluation_to_grading_blueprint(evaluacion)
-        )
-        if evaluacion
-        else [],
+        "guia_revision": revision_guide,
         "created_at": cal.created_at,
         "updated_at": cal.updated_at,
     }
@@ -1313,18 +1371,13 @@ async def obtener_bandeja_docente(
             *teacher_filter,
         )
     )
-    pendientes_base = (
+    calificaciones_base = (
         select(Calificacion, Evaluacion, Materia, User)
         .join(Evaluacion, Calificacion.evaluacion_id == Evaluacion.id)
         .join(Materia, Calificacion.materia_id == Materia.id)
         .join(User, Calificacion.estudiante_id == User.id)
         .where(
-            Calificacion.estado.in_(
-                [
-                    CalificacionEstado.SUGERIDA.value,
-                    CalificacionEstado.REQUIERE_REVISION.value,
-                ]
-            ),
+            Calificacion.estado != CalificacionEstado.ANULADA.value,
             *active_evaluation,
             *teacher_filter,
         )
@@ -1333,9 +1386,6 @@ async def obtener_bandeja_docente(
     reclamos_total = await db.scalar(
         select(func.count()).select_from(reclamos_base.subquery())
     )
-    pendientes_total = await db.scalar(
-        select(func.count()).select_from(pendientes_base.subquery())
-    )
     reclamos_rows = (
         await db.execute(
             reclamos_base.order_by(CalificacionIncidencia.created_at.desc()).limit(
@@ -1343,11 +1393,18 @@ async def obtener_bandeja_docente(
             )
         )
     ).all()
-    pendientes_rows = (
-        await db.execute(
-            pendientes_base.order_by(Calificacion.updated_at.desc()).limit(limite)
-        )
-    ).all()
+    calificaciones_rows = (await db.execute(calificaciones_base)).all()
+    current_pending_rows = [
+        row
+        for row in _select_current_inbox_rows(calificaciones_rows)
+        if row[0].estado
+        in {
+            CalificacionEstado.SUGERIDA.value,
+            CalificacionEstado.REQUIERE_REVISION.value,
+        }
+    ]
+    pendientes_total = len(current_pending_rows)
+    pendientes_rows = current_pending_rows[:limite]
 
     reclamos = [
         {
@@ -1391,18 +1448,23 @@ async def obtener_bandeja_docente(
     ]
     return {
         "reclamos_abiertos": int(reclamos_total or 0),
-        "pendientes_revision": int(pendientes_total or 0),
+        "pendientes_revision": pendientes_total,
         "reclamos": reclamos,
         "pendientes": pendientes,
     }
 
 
 async def resolver_incidencia(
-    db: AsyncSession, incidencia_id: UUID, resolucion: str, resuelto_por: UUID
+    db: AsyncSession,
+    incidencia_id: UUID,
+    resolucion: str,
+    resuelto_por: UUID,
+    *,
+    incidencia: object | None = None,
 ) -> dict | None:
     from app.modules.calificaciones.incidencia_models import CalificacionIncidencia
 
-    inc = await db.scalar(
+    inc = incidencia or await db.scalar(
         select(CalificacionIncidencia).where(CalificacionIncidencia.id == incidencia_id)
     )
     if not inc:

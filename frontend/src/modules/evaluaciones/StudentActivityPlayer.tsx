@@ -112,7 +112,7 @@ export function StudentActivityPlayer({ activity, onAnswersChange, readOnly = fa
   }, [activity.contenido, onAnswersChange]);
 
   return (
-    <section aria-labelledby="interactive-activity-title" className="rounded-xl border border-border bg-surface p-5">
+    <section aria-labelledby="interactive-activity-title" className="min-w-0 max-w-full overflow-hidden rounded-xl border border-border bg-surface p-3 sm:p-5">
       <div className="mb-5 flex items-center gap-3 border-b border-border pb-4">
         <span className="grid h-11 w-11 place-items-center rounded-xl bg-violet-100 text-violet-700 dark:bg-violet-500/20 dark:text-violet-200"><Puzzle className="h-6 w-6" /></span>
         <div><p className="text-xs font-bold uppercase tracking-wide text-violet-700 dark:text-violet-300">{readOnly ? 'Material asignado' : 'Actividad interactiva'}</p><h2 id="interactive-activity-title" className="font-display text-xl font-bold">{activity.titulo}</h2></div>

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { TOOLS } from './meta';
 import {
+  canonicalCreationTool,
   filterTools,
   goalForTool,
   isGradableTool,
@@ -26,6 +27,16 @@ describe('toolPickerModel', () => {
   it('deja examen, quiz y rúbrica fuera del creador de materiales', () => {
     expect(MATERIAL_CREATION_TOOLS.some((tool) => isGradableTool(tool.tipo))).toBe(false);
     expect(MATERIAL_CREATION_TOOLS.map((tool) => tool.tipo)).not.toContain('examen');
+  });
+
+  it('muestra una sola herramienta para relacionar pares y conserva el alias anterior', () => {
+    const matchingTools = MATERIAL_CREATION_TOOLS.filter((tool) =>
+      ['unir_columnas', 'emparejar'].includes(tool.tipo),
+    );
+
+    expect(matchingTools.map((tool) => tool.tipo)).toEqual(['emparejar']);
+    expect(matchingTools[0]?.label).toBe('Relacionar pares');
+    expect(canonicalCreationTool('unir_columnas')).toBe('emparejar');
   });
 
   it('busca sin exigir tildes ni mayúsculas', () => {

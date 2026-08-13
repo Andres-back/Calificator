@@ -200,6 +200,33 @@ def test_profesor_gets_editor_url_and_exports(monkeypatch) -> None:
     assert export_response.json()["pptx_url"]
 
 
+def test_pdf_download_streams_with_mobile_safe_headers(monkeypatch, tmp_path) -> None:
+    profesor = _user("profesor")
+    pres = _presentation(profesor_id=profesor.id, titulo="Clase para iPhone")
+    pdf_path = tmp_path / "clase-iphone.pdf"
+    pdf_path.write_bytes(b"%PDF-1.4\n%%EOF")
+
+    async def ensure_can_read_presentacion(*args, **kwargs):
+        return pres
+
+    monkeypatch.setattr(
+        service,
+        "ensure_can_read_presentacion",
+        ensure_can_read_presentacion,
+    )
+    monkeypatch.setattr(service, "get_download_path", lambda *_args: pdf_path)
+
+    client = _client_with_user(profesor)
+    response = client.get(f"/api/presentaciones/{pres.id}/archivo/pdf")
+
+    assert response.status_code == 200, response.text
+    assert response.content == pdf_path.read_bytes()
+    assert response.headers["content-type"] == "application/pdf"
+    assert response.headers["content-disposition"].startswith("attachment;")
+    assert response.headers["cache-control"] == "private, no-store"
+    assert response.headers["x-content-type-options"] == "nosniff"
+
+
 def test_presentation_images_force_openai_for_all_strategies() -> None:
     eligible_order = {0: 0, 2: 1, 4: 2, 6: 3}
 

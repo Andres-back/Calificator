@@ -7,9 +7,7 @@ import {
   AlertTriangle,
   CheckCircle2,
   Clock,
-  Download,
   ExternalLink,
-  FileText,
   Loader2,
   Plus,
   Presentation,
@@ -21,12 +19,12 @@ import { useMaterias } from '@/modules/materias/MateriaSelect';
 import {
   createPresentacion,
   deletePresentacion,
-  downloadPresentacionFile,
   getPresentacionEditorUrl,
   listPresentaciones,
   type PresentacionCreate,
 } from './api';
 import { PresentacionForm } from './PresentacionForm';
+import { PresentationFileLink } from './PresentationFileLink';
 import { queryClient } from '@/lib/queryClient';
 import { toApiError } from '@/lib/api';
 import { formatDate } from '@/lib/dates';
@@ -80,12 +78,6 @@ export function PresentacionesPage() {
       toast.success('Generando presentación… puede tardar unos minutos.');
       setOpen(false);
     },
-    onError: (e) => toast.error(toApiError(e).detail),
-  });
-
-  const downloadFile = useMutation({
-    mutationFn: ({ id, format, title }: { id: string; format: 'pptx' | 'pdf'; title: string }) =>
-      downloadPresentacionFile(id, format, title),
     onError: (e) => toast.error(toApiError(e).detail),
   });
 
@@ -156,24 +148,10 @@ export function PresentacionesPage() {
                       </Button>
                     )}
                     {p.pptx_url && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => downloadFile.mutate({ id: p.id, format: 'pptx', title: p.titulo })}
-                        loading={downloadFile.isPending}
-                      >
-                        <Download className="h-4 w-4" /> Descargar PPTX
-                      </Button>
+                      <PresentationFileLink id={p.id} format="pptx" />
                     )}
                     {p.pdf_url && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => downloadFile.mutate({ id: p.id, format: 'pdf', title: p.titulo })}
-                        loading={downloadFile.isPending}
-                      >
-                        <FileText className="h-4 w-4" /> Descargar PDF
-                      </Button>
+                      <PresentationFileLink id={p.id} format="pdf" />
                     )}
                     <Button size="icon" variant="ghost" className="text-rose-700 dark:text-rose-300" onClick={() => setPresentationToDelete({ id: p.id, title: p.titulo })} loading={remove.isPending} aria-label={`Eliminar ${p.titulo}`} title="Eliminar presentación">
                       <Trash2 className="h-4 w-4" />

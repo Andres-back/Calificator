@@ -54,6 +54,7 @@ function renderPage() {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  sessionStorage.clear();
   mocks.getEvaluation.mockResolvedValue({
     id: 'evaluation-1',
     materia_id: 'materia-1',
@@ -109,9 +110,12 @@ describe('ResolverEvaluacionPage', () => {
     const user = userEvent.setup();
     renderPage();
 
-    const answer = await screen.findByLabelText(/Respuesta 1/i);
+    const answer = await screen.findByLabelText('Tu respuesta');
     await user.type(answer, 'Mi procedimiento se conserva.');
-    await user.click(screen.getByRole('button', { name: /Enviar respuesta/i }));
+    await user.click(screen.getByRole('button', { name: /Revisar respuestas y entregar/i }));
+    expect(mocks.createDelivery).not.toHaveBeenCalled();
+    expect(screen.getByText('¿Entregar la evaluación?')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Sí, entregar ahora' }));
 
     await waitFor(() => expect(mocks.createDelivery).toHaveBeenCalledTimes(1));
     expect(mocks.createDelivery).toHaveBeenCalledWith('evaluation-1', {
@@ -119,7 +123,7 @@ describe('ResolverEvaluacionPage', () => {
     });
     expect(await screen.findByText('Entrega recibida')).toBeInTheDocument();
     expect(screen.getByText(/no necesitas volver a enviarla/i)).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /Enviar respuesta/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Revisar respuestas y entregar/i })).not.toBeInTheDocument();
     expect(mocks.success).toHaveBeenCalledWith(
       'Entrega realizada. Quedó pendiente de calificación docente.',
     );
@@ -167,8 +171,9 @@ describe('ResolverEvaluacionPage', () => {
     expect(screen.queryByText('Dibujo que se entrega en papel.')).not.toBeInTheDocument();
     expect(screen.getByText(/Las otras 1 se entregan en papel o archivo/i)).toBeInTheDocument();
 
-    await user.type(screen.getByLabelText(/Respuesta 1/i), 'respuesta online.');
-    await user.click(screen.getByRole('button', { name: /Enviar respuesta/i }));
+    await user.type(screen.getByLabelText('Tu respuesta'), 'respuesta online.');
+    await user.click(screen.getByRole('button', { name: /Revisar respuestas y entregar/i }));
+    await user.click(screen.getByRole('button', { name: 'Sí, entregar ahora' }));
 
     expect(await screen.findByText('Parte online guardada')).toBeInTheDocument();
     expect(screen.getByText(/Ahora entrega la parte física/i)).toBeInTheDocument();
@@ -189,7 +194,7 @@ describe('ResolverEvaluacionPage', () => {
     expect(screen.getByText('Foto o PDF de tu trabajo')).toBeInTheDocument();
     expect(screen.queryByText('Tus respuestas')).not.toBeInTheDocument();
     expect(
-      screen.queryByRole('button', { name: /Enviar respuesta/i }),
+      screen.queryByRole('button', { name: /Revisar respuestas y entregar/i }),
     ).not.toBeInTheDocument();
   });
 
@@ -352,5 +357,66 @@ describe('ResolverEvaluacionPage', () => {
       pages,
       [0, 0],
     ));
+  });
+  it('restaura el borrador guardado al volver a la evaluación', async () => {
+    sessionStorage.setItem(
+      'xcalificator:evaluacion:draft:anonymous:evaluation-1',
+      JSON.stringify({ 1: 'Procedimiento que aún no he entregado.' }),
+    );
+
+    renderPage();
+
+    expect(await screen.findByLabelText('Tu respuesta')).toHaveValue(
+      'Procedimiento que aún no he entregado.',
+    );
+    expect(screen.getByText('Borrador guardado en esta pestaña.')).toBeInTheDocument();
+    expect(mocks.createDelivery).not.toHaveBeenCalled();
+  });
+
+  it('lleva al estudiante a la primera respuesta pendiente antes de entregar', async () => {
+    const currentEvaluation = await mocks.getEvaluation();
+    mocks.getEvaluation.mockResolvedValue({
+      ...currentEvaluation,
+      preguntas: [
+        { numero: 1, enunciado: 'Primera pregunta.' },
+        { numero: 2, enunciado: 'Segunda pregunta.' },
+      ],
+    });
+    const user = userEvent.setup();
+    renderPage();
+
+    const inputs = await screen.findAllByLabelText('Tu respuesta');
+    await user.type(inputs[0], 'Esta es mi primera respuesta.');
+    await user.click(screen.getByRole('button', { name: /Revisar respuestas y entregar/i }));
+
+    expect(screen.getByText('Completa esta respuesta antes de entregar.')).toBeInTheDocument();
+    expect(mocks.error).toHaveBeenCalledWith('Completa la respuesta pendiente.');
+    expect(mocks.createDelivery).not.toHaveBeenCalled();
+  });
+  it('no duplica las preguntas debajo de una actividad interactiva', async () => {
+    const currentEvaluation = await mocks.getEvaluation();
+    mocks.getEvaluation.mockResolvedValue({
+      ...currentEvaluation,
+      modalidad: 'online',
+      material_origen_id: 'material-interactivo',
+      preguntas: [{ numero: 1, enunciado: 'Encuentra las palabras.' }],
+    });
+    mocks.getStudentActivity.mockResolvedValue({
+      material_id: 'material-interactivo',
+      tipo: 'sopa_letras',
+      titulo: 'Sopa de operaciones',
+      interactivo: true,
+      contenido: {
+        grilla: [['S', 'U', 'M', 'A'], ['R', 'E', 'S', 'T']],
+        banco_palabras: ['SUMA', 'RESTA'],
+      },
+    });
+
+    renderPage();
+
+    expect(await screen.findByText('Sopa de operaciones')).toBeInTheDocument();
+    expect(screen.getByText('Entrega tu actividad interactiva')).toBeInTheDocument();
+    expect(screen.queryByText('Resuelve paso a paso')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Revisar actividad y entregar' })).toBeInTheDocument();
   });
 });

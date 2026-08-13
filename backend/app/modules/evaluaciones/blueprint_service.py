@@ -4,6 +4,56 @@ from app.modules.evaluaciones.modality_service import normalize_question_modalit
 from app.shared.enums import BlueprintNivelContexto, EvaluacionTipoOrigen
 
 
+_INCOMPLETE_ANSWER_MARKERS = (
+    "pendiente de validacion",
+    "pendiente de definir",
+    "por definir",
+    "no registrada",
+    "no disponible",
+    "respuesta argumentada",
+    "respuesta de referencia",
+    "el docente debe",
+    "seleccionar respuesta",
+)
+
+
+def _normalized_answer(value: Any) -> str:
+    import unicodedata
+
+    text = unicodedata.normalize("NFKD", str(value or ""))
+    text = "".join(character for character in text if not unicodedata.combining(character))
+    return " ".join(text.casefold().split())
+
+
+def grading_answer_key_status(blueprint: dict[str, Any]) -> tuple[bool, list[int | str]]:
+    """Indica si cada pregunta tiene una respuesta especifica y utilizable."""
+    questions = blueprint.get("preguntas") or []
+    answers = blueprint.get("respuestas_esperadas") or []
+    answers_by_number: dict[str, Any] = {}
+    for index, item in enumerate(answers, start=1):
+        if isinstance(item, dict):
+            number = item.get("numero", index)
+            value = next(
+                (
+                    item.get(key)
+                    for key in ("respuesta", "respuesta_correcta", "texto", "answer")
+                    if item.get(key) not in (None, "", [])
+                ),
+                None,
+            )
+        else:
+            number, value = index, item
+        answers_by_number[str(number)] = value
+
+    missing: list[int | str] = []
+    for index, question in enumerate(questions, start=1):
+        number = question.get("numero", index) if isinstance(question, dict) else index
+        normalized = _normalized_answer(answers_by_number.get(str(number)))
+        if not normalized or any(marker in normalized for marker in _INCOMPLETE_ANSWER_MARKERS):
+            missing.append(number)
+    return bool(questions) and not missing, missing
+
+
 def infer_blueprint_level(tipo_origen: str) -> BlueprintNivelContexto:
     if tipo_origen == EvaluacionTipoOrigen.EXTERNA_DIGITALIZADA.value:
         return BlueprintNivelContexto.RECONSTRUIDO
