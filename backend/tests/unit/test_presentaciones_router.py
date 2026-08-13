@@ -246,6 +246,27 @@ def test_cover_title_wrapping_keeps_long_words() -> None:
     assert "entorno" in rendered
 
 
+def test_text_card_wrapping_keeps_complete_explanation() -> None:
+    image = Image.new("RGB", (1600, 900))
+    draw = ImageDraw.Draw(image)
+    explanation = (
+        "Relaciona fracciones equivalentes con ejemplos visuales y situaciones "
+        "cotidianas mediante una explicacion concreta y progresiva."
+    )
+
+    _, lines = _fit_lines(
+        draw,
+        explanation,
+        max_width=778,
+        max_lines=4,
+        sizes=[32, 29, 26, 24, 22, 20],
+    )
+
+    assert "..." not in " ".join(lines)
+    assert "progresiva" in " ".join(lines)
+
+
+
 @pytest.mark.anyio
 async def test_export_presentacion_uses_editable_pptx_as_primary(monkeypatch) -> None:
     pres = _presentation(
