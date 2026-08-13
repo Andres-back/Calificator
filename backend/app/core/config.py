@@ -55,6 +55,10 @@ class Settings(BaseSettings):
     OPEN_CODE_API_KEY: str = ""
     OPEN_CODE_BASE_URL: str = "https://opencode.ai/zen/go/v1"
     OPEN_CODE_MODEL: str = "deepseek-v4-flash"
+    OPEN_CODE_MAX_TOKENS: int = 8192
+    OPEN_CODE_PRESENTATION_MODEL: str = "qwen3.7-plus"
+    OPEN_CODE_PRESENTATION_TIMEOUT_SECONDS: int = 120
+    OPEN_CODE_PRESENTATION_MAX_TOKENS: int = 8192
     OPEN_CODE_DIGITALIZATION_VISION_MODEL: str = "mimo-v2.5"
     OPEN_CODE_DIGITALIZATION_VISION_TIMEOUT_SECONDS: int = 60
     OPEN_CODE_DIGITALIZATION_MODEL: str = "mimo-v2.5"

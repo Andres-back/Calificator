@@ -258,8 +258,8 @@ def test_text_card_wrapping_keeps_complete_explanation() -> None:
         draw,
         explanation,
         max_width=778,
-        max_lines=4,
-        sizes=[32, 29, 26, 24, 22, 20],
+        max_lines=5,
+        sizes=[32, 29, 26, 24, 22, 20, 18],
     )
 
     assert "..." not in " ".join(lines)

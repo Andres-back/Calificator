@@ -352,7 +352,7 @@ def _layout_text(canvas, draw, title, bullets, theme, *, index, total) -> None:
             draw, str(bullet), max_width=x1 - x0 - 155,
             # Cuatro lineas a 20 pt caben dentro de la tarjeta de 154 px.
             # Conservamos la explicacion completa en vez de recortarla.
-            max_lines=4, sizes=[32, 29, 26, 24, 22, 20],
+            max_lines=5, sizes=[32, 29, 26, 24, 22, 20, 18],
         )
         text_y = cy - (len(lines) * (_line_height(bfont) + 5)) // 2
         for line in lines:

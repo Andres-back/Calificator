@@ -83,7 +83,7 @@ DEFAULT_FEATURES: list[dict[str, Any]] = [
     {"feature": "generacion_preguntas", "label": "Generación de preguntas", "primary_provider": "groq", "fallback_provider": "template", "active": True},
     {"feature": "evaluacion_digitalizar", "label": "Digitalización de evaluaciones", "primary_provider": "open_code", "fallback_provider": None, "active": True},
     {"feature": "herramientas_educativas", "label": "Herramientas educativas", "primary_provider": "groq", "fallback_provider": "template", "active": True},
-    {"feature": "presentaciones", "label": "Presentaciones", "primary_provider": "groq", "fallback_provider": "template", "active": True},
+    {"feature": "presentaciones", "label": "Presentaciones", "primary_provider": "open_code", "fallback_provider": "groq", "active": True},
     {"feature": "generacion_imagenes", "label": "Generación de imágenes", "primary_provider": "openai_image", "fallback_provider": "cloudflare_image", "active": True},
     {"feature": "vision_ocr", "label": "Visión/OCR", "primary_provider": "open_code", "fallback_provider": None, "active": True},
     {"feature": "rag", "label": "RAG (embeddings)", "primary_provider": "openai", "fallback_provider": None, "active": True},

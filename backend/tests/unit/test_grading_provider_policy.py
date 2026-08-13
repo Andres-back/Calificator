@@ -17,3 +17,8 @@ def test_grading_and_vision_defaults_prefer_opencode() -> None:
     for feature in ("calificacion_texto", "calificacion_foto", "vision_ocr"):
         assert routes[feature]["primary_provider"] == "open_code"
         assert routes[feature]["fallback_provider"] is None
+
+def test_presentation_defaults_prefer_opencode_with_groq_fallback() -> None:
+    routes = {item["feature"]: item for item in DEFAULT_FEATURES}
+    assert routes["presentaciones"]["primary_provider"] == "open_code"
+    assert routes["presentaciones"]["fallback_provider"] == "groq"

@@ -410,6 +410,7 @@ def test_document_routing_never_falls_through_to_other_providers(monkeypatch) ->
     assert [provider for provider, _call in providers] == ["open_code"]
     assert router._provider_configs["open_code"]["model"] == "mimo-v2.5"
     assert router._provider_configs["open_code"]["timeout_seconds"] == 180
+    assert router._provider_configs["open_code"]["max_tokens"] == 3072
 
 
 def test_template_fallback_stays_after_real_text_providers(monkeypatch) -> None:
@@ -463,6 +464,10 @@ def test_template_fallback_stays_after_real_text_providers(monkeypatch) -> None:
         "ollama",
         "template",
     ]
+
+    assert router._provider_configs["open_code"]["model"] == "qwen3.7-plus"
+    assert router._provider_configs["open_code"]["timeout_seconds"] == 120
+    assert router._provider_configs["open_code"]["max_tokens"] == 8192
 
 
 def test_digitalization_defaults_to_mimo_fast_path() -> None:
@@ -530,7 +535,7 @@ def test_opencode_text_router_retries_rate_limit(monkeypatch) -> None:
     assert FakeHTTPClient.last_url.endswith("/messages")
     assert FakeHTTPClient.last_headers["x-api-key"] == "test-key"
     assert "response_format" not in FakeHTTPClient.last_json
-    assert FakeHTTPClient.last_json["max_tokens"] == 3072
+    assert FakeHTTPClient.last_json["max_tokens"] == 8192
 
 
 def test_opencode_retries_with_environment_key_after_stored_key_401(monkeypatch) -> None:

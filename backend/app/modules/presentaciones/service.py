@@ -157,6 +157,31 @@ ESQUEMA JSON OBLIGATORIO:
 
 Devuelve SOLO JSON valido. No incluyas texto fuera del JSON."""
 
+SLIDES_REVIEW_PROMPT = """Eres el revisor final de una presentacion escolar.
+Audita y corrige el borrador antes de mostrarlo a estudiantes.
+
+CONTEXTO
+- Tema: {tema}
+- Area: {area}
+- Grado: {grado}
+- Cantidad exacta: {cantidad}
+
+REVISION OBLIGATORIA
+- Corrige todo error conceptual, matematico, factual o de lenguaje.
+- Verifica cada igualdad, ejemplo, definicion, clasificacion y respuesta.
+- No afirmes que dos fracciones equivalentes requieren el mismo numerador o denominador.
+- Conserva EXACTAMENTE {cantidad} slides y el mismo esquema JSON.
+- Mantiene 2 a 4 bullets completos de 8 a 16 palabras en cada slide de contenido.
+- Elimina instrucciones genericas; cada bullet debe ensenar contenido del tema.
+- No agregues informacion incierta. Si una frase es ambigua, reemplazala por una verificable.
+- Devuelve el arreglo completo corregido, no una lista de observaciones.
+
+BORRADOR
+{draft}
+
+Devuelve SOLO JSON valido con la forma {{"slides": [...]}}."""
+
+
 GENERIC_PRESENTATION_MARKERS = (
     "reconocer el tema central",
     "conectar con situaciones conocidas",
@@ -353,7 +378,7 @@ async def _generate_slides(payload: PresentacionCreate, profesor_id: UUID) -> li
                 best_candidate = candidate
                 best_score = score
             if not last_issues:
-                return candidate
+                return await _review_slides_for_accuracy(llm, candidate, payload)
         else:
             candidate = []
             last_issues = ["La respuesta no contiene el arreglo slides."]
@@ -375,7 +400,7 @@ async def _generate_slides(payload: PresentacionCreate, profesor_id: UUID) -> li
                 "Presentation content required deterministic completion after provider retries: %s",
                 "; ".join(last_issues[:8]),
             )
-            return repaired
+            return await _review_slides_for_accuracy(llm, repaired, payload)
         last_issues = repair_issues
 
     raise RuntimeError(
@@ -383,6 +408,48 @@ async def _generate_slides(payload: PresentacionCreate, profesor_id: UUID) -> li
         + "; ".join(last_issues[:5])
     )
 
+
+async def _review_slides_for_accuracy(
+    llm: LLMRouter,
+    slides: list[dict],
+    payload: PresentacionCreate,
+) -> list[dict]:
+    """Run one final factual pass without making availability depend on it."""
+    prompt = SLIDES_REVIEW_PROMPT.format(
+        tema=payload.tema,
+        area=payload.area or payload.materia_nombre or "General",
+        grado=payload.grado or payload.nivel or "",
+        cantidad=payload.cantidad_slides,
+        draft=json.dumps({"slides": slides}, ensure_ascii=False),
+    )
+    try:
+        raw = await llm.generate_json("presentacion", prompt)
+    except Exception:  # noqa: BLE001
+        logger.exception("Presentation factual review provider failed")
+        return slides
+
+    if isinstance(raw, dict):
+        reviewed_raw: Any = raw.get("slides", [])
+    elif isinstance(raw, list):
+        reviewed_raw = raw
+    else:
+        reviewed_raw = []
+    if not isinstance(reviewed_raw, list) or not reviewed_raw:
+        logger.warning("Presentation factual review returned no slides")
+        return slides
+
+    reviewed = _apply_pedagogical_slide_defaults(
+        _polish_slides_for_presenton(
+            normalize_presentation(reviewed_raw),
+            topic=payload.tema,
+        ),
+        payload,
+    )
+    issues = _presentation_quality_issues(reviewed, payload)
+    if issues:
+        logger.warning("Presentation factual review rejected: %s", "; ".join(issues[:8]))
+        return slides
+    return reviewed
 
 def _contains_generic_marker(value: Any) -> bool:
     normalized = " ".join(str(value or "").lower().split())
@@ -472,14 +539,14 @@ def _repair_incomplete_presentation(
 
         bullets = [
             bullet
-            for bullet in _clean_text_list(slide.get("bullets"), max_items=4, max_chars=120)
+            for bullet in _clean_text_list(slide.get("bullets"), max_items=4, max_chars=160)
             if not _contains_generic_marker(bullet)
         ]
         for fallback in _repair_role_bullets(role, topic=topic, area=area, grade=grade):
             if len(bullets) >= 2 and _visible_words(bullets) >= 14:
                 break
             if fallback.lower() not in {item.lower() for item in bullets}:
-                bullets.append(_clip_text(fallback, 120))
+                bullets.append(_clip_text(fallback, 160))
         slide["bullets"] = bullets
 
         message = str(slide.get("key_message") or "").strip()
@@ -514,7 +581,7 @@ def _presentation_quality_issues(slides: list[dict], payload: PresentacionCreate
     messages: dict[str, int] = {}
     for index, slide in enumerate(slides):
         role = str(slide.get("role") or "concept")
-        bullets = _clean_text_list(slide.get("bullets"), max_items=4, max_chars=120)
+        bullets = _clean_text_list(slide.get("bullets"), max_items=4, max_chars=160)
         visible = " ".join(str(slide.get(field) or "") for field in ("title", "key_message", "example", "activity", "question")) + " " + " ".join(bullets)
         normalized = " ".join(visible.lower().split())
         if role != "cover" and len(bullets) < 2:
@@ -853,7 +920,7 @@ def _apply_role_sequence(slides: list[dict]) -> list[dict]:
 def _merge_structured_content_into_bullets(slides: list[dict]) -> list[dict]:
     """Hace visibles ejemplos, actividades y preguntas en los archivos exportados."""
     for slide in slides:
-        bullets = _clean_text_list(slide.get("bullets"), max_items=4, max_chars=120)
+        bullets = _clean_text_list(slide.get("bullets"), max_items=4, max_chars=160)
         role = str(slide.get("role") or "")
         additions: list[tuple[str, str]] = []
         if role == "example":
@@ -1095,7 +1162,7 @@ def _polish_slides_for_presenton(slides: list[dict], *, topic: str = "") -> list
         title = _slide_title(str(slide.get("title") or ""), index=index, topic=topic)
         bullets = slide.get("bullets") if isinstance(slide.get("bullets"), list) else []
         # Viñetas completas y educativas (ideas claras), no fragmentos de 2 palabras.
-        compact_bullets = [_clip_text(str(item), 95) for item in bullets if str(item).strip()]
+        compact_bullets = [_clip_text(str(item), 160) for item in bullets if str(item).strip()]
         compact_bullets = [item for item in compact_bullets if len(item) >= 3][:4]
         if not compact_bullets:
             note = str(slide.get("notes") or "Idea clave para trabajar en clase.")

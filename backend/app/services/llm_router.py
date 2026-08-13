@@ -121,6 +121,12 @@ class LLMRouter:
                 "model": settings.OPEN_CODE_DIGITALIZATION_MODEL,
                 "timeout_seconds": settings.OPEN_CODE_DIGITALIZATION_TIMEOUT_SECONDS,
             }
+        elif task_type == "presentacion":
+            self._provider_configs[LLMProvider.OPEN_CODE.value] = {
+                "model": settings.OPEN_CODE_PRESENTATION_MODEL,
+                "timeout_seconds": settings.OPEN_CODE_PRESENTATION_TIMEOUT_SECONDS,
+                "max_tokens": settings.OPEN_CODE_PRESENTATION_MAX_TOKENS,
+            }
         try:
             from app.db.session import AsyncSessionLocal
             from app.services.ai_config_service import AIConfigService
@@ -143,6 +149,17 @@ class LLMRouter:
                     document_provider[
                         "timeout_seconds"
                     ] = settings.OPEN_CODE_DIGITALIZATION_TIMEOUT_SECONDS
+                    document_provider["max_tokens"] = (
+                        settings.OPEN_CODE_DIGITALIZATION_MAX_TOKENS
+                    )
+                elif task_type == "presentacion":
+                    presentation_provider = self._provider_configs.setdefault(
+                        LLMProvider.OPEN_CODE.value, {}
+                    )
+                    presentation_provider["model"] = settings.OPEN_CODE_PRESENTATION_MODEL
+                    presentation_provider["timeout_seconds"] = settings.OPEN_CODE_PRESENTATION_TIMEOUT_SECONDS
+                    presentation_provider["max_tokens"] = settings.OPEN_CODE_PRESENTATION_MAX_TOKENS
+
 
                 # Student/teacher documents are restricted to OpenCode only.
                 if task_type == "evaluacion_digitalizar":
@@ -256,7 +273,7 @@ class LLMRouter:
         if use_messages_api:
             body["max_tokens"] = int(
                 config.get("max_tokens")
-                or getattr(settings, "OPEN_CODE_DIGITALIZATION_MAX_TOKENS", 3072)
+                or getattr(settings, "OPEN_CODE_MAX_TOKENS", 8192)
             )
             endpoint = "messages"
         else:

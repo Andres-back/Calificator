@@ -446,9 +446,47 @@ def test_generacion_recupera_respuesta_corta_despues_de_reintentos(monkeypatch) 
 
     slides = asyncio.run(service._generate_slides(payload, uuid4()))
 
-    assert ShortContentRouter.calls == 3
+    assert ShortContentRouter.calls == 4
     assert len(slides) == 8
     assert service._presentation_quality_issues(slides, payload) == []
+
+def test_revision_final_corrige_un_error_conceptual() -> None:
+    payload = PresentacionCreate(
+        titulo="Fracciones equivalentes",
+        tema="Fracciones equivalentes",
+        area="Matematicas",
+        grado="3",
+        cantidad_slides=8,
+    )
+    draft = service._repair_incomplete_presentation(
+        [
+            {"title": f"Diapositiva {index + 1}", "bullets": ["Idea inicial"]}
+            for index in range(8)
+        ],
+        payload,
+    )
+    draft[2]["bullets"][0] = "Las equivalentes tienen el mismo numerador y denominador."
+    corrected = [dict(slide) for slide in draft]
+    corrected[2] = {
+        **corrected[2],
+        "bullets": [
+            "Las fracciones equivalentes representan la misma cantidad.",
+            "Multiplicar numerador y denominador por el mismo numero conserva su valor.",
+        ],
+    }
+
+    class Reviewer:
+        async def generate_json(self, feature, prompt):
+            assert feature == "presentacion"
+            assert "error conceptual" in prompt
+            return {"slides": corrected}
+
+    reviewed = asyncio.run(
+        service._review_slides_for_accuracy(Reviewer(), draft, payload)
+    )
+
+    visible = " ".join(reviewed[2]["bullets"]).lower()
+    assert "mismo numerador y denominador" not in visible
 
 
 def test_actividad_y_pregunta_quedan_visibles_en_la_exportacion() -> None:
