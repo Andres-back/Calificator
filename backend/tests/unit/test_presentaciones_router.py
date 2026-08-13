@@ -93,6 +93,27 @@ def _client_with_user(user: User) -> TestClient:
     return TestClient(app, base_url="http://localhost")
 
 
+def test_generated_asset_uses_writable_presentation_directory(
+    monkeypatch,
+    tmp_path,
+) -> None:
+    monkeypatch.setattr(presenton_service.settings, "UPLOADS_DIR", str(tmp_path))
+    path, url = presenton_service._ai_slide_asset("Fracciones", "Pizzas iguales")
+
+    assert path.parent == tmp_path / "presentations" / "images" / "xcal"
+    assert url.startswith("/api/presentaciones/assets/")
+
+    path.parent.mkdir(parents=True)
+    Image.new("RGB", (8, 8), "blue").save(path, "PNG")
+    assert presenton_service._data_uri_from_app_data_url(url).startswith("data:image/png;base64,")
+
+    client = _client_with_user(_user("profesor"))
+    response = client.get(url)
+    assert response.status_code == 200
+    assert response.headers["content-type"] == "image/png"
+    assert client.get("/api/presentaciones/assets/../../secreto.png").status_code == 404
+
+
 def test_unauthenticated_user_cannot_access_presentaciones() -> None:
     client = TestClient(create_app(), base_url="http://localhost")
     response = client.get("/api/presentaciones")

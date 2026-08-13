@@ -14,7 +14,7 @@ services:
     command:
       - sh
       - -c
-      - "mkdir -p /app/uploads/presenton/images/xcal /app/uploads/presentations && chown -R $${APP_UID}:$${APP_GID} /app/uploads/presenton /app/uploads/presentations && chmod -R u+rwX,g+rwX /app/uploads/presenton /app/uploads/presentations"
+      - "mkdir -p /app/uploads/presentations/images/xcal && chown -R $${APP_UID}:$${APP_GID} /app/uploads/presentations && chmod -R u+rwX,g+rwX /app/uploads/presentations"
     volumes:
       - ./uploads:/app/uploads
     restart: "no"

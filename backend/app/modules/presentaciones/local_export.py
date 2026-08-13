@@ -380,7 +380,7 @@ def _slide_image_path(title: str, hint: str) -> Path:
     from app.core.config import settings
 
     key = hashlib.sha1(f"{title}|{hint}".encode("utf-8")).hexdigest()[:18]
-    return Path(settings.UPLOADS_DIR) / "presenton" / "images" / "xcal" / f"{key}.png"
+    return Path(settings.UPLOADS_DIR) / "presentations" / "images" / "xcal" / f"{key}.png"
 
 
 def _resolve_photo(title: str, hint: str, asset: str) -> Image.Image | None:
@@ -424,12 +424,18 @@ def _paste_cover(canvas: Image.Image, box: tuple[int, int, int, int], photo: Ima
 
 
 def _slide_image_path_from_asset(asset: str) -> Path | None:
-    if not asset.startswith("/app_data/"):
-        return None
     from app.core.config import settings
 
-    relative = asset.removeprefix("/app_data/").lstrip("/")
-    return Path(settings.UPLOADS_DIR) / "presenton" / relative
+    asset_prefix = "/api/presentaciones/assets/"
+    if asset.startswith(asset_prefix):
+        filename = asset.removeprefix(asset_prefix)
+        if not re.fullmatch(r"[0-9a-f]{18}\.png", filename):
+            return None
+        return Path(settings.UPLOADS_DIR) / "presentations" / "images" / "xcal" / filename
+    if asset.startswith("/app_data/"):
+        relative = asset.removeprefix("/app_data/").lstrip("/")
+        return Path(settings.UPLOADS_DIR) / "presenton" / relative
+    return None
 
 
 

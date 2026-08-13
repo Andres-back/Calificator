@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import re
+from pathlib import Path
 from uuid import UUID
 from urllib.parse import parse_qs, urlparse
 
@@ -60,6 +62,20 @@ async def editor_auth(
     if presenton_id:
         await service.ensure_can_manage_presenton_id(db, presenton_id, current_user)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.get("/assets/{filename}", include_in_schema=False)
+async def get_generated_asset(
+    filename: str,
+    current_user: User = Depends(get_current_user),
+) -> FileResponse:
+    """Serve only generated presentation PNGs to authenticated users."""
+    if not re.fullmatch(r"[0-9a-f]{18}\.png", filename):
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Archivo no encontrado")
+    path = Path(settings.UPLOADS_DIR) / "presentations" / "images" / "xcal" / filename
+    if not path.is_file():
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Archivo no encontrado")
+    return FileResponse(path, media_type="image/png")
 
 
 @router.get("/{presentacion_id}", response_model=PresentacionRead)

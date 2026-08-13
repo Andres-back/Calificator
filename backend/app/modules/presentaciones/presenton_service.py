@@ -9,6 +9,7 @@ import asyncio
 import base64
 import hashlib
 import json
+import re
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Literal
@@ -483,16 +484,24 @@ def _compact_text(value: str, max_chars: int) -> str:
 
 def _ensure_presenton_image_asset(title: str, hint: str) -> str:
     key = hashlib.sha1(f"{title}|{hint}".encode("utf-8")).hexdigest()[:18]
-    relative = Path("images") / "xcal" / f"{key}.png"
-    host_path = Path(settings.UPLOADS_DIR) / "presenton" / relative
+    host_path = _generated_slide_asset_path(f"{key}.png")
     if host_path.is_file():
-        return f"/app_data/{relative.as_posix()}"
+        return _generated_slide_asset_url(host_path.name)
     try:
         _render_presenton_image(host_path, title, hint)
         _write_asset_meta(host_path, provider="placeholder", title=title, prompt=hint)
-        return f"/app_data/{relative.as_posix()}"
+        return _generated_slide_asset_url(host_path.name)
     except Exception:
         return ""
+
+
+def _generated_slide_asset_path(filename: str) -> Path:
+    """Store images beside exports, a directory owned by the worker."""
+    return Path(settings.UPLOADS_DIR) / "presentations" / "images" / "xcal" / filename
+
+
+def _generated_slide_asset_url(filename: str) -> str:
+    return f"/api/presentaciones/assets/{filename}"
 
 
 def _ai_slide_asset(title: str, prompt: str) -> tuple[Path, str]:
@@ -503,9 +512,7 @@ def _ai_slide_asset(title: str, prompt: str) -> tuple[Path, str]:
     cualquier ruta de resolución (incluido el re-normalizado del export, que
     pierde nuestro __image_url__) encuentra la imagen IA antes de dibujar PIL."""
     key = hashlib.sha1(f"{title}|{prompt}".encode("utf-8")).hexdigest()[:18]
-    relative = Path("images") / "xcal" / f"{key}.png"
-    host_path = Path(settings.UPLOADS_DIR) / "presenton" / relative
-    return host_path, f"/app_data/{relative.as_posix()}"
+    return _generated_slide_asset_path(f"{key}.png"), _generated_slide_asset_url(f"{key}.png")
 
 
 def _resolve_slide_image_url(title: str, prompt: str, *, prebuilt: str = "") -> str:
@@ -525,10 +532,17 @@ def _presenton_image_src(title: str, prompt: str, *, prebuilt: str = "") -> str:
 
 
 def _data_uri_from_app_data_url(image_url: str) -> str:
-    if not image_url.startswith("/app_data/"):
+    asset_prefix = "/api/presentaciones/assets/"
+    if image_url.startswith(asset_prefix):
+        filename = image_url.removeprefix(asset_prefix)
+        if not re.fullmatch(r"[0-9a-f]{18}\.png", filename):
+            return ""
+        path = _generated_slide_asset_path(filename)
+    elif image_url.startswith("/app_data/"):
+        relative = image_url.removeprefix("/app_data/").lstrip("/")
+        path = Path(settings.UPLOADS_DIR) / "presenton" / relative
+    else:
         return ""
-    relative = image_url.removeprefix("/app_data/").lstrip("/")
-    path = Path(settings.UPLOADS_DIR) / "presenton" / relative
     try:
         if not path.is_file():
             return ""
@@ -631,7 +645,7 @@ async def generate_ai_slide_image(title: str, prompt: str, *, provider) -> str:
 
 
 def _render_presenton_image(path: Path, title: str, hint: str) -> None:
-    from PIL import Image, ImageDraw, ImageFont
+    from PIL import Image, ImageDraw
 
     path.parent.mkdir(parents=True, exist_ok=True)
     width, height = 960, 540
