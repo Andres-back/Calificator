@@ -64,15 +64,15 @@ async def editor_auth(
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
-@router.get("/assets/{filename}", include_in_schema=False)
+@router.get("/assets/{asset_id}", include_in_schema=False)
 async def get_generated_asset(
-    filename: str,
+    asset_id: str,
     current_user: User = Depends(get_current_user),
 ) -> FileResponse:
     """Serve only generated presentation PNGs to authenticated users."""
-    if not re.fullmatch(r"[0-9a-f]{18}\.png", filename):
+    if not re.fullmatch(r"[0-9a-f]{18}", asset_id):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Archivo no encontrado")
-    path = Path(settings.UPLOADS_DIR) / "presentations" / "images" / "xcal" / filename
+    path = Path(settings.UPLOADS_DIR) / "presentations" / "images" / "xcal" / f"{asset_id}.png"
     if not path.is_file():
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Archivo no encontrado")
     return FileResponse(path, media_type="image/png")

@@ -501,7 +501,8 @@ def _generated_slide_asset_path(filename: str) -> Path:
 
 
 def _generated_slide_asset_url(filename: str) -> str:
-    return f"/api/presentaciones/assets/{filename}"
+    asset_id = Path(filename).stem
+    return f"/api/presentaciones/assets/{asset_id}"
 
 
 def _ai_slide_asset(title: str, prompt: str) -> tuple[Path, str]:
@@ -534,10 +535,10 @@ def _presenton_image_src(title: str, prompt: str, *, prebuilt: str = "") -> str:
 def _data_uri_from_app_data_url(image_url: str) -> str:
     asset_prefix = "/api/presentaciones/assets/"
     if image_url.startswith(asset_prefix):
-        filename = image_url.removeprefix(asset_prefix)
-        if not re.fullmatch(r"[0-9a-f]{18}\.png", filename):
+        asset_id = image_url.removeprefix(asset_prefix)
+        if not re.fullmatch(r"[0-9a-f]{18}", asset_id):
             return ""
-        path = _generated_slide_asset_path(filename)
+        path = _generated_slide_asset_path(f"{asset_id}.png")
     elif image_url.startswith("/app_data/"):
         relative = image_url.removeprefix("/app_data/").lstrip("/")
         path = Path(settings.UPLOADS_DIR) / "presenton" / relative
