@@ -334,6 +334,8 @@ async def _generate_slides(payload: PresentacionCreate, profesor_id: UUID) -> li
     )
     prompt = base_prompt
     last_issues = ["La IA no devolvio una lista de diapositivas."]
+    best_candidate: list[dict] = []
+    best_score: tuple[int, int] | None = None
     for attempt in range(1, 4):
         raw = await llm.generate_json("presentacion", prompt)
         if isinstance(raw, dict):
@@ -346,6 +348,10 @@ async def _generate_slides(payload: PresentacionCreate, profesor_id: UUID) -> li
             polished = _polish_slides_for_presenton(normalize_presentation(slides_raw), topic=payload.tema)
             candidate = _apply_pedagogical_slide_defaults(polished, payload)
             last_issues = _presentation_quality_issues(candidate, payload)
+            score = (abs(len(candidate) - payload.cantidad_slides), len(last_issues))
+            if best_score is None or score < best_score:
+                best_candidate = candidate
+                best_score = score
             if not last_issues:
                 return candidate
         else:
@@ -361,10 +367,144 @@ async def _generate_slides(payload: PresentacionCreate, profesor_id: UUID) -> li
             + "\nReescribe TODA la presentacion, conserva la cantidad exacta y devuelve solo JSON."
             + (f"\nBORRADOR RECHAZADO:\n{previous}" if previous else "")
         )
+    if best_candidate:
+        repaired = _repair_incomplete_presentation(best_candidate, payload)
+        repair_issues = _presentation_quality_issues(repaired, payload)
+        if not repair_issues:
+            logger.warning(
+                "Presentation content required deterministic completion after provider retries: %s",
+                "; ".join(last_issues[:8]),
+            )
+            return repaired
+        last_issues = repair_issues
+
     raise RuntimeError(
         "La IA no produjo contenido pedagogico suficientemente completo: "
         + "; ".join(last_issues[:5])
     )
+
+
+def _contains_generic_marker(value: Any) -> bool:
+    normalized = " ".join(str(value or "").lower().split())
+    return any(marker in normalized for marker in GENERIC_PRESENTATION_MARKERS)
+
+
+def _repair_role_bullets(
+    role: str,
+    *,
+    topic: str,
+    area: str,
+    grade: str,
+) -> list[str]:
+    context = f"en {area}" if area else "en esta clase"
+    templates = {
+        "objective": [
+            f"Al finalizar, podras explicar {topic} con vocabulario claro y preciso.",
+            f"Tambien podras aplicar la idea en un ejemplo adecuado para el grado {grade}.",
+        ],
+        "prior_knowledge": [
+            f"Relaciona {topic} con conocimientos que utilizaste en clases anteriores.",
+            "Escribe una prediccion inicial y comparala con la explicacion de la clase.",
+        ],
+        "example": [
+            f"Observa un caso concreto de {topic} y reconoce cada elemento importante.",
+            "Sigue la explicacion del ejemplo antes de resolver una situacion semejante.",
+        ],
+        "process": [
+            f"Organiza el procedimiento de {topic} en pasos pequenos y verificables.",
+            "Comprueba cada paso antes de avanzar para detectar errores a tiempo.",
+        ],
+        "comparison": [
+            f"Compara dos representaciones de {topic} e identifica sus semejanzas principales.",
+            "Explica una diferencia usando evidencia visible en los ejemplos presentados.",
+        ],
+        "activity": [
+            f"Resuelve en equipo una situacion breve relacionada con {topic}.",
+            "Registra el procedimiento y prepara una explicacion para compartir con el grupo.",
+        ],
+        "comprehension_check": [
+            f"Explica con tus palabras la idea principal de {topic}.",
+            "Justifica tu respuesta usando un ejemplo trabajado durante la presentacion.",
+        ],
+        "assessment": [
+            f"Aplica lo aprendido sobre {topic} en una situacion nueva.",
+            "Muestra el procedimiento y revisa la respuesta antes de entregarla.",
+        ],
+        "summary": [
+            f"Resume las ideas esenciales de {topic} usando palabras propias.",
+            "Relaciona el concepto, el ejemplo y la actividad desarrollada durante la clase.",
+        ],
+        "closing": [
+            f"Selecciona el aprendizaje mas importante sobre {topic} y explicalo brevemente.",
+            "Propone una situacion cotidiana donde puedas volver a aplicar esta idea.",
+        ],
+    }
+    return templates.get(
+        role,
+        [
+            f"Estudia {topic} mediante una explicacion concreta y progresiva {context}.",
+            "Usa el ejemplo visible para reconocer elementos, relaciones y aplicaciones principales.",
+        ],
+    )
+
+
+def _repair_incomplete_presentation(
+    slides: list[dict],
+    payload: PresentacionCreate,
+) -> list[dict]:
+    count = payload.cantidad_slides
+    repaired = [dict(slide) for slide in slides[:count]]
+    while len(repaired) < count:
+        repaired.append({"title": "", "bullets": [], "role": "concept"})
+    repaired = _apply_pedagogical_slide_defaults(repaired, payload)
+
+    topic = str(payload.tema or payload.titulo).strip()
+    area = str(payload.area or payload.materia_nombre or "").strip()
+    grade = str(payload.grado or payload.nivel or "").strip()
+    seen_messages: set[str] = set()
+
+    for index, slide in enumerate(repaired):
+        role = _normalize_role(slide.get("role"), index=index, title=str(slide.get("title") or ""))
+        slide["role"] = role
+        title = str(slide.get("title") or "").strip()
+        if not title or _contains_generic_marker(title):
+            slide["title"] = _clip_text(f"{topic}: paso {index + 1}", 52)
+
+        bullets = [
+            bullet
+            for bullet in _clean_text_list(slide.get("bullets"), max_items=4, max_chars=120)
+            if not _contains_generic_marker(bullet)
+        ]
+        for fallback in _repair_role_bullets(role, topic=topic, area=area, grade=grade):
+            if len(bullets) >= 2 and _visible_words(bullets) >= 14:
+                break
+            if fallback.lower() not in {item.lower() for item in bullets}:
+                bullets.append(_clip_text(fallback, 120))
+        slide["bullets"] = bullets
+
+        message = str(slide.get("key_message") or "").strip()
+        normalized_message = " ".join(message.lower().split())
+        if not message or _contains_generic_marker(message) or normalized_message in seen_messages:
+            message = _clip_text(
+                f"{topic}: {slide.get('title') or f'idea {index + 1}'}",
+                110,
+            )
+            normalized_message = " ".join(message.lower().split())
+        slide["key_message"] = message
+        seen_messages.add(normalized_message)
+
+        if role == "activity" and (
+            not str(slide.get("activity") or "").strip()
+            or _contains_generic_marker(slide.get("activity"))
+        ):
+            slide["activity"] = f"Resuelve un ejemplo de {topic} y explica el procedimiento al grupo."
+        if role in {"comprehension_check", "assessment"} and (
+            not str(slide.get("question") or "").strip()
+            or _contains_generic_marker(slide.get("question"))
+        ):
+            slide["question"] = f"Como aplicarias {topic} en una situacion diferente?"
+
+    return _merge_structured_content_into_bullets(repaired)
 
 
 def _presentation_quality_issues(slides: list[dict], payload: PresentacionCreate) -> list[str]:

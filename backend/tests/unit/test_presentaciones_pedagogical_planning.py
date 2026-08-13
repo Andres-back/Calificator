@@ -1,3 +1,5 @@
+import asyncio
+from uuid import uuid4
 from app.modules.imagenes import service as imagenes_service
 from io import BytesIO
 
@@ -385,6 +387,68 @@ def test_contenido_generico_del_demo_se_rechaza() -> None:
 
     assert issues
     assert any("generico" in issue or "repite" in issue for issue in issues)
+
+
+def test_repara_borrador_incompleto_sin_perder_la_cantidad() -> None:
+    payload = PresentacionCreate(
+        titulo="Fracciones equivalentes",
+        tema="Fracciones equivalentes",
+        area="Matematicas",
+        grado="3",
+        cantidad_slides=8,
+    )
+    draft = [
+        {"title": f"Diapositiva {index + 1}", "key_message": "Idea", "bullets": ["Dato"]}
+        for index in range(8)
+    ]
+    candidate = service._apply_pedagogical_slide_defaults(
+        service.normalize_presentation(draft),
+        payload,
+    )
+
+    repaired = service._repair_incomplete_presentation(candidate, payload)
+
+    assert len(repaired) == 8
+    assert service._presentation_quality_issues(repaired, payload) == []
+    assert all(len(slide["bullets"]) >= 2 for slide in repaired[1:])
+
+
+def test_generacion_recupera_respuesta_corta_despues_de_reintentos(monkeypatch) -> None:
+    payload = PresentacionCreate(
+        titulo="Fracciones equivalentes",
+        tema="Fracciones equivalentes",
+        area="Matematicas",
+        grado="3",
+        cantidad_slides=8,
+    )
+
+    class ShortContentRouter:
+        calls = 0
+
+        def __init__(self, *args, **kwargs):
+            pass
+
+        async def generate_json(self, feature, prompt):
+            assert feature == "presentacion"
+            self.__class__.calls += 1
+            return {
+                "slides": [
+                    {
+                        "title": f"Diapositiva {index + 1}",
+                        "key_message": "Idea",
+                        "bullets": ["Dato"],
+                    }
+                    for index in range(8)
+                ]
+            }
+
+    monkeypatch.setattr(service, "LLMRouter", ShortContentRouter)
+
+    slides = asyncio.run(service._generate_slides(payload, uuid4()))
+
+    assert ShortContentRouter.calls == 3
+    assert len(slides) == 8
+    assert service._presentation_quality_issues(slides, payload) == []
 
 
 def test_actividad_y_pregunta_quedan_visibles_en_la_exportacion() -> None:
