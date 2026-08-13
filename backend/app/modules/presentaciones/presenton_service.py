@@ -497,7 +497,7 @@ def _ensure_presenton_image_asset(title: str, hint: str) -> str:
 
 def _generated_slide_asset_path(filename: str) -> Path:
     """Store images beside exports, a directory owned by the worker."""
-    return Path(settings.UPLOADS_DIR) / "presentations" / "images" / "xcal" / filename
+    return Path(settings.UPLOADS_DIR) / "presentaciones" / f"slide-{filename}"
 
 
 def _generated_slide_asset_url(filename: str) -> str:

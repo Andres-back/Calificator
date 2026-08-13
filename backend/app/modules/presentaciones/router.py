@@ -72,7 +72,7 @@ async def get_generated_asset(
     """Serve only generated presentation PNGs to authenticated users."""
     if not re.fullmatch(r"[0-9a-f]{18}", asset_id):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Archivo no encontrado")
-    path = Path(settings.UPLOADS_DIR) / "presentations" / "images" / "xcal" / f"{asset_id}.png"
+    path = Path(settings.UPLOADS_DIR) / "presentaciones" / f"slide-{asset_id}.png"
     if not path.is_file():
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Archivo no encontrado")
     return FileResponse(path, media_type="image/png")

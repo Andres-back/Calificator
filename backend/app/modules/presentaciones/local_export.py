@@ -380,7 +380,7 @@ def _slide_image_path(title: str, hint: str) -> Path:
     from app.core.config import settings
 
     key = hashlib.sha1(f"{title}|{hint}".encode("utf-8")).hexdigest()[:18]
-    return Path(settings.UPLOADS_DIR) / "presentations" / "images" / "xcal" / f"{key}.png"
+    return Path(settings.UPLOADS_DIR) / "presentaciones" / f"slide-{key}.png"
 
 
 def _resolve_photo(title: str, hint: str, asset: str) -> Image.Image | None:
@@ -431,7 +431,7 @@ def _slide_image_path_from_asset(asset: str) -> Path | None:
         asset_id = asset.removeprefix(asset_prefix)
         if not re.fullmatch(r"[0-9a-f]{18}", asset_id):
             return None
-        return Path(settings.UPLOADS_DIR) / "presentations" / "images" / "xcal" / f"{asset_id}.png"
+        return Path(settings.UPLOADS_DIR) / "presentaciones" / f"slide-{asset_id}.png"
     if asset.startswith("/app_data/"):
         relative = asset.removeprefix("/app_data/").lstrip("/")
         return Path(settings.UPLOADS_DIR) / "presenton" / relative

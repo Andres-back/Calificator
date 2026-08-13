@@ -100,7 +100,7 @@ def test_generated_asset_uses_writable_presentation_directory(
     monkeypatch.setattr(presenton_service.settings, "UPLOADS_DIR", str(tmp_path))
     path, url = presenton_service._ai_slide_asset("Fracciones", "Pizzas iguales")
 
-    assert path.parent == tmp_path / "presentations" / "images" / "xcal"
+    assert path.parent == tmp_path / "presentaciones"
     assert url.startswith("/api/presentaciones/assets/")
 
     path.parent.mkdir(parents=True)
