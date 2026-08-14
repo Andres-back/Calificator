@@ -1,5 +1,6 @@
 import asyncio
 from datetime import datetime, timezone
+from io import BytesIO
 from types import SimpleNamespace
 from uuid import uuid4
 
@@ -11,15 +12,18 @@ from app.db.session import get_db
 from app.main import create_app
 from PIL import Image, ImageDraw
 
+from app.modules.presentaciones.editable_pptx_service import build_editable_pptx
 from app.modules.presentaciones.local_export import (
     _fit_lines,
     build_local_export,
     extract_slides_for_export,
     pdf_has_minimal_content,
     pptx_has_slides_and_media,
+    render_slide_png,
 )
-from app.modules.presentaciones import presenton_service
+from app.modules.presentaciones import assets_service
 from app.modules.presentaciones import service
+from app.modules.presentaciones.template_library import choose_layout, layout_family
 from app.workers import tasks_presentations
 from app.modules.users.models import User
 from app.shared.enums import ImageProvider
@@ -73,7 +77,6 @@ def _presentation(**overrides):
         "estado": "success",
         "pptx_url": "/api/presentaciones/test/archivo/pptx",
         "pdf_url": None,
-        "presenton_id": "presenton-test",
         "error": None,
         "created_at": now,
         "updated_at": now,
@@ -97,15 +100,18 @@ def test_generated_asset_uses_writable_presentation_directory(
     monkeypatch,
     tmp_path,
 ) -> None:
-    monkeypatch.setattr(presenton_service.settings, "UPLOADS_DIR", str(tmp_path))
-    path, url = presenton_service._ai_slide_asset("Fracciones", "Pizzas iguales")
+    monkeypatch.setattr(assets_service.settings, "UPLOADS_DIR", str(tmp_path))
+    path, url = assets_service._ai_slide_asset("Fracciones", "Pizzas iguales")
 
     assert path.parent == tmp_path / "presentaciones"
     assert url.startswith("/api/presentaciones/assets/")
 
     path.parent.mkdir(parents=True)
     Image.new("RGB", (8, 8), "blue").save(path, "PNG")
-    assert presenton_service._data_uri_from_app_data_url(url).startswith("data:image/png;base64,")
+    assert assets_service._data_uri_from_asset_url(url).startswith(
+        "data:image/png;base64,"
+    )
+    assert assets_service.resolve_asset_path(url) == path.resolve()
 
     client = _client_with_user(_user("profesor"))
     response = client.get(url)
@@ -129,9 +135,7 @@ def test_profesor_creates_presentacion(monkeypatch) -> None:
     )
 
     profesor = _user("profesor")
-    pres = _presentation(
-        profesor_id=profesor.id, estado="queued", pptx_url=None, presenton_id=None
-    )
+    pres = _presentation(profesor_id=profesor.id, estado="queued", pptx_url=None)
 
     async def create_presentacion(*args, **kwargs):
         return pres
@@ -170,7 +174,7 @@ def test_student_cannot_create_or_export_presentacion(monkeypatch) -> None:
     assert export_response.status_code == 403
 
 
-def test_profesor_gets_editor_url_and_exports(monkeypatch) -> None:
+def test_profesor_previews_and_exports(monkeypatch) -> None:
     profesor = _user("profesor")
     pres = _presentation(profesor_id=profesor.id)
 
@@ -183,19 +187,36 @@ def test_profesor_gets_editor_url_and_exports(monkeypatch) -> None:
     monkeypatch.setattr(
         service, "ensure_can_manage_presentacion", ensure_can_manage_presentacion
     )
+    monkeypatch.setattr(
+        service, "ensure_can_read_presentacion", ensure_can_manage_presentacion
+    )
     monkeypatch.setattr(service, "export_presentacion", export_presentacion)
 
     client = _client_with_user(profesor)
 
-    editor_response = client.post(f"/api/presentaciones/{pres.id}/editor-url")
+    monkeypatch.setattr(
+        service,
+        "build_preview_metadata",
+        lambda _pres: {
+            "id": pres.id,
+            "titulo": pres.titulo,
+            "total": 1,
+            "slides": [
+                {
+                    "numero": 1,
+                    "titulo": "Portada",
+                    "image_url": f"/api/presentaciones/{pres.id}/preview/1.png",
+                }
+            ],
+        },
+    )
+    preview_response = client.get(f"/api/presentaciones/{pres.id}/preview")
     export_response = client.post(
         f"/api/presentaciones/{pres.id}/exportar", json={"format": "pptx"}
     )
 
-    assert editor_response.status_code == 200, editor_response.text
-    assert editor_response.json()["url"].startswith(
-        f"/api/presentaciones/{pres.id}/editor"
-    )
+    assert preview_response.status_code == 200, preview_response.text
+    assert preview_response.json()["total"] == 1
     assert export_response.status_code == 200, export_response.text
     assert export_response.json()["pptx_url"]
 
@@ -244,25 +265,16 @@ def test_presentation_images_force_openai_for_all_strategies() -> None:
         assert providers == [ImageProvider.OPENAI] * len(eligible_order)
 
 
-def test_presenton_direct_slides_use_modern_image_layout() -> None:
-    slides = [
-        {
-            "title": "Fotosintesis",
-            "bullets": ["Las plantas producen alimento.", "Usan luz solar y agua."],
-            "image": "escena educativa de una planta recibiendo luz solar",
-            "image_asset": "/app_data/images/xcal/test.png",
-            "notes": "Relacionar con plantas del entorno.",
-        }
-    ]
+def test_native_template_library_preserves_visual_alternation() -> None:
+    left = choose_layout(role="concept", index=1, layout_hint="", has_visual=True)
+    right = choose_layout(role="concept", index=2, layout_hint="", has_visual=True)
 
-    direct = presenton_service._build_direct_slides("presentation-id", "modern", slides)
-
-    assert direct[0]["layout_group"] == "modern"
-    assert direct[0]["layout"] == "modern:image-and-description"
-    assert set(direct[0]["content"]) == {"title", "content", "image"}
+    assert left == "split-left"
+    assert right == "split-right"
+    assert layout_family(left) == "image-and-description"
     assert (
-        direct[0]["content"]["image"]["__image_url__"]
-        == "/app_data/images/xcal/test.png"
+        choose_layout(role="concept", index=3, layout_hint="", has_visual=False)
+        == "text"
     )
 
 
@@ -274,6 +286,54 @@ def test_local_export_builds_valid_files_from_xcal_slides() -> None:
 
     assert pptx_has_slides_and_media(pptx)
     assert pdf_has_minimal_content(pdf)
+
+
+def test_editable_pptx_embeds_generated_asset(monkeypatch, tmp_path) -> None:
+    asset_id = "1234567890abcdef12"
+    asset_dir = tmp_path / "presentaciones"
+    asset_dir.mkdir()
+    Image.new("RGB", (640, 480), "teal").save(asset_dir / f"slide-{asset_id}.png")
+    monkeypatch.setattr(assets_service.settings, "UPLOADS_DIR", str(tmp_path))
+
+    canonical = {
+        "meta": {"titulo": "Ciclo del agua"},
+        "slides": [
+            {
+                "tipo": "concepto",
+                "layout": "split-left",
+                "titulo": "Evaporación",
+                "bullets": [{"texto": "El agua cambia de líquido a vapor."}],
+                "imagen": {"url": f"/api/presentaciones/assets/{asset_id}"},
+            }
+        ],
+    }
+
+    content = build_editable_pptx(canonical)
+    rendered = Image.open(
+        BytesIO(
+            render_slide_png(
+                "Ciclo del agua",
+                {
+                    "title": "Evaporación",
+                    "bullets": ["El agua cambia de líquido a vapor."],
+                    "image_asset": f"/api/presentaciones/assets/{asset_id}",
+                    "image": "Ilustración del ciclo del agua",
+                    "role": "concept",
+                    "layout": "split-left",
+                },
+                1,
+                2,
+            )
+        )
+    ).convert("RGB")
+    teal_pixels = sum(
+        1
+        for red, green, blue in rendered.getdata()
+        if red < 30 and 90 < green < 160 and 90 < blue < 160
+    )
+
+    assert pptx_has_slides_and_media(content)
+    assert teal_pixels > 1_000
 
 
 def test_cover_title_wrapping_keeps_long_words() -> None:
@@ -314,11 +374,49 @@ def test_text_card_wrapping_keeps_complete_explanation() -> None:
     assert "progresiva" in " ".join(lines)
 
 
+@pytest.mark.anyio
+async def test_legacy_text_only_pptx_is_regenerated_on_download(
+    monkeypatch, tmp_path
+) -> None:
+    pres = _presentation(
+        slides_json={
+            "slides": [
+                {
+                    "title": "Evaporación",
+                    "bullets": ["El agua cambia de estado."],
+                    "image_asset": "/api/presentaciones/assets/1234567890abcdef12",
+                }
+            ]
+        }
+    )
+    path = tmp_path / "legacy.pptx"
+    path.write_bytes(b"text-only-export")
+    replacement = build_local_export(
+        "Ciclo del agua",
+        [{"title": "Evaporación", "bullets": ["El agua cambia de estado."]}],
+        "pptx",
+    )
+    calls = 0
+
+    async def store(_db, _pres, export_as):
+        nonlocal calls
+        calls += 1
+        assert export_as == "pptx"
+        path.write_bytes(replacement)
+
+    monkeypatch.setattr(service, "get_download_path", lambda *_args: path)
+    monkeypatch.setattr(service, "_store_local_export_result", store)
+
+    result = await service.ensure_current_pptx_download(object(), pres)
+
+    assert result == path
+    assert calls == 1
+    assert pptx_has_slides_and_media(path.read_bytes())
+
 
 @pytest.mark.anyio
 async def test_export_presentacion_uses_editable_pptx_as_primary(monkeypatch) -> None:
     pres = _presentation(
-        presenton_id=None,
         slides_json={
             "slides": [
                 {"title": "Ecosistemas", "bullets": ["Idea clave"], "image": ""}
@@ -370,7 +468,6 @@ async def test_export_presentacion_falls_back_to_local_export_when_editable_fail
     monkeypatch,
 ) -> None:
     pres = _presentation(
-        presenton_id=None,
         slides_json={
             "slides": [
                 {"title": "Ecosistemas", "bullets": ["Idea clave"], "image": ""}

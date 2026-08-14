@@ -39,11 +39,23 @@ export function presentacionFileUrl(id: string, format: 'pptx' | 'pdf'): string 
   return `${apiBase}/presentaciones/${encodeURIComponent(id)}/archivo/${format}`;
 }
 
-export async function getPresentacionEditorUrl(id: string): Promise<{ url: string; expires_in: number }> {
-  const { data } = await api.post<{ url: string; expires_in: number }>(`/presentaciones/${id}/editor-url`);
-  return data;
+export interface PresentacionPreviewSlide {
+  numero: number;
+  titulo: string;
+  image_url: string;
 }
 
+export interface PresentacionPreview {
+  id: string;
+  titulo: string;
+  total: number;
+  slides: PresentacionPreviewSlide[];
+}
+
+export async function getPresentacionPreview(id: string): Promise<PresentacionPreview> {
+  const { data } = await api.get<PresentacionPreview>(`/presentaciones/${id}/preview`);
+  return data;
+}
 export async function deletePresentacion(id: string): Promise<void> {
   await api.delete(`/presentaciones/${id}`);
 }

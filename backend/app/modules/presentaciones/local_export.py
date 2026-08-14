@@ -1,20 +1,25 @@
-"""Fallback local para exportar presentaciones cuando Presenton devuelve archivos vacios.
+"""Render canonico de presentaciones administrado por XCalificator.
 
 Genera una version visual simple: cada diapositiva se renderiza como PNG y se
 inserta en PPTX/PDF. Evita depender de librerias externas de PowerPoint.
 """
+
 from __future__ import annotations
 
 import hashlib
 from datetime import datetime, timezone
 from io import BytesIO
 from pathlib import Path
-import re
 from textwrap import wrap
 from typing import Any
 from zipfile import ZIP_DEFLATED, ZipFile
 
 from PIL import Image, ImageDraw, ImageFilter, ImageFont, ImageOps
+
+from app.modules.presentaciones.assets_service import (
+    is_placeholder_asset,
+    resolve_asset_path,
+)
 
 EMU_WIDE = 12192000
 EMU_HIGH = 6858000
@@ -22,49 +27,29 @@ SLIDE_W = 1600
 SLIDE_H = 900
 
 
-def build_local_export(title: str, slides: list[dict[str, Any]], export_as: str) -> bytes:
+def build_local_export(
+    title: str, slides: list[dict[str, Any]], export_as: str
+) -> bytes:
     total = len(slides)
-    rendered = [_render_slide(title, slide, index, total) for index, slide in enumerate(slides)]
+    rendered = [
+        render_slide_png(title, slide, index, total)
+        for index, slide in enumerate(slides)
+    ]
     if export_as == "pdf":
         return _build_pdf(rendered)
     return _build_pptx(title, rendered)
 
 
-def extract_slides_for_export(slides_json: dict[str, Any] | None) -> list[dict[str, Any]]:
+def extract_slides_for_export(
+    slides_json: dict[str, Any] | None,
+) -> list[dict[str, Any]]:
     raw_slides = (slides_json or {}).get("slides")
     if isinstance(raw_slides, list) and raw_slides:
-        return [_normalize_xcal_slide(slide, index) for index, slide in enumerate(raw_slides)]
-    return []
-
-
-def presenton_slides_to_export(slides: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    normalized: list[dict[str, Any]] = []
-    for index, slide in enumerate(sorted(slides, key=lambda item: int(item.get("index") or 0))):
-        content = slide.get("content") if isinstance(slide.get("content"), dict) else {}
-        description = str(content.get("content") or content.get("description") or "").strip()
-        bullets = [
-            line.strip().lstrip("- ").strip()
-            for line in _split_description(description)
-            if line.strip()
+        return [
+            _normalize_xcal_slide(slide, index)
+            for index, slide in enumerate(raw_slides)
         ]
-        image = content.get("image") if isinstance(content.get("image"), dict) else {}
-        normalized.append(
-            {
-                "title": str(content.get("title") or f"Diapositiva {index + 1}"),
-                "bullets": bullets,
-                "image": str(image.get("__image_prompt__") or image.get("__image_url__") or ""),
-                "image_asset": str(image.get("__image_url__") or ""),
-                "notes": str(slide.get("speaker_note") or ""),
-            }
-        )
-    return normalized
-
-
-def _split_description(description: str) -> list[str]:
-    text = " ".join(str(description).split())
-    if not text:
-        return []
-    return [part.strip() for part in re.split(r"\s+[\u2022-]\s+|(?<=[.!?])\s+", text) if part.strip()]
+    return []
 
 
 def pptx_has_slides_and_media(content: bytes) -> bool:
@@ -82,7 +67,11 @@ def pptx_has_slides_and_media(content: bytes) -> bool:
 
 
 def pdf_has_minimal_content(content: bytes) -> bool:
-    return content.startswith(b"%PDF") and b"%%EOF" in content[-2048:] and len(content) > 4096
+    return (
+        content.startswith(b"%PDF")
+        and b"%%EOF" in content[-2048:]
+        and len(content) > 4096
+    )
 
 
 def _normalize_xcal_slide(slide: Any, index: int) -> dict[str, Any]:
@@ -105,7 +94,10 @@ def _normalize_xcal_slide(slide: Any, index: int) -> dict[str, Any]:
         "role": str(slide.get("role") or ""),
         "layout": str(slide.get("layout") or slide.get("layout_hint") or ""),
     }
-    if str(slide.get("slide_type") or slide.get("layout") or "").lower() == "full_image":
+    if (
+        str(slide.get("slide_type") or slide.get("layout") or "").lower()
+        == "full_image"
+    ):
         normalized["slide_type"] = "full_image"
     return normalized
 
@@ -158,11 +150,20 @@ def _kicker(draw: ImageDraw.ImageDraw, x: int, y: int, label: str, theme) -> Non
     draw.text((x + 20, y + 9), label, font=f, fill="#ffffff")
 
 
-def _page(draw: ImageDraw.ImageDraw, x: int, y: int, index: int, total: int, theme) -> None:
-    draw.text((x, y), f"{index + 1:02d} / {max(total, index + 1):02d}", font=_font(20, bold=True), fill=theme[3])
+def _page(
+    draw: ImageDraw.ImageDraw, x: int, y: int, index: int, total: int, theme
+) -> None:
+    draw.text(
+        (x, y),
+        f"{index + 1:02d} / {max(total, index + 1):02d}",
+        font=_font(20, bold=True),
+        fill=theme[3],
+    )
 
 
-def _render_slide(deck_title: str, slide: dict[str, Any], index: int, total: int = 1) -> bytes:
+def render_slide_png(
+    deck_title: str, slide: dict[str, Any], index: int, total: int = 1
+) -> bytes:
     role = str(slide.get("role") or "").lower()
     theme = _role_theme(role, _deck_theme(deck_title))
     canvas = Image.new("RGB", (SLIDE_W, SLIDE_H), theme[0])
@@ -174,17 +175,36 @@ def _render_slide(deck_title: str, slide: dict[str, Any], index: int, total: int
         note = str(slide.get("notes") or "").strip()
         if note:
             bullets = [note]
-    photo = _resolve_photo(title, str(slide.get("image") or ""), str(slide.get("image_asset") or ""))
+    photo = _resolve_photo(
+        title, str(slide.get("image") or ""), str(slide.get("image_asset") or "")
+    )
 
     if str(slide.get("slide_type") or "").lower() == "full_image" and photo is not None:
         _layout_full_image(canvas, photo)
     elif str(slide.get("layout") or "").lower() == "math-arrays":
-        _layout_math_arrays(canvas, draw, title, bullets, theme, index=index, total=total)
+        _layout_math_arrays(
+            canvas, draw, title, bullets, theme, index=index, total=total
+        )
     elif index == 0:
         _layout_cover(canvas, draw, deck_title, title, bullets, photo, theme)
     elif photo is not None:
-        _layout_split(canvas, draw, title, bullets, photo, theme,
-                      index=index, total=total, image_left=((index // 2) % 2 == 1))
+        layout = str(slide.get("layout") or "").lower()
+        image_left = (
+            layout == "split-left"
+            if layout in {"split-left", "split-right"}
+            else ((index // 2) % 2 == 1)
+        )
+        _layout_split(
+            canvas,
+            draw,
+            title,
+            bullets,
+            photo,
+            theme,
+            index=index,
+            total=total,
+            image_left=image_left,
+        )
     else:
         _layout_text(canvas, draw, title, bullets, theme, index=index, total=total)
 
@@ -195,7 +215,9 @@ def _render_slide(deck_title: str, slide: dict[str, Any], index: int, total: int
 
 def _layout_cover(canvas, draw, deck_title, title, bullets, photo, theme) -> None:
     bg, ink, body, muted, accent, soft = theme
-    headline = " ".join(str(deck_title or title or "Presentacion educativa").split()).strip()
+    headline = " ".join(
+        str(deck_title or title or "Presentacion educativa").split()
+    ).strip()
     kicker = "PRESENTACION EDUCATIVA"
     split = int(SLIDE_W * 0.50)
     if photo is not None:
@@ -208,7 +230,9 @@ def _layout_cover(canvas, draw, deck_title, title, bullets, photo, theme) -> Non
     pad = 104
     tw = split - pad - 72
     draw.text((pad, 148), _clip(kicker, 40), font=_font(26, bold=True), fill=accent)
-    tfont, tlines = _fit_lines(draw, headline, max_width=tw, max_lines=4, sizes=[92, 80, 70, 60, 52], bold=True)
+    tfont, tlines = _fit_lines(
+        draw, headline, max_width=tw, max_lines=4, sizes=[92, 80, 70, 60, 52], bold=True
+    )
     y = 212
     for line in tlines:
         draw.text((pad, y), line, font=tfont, fill=ink)
@@ -217,15 +241,23 @@ def _layout_cover(canvas, draw, deck_title, title, bullets, photo, theme) -> Non
     draw.rounded_rectangle((pad, y, pad + 132, y + 11), radius=5, fill=accent)
     y += 48
     if bullets:
-        sfont, slines = _fit_lines(draw, bullets[0], max_width=tw, max_lines=3, sizes=[34, 30, 28])
+        sfont, slines = _fit_lines(
+            draw, bullets[0], max_width=tw, max_lines=3, sizes=[34, 30, 28]
+        )
         for line in slines:
             draw.text((pad, y), line, font=sfont, fill=muted)
             y += _line_height(sfont) + 8
-    draw.text((pad, SLIDE_H - 92), "XCalificator", font=_font(23, bold=True), fill=accent)
-    draw.text((pad, SLIDE_H - 60), "Plataforma Educativa IA", font=_font(20), fill=muted)
+    draw.text(
+        (pad, SLIDE_H - 92), "XCalificator", font=_font(23, bold=True), fill=accent
+    )
+    draw.text(
+        (pad, SLIDE_H - 60), "Plataforma Educativa IA", font=_font(20), fill=muted
+    )
 
 
-def _layout_split(canvas, draw, title, bullets, photo, theme, *, index, total, image_left) -> None:
+def _layout_split(
+    canvas, draw, title, bullets, photo, theme, *, index, total, image_left
+) -> None:
     bg, ink, body, muted, accent, soft = theme
     img_w = int(SLIDE_W * 0.42)
     if image_left:
@@ -236,13 +268,15 @@ def _layout_split(canvas, draw, title, bullets, photo, theme, *, index, total, i
         img_box = (SLIDE_W - img_w, 0, SLIDE_W, SLIDE_H)
         seam = (SLIDE_W - img_w - 8, 0, SLIDE_W - img_w, SLIDE_H)
         tx0, tx1 = 100, SLIDE_W - img_w - 96
-    _paste_cover(canvas, img_box, photo)
+    _paste_contain(canvas, img_box, photo, background=soft, padding=42)
     draw.rectangle(seam, fill=accent)
 
     tw = tx1 - tx0
     _kicker(draw, tx0, 100, f"{index + 1:02d}", theme)
     y = 176
-    tfont, tlines = _fit_lines(draw, title, max_width=tw, max_lines=3, sizes=[62, 54, 48, 42], bold=True)
+    tfont, tlines = _fit_lines(
+        draw, title, max_width=tw, max_lines=3, sizes=[62, 54, 48, 42], bold=True
+    )
     for line in tlines:
         draw.text((tx0, y), line, font=tfont, fill=ink)
         y += _line_height(tfont) + 10
@@ -264,12 +298,40 @@ def _role_theme(role: str, fallback):
     palettes = {
         "objective": ("#eff6ff", "#172554", "#1e3a8a", "#3b82f6", "#2563eb", "#dbeafe"),
         "objetivo": ("#eff6ff", "#172554", "#1e3a8a", "#3b82f6", "#2563eb", "#dbeafe"),
-        "prior_knowledge": ("#fff7ed", "#431407", "#7c2d12", "#f97316", "#ea580c", "#ffedd5"),
-        "saberes_previos": ("#fff7ed", "#431407", "#7c2d12", "#f97316", "#ea580c", "#ffedd5"),
+        "prior_knowledge": (
+            "#fff7ed",
+            "#431407",
+            "#7c2d12",
+            "#f97316",
+            "#ea580c",
+            "#ffedd5",
+        ),
+        "saberes_previos": (
+            "#fff7ed",
+            "#431407",
+            "#7c2d12",
+            "#f97316",
+            "#ea580c",
+            "#ffedd5",
+        ),
         "activity": ("#ecfdf5", "#022c22", "#065f46", "#10b981", "#059669", "#d1fae5"),
         "actividad": ("#ecfdf5", "#022c22", "#065f46", "#10b981", "#059669", "#d1fae5"),
-        "comprehension_check": ("#f5f3ff", "#2e1065", "#4c1d95", "#8b5cf6", "#7c3aed", "#ede9fe"),
-        "assessment": ("#f5f3ff", "#2e1065", "#4c1d95", "#8b5cf6", "#7c3aed", "#ede9fe"),
+        "comprehension_check": (
+            "#f5f3ff",
+            "#2e1065",
+            "#4c1d95",
+            "#8b5cf6",
+            "#7c3aed",
+            "#ede9fe",
+        ),
+        "assessment": (
+            "#f5f3ff",
+            "#2e1065",
+            "#4c1d95",
+            "#8b5cf6",
+            "#7c3aed",
+            "#ede9fe",
+        ),
         "pregunta": ("#f5f3ff", "#2e1065", "#4c1d95", "#8b5cf6", "#7c3aed", "#ede9fe"),
     }
     safe_light = ("#eef2ff", "#1e1b4b", "#312e81", "#6366f1", "#4f46e5", "#e0e7ff")
@@ -304,15 +366,25 @@ def _layout_math_arrays(canvas, draw, title, bullets, theme, *, index, total) ->
     draw.rectangle((0, 0, SLIDE_W, SLIDE_H), fill="#eef2ff")
     draw.rectangle((0, 0, 22, SLIDE_H), fill="#4f46e5")
     _kicker(draw, 100, 82, "MATEMATICAS EXACTAS", readable_theme)
-    tfont, tlines = _fit_lines(draw, title, max_width=1360, max_lines=1, sizes=[60, 54, 48], bold=True)
+    tfont, tlines = _fit_lines(
+        draw, title, max_width=1360, max_lines=1, sizes=[60, 54, 48], bold=True
+    )
     draw.text((100, 155), tlines[0], font=tfont, fill=ink)
     for group_index, (label, count_rows) in enumerate(groups[:2]):
         x0 = 92 + group_index * 760
-        draw.rounded_rectangle((x0, 260, x0 + 670, 760), radius=42, fill="#ffffff", outline="#c7d2fe", width=4)
+        draw.rounded_rectangle(
+            (x0, 260, x0 + 670, 760),
+            radius=42,
+            fill="#ffffff",
+            outline="#c7d2fe",
+            width=4,
+        )
         draw.text((x0 + 50, 310), label, font=_font(34, bold=True), fill="#4f46e5")
         y = 405
         for row in count_rows:
-            draw.text((x0 + 335, y), row, font=_font(38, bold=True), fill=ink, anchor="ma")
+            draw.text(
+                (x0 + 335, y), row, font=_font(38, bold=True), fill=ink, anchor="ma"
+            )
             y += 82
     _page(draw, 100, SLIDE_H - 64, index, total, readable_theme)
 
@@ -324,35 +396,50 @@ def _layout_text(canvas, draw, title, bullets, theme, *, index, total) -> None:
     draw.text((84, 151), "APRENDEMOS JUNTOS", font=_font(22, bold=True), fill="#ffffff")
 
     title_font, title_lines = _fit_lines(
-        draw, title, max_width=340, max_lines=5,
-        sizes=[54, 48, 42, 36], bold=True,
+        draw,
+        title,
+        max_width=340,
+        max_lines=5,
+        sizes=[54, 48, 42, 36],
+        bold=True,
     )
     y = 228
     for line in title_lines:
         draw.text((84, y), line, font=title_font, fill="#ffffff")
         y += _line_height(title_font) + 10
 
-    visible = bullets[:4] or ["Descubre la idea principal y explicala con tus palabras."]
+    visible = bullets[:4] or [
+        "Descubre la idea principal y explicala con tus palabras."
+    ]
     x0, x1 = 575, 1508
     gap = 24
     tile_h = min(154, (690 - gap * (len(visible) - 1)) // max(1, len(visible)))
     y = 86
     for bullet_index, bullet in enumerate(visible):
         draw.rounded_rectangle(
-            (x0, y, x1, y + tile_h), radius=30,
-            fill="#ffffff", outline=soft, width=4,
+            (x0, y, x1, y + tile_h),
+            radius=30,
+            fill="#ffffff",
+            outline=soft,
+            width=4,
         )
         cy = y + tile_h // 2
         draw.ellipse((x0 + 28, cy - 30, x0 + 88, cy + 30), fill=accent)
         draw.text(
-            (x0 + 58, cy), str(bullet_index + 1),
-            font=_font(24, bold=True), fill="#ffffff", anchor="mm",
+            (x0 + 58, cy),
+            str(bullet_index + 1),
+            font=_font(24, bold=True),
+            fill="#ffffff",
+            anchor="mm",
         )
         bfont, lines = _fit_lines(
-            draw, str(bullet), max_width=x1 - x0 - 155,
+            draw,
+            str(bullet),
+            max_width=x1 - x0 - 155,
             # Cuatro lineas a 20 pt caben dentro de la tarjeta de 154 px.
             # Conservamos la explicacion completa en vez de recortarla.
-            max_lines=5, sizes=[32, 29, 26, 24, 22, 20, 18],
+            max_lines=5,
+            sizes=[32, 29, 26, 24, 22, 20, 18],
         )
         text_y = cy - (len(lines) * (_line_height(bfont) + 5)) // 2
         for line in lines:
@@ -362,19 +449,22 @@ def _layout_text(canvas, draw, title, bullets, theme, *, index, total) -> None:
     _page(draw, 84, SLIDE_H - 64, index, total, theme)
 
 
-
 def _draw_glyph(canvas, draw, box, title, theme) -> None:
     bg, ink, body, muted, accent, soft = theme
     x0, y0, x1, y1 = box
     cx, cy = (x0 + x1) // 2, (y0 + y1) // 2
     for i, r in enumerate((300, 210, 132)):
-        draw.ellipse((cx - r, cy - r, cx + r, cy + r), fill=(accent if i == 2 else soft))
+        draw.ellipse(
+            (cx - r, cy - r, cx + r, cy + r), fill=(accent if i == 2 else soft)
+        )
     initials = "".join(w[:1] for w in title.split()[:2]).upper() or "XC"
-    draw.text((cx, cy), initials[:2], font=_font(130, bold=True), fill="#ffffff", anchor="mm")
+    draw.text(
+        (cx, cy), initials[:2], font=_font(130, bold=True), fill="#ffffff", anchor="mm"
+    )
 
 
 def _slide_image_path(title: str, hint: str) -> Path:
-    """Misma clave que presenton_service._ai_slide_asset / _ensure_presenton_image_asset."""
+    """Usa la misma clave determinista que assets_service._ai_slide_asset."""
     import hashlib
 
     from app.core.config import settings
@@ -387,11 +477,34 @@ def _resolve_photo(title: str, hint: str, asset: str) -> Image.Image | None:
     """Devuelve la imagen IA real (foto, no placeholder PIL) o None."""
     path = _slide_image_path_from_asset(asset) or _slide_image_path(title, hint)
     try:
-        if path and path.is_file() and path.stat().st_size >= 60_000:
+        if path and path.is_file() and not is_placeholder_asset(path):
             return Image.open(path).convert("RGB")
     except Exception:
         pass
     return None
+
+
+def _paste_contain(
+    canvas: Image.Image,
+    box: tuple[int, int, int, int],
+    photo: Image.Image,
+    *,
+    background: str,
+    padding: int = 36,
+) -> None:
+    """Place a complete image inside a clean card without cropping its subject."""
+    x0, y0, x1, y1 = box
+    width, height = x1 - x0, y1 - y0
+    card = Image.new("RGB", (width, height), background)
+    contained = ImageOps.contain(
+        photo,
+        (max(1, width - padding * 2), max(1, height - padding * 2)),
+        method=Image.LANCZOS,
+    )
+    x = (width - contained.width) // 2
+    y = (height - contained.height) // 2
+    card.paste(contained, (x, y))
+    canvas.paste(card, (x0, y0))
 
 
 def _layout_full_image(canvas: Image.Image, photo: Image.Image) -> None:
@@ -400,7 +513,13 @@ def _layout_full_image(canvas: Image.Image, photo: Image.Image) -> None:
     _paste_cover(canvas, (0, 0, canvas.width, canvas.height), photo)
 
 
-def _paste_cover(canvas: Image.Image, box: tuple[int, int, int, int], photo: Image.Image, *, radius: int = 0) -> None:
+def _paste_cover(
+    canvas: Image.Image,
+    box: tuple[int, int, int, int],
+    photo: Image.Image,
+    *,
+    radius: int = 0,
+) -> None:
     """Pega la foto sin perder informacion importante.
 
     Usa un fondo blur a sangre y la imagen completa encima. Mantiene el acabado
@@ -408,36 +527,29 @@ def _paste_cover(canvas: Image.Image, box: tuple[int, int, int, int], photo: Ima
     """
     x0, y0, x1, y1 = box
     bw, bh = x1 - x0, y1 - y0
-    filled = ImageOps.fit(photo, (bw, bh), method=Image.LANCZOS, centering=(0.5, 0.42)).filter(ImageFilter.GaussianBlur(18))
+    filled = ImageOps.fit(
+        photo, (bw, bh), method=Image.LANCZOS, centering=(0.5, 0.42)
+    ).filter(ImageFilter.GaussianBlur(18))
     overlay = Image.new("RGB", (bw, bh), "#0f172a")
     filled = Image.blend(filled, overlay, 0.16)
-    contained = ImageOps.contain(photo, (max(1, bw - 64), max(1, bh - 64)), method=Image.LANCZOS)
+    contained = ImageOps.contain(
+        photo, (max(1, bw - 64), max(1, bh - 64)), method=Image.LANCZOS
+    )
     px = (bw - contained.width) // 2
     py = (bh - contained.height) // 2
     filled.paste(contained, (px, py))
     if radius > 0:
         mask = Image.new("L", (bw, bh), 0)
-        ImageDraw.Draw(mask).rounded_rectangle((0, 0, bw - 1, bh - 1), radius=radius, fill=255)
+        ImageDraw.Draw(mask).rounded_rectangle(
+            (0, 0, bw - 1, bh - 1), radius=radius, fill=255
+        )
         canvas.paste(filled, (x0, y0), mask)
     else:
         canvas.paste(filled, (x0, y0))
 
 
 def _slide_image_path_from_asset(asset: str) -> Path | None:
-    from app.core.config import settings
-
-    asset_prefix = "/api/presentaciones/assets/"
-    if asset.startswith(asset_prefix):
-        asset_id = asset.removeprefix(asset_prefix)
-        if not re.fullmatch(r"[0-9a-f]{18}", asset_id):
-            return None
-        return Path(settings.UPLOADS_DIR) / "presentaciones" / f"slide-{asset_id}.png"
-    if asset.startswith("/app_data/"):
-        relative = asset.removeprefix("/app_data/").lstrip("/")
-        return Path(settings.UPLOADS_DIR) / "presenton" / relative
-    return None
-
-
+    return resolve_asset_path(asset)
 
 
 def _wrap_text(text: str, width: int) -> list[str]:
@@ -468,7 +580,9 @@ def _fit_lines(
 
 
 def _wrap_kept_words(original: str, lines: list[str]) -> bool:
-    source_words = [word.strip(".,;:!?").lower() for word in str(original).split() if word.strip()]
+    source_words = [
+        word.strip(".,;:!?").lower() for word in str(original).split() if word.strip()
+    ]
     rendered = " ".join(lines).replace("...", " ").lower()
     return all(word in rendered for word in source_words if len(word) > 2)
 
@@ -499,7 +613,9 @@ def _fit_bullet_lines(
     return last_font, limited
 
 
-def _wrap_pixels(draw: ImageDraw.ImageDraw, text: str, font, max_width: int) -> list[str]:
+def _wrap_pixels(
+    draw: ImageDraw.ImageDraw, text: str, font, max_width: int
+) -> list[str]:
     lines: list[str] = []
     for paragraph in str(text).splitlines() or [""]:
         current = ""
@@ -519,14 +635,18 @@ def _wrap_pixels(draw: ImageDraw.ImageDraw, text: str, font, max_width: int) -> 
     return lines or [""]
 
 
-def _limit_lines(draw: ImageDraw.ImageDraw, lines: list[str], font, max_width: int, max_lines: int) -> list[str]:
+def _limit_lines(
+    draw: ImageDraw.ImageDraw, lines: list[str], font, max_width: int, max_lines: int
+) -> list[str]:
     limited = lines[:max_lines]
     if len(lines) > max_lines and limited:
         limited[-1] = _truncate_to_width(draw, limited[-1], font, max_width)
     return limited
 
 
-def _truncate_to_width(draw: ImageDraw.ImageDraw, text: str, font, max_width: int) -> str:
+def _truncate_to_width(
+    draw: ImageDraw.ImageDraw, text: str, font, max_width: int
+) -> str:
     suffix = "..."
     value = str(text).strip()
     while value and _text_width(draw, value + suffix, font) > max_width:
@@ -544,9 +664,13 @@ def _line_height(font) -> int:
     return max(18, bbox[3] - bbox[1])
 
 
-def _font(size: int, *, bold: bool = False) -> ImageFont.FreeTypeFont | ImageFont.ImageFont:
+def _font(
+    size: int, *, bold: bool = False
+) -> ImageFont.FreeTypeFont | ImageFont.ImageFont:
     candidates = [
-        "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf" if bold else "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
+        if bold
+        else "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
         "C:/Windows/Fonts/arialbd.ttf" if bold else "C:/Windows/Fonts/arial.ttf",
     ]
     for candidate in candidates:
@@ -555,7 +679,9 @@ def _font(size: int, *, bold: bool = False) -> ImageFont.FreeTypeFont | ImageFon
     return ImageFont.load_default()
 
 
-def _write_common_parts(pptx: ZipFile, title: str, slide_count: int, timestamp: str) -> None:
+def _write_common_parts(
+    pptx: ZipFile, title: str, slide_count: int, timestamp: str
+) -> None:
     pptx.writestr("[Content_Types].xml", _content_types(slide_count))
     pptx.writestr("_rels/.rels", _root_rels())
     pptx.writestr("docProps/core.xml", _core_props(title, timestamp))
@@ -574,7 +700,7 @@ def _content_types(slide_count: int) -> str:
         f'<Override PartName="/ppt/slides/slide{i}.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slide+xml"/>'
         for i in range(1, slide_count + 1)
     )
-    return f'''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+    return f"""<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
 <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
 <Default Extension="xml" ContentType="application/xml"/>
@@ -586,32 +712,32 @@ def _content_types(slide_count: int) -> str:
 <Override PartName="/ppt/slideLayouts/slideLayout1.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slideLayout+xml"/>
 <Override PartName="/ppt/theme/theme1.xml" ContentType="application/vnd.openxmlformats-officedocument.theme+xml"/>
 {slide_overrides}
-</Types>'''
+</Types>"""
 
 
 def _root_rels() -> str:
-    return '''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+    return """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
 <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="ppt/presentation.xml"/>
 <Relationship Id="rId2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/>
 <Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties" Target="docProps/app.xml"/>
-</Relationships>'''
+</Relationships>"""
 
 
 def _core_props(title: str, timestamp: str) -> str:
     escaped = _xml_escape(title)
-    return f'''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+    return f"""<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:dcmitype="http://purl.org/dc/dcmitype/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
 <dc:title>{escaped}</dc:title><dc:creator>XCalificator</dc:creator><cp:lastModifiedBy>XCalificator</cp:lastModifiedBy>
 <dcterms:created xsi:type="dcterms:W3CDTF">{timestamp}</dcterms:created><dcterms:modified xsi:type="dcterms:W3CDTF">{timestamp}</dcterms:modified>
-</cp:coreProperties>'''
+</cp:coreProperties>"""
 
 
 def _app_props(slide_count: int) -> str:
-    return f'''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+    return f"""<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties" xmlns:vt="http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes">
 <Application>XCalificator</Application><PresentationFormat>Widescreen</PresentationFormat><Slides>{slide_count}</Slides><Notes>0</Notes><HiddenSlides>0</HiddenSlides>
-</Properties>'''
+</Properties>"""
 
 
 def _presentation_xml(slide_count: int) -> str:
@@ -627,12 +753,14 @@ def _presentation_xml(slide_count: int) -> str:
 
 
 def _presentation_rels(slide_count: int) -> str:
-    rels = ['<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideMaster" Target="slideMasters/slideMaster1.xml"/>']
+    rels = [
+        '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideMaster" Target="slideMasters/slideMaster1.xml"/>'
+    ]
     rels.extend(
         f'<Relationship Id="rId{i + 1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide" Target="slides/slide{i}.xml"/>'
         for i in range(1, slide_count + 1)
     )
-    return f'''<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">{''.join(rels)}</Relationships>'''
+    return f"""<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">{"".join(rels)}</Relationships>"""
 
 
 def _slide_xml() -> str:
@@ -645,49 +773,49 @@ def _slide_xml() -> str:
 
 
 def _slide_rels(index: int) -> str:
-    return f'''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+    return f"""<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
 <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="../media/slide{index}.png"/>
 <Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout" Target="../slideLayouts/slideLayout1.xml"/>
-</Relationships>'''
+</Relationships>"""
 
 
 def _slide_master_xml() -> str:
-    return '''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+    return """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <p:sldMaster xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main">
 <p:cSld><p:spTree><p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr><p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/><a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr></p:spTree></p:cSld>
 <p:clrMap bg1="lt1" tx1="dk1" bg2="lt2" tx2="dk2" accent1="accent1" accent2="accent2" accent3="accent3" accent4="accent4" accent5="accent5" accent6="accent6" hlink="hlink" folHlink="folHlink"/>
 <p:sldLayoutIdLst><p:sldLayoutId id="2147483649" r:id="rId1"/></p:sldLayoutIdLst><p:txStyles><p:titleStyle/><p:bodyStyle/><p:otherStyle/></p:txStyles>
-</p:sldMaster>'''
+</p:sldMaster>"""
 
 
 def _slide_master_rels() -> str:
-    return '''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+    return """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
 <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout" Target="../slideLayouts/slideLayout1.xml"/>
 <Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme" Target="../theme/theme1.xml"/>
-</Relationships>'''
+</Relationships>"""
 
 
 def _slide_layout_xml() -> str:
-    return '''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+    return """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <p:sldLayout xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main" type="blank" preserve="1">
 <p:cSld name="Blank"><p:spTree><p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr><p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/><a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr></p:spTree></p:cSld><p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr>
-</p:sldLayout>'''
+</p:sldLayout>"""
 
 
 def _slide_layout_rels() -> str:
-    return '''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+    return """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
 <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideMaster" Target="../slideMasters/slideMaster1.xml"/>
-</Relationships>'''
+</Relationships>"""
 
 
 def _theme_xml() -> str:
-    return '''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+    return """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <a:theme xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" name="XCalificator">
 <a:themeElements><a:clrScheme name="XCalificator"><a:dk1><a:srgbClr val="0F172A"/></a:dk1><a:lt1><a:srgbClr val="FFFFFF"/></a:lt1><a:dk2><a:srgbClr val="334155"/></a:dk2><a:lt2><a:srgbClr val="F8FAFC"/></a:lt2><a:accent1><a:srgbClr val="0F766E"/></a:accent1><a:accent2><a:srgbClr val="1D4ED8"/></a:accent2><a:accent3><a:srgbClr val="7C3AED"/></a:accent3><a:accent4><a:srgbClr val="BE123C"/></a:accent4><a:accent5><a:srgbClr val="B45309"/></a:accent5><a:accent6><a:srgbClr val="475569"/></a:accent6><a:hlink><a:srgbClr val="2563EB"/></a:hlink><a:folHlink><a:srgbClr val="7C3AED"/></a:folHlink></a:clrScheme><a:fontScheme name="XCalificator"><a:majorFont><a:latin typeface="Arial"/></a:majorFont><a:minorFont><a:latin typeface="Arial"/></a:minorFont></a:fontScheme><a:fmtScheme name="XCalificator"><a:fillStyleLst><a:solidFill><a:schemeClr val="phClr"/></a:solidFill></a:fillStyleLst><a:lnStyleLst><a:ln w="6350"><a:solidFill><a:schemeClr val="phClr"/></a:solidFill></a:ln></a:lnStyleLst><a:effectStyleLst><a:effectStyle><a:effectLst/></a:effectStyle></a:effectStyleLst><a:bgFillStyleLst><a:solidFill><a:schemeClr val="phClr"/></a:solidFill></a:bgFillStyleLst></a:fmtScheme></a:themeElements><a:objectDefaults/><a:extraClrSchemeLst/>
-</a:theme>'''
+</a:theme>"""
 
 
 def _xml_escape(value: str) -> str:

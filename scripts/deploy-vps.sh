@@ -6,7 +6,7 @@ cd "$PROJECT_DIR"
 
 python3 scripts/preflight.py .env
 chmod 600 .env
-mkdir -p uploads/presentations uploads/presenton
+mkdir -p uploads/presentations
 
 docker compose --profile production config --quiet
 docker compose --profile production build --pull

@@ -3,6 +3,8 @@ from __future__ import annotations
 from copy import deepcopy
 from typing import Any
 
+from app.modules.presentaciones.template_library import choose_layout
+
 
 CANONICAL_VERSION = "1.0"
 
@@ -48,12 +50,20 @@ def is_canonical_presentation(data: Any) -> bool:
     )
 
 
-def normalize_to_canonical(raw_data: Any, input_data: dict[str, Any] | None = None) -> dict[str, Any]:
+def normalize_to_canonical(
+    raw_data: Any, input_data: dict[str, Any] | None = None
+) -> dict[str, Any]:
     input_data = input_data if isinstance(input_data, dict) else {}
-    source = raw_data if isinstance(raw_data, dict) else {"slides": raw_data if isinstance(raw_data, list) else []}
+    source = (
+        raw_data
+        if isinstance(raw_data, dict)
+        else {"slides": raw_data if isinstance(raw_data, list) else []}
+    )
     if is_canonical_presentation(source):
         canonical = deepcopy(source)
-    elif is_canonical_presentation(source.get("canonical") if isinstance(source, dict) else None):
+    elif is_canonical_presentation(
+        source.get("canonical") if isinstance(source, dict) else None
+    ):
         canonical = deepcopy(source["canonical"])
         # Si el canonical embebido quedó sin slides (se creó antes de generar),
         # reconstruirlos desde los slides legacy frescos. Sin esto, el PPTX
@@ -61,24 +71,37 @@ def normalize_to_canonical(raw_data: Any, input_data: dict[str, Any] | None = No
         if not canonical.get("slides"):
             raw_slides = source.get("slides") if isinstance(source, dict) else []
             canonical["slides"] = [
-                _legacy_slide_to_canonical(slide, index) for index, slide in enumerate(raw_slides or [])
+                _legacy_slide_to_canonical(slide, index)
+                for index, slide in enumerate(raw_slides or [])
             ]
     else:
         canonical = _empty_canonical(input_data, source)
         raw_slides = source.get("slides") if isinstance(source, dict) else []
-        canonical["slides"] = [_legacy_slide_to_canonical(slide, index) for index, slide in enumerate(raw_slides or [])]
+        canonical["slides"] = [
+            _legacy_slide_to_canonical(slide, index)
+            for index, slide in enumerate(raw_slides or [])
+        ]
 
     canonical = _apply_defaults(canonical, input_data, source)
-    canonical["slides"] = [_normalize_canonical_slide(slide, index) for index, slide in enumerate(canonical.get("slides") or [])]
+    canonical["slides"] = [
+        _normalize_canonical_slide(slide, index)
+        for index, slide in enumerate(canonical.get("slides") or [])
+    ]
     return canonical
 
 
-def build_canonical_from_legacy(slides_json: dict[str, Any] | None, presentacion: Any) -> dict[str, Any]:
+def build_canonical_from_legacy(
+    slides_json: dict[str, Any] | None, presentacion: Any
+) -> dict[str, Any]:
     data = slides_json if isinstance(slides_json, dict) else {}
     input_data = data.get("input") if isinstance(data.get("input"), dict) else {}
     canonical = normalize_to_canonical(data, input_data)
-    canonical["meta"]["titulo"] = str(getattr(presentacion, "titulo", None) or canonical["meta"]["titulo"] or "")
-    canonical["meta"]["materia_id"] = _string_or_none(getattr(presentacion, "materia_id", None))
+    canonical["meta"]["titulo"] = str(
+        getattr(presentacion, "titulo", None) or canonical["meta"]["titulo"] or ""
+    )
+    canonical["meta"]["materia_id"] = _string_or_none(
+        getattr(presentacion, "materia_id", None)
+    )
     canonical["exports"]["pptx"]["url"] = getattr(presentacion, "pptx_url", None)
     canonical["exports"]["pdf"]["url"] = getattr(presentacion, "pdf_url", None)
     estado = getattr(presentacion, "estado", None)
@@ -88,17 +111,26 @@ def build_canonical_from_legacy(slides_json: dict[str, Any] | None, presentacion
 
 
 def get_canonical_slides(presentacion: Any) -> list[dict[str, Any]]:
-    canonical = build_canonical_from_legacy(getattr(presentacion, "slides_json", None), presentacion)
+    canonical = build_canonical_from_legacy(
+        getattr(presentacion, "slides_json", None), presentacion
+    )
     return canonical.get("slides") or []
 
 
-def canonical_to_legacy_slides(canonical: dict[str, Any] | None) -> list[dict[str, Any]]:
+def canonical_to_legacy_slides(
+    canonical: dict[str, Any] | None,
+) -> list[dict[str, Any]]:
     if not is_canonical_presentation(canonical):
         return []
-    return [_canonical_slide_to_legacy(slide, index) for index, slide in enumerate(canonical.get("slides") or [])]
+    return [
+        _canonical_slide_to_legacy(slide, index)
+        for index, slide in enumerate(canonical.get("slides") or [])
+    ]
 
 
-def _empty_canonical(input_data: dict[str, Any], source: dict[str, Any]) -> dict[str, Any]:
+def _empty_canonical(
+    input_data: dict[str, Any], source: dict[str, Any]
+) -> dict[str, Any]:
     title = str(source.get("title") or input_data.get("titulo") or "")
     return {
         "version": CANONICAL_VERSION,
@@ -144,18 +176,24 @@ def _empty_canonical(input_data: dict[str, Any], source: dict[str, Any]) -> dict
     }
 
 
-def _apply_defaults(canonical: dict[str, Any], input_data: dict[str, Any], source: dict[str, Any]) -> dict[str, Any]:
+def _apply_defaults(
+    canonical: dict[str, Any], input_data: dict[str, Any], source: dict[str, Any]
+) -> dict[str, Any]:
     defaults = _empty_canonical(input_data, source)
     merged = deepcopy(defaults)
     for key in ("meta", "source", "ai", "generation", "exports"):
         current = canonical.get(key) if isinstance(canonical.get(key), dict) else {}
         for nested_key, value in current.items():
-            if isinstance(value, dict) and isinstance(merged[key].get(nested_key), dict):
+            if isinstance(value, dict) and isinstance(
+                merged[key].get(nested_key), dict
+            ):
                 merged[key][nested_key].update(value)
             else:
                 merged[key][nested_key] = value
     merged["version"] = CANONICAL_VERSION
-    merged["slides"] = canonical.get("slides") if isinstance(canonical.get("slides"), list) else []
+    merged["slides"] = (
+        canonical.get("slides") if isinstance(canonical.get("slides"), list) else []
+    )
     return merged
 
 
@@ -170,17 +208,20 @@ def _legacy_slide_to_canonical(slide: Any, index: int) -> dict[str, Any]:
     provider = slide.get("image_provider") or image.get("proveedor")
     role = _normalize_role(slide.get("role"), title=title, index=index)
     visual_concept = str(slide.get("visual_concept") or prompt or "")
-    layout_hint = _normalize_layout_hint(slide.get("layout_hint") or slide.get("layout"), role=role, index=index)
-    is_full_image = str(slide.get("slide_type") or slide.get("layout") or layout_hint).lower() == "full_image"
+    layout_hint = _normalize_layout_hint(
+        slide.get("layout_hint") or slide.get("layout"), role=role, index=index
+    )
+    is_full_image = (
+        str(slide.get("slide_type") or slide.get("layout") or layout_hint).lower()
+        == "full_image"
+    )
 
-    if is_full_image:
-        layout = "full_image"
-    elif index == 0:
-        layout = "cover"
-    elif layout_hint == "editable":
-        layout = "text"
-    else:
-        layout = "split-right" if prompt or image_asset else "text"
+    layout = choose_layout(
+        role=role,
+        index=index,
+        layout_hint="full_image" if is_full_image else layout_hint,
+        has_visual=bool(prompt or image_asset),
+    )
 
     return {
         "id": str(slide.get("id") or f"slide-{index + 1}"),
@@ -197,8 +238,12 @@ def _legacy_slide_to_canonical(slide: Any, index: int) -> dict[str, Any]:
         "titulo": title,
         "subtitulo": slide.get("subtitle") or slide.get("subtitulo"),
         "bullets": _canonical_bullets(slide.get("bullets") or []),
-        "texto_principal": slide.get("texto_principal") or slide.get("text_content") or _text_content_from_slide(slide),
-        "image_text_expected": [str(t) for t in slide.get("image_text_expected") or [] if str(t).strip()],
+        "texto_principal": slide.get("texto_principal")
+        or slide.get("text_content")
+        or _text_content_from_slide(slide),
+        "image_text_expected": [
+            str(t) for t in slide.get("image_text_expected") or [] if str(t).strip()
+        ],
         "tags": [str(t) for t in slide.get("tags") or [] if str(t).strip()],
         "imagen": {
             "url": image_asset or None,
@@ -220,7 +265,9 @@ def _legacy_slide_to_canonical(slide: Any, index: int) -> dict[str, Any]:
 def _normalize_canonical_slide(slide: Any, index: int) -> dict[str, Any]:
     if not isinstance(slide, dict):
         return _legacy_slide_to_canonical(slide, index)
-    normalized = _legacy_slide_to_canonical(_canonical_slide_to_legacy(slide, index), index)
+    normalized = _legacy_slide_to_canonical(
+        _canonical_slide_to_legacy(slide, index), index
+    )
     for key, value in slide.items():
         if key == "bullets":
             normalized["bullets"] = _canonical_bullets(value)
@@ -231,24 +278,34 @@ def _normalize_canonical_slide(slide: Any, index: int) -> dict[str, Any]:
     normalized["id"] = str(normalized.get("id") or f"slide-{index + 1}")
     normalized["orden"] = int(normalized.get("orden") or index + 1)
     normalized["titulo"] = str(normalized.get("titulo") or f"Diapositiva {index + 1}")
-    normalized["role"] = _normalize_role(normalized.get("role"), title=normalized["titulo"], index=index)
+    normalized["role"] = _normalize_role(
+        normalized.get("role"), title=normalized["titulo"], index=index
+    )
     normalized["layout_hint"] = _normalize_layout_hint(
         normalized.get("layout_hint") or normalized.get("layout"),
         role=normalized["role"],
         index=index,
     )
-    normalized["tipo"] = str(normalized.get("tipo") or ROLE_TO_TIPO.get(normalized["role"]) or "concepto")
+    normalized["tipo"] = str(
+        normalized.get("tipo") or ROLE_TO_TIPO.get(normalized["role"]) or "concepto"
+    )
     normalized["bullets"] = _canonical_bullets(normalized.get("bullets") or [])
     normalized["image_text_expected"] = [
         str(t) for t in normalized.get("image_text_expected") or [] if str(t).strip()
     ]
-    normalized["tags"] = [str(t) for t in normalized.get("tags") or [] if str(t).strip()]
-    normalized["visual_concept"] = str(normalized.get("visual_concept") or normalized.get("image") or "")
+    normalized["tags"] = [
+        str(t) for t in normalized.get("tags") or [] if str(t).strip()
+    ]
+    normalized["visual_concept"] = str(
+        normalized.get("visual_concept") or normalized.get("image") or ""
+    )
     normalized["key_message"] = str(normalized.get("key_message") or "")
     normalized["example"] = str(normalized.get("example") or "")
     normalized["activity"] = str(normalized.get("activity") or "")
     normalized["question"] = str(normalized.get("question") or "")
-    normalized["texto_principal"] = str(normalized.get("texto_principal") or _text_content_from_canonical(normalized))
+    normalized["texto_principal"] = str(
+        normalized.get("texto_principal") or _text_content_from_canonical(normalized)
+    )
     if not isinstance(normalized.get("imagen"), dict):
         normalized["imagen"] = _legacy_slide_to_canonical({}, index)["imagen"]
     return normalized
@@ -258,13 +315,17 @@ def _canonical_slide_to_legacy(slide: dict[str, Any], index: int) -> dict[str, A
     image = slide.get("imagen") if isinstance(slide.get("imagen"), dict) else {}
     bullets = slide.get("bullets") if isinstance(slide.get("bullets"), list) else []
     legacy = {
-        "title": str(slide.get("titulo") or slide.get("title") or f"Diapositiva {index + 1}"),
+        "title": str(
+            slide.get("titulo") or slide.get("title") or f"Diapositiva {index + 1}"
+        ),
         "bullets": _legacy_bullet_texts(bullets),
         "image": str(image.get("prompt") or slide.get("image") or ""),
         "image_asset": str(image.get("url") or slide.get("image_asset") or ""),
         "image_provider": image.get("proveedor") or slide.get("image_provider"),
         "notes": str(slide.get("notas_presentador") or slide.get("notes") or ""),
-        "role": _normalize_role(slide.get("role"), title=str(slide.get("titulo") or ""), index=index),
+        "role": _normalize_role(
+            slide.get("role"), title=str(slide.get("titulo") or ""), index=index
+        ),
         "key_message": str(slide.get("key_message") or ""),
         "example": str(slide.get("example") or ""),
         "activity": str(slide.get("activity") or ""),
@@ -272,14 +333,23 @@ def _canonical_slide_to_legacy(slide: dict[str, Any], index: int) -> dict[str, A
         "visual_concept": str(slide.get("visual_concept") or image.get("prompt") or ""),
         "layout_hint": _normalize_layout_hint(
             slide.get("layout_hint") or slide.get("layout"),
-            role=_normalize_role(slide.get("role"), title=str(slide.get("titulo") or ""), index=index),
+            role=_normalize_role(
+                slide.get("role"), title=str(slide.get("titulo") or ""), index=index
+            ),
             index=index,
         ),
-        "image_text_expected": [str(t) for t in slide.get("image_text_expected") or [] if str(t).strip()],
+        "image_text_expected": [
+            str(t) for t in slide.get("image_text_expected") or [] if str(t).strip()
+        ],
         "tags": [str(t) for t in slide.get("tags") or [] if str(t).strip()],
-        "text_content": str(slide.get("texto_principal") or slide.get("text_content") or ""),
+        "text_content": str(
+            slide.get("texto_principal") or slide.get("text_content") or ""
+        ),
     }
-    if str(slide.get("layout") or slide.get("slide_type") or "").lower() == "full_image":
+    if (
+        str(slide.get("layout") or slide.get("slide_type") or "").lower()
+        == "full_image"
+    ):
         legacy["slide_type"] = "full_image"
         legacy["layout"] = "full_image"
     return legacy
@@ -300,7 +370,9 @@ def _canonical_bullets(raw: Any) -> list[dict[str, Any]]:
     bullets: list[dict[str, Any]] = []
     for item in raw:
         if isinstance(item, dict):
-            text = str(item.get("texto") or item.get("text") or item.get("title") or "").strip()
+            text = str(
+                item.get("texto") or item.get("text") or item.get("title") or ""
+            ).strip()
             level = int(item.get("nivel") or item.get("level") or 0)
         else:
             text = str(item).strip()
@@ -335,9 +407,23 @@ def _normalize_layout_hint(value: Any, *, role: str, index: int) -> str:
         return "editable"
     if index == 0 or role == "cover":
         return "cover"
-    if role in {"objective", "prior_knowledge", "activity", "comprehension_check", "assessment"}:
+    if role in {
+        "objective",
+        "prior_knowledge",
+        "activity",
+        "comprehension_check",
+        "assessment",
+    }:
         return "editable"
-    if role in {"concept", "explanation", "example", "process", "comparison", "summary", "closing"}:
+    if role in {
+        "concept",
+        "explanation",
+        "example",
+        "process",
+        "comparison",
+        "summary",
+        "closing",
+    }:
         return "full_image"
     return "support"
 
@@ -355,7 +441,9 @@ def _text_content_from_slide(slide: dict[str, Any]) -> str:
 
 
 def _text_content_from_canonical(slide: dict[str, Any]) -> str:
-    bullets = _legacy_bullet_texts(slide.get("bullets") if isinstance(slide.get("bullets"), list) else [])
+    bullets = _legacy_bullet_texts(
+        slide.get("bullets") if isinstance(slide.get("bullets"), list) else []
+    )
     parts = [
         slide.get("key_message"),
         *bullets,

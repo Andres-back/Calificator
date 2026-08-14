@@ -8,44 +8,6 @@ import path from 'node:path';
 export default defineConfig(({ mode }) => {
   const rootEnv = loadEnv(mode, path.resolve(__dirname, '..'), '');
   const allowLan = rootEnv.VITE_ALLOW_LAN === 'true';
-  // Presenton proxies may attach an internal Basic Auth header. Keep them
-  // loopback-only unless LAN exposure is explicitly requested as well.
-  const allowPresentonProxyOnLan = rootEnv.VITE_ALLOW_PRESENTON_PROXY_ON_LAN === 'true';
-  const enablePresentonProxy = !allowLan || allowPresentonProxyOnLan;
-
-  const presentonUser = rootEnv.PRESENTON_AUTH_USERNAME || 'presenton_admin';
-  const presentonPassword = rootEnv.PRESENTON_AUTH_PASSWORD || '';
-  const presentonBasicAuth = rootEnv.PRESENTON_BASIC_AUTH || (
-    presentonPassword ? Buffer.from(`${presentonUser}:${presentonPassword}`).toString('base64') : ''
-  );
-  const presentonTarget = rootEnv.PRESENTON_PUBLIC_URL || 'http://localhost:5001';
-  const withPresentonAuth = (proxy: any) => {
-    proxy.on('proxyReq', (proxyReq: any) => {
-      if (presentonBasicAuth) proxyReq.setHeader('Authorization', `Basic ${presentonBasicAuth}`);
-    });
-  };
-  const presentonProxy = {
-    target: presentonTarget,
-    changeOrigin: true,
-    configure: withPresentonAuth,
-  };
-
-  const presentonRoutes = {
-    '/api/v1': presentonProxy,
-    '/api/telemetry-status': presentonProxy,
-    '/api/can-change-keys': presentonProxy,
-    '/presenton': {
-      target: presentonTarget,
-      changeOrigin: true,
-      rewrite: (url: string) => url.replace(/^\/presenton/, ''),
-      configure: withPresentonAuth,
-    },
-    '/_next': presentonProxy,
-    '/app_data': presentonProxy,
-    '/static': presentonProxy,
-    '/presentation': presentonProxy,
-  };
-
   return {
     plugins: [react()],
     resolve: {
@@ -96,7 +58,6 @@ export default defineConfig(({ mode }) => {
       // Default to loopback. LAN is opt-in through VITE_ALLOW_LAN=true.
       host: allowLan ? true : '127.0.0.1',
       proxy: {
-        ...(enablePresentonProxy ? presentonRoutes : {}),
         '/api': { target: 'http://localhost:8000', changeOrigin: true },
         '/uploads': { target: 'http://localhost:8000', changeOrigin: true },
         '/health': { target: 'http://localhost:8000', changeOrigin: true },

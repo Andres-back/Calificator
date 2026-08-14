@@ -24,4 +24,4 @@
 1. Si OpenAI falla → intentar Cloudflare
 2. Si Cloudflare falla → usar placeholder educativo
 3. Nunca bloquear el flujo principal por una imagen fallida
-4. Nunca enviar `image: undefined` a Presenton
+4. Nunca enviar una imagen indefinida al renderizador de presentaciones

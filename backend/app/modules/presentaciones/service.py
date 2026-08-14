@@ -1,8 +1,9 @@
 """Servicio de presentaciones de XCalificator.
 
 XCalificator genera el contenido, las imagenes y los archivos descargables.
-Presenton queda como editor opcional bajo demanda.
+La vista previa, las imagenes y los archivos se producen desde una fuente canonica unica.
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -16,7 +17,6 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.logging import get_logger
-from app.core.config import settings
 from app.db.session import AsyncSessionLocal
 from app.modules.materias import service as materias_service
 from app.modules.matriculas.models import Matricula
@@ -27,31 +27,31 @@ from app.modules.presentaciones.editable_pptx_service import build_editable_pptx
 from app.modules.presentaciones.local_export import (
     build_local_export,
     extract_slides_for_export,
+    pptx_has_slides_and_media,
+    render_slide_png,
 )
 from app.modules.presentaciones.presentation_schema import (
     build_canonical_from_legacy,
     canonical_to_legacy_slides,
     normalize_to_canonical,
 )
-from app.modules.presentaciones.presenton_service import (
+from app.modules.presentaciones.assets_service import (
     ExportFormat,
-    build_editor_redirect_url,
-    build_generation_payload,
-    create_editor_presentation,
-    create_editor_token,
-    create_presenton_session_cookie,
-    ensure_presenton_presentation_ready,
+    generate_ai_slide_image_detailed,
     get_export_file_path,
     save_export_file,
-    verify_editor_token,
 )
 from app.modules.presentaciones.image_prompts import build_presentation_image_prompt
-from app.modules.presentaciones.presenton_service import generate_ai_slide_image_detailed
 from app.modules.presentaciones.schemas import PresentacionCreate
 from app.modules.imagenes import service as imagenes_service
 from app.modules.users.models import User
 from app.services.llm_router import LLMRouter
-from app.shared.enums import ImageProvider, MatriculaEstado, PresentacionEstado, UserRole
+from app.shared.enums import (
+    ImageProvider,
+    MatriculaEstado,
+    PresentacionEstado,
+    UserRole,
+)
 
 logger = get_logger(__name__)
 
@@ -210,8 +210,23 @@ PEDAGOGICAL_ROLES = {
     "summary",
     "closing",
 }
-EDITABLE_ROLES = {"objective", "prior_knowledge", "activity", "comprehension_check", "assessment"}
-FULL_IMAGE_ROLES = {"cover", "concept", "explanation", "example", "process", "comparison", "summary", "closing"}
+EDITABLE_ROLES = {
+    "objective",
+    "prior_knowledge",
+    "activity",
+    "comprehension_check",
+    "assessment",
+}
+FULL_IMAGE_ROLES = {
+    "cover",
+    "concept",
+    "explanation",
+    "example",
+    "process",
+    "comparison",
+    "summary",
+    "closing",
+}
 LAYOUT_HINTS = {"editable", "full_image", "cover", "support"}
 
 
@@ -231,7 +246,9 @@ async def _resolve_presentacion_context(
     db: AsyncSession, payload: PresentacionCreate, current_user: User
 ) -> tuple[UUID, PresentacionCreate]:
     if payload.materia_id:
-        materia = await materias_service.ensure_can_manage_materia(db, payload.materia_id, current_user)
+        materia = await materias_service.ensure_can_manage_materia(
+            db, payload.materia_id, current_user
+        )
         enriched = payload.model_copy(
             update={
                 "materia_nombre": materia.nombre,
@@ -249,7 +266,9 @@ async def create_presentacion(
     payload: PresentacionCreate,
     current_user: User,
 ) -> Presentacion:
-    profesor_id, payload = await _resolve_presentacion_context(db, payload, current_user)
+    profesor_id, payload = await _resolve_presentacion_context(
+        db, payload, current_user
+    )
     input_data = payload.model_dump(mode="json")
     slides_json = {
         "input": input_data,
@@ -343,7 +362,9 @@ async def _run_generation(db: AsyncSession, pres: Presentacion) -> None:
     await db.commit()
 
 
-async def _generate_slides(payload: PresentacionCreate, profesor_id: UUID) -> list[dict]:
+async def _generate_slides(
+    payload: PresentacionCreate, profesor_id: UUID
+) -> list[dict]:
     llm = LLMRouter(user_id=profesor_id)
     base_prompt = SLIDES_PROMPT.format(
         tema=payload.tema,
@@ -370,7 +391,9 @@ async def _generate_slides(payload: PresentacionCreate, profesor_id: UUID) -> li
         else:
             slides_raw = []
         if isinstance(slides_raw, list) and slides_raw:
-            polished = _polish_slides_for_presenton(normalize_presentation(slides_raw), topic=payload.tema)
+            polished = _polish_slides_for_export(
+                normalize_presentation(slides_raw), topic=payload.tema
+            )
             candidate = _apply_pedagogical_slide_defaults(polished, payload)
             last_issues = _presentation_quality_issues(candidate, payload)
             score = (abs(len(candidate) - payload.cantidad_slides), len(last_issues))
@@ -382,7 +405,11 @@ async def _generate_slides(payload: PresentacionCreate, profesor_id: UUID) -> li
         else:
             candidate = []
             last_issues = ["La respuesta no contiene el arreglo slides."]
-        logger.warning("Presentation content rejected on attempt %d: %s", attempt, "; ".join(last_issues[:8]))
+        logger.warning(
+            "Presentation content rejected on attempt %d: %s",
+            attempt,
+            "; ".join(last_issues[:8]),
+        )
         previous = json.dumps(candidate, ensure_ascii=False)[:9000]
         prompt = (
             base_prompt
@@ -439,7 +466,7 @@ async def _review_slides_for_accuracy(
         return slides
 
     reviewed = _apply_pedagogical_slide_defaults(
-        _polish_slides_for_presenton(
+        _polish_slides_for_export(
             normalize_presentation(reviewed_raw),
             topic=payload.tema,
         ),
@@ -447,9 +474,12 @@ async def _review_slides_for_accuracy(
     )
     issues = _presentation_quality_issues(reviewed, payload)
     if issues:
-        logger.warning("Presentation factual review rejected: %s", "; ".join(issues[:8]))
+        logger.warning(
+            "Presentation factual review rejected: %s", "; ".join(issues[:8])
+        )
         return slides
     return reviewed
+
 
 def _contains_generic_marker(value: Any) -> bool:
     normalized = " ".join(str(value or "").lower().split())
@@ -531,7 +561,9 @@ def _repair_incomplete_presentation(
     seen_messages: set[str] = set()
 
     for index, slide in enumerate(repaired):
-        role = _normalize_role(slide.get("role"), index=index, title=str(slide.get("title") or ""))
+        role = _normalize_role(
+            slide.get("role"), index=index, title=str(slide.get("title") or "")
+        )
         slide["role"] = role
         title = str(slide.get("title") or "").strip()
         if not title or _contains_generic_marker(title):
@@ -539,7 +571,9 @@ def _repair_incomplete_presentation(
 
         bullets = [
             bullet
-            for bullet in _clean_text_list(slide.get("bullets"), max_items=4, max_chars=160)
+            for bullet in _clean_text_list(
+                slide.get("bullets"), max_items=4, max_chars=160
+            )
             if not _contains_generic_marker(bullet)
         ]
         for fallback in _repair_role_bullets(role, topic=topic, area=area, grade=grade):
@@ -551,7 +585,11 @@ def _repair_incomplete_presentation(
 
         message = str(slide.get("key_message") or "").strip()
         normalized_message = " ".join(message.lower().split())
-        if not message or _contains_generic_marker(message) or normalized_message in seen_messages:
+        if (
+            not message
+            or _contains_generic_marker(message)
+            or normalized_message in seen_messages
+        ):
             message = _clip_text(
                 f"{topic}: {slide.get('title') or f'idea {index + 1}'}",
                 110,
@@ -564,7 +602,9 @@ def _repair_incomplete_presentation(
             not str(slide.get("activity") or "").strip()
             or _contains_generic_marker(slide.get("activity"))
         ):
-            slide["activity"] = f"Resuelve un ejemplo de {topic} y explica el procedimiento al grupo."
+            slide["activity"] = (
+                f"Resuelve un ejemplo de {topic} y explica el procedimiento al grupo."
+            )
         if role in {"comprehension_check", "assessment"} and (
             not str(slide.get("question") or "").strip()
             or _contains_generic_marker(slide.get("question"))
@@ -574,28 +614,52 @@ def _repair_incomplete_presentation(
     return _merge_structured_content_into_bullets(repaired)
 
 
-def _presentation_quality_issues(slides: list[dict], payload: PresentacionCreate) -> list[str]:
+def _presentation_quality_issues(
+    slides: list[dict], payload: PresentacionCreate
+) -> list[str]:
     issues: list[str] = []
     if len(slides) != payload.cantidad_slides:
-        issues.append(f"Se esperaban {payload.cantidad_slides} diapositivas y llegaron {len(slides)}.")
+        issues.append(
+            f"Se esperaban {payload.cantidad_slides} diapositivas y llegaron {len(slides)}."
+        )
     messages: dict[str, int] = {}
     for index, slide in enumerate(slides):
         role = str(slide.get("role") or "concept")
         bullets = _clean_text_list(slide.get("bullets"), max_items=4, max_chars=160)
-        visible = " ".join(str(slide.get(field) or "") for field in ("title", "key_message", "example", "activity", "question")) + " " + " ".join(bullets)
+        visible = (
+            " ".join(
+                str(slide.get(field) or "")
+                for field in ("title", "key_message", "example", "activity", "question")
+            )
+            + " "
+            + " ".join(bullets)
+        )
         normalized = " ".join(visible.lower().split())
         if role != "cover" and len(bullets) < 2:
-            issues.append(f"La diapositiva {index + 1} tiene menos de dos ideas visibles.")
+            issues.append(
+                f"La diapositiva {index + 1} tiene menos de dos ideas visibles."
+            )
         if role != "cover" and len(normalized.split()) < 16:
-            issues.append(f"La diapositiva {index + 1} no desarrolla contenido suficiente.")
+            issues.append(
+                f"La diapositiva {index + 1} no desarrolla contenido suficiente."
+            )
         for marker in GENERIC_PRESENTATION_MARKERS:
             if marker in normalized:
-                issues.append(f"La diapositiva {index + 1} usa contenido generico: {marker}.")
+                issues.append(
+                    f"La diapositiva {index + 1} usa contenido generico: {marker}."
+                )
                 break
         if role == "activity" and not str(slide.get("activity") or "").strip():
-            issues.append(f"La diapositiva {index + 1} no define una actividad concreta.")
-        if role in {"comprehension_check", "assessment"} and not str(slide.get("question") or "").strip():
-            issues.append(f"La diapositiva {index + 1} no incluye una pregunta comprobable.")
+            issues.append(
+                f"La diapositiva {index + 1} no define una actividad concreta."
+            )
+        if (
+            role in {"comprehension_check", "assessment"}
+            and not str(slide.get("question") or "").strip()
+        ):
+            issues.append(
+                f"La diapositiva {index + 1} no incluye una pregunta comprobable."
+            )
         message = " ".join(str(slide.get("key_message") or "").lower().split())
         if message:
             messages[message] = messages.get(message, 0) + 1
@@ -666,7 +730,9 @@ def _normalize_layout_hint(value: Any, *, role: str, index: int, legacy: bool) -
     return "support"
 
 
-def _clean_text_list(value: Any, *, max_items: int = 8, max_chars: int = 90) -> list[str]:
+def _clean_text_list(
+    value: Any, *, max_items: int = 8, max_chars: int = 90
+) -> list[str]:
     if not isinstance(value, list):
         value = [value] if value else []
     cleaned: list[str] = []
@@ -767,12 +833,21 @@ def _default_tags(payload: PresentacionCreate, slide: dict, role: str) -> list[s
     return tags[:6]
 
 
-def _apply_pedagogical_slide_defaults(slides: list[dict], payload: PresentacionCreate) -> list[dict]:
+def _apply_pedagogical_slide_defaults(
+    slides: list[dict], payload: PresentacionCreate
+) -> list[dict]:
     normalized: list[dict] = []
     for index, slide in enumerate(slides):
-        legacy = not any(slide.get(key) for key in ("role", "layout_hint", "visual_concept", "key_message"))
-        role = _normalize_role(slide.get("role"), index=index, title=str(slide.get("title") or ""))
-        layout_hint = _normalize_layout_hint(slide.get("layout_hint"), role=role, index=index, legacy=legacy)
+        legacy = not any(
+            slide.get(key)
+            for key in ("role", "layout_hint", "visual_concept", "key_message")
+        )
+        role = _normalize_role(
+            slide.get("role"), index=index, title=str(slide.get("title") or "")
+        )
+        layout_hint = _normalize_layout_hint(
+            slide.get("layout_hint"), role=role, index=index, legacy=legacy
+        )
         exact_math_content = _slide_has_exact_math_content(
             slide,
             area=payload.area,
@@ -780,15 +855,23 @@ def _apply_pedagogical_slide_defaults(slides: list[dict], payload: PresentacionC
         )
         visual_concept = str(slide.get("visual_concept") or "").strip()
         legacy_image = str(slide.get("image") or "").strip()
-        if not visual_concept and legacy_image and not legacy_image.startswith("/static/"):
+        if (
+            not visual_concept
+            and legacy_image
+            and not legacy_image.startswith("/static/")
+        ):
             visual_concept = legacy_image
         if not visual_concept and layout_hint == "full_image":
-            visual_concept = f"Escena educativa clara sobre {slide.get('title') or payload.tema}"
+            visual_concept = (
+                f"Escena educativa clara sobre {slide.get('title') or payload.tema}"
+            )
         if exact_math_content:
             layout_hint = "editable"
             visual_concept = ""
 
-        image_text_expected = _clean_text_list(slide.get("image_text_expected"), max_items=4, max_chars=90)
+        image_text_expected = _clean_text_list(
+            slide.get("image_text_expected"), max_items=4, max_chars=90
+        )
         if exact_math_content:
             image_text_expected = []
         if layout_hint == "full_image" and not image_text_expected:
@@ -899,21 +982,31 @@ def _apply_role_sequence(slides: list[dict]) -> list[dict]:
         if previous_role == target_role:
             continue
         slide["role"] = target_role
-        slide["layout_hint"] = _normalize_layout_hint(None, role=target_role, index=index, legacy=False)
+        slide["layout_hint"] = _normalize_layout_hint(
+            None, role=target_role, index=index, legacy=False
+        )
         if slide["layout_hint"] == "editable":
             slide["image_text_expected"] = []
             slide.pop("slide_type", None)
             if slide.get("layout") == "full_image":
                 slide.pop("layout", None)
-        elif slide["layout_hint"] == "full_image" and not slide.get("image_text_expected"):
+        elif slide["layout_hint"] == "full_image" and not slide.get(
+            "image_text_expected"
+        ):
             slide["image_text_expected"] = _default_image_text(slide, role=target_role)
         title = str(slide.get("title") or "").strip()
         if title.lower() in generic_titles or previous_role != target_role:
-            slide["title"] = labels.get(target_role, title or f"Diapositiva {index + 1}")
+            slide["title"] = labels.get(
+                target_role, title or f"Diapositiva {index + 1}"
+            )
         if target_role == "comprehension_check" and not slide.get("question"):
-            slide["question"] = "Que idea clave puedes explicar con tus propias palabras?"
+            slide["question"] = (
+                "Que idea clave puedes explicar con tus propias palabras?"
+            )
         if target_role == "activity" and not slide.get("activity"):
-            slide["activity"] = "Aplica la idea principal en una situacion cercana al grupo."
+            slide["activity"] = (
+                "Aplica la idea principal en una situacion cercana al grupo."
+            )
     return slides
 
 
@@ -942,29 +1035,55 @@ def _merge_structured_content_into_bullets(slides: list[dict]) -> list[dict]:
 def _has_pedagogical_intent(slide: dict) -> bool:
     if slide.get("_legacy_layout_fallback"):
         return False
-    return any(slide.get(key) for key in ("role", "layout_hint", "visual_concept", "key_message", "image_text_expected"))
+    return any(
+        slide.get(key)
+        for key in (
+            "role",
+            "layout_hint",
+            "visual_concept",
+            "key_message",
+            "image_text_expected",
+        )
+    )
 
 
-def _should_be_full_image(slide: dict, *, index: int, legacy_full_idx: int | None) -> bool:
+def _should_be_full_image(
+    slide: dict, *, index: int, legacy_full_idx: int | None
+) -> bool:
     if _slide_has_exact_math_content(slide):
         return False
     if not _has_pedagogical_intent(slide):
         return index == legacy_full_idx
-    role = _normalize_role(slide.get("role"), index=index, title=str(slide.get("title") or ""))
+    role = _normalize_role(
+        slide.get("role"), index=index, title=str(slide.get("title") or "")
+    )
     layout_hint = str(slide.get("layout_hint") or "").strip().lower()
-    image_text_expected = _clean_text_list(slide.get("image_text_expected"), max_items=4, max_chars=90)
-    visual_concept = str(slide.get("visual_concept") or slide.get("image") or "").strip()
+    image_text_expected = _clean_text_list(
+        slide.get("image_text_expected"), max_items=4, max_chars=90
+    )
+    visual_concept = str(
+        slide.get("visual_concept") or slide.get("image") or ""
+    ).strip()
     if role in EDITABLE_ROLES and layout_hint != "full_image":
         return False
     if layout_hint == "editable":
         return False
     if layout_hint == "full_image":
         return bool(visual_concept and image_text_expected)
-    return bool(role in FULL_IMAGE_ROLES and visual_concept and image_text_expected and _visible_words(image_text_expected) <= 45)
+    return bool(
+        role in FULL_IMAGE_ROLES
+        and visual_concept
+        and image_text_expected
+        and _visible_words(image_text_expected) <= 45
+    )
 
 
-def _image_kind_for_slide(slide: dict, *, index: int, legacy_full_idx: int | None) -> str:
-    role = _normalize_role(slide.get("role"), index=index, title=str(slide.get("title") or ""))
+def _image_kind_for_slide(
+    slide: dict, *, index: int, legacy_full_idx: int | None
+) -> str:
+    role = _normalize_role(
+        slide.get("role"), index=index, title=str(slide.get("title") or "")
+    )
     if role == "cover" or (index == 0 and not _has_pedagogical_intent(slide)):
         return "cover"
     if _should_be_full_image(slide, index=index, legacy_full_idx=legacy_full_idx):
@@ -979,7 +1098,10 @@ def _image_kind_for_slide(slide: dict, *, index: int, legacy_full_idx: int | Non
 
 
 async def _attach_slide_images(
-    db: AsyncSession, pres: Presentacion, slides: list[dict], payload: PresentacionCreate
+    db: AsyncSession,
+    pres: Presentacion,
+    slides: list[dict],
+    payload: PresentacionCreate,
 ) -> None:
     """Genera las imágenes IA de la presentación en 3 fases:
 
@@ -999,20 +1121,24 @@ async def _attach_slide_images(
         if _should_be_full_image(slide, index=index, legacy_full_idx=legacy_full_idx):
             eligible.add(index)
     eligible = {
-        index
-        for index in eligible
-        if not _slide_has_exact_math_content(slides[index])
+        index for index in eligible if not _slide_has_exact_math_content(slides[index])
     }
     if not eligible:
         return
-    eligible_order = {slide_index: order for order, slide_index in enumerate(sorted(eligible))}
+    eligible_order = {
+        slide_index: order for order, slide_index in enumerate(sorted(eligible))
+    }
 
     # ── Fase 1: plan + dedupe por biblioteca ────────────────────────────────
     plans: list[dict] = []
     for index in sorted(eligible):
         slide = slides[index]
         title = str(slide.get("title") or f"Diapositiva {index + 1}")
-        raw_prompt = str(slide.get("visual_concept") or slide.get("image") or f"Ilustracion educativa sobre {title}")
+        raw_prompt = str(
+            slide.get("visual_concept")
+            or slide.get("image")
+            or f"Ilustracion educativa sobre {title}"
+        )
         bullets = slide.get("bullets") if isinstance(slide.get("bullets"), list) else []
         provider = _image_provider_for_slide(
             index=index,
@@ -1021,7 +1147,9 @@ async def _attach_slide_images(
             title=title,
             prompt=raw_prompt,
         )
-        kind = _image_kind_for_slide(slide, index=index, legacy_full_idx=legacy_full_idx)
+        kind = _image_kind_for_slide(
+            slide, index=index, legacy_full_idx=legacy_full_idx
+        )
         if kind == "full_image":
             # full_image siempre por OpenAI: es quien renderiza texto legible.
             provider = ImageProvider.OPENAI
@@ -1058,7 +1186,9 @@ async def _attach_slide_images(
                 ]
                 if str(item or "").strip()
             )
-            slide["tags"] = _clean_text_list(slide.get("tags"), max_items=6, max_chars=28)
+            slide["tags"] = _clean_text_list(
+                slide.get("tags"), max_items=6, max_chars=28
+            )
         modelo, calidad = imagenes_service.provider_model_quality(provider.value)
         prompt_hash = imagenes_service.compute_prompt_hash(
             bundle.prompt_usado, modelo=modelo, calidad=calidad, size=SLIDE_IMAGE_SIZE
@@ -1094,7 +1224,9 @@ async def _attach_slide_images(
         async with sem:
             try:
                 plan["result"] = await generate_ai_slide_image_detailed(
-                    plan["title"], plan["bundle"].prompt_usado, provider=plan["provider"]
+                    plan["title"],
+                    plan["bundle"].prompt_usado,
+                    provider=plan["provider"],
                 )
             except Exception as exc:  # noqa: BLE001
                 logger.warning("No se pudo generar imagen para slide %d", plan["index"])
@@ -1117,7 +1249,11 @@ async def _attach_slide_images(
         if result.get("url"):
             slide["image_asset"] = result["url"]
         is_real = bool(result.get("url")) and not result.get("placeholder")
-        estado = "reused" if (result.get("reused") and is_real) else ("success" if is_real else "failed")
+        estado = (
+            "reused"
+            if (result.get("reused") and is_real)
+            else ("success" if is_real else "failed")
+        )
         await imagenes_service.register_imagen_generada(
             db,
             prompt_original=bundle.prompt_original,
@@ -1130,7 +1266,10 @@ async def _attach_slide_images(
             ),
             tags=_clean_text_list(slide.get("tags"), max_items=6, max_chars=28)
             or imagenes_service.build_default_tags(
-                tema=payload.tema, area=payload.area, grado=payload.grado, tipo_uso=bundle.tipo_uso
+                tema=payload.tema,
+                area=payload.area,
+                grado=payload.grado,
+                tipo_uso=bundle.tipo_uso,
             ),
             tema=payload.tema,
             area=payload.area,
@@ -1156,13 +1295,15 @@ async def _attach_slide_images(
         await db.rollback()
 
 
-def _polish_slides_for_presenton(slides: list[dict], *, topic: str = "") -> list[dict]:
+def _polish_slides_for_export(slides: list[dict], *, topic: str = "") -> list[dict]:
     polished: list[dict] = []
     for index, slide in enumerate(slides):
         title = _slide_title(str(slide.get("title") or ""), index=index, topic=topic)
         bullets = slide.get("bullets") if isinstance(slide.get("bullets"), list) else []
         # Viñetas completas y educativas (ideas claras), no fragmentos de 2 palabras.
-        compact_bullets = [_clip_text(str(item), 160) for item in bullets if str(item).strip()]
+        compact_bullets = [
+            _clip_text(str(item), 160) for item in bullets if str(item).strip()
+        ]
         compact_bullets = [item for item in compact_bullets if len(item) >= 3][:4]
         if not compact_bullets:
             note = str(slide.get("notes") or "Idea clave para trabajar en clase.")
@@ -1180,7 +1321,14 @@ def _polish_slides_for_presenton(slides: list[dict], *, topic: str = "") -> list
 
 def _slide_title(value: str, *, index: int, topic: str) -> str:
     cleaned = " ".join(str(value).split()).strip()
-    generic = {"portada", "objetivo", "conceptos", "cierre", "introduccion", "introducción"}
+    generic = {
+        "portada",
+        "objetivo",
+        "conceptos",
+        "cierre",
+        "introduccion",
+        "introducción",
+    }
     if cleaned.lower() in generic:
         replacements = {
             0: _short_topic_title(topic) or "Inicio de la clase",
@@ -1277,14 +1425,24 @@ def _fallback_slides(payload: PresentacionCreate) -> list[dict]:
                 "key_message": f"Comprender {payload.tema} con ejemplos claros.",
                 "bullets": bullets,
                 "example": "",
-                "activity": "Ajusta esta actividad al grupo." if role == "activity" else "",
-                "question": "Que idea clave puedes explicar con tus palabras?" if role in {"summary", "closing"} else "",
+                "activity": "Ajusta esta actividad al grupo."
+                if role == "activity"
+                else "",
+                "question": "Que idea clave puedes explicar con tus palabras?"
+                if role in {"summary", "closing"}
+                else "",
                 "visual_concept": visual_concept,
                 "layout_hint": layout_hint,
-                "image_text_expected": [] if layout_hint == "editable" else [title.upper(), f"Idea clave sobre {payload.tema}"],
+                "image_text_expected": []
+                if layout_hint == "editable"
+                else [title.upper(), f"Idea clave sobre {payload.tema}"],
                 "image": visual_concept,
                 "notes": "Ajusta ejemplos al contexto del grupo.",
-                "tags": [str(payload.area or "").lower(), str(payload.tema or "").lower(), role],
+                "tags": [
+                    str(payload.area or "").lower(),
+                    str(payload.tema or "").lower(),
+                    role,
+                ],
             }
         )
     return slides
@@ -1293,11 +1451,16 @@ def _fallback_slides(payload: PresentacionCreate) -> list[dict]:
 def _payload_from_presentacion(pres: Presentacion) -> PresentacionCreate:
     input_data = (pres.slides_json or {}).get("input")
     if not isinstance(input_data, dict):
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="La presentacion no tiene datos de entrada.")
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="La presentacion no tiene datos de entrada.",
+        )
     return PresentacionCreate.model_validate(input_data)
 
 
-async def _store_local_export_result(db: AsyncSession, pres: Presentacion, export_as: ExportFormat) -> None:
+async def _store_local_export_result(
+    db: AsyncSession, pres: Presentacion, export_as: ExportFormat
+) -> None:
     slides = extract_slides_for_export(pres.slides_json)
     canonical = build_canonical_from_legacy(pres.slides_json, pres)
     if not slides:
@@ -1313,7 +1476,11 @@ async def _store_local_export_result(db: AsyncSession, pres: Presentacion, expor
             content = build_editable_pptx(canonical)
             editable = True
         except Exception as exc:  # noqa: BLE001
-            logger.warning("Editable PPTX export failed for %s; using local fallback: %s", pres.id, exc)
+            logger.warning(
+                "Editable PPTX export failed for %s; using local fallback: %s",
+                pres.id,
+                exc,
+            )
             content = build_local_export(pres.titulo, slides, export_as)
     else:
         content = build_local_export(pres.titulo, slides, export_as)
@@ -1322,7 +1489,9 @@ async def _store_local_export_result(db: AsyncSession, pres: Presentacion, expor
         pres.pptx_url = file_url
     else:
         pres.pdf_url = file_url
-    pres.slides_json = _with_canonical_exports(pres, export_as, file_url, len(content), editable=editable)
+    pres.slides_json = _with_canonical_exports(
+        pres, export_as, file_url, len(content), editable=editable
+    )
     await db.commit()
     await db.refresh(pres)
 
@@ -1336,7 +1505,9 @@ async def export_presentacion(
     return pres
 
 
-async def list_presentaciones(db: AsyncSession, current_user: User) -> list[Presentacion]:
+async def list_presentaciones(
+    db: AsyncSession, current_user: User
+) -> list[Presentacion]:
     if _is_admin(current_user):
         stmt = select(Presentacion).order_by(Presentacion.created_at.desc())
     elif _is_profesor(current_user):
@@ -1374,43 +1545,74 @@ async def _student_materia_ids(db: AsyncSession, estudiante_id: UUID) -> list[UU
     return list(result)
 
 
-async def get_presentacion_or_404(db: AsyncSession, presentacion_id: UUID) -> Presentacion:
-    pres = await db.scalar(select(Presentacion).where(Presentacion.id == presentacion_id))
+async def get_presentacion_or_404(
+    db: AsyncSession, presentacion_id: UUID
+) -> Presentacion:
+    pres = await db.scalar(
+        select(Presentacion).where(Presentacion.id == presentacion_id)
+    )
     if not pres:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Presentacion no encontrada")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Presentacion no encontrada"
+        )
     return pres
 
 
-async def get_presentacion_by_presenton_id_or_404(db: AsyncSession, presenton_id: str) -> Presentacion:
-    pres = await db.scalar(select(Presentacion).where(Presentacion.presenton_id == presenton_id))
-    if not pres:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Presentacion no encontrada")
-    return pres
-
-
-async def ensure_can_read_presentacion(db: AsyncSession, presentacion_id: UUID, current_user: User) -> Presentacion:
+async def ensure_can_read_presentacion(
+    db: AsyncSession, presentacion_id: UUID, current_user: User
+) -> Presentacion:
     pres = await get_presentacion_or_404(db, presentacion_id)
     if _is_admin(current_user) or pres.profesor_id == current_user.id:
         return pres
-    if _is_estudiante(current_user) and pres.materia_id and (pres.slides_json or {}).get("publicada") is True:
+    if (
+        _is_estudiante(current_user)
+        and pres.materia_id
+        and (pres.slides_json or {}).get("publicada") is True
+    ):
         materia_ids = await _student_materia_ids(db, current_user.id)
         if pres.materia_id in materia_ids:
             return pres
-    raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not enough permissions")
+    raise HTTPException(
+        status_code=status.HTTP_403_FORBIDDEN, detail="Not enough permissions"
+    )
 
 
-async def ensure_can_manage_presentacion(db: AsyncSession, presentacion_id: UUID, current_user: User) -> Presentacion:
+async def ensure_can_manage_presentacion(
+    db: AsyncSession, presentacion_id: UUID, current_user: User
+) -> Presentacion:
     pres = await get_presentacion_or_404(db, presentacion_id)
     if _is_admin(current_user) or pres.profesor_id == current_user.id:
         return pres
-    raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not enough permissions")
+    raise HTTPException(
+        status_code=status.HTTP_403_FORBIDDEN, detail="Not enough permissions"
+    )
 
 
-async def ensure_can_manage_presenton_id(db: AsyncSession, presenton_id: str, current_user: User) -> Presentacion:
-    pres = await get_presentacion_by_presenton_id_or_404(db, presenton_id)
-    if _is_admin(current_user) or pres.profesor_id == current_user.id:
-        return pres
-    raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not enough permissions")
+def build_preview_metadata(pres: Presentacion) -> dict[str, Any]:
+    slides = extract_slides_for_export(pres.slides_json)
+    return {
+        "id": pres.id,
+        "titulo": pres.titulo,
+        "total": len(slides),
+        "slides": [
+            {
+                "numero": index + 1,
+                "titulo": str(slide.get("title") or f"Diapositiva {index + 1}"),
+                "image_url": f"/api/presentaciones/{pres.id}/preview/{index + 1}.png",
+            }
+            for index, slide in enumerate(slides)
+        ],
+    }
+
+
+def render_preview_slide(pres: Presentacion, slide_number: int) -> bytes:
+    slides = extract_slides_for_export(pres.slides_json)
+    if slide_number < 1 or slide_number > len(slides):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Diapositiva no encontrada"
+        )
+    index = slide_number - 1
+    return render_slide_png(pres.titulo, slides[index], index, len(slides))
 
 
 def build_estado(pres: Presentacion) -> dict:
@@ -1433,73 +1635,33 @@ def build_estado(pres: Presentacion) -> dict:
 def get_download_path(pres: Presentacion, export_as: ExportFormat):
     path = get_export_file_path(pres.id, export_as)
     if not path.is_file():
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Archivo no encontrado")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Archivo no encontrado"
+        )
     return path
 
 
-async def build_editor_launch(db: AsyncSession, pres: Presentacion, current_user: User) -> dict:
-    if not pres.presenton_id:
-        await _create_presenton_editor_copy(db, pres)
-    try:
-        UUID(str(pres.presenton_id))
-    except ValueError:
-        pass
-    else:
-        await ensure_presenton_presentation_ready(
-            pres.presenton_id,
-            xcal_slides=extract_slides_for_export(pres.slides_json),
-            title=pres.titulo,
-        )
-    token = create_editor_token(pres.id, current_user.id, pres.presenton_id)
-    return {
-        "url": f"/api/presentaciones/{pres.id}/editor?token={token}",
-        "expires_in": settings.PRESENTON_EDITOR_TOKEN_EXPIRE_SECONDS,
-    }
-
-
-async def _create_presenton_editor_copy(db: AsyncSession, pres: Presentacion) -> None:
-    slides = extract_slides_for_export(pres.slides_json)
-    if not slides:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="La presentacion no tiene slides para abrir editor.",
-        )
-    input_data = (pres.slides_json or {}).get("input") if isinstance(pres.slides_json, dict) else {}
-    payload = build_generation_payload(
-        title=pres.titulo,
-        topic=str(input_data.get("tema") or pres.titulo) if isinstance(input_data, dict) else pres.titulo,
-        area=str(input_data.get("area") or "") if isinstance(input_data, dict) else None,
-        grade=str(input_data.get("grado") or "") if isinstance(input_data, dict) else None,
-        instructions=str(input_data.get("instrucciones") or "") if isinstance(input_data, dict) else None,
-        slides=slides,
-        export_as="pptx",
+async def ensure_current_pptx_download(db: AsyncSession, pres: Presentacion):
+    """Regenerate legacy text-only PPTX files when canonical slides have visuals."""
+    path = get_download_path(pres, "pptx")
+    canonical = build_canonical_from_legacy(pres.slides_json, pres)
+    slides = (
+        canonical.get("slides") if isinstance(canonical.get("slides"), list) else []
     )
-    editor = await create_editor_presentation(payload)
-    pres.presenton_id = str(editor.get("presentation_id") or editor.get("id") or "")
-    if not pres.presenton_id:
-        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail="Presenton no devolvio ID de editor.")
-    pres.slides_json = {
-        **(pres.slides_json or {}),
-        "presenton": {
-            **((pres.slides_json or {}).get("presenton") or {}),
-            "presentation_id": pres.presenton_id,
-            "edit_path": editor.get("edit_path"),
-            "role": "editor_only",
-        },
-    }
-    await db.commit()
-    await db.refresh(pres)
-
-
-def verify_editor_launch_token(pres: Presentacion, current_user: User, token: str) -> str:
-    if not pres.presenton_id:
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="La presentacion aun no tiene editor.")
-    verify_editor_token(token, pres.id, current_user.id, pres.presenton_id)
-    return build_editor_redirect_url(pres.presenton_id)
-
-
-async def build_presenton_session_cookie() -> str:
-    return await create_presenton_session_cookie()
+    has_visuals = any(
+        isinstance(slide, dict)
+        and isinstance(slide.get("imagen"), dict)
+        and bool(slide["imagen"].get("url"))
+        for slide in slides
+    )
+    if has_visuals and not pptx_has_slides_and_media(path.read_bytes()):
+        logger.info(
+            "Regenerating legacy text-only PPTX",
+            extra={"presentation_id": str(pres.id)},
+        )
+        await _store_local_export_result(db, pres, "pptx")
+        path = get_download_path(pres, "pptx")
+    return path
 
 
 async def delete_presentacion(db: AsyncSession, pres: Presentacion) -> None:
@@ -1566,7 +1728,11 @@ def _with_canonical_exports(
     slides_json = dict(pres.slides_json or {})
     canonical = _canonical_for_presentacion(pres, slides_json)
     if export_as == "pptx":
-        canonical["exports"]["pptx"] = {"url": file_url, "editable": editable, "bytes": file_size}
+        canonical["exports"]["pptx"] = {
+            "url": file_url,
+            "editable": editable,
+            "bytes": file_size,
+        }
     else:
         canonical["exports"]["pdf"] = {"url": file_url, "bytes": file_size}
     slides_json["canonical"] = canonical

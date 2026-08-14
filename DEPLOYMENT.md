@@ -8,7 +8,7 @@
 - VPS Linux x86_64 con Docker Engine y Docker Compose v2.
 - Dominio o IP pública configurada en `SERVER_NAME` y `TRUSTED_HOSTS`.
 - HTTPS terminado por Cloudflare, Caddy, Traefik o el proxy del proveedor. En producción las cookies son `Secure`, por lo que el acceso HTTP directo no permite iniciar sesión.
-- Recomendado: 4 vCPU, 8 GB RAM y 30 GB libres. Presenton y Ollama son los servicios más pesados.
+- Recomendado: 4 vCPU, 8 GB RAM y 30 GB libres. Ollama y los workers de IA son los servicios más pesados.
 
 ## Primera instalación
 
@@ -38,7 +38,7 @@ git pull --ff-only
 sh scripts/deploy-vps.sh
 ```
 
-Los uploads y datos de Presenton viven en `./uploads`; PostgreSQL, Redis y Ollama usan volúmenes Docker persistentes.
+Las imágenes y exportaciones de presentaciones viven en `./uploads`; PostgreSQL, Redis y Ollama usan volúmenes Docker persistentes.
 Configura `APP_UID` y `APP_GID` en `.env` con la salida de `id -u` e `id -g` del usuario que despliega. Backend y worker se ejecutan sin privilegios y necesitan que ese usuario sea propietario de `./uploads`.
 
 ## Operación
@@ -50,7 +50,7 @@ docker compose exec -T backend alembic current
 curl -fsS http://127.0.0.1:${HTTP_PORT:-80}/health
 ```
 
-PostgreSQL, Redis, Ollama, Presenton y FastAPI solo publican puertos sobre loopback. El único acceso público del stack es Nginx.
+PostgreSQL, Redis, Ollama y FastAPI solo publican puertos sobre loopback. El único acceso público del stack es Nginx.
 
 ## Rollback
 

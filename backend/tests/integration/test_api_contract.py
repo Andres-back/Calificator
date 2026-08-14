@@ -42,12 +42,8 @@ def test_phase_1_2_routes_are_registered() -> None:
         "/api/presentaciones/{presentacion_id}/estado",
         "/api/presentaciones/{presentacion_id}/exportar",
         "/api/presentaciones/{presentacion_id}/archivo/{fmt}",
-        "/api/presentaciones/{presentacion_id}/editor-url",
+        "/api/presentaciones/{presentacion_id}/preview",
+        "/api/presentaciones/{presentacion_id}/preview/{slide_number}.png",
     }
 
     assert expected_paths.issubset(paths)
-    editor_path = app.url_path_for(
-        "open_editor",
-        presentacion_id="00000000-0000-0000-0000-000000000000",
-    )
-    assert str(editor_path) == "/api/presentaciones/00000000-0000-0000-0000-000000000000/editor"

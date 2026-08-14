@@ -198,7 +198,6 @@ export interface Presentacion {
   estado: string;
   pptx_url: string | null;
   pdf_url: string | null;
-  presenton_id: string | null;
   error: string | null;
   created_at: string;
   updated_at: string;

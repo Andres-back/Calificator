@@ -3,10 +3,9 @@ from __future__ import annotations
 import re
 from pathlib import Path
 from uuid import UUID
-from urllib.parse import parse_qs, urlparse
 
-from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request, Response, status
-from fastapi.responses import FileResponse, RedirectResponse
+from fastapi import APIRouter, Depends, HTTPException, Response, status
+from fastapi.responses import FileResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
@@ -16,9 +15,9 @@ from app.db.session import get_db
 from app.modules.presentaciones import service
 from app.modules.presentaciones.schemas import (
     PresentacionCreate,
-    PresentacionEditorUrlRead,
     PresentacionEstadoRead,
     PresentacionExportRequest,
+    PresentacionPreviewRead,
     PresentacionRead,
 )
 from app.modules.users.models import User
@@ -38,7 +37,9 @@ async def create(
     require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
     pres = await service.create_presentacion(db, payload, current_user)
     generate_presentation.delay(str(pres.id))
-    logger.info("Presentation generation enqueued", extra={"presentation_id": str(pres.id)})
+    logger.info(
+        "Presentation generation enqueued", extra={"presentation_id": str(pres.id)}
+    )
     return pres
 
 
@@ -50,20 +51,6 @@ async def list_presentaciones(
     return await service.list_presentaciones(db, current_user)
 
 
-@router.get("/editor-auth", status_code=status.HTTP_204_NO_CONTENT, include_in_schema=False)
-async def editor_auth(
-    request: Request,
-    x_original_uri: str | None = Header(default=None, alias="X-Original-URI"),
-    current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
-) -> Response:
-    require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
-    presenton_id = _extract_presenton_id(x_original_uri or str(request.url))
-    if presenton_id:
-        await service.ensure_can_manage_presenton_id(db, presenton_id, current_user)
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
-
-
 @router.get("/assets/{asset_id}", include_in_schema=False)
 async def get_generated_asset(
     asset_id: str,
@@ -71,10 +58,14 @@ async def get_generated_asset(
 ) -> FileResponse:
     """Serve only generated presentation PNGs to authenticated users."""
     if not re.fullmatch(r"[0-9a-f]{18}", asset_id):
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Archivo no encontrado")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Archivo no encontrado"
+        )
     path = Path(settings.UPLOADS_DIR) / "presentaciones" / f"slide-{asset_id}.png"
     if not path.is_file():
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Archivo no encontrado")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Archivo no encontrado"
+        )
     return FileResponse(path, media_type="image/png")
 
 
@@ -97,6 +88,35 @@ async def get_estado(
     return service.build_estado(pres)
 
 
+@router.get("/{presentacion_id}/preview", response_model=PresentacionPreviewRead)
+async def preview_metadata(
+    presentacion_id: UUID,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    pres = await service.ensure_can_read_presentacion(db, presentacion_id, current_user)
+    return service.build_preview_metadata(pres)
+
+
+@router.get("/{presentacion_id}/preview/{slide_number}.png")
+async def preview_slide(
+    presentacion_id: UUID,
+    slide_number: int,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> Response:
+    pres = await service.ensure_can_read_presentacion(db, presentacion_id, current_user)
+    content = service.render_preview_slide(pres, slide_number)
+    return Response(
+        content=content,
+        media_type="image/png",
+        headers={
+            "Cache-Control": "private, no-store",
+            "X-Content-Type-Options": "nosniff",
+        },
+    )
+
+
 @router.post("/{presentacion_id}/exportar", response_model=PresentacionRead)
 async def exportar(
     presentacion_id: UUID,
@@ -105,7 +125,9 @@ async def exportar(
     db: AsyncSession = Depends(get_db),
 ) -> object:
     require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
-    pres = await service.ensure_can_manage_presentacion(db, presentacion_id, current_user)
+    pres = await service.ensure_can_manage_presentacion(
+        db, presentacion_id, current_user
+    )
     return await service.export_presentacion(db, pres, payload.format)
 
 
@@ -117,9 +139,15 @@ async def descargar_archivo(
     db: AsyncSession = Depends(get_db),
 ) -> FileResponse:
     if fmt not in {"pptx", "pdf"}:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Formato invalido")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Formato invalido"
+        )
     pres = await service.ensure_can_read_presentacion(db, presentacion_id, current_user)
-    path = service.get_download_path(pres, fmt)  # type: ignore[arg-type]
+    path = (
+        await service.ensure_current_pptx_download(db, pres)
+        if fmt == "pptx"
+        else service.get_download_path(pres, "pdf")
+    )
     media_type = (
         "application/vnd.openxmlformats-officedocument.presentationml.presentation"
         if fmt == "pptx"
@@ -136,41 +164,6 @@ async def descargar_archivo(
     )
 
 
-@router.post("/{presentacion_id}/editor-url", response_model=PresentacionEditorUrlRead)
-async def editor_url(
-    presentacion_id: UUID,
-    current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
-) -> dict:
-    require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
-    pres = await service.ensure_can_manage_presentacion(db, presentacion_id, current_user)
-    return await service.build_editor_launch(db, pres, current_user)
-
-
-@router.get("/{presentacion_id}/editor", include_in_schema=False)
-async def open_editor(
-    presentacion_id: UUID,
-    token: str = Query(...),
-    current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
-) -> RedirectResponse:
-    require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
-    pres = await service.ensure_can_manage_presentacion(db, presentacion_id, current_user)
-    redirect_url = service.verify_editor_launch_token(pres, current_user, token)
-    response = RedirectResponse(redirect_url)
-    presenton_cookie = await service.build_presenton_session_cookie()
-    response.set_cookie(
-        "presenton_session",
-        presenton_cookie,
-        httponly=True,
-        secure=settings.cookie_secure,
-        samesite="lax",
-        path="/",
-        max_age=60 * 60 * 24 * 30,
-    )
-    return response
-
-
 @router.delete("/{presentacion_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete(
     presentacion_id: UUID,
@@ -178,20 +171,8 @@ async def delete(
     db: AsyncSession = Depends(get_db),
 ) -> Response:
     require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
-    pres = await service.ensure_can_manage_presentacion(db, presentacion_id, current_user)
+    pres = await service.ensure_can_manage_presentacion(
+        db, presentacion_id, current_user
+    )
     await service.delete_presentacion(db, pres)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
-
-
-def _extract_presenton_id(uri: str) -> str | None:
-    parsed = urlparse(uri)
-    query_id = parse_qs(parsed.query).get("id")
-    if query_id and query_id[0]:
-        return query_id[0]
-
-    parts = [part for part in parsed.path.split("/") if part]
-    if "presentation" in parts:
-        idx = parts.index("presentation")
-        if idx + 1 < len(parts):
-            return parts[idx + 1]
-    return None

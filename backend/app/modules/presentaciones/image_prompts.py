@@ -8,6 +8,7 @@ Modos:
 GPT Image 2 en calidad LOW: prompts claros y concretos (45-90 palabras para
 full_image, 25-55 para apoyo), pocos elementos, alto contraste.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -45,14 +46,22 @@ def _clip(value: str, max_chars: int) -> str:
 
 def _safe_visual_topic(raw_prompt: str, *, topic: str, bullets: list) -> str:
     combined = f"{raw_prompt} {topic} {' '.join(str(item) for item in bullets)}".lower()
-    if "ecosistema" in combined or "cadena alimentaria" in combined or "cadenas alimentarias" in combined:
+    if (
+        "ecosistema" in combined
+        or "cadena alimentaria" in combined
+        or "cadenas alimentarias" in combined
+    ):
         return "ecosistema natural con relaciones ecologicas visibles entre seres vivos"
     return topic
 
 
 def _safe_visual_subject(raw_prompt: str, *, topic: str, bullets: list) -> str:
     combined = f"{raw_prompt} {topic} {' '.join(str(item) for item in bullets)}".lower()
-    if "ecosistema" in combined or "cadena alimentaria" in combined or "cadenas alimentarias" in combined:
+    if (
+        "ecosistema" in combined
+        or "cadena alimentaria" in combined
+        or "cadenas alimentarias" in combined
+    ):
         return (
             "escena natural de bosque o humedal con plantas productoras, insectos, conejo o venado, "
             "ave o zorro consumidor, hongos y hojas en descomposicion, relaciones ecologicas visibles sin etiquetas"
@@ -79,10 +88,16 @@ def _support_prompt(
     provider: ImageProvider,
 ) -> str:
     """Prompt de apoyo (sin texto). Mantiene el estilo premium existente."""
-    context = ", ".join(part for part in [area, f"grado {grade}" if grade else None] if part)
+    context = ", ".join(
+        part for part in [area, f"grado {grade}" if grade else None] if part
+    )
     context_text = f" para {context}" if context else ""
-    slide_context = "; ".join(_clip(str(item), 42) for item in bullets[:3] if str(item).strip())
-    slide_context_text = f" Ideas de la diapositiva: {slide_context}." if slide_context else ""
+    slide_context = "; ".join(
+        _clip(str(item), 42) for item in bullets[:3] if str(item).strip()
+    )
+    slide_context_text = (
+        f" Ideas de la diapositiva: {slide_context}." if slide_context else ""
+    )
     subject = _safe_visual_subject(raw_prompt, topic=topic, bullets=bullets)
     visual_topic = _safe_visual_topic(raw_prompt, topic=topic, bullets=bullets)
     if provider == ImageProvider.CLOUDFLARE:
@@ -102,7 +117,9 @@ def _support_prompt(
     )
 
 
-def _big_text_lines(title: str, topic: str, bullets: list, *, kind: PromptKind) -> list[str]:
+def _big_text_lines(
+    title: str, topic: str, bullets: list, *, kind: PromptKind
+) -> list[str]:
     """Texto grande esperado dentro de la imagen: corto, claro, 1-2 líneas."""
     main = _clip(title or topic, 40).upper().rstrip("…")
     lines = [main]
@@ -157,7 +174,9 @@ def build_presentation_image_prompt(
     (prompt_original, prompt_normalizado, prompt_usado, restricciones)."""
     bullets = bullets if isinstance(bullets, list) else []
     prompt_original = str(visual_concept or raw_prompt or "").strip()
-    normalized = _clip(_safe_visual_subject(prompt_original, topic=topic, bullets=bullets), 220)
+    normalized = _clip(
+        _safe_visual_subject(prompt_original, topic=topic, bullets=bullets), 220
+    )
 
     if kind in {"cover", "full_image"}:
         text_lines = _clean_text_lines(image_text_expected)
@@ -167,7 +186,9 @@ def build_presentation_image_prompt(
         nivel_txt = _nivel_text(grade, nivel)
         area_txt = f" de {area}" if area else ""
         role_txt = f" Rol pedagogico: {role}." if role else ""
-        key_txt = f" Idea educativa: {_clip(str(key_message), 95)}." if key_message else ""
+        key_txt = (
+            f" Idea educativa: {_clip(str(key_message), 95)}." if key_message else ""
+        )
         tag_txt = ""
         if isinstance(tags, list) and tags:
             tag_values = [_clip(str(tag), 24) for tag in tags[:4] if str(tag).strip()]
@@ -201,7 +222,11 @@ def build_presentation_image_prompt(
             image_text_expected=text_lines,
         )
 
-    tipo_por_kind = {"technical": "diagrama", "activity": "actividad", "closing": "cierre"}
+    tipo_por_kind = {
+        "technical": "diagrama",
+        "activity": "actividad",
+        "closing": "cierre",
+    }
     prompt_usado = _support_prompt(
         prompt_original,
         title=title,

@@ -87,15 +87,6 @@ class Settings(BaseSettings):
     EMBEDDING_MODEL: str = "text-embedding-3-small"
     EMBEDDING_DIMENSIONS: int = 1536
 
-    PRESENTON_INTERNAL_URL: str = "http://presenton:80"
-    PRESENTON_BASE_URL: str | None = None
-    PRESENTON_PUBLIC_URL: str = "http://localhost:5001"
-    PRESENTON_PUBLIC_EDITOR_URL: str = "/presenton"
-    PRESENTON_TEMPLATE: str = "modern"
-    PRESENTON_AUTH_USERNAME: str = "presenton_admin"
-    PRESENTON_AUTH_PASSWORD: str = ""
-    PRESENTON_ASSET_TIMEOUT: int = 120
-    PRESENTON_EDITOR_TOKEN_EXPIRE_SECONDS: int = 300
 
     MAX_PRESENTATION_PARALLEL_JOBS: int = 5
     MAX_LLM_CONCURRENT_CALLS: int = 10
@@ -138,9 +129,6 @@ class Settings(BaseSettings):
         if not redis_url.password:
             invalid.append("REDIS_URL must include a password")
 
-        presenton_password = self.PRESENTON_AUTH_PASSWORD.strip().lower()
-        if len(presenton_password) < 12 or presenton_password.startswith("change-me"):
-            invalid.append("PRESENTON_AUTH_PASSWORD must contain at least 12 non-default characters")
         if "*" in self.trusted_hosts:
             invalid.append("TRUSTED_HOSTS cannot contain '*' in production")
 

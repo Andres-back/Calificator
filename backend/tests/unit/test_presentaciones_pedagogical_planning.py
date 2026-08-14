@@ -5,7 +5,7 @@ from io import BytesIO
 
 from app.modules.presentaciones import service
 from app.modules.presentaciones.editable_pptx_service import build_editable_pptx
-from app.modules.presentaciones.local_export import _render_slide, _role_theme
+from app.modules.presentaciones.local_export import render_slide_png, _role_theme
 from app.modules.presentaciones.image_prompts import build_presentation_image_prompt
 from app.modules.presentaciones.presentation_schema import normalize_to_canonical
 from app.modules.presentaciones.schemas import PresentacionCreate
@@ -40,7 +40,15 @@ def test_slides_prompt_solicita_esquema_pedagogico_enriquecido() -> None:
         "tags",
     ]:
         assert field in prompt
-    for role in ["cover", "objective", "prior_knowledge", "concept", "activity", "assessment", "closing"]:
+    for role in [
+        "cover",
+        "objective",
+        "prior_knowledge",
+        "concept",
+        "activity",
+        "assessment",
+        "closing",
+    ]:
         assert role in prompt
     assert "exactitud matematica nunca depende de la imagen IA" in prompt
 
@@ -48,7 +56,12 @@ def test_slides_prompt_solicita_esquema_pedagogico_enriquecido() -> None:
 def test_roles_validos_se_conservan_y_roles_invalidos_tienen_fallback() -> None:
     slides = service._apply_pedagogical_slide_defaults(
         [
-            {"role": "cover", "title": "Inicio", "bullets": ["Idea inicial"], "visual_concept": "Aula"},
+            {
+                "role": "cover",
+                "title": "Inicio",
+                "bullets": ["Idea inicial"],
+                "visual_concept": "Aula",
+            },
             {"role": "rol_raro", "title": "Ejemplo guiado", "bullets": ["Idea clara"]},
         ],
         _payload(3),
@@ -61,8 +74,17 @@ def test_roles_validos_se_conservan_y_roles_invalidos_tienen_fallback() -> None:
 def test_slide_intermedia_puede_ser_full_image_y_ultima_editable() -> None:
     slides = service._apply_pedagogical_slide_defaults(
         [
-            {"role": "cover", "title": "Newton", "bullets": ["Inicio"], "visual_concept": "Portada"},
-            {"role": "objective", "title": "Objetivo", "bullets": ["Comprender la inercia"]},
+            {
+                "role": "cover",
+                "title": "Newton",
+                "bullets": ["Inicio"],
+                "visual_concept": "Portada",
+            },
+            {
+                "role": "objective",
+                "title": "Objetivo",
+                "bullets": ["Comprender la inercia"],
+            },
             {
                 "role": "concept",
                 "title": "Ley de la inercia",
@@ -70,7 +92,10 @@ def test_slide_intermedia_puede_ser_full_image_y_ultima_editable() -> None:
                 "bullets": ["Un objeto quieto permanece quieto."],
                 "visual_concept": "Autobus frenando con flechas simples",
                 "layout_hint": "full_image",
-                "image_text_expected": ["LEY DE LA INERCIA", "Un objeto quieto permanece quieto"],
+                "image_text_expected": [
+                    "LEY DE LA INERCIA",
+                    "Un objeto quieto permanece quieto",
+                ],
             },
             {
                 "role": "activity",
@@ -83,8 +108,18 @@ def test_slide_intermedia_puede_ser_full_image_y_ultima_editable() -> None:
     )
     legacy_full_idx = service._full_image_index(slides)
 
-    assert service._image_kind_for_slide(slides[2], index=2, legacy_full_idx=legacy_full_idx) == "full_image"
-    assert service._should_be_full_image(slides[3], index=3, legacy_full_idx=legacy_full_idx) is False
+    assert (
+        service._image_kind_for_slide(
+            slides[2], index=2, legacy_full_idx=legacy_full_idx
+        )
+        == "full_image"
+    )
+    assert (
+        service._should_be_full_image(
+            slides[3], index=3, legacy_full_idx=legacy_full_idx
+        )
+        is False
+    )
     assert slides[3]["layout_hint"] == "editable"
 
 
@@ -108,7 +143,7 @@ def test_exact_math_content_never_depends_on_generated_image() -> None:
                 "visual_concept": "Arreglos de circulos con cantidades exactas",
                 "layout_hint": "full_image",
                 "image_text_expected": ["12 = 2 x 6", "18 = 3 x 6"],
-                "image_asset": "/app_data/images/incorrecta.png",
+                "image_asset": "/api/presentaciones/assets/000000000000000000",
                 "slide_type": "full_image",
                 "layout": "full_image",
             }
@@ -172,7 +207,7 @@ def test_text_only_slides_use_colorful_role_aware_layouts() -> None:
 
     rendered = Image.open(
         BytesIO(
-            _render_slide(
+            render_slide_png(
                 "Factores",
                 {
                     "title": "Nuestra meta de hoy",
@@ -236,8 +271,16 @@ def test_editable_pptx_preserves_six_dots_per_math_array_row() -> None:
 def test_activity_y_assessment_son_editables_por_defecto() -> None:
     slides = service._apply_pedagogical_slide_defaults(
         [
-            {"role": "activity", "title": "Actividad", "bullets": ["Resuelve en equipo."]},
-            {"role": "assessment", "title": "Evaluacion", "bullets": ["Responde la pregunta."]},
+            {
+                "role": "activity",
+                "title": "Actividad",
+                "bullets": ["Resuelve en equipo."],
+            },
+            {
+                "role": "assessment",
+                "title": "Evaluacion",
+                "bullets": ["Responde la pregunta."],
+            },
         ],
         _payload(3),
     )
@@ -251,9 +294,22 @@ def test_activity_y_assessment_son_editables_por_defecto() -> None:
 def test_ocho_slides_refuerza_hitos_pedagogicos_minimos() -> None:
     slides = service._apply_pedagogical_slide_defaults(
         [
-            {"role": "cover", "title": "Newton", "bullets": ["Inicio"], "visual_concept": "Portada"},
-            {"role": "objective", "title": "Objetivo", "bullets": ["Comprender la inercia"]},
-            {"role": "prior_knowledge", "title": "Previos", "bullets": ["Recordar movimiento"]},
+            {
+                "role": "cover",
+                "title": "Newton",
+                "bullets": ["Inicio"],
+                "visual_concept": "Portada",
+            },
+            {
+                "role": "objective",
+                "title": "Objetivo",
+                "bullets": ["Comprender la inercia"],
+            },
+            {
+                "role": "prior_knowledge",
+                "title": "Previos",
+                "bullets": ["Recordar movimiento"],
+            },
             {
                 "role": "concept",
                 "title": "Inercia",
@@ -261,10 +317,26 @@ def test_ocho_slides_refuerza_hitos_pedagogicos_minimos() -> None:
                 "visual_concept": "Bus frenando",
                 "image_text_expected": ["INERCIA", "Los cuerpos mantienen su estado"],
             },
-            {"role": "explanation", "title": "Explicacion", "bullets": ["Una fuerza cambia el estado."]},
-            {"role": "example", "title": "Ejemplo", "bullets": ["Un pasajero se inclina al frenar."]},
-            {"role": "activity", "title": "Actividad", "bullets": ["Observa un experimento simple."]},
-            {"role": "summary", "title": "Resumen", "bullets": ["La inercia explica el movimiento."]},
+            {
+                "role": "explanation",
+                "title": "Explicacion",
+                "bullets": ["Una fuerza cambia el estado."],
+            },
+            {
+                "role": "example",
+                "title": "Ejemplo",
+                "bullets": ["Un pasajero se inclina al frenar."],
+            },
+            {
+                "role": "activity",
+                "title": "Actividad",
+                "bullets": ["Observa un experimento simple."],
+            },
+            {
+                "role": "summary",
+                "title": "Resumen",
+                "bullets": ["La inercia explica el movimiento."],
+            },
         ],
         _payload(8),
     )
@@ -312,7 +384,11 @@ def test_canonical_preserva_campos_pedagogicos_y_legacy_sigue_normalizando() -> 
                     "tags": ["fisica", "newton"],
                     "notes": "Relaciona con transporte.",
                 },
-                {"title": "Legacy", "bullets": ["Idea clave"], "image": "Ilustracion legacy"},
+                {
+                    "title": "Legacy",
+                    "bullets": ["Idea clave"],
+                    "image": "Ilustracion legacy",
+                },
             ],
         },
         {"titulo": "Newton", "tema": "Primera Ley de Newton"},
@@ -353,14 +429,21 @@ def test_builder_full_image_usa_texto_esperado_sin_inventar_texto_visible() -> N
     assert "Este bullet no debe aparecer" not in bundle.prompt_usado
     assert "horizontal 16:9" in bundle.prompt_usado
     assert "sin texto pequeño" in bundle.prompt_usado
-    assert bundle.image_text_expected == ["LEY DE LA INERCIA", "Un objeto quieto permanece quieto"]
+    assert bundle.image_text_expected == [
+        "LEY DE LA INERCIA",
+        "Un objeto quieto permanece quieto",
+    ]
     assert len(bundle.prompt_usado.split()) <= 110
 
 
 def test_openai_modelo_calidad_y_hash_no_cambian() -> None:
     modelo, calidad = imagenes_service.provider_model_quality("openai")
-    h1 = imagenes_service.compute_prompt_hash("abc", modelo=modelo, calidad=calidad, size=service.SLIDE_IMAGE_SIZE)
-    h2 = imagenes_service.compute_prompt_hash("abc", modelo=modelo, calidad=calidad, size=service.SLIDE_IMAGE_SIZE)
+    h1 = imagenes_service.compute_prompt_hash(
+        "abc", modelo=modelo, calidad=calidad, size=service.SLIDE_IMAGE_SIZE
+    )
+    h2 = imagenes_service.compute_prompt_hash(
+        "abc", modelo=modelo, calidad=calidad, size=service.SLIDE_IMAGE_SIZE
+    )
 
     assert modelo == "gpt-image-2"
     assert calidad == "low"
@@ -376,7 +459,7 @@ def test_contenido_generico_del_demo_se_rechaza() -> None:
         cantidad_slides=8,
     )
     slides = service._apply_pedagogical_slide_defaults(
-        service._polish_slides_for_presenton(
+        service._polish_slides_for_export(
             service.normalize_presentation(service._fallback_slides(payload)),
             topic=payload.tema,
         ),
@@ -398,7 +481,11 @@ def test_repara_borrador_incompleto_sin_perder_la_cantidad() -> None:
         cantidad_slides=8,
     )
     draft = [
-        {"title": f"Diapositiva {index + 1}", "key_message": "Idea", "bullets": ["Dato"]}
+        {
+            "title": f"Diapositiva {index + 1}",
+            "key_message": "Idea",
+            "bullets": ["Dato"],
+        }
         for index in range(8)
     ]
     candidate = service._apply_pedagogical_slide_defaults(
@@ -450,6 +537,7 @@ def test_generacion_recupera_respuesta_corta_despues_de_reintentos(monkeypatch) 
     assert len(slides) == 8
     assert service._presentation_quality_issues(slides, payload) == []
 
+
 def test_revision_final_corrige_un_error_conceptual() -> None:
     payload = PresentacionCreate(
         titulo="Fracciones equivalentes",
@@ -494,12 +582,18 @@ def test_actividad_y_pregunta_quedan_visibles_en_la_exportacion() -> None:
         [
             {
                 "role": "activity",
-                "bullets": ["Coloca una moneda sobre una tarjeta.", "Retira la tarjeta con rapidez."],
+                "bullets": [
+                    "Coloca una moneda sobre una tarjeta.",
+                    "Retira la tarjeta con rapidez.",
+                ],
                 "activity": "Describe por que la moneda cae dentro del vaso.",
             },
             {
                 "role": "comprehension_check",
-                "bullets": ["Relaciona fuerza y cambio de movimiento.", "Usa el experimento como evidencia."],
+                "bullets": [
+                    "Relaciona fuerza y cambio de movimiento.",
+                    "Usa el experimento como evidencia.",
+                ],
                 "question": "Que propiedad explica que la moneda conserve su posicion?",
             },
         ]

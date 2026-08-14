@@ -39,7 +39,11 @@ async def cleanup_presentation_exports(presentation_id: UUID) -> None:
         try:
             path = _safe_export_path(presentation_id, fmt)
         except ValueError:
-            logger.warning("Skipping unsafe export cleanup for presentation %s (%s)", presentation_id, fmt)
+            logger.warning(
+                "Skipping unsafe export cleanup for presentation %s (%s)",
+                presentation_id,
+                fmt,
+            )
             continue
 
         try:

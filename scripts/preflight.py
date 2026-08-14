@@ -49,7 +49,6 @@ def main() -> int:
     for name, minimum in (
         ("POSTGRES_PASSWORD", 16),
         ("REDIS_PASSWORD", 16),
-        ("PRESENTON_AUTH_PASSWORD", 12),
     ):
         value = values.get(name, "")
         if len(value) < minimum or is_placeholder(value):

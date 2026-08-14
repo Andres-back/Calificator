@@ -11,10 +11,7 @@ RUN npm run build
 FROM nginx:1.28-alpine@sha256:a8b39bd9cf0f83869a2162827a0caf6137ddf759d50a171451b335cecc87d236
 
 COPY nginx/templates/default.conf.template /etc/nginx/templates/default.conf.template
-COPY frontend/nginx-entrypoint.sh /usr/local/bin/xcalificator-nginx-entrypoint
 COPY --from=frontend-build /app/dist /var/www/html
 
-RUN chmod +x /usr/local/bin/xcalificator-nginx-entrypoint
 
-ENTRYPOINT ["/usr/local/bin/xcalificator-nginx-entrypoint"]
 CMD ["nginx", "-g", "daemon off;"]

@@ -51,7 +51,7 @@ Responsable de la operación general del sistema.
 
 Funciones:
 
-- Configurar claves globales de IA: OpenAI, Cloudflare, Groq, Open Code, Ollama y Presenton.
+- Configurar claves globales de IA: OpenAI, Cloudflare, Groq, Open Code y Ollama.
 - Importar y mantener el catálogo de DBA.
 - Gestionar usuarios, roles y permisos.
 - Visualizar métricas globales de uso.
@@ -541,7 +541,7 @@ Regla:
 | Plan de refuerzo | Sí | Sí | No/optativo | No | LLM + datos de notas |
 | Mapa conceptual | Sí | Sí | Opcional | Parcial | LLM + SVG/HTML |
 | Flashcards | Sí | Sí | Opcional | Sí | LLM |
-| Presentación | PPTX/PDF | Vista web | No | No | LLM + imagen + Presenton |
+| Presentación | PPTX/PDF | Vista web | No | No | LLM + imagen + renderizador XCalificator |
 
 ---
 

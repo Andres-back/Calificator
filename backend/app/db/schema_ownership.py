@@ -1,9 +1,8 @@
 """Ownership rules for Alembic schema comparisons.
 
 Some XCalificator operational tables are intentionally maintained with explicit
-SQL migrations because their services use SQLAlchemy Core. Presenton owns its
-own schema and currently runs on a separate SQLite database. Alembic must not
-interpret reflected-only objects from either group as candidates for deletion.
+SQL migrations because their services use SQLAlchemy Core. Alembic must not
+interpret those reflected-only objects as candidates for deletion.
 """
 from __future__ import annotations
 
@@ -27,25 +26,7 @@ SQL_MANAGED_TABLES = frozenset(
 
 DEPRECATED_SQL_TABLES = frozenset({"ai_usage_logs"})
 
-EXTERNAL_PRESENTON_TABLES = frozenset(
-    {
-        "async_presentation_generation_tasks",
-        "chat_history_messages",
-        "imageasset",
-        "keyvaluesqlmodel",
-        "ollamapullstatus",
-        "presentation_layout_codes",
-        "presentations",
-        "slides",
-        "template_create_infos",
-        "templates",
-        "webhook_subscriptions",
-    }
-)
-
-REFLECTED_ONLY_TABLES = (
-    SQL_MANAGED_TABLES | DEPRECATED_SQL_TABLES | EXTERNAL_PRESENTON_TABLES
-)
+REFLECTED_ONLY_TABLES = SQL_MANAGED_TABLES | DEPRECATED_SQL_TABLES
 
 # Objects created deliberately with SQL or retained for compatibility. They are
 # not represented by the ORM and must not become destructive autogenerate ops.

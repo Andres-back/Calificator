@@ -35,7 +35,6 @@ class PresentacionRead(BaseModel):
     estado: str
     pptx_url: str | None
     pdf_url: str | None
-    presenton_id: str | None
     error: str | None
     created_at: datetime
     updated_at: datetime
@@ -58,6 +57,14 @@ class PresentacionExportRequest(BaseModel):
     format: Literal["pptx", "pdf"] = "pptx"
 
 
-class PresentacionEditorUrlRead(BaseModel):
-    url: str
-    expires_in: int
+class PresentacionPreviewSlideRead(BaseModel):
+    numero: int
+    titulo: str
+    image_url: str
+
+
+class PresentacionPreviewRead(BaseModel):
+    id: UUID
+    titulo: str
+    total: int
+    slides: list[PresentacionPreviewSlideRead]

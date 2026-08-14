@@ -1,10 +1,11 @@
 """
-Normaliza el JSON de slides antes de enviarlo a Presenton.
+Normaliza el JSON de diapositivas antes de renderizarlo y exportarlo.
 Reglas críticas:
 - Nunca pasar image=undefined.
 - Si falla una imagen, usar placeholder.
 - Arrays siempre deben existir (nunca None).
 """
+
 from __future__ import annotations
 
 PLACEHOLDER_IMAGE = "/static/placeholder_educational.svg"
@@ -39,5 +40,12 @@ def normalize_slide(slide: dict) -> dict:
 def normalize_presentation(slides: list[dict]) -> list[dict]:
     """Normaliza toda la presentación."""
     if not slides:
-        return [{"title": "Sin contenido", "bullets": [], "image": PLACEHOLDER_IMAGE, "notes": ""}]
+        return [
+            {
+                "title": "Sin contenido",
+                "bullets": [],
+                "image": PLACEHOLDER_IMAGE,
+                "notes": "",
+            }
+        ]
     return [normalize_slide(s) for s in slides]

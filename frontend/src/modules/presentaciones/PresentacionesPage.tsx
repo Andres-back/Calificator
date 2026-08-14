@@ -7,7 +7,7 @@ import {
   AlertTriangle,
   CheckCircle2,
   Clock,
-  ExternalLink,
+  Eye,
   Loader2,
   Plus,
   Presentation,
@@ -19,7 +19,6 @@ import { useMaterias } from '@/modules/materias/MateriaSelect';
 import {
   createPresentacion,
   deletePresentacion,
-  getPresentacionEditorUrl,
   listPresentaciones,
   type PresentacionCreate,
 } from './api';
@@ -28,6 +27,7 @@ import { PresentationFileLink } from './PresentationFileLink';
 import { queryClient } from '@/lib/queryClient';
 import { toApiError } from '@/lib/api';
 import { formatDate } from '@/lib/dates';
+import { PresentationPreviewModal } from './PresentationPreviewModal';
 
 const STATE: Record<string, { tone: 'warning' | 'info' | 'success' | 'error'; label: string; icon: typeof Clock; accent: string; iconTone: string }> = {
   queued: { tone: 'warning', label: 'En cola', icon: Clock, accent: 'border-l-amber-500', iconTone: 'bg-amber-50 text-amber-600 dark:bg-amber-500/15 dark:text-amber-300' },
@@ -39,22 +39,13 @@ function presentationErrorMessage(error: string | null) {
   const value = (error ?? '').toLowerCase();
   if (value.includes('timeout') || value.includes('timed out')) return 'La generación tardó más de lo esperado. Puedes crear una nueva presentación.';
   if (value.includes('imagen') || value.includes('image')) return 'No fue posible preparar una de las imágenes. Puedes crear una nueva presentación.';
-  if (value.includes('presenton') || value.includes('editor')) return 'La presentación se creó, pero el editor no pudo prepararse. Intenta abrirlo nuevamente.';
   if (value.includes('openai') || value.includes('groq') || value.includes('provider')) return 'El proveedor de IA no pudo completar la generación. Intenta crear una nueva presentación más tarde.';
   return 'La presentación no pudo completarse. Puedes crear una nueva presentación o intentarlo más tarde.';
 }
 
-function trustedEditorPath(value: string) {
-  const target = new URL(value, window.location.origin);
-  const validPath = /^\/api\/presentaciones\/[^/]+\/editor$/.test(target.pathname);
-  if (target.origin !== window.location.origin || !validPath || !target.searchParams.get('token')) {
-    throw new Error('La URL del editor no es válida.');
-  }
-  return `${target.pathname}${target.search}${target.hash}`;
-}
-
 export function PresentacionesPage() {
   const [open, setOpen] = useState(false);
+  const [previewPresentation, setPreviewPresentation] = useState<{ id: string; title: string } | null>(null);
   const { target: presentationToDelete, setTarget: setPresentationToDelete, mutation: remove } = useDeleteConfirm({
     mutationFn: deletePresentacion,
     queryKey: ['presentaciones'],
@@ -80,16 +71,6 @@ export function PresentacionesPage() {
     },
     onError: (e) => toast.error(toApiError(e).detail),
   });
-
-  const openEditor = useMutation({
-    mutationFn: async (id: string) => {
-      const { url } = await getPresentacionEditorUrl(id);
-      window.location.assign(trustedEditorPath(url));
-    },
-    onError: (error) => toast.error(toApiError(error).detail),
-  });
-
-
 
   return (
     <div className="space-y-6">
@@ -143,8 +124,8 @@ export function PresentacionesPage() {
 
                   <div className="flex flex-wrap items-center gap-2 lg:justify-end">
                     {p.estado === 'success' && (
-                      <Button size="sm" variant="outline" onClick={() => openEditor.mutate(p.id)} loading={openEditor.isPending}>
-                        <ExternalLink className="h-4 w-4" /> Editor
+                      <Button size="sm" variant="outline" onClick={() => setPreviewPresentation({ id: p.id, title: p.titulo })}>
+                        <Eye className="h-4 w-4" /> Vista previa
                       </Button>
                     )}
                     {p.pptx_url && (
@@ -187,8 +168,8 @@ export function PresentacionesPage() {
         tone="danger"
         loading={remove.isPending}
       />
+      <PresentationPreviewModal presentation={previewPresentation} onClose={() => setPreviewPresentation(null)} />
     </div>
   );
 }
-
 
