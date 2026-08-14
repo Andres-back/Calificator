@@ -1,6 +1,8 @@
 .git
 .github
 .agents
+.specify
+specs
 .claude
 .playwright-cli
 .env

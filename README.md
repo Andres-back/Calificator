@@ -65,6 +65,12 @@ Evaluar el impacto de la implementación de un software integral de apoyo acadé
 
 ---
 
+## 📐 Gobernanza de cambios
+
+Todo cambio se define y aprueba con GitHub Spec Kit antes de implementarse. Consulta la
+[guía de Spec Kit](docs/SPEC_KIT.md) y el [índice funcional](specs/README.md).
+
+---
 ## 🚀 Desarrollo
 
 ```bash
