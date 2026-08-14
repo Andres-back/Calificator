@@ -17,6 +17,8 @@ def test_production_nginx_enforces_csp_and_blocks_upload_directory() -> None:
     assert "frame-ancestors 'self'" in config
     assert "'unsafe-eval'" not in config
     assert "location ^~ /uploads/" in config
+    assert "location ^~ /api/" in config
+    assert "location /api/" not in config
     assert "return 404;" in config
     assert "resolver 127.0.0.11" in config
     assert "server xcalificator_backend:8000 resolve;" in config
