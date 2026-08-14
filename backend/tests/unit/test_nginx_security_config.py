@@ -19,7 +19,10 @@ def test_production_nginx_enforces_csp_and_blocks_upload_directory() -> None:
     assert "location ^~ /uploads/" in config
     assert "return 404;" in config
     assert "resolver 127.0.0.11" in config
-    assert "server backend:8000 resolve;" in config
-    assert "server presenton:80 resolve;" in config
+    assert "server xcalificator_backend:8000 resolve;" in config
+    assert "server xcalificator_presenton:80 resolve;" in config
     assert "http://xcalificator_backend:8000" not in config
     assert "http://xcalificator_presenton:80" not in config
+    assert "server backend:8000 resolve;" not in config
+    assert "server presenton:80 resolve;" not in config
+    assert "proxy_set_header Host 127.0.0.1;" in config

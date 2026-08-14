@@ -7,13 +7,13 @@ resolver 127.0.0.11 valid=10s ipv6=off;
 
 upstream xcalificator_backend_upstream {
     zone xcalificator_backend_upstream 64k;
-    server backend:8000 resolve;
+    server xcalificator_backend:8000 resolve;
     keepalive 16;
 }
 
 upstream xcalificator_presenton_upstream {
     zone xcalificator_presenton_upstream 64k;
-    server presenton:80 resolve;
+    server xcalificator_presenton:80 resolve;
     keepalive 8;
 }
 
@@ -40,7 +40,7 @@ server {
 
     location = /health {
         proxy_pass http://xcalificator_backend_upstream/health;
-        proxy_set_header Host $host;
+        proxy_set_header Host 127.0.0.1;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Host $host;

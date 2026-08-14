@@ -43,6 +43,10 @@ services:
       - .env
     environment:
       FORWARDED_ALLOW_IPS: "*"
+    networks:
+      default:
+        aliases:
+          - xcalificator_backend
     volumes:
       - ./uploads:/app/uploads
     ports:
@@ -155,6 +159,10 @@ services:
       context: .
       dockerfile: presenton.Dockerfile
     image: xcalificator-presenton:2026-07
+    networks:
+      default:
+        aliases:
+          - xcalificator_presenton
     depends_on:
       storage-init:
         condition: service_completed_successfully
