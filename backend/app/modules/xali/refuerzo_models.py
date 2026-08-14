@@ -4,7 +4,7 @@ from __future__ import annotations
 from datetime import datetime
 from uuid import UUID as PyUUID, uuid4
 
-from sqlalchemy import CheckConstraint, DateTime, ForeignKey, String, Text, func, text
+from sqlalchemy import CheckConstraint, DateTime, ForeignKey, Index, String, Text, func, text
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -32,3 +32,8 @@ class XaliRefuerzo(Base):
     material_id: Mapped[PyUUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, server_default=func.now(), onupdate=func.now())
+
+
+Index("idx_xali_refuerzos_profesor", XaliRefuerzo.profesor_id)
+Index("idx_xali_refuerzos_materia", XaliRefuerzo.materia_id)
+Index("idx_xali_refuerzos_created", XaliRefuerzo.created_at)

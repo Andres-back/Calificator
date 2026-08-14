@@ -4,7 +4,7 @@ from __future__ import annotations
 from datetime import datetime
 from uuid import UUID as PyUUID, uuid4
 
-from sqlalchemy import DateTime, Index, String, Text, func, text
+from sqlalchemy import DateTime, Index, String, func, text
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -17,7 +17,7 @@ class AnalyticsEvento(Base):
     id: Mapped[PyUUID] = mapped_column(
         UUID(as_uuid=True), primary_key=True, default=uuid4, server_default=text("uuid_generate_v4()")
     )
-    tipo: Mapped[str] = mapped_column(String(60), nullable=False, index=True)
+    tipo: Mapped[str] = mapped_column(String(60), nullable=False)
     actor_id: Mapped[PyUUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
     evaluacion_id: Mapped[PyUUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
     calificacion_id: Mapped[PyUUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)

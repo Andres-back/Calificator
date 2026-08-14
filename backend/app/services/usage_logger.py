@@ -1,23 +1,29 @@
-"""Registro de uso de IA en ai_usage_logs."""
+"""Compatibility adapter for the canonical AI usage event ledger.
+
+New code should call ``app.modules.analytics.usage_logger.log_ai_usage``
+directly. This class remains temporarily so external imports do not break while
+the deprecated ``ai_usage_logs`` table is retired in a later release.
+"""
 from __future__ import annotations
 
 import time
 from contextlib import asynccontextmanager
+from datetime import datetime, timedelta, timezone
 from typing import AsyncGenerator
 from uuid import UUID
 
-from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.logging import get_logger
-
-logger = get_logger(__name__)
+from app.modules.analytics.usage_logger import log_ai_usage
 
 
 class UsageLogger:
-    """Registra cada llamada IA en la tabla ai_usage_logs."""
+    """Preserve the old API while writing only to ``ai_usage_events``."""
 
     def __init__(self, db: AsyncSession) -> None:
+        # Kept for constructor compatibility. The canonical logger deliberately
+        # owns a short-lived session so usage telemetry cannot roll back the
+        # caller's academic transaction.
         self._db = db
 
     async def log(
@@ -34,31 +40,27 @@ class UsageLogger:
         error: str | None = None,
         user_id: UUID | None = None,
     ) -> None:
-        try:
-            await self._db.execute(
-                text(
-                    "INSERT INTO ai_usage_logs "
-                    "(provider, model, tipo, tokens_input, tokens_output, "
-                    "latencia_ms, costo_estimado, success, error, user_id) "
-                    "VALUES (:provider, :model, :tipo, :tokens_input, :tokens_output, "
-                    ":latencia_ms, :costo_estimado, :success, :error, :user_id)"
-                ),
-                {
-                    "provider": provider,
-                    "model": model,
-                    "tipo": tipo,
-                    "tokens_input": tokens_input,
-                    "tokens_output": tokens_output,
-                    "latencia_ms": latencia_ms,
-                    "costo_estimado": costo_estimado,
-                    "success": success,
-                    "error": error,
-                    "user_id": str(user_id) if user_id else None,
-                },
-            )
-            await self._db.commit()
-        except Exception as exc:  # noqa: BLE001
-            logger.warning("Failed to write usage log: %s", exc)
+        # ``ai_usage_events`` does not store a user identifier and calculates
+        # costs centrally from provider/model pricing. Accept both deprecated
+        # arguments so old callers remain source-compatible.
+        del costo_estimado, user_id
+
+        completed_at = datetime.now(timezone.utc)
+        elapsed_ms = max(latencia_ms or 0, 0)
+        started_at = completed_at - timedelta(milliseconds=elapsed_ms)
+        await log_ai_usage(
+            feature=tipo or "legacy",
+            stage="compat_usage_logger",
+            provider=provider,
+            model=model,
+            status="success" if success else "failed",
+            started_at=started_at,
+            completed_at=completed_at,
+            latency_ms=latencia_ms,
+            input_tokens=tokens_input,
+            output_tokens=tokens_output,
+            error_code=error[:160] if error else None,
+        )
 
     @asynccontextmanager
     async def track(
@@ -69,30 +71,30 @@ class UsageLogger:
         tipo: str,
         user_id: UUID | None = None,
     ) -> AsyncGenerator[dict, None]:
-        """Context manager: mide tiempo y guarda el log automáticamente."""
+        """Measure a compatible operation and persist it in the canonical ledger."""
         meta: dict = {"tokens_input": 0, "tokens_output": 0}
         start = time.monotonic()
         try:
             yield meta
-            latencia = int((time.monotonic() - start) * 1000)
+            latency = int((time.monotonic() - start) * 1000)
             await self.log(
                 provider=provider,
                 model=model,
                 tipo=tipo,
                 tokens_input=meta.get("tokens_input", 0),
                 tokens_output=meta.get("tokens_output", 0),
-                latencia_ms=latencia,
+                latencia_ms=latency,
                 costo_estimado=meta.get("costo_estimado"),
                 success=True,
                 user_id=user_id,
             )
         except Exception as exc:
-            latencia = int((time.monotonic() - start) * 1000)
+            latency = int((time.monotonic() - start) * 1000)
             await self.log(
                 provider=provider,
                 model=model,
                 tipo=tipo,
-                latencia_ms=latencia,
+                latencia_ms=latency,
                 success=False,
                 error=str(exc)[:500],
                 user_id=user_id,

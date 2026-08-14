@@ -18,16 +18,17 @@ from app.services.ai_credentials_service import (
     get_effective_ai_credentials,
 )
 from app.services.ai_config_service import AIConfigService
+from app.modules.admin_ai_config.usage_service import (
+    get_recent_provider_errors,
+    get_usage_summary,
+)
 from app.modules.admin_ai_config.schemas import (
-    AIProvider,
     AIProviderTestResponse,
     AIProviderUpdate,
     AISettingsRead,
-    FeatureRouting,
     GlobalAIConfigRead,
     GlobalAIConfigUpdate,
     ProfesorAIConfigUpdate,
-    UsageStatsRead,
 )
 from app.modules.users.models import User
 from app.shared.enums import UserRole
@@ -327,16 +328,7 @@ async def get_full_ai_settings(
     # enabled state always come from the persisted configuration used by routing.
     last_errors: dict[str, dict[str, Any]] = {}
     try:
-        test_rows = await db.execute(
-            text("SELECT provider, error, created_at FROM ai_usage_logs WHERE success=false AND provider IS NOT NULL ORDER BY created_at DESC LIMIT 50")
-        )
-        for row in test_rows:
-            provider_id = row.provider
-            if provider_id and provider_id not in last_errors:
-                last_errors[provider_id] = {
-                    "error": row.error,
-                    "at": str(row.created_at)[:19] if row.created_at else None,
-                }
+        last_errors = await get_recent_provider_errors(db)
     except Exception:
         await db.rollback()
 
@@ -358,13 +350,7 @@ async def get_full_ai_settings(
 
     features = await svc.get_all_features()
 
-    totals = await db.execute(
-        text("SELECT COUNT(*) as total_calls, COALESCE(SUM(tokens_input),0) as tokens_in, COALESCE(SUM(tokens_output),0) as tokens_out, COALESCE(SUM(costo_estimado),0) as total_cost FROM ai_usage_logs")
-    )
-    total_row = totals.fetchone()
-    by_provider = await db.execute(
-        text("SELECT provider, COUNT(*) as calls, COALESCE(SUM(costo_estimado),0) as cost FROM ai_usage_logs GROUP BY provider ORDER BY calls DESC")
-    )
+    usage_summary = await get_usage_summary(db)
 
     cfg_row = await db.execute(text("SELECT * FROM ai_global_config ORDER BY created_at DESC LIMIT 1"))
     cfg = cfg_row.fetchone()
@@ -375,16 +361,7 @@ async def get_full_ai_settings(
         "providers": providers,
         "features": features,
         "global_config": global_config,
-        "usage": {
-            "total_calls": total_row.total_calls,
-            "total_tokens_input": total_row.tokens_in,
-            "total_tokens_output": total_row.tokens_out,
-            "total_cost": float(total_row.total_cost),
-            "by_provider": [
-                {"provider": row.provider, "calls": row.calls, "cost": float(row.cost)}
-                for row in by_provider
-            ],
-        },
+        "usage": usage_summary,
     }
 
 @router.post("/admin/ai-providers/{provider}/test", response_model=AIProviderTestResponse)
@@ -429,20 +406,8 @@ async def get_usage_stats(
     db: AsyncSession = Depends(get_db),
 ) -> dict:
     require_role(current_user, [UserRole.ADMIN])
-    totals = await db.execute(
-        text("SELECT COUNT(*) as total_calls, COALESCE(SUM(tokens_input),0) as tokens_in, COALESCE(SUM(tokens_output),0) as tokens_out, COALESCE(SUM(costo_estimado),0) as total_cost FROM ai_usage_logs")
-    )
-    t = totals.fetchone()
-    by_provider = await db.execute(
-        text("SELECT provider, COUNT(*) as calls, COALESCE(SUM(costo_estimado),0) as cost FROM ai_usage_logs GROUP BY provider ORDER BY calls DESC")
-    )
-    return {
-        "total_calls": t.total_calls,
-        "total_tokens_input": t.tokens_in,
-        "total_tokens_output": t.tokens_out,
-        "total_cost": float(t.total_cost),
-        "by_provider": [{"provider": r.provider, "calls": r.calls, "cost": float(r.cost)} for r in by_provider],
-    }
+    return await get_usage_summary(db)
+
 
 
 @router.post("/admin/ai-cache/clear")

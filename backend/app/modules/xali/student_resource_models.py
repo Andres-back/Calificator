@@ -4,7 +4,7 @@ from __future__ import annotations
 from datetime import datetime
 from uuid import UUID as PyUUID, uuid4
 
-from sqlalchemy import DateTime, ForeignKey, String, Text, UniqueConstraint, func, text
+from sqlalchemy import DateTime, ForeignKey, Index, String, Text, UniqueConstraint, func, text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -48,3 +48,10 @@ class XaliStudentResource(Base):
         server_default=func.now(),
         onupdate=func.now(),
     )
+
+
+Index(
+    "idx_xali_student_resources_evaluation",
+    XaliStudentResource.estudiante_id,
+    XaliStudentResource.evaluacion_id,
+)

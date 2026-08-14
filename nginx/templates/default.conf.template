@@ -3,6 +3,20 @@ map $http_x_forwarded_proto $forwarded_proto {
     "" $scheme;
 }
 
+resolver 127.0.0.11 valid=10s ipv6=off;
+
+upstream xcalificator_backend_upstream {
+    zone xcalificator_backend_upstream 64k;
+    server backend:8000 resolve;
+    keepalive 16;
+}
+
+upstream xcalificator_presenton_upstream {
+    zone xcalificator_presenton_upstream 64k;
+    server presenton:80 resolve;
+    keepalive 8;
+}
+
 server {
     listen 80;
     server_name ${SERVER_NAME};
@@ -25,7 +39,7 @@ server {
     gzip_types text/plain text/css application/json application/javascript application/xml image/svg+xml;
 
     location = /health {
-        proxy_pass http://xcalificator_backend:8000/health;
+        proxy_pass http://xcalificator_backend_upstream/health;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -34,7 +48,7 @@ server {
     }
 
     location /api/ {
-        proxy_pass http://xcalificator_backend:8000/api/;
+        proxy_pass http://xcalificator_backend_upstream/api/;
         proxy_http_version 1.1;
         proxy_connect_timeout 30s;
         proxy_read_timeout 10m;
@@ -54,7 +68,7 @@ server {
 
     location = /_presenton_auth {
         internal;
-        proxy_pass http://xcalificator_backend:8000/api/presentaciones/editor-auth;
+        proxy_pass http://xcalificator_backend_upstream/api/presentaciones/editor-auth;
         proxy_pass_request_body off;
         proxy_set_header Content-Length "";
         proxy_set_header Cookie $http_cookie;
@@ -65,21 +79,21 @@ server {
 
     location = /api/telemetry-status {
         auth_request /_presenton_auth;
-        proxy_pass http://xcalificator_presenton:80/api/telemetry-status;
+        proxy_pass http://xcalificator_presenton_upstream/api/telemetry-status;
         proxy_set_header Host $host;
         proxy_set_header Authorization "Basic ${PRESENTON_BASIC_AUTH}";
     }
 
     location = /api/can-change-keys {
         auth_request /_presenton_auth;
-        proxy_pass http://xcalificator_presenton:80/api/can-change-keys;
+        proxy_pass http://xcalificator_presenton_upstream/api/can-change-keys;
         proxy_set_header Host $host;
         proxy_set_header Authorization "Basic ${PRESENTON_BASIC_AUTH}";
     }
 
     location ^~ /presenton/ {
         auth_request /_presenton_auth;
-        proxy_pass http://xcalificator_presenton:80/;
+        proxy_pass http://xcalificator_presenton_upstream/;
         proxy_http_version 1.1;
         proxy_read_timeout 30m;
         proxy_connect_timeout 30s;
@@ -94,14 +108,14 @@ server {
 
     location ^~ /_next/ {
         auth_request /_presenton_auth;
-        proxy_pass http://xcalificator_presenton:80/_next/;
+        proxy_pass http://xcalificator_presenton_upstream/_next/;
         proxy_set_header Host $host;
         proxy_set_header Authorization "Basic ${PRESENTON_BASIC_AUTH}";
     }
 
     location ^~ /api/v1/ {
         auth_request /_presenton_auth;
-        proxy_pass http://xcalificator_presenton:80/api/v1/;
+        proxy_pass http://xcalificator_presenton_upstream/api/v1/;
         proxy_read_timeout 30m;
         proxy_connect_timeout 30s;
         proxy_set_header Host $host;
@@ -110,21 +124,21 @@ server {
 
     location ^~ /app_data/ {
         auth_request /_presenton_auth;
-        proxy_pass http://xcalificator_presenton:80/app_data/;
+        proxy_pass http://xcalificator_presenton_upstream/app_data/;
         proxy_set_header Host $host;
         proxy_set_header Authorization "Basic ${PRESENTON_BASIC_AUTH}";
     }
 
     location ^~ /static/ {
         auth_request /_presenton_auth;
-        proxy_pass http://xcalificator_presenton:80/static/;
+        proxy_pass http://xcalificator_presenton_upstream/static/;
         proxy_set_header Host $host;
         proxy_set_header Authorization "Basic ${PRESENTON_BASIC_AUTH}";
     }
 
     location ^~ /presentation {
         auth_request /_presenton_auth;
-        proxy_pass http://xcalificator_presenton:80/presentation;
+        proxy_pass http://xcalificator_presenton_upstream/presentation;
         proxy_http_version 1.1;
         proxy_read_timeout 30m;
         proxy_set_header Host $host;

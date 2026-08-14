@@ -9,3 +9,7 @@ def test_all_declared_models_have_resolvable_metadata_dependencies() -> None:
     assert "evaluaciones" in table_names
     assert "entregas" in table_names
     assert "calificaciones" in table_names
+    assert "calificacion_incidencias" in table_names
+    assert "analytics_eventos" in table_names
+    assert "xali_refuerzos" in table_names
+    assert "xali_student_resources" in table_names
