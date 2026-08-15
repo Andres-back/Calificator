@@ -513,3 +513,120 @@ async def test_export_presentacion_falls_back_to_local_export_when_editable_fail
     assert saved["content"] == b"local-pptx"
     assert calls == {"editable": 1, "local": 1}
     assert pres.slides_json["canonical"]["exports"]["pptx"]["editable"] is False
+
+
+def test_presentation_object_authorization_matrix(monkeypatch) -> None:
+    from fastapi import HTTPException
+
+    owner = _user("profesor")
+    outsider = _user("profesor")
+    student = _user("estudiante")
+    admin = _user("admin")
+    materia_id = uuid4()
+    pres = _presentation(
+        profesor_id=owner.id,
+        materia_id=materia_id,
+        slides_json={"publicada": True, "slides": [{"title": "Portada", "bullets": ["Idea"]}]},
+    )
+
+    class FakeDB:
+        async def scalar(self, _statement):
+            return pres
+
+    async def active_enrollment(_db, _student_id):
+        return [materia_id]
+
+    monkeypatch.setattr(service, "_student_materia_ids", active_enrollment)
+
+    assert asyncio.run(service.ensure_can_read_presentacion(FakeDB(), pres.id, owner)) is pres
+    assert asyncio.run(service.ensure_can_read_presentacion(FakeDB(), pres.id, admin)) is pres
+    assert asyncio.run(service.ensure_can_read_presentacion(FakeDB(), pres.id, student)) is pres
+
+    with pytest.raises(HTTPException) as error:
+        asyncio.run(service.ensure_can_read_presentacion(FakeDB(), pres.id, outsider))
+    assert error.value.status_code == 403
+
+
+def test_student_cannot_read_unpublished_or_revoked_presentation(monkeypatch) -> None:
+    from fastapi import HTTPException
+
+    student = _user("estudiante")
+    materia_id = uuid4()
+    pres = _presentation(
+        materia_id=materia_id,
+        slides_json={"publicada": False, "slides": []},
+    )
+
+    class FakeDB:
+        async def scalar(self, _statement):
+            return pres
+
+    async def no_enrollment(_db, _student_id):
+        return []
+
+    monkeypatch.setattr(service, "_student_materia_ids", no_enrollment)
+    with pytest.raises(HTTPException) as unpublished:
+        asyncio.run(service.ensure_can_read_presentacion(FakeDB(), pres.id, student))
+    assert unpublished.value.status_code == 403
+
+    pres.slides_json = {"publicada": True, "slides": []}
+    with pytest.raises(HTTPException) as revoked:
+        asyncio.run(service.ensure_can_read_presentacion(FakeDB(), pres.id, student))
+    assert revoked.value.status_code == 403
+
+
+def test_list_status_and_preview_preserve_authorized_http_contract(monkeypatch) -> None:
+    materia_id = uuid4()
+    pres = _presentation(
+        materia_id=materia_id,
+        slides_json={"publicada": True, "slides": [{"title": "Portada", "bullets": ["Idea"]}]},
+    )
+
+    async def list_allowed(*_args, **_kwargs):
+        return [pres]
+
+    async def read_allowed(*_args, **_kwargs):
+        return pres
+
+    monkeypatch.setattr(service, "list_presentaciones", list_allowed)
+    monkeypatch.setattr(service, "ensure_can_read_presentacion", read_allowed)
+
+    for role in ("profesor", "estudiante", "admin"):
+        user = _user(role)
+        client = _client_with_user(user)
+        listed = client.get("/api/presentaciones")
+        state = client.get(f"/api/presentaciones/{pres.id}/estado")
+        preview = client.get(f"/api/presentaciones/{pres.id}/preview")
+
+        assert listed.status_code == 200, listed.text
+        assert len(listed.json()) == 1
+        assert state.status_code == 200, state.text
+        assert state.json()["progreso"] == 100
+        assert preview.status_code == 200, preview.text
+        assert preview.json()["total"] == 1
+
+
+def test_presentation_denial_runs_before_status_or_preview_builders(monkeypatch) -> None:
+    from fastapi import HTTPException
+
+    outsider = _user("profesor")
+    calls: list[str] = []
+
+    async def deny(*_args, **_kwargs):
+        raise HTTPException(status_code=403, detail="Not enough permissions")
+
+    def must_not_build(*_args, **_kwargs):
+        calls.append("built")
+        raise AssertionError("No debe construir contenido de una presentación ajena")
+
+    monkeypatch.setattr(service, "ensure_can_read_presentacion", deny)
+    monkeypatch.setattr(service, "build_estado", must_not_build)
+    monkeypatch.setattr(service, "build_preview_metadata", must_not_build)
+    client = _client_with_user(outsider)
+
+    state = client.get(f"/api/presentaciones/{uuid4()}/estado")
+    preview = client.get(f"/api/presentaciones/{uuid4()}/preview")
+
+    assert state.status_code == 403
+    assert preview.status_code == 403
+    assert calls == []

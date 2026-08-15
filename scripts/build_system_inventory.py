@@ -53,7 +53,7 @@ def build_inventory(root: Path) -> dict[str, Any]:
     validate_findings(findings)
     kind_counts = Counter(surface.kind for surface in surfaces)
     coverage_counts = Counter(surface.coverage for surface in surfaces)
-    return {
+    inventory = {
         "schema_version": 1,
         "source_digest": reader.source_digest(),
         "counts": {

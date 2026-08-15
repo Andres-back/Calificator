@@ -32,6 +32,10 @@
 | table | `xali_refuerzos` | system | covered | `backend/app/modules/xali/refuerzo_models.py:14` |
 | table | `xali_student_resources` | system | covered | `backend/app/modules/xali/student_resource_models.py:14` |
 
+## Decisiones explícitas de permiso
+
+Sin decisiones explícitas de permiso para este dominio.
+
 ## Hallazgos
 
 - **low · missing_coverage**: 6 superficies de 009-xali-rag-refuerzos no tienen evidencia de prueba observable.

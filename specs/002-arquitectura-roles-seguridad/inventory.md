@@ -31,6 +31,10 @@
 | table | `materiales_generados` | system | covered | `backend/alembic/versions/202606290002_phases_3_to_8.py:121` |
 | table | `profesor_ai_configs` | system | missing | `backend/alembic/versions/202606290002_phases_3_to_8.py:227` |
 
+## Decisiones explícitas de permiso
+
+Sin decisiones explícitas de permiso para este dominio.
+
 ## Hallazgos
 
 - **low · orphan_candidate**: 12 superficies no alcanzables o históricas se conservan como candidatas a retiro.

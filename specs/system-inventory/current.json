@@ -1,8 +1,8 @@
 {
   "counts": {
     "by_coverage": {
-      "covered": 317,
-      "missing": 56
+      "covered": 319,
+      "missing": 54
     },
     "by_kind": {
       "endpoint": 185,
@@ -18,12 +18,11 @@
   "findings": [
     {
       "category": "missing_coverage",
-      "description": "6 superficies de 004-dba-asistencia-curriculo no tienen evidencia de prueba observable.",
-      "id": "F-1F98F7FF4859",
+      "description": "5 superficies de 004-dba-asistencia-curriculo no tienen evidencia de prueba observable.",
+      "id": "F-1306EF66A8D3",
       "issue_url": "",
       "severity": "low",
       "surface_ids": [
-        "backend:GET:/materias/{materia_id}/dba",
         "backend:GET:/materias/{materia_id}/dba-personalizados",
         "backend:POST:/materias/{materia_id}/dba-personalizados",
         "backend:POST:/materias/{materia_id}/dba-personalizados/upload-document",
@@ -32,25 +31,20 @@
       ]
     },
     {
-      "category": "authorization_mismatch",
-      "description": "Permisos observables distintos para PUT:/materias/{}/asistencia: backend=['authenticated'], frontend=['admin', 'profesor'].",
-      "id": "F-63B45C46406C",
+      "category": "missing_coverage",
+      "description": "8 superficies de 011-reportes-analitica-impacto no tienen evidencia de prueba observable.",
+      "id": "F-17340D58792D",
       "issue_url": "",
-      "severity": "medium",
+      "severity": "low",
       "surface_ids": [
-        "backend:PUT:/materias/{materia_id}/asistencia",
-        "frontend_call:PUT:/materias/{materiaId}/asistencia:frontend/src/modules/materias/asistenciaApi.ts"
-      ]
-    },
-    {
-      "category": "authorization_mismatch",
-      "description": "Permisos observables distintos para GET:/materias/{}/dba: backend=['authenticated'], frontend=['admin', 'profesor'].",
-      "id": "F-6AF77AC04842",
-      "issue_url": "",
-      "severity": "medium",
-      "surface_ids": [
-        "backend:GET:/materias/{materia_id}/dba",
-        "frontend_call:GET:/materias/{materiaId}/dba:frontend/src/modules/materias/dbaApi.ts"
+        "backend:GET:/impacto/cualitativo",
+        "backend:GET:/impacto/kappa",
+        "backend:GET:/impacto/likert",
+        "backend:GET:/impacto/tiempo-ahorrado",
+        "backend:GET:/reportes/estudiante/{estudiante_id}",
+        "backend:GET:/reportes/materia/{materia_id}",
+        "backend:POST:/impacto/encuestas",
+        "backend:POST:/reportes/export/pdf"
       ]
     },
     {
@@ -72,57 +66,6 @@
         "table:evaluation_blueprints",
         "table:materiales_generados",
         "table:profesor_ai_configs"
-      ]
-    },
-    {
-      "category": "authorization_mismatch",
-      "description": "Permisos observables distintos para GET:/presentaciones/{}/preview: backend=['authenticated'], frontend=['admin', 'profesor'].",
-      "id": "F-7FE78F55F350",
-      "issue_url": "",
-      "severity": "medium",
-      "surface_ids": [
-        "backend:GET:/presentaciones/{presentacion_id}/preview",
-        "frontend_call:GET:/presentaciones/{id}/preview:frontend/src/modules/presentaciones/api.ts"
-      ]
-    },
-    {
-      "category": "authorization_mismatch",
-      "description": "Permisos observables distintos para GET:/herramientas/{}: backend=['authenticated'], frontend=['admin', 'profesor'].",
-      "id": "F-932279007F87",
-      "issue_url": "",
-      "severity": "medium",
-      "surface_ids": [
-        "backend:GET:/herramientas/{material_id}",
-        "frontend_call:GET:/herramientas/{id}:frontend/src/modules/herramientas/api.ts"
-      ]
-    },
-    {
-      "category": "authorization_mismatch",
-      "description": "Permisos observables distintos para GET:/presentaciones: backend=['authenticated'], frontend=['admin', 'profesor'].",
-      "id": "F-95575963948B",
-      "issue_url": "",
-      "severity": "medium",
-      "surface_ids": [
-        "backend:GET:/presentaciones",
-        "frontend_call:GET:/presentaciones:frontend/src/modules/presentaciones/api.ts"
-      ]
-    },
-    {
-      "category": "missing_coverage",
-      "description": "9 superficies de 011-reportes-analitica-impacto no tienen evidencia de prueba observable.",
-      "id": "F-A27918D36041",
-      "issue_url": "",
-      "severity": "low",
-      "surface_ids": [
-        "backend:GET:/impacto/cualitativo",
-        "backend:GET:/impacto/kappa",
-        "backend:GET:/impacto/likert",
-        "backend:GET:/impacto/tiempo-ahorrado",
-        "backend:GET:/reportes/estudiante/{estudiante_id}",
-        "backend:GET:/reportes/materia/{materia_id}",
-        "backend:POST:/impacto/encuestas",
-        "backend:POST:/reportes/export/pdf",
-        "frontend_call:POST:/analytics/evento:frontend/src/lib/analytics.ts"
       ]
     },
     {
@@ -168,50 +111,6 @@
       ]
     },
     {
-      "category": "authorization_mismatch",
-      "description": "Permisos observables distintos para GET:/herramientas/materias/{}/recursos: backend=['authenticated'], frontend=['admin', 'profesor'].",
-      "id": "F-AC3BC64F359E",
-      "issue_url": "",
-      "severity": "medium",
-      "surface_ids": [
-        "backend:GET:/herramientas/materias/{materia_id}/recursos",
-        "frontend_call:GET:/herramientas/materias/{materiaId}/recursos:frontend/src/modules/herramientas/api.ts"
-      ]
-    },
-    {
-      "category": "authorization_mismatch",
-      "description": "Permisos observables distintos para GET:/materias/{}/asistencia: backend=['authenticated'], frontend=['admin', 'profesor'].",
-      "id": "F-B0942536A8C5",
-      "issue_url": "",
-      "severity": "medium",
-      "surface_ids": [
-        "backend:GET:/materias/{materia_id}/asistencia",
-        "frontend_call:GET:/materias/{materiaId}/asistencia:frontend/src/modules/materias/asistenciaApi.ts"
-      ]
-    },
-    {
-      "category": "authorization_mismatch",
-      "description": "Permisos observables distintos para POST:/analytics/evento: backend=['authenticated'], frontend=['admin', 'profesor'].",
-      "id": "F-C40881700BCE",
-      "issue_url": "",
-      "severity": "medium",
-      "surface_ids": [
-        "backend:POST:/analytics/evento",
-        "frontend_call:POST:/analytics/evento:frontend/src/lib/analytics.ts"
-      ]
-    },
-    {
-      "category": "authorization_mismatch",
-      "description": "Permisos observables distintos para GET:/presentaciones/{}/estado: backend=['authenticated'], frontend=['admin', 'profesor'].",
-      "id": "F-C518AEE8C583",
-      "issue_url": "",
-      "severity": "medium",
-      "surface_ids": [
-        "backend:GET:/presentaciones/{presentacion_id}/estado",
-        "frontend_call:GET:/presentaciones/{id}/estado:frontend/src/modules/presentaciones/api.ts"
-      ]
-    },
-    {
       "category": "missing_coverage",
       "description": "4 superficies de 010-presentaciones-imagenes no tienen evidencia de prueba observable.",
       "id": "F-EB65DEC976DE",
@@ -245,22 +144,140 @@
         "table:evaluation_blueprints",
         "table:profesor_ai_configs"
       ]
-    },
-    {
-      "category": "authorization_mismatch",
-      "description": "Permisos observables distintos para PATCH:/incidencias/{}/resolver: backend=['admin', 'profesor'], frontend=['estudiante'].",
-      "id": "F-FEC12516A03B",
-      "issue_url": "",
-      "severity": "medium",
-      "surface_ids": [
-        "backend:PATCH:/incidencias/{incidencia_id}/resolver",
-        "frontend_call:PATCH:/incidencias/{incidenciaId}/resolver:frontend/src/modules/calificaciones/api.ts"
-      ]
     }
   ],
-  "permission_overrides": [],
+  "permission_overrides": [
+    {
+      "actors": [
+        "admin",
+        "estudiante",
+        "profesor"
+      ],
+      "evidence": [
+        "backend/tests/unit/test_authorization_contracts.py"
+      ],
+      "issue_url": "https://github.com/Andres-back/Calificator/issues/17",
+      "reason": "El servicio valida gestión docente o matrícula activa y filtra recursos publicados para estudiantes.",
+      "surface_id": "backend:GET:/herramientas/materias/{materia_id}/recursos"
+    },
+    {
+      "actors": [
+        "admin",
+        "estudiante",
+        "profesor"
+      ],
+      "evidence": [
+        "backend/tests/unit/test_authorization_contracts.py"
+      ],
+      "issue_url": "https://github.com/Andres-back/Calificator/issues/17",
+      "reason": "El servicio limita profesor y administrador por autor, y estudiante por publicación, asignación y matrícula.",
+      "surface_id": "backend:GET:/herramientas/{material_id}"
+    },
+    {
+      "actors": [
+        "admin",
+        "profesor"
+      ],
+      "evidence": [
+        "backend/tests/unit/test_authorization_contracts.py"
+      ],
+      "issue_url": "https://github.com/Andres-back/Calificator/issues/17",
+      "reason": "El router delega en ensure_can_manage_materia antes de consultar registros.",
+      "surface_id": "backend:GET:/materias/{materia_id}/asistencia"
+    },
+    {
+      "actors": [
+        "admin",
+        "estudiante",
+        "profesor"
+      ],
+      "evidence": [
+        "backend/tests/unit/test_authorization_contracts.py"
+      ],
+      "issue_url": "https://github.com/Andres-back/Calificator/issues/17",
+      "reason": "El router delega lectura de materia; estudiante requiere matrícula activa y los actores docentes conservan su ámbito.",
+      "surface_id": "backend:GET:/materias/{materia_id}/dba"
+    },
+    {
+      "actors": [
+        "admin",
+        "estudiante",
+        "profesor"
+      ],
+      "evidence": [
+        "backend/tests/unit/test_presentaciones_router.py"
+      ],
+      "issue_url": "https://github.com/Andres-back/Calificator/issues/17",
+      "reason": "El servicio lista todo para admin, solo propias para profesor y solo publicadas de matrículas activas para estudiante.",
+      "surface_id": "backend:GET:/presentaciones"
+    },
+    {
+      "actors": [
+        "admin",
+        "estudiante",
+        "profesor"
+      ],
+      "evidence": [
+        "backend/tests/unit/test_presentaciones_router.py"
+      ],
+      "issue_url": "https://github.com/Andres-back/Calificator/issues/17",
+      "reason": "La ruta exige ensure_can_read_presentacion antes de construir el estado.",
+      "surface_id": "backend:GET:/presentaciones/{presentacion_id}/estado"
+    },
+    {
+      "actors": [
+        "admin",
+        "estudiante",
+        "profesor"
+      ],
+      "evidence": [
+        "backend/tests/unit/test_presentaciones_router.py"
+      ],
+      "issue_url": "https://github.com/Andres-back/Calificator/issues/17",
+      "reason": "La ruta exige ensure_can_read_presentacion antes de construir la vista previa.",
+      "surface_id": "backend:GET:/presentaciones/{presentacion_id}/preview"
+    },
+    {
+      "actors": [
+        "admin",
+        "estudiante",
+        "profesor"
+      ],
+      "evidence": [
+        "backend/tests/unit/test_analytics_events.py",
+        "frontend/src/lib/analytics.test.ts"
+      ],
+      "issue_url": "https://github.com/Andres-back/Calificator/issues/17",
+      "reason": "El catálogo cerrado autoriza eventos por rol y deriva identidad de la sesión antes de persistir.",
+      "surface_id": "backend:POST:/analytics/evento"
+    },
+    {
+      "actors": [
+        "admin",
+        "profesor"
+      ],
+      "evidence": [
+        "backend/tests/unit/test_authorization_contracts.py"
+      ],
+      "issue_url": "https://github.com/Andres-back/Calificator/issues/17",
+      "reason": "El router delega en ensure_can_manage_materia antes de guardar y las denegaciones no escriben.",
+      "surface_id": "backend:PUT:/materias/{materia_id}/asistencia"
+    },
+    {
+      "actors": [
+        "admin",
+        "profesor"
+      ],
+      "evidence": [
+        "backend/tests/unit/test_student_review_request.py"
+      ],
+      "issue_url": "https://github.com/Andres-back/Calificator/issues/17",
+      "reason": "La llamada pertenece al workspace docente; el estudiante crea o consulta su solicitud por endpoints separados.",
+      "surface_id": "frontend_call:PATCH:/incidencias/{incidenciaId}/resolver:frontend/src/modules/calificaciones/api.ts"
+    }
+  ],
   "schema_version": 1,
-  "source_digest": "33198c8f29942620458960f931ab47759df440ec5f0591be31d638272817b5c4",
+  "source_digest": "46fedec5319167abbf4dd59205270d9be7efb355cd91247f5d22c5a34b43f215",
   "surfaces": [
     {
       "actors": [
@@ -437,6 +454,18 @@
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
         },
         {
+          "level": "e2e",
+          "reference": "DELETE:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/student-activity-delivery.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "DELETE:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
+          "test_path": "frontend/src/lib/analytics.test.ts"
+        },
+        {
           "level": "unit",
           "reference": "DELETE:/evaluaciones/{evaluacion_id}",
           "status": "direct",
@@ -519,6 +548,18 @@
         {
           "level": "unit",
           "reference": "DELETE:/herramientas/{material_id}",
+          "status": "direct",
+          "test_path": "backend/tests/unit/authorization_helpers.py"
+        },
+        {
+          "level": "unit",
+          "reference": "DELETE:/herramientas/{material_id}",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_authorization_contracts.py"
+        },
+        {
+          "level": "unit",
+          "reference": "DELETE:/herramientas/{material_id}",
           "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
         },
@@ -551,6 +592,12 @@
           "reference": "DELETE:/herramientas/{material_id}",
           "status": "direct",
           "test_path": "frontend/e2e/resources-creation.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "DELETE:/herramientas/{material_id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/student-activity-delivery.spec.ts"
         },
         {
           "level": "unit",
@@ -611,6 +658,18 @@
         {
           "level": "unit",
           "reference": "DELETE:/presentaciones/{presentacion_id}",
+          "status": "direct",
+          "test_path": "backend/tests/unit/authorization_helpers.py"
+        },
+        {
+          "level": "unit",
+          "reference": "DELETE:/presentaciones/{presentacion_id}",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_authorization_contracts.py"
+        },
+        {
+          "level": "unit",
+          "reference": "DELETE:/presentaciones/{presentacion_id}",
           "status": "domain",
           "test_path": "backend/tests/unit/test_presentaciones_context.py"
         },
@@ -631,6 +690,12 @@
           "reference": "DELETE:/presentaciones/{presentacion_id}",
           "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "DELETE:/presentaciones/{presentacion_id}",
+          "status": "direct",
+          "test_path": "frontend/src/lib/analytics.test.ts"
         },
         {
           "level": "unit",
@@ -924,7 +989,7 @@
       "kind": "endpoint",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "GET:/analytics/ai-quality/concordancia",
-      "source_line": 219,
+      "source_line": 221,
       "source_path": "backend/app/modules/analytics/router.py",
       "states": [],
       "tests": [
@@ -933,6 +998,12 @@
           "reference": "GET:/analytics/ai-quality/concordancia",
           "status": "domain",
           "test_path": "backend/tests/unit/test_analytics_events.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/analytics/ai-quality/concordancia",
+          "status": "domain",
+          "test_path": "frontend/src/lib/analytics.test.ts"
         }
       ]
     },
@@ -956,7 +1027,7 @@
       "kind": "endpoint",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "GET:/analytics/ai-quality/confidence",
-      "source_line": 264,
+      "source_line": 266,
       "source_path": "backend/app/modules/analytics/router.py",
       "states": [],
       "tests": [
@@ -965,6 +1036,12 @@
           "reference": "GET:/analytics/ai-quality/confidence",
           "status": "domain",
           "test_path": "backend/tests/unit/test_analytics_events.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/analytics/ai-quality/confidence",
+          "status": "domain",
+          "test_path": "frontend/src/lib/analytics.test.ts"
         }
       ]
     },
@@ -988,7 +1065,7 @@
       "kind": "endpoint",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "GET:/analytics/ai-quality/costs",
-      "source_line": 336,
+      "source_line": 338,
       "source_path": "backend/app/modules/analytics/router.py",
       "states": [],
       "tests": [
@@ -997,6 +1074,12 @@
           "reference": "GET:/analytics/ai-quality/costs",
           "status": "domain",
           "test_path": "backend/tests/unit/test_analytics_events.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/analytics/ai-quality/costs",
+          "status": "domain",
+          "test_path": "frontend/src/lib/analytics.test.ts"
         }
       ]
     },
@@ -1020,7 +1103,7 @@
       "kind": "endpoint",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "GET:/analytics/ai-quality/costs/provider-comparison",
-      "source_line": 353,
+      "source_line": 355,
       "source_path": "backend/app/modules/analytics/router.py",
       "states": [],
       "tests": [
@@ -1029,6 +1112,12 @@
           "reference": "GET:/analytics/ai-quality/costs/provider-comparison",
           "status": "domain",
           "test_path": "backend/tests/unit/test_analytics_events.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/analytics/ai-quality/costs/provider-comparison",
+          "status": "domain",
+          "test_path": "frontend/src/lib/analytics.test.ts"
         }
       ]
     },
@@ -1052,7 +1141,7 @@
       "kind": "endpoint",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "GET:/analytics/ai-quality/errors",
-      "source_line": 250,
+      "source_line": 252,
       "source_path": "backend/app/modules/analytics/router.py",
       "states": [],
       "tests": [
@@ -1061,6 +1150,12 @@
           "reference": "GET:/analytics/ai-quality/errors",
           "status": "domain",
           "test_path": "backend/tests/unit/test_analytics_events.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/analytics/ai-quality/errors",
+          "status": "domain",
+          "test_path": "frontend/src/lib/analytics.test.ts"
         }
       ]
     },
@@ -1084,7 +1179,7 @@
       "kind": "endpoint",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "GET:/analytics/ai-quality/latency",
-      "source_line": 236,
+      "source_line": 238,
       "source_path": "backend/app/modules/analytics/router.py",
       "states": [],
       "tests": [
@@ -1093,6 +1188,12 @@
           "reference": "GET:/analytics/ai-quality/latency",
           "status": "domain",
           "test_path": "backend/tests/unit/test_analytics_events.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/analytics/ai-quality/latency",
+          "status": "domain",
+          "test_path": "frontend/src/lib/analytics.test.ts"
         }
       ]
     },
@@ -1116,7 +1217,7 @@
       "kind": "endpoint",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "GET:/analytics/ai-quality/usage",
-      "source_line": 278,
+      "source_line": 280,
       "source_path": "backend/app/modules/analytics/router.py",
       "states": [],
       "tests": [
@@ -1125,6 +1226,12 @@
           "reference": "GET:/analytics/ai-quality/usage",
           "status": "domain",
           "test_path": "backend/tests/unit/test_analytics_events.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/analytics/ai-quality/usage",
+          "status": "domain",
+          "test_path": "frontend/src/lib/analytics.test.ts"
         }
       ]
     },
@@ -1148,7 +1255,7 @@
       "kind": "endpoint",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "GET:/analytics/criterios",
-      "source_line": 92,
+      "source_line": 94,
       "source_path": "backend/app/modules/analytics/router.py",
       "states": [],
       "tests": [
@@ -1157,6 +1264,12 @@
           "reference": "GET:/analytics/criterios",
           "status": "domain",
           "test_path": "backend/tests/unit/test_analytics_events.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/analytics/criterios",
+          "status": "domain",
+          "test_path": "frontend/src/lib/analytics.test.ts"
         }
       ]
     },
@@ -1180,7 +1293,7 @@
       "kind": "endpoint",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "GET:/analytics/estudiantes",
-      "source_line": 125,
+      "source_line": 127,
       "source_path": "backend/app/modules/analytics/router.py",
       "states": [],
       "tests": [
@@ -1189,6 +1302,12 @@
           "reference": "GET:/analytics/estudiantes",
           "status": "domain",
           "test_path": "backend/tests/unit/test_analytics_events.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/analytics/estudiantes",
+          "status": "domain",
+          "test_path": "frontend/src/lib/analytics.test.ts"
         }
       ]
     },
@@ -1212,7 +1331,7 @@
       "kind": "endpoint",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "GET:/analytics/estudiantes/{estudiante_id}",
-      "source_line": 142,
+      "source_line": 144,
       "source_path": "backend/app/modules/analytics/router.py",
       "states": [],
       "tests": [
@@ -1221,6 +1340,12 @@
           "reference": "GET:/analytics/estudiantes/{estudiante_id}",
           "status": "domain",
           "test_path": "backend/tests/unit/test_analytics_events.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/analytics/estudiantes/{estudiante_id}",
+          "status": "domain",
+          "test_path": "frontend/src/lib/analytics.test.ts"
         }
       ]
     },
@@ -1244,7 +1369,7 @@
       "kind": "endpoint",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "GET:/analytics/evaluaciones",
-      "source_line": 62,
+      "source_line": 64,
       "source_path": "backend/app/modules/analytics/router.py",
       "states": [],
       "tests": [
@@ -1259,6 +1384,12 @@
           "reference": "GET:/analytics/evaluaciones",
           "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/analytics/evaluaciones",
+          "status": "domain",
+          "test_path": "frontend/src/lib/analytics.test.ts"
         }
       ]
     },
@@ -1282,7 +1413,7 @@
       "kind": "endpoint",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "GET:/analytics/evaluaciones/{evaluacion_id}",
-      "source_line": 78,
+      "source_line": 80,
       "source_path": "backend/app/modules/analytics/router.py",
       "states": [],
       "tests": [
@@ -1297,6 +1428,12 @@
           "reference": "GET:/analytics/evaluaciones/{evaluacion_id}",
           "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/analytics/evaluaciones/{evaluacion_id}",
+          "status": "domain",
+          "test_path": "frontend/src/lib/analytics.test.ts"
         }
       ]
     },
@@ -1320,7 +1457,7 @@
       "kind": "endpoint",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "GET:/analytics/export/criterios.csv",
-      "source_line": 173,
+      "source_line": 175,
       "source_path": "backend/app/modules/analytics/router.py",
       "states": [],
       "tests": [
@@ -1329,6 +1466,12 @@
           "reference": "GET:/analytics/export/criterios.csv",
           "status": "domain",
           "test_path": "backend/tests/unit/test_analytics_events.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/analytics/export/criterios.csv",
+          "status": "domain",
+          "test_path": "frontend/src/lib/analytics.test.ts"
         }
       ]
     },
@@ -1352,7 +1495,7 @@
       "kind": "endpoint",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "GET:/analytics/export/estudiantes.csv",
-      "source_line": 196,
+      "source_line": 198,
       "source_path": "backend/app/modules/analytics/router.py",
       "states": [],
       "tests": [
@@ -1361,6 +1504,12 @@
           "reference": "GET:/analytics/export/estudiantes.csv",
           "status": "domain",
           "test_path": "backend/tests/unit/test_analytics_events.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/analytics/export/estudiantes.csv",
+          "status": "domain",
+          "test_path": "frontend/src/lib/analytics.test.ts"
         }
       ]
     },
@@ -1384,7 +1533,7 @@
       "kind": "endpoint",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "GET:/analytics/overview",
-      "source_line": 46,
+      "source_line": 48,
       "source_path": "backend/app/modules/analytics/router.py",
       "states": [],
       "tests": [
@@ -1399,6 +1548,12 @@
           "reference": "GET:/analytics/overview",
           "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/analytics/overview",
+          "status": "domain",
+          "test_path": "frontend/src/lib/analytics.test.ts"
         }
       ]
     },
@@ -1422,7 +1577,7 @@
       "kind": "endpoint",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "GET:/analytics/preguntas",
-      "source_line": 109,
+      "source_line": 111,
       "source_path": "backend/app/modules/analytics/router.py",
       "states": [],
       "tests": [
@@ -1431,6 +1586,12 @@
           "reference": "GET:/analytics/preguntas",
           "status": "domain",
           "test_path": "backend/tests/unit/test_analytics_events.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/analytics/preguntas",
+          "status": "domain",
+          "test_path": "frontend/src/lib/analytics.test.ts"
         }
       ]
     },
@@ -1454,7 +1615,7 @@
       "kind": "endpoint",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "GET:/analytics/sintesis",
-      "source_line": 156,
+      "source_line": 158,
       "source_path": "backend/app/modules/analytics/router.py",
       "states": [],
       "tests": [
@@ -1463,6 +1624,12 @@
           "reference": "GET:/analytics/sintesis",
           "status": "domain",
           "test_path": "backend/tests/unit/test_analytics_events.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/analytics/sintesis",
+          "status": "domain",
+          "test_path": "frontend/src/lib/analytics.test.ts"
         }
       ]
     },
@@ -1498,6 +1665,12 @@
           "level": "unit",
           "reference": "GET:/auth/me",
           "status": "domain",
+          "test_path": "backend/tests/unit/authorization_helpers.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/auth/me",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_auth_logout.py"
         },
         {
@@ -1505,6 +1678,12 @@
           "reference": "GET:/auth/me",
           "status": "domain",
           "test_path": "backend/tests/unit/test_auth_registration_security.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/auth/me",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_authorization_contracts.py"
         },
         {
           "level": "e2e",
@@ -1529,6 +1708,12 @@
           "reference": "GET:/auth/me",
           "status": "direct",
           "test_path": "frontend/e2e/resources-creation.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/auth/me",
+          "status": "direct",
+          "test_path": "frontend/e2e/student-activity-delivery.spec.ts"
         },
         {
           "level": "unit",
@@ -1909,6 +2094,18 @@
           "test_path": "backend/tests/integration/test_api_contract.py"
         },
         {
+          "level": "unit",
+          "reference": "GET:/dba",
+          "status": "direct",
+          "test_path": "backend/tests/unit/authorization_helpers.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/dba",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_authorization_contracts.py"
+        },
+        {
           "level": "e2e",
           "reference": "GET:/dba",
           "status": "direct",
@@ -2132,6 +2329,18 @@
           "reference": "GET:/evaluaciones/{evaluacion_id}",
           "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/student-activity-delivery.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
+          "test_path": "frontend/src/lib/analytics.test.ts"
         },
         {
           "level": "unit",
@@ -2463,6 +2672,18 @@
         {
           "level": "unit",
           "reference": "GET:/herramientas",
+          "status": "direct",
+          "test_path": "backend/tests/unit/authorization_helpers.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/herramientas",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_authorization_contracts.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/herramientas",
           "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
         },
@@ -2497,6 +2718,12 @@
           "test_path": "frontend/e2e/resources-creation.spec.ts"
         },
         {
+          "level": "e2e",
+          "reference": "GET:/herramientas",
+          "status": "direct",
+          "test_path": "frontend/e2e/student-activity-delivery.spec.ts"
+        },
+        {
           "level": "unit",
           "reference": "GET:/herramientas",
           "status": "direct",
@@ -2524,15 +2751,23 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin",
+        "estudiante",
+        "profesor"
       ],
       "authorization": [
+        "explicit_permission_override",
         "get_current_user"
       ],
       "consumers": [],
       "coverage": "covered",
       "details": {
         "function": "listar_recursos_de_materia",
+        "permission_override_evidence": [
+          "backend/tests/unit/test_authorization_contracts.py"
+        ],
+        "permission_override_issue": "https://github.com/Andres-back/Calificator/issues/17",
+        "permission_override_reason": "El servicio valida gestión docente o matrícula activa y filtra recursos publicados para estudiantes.",
         "registered": true,
         "router": "router"
       },
@@ -2566,15 +2801,23 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin",
+        "estudiante",
+        "profesor"
       ],
       "authorization": [
+        "explicit_permission_override",
         "get_current_user"
       ],
       "consumers": [],
       "coverage": "covered",
       "details": {
         "function": "ver_material",
+        "permission_override_evidence": [
+          "backend/tests/unit/test_authorization_contracts.py"
+        ],
+        "permission_override_issue": "https://github.com/Andres-back/Calificator/issues/17",
+        "permission_override_reason": "El servicio limita profesor y administrador por autor, y estudiante por publicación, asignación y matrícula.",
         "registered": true,
         "router": "router"
       },
@@ -2586,6 +2829,18 @@
       "source_path": "backend/app/modules/herramientas/router.py",
       "states": [],
       "tests": [
+        {
+          "level": "unit",
+          "reference": "GET:/herramientas/{material_id}",
+          "status": "direct",
+          "test_path": "backend/tests/unit/authorization_helpers.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/herramientas/{material_id}",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_authorization_contracts.py"
+        },
         {
           "level": "unit",
           "reference": "GET:/herramientas/{material_id}",
@@ -2621,6 +2876,12 @@
           "reference": "GET:/herramientas/{material_id}",
           "status": "direct",
           "test_path": "frontend/e2e/resources-creation.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/herramientas/{material_id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/student-activity-delivery.spec.ts"
         },
         {
           "level": "unit",
@@ -2945,6 +3206,18 @@
         {
           "level": "unit",
           "reference": "GET:/materias",
+          "status": "direct",
+          "test_path": "backend/tests/unit/authorization_helpers.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_authorization_contracts.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias",
           "status": "domain",
           "test_path": "backend/tests/unit/test_materias_service.py"
         },
@@ -2973,6 +3246,12 @@
           "test_path": "frontend/e2e/resources-creation.spec.ts"
         },
         {
+          "level": "e2e",
+          "reference": "GET:/materias",
+          "status": "direct",
+          "test_path": "frontend/e2e/student-activity-delivery.spec.ts"
+        },
+        {
           "level": "unit",
           "reference": "GET:/materias",
           "status": "direct",
@@ -2983,6 +3262,12 @@
           "reference": "GET:/materias",
           "status": "direct",
           "test_path": "frontend/src/components/ui/P2Accessibility.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias",
+          "status": "direct",
+          "test_path": "frontend/src/lib/analytics.test.ts"
         },
         {
           "level": "unit",
@@ -3077,6 +3362,18 @@
         {
           "level": "unit",
           "reference": "GET:/materias/{materia_id}",
+          "status": "direct",
+          "test_path": "backend/tests/unit/authorization_helpers.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias/{materia_id}",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_authorization_contracts.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias/{materia_id}",
           "status": "domain",
           "test_path": "backend/tests/unit/test_materias_service.py"
         },
@@ -3105,6 +3402,12 @@
           "test_path": "frontend/e2e/resources-creation.spec.ts"
         },
         {
+          "level": "e2e",
+          "reference": "GET:/materias/{materia_id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/student-activity-delivery.spec.ts"
+        },
+        {
           "level": "unit",
           "reference": "GET:/materias/{materia_id}",
           "status": "direct",
@@ -3115,6 +3418,12 @@
           "reference": "GET:/materias/{materia_id}",
           "status": "direct",
           "test_path": "frontend/src/components/ui/P2Accessibility.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias/{materia_id}",
+          "status": "direct",
+          "test_path": "frontend/src/lib/analytics.test.ts"
         },
         {
           "level": "unit",
@@ -3174,15 +3483,22 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin",
+        "profesor"
       ],
       "authorization": [
+        "explicit_permission_override",
         "get_current_user"
       ],
       "consumers": [],
       "coverage": "covered",
       "details": {
         "function": "get_attendance_day",
+        "permission_override_evidence": [
+          "backend/tests/unit/test_authorization_contracts.py"
+        ],
+        "permission_override_issue": "https://github.com/Andres-back/Calificator/issues/17",
+        "permission_override_reason": "El router delega en ensure_can_manage_materia antes de consultar registros.",
         "registered": true,
         "router": "router"
       },
@@ -3205,6 +3521,12 @@
           "reference": "GET:/materias/{materia_id}/asistencia",
           "status": "domain",
           "test_path": "backend/tests/unit/test_asistencia_service.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias/{materia_id}/asistencia",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_authorization_contracts.py"
         }
       ]
     },
@@ -3246,15 +3568,23 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin",
+        "estudiante",
+        "profesor"
       ],
       "authorization": [
+        "explicit_permission_override",
         "get_current_user"
       ],
       "consumers": [],
-      "coverage": "missing",
+      "coverage": "covered",
       "details": {
         "function": "list_materia_dba_combined",
+        "permission_override_evidence": [
+          "backend/tests/unit/test_authorization_contracts.py"
+        ],
+        "permission_override_issue": "https://github.com/Andres-back/Calificator/issues/17",
+        "permission_override_reason": "El router delega lectura de materia; estudiante requiere matrícula activa y los actores docentes conservan su ámbito.",
         "registered": true,
         "router": "custom_router"
       },
@@ -3265,7 +3595,14 @@
       "source_line": 131,
       "source_path": "backend/app/modules/dba/router.py",
       "states": [],
-      "tests": []
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "GET:/materias/{materia_id}/dba",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_authorization_contracts.py"
+        }
+      ]
     },
     {
       "actors": [
@@ -3421,15 +3758,23 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin",
+        "estudiante",
+        "profesor"
       ],
       "authorization": [
+        "explicit_permission_override",
         "get_current_user"
       ],
       "consumers": [],
       "coverage": "covered",
       "details": {
         "function": "list_presentaciones",
+        "permission_override_evidence": [
+          "backend/tests/unit/test_presentaciones_router.py"
+        ],
+        "permission_override_issue": "https://github.com/Andres-back/Calificator/issues/17",
+        "permission_override_reason": "El servicio lista todo para admin, solo propias para profesor y solo publicadas de matrículas activas para estudiante.",
         "registered": true,
         "router": "router"
       },
@@ -3446,6 +3791,18 @@
           "reference": "GET:/presentaciones",
           "status": "direct",
           "test_path": "backend/tests/integration/test_api_contract.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/presentaciones",
+          "status": "direct",
+          "test_path": "backend/tests/unit/authorization_helpers.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/presentaciones",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_authorization_contracts.py"
         },
         {
           "level": "unit",
@@ -3470,6 +3827,12 @@
           "reference": "GET:/presentaciones",
           "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/presentaciones",
+          "status": "direct",
+          "test_path": "frontend/src/lib/analytics.test.ts"
         },
         {
           "level": "unit",
@@ -3552,6 +3915,18 @@
         {
           "level": "unit",
           "reference": "GET:/presentaciones/{presentacion_id}",
+          "status": "direct",
+          "test_path": "backend/tests/unit/authorization_helpers.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/presentaciones/{presentacion_id}",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_authorization_contracts.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/presentaciones/{presentacion_id}",
           "status": "domain",
           "test_path": "backend/tests/unit/test_presentaciones_context.py"
         },
@@ -3572,6 +3947,12 @@
           "reference": "GET:/presentaciones/{presentacion_id}",
           "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/presentaciones/{presentacion_id}",
+          "status": "direct",
+          "test_path": "frontend/src/lib/analytics.test.ts"
         },
         {
           "level": "unit",
@@ -3631,15 +4012,23 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin",
+        "estudiante",
+        "profesor"
       ],
       "authorization": [
+        "explicit_permission_override",
         "get_current_user"
       ],
       "consumers": [],
       "coverage": "covered",
       "details": {
         "function": "get_estado",
+        "permission_override_evidence": [
+          "backend/tests/unit/test_presentaciones_router.py"
+        ],
+        "permission_override_issue": "https://github.com/Andres-back/Calificator/issues/17",
+        "permission_override_reason": "La ruta exige ensure_can_read_presentacion antes de construir el estado.",
         "registered": true,
         "router": "router"
       },
@@ -3679,15 +4068,23 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin",
+        "estudiante",
+        "profesor"
       ],
       "authorization": [
+        "explicit_permission_override",
         "get_current_user"
       ],
       "consumers": [],
       "coverage": "covered",
       "details": {
         "function": "preview_metadata",
+        "permission_override_evidence": [
+          "backend/tests/unit/test_presentaciones_router.py"
+        ],
+        "permission_override_issue": "https://github.com/Andres-back/Calificator/issues/17",
+        "permission_override_reason": "La ruta exige ensure_can_read_presentacion antes de construir la vista previa.",
         "registered": true,
         "router": "router"
       },
@@ -4580,6 +4977,18 @@
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
         },
         {
+          "level": "e2e",
+          "reference": "PATCH:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/student-activity-delivery.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
+          "test_path": "frontend/src/lib/analytics.test.ts"
+        },
+        {
           "level": "unit",
           "reference": "PATCH:/evaluaciones/{evaluacion_id}",
           "status": "direct",
@@ -4698,6 +5107,18 @@
         {
           "level": "unit",
           "reference": "PATCH:/herramientas/{material_id}",
+          "status": "direct",
+          "test_path": "backend/tests/unit/authorization_helpers.py"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/herramientas/{material_id}",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_authorization_contracts.py"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/herramientas/{material_id}",
           "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
         },
@@ -4730,6 +5151,12 @@
           "reference": "PATCH:/herramientas/{material_id}",
           "status": "direct",
           "test_path": "frontend/e2e/resources-creation.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/herramientas/{material_id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/student-activity-delivery.spec.ts"
         },
         {
           "level": "unit",
@@ -4875,6 +5302,18 @@
         {
           "level": "unit",
           "reference": "PATCH:/materias/{materia_id}",
+          "status": "direct",
+          "test_path": "backend/tests/unit/authorization_helpers.py"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/materias/{materia_id}",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_authorization_contracts.py"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/materias/{materia_id}",
           "status": "domain",
           "test_path": "backend/tests/unit/test_materias_service.py"
         },
@@ -4903,6 +5342,12 @@
           "test_path": "frontend/e2e/resources-creation.spec.ts"
         },
         {
+          "level": "e2e",
+          "reference": "PATCH:/materias/{materia_id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/student-activity-delivery.spec.ts"
+        },
+        {
           "level": "unit",
           "reference": "PATCH:/materias/{materia_id}",
           "status": "direct",
@@ -4913,6 +5358,12 @@
           "reference": "PATCH:/materias/{materia_id}",
           "status": "direct",
           "test_path": "frontend/src/components/ui/P2Accessibility.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/materias/{materia_id}",
+          "status": "direct",
+          "test_path": "frontend/src/lib/analytics.test.ts"
         },
         {
           "level": "unit",
@@ -5203,15 +5654,24 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin",
+        "estudiante",
+        "profesor"
       ],
       "authorization": [
+        "explicit_permission_override",
         "get_current_user"
       ],
       "consumers": [],
       "coverage": "covered",
       "details": {
         "function": "registrar_evento",
+        "permission_override_evidence": [
+          "backend/tests/unit/test_analytics_events.py",
+          "frontend/src/lib/analytics.test.ts"
+        ],
+        "permission_override_issue": "https://github.com/Andres-back/Calificator/issues/17",
+        "permission_override_reason": "El catálogo cerrado autoriza eventos por rol y deriva identidad de la sesión antes de persistir.",
         "registered": true,
         "router": "router"
       },
@@ -5226,8 +5686,32 @@
         {
           "level": "unit",
           "reference": "POST:/analytics/evento",
-          "status": "domain",
+          "status": "direct",
+          "test_path": "backend/tests/unit/authorization_helpers.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/analytics/evento",
+          "status": "direct",
           "test_path": "backend/tests/unit/test_analytics_events.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/analytics/evento",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_authorization_contracts.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/analytics/evento",
+          "status": "direct",
+          "test_path": "frontend/src/components/layout/AppShell.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/analytics/evento",
+          "status": "direct",
+          "test_path": "frontend/src/lib/analytics.test.ts"
         }
       ]
     },
@@ -5267,6 +5751,12 @@
           "level": "unit",
           "reference": "POST:/auth/login",
           "status": "domain",
+          "test_path": "backend/tests/unit/authorization_helpers.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/auth/login",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_auth_logout.py"
         },
         {
@@ -5274,6 +5764,12 @@
           "reference": "POST:/auth/login",
           "status": "domain",
           "test_path": "backend/tests/unit/test_auth_registration_security.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/auth/login",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_authorization_contracts.py"
         },
         {
           "level": "unit",
@@ -5304,6 +5800,12 @@
           "reference": "POST:/auth/login",
           "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/auth/login",
+          "status": "direct",
+          "test_path": "frontend/e2e/student-activity-delivery.spec.ts"
         }
       ]
     },
@@ -5336,6 +5838,12 @@
         {
           "level": "unit",
           "reference": "POST:/auth/logout",
+          "status": "domain",
+          "test_path": "backend/tests/unit/authorization_helpers.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/auth/logout",
           "status": "direct",
           "test_path": "backend/tests/unit/test_auth_logout.py"
         },
@@ -5344,6 +5852,12 @@
           "reference": "POST:/auth/logout",
           "status": "domain",
           "test_path": "backend/tests/unit/test_auth_registration_security.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/auth/logout",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_authorization_contracts.py"
         },
         {
           "level": "e2e",
@@ -5389,6 +5903,12 @@
           "level": "unit",
           "reference": "POST:/auth/refresh",
           "status": "domain",
+          "test_path": "backend/tests/unit/authorization_helpers.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/auth/refresh",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_auth_logout.py"
         },
         {
@@ -5396,6 +5916,12 @@
           "reference": "POST:/auth/refresh",
           "status": "domain",
           "test_path": "backend/tests/unit/test_auth_registration_security.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/auth/refresh",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_authorization_contracts.py"
         },
         {
           "level": "e2e",
@@ -5420,6 +5946,12 @@
           "reference": "POST:/auth/refresh",
           "status": "direct",
           "test_path": "frontend/e2e/resources-creation.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/auth/refresh",
+          "status": "direct",
+          "test_path": "frontend/e2e/student-activity-delivery.spec.ts"
         },
         {
           "level": "unit",
@@ -5465,6 +5997,12 @@
           "level": "unit",
           "reference": "POST:/auth/register",
           "status": "domain",
+          "test_path": "backend/tests/unit/authorization_helpers.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/auth/register",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_auth_logout.py"
         },
         {
@@ -5472,6 +6010,12 @@
           "reference": "POST:/auth/register",
           "status": "domain",
           "test_path": "backend/tests/unit/test_auth_registration_security.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/auth/register",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_authorization_contracts.py"
         },
         {
           "level": "e2e",
@@ -6184,6 +6728,18 @@
           "reference": "POST:/evaluaciones",
           "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/evaluaciones",
+          "status": "direct",
+          "test_path": "frontend/e2e/student-activity-delivery.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/evaluaciones",
+          "status": "direct",
+          "test_path": "frontend/src/lib/analytics.test.ts"
         },
         {
           "level": "unit",
@@ -7872,6 +8428,18 @@
         {
           "level": "unit",
           "reference": "POST:/materias",
+          "status": "direct",
+          "test_path": "backend/tests/unit/authorization_helpers.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/materias",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_authorization_contracts.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/materias",
           "status": "domain",
           "test_path": "backend/tests/unit/test_materias_service.py"
         },
@@ -7900,6 +8468,12 @@
           "test_path": "frontend/e2e/resources-creation.spec.ts"
         },
         {
+          "level": "e2e",
+          "reference": "POST:/materias",
+          "status": "direct",
+          "test_path": "frontend/e2e/student-activity-delivery.spec.ts"
+        },
+        {
           "level": "unit",
           "reference": "POST:/materias",
           "status": "direct",
@@ -7910,6 +8484,12 @@
           "reference": "POST:/materias",
           "status": "direct",
           "test_path": "frontend/src/components/ui/P2Accessibility.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/materias",
+          "status": "direct",
+          "test_path": "frontend/src/lib/analytics.test.ts"
         },
         {
           "level": "unit",
@@ -8124,6 +8704,18 @@
         {
           "level": "unit",
           "reference": "POST:/presentaciones",
+          "status": "direct",
+          "test_path": "backend/tests/unit/authorization_helpers.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/presentaciones",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_authorization_contracts.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/presentaciones",
           "status": "domain",
           "test_path": "backend/tests/unit/test_presentaciones_context.py"
         },
@@ -8144,6 +8736,12 @@
           "reference": "POST:/presentaciones",
           "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/presentaciones",
+          "status": "direct",
+          "test_path": "frontend/src/lib/analytics.test.ts"
         },
         {
           "level": "unit",
@@ -8536,15 +9134,22 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin",
+        "profesor"
       ],
       "authorization": [
+        "explicit_permission_override",
         "get_current_user"
       ],
       "consumers": [],
       "coverage": "covered",
       "details": {
         "function": "save_attendance_day",
+        "permission_override_evidence": [
+          "backend/tests/unit/test_authorization_contracts.py"
+        ],
+        "permission_override_issue": "https://github.com/Andres-back/Calificator/issues/17",
+        "permission_override_reason": "El router delega en ensure_can_manage_materia antes de guardar y las denegaciones no escriben.",
         "registered": true,
         "router": "router"
       },
@@ -8567,6 +9172,12 @@
           "reference": "PUT:/materias/{materia_id}/asistencia",
           "status": "domain",
           "test_path": "backend/tests/unit/test_asistencia_service.py"
+        },
+        {
+          "level": "unit",
+          "reference": "PUT:/materias/{materia_id}/asistencia",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_authorization_contracts.py"
         }
       ]
     },
@@ -8605,7 +9216,25 @@
           "level": "unit",
           "reference": "/",
           "status": "direct",
+          "test_path": "backend/tests/unit/authorization_helpers.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_analytics_events.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
           "test_path": "backend/tests/unit/test_auth_logout.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_authorization_contracts.py"
         },
         {
           "level": "unit",
@@ -8809,6 +9438,12 @@
           "level": "e2e",
           "reference": "/",
           "status": "direct",
+          "test_path": "frontend/e2e/student-activity-delivery.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/",
+          "status": "direct",
           "test_path": "frontend/e2e/visual/example.visual.spec.ts"
         },
         {
@@ -8846,6 +9481,12 @@
           "reference": "/",
           "status": "direct",
           "test_path": "frontend/src/config/studentNavigation.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "frontend/src/lib/analytics.test.ts"
         },
         {
           "level": "unit",
@@ -9147,6 +9788,12 @@
           "test_path": "frontend/e2e/resources-creation.spec.ts"
         },
         {
+          "level": "e2e",
+          "reference": "/app",
+          "status": "direct",
+          "test_path": "frontend/e2e/student-activity-delivery.spec.ts"
+        },
+        {
           "level": "unit",
           "reference": "/app",
           "status": "direct",
@@ -9169,6 +9816,12 @@
           "reference": "/app",
           "status": "direct",
           "test_path": "frontend/src/config/studentNavigation.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "/app",
+          "status": "direct",
+          "test_path": "frontend/src/lib/analytics.test.ts"
         },
         {
           "level": "unit",
@@ -9481,6 +10134,12 @@
         {
           "level": "unit",
           "reference": "/app/calificaciones/boletin",
+          "status": "direct",
+          "test_path": "frontend/src/lib/analytics.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/calificaciones/boletin",
           "status": "domain",
           "test_path": "frontend/src/modules/admin/AdminAIConfigPage.test.tsx"
         }
@@ -9531,6 +10190,12 @@
           "reference": "/app/calificaciones/workspace",
           "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/calificaciones/workspace",
+          "status": "direct",
+          "test_path": "frontend/src/lib/analytics.test.ts"
         },
         {
           "level": "unit",
@@ -9591,6 +10256,12 @@
           "reference": "/app/calificaciones/workspace/{evaluacionId}",
           "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/calificaciones/workspace/{evaluacionId}",
+          "status": "direct",
+          "test_path": "frontend/src/lib/analytics.test.ts"
         },
         {
           "level": "unit",
@@ -9656,6 +10327,18 @@
           "reference": "/app/evaluaciones",
           "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app/evaluaciones",
+          "status": "direct",
+          "test_path": "frontend/e2e/student-activity-delivery.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/evaluaciones",
+          "status": "direct",
+          "test_path": "frontend/src/lib/analytics.test.ts"
         },
         {
           "level": "unit",
@@ -9908,6 +10591,12 @@
         {
           "level": "unit",
           "reference": "/app/materias",
+          "status": "direct",
+          "test_path": "frontend/src/lib/analytics.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/materias",
           "status": "domain",
           "test_path": "frontend/src/modules/admin/AdminAIConfigPage.test.tsx"
         },
@@ -9994,6 +10683,12 @@
           "reference": "/app/materias/{id}",
           "status": "direct",
           "test_path": "frontend/src/components/ui/P2Accessibility.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/materias/{id}",
+          "status": "direct",
+          "test_path": "frontend/src/lib/analytics.test.ts"
         },
         {
           "level": "unit",
@@ -10364,6 +11059,12 @@
         {
           "level": "unit",
           "reference": "/app/presentaciones",
+          "status": "direct",
+          "test_path": "frontend/src/lib/analytics.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/presentaciones",
           "status": "domain",
           "test_path": "frontend/src/modules/admin/AdminAIConfigPage.test.tsx"
         }
@@ -10407,6 +11108,12 @@
           "reference": "/app/recursos/{id}",
           "status": "domain",
           "test_path": "backend/tests/unit/test_worker_ai_config.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app/recursos/{id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/student-activity-delivery.spec.ts"
         },
         {
           "level": "unit",
@@ -10530,6 +11237,12 @@
         {
           "level": "unit",
           "reference": "/app/xali",
+          "status": "direct",
+          "test_path": "frontend/src/lib/analytics.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/xali",
           "status": "domain",
           "test_path": "frontend/src/modules/admin/AdminAIConfigPage.test.tsx"
         }
@@ -10613,6 +11326,12 @@
           "reference": "/login",
           "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/login",
+          "status": "direct",
+          "test_path": "frontend/e2e/student-activity-delivery.spec.ts"
         },
         {
           "level": "unit",
@@ -10783,6 +11502,18 @@
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
         },
         {
+          "level": "e2e",
+          "reference": "DELETE:/evaluaciones/{id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/student-activity-delivery.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "DELETE:/evaluaciones/{id}",
+          "status": "direct",
+          "test_path": "frontend/src/lib/analytics.test.ts"
+        },
+        {
           "level": "unit",
           "reference": "DELETE:/evaluaciones/{id}",
           "status": "direct",
@@ -10864,6 +11595,18 @@
         {
           "level": "unit",
           "reference": "DELETE:/herramientas/{id}",
+          "status": "direct",
+          "test_path": "backend/tests/unit/authorization_helpers.py"
+        },
+        {
+          "level": "unit",
+          "reference": "DELETE:/herramientas/{id}",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_authorization_contracts.py"
+        },
+        {
+          "level": "unit",
+          "reference": "DELETE:/herramientas/{id}",
           "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
         },
@@ -10896,6 +11639,12 @@
           "reference": "DELETE:/herramientas/{id}",
           "status": "direct",
           "test_path": "frontend/e2e/resources-creation.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "DELETE:/herramientas/{id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/student-activity-delivery.spec.ts"
         },
         {
           "level": "unit",
@@ -10955,6 +11704,18 @@
         {
           "level": "unit",
           "reference": "DELETE:/presentaciones/{id}",
+          "status": "direct",
+          "test_path": "backend/tests/unit/authorization_helpers.py"
+        },
+        {
+          "level": "unit",
+          "reference": "DELETE:/presentaciones/{id}",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_authorization_contracts.py"
+        },
+        {
+          "level": "unit",
+          "reference": "DELETE:/presentaciones/{id}",
           "status": "domain",
           "test_path": "backend/tests/unit/test_presentaciones_context.py"
         },
@@ -10975,6 +11736,12 @@
           "reference": "DELETE:/presentaciones/{id}",
           "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "DELETE:/presentaciones/{id}",
+          "status": "direct",
+          "test_path": "frontend/src/lib/analytics.test.ts"
         },
         {
           "level": "unit",
@@ -11226,6 +11993,12 @@
           "reference": "GET:/analytics/ai-quality/concordancia",
           "status": "domain",
           "test_path": "backend/tests/unit/test_analytics_events.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/analytics/ai-quality/concordancia",
+          "status": "domain",
+          "test_path": "frontend/src/lib/analytics.test.ts"
         }
       ]
     },
@@ -11257,6 +12030,12 @@
           "reference": "GET:/analytics/ai-quality/confidence",
           "status": "domain",
           "test_path": "backend/tests/unit/test_analytics_events.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/analytics/ai-quality/confidence",
+          "status": "domain",
+          "test_path": "frontend/src/lib/analytics.test.ts"
         }
       ]
     },
@@ -11288,6 +12067,12 @@
           "reference": "GET:/analytics/ai-quality/costs/provider-comparison",
           "status": "domain",
           "test_path": "backend/tests/unit/test_analytics_events.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/analytics/ai-quality/costs/provider-comparison",
+          "status": "domain",
+          "test_path": "frontend/src/lib/analytics.test.ts"
         }
       ]
     },
@@ -11319,6 +12104,12 @@
           "reference": "GET:/analytics/ai-quality/costs",
           "status": "domain",
           "test_path": "backend/tests/unit/test_analytics_events.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/analytics/ai-quality/costs",
+          "status": "domain",
+          "test_path": "frontend/src/lib/analytics.test.ts"
         }
       ]
     },
@@ -11350,6 +12141,12 @@
           "reference": "GET:/analytics/ai-quality/errors",
           "status": "domain",
           "test_path": "backend/tests/unit/test_analytics_events.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/analytics/ai-quality/errors",
+          "status": "domain",
+          "test_path": "frontend/src/lib/analytics.test.ts"
         }
       ]
     },
@@ -11381,6 +12178,12 @@
           "reference": "GET:/analytics/ai-quality/latency",
           "status": "domain",
           "test_path": "backend/tests/unit/test_analytics_events.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/analytics/ai-quality/latency",
+          "status": "domain",
+          "test_path": "frontend/src/lib/analytics.test.ts"
         }
       ]
     },
@@ -11412,6 +12215,12 @@
           "reference": "GET:/analytics/criterios",
           "status": "domain",
           "test_path": "backend/tests/unit/test_analytics_events.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/analytics/criterios",
+          "status": "domain",
+          "test_path": "frontend/src/lib/analytics.test.ts"
         }
       ]
     },
@@ -11443,6 +12252,12 @@
           "reference": "GET:/analytics/estudiantes/{selected}",
           "status": "domain",
           "test_path": "backend/tests/unit/test_analytics_events.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/analytics/estudiantes/{selected}",
+          "status": "domain",
+          "test_path": "frontend/src/lib/analytics.test.ts"
         }
       ]
     },
@@ -11474,6 +12289,12 @@
           "reference": "GET:/analytics/estudiantes",
           "status": "domain",
           "test_path": "backend/tests/unit/test_analytics_events.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/analytics/estudiantes",
+          "status": "domain",
+          "test_path": "frontend/src/lib/analytics.test.ts"
         }
       ]
     },
@@ -11511,6 +12332,12 @@
           "reference": "GET:/analytics/evaluaciones",
           "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/analytics/evaluaciones",
+          "status": "domain",
+          "test_path": "frontend/src/lib/analytics.test.ts"
         }
       ]
     },
@@ -11548,6 +12375,12 @@
           "reference": "GET:/analytics/overview",
           "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/analytics/overview",
+          "status": "domain",
+          "test_path": "frontend/src/lib/analytics.test.ts"
         }
       ]
     },
@@ -11579,6 +12412,12 @@
           "reference": "GET:/analytics/preguntas",
           "status": "domain",
           "test_path": "backend/tests/unit/test_analytics_events.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/analytics/preguntas",
+          "status": "domain",
+          "test_path": "frontend/src/lib/analytics.test.ts"
         }
       ]
     },
@@ -11610,6 +12449,12 @@
           "reference": "GET:/analytics/sintesis",
           "status": "domain",
           "test_path": "backend/tests/unit/test_analytics_events.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/analytics/sintesis",
+          "status": "domain",
+          "test_path": "frontend/src/lib/analytics.test.ts"
         }
       ]
     },
@@ -11662,6 +12507,12 @@
           "reference": "GET:/auth/me",
           "status": "direct",
           "test_path": "frontend/e2e/resources-creation.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/auth/me",
+          "status": "direct",
+          "test_path": "frontend/e2e/student-activity-delivery.spec.ts"
         },
         {
           "level": "unit",
@@ -11910,6 +12761,18 @@
           "reference": "GET:/dba",
           "status": "direct",
           "test_path": "backend/tests/integration/test_api_contract.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/dba",
+          "status": "direct",
+          "test_path": "backend/tests/unit/authorization_helpers.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/dba",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_authorization_contracts.py"
         },
         {
           "level": "e2e",
@@ -12252,6 +13115,18 @@
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
         },
         {
+          "level": "e2e",
+          "reference": "GET:/evaluaciones/{id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/student-activity-delivery.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/{id}",
+          "status": "direct",
+          "test_path": "frontend/src/lib/analytics.test.ts"
+        },
+        {
           "level": "unit",
           "reference": "GET:/evaluaciones/{id}",
           "status": "direct",
@@ -12419,6 +13294,18 @@
         {
           "level": "unit",
           "reference": "GET:/herramientas/{id}",
+          "status": "direct",
+          "test_path": "backend/tests/unit/authorization_helpers.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/herramientas/{id}",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_authorization_contracts.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/herramientas/{id}",
           "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
         },
@@ -12451,6 +13338,12 @@
           "reference": "GET:/herramientas/{id}",
           "status": "direct",
           "test_path": "frontend/e2e/resources-creation.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/herramientas/{id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/student-activity-delivery.spec.ts"
         },
         {
           "level": "unit",
@@ -12620,6 +13513,18 @@
         {
           "level": "unit",
           "reference": "GET:/materias/{id}",
+          "status": "direct",
+          "test_path": "backend/tests/unit/authorization_helpers.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias/{id}",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_authorization_contracts.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias/{id}",
           "status": "domain",
           "test_path": "backend/tests/unit/test_materias_service.py"
         },
@@ -12648,6 +13553,12 @@
           "test_path": "frontend/e2e/resources-creation.spec.ts"
         },
         {
+          "level": "e2e",
+          "reference": "GET:/materias/{id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/student-activity-delivery.spec.ts"
+        },
+        {
           "level": "unit",
           "reference": "GET:/materias/{id}",
           "status": "direct",
@@ -12658,6 +13569,12 @@
           "reference": "GET:/materias/{id}",
           "status": "direct",
           "test_path": "frontend/src/components/ui/P2Accessibility.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias/{id}",
+          "status": "direct",
+          "test_path": "frontend/src/lib/analytics.test.ts"
         },
         {
           "level": "unit",
@@ -12920,6 +13837,18 @@
         {
           "level": "unit",
           "reference": "GET:/materias",
+          "status": "direct",
+          "test_path": "backend/tests/unit/authorization_helpers.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_authorization_contracts.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias",
           "status": "domain",
           "test_path": "backend/tests/unit/test_materias_service.py"
         },
@@ -12948,6 +13877,12 @@
           "test_path": "frontend/e2e/resources-creation.spec.ts"
         },
         {
+          "level": "e2e",
+          "reference": "GET:/materias",
+          "status": "direct",
+          "test_path": "frontend/e2e/student-activity-delivery.spec.ts"
+        },
+        {
           "level": "unit",
           "reference": "GET:/materias",
           "status": "direct",
@@ -12958,6 +13893,12 @@
           "reference": "GET:/materias",
           "status": "direct",
           "test_path": "frontend/src/components/ui/P2Accessibility.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias",
+          "status": "direct",
+          "test_path": "frontend/src/lib/analytics.test.ts"
         },
         {
           "level": "unit",
@@ -13041,6 +13982,12 @@
         {
           "level": "unit",
           "reference": "GET:/presentaciones/{id}/estado",
+          "status": "direct",
+          "test_path": "backend/tests/unit/authorization_helpers.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/presentaciones/{id}/estado",
           "status": "domain",
           "test_path": "backend/tests/unit/test_presentaciones_context.py"
         },
@@ -13081,6 +14028,12 @@
       "source_path": "frontend/src/modules/presentaciones/api.ts",
       "states": [],
       "tests": [
+        {
+          "level": "unit",
+          "reference": "GET:/presentaciones/{id}/preview",
+          "status": "direct",
+          "test_path": "backend/tests/unit/authorization_helpers.py"
+        },
         {
           "level": "unit",
           "reference": "GET:/presentaciones/{id}/preview",
@@ -13133,6 +14086,18 @@
         {
           "level": "unit",
           "reference": "GET:/presentaciones",
+          "status": "direct",
+          "test_path": "backend/tests/unit/authorization_helpers.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/presentaciones",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_authorization_contracts.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/presentaciones",
           "status": "domain",
           "test_path": "backend/tests/unit/test_presentaciones_context.py"
         },
@@ -13153,6 +14118,12 @@
           "reference": "GET:/presentaciones",
           "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/presentaciones",
+          "status": "direct",
+          "test_path": "frontend/src/lib/analytics.test.ts"
         },
         {
           "level": "unit",
@@ -13720,6 +14691,18 @@
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
         },
         {
+          "level": "e2e",
+          "reference": "PATCH:/evaluaciones/{id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/student-activity-delivery.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/evaluaciones/{id}",
+          "status": "direct",
+          "test_path": "frontend/src/lib/analytics.test.ts"
+        },
+        {
           "level": "unit",
           "reference": "PATCH:/evaluaciones/{id}",
           "status": "direct",
@@ -13801,6 +14784,18 @@
         {
           "level": "unit",
           "reference": "PATCH:/herramientas/{id}",
+          "status": "direct",
+          "test_path": "backend/tests/unit/authorization_helpers.py"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/herramientas/{id}",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_authorization_contracts.py"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/herramientas/{id}",
           "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
         },
@@ -13835,6 +14830,12 @@
           "test_path": "frontend/e2e/resources-creation.spec.ts"
         },
         {
+          "level": "e2e",
+          "reference": "PATCH:/herramientas/{id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/student-activity-delivery.spec.ts"
+        },
+        {
           "level": "unit",
           "reference": "PATCH:/herramientas/{id}",
           "status": "direct",
@@ -13862,17 +14863,24 @@
     },
     {
       "actors": [
-        "estudiante"
+        "admin",
+        "profesor"
       ],
       "authorization": [
-        "RequireRole"
+        "RequireRole",
+        "explicit_permission_override"
       ],
       "consumers": [],
       "coverage": "covered",
       "details": {
         "backend_contract": "backend:PATCH:/incidencias/{incidencia_id}/resolver",
         "backend_contract_candidates": [],
-        "contract_status": "matched"
+        "contract_status": "matched",
+        "permission_override_evidence": [
+          "backend/tests/unit/test_student_review_request.py"
+        ],
+        "permission_override_issue": "https://github.com/Andres-back/Calificator/issues/17",
+        "permission_override_reason": "La llamada pertenece al workspace docente; el estudiante crea o consulta su solicitud por endpoints separados."
       },
       "id": "frontend_call:PATCH:/incidencias/{incidenciaId}/resolver:frontend/src/modules/calificaciones/api.ts",
       "kind": "frontend_call",
@@ -13949,6 +14957,18 @@
         {
           "level": "unit",
           "reference": "PATCH:/materias/{id}",
+          "status": "direct",
+          "test_path": "backend/tests/unit/authorization_helpers.py"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/materias/{id}",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_authorization_contracts.py"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/materias/{id}",
           "status": "domain",
           "test_path": "backend/tests/unit/test_materias_service.py"
         },
@@ -13977,6 +14997,12 @@
           "test_path": "frontend/e2e/resources-creation.spec.ts"
         },
         {
+          "level": "e2e",
+          "reference": "PATCH:/materias/{id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/student-activity-delivery.spec.ts"
+        },
+        {
           "level": "unit",
           "reference": "PATCH:/materias/{id}",
           "status": "direct",
@@ -13987,6 +15013,12 @@
           "reference": "PATCH:/materias/{id}",
           "status": "direct",
           "test_path": "frontend/src/components/ui/P2Accessibility.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/materias/{id}",
+          "status": "direct",
+          "test_path": "frontend/src/lib/analytics.test.ts"
         },
         {
           "level": "unit",
@@ -14069,6 +15101,12 @@
           "reference": "PATCH:/xali/refuerzos/{id}",
           "status": "domain",
           "test_path": "backend/tests/unit/test_analytics_events.py"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/xali/refuerzos/{id}",
+          "status": "domain",
+          "test_path": "frontend/src/lib/analytics.test.ts"
         }
       ]
     },
@@ -14189,7 +15227,7 @@
         "RequireRole"
       ],
       "consumers": [],
-      "coverage": "missing",
+      "coverage": "covered",
       "details": {
         "backend_contract": "backend:POST:/analytics/evento",
         "backend_contract_candidates": [],
@@ -14199,10 +15237,41 @@
       "kind": "frontend_call",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "POST:/analytics/evento",
-      "source_line": 20,
+      "source_line": 40,
       "source_path": "frontend/src/lib/analytics.ts",
       "states": [],
-      "tests": []
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "POST:/analytics/evento",
+          "status": "direct",
+          "test_path": "backend/tests/unit/authorization_helpers.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/analytics/evento",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_analytics_events.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/analytics/evento",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_authorization_contracts.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/analytics/evento",
+          "status": "direct",
+          "test_path": "frontend/src/components/layout/AppShell.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/analytics/evento",
+          "status": "direct",
+          "test_path": "frontend/src/lib/analytics.test.ts"
+        }
+      ]
     },
     {
       "actors": [
@@ -14265,6 +15334,12 @@
           "reference": "POST:/auth/login",
           "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/auth/login",
+          "status": "direct",
+          "test_path": "frontend/e2e/student-activity-delivery.spec.ts"
         }
       ]
     },
@@ -15217,6 +16292,18 @@
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
         },
         {
+          "level": "e2e",
+          "reference": "POST:/evaluaciones",
+          "status": "direct",
+          "test_path": "frontend/e2e/student-activity-delivery.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/evaluaciones",
+          "status": "direct",
+          "test_path": "frontend/src/lib/analytics.test.ts"
+        },
+        {
           "level": "unit",
           "reference": "POST:/evaluaciones",
           "status": "direct",
@@ -15316,6 +16403,18 @@
         {
           "level": "unit",
           "reference": "POST:/herramientas/{endpoint}",
+          "status": "direct",
+          "test_path": "backend/tests/unit/authorization_helpers.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/herramientas/{endpoint}",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_authorization_contracts.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/herramientas/{endpoint}",
           "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
         },
@@ -15348,6 +16447,12 @@
           "reference": "POST:/herramientas/{endpoint}",
           "status": "direct",
           "test_path": "frontend/e2e/resources-creation.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/herramientas/{endpoint}",
+          "status": "direct",
+          "test_path": "frontend/e2e/student-activity-delivery.spec.ts"
         },
         {
           "level": "unit",
@@ -15684,6 +16789,18 @@
         {
           "level": "unit",
           "reference": "POST:/materias",
+          "status": "direct",
+          "test_path": "backend/tests/unit/authorization_helpers.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/materias",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_authorization_contracts.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/materias",
           "status": "domain",
           "test_path": "backend/tests/unit/test_materias_service.py"
         },
@@ -15712,6 +16829,12 @@
           "test_path": "frontend/e2e/resources-creation.spec.ts"
         },
         {
+          "level": "e2e",
+          "reference": "POST:/materias",
+          "status": "direct",
+          "test_path": "frontend/e2e/student-activity-delivery.spec.ts"
+        },
+        {
           "level": "unit",
           "reference": "POST:/materias",
           "status": "direct",
@@ -15722,6 +16845,12 @@
           "reference": "POST:/materias",
           "status": "direct",
           "test_path": "frontend/src/components/ui/P2Accessibility.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/materias",
+          "status": "direct",
+          "test_path": "frontend/src/lib/analytics.test.ts"
         },
         {
           "level": "unit",
@@ -15900,6 +17029,18 @@
         {
           "level": "unit",
           "reference": "POST:/presentaciones",
+          "status": "direct",
+          "test_path": "backend/tests/unit/authorization_helpers.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/presentaciones",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_authorization_contracts.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/presentaciones",
           "status": "domain",
           "test_path": "backend/tests/unit/test_presentaciones_context.py"
         },
@@ -15920,6 +17061,12 @@
           "reference": "POST:/presentaciones",
           "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/presentaciones",
+          "status": "direct",
+          "test_path": "frontend/src/lib/analytics.test.ts"
         },
         {
           "level": "unit",
@@ -16080,6 +17227,12 @@
           "reference": "POST:/xali/refuerzos/generar",
           "status": "domain",
           "test_path": "backend/tests/unit/test_analytics_events.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/xali/refuerzos/generar",
+          "status": "domain",
+          "test_path": "frontend/src/lib/analytics.test.ts"
         }
       ]
     },
@@ -17136,6 +18289,12 @@
           "reference": "analytics_eventos",
           "status": "direct",
           "test_path": "backend/tests/unit/test_model_metadata.py"
+        },
+        {
+          "level": "unit",
+          "reference": "analytics_eventos",
+          "status": "domain",
+          "test_path": "frontend/src/lib/analytics.test.ts"
         }
       ]
     },
@@ -17494,6 +18653,12 @@
           "reference": "calificaciones",
           "status": "direct",
           "test_path": "frontend/src/components/ui/P2Accessibility.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "calificaciones",
+          "status": "direct",
+          "test_path": "frontend/src/lib/analytics.test.ts"
         },
         {
           "level": "unit",
@@ -17919,6 +19084,12 @@
           "level": "unit",
           "reference": "evaluaciones",
           "status": "direct",
+          "test_path": "backend/tests/unit/test_authorization_contracts.py"
+        },
+        {
+          "level": "unit",
+          "reference": "evaluaciones",
+          "status": "direct",
           "test_path": "backend/tests/unit/test_blueprint_service.py"
         },
         {
@@ -18052,6 +19223,18 @@
           "reference": "evaluaciones",
           "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "evaluaciones",
+          "status": "direct",
+          "test_path": "frontend/e2e/student-activity-delivery.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "evaluaciones",
+          "status": "direct",
+          "test_path": "frontend/src/lib/analytics.test.ts"
         },
         {
           "level": "unit",
@@ -18280,6 +19463,18 @@
           "level": "unit",
           "reference": "materias",
           "status": "direct",
+          "test_path": "backend/tests/unit/authorization_helpers.py"
+        },
+        {
+          "level": "unit",
+          "reference": "materias",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_authorization_contracts.py"
+        },
+        {
+          "level": "unit",
+          "reference": "materias",
+          "status": "direct",
           "test_path": "backend/tests/unit/test_calificaciones_boletin_permissions.py"
         },
         {
@@ -18349,6 +19544,12 @@
           "test_path": "frontend/e2e/resources-creation.spec.ts"
         },
         {
+          "level": "e2e",
+          "reference": "materias",
+          "status": "direct",
+          "test_path": "frontend/e2e/student-activity-delivery.spec.ts"
+        },
+        {
           "level": "unit",
           "reference": "materias",
           "status": "direct",
@@ -18371,6 +19572,12 @@
           "reference": "materias",
           "status": "direct",
           "test_path": "frontend/src/config/studentNavigation.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "materias",
+          "status": "direct",
+          "test_path": "frontend/src/lib/analytics.test.ts"
         },
         {
           "level": "unit",
@@ -18543,6 +19750,18 @@
           "level": "unit",
           "reference": "presentaciones",
           "status": "direct",
+          "test_path": "backend/tests/unit/authorization_helpers.py"
+        },
+        {
+          "level": "unit",
+          "reference": "presentaciones",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_authorization_contracts.py"
+        },
+        {
+          "level": "unit",
+          "reference": "presentaciones",
+          "status": "direct",
           "test_path": "backend/tests/unit/test_grading_provider_policy.py"
         },
         {
@@ -18574,6 +19793,12 @@
           "reference": "presentaciones",
           "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "presentaciones",
+          "status": "direct",
+          "test_path": "frontend/src/lib/analytics.test.ts"
         },
         {
           "level": "unit",
@@ -18889,6 +20114,12 @@
           "reference": "users",
           "status": "direct",
           "test_path": "backend/tests/integration/test_business_flow_smoke.py"
+        },
+        {
+          "level": "unit",
+          "reference": "users",
+          "status": "direct",
+          "test_path": "backend/tests/unit/authorization_helpers.py"
         },
         {
           "level": "unit",

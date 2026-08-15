@@ -2,8 +2,11 @@
 .env.*
 !.env.example
 .git
+.dockerignore
+Dockerfile*
 .pytest_cache
 .coverage
+coverage
 htmlcov
 __pycache__
 *.py[cod]

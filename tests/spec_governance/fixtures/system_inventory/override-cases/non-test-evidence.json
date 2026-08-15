@@ -1,0 +1,11 @@
+{
+  "permission_overrides": [
+    {
+      "surface_id": "backend:GET:/demo",
+      "actors": ["profesor"],
+      "reason": "Una fuente de aplicación no sirve como evidencia.",
+      "issue_url": "https://github.com/example/project/issues/17",
+      "evidence": ["backend/app/api.py"]
+    }
+  ]
+}

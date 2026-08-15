@@ -46,6 +46,10 @@
 | table | `matriculas` | system | covered | `backend/app/modules/matriculas/models.py:13` |
 | table | `users` | system | covered | `backend/app/modules/users/models.py:13` |
 
+## Decisiones explícitas de permiso
+
+Sin decisiones explícitas de permiso para este dominio.
+
 ## Hallazgos
 
 Sin hallazgos específicos del dominio.

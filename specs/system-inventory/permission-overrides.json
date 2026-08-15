@@ -1,1 +1,78 @@
-{"schema_version":1,"permission_overrides":[]}
+{
+  "schema_version": 1,
+  "permission_overrides": [
+    {
+      "surface_id": "backend:GET:/herramientas/materias/{materia_id}/recursos",
+      "actors": ["admin", "estudiante", "profesor"],
+      "reason": "El servicio valida gestión docente o matrícula activa y filtra recursos publicados para estudiantes.",
+      "issue_url": "https://github.com/Andres-back/Calificator/issues/17",
+      "evidence": ["backend/tests/unit/test_authorization_contracts.py"]
+    },
+    {
+      "surface_id": "backend:GET:/herramientas/{material_id}",
+      "actors": ["admin", "estudiante", "profesor"],
+      "reason": "El servicio limita profesor y administrador por autor, y estudiante por publicación, asignación y matrícula.",
+      "issue_url": "https://github.com/Andres-back/Calificator/issues/17",
+      "evidence": ["backend/tests/unit/test_authorization_contracts.py"]
+    },
+    {
+      "surface_id": "backend:GET:/materias/{materia_id}/asistencia",
+      "actors": ["admin", "profesor"],
+      "reason": "El router delega en ensure_can_manage_materia antes de consultar registros.",
+      "issue_url": "https://github.com/Andres-back/Calificator/issues/17",
+      "evidence": ["backend/tests/unit/test_authorization_contracts.py"]
+    },
+    {
+      "surface_id": "backend:GET:/materias/{materia_id}/dba",
+      "actors": ["admin", "estudiante", "profesor"],
+      "reason": "El router delega lectura de materia; estudiante requiere matrícula activa y los actores docentes conservan su ámbito.",
+      "issue_url": "https://github.com/Andres-back/Calificator/issues/17",
+      "evidence": ["backend/tests/unit/test_authorization_contracts.py"]
+    },
+    {
+      "surface_id": "backend:GET:/presentaciones",
+      "actors": ["admin", "estudiante", "profesor"],
+      "reason": "El servicio lista todo para admin, solo propias para profesor y solo publicadas de matrículas activas para estudiante.",
+      "issue_url": "https://github.com/Andres-back/Calificator/issues/17",
+      "evidence": ["backend/tests/unit/test_presentaciones_router.py"]
+    },
+    {
+      "surface_id": "backend:GET:/presentaciones/{presentacion_id}/estado",
+      "actors": ["admin", "estudiante", "profesor"],
+      "reason": "La ruta exige ensure_can_read_presentacion antes de construir el estado.",
+      "issue_url": "https://github.com/Andres-back/Calificator/issues/17",
+      "evidence": ["backend/tests/unit/test_presentaciones_router.py"]
+    },
+    {
+      "surface_id": "backend:GET:/presentaciones/{presentacion_id}/preview",
+      "actors": ["admin", "estudiante", "profesor"],
+      "reason": "La ruta exige ensure_can_read_presentacion antes de construir la vista previa.",
+      "issue_url": "https://github.com/Andres-back/Calificator/issues/17",
+      "evidence": ["backend/tests/unit/test_presentaciones_router.py"]
+    },
+    {
+      "surface_id": "backend:POST:/analytics/evento",
+      "actors": ["admin", "estudiante", "profesor"],
+      "reason": "El catálogo cerrado autoriza eventos por rol y deriva identidad de la sesión antes de persistir.",
+      "issue_url": "https://github.com/Andres-back/Calificator/issues/17",
+      "evidence": [
+        "backend/tests/unit/test_analytics_events.py",
+        "frontend/src/lib/analytics.test.ts"
+      ]
+    },
+    {
+      "surface_id": "backend:PUT:/materias/{materia_id}/asistencia",
+      "actors": ["admin", "profesor"],
+      "reason": "El router delega en ensure_can_manage_materia antes de guardar y las denegaciones no escriben.",
+      "issue_url": "https://github.com/Andres-back/Calificator/issues/17",
+      "evidence": ["backend/tests/unit/test_authorization_contracts.py"]
+    },
+    {
+      "surface_id": "frontend_call:PATCH:/incidencias/{incidenciaId}/resolver:frontend/src/modules/calificaciones/api.ts",
+      "actors": ["admin", "profesor"],
+      "reason": "La llamada pertenece al workspace docente; el estudiante crea o consulta su solicitud por endpoints separados.",
+      "issue_url": "https://github.com/Andres-back/Calificator/issues/17",
+      "evidence": ["backend/tests/unit/test_student_review_request.py"]
+    }
+  ]
+}

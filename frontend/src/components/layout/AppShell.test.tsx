@@ -1,9 +1,10 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { AppShell } from './AppShell';
 import { useAuth } from '@/stores/auth';
+import { api } from '@/lib/api';
 
 function renderShell() {
   return render(
@@ -19,6 +20,7 @@ function renderShell() {
 }
 
 beforeEach(() => {
+  vi.spyOn(api, 'post').mockResolvedValue({ data: { status: 'ok' } });
   useAuth.setState({
     user: {
       id: 'profesor-mobile',
@@ -33,6 +35,7 @@ beforeEach(() => {
 
 afterEach(() => {
   document.body.style.overflow = '';
+  vi.restoreAllMocks();
 });
 
 describe('AppShell mobile navigation', () => {
@@ -53,5 +56,30 @@ describe('AppShell mobile navigation', () => {
     });
     expect(screen.getByText('Materias docente')).toBeInTheDocument();
     expect(document.querySelector('[inert]')).toBeNull();
+  });
+});
+
+describe('AppShell analytics', () => {
+  it('emits once per authenticated path and ignores unrelated rerenders', async () => {
+    const post = vi.mocked(api.post);
+    const user = userEvent.setup();
+    renderShell();
+
+    await waitFor(() => expect(post).toHaveBeenCalledTimes(1));
+    expect(post).toHaveBeenLastCalledWith('/analytics/evento', {
+      tipo: 'session_view_opened',
+      metadata_json: { surface: 'inicio' },
+    });
+
+    await user.click(screen.getByRole('button', { name: 'Abrir menú principal' }));
+    expect(post).toHaveBeenCalledTimes(1);
+    const mobileDialog = screen.getByRole('dialog', { name: 'Navegación principal' });
+    await user.click(within(mobileDialog).getByRole('link', { name: 'Materias' }));
+
+    await waitFor(() => expect(post).toHaveBeenCalledTimes(2));
+    expect(post).toHaveBeenLastCalledWith('/analytics/evento', {
+      tipo: 'session_view_opened',
+      metadata_json: { surface: 'materias' },
+    });
   });
 });

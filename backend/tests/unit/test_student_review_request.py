@@ -207,3 +207,93 @@ def test_owner_teacher_can_resolve_their_review_request(monkeypatch) -> None:
     )
 
     assert result == expected
+
+def test_student_cannot_resolve_review_request() -> None:
+    student = SimpleNamespace(id=uuid4(), rol=UserRole.ESTUDIANTE.value)
+
+    class MustNotQueryDB:
+        async def scalar(self, _statement):
+            raise AssertionError("El estudiante debe ser rechazado antes de consultar la incidencia")
+
+    with pytest.raises(HTTPException) as error:
+        asyncio.run(
+            router.resolver_incidencia(
+                uuid4(),
+                ResolverIncidencia(resolucion="Intento inválido."),
+                current_user=student,
+                db=MustNotQueryDB(),
+            )
+        )
+
+    assert error.value.status_code == 403
+
+
+def test_student_consults_only_their_review_request(monkeypatch) -> None:
+    student = SimpleNamespace(id=uuid4(), rol=UserRole.ESTUDIANTE.value)
+    evaluation_id = uuid4()
+    expected = {"id": uuid4(), "estado": "abierta"}
+    captured: dict[str, object] = {}
+
+    async def fake_get(_db, *, evaluacion_id, estudiante_id):
+        captured.update(evaluacion_id=evaluacion_id, estudiante_id=estudiante_id)
+        return expected
+
+    monkeypatch.setattr(service, "obtener_solicitud_revision_estudiante", fake_get)
+    result = asyncio.run(
+        router.obtener_mi_solicitud_revision(
+            evaluation_id,
+            current_user=student,
+            db=object(),
+        )
+    )
+
+    assert result == expected
+    assert captured == {"evaluacion_id": evaluation_id, "estudiante_id": student.id}
+
+
+def test_admin_resolution_preserves_actor_and_auditable_result(monkeypatch) -> None:
+    admin = SimpleNamespace(id=uuid4(), rol=UserRole.ADMIN.value)
+    incidence = SimpleNamespace(id=uuid4(), calificacion_id=uuid4())
+    grade = SimpleNamespace(evaluacion_id=uuid4())
+    now = datetime.now()
+    expected = {
+        "id": incidence.id,
+        "estado": "resuelta",
+        "resuelto_por": admin.id,
+        "resolved_at": now,
+        "resolucion": "Se verificó la evidencia y se mantuvo la nota.",
+    }
+
+    class FakeDB:
+        async def scalar(self, _statement):
+            return incidence
+
+    async def fake_grade(*_args, **_kwargs):
+        return grade
+
+    async def allow_management(*_args, **_kwargs):
+        return SimpleNamespace(id=grade.evaluacion_id)
+
+    async def fake_resolve(_db, incidencia_id, resolucion, resuelto_por, *, incidencia):
+        assert incidencia_id == incidence.id
+        assert incidencia is incidence
+        assert resolucion == expected["resolucion"]
+        assert resuelto_por == admin.id
+        return expected
+
+    monkeypatch.setattr(router.service, "get_calificacion_or_404", fake_grade)
+    monkeypatch.setattr(router.evaluaciones_service, "ensure_can_manage_evaluation", allow_management)
+    monkeypatch.setattr(router.service, "resolver_incidencia", fake_resolve)
+
+    result = asyncio.run(
+        router.resolver_incidencia(
+            incidence.id,
+            ResolverIncidencia(resolucion=expected["resolucion"]),
+            current_user=admin,
+            db=FakeDB(),
+        )
+    )
+
+    assert result == expected
+    assert result["resuelto_por"] == admin.id
+    assert result["resolved_at"] == now

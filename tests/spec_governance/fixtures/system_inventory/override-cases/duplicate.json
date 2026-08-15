@@ -1,0 +1,18 @@
+{
+  "permission_overrides": [
+    {
+      "surface_id": "backend:GET:/demo",
+      "actors": ["profesor"],
+      "reason": "Primera decisión.",
+      "issue_url": "https://github.com/example/project/issues/17",
+      "evidence": ["backend/tests/test_demo.py"]
+    },
+    {
+      "surface_id": "backend:GET:/demo",
+      "actors": ["admin"],
+      "reason": "Decisión contradictoria.",
+      "issue_url": "https://github.com/example/project/issues/17",
+      "evidence": ["backend/tests/test_demo.py"]
+    }
+  ]
+}

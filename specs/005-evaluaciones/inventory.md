@@ -50,6 +50,10 @@
 | table | `evaluacion_blueprints` | system | covered | `backend/app/modules/evaluaciones/models.py:127` |
 | table | `evaluaciones` | system | covered | `backend/app/modules/evaluaciones/models.py:14` |
 
+## Decisiones explícitas de permiso
+
+Sin decisiones explícitas de permiso para este dominio.
+
 ## Hallazgos
 
 Sin hallazgos específicos del dominio.

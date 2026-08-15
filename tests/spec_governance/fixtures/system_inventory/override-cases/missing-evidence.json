@@ -1,0 +1,10 @@
+{
+  "permission_overrides": [
+    {
+      "surface_id": "backend:GET:/demo",
+      "actors": ["profesor"],
+      "reason": "Falta evidencia.",
+      "issue_url": "https://github.com/example/project/issues/17"
+    }
+  ]
+}
