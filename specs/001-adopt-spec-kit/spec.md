@@ -54,3 +54,7 @@ Como equipo, necesito actualizar estos artefactos cuando cambie el comportamient
 - Registra comportamiento vigente y no introduce cambios funcionales.
 - Las inconsistencias se convierten en issues separados.
 - Se conservan arquitectura y contratos públicos durante la línea base.
+
+## Inventario técnico global
+
+- [Consultar el inventario canónico del sistema](../system-inventory/current.json).

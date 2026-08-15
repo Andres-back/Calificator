@@ -24,3 +24,7 @@ actualizar la especificación propietaria, su plan y sus tareas; no debe crear d
 - Los componentes compartidos se documentan en 002; su comportamiento de negocio se documenta en el dominio consumidor.
 - Una nueva superficie requiere actualizar este índice dentro del mismo PR.
 - Las inconsistencias detectadas se registran como issues; la línea base no cambia funcionalidad silenciosamente.
+## Inventario técnico global
+
+- [Inventario canónico JSON](system-inventory/current.json)
+- [Especificación del generador y gate de deriva](013-inventario-tecnico-exhaustivo/spec.md)

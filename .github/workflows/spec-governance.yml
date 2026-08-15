@@ -34,6 +34,9 @@ jobs:
       - name: Test governance validator
         run: python -m pytest tests/spec_governance -q
 
+      - name: Validate technical inventory
+        run: python scripts/build_system_inventory.py --check
+
       - name: Validate pull request specification
         if: github.event_name == 'pull_request'
         run: >-
