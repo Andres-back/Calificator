@@ -136,4 +136,4 @@
 - Contenedores: `docker compose config --quiet`, imágenes backend/worker/beat/migrate/storage-init y Dockerfile frontend construidos.
 - Inventario: 373 superficies vigentes, 10 decisiones auditadas y dos generaciones consecutivas determinísticas.
 - Convergencia: cero brechas accionables; no se añadieron tareas.
-- Revisión/CI: PR [#18](https://github.com/Andres-back/Calificator/pull/18), enlazado al issue #17; evidencia de checks en la pestaña del PR.
+- Revisión/CI: PR [#18](https://github.com/Andres-back/Calificator/pull/18), enlazado al issue #17 y etiquetado `spec-approved`/`plan-approved`; evidencia de checks en la pestaña del PR.
