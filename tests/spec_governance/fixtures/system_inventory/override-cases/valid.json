@@ -1,0 +1,11 @@
+{
+  "permission_overrides": [
+    {
+      "surface_id": "backend:GET:/demo",
+      "actors": ["profesor"],
+      "reason": "El permiso se delega a un servicio con prueba negativa por objeto.",
+      "issue_url": "https://github.com/example/project/issues/17",
+      "evidence": ["backend/tests/test_demo.py"]
+    }
+  ]
+}

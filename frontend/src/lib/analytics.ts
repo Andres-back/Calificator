@@ -1,26 +1,54 @@
 /**
- * Utilidad de analítica — eventos fire-and-forget desde el frontend.
+ * Cliente analítico tipado y fire-and-forget.
  *
- * Uso:
- *   trackEvent('workspace_opened', { evaluacion_id: '...' })
- *   trackEvent('calificacion_confirmed', { calificacion_id: '...', override_delta: 0.5 })
- *
- * Los eventos se envían al backend sin afectar la UX (fire-and-forget).
- * Si falla el envío, se silencia — no debe interferir con el flujo del docente.
+ * Las referencias académicas viajan en campos canónicos y nunca dentro de
+ * metadata. La identidad y el rol se derivan exclusivamente de la sesión.
  */
 import { api } from './api';
 
-type EventPayload = Record<string, unknown>;
+export type AnalyticsSurface =
+  | 'inicio'
+  | 'materias'
+  | 'actividades'
+  | 'resultados'
+  | 'xali'
+  | 'calificaciones'
+  | 'presentaciones';
 
-/** Envía un evento de analítica al backend. Silencioso si falla. */
-export function trackEvent(
-  tipo: string,
-  metadata?: EventPayload,
+type EvaluationReference = { evaluacion_id: string };
+type BatchReference = EvaluationReference & { metadata_json: { batch_size: number } };
+
+export type AnalyticsEventPayloads = {
+  session_view_opened: { metadata_json: { surface: AnalyticsSurface } };
+  workspace_opened: EvaluationReference & { metadata_json: { materia_id: string } };
+  calificacion_opened: EvaluationReference & { calificacion_id: string };
+  calificacion_confirmed: EvaluationReference;
+  grade_adjusted: EvaluationReference;
+  grade_marked_manual_review: EvaluationReference;
+  batch_confirmed: BatchReference;
+  batch_adjusted: BatchReference;
+  calificacion_published: EvaluationReference;
+  batch_published: BatchReference;
+};
+
+export type AnalyticsEventType = keyof AnalyticsEventPayloads;
+
+export function trackEvent<T extends AnalyticsEventType>(
+  tipo: T,
+  payload: AnalyticsEventPayloads[T],
 ): void {
-  api.post('/analytics/evento', {
-    tipo,
-    metadata_json: metadata ?? {},
-  }).catch(() => {
-    // Fire-and-forget: silencioso
+  void api.post('/analytics/evento', { tipo, ...payload }).catch(() => {
+    // La telemetría nunca bloquea ni revierte la acción académica principal.
   });
+}
+
+export function surfaceForPath(pathname: string): AnalyticsSurface {
+  const path = pathname.toLowerCase();
+  if (path.includes('/calificaciones/boletin') || path.includes('/resultados')) return 'resultados';
+  if (path.startsWith('/app/calificaciones')) return 'calificaciones';
+  if (path.startsWith('/app/presentaciones')) return 'presentaciones';
+  if (path.startsWith('/app/evaluaciones') || path.startsWith('/app/actividades')) return 'actividades';
+  if (path.startsWith('/app/materias')) return 'materias';
+  if (path.startsWith('/app/xali')) return 'xali';
+  return 'inicio';
 }

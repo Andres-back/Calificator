@@ -1,5 +1,7 @@
 .git
 .github
+.dockerignore
+Dockerfile*
 .agents
 .specify
 specs
@@ -14,6 +16,8 @@ specs
 **/.venv
 frontend/node_modules
 frontend/dist
+frontend/coverage/
+coverage/
 frontend/output
 frontend/test-results
 frontend/playwright-report

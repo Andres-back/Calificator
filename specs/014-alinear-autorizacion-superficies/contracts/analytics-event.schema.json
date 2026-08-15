@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://xcalificator.local/contracts/analytics-event.schema.json",
+  "title": "Evento analítico autenticado",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["tipo"],
+  "properties": {
+    "tipo": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 60,
+      "description": "Nombre presente en el catálogo de eventos permitido para el rol de la sesión."
+    },
+    "evaluacion_id": {
+      "type": ["string", "null"],
+      "format": "uuid",
+      "description": "Referencia opcional admitida por la política y autorizada para el actor."
+    },
+    "calificacion_id": {
+      "type": ["string", "null"],
+      "format": "uuid",
+      "description": "Referencia opcional admitida por la política y autorizada para el actor."
+    },
+    "metadata_json": {
+      "type": "object",
+      "maxProperties": 10,
+      "additionalProperties": {
+        "oneOf": [
+          { "type": "string", "maxLength": 256 },
+          { "type": "number" },
+          { "type": "boolean" },
+          { "type": "null" }
+        ]
+      },
+      "description": "Metadatos escalares filtrados por evento y limitados a 4096 bytes serializados."
+    }
+  }
+}

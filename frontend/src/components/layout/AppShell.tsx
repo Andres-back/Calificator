@@ -1,19 +1,32 @@
 import { useEffect, useRef, useState } from 'react';
-import { Outlet } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { Topbar } from './Topbar';
 import { useAuth } from '@/stores/auth';
 import { cn } from '@/lib/cn';
 import { DigitalizationJobMonitor } from '@/modules/evaluaciones/components/DigitalizationJobMonitor';
 import { GradingJobMonitor } from '@/modules/calificaciones/GradingJobMonitor';
+import { surfaceForPath, trackEvent } from '@/lib/analytics';
 
 export function AppShell() {
+  const location = useLocation();
   const role = useAuth((state) => state.user?.rol);
   const isStudent = role === 'estudiante';
   const isTeacher = role === 'profesor';
   const [mobileOpen, setMobileOpen] = useState(false);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
   const appContentRef = useRef<HTMLDivElement>(null);
+  const lastTrackedPathRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!role) return;
+    const trackingKey = `${role}:${location.pathname}`;
+    if (lastTrackedPathRef.current === trackingKey) return;
+    lastTrackedPathRef.current = trackingKey;
+    trackEvent('session_view_opened', {
+      metadata_json: { surface: surfaceForPath(location.pathname) },
+    });
+  }, [location.pathname, role]);
 
   useEffect(() => {
     if (!mobileOpen) return;

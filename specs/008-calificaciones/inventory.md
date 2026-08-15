@@ -47,7 +47,7 @@
 | frontend_call | `PATCH:/calificaciones/{id}/ajustar` | ambiguous | covered | `frontend/src/modules/calificaciones/api.ts:35` |
 | frontend_call | `PATCH:/calificaciones/{id}/confirmar` | ambiguous | covered | `frontend/src/modules/calificaciones/api.ts:31` |
 | frontend_call | `PATCH:/calificaciones/{id}/revision-manual` | ambiguous | covered | `frontend/src/modules/calificaciones/api.ts:39` |
-| frontend_call | `PATCH:/incidencias/{incidenciaId}/resolver` | estudiante | covered | `frontend/src/modules/calificaciones/api.ts:148` |
+| frontend_call | `PATCH:/incidencias/{incidenciaId}/resolver` | admin, profesor | covered | `frontend/src/modules/calificaciones/api.ts:148` |
 | frontend_call | `POST:/calificaciones/foto` | ambiguous | covered | `frontend/src/modules/calificaciones/api.ts:56` |
 | frontend_call | `POST:/calificaciones/lote/ajustar` | ambiguous | covered | `frontend/src/modules/calificaciones/api.ts:117` |
 | frontend_call | `POST:/calificaciones/lote/confirmar` | ambiguous | covered | `frontend/src/modules/calificaciones/api.ts:112` |
@@ -63,6 +63,10 @@
 | table | `salon_sesion_estudiantes` | system | covered | `backend/app/modules/calificaciones/models.py:161` |
 | table | `salon_sesiones` | system | covered | `backend/app/modules/calificaciones/models.py:145` |
 
+## Decisiones explícitas de permiso
+
+- `frontend_call:PATCH:/incidencias/{incidenciaId}/resolver:frontend/src/modules/calificaciones/api.ts` — La llamada pertenece al workspace docente; el estudiante crea o consulta su solicitud por endpoints separados. ([issue](https://github.com/Andres-back/Calificator/issues/17)). Evidencia: `backend/tests/unit/test_student_review_request.py`.
+
 ## Hallazgos
 
-- **medium · authorization_mismatch**: Permisos observables distintos para PATCH:/incidencias/{}/resolver: backend=['admin', 'profesor'], frontend=['estudiante'].
+Sin hallazgos específicos del dominio.

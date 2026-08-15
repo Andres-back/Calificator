@@ -35,7 +35,9 @@ async def registrar_evento(
     if len(payload.tipo) > max_tipo_len:
         raise HTTPException(status_code=422, detail=f"tipo no puede exceder {max_tipo_len} caracteres")
     await service.registrar_evento(
-        db, tipo=payload.tipo, actor_id=current_user.id,
+        db,
+        tipo=payload.tipo,
+        current_user=current_user,
         evaluacion_id=payload.evaluacion_id,
         calificacion_id=payload.calificacion_id,
         metadata_json=payload.metadata_json,

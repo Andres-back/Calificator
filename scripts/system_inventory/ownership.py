@@ -33,7 +33,13 @@ def apply_permission_overrides(surfaces: list[Surface], config: InventoryConfig)
         surface = by_id[surface_id]
         surface.actors = sorted(set(override["actors"]))
         surface.authorization = sorted(set(surface.authorization + ["explicit_permission_override"]))
-        surface.details["permission_override_issue"] = override["issue_url"]
+        surface.details.update(
+            {
+                "permission_override_issue": override["issue_url"],
+                "permission_override_reason": override["reason"],
+                "permission_override_evidence": list(override["evidence"]),
+            }
+        )
         surface.details = dict(sorted(surface.details.items()))
 
 

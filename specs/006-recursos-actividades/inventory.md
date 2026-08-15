@@ -8,8 +8,8 @@
 |---|---|---|---|---|
 | endpoint | `DELETE:/herramientas/{material_id}` | admin, profesor | covered | `backend/app/modules/herramientas/router.py:246` |
 | endpoint | `GET:/herramientas` | admin, profesor | covered | `backend/app/modules/herramientas/router.py:42` |
-| endpoint | `GET:/herramientas/materias/{materia_id}/recursos` | authenticated | covered | `backend/app/modules/herramientas/router.py:226` |
-| endpoint | `GET:/herramientas/{material_id}` | authenticated | covered | `backend/app/modules/herramientas/router.py:234` |
+| endpoint | `GET:/herramientas/materias/{materia_id}/recursos` | admin, estudiante, profesor | covered | `backend/app/modules/herramientas/router.py:226` |
+| endpoint | `GET:/herramientas/{material_id}` | admin, estudiante, profesor | covered | `backend/app/modules/herramientas/router.py:234` |
 | endpoint | `GET:/herramientas/{material_id}/evaluaciones` | admin, profesor | covered | `backend/app/modules/herramientas/router.py:341` |
 | endpoint | `GET:/herramientas/{material_id}/pdf` | authenticated | covered | `backend/app/modules/herramientas/router.py:259` |
 | endpoint | `GET:/xali/evaluaciones/{evaluacion_id}/recursos` | estudiante | covered | `backend/app/modules/xali/router.py:87` |
@@ -53,7 +53,11 @@
 | frontend_call | `POST:/herramientas/{id}/retirar-apoyo` | admin, profesor | covered | `frontend/src/modules/herramientas/api.ts:46` |
 | frontend_call | `POST:/xali/evaluaciones/{evaluacionId}/recursos` | ambiguous | covered | `frontend/src/modules/xali/api.ts:21` |
 
+## Decisiones explícitas de permiso
+
+- `backend:GET:/herramientas/materias/{materia_id}/recursos` — El servicio valida gestión docente o matrícula activa y filtra recursos publicados para estudiantes. ([issue](https://github.com/Andres-back/Calificator/issues/17)). Evidencia: `backend/tests/unit/test_authorization_contracts.py`.
+- `backend:GET:/herramientas/{material_id}` — El servicio limita profesor y administrador por autor, y estudiante por publicación, asignación y matrícula. ([issue](https://github.com/Andres-back/Calificator/issues/17)). Evidencia: `backend/tests/unit/test_authorization_contracts.py`.
+
 ## Hallazgos
 
-- **medium · authorization_mismatch**: Permisos observables distintos para GET:/herramientas/{}: backend=['authenticated'], frontend=['admin', 'profesor'].
-- **medium · authorization_mismatch**: Permisos observables distintos para GET:/herramientas/materias/{}/recursos: backend=['authenticated'], frontend=['admin', 'profesor'].
+Sin hallazgos específicos del dominio.

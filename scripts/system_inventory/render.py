@@ -32,6 +32,20 @@ def domain_markdown(spec: str, inventory: dict[str, Any]) -> str:
         lines.append(f"| {item['kind']} | `{item['signature']}` | {actors} | {item['coverage']} | {source} |")
     if not surfaces:
         lines.append("| — | Sin superficies detectadas | — | — | — |")
+
+    explicit = [item for item in surfaces if item.get("details", {}).get("permission_override_issue")]
+    lines.extend(["", "## Decisiones explícitas de permiso", ""])
+    if explicit:
+        for item in explicit:
+            details = item["details"]
+            evidence = ", ".join(f"`{path}`" for path in details["permission_override_evidence"])
+            lines.append(
+                f"- `{item['id']}` — {details['permission_override_reason']} "
+                f"([issue]({details['permission_override_issue']})). Evidencia: {evidence}."
+            )
+    else:
+        lines.append("Sin decisiones explícitas de permiso para este dominio.")
+
     findings = [finding for finding in inventory["findings"] if any(identifier in {item["id"] for item in surfaces} for identifier in finding["surface_ids"])]
     lines.extend(["", "## Hallazgos", ""])
     if findings:

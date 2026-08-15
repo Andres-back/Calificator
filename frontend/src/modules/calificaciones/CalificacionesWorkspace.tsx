@@ -985,7 +985,7 @@ export function CalificacionesWorkspace() {
 
   // Track workspace opened
   useEffect(() => {
-    if (evalId) trackEvent('workspace_opened', { evaluacion_id: evalId, materia_id: materiaId });
+    if (evalId) trackEvent('workspace_opened', { evaluacion_id: evalId, metadata_json: { materia_id: materiaId } });
   }, [evalId, materiaId]);
 
   const { data: cals, isLoading } = useQuery({
@@ -1053,7 +1053,7 @@ export function CalificacionesWorkspace() {
       toast.success(`${res.exitosos} nota(s) confirmada(s)`);
       if (res.fallidos > 0) toast.error(`${res.fallidos} fallaron`);
       setSelectedBatch(new Set());
-      trackEvent('batch_confirmed', { evaluacion_id: evalId, batch_size: res.exitosos });
+      trackEvent('batch_confirmed', { evaluacion_id: evalId, metadata_json: { batch_size: res.exitosos } });
     },
     onError: (e) => toast.error(toApiError(e).detail),
   });
@@ -1064,7 +1064,7 @@ export function CalificacionesWorkspace() {
       toast.success(`${res.exitosos} nota(s) ajustada(s)`);
       if (res.fallidos > 0) toast.error(`${res.fallidos} fallaron`);
       setSelectedBatch(new Set());
-      trackEvent('batch_adjusted', { evaluacion_id: evalId, batch_size: res.exitosos });
+      trackEvent('batch_adjusted', { evaluacion_id: evalId, metadata_json: { batch_size: res.exitosos } });
     },
     onError: (e) => toast.error(toApiError(e).detail),
   });
@@ -1080,7 +1080,7 @@ export function CalificacionesWorkspace() {
       toast.success(`${res.exitosos} nota(s) publicada(s)`);
       if (res.fallidos > 0) toast.error(`${res.fallidos} no pudieron publicarse`);
       setSelectedBatch(new Set());
-      trackEvent('batch_published', { evaluacion_id: evalId, batch_size: res.exitosos });
+      trackEvent('batch_published', { evaluacion_id: evalId, metadata_json: { batch_size: res.exitosos } });
     },
     onError: (e) => toast.error(toApiError(e).detail),
   });

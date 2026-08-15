@@ -5,36 +5,128 @@ from datetime import datetime, timedelta
 from decimal import Decimal
 from uuid import UUID
 
-from sqlalchemy import func, select, case, and_
+from fastapi import HTTPException, status
+from sqlalchemy import and_, case, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.logging import get_logger
+from app.modules.analytics.event_policy import AnalyticsValidationError, validate_event_payload
+from app.modules.analytics.models import AnalyticsEvento
+from app.modules.calificaciones.incidencia_models import CalificacionIncidencia
 from app.modules.calificaciones.models import Calificacion
 from app.modules.evaluaciones.models import Evaluacion
-from app.modules.calificaciones.incidencia_models import CalificacionIncidencia
-from app.modules.analytics.models import AnalyticsEvento
 from app.modules.materias.models import Materia
-from app.shared.enums import CalificacionEstado
+from app.modules.users.models import User
+from app.shared.enums import CalificacionEstado, UserRole
 
 logger = get_logger(__name__)
+
+
+async def _get_allowed_evaluation(
+    db: AsyncSession,
+    evaluacion_id: UUID,
+    current_user: User,
+) -> Evaluacion | None:
+    stmt = select(Evaluacion).where(
+        Evaluacion.id == evaluacion_id,
+        Evaluacion.deleted_at.is_(None),
+    )
+    if current_user.rol == UserRole.PROFESOR.value:
+        stmt = stmt.where(Evaluacion.profesor_id == current_user.id)
+    elif current_user.rol != UserRole.ADMIN.value:
+        return None
+    return await db.scalar(stmt)
+
+
+async def _get_allowed_calificacion(
+    db: AsyncSession,
+    calificacion_id: UUID,
+    current_user: User,
+) -> Calificacion | None:
+    stmt = select(Calificacion).where(Calificacion.id == calificacion_id)
+    if current_user.rol == UserRole.PROFESOR.value:
+        stmt = stmt.join(Evaluacion, Evaluacion.id == Calificacion.evaluacion_id).where(
+            Evaluacion.profesor_id == current_user.id,
+            Evaluacion.deleted_at.is_(None),
+        )
+    elif current_user.rol == UserRole.ESTUDIANTE.value:
+        stmt = stmt.where(Calificacion.estudiante_id == current_user.id)
+    elif current_user.rol != UserRole.ADMIN.value:
+        return None
+    return await db.scalar(stmt)
+
+
+async def _validate_event_references(
+    db: AsyncSession,
+    *,
+    current_user: User,
+    evaluacion_id: UUID | None,
+    calificacion_id: UUID | None,
+    metadata_json: dict,
+) -> None:
+    evaluation = None
+    if evaluacion_id is not None:
+        evaluation = await _get_allowed_evaluation(db, evaluacion_id, current_user)
+        if evaluation is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Referencia no encontrada",
+            )
+        materia_id = metadata_json.get("materia_id")
+        if materia_id is not None and str(evaluation.materia_id) != str(materia_id):
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+                detail="Las referencias académicas no son coherentes",
+            )
+
+    if calificacion_id is not None:
+        grade = await _get_allowed_calificacion(db, calificacion_id, current_user)
+        if grade is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Referencia no encontrada",
+            )
+        if evaluation is not None and grade.evaluacion_id != evaluation.id:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+                detail="Las referencias académicas no son coherentes",
+            )
 
 
 async def registrar_evento(
     db: AsyncSession,
     *,
     tipo: str,
-    actor_id: UUID | None = None,
+    current_user: User,
     evaluacion_id: UUID | None = None,
     calificacion_id: UUID | None = None,
     metadata_json: dict | None = None,
 ) -> AnalyticsEvento:
-    """Persiste un evento liviano emitido por la interfaz."""
+    """Valida y persiste un evento atribuible únicamente a la sesión efectiva."""
+    try:
+        validated = validate_event_payload(
+            tipo=tipo,
+            role=current_user.rol,
+            evaluacion_id=evaluacion_id,
+            calificacion_id=calificacion_id,
+            metadata_json=metadata_json or {},
+        )
+    except AnalyticsValidationError as exc:
+        raise HTTPException(status_code=exc.status_code, detail=exc.detail) from exc
+
+    await _validate_event_references(
+        db,
+        current_user=current_user,
+        evaluacion_id=validated.evaluacion_id,
+        calificacion_id=validated.calificacion_id,
+        metadata_json=validated.metadata_json,
+    )
     evento = AnalyticsEvento(
-        tipo=tipo,
-        actor_id=actor_id,
-        evaluacion_id=evaluacion_id,
-        calificacion_id=calificacion_id,
-        metadata_json=metadata_json or {},
+        tipo=validated.tipo,
+        actor_id=current_user.id,
+        evaluacion_id=validated.evaluacion_id,
+        calificacion_id=validated.calificacion_id,
+        metadata_json=validated.metadata_json,
     )
     db.add(evento)
     await db.commit()

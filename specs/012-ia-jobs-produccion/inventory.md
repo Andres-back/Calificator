@@ -48,6 +48,10 @@
 | job | `tasks.grade_batch` | system | missing | `backend/app/workers/tasks_grading.py:556` |
 | job | `tasks.ingest_rag` | system | missing | `backend/app/workers/tasks_rag.py:5` |
 
+## Decisiones explícitas de permiso
+
+Sin decisiones explícitas de permiso para este dominio.
+
 ## Hallazgos
 
 - **low · missing_coverage**: 18 superficies de 012-ia-jobs-produccion no tienen evidencia de prueba observable.
