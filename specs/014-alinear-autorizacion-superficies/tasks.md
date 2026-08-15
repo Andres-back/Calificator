@@ -86,13 +86,13 @@
 ## Fase final: Validación y cierre
 
 - [X] T043 [P] Actualizar contratos y quickstart si la implementación final ajusta límites en `specs/014-alinear-autorizacion-superficies/contracts/` y `specs/014-alinear-autorizacion-superficies/quickstart.md`
-- [ ] T044 [P] Ejecutar las pruebas completas de gobernanza en `tests/spec_governance/`
+- [X] T044 [P] Ejecutar las pruebas completas de gobernanza en `tests/spec_governance/`
 - [X] T045 Ejecutar compilación y pruebas unitarias/integración del backend en `backend/tests/`
 - [X] T046 Ejecutar typecheck, lint estricto, unitarias, build y E2E aplicables desde `frontend/package.json`
 - [X] T047 Validar configuración y construcción de imágenes mediante `docker-compose.yml`, `backend/Dockerfile` y `frontend/Dockerfile`
 - [X] T048 Solicitar revisión humana de los 24 criterios sin modificar automáticamente `specs/014-alinear-autorizacion-superficies/checklists/security.md`
 - [X] T049 Ejecutar `$speckit-converge` y añadir cualquier brecha real a `specs/014-alinear-autorizacion-superficies/tasks.md`
-- [ ] T050 Ejecutar gobernanza final, abrir PR enlazado a #17 y registrar evidencia de CI en `specs/014-alinear-autorizacion-superficies/tasks.md`
+- [X] T050 Ejecutar gobernanza final, abrir PR enlazado a #17 y registrar evidencia de CI en `specs/014-alinear-autorizacion-superficies/tasks.md`
 
 ## Dependencias
 
@@ -128,3 +128,12 @@
 - T020–T027: FR-011, FR-012, FR-013, FR-014.
 - T028–T036: FR-018, FR-019, FR-020.
 - T037–T050: verificación transversal de FR-001 a FR-020.
+
+## Evidencia de cierre
+
+- Backend: compilación completa; 435 unitarias aprobadas; integración con 1 aprobada y 1 omitida por condición declarada.
+- Frontend: TypeScript y lint estricto aprobados; 180 unitarias; build de producción; 34 E2E aprobadas.
+- Contenedores: `docker compose config --quiet`, imágenes backend/worker/beat/migrate/storage-init y Dockerfile frontend construidos.
+- Inventario: 373 superficies vigentes, 10 decisiones auditadas y dos generaciones consecutivas determinísticas.
+- Convergencia: cero brechas accionables; no se añadieron tareas.
+- Revisión/CI: PR [#18](https://github.com/Andres-back/Calificator/pull/18), enlazado al issue #17; evidencia de checks en la pestaña del PR.
