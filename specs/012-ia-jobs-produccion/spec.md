@@ -55,3 +55,6 @@ Como equipo, necesito actualizar estos artefactos cuando cambie el comportamient
 - Registra comportamiento vigente; no introduce cambios funcionales.
 - Inconsistencias se convierten en issues separados.
 - Se conservan arquitectura y contratos públicos.
+## Inventario técnico
+
+- [Ver superficies, permisos y cobertura de este dominio](./inventory.md).

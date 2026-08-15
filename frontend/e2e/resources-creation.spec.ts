@@ -82,6 +82,7 @@ test.beforeEach(async ({ page }) => {
 test('el selector ofrece una sola herramienta para relacionar pares', async ({ page }) => {
   await page.goto('/app/herramientas/nuevo');
 
+  await expect(page.getByRole('heading', { name: '2. Elige el formato' })).toBeVisible({ timeout: 15_000 });
   await expect(page.getByRole('button', { name: /Elegir Relacionar pares/i })).toHaveCount(1);
   await expect(page.getByText('Unir columnas', { exact: true })).toHaveCount(0);
   await expect(page.getByText('Emparejar', { exact: true })).toHaveCount(0);

@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "rules": [
+    {"spec":"003-usuarios-materias-matriculas","priority":35,"kinds":["frontend_route","frontend_call","endpoint"],"signature_patterns":["*/auth*","*/users*","*/materias*","*/matriculas*","/login"]},
+    {"spec":"004-dba-asistencia-curriculo","priority":36,"kinds":["frontend_route","frontend_call","endpoint"],"signature_patterns":["*/dba*","*/asistencia*"]},
+    {"spec":"005-evaluaciones","priority":37,"kinds":["frontend_route","frontend_call","endpoint"],"signature_patterns":["*:/evaluaciones*","/app/evaluaciones*","/app/materias/*/evaluaciones*"]},
+    {"spec":"006-recursos-actividades","priority":37,"kinds":["frontend_route","frontend_call","endpoint"],"signature_patterns":["*/herramientas*","*/recursos*"]},
+    {"spec":"007-entregas-estudiante","priority":45,"kinds":["frontend_route"],"signature_patterns":["*/evaluaciones/*/resolver"]},
+    {"spec":"008-calificaciones","priority":36,"kinds":["frontend_route","frontend_call","endpoint"],"signature_patterns":["*/calificaciones*","*/boletin*","*/calificar*"]},
+    {"spec":"009-xali-rag-refuerzos","priority":35,"kinds":["frontend_route","frontend_call","endpoint"],"signature_patterns":["*/xali*","*/rag*"]},
+    {"spec":"010-presentaciones-imagenes","priority":35,"kinds":["frontend_route","frontend_call","endpoint"],"signature_patterns":["*/presentaciones*","*/imagenes*"]},
+    {"spec":"011-reportes-analitica-impacto","priority":35,"kinds":["frontend_route","frontend_call","endpoint"],"signature_patterns":["*/reportes*","*/analytics*","*/impacto*"]},
+    {"spec":"012-ia-jobs-produccion","priority":35,"kinds":["frontend_route","frontend_call","endpoint"],"signature_patterns":["*/jobs*","*/admin/ai-*"]},    {"spec":"002-arquitectura-roles-seguridad","priority":10,"source_patterns":["backend/app/main.py","backend/app/api.py","backend/app/core/**","backend/app/shared/**","backend/app/db/**","frontend/src/router.tsx","frontend/src/config/**","frontend/src/lib/**","frontend/src/components/auth/**","frontend/src/components/layout/**","frontend/src/pages/**"]},
+    {"spec":"003-usuarios-materias-matriculas","priority":20,"source_patterns":["backend/app/modules/auth/**","backend/app/modules/users/**","backend/app/modules/materias/**","backend/app/modules/matriculas/**","frontend/src/modules/auth/**","frontend/src/modules/materias/**"]},
+    {"spec":"004-dba-asistencia-curriculo","priority":30,"source_patterns":["backend/app/modules/dba/**","backend/app/modules/asistencia/**","frontend/src/modules/materias/*Asistencia*","frontend/src/modules/materias/*Dba*"]},
+    {"spec":"005-evaluaciones","priority":30,"source_patterns":["backend/app/modules/evaluaciones/**","frontend/src/modules/evaluaciones/**","frontend/src/modules/materias/*Evaluaciones*"]},
+    {"spec":"006-recursos-actividades","priority":30,"source_patterns":["backend/app/modules/herramientas/**","frontend/src/modules/herramientas/**","frontend/src/modules/materias/*Recursos*"]},
+    {"spec":"007-entregas-estudiante","priority":40,"kinds":["endpoint","frontend_call"],"signature_patterns":["*/entregas*","*/entrega*","*/reemplazo*","*/archivo*"]},
+    {"spec":"007-entregas-estudiante","priority":30,"source_patterns":["frontend/src/components/evidence/**"]},
+    {"spec":"008-calificaciones","priority":30,"source_patterns":["backend/app/modules/calificaciones/**","frontend/src/modules/calificaciones/**","frontend/src/modules/materias/*Calificar*","frontend/src/modules/materias/*Boletin*"]},
+    {"spec":"009-xali-rag-refuerzos","priority":20,"source_patterns":["backend/app/modules/xali/**","backend/app/modules/rag/**","frontend/src/modules/xali/**"]},
+    {"spec":"010-presentaciones-imagenes","priority":20,"source_patterns":["backend/app/modules/presentaciones/**","backend/app/modules/imagenes/**","frontend/src/modules/presentaciones/**"]},
+    {"spec":"011-reportes-analitica-impacto","priority":20,"source_patterns":["backend/app/modules/reportes/**","backend/app/modules/analytics/**","backend/app/modules/impacto_tesis/**","frontend/src/modules/reportes/**","frontend/src/modules/analytics/**"]},
+    {"spec":"012-ia-jobs-produccion","priority":20,"source_patterns":["backend/app/modules/admin_ai_config/**","backend/app/modules/jobs/**","backend/app/services/**","backend/app/workers/**","frontend/src/modules/admin/**"]},
+    {"spec":"002-arquitectura-roles-seguridad","priority":1,"source_patterns":["backend/app/**","backend/alembic/**","frontend/src/**"]}
+  ]
+}

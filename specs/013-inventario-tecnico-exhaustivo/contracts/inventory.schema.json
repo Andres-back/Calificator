@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "XCalificator System Inventory",
+  "type": "object",
+  "required": ["schema_version", "source_digest", "counts", "surfaces", "findings", "exceptions", "permission_overrides"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "source_digest": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "counts": {"type": "object", "additionalProperties": {"type": "integer", "minimum": 0}},
+    "surfaces": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "kind", "source_path", "source_line", "signature", "owner_spec", "actors", "authorization", "states", "tests", "coverage", "consumers", "details"],
+        "properties": {
+          "id": {"type": "string", "minLength": 1},
+          "kind": {"enum": ["endpoint", "frontend_route", "frontend_call", "table", "job", "integration"]},
+          "source_path": {"type": "string", "minLength": 1},
+          "source_line": {"type": "integer", "minimum": 1},
+          "signature": {"type": "string", "minLength": 1},
+          "owner_spec": {"type": "string", "pattern": "^\\d{3}-[a-z0-9-]+$"},
+          "actors": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+          "authorization": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+          "states": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+          "tests": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+          "coverage": {"enum": ["covered", "missing"]},
+          "consumers": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+          "details": {"type": "object"}
+        },
+        "additionalProperties": false
+      }
+    },
+    "findings": {"type": "array", "items": {"type": "object"}},
+    "exceptions": {"type": "array", "items": {"type": "object"}},
+    "permission_overrides": {"type": "array", "items": {"type": "object"}}
+  },
+  "additionalProperties": false
+}
