@@ -1,0 +1,273 @@
+openapi: 3.1.0
+info:
+  title: XCalificator - Calificación explicable
+  version: 0.1.0
+  description: Contrato aditivo para desgloses docentes y estudiantiles.
+paths:
+  /calificaciones/{calificacion_id}/desglose:
+    get:
+      summary: Obtener el desglose docente vigente
+      description: Requiere profesor propietario de la evaluación o administrador.
+      parameters:
+        - $ref: '#/components/parameters/CalificacionId'
+      responses:
+        '200':
+          description: Desglose completo, incluidas referencias y bloqueos.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DesgloseDocente'
+        '404':
+          description: Calificación inexistente o desglose histórico no disponible.
+        '403':
+          description: Rol o propiedad no autorizados.
+    put:
+      summary: Guardar decisiones docentes de forma atómica
+      parameters:
+        - $ref: '#/components/parameters/CalificacionId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ActualizarDesglose'
+      responses:
+        '200':
+          description: Nueva versión vigente y nota recalculada.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DesgloseDocente'
+        '409':
+          description: Versión desactualizada o desglose inválido; no se escribe parcialmente.
+  /calificaciones/{calificacion_id}/desgloses:
+    get:
+      summary: Listar el historial de versiones para auditoría docente
+      parameters:
+        - $ref: '#/components/parameters/CalificacionId'
+      responses:
+        '200':
+          description: Versiones ordenadas de reciente a antigua.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ResumenVersion'
+  /calificaciones/{calificacion_id}/confirmar:
+    patch:
+      summary: Confirmar la versión vigente
+      description: Extiende el endpoint existente. Para desgloses nuevos valida versión, fórmula y bloqueos.
+      parameters:
+        - $ref: '#/components/parameters/CalificacionId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [nota_confirmada]
+              properties:
+                nota_confirmada:
+                  type: number
+                  minimum: 0
+                desglose_version:
+                  type: integer
+                  minimum: 1
+      responses:
+        '200':
+          description: Calificación confirmada.
+        '409':
+          description: Nota distinta de la fórmula, versión obsoleta o pendientes abiertos.
+  /evaluaciones/{evaluacion_id}/mi-desglose:
+    get:
+      summary: Obtener el desglose publicado del estudiante autenticado
+      parameters:
+        - name: evaluacion_id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Vista publicada y redactada en el servidor.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DesgloseEstudiante'
+        '409':
+          description: La calificación aún no ha sido publicada.
+        '404':
+          description: No existe calificación o el detalle histórico no está disponible.
+  /evaluaciones/{evaluacion_id}/solicitud-revision:
+    post:
+      summary: Solicitar revisión general o de un componente publicado
+      parameters:
+        - name: evaluacion_id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [motivo, descripcion]
+              properties:
+                motivo: { type: string }
+                descripcion: { type: string, minLength: 10, maxLength: 2000 }
+                componente_id: { type: string, format: uuid, nullable: true }
+                desglose_version: { type: integer, minimum: 1, nullable: true }
+      responses:
+        '200':
+          description: Solicitud vinculada a la instantánea publicada.
+        '409':
+          description: Ya existe solicitud abierta o el componente no pertenece a la versión publicada.
+components:
+  parameters:
+    CalificacionId:
+      name: calificacion_id
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+  schemas:
+    Formula:
+      type: object
+      required: [puntos_obtenidos, puntos_posibles, nota_maxima, nota_base, ajuste_global, regla_redondeo, decimales, nota_final]
+      properties:
+        puntos_obtenidos: { type: number }
+        puntos_posibles: { type: number, exclusiveMinimum: 0 }
+        nota_maxima: { type: number, exclusiveMinimum: 0 }
+        nota_base: { type: number }
+        ajuste_global: { type: number }
+        nota_antes_redondeo: { type: number }
+        regla_redondeo: { type: string, const: half_up }
+        decimales: { type: integer, minimum: 0, maximum: 4 }
+        nota_final: { type: number }
+    ValoracionAutomatica:
+      type: object
+      additionalProperties: false
+      properties:
+        evaluador: { type: string }
+        puntaje: { type: number }
+        estado: { type: string }
+        explicacion: { type: string }
+        confianza: { type: number, minimum: 0, maximum: 1 }
+        proveedor: { type: string }
+        modelo: { type: string }
+        tiempo_ms: { type: integer, minimum: 0 }
+    ComponenteDocente:
+      type: object
+      required: [id, clave, orden, tipo, titulo, puntos_maximos, estado, explicacion_verificable, requiere_revision]
+      properties:
+        id: { type: string, format: uuid }
+        clave: { type: string }
+        orden: { type: integer }
+        tipo: { type: string, enum: [pregunta, rubrica, manual] }
+        numero: { type: string, nullable: true }
+        titulo: { type: string }
+        respuesta_estudiante: { type: string, nullable: true }
+        respuesta_referencia: { type: string, nullable: true }
+        puntos_obtenidos: { type: number, nullable: true }
+        puntos_maximos: { type: number, exclusiveMinimum: 0 }
+        estado:
+          type: string
+          enum: [correcta, parcial, incorrecta, sin_respuesta, ilegible, no_evaluable, revision_pendiente]
+        explicacion_verificable: { type: string }
+        explicacion_estudiante: { type: string, nullable: true }
+        origen: { type: string }
+        requiere_revision: { type: boolean }
+        evidencia_paginas:
+          type: array
+          items: { type: integer, minimum: 1 }
+        valoraciones:
+          type: array
+          items: { $ref: '#/components/schemas/ValoracionAutomatica' }
+    ComponenteEstudiante:
+      type: object
+      required: [id, clave, orden, titulo, puntos_maximos, estado, explicacion, referencia_oculta]
+      properties:
+        id: { type: string, format: uuid }
+        clave: { type: string }
+        orden: { type: integer }
+        numero: { type: string, nullable: true }
+        titulo: { type: string }
+        respuesta_estudiante: { type: string, nullable: true }
+        respuesta_referencia: { type: string, nullable: true }
+        referencia_oculta: { type: boolean }
+        puntos_obtenidos: { type: number, nullable: true }
+        puntos_maximos: { type: number }
+        estado: { type: string }
+        explicacion: { type: string }
+        evidencia_paginas:
+          type: array
+          items: { type: integer, minimum: 1 }
+    DesgloseDocente:
+      type: object
+      required: [id, calificacion_id, version, origen, cobertura_estado, formula, requiere_revision, componentes]
+      properties:
+        id: { type: string, format: uuid }
+        calificacion_id: { type: string, format: uuid }
+        version: { type: integer, minimum: 1 }
+        origen: { type: string }
+        cobertura_estado: { type: string, enum: [completa, incompleta, inconsistente] }
+        formula: { $ref: '#/components/schemas/Formula' }
+        requiere_revision: { type: boolean }
+        bloqueos:
+          type: array
+          items: { type: string }
+        componentes:
+          type: array
+          items: { $ref: '#/components/schemas/ComponenteDocente' }
+        created_at: { type: string, format: date-time }
+    DesgloseEstudiante:
+      type: object
+      required: [calificacion_id, version, nota_publicada, formula, componentes, claves_liberadas]
+      properties:
+        calificacion_id: { type: string, format: uuid }
+        version: { type: integer }
+        nota_publicada: { type: number }
+        formula: { $ref: '#/components/schemas/Formula' }
+        componentes:
+          type: array
+          items: { $ref: '#/components/schemas/ComponenteEstudiante' }
+        claves_liberadas: { type: boolean }
+    CambioComponente:
+      type: object
+      required: [componente_id, puntos_obtenidos, estado, motivo_interno, explicacion_estudiante]
+      properties:
+        componente_id: { type: string, format: uuid }
+        puntos_obtenidos: { type: number, minimum: 0 }
+        estado: { type: string }
+        motivo_interno: { type: string, minLength: 3, maxLength: 1000 }
+        explicacion_estudiante: { type: string, minLength: 3, maxLength: 2000 }
+    AjusteGlobal:
+      type: object
+      required: [valor, motivo_interno, explicacion_estudiante]
+      properties:
+        valor: { type: number }
+        motivo_interno: { type: string, minLength: 3, maxLength: 1000 }
+        explicacion_estudiante: { type: string, minLength: 3, maxLength: 2000 }
+    ActualizarDesglose:
+      type: object
+      required: [version_esperada]
+      properties:
+        version_esperada: { type: integer, minimum: 1 }
+        cambios_componentes:
+          type: array
+          items: { $ref: '#/components/schemas/CambioComponente' }
+        ajuste_global:
+          oneOf:
+            - $ref: '#/components/schemas/AjusteGlobal'
+            - type: 'null'
+    ResumenVersion:
+      type: object
+      required: [id, version, origen, nota_final, activo, created_at]
+      properties:
+        id: { type: string, format: uuid }
+        version: { type: integer }
+        origen: { type: string }
+        nota_final: { type: number }
+        activo: { type: boolean }
+        actor_nombre: { type: string, nullable: true }
+        created_at: { type: string, format: date-time }

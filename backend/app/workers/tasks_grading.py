@@ -17,6 +17,7 @@ from sqlalchemy.orm import selectinload
 from app.core.logging import get_logger
 from app.db.session import AsyncSessionLocal, engine
 from app.modules.calificaciones import photo_service, service as calificaciones_service
+from app.modules.calificaciones.breakdown_service import create_automatic_breakdown
 from app.modules.calificaciones.grading_service import grade_submission
 from app.modules.calificaciones.models import Calificacion, Entrega
 from app.modules.calificaciones.salon_mode_service import update_estudiante_estado
@@ -194,6 +195,14 @@ async def _grade_delivery(
     if existing is None:
         db.add(calificacion)
 
+    await create_automatic_breakdown(
+        db,
+        calificacion=calificacion,
+        blueprint=evaluation_to_grading_blueprint(evaluacion),
+        raw_output=grading.raw_model_output,
+        pipeline_run_id=str(queued_payload.get("job_id") or "") or None,
+    )
+
     salon_session_id = (
         evidence_metadata.get("salon_sesion_id")
         if isinstance(evidence_metadata, dict)
@@ -242,6 +251,14 @@ async def _mark_delivery_for_retry(
         existing.resultado_json = failed_payload
         existing.estado = CalificacionEstado.REQUIERE_REVISION.value
     evidence_metadata = current.get("evidencia_consolidada")
+    await create_automatic_breakdown(
+        db,
+        calificacion=calificacion,
+        blueprint=evaluation_to_grading_blueprint(evaluacion),
+        raw_output=grading.raw_model_output,
+        pipeline_run_id=str(queued_payload.get("job_id") or "") or None,
+    )
+
     salon_session_id = (
         evidence_metadata.get("salon_sesion_id")
         if isinstance(evidence_metadata, dict)

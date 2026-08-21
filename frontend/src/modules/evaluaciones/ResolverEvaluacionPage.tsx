@@ -9,9 +9,10 @@ import { evidenceFiles, evidenceRotations, type EvidencePage } from '@/component
 import { PageHeader } from '@/components/layout/PageHeader';
 import { toApiError } from '@/lib/api';
 import { useAuth } from '@/stores/auth';
-import { crearEntregaArchivo, crearEntregaOnline, evaluationPdfUrl, getActividadEstudiante, getEvaluacion, getMiEntrega, getMiSolicitudRevision, solicitarRevisionEvaluacion } from './api';
+import { crearEntregaArchivo, crearEntregaOnline, evaluationPdfUrl, getActividadEstudiante, getEvaluacion, getMiDesglose, getMiEntrega, getMiSolicitudRevision, solicitarRevisionEvaluacion } from './api';
 import { StudentActivityPlayer } from './StudentActivityPlayer';
 import { StudentAnswerSheet } from './StudentAnswerSheet';
+import { GradeBreakdown } from '@/modules/calificaciones/components/GradeBreakdown';
 import type { SolicitudRevisionMotivo } from '@/types/api';
 
 function textFromQuestion(question: Record<string, unknown>, index: number): string {
@@ -60,6 +61,7 @@ export function ResolverEvaluacionPage() {
   const [reviewOpen, setReviewOpen] = useState(false);
   const [reviewReason, setReviewReason] = useState<SolicitudRevisionMotivo>('nota');
   const [reviewDetail, setReviewDetail] = useState('');
+  const [reviewComponentId, setReviewComponentId] = useState('');
   const [firstIncomplete, setFirstIncomplete] = useState<number | null>(null);
   const [onlineConfirmOpen, setOnlineConfirmOpen] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -95,6 +97,13 @@ export function ResolverEvaluacionPage() {
     refetchOnWindowFocus: true,
   });
 
+  const myBreakdown = useQuery({
+    queryKey: ['mi-desglose', evaluacionId],
+    queryFn: () => getMiDesglose(evaluacionId),
+    enabled: Boolean(evaluacionId && evaluacion?.mi_nota_confirmada != null),
+    retry: false,
+    refetchOnWindowFocus: true,
+  });
   const modalidad = evaluacion?.modalidad ?? 'online';
   const assignedMaterial = activityQuery.data ?? null;
   const preguntas = useMemo(() => evaluacion?.preguntas ?? [], [evaluacion?.preguntas]);
@@ -249,11 +258,14 @@ export function ResolverEvaluacionPage() {
     mutationFn: () => solicitarRevisionEvaluacion(evaluacionId, {
       motivo: reviewReason,
       descripcion: reviewDetail.trim(),
+      componente_id: reviewComponentId || undefined,
+      desglose_version: reviewComponentId ? myBreakdown.data?.version : undefined,
     }),
     onSuccess: () => {
       void reviewRequest.refetch();
       setReviewOpen(false);
       setReviewDetail('');
+      setReviewComponentId('');
       toast.success('Solicitud de revisión enviada al docente.');
     },
     onError: (requestError) => toast.error(toApiError(requestError).detail),
@@ -505,7 +517,20 @@ export function ResolverEvaluacionPage() {
                   )}
                 </div>
               </div>
-              {evaluacion?.mi_nota_confirmada == null && !(modalidad === 'mixta' && !physicalSubmitted) && (
+              {evaluacion?.mi_nota_confirmada != null && (
+                <div className="border-t border-emerald-200 pt-5 dark:border-emerald-500/25">
+                  {myBreakdown.isLoading ? (
+                    <Skeleton className="h-56" />
+                  ) : myBreakdown.data ? (
+                    <GradeBreakdown breakdown={myBreakdown.data} student />
+                  ) : (
+                    <div className="rounded-xl border border-border p-4">
+                      <p className="font-bold">Detalle histórico</p>
+                      <p className="mt-1 text-sm leading-6 text-muted">Esta nota fue creada antes del desglose respuesta por respuesta. Conservamos la retroalimentación original sin inventar datos.</p>
+                    </div>
+                  )}
+                </div>
+              )}              {evaluacion?.mi_nota_confirmada == null && !(modalidad === 'mixta' && !physicalSubmitted) && (
                 <Link to="/app/evaluaciones" className="focus-ring inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg border border-border bg-surface px-4 text-sm font-semibold text-fg transition hover:bg-surface-2 sm:w-auto">
                   <ArrowLeft className="h-4 w-4" aria-hidden="true" /> Volver a mis evaluaciones
                 </Link>
@@ -646,7 +671,18 @@ export function ResolverEvaluacionPage() {
               <option value="otro">Otra inconsistencia</option>
             </Select>
           </Field>
-          <Field label="Explica lo que encontraste" hint="Menciona la pregunta o parte de la evidencia y por qué consideras que debe revisarse." required>
+          {reviewReason === 'respuesta' && myBreakdown.data && (
+            <Field label="Pregunta o criterio que deseas revisar" hint="Así el docente llega directamente al punto exacto.">
+              <Select value={reviewComponentId} onChange={(event) => setReviewComponentId(event.target.value)}>
+                <option value="">Seleccionar componente</option>
+                {myBreakdown.data.componentes.map((component) => (
+                  <option key={component.id} value={component.id}>
+                    {component.tipo === 'pregunta' ? `Pregunta ${component.numero ?? component.orden + 1}` : component.titulo} · {component.puntos_obtenidos ?? '—'} / {component.puntos_maximos}
+                  </option>
+                ))}
+              </Select>
+            </Field>
+          )}          <Field label="Explica lo que encontraste" hint="Menciona la pregunta o parte de la evidencia y por qué consideras que debe revisarse." required>
             <Textarea
               value={reviewDetail}
               onChange={(event) => setReviewDetail(event.target.value)}

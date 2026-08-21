@@ -1,18 +1,18 @@
 {
   "counts": {
     "by_coverage": {
-      "covered": 319,
+      "covered": 332,
       "missing": 54
     },
     "by_kind": {
-      "endpoint": 185,
-      "frontend_call": 115,
+      "endpoint": 190,
+      "frontend_call": 120,
       "frontend_route": 26,
       "integration": 7,
       "job": 8,
-      "table": 32
+      "table": 35
     },
-    "total": 373
+    "total": 386
   },
   "exceptions": [],
   "findings": [
@@ -277,7 +277,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "46fedec5319167abbf4dd59205270d9be7efb355cd91247f5d22c5a34b43f215",
+  "source_digest": "26cc8fd1e1abae786110cf284cf3805390fd867bff18417faf93375b18e3b205",
   "surfaces": [
     {
       "actors": [
@@ -329,7 +329,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "DELETE:/calificaciones/modo-salon/{sesion_id}",
-      "source_line": 1130,
+      "source_line": 1137,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -433,6 +433,12 @@
           "level": "unit",
           "reference": "DELETE:/evaluaciones/{evaluacion_id}",
           "status": "direct",
+          "test_path": "backend/tests/integration/test_explainable_grading_flow.py"
+        },
+        {
+          "level": "unit",
+          "reference": "DELETE:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
           "test_path": "backend/tests/unit/test_evaluation_generation.py"
         },
         {
@@ -446,6 +452,12 @@
           "reference": "DELETE:/evaluaciones/{evaluacion_id}",
           "status": "direct",
           "test_path": "frontend/e2e/evaluation-ai-wizard.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "DELETE:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/explainable-grading.spec.ts"
         },
         {
           "level": "e2e",
@@ -1686,6 +1698,12 @@
           "test_path": "backend/tests/unit/test_authorization_contracts.py"
         },
         {
+          "level": "unit",
+          "reference": "GET:/auth/me",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_breakdown_authorization.py"
+        },
+        {
           "level": "e2e",
           "reference": "GET:/auth/me",
           "status": "direct",
@@ -1696,6 +1714,12 @@
           "reference": "GET:/auth/me",
           "status": "direct",
           "test_path": "frontend/e2e/evaluation-ai-wizard.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/auth/me",
+          "status": "direct",
+          "test_path": "frontend/e2e/explainable-grading.spec.ts"
         },
         {
           "level": "e2e",
@@ -1743,7 +1767,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "GET:/calificaciones/bandeja-docente",
-      "source_line": 1533,
+      "source_line": 1540,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -1770,6 +1794,12 @@
           "reference": "GET:/calificaciones/bandeja-docente",
           "status": "domain",
           "test_path": "backend/tests/unit/test_calificaciones_revision_workspace.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/calificaciones/bandeja-docente",
+          "status": "direct",
+          "test_path": "frontend/e2e/explainable-grading.spec.ts"
         },
         {
           "level": "e2e",
@@ -1805,7 +1835,7 @@
       "kind": "endpoint",
       "owner_spec": "007-entregas-estudiante",
       "signature": "GET:/calificaciones/entregas/{entrega_id}/evidencia",
-      "source_line": 1414,
+      "source_line": 1421,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -1861,7 +1891,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "GET:/calificaciones/modo-salon/{sesion_id}",
-      "source_line": 942,
+      "source_line": 949,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -1917,7 +1947,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "GET:/calificaciones/modo-salon/{sesion_id}/estudiantes",
-      "source_line": 966,
+      "source_line": 973,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -1965,6 +1995,130 @@
       "consumers": [],
       "coverage": "covered",
       "details": {
+        "function": "get_desglose_docente",
+        "registered": true,
+        "router": "router"
+      },
+      "id": "backend:GET:/calificaciones/{calificacion_id}/desglose",
+      "kind": "endpoint",
+      "owner_spec": "008-calificaciones",
+      "signature": "GET:/calificaciones/{calificacion_id}/desglose",
+      "source_line": 1659,
+      "source_path": "backend/app/modules/calificaciones/router.py",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/{calificacion_id}/desglose",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_explainable_grading_flow.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/{calificacion_id}/desglose",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_calificaciones_boletin_permissions.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/{calificacion_id}/desglose",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_calificaciones_lote_async.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/{calificacion_id}/desglose",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_calificaciones_resumen_academico.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/{calificacion_id}/desglose",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_calificaciones_revision_workspace.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/{calificacion_id}/desglose",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/CalificacionesTimeline.test.tsx"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "admin",
+        "profesor"
+      ],
+      "authorization": [
+        "get_current_user",
+        "require_role"
+      ],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
+        "function": "get_historial_desglose",
+        "registered": true,
+        "router": "router"
+      },
+      "id": "backend:GET:/calificaciones/{calificacion_id}/desglose/historial",
+      "kind": "endpoint",
+      "owner_spec": "008-calificaciones",
+      "signature": "GET:/calificaciones/{calificacion_id}/desglose/historial",
+      "source_line": 1695,
+      "source_path": "backend/app/modules/calificaciones/router.py",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/{calificacion_id}/desglose/historial",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_explainable_grading_flow.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/{calificacion_id}/desglose/historial",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_calificaciones_boletin_permissions.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/{calificacion_id}/desglose/historial",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_calificaciones_lote_async.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/{calificacion_id}/desglose/historial",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_calificaciones_resumen_academico.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/{calificacion_id}/desglose/historial",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_calificaciones_revision_workspace.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/{calificacion_id}/desglose/historial",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/CalificacionesTimeline.test.tsx"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "admin",
+        "profesor"
+      ],
+      "authorization": [
+        "get_current_user",
+        "require_role"
+      ],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
         "function": "get_calificacion_detalle",
         "registered": true,
         "router": "router"
@@ -1973,7 +2127,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "GET:/calificaciones/{calificacion_id}/detalle",
-      "source_line": 1460,
+      "source_line": 1467,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -2029,7 +2183,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "GET:/calificaciones/{calificacion_id}/incidencias",
-      "source_line": 1605,
+      "source_line": 1612,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -2182,7 +2336,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "GET:/estudiantes/{estudiante_id}/boletin",
-      "source_line": 869,
+      "source_line": 876,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -2236,7 +2390,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "GET:/estudiantes/{estudiante_id}/resumen-academico",
-      "source_line": 849,
+      "source_line": 856,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -2310,6 +2464,12 @@
           "level": "unit",
           "reference": "GET:/evaluaciones/{evaluacion_id}",
           "status": "direct",
+          "test_path": "backend/tests/integration/test_explainable_grading_flow.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
           "test_path": "backend/tests/unit/test_evaluation_generation.py"
         },
         {
@@ -2323,6 +2483,12 @@
           "reference": "GET:/evaluaciones/{evaluacion_id}",
           "status": "direct",
           "test_path": "frontend/e2e/evaluation-ai-wizard.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/explainable-grading.spec.ts"
         },
         {
           "level": "e2e",
@@ -2448,7 +2614,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "GET:/evaluaciones/{evaluacion_id}/calificaciones",
-      "source_line": 832,
+      "source_line": 839,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -2495,6 +2661,67 @@
       "consumers": [],
       "coverage": "covered",
       "details": {
+        "function": "get_mi_desglose",
+        "registered": true,
+        "router": "router"
+      },
+      "id": "backend:GET:/evaluaciones/{evaluacion_id}/mi-desglose",
+      "kind": "endpoint",
+      "owner_spec": "005-evaluaciones",
+      "signature": "GET:/evaluaciones/{evaluacion_id}/mi-desglose",
+      "source_line": 1720,
+      "source_path": "backend/app/modules/calificaciones/router.py",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/{evaluacion_id}/mi-desglose",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_explainable_grading_flow.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/{evaluacion_id}/mi-desglose",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_calificaciones_boletin_permissions.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/{evaluacion_id}/mi-desglose",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_calificaciones_lote_async.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/{evaluacion_id}/mi-desglose",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_calificaciones_resumen_academico.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/{evaluacion_id}/mi-desglose",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_calificaciones_revision_workspace.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/{evaluacion_id}/mi-desglose",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/CalificacionesTimeline.test.tsx"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "estudiante"
+      ],
+      "authorization": [
+        "get_current_user",
+        "require_role"
+      ],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
         "function": "get_my_delivery",
         "registered": true,
         "router": "router"
@@ -2503,7 +2730,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "GET:/evaluaciones/{evaluacion_id}/mi-entrega",
-      "source_line": 1157,
+      "source_line": 1164,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -2558,7 +2785,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "GET:/evaluaciones/{evaluacion_id}/mi-solicitud-revision",
-      "source_line": 1546,
+      "source_line": 1553,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -3237,6 +3464,12 @@
           "level": "e2e",
           "reference": "GET:/materias",
           "status": "direct",
+          "test_path": "frontend/e2e/explainable-grading.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/materias",
+          "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
         },
         {
@@ -3388,6 +3621,12 @@
           "reference": "GET:/materias/{materia_id}",
           "status": "direct",
           "test_path": "frontend/e2e/evaluation-ai-wizard.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/materias/{materia_id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/explainable-grading.spec.ts"
         },
         {
           "level": "e2e",
@@ -4628,7 +4867,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "PATCH:/calificaciones/modo-salon/{sesion_id}/estudiantes/{estudiante_id}",
-      "source_line": 1012,
+      "source_line": 1019,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -4684,7 +4923,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "PATCH:/calificaciones/{calificacion_id}/ajustar",
-      "source_line": 781,
+      "source_line": 788,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -4740,7 +4979,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "PATCH:/calificaciones/{calificacion_id}/confirmar",
-      "source_line": 764,
+      "source_line": 771,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -4796,7 +5035,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "PATCH:/calificaciones/{calificacion_id}/publicar",
-      "source_line": 1481,
+      "source_line": 1488,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -4852,7 +5091,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "PATCH:/calificaciones/{calificacion_id}/revision-manual",
-      "source_line": 798,
+      "source_line": 805,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -4956,6 +5195,12 @@
           "level": "unit",
           "reference": "PATCH:/evaluaciones/{evaluacion_id}",
           "status": "direct",
+          "test_path": "backend/tests/integration/test_explainable_grading_flow.py"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
           "test_path": "backend/tests/unit/test_evaluation_generation.py"
         },
         {
@@ -4969,6 +5214,12 @@
           "reference": "PATCH:/evaluaciones/{evaluacion_id}",
           "status": "direct",
           "test_path": "frontend/e2e/evaluation-ai-wizard.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/explainable-grading.spec.ts"
         },
         {
           "level": "e2e",
@@ -5041,6 +5292,68 @@
           "reference": "PATCH:/evaluaciones/{evaluacion_id}",
           "status": "direct",
           "test_path": "frontend/src/modules/materias/teacherFlowModel.test.ts"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "admin",
+        "profesor"
+      ],
+      "authorization": [
+        "get_current_user",
+        "require_role"
+      ],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
+        "function": "set_respuestas_liberadas",
+        "registered": true,
+        "router": "router"
+      },
+      "id": "backend:PATCH:/evaluaciones/{evaluacion_id}/respuestas-liberadas",
+      "kind": "endpoint",
+      "owner_spec": "005-evaluaciones",
+      "signature": "PATCH:/evaluaciones/{evaluacion_id}/respuestas-liberadas",
+      "source_line": 1707,
+      "source_path": "backend/app/modules/calificaciones/router.py",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "PATCH:/evaluaciones/{evaluacion_id}/respuestas-liberadas",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_explainable_grading_flow.py"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/evaluaciones/{evaluacion_id}/respuestas-liberadas",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_calificaciones_boletin_permissions.py"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/evaluaciones/{evaluacion_id}/respuestas-liberadas",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_calificaciones_lote_async.py"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/evaluaciones/{evaluacion_id}/respuestas-liberadas",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_calificaciones_resumen_academico.py"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/evaluaciones/{evaluacion_id}/respuestas-liberadas",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_calificaciones_revision_workspace.py"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/evaluaciones/{evaluacion_id}/respuestas-liberadas",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/CalificacionesTimeline.test.tsx"
         }
       ]
     },
@@ -5229,7 +5542,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "PATCH:/incidencias/{incidencia_id}/resolver",
-      "source_line": 1621,
+      "source_line": 1628,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -5328,6 +5641,12 @@
           "reference": "PATCH:/materias/{materia_id}",
           "status": "direct",
           "test_path": "frontend/e2e/evaluation-ai-wizard.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/materias/{materia_id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/explainable-grading.spec.ts"
         },
         {
           "level": "e2e",
@@ -5702,6 +6021,12 @@
           "test_path": "backend/tests/unit/test_authorization_contracts.py"
         },
         {
+          "level": "e2e",
+          "reference": "POST:/analytics/evento",
+          "status": "direct",
+          "test_path": "frontend/e2e/explainable-grading.spec.ts"
+        },
+        {
           "level": "unit",
           "reference": "POST:/analytics/evento",
           "status": "direct",
@@ -5774,6 +6099,12 @@
         {
           "level": "unit",
           "reference": "POST:/auth/login",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_breakdown_authorization.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/auth/login",
           "status": "direct",
           "test_path": "backend/tests/unit/test_csrf_middleware.py"
         },
@@ -5794,6 +6125,12 @@
           "reference": "POST:/auth/login",
           "status": "direct",
           "test_path": "frontend/e2e/evaluation-ai-wizard.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/auth/login",
+          "status": "direct",
+          "test_path": "frontend/e2e/explainable-grading.spec.ts"
         },
         {
           "level": "e2e",
@@ -5860,6 +6197,12 @@
           "test_path": "backend/tests/unit/test_authorization_contracts.py"
         },
         {
+          "level": "unit",
+          "reference": "POST:/auth/logout",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_breakdown_authorization.py"
+        },
+        {
           "level": "e2e",
           "reference": "POST:/auth/logout",
           "status": "domain",
@@ -5924,6 +6267,12 @@
           "test_path": "backend/tests/unit/test_authorization_contracts.py"
         },
         {
+          "level": "unit",
+          "reference": "POST:/auth/refresh",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_breakdown_authorization.py"
+        },
+        {
           "level": "e2e",
           "reference": "POST:/auth/refresh",
           "status": "direct",
@@ -5934,6 +6283,12 @@
           "reference": "POST:/auth/refresh",
           "status": "direct",
           "test_path": "frontend/e2e/evaluation-ai-wizard.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/auth/refresh",
+          "status": "direct",
+          "test_path": "frontend/e2e/explainable-grading.spec.ts"
         },
         {
           "level": "e2e",
@@ -6018,6 +6373,12 @@
           "test_path": "backend/tests/unit/test_authorization_contracts.py"
         },
         {
+          "level": "unit",
+          "reference": "POST:/auth/register",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_breakdown_authorization.py"
+        },
+        {
           "level": "e2e",
           "reference": "POST:/auth/register",
           "status": "domain",
@@ -6045,7 +6406,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "POST:/calificaciones/foto",
-      "source_line": 248,
+      "source_line": 255,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -6101,7 +6462,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "POST:/calificaciones/lote",
-      "source_line": 496,
+      "source_line": 503,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -6157,7 +6518,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "POST:/calificaciones/lote/ajustar",
-      "source_line": 1520,
+      "source_line": 1527,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -6213,7 +6574,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "POST:/calificaciones/lote/asincrono",
-      "source_line": 602,
+      "source_line": 609,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -6269,7 +6630,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "POST:/calificaciones/lote/confirmar",
-      "source_line": 1510,
+      "source_line": 1517,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -6325,7 +6686,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "POST:/calificaciones/lote/publicar",
-      "source_line": 1500,
+      "source_line": 1507,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -6381,7 +6742,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "POST:/calificaciones/modo-salon/iniciar",
-      "source_line": 901,
+      "source_line": 908,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -6437,7 +6798,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "POST:/calificaciones/modo-salon/{sesion_id}/foto",
-      "source_line": 1055,
+      "source_line": 1062,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -6493,7 +6854,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "POST:/calificaciones/{calificacion_id}/incidencias",
-      "source_line": 1584,
+      "source_line": 1591,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -6549,7 +6910,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "POST:/calificaciones/{calificacion_id}/reintentar-foto",
-      "source_line": 388,
+      "source_line": 395,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -6605,7 +6966,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "POST:/calificaciones/{calificacion_id}/solicitar-reemplazo",
-      "source_line": 451,
+      "source_line": 458,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -6709,6 +7070,12 @@
           "level": "unit",
           "reference": "POST:/evaluaciones",
           "status": "direct",
+          "test_path": "backend/tests/integration/test_explainable_grading_flow.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/evaluaciones",
+          "status": "direct",
           "test_path": "backend/tests/unit/test_evaluation_generation.py"
         },
         {
@@ -6722,6 +7089,12 @@
           "reference": "POST:/evaluaciones",
           "status": "direct",
           "test_path": "frontend/e2e/evaluation-ai-wizard.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/evaluaciones",
+          "status": "direct",
+          "test_path": "frontend/e2e/explainable-grading.spec.ts"
         },
         {
           "level": "e2e",
@@ -7045,7 +7418,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "POST:/evaluaciones/{evaluacion_id}/calificaciones/manual",
-      "source_line": 815,
+      "source_line": 822,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -7172,7 +7545,7 @@
       "kind": "endpoint",
       "owner_spec": "007-entregas-estudiante",
       "signature": "POST:/evaluaciones/{evaluacion_id}/entregas",
-      "source_line": 1185,
+      "source_line": 1192,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -7227,7 +7600,7 @@
       "kind": "endpoint",
       "owner_spec": "007-entregas-estudiante",
       "signature": "POST:/evaluaciones/{evaluacion_id}/entregas/archivo",
-      "source_line": 1280,
+      "source_line": 1287,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -7354,7 +7727,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "POST:/evaluaciones/{evaluacion_id}/solicitud-revision",
-      "source_line": 1563,
+      "source_line": 1570,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -8459,6 +8832,12 @@
           "level": "e2e",
           "reference": "POST:/materias",
           "status": "direct",
+          "test_path": "frontend/e2e/explainable-grading.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/materias",
+          "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
         },
         {
@@ -9138,6 +9517,68 @@
         "profesor"
       ],
       "authorization": [
+        "get_current_user",
+        "require_role"
+      ],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
+        "function": "update_desglose_docente",
+        "registered": true,
+        "router": "router"
+      },
+      "id": "backend:PUT:/calificaciones/{calificacion_id}/desglose",
+      "kind": "endpoint",
+      "owner_spec": "008-calificaciones",
+      "signature": "PUT:/calificaciones/{calificacion_id}/desglose",
+      "source_line": 1674,
+      "source_path": "backend/app/modules/calificaciones/router.py",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "PUT:/calificaciones/{calificacion_id}/desglose",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_explainable_grading_flow.py"
+        },
+        {
+          "level": "unit",
+          "reference": "PUT:/calificaciones/{calificacion_id}/desglose",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_calificaciones_boletin_permissions.py"
+        },
+        {
+          "level": "unit",
+          "reference": "PUT:/calificaciones/{calificacion_id}/desglose",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_calificaciones_lote_async.py"
+        },
+        {
+          "level": "unit",
+          "reference": "PUT:/calificaciones/{calificacion_id}/desglose",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_calificaciones_resumen_academico.py"
+        },
+        {
+          "level": "unit",
+          "reference": "PUT:/calificaciones/{calificacion_id}/desglose",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_calificaciones_revision_workspace.py"
+        },
+        {
+          "level": "unit",
+          "reference": "PUT:/calificaciones/{calificacion_id}/desglose",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/CalificacionesTimeline.test.tsx"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "admin",
+        "profesor"
+      ],
+      "authorization": [
         "explicit_permission_override",
         "get_current_user"
       ],
@@ -9216,6 +9657,12 @@
           "level": "unit",
           "reference": "/",
           "status": "direct",
+          "test_path": "backend/tests/integration/test_explainable_grading_flow.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
           "test_path": "backend/tests/unit/authorization_helpers.py"
         },
         {
@@ -9235,6 +9682,12 @@
           "reference": "/",
           "status": "direct",
           "test_path": "backend/tests/unit/test_authorization_contracts.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_breakdown_modalities.py"
         },
         {
           "level": "unit",
@@ -9420,6 +9873,12 @@
           "level": "e2e",
           "reference": "/",
           "status": "direct",
+          "test_path": "frontend/e2e/explainable-grading.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/",
+          "status": "direct",
           "test_path": "frontend/e2e/mock/example.mock.spec.ts"
         },
         {
@@ -9535,6 +9994,30 @@
           "reference": "/",
           "status": "direct",
           "test_path": "frontend/src/modules/calificaciones/api.revision.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/components/GradeBreakdown.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/components/GradeBreakdownHistory.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/components/GradeComponentEditor.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/components/GradeGlobalAdjustmentEditor.test.tsx"
         },
         {
           "level": "unit",
@@ -9774,6 +10257,12 @@
           "reference": "/app",
           "status": "direct",
           "test_path": "frontend/e2e/evaluation-ai-wizard.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app",
+          "status": "direct",
+          "test_path": "frontend/e2e/explainable-grading.spec.ts"
         },
         {
           "level": "e2e",
@@ -10189,6 +10678,12 @@
           "level": "e2e",
           "reference": "/app/calificaciones/workspace",
           "status": "direct",
+          "test_path": "frontend/e2e/explainable-grading.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app/calificaciones/workspace",
+          "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
         },
         {
@@ -10250,6 +10745,12 @@
           "reference": "/app/calificaciones/workspace/{evaluacionId}",
           "status": "domain",
           "test_path": "backend/tests/unit/test_worker_ai_config.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app/calificaciones/workspace/{evaluacionId}",
+          "status": "direct",
+          "test_path": "frontend/e2e/explainable-grading.spec.ts"
         },
         {
           "level": "e2e",
@@ -10321,6 +10822,12 @@
           "reference": "/app/evaluaciones",
           "status": "direct",
           "test_path": "frontend/e2e/evaluation-ai-wizard.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app/evaluaciones",
+          "status": "direct",
+          "test_path": "frontend/e2e/explainable-grading.spec.ts"
         },
         {
           "level": "e2e",
@@ -11325,6 +11832,12 @@
           "level": "e2e",
           "reference": "/login",
           "status": "direct",
+          "test_path": "frontend/e2e/explainable-grading.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/login",
+          "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
         },
         {
@@ -11481,6 +11994,12 @@
           "level": "unit",
           "reference": "DELETE:/evaluaciones/{id}",
           "status": "direct",
+          "test_path": "backend/tests/integration/test_explainable_grading_flow.py"
+        },
+        {
+          "level": "unit",
+          "reference": "DELETE:/evaluaciones/{id}",
+          "status": "direct",
           "test_path": "backend/tests/unit/test_evaluation_generation.py"
         },
         {
@@ -11494,6 +12013,12 @@
           "reference": "DELETE:/evaluaciones/{id}",
           "status": "direct",
           "test_path": "frontend/e2e/evaluation-ai-wizard.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "DELETE:/evaluaciones/{id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/explainable-grading.spec.ts"
         },
         {
           "level": "e2e",
@@ -12500,6 +13025,12 @@
           "level": "e2e",
           "reference": "GET:/auth/me",
           "status": "direct",
+          "test_path": "frontend/e2e/explainable-grading.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/auth/me",
+          "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
         },
         {
@@ -12570,6 +13101,12 @@
           "level": "e2e",
           "reference": "GET:/calificaciones/bandeja-docente",
           "status": "direct",
+          "test_path": "frontend/e2e/explainable-grading.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/calificaciones/bandeja-docente",
+          "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
         },
         {
@@ -12627,6 +13164,110 @@
         {
           "level": "unit",
           "reference": "GET:/calificaciones/modo-salon/{sesionId}",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/CalificacionesTimeline.test.tsx"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "ambiguous"
+      ],
+      "authorization": [],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
+        "backend_contract": "backend:GET:/calificaciones/{calificacion_id}/desglose/historial",
+        "backend_contract_candidates": [],
+        "contract_status": "matched"
+      },
+      "id": "frontend_call:GET:/calificaciones/{calificacionId}/desglose/historial:frontend/src/modules/calificaciones/api.ts",
+      "kind": "frontend_call",
+      "owner_spec": "008-calificaciones",
+      "signature": "GET:/calificaciones/{calificacionId}/desglose/historial",
+      "source_line": 162,
+      "source_path": "frontend/src/modules/calificaciones/api.ts",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/{calificacionId}/desglose/historial",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_calificaciones_boletin_permissions.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/{calificacionId}/desglose/historial",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_calificaciones_lote_async.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/{calificacionId}/desglose/historial",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_calificaciones_resumen_academico.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/{calificacionId}/desglose/historial",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_calificaciones_revision_workspace.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/{calificacionId}/desglose/historial",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/CalificacionesTimeline.test.tsx"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "ambiguous"
+      ],
+      "authorization": [],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
+        "backend_contract": "backend:GET:/calificaciones/{calificacion_id}/desglose",
+        "backend_contract_candidates": [],
+        "contract_status": "matched"
+      },
+      "id": "frontend_call:GET:/calificaciones/{calificacionId}/desglose:frontend/src/modules/calificaciones/api.ts",
+      "kind": "frontend_call",
+      "owner_spec": "008-calificaciones",
+      "signature": "GET:/calificaciones/{calificacionId}/desglose",
+      "source_line": 152,
+      "source_path": "frontend/src/modules/calificaciones/api.ts",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/{calificacionId}/desglose",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_calificaciones_boletin_permissions.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/{calificacionId}/desglose",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_calificaciones_lote_async.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/{calificacionId}/desglose",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_calificaciones_resumen_academico.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/{calificacionId}/desglose",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_calificaciones_revision_workspace.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/{calificacionId}/desglose",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/CalificacionesTimeline.test.tsx"
         }
@@ -13010,6 +13651,34 @@
       "consumers": [],
       "coverage": "covered",
       "details": {
+        "backend_contract": "backend:GET:/evaluaciones/{evaluacion_id}/mi-desglose",
+        "backend_contract_candidates": [],
+        "contract_status": "matched"
+      },
+      "id": "frontend_call:GET:/evaluaciones/{evaluacionId}/mi-desglose:frontend/src/modules/evaluaciones/api.ts",
+      "kind": "frontend_call",
+      "owner_spec": "005-evaluaciones",
+      "signature": "GET:/evaluaciones/{evaluacionId}/mi-desglose",
+      "source_line": 163,
+      "source_path": "frontend/src/modules/evaluaciones/api.ts",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/{evaluacionId}/mi-desglose",
+          "status": "domain",
+          "test_path": "frontend/src/modules/materias/MateriaEvaluaciones.test.tsx"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "ambiguous"
+      ],
+      "authorization": [],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
         "backend_contract": "backend:GET:/evaluaciones/{evaluacion_id}/mi-entrega",
         "backend_contract_candidates": [],
         "contract_status": "matched"
@@ -13094,6 +13763,12 @@
           "level": "unit",
           "reference": "GET:/evaluaciones/{id}",
           "status": "direct",
+          "test_path": "backend/tests/integration/test_explainable_grading_flow.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/{id}",
+          "status": "direct",
           "test_path": "backend/tests/unit/test_evaluation_generation.py"
         },
         {
@@ -13107,6 +13782,12 @@
           "reference": "GET:/evaluaciones/{id}",
           "status": "direct",
           "test_path": "frontend/e2e/evaluation-ai-wizard.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/evaluaciones/{id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/explainable-grading.spec.ts"
         },
         {
           "level": "e2e",
@@ -13544,6 +14225,12 @@
           "level": "e2e",
           "reference": "GET:/materias/{id}",
           "status": "direct",
+          "test_path": "frontend/e2e/explainable-grading.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/materias/{id}",
+          "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
         },
         {
@@ -13863,6 +14550,12 @@
           "reference": "GET:/materias",
           "status": "direct",
           "test_path": "frontend/e2e/evaluation-ai-wizard.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/materias",
+          "status": "direct",
+          "test_path": "frontend/e2e/explainable-grading.spec.ts"
         },
         {
           "level": "e2e",
@@ -14642,6 +15335,58 @@
       "consumers": [],
       "coverage": "covered",
       "details": {
+        "backend_contract": "backend:PATCH:/evaluaciones/{evaluacion_id}/respuestas-liberadas",
+        "backend_contract_candidates": [],
+        "contract_status": "matched"
+      },
+      "id": "frontend_call:PATCH:/evaluaciones/{evaluacionId}/respuestas-liberadas:frontend/src/modules/calificaciones/api.ts",
+      "kind": "frontend_call",
+      "owner_spec": "005-evaluaciones",
+      "signature": "PATCH:/evaluaciones/{evaluacionId}/respuestas-liberadas",
+      "source_line": 167,
+      "source_path": "frontend/src/modules/calificaciones/api.ts",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "PATCH:/evaluaciones/{evaluacionId}/respuestas-liberadas",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_calificaciones_boletin_permissions.py"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/evaluaciones/{evaluacionId}/respuestas-liberadas",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_calificaciones_lote_async.py"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/evaluaciones/{evaluacionId}/respuestas-liberadas",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_calificaciones_resumen_academico.py"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/evaluaciones/{evaluacionId}/respuestas-liberadas",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_calificaciones_revision_workspace.py"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/evaluaciones/{evaluacionId}/respuestas-liberadas",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/CalificacionesTimeline.test.tsx"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "ambiguous"
+      ],
+      "authorization": [],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
         "backend_contract": "backend:PATCH:/evaluaciones/{evaluacion_id}",
         "backend_contract_candidates": [],
         "contract_status": "matched"
@@ -14670,6 +15415,12 @@
           "level": "unit",
           "reference": "PATCH:/evaluaciones/{id}",
           "status": "direct",
+          "test_path": "backend/tests/integration/test_explainable_grading_flow.py"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/evaluaciones/{id}",
+          "status": "direct",
           "test_path": "backend/tests/unit/test_evaluation_generation.py"
         },
         {
@@ -14683,6 +15434,12 @@
           "reference": "PATCH:/evaluaciones/{id}",
           "status": "direct",
           "test_path": "frontend/e2e/evaluation-ai-wizard.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/evaluaciones/{id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/explainable-grading.spec.ts"
         },
         {
           "level": "e2e",
@@ -14988,6 +15745,12 @@
           "level": "e2e",
           "reference": "PATCH:/materias/{id}",
           "status": "direct",
+          "test_path": "frontend/e2e/explainable-grading.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/materias/{id}",
+          "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
         },
         {
@@ -15260,6 +16023,12 @@
           "test_path": "backend/tests/unit/test_authorization_contracts.py"
         },
         {
+          "level": "e2e",
+          "reference": "POST:/analytics/evento",
+          "status": "direct",
+          "test_path": "frontend/e2e/explainable-grading.spec.ts"
+        },
+        {
           "level": "unit",
           "reference": "POST:/analytics/evento",
           "status": "direct",
@@ -15328,6 +16097,12 @@
           "reference": "POST:/auth/login",
           "status": "direct",
           "test_path": "frontend/e2e/evaluation-ai-wizard.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/auth/login",
+          "status": "direct",
+          "test_path": "frontend/e2e/explainable-grading.spec.ts"
         },
         {
           "level": "e2e",
@@ -16271,6 +17046,12 @@
           "level": "unit",
           "reference": "POST:/evaluaciones",
           "status": "direct",
+          "test_path": "backend/tests/integration/test_explainable_grading_flow.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/evaluaciones",
+          "status": "direct",
           "test_path": "backend/tests/unit/test_evaluation_generation.py"
         },
         {
@@ -16284,6 +17065,12 @@
           "reference": "POST:/evaluaciones",
           "status": "direct",
           "test_path": "frontend/e2e/evaluation-ai-wizard.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/evaluaciones",
+          "status": "direct",
+          "test_path": "frontend/e2e/explainable-grading.spec.ts"
         },
         {
           "level": "e2e",
@@ -16820,6 +17607,12 @@
           "level": "e2e",
           "reference": "POST:/materias",
           "status": "direct",
+          "test_path": "frontend/e2e/explainable-grading.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/materias",
+          "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
         },
         {
@@ -17311,6 +18104,58 @@
           "reference": "PUT:/admin/ai-providers",
           "status": "direct",
           "test_path": "frontend/src/modules/admin/api.test.ts"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "ambiguous"
+      ],
+      "authorization": [],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
+        "backend_contract": "backend:PUT:/calificaciones/{calificacion_id}/desglose",
+        "backend_contract_candidates": [],
+        "contract_status": "matched"
+      },
+      "id": "frontend_call:PUT:/calificaciones/{calificacionId}/desglose:frontend/src/modules/calificaciones/api.ts",
+      "kind": "frontend_call",
+      "owner_spec": "008-calificaciones",
+      "signature": "PUT:/calificaciones/{calificacionId}/desglose",
+      "source_line": 157,
+      "source_path": "frontend/src/modules/calificaciones/api.ts",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "PUT:/calificaciones/{calificacionId}/desglose",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_calificaciones_boletin_permissions.py"
+        },
+        {
+          "level": "unit",
+          "reference": "PUT:/calificaciones/{calificacionId}/desglose",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_calificaciones_lote_async.py"
+        },
+        {
+          "level": "unit",
+          "reference": "PUT:/calificaciones/{calificacionId}/desglose",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_calificaciones_resumen_academico.py"
+        },
+        {
+          "level": "unit",
+          "reference": "PUT:/calificaciones/{calificacionId}/desglose",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_calificaciones_revision_workspace.py"
+        },
+        {
+          "level": "unit",
+          "reference": "PUT:/calificaciones/{calificacionId}/desglose",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/CalificacionesTimeline.test.tsx"
         }
       ]
     },
@@ -17943,7 +18788,7 @@
       "kind": "job",
       "owner_spec": "012-ia-jobs-produccion",
       "signature": "tasks.grade_batch",
-      "source_line": 556,
+      "source_line": 573,
       "source_path": "backend/app/workers/tasks_grading.py",
       "states": [
         "cancelled",
@@ -18374,6 +19219,248 @@
       "coverage": "covered",
       "details": {
         "active": true,
+        "class": "CalificacionAjuste",
+        "constraints": [
+          "tipo IN ('componente','global','explicacion','resolucion')"
+        ],
+        "enum_refs": [],
+        "historical_only": false,
+        "identity": [
+          "id"
+        ],
+        "indexes": [],
+        "migrations": [
+          "backend/alembic/versions/202608210001_calificacion_desgloses.py"
+        ],
+        "relationships": [
+          "calificacion_desgloses.id",
+          "calificaciones.id",
+          "users.id"
+        ],
+        "unique": []
+      },
+      "id": "table:calificacion_ajustes",
+      "kind": "table",
+      "owner_spec": "008-calificaciones",
+      "signature": "calificacion_ajustes",
+      "source_line": 96,
+      "source_path": "backend/app/modules/calificaciones/breakdown_models.py",
+      "states": [
+        "componente",
+        "explicacion",
+        "global",
+        "resolucion"
+      ],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "calificacion_ajustes",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_calificaciones_boletin_permissions.py"
+        },
+        {
+          "level": "unit",
+          "reference": "calificacion_ajustes",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_calificaciones_lote_async.py"
+        },
+        {
+          "level": "unit",
+          "reference": "calificacion_ajustes",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_calificaciones_resumen_academico.py"
+        },
+        {
+          "level": "unit",
+          "reference": "calificacion_ajustes",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_calificaciones_revision_workspace.py"
+        },
+        {
+          "level": "unit",
+          "reference": "calificacion_ajustes",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/CalificacionesTimeline.test.tsx"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "system"
+      ],
+      "authorization": [],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
+        "active": true,
+        "class": "CalificacionComponente",
+        "constraints": [
+          "estado IN ('correcta','parcial','incorrecta','sin_respuesta','ilegible','no_evaluable','revision_pendiente')",
+          "orden >= 0",
+          "puntos_maximos > 0",
+          "puntos_obtenidos IS NULL OR (puntos_obtenidos >= 0 AND puntos_obtenidos <= puntos_maximos)",
+          "tipo IN ('pregunta','rubrica','manual')"
+        ],
+        "enum_refs": [],
+        "historical_only": false,
+        "identity": [
+          "id"
+        ],
+        "indexes": [],
+        "migrations": [
+          "backend/alembic/versions/202608210001_calificacion_desgloses.py"
+        ],
+        "relationships": [
+          "calificacion_desgloses.id"
+        ],
+        "unique": [
+          "clave",
+          "desglose_id"
+        ]
+      },
+      "id": "table:calificacion_componentes",
+      "kind": "table",
+      "owner_spec": "008-calificaciones",
+      "signature": "calificacion_componentes",
+      "source_line": 59,
+      "source_path": "backend/app/modules/calificaciones/breakdown_models.py",
+      "states": [
+        "correcta",
+        "ilegible",
+        "incorrecta",
+        "manual",
+        "no_evaluable",
+        "parcial",
+        "pregunta",
+        "revision_pendiente",
+        "rubrica",
+        "sin_respuesta"
+      ],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "calificacion_componentes",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_calificaciones_boletin_permissions.py"
+        },
+        {
+          "level": "unit",
+          "reference": "calificacion_componentes",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_calificaciones_lote_async.py"
+        },
+        {
+          "level": "unit",
+          "reference": "calificacion_componentes",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_calificaciones_resumen_academico.py"
+        },
+        {
+          "level": "unit",
+          "reference": "calificacion_componentes",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_calificaciones_revision_workspace.py"
+        },
+        {
+          "level": "unit",
+          "reference": "calificacion_componentes",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/CalificacionesTimeline.test.tsx"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "system"
+      ],
+      "authorization": [],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
+        "active": true,
+        "class": "CalificacionDesglose",
+        "constraints": [
+          "cobertura_estado IN ('completa','incompleta','inconsistente')",
+          "decimales BETWEEN 0 AND 4",
+          "nota_maxima > 0",
+          "origen IN ('automatico','docente','manual')",
+          "puntos_posibles > 0",
+          "version >= 1"
+        ],
+        "enum_refs": [],
+        "historical_only": false,
+        "identity": [
+          "id"
+        ],
+        "indexes": [],
+        "migrations": [
+          "backend/alembic/versions/202608210001_calificacion_desgloses.py"
+        ],
+        "relationships": [
+          "calificaciones.id",
+          "users.id"
+        ],
+        "unique": [
+          "calificacion_id",
+          "version"
+        ]
+      },
+      "id": "table:calificacion_desgloses",
+      "kind": "table",
+      "owner_spec": "008-calificaciones",
+      "signature": "calificacion_desgloses",
+      "source_line": 15,
+      "source_path": "backend/app/modules/calificaciones/breakdown_models.py",
+      "states": [
+        "automatico",
+        "completa",
+        "docente",
+        "incompleta",
+        "inconsistente",
+        "manual"
+      ],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "calificacion_desgloses",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_calificaciones_boletin_permissions.py"
+        },
+        {
+          "level": "unit",
+          "reference": "calificacion_desgloses",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_calificaciones_lote_async.py"
+        },
+        {
+          "level": "unit",
+          "reference": "calificacion_desgloses",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_calificaciones_resumen_academico.py"
+        },
+        {
+          "level": "unit",
+          "reference": "calificacion_desgloses",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_calificaciones_revision_workspace.py"
+        },
+        {
+          "level": "unit",
+          "reference": "calificacion_desgloses",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/CalificacionesTimeline.test.tsx"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "system"
+      ],
+      "authorization": [],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
+        "active": true,
         "class": "CalificacionIncidencia",
         "constraints": [
           "estado IN ('abierta','resuelta')",
@@ -18390,6 +19477,7 @@
           "backend/alembic/versions/202608080001_repair_missing_operational_tables.py"
         ],
         "relationships": [
+          "calificacion_componentes.id",
           "calificaciones.id",
           "users.id"
         ],
@@ -18502,6 +19590,12 @@
           "level": "unit",
           "reference": "calificaciones",
           "status": "direct",
+          "test_path": "backend/tests/integration/test_explainable_grading_flow.py"
+        },
+        {
+          "level": "unit",
+          "reference": "calificaciones",
+          "status": "direct",
           "test_path": "backend/tests/unit/test_answer_key_guard.py"
         },
         {
@@ -18509,6 +19603,60 @@
           "reference": "calificaciones",
           "status": "direct",
           "test_path": "backend/tests/unit/test_attempt_policy_contract.py"
+        },
+        {
+          "level": "unit",
+          "reference": "calificaciones",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_breakdown_authorization.py"
+        },
+        {
+          "level": "unit",
+          "reference": "calificaciones",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_breakdown_compatibility.py"
+        },
+        {
+          "level": "unit",
+          "reference": "calificaciones",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_breakdown_history.py"
+        },
+        {
+          "level": "unit",
+          "reference": "calificaciones",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_breakdown_modalities.py"
+        },
+        {
+          "level": "unit",
+          "reference": "calificaciones",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_breakdown_persistence.py"
+        },
+        {
+          "level": "unit",
+          "reference": "calificaciones",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_breakdown_sanitizer.py"
+        },
+        {
+          "level": "unit",
+          "reference": "calificaciones",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_breakdown_teacher_adjustment.py"
+        },
+        {
+          "level": "unit",
+          "reference": "calificaciones",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_breakdown_visibility.py"
+        },
+        {
+          "level": "unit",
+          "reference": "calificaciones",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_calificacion_breakdown.py"
         },
         {
           "level": "unit",
@@ -18569,6 +19717,12 @@
           "reference": "calificaciones",
           "status": "direct",
           "test_path": "backend/tests/unit/test_evidence_replacement.py"
+        },
+        {
+          "level": "unit",
+          "reference": "calificaciones",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_grading_component_consensus.py"
         },
         {
           "level": "unit",
@@ -18641,6 +19795,12 @@
           "reference": "calificaciones",
           "status": "direct",
           "test_path": "backend/tests/unit/test_teacher_review_inbox.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "calificaciones",
+          "status": "direct",
+          "test_path": "frontend/e2e/explainable-grading.spec.ts"
         },
         {
           "level": "e2e",
@@ -19078,6 +20238,12 @@
           "level": "unit",
           "reference": "evaluaciones",
           "status": "direct",
+          "test_path": "backend/tests/integration/test_explainable_grading_flow.py"
+        },
+        {
+          "level": "unit",
+          "reference": "evaluaciones",
+          "status": "direct",
           "test_path": "backend/tests/unit/test_answer_key_guard.py"
         },
         {
@@ -19217,6 +20383,12 @@
           "reference": "evaluaciones",
           "status": "direct",
           "test_path": "frontend/e2e/evaluation-ai-wizard.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "evaluaciones",
+          "status": "direct",
+          "test_path": "frontend/e2e/explainable-grading.spec.ts"
         },
         {
           "level": "e2e",
@@ -19530,6 +20702,12 @@
           "reference": "materias",
           "status": "direct",
           "test_path": "frontend/e2e/evaluation-ai-wizard.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "materias",
+          "status": "direct",
+          "test_path": "frontend/e2e/explainable-grading.spec.ts"
         },
         {
           "level": "e2e",

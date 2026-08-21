@@ -22,12 +22,16 @@ import {
   ajustarNota, ajustarNotaBatch, confirmarNota, confirmarNotaBatch,
   crearIncidencia, getBandejaDocente, getCalificacionDetalle, listarIncidencias,
   establecerNotaManual, listCalificaciones, publicarNota, publicarNotaBatch,
-  marcarRevisionManual, resolverIncidencia, solicitarReemplazoEvidencia,
+  marcarRevisionManual, resolverIncidencia, setAnswersReleased, solicitarReemplazoEvidencia, updateGradeBreakdown,
 } from './api';
 import { RevisionGuide } from './RevisionGuide';
+import { GradeBreakdown } from './components/GradeBreakdown';
+import { GradeComponentEditor } from './components/GradeComponentEditor';
+import { GradeGlobalAdjustmentEditor } from './components/GradeGlobalAdjustmentEditor';
+import { GradeBreakdownHistory } from './components/GradeBreakdownHistory';
 import { formatAIModelSource } from './aiPipelineLabels';
 import { formatTimelineScore } from './timeline';
-import type { BatchResult, Calificacion, CalificacionDetalle, GradeFilter } from '@/types/api';
+import type { BatchResult, Calificacion, CalificacionDetalle, GradeComponentChange, GradeFilter } from '@/types/api';
 
 const CONFIRMADA = 'confirmada';
 const AJUSTADA = 'ajustada';
@@ -343,6 +347,8 @@ function PanelDetalle({
   const [showDirtyWarning, setShowDirtyWarning] = useState(false);
   const [replacementOpen, setReplacementOpen] = useState(false);
   const [replacementReason, setReplacementReason] = useState('');
+  const [editingComponentId, setEditingComponentId] = useState<string | null>(null);
+  const [showGlobalAdjustment, setShowGlobalAdjustment] = useState(false);
   const pendingClose = useRef<(() => void) | null>(null);
 
   const replacementMutation = useMutation({
@@ -357,6 +363,49 @@ function PanelDetalle({
     onError: (error) => toast.error(toApiError(error).detail),
   });
 
+  const answerReleaseMutation = useMutation({
+    mutationFn: (released: boolean) => setAnswersReleased(cal.evaluacion_id, released),
+    onSuccess: (_, released) => {
+      void queryClient.invalidateQueries({ queryKey: ['calificacion-detalle', cal.id] });
+      toast.success(released ? 'Respuestas de referencia liberadas.' : 'Respuestas de referencia ocultas.');
+    },
+    onError: (error) => toast.error(toApiError(error).detail),
+  });
+  const breakdownMutation = useMutation({
+    mutationFn: (change: GradeComponentChange) => {
+      if (!cal.desglose) throw new Error('No hay desglose vigente');
+      return updateGradeBreakdown(cal.id, {
+        version_esperada: cal.desglose.version,
+        cambios_componentes: [change],
+      });
+    },
+    onSuccess: () => {
+      setEditingComponentId(null);
+      void queryClient.invalidateQueries({ queryKey: ['calificacion-detalle', cal.id] });
+      void queryClient.invalidateQueries({ queryKey: ['calificaciones', cal.evaluacion_id] });
+      void queryClient.invalidateQueries({ queryKey: ['grade-breakdown-history', cal.id] });
+      toast.success('Puntaje actualizado y nota recalculada.');
+    },
+    onError: (error) => toast.error(toApiError(error).detail),
+  });
+  const globalAdjustmentMutation = useMutation({
+    mutationFn: (adjustment: { valor: number; motivo_interno: string; explicacion_estudiante: string }) => {
+      if (!cal.desglose) throw new Error('No hay desglose vigente');
+      return updateGradeBreakdown(cal.id, {
+        version_esperada: cal.desglose.version,
+        cambios_componentes: [],
+        ajuste_global: adjustment,
+      });
+    },
+    onSuccess: () => {
+      setShowGlobalAdjustment(false);
+      void queryClient.invalidateQueries({ queryKey: ['calificacion-detalle', cal.id] });
+      void queryClient.invalidateQueries({ queryKey: ['calificaciones', cal.evaluacion_id] });
+      void queryClient.invalidateQueries({ queryKey: ['grade-breakdown-history', cal.id] });
+      toast.success('Ajuste global registrado y nota recalculada.');
+    },
+    onError: (error) => toast.error(toApiError(error).detail),
+  });
   const done = DONE_STATES.has(cal.estado);
   const published = cal.estado === PUBLICADA;
   const originalNota = Number(cal.nota_confirmada ?? cal.nota_sugerida ?? 0);
@@ -581,6 +630,51 @@ function PanelDetalle({
           </div>
         )}
 
+        {cal.desglose ? (
+          <div className="space-y-4">
+            <div className="flex flex-col gap-3 rounded-xl border border-border bg-surface-2 p-4 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="font-bold">Respuestas de referencia para estudiantes</p>
+                <p className="mt-1 text-sm text-muted">{cal.respuestas_liberadas ? 'Los estudiantes pueden comparar sus respuestas.' : 'Permanecen ocultas mientras las entregas están abiertas.'}</p>
+              </div>
+              <Button type="button" variant="outline" onClick={() => answerReleaseMutation.mutate(!cal.respuestas_liberadas)} loading={answerReleaseMutation.isPending}>
+                {cal.respuestas_liberadas ? 'Ocultar respuestas' : 'Liberar respuestas'}
+              </Button>
+            </div>
+            <GradeBreakdown breakdown={cal.desglose} onEdit={setEditingComponentId} />
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-sm text-muted">Si un caso excepcional cambia la nota completa, quedará separado de los puntos por respuesta.</p>
+              <Button type="button" variant="outline" onClick={() => setShowGlobalAdjustment((value) => !value)}>
+                {showGlobalAdjustment ? 'Cancelar ajuste global' : 'Registrar ajuste global'}
+              </Button>
+            </div>
+            {showGlobalAdjustment && (
+              <GradeGlobalAdjustmentEditor
+                formula={cal.desglose.formula}
+                saving={globalAdjustmentMutation.isPending}
+                onCancel={() => setShowGlobalAdjustment(false)}
+                onSave={(adjustment) => globalAdjustmentMutation.mutate(adjustment)}
+              />
+            )}
+            {editingComponentId && (() => {
+              const component = cal.desglose?.componentes.find((item) => item.id === editingComponentId);
+              return component ? (
+                <GradeComponentEditor
+                  component={component}
+                  saving={breakdownMutation.isPending}
+                  onCancel={() => setEditingComponentId(null)}
+                  onSave={(change) => breakdownMutation.mutate(change)}
+                />
+              ) : null;
+            })()}
+            <GradeBreakdownHistory calificacionId={cal.id} />
+          </div>
+        ) : cal.desglose_heredado ? (
+          <Card className="border-border p-4">
+            <p className="font-bold">Calificación anterior al desglose explicable</p>
+            <p className="mt-1 text-sm leading-6 text-muted">La nota y los criterios históricos se conservan. No se inventaron puntajes por pregunta para esta entrega.</p>
+          </Card>
+        ) : null}
         {/* Feedback */}
         <Field label="Retroalimentación">
           <Textarea

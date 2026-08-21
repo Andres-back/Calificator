@@ -699,6 +699,7 @@ async def orchestrate_grading(
                 "confianza": grading_a.confianza,
                 "tiempo_ms": grading_a.tiempo_ms,
                 "criterios": grading_a.criterios,
+                "componentes": grading_a.componentes,
                 "error_type": "grader_error" if grading_a.error else None,
             },
             "grader_b": {
@@ -708,6 +709,7 @@ async def orchestrate_grading(
                 "confianza": grading_b.confianza,
                 "tiempo_ms": grading_b.tiempo_ms,
                 "criterios": grading_b.criterios,
+                "componentes": grading_b.componentes,
                 "error_type": "grader_error" if grading_b.error else None,
             },
             "comparator": {
@@ -719,7 +721,6 @@ async def orchestrate_grading(
                     if final.raw_output
                     else comparator_failed
                 ),
-                "analisis": final.raw_output.get("analisis", "") if final.raw_output else "",
                 "fallback_applied": comparator_failed,
                 "error_type": "comparator_error" if comparator_failed else None,
             },
@@ -730,6 +731,7 @@ async def orchestrate_grading(
             nota_maxima=nota_maxima,
             confianza=final.confianza,
             criterios=final.criterios or grading_a.criterios or grading_b.criterios,
+            componentes=final.componentes or grading_a.componentes or grading_b.componentes,
             feedback_estudiante=final.feedback_estudiante or grading_a.feedback_estudiante or grading_b.feedback_estudiante,
             alertas=final.alertas,
             requiere_revision_docente=requiere_revision,

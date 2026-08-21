@@ -45,7 +45,7 @@
 | job | `tasks.generate_image` | system | missing | `backend/app/workers/tasks_images.py:5` |
 | job | `tasks.generate_presentation` | system | missing | `backend/app/workers/tasks_presentations.py:32` |
 | job | `tasks.get_ai_config_version` | system | missing | `backend/app/workers/tasks_ai_config.py:28` |
-| job | `tasks.grade_batch` | system | missing | `backend/app/workers/tasks_grading.py:556` |
+| job | `tasks.grade_batch` | system | missing | `backend/app/workers/tasks_grading.py:573` |
 | job | `tasks.ingest_rag` | system | missing | `backend/app/workers/tasks_rag.py:5` |
 
 ## Decisiones explícitas de permiso

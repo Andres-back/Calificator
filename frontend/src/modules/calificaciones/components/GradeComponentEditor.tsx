@@ -1,0 +1,48 @@
+import { useEffect, useState } from 'react';
+import { Button, Field, Input, Select, Textarea } from '@/components/ui';
+import type { GradeComponentData, GradeComponentChange } from '@/types/api';
+
+export function GradeComponentEditor({ component, saving, onCancel, onSave }: {
+  component: GradeComponentData;
+  saving?: boolean;
+  onCancel: () => void;
+  onSave: (change: GradeComponentChange) => void;
+}) {
+  const [points, setPoints] = useState(String(component.puntos_obtenidos ?? ''));
+  const [state, setState] = useState(component.estado);
+  const [reason, setReason] = useState('');
+  const [studentExplanation, setStudentExplanation] = useState(component.explicacion ?? '');
+  useEffect(() => {
+    setPoints(String(component.puntos_obtenidos ?? ''));
+    setState(component.estado);
+    setReason('');
+    setStudentExplanation(component.explicacion ?? '');
+  }, [component]);
+  const numeric = Number(points);
+  const valid = Number.isFinite(numeric) && numeric >= 0 && numeric <= Number(component.puntos_maximos) && reason.trim().length >= 3 && studentExplanation.trim().length >= 3;
+  return (
+    <div className="space-y-4 rounded-xl border border-brand-200 bg-brand-50/40 p-4 dark:border-brand-500/30 dark:bg-brand-500/10">
+      <p className="font-bold">Editar {component.tipo === 'pregunta' ? `pregunta ${component.numero ?? component.orden + 1}` : component.titulo}</p>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Field label={`Puntos (máximo ${Number(component.puntos_maximos).toFixed(2)})`} required>
+          <Input type="number" min={0} max={Number(component.puntos_maximos)} step="0.01" value={points} onChange={(event) => setPoints(event.target.value)} />
+        </Field>
+        <Field label="Estado" required>
+          <Select value={state} onChange={(event) => setState(event.target.value)}>
+            <option value="correcta">Correcta</option><option value="parcial">Parcial</option><option value="incorrecta">Incorrecta</option><option value="sin_respuesta">Sin respuesta</option>
+          </Select>
+        </Field>
+      </div>
+      <Field label="Motivo interno del cambio" hint="Queda en el historial docente y no se muestra al estudiante." required>
+        <Textarea value={reason} onChange={(event) => setReason(event.target.value)} rows={2} />
+      </Field>
+      <Field label="Explicación para el estudiante" required>
+        <Textarea value={studentExplanation} onChange={(event) => setStudentExplanation(event.target.value)} rows={3} />
+      </Field>
+      <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+        <Button type="button" variant="ghost" onClick={onCancel} disabled={saving}>Cancelar</Button>
+        <Button type="button" onClick={() => valid && onSave({ componente_id: component.id, puntos_obtenidos: numeric, estado: state, motivo_interno: reason.trim(), explicacion_estudiante: studentExplanation.trim() })} disabled={!valid || saving} loading={saving}>Guardar y recalcular</Button>
+      </div>
+    </div>
+  );
+}

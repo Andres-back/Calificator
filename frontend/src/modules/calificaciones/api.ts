@@ -1,5 +1,5 @@
 import { api } from '@/lib/api';
-import type { BandejaDocenteRead, BatchResult, BoletinItem, Calificacion, CalificacionDetalle, EntregaRead, IncidenciaRead, ResumenAcademico, SalonSesionRead } from '@/types/api';
+import type { BandejaDocenteRead, BatchResult, BoletinItem, Calificacion, CalificacionDetalle, EntregaRead, GradeBreakdownData, GradeBreakdownUpdate, GradeBreakdownVersion, IncidenciaRead, ResumenAcademico, SalonSesionRead } from '@/types/api';
 
 export async function getBandejaDocente(): Promise<BandejaDocenteRead> {
   const { data } = await api.get<BandejaDocenteRead>('/calificaciones/bandeja-docente');
@@ -146,5 +146,24 @@ export async function crearIncidencia(calificacionId: string, payload: { tipo: s
 
 export async function resolverIncidencia(incidenciaId: string, resolucion: string): Promise<IncidenciaRead> {
   const { data } = await api.patch<IncidenciaRead>(`/incidencias/${incidenciaId}/resolver`, { resolucion });
+  return data;
+}
+export async function getGradeBreakdown(calificacionId: string): Promise<GradeBreakdownData> {
+  const { data } = await api.get<GradeBreakdownData>(`/calificaciones/${calificacionId}/desglose`);
+  return data;
+}
+
+export async function updateGradeBreakdown(calificacionId: string, payload: GradeBreakdownUpdate): Promise<GradeBreakdownData> {
+  const { data } = await api.put<GradeBreakdownData>(`/calificaciones/${calificacionId}/desglose`, payload);
+  return data;
+}
+
+export async function getGradeBreakdownHistory(calificacionId: string): Promise<GradeBreakdownVersion[]> {
+  const { data } = await api.get<GradeBreakdownVersion[]>(`/calificaciones/${calificacionId}/desglose/historial`);
+  return data;
+}
+
+export async function setAnswersReleased(evaluacionId: string, liberadas: boolean): Promise<{ evaluacion_id: string; liberadas: boolean }> {
+  const { data } = await api.patch(`/evaluaciones/${evaluacionId}/respuestas-liberadas`, { liberadas });
   return data;
 }

@@ -235,6 +235,83 @@ export interface ImagenGenerada {
 }
 
 /* ── Calificaciones ── */
+export interface GradeFormulaData {
+  puntos_obtenidos: number | string;
+  puntos_posibles: number | string;
+  nota_maxima: number | string;
+  nota_base: number | string;
+  ajuste_global: number | string;
+  nota_antes_redondeo: number | string;
+  regla_redondeo: string;
+  decimales: number;
+  nota_final: number | string;
+}
+
+export interface GradeComponentData {
+  id: string;
+  clave: string;
+  orden: number;
+  tipo: string;
+  numero: string | null;
+  titulo: string;
+  respuesta_estudiante: string | null;
+  respuesta_referencia: string | null;
+  referencia_oculta?: boolean;
+  puntos_obtenidos: number | string | null;
+  puntos_maximos: number | string;
+  estado: string;
+  explicacion: string;
+  explicacion_estudiante?: string | null;
+  origen: string;
+  requiere_revision: boolean;
+  evidencia_paginas: number[];
+  valoraciones?: Record<string, unknown>[];
+}
+
+export interface GradeBreakdownData {
+  id: string;
+  calificacion_id: string;
+  version: number;
+  origen: string;
+  cobertura_estado: string;
+  formula: GradeFormulaData;
+  ajuste_global_detalle?: { valor: number | string; motivo_interno?: string; explicacion_estudiante?: string } | null;
+  nota_publicada?: number | string;
+  claves_liberadas?: boolean;
+  requiere_revision: boolean;
+  bloqueos?: string[];
+  procedencia?: Record<string, unknown>;
+  componentes: GradeComponentData[];
+  created_at: string;
+}
+
+export interface GradeComponentChange {
+  componente_id: string;
+  puntos_obtenidos: number;
+  estado: string;
+  motivo_interno: string;
+  explicacion_estudiante: string;
+}
+
+export interface GradeBreakdownUpdate {
+  version_esperada: number;
+  cambios_componentes: GradeComponentChange[];
+  ajuste_global?: {
+    valor: number;
+    motivo_interno: string;
+    explicacion_estudiante: string;
+  } | null;
+}
+
+export interface GradeBreakdownVersion {
+  id: string;
+  version: number;
+  origen: string;
+  nota_final: number | string;
+  activo: boolean;
+  actor_nombre: string | null;
+  created_at: string;
+}
 export interface Calificacion {
   id: string;
   evaluacion_id: string;
@@ -288,6 +365,9 @@ export interface CalificacionDetalle extends Calificacion {
   entrega_created_at: string | null;
   timeline: CalificacionTimelineEvent[];
   guia_revision: GuiaRevisionItem[];
+  desglose: GradeBreakdownData | null;
+  desglose_heredado: boolean;
+  respuestas_liberadas: boolean;
 }
 
 export interface BatchResultItem {
@@ -312,6 +392,8 @@ export interface IncidenciaRead {
   descripcion: string;
   estado: string;
   metadata_json: Record<string, unknown>;
+  componente_id?: string | null;
+  desglose_version?: number | null;
   resolucion: string | null;
   resuelto_por: string | null;
   resolved_at: string | null;

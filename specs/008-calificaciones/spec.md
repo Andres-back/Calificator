@@ -56,3 +56,7 @@ Como equipo, necesito actualizar estos artefactos cuando cambie el comportamient
 ## Inventario técnico
 
 - [Ver superficies, permisos y cobertura de este dominio](./inventory.md).
+
+## Extensión vigente: calificación explicable
+
+La especificación [016-calificacion-explicable](../016-calificacion-explicable/spec.md) amplía este dominio con componentes versionados por pregunta o rúbrica, fórmula reproducible, ajustes docentes auditables, redacción de claves por rol y PQRS vinculadas a una versión. La adopción inicial es controlada y no sustituye silenciosamente la nota del flujo histórico.
