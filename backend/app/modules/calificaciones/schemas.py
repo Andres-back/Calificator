@@ -53,6 +53,7 @@ class GradingResult(BaseModel):
     nota_maxima: Decimal
     confianza: float = Field(ge=0.0, le=1.0)
     criterios: list[dict] = Field(default_factory=list)
+    componentes: list[dict] = Field(default_factory=list)
     feedback_estudiante: str = ""
     alertas: list[str] = Field(default_factory=list)
     requiere_revision_docente: bool = True
@@ -245,6 +246,9 @@ class CalificacionDetalleRead(BaseModel):
     estado: str
     revisado_por_docente: bool
     resultado_json: dict = {}
+    desglose: dict | None = None
+    desglose_heredado: bool = True
+    respuestas_liberadas: bool = False
     entrega_tipo: str | None = None
     entrega_archivo_url: str | None = None
     entrega_evidencia_paginas: int = 0
@@ -304,6 +308,8 @@ class IncidenciaCreate(BaseModel):
     )
     descripcion: str = Field(..., min_length=1, max_length=2000)
     metadata_json: dict = {}
+    componente_id: UUID | None = None
+    desglose_version: int | None = None
 
 
 class IncidenciaRead(BaseModel):
@@ -313,6 +319,8 @@ class IncidenciaRead(BaseModel):
     descripcion: str
     estado: str
     metadata_json: dict = {}
+    componente_id: UUID | None = None
+    desglose_version: int | None = None
     resolucion: str | None = None
     resuelto_por: UUID | None = None
     resolved_at: datetime | None = None
@@ -331,6 +339,8 @@ class SolicitudRevisionCreate(BaseModel):
         ..., pattern=r"^(nota|respuesta|evidencia|retroalimentacion|otro)$"
     )
     descripcion: str = Field(..., min_length=10, max_length=2000)
+    componente_id: UUID | None = None
+    desglose_version: int | None = Field(default=None, ge=1)
 
 
 class BandejaDocenteItem(BaseModel):

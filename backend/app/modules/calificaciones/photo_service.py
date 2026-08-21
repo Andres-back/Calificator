@@ -7,6 +7,7 @@ from uuid import UUID
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modules.calificaciones import service
+from app.modules.calificaciones.breakdown_service import create_automatic_breakdown
 from app.modules.calificaciones.grading_service import grade_submission
 from app.modules.calificaciones.models import Calificacion, Entrega
 from app.modules.calificaciones.schemas import GradingResult
@@ -23,6 +24,7 @@ def serialize_grading_result(grading: GradingResult) -> dict:
         "motivo_revision": grading.motivo_revision,
         "alertas": list(grading.alertas),
         "criterios": list(grading.criterios),
+        "componentes": list(grading.componentes),
     })
     return payload
 
@@ -191,6 +193,13 @@ async def grade_persisted_photo(
     )
     if calificacion is None:
         db.add(result)
+    await create_automatic_breakdown(
+        db,
+        calificacion=result,
+        blueprint=evaluation_to_grading_blueprint(evaluacion),
+        raw_output=grading.raw_model_output,
+        pipeline_run_id=str((grading.raw_model_output or {}).get("job_id") or "") or None,
+    )
     await db.commit()
     await db.refresh(result)
     return result

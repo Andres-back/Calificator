@@ -1,6 +1,6 @@
 import { api } from '@/lib/api';
 import { useQuery } from '@tanstack/react-query';
-import type { DBARead, EntregaOnlineCreate, EntregaRead, Evaluacion, EvaluacionModalidad, IncidenciaRead, SolicitudRevisionMotivo, StudentActivity } from '@/types/api';
+import type { DBARead, EntregaOnlineCreate, EntregaRead, Evaluacion, EvaluacionModalidad, GradeBreakdownData, IncidenciaRead, SolicitudRevisionMotivo, StudentActivity } from '@/types/api';
 
 export interface EvaluacionCreate {
   materia_id: string;
@@ -128,7 +128,7 @@ export async function getMiSolicitudRevision(evaluacionId: string): Promise<Inci
 }
 export async function solicitarRevisionEvaluacion(
   evaluacionId: string,
-  payload: { motivo: SolicitudRevisionMotivo; descripcion: string },
+  payload: { motivo: SolicitudRevisionMotivo; descripcion: string; componente_id?: string; desglose_version?: number },
 ): Promise<IncidenciaRead> {
   const { data } = await api.post<IncidenciaRead>(`/evaluaciones/${evaluacionId}/solicitud-revision`, payload);
   return data;
@@ -158,4 +158,8 @@ export function useEvaluacion(id: string) {
     queryFn: () => getEvaluacion(id),
     enabled: Boolean(id),
   });
+}
+export async function getMiDesglose(evaluacionId: string): Promise<GradeBreakdownData | null> {
+  const { data } = await api.get<GradeBreakdownData | null>(`/evaluaciones/${evaluacionId}/mi-desglose`);
+  return data;
 }

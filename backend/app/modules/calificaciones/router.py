@@ -22,7 +22,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.permissions import get_current_user, is_student_enrolled, require_role
 from app.db.session import get_db
-from app.modules.calificaciones import photo_service, service
+from app.modules.calificaciones import breakdown_service, photo_service, service
+from app.modules.calificaciones.breakdown_schemas import (
+    ActualizarDesglose,
+    DesgloseDocenteRead,
+    DesgloseEstudianteRead,
+    LiberarRespuestas,
+    ResumenVersion,
+)
 from app.modules.calificaciones.models import Calificacion, Entrega, SalonSesion
 from app.modules.calificaciones.salon_mode_service import (
     create_sesion_id,
@@ -1646,4 +1653,96 @@ async def resolver_incidencia(
         payload.resolucion,
         current_user.id,
         incidencia=incidencia,
+    )
+# ── Desglose explicable y auditable ────────────────────────────────────────
+
+@router.get("/calificaciones/{calificacion_id}/desglose", response_model=DesgloseDocenteRead)
+async def get_desglose_docente(
+    calificacion_id: UUID,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> object:
+    require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
+    cal = await service.get_calificacion_or_404(db, calificacion_id)
+    await evaluaciones_service.ensure_can_manage_evaluation(db, cal.evaluacion_id, current_user)
+    desglose = await breakdown_service.get_active_breakdown(db, cal.id)
+    if not desglose:
+        raise HTTPException(status_code=404, detail="Esta calificación es anterior al desglose explicable.")
+    return breakdown_service.serialize_breakdown(desglose)
+
+
+@router.put("/calificaciones/{calificacion_id}/desglose", response_model=DesgloseDocenteRead)
+async def update_desglose_docente(
+    calificacion_id: UUID,
+    payload: ActualizarDesglose,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> object:
+    require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
+    cal = await service.get_calificacion_or_404(db, calificacion_id)
+    await evaluaciones_service.ensure_can_manage_evaluation(db, cal.evaluacion_id, current_user)
+    updated = await breakdown_service.update_breakdown(
+        db,
+        calificacion=cal,
+        expected_version=payload.version_esperada,
+        changes=[item.model_dump() for item in payload.cambios_componentes],
+        global_adjustment=payload.ajuste_global.model_dump() if payload.ajuste_global else None,
+        actor_id=current_user.id,
+    )
+    return breakdown_service.serialize_breakdown(updated)
+
+
+@router.get("/calificaciones/{calificacion_id}/desglose/historial", response_model=list[ResumenVersion])
+async def get_historial_desglose(
+    calificacion_id: UUID,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> object:
+    require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
+    cal = await service.get_calificacion_or_404(db, calificacion_id)
+    await evaluaciones_service.ensure_can_manage_evaluation(db, cal.evaluacion_id, current_user)
+    return await breakdown_service.list_versions(db, cal.id)
+
+
+@router.patch("/evaluaciones/{evaluacion_id}/respuestas-liberadas")
+async def set_respuestas_liberadas(
+    evaluacion_id: UUID,
+    payload: LiberarRespuestas,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
+    evaluacion = await evaluaciones_service.ensure_can_manage_evaluation(db, evaluacion_id, current_user)
+    released = await breakdown_service.set_answers_released(db, evaluacion, payload.liberadas)
+    return {"evaluacion_id": evaluacion_id, "liberadas": released}
+
+
+@router.get("/evaluaciones/{evaluacion_id}/mi-desglose", response_model=DesgloseEstudianteRead | None)
+async def get_mi_desglose(
+    evaluacion_id: UUID,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> object:
+    require_role(current_user, [UserRole.ESTUDIANTE])
+    cal = await db.scalar(
+        select(Calificacion)
+        .where(
+            Calificacion.evaluacion_id == evaluacion_id,
+            Calificacion.estudiante_id == current_user.id,
+            Calificacion.estado == CalificacionEstado.PUBLICADA.value,
+        )
+        .order_by(Calificacion.updated_at.desc())
+    )
+    if not cal:
+        return None
+    desglose = await breakdown_service.get_active_breakdown(db, cal.id)
+    if not desglose:
+        return None
+    if not breakdown_service.student_breakdown_is_publishable(cal, desglose):
+        return None
+    evaluacion = await service.get_evaluation_for_calificacion(db, cal)
+    return breakdown_service.serialize_breakdown(
+        desglose,
+        student=True,
+        reveal_key=breakdown_service.answers_released(evaluacion),
     )

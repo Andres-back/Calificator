@@ -72,6 +72,8 @@ class Settings(BaseSettings):
     PHOTO_GRADING_TEXT_REVIEW_MODEL: str = "deepseek-v4-pro"
     PHOTO_GRADING_COMPARATOR_MODEL: str = "deepseek-v4-flash"
     PHOTO_GRADING_CROSS_PROVIDER_FALLBACK_ENABLED: bool = False
+    EXPLAINABLE_GRADING_GENERATION_ENABLED: bool = True
+    EXPLAINABLE_GRADING_AUTHORITY_ENABLED: bool = False
 
     GROQ_API_KEY: str = ""
     # llama-3.1-70b-versatile fue dado de baja por Groq; usar el sucesor vigente.

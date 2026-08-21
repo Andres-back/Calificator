@@ -12,6 +12,7 @@ import httpx
 from app.core.config import settings
 from app.core.logging import get_logger
 from app.modules.analytics.usage_logger import log_ai_usage
+from app.modules.calificaciones.breakdown_policy import build_component_scaffold, sanitize_component_payload
 from app.services.llm_router import LLMRouter
 from app.services.vision_service import interpret_image
 
@@ -241,6 +242,7 @@ class AgentResult:
     confianza: float
     feedback_estudiante: str
     criterios: list[dict] = field(default_factory=list)
+    componentes: list[dict] = field(default_factory=list)
     alertas: list[str] = field(default_factory=list)
     requiere_revision_docente: bool = True
     proveedor: str = ""
@@ -715,6 +717,10 @@ REGLAS OBLIGATORIAS:
 ## Contexto adicional (RAG)
 {rag_context}
 
+## Componentes esperados
+Usa exactamente estas claves. Devuelve una valoración independiente por cada componente; no omitas ni inventes claves.
+{componentes_esperados}
+
 ## Respuesta del estudiante
 {student_response}
 
@@ -725,6 +731,9 @@ Devuelve SOLO JSON válido con este esquema:
   "confianza": <0.0-1.0>,
   "criterios": [
     {{"nombre": "...", "puntaje": <número>, "maximo": <número>, "observacion": "..."}}
+  ],
+  "componentes": [
+    {{"clave": "pregunta:1", "respuesta_estudiante": "...", "puntaje": <número>, "estado": "correcta|parcial|incorrecta|sin_respuesta|ilegible|no_evaluable", "explicacion": "Razón verificable y concreta", "confianza": <0.0-1.0>, "paginas": [1]}}
   ],
   "feedback_estudiante": "...",
   "alertas": [],
@@ -752,6 +761,7 @@ async def grader_agent(
         objective_validation=json.dumps(ctx.objective_validation, ensure_ascii=False),
         errores_comunes=json.dumps(ctx.blueprint.get("errores_comunes", []), ensure_ascii=False),
         rag_context=ctx.rag_context or "(sin contexto adicional)",
+        componentes_esperados=json.dumps([{**item, "puntos_maximos": float(item["puntos_maximos"])} for item in build_component_scaffold(ctx.blueprint)], ensure_ascii=False),
         student_response=ctx.student_response_text[:5000],
     )
     own_client = False
@@ -776,7 +786,6 @@ async def grader_agent(
         ms = int((time.monotonic() - start) * 1000)
         content = raw["choices"][0]["message"]["content"]
         parsed = _parse_json_content(content)
-        reasoning = raw["choices"][0]["message"].get("reasoning_content", "")
 
         raw_score = parsed.get("nota_sugerida")
         if raw_score is None:
@@ -792,10 +801,11 @@ async def grader_agent(
             confianza=float(parsed.get("confianza", 0.5)),
             feedback_estudiante=parsed.get("feedback_estudiante", ""),
             criterios=parsed.get("criterios", []),
+            componentes=[sanitize_component_payload(item) for item in parsed.get("componentes", []) if isinstance(item, dict)],
             alertas=parsed.get("alertas", []),
             requiere_revision_docente=parsed.get("requiere_revision_docente", True),
             proveedor="opencode", modelo=model, tiempo_ms=ms,
-            raw_output={**parsed, "_reasoning": reasoning} if reasoning else parsed,
+            raw_output=parsed,
         )
         logger.info("Grader agent OK: modelo=%s %dms nota=%.2f confianza=%.2f", model, ms, result.nota_sugerida, result.confianza)
         return result
@@ -827,6 +837,7 @@ async def router_grader_agent(ctx: AgentContext) -> AgentResult:
             ensure_ascii=False,
         ),
         rag_context=ctx.rag_context or "(sin contexto adicional)",
+        componentes_esperados=json.dumps([{**item, "puntos_maximos": float(item["puntos_maximos"])} for item in build_component_scaffold(ctx.blueprint)], ensure_ascii=False),
         student_response=ctx.student_response_text[:5000],
     )
     start = time.monotonic()
@@ -850,6 +861,7 @@ async def router_grader_agent(ctx: AgentContext) -> AgentResult:
             confianza=float(parsed.get("confianza", 0.5)),
             feedback_estudiante=parsed.get("feedback_estudiante", ""),
             criterios=parsed.get("criterios", []),
+            componentes=[sanitize_component_payload(item) for item in parsed.get("componentes", []) if isinstance(item, dict)],
             alertas=parsed.get("alertas", []),
             requiere_revision_docente=parsed.get(
                 "requiere_revision_docente",
@@ -964,6 +976,7 @@ async def comparator_agent(
             confianza=valid.confianza,
             feedback_estudiante=valid.feedback_estudiante,
             criterios=valid.criterios,
+            componentes=valid.componentes,
             alertas=valid.alertas + ["Solo uno de los evaluadores produjo una nota."],
             requiere_revision_docente=True,
             proveedor="comparator",
@@ -981,6 +994,7 @@ async def comparator_agent(
         return AgentResult(
             nota_sugerida=nota_final, confianza=confianza, feedback_estudiante=feedback,
             criterios=grading_a.criterios or grading_b.criterios,
+            componentes=grading_a.componentes or grading_b.componentes,
             alertas=grading_a.alertas + grading_b.alertas,
             requiere_revision_docente=False, proveedor="comparator", modelo="consenso",
             raw_output={"discrepancia": False, "diferencia": diff, "nota_final": nota_final,
@@ -990,8 +1004,8 @@ async def comparator_agent(
 
     client = OpenCodeClient()
     try:
-        grading_a_str = json.dumps({"nota_sugerida": grading_a.nota_sugerida, "confianza": grading_a.confianza, "feedback": grading_a.feedback_estudiante[:300], "criterios": grading_a.criterios, "alertas": grading_a.alertas, "error": grading_a.error}, ensure_ascii=False)
-        grading_b_str = json.dumps({"nota_sugerida": grading_b.nota_sugerida, "confianza": grading_b.confianza, "feedback": grading_b.feedback_estudiante[:300], "criterios": grading_b.criterios, "alertas": grading_b.alertas, "error": grading_b.error}, ensure_ascii=False)
+        grading_a_str = json.dumps({"nota_sugerida": grading_a.nota_sugerida, "confianza": grading_a.confianza, "feedback": grading_a.feedback_estudiante[:300], "criterios": grading_a.criterios, "componentes": grading_a.componentes, "alertas": grading_a.alertas, "error": grading_a.error}, ensure_ascii=False)
+        grading_b_str = json.dumps({"nota_sugerida": grading_b.nota_sugerida, "confianza": grading_b.confianza, "feedback": grading_b.feedback_estudiante[:300], "criterios": grading_b.criterios, "componentes": grading_b.componentes, "alertas": grading_b.alertas, "error": grading_b.error}, ensure_ascii=False)
         prompt = COMPARATOR_PROMPT.format(
             umbral=umbral,
             model_a=grading_a.modelo,
@@ -1011,6 +1025,7 @@ async def comparator_agent(
             nota_sugerida=nota_final, confianza=grading_a.confianza if not grading_a.error else grading_b.confianza,
             feedback_estudiante=parsed.get("feedback_integrado", ""),
             criterios=grading_a.criterios or grading_b.criterios,
+            componentes=grading_a.componentes or grading_b.componentes,
             alertas=grading_a.alertas + grading_b.alertas,
             requiere_revision_docente=discrepancy or grading_a.requiere_revision_docente or grading_b.requiere_revision_docente,
             proveedor="comparator", modelo=model if discrepancy else "consenso", tiempo_ms=ms,

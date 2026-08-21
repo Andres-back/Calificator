@@ -34,6 +34,10 @@ class CalificacionIncidencia(Base):
     descripcion: Mapped[str] = mapped_column(Text, nullable=False)
     estado: Mapped[str] = mapped_column(String(20), nullable=False, default="abierta")
     metadata_json: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
+    componente_id: Mapped[PyUUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("calificacion_componentes.id", ondelete="SET NULL"), nullable=True
+    )
+    desglose_version: Mapped[int | None] = mapped_column(nullable=True)
     resolucion: Mapped[str | None] = mapped_column(Text, nullable=True)
     resuelto_por: Mapped[PyUUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("users.id"), nullable=True

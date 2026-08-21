@@ -11,6 +11,8 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import settings
+from app.modules.calificaciones.breakdown_service import answers_released, create_manual_breakdown, get_active_breakdown, serialize_breakdown
 from app.modules.calificaciones.models import (
     Calificacion,
     Entrega,
@@ -329,6 +331,10 @@ async def set_manual_grade(
         actor_nombre=current_user.nombre,
         detalle=f"Nota establecida directamente por el docente: {reason}",
     )
+    await create_manual_breakdown(
+        db, calificacion=cal, nota_maxima=evaluacion.nota_maxima,
+        nota=payload.nota_confirmada, motivo=feedback, actor_id=current_user.id,
+    )
     await db.commit()
     await db.refresh(cal)
     return cal
@@ -411,6 +417,11 @@ async def assign_overdue_zero_grades(
         )
         db.add(cal)
         created.append(cal)
+    for cal in created:
+        await create_manual_breakdown(
+            db, calificacion=cal, nota_maxima=getattr(evaluacion, "nota_maxima", Decimal("5")), nota=Decimal("0"),
+            motivo=feedback, actor_id=evaluacion.profesor_id, origin="vencimiento_automatico",
+        )
     await db.commit()
     return created
 
@@ -868,6 +879,7 @@ async def get_calificacion_detalle(
         grading_answer_key_status(grading_blueprint) if evaluacion else (False, [])
     )
     result_payload = dict(cal.resultado_json or {})
+    active_breakdown = await get_active_breakdown(db, cal.id)
     result_payload["answer_key"] = {
         "complete": key_complete,
         "missing_questions": missing_answers,
@@ -893,6 +905,9 @@ async def get_calificacion_detalle(
         "estado": cal.estado,
         "revisado_por_docente": cal.revisado_por_docente,
         "resultado_json": result_payload,
+        "desglose": serialize_breakdown(active_breakdown) if active_breakdown else None,
+        "desglose_heredado": active_breakdown is None,
+        "respuestas_liberadas": answers_released(evaluacion) if evaluacion else False,
         "entrega_tipo": cal.entrega.tipo if cal.entrega else None,
         "entrega_archivo_url": (
             f"/api/calificaciones/entregas/{cal.entrega.id}/evidencia"
@@ -1108,6 +1123,12 @@ async def publicar_nota(
             detail=f"Solo calificaciones confirmadas o ajustadas pueden publicarse. Estado actual: {cal.estado}",
         )
     evaluacion = await get_evaluation_for_calificacion(db, cal)
+    if settings.EXPLAINABLE_GRADING_AUTHORITY_ENABLED:
+        desglose = await get_active_breakdown(db, cal.id)
+        if desglose and desglose.requiere_revision:
+            raise HTTPException(status_code=409, detail="El desglose tiene preguntas pendientes de revisión; resuélvelas antes de publicar.")
+        if desglose and cal.nota_confirmada != desglose.nota_final:
+            raise HTTPException(status_code=409, detail="La nota confirmada no coincide con la fórmula vigente del desglose.")
     await _prepare_grade_publication(db, cal, evaluacion)
     cal.estado = CalificacionEstado.PUBLICADA.value
     _append_timeline_event(
@@ -1188,6 +1209,8 @@ async def crear_incidencia(
     tipo: str,
     descripcion: str,
     metadata_json: dict | None = None,
+    componente_id: UUID | None = None,
+    desglose_version: int | None = None,
 ) -> dict:
     from app.modules.calificaciones.incidencia_models import CalificacionIncidencia
 
@@ -1196,6 +1219,8 @@ async def crear_incidencia(
         tipo=tipo,
         descripcion=descripcion,
         metadata_json=metadata_json or {},
+        componente_id=componente_id,
+        desglose_version=desglose_version,
     )
     db.add(inc)
     await db.commit()
@@ -1207,6 +1232,8 @@ async def crear_incidencia(
         "descripcion": inc.descripcion,
         "estado": inc.estado,
         "metadata_json": inc.metadata_json,
+        "componente_id": getattr(inc, "componente_id", None),
+        "desglose_version": getattr(inc, "desglose_version", None),
         "resolucion": inc.resolucion,
         "resuelto_por": inc.resuelto_por,
         "resolved_at": inc.resolved_at,
@@ -1284,6 +1311,8 @@ async def crear_solicitud_revision_estudiante(
     estudiante_id: UUID,
     motivo: str,
     descripcion: str,
+    componente_id: UUID | None = None,
+    desglose_version: int | None = None,
 ) -> dict:
     from app.modules.calificaciones.incidencia_models import CalificacionIncidencia
 
@@ -1292,6 +1321,20 @@ async def crear_solicitud_revision_estudiante(
         evaluacion_id=evaluacion_id,
         estudiante_id=estudiante_id,
     )
+    if componente_id is not None:
+        from app.modules.calificaciones.breakdown_models import CalificacionComponente, CalificacionDesglose
+        valid_component = await db.scalar(
+            select(CalificacionComponente.id)
+            .join(CalificacionDesglose, CalificacionDesglose.id == CalificacionComponente.desglose_id)
+            .where(
+                CalificacionComponente.id == componente_id,
+                CalificacionDesglose.calificacion_id == calificacion.id,
+                CalificacionDesglose.version == desglose_version,
+                CalificacionDesglose.activo.is_(True),
+            )
+        )
+        if not valid_component:
+            raise HTTPException(status_code=409, detail="La pregunta seleccionada ya no pertenece al desglose vigente.")
     abierta = await db.scalar(
         select(CalificacionIncidencia).where(
             CalificacionIncidencia.calificacion_id == calificacion.id,
@@ -1334,6 +1377,8 @@ async def listar_incidencias(db: AsyncSession, calificacion_id: UUID) -> list[di
             "descripcion": inc.descripcion,
             "estado": inc.estado,
             "metadata_json": inc.metadata_json,
+        "componente_id": getattr(inc, "componente_id", None),
+        "desglose_version": getattr(inc, "desglose_version", None),
             "resolucion": inc.resolucion,
             "resuelto_por": inc.resuelto_por,
             "resolved_at": inc.resolved_at,
@@ -1485,6 +1530,8 @@ async def resolver_incidencia(
         "descripcion": inc.descripcion,
         "estado": inc.estado,
         "metadata_json": inc.metadata_json,
+        "componente_id": getattr(inc, "componente_id", None),
+        "desglose_version": getattr(inc, "desglose_version", None),
         "resolucion": inc.resolucion,
         "resuelto_por": inc.resuelto_por,
         "resolved_at": inc.resolved_at,

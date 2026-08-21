@@ -11,6 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.permissions import is_student_enrolled
 from app.core.logging import get_logger
 from app.modules.calificaciones import service as calificaciones_service
+from app.modules.calificaciones.breakdown_service import create_automatic_breakdown
 from app.modules.calificaciones.grading_service import grade_submission
 from app.modules.calificaciones.models import Calificacion, Entrega, SalonSesion, SalonSesionEstudiante
 from app.modules.evaluaciones.blueprint_service import evaluation_to_grading_blueprint
@@ -183,6 +184,13 @@ async def grade_student_photo(
         )
         db.add(calificacion)
         await db.flush()
+        await create_automatic_breakdown(
+            db,
+            calificacion=calificacion,
+            blueprint=evaluation_to_grading_blueprint(evaluacion),
+            raw_output=grading.raw_model_output,
+            pipeline_run_id=f"salon:{sesion_id or entrega.id}:{entrega.id}",
+        )
 
         if sesion_id:
             await update_estudiante_estado(
