@@ -52,9 +52,9 @@ export function DashboardEstudiante() {
         {/* Hero Image Background */}
         <div className="absolute inset-0 z-0">
           <img 
-            src="/branding/hero-ai-brain.png" 
+            src="/branding/learning-atmosphere-v2.webp"
             alt="" 
-            className="h-full w-full object-cover opacity-10 mix-blend-screen"
+            className="h-full w-full object-cover opacity-25 mix-blend-screen"
           />
           <div className="absolute inset-0 bg-gradient-to-r from-brand-950/40 via-brand-700/20 to-sky-500/10" />
         </div>

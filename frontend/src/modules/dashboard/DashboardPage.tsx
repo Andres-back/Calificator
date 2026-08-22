@@ -86,7 +86,7 @@ function DashboardDocente() {
   return (
     <div className="mx-auto max-w-7xl space-y-6">
       <section className="relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-brand-900 via-indigo-700 to-sky-600 p-5 text-white shadow-2xl shadow-brand-900/15 sm:rounded-3xl sm:p-8">
-        <img src="/branding/hero-classroom.png" alt="" className="absolute inset-0 h-full w-full object-cover opacity-15 mix-blend-screen" />
+        <img src="/branding/learning-atmosphere-v2.webp" alt="" className="absolute inset-0 h-full w-full object-cover opacity-30 mix-blend-screen" />
         <div className="absolute -right-20 -top-24 h-72 w-72 rounded-full bg-cyan-300/20 blur-3xl" />
         <div className="relative z-10 grid gap-7 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
           <div>

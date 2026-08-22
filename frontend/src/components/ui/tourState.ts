@@ -10,15 +10,27 @@ export function tourStorageKey({ tourId, role, version }: TourIdentity) {
 
 export function hasCompletedTour(identity: TourIdentity) {
   if (typeof window === 'undefined') return false;
-  return window.localStorage.getItem(tourStorageKey(identity)) === 'completed';
+  try {
+    return window.localStorage.getItem(tourStorageKey(identity)) === 'completed';
+  } catch {
+    return false;
+  }
 }
 
 export function markTourCompleted(identity: TourIdentity) {
   if (typeof window === 'undefined') return;
-  window.localStorage.setItem(tourStorageKey(identity), 'completed');
+  try {
+    window.localStorage.setItem(tourStorageKey(identity), 'completed');
+  } catch {
+    // The guide remains usable when storage is disabled or private.
+  }
 }
 
 export function resetTour(identity: TourIdentity) {
   if (typeof window === 'undefined') return;
-  window.localStorage.removeItem(tourStorageKey(identity));
+  try {
+    window.localStorage.removeItem(tourStorageKey(identity));
+  } catch {
+    // Nothing to reset when storage is unavailable.
+  }
 }

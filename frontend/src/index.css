@@ -275,6 +275,123 @@
   }
 }
 
+@layer components {
+  .app-atmosphere {
+    position: absolute;
+    inset: 0 0 auto;
+    z-index: 0;
+    height: min(48rem, 88vh);
+    overflow: hidden;
+    pointer-events: none;
+    user-select: none;
+    mask-image: linear-gradient(to bottom, black 0%, black 48%, transparent 100%);
+  }
+
+  .app-atmosphere img {
+    height: 100%;
+    width: 100%;
+    object-fit: cover;
+    opacity: 0.22;
+    filter: saturate(0.95) contrast(0.94);
+  }
+
+  .student-shell .app-atmosphere img { opacity: 0.26; }
+  .dark .app-atmosphere img {
+    opacity: 0.10;
+    filter: saturate(1.2) brightness(0.72) contrast(1.08);
+    mix-blend-mode: screen;
+  }
+
+  .app-atmosphere-orb {
+    position: absolute;
+    border-radius: 9999px;
+    filter: blur(42px);
+    opacity: 0.28;
+    animation: atmosphere-drift 18s ease-in-out infinite;
+  }
+
+  .app-atmosphere-orb-primary {
+    right: 8%;
+    top: 4rem;
+    height: 11rem;
+    width: 11rem;
+    background: rgb(34 211 238 / 0.32);
+  }
+
+  .app-atmosphere-orb-secondary {
+    left: 10%;
+    top: 18rem;
+    height: 9rem;
+    width: 9rem;
+    background: rgb(139 92 246 / 0.25);
+    animation-delay: -8s;
+  }
+
+  .teacher-page-header::after,
+  .student-page-header::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background-image: url('/branding/learning-atmosphere-v2.webp');
+    background-position: right center;
+    background-size: cover;
+    opacity: 0.075;
+    mix-blend-mode: multiply;
+  }
+
+  .dark .teacher-page-header::after,
+  .dark .student-page-header::after {
+    opacity: 0.055;
+    mix-blend-mode: screen;
+  }
+
+  .empty-state {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    background-image:
+      radial-gradient(circle at 12% 18%, rgb(99 102 241 / 0.08), transparent 10rem),
+      radial-gradient(circle at 92% 84%, rgb(14 165 233 / 0.08), transparent 11rem);
+  }
+
+  .empty-state::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background-image: url('/branding/learning-atmosphere-v2.webp');
+    background-position: center;
+    background-size: cover;
+    opacity: 0.055;
+  }
+
+  .uiverse-card::before {
+    content: '';
+    position: absolute;
+    inset: 0 12% auto;
+    height: 2px;
+    border-radius: 9999px;
+    pointer-events: none;
+    background: linear-gradient(90deg, transparent, rgb(99 102 241 / 0.72), rgb(14 165 233 / 0.60), transparent);
+    opacity: 0;
+    transform: scaleX(0.7);
+    transition: opacity 180ms ease, transform 180ms ease;
+  }
+
+  .uiverse-card:hover::before,
+  .uiverse-card:focus-within::before {
+    opacity: 0.7;
+    transform: scaleX(1);
+  }
+}
+
+@keyframes atmosphere-drift {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(0.96); }
+  50% { transform: translate3d(0, 10px, 0) scale(1.04); }
+}
 @media (prefers-reduced-motion: reduce) {
   html:focus-within {
     scroll-behavior: auto;

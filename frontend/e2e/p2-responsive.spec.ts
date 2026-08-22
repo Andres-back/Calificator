@@ -140,6 +140,9 @@ for (const role of ['profesor', 'estudiante', 'admin'] as const) {
       await page.getByRole('button', { name: /Iniciar sesión/i }).click();
       await page.goto('/app');
       await expect(page.locator('main#main-content')).toBeVisible();
+      const atmosphere = page.locator('.app-atmosphere');
+      await expect(atmosphere).toHaveAttribute('aria-hidden', 'true');
+      await expect(atmosphere.locator('img')).toHaveAttribute('src', '/branding/learning-atmosphere-v2.webp');
       page.on('pageerror', (error) => errors.push(error.message));
       page.on('console', (message) => { if (message.type() === 'error') errors.push(message.text()); });
 

@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { ArrowLeft, ArrowRight, Camera, CheckCircle2, HelpCircle, LoaderCircle, RotateCcw, ScanText, TriangleAlert } from 'lucide-react';
-import { Badge, Button, Card, ConfirmDialog, EmptyState, Field, Select, Skeleton, GuidedTour, RichContent } from '@/components/ui';
+import { Badge, Button, Card, ConfirmDialog, EmptyState, Field, Select, Skeleton, GuidedTour, useFirstVisitTour, RichContent } from '@/components/ui';
 import { MultiPageEvidencePicker } from '@/components/evidence/MultiPageEvidencePicker';
 import { evidenceFiles, evidenceRotations, type EvidencePage } from '@/components/evidence/evidencePayload';
 import { PageHeader } from '@/components/layout/PageHeader';
@@ -38,7 +38,7 @@ export function CalificarFotoPage() {
   const [resultado, setResultado] = useState<Calificacion | null>(null);
   const [submissionError, setSubmissionError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [tourOpen, setTourOpen] = useState(false);
+  const { open: tourOpen, openTour, closeTour } = useFirstVisitTour({ tourId: 'calificacion-foto', role, version: 1 });
   const submittingRef = useRef(false);
 
   const { data: materias, isLoading: loadingMaterias } = useMaterias();
@@ -161,13 +161,13 @@ export function CalificarFotoPage() {
         subtitle="Sube fotos o un PDF de la respuesta para recibir una nota sugerida y comentarios claros."
         action={
           <div className="flex flex-wrap gap-2">
-            <Button variant="outline" onClick={() => setTourOpen(true)}><HelpCircle className="h-4 w-4" /> ¿Cómo se usa?</Button>
+            <Button variant="outline" onClick={openTour}><HelpCircle className="h-4 w-4" /> ¿Cómo se usa?</Button>
             <Link to={routes.calificacionesWorkspace} className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-border px-5 text-sm font-semibold text-fg transition-all hover:bg-surface-2"><ArrowLeft className="h-4 w-4" /> Volver</Link>
           </div>
         }
       />
 
-      <GuidedTour steps={fotoTour} open={tourOpen} onClose={() => setTourOpen(false)} tourId="calificacion-foto" role={role} version={1} />
+      <GuidedTour steps={fotoTour} open={tourOpen} onClose={closeTour} tourId="calificacion-foto" role={role} version={1} />
 
       {noMaterias ? (
         <EmptyState icon={Camera} title="Primero crea una materia" description="Necesitas una materia con evaluaciones y estudiantes matriculados." />

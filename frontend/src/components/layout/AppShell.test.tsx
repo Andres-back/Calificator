@@ -83,3 +83,17 @@ describe('AppShell analytics', () => {
     });
   });
 });
+
+
+describe('AppShell ambientación', () => {
+  it('mantiene la ilustración fuera de la interacción y el contenido por encima', () => {
+    const { container } = renderShell();
+    const atmosphere = container.querySelector('.app-atmosphere');
+    const content = container.querySelector('main#main-content > .relative');
+
+    expect(atmosphere).toHaveAttribute('aria-hidden', 'true');
+    expect(atmosphere?.querySelector('img')).toHaveAttribute('src', '/branding/learning-atmosphere-v2.webp');
+    expect(content).not.toHaveClass('z-[1]');
+    expect(content).toHaveTextContent('Inicio docente');
+  });
+});

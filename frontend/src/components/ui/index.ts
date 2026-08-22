@@ -23,3 +23,5 @@ export { MetricCard, ActionCard, StatusCard, ContentCard, AlertCard, EmptyStateC
 export type { SemanticTone } from './SummaryCard';
 export { StatCard } from './StatCard';
 export type { StatTone } from './StatCard';
+export { useFirstVisitTour } from './useFirstVisitTour';
+export type { FirstVisitTourOptions } from './useFirstVisitTour';

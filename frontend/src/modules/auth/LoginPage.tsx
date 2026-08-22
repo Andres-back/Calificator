@@ -251,7 +251,7 @@ export function LoginPage() {
                       }
                     }}
                     disabled={loading}
-                    className="flex-1 rounded-lg border border-violet-200 bg-violet-50 px-3 py-2 text-xs font-medium text-violet-700 transition-colors hover:bg-violet-100 dark:border-violet-500/30 dark:bg-violet-500/10 dark:text-violet-300"
+                    className="min-h-11 flex-1 rounded-lg border border-violet-200 bg-violet-50 px-3 py-2 text-xs font-medium text-violet-700 transition-colors hover:bg-violet-100 dark:border-violet-500/30 dark:bg-violet-500/10 dark:text-violet-300"
                   >
                     <School2 className="mr-1.5 inline h-4 w-4" aria-hidden="true" /> Profesor
                   </button>
@@ -272,7 +272,7 @@ export function LoginPage() {
                       }
                     }}
                     disabled={loading}
-                    className="flex-1 rounded-lg border border-cyan-200 bg-cyan-50 px-3 py-2 text-xs font-medium text-cyan-700 transition-colors hover:bg-cyan-100 dark:border-cyan-500/30 dark:bg-cyan-500/10 dark:text-cyan-300"
+                    className="min-h-11 flex-1 rounded-lg border border-cyan-200 bg-cyan-50 px-3 py-2 text-xs font-medium text-cyan-700 transition-colors hover:bg-cyan-100 dark:border-cyan-500/30 dark:bg-cyan-500/10 dark:text-cyan-300"
                   >
                     <GraduationCap className="mr-1.5 inline h-4 w-4" aria-hidden="true" /> Estudiante
                   </button>

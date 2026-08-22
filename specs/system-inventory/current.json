@@ -277,7 +277,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "26cc8fd1e1abae786110cf284cf3805390fd867bff18417faf93375b18e3b205",
+  "source_digest": "f2765b1876536be74e43c46486c831568444f09a29417ff3031a3ac5b4868f7d",
   "surfaces": [
     {
       "actors": [
@@ -9939,6 +9939,12 @@
           "level": "unit",
           "reference": "/",
           "status": "direct",
+          "test_path": "frontend/src/components/ui/useFirstVisitTour.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
           "test_path": "frontend/src/config/studentNavigation.test.ts"
         },
         {
@@ -11815,6 +11821,12 @@
           "reference": "/login",
           "status": "domain",
           "test_path": "backend/tests/unit/test_worker_ai_config.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "/login",
+          "status": "direct",
+          "test_path": "frontend/e2e/accessibility/example.a11y.spec.ts"
         },
         {
           "level": "e2e",
@@ -19813,6 +19825,12 @@
           "reference": "calificaciones",
           "status": "direct",
           "test_path": "frontend/src/components/ui/P2Accessibility.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "calificaciones",
+          "status": "direct",
+          "test_path": "frontend/src/components/ui/useFirstVisitTour.test.tsx"
         },
         {
           "level": "unit",

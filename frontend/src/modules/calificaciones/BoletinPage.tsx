@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { BookOpenCheck, GraduationCap, ShieldCheck, HelpCircle, CheckCircle2, Clock3, ListChecks } from 'lucide-react';
-import { Badge, statusTone, Button, Card, EmptyState, Field, Select, Skeleton, GuidedTour, RichContent, QueryError } from '@/components/ui';
+import { Badge, statusTone, Button, Card, EmptyState, Field, Select, Skeleton, GuidedTour, useFirstVisitTour, RichContent, QueryError } from '@/components/ui';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { getMateriaEstudiantes, listMaterias } from '@/modules/materias/api';
 import { toApiError } from '@/lib/api';
@@ -81,7 +81,7 @@ export function BoletinPage() {
   const isStudent = user?.rol === 'estudiante';
   const [materiaId, setMateriaId] = useState('');
   const [studentId, setStudentId] = useState('');
-  const [tourOpen, setTourOpen] = useState(false);
+  const { open: tourOpen, openTour, closeTour } = useFirstVisitTour({ tourId: 'boletin', role: user?.rol ?? 'estudiante', version: 1 });
 
   const { data: materias, isLoading: loadingMaterias, isError: materiasError, error: materiasQueryError, refetch: refetchMaterias } = useQuery({
     queryKey: ['materias'],
@@ -144,14 +144,14 @@ export function BoletinPage() {
         eyebrow="Seguimiento académico"
         subtitle="Consulta notas confirmadas y retroalimentación organizada. Este boletín es informativo y no editable."
         action={
-          <Button variant="outline" onClick={() => setTourOpen(true)}>
+          <Button variant="outline" onClick={openTour}>
             <HelpCircle className="h-4 w-4" />
             ¿Cómo se usa?
           </Button>
         }
       />
 
-      <GuidedTour steps={boletinTour} open={tourOpen} onClose={() => setTourOpen(false)} tourId="boletin" role={user?.rol ?? 'estudiante'} version={1} />
+      <GuidedTour steps={boletinTour} open={tourOpen} onClose={closeTour} tourId="boletin" role={user?.rol ?? 'estudiante'} version={1} />
 
       <Card data-tour="boletin-info" className="flex items-start gap-3 p-5">
         <ShieldCheck className="mt-0.5 h-5 w-5 text-emerald-500" />

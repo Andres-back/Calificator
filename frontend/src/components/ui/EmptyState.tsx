@@ -19,7 +19,7 @@ export function EmptyState({
 }) {
   const imageClass = imageSize === 'lg' ? 'mb-5 h-48 w-48 rounded-2xl object-contain' : 'mb-4 h-28 w-28 rounded-xl object-contain';
   return (
-    <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border bg-surface px-6 py-14 text-center">
+    <div className="empty-state flex flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-surface px-6 py-14 text-center">
       {image ? (
         <img src={image} alt="" className={imageClass} />
       ) : (

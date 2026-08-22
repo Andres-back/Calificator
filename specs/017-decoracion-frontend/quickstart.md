@@ -1,0 +1,55 @@
+# Guía de validación: Decoración visual transversal
+
+## Preparación
+
+1. Instalar dependencias del frontend.
+2. Iniciar servicios locales y el frontend.
+3. Disponer de una sesión de profesor y una de estudiante.
+
+## Verificación automática
+
+```powershell
+Set-Location frontend
+npm run audit:actions
+npm run lint
+npm run typecheck
+npm run test:run
+npm run build
+```
+
+## Verificación visual
+
+Para profesor y estudiante, revisar inicio, materias, evaluaciones y una página con formulario o tabla en:
+
+- 360×800
+- 390×844
+- 768×1024
+- 1366×768
+- 1920×1080
+
+En cada tamaño:
+
+1. Alternar modo claro y oscuro.
+2. Confirmar que no hay desplazamiento horizontal.
+3. Confirmar que títulos, botones, menús, formularios y modales permanecen visibles y utilizables.
+4. Bloquear o renombrar temporalmente la imagen decorativa y confirmar que la interfaz sigue siendo legible.
+5. Activar movimiento reducido y confirmar que no hay animación decorativa persistente.
+6. Recorrer al menos una acción por página y comprobar que su destino no cambió.
+
+## Resultado esperado
+
+La aplicación tiene una identidad más rica y coherente, pero mantiene exactamente los mismos recorridos, permisos y estados funcionales.
+
+## Evidencia de implementación (2026-08-21)
+
+- Recurso generado con la herramienta ImageGen y convertido a WebP: `frontend/public/branding/learning-atmosphere-v2.webp` (46.170 bytes; SHA-256 `A6E5E3539C897DF38B52C06DA7F8809AAAD675969323B8D44C6544299F23191B`).
+- Prompt final: ilustración conceptual horizontal para fondo educativo, con libros, lápices, cuadernos, estrellas, bloques y rutas de conocimiento; paleta índigo, violeta, cian, cielo y menta; centro despejado; sin texto, números, logotipos, controles ni personas.
+- Auditoría estática: 300 botones y 80 enlaces con acción, envío o destino verificable.
+- Verificación principal: 50 archivos y 189 pruebas Vitest, lint, TypeScript y build Vite en verde.
+- Gobernanza Spec Kit: 39 pruebas del validador pasaron y la spec 017 quedó registrada en el índice canónico.
+- Accesibilidad: 1 recorrido Playwright confirmó nombre accesible y objetivo táctil mínimo en todos los botones visibles del acceso.
+- Responsive: 20 recorridos Playwright pasaron para profesor, estudiante y administrador en 360×800, 390×844, 768×1024, 1024×768, 1366×768 y 1920×1080, además de todas las rutas docentes en modo oscuro móvil y escritorio, sin overflow general ni errores de consola.
+- Capturas: `output/playwright/p2/profesor-dashboard-390x844.png`, `profesor-dashboard-1366x768.png`, `estudiante-dashboard-390x844.png` y `estudiante-dashboard-1366x768.png`.
+- La auditoría detectó durante la implementación dos accesos rápidos del login por debajo de 40 px; se ajustaron a 44 px y la regresión quedó cubierta.
+- Los recorridos de Calificaciones, Calificar foto, Modo salón y Boletín se presentan una vez por rol/versión y conservan su botón manual «¿Cómo se usa?».
+- Regresión de apilamiento: los cuatro recorridos de creación IA pasan y los modales permanecen por encima de la barra lateral; el contenido ambiental no crea un `z-index` contenedor.
