@@ -4,7 +4,7 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { GraduationCap, CheckCircle2, Pencil, ShieldCheck, AlertTriangle, Camera, Sparkles, HelpCircle } from 'lucide-react';
-import { Button, Card, Badge, statusTone, Select, Skeleton, EmptyState, Modal, ConfirmDialog, GuidedTour, Input, Field, Textarea, RichContent } from '@/components/ui';
+import { Button, Card, Badge, statusTone, Select, Skeleton, EmptyState, Modal, ConfirmDialog, GuidedTour, useFirstVisitTour, Input, Field, Textarea, RichContent } from '@/components/ui';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { useMaterias } from '@/modules/materias/MateriaSelect';
 import { getMateriaEstudiantes } from '@/modules/materias/api';
@@ -26,7 +26,7 @@ export function CalificacionesPage() {
   const [adjForm, setAdjForm] = useState({ nota: 0, feedback: '' });
   const [adjError, setAdjError] = useState('');
   const [confirming, setConfirming] = useState<Calificacion | null>(null);
-  const [tourOpen, setTourOpen] = useState(false);
+  const { open: tourOpen, openTour, closeTour } = useFirstVisitTour({ tourId: 'calificaciones', role, version: 1 });
   const [gradeFilter, setGradeFilter] = useState<'todas' | 'pendientes' | 'confirmadas'>('todas');
 
   useEffect(() => { if (!materiaId && materias?.[0]) setMateriaId(materias[0].id); }, [materias, materiaId]);
@@ -85,7 +85,7 @@ export function CalificacionesPage() {
         subtitle="Revisa la nota sugerida y la retroalimentación organizada antes de confirmar."
         action={
           <div className="flex flex-wrap gap-2">
-            <Button variant="outline" onClick={() => setTourOpen(true)}>
+            <Button variant="outline" onClick={openTour}>
               <HelpCircle className="h-4 w-4" />
               ¿Cómo se usa?
             </Button>
@@ -112,7 +112,7 @@ export function CalificacionesPage() {
         </div>
       </div>
 
-      <GuidedTour steps={calificacionesTour} open={tourOpen} onClose={() => setTourOpen(false)} tourId="calificaciones" role={role} version={1} />
+      <GuidedTour steps={calificacionesTour} open={tourOpen} onClose={closeTour} tourId="calificaciones" role={role} version={1} />
 
       {noMaterias ? (
         <EmptyState icon={GraduationCap} title="Primero crea una materia y una evaluación" />

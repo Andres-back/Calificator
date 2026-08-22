@@ -24,9 +24,10 @@ export interface BotonGrandeProps extends ButtonHTMLAttributes<HTMLButtonElement
 }
 
 export const BotonGrande = forwardRef<HTMLButtonElement, BotonGrandeProps>(
-  ({ className, variant = 'primary', loading, icon, disabled, children, ...props }, ref) => (
+  ({ className, variant = 'primary', loading, icon, disabled, children, type = 'button', ...props }, ref) => (
     <button
       ref={ref}
+      type={type}
       disabled={disabled || loading}
       aria-busy={loading || undefined}
       className={cn(

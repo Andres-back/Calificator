@@ -92,11 +92,16 @@ export function AppShell() {
           id="main-content"
           tabIndex={-1}
           className={cn(
-            'safe-area-pb min-w-0 flex-1 px-4 py-5 outline-none sm:px-6 lg:min-h-0 lg:overflow-y-auto lg:px-8 lg:py-7',
+            'safe-area-pb relative min-w-0 flex-1 px-4 py-5 outline-none sm:px-6 lg:min-h-0 lg:overflow-y-auto lg:px-8 lg:py-7',
             isStudent && 'sm:py-7 lg:px-10 lg:py-9',
           )}
         >
-          <div className="mx-auto max-w-7xl">
+          <div className="app-atmosphere" aria-hidden="true">
+            <img src="/branding/learning-atmosphere-v2.webp" alt="" />
+            <span className="app-atmosphere-orb app-atmosphere-orb-primary" />
+            <span className="app-atmosphere-orb app-atmosphere-orb-secondary" />
+          </div>
+          <div className="relative mx-auto max-w-7xl">
             <Outlet />
           </div>
         </main>

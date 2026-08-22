@@ -41,7 +41,7 @@ export function PageHeader({
 
   return (
     <header className={cn(
-      'relative flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between',
+      'relative isolate flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between',
       isTeacher
         ? 'teacher-page-header overflow-hidden rounded-3xl border border-indigo-100 bg-gradient-to-br from-white via-white to-indigo-50/80 p-5 shadow-card dark:border-indigo-500/20 dark:from-surface dark:via-surface dark:to-indigo-950/40 sm:p-6'
         : isStudent

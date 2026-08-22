@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { ArrowLeft, Camera, CheckCircle2, DoorClosed, HelpCircle, ImageUp, LoaderCircle, Play, SkipForward, Users } from 'lucide-react';
-import { Badge, Button, Card, ConfirmDialog, EmptyState, Field, Input, Select, Skeleton, GuidedTour, RichContent } from '@/components/ui';
+import { Badge, Button, Card, ConfirmDialog, EmptyState, Field, Input, Select, Skeleton, GuidedTour, useFirstVisitTour, RichContent } from '@/components/ui';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { useMaterias } from '@/modules/materias/MateriaSelect';
 import { useEstudiantes } from '@/modules/materias/hooks';
@@ -45,7 +45,7 @@ export function SalonPage() {
   const [processedIds, setProcessedIds] = useState<string[]>([]);
   const [confirmClose, setConfirmClose] = useState(false);
   const [confirmLeave, setConfirmLeave] = useState(false);
-  const [tourOpen, setTourOpen] = useState(false);
+  const { open: tourOpen, openTour, closeTour } = useFirstVisitTour({ tourId: 'modo-salon', role: user?.rol ?? 'profesor', version: 1 });
 
   const storageKey = user?.id ? salonStorageKey(user.id) : null;
   const sessionActive = sessionStatus === 'active' && Boolean(sesionId);
@@ -323,7 +323,7 @@ export function SalonPage() {
         subtitle="Califica fotos estudiante por estudiante en una sesión guiada y recuperable."
         action={
           <div className="flex flex-wrap gap-2">
-            <Button variant="outline" onClick={() => setTourOpen(true)}>
+            <Button variant="outline" onClick={openTour}>
               <HelpCircle className="h-4 w-4" />
               ¿Cómo se usa?
             </Button>
@@ -335,7 +335,7 @@ export function SalonPage() {
         }
       />
 
-      <GuidedTour steps={salonTour} open={tourOpen} onClose={() => setTourOpen(false)} tourId="modo-salon" role={user?.rol ?? 'profesor'} version={1} />
+      <GuidedTour steps={salonTour} open={tourOpen} onClose={closeTour} tourId="modo-salon" role={user?.rol ?? 'profesor'} version={1} />
 
       <Card className="flex items-start gap-3 border-l-4 border-l-emerald-500 p-5">
         <CheckCircle2 className="mt-0.5 h-5 w-5 text-emerald-500" />
