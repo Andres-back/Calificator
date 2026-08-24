@@ -16,6 +16,7 @@ from app.modules.calificaciones.breakdown_policy import build_component_scaffold
 from app.services.image_preprocessing import prepare_orientation_variants
 from app.services.llm_router import LLMRouter
 from app.services.vision_service import interpret_image
+from app.services.vision_extractor import VisionExtractionError, VisionExtractor
 
 logger = get_logger(__name__)
 
@@ -574,71 +575,56 @@ Devuelve SOLO JSON con este formato:
 
 async def vision_agent(
     ctx: AgentContext,
-    model: str = "mimo-v2.5",
+    model: str = "deepseek-v4-flash-vision-exp",
     client: OpenCodeClient | None = None,
     prompt_override: str | None = None,
     timeout: int | None = None,
     max_attempts: int | None = None,
 ) -> AgentResult:
-    """Agente de visión: extrae texto estructurado de una imagen de respuesta."""
-    preguntas_context = ""
-    blueprint_preguntas = ctx.blueprint.get("preguntas", []) if ctx.blueprint else []
-    if blueprint_preguntas:
-        preguntas_context = "Preguntas del examen:\n" + "\n".join(
-            f"{p.get('numero', i+1)}. {p.get('texto', p.get('enunciado', '?'))}"
-            for i, p in enumerate(blueprint_preguntas)
-        )
+    """Extrae evidencia estructurada; nunca decide la nota."""
+    del timeout, max_attempts
     if not ctx.image_bytes:
         return AgentResult(
             nota_sugerida=None, confianza=0, feedback_estudiante="",
             proveedor="opencode", modelo=model, error="No hay imagen para procesar",
         )
-
-    own_client = False
-    if client is None:
-        client = OpenCodeClient()
-        own_client = True
-
+    tracking = getattr(client, "_tracking", {}) if client else {}
+    purpose = "evaluation_document" if prompt_override else "student_response"
+    started = time.monotonic()
     try:
-        start = time.monotonic()
-        vision_text = prompt_override or VISION_PROMPT.replace(
-            "{preguntas_context}",
-            preguntas_context,
+        extraction = await VisionExtractor(tracking=tracking, primary_model=model).extract(
+            ctx.image_bytes,
+            ctx.image_mime,
+            blueprint=ctx.blueprint,
+            purpose=purpose,
         )
-        raw = await client.chat_multimodal(
-            model=model, text=vision_text,
-            image_bytes=ctx.image_bytes, image_mime=ctx.image_mime,
-            json_mode=True, max_tokens=4096, timeout=timeout,
-            max_attempts=max_attempts,
-        )
-        ms = int((time.monotonic() - start) * 1000)
-        content = raw["choices"][0]["message"]["content"]
-        parsed = _parse_json_content(content)
-        usable = parsed.get("usable", True)
-        alertas = parsed.get("alertas", [])
-        texto = parsed.get("texto_extraido", "")
-
-        if not usable:
-            return AgentResult(
-                nota_sugerida=None, confianza=0,
-                feedback_estudiante="La imagen no pudo procesarse. Revisión docente requerida.",
-                alertas=alertas or ["Imagen no utilizable"],
-                proveedor="opencode", modelo=model, tiempo_ms=ms,
-                raw_output=parsed, requiere_revision_docente=True,
-            )
-        logger.info("Vision agent OK: modelo=%s %dms texto=%d chars", model, ms, len(texto))
+        parsed = extraction.legacy_payload()
         return AgentResult(
-            nota_sugerida=None, confianza=1.0, feedback_estudiante="",
-            alertas=alertas, proveedor="opencode", modelo=model,
-            tiempo_ms=ms, raw_output=parsed, requiere_revision_docente=False,
+            nota_sugerida=None,
+            confianza=extraction.document_quality,
+            feedback_estudiante="",
+            alertas=extraction.warnings,
+            proveedor=extraction.provider,
+            modelo=extraction.fallback_model or extraction.primary_model,
+            tiempo_ms=extraction.duration_ms,
+            raw_output=parsed,
+            requiere_revision_docente=extraction.requires_review,
         )
-
-    except Exception as exc:
-        logger.error("Vision agent %s failed: %s", model, exc)
-        return AgentResult(nota_sugerida=None, confianza=0, feedback_estudiante="", proveedor="opencode", modelo=model, error=str(exc))
-    finally:
-        if own_client:
-            await client.close()
+    except VisionExtractionError as exc:
+        logger.error("Vision extraction failed: %s", exc.code)
+        return AgentResult(
+            nota_sugerida=None, confianza=0, feedback_estudiante="",
+            proveedor="opencode", modelo=model,
+            tiempo_ms=int((time.monotonic() - started) * 1000),
+            raw_output={
+                "usable": False,
+                "alertas": ["La evidencia no pudo extraerse automáticamente."],
+                "vision_error_code": exc.code,
+                "vision_failure_temporary": exc.temporary,
+            },
+            error=exc.code,
+            requiere_revision_docente=True,
+        )
 
 
 async def vision_router_agent(ctx: AgentContext) -> AgentResult:

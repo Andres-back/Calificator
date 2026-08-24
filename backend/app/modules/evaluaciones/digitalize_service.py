@@ -211,7 +211,7 @@ async def _extract_image_text(
             context = AgentContext(
                 evaluacion_nombre=name,
                 nota_maxima=5.0,
-                blueprint={},
+                blueprint={"nombre": name},
                 image_bytes=variant.data,
                 image_mime=variant.mime,
             )
@@ -227,9 +227,7 @@ async def _extract_image_text(
             raw = result.raw_output or {}
             text = str(raw.get("texto_extraido") or "").strip()
             primary_usable = _declared_usable(raw.get("usable"), default=bool(text))
-            if text and (
-                primary_usable or _has_meaningful_evaluation_text(text)
-            ):
+            if text and (primary_usable or _has_meaningful_evaluation_text(text)):
                 warnings = _clean_warnings(raw.get("alertas"))
                 if variant.rotation_degrees:
                     warnings.append(
@@ -237,11 +235,10 @@ async def _extract_image_text(
                         f"({variant.rotation_degrees:+d}°)."
                     )
                 if not primary_usable:
-                    warnings.append(
-                        "La imagen fue marcada como parcialmente legible, pero se recuperó "
-                        "texto suficiente. Revisa cuidadosamente el borrador."
-                    )
+                    warnings.append("El documento es parcialmente legible; revisa el borrador antes de publicarlo.")
                 return text, warnings
+            if result.error:
+                break
     finally:
         await client.close()
 
@@ -251,10 +248,9 @@ async def _extract_image_text(
             last_result.error,
         )
     else:
-        logger.info(
-            "Primary vision did not recover usable evaluation text after orientation retries; "
-            "trying fallback"
-        )
+        logger.info("Primary vision did not recover usable evaluation text; trying fallback")
+
+
 
     fallback_warnings: list[str] = []
     for variant in variants:
@@ -309,34 +305,39 @@ async def _extract_image_text(
     )
 
 async def _extract_scanned_pdf(content: bytes, name: str) -> tuple[str, list[str]]:
-    import fitz
-
-    document = fitz.open(stream=content, filetype="pdf")
-    try:
-        page_count = len(document)
-        pages_to_process = min(page_count, MAX_SCANNED_PDF_PAGES)
-        parts: list[str] = []
-        warnings: list[str] = []
-        for index in range(pages_to_process):
-            pixmap = document[index].get_pixmap(dpi=180, alpha=False)
-            page_text, page_warnings = await _extract_image_text(
-                pixmap.tobytes("png"),
-                "image/png",
-                f"{name} - página {index + 1}",
-            )
-            parts.append(page_text)
-            warnings.extend(
-                f"Página {index + 1}: {warning}"
-                for warning in page_warnings
-            )
-    finally:
-        document.close()
-    if page_count > MAX_SCANNED_PDF_PAGES:
-        warnings.append(
-            f"El PDF escaneado tiene {page_count} páginas; se analizaron las primeras "
-            f"{MAX_SCANNED_PDF_PAGES}."
+    context = AgentContext(
+        evaluacion_nombre=name,
+        nota_maxima=5.0,
+        blueprint={"nombre": name},
+        image_bytes=content,
+        image_mime="application/pdf",
+    )
+    result = await vision_agent(
+        context,
+        model=settings.OPEN_CODE_DIGITALIZATION_VISION_MODEL,
+        prompt_override=DIGITALIZATION_VISION_PROMPT,
+    )
+    raw = result.raw_output or {}
+    text = str(raw.get("texto_extraido") or "").strip()
+    if result.error:
+        temporary = bool(raw.get("vision_failure_temporary"))
+        raise HTTPException(
+            status_code=(
+                status.HTTP_503_SERVICE_UNAVAILABLE
+                if temporary else status.HTTP_422_UNPROCESSABLE_ENTITY
+            ),
+            detail=(
+                "El proveedor visual no respondió; el trabajo puede reintentarse."
+                if temporary else "No fue posible extraer el PDF escaneado."
+            ),
         )
-    return "\n\n".join(parts).strip(), warnings
+    if not text:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="No se encontró contenido educativo legible en el PDF.",
+        )
+    return text, _clean_warnings(raw.get("alertas"))
+
 
 
 async def extract_evaluation_text(

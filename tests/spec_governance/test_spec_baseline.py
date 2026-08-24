@@ -19,13 +19,14 @@ ALL_SPECS = {
     "013-inventario-tecnico-exhaustivo",
     "014-alinear-autorizacion-superficies",
     "016-calificacion-explicable",
+    "020-deepseek-vision",
     "017-decoracion-frontend",
     "018-recursos-calificacion-fluida",
 }
 OWNED_SPECS = {name for name in ALL_SPECS if name.startswith(tuple(f"{number:03d}-" for number in range(2, 13)))}
 
 
-def test_baseline_contains_exactly_seventeen_active_specs() -> None:
+def test_baseline_contains_exactly_eighteen_active_specs() -> None:
     found = {path.name for path in (ROOT / "specs").iterdir() if path.is_dir() and path.name[:3].isdigit()}
     assert found == ALL_SPECS
 

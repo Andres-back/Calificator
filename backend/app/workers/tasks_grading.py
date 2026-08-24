@@ -186,6 +186,7 @@ async def _grade_delivery(
             "nota_sugerida",
         )
         calificaciones_service.transition_to_grading_if_needed(evaluacion)
+    persistence_started = time.monotonic()
     calificacion = photo_service.apply_grading_result(
         entrega=entrega,
         evaluacion=evaluacion,
@@ -227,6 +228,22 @@ async def _grade_delivery(
             raise
         return current, False
     await db.refresh(calificacion)
+    persistence_ms = max(0, int((time.monotonic() - persistence_started) * 1000))
+    persisted_payload = dict(calificacion.resultado_json) if isinstance(calificacion.resultado_json, dict) else {}
+    persisted_timings = (
+        dict(persisted_payload.get("timings_ms"))
+        if isinstance(persisted_payload.get("timings_ms"), dict)
+        else {}
+    )
+    persisted_timings["persistence"] = persistence_ms
+    persisted_timings["total"] = max(
+        int(persisted_timings.get("total") or 0) + persistence_ms,
+        persistence_ms,
+    )
+    persisted_payload["timings_ms"] = persisted_timings
+    calificacion.resultado_json = persisted_payload
+    entrega.visual_text_json = persisted_payload
+    await db.commit()
     return calificacion, True
 
 
@@ -342,7 +359,7 @@ async def _grade_batch_async(
     async with AsyncSessionLocal() as db:
         pipeline_started = time.monotonic()
         job_timings = {
-            "queue": 0, "prepare": 0, "extraction": 0, "primary": 0,
+            "queue": 0, "prepare": 0, "extraction": 0, "parsing": 0, "primary": 0,
             "secondary": 0, "consolidation": 0, "persistence": 0, "total": 0,
         }
         job_fallbacks: list[dict[str, str]] = []
@@ -374,7 +391,7 @@ async def _grade_batch_async(
             raw_value = getattr(calificacion, "resultado_json", None)
             raw = raw_value if isinstance(raw_value, dict) else {}
             timings = raw.get("timings_ms") if isinstance(raw.get("timings_ms"), dict) else {}
-            for stage in ("prepare", "extraction", "primary", "secondary", "consolidation", "persistence"):
+            for stage in ("prepare", "extraction", "parsing", "primary", "secondary", "consolidation", "persistence"):
                 job_timings[stage] += max(0, int(timings.get(stage) or 0))
             for fallback in raw.get("fallbacks", []):
                 if not isinstance(fallback, dict):

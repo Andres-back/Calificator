@@ -204,7 +204,7 @@ def test_image_extraction_accepts_meaningful_text_when_flagged_unusable(monkeypa
 
     assert "Seleccione el número" in text
     assert "hoja de preguntas" in captured["prompt"].lower()
-    assert captured["model"] == "mimo-v2.5"
+    assert captured["model"] == "deepseek-v4-flash-vision-exp"
     assert captured["timeout"] == 60
     assert any("parcialmente legible" in warning for warning in warnings)
 
@@ -473,7 +473,7 @@ def test_template_fallback_stays_after_real_text_providers(monkeypatch) -> None:
 
 
 def test_digitalization_separates_fast_vision_from_text_structuring() -> None:
-    assert digitalize_service.settings.OPEN_CODE_DIGITALIZATION_VISION_MODEL == "mimo-v2.5"
+    assert digitalize_service.settings.OPEN_CODE_DIGITALIZATION_VISION_MODEL == "deepseek-v4-flash-vision-exp"
     assert digitalize_service.settings.OPEN_CODE_DIGITALIZATION_MODEL == "deepseek-v4-flash"
 
 def test_opencode_text_router_retries_rate_limit(monkeypatch) -> None:

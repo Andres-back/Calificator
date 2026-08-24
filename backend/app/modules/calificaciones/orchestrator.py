@@ -39,7 +39,6 @@ from app.modules.evaluaciones.modality_service import (
     question_numbers_by_section,
 )
 from app.modules.rag.context_builder import build_context_for_grading, format_context_as_text
-from app.services.image_preprocessing import prepare_orientation_variants
 
 logger = get_logger(__name__)
 
@@ -313,6 +312,8 @@ def build_objective_validation(
     validation: list[dict] = []
     for number, question in questions.items():
         question_type = str(question.get("tipo") or "").lower()
+        if question_type not in {"opcion_multiple", "verdadero_falso", "completar", "numerica", "respuesta_corta", "emparejamiento"}:
+            continue
         if number not in expected or number not in detected:
             continue
         expected_answer = expected[number]
@@ -426,7 +427,7 @@ async def orchestrate_grading(
         image_mime: MIME type de la imagen.
         student_response_text: Respuesta texto del estudiante (opcional).
         user_id: ID del usuario (para auditoría).
-        vision_model: Modelo OpenCode Go para visión (default: qwen3.7-plus).
+        vision_model: Modelo OpenCode Go para visión (default: deepseek-v4-flash-vision-exp).
         grader_a_model: Modelo Flash que genera el desglose completo.
         verifier_model: Modelo Flash de verificación compacta.
         grader_b_model: Modelo Pro de contingencia si el principal falla.
@@ -463,58 +464,29 @@ async def orchestrate_grading(
         )
         vision_result: AgentResult | None = None
         coverage_analysis: dict | None = None
+        vision_requires_review = False
 
         image_bytes_for_grading = image_bytes
         image_mime_for_grading = image_mime
         applied_rotation = 0
 
         if image_bytes:
-            vision_variants = prepare_orientation_variants(image_bytes, image_mime)
-            vision_models = _ordered_unique_models(
-                vision_model,
-                settings.PHOTO_GRADING_VISION_FALLBACK_MODEL,
-                settings.PHOTO_GRADING_VISION_LAST_RESORT_MODEL,
+            ctx = AgentContext(
+                evaluacion_nombre=blueprint.get("nombre", ""),
+                nota_maxima=float(blueprint.get("nota_maxima", 5)),
+                blueprint=blueprint,
+                rag_context=rag_context,
+                image_bytes=image_bytes,
+                image_mime=image_mime,
             )
-            ctx: AgentContext | None = None
-            # Primero prueba el mejor modelo en todas las orientaciones. Solo después
-            # consume los modelos de contingencia, evitando latencia innecesaria.
-            for candidate_model in vision_models:
-                for variant in vision_variants:
-                    ctx = AgentContext(
-                        evaluacion_nombre=blueprint.get("nombre", ""),
-                        nota_maxima=float(blueprint.get("nota_maxima", 5)),
-                        blueprint=blueprint,
-                        rag_context=rag_context,
-                        image_bytes=variant.data,
-                        image_mime=variant.mime,
-                    )
-                    vision_result = await vision_agent(
-                        ctx,
-                        model=candidate_model,
-                        client=client,
-                        timeout=None,
-                        max_attempts=max(1, int(settings.PHOTO_GRADING_MODEL_MAX_ATTEMPTS)),
-                    )
-                    if _vision_result_is_usable(vision_result):
-                        image_bytes_for_grading = variant.data
-                        image_mime_for_grading = variant.mime
-                        applied_rotation = variant.rotation_degrees
-                        if vision_result.raw_output is not None:
-                            vision_result.raw_output["rotation_applied"] = applied_rotation
-                        break
-                    logger.warning(
-                        "OpenCode vision model %s did not produce usable evidence "
-                        "at rotation %+d",
-                        candidate_model,
-                        variant.rotation_degrees,
-                    )
-                if _vision_result_is_usable(vision_result):
-                    break
-
+            vision_result = await vision_agent(
+                ctx,
+                model=vision_model,
+                client=client,
+            )
             if (
-                not _vision_result_is_usable(vision_result)
+                vision_result.error
                 and settings.PHOTO_GRADING_CROSS_PROVIDER_FALLBACK_ENABLED
-                and ctx is not None
             ):
                 logger.warning(
                     "OpenCode Go vision exhausted; trying explicit cross-provider fallback"
@@ -522,12 +494,35 @@ async def orchestrate_grading(
                 cross_provider_result = await vision_router_agent(ctx)
                 if _vision_result_is_usable(cross_provider_result):
                     vision_result = cross_provider_result
-            if vision_result and vision_result.raw_output and not vision_result.error:
-                physical_text = vision_result.raw_output.get("texto_extraido", "")
-                physical_answers = vision_result.raw_output.get(
-                    "respuestas_detectadas",
-                    [],
+
+            if vision_result.error:
+                failure_payload = dict(vision_result.raw_output or {})
+                temporary = bool(failure_payload.get("vision_failure_temporary"))
+                return _technical_failure_result(
+                    blueprint,
+                    "vision_failed_temporary" if temporary else "vision_failed_permanent",
+                    "extraction",
+                    pipeline_status="failed_temporary" if temporary else "failed_permanent",
+                    alertas=vision_result.alertas or ["La evidencia requiere intervención docente."],
+                    raw_output={
+                        "orchestrator": "vision_failed",
+                        "vision_result": failure_payload,
+                    },
                 )
+
+            if vision_result.raw_output:
+                physical_text = str(
+                    vision_result.raw_output.get("texto_extraido") or ""
+                )
+                raw_answers = vision_result.raw_output.get(
+                    "respuestas_detectadas", []
+                )
+                physical_answers = [
+                    answer for answer in raw_answers
+                    if isinstance(answer, dict)
+                    and answer.get("legible", True)
+                    and not answer.get("requiere_revision", False)
+                ]
                 coverage_analysis = _evidence_coverage(
                     blueprint,
                     vision_result.raw_output,
@@ -549,14 +544,22 @@ async def orchestrate_grading(
                         physical_answers,
                     ),
                 )
-
+                extraction_meta = vision_result.raw_output.get("vision_extraction")
+                if isinstance(extraction_meta, dict):
+                    applied_rotation = int(
+                        extraction_meta.get("rotation_applied") or 0
+                    )
+                    vision_requires_review = bool(extraction_meta.get("requires_review"))
                 if not vision_result.raw_output.get("usable", True):
                     return _technical_failure_result(
                         blueprint,
                         "image_not_usable",
                         "vision",
                         alertas=vision_result.alertas or ["Imagen no utilizable"],
-                        raw_output={"orchestrator": "vision_failed", "vision_result": vision_result.raw_output},
+                        raw_output={
+                            "orchestrator": "vision_failed",
+                            "vision_result": vision_result.raw_output,
+                        },
                     )
 
         if image_bytes and not texto_extraido.strip():
@@ -727,6 +730,7 @@ async def orchestrate_grading(
             or grading_b.nota_sugerida is None
             or objective_floor_applied
             or coverage_requires_review
+            or vision_requires_review
         )
 
         # Los fallos dobles ya se manejaron antes del comparador.
@@ -738,10 +742,19 @@ async def orchestrate_grading(
             fallbacks.append({"stage": "grading_secondary", "reason": "grader_error"})
         if comparator_failed:
             fallbacks.append({"stage": "consolidation", "reason": "comparator_error"})
+        vision_trace = (
+            vision_result.raw_output.get("vision_extraction", {})
+            if vision_result and isinstance(vision_result.raw_output, dict)
+            else {}
+        )
+        vision_prepare_ms = max(0, int(vision_trace.get("preparation_ms") or 0))
+        vision_parsing_ms = max(0, int(vision_trace.get("parsing_ms") or 0))
+        vision_total_ms = vision_result.tiempo_ms if vision_result else 0
         timings_ms = {
             "queue": 0,
-            "prepare": 0,
-            "extraction": vision_result.tiempo_ms if vision_result else 0,
+            "prepare": vision_prepare_ms,
+            "extraction": max(0, vision_total_ms - vision_prepare_ms - vision_parsing_ms),
+            "parsing": vision_parsing_ms,
             "primary": grading_a.tiempo_ms,
             "secondary": grading_b.tiempo_ms,
             "consolidation": final.tiempo_ms,
@@ -775,6 +788,7 @@ async def orchestrate_grading(
                 "tiempo_ms": vision_result.tiempo_ms if vision_result else 0,
                 "usable": vision_result.raw_output.get("usable") if vision_result and vision_result.raw_output else None,
                 "rotation_applied": applied_rotation,
+                "extraction": vision_result.raw_output.get("vision_extraction"),
             } if vision_result and not vision_result.error else None,
             "grader_a": {
                 "proveedor": grading_a.proveedor,
