@@ -73,3 +73,14 @@ La latencia real posterior debe medirse con un fixture autorizado después del d
 - Docker reconstruido: backend y worker saludables, Celery responde, migraciones concluyen y el esquema OpenAPI 3.1 genera 165 rutas y 165 esquemas; el endpoint público permanece desactivado en producción.
 - Configuración efectiva: `qwen3.7-plus` para visión, `deepseek-v4-flash` para calificación/verificación y `deepseek-v4-pro` solo para arbitraje; lectura sin timeout y conexión/escritura/pool en 15/60/30 s.
 - Gobernanza: 39 pruebas aprobadas, inventario vigente de 388 superficies, diff sin errores y escaneo de secretos limpio en 82 archivos.
+
+
+## Regresión de vistas internas de materia (2026-08-24)
+
+- Causa reproducida: los campos DBA leían `event.currentTarget.value` dentro de un actualizador diferido de React; el evento podía quedar anulado y derribar la ruta al escribir.
+- Corrección: cada campo captura su valor antes de llamar a `setForm`; el mismo patrón inseguro se eliminó del crucigrama del estudiante.
+- Prevención: `audit:actions` falla si detecta lectura de `event.target/currentTarget` dentro de un actualizador funcional de estado.
+- Navegación de materia: Vista general, Evaluaciones, Recursos, Calificar, Asistencia, Boletín y DBA aprobadas a 390×844, sin errores de JavaScript ni desbordamiento horizontal.
+- Chromium: escritura, envío y cierre del formulario DBA aprobados con clic real. WebKit: escritura y manejador de envío aprobados.
+- Frontend completo: auditoría de 301 botones y 80 enlaces; ESLint, TypeScript, 197 pruebas en 54 archivos y build de producción aprobados.
+- Suite responsive completa Chromium: 21 de 21 recorridos aprobados entre 360×800 y 1920×1080, incluidos los tres roles y modo oscuro.

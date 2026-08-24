@@ -116,10 +116,11 @@
 - [X] T047 Impedir que asignar como apoyo o convertir en actividad cambie silenciosamente la materia original; bloquear el selector cuando exista materia, rechazar clientes divergentes con 409 y cubrir UI/backend per FR-002, FR-004 y caso límite de cambio de materia (partial, HIGH)
 - [X] T048 [US2] Mantener `qwen3.7-plus` como extractor principal, sustituir el segundo grader Pro obligatorio por verificación Flash compacta, invocar Pro solo como árbitro ante discrepancia/baja confianza/fallo, limitar salida por etapa y cubrir camino rápido/arbitraje/telemetría en backend/app/modules/calificaciones/, backend/app/core/config.py, backend/.env.example y backend/tests/unit/
 - [X] T049 [US2] No cancelar inferencias aceptadas por duración: esperar lectura de OpenCode, conservar conexión/escritura/pool protegidos, mantener jobs asíncronos recuperables, optimizar payload visual y probar respuesta posterior al antiguo deadline en backend/frontend/specs.
+- [X] T050 [US4] Evitar eventos React anulados en DBA y actividades interactivas, auditar las siete pestañas de una materia y añadir regresión de escritura/navegación en frontend/src/modules/materias/MateriaDbaPage.tsx, frontend/src/modules/evaluaciones/StudentActivityPlayer.tsx, frontend/scripts/audit-actions.mjs y frontend/e2e/p2-responsive.spec.ts (FR-028, FR-032).
 
 ## Trazabilidad de requisitos
 
 - Recursos y permisos, T011–T019 y T047: FR-001, FR-002, FR-003, FR-004, FR-005, FR-006, FR-007, FR-008, FR-009, FR-010.
 - Pipeline y observabilidad, T020–T029 y T048–T049: FR-011, FR-012, FR-013, FR-014, FR-015, FR-016, FR-017, FR-018, FR-019, FR-020, FR-032, FR-033, FR-034, FR-035.
 - Edición contextual, T030–T034: FR-021, FR-022, FR-023, FR-024, FR-025, FR-026.
-- Scroll y experiencia responsive, T035–T040: FR-027, FR-028, FR-029, FR-030, FR-031.
+- Scroll y experiencia responsive, T035–T040 y T050: FR-027, FR-028, FR-029, FR-030, FR-031, FR-032.

@@ -88,6 +88,14 @@ async function installApiMocks(page: Page, targetRole: Role) {
       resumen: { total_registros: 0, presentes: 0, tarde: 0, ausentes: 0, excusas: 0, porcentaje_asistencia: 0 },
       estudiantes: [], jornadas: [],
     });
+    if (path === '/materias/m1/dba-personalizados' && method === 'POST') {
+      await new Promise((resolve) => setTimeout(resolve, 75));
+      return fulfillJson(route, {
+        id: 'dba-e2e', materia_id: 'm1', enunciado: 'Comprende y compara fracciones equivalentes.',
+        evidencias_aprendizaje: 'Explica el procedimiento con un ejemplo.',
+        ejemplo: 'Representa un medio y dos cuartos.', activo: true, created_at: '2026-08-24T00:00:00Z',
+      }, 201);
+    }
     if (path === '/materias/m1/dba' || path === '/materias/m1/dba-personalizados') return fulfillJson(route, []);
     if (path === '/evaluaciones/e1' && method === 'GET') return fulfillJson(route, evaluacion);
     if (path === '/evaluaciones/e1/calificaciones') return fulfillJson(route, []);
@@ -189,6 +197,44 @@ for (const role of ['profesor', 'estudiante', 'admin'] as const) {
     });
   }
 }
+test('profesor recorre las siete vistas de una materia y escribe un DBA sin perder la página', async ({ page, browserName }) => {
+  test.setTimeout(90_000);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await installApiMocks(page, 'profesor');
+  const errors: string[] = [];
+
+  await page.goto('/login');
+  await page.getByLabel(/Correo/i).fill(users.profesor.email);
+  await page.locator('input[type="password"]').fill('password-for-test');
+  await page.getByRole('button', { name: /Iniciar sesión/i }).click();
+  await page.goto('/app/materias/m1');
+  page.on('pageerror', (error) => errors.push(error.message));
+  page.on('console', (message) => { if (message.type() === 'error') errors.push(message.text()); });
+
+  const navigation = page.getByRole('navigation', { name: 'Secciones de la materia' });
+  for (const tab of ['Vista general', 'Evaluaciones', 'Recursos', 'Calificar', 'Asistencia', 'Boletín', 'DBA']) {
+    await navigation.getByRole('link', { name: tab, exact: true }).click();
+    await page.waitForLoadState('networkidle');
+    await expect(page.locator('main#main-content')).toBeVisible();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
+  }
+
+  await page.getByRole('button', { name: 'Nuevo DBA' }).first().click();
+  await page.getByPlaceholder(/Comprende la relación/i).pressSequentially('Comprende y compara fracciones equivalentes.');
+  await page.getByPlaceholder(/Identifica factores/i).fill('Explica el procedimiento con un ejemplo.');
+  await page.getByPlaceholder(/Al visitar un humedal/i).fill('Representa un medio y dos cuartos.');
+  await expect(page.getByRole('button', { name: 'Crear DBA', exact: true })).toBeEnabled();
+  const createButton = page.getByRole('button', { name: 'Crear DBA', exact: true });
+  if (browserName === 'webkit') {
+    // WebKit observa el cierre inmediato del modal como un detach durante click();
+    // dispatchEvent valida el mismo manejador sin el falso requisito de estabilidad visual.
+    await createButton.dispatchEvent('click');
+  } else {
+    await createButton.click();
+  }
+  await expect(page.getByRole('dialog')).toBeHidden();
+  expect(errors, errors.join('\n')).toEqual([]);
+});
 for (const viewport of [viewports[1], viewports[4]]) {
   test(`profesor mantiene modo oscuro y responsive en todas sus vistas en ${viewport.name}`, async ({ page }) => {
     test.setTimeout(90_000);

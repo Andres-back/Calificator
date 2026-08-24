@@ -68,7 +68,10 @@ function CrosswordPlayer({ activity, onAnswersChange, readOnly }: { activity: St
                   value={entries[key] ?? ''}
                   disabled={readOnly}
                   maxLength={1}
-                  onChange={(event) => setEntries((current) => ({ ...current, [key]: event.target.value.slice(-1).toUpperCase() }))}
+                  onChange={(event) => {
+                    const value = event.currentTarget.value.slice(-1).toUpperCase();
+                    setEntries((current) => ({ ...current, [key]: value }));
+                  }}
                   className="focus-ring h-10 w-10 rounded-md border border-border bg-surface text-center text-lg font-bold uppercase"
                 />
               </label>
