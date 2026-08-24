@@ -277,7 +277,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "229ea7431fb0da0e4c30ccc44cf7544788452cfc2ab238f809832488773959f1",
+  "source_digest": "b8eeb037b8ff411f1c3ad0ba6e04db4a44d91145752916f2e1c31545a14b5d42",
   "surfaces": [
     {
       "actors": [
@@ -10037,6 +10037,12 @@
           "level": "unit",
           "reference": "/",
           "status": "direct",
+          "test_path": "backend/tests/unit/test_vision_extractor.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
           "test_path": "backend/tests/unit/test_xali_guidance_policy.py"
         },
         {
@@ -19199,7 +19205,7 @@
       "kind": "job",
       "owner_spec": "012-ia-jobs-produccion",
       "signature": "tasks.grade_batch",
-      "source_line": 612,
+      "source_line": 629,
       "source_path": "backend/app/workers/tasks_grading.py",
       "states": [
         "cancelled",
