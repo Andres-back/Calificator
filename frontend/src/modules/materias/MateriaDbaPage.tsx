@@ -354,7 +354,10 @@ function DbaContent({ materiaId }: { materiaId: string }) {
           <Field label="Enunciado" required hint="Describe el derecho básico de aprendizaje. Mínimo 10 caracteres.">
             <Textarea
               value={form.enunciado}
-              onChange={(event) => setForm((prev) => ({ ...prev, enunciado: event.currentTarget.value }))}
+              onChange={(event) => {
+                const value = event.currentTarget.value;
+                setForm((prev) => ({ ...prev, enunciado: value }));
+              }}
               placeholder="Ej: Comprende la relación entre los seres vivos y su entorno."
               rows={3}
               aria-invalid={Boolean(form.enunciado && !valid)}
@@ -363,7 +366,10 @@ function DbaContent({ materiaId }: { materiaId: string }) {
           <Field label="Evidencias de aprendizaje" hint="Opcional. Indicadores observables de que el estudiante alcanzó el DBA.">
             <Textarea
               value={form.evidencias_aprendizaje}
-              onChange={(event) => setForm((prev) => ({ ...prev, evidencias_aprendizaje: event.currentTarget.value }))}
+              onChange={(event) => {
+                const value = event.currentTarget.value;
+                setForm((prev) => ({ ...prev, evidencias_aprendizaje: value }));
+              }}
               placeholder="Ej: Identifica factores bióticos y abióticos en un ecosistema local."
               rows={2}
             />
@@ -371,7 +377,10 @@ function DbaContent({ materiaId }: { materiaId: string }) {
           <Field label="Ejemplo" hint="Opcional. Situación o caso concreto que ilustra el DBA.">
             <Textarea
               value={form.ejemplo}
-              onChange={(event) => setForm((prev) => ({ ...prev, ejemplo: event.currentTarget.value }))}
+              onChange={(event) => {
+                const value = event.currentTarget.value;
+                setForm((prev) => ({ ...prev, ejemplo: value }));
+              }}
               placeholder="Ej: Al visitar un humedal, el estudiante clasifica los organismos que observa."
               rows={2}
             />

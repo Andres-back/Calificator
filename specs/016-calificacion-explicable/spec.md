@@ -123,8 +123,10 @@ Como responsable académico, necesito que calificaciones online, por visión, mi
 - **FR-031**: Los trabajos asíncronos DEBEN mantener estados visibles de cola, procesamiento, revisión y error, y completar el desglose de forma idempotente.
 - **FR-032**: Profesor, estudiante y administrador DEBEN recibir únicamente el nivel de detalle permitido por su rol y ámbito académico.
 - **FR-033**: La vista de revisión DEBE ser usable desde 360 px, en modo claro y oscuro, con controles táctiles legibles y sin desbordamiento horizontal.
+- **FR-034**: La transparencia por componente DEBE conservarse con evaluación Flash y verificación compacta; el modelo Pro solo DEBE intervenir ante una causa de arbitraje registrada, sin sustituir la autoridad docente.
 - **FR-034**: La especificación viva de calificaciones, sus contratos, historial y pruebas DEBEN actualizarse junto con este cambio.
 - **FR-035**: La adopción del desglose DEBE ser aditiva, progresiva y reversible; calificaciones históricas, endpoints actuales y el flujo vigente DEBEN conservarse hasta que pruebas de regresión y validación controlada demuestren que el nuevo cálculo puede asumir la autoridad sin pérdida funcional.
+- **FR-036**: Una inferencia aceptada por el proveedor NO DEBE descartarse por duración; el job permanece activo y solo fallos reales, respuesta inválida o cancelación humana conducen a reintento o revisión.
 
 ### Entidades clave
 
@@ -165,3 +167,13 @@ Como responsable académico, necesito que calificaciones online, por visión, mi
 - Las calificaciones históricas se conservan; solo se muestran desgloses heredados cuando pueden validarse sin inferencias.
 - Los metadatos técnicos de proveedor pueden formar parte de la auditoría docente, pero no sustituyen la justificación pedagógica ni se muestran al estudiante.
 - Un DBA expresa alineación curricular y puede aparecer en la explicación, pero no representa puntos. Una rúbrica solo participa en la fórmula cuando el profesor definió criterios puntuables y pesos; de lo contrario es descriptiva.
+
+
+## Evolución 018: edición contextual y regresión extensa
+
+- El editor de componente vive dentro de la respuesta seleccionada y conserva identidad, orden y posición aun cuando se invalidan consultas.
+- La vista previa reproduce la fórmula oficial con puntos, escala, ajuste y redondeo antes de persistir.
+- Cancelar, cambiar de componente o volver a la lista con cambios pendientes requiere una decisión explícita; guardar crea una nueva versión auditable.
+- El contrato se verificó con veinte componentes estables, claves únicas, suma de 4,00 sobre 5,00 y cobertura completa.
+- Las pruebas responsivas alcanzan la última respuesta en 360×800, 390×844, 768×1024 y escritorio; WebKit valida el comportamiento equivalente a Safari/iPhone.
+- Las explicaciones continúan siendo pedagógicas y verificables; los tiempos o nombres técnicos del proveedor no sustituyen el porqué de cada puntaje.

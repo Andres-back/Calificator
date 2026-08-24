@@ -41,6 +41,19 @@ async def create_job(
     return created_id
 
 
+async def get_job_queue_time_ms(db: AsyncSession, job_id: UUID) -> int:
+    """Devuelve solo duración técnica; nunca consulta el contenido del trabajo."""
+    statement = text(
+        "SELECT GREATEST(0, EXTRACT(EPOCH FROM (NOW() - created_at)) * 1000) "
+        "FROM ai_jobs WHERE id=:id"
+    ).bindparams(id=str(job_id))
+    value = await db.scalar(statement)
+    try:
+        return max(0, int(value or 0))
+    except (TypeError, ValueError):
+        return 0
+
+
 async def get_job_state(db: AsyncSession, job_id: UUID) -> str | None:
     return await db.scalar(
         text("SELECT estado FROM ai_jobs WHERE id=:id"),

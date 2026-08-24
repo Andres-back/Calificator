@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { BookOpenCheck, Download, Library, Pencil, Plus } from 'lucide-react';
+import { BookOpenCheck, ClipboardList, Download, Library, Pencil, Plus } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Badge, Button, Card, EmptyState, QueryState, Skeleton } from '@/components/ui';
 import { listMateriaResources, pdfUrl } from '@/modules/herramientas/api';
@@ -27,7 +27,7 @@ export function MateriaRecursos() {
             <h2 className="font-display text-xl font-extrabold">{canManageMateria ? 'Recursos del salón' : 'Material para repasar'}</h2>
             <p className="mt-1 text-sm text-muted">
               {canManageMateria
-                ? 'Publica guías, juegos y materiales que no requieren entrega ni generan nota.'
+                ? 'Aquí aparecen desde el borrador los recursos creados para esta materia. Decide cuándo serán apoyo o actividad.'
                 : 'Consulta los recursos que tu docente preparó para ayudarte a practicar.'}
             </p>
           </div>
@@ -47,8 +47,8 @@ export function MateriaRecursos() {
         empty={(
           <EmptyState
             icon={BookOpenCheck}
-            title={canManageMateria ? 'Aún no hay recursos publicados' : 'Tu docente aún no ha publicado recursos'}
-            description={canManageMateria ? 'Crea un recurso y asígnalo a esta materia como material de apoyo.' : 'Cuando haya una guía o práctica disponible aparecerá aquí.'}
+            title={canManageMateria ? 'Aún no hay recursos en esta materia' : 'Tu docente aún no ha publicado recursos'}
+            description={canManageMateria ? 'Crea un recurso seleccionando esta materia; aparecerá aquí como borrador y también en tu biblioteca.' : 'Cuando haya una guía o práctica disponible aparecerá aquí.'}
             action={canManageMateria ? <Link to="/app/herramientas"><Button variant="outline">Abrir mi biblioteca</Button></Link> : undefined}
           />
         )}
@@ -63,11 +63,22 @@ export function MateriaRecursos() {
                 <Link to={destination} className="flex flex-1 flex-col p-5">
                   <div className="flex items-start justify-between gap-3">
                     <div className={cn('grid h-11 w-11 place-items-center rounded-xl bg-gradient-to-br text-white shadow-sm', meta?.gradient ?? 'from-sky-500 to-indigo-600')}><Icon className="h-5 w-5" /></div>
-                    <Badge tone={resource.publicado_estudiantes ? 'success' : 'neutral'}>{resource.publicado_estudiantes ? 'Visible' : 'Retirado'}</Badge>
+                    <Badge tone={resource.publicado_estudiantes ? 'success' : resource.asignacion_tipo === 'actividad' ? 'violet' : 'neutral'}>
+                      {resource.asignacion_tipo === 'actividad'
+                        ? resource.publicado_estudiantes ? 'Actividad visible' : 'Actividad en borrador'
+                        : resource.asignacion_tipo === 'apoyo'
+                          ? resource.publicado_estudiantes ? 'Apoyo visible' : 'Apoyo oculto'
+                          : 'Borrador'}
+                    </Badge>
                   </div>
                   <p className="mt-4 text-xs font-semibold uppercase tracking-wide text-muted">{meta?.label ?? resource.tipo}</p>
                   <h3 className="mt-1 line-clamp-2 font-display text-lg font-bold">{resource.titulo}</h3>
-                  <p className="mt-2 text-xs text-muted">Actualizado {formatDate(resource.updated_at ?? resource.created_at)}</p>
+                  <p className="mt-2 text-xs text-muted">
+                    {resource.asignacion_tipo === 'actividad' ? (
+                      <span className="mb-1 flex items-center gap-1"><ClipboardList className="h-3.5 w-3.5" /> {resource.evaluacion_recepcion_habilitada ? 'Recibe entregas' : 'Entregas cerradas'}</span>
+                    ) : null}
+                    Actualizado {formatDate(resource.updated_at ?? resource.created_at)}
+                  </p>
                 </Link>
                 <div className="flex flex-wrap items-center gap-2 border-t border-border px-4 py-3">
                   <Link to={destination} className="flex-1">

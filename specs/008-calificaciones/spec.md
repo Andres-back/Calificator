@@ -60,3 +60,13 @@ Como equipo, necesito actualizar estos artefactos cuando cambie el comportamient
 ## Extensión vigente: calificación explicable
 
 La especificación [016-calificacion-explicable](../016-calificacion-explicable/spec.md) amplía este dominio con componentes versionados por pregunta o rúbrica, fórmula reproducible, ajustes docentes auditables, redacción de claves por rol y PQRS vinculadas a una versión. La adopción inicial es controlada y no sustituye silenciosamente la nota del flujo histórico.
+
+## Evolución 018: revisión fluida y tiempos observables
+
+- La revisión docente muestra cada respuesta, referencia, explicación verificable, puntaje obtenido/máximo y fórmula final dentro de un único desglose versionado.
+- El ajuste se realiza dentro de la tarjeta activa, previsualiza la nueva nota y exige motivo interno y explicación pedagógica antes de guardar.
+- Cambiar de respuesta o abandonar el detalle con datos sin guardar exige confirmación; un conflicto de versión no sobrescribe cambios de otra sesión.
+- En móvil existe un único propietario de desplazamiento, altura dinámica, áreas seguras y objetivos táctiles de al menos 44 px para volver, cerrar y crear incidencias.
+- La extracción visual se ejecuta una vez con `qwen3.7-plus` como principal configurable. Un evaluador Flash genera el desglose y un verificador Flash compacto valida puntajes y fórmula; el modelo Pro solo arbitra discrepancia, confianza baja, ambigüedad o fallo. Una demora mantiene el job activo; solo un fallo real de transporte o respuesta inválida termina en revisión docente y nunca en publicación automática.
+- Los tiempos técnicos son diagnósticos aditivos y no alteran la fórmula, la autoridad docente ni la única calificación vigente.
+- La regresión de veinte componentes, Chromium, WebKit, accesibilidad y modo claro/oscuro se conserva en la especificación 018.

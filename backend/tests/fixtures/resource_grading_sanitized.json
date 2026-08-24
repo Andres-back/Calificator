@@ -1,0 +1,231 @@
+{
+  "resource_draft": {
+    "id": "10000000-0000-4000-8000-000000000001",
+    "materia_id": "20000000-0000-4000-8000-000000000001",
+    "tipo": "taller",
+    "titulo": "Taller sanitizado",
+    "asignacion_tipo": null,
+    "publicado_estudiantes": false
+  },
+  "readable_photo": {
+    "filename": "evaluacion-legible.png",
+    "mime": "image/png",
+    "width": 1200,
+    "height": 1600,
+    "expected_quality": "usable",
+    "synthetic": true
+  },
+  "ambiguous_photo": {
+    "filename": "evaluacion-ambigua.png",
+    "mime": "image/png",
+    "width": 600,
+    "height": 800,
+    "expected_quality": "review_required",
+    "synthetic": true
+  },
+  "grading": {
+    "nota_maxima": 5,
+    "componentes": [
+      {
+        "componente_id": "00000000-0000-4000-8000-000000000001",
+        "pregunta_numero": 1,
+        "titulo": "Pregunta 1",
+        "puntos_obtenidos": 0.2,
+        "puntos_maximos": 0.25,
+        "estado": "parcial",
+        "explicacion_estudiante": "La respuesta muestra avance y necesita una revisión breve.",
+        "clave": "pregunta:1"
+      },
+      {
+        "componente_id": "00000000-0000-4000-8000-000000000002",
+        "pregunta_numero": 2,
+        "titulo": "Pregunta 2",
+        "puntos_obtenidos": 0.2,
+        "puntos_maximos": 0.25,
+        "estado": "parcial",
+        "explicacion_estudiante": "La respuesta muestra avance y necesita una revisión breve.",
+        "clave": "pregunta:2"
+      },
+      {
+        "componente_id": "00000000-0000-4000-8000-000000000003",
+        "pregunta_numero": 3,
+        "titulo": "Pregunta 3",
+        "puntos_obtenidos": 0.2,
+        "puntos_maximos": 0.25,
+        "estado": "parcial",
+        "explicacion_estudiante": "La respuesta muestra avance y necesita una revisión breve.",
+        "clave": "pregunta:3"
+      },
+      {
+        "componente_id": "00000000-0000-4000-8000-000000000004",
+        "pregunta_numero": 4,
+        "titulo": "Pregunta 4",
+        "puntos_obtenidos": 0.2,
+        "puntos_maximos": 0.25,
+        "estado": "parcial",
+        "explicacion_estudiante": "La respuesta muestra avance y necesita una revisión breve.",
+        "clave": "pregunta:4"
+      },
+      {
+        "componente_id": "00000000-0000-4000-8000-000000000005",
+        "pregunta_numero": 5,
+        "titulo": "Pregunta 5",
+        "puntos_obtenidos": 0.2,
+        "puntos_maximos": 0.25,
+        "estado": "parcial",
+        "explicacion_estudiante": "La respuesta muestra avance y necesita una revisión breve.",
+        "clave": "pregunta:5"
+      },
+      {
+        "componente_id": "00000000-0000-4000-8000-000000000006",
+        "pregunta_numero": 6,
+        "titulo": "Pregunta 6",
+        "puntos_obtenidos": 0.2,
+        "puntos_maximos": 0.25,
+        "estado": "parcial",
+        "explicacion_estudiante": "La respuesta muestra avance y necesita una revisión breve.",
+        "clave": "pregunta:6"
+      },
+      {
+        "componente_id": "00000000-0000-4000-8000-000000000007",
+        "pregunta_numero": 7,
+        "titulo": "Pregunta 7",
+        "puntos_obtenidos": 0.2,
+        "puntos_maximos": 0.25,
+        "estado": "parcial",
+        "explicacion_estudiante": "La respuesta muestra avance y necesita una revisión breve.",
+        "clave": "pregunta:7"
+      },
+      {
+        "componente_id": "00000000-0000-4000-8000-000000000008",
+        "pregunta_numero": 8,
+        "titulo": "Pregunta 8",
+        "puntos_obtenidos": 0.2,
+        "puntos_maximos": 0.25,
+        "estado": "parcial",
+        "explicacion_estudiante": "La respuesta muestra avance y necesita una revisión breve.",
+        "clave": "pregunta:8"
+      },
+      {
+        "componente_id": "00000000-0000-4000-8000-000000000009",
+        "pregunta_numero": 9,
+        "titulo": "Pregunta 9",
+        "puntos_obtenidos": 0.2,
+        "puntos_maximos": 0.25,
+        "estado": "parcial",
+        "explicacion_estudiante": "La respuesta muestra avance y necesita una revisión breve.",
+        "clave": "pregunta:9"
+      },
+      {
+        "componente_id": "00000000-0000-4000-8000-000000000010",
+        "pregunta_numero": 10,
+        "titulo": "Pregunta 10",
+        "puntos_obtenidos": 0.2,
+        "puntos_maximos": 0.25,
+        "estado": "parcial",
+        "explicacion_estudiante": "La respuesta muestra avance y necesita una revisión breve.",
+        "clave": "pregunta:10"
+      },
+      {
+        "componente_id": "00000000-0000-4000-8000-000000000011",
+        "pregunta_numero": 11,
+        "titulo": "Pregunta 11",
+        "puntos_obtenidos": 0.2,
+        "puntos_maximos": 0.25,
+        "estado": "parcial",
+        "explicacion_estudiante": "La respuesta muestra avance y necesita una revisión breve.",
+        "clave": "pregunta:11"
+      },
+      {
+        "componente_id": "00000000-0000-4000-8000-000000000012",
+        "pregunta_numero": 12,
+        "titulo": "Pregunta 12",
+        "puntos_obtenidos": 0.2,
+        "puntos_maximos": 0.25,
+        "estado": "parcial",
+        "explicacion_estudiante": "La respuesta muestra avance y necesita una revisión breve.",
+        "clave": "pregunta:12"
+      },
+      {
+        "componente_id": "00000000-0000-4000-8000-000000000013",
+        "pregunta_numero": 13,
+        "titulo": "Pregunta 13",
+        "puntos_obtenidos": 0.2,
+        "puntos_maximos": 0.25,
+        "estado": "parcial",
+        "explicacion_estudiante": "La respuesta muestra avance y necesita una revisión breve.",
+        "clave": "pregunta:13"
+      },
+      {
+        "componente_id": "00000000-0000-4000-8000-000000000014",
+        "pregunta_numero": 14,
+        "titulo": "Pregunta 14",
+        "puntos_obtenidos": 0.2,
+        "puntos_maximos": 0.25,
+        "estado": "parcial",
+        "explicacion_estudiante": "La respuesta muestra avance y necesita una revisión breve.",
+        "clave": "pregunta:14"
+      },
+      {
+        "componente_id": "00000000-0000-4000-8000-000000000015",
+        "pregunta_numero": 15,
+        "titulo": "Pregunta 15",
+        "puntos_obtenidos": 0.2,
+        "puntos_maximos": 0.25,
+        "estado": "parcial",
+        "explicacion_estudiante": "La respuesta muestra avance y necesita una revisión breve.",
+        "clave": "pregunta:15"
+      },
+      {
+        "componente_id": "00000000-0000-4000-8000-000000000016",
+        "pregunta_numero": 16,
+        "titulo": "Pregunta 16",
+        "puntos_obtenidos": 0.2,
+        "puntos_maximos": 0.25,
+        "estado": "parcial",
+        "explicacion_estudiante": "La respuesta muestra avance y necesita una revisión breve.",
+        "clave": "pregunta:16"
+      },
+      {
+        "componente_id": "00000000-0000-4000-8000-000000000017",
+        "pregunta_numero": 17,
+        "titulo": "Pregunta 17",
+        "puntos_obtenidos": 0.2,
+        "puntos_maximos": 0.25,
+        "estado": "parcial",
+        "explicacion_estudiante": "La respuesta muestra avance y necesita una revisión breve.",
+        "clave": "pregunta:17"
+      },
+      {
+        "componente_id": "00000000-0000-4000-8000-000000000018",
+        "pregunta_numero": 18,
+        "titulo": "Pregunta 18",
+        "puntos_obtenidos": 0.2,
+        "puntos_maximos": 0.25,
+        "estado": "parcial",
+        "explicacion_estudiante": "La respuesta muestra avance y necesita una revisión breve.",
+        "clave": "pregunta:18"
+      },
+      {
+        "componente_id": "00000000-0000-4000-8000-000000000019",
+        "pregunta_numero": 19,
+        "titulo": "Pregunta 19",
+        "puntos_obtenidos": 0.2,
+        "puntos_maximos": 0.25,
+        "estado": "parcial",
+        "explicacion_estudiante": "La respuesta muestra avance y necesita una revisión breve.",
+        "clave": "pregunta:19"
+      },
+      {
+        "componente_id": "00000000-0000-4000-8000-000000000020",
+        "pregunta_numero": 20,
+        "titulo": "Pregunta 20",
+        "puntos_obtenidos": 0.2,
+        "puntos_maximos": 0.25,
+        "estado": "parcial",
+        "explicacion_estudiante": "La respuesta muestra avance y necesita una revisión breve.",
+        "clave": "pregunta:20"
+      }
+    ]
+  }
+}

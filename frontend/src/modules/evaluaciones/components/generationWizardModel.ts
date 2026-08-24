@@ -1,6 +1,6 @@
 import type { Evaluacion, EvaluacionModalidad } from '@/types/api';
 
-export const WIZARD_VERSION = 6;
+export const WIZARD_VERSION = 7;
 export const WIZARD_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 export const MIN_QUESTIONS = 3;
 export const MAX_QUESTIONS = 30;
@@ -46,6 +46,15 @@ export interface EditableQuestion {
   expanded: boolean;
 }
 
+
+export interface EditableRubricCriterion extends Record<string, unknown> {
+  nombre: string;
+  descripcion: string;
+  peso_porcentaje: number;
+  puntaje_maximo?: number;
+  niveles: Record<string, string>;
+  dba_ids: string[];
+}
 export interface WizardState {
   step: number;
   materiaId: string;
@@ -64,7 +73,7 @@ export interface WizardState {
   referenceFile: ReferenceFileMetadata | null;
   instruccionesAdicionales: string;
   generatedEvaluationId: string | null;
-  generatedCriteria: Record<string, unknown>[];
+  generatedCriteria: EditableRubricCriterion[];
   questions: EditableQuestion[];
 }
 
@@ -137,6 +146,10 @@ export function validateStep(state: WizardState, step = state.step): string | nu
     if (!state.generatedEvaluationId || state.questions.length === 0) {
       return 'Genera el borrador antes de continuar.';
     }
+    if (state.useRubric) {
+      const rubricError = validateRubricCriteria(state.generatedCriteria);
+      if (rubricError) return rubricError;
+    }
     const firstError = state.questions
       .map((question, index) => validateQuestion(question, index))
       .find(Boolean);
@@ -158,6 +171,118 @@ export function validateStep(state: WizardState, step = state.step): string | nu
   return null;
 }
 
+
+export function normalizeRubricCriteria(
+  criteria: Record<string, unknown>[] | null | undefined,
+): EditableRubricCriterion[] {
+  return (criteria ?? []).map((criterion) => {
+    const rawLevels = criterion.niveles;
+    const levels = rawLevels && typeof rawLevels === 'object' && !Array.isArray(rawLevels)
+      ? Object.fromEntries(
+          Object.entries(rawLevels as Record<string, unknown>)
+            .map(([name, description]) => [name.trim(), String(description ?? '').trim()])
+            .filter(([name]) => Boolean(name)),
+        )
+      : {};
+    const rawWeight = Number(criterion.peso_porcentaje ?? 0);
+    return {
+      ...criterion,
+      nombre: String(criterion.nombre ?? '').trim(),
+      descripcion: String(criterion.descripcion ?? '').trim(),
+      peso_porcentaje: Number.isFinite(rawWeight) ? rawWeight : 0,
+      puntaje_maximo: Number.isFinite(Number(criterion.puntaje_maximo))
+        ? Number(criterion.puntaje_maximo)
+        : undefined,
+      niveles: levels,
+      dba_ids: Array.isArray(criterion.dba_ids) ? criterion.dba_ids.map(String) : [],
+    };
+  });
+}
+
+export function rubricWeightTotal(criteria: EditableRubricCriterion[]): number {
+  return Number(criteria.reduce((total, criterion) => total + Number(criterion.peso_porcentaje || 0), 0).toFixed(2));
+}
+
+export function validateRubricCriteria(criteria: EditableRubricCriterion[]): string | null {
+  if (!criteria.length) return 'Agrega al menos un criterio a la rúbrica.';
+  const names = criteria.map((criterion) => criterion.nombre.trim().toLocaleLowerCase());
+  if (names.some((name) => !name)) return 'Todos los criterios necesitan un nombre.';
+  if (new Set(names).size !== names.length) return 'Los criterios de la rúbrica no pueden repetirse.';
+  for (const [index, criterion] of criteria.entries()) {
+    const weight = Number(criterion.peso_porcentaje);
+    if (!Number.isFinite(weight) || weight <= 0) {
+      return `Criterio ${index + 1}: el peso debe ser mayor que cero.`;
+    }
+    const invalidLevel = Object.entries(criterion.niveles).find(
+      ([name, description]) => !name.trim() || !description.trim(),
+    );
+    if (invalidLevel) return `Criterio ${index + 1}: completa todos los descriptores de nivel.`;
+  }
+  const total = rubricWeightTotal(criteria);
+  if (Math.abs(total - 100) > 0.01) return `Los pesos de la rúbrica deben sumar 100 %. Total actual: ${total} %.`;
+  return null;
+}
+
+export function rebalanceRubricWeights(
+  criteria: EditableRubricCriterion[],
+): EditableRubricCriterion[] {
+  if (!criteria.length) return [];
+  const shared = Math.floor((100 / criteria.length) * 100) / 100;
+  return criteria.map((criterion, index) => ({
+    ...criterion,
+    peso_porcentaje: index === criteria.length - 1
+      ? Number((100 - shared * (criteria.length - 1)).toFixed(2))
+      : shared,
+  }));
+}
+
+export function createBlankRubricCriterion(
+  criteria: EditableRubricCriterion[],
+): EditableRubricCriterion[] {
+  return [
+    ...criteria,
+    {
+      nombre: `Criterio ${criteria.length + 1}`,
+      descripcion: '',
+      peso_porcentaje: 0,
+      puntaje_maximo: 0,
+      niveles: {},
+      dba_ids: [],
+    },
+  ];
+}
+
+export function moveRubricCriterion(
+  criteria: EditableRubricCriterion[],
+  index: number,
+  direction: -1 | 1,
+): EditableRubricCriterion[] {
+  const target = index + direction;
+  if (target < 0 || target >= criteria.length) return criteria;
+  const next = [...criteria];
+  [next[index], next[target]] = [next[target], next[index]];
+  return next;
+}
+
+export function prepareRubricCriteriaForSave(
+  criteria: EditableRubricCriterion[],
+  maximumGrade: number,
+): Record<string, unknown>[] {
+  return criteria.map((criterion) => {
+    const weight = Number(Number(criterion.peso_porcentaje).toFixed(2));
+    return {
+      ...criterion,
+      nombre: criterion.nombre.trim(),
+      descripcion: criterion.descripcion.trim(),
+      peso_porcentaje: weight,
+      puntaje_maximo: Number(((weight / 100) * maximumGrade).toFixed(3)),
+      niveles: Object.fromEntries(
+        Object.entries(criterion.niveles).map(([name, description]) => [name.trim(), description.trim()]),
+      ),
+      dba_ids: criterion.dba_ids.map(String),
+    };
+  });
+}
 export function validateReferenceFile(file: Pick<File, 'name' | 'type' | 'size'>): string | null {
   const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp'];
   if (!allowedTypes.includes(file.type)) return 'Selecciona un PDF o una imagen JPG, PNG o WebP.';
@@ -362,7 +487,7 @@ export function evaluationToWizardState(evaluation: Evaluacion): WizardState {
     rubricCriteria: criteria.map((criterion) => String(criterion.nombre ?? '')).filter(Boolean),
     counts,
     generatedEvaluationId: evaluation.id,
-    generatedCriteria: criteria,
+    generatedCriteria: normalizeRubricCriteria(criteria),
     questions,
   };
 }

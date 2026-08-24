@@ -23,6 +23,26 @@ const materia = {
   updated_at: '2026-01-01T00:00:00Z',
 };
 
+
+const generatedResource = {
+  id: 'resource-associated-1',
+  tipo: 'guia',
+  titulo: 'Guía del ciclo del agua',
+  materia_id: materia.id,
+  materia_nombre: materia.nombre,
+  contenido_json: { titulo: 'Guía del ciclo del agua', instrucciones: 'Repasa y responde.' },
+  archivo_url: null,
+  asignacion_tipo: null,
+  publicado_estudiantes: false,
+  fecha_publicacion: null,
+  evaluacion_id: null,
+  evaluacion_estado: null,
+  evaluacion_modalidad: null,
+  evaluacion_recepcion_habilitada: null,
+  created_at: '2026-08-22T00:00:00Z',
+  updated_at: '2026-08-22T00:00:00Z',
+};
+
 const resourceTypes = [
   'crucigrama',
   'sopa_letras',
@@ -62,6 +82,9 @@ async function mockApplication(page: Page) {
         descripcion: 'Explica los cambios de estado del agua.',
       }]);
     }
+    if (path === '/herramientas/guia' && request.method() === 'POST') return json(generatedResource);
+    if (path === '/herramientas/' + generatedResource.id && request.method() === 'GET') return json(generatedResource);
+    if (path === '/herramientas/' + generatedResource.id + '/evaluaciones') return json([]);
     if (path === '/herramientas' && request.method() === 'GET') return json([]);
     return json({});
   });
@@ -136,4 +159,21 @@ test('DBA solo se exige cuando el profesor activa esa opción', async ({ page })
   await page.getByRole('button', { name: 'Revisar antes de generar' }).click();
 
   await expect(page.getByText('Alineación con DBA')).toBeVisible();
+});
+
+
+test('generar con materia conserva el recurso y abre la decisión de asignación', async ({ page }) => {
+  await page.goto('/app/herramientas/nuevo?tipo=guia');
+  await page.getByRole('textbox', { name: /^Título/ }).fill(generatedResource.titulo);
+  await page.getByRole('textbox', { name: /^Tema/ }).fill('El ciclo del agua');
+  await page.getByRole('combobox').selectOption(materia.id);
+  await page.getByRole('button', { name: 'Revisar antes de generar' }).click();
+  await page.getByRole('button', { name: 'Sí, generar material' }).click();
+
+  await expect(page).toHaveURL(new RegExp('/app/herramientas/' + generatedResource.id + '\\?action=assign'));
+  await expect(page.getByRole('heading', { name: 'Asignar a una clase' })).toBeVisible();
+  await expect(page.getByLabel('Materia o salón')).toBeDisabled();
+  await expect(page.getByText(/Conserva la materia elegida al generar/)).toBeVisible();
+  await expect(page.getByText('Material de apoyo', { exact: true })).toBeVisible();
+  await expect(page.getByText('Taller o actividad evaluable', { exact: true })).toBeVisible();
 });

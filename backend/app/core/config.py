@@ -61,17 +61,40 @@ class Settings(BaseSettings):
     OPEN_CODE_PRESENTATION_MAX_TOKENS: int = 8192
     OPEN_CODE_DIGITALIZATION_VISION_MODEL: str = "mimo-v2.5"
     OPEN_CODE_DIGITALIZATION_VISION_TIMEOUT_SECONDS: int = 60
-    OPEN_CODE_DIGITALIZATION_MODEL: str = "mimo-v2.5"
-    OPEN_CODE_DIGITALIZATION_TIMEOUT_SECONDS: int = 180
+    OPEN_CODE_DIGITALIZATION_MODEL: str = "deepseek-v4-flash"
+    OPEN_CODE_DIGITALIZATION_TIMEOUT_SECONDS: int = 60
     OPEN_CODE_DIGITALIZATION_MAX_TOKENS: int = 3072
+    # Compatibilidad con despliegues anteriores; ya no cancela el job.
+    DIGITALIZATION_TOTAL_TIMEOUT_SECONDS: int = 180
     OPEN_CODE_TIMEOUT_SECONDS: int = 45
+    # Transporte: una inferencia aceptada espera sin read-timeout. Estos límites
+    # detectan únicamente conexión, escritura o espera de pool realmente rotas.
+    AI_PROVIDER_CONNECT_TIMEOUT_SECONDS: int = 15
+    AI_PROVIDER_WRITE_TIMEOUT_SECONDS: int = 60
+    AI_PROVIDER_POOL_TIMEOUT_SECONDS: int = 30
+    DIGITALIZATION_SLOW_WARNING_SECONDS: int = 90
+    PHOTO_GRADING_SLOW_WARNING_SECONDS: int = 90
     PHOTO_GRADING_VISION_MODEL: str = "qwen3.7-plus"
     PHOTO_GRADING_VISION_FALLBACK_MODEL: str = "qwen3.6-plus"
     PHOTO_GRADING_VISION_LAST_RESORT_MODEL: str = "mimo-v2.5"
     PHOTO_GRADING_TEXT_MODEL: str = "deepseek-v4-flash"
+    PHOTO_GRADING_VERIFIER_MODEL: str = "deepseek-v4-flash"
+    # Compatibilidad: este modelo Pro ahora se usa solo como árbitro excepcional.
     PHOTO_GRADING_TEXT_REVIEW_MODEL: str = "deepseek-v4-pro"
-    PHOTO_GRADING_COMPARATOR_MODEL: str = "deepseek-v4-flash"
+    PHOTO_GRADING_COMPARATOR_MODEL: str = "deepseek-v4-pro"
     PHOTO_GRADING_CROSS_PROVIDER_FALLBACK_ENABLED: bool = False
+    # Nombres legacy conservados para compatibilidad; son umbrales observacionales.
+    PHOTO_GRADING_VISION_TIMEOUT_SECONDS: int = 75
+    PHOTO_GRADING_GRADERS_TIMEOUT_SECONDS: int = 45
+    PHOTO_GRADING_VERIFIER_TIMEOUT_SECONDS: int = 20
+    PHOTO_GRADING_ARBITER_TIMEOUT_SECONDS: int = 30
+    PHOTO_GRADING_PRIMARY_MAX_TOKENS: int = 3072
+    PHOTO_GRADING_VERIFIER_MAX_TOKENS: int = 1536
+    PHOTO_GRADING_ARBITRATION_MIN_CONFIDENCE: float = 0.75
+    PHOTO_GRADING_ARBITRATION_SCORE_DELTA: float = 0.5
+    PHOTO_GRADING_MODEL_MAX_ATTEMPTS: int = 1
+    # Compatibilidad con despliegues anteriores; ya no cancela el pipeline.
+    PHOTO_GRADING_TOTAL_TIMEOUT_SECONDS: int = 180
     EXPLAINABLE_GRADING_GENERATION_ENABLED: bool = True
     EXPLAINABLE_GRADING_AUTHORITY_ENABLED: bool = False
 

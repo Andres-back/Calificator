@@ -1,11 +1,12 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { convertToEvaluacion, listMaterialEvaluaciones } from './api';
+import { convertToEvaluacion, listMaterialEvaluaciones, setMaterialVisibility } from './api';
 
 
 const transport = vi.hoisted(() => ({
   get: vi.fn(),
   post: vi.fn(),
+  patch: vi.fn(),
 }));
 
 vi.mock('@/lib/api', () => ({ api: transport }));
@@ -40,6 +41,17 @@ describe('generated material assignment API', () => {
     );
   });
 
+  it('changes visibility without touching the evaluation reception endpoint', async () => {
+    const material = { id: 'material-1', publicado_estudiantes: false };
+    transport.patch.mockResolvedValue({ data: material });
+
+    await expect(setMaterialVisibility('material-1', false)).resolves.toBe(material);
+    expect(transport.patch).toHaveBeenCalledWith(
+      '/herramientas/material-1/visibilidad',
+      { visible: false },
+    );
+    expect(transport.post).not.toHaveBeenCalled();
+  });
   it('lists the canonical evaluations already created from the material', async () => {
     const evaluations = [
       { id: 'evaluation-1', material_origen_id: 'material-1' },

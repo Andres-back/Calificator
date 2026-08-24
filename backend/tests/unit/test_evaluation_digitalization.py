@@ -18,6 +18,7 @@ from app.modules.evaluaciones.schemas import DigitalizarEvaluacionExternaRequest
 from app.shared.enums import EvaluacionModalidad
 from app.services.llm_router import LLMRouter
 from app.services import llm_router as llm_router_module
+from app.workers import tasks_digitalization
 
 
 def _structure(*, missing_answer: int | None = None) -> dict:
@@ -172,7 +173,7 @@ class _FakeVisionClient:
 def test_image_extraction_accepts_meaningful_text_when_flagged_unusable(monkeypatch) -> None:
     captured: dict[str, str] = {}
 
-    async def fake_vision(context, model, client, prompt_override=None, timeout=None):
+    async def fake_vision(context, model, client, prompt_override=None, timeout=None, max_attempts=None):
         captured["prompt"] = prompt_override
         captured["model"] = model
         captured["timeout"] = timeout
@@ -209,7 +210,7 @@ def test_image_extraction_accepts_meaningful_text_when_flagged_unusable(monkeypa
 
 
 def test_image_extraction_uses_document_fallback_on_provider_error(monkeypatch) -> None:
-    async def failed_primary(context, model, client, prompt_override=None, timeout=None):
+    async def failed_primary(context, model, client, prompt_override=None, timeout=None, max_attempts=None):
         return AgentResult(
             nota_sugerida=None,
             confianza=0,
@@ -242,7 +243,7 @@ def test_image_extraction_uses_document_fallback_on_provider_error(monkeypatch) 
 
 
 def test_image_extraction_reports_provider_outage_without_blaming_photo(monkeypatch) -> None:
-    async def failed_primary(context, model, client, prompt_override=None, timeout=None):
+    async def failed_primary(context, model, client, prompt_override=None, timeout=None, max_attempts=None):
         return AgentResult(
             nota_sugerida=None,
             confianza=0,
@@ -408,9 +409,10 @@ def test_document_routing_never_falls_through_to_other_providers(monkeypatch) ->
     providers = asyncio.run(router._load_providers("evaluacion_digitalizar"))
 
     assert [provider for provider, _call in providers] == ["open_code"]
-    assert router._provider_configs["open_code"]["model"] == "mimo-v2.5"
-    assert router._provider_configs["open_code"]["timeout_seconds"] == 180
+    assert router._provider_configs["open_code"]["model"] == "deepseek-v4-flash"
+    assert router._provider_configs["open_code"]["timeout_seconds"] == 60
     assert router._provider_configs["open_code"]["max_tokens"] == 3072
+    assert router._provider_configs["open_code"]["wait_for_completion"] is True
 
 
 def test_template_fallback_stays_after_real_text_providers(monkeypatch) -> None:
@@ -470,9 +472,9 @@ def test_template_fallback_stays_after_real_text_providers(monkeypatch) -> None:
     assert router._provider_configs["open_code"]["max_tokens"] == 8192
 
 
-def test_digitalization_defaults_to_mimo_fast_path() -> None:
+def test_digitalization_separates_fast_vision_from_text_structuring() -> None:
     assert digitalize_service.settings.OPEN_CODE_DIGITALIZATION_VISION_MODEL == "mimo-v2.5"
-    assert digitalize_service.settings.OPEN_CODE_DIGITALIZATION_MODEL == "mimo-v2.5"
+    assert digitalize_service.settings.OPEN_CODE_DIGITALIZATION_MODEL == "deepseek-v4-flash"
 
 def test_opencode_text_router_retries_rate_limit(monkeypatch) -> None:
     request = httpx.Request("POST", "https://example.test/messages")
@@ -495,11 +497,13 @@ def test_opencode_text_router_retries_rate_limit(monkeypatch) -> None:
     class FakeHTTPClient:
         calls = 0
         last_url = ""
+        last_timeout = None
         last_headers: dict = {}
         last_json: dict = {}
 
         def __init__(self, timeout):
             self.timeout = timeout
+            type(self).last_timeout = timeout
 
         async def __aenter__(self):
             return self
@@ -526,6 +530,7 @@ def test_opencode_text_router_retries_rate_limit(monkeypatch) -> None:
         "base_url": "https://example.test",
         "model": "qwen3.6-plus",
         "timeout_seconds": 5,
+        "wait_for_completion": True,
     }
 
     result = asyncio.run(router._call_open_code("Digitaliza", json_mode=True))
@@ -536,6 +541,9 @@ def test_opencode_text_router_retries_rate_limit(monkeypatch) -> None:
     assert FakeHTTPClient.last_headers["x-api-key"] == "test-key"
     assert "response_format" not in FakeHTTPClient.last_json
     assert FakeHTTPClient.last_json["max_tokens"] == 8192
+    assert isinstance(FakeHTTPClient.last_timeout, httpx.Timeout)
+    assert FakeHTTPClient.last_timeout.read is None
+    assert FakeHTTPClient.last_timeout.connect is not None
 
 
 def test_opencode_retries_with_environment_key_after_stored_key_401(monkeypatch) -> None:
@@ -559,6 +567,7 @@ def test_opencode_retries_with_environment_key_after_stored_key_401(monkeypatch)
 
         def __init__(self, timeout):
             self.timeout = timeout
+            type(self).last_timeout = timeout
 
         async def __aenter__(self):
             return self
@@ -615,6 +624,7 @@ def test_opencode_retries_with_environment_key_after_stored_key_403(monkeypatch)
 
         def __init__(self, timeout):
             self.timeout = timeout
+            type(self).last_timeout = timeout
 
         async def __aenter__(self):
             return self
@@ -672,7 +682,7 @@ def test_image_extraction_retries_rotated_photo_before_rejecting(monkeypatch) ->
     seen_sizes: list[tuple[int, int]] = []
 
     async def orientation_sensitive_vision(
-        context, model, client, prompt_override=None, timeout=None,
+        context, model, client, prompt_override=None, timeout=None, max_attempts=None,
     ):
         size = Image.open(BytesIO(context.image_bytes)).size
         seen_sizes.append(size)
@@ -715,3 +725,20 @@ def test_image_extraction_retries_rotated_photo_before_rejecting(monkeypatch) ->
     assert seen_sizes == [(320, 180), (180, 320)]
     assert "32,37 + 41,32" in text
     assert any("orientación" in warning for warning in warnings)
+
+def test_digitalization_waits_for_delayed_provider_result(monkeypatch) -> None:
+    expected = {"status": "success", "progreso": 100, "evaluation_id": "eval-1"}
+
+    async def delayed_run(**_kwargs):
+        await asyncio.sleep(0.01)
+        return expected
+
+    def forbidden_wait_for(*_args, **_kwargs):
+        raise AssertionError("La duración no debe cancelar la digitalización")
+
+    monkeypatch.setattr(tasks_digitalization, "_run_and_dispose", delayed_run)
+    monkeypatch.setattr(asyncio, "wait_for", forbidden_wait_for)
+
+    result = asyncio.run(tasks_digitalization._run_until_complete(job_id=uuid4()))
+
+    assert result == expected

@@ -102,7 +102,7 @@ def test_assign_support_rejects_a_resource_already_used_as_activity(monkeypatch)
     assert error.value.status_code == 409
 
 
-def test_student_subject_resources_are_filtered_to_published_support(monkeypatch) -> None:
+def test_student_subject_resources_include_only_visible_support_or_activity(monkeypatch) -> None:
     subject_id = uuid4()
     student = SimpleNamespace(id=uuid4(), rol="estudiante")
     now = datetime.now()
@@ -121,6 +121,7 @@ def test_student_subject_resources_are_filtered_to_published_support(monkeypatch
         evaluacion_id=None,
         evaluacion_estado=None,
         evaluacion_modalidad=None,
+        evaluacion_recepcion_habilitada=None,
     )
     authorized = False
 
@@ -143,7 +144,7 @@ def test_student_subject_resources_are_filtered_to_published_support(monkeypatch
     assert "mg.asignacion_tipo = 'apoyo'" in sql
     assert "mg.publicado_estudiantes = true" in sql
 
-def test_student_can_open_assigned_activity_without_receiving_solution_keys(monkeypatch) -> None:
+def test_student_can_open_visible_activity_without_receiving_solution_keys(monkeypatch) -> None:
     subject_id = uuid4()
     material_id = uuid4()
     student = SimpleNamespace(id=uuid4(), rol="estudiante")
@@ -164,11 +165,12 @@ def test_student_can_open_assigned_activity_without_receiving_solution_keys(monk
         created_at=now,
         updated_at=now,
         asignacion_tipo="actividad",
-        publicado_estudiantes=False,
+        publicado_estudiantes=True,
         fecha_publicacion=now,
         evaluacion_id=uuid4(),
         evaluacion_estado="publicada",
         evaluacion_modalidad="fisica",
+        evaluacion_recepcion_habilitada=True,
     )
 
     async def can_read(_db, selected_subject_id, user):
@@ -249,3 +251,98 @@ def test_editing_matching_pairs_rebuilds_columns_and_solution_key() -> None:
     assert [item["numero"] for item in rebuilt["columna_izquierda"]] == [1, 2]
     assert {item["texto"] for item in rebuilt["columna_derecha"]} == {"6", "20"}
     assert len(rebuilt["soluciones"]) == 2
+
+def test_teacher_subject_resources_include_drafts_and_activities(monkeypatch) -> None:
+    subject_id = uuid4()
+    teacher = SimpleNamespace(id=uuid4(), rol="profesor")
+
+    async def can_manage(_db, selected_subject_id, user):
+        assert selected_subject_id == subject_id
+        assert user is teacher
+
+    monkeypatch.setattr(service.materias_service, "ensure_can_manage_materia", can_manage)
+    db = FakeDB()
+
+    assert asyncio.run(service.list_materials_for_materia(db, subject_id, teacher)) == []
+    sql = str(db.executions[0][0])
+    assert "mg.materia_id = :materia_id" in sql
+    assert "mg.asignacion_tipo = 'apoyo'" not in sql
+    assert "mg.publicado_estudiantes = true" not in sql
+
+
+def test_visibility_update_does_not_change_evaluation_reception(monkeypatch) -> None:
+    material_id = uuid4()
+    teacher = SimpleNamespace(id=uuid4(), rol="profesor")
+    calls = 0
+
+    async def get_material(_db, _material_id, _teacher_id):
+        nonlocal calls
+        calls += 1
+        return {
+            "id": material_id,
+            "asignacion_tipo": "apoyo",
+            "publicado_estudiantes": calls > 1,
+        }
+
+    monkeypatch.setattr(service, "get_material", get_material)
+    db = FakeDB()
+    result = asyncio.run(
+        service.set_material_visibility(db, material_id, teacher, visible=True)
+    )
+
+    assert result["publicado_estudiantes"] is True
+    sql = str(db.executions[0][0])
+    assert "publicado_estudiantes = :visible" in sql
+    assert "recepcion_habilitada" not in sql
+
+def test_assign_support_rejects_changing_original_subject(monkeypatch) -> None:
+    material_id = uuid4()
+    original_subject_id = uuid4()
+    other_subject_id = uuid4()
+    teacher = SimpleNamespace(id=uuid4(), rol="profesor")
+
+    async def get_material(*_args):
+        return {"id": material_id, "materia_id": original_subject_id}
+
+    monkeypatch.setattr(service, "get_material", get_material)
+    db = FakeDB()
+
+    with pytest.raises(HTTPException) as error:
+        asyncio.run(
+            service.assign_material_as_support(
+                db, material_id, teacher, other_subject_id
+            )
+        )
+
+    assert error.value.status_code == 409
+    assert "conserva la materia" in error.value.detail
+    assert db.executions == []
+
+
+def test_convert_activity_rejects_changing_original_subject(monkeypatch) -> None:
+    material_id = uuid4()
+    original_subject_id = uuid4()
+    other_subject_id = uuid4()
+    teacher = SimpleNamespace(id=uuid4(), rol="profesor")
+
+    async def get_material(*_args):
+        return {"id": material_id, "materia_id": original_subject_id}
+
+    async def no_linked_evaluation(*_args):
+        return None
+
+    monkeypatch.setattr(service, "get_material", get_material)
+    monkeypatch.setattr(service, "_linked_evaluation", no_linked_evaluation)
+
+    with pytest.raises(HTTPException) as error:
+        asyncio.run(
+            service.convertir_a_evaluacion(
+                FakeDB(),
+                material_id,
+                teacher,
+                SimpleNamespace(materia_id=other_subject_id),
+            )
+        )
+
+    assert error.value.status_code == 409
+    assert "conserva la materia" in error.value.detail

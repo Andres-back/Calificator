@@ -25,6 +25,7 @@ from app.modules.herramientas.schemas import (
     MaterialListItem,
     MaterialRead,
     MaterialUpdate,
+    MaterialVisibilityRequest,
     ParaColorearRequest,
     PlanRefuerzoRequest,
     QuizRapidoRequest,
@@ -326,6 +327,18 @@ async def retirar_apoyo(
 ) -> dict:
     require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
     return await service.withdraw_support_material(db, material_id, current_user)
+
+@router.patch("/{material_id}/visibilidad", response_model=MaterialRead)
+async def cambiar_visibilidad_material(
+    material_id: UUID,
+    req: MaterialVisibilityRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
+    return await service.set_material_visibility(
+        db, material_id, current_user, visible=req.visible
+    )
 
 @router.post("/{material_id}/duplicar", status_code=status.HTTP_201_CREATED)
 async def duplicar_material(

@@ -75,6 +75,36 @@ const evaluation: Evaluacion = {
   updated_at: '2026-01-01T00:00:00Z',
 };
 
+
+const rubricEvaluation: Evaluacion = {
+  ...evaluation,
+  criterios: [
+    {
+      nombre: 'Comprensión conceptual',
+      descripcion: 'Explica los conceptos principales.',
+      peso_porcentaje: 60,
+      puntaje_maximo: 3,
+      dba_ids: [],
+      niveles: {
+        Excelente: 'Explica con precisión y ejemplos.',
+        Satisfactorio: 'Explica la idea principal.',
+        Inicial: 'Necesita apoyo para explicar.',
+      },
+    },
+    {
+      nombre: 'Aplicación',
+      descripcion: 'Aplica el procedimiento correctamente.',
+      peso_porcentaje: 40,
+      puntaje_maximo: 2,
+      dba_ids: [],
+      niveles: {
+        Excelente: 'Aplica y justifica cada paso.',
+        Satisfactorio: 'Aplica el procedimiento.',
+        Inicial: 'Presenta errores de aplicación.',
+      },
+    },
+  ],
+};
 function renderWizard(onCompleted = vi.fn(), initialEvaluation: Evaluacion | null = null) {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
@@ -147,7 +177,7 @@ describe('GenerationWizard', () => {
 
     await user.click(screen.getByRole('button', { name: 'Generar borrador' }));
     expect(mocks.generate).toHaveBeenCalledWith(expect.objectContaining({ modalidad: 'fisica' }));
-    expect(await screen.findByText('Revisa y edita las preguntas')).toBeInTheDocument();
+    expect(await screen.findByText('Revisa y edita la evaluación')).toBeInTheDocument();
     await user.clear(screen.getByLabelText(/Enunciado/i));
     await user.type(screen.getByLabelText(/Enunciado/i), 'Pregunta uno editada');
     await user.click(screen.getByRole('button', { name: 'Siguiente' }));
@@ -179,7 +209,7 @@ describe('GenerationWizard', () => {
     expect(generateButton).toHaveAttribute('aria-busy', 'true');
 
     resolveGeneration(evaluation);
-    expect(await screen.findByText('Revisa y edita las preguntas')).toBeInTheDocument();
+    expect(await screen.findByText('Revisa y edita la evaluación')).toBeInTheDocument();
     await user.tab();
     expect(document.activeElement).toBeInstanceOf(HTMLElement);
   });
@@ -250,6 +280,14 @@ describe('GenerationWizard', () => {
     expect(screen.getByRole('button', { name: 'Agregar pregunta' })).toBeInTheDocument();
   });
 
+  it('uses the wide single-scroll layout when editing questions', () => {
+    renderWizard(vi.fn(), { ...evaluation, estado: 'publicada', recepcion_habilitada: true });
+
+    expect(screen.getByRole('dialog', { name: /Editar contenido/i })).toHaveClass('max-w-[min(96vw,90rem)]');
+    const questionList = screen.getByRole('list', { name: 'Preguntas editables' });
+    expect(questionList).not.toHaveClass('max-h-[52vh]', 'overflow-y-auto');
+    expect(screen.getByRole('complementary', { name: 'Asistencia opcional de Xali' }).parentElement).toHaveClass('order-1');
+  });
   it('recovers, discards, and starts over from a saved draft', async () => {
     const state = createEmptyWizardState(materia.id);
     state.nombre = 'Evaluación recuperada';
@@ -267,4 +305,49 @@ describe('GenerationWizard', () => {
     await user.click(await screen.findByRole('button', { name: 'Empezar de nuevo' }));
     expect(screen.getByText('Datos básicos de la evaluación')).toBeInTheDocument();
   });
+  it('lets the teacher edit the AI rubric before confirming the evaluation', async () => {
+    mocks.generate.mockResolvedValueOnce(rubricEvaluation);
+    mocks.update.mockResolvedValueOnce(rubricEvaluation);
+    const user = userEvent.setup();
+    renderWizard();
+
+    await user.type(screen.getByLabelText(/Nombre de la evaluación/i), 'Evaluación con rúbrica editable');
+    await user.click(screen.getByRole('button', { name: 'Siguiente' }));
+    await user.click(screen.getByRole('checkbox', { name: /Evaluar con rúbrica/i }));
+    await user.click(screen.getByRole('button', { name: 'Siguiente' }));
+    await user.click(screen.getByRole('button', { name: 'Siguiente' }));
+    await user.click(screen.getByRole('button', { name: 'Siguiente' }));
+    await user.click(screen.getByRole('button', { name: 'Generar borrador' }));
+
+    const criterionName = await screen.findByLabelText('Nombre del criterio 1');
+    await user.clear(criterionName);
+    await user.type(criterionName, 'Argumentación matemática');
+    const criterionDescription = screen.getByLabelText('Descripción del criterio 1');
+    await user.clear(criterionDescription);
+    await user.type(criterionDescription, 'Justifica el procedimiento con evidencias.');
+    const firstWeight = screen.getByLabelText('Peso del criterio 1');
+    await user.clear(firstWeight);
+    await user.type(firstWeight, '50');
+    expect(screen.getByRole('button', { name: 'Siguiente' })).toBeDisabled();
+    expect(screen.getAllByText(/deben sumar 100 %/i).length).toBeGreaterThan(0);
+    const secondWeight = screen.getByLabelText('Peso del criterio 2');
+    await user.clear(secondWeight);
+    await user.type(secondWeight, '50');
+    const levelDescription = screen.getByLabelText('Descripción del nivel Excelente del criterio 1');
+    await user.clear(levelDescription);
+    await user.type(levelDescription, 'Justifica cada paso con precisión.');
+
+    expect(screen.getByText('Peso total: 100 %')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Siguiente' }));
+    await user.click(screen.getByRole('button', { name: 'Crear evaluación' }));
+
+    await waitFor(() => expect(mocks.update).toHaveBeenCalledTimes(1));
+    expect(mocks.update.mock.calls[0][1].criterios[0]).toMatchObject({
+      nombre: 'Argumentación matemática',
+      descripcion: 'Justifica el procedimiento con evidencias.',
+      peso_porcentaje: 50,
+      puntaje_maximo: 2.5,
+      niveles: { Excelente: 'Justifica cada paso con precisión.' },
+    });
+  }, 10_000);
 });

@@ -18,7 +18,7 @@ def prepare_orientation_variants(
     content: bytes,
     mime: str,
     *,
-    max_side: int = 2600,
+    max_side: int = 2200,
 ) -> list[PreparedImage]:
     """Normaliza EXIF/contraste y ofrece orientaciones alternativas para OCR.
 
@@ -47,7 +47,20 @@ def prepare_orientation_variants(
     )
     variants: list[PreparedImage] = []
     for degrees, image in orientations:
-        output = BytesIO()
-        image.save(output, format="JPEG", quality=92, optimize=True)
-        variants.append(PreparedImage(output.getvalue(), "image/jpeg", degrees))
+        # 2 200 px conserva escritura y símbolos matemáticos, pero evita enviar fotos
+        # de cámara de 8-20 MP. La compresión adaptativa reduce el base64 y la carga.
+        encoded = b""
+        for quality in (88, 82, 76):
+            output = BytesIO()
+            image.save(
+                output,
+                format="JPEG",
+                quality=quality,
+                optimize=True,
+                progressive=True,
+            )
+            encoded = output.getvalue()
+            if len(encoded) <= 2_500_000:
+                break
+        variants.append(PreparedImage(encoded, "image/jpeg", degrees))
     return variants

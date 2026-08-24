@@ -183,6 +183,11 @@ def test_enrolled_student_detail_visibility_follows_the_lifecycle(
     monkeypatch.setattr(evaluation_service, "is_student_enrolled", enrolled)
     monkeypatch.setattr(evaluation_service, "_student_progress_by_evaluation", student_progress)
 
+    async def linked_material_visible(_db, _evaluation):
+        return True
+
+    monkeypatch.setattr(evaluation_service, "_linked_material_is_visible", linked_material_visible)
+
     if visible:
         result = asyncio.run(
             evaluation_service.ensure_can_read_evaluation(

@@ -1,6 +1,7 @@
 """Logging de uso de IA — ledger por llamada a proveedores."""
 from __future__ import annotations
 
+import re
 import uuid
 from datetime import datetime
 from typing import Any
@@ -14,6 +15,35 @@ from app.db.session import AsyncSessionLocal
 from app.services.ai_pricing import estimate_cost
 
 logger = get_logger(__name__)
+
+CANONICAL_STAGES = {
+    "extraction", "structure", "key_repair", "grading_primary",
+    "grading_secondary", "targeted_recheck", "consolidation",
+    "compat_usage_logger", "other",
+}
+
+
+def _safe_stage(value: str | None) -> str | None:
+    if value is None:
+        return None
+    return value if value in CANONICAL_STAGES else "other"
+
+
+def _safe_error_code(value: str | None) -> str | None:
+    if not value:
+        return None
+    normalized = value.lower()
+    if "timeout" in normalized or "timed out" in normalized:
+        return "provider_timeout"
+    if "429" in normalized or "rate" in normalized:
+        return "rate_limited"
+    if "401" in normalized or "403" in normalized or "credential" in normalized:
+        return "provider_auth_failed"
+    http_status = re.search(r"\b(?:http[_ ]?)?([45]\d{2})\b", normalized)
+    if http_status:
+        return f"http_{http_status.group(1)}"
+    return "provider_error"
+
 
 # Columnas de ai_usage_events según la migración existente
 # Usamos SQL directo para evitar dependencia del modelo ORM
@@ -46,6 +76,8 @@ async def log_ai_usage(
     Retorna el request_id generado, o None si falla.
     """
     rid = request_id or str(uuid.uuid4())
+    stage = _safe_stage(stage)
+    error_code = _safe_error_code(error_code)
     now = datetime.utcnow()
 
     if started_at is None:

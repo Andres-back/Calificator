@@ -73,7 +73,7 @@
 ## Fase 7: Validación, adopción progresiva y cierre
 
 - [X] T037 Implementar modo controlado y autoridad configurable sin alterar notas oficiales en `backend/app/modules/calificaciones/breakdown_service.py` y `backend/app/core/config.py` (FR-035)
-- [X] T038 [P] Añadir regresiones de endpoints actuales y comparación vigente/nuevo en `backend/tests/unit/test_breakdown_compatibility.py` (FR-035)
+- [X] T038 [P] Añadir regresiones de endpoints actuales, comparación vigente/nuevo y espera recuperable de inferencias aceptadas en `backend/tests/unit/test_breakdown_compatibility.py` y `backend/tests/unit/test_photo_grading_failures.py` (FR-035, FR-036)
 - [X] T039 [P] Añadir recorrido E2E docente-estudiante y vistas 360/390/768 en `frontend/e2e/explainable-grading.spec.ts` (SC-006–SC-011)
 - [X] T040 Medir diez ejecuciones equivalentes e idempotencia y documentar resultados en `specs/016-calificacion-explicable/validation.md` (SC-012–SC-013)
 - [X] T041 Ejecutar migración upgrade/downgrade/upgrade y suites backend unitarias e integración según `specs/016-calificacion-explicable/quickstart.md`

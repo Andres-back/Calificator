@@ -31,7 +31,15 @@ async def get_job(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> dict:
-    return await _get_job(db, job_id, current_user.id)
+    job = await _get_job(db, job_id, current_user.id)
+    result = job.get("resultado_json") if isinstance(job.get("resultado_json"), dict) else {}
+    job["timings_ms"] = result.get("timings_ms", {})
+    job["terminal_reason"] = result.get("terminal_reason")
+    job["fallbacks"] = result.get("fallbacks", [])
+    job["pipeline_run_id"] = result.get("pipeline_run_id")
+    job["deadline_ms"] = result.get("deadline_ms")
+    job["slow_after_ms"] = result.get("slow_after_ms")
+    return job
 
 
 @router.get("/{job_id}/estado", response_model=JobEstadoRead)

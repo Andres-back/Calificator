@@ -43,6 +43,7 @@ export interface MaterialListItem {
   evaluacion_id?: string | null;
   evaluacion_estado?: EvaluacionEstado | null;
   evaluacion_modalidad?: EvaluacionModalidad | null;
+  evaluacion_recepcion_habilitada?: boolean | null;
   asignacion_tipo?: 'apoyo' | 'actividad' | null;
   publicado_estudiantes?: boolean;
   fecha_publicacion?: string | null;
@@ -60,6 +61,7 @@ export interface Material<T = Record<string, unknown>> {
   evaluacion_id?: string | null;
   evaluacion_estado?: EvaluacionEstado | null;
   evaluacion_modalidad?: EvaluacionModalidad | null;
+  evaluacion_recepcion_habilitada?: boolean | null;
   asignacion_tipo?: 'apoyo' | 'actividad' | null;
   publicado_estudiantes?: boolean;
   fecha_publicacion?: string | null;
@@ -567,4 +569,31 @@ export interface DBAUnifiedItem {
   descripcion: string;
   evidencias_aprendizaje: string | null;
   ejemplo: string | null;
+}
+
+export interface PipelineTimings {
+  queue: number;
+  prepare: number;
+  extraction: number;
+  structure?: number;
+  primary: number;
+  secondary: number;
+  consolidation: number;
+  persistence: number;
+  total: number;
+}
+
+export interface AIJobRead {
+  id: string;
+  tipo: string;
+  estado: 'queued' | 'running' | 'success' | 'failed' | 'cancelled';
+  progreso: number;
+  resultado_json: Record<string, unknown>;
+  timings_ms: PipelineTimings;
+  terminal_reason: string | null;
+  fallbacks: Array<{ stage: string; reason: string; previous_candidate?: string | null }>;
+  pipeline_run_id: string | null;
+  deadline_ms: number | null;
+  slow_after_ms: number | null;
+  error: string | null;
 }

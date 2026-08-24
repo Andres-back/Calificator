@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import time
 from collections.abc import Callable
 
 from uuid import UUID
@@ -14,6 +15,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 
+from app.core.config import settings
 from app.core.logging import get_logger
 from app.db.session import AsyncSessionLocal, engine
 from app.modules.calificaciones import photo_service, service as calificaciones_service
@@ -251,14 +253,6 @@ async def _mark_delivery_for_retry(
         existing.resultado_json = failed_payload
         existing.estado = CalificacionEstado.REQUIERE_REVISION.value
     evidence_metadata = current.get("evidencia_consolidada")
-    await create_automatic_breakdown(
-        db,
-        calificacion=calificacion,
-        blueprint=evaluation_to_grading_blueprint(evaluacion),
-        raw_output=grading.raw_model_output,
-        pipeline_run_id=str(queued_payload.get("job_id") or "") or None,
-    )
-
     salon_session_id = (
         evidence_metadata.get("salon_sesion_id")
         if isinstance(evidence_metadata, dict)
@@ -346,6 +340,50 @@ async def _grade_batch_async(
     progress_callback: ProgressCallback | None = None,
 ) -> dict:
     async with AsyncSessionLocal() as db:
+        pipeline_started = time.monotonic()
+        job_timings = {
+            "queue": 0, "prepare": 0, "extraction": 0, "primary": 0,
+            "secondary": 0, "consolidation": 0, "persistence": 0, "total": 0,
+        }
+        job_fallbacks: list[dict[str, str]] = []
+        if job_id:
+            job_timings["queue"] = await jobs_service.get_job_queue_time_ms(db, job_id)
+
+        def build_result(**values) -> dict:
+            job_timings["total"] = max(
+                0, int((time.monotonic() - pipeline_started) * 1000)
+            )
+            status_value = str(values.get("status_value") or "")
+            terminal_reason = (
+                "success" if status_value == JobEstado.SUCCESS.value
+                else "processing_failed" if status_value == JobEstado.FAILED.value
+                else None
+            )
+            payload = _build_result(**values)
+            payload.update({
+                "pipeline_run_id": str(job_id) if job_id else None,
+                "timings_ms": dict(job_timings),
+                "fallbacks": list(job_fallbacks),
+                "terminal_reason": terminal_reason,
+                "deadline_ms": None,
+                "slow_after_ms": int(settings.PHOTO_GRADING_SLOW_WARNING_SECONDS) * 1000,
+            })
+            return payload
+
+        def record_grade_telemetry(calificacion: Calificacion) -> None:
+            raw_value = getattr(calificacion, "resultado_json", None)
+            raw = raw_value if isinstance(raw_value, dict) else {}
+            timings = raw.get("timings_ms") if isinstance(raw.get("timings_ms"), dict) else {}
+            for stage in ("prepare", "extraction", "primary", "secondary", "consolidation", "persistence"):
+                job_timings[stage] += max(0, int(timings.get(stage) or 0))
+            for fallback in raw.get("fallbacks", []):
+                if not isinstance(fallback, dict):
+                    continue
+                job_fallbacks.append({
+                    "stage": str(fallback.get("stage") or "unknown")[:80],
+                    "reason": str(fallback.get("reason") or "fallback")[:120],
+                })
+
         processed = 0
         skipped = 0
         errors: list[dict] = []
@@ -365,7 +403,7 @@ async def _grade_batch_async(
                         calificacion_ids=[],
                     )
                 if state in {JobEstado.SUCCESS.value, JobEstado.FAILED.value}:
-                    return _build_result(
+                    return build_result(
                         evaluacion_id=evaluacion_id,
                         status_value=state,
                         processed=0,
@@ -426,6 +464,7 @@ async def _grade_batch_async(
                         profesor_id=effective_profesor_id,
                     )
                     calificacion_ids.append(str(calificacion.id))
+                    record_grade_telemetry(calificacion)
                     if created:
                         processed += 1
                     else:
@@ -469,7 +508,7 @@ async def _grade_batch_async(
                     _emit_progress(progress_callback, progreso, result)
                     return result
 
-                interim = _build_result(
+                interim = build_result(
                     evaluacion_id=evaluacion_id,
                     status_value=JobEstado.RUNNING.value,
                     processed=processed,
@@ -492,7 +531,7 @@ async def _grade_batch_async(
                 if errors and processed == 0 and skipped == 0
                 else JobEstado.SUCCESS.value
             )
-            result = _build_result(
+            result = build_result(
                 evaluacion_id=evaluacion_id,
                 status_value=final_state,
                 processed=processed,
@@ -536,7 +575,7 @@ async def _grade_batch_async(
         except Exception as exc:
             await db.rollback()
             if job_id:
-                result = _build_result(
+                result = build_result(
                     evaluacion_id=evaluacion_id,
                     status_value=JobEstado.FAILED.value,
                     processed=processed,

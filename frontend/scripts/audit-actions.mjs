@@ -72,6 +72,11 @@ let linkCount = 0;
 for (const file of walk(root)) {
   const sourceText = fs.readFileSync(file, 'utf8');
   const source = ts.createSourceFile(file, sourceText, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+  const unsafeEventUpdater = /set[A-Za-z0-9_$]+\s*\(\s*\([^)]*\)\s*=>[\s\S]{0,240}?\b(?:event|e)\.(?:currentTarget|target)\.(?:value|checked|files)/g;
+  for (const match of sourceText.matchAll(unsafeEventUpdater)) {
+    const line = sourceText.slice(0, match.index).split('\n').length;
+    findings.push(`${path.relative(process.cwd(), file)}:${line} evento DOM leído dentro de un actualizador diferido; captura el valor antes de setState`);
+  }
 
   function visit(node) {
     if (ts.isJsxOpeningElement(node) || ts.isJsxSelfClosingElement(node)) {

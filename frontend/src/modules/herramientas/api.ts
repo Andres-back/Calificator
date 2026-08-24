@@ -47,6 +47,11 @@ export async function withdrawSupportMaterial(id: string): Promise<Material> {
   return data;
 }
 
+export async function setMaterialVisibility(id: string, visible: boolean): Promise<Material> {
+  const { data } = await api.patch<Material>(`${BASE}/${id}/visibilidad`, { visible });
+  return data;
+}
+
 export async function duplicateMaterial(id: string): Promise<Material> {
   const { data } = await api.post<Material>(`${BASE}/${id}/duplicar`);
   return data;

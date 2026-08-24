@@ -118,4 +118,56 @@ describe('DigitalizationJobMonitor', () => {
       });
     });
   });
-});
+  it('shows the slowest safe stage and elapsed time while navigation remains available', async () => {
+    queueJob();
+    mocks.get.mockResolvedValue({
+      data: {
+        id: 'job-1',
+        estado: 'running',
+        progreso: 50,
+        resultado_json: {},
+        timings_ms: { queue: 200, prepare: 800, extraction: 18000, total: 19000 },
+        terminal_reason: null,
+        error: null,
+      },
+    });
+
+    renderMonitor();
+
+    expect(await screen.findByText(/Leyendo documento/)).toHaveTextContent('19 s transcurridos');
+    expect(screen.getByText(/Puedes continuar navegando/)).toBeInTheDocument();
+    await waitFor(() => {
+      expect(readPendingDigitalizations()[0].timingsMs?.extraction).toBe(18000);
+    });
+  });
+
+
+  it('explains that a slow provider request remains active instead of being cancelled', async () => {
+    queueJob();
+    const [stored] = readPendingDigitalizations();
+    window.localStorage.setItem(
+      'xcalificator.pending-digitalizations.v1',
+      JSON.stringify([{
+        ...stored,
+        createdAt: new Date(Date.now() - 100_000).toISOString(),
+        updatedAt: new Date(Date.now() - 100_000).toISOString(),
+      }]),
+    );
+    mocks.get.mockResolvedValue({
+      data: {
+        id: 'job-1',
+        estado: 'running',
+        progreso: 20,
+        resultado_json: {},
+        timings_ms: {},
+        terminal_reason: null,
+        error: null,
+      },
+    });
+
+    renderMonitor();
+
+    expect(await screen.findByText(/OpenCode sigue trabajando/)).toHaveTextContent(
+      'La solicitud permanece activa',
+    );
+  });});
