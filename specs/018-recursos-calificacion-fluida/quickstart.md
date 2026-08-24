@@ -142,3 +142,14 @@ Aceptación: misma decisión por componente y diferencia de nota máxima 0,1, o 
 - Procesar solo fixture autorizado.
 - Medir p50/p90 por etapa; si una ejecución supera el objetivo, confirmar que permanece activa y finalmente persiste el resultado.
 - Si calidad o latencia regresa, revertir el commit reproduciblemente.
+## Validación 7 - Rúbrica generada editable
+
+1. Crear o editar una evaluación con rúbrica generada por IA.
+2. Modificar nombre, descripción, peso y un descriptor de nivel.
+3. Agregar, reordenar y eliminar un criterio.
+4. Dejar el total distinto de 100 % y confirmar que no se puede continuar.
+5. Usar “Distribuir pesos” o ajustar manualmente hasta 100 %.
+6. Confirmar y comprobar que el PATCH conserva el contenido editado y recalcula puntaje_maximo según la nota máxima.
+7. Repetir en escritorio y 390×844 verificando que todos los controles sean visibles y utilizables.
+
+Criterios: FR-032, FR-036 y SC-016.

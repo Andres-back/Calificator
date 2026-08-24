@@ -9,6 +9,11 @@
 - **P**: Si crear un recurso exige seleccionar materia, ¿cuándo debe aparecer en esa materia? → **R**: Inmediatamente después de generarse; queda visible para el profesor como borrador y solo se muestra al estudiante después de elegir y publicar su tipo de asignación.
 - **P**: ¿Una operación lenta debe terminar por tiempo? → **R**: No. Una inferencia aceptada permanece activa hasta recibir respuesta o un fallo real; los umbrales temporales solo informan lentitud.
 
+
+### Sesión 2026-08-24
+
+- **P**: ¿La rúbrica propuesta por la IA queda bloqueada? → **R**: No. Antes de confirmar la evaluación, el profesor puede editar nombre, descripción, peso y descriptores de nivel, además de agregar, ordenar o eliminar criterios. El total debe ser 100 % y se guarda con las preguntas mediante el contrato vigente.
+
 ## Escenarios de usuario y pruebas
 
 ### Historia 1 - Asignar un recurso sin perder su contexto (Prioridad: P1)
@@ -133,6 +138,7 @@ Como profesor, quiero recorrer lista y detalle en celular, tableta y escritorio 
 - **FR-033**: La extracción física DEBE conservar `qwen3.7-plus` como modelo visual principal configurable; los modelos textuales NO DEBEN recibir nuevamente la imagen completa.
 - **FR-034**: El camino normal DEBE producir un desglose completo con un evaluador rápido y validarlo con un verificador compacto; el modelo Pro solo PUEDE invocarse como árbitro ante discrepancia, confianza baja, ambigüedad o fallo del verificador.
 - **FR-035**: Los límites de salida DEBEN ser específicos por función. Los umbrales de tiempo solo DEBEN marcar una operación como lenta y alimentar telemetría; NO DEBEN cancelar una solicitud aceptada ni convertir la demora en una entrega sin nota.
+- **FR-036**: La rúbrica generada por IA DEBE ser un borrador editable antes de confirmar: el profesor PUEDE modificar nombre, descripción, peso y descriptores, agregar, ordenar o eliminar criterios, y el sistema DEBE impedir continuar mientras los pesos no sumen 100 %.
 
 ### Entidades clave
 
@@ -160,6 +166,7 @@ Como profesor, quiero recorrer lista y detalle en celular, tableta y escritorio 
 - **SC-013**: En el 100 % de ejecuciones simuladas sin discrepancia se usa `qwen3.7-plus` para extracción, Flash para evaluar/verificar y cero llamadas al árbitro Pro.
 - **SC-014**: En el 100 % de ejecuciones simuladas con discrepancia o baja confianza se invoca el árbitro Pro una sola vez y se conserva el desglose transparente y la revisión docente cuando corresponda.
 - **SC-015**: Una respuesta simulada que llega después del antiguo límite de 180 s produce y persiste la nota exactamente una vez; el job no cambia a error por duración.
+- **SC-016**: En una evaluación con rúbrica generada, el profesor modifica al menos un criterio y su peso antes de confirmar; el 100 % del contenido editado llega al contrato de actualización con pesos totalizados en 100 %.
 
 ## Supuestos
 

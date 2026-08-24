@@ -19,11 +19,11 @@ import { extraerReferenciaEvaluacion, generarBorradorEvaluacion, updateEvaluacio
 import { DBASelector } from './DBASelector';
 import { PasosGuia } from './PasosGuia';
 import {
-  createBlankQuestion, createEmptyWizardState, discardWizardDraft, duplicateQuestion,
+  createBlankQuestion, createBlankRubricCriterion, createEmptyWizardState, discardWizardDraft, duplicateQuestion,
   evaluationToEditableQuestions, evaluationToWizardState, loadWizardDraft, MAX_QUESTIONS, MIN_QUESTIONS,
-  moveQuestion, persistWizardDraft, QUESTION_TYPES, questionsToUpdatePayload,
-  renumberQuestions, selectedQuestionTypes, totalQuestionCount, validateQuestion,
-  validateReferenceFile, validateStep, type EditableQuestion, type QuestionType, type WizardState,
+  moveQuestion, moveRubricCriterion, normalizeRubricCriteria, persistWizardDraft, prepareRubricCriteriaForSave, QUESTION_TYPES, questionsToUpdatePayload,
+  rebalanceRubricWeights, renumberQuestions, rubricWeightTotal, selectedQuestionTypes, totalQuestionCount, validateQuestion,
+  validateReferenceFile, validateRubricCriteria, validateStep, type EditableQuestion, type EditableRubricCriterion, type QuestionType, type WizardState,
 } from './generationWizardModel';
 
 const TYPE_COPY: Record<QuestionType, { label: string; description: string; icon: typeof ListChecks }> = {
@@ -192,6 +192,91 @@ function QuestionCard({
   );
 }
 
+
+function RubricEditor({
+  criteria,
+  onChange,
+}: {
+  criteria: EditableRubricCriterion[];
+  onChange: (criteria: EditableRubricCriterion[]) => void;
+}) {
+  const totalWeight = rubricWeightTotal(criteria);
+  const error = validateRubricCriteria(criteria);
+
+  function updateCriterion(index: number, criterionPatch: Partial<EditableRubricCriterion>) {
+    onChange(criteria.map((criterion, currentIndex) => (
+      currentIndex === index ? { ...criterion, ...criterionPatch } : criterion
+    )));
+  }
+
+  return (
+    <section aria-label="Editor de rúbrica" className="rounded-2xl border border-violet-200 bg-violet-50/60 p-4 dark:border-violet-500/30 dark:bg-violet-500/10">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+        <div>
+          <div className="flex flex-wrap items-center gap-2">
+            <h4 className="text-lg font-bold">Rúbrica editable</h4>
+            <Badge tone={error ? 'warning' : 'success'}>Peso total: {totalWeight} %</Badge>
+          </div>
+          <p className="mt-1 max-w-2xl text-sm leading-5 text-muted">La IA creó este borrador. Ajusta los criterios antes de confirmar; los cambios serán los que use la evaluación.</p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Button type="button" variant="outline" onClick={() => onChange(rebalanceRubricWeights(criteria))} disabled={!criteria.length}>
+            <ListChecks className="h-4 w-4" /> Distribuir pesos
+          </Button>
+          <Button type="button" variant="outline" onClick={() => onChange(createBlankRubricCriterion(criteria))}>
+            <Plus className="h-4 w-4" /> Agregar criterio
+          </Button>
+        </div>
+      </div>
+
+      {error && <p role="alert" className="mt-3 rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm font-semibold text-amber-950 dark:bg-amber-500/10 dark:text-amber-100">{error}</p>}
+
+      <div role="list" aria-label="Criterios editables" className="mt-4 space-y-3">
+        {criteria.map((criterion, index) => (
+          <article role="listitem" key={`rubric-${index}`} className="rounded-xl border border-violet-200 bg-surface p-4 dark:border-violet-500/20">
+            <div className="mb-4 flex flex-wrap items-center gap-2 border-b border-border pb-3">
+              <span className="grid h-9 w-9 place-items-center rounded-full bg-violet-100 text-sm font-bold text-violet-800 dark:bg-violet-500/20 dark:text-violet-100">{index + 1}</span>
+              <p className="min-w-0 flex-1 font-bold">Criterio {index + 1}</p>
+              <Button type="button" variant="ghost" size="icon" onClick={() => onChange(moveRubricCriterion(criteria, index, -1))} disabled={index === 0} aria-label={`Subir criterio ${index + 1}`}><ArrowUp className="h-4 w-4" /></Button>
+              <Button type="button" variant="ghost" size="icon" onClick={() => onChange(moveRubricCriterion(criteria, index, 1))} disabled={index === criteria.length - 1} aria-label={`Bajar criterio ${index + 1}`}><ArrowDown className="h-4 w-4" /></Button>
+              <Button type="button" variant="ghost" size="icon" onClick={() => onChange(criteria.filter((_, currentIndex) => currentIndex !== index))} aria-label={`Eliminar criterio ${index + 1}`}><Trash2 className="h-4 w-4" /></Button>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_10rem]">
+              <Field label="Nombre" required>
+                <Input value={criterion.nombre} onChange={(event) => updateCriterion(index, { nombre: event.target.value })} aria-label={`Nombre del criterio ${index + 1}`} className="min-h-12 text-base" />
+              </Field>
+              <Field label="Peso porcentual" required>
+                <Input type="number" min={0.01} max={100} step={0.01} value={criterion.peso_porcentaje} onChange={(event) => updateCriterion(index, { peso_porcentaje: Number(event.target.value) })} aria-label={`Peso del criterio ${index + 1}`} className="min-h-12 text-base" />
+              </Field>
+            </div>
+            <Field label="Descripción" hint="Opcional, pero ayuda a que la calificación sea transparente.">
+              <Textarea value={criterion.descripcion} onChange={(event) => updateCriterion(index, { descripcion: event.target.value })} aria-label={`Descripción del criterio ${index + 1}`} className="min-h-20 text-base" />
+            </Field>
+
+            {Object.keys(criterion.niveles).length > 0 && (
+              <div className="mt-4 rounded-xl bg-surface-2 p-3">
+                <p className="text-sm font-bold">Descriptores de desempeño</p>
+                <div className="mt-3 grid gap-3 lg:grid-cols-2">
+                  {Object.entries(criterion.niveles).map(([level, description]) => (
+                    <Field key={level} label={level}>
+                      <Textarea
+                        value={description}
+                        onChange={(event) => updateCriterion(index, { niveles: { ...criterion.niveles, [level]: event.target.value } })}
+                        aria-label={`Descripción del nivel ${level} del criterio ${index + 1}`}
+                        className="min-h-20 text-sm"
+                      />
+                    </Field>
+                  ))}
+                </div>
+              </div>
+            )}
+          </article>
+        ))}
+      </div>
+    </section>
+  );
+}
 function XaliPanel({
   state, materiaNombre, onSuggestion,
 }: {
@@ -295,7 +380,7 @@ export function GenerationWizard({
       setState((current) => ({
         ...current,
         generatedEvaluationId: evaluation.id,
-        generatedCriteria: (evaluation.criterios ?? []) as Record<string, unknown>[],
+        generatedCriteria: normalizeRubricCriteria((evaluation.criterios ?? []) as Record<string, unknown>[]),
         questions: evaluationToEditableQuestions(evaluation),
       }));
       toast.success('Borrador generado. Revísalo antes de continuar.');
@@ -447,7 +532,7 @@ export function GenerationWizard({
         fecha_limite_entrega: state.fechaLimiteEntrega ? new Date(state.fechaLimiteEntrega).toISOString() : null,
         dba_ids: state.useDba ? state.dbaIds : [],
         dba_personalizado_ids: state.useDba ? state.dbaPersonalizadoIds : [],
-        criterios: state.generatedCriteria,
+        criterios: state.useRubric ? prepareRubricCriteriaForSave(state.generatedCriteria, state.notaMaxima) : state.generatedCriteria,
         ...questionsToUpdatePayload(state.questions),
       },
     });
@@ -496,7 +581,7 @@ export function GenerationWizard({
               <span className="grid h-12 w-12 place-items-center rounded-xl bg-brand-100 text-brand-700"><Sparkles className="h-6 w-6" /></span>
               <div className="min-w-0 flex-1">
                 <h2 className="text-xl font-bold">{initialEvaluation ? 'Editar contenido de la evaluación' : 'Crear evaluación paso a paso'}</h2>
-                <p className="text-sm text-muted">{initialEvaluation ? 'Modifica, agrega, ordena o elimina preguntas antes de publicar.' : 'La IA prepara un borrador; tú revisas y decides.'}</p>
+                <p className="text-sm text-muted">{initialEvaluation ? 'Modifica, agrega, ordena o elimina criterios y preguntas antes de guardar.' : 'La IA prepara un borrador; tú revisas y decides.'}</p>
               </div>
               <Button type="button" variant="ghost" size="icon" onClick={onClose} disabled={generate.isPending || confirm.isPending || extractReference.isPending} aria-label="Cerrar wizard"><X className="h-5 w-5" /></Button>
             </div>
@@ -694,7 +779,7 @@ export function GenerationWizard({
                     ) : (
                       <section aria-labelledby="wizard-step-title" className="space-y-4">
                         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-                          <div><h3 id="wizard-step-title" className="text-xl font-bold">Revisa y edita las preguntas</h3><p className="mt-1 text-base text-muted">Puedes cambiar el tipo, editar, agregar, duplicar, ordenar o eliminar preguntas.</p></div>
+                          <div><h3 id="wizard-step-title" className="text-xl font-bold">Revisa y edita la evaluación</h3><p className="mt-1 text-base text-muted">Ajusta la rúbrica y las preguntas antes de confirmar. La IA propone; tú decides.</p></div>
                           <div className="flex flex-wrap items-center gap-2">
                             <Badge tone={questionErrors || !state.questions.length ? 'warning' : 'success'}>{!state.questions.length ? 'Agrega una pregunta' : questionErrors ? `${questionErrors} por corregir` : 'Todas válidas'}</Badge>
                             <Button type="button" variant="outline" onClick={() => patch({ questions: createBlankQuestion(state.questions, state.modalidad) })} disabled={state.questions.length >= MAX_QUESTIONS}><Plus className="h-4 w-4" /> Agregar pregunta</Button>
@@ -706,19 +791,8 @@ export function GenerationWizard({
                             <p>Los cambios quedarán disponibles de inmediato. No se borrarán entregas ni notas anteriores; revísalas si modificas criterios, puntajes o respuestas correctas.</p>
                           </div>
                         )}
-                        {state.useRubric && state.generatedCriteria.length > 0 && (
-                          <div className="rounded-2xl border border-violet-200 bg-violet-50/60 p-4 dark:border-violet-500/30 dark:bg-violet-500/10">
-                            <div className="flex items-center justify-between gap-3"><h4 className="font-bold">Rúbrica generada</h4><Badge tone="violet">{state.generatedCriteria.length} criterios</Badge></div>
-                            <div className="mt-3 grid gap-2 sm:grid-cols-2">
-                              {state.generatedCriteria.map((criterion, index) => (
-                                <div key={`${String(criterion.nombre ?? 'criterio')}-${index}`} className="rounded-xl border border-violet-200 bg-surface p-3 dark:border-violet-500/20">
-                                  <p className="font-semibold">{String(criterion.nombre ?? `Criterio ${index + 1}`)}</p>
-                                  <p className="mt-1 text-sm leading-5 text-muted">{String(criterion.descripcion ?? '')}</p>
-                                  <p className="mt-2 text-xs font-bold text-violet-700 dark:text-violet-200">Peso: {Number(criterion.peso_porcentaje ?? 0)}%</p>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
+                        {state.useRubric && (
+                          <RubricEditor criteria={state.generatedCriteria} onChange={(generatedCriteria) => patch({ generatedCriteria })} />
                         )}
                         <div role="list" aria-label="Preguntas editables" className="space-y-4">
                           {state.questions.map((question, index) => (

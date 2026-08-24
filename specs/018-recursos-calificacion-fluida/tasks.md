@@ -119,6 +119,7 @@
 - [X] T050 [US4] Evitar eventos React anulados en DBA y actividades interactivas, auditar las siete pestañas de una materia y añadir regresión de escritura/navegación en frontend/src/modules/materias/MateriaDbaPage.tsx, frontend/src/modules/evaluaciones/StudentActivityPlayer.tsx, frontend/scripts/audit-actions.mjs y frontend/e2e/p2-responsive.spec.ts (FR-028, FR-032).
 - [X] T051 [US4] Permitir que la rueda usada sobre el panel derecho de calificaciones desplace el contenido en escritorio, sin romper el scroller único del overlay móvil, y cubrirlo en frontend/src/modules/calificaciones/CalificacionesWorkspace.tsx y frontend/e2e/explainable-grading.spec.ts (FR-028, FR-031, SC-011).
 - [X] T052 [US4] Ampliar y simplificar la edición de preguntas: modal ancho, una sola columna, Xali plegable sin reducir el editor, un solo scroll y campos principales responsivos en frontend/src/modules/evaluaciones/components/GenerationWizard.tsx y GenerationWizard.test.tsx (FR-028, FR-031).
+- [X] T053 [US4] Convertir la rúbrica generada en un borrador editable con criterios, descriptores, pesos totalizados, orden y persistencia dentro del wizard en generationWizardModel.ts, GenerationWizard.tsx y sus pruebas (FR-032, FR-036, SC-016).
 
 ## Trazabilidad de requisitos
 
@@ -126,3 +127,4 @@
 - Pipeline y observabilidad, T020–T029 y T048–T049: FR-011, FR-012, FR-013, FR-014, FR-015, FR-016, FR-017, FR-018, FR-019, FR-020, FR-032, FR-033, FR-034, FR-035.
 - Edición contextual, T030–T034: FR-021, FR-022, FR-023, FR-024, FR-025, FR-026.
 - Scroll y experiencia responsive, T035–T040 y T050–T052: FR-027, FR-028, FR-029, FR-030, FR-031, FR-032.
+- Rúbrica editable, T053: FR-032, FR-036 y SC-016.

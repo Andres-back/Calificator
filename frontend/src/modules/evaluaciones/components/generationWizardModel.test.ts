@@ -9,10 +9,14 @@ import {
   loadWizardDraft,
   MAX_REFERENCE_FILE_BYTES,
   moveQuestion,
+  normalizeRubricCriteria,
   persistWizardDraft,
+  prepareRubricCriteriaForSave,
+  rebalanceRubricWeights,
   totalQuestionCount,
   validateQuestion,
   validateReferenceFile,
+  validateRubricCriteria,
   validateStep,
   WIZARD_TTL_MS,
   WIZARD_VERSION,
@@ -180,5 +184,48 @@ describe('generation wizard model', () => {
     expect(withBlank).toHaveLength(3);
     expect(withBlank[2]).toMatchObject({ numero: 3, tipo: 'abierta', expanded: true });
     expect(withBlank.slice(0, 2).every((question) => !question.expanded)).toBe(true);
+  });
+  it('normalizes, balances and prepares an editable AI rubric', () => {
+    const criteria = normalizeRubricCriteria([
+      {
+        nombre: 'Razonamiento',
+        descripcion: 'Explica el procedimiento.',
+        peso_porcentaje: 70,
+        niveles: { Alto: 'Explicación completa', Básico: 'Explicación parcial' },
+        dba_ids: ['dba-1'],
+      },
+      {
+        nombre: 'Resultado',
+        descripcion: 'Obtiene la respuesta.',
+        peso_porcentaje: 20,
+        niveles: { Alto: 'Resultado correcto', Básico: 'Resultado aproximado' },
+      },
+    ]);
+
+    expect(validateRubricCriteria(criteria)).toMatch(/100 %/i);
+    const state = createEmptyWizardState('materia-1');
+    state.nombre = 'Evaluación con rúbrica';
+    state.step = 5;
+    state.useRubric = true;
+    state.generatedEvaluationId = 'evaluation-1';
+    state.generatedCriteria = criteria;
+    state.questions = [validQuestion()];
+    expect(validateStep(state, 5)).toMatch(/100 %/i);
+
+    const balanced = rebalanceRubricWeights(criteria);
+    expect(balanced.map((criterion) => criterion.peso_porcentaje)).toEqual([50, 50]);
+    expect(validateRubricCriteria(balanced)).toBeNull();
+
+    balanced[0].nombre = 'Argumentación matemática';
+    balanced[0].niveles.Alto = 'Justifica cada paso con claridad.';
+    const payload = prepareRubricCriteriaForSave(balanced, 5);
+
+    expect(payload[0]).toMatchObject({
+      nombre: 'Argumentación matemática',
+      peso_porcentaje: 50,
+      puntaje_maximo: 2.5,
+      dba_ids: ['dba-1'],
+      niveles: { Alto: 'Justifica cada paso con claridad.' },
+    });
   });
 });

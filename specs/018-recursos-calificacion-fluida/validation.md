@@ -100,3 +100,12 @@ La latencia real posterior debe medirse con un fixture autorizado después del d
 - Tipo de pregunta y puntaje quedan juntos en escritorio y se apilan en celular; los enunciados largos muestran hasta dos líneas sin cortar el contexto.
 - Validación visual funcional aprobada con una evaluación real en 1440×900 y 390×844; campos, opciones y acciones permanecen accesibles.
 - Frontend: 198 pruebas en 54 archivos, TypeScript y build de producción aprobados. La auditoría conserva 301 botones y 80 enlaces con propósito verificable.
+## Rúbrica generada editable (2026-08-24)
+
+- La salida de IA se normaliza como borrador editable sin cambiar API ni base de datos.
+- El profesor puede modificar nombre, descripción, peso y descriptores; también agregar, reordenar o eliminar criterios.
+- La navegación se bloquea si los pesos no totalizan 100 % y “Distribuir pesos” restablece un total válido.
+- Al confirmar, el PATCH vigente conserva metadatos y DBA, envía las modificaciones y recalcula puntaje_maximo a partir de la nota máxima.
+- Validación funcional y visual aprobada en escritorio y 390×844; los controles se apilan sin cortes en celular.
+- Frontend completo: auditoría de 306 botones y 80 enlaces, ESLint, TypeScript, 200 pruebas en 54 archivos y build Vite de producción aprobados.
+- Convergencia Spec Kit: FR-032, FR-036, SC-016 y T053 satisfechos; no se añadieron tareas de remediación.
