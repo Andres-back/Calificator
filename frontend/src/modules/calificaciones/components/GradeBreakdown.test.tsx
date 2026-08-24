@@ -26,6 +26,16 @@ describe('GradeBreakdown', () => {
     expect(screen.getByText('Evidencia: hoja 2.')).toBeInTheDocument();
   });
 
+  it('renderiza el editor dentro de la tarjeta activa', () => {
+    render(<GradeBreakdown
+      breakdown={breakdown}
+      editingComponentId="p1"
+      onEdit={() => undefined}
+      renderEditor={() => <div>Editor contextual</div>}
+    />);
+    expect(screen.getByTestId('grade-editor-p1')).toHaveTextContent('Editor contextual');
+    expect(screen.queryByRole('button', { name: 'Ajustar puntaje y explicación' })).not.toBeInTheDocument();
+  });
   it('no filtra una referencia oculta al estudiante', () => {
     const hidden = { ...breakdown, componentes: [{ ...breakdown.componentes[0], respuesta_referencia: null, referencia_oculta: true }] };
     render(<GradeBreakdown breakdown={hidden} student />);

@@ -321,7 +321,7 @@ export function GeneratePage() {
     try {
       const material = await generateMaterial(tool.endpoint, pendingPayload);
       toast.success('Material listo para tu revisión.');
-      navigate(`/app/herramientas/${material.id}`);
+      navigate(`/app/herramientas/${material.id}?action=assign`);
     } catch (error) {
       toast.error(toApiError(error).detail);
     } finally {

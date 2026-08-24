@@ -113,6 +113,11 @@ export function GradingJobMonitor() {
   if (jobs.length === 0) return null;
   const current: PendingGradingJob = jobs[0];
   const currentProgress = progress[current.jobId] ?? 5;
+  const elapsedSeconds = Math.max(
+    0,
+    Math.floor((Date.now() - new Date(current.createdAt).getTime()) / 1000),
+  );
+  const isTakingLonger = elapsedSeconds >= 90;
 
   return (
     <aside
@@ -131,7 +136,9 @@ export function GradingJobMonitor() {
           </p>
           <p className="mt-1 truncate text-sm text-muted">{current.estudianteNombre}</p>
           <p className="mt-1 text-xs leading-5 text-muted">
-            Puedes seguir navegando o añadir más evidencias.
+            {isTakingLonger
+              ? 'OpenCode sigue procesando. No cancelamos la solicitud y la evidencia está segura.'
+              : 'Puedes seguir navegando o añadir más evidencias.'}
           </p>
         </div>
       </div>

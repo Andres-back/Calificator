@@ -159,6 +159,7 @@ for (const role of ['profesor', 'estudiante', 'admin'] as const) {
 
       for (const route of routesByRole[role]) {
         await page.goto(route);
+        await page.waitForLoadState('networkidle');
         await expect(page.locator('main#main-content')).toBeVisible();
         await expect.poll(
           () => page.evaluate(() => {
@@ -203,6 +204,7 @@ for (const viewport of [viewports[1], viewports[4]]) {
 
     for (const route of routesByRole.profesor) {
       await page.goto(route);
+      await page.waitForLoadState('networkidle');
       await expect(page.locator('main#main-content')).toBeVisible();
       await expect(page.locator('html')).toHaveClass(/dark/);
       await expect.poll(

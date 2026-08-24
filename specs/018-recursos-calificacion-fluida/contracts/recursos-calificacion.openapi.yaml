@@ -1,0 +1,241 @@
+openapi: 3.1.0
+info:
+  title: XCalificator - Recursos y calificación fluida
+  version: 0.1.0
+  description: Contratos aditivos y contratos existentes reutilizados por la especificación 018.
+paths:
+  /herramientas/materias/{materia_id}/recursos:
+    get:
+      summary: Lista recursos asignados de una materia
+      description: El docente recibe borradores, apoyos y actividades asociados a la materia. El estudiante recibe solo elementos visibles y autorizados.
+      parameters:
+        - in: path
+          name: materia_id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Recursos sin duplicados
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/MaterialListItem" }
+        "403": { description: Sin acceso a la materia }
+
+  /herramientas/{material_id}/asignar-apoyo:
+    post:
+      summary: Asigna y muestra un recurso como apoyo
+      parameters:
+        - in: path
+          name: material_id
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [materia_id]
+              properties:
+                materia_id: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Recurso asignado
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/MaterialRead" }
+        "403": { description: No autorizado }
+        "409": { description: Ya existe actividad vinculada }
+
+  /herramientas/{material_id}/convertir-evaluacion:
+    post:
+      summary: Vincula el recurso a una única evaluación
+      parameters:
+        - in: path
+          name: material_id
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ConvertirEvaluacion" }
+      responses:
+        "201": { description: Evaluación borrador creada }
+        "200": { description: Evaluación existente devuelta idempotentemente }
+        "409": { description: Recurso no evaluable o conflicto de ciclo }
+
+  /herramientas/{material_id}/visibilidad:
+    patch:
+      summary: Muestra u oculta el recurso sin alterar recepción
+      parameters:
+        - in: path
+          name: material_id
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [visible]
+              properties:
+                visible: { type: boolean }
+      responses:
+        "200":
+          description: Estado sincronizado
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/MaterialRead" }
+        "409": { description: No puede mostrarse una actividad aún no publicable }
+
+  /evaluaciones/{evaluacion_id}/activar-recepcion:
+    post:
+      summary: Reabre entregas sin cambiar visibilidad
+      responses:
+        "200": { description: Recepción habilitada }
+        "409": { description: Evaluación no publicada }
+
+  /evaluaciones/{evaluacion_id}/pausar-recepcion:
+    post:
+      summary: Pausa nuevas entregas y conserva contenido visible
+      responses:
+        "200": { description: Recepción pausada }
+
+  /evaluaciones/{evaluacion_id}/cerrar:
+    post:
+      summary: Cierra la evaluación y conserva historial
+      responses:
+        "200": { description: Evaluación cerrada }
+
+  /jobs/{job_id}:
+    get:
+      summary: Consulta estado y tiempos seguros del trabajo
+      parameters:
+        - in: path
+          name: job_id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Estado propio autorizado
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/JobRead" }
+
+  /calificaciones/{calificacion_id}/desglose:
+    put:
+      summary: Ajusta componentes con versión optimista
+      parameters:
+        - in: path
+          name: calificacion_id
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/GradeBreakdownUpdate" }
+      responses:
+        "200": { description: Nueva versión y nota recalculada }
+        "409": { description: Versión obsoleta }
+        "422": { description: Puntaje o explicaciones inválidas }
+
+components:
+  schemas:
+    MaterialListItem:
+      type: object
+      required: [id, tipo, titulo, asignacion_tipo, publicado_estudiantes]
+      properties:
+        id: { type: string, format: uuid }
+        tipo: { type: string }
+        titulo: { type: string }
+        materia_id: { type: [string, "null"], format: uuid }
+        materia_nombre: { type: [string, "null"] }
+        asignacion_tipo:
+          anyOf:
+            - enum: [apoyo, actividad]
+            - type: "null"
+        publicado_estudiantes: { type: boolean }
+        evaluacion_id: { type: [string, "null"], format: uuid }
+        evaluacion_estado: { type: [string, "null"] }
+        evaluacion_modalidad: { type: [string, "null"] }
+        evaluacion_recepcion_habilitada: { type: [boolean, "null"] }
+
+    MaterialRead:
+      allOf:
+        - $ref: "#/components/schemas/MaterialListItem"
+        - type: object
+          required: [contenido_json, created_at]
+          properties:
+            contenido_json: { type: object }
+            archivo_url: { type: [string, "null"] }
+            fecha_publicacion: { type: [string, "null"], format: date-time }
+            created_at: { type: string, format: date-time }
+            updated_at: { type: [string, "null"], format: date-time }
+
+    ConvertirEvaluacion:
+      type: object
+      required: [materia_id, nota_maxima, modalidad]
+      properties:
+        materia_id: { type: string, format: uuid }
+        nombre: { type: [string, "null"] }
+        nota_maxima: { type: number, exclusiveMinimum: 0 }
+        modalidad: { enum: [online, papel, mixta] }
+        fecha_inicio: { type: [string, "null"], format: date-time }
+        fecha_fin: { type: [string, "null"], format: date-time }
+
+    PipelineTiming:
+      type: object
+      properties:
+        queue: { type: integer, minimum: 0 }
+        prepare: { type: integer, minimum: 0 }
+        extraction: { type: integer, minimum: 0 }
+        structure: { type: integer, minimum: 0 }
+        primary: { type: integer, minimum: 0 }
+        secondary: { type: integer, minimum: 0 }
+        consolidation: { type: integer, minimum: 0 }
+        persistence: { type: integer, minimum: 0 }
+        total: { type: integer, minimum: 0 }
+
+    JobRead:
+      type: object
+      required: [id, tipo, estado, progreso]
+      properties:
+        id: { type: string, format: uuid }
+        tipo: { type: string }
+        estado: { enum: [queued, running, success, failed, cancelled] }
+        progreso: { type: integer, minimum: 0, maximum: 100 }
+        timings_ms: { $ref: "#/components/schemas/PipelineTiming" }
+        terminal_reason: { type: [string, "null"] }
+        deadline_ms: { type: [integer, "null"], description: Campo legacy; permanece nulo }
+        slow_after_ms: { type: [integer, "null"], description: Umbral informativo, no cancelador }
+        fallbacks:
+          type: array
+          items:
+            type: object
+            properties:
+              stage: { type: string }
+              reason: { type: string }
+
+    GradeComponentChange:
+      type: object
+      required: [componente_id, puntos_obtenidos, estado, motivo_interno, explicacion_estudiante]
+      properties:
+        componente_id: { type: string, format: uuid }
+        puntos_obtenidos: { type: number, minimum: 0 }
+        estado: { type: string }
+        motivo_interno: { type: string, minLength: 3, maxLength: 2000 }
+        explicacion_estudiante: { type: string, minLength: 3, maxLength: 2000 }
+
+    GradeBreakdownUpdate:
+      type: object
+      required: [version_esperada, cambios_componentes]
+      properties:
+        version_esperada: { type: integer, minimum: 1 }
+        cambios_componentes:
+          type: array
+          items: { $ref: "#/components/schemas/GradeComponentChange" }

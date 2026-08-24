@@ -14,7 +14,7 @@ import {
   getMaterial,
   listMaterialEvaluaciones,
   pdfUrl,
-  withdrawSupportMaterial,
+  setMaterialVisibility,
   type IntentPolicy,
 } from './api';
 import { TOOL_BY_TIPO } from './meta';
@@ -82,6 +82,8 @@ export function DetailPage() {
   const linkedEvaluation = linkedEvaluationsQuery.data?.[0] ?? null;
   const linkedEvaluationId = linkedEvaluation?.id ?? material?.evaluacion_id ?? null;
   const linkedMateriaId = linkedEvaluation?.materia_id ?? material?.materia_id ?? null;
+  const linkedState = linkedEvaluation?.estado ?? material?.evaluacion_estado ?? null;
+  const activityCanBeShown = ['publicada', 'en_calificacion', 'pendiente_revision', 'cerrada'].includes(linkedState ?? '');
 
   const openConvert = () => {
     setConvertMateria(supportMateria || material?.materia_id || '');
@@ -183,24 +185,24 @@ export function DetailPage() {
     }
   };
 
-  const handleWithdrawSupport = async () => {
+  const handleToggleVisibility = async (visible: boolean) => {
     if (publishingSupport) return;
     setPublishingSupport(true);
     try {
-      await withdrawSupportMaterial(id);
+      await setMaterialVisibility(id, visible);
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ['material', id] }),
         queryClient.invalidateQueries({ queryKey: ['materials'] }),
         queryClient.invalidateQueries({ queryKey: ['materia-resources', material?.materia_id] }),
+        queryClient.invalidateQueries({ queryKey: ['evaluaciones', material?.materia_id] }),
       ]);
-      toast.success('El recurso ya no está visible para los estudiantes');
+      toast.success(visible ? 'El recurso ya es visible para los estudiantes' : 'El recurso quedó oculto sin borrar entregas ni notas');
     } catch (err) {
       toast.error(toApiError(err).detail);
     } finally {
       setPublishingSupport(false);
     }
   };
-
   const handleDuplicate = async () => {
     if (duplicating) return;
     setDuplicating(true);
@@ -358,29 +360,38 @@ export function DetailPage() {
         {material.publicado_estudiantes ? (
           <div className="mt-5 flex flex-col gap-3 rounded-xl border border-emerald-200 bg-emerald-50/80 px-4 py-3 text-sm dark:border-emerald-500/30 dark:bg-emerald-500/10 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-start gap-3">
-              <BookOpenCheck className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600 dark:text-emerald-300" />
+              {material.asignacion_tipo === 'actividad' ? <ClipboardList className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600 dark:text-emerald-300" /> : <BookOpenCheck className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600 dark:text-emerald-300" />}
               <div>
-                <p className="font-bold text-emerald-900 dark:text-emerald-100">Visible como material de apoyo</p>
-                <p className="text-emerald-800/80 dark:text-emerald-100/70">Los estudiantes de {material.materia_nombre ?? 'la materia'} pueden consultarlo y descargarlo. No genera nota.</p>
+                <p className="font-bold text-emerald-900 dark:text-emerald-100">{material.asignacion_tipo === 'actividad' ? 'Actividad visible' : 'Visible como material de apoyo'}</p>
+                <p className="text-emerald-800/80 dark:text-emerald-100/70">
+                  {material.asignacion_tipo === 'actividad'
+                    ? `Los estudiantes pueden verla. ${material.evaluacion_recepcion_habilitada ? 'Las entregas están abiertas.' : 'Las entregas están cerradas.'}`
+                    : `Los estudiantes de ${material.materia_nombre ?? 'la materia'} pueden consultarlo y descargarlo. No genera nota.`}
+                </p>
               </div>
             </div>
-            <Button size="sm" variant="outline" onClick={handleWithdrawSupport} loading={publishingSupport} loadingLabel="Retirando…">Retirar del salón</Button>
+            <Button size="sm" variant="outline" onClick={() => void handleToggleVisibility(false)} loading={publishingSupport} loadingLabel="Ocultando…">Ocultar a estudiantes</Button>
           </div>
         ) : linkedEvaluationId ? (
-          <div className="mt-5 flex items-start gap-3 rounded-xl border border-violet-200 bg-violet-50/80 px-4 py-3 text-sm dark:border-violet-500/30 dark:bg-violet-500/10">
-            <ClipboardList className="mt-0.5 h-5 w-5 shrink-0 text-violet-600 dark:text-violet-300" />
-            <div>
-              <p className="font-bold text-violet-900 dark:text-violet-100">Actividad evaluable vinculada</p>
-              <p className="text-violet-800/80 dark:text-violet-100/70">Las entregas, intentos y notas se administran con Calificator desde {material.materia_nombre ?? 'la materia'}.</p>
+          <div className="mt-5 flex flex-col gap-3 rounded-xl border border-violet-200 bg-violet-50/80 px-4 py-3 text-sm dark:border-violet-500/30 dark:bg-violet-500/10 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-start gap-3">
+              <ClipboardList className="mt-0.5 h-5 w-5 shrink-0 text-violet-600 dark:text-violet-300" />
+              <div>
+                <p className="font-bold text-violet-900 dark:text-violet-100">Actividad vinculada y oculta</p>
+                <p className="text-violet-800/80 dark:text-violet-100/70">Sigue disponible para el profesor en {material.materia_nombre ?? 'la materia'}; ocultarla no borra entregas ni notas.</p>
+              </div>
             </div>
+            {activityCanBeShown ? <Button size="sm" variant="outline" onClick={() => void handleToggleVisibility(true)} loading={publishingSupport} loadingLabel="Mostrando…">Mostrar a estudiantes</Button> : <Badge tone="neutral">Publica la evaluación para mostrarla</Badge>}
           </div>
         ) : (
           <div className="mt-5 flex items-start gap-3 rounded-xl border border-border bg-surface/70 px-4 py-3 text-sm">
             <Send className="mt-0.5 h-5 w-5 shrink-0 text-brand-600" />
-            <div><p className="font-bold">Aún no está asignado</p><p className="text-muted">Puedes publicarlo para repasar o convertirlo en una actividad calificable.</p></div>
+            <div>
+              <p className="font-bold">Guardado en {material.materia_nombre ?? 'la materia'} como borrador</p>
+              <p className="text-muted">Ya aparece en Recursos y en la materia. Elige si será apoyo para repasar o una actividad calificable.</p>
+            </div>
           </div>
-        )}
-      </motion.div>
+        )}      </motion.div>
 
       {aiTrace && (
         <div className="flex gap-3 rounded-xl border border-violet-200 bg-violet-50 px-4 py-3 text-sm text-violet-900 dark:border-violet-500/30 dark:bg-violet-500/10 dark:text-violet-100 print:hidden">
@@ -443,8 +454,8 @@ export function DetailPage() {
               <h2 className="font-display text-xl font-extrabold">Asignar a una clase</h2>
               <p className="mt-1 text-sm text-muted">Elige qué harán tus estudiantes con este recurso.</p>
             </div>
-            <Field label="Materia o salón" required>
-              <Select value={supportMateria} onChange={(event) => setSupportMateria(event.target.value)} required>
+            <Field label="Materia o salón" required hint={material?.materia_id ? "Conserva la materia elegida al generar. Duplica el recurso para usarlo en otra." : undefined}>
+              <Select value={supportMateria} onChange={(event) => setSupportMateria(event.target.value)} disabled={Boolean(material?.materia_id)} required>
                 <option value="">Selecciona una materia</option>
                 {materias.map((materia) => (
                   <option key={materia.id} value={materia.id}>{materia.nombre}{materia.grado ? ` - ${materia.grado}` : ''}</option>
@@ -491,7 +502,7 @@ export function DetailPage() {
               <Input value={convertNombre} onChange={(e) => setConvertNombre(e.target.value)} placeholder={contentTitle} />
             </Field>
             <Field label="Materia" required hint="Aquí se administrarán publicación, entregas y calificaciones.">
-              <Select value={convertMateria} onChange={(e) => setConvertMateria(e.target.value)} required>
+              <Select value={convertMateria} onChange={(e) => setConvertMateria(e.target.value)} disabled={Boolean(material?.materia_id)} required>
                 <option value="">Selecciona una materia</option>
                 {materias.map((m) => (
                   <option key={m.id} value={m.id}>{m.nombre}{m.grado ? ` - ${m.grado}` : ''}</option>

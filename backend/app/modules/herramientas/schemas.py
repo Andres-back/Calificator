@@ -144,6 +144,7 @@ class MaterialRead(BaseModel):
     evaluacion_id: UUID | None = None
     evaluacion_estado: str | None = None
     evaluacion_modalidad: EvaluacionModalidad | None = None
+    evaluacion_recepcion_habilitada: bool | None = None
     asignacion_tipo: Literal["apoyo", "actividad"] | None = None
     publicado_estudiantes: bool = False
     fecha_publicacion: datetime | None = None
@@ -163,6 +164,7 @@ class MaterialListItem(BaseModel):
     evaluacion_id: UUID | None = None
     evaluacion_estado: str | None = None
     evaluacion_modalidad: EvaluacionModalidad | None = None
+    evaluacion_recepcion_habilitada: bool | None = None
     asignacion_tipo: Literal["apoyo", "actividad"] | None = None
     publicado_estudiantes: bool = False
     fecha_publicacion: datetime | None = None
@@ -180,6 +182,10 @@ class MaterialUpdate(BaseModel):
 
 class AsignarMaterialApoyoRequest(BaseModel):
     materia_id: UUID
+
+
+class MaterialVisibilityRequest(BaseModel):
+    visible: bool
 
 
 class ConvertirEvaluacionRequest(BaseModel):

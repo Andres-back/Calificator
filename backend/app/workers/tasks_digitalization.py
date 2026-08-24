@@ -3,11 +3,13 @@
 from __future__ import annotations
 
 import asyncio
+import time
 from decimal import Decimal
 from uuid import UUID
 
 import aiofiles
 
+from app.core.config import settings
 from app.core.logging import get_logger
 from app.db.session import AsyncSessionLocal, engine
 from app.modules.evaluaciones import service as evaluaciones_service
@@ -52,13 +54,31 @@ async def _digitalize_async(
     modalidad: str,
 ) -> dict:
     private_path = resolve_private_upload_path(file_key)
+    pipeline_started = time.monotonic()
+    timings_ms = {
+        "queue": 0, "prepare": 0, "extraction": 0, "structure": 0,
+        "primary": 0, "secondary": 0, "consolidation": 0,
+        "persistence": 0, "total": 0,
+    }
+
+    def refresh_total() -> None:
+        timings_ms["total"] = max(0, int((time.monotonic() - pipeline_started) * 1000))
+
     async with AsyncSessionLocal() as db:
         result: dict = {
             "status": JobEstado.RUNNING.value,
             "materia_id": str(materia_id),
             "nombre": nombre,
             "progreso": 5,
+            "pipeline_run_id": str(job_id),
+            "timings_ms": timings_ms,
+            "strategy": {"vision_reads": 1, "text_structuring": True},
+            "fallbacks": [],
+            "terminal_reason": None,
+            "deadline_ms": None,
+            "slow_after_ms": int(settings.DIGITALIZATION_SLOW_WARNING_SECONDS) * 1000,
         }
+        timings_ms["queue"] = await jobs_service.get_job_queue_time_ms(db, job_id)
         try:
             state = await jobs_service.get_job_state(db, job_id)
             if state == JobEstado.CANCELLED.value:
@@ -84,9 +104,12 @@ async def _digitalize_async(
                     "El profesor que inició la digitalización ya no existe"
                 )
 
+            prepare_started = time.monotonic()
             async with aiofiles.open(private_path, "rb") as source:
                 content = await source.read()
             mime = detect_digitalization_mime(content, filename)
+            timings_ms["prepare"] = int((time.monotonic() - prepare_started) * 1000)
+            refresh_total()
             result["progreso"] = 15
             await jobs_service.update_job_progress(
                 db,
@@ -98,11 +121,14 @@ async def _digitalize_async(
             if await _cancel_if_requested(db, job_id, result):
                 return {**result, "status": JobEstado.CANCELLED.value}
 
+            extraction_started = time.monotonic()
             extracted_text, warnings = await extract_evaluation_text(
                 content,
                 mime,
                 filename or nombre,
             )
+            timings_ms["extraction"] = int((time.monotonic() - extraction_started) * 1000)
+            refresh_total()
             result["progreso"] = 50
             await jobs_service.update_job_progress(
                 db,
@@ -115,12 +141,15 @@ async def _digitalize_async(
                 return {**result, "status": JobEstado.CANCELLED.value}
 
             score = Decimal(nota_maxima)
+            structure_started = time.monotonic()
             structure = await detectar_estructura_evaluacion(
                 user_id=user_id,
                 contenido_texto=extracted_text,
                 nota_maxima=score,
                 initial_warnings=warnings,
             )
+            timings_ms["structure"] = int((time.monotonic() - structure_started) * 1000)
+            refresh_total()
             result["progreso"] = 80
             await jobs_service.update_job_progress(
                 db,
@@ -141,11 +170,14 @@ async def _digitalize_async(
                 criterios=structure.get("criterios", []),
                 estructura_detectada=structure,
             )
+            persistence_started = time.monotonic()
             evaluation = await evaluaciones_service.digitalize_external_evaluation(
                 db,
                 payload,
                 user,
             )
+            timings_ms["persistence"] = int((time.monotonic() - persistence_started) * 1000)
+            refresh_total()
             result = {
                 "status": JobEstado.SUCCESS.value,
                 "evaluacion_id": str(evaluation.id),
@@ -155,6 +187,13 @@ async def _digitalize_async(
                 "respuestas_count": len(structure.get("respuestas_esperadas", [])),
                 "advertencias": structure.get("advertencias", []),
                 "progreso": 100,
+                "pipeline_run_id": str(job_id),
+                "timings_ms": timings_ms,
+                "strategy": {"vision_reads": 1, "text_structuring": True},
+                "fallbacks": [],
+                "terminal_reason": "success",
+                "deadline_ms": None,
+            "slow_after_ms": int(settings.DIGITALIZATION_SLOW_WARNING_SECONDS) * 1000,
             }
             await jobs_service.finish_job(
                 db,
@@ -166,10 +205,13 @@ async def _digitalize_async(
             return result
         except Exception as exc:
             await db.rollback()
+            refresh_total()
             failure = {
                 **result,
                 "status": JobEstado.FAILED.value,
                 "progreso": 100,
+                "timings_ms": timings_ms,
+                "terminal_reason": "provider_timeout" if isinstance(exc, TimeoutError) else "processing_failed",
             }
             await jobs_service.finish_job(
                 db,
@@ -199,12 +241,17 @@ async def _run_and_dispose(**kwargs) -> dict:
         await engine.dispose()
 
 
+async def _run_until_complete(**kwargs) -> dict:
+    """Conserva una inferencia aceptada hasta respuesta o fallo real de transporte."""
+    return await _run_and_dispose(**kwargs)
+
+
 @celery_app.task(bind=True, name="tasks.digitalize_evaluation")
 def digitalize_evaluation(self, **kwargs) -> dict:
     try:
         self.update_state(state="PROGRESS", meta={"progreso": 5})
         result = asyncio.run(
-            _run_and_dispose(
+            _run_until_complete(
                 job_id=UUID(kwargs["job_id"]),
                 user_id=UUID(kwargs["user_id"]),
                 materia_id=UUID(kwargs["materia_id"]),

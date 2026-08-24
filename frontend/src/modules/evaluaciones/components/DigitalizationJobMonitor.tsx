@@ -31,6 +31,8 @@ interface JobRead {
     nombre?: string;
     preguntas_count?: number;
   };
+  timings_ms?: Record<string, number>;
+  terminal_reason?: string | null;
   error: string | null;
 }
 
@@ -40,6 +42,23 @@ function cleanJobError(error: string | null) {
     .replace(/^HTTPException:\s*/i, '')
     .trim();
   return cleaned || 'El servicio de IA no pudo completar el análisis. Puedes intentarlo de nuevo.';
+}
+
+function timingSummary(timings?: Record<string, number>) {
+  if (!timings) return null;
+  const labels: Record<string, string> = {
+    queue: 'En cola', prepare: 'Preparando archivo', extraction: 'Leyendo documento',
+    structure: 'Organizando preguntas', primary: 'Evaluando', secondary: 'Contrastando',
+    consolidation: 'Consolidando', persistence: 'Guardando borrador',
+  };
+  const stages = Object.entries(timings)
+    .filter(([stage, value]) => stage !== 'total' && value > 0)
+    .sort((left, right) => right[1] - left[1]);
+  const totalSeconds = Math.max(0, Math.round((timings.total ?? 0) / 1000));
+  return {
+    slowest: stages[0] ? labels[stages[0][0]] ?? stages[0][0] : null,
+    totalSeconds,
+  };
 }
 
 function sortJobs(jobs: PendingDigitalizationJob[]) {
@@ -98,6 +117,8 @@ export function DigitalizationJobMonitor() {
               status: state.data.estado,
               progress: state.data.progreso,
               error: undefined,
+              timingsMs: state.data.timings_ms,
+              terminalReason: state.data.terminal_reason ?? undefined,
             });
             continue;
           }
@@ -109,6 +130,8 @@ export function DigitalizationJobMonitor() {
               evaluationId: state.data.resultado_json.evaluacion_id,
               questionsCount: state.data.resultado_json.preguntas_count,
               error: undefined,
+              timingsMs: state.data.timings_ms,
+              terminalReason: state.data.terminal_reason ?? undefined,
             });
             await queryClient.invalidateQueries({
               queryKey: ['evaluaciones', state.job.materiaId],
@@ -125,6 +148,8 @@ export function DigitalizationJobMonitor() {
               status: 'failed',
               progress: 100,
               error: cleanJobError(state.data.error),
+              timingsMs: state.data.timings_ms,
+              terminalReason: state.data.terminal_reason ?? undefined,
             });
             toast.error('No se pudo digitalizar el documento. Revisa el detalle.', {
               id: 'digitalization-failed-' + state.job.jobId,
@@ -159,6 +184,12 @@ export function DigitalizationJobMonitor() {
   const active = visibleJob.status === 'queued' || visibleJob.status === 'running';
   const success = visibleJob.status === 'success';
   const currentProgress = visibleJob.progress || 5;
+  const timing = timingSummary(visibleJob.timingsMs);
+  const elapsedSeconds = Math.max(
+    0,
+    Math.floor((Date.now() - new Date(visibleJob.createdAt).getTime()) / 1000),
+  );
+  const isTakingLonger = active && elapsedSeconds >= 90;
 
   const dismiss = () => removePendingDigitalization(visibleJob.jobId);
   const review = () => {
@@ -214,9 +245,19 @@ export function DigitalizationJobMonitor() {
           <p className="mt-1 truncate text-sm font-medium text-fg">{visibleJob.nombre}</p>
 
           {active ? (
-            <p className="mt-1 text-xs leading-5 text-muted">
-              Puedes continuar navegando. Conservaremos este proceso aunque recargues la página.
-            </p>
+            <div className="mt-1 text-xs leading-5 text-muted">
+              <p>
+                {isTakingLonger
+                  ? 'OpenCode sigue trabajando. La solicitud permanece activa y conservaremos el resultado cuando llegue.'
+                  : 'Puedes continuar navegando. Conservaremos este proceso aunque recargues la página.'}
+              </p>
+              {timing && (timing.slowest || timing.totalSeconds > 0) ? (
+                <p className="mt-1 font-semibold text-brand-700 dark:text-brand-300">
+                  {timing.slowest ?? 'Procesando'}
+                  {timing.totalSeconds > 0 ? ' · ' + timing.totalSeconds + ' s transcurridos' : ''}
+                </p>
+              ) : null}
+            </div>
           ) : success ? (
             <p className="mt-1 text-xs leading-5 text-muted">
               {visibleJob.questionsCount

@@ -124,7 +124,8 @@ def test_pdf_renderer_keeps_every_page(monkeypatch) -> None:
     pages = _prepare_multimodal_images(pdf_bytes, "application/pdf")
 
     assert [page_number for _, _, page_number in pages] == [1, 2, 3]
-    assert all(mime == "image/png" for _, mime, _ in pages)
+    assert all(mime == "image/jpeg" for _, mime, _ in pages)
+    assert all(page_bytes.startswith(b"\xff\xd8") for page_bytes, _, _ in pages)
 
 
 def test_protocol_mapping_matches_opencode_go_contract() -> None:
@@ -151,3 +152,65 @@ def test_json_parser_accepts_markdown_fence_from_messages_api() -> None:
     parsed = _parse_json_content("```json\n{\"nota_sugerida\": 4}\n```")
 
     assert parsed == {"nota_sugerida": 4}
+
+class RetryableResponse(FakeResponse):
+    status_code = 503
+
+    def raise_for_status(self) -> None:
+        raise RuntimeError("provider unavailable")
+
+
+def test_max_attempts_one_does_not_retry_same_model() -> None:
+    async def scenario() -> int:
+        client = OpenCodeClient()
+        await client._client.aclose()
+        transport = CapturingHTTPClient({})
+
+        async def unavailable_post(url: str, **kwargs):
+            transport.calls.append({"url": url, **kwargs})
+            return RetryableResponse({})
+
+        transport.post = unavailable_post
+        client._client = transport
+        client._log_call = _no_usage_log
+        try:
+            await client.chat(
+                model="deepseek-v4-flash",
+                messages=[{"role": "user", "content": "JSON"}],
+                max_attempts=1,
+            )
+        except RuntimeError:
+            pass
+        await client.close()
+        return len(transport.calls)
+
+    assert asyncio.run(scenario()) == 1
+
+
+def test_multimodal_call_logs_only_one_vision_attempt() -> None:
+    async def scenario() -> list[dict]:
+        client = OpenCodeClient()
+        await client._client.aclose()
+        client._client = CapturingHTTPClient({
+            "choices": [{"message": {"content": "{}"}}],
+            "usage": {},
+        })
+        events: list[dict] = []
+
+        async def capture(**kwargs) -> None:
+            events.append(kwargs)
+
+        client._log_call = capture
+        await client.chat_multimodal(
+            model="mimo-v2.5",
+            text="Extrae",
+            image_bytes=b"imagen",
+            max_attempts=1,
+        )
+        await client.close()
+        return events
+
+    events = asyncio.run(scenario())
+    assert len(events) == 1
+    assert events[0]["stage"] == "extraction"
+    assert events[0]["image_count"] == 1

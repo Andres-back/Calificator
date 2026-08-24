@@ -1,5 +1,6 @@
 import asyncio
 
+from app.modules.calificaciones import agents
 from app.modules.calificaciones.agents import AgentResult, comparator_agent
 
 
@@ -40,3 +41,52 @@ def test_consensus_deduplicates_equal_feedback() -> None:
     consolidated = asyncio.run(comparator_agent(grading_a, grading_b))
 
     assert consolidated.feedback_estudiante == feedback
+
+
+def test_forced_arbitration_calls_pro_once_when_verifier_failed(monkeypatch) -> None:
+    calls: list[dict] = []
+
+    class FakeArbiterClient:
+        async def chat(self, **kwargs):
+            calls.append(kwargs)
+            return {
+                "choices": [{
+                    "message": {
+                        "content": {
+                            "nota_final": 4.0,
+                            "discrepancia": True,
+                            "feedback_integrado": "Se requiere revisión docente.",
+                        }
+                    }
+                }]
+            }
+
+        async def close(self) -> None:
+            return None
+
+    monkeypatch.setattr(agents, "OpenCodeClient", FakeArbiterClient)
+    primary = result(feedback="Desglose disponible.", confidence=0.9, score=4.0)
+    failed_verifier = AgentResult(
+        nota_sugerida=None,
+        confianza=0,
+        feedback_estudiante="",
+        proveedor="opencode",
+        modelo="deepseek-v4-flash",
+        error="verifier_deadline_exceeded",
+        requiere_revision_docente=True,
+    )
+
+    consolidated = asyncio.run(
+        comparator_agent(
+            primary,
+            failed_verifier,
+            model="deepseek-v4-pro",
+            force_arbitration=True,
+        )
+    )
+
+    assert consolidated.nota_sugerida == 4.0
+    assert len(calls) == 1
+    assert calls[0]["model"] == "deepseek-v4-pro"
+    assert calls[0]["max_tokens"] == 1024
+    assert calls[0]["stage"] == "consolidation"

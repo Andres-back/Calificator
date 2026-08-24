@@ -122,6 +122,19 @@ export function ListPage() {
               {filtered.map((material) => {
                 const meta = TOOL_BY_TIPO[material.tipo];
                 const Icon = meta?.icon ?? Wrench;
+                const stateLabel = material.asignacion_tipo === "actividad"
+                  ? material.publicado_estudiantes
+                    ? material.evaluacion_recepcion_habilitada ? "Actividad · recibe entregas" : "Actividad · entregas cerradas"
+                    : "Actividad oculta"
+                  : material.asignacion_tipo === "apoyo"
+                    ? material.publicado_estudiantes ? "Apoyo visible" : "Apoyo oculto"
+                    : "Borrador";
+                const stateTone = material.publicado_estudiantes
+                  ? "success" as const
+                  : material.asignacion_tipo === "actividad" ? "violet" as const : "neutral" as const;
+                const assignmentLabel = material.evaluacion_id
+                  ? "Abrir actividad"
+                  : material.asignacion_tipo === "apoyo" ? "Administrar" : "Asignar";
                 return (
                   <motion.div key={material.id} layout initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }}>
                     <Card interactive className="group flex h-full flex-col p-5">
@@ -129,9 +142,9 @@ export function ListPage() {
                         <div className={cn('mb-3 grid h-11 w-11 place-items-center rounded-lg bg-gradient-to-br text-white shadow-sm', meta?.gradient ?? 'from-slate-400 to-slate-600')}><Icon className="h-5 w-5" /></div>
                         <div className="flex flex-wrap items-center gap-2">
                           <Badge tone="neutral">{meta?.label ?? material.tipo}</Badge>
-                          {material.publicado_estudiantes && <Badge tone="success">Apoyo publicado</Badge>}
-                          {material.asignacion_tipo === 'actividad' && <Badge tone="violet">Actividad calificable</Badge>}
-                          {!material.asignacion_tipo && meta?.category === 'Evaluación' ? <Badge tone="warning">Borrador · convertir para calificar</Badge> : null}
+                          <Badge tone={stateTone}>{stateLabel}</Badge>
+
+
                           {meta?.interactive && <Badge tone="violet"><Gamepad2 className="h-3 w-3" /> Interactivo</Badge>}
                         </div>
                         {material.materia_nombre && <p className="mt-2 text-xs font-semibold text-brand-600">{material.materia_nombre}</p>}
@@ -143,7 +156,7 @@ export function ListPage() {
                           <Button size="sm" variant="outline" className="w-full"><Pencil className="h-4 w-4" /> Editar</Button>
                         </Link>
                         <Link to={material.evaluacion_id && material.materia_id ? routes.materiaEvaluaciones(material.materia_id) : `/app/herramientas/${material.id}?action=assign`} className="min-w-[7rem] flex-1">
-                          <Button size="sm" className="w-full"><Send className="h-4 w-4" /> {material.evaluacion_id ? 'Abrir actividad' : 'Asignar'}</Button>
+                          <Button size="sm" className="w-full"><Send className="h-4 w-4" /> {assignmentLabel}</Button>
                         </Link>
                         <a href={pdfUrl(material.id)} target="_blank" rel="noreferrer"><Button size="icon" variant="ghost" title="Descargar PDF" aria-label={`Descargar ${material.titulo} en PDF`}><Download className="h-4 w-4" /></Button></a>
                         <Button size="icon" variant="ghost" onClick={async () => { try { const n = await duplicateMaterial(material.id); await queryClient.invalidateQueries({ queryKey: ['materials'] }); toast.success('Duplicado'); navigate(`/app/herramientas/${n.id}`); } catch { toast.error('Error al duplicar'); } }} title="Duplicar material" aria-label={`Duplicar ${material.titulo}`}><Copy className="h-4 w-4" /></Button>

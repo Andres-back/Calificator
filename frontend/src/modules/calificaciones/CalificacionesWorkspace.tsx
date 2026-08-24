@@ -18,6 +18,7 @@ import { toApiError } from '@/lib/api';
 import { cn } from '@/lib/cn';
 import { trackEvent } from '@/lib/analytics';
 import { routes } from '@/config/routes';
+import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 import {
   ajustarNota, ajustarNotaBatch, confirmarNota, confirmarNotaBatch,
   crearIncidencia, getBandejaDocente, getCalificacionDetalle, listarIncidencias,
@@ -106,6 +107,8 @@ function AIPipelineSummary({
   comparator,
   vision,
   answerKeyIncomplete,
+  timings,
+  strategy,
 }: {
   confianza: number | null;
   graderA: Record<string, unknown> | undefined;
@@ -113,6 +116,8 @@ function AIPipelineSummary({
   comparator: Record<string, unknown> | undefined;
   vision: Record<string, unknown> | undefined;
   answerKeyIncomplete: boolean;
+  timings?: Record<string, number>;
+  strategy?: Record<string, unknown>;
 }) {
   const [expanded, setExpanded] = useState(false);
 
@@ -121,6 +126,7 @@ function AIPipelineSummary({
   const discrepancia = Boolean(comparator?.discrepancia);
   const confianzaAlta = confianza != null && confianza >= 0.7;
   const confianzaMedia = confianza != null && confianza >= 0.4 && confianza < 0.7;
+  const arbiterInvoked = Boolean(strategy?.arbiter_invoked);
 
   let summary: { label: string; tone: string; icon: string };
   if (answerKeyIncomplete) {
@@ -128,9 +134,9 @@ function AIPipelineSummary({
   } else if (graderAError && graderBError) {
     summary = { label: 'Error en análisis automático. Se requiere revisión docente.', tone: 'rose', icon: '⚠️' };
   } else if (discrepancia) {
-    summary = { label: 'Los evaluadores de IA tuvieron diferencias significativas. Revisa los criterios.', tone: 'amber', icon: '⚡' };
+    summary = { label: 'El verificador detectó diferencias y se solicitó arbitraje. Revisa los criterios.', tone: 'amber', icon: '⚡' };
   } else if (confianzaAlta) {
-    summary = { label: 'Los evaluadores de IA coincidieron. Confianza alta.', tone: 'emerald', icon: '✓' };
+    summary = { label: 'La calificación y su verificación coincidieron. Confianza alta.', tone: 'emerald', icon: '✓' };
   } else if (confianzaMedia) {
     summary = { label: 'Confianza media. Revisa los criterios detenidamente.', tone: 'amber', icon: '→' };
   } else {
@@ -162,6 +168,15 @@ function AIPipelineSummary({
 
       {expanded && (
         <div className="space-y-2 border-t border-border px-4 py-3 text-xs">
+          {timings?.total ? (
+            <div className="mb-2 rounded-lg bg-surface-2 px-3 py-2 text-muted">
+              Tiempo total: <strong className="text-fg">{Math.round(timings.total / 1000)} s</strong>
+              {timings.extraction ? ' · lectura ' + Math.round(timings.extraction / 1000) + ' s' : ''}
+              {timings.primary ? ' · evaluación ' + Math.round(timings.primary / 1000) + ' s' : ''}
+              {timings.secondary ? ' · verificación ' + Math.round(timings.secondary / 1000) + ' s' : ''}
+              {timings.consolidation ? ' · arbitraje ' + Math.round(timings.consolidation / 1000) + ' s' : ''}
+            </div>
+          ) : null}
           {vision && (
             <div className="flex items-center justify-between">
               <span>Visión ({formatAIModelSource(vision)})</span>
@@ -172,23 +187,33 @@ function AIPipelineSummary({
           )}
           {graderA && (
             <div className="flex items-center justify-between">
-              <span>Evaluador A ({formatAIModelSource(graderA)})</span>
+              <span>Calificador ({formatAIModelSource(graderA)})</span>
               <span className={graderA.error ? 'text-rose-600' : 'text-fg'}>
-                {graderA.nota != null ? Number(graderA.nota).toFixed(1) : '—'}
+                {graderA.nota != null ? Number(graderA.nota).toFixed(1) : '—'}{graderA.tiempo_ms ? ' · ' + Math.round(Number(graderA.tiempo_ms) / 1000) + 's' : ''}
               </span>
             </div>
           )}
           {graderB && (
             <div className="flex items-center justify-between">
-              <span>Evaluador B ({formatAIModelSource(graderB)})</span>
+              <span>
+                {strategy?.secondary_mode === 'pro_recovery' ? 'Recuperación Pro' : 'Verificador rápido'}
+                {' '}({formatAIModelSource(graderB)})
+              </span>
               <span className={graderB.error ? 'text-rose-600' : 'text-fg'}>
-                {graderB.nota != null ? Number(graderB.nota).toFixed(1) : '—'}
+                {graderB.nota != null ? Number(graderB.nota).toFixed(1) : '—'}{graderB.tiempo_ms ? ' · ' + Math.round(Number(graderB.tiempo_ms) / 1000) + 's' : ''}
               </span>
             </div>
           )}
           {comparator && (
             <div className="flex items-center justify-between border-t border-border pt-2 font-semibold">
-              <span>Consolidado{discrepancia ? ' ⚠️' : ''}</span>
+              <span>
+                {strategy?.secondary_mode === 'pro_recovery'
+                  ? 'Consolidado con recuperación Pro'
+                  : arbiterInvoked
+                    ? `Árbitro Pro (${formatAIModelSource(comparator)})`
+                    : 'Consolidado'}
+                {discrepancia ? ' ⚠️' : ''}
+              </span>
               <span>{comparator.nota_final != null ? Number(comparator.nota_final).toFixed(1) : '—'}</span>
             </div>
           )}
@@ -237,7 +262,7 @@ function IncidenciasSection({ calificacionId }: { calificacionId: string }) {
         <p className="flex items-center gap-2 text-xs font-semibold text-muted">
           <ShieldAlert className="h-4 w-4" /> Incidencias y solicitudes {incidencias && incidencias.length > 0 && `(${incidencias.length})`}
         </p>
-        <button type="button" onClick={() => setShowCreate(!showCreate)} className="focus-ring text-xs font-semibold text-brand-600 hover:text-brand-700">
+        <button type="button" onClick={() => setShowCreate(!showCreate)} className="focus-ring min-h-11 rounded-lg px-3 text-xs font-semibold text-brand-600 hover:text-brand-700">
           + Nueva
         </button>
       </div>
@@ -348,6 +373,8 @@ function PanelDetalle({
   const [replacementOpen, setReplacementOpen] = useState(false);
   const [replacementReason, setReplacementReason] = useState('');
   const [editingComponentId, setEditingComponentId] = useState<string | null>(null);
+  const [editingComponentDirty, setEditingComponentDirty] = useState(false);
+  const [pendingEditorAction, setPendingEditorAction] = useState<string | 'close' | null>(null);
   const [showGlobalAdjustment, setShowGlobalAdjustment] = useState(false);
   const pendingClose = useRef<(() => void) | null>(null);
 
@@ -380,13 +407,24 @@ function PanelDetalle({
       });
     },
     onSuccess: () => {
+      setEditingComponentDirty(false);
       setEditingComponentId(null);
       void queryClient.invalidateQueries({ queryKey: ['calificacion-detalle', cal.id] });
       void queryClient.invalidateQueries({ queryKey: ['calificaciones', cal.evaluacion_id] });
       void queryClient.invalidateQueries({ queryKey: ['grade-breakdown-history', cal.id] });
       toast.success('Puntaje actualizado y nota recalculada.');
     },
-    onError: (error) => toast.error(toApiError(error).detail),
+    onError: (error) => {
+      const parsed = toApiError(error);
+      if (parsed.status === 409) {
+        setEditingComponentDirty(false);
+        setEditingComponentId(null);
+        void queryClient.invalidateQueries({ queryKey: ['calificacion-detalle', cal.id] });
+        toast.error('La calificación cambió en otra revisión. Recargamos la versión vigente sin sobrescribirla.');
+        return;
+      }
+      toast.error(parsed.detail);
+    },
   });
   const globalAdjustmentMutation = useMutation({
     mutationFn: (adjustment: { valor: number; motivo_interno: string; explicacion_estudiante: string }) => {
@@ -427,6 +465,29 @@ function PanelDetalle({
     onDirtyChange?.(isDirty);
   }, [isDirty, onDirtyChange]);
 
+  function requestComponentEdit(componentId: string) {
+    if (editingComponentId && editingComponentId !== componentId && editingComponentDirty) {
+      setPendingEditorAction(componentId);
+      return;
+    }
+    setEditingComponentDirty(false);
+    setEditingComponentId(componentId);
+  }
+
+  function requestComponentClose() {
+    if (editingComponentDirty) {
+      setPendingEditorAction('close');
+      return;
+    }
+    setEditingComponentId(null);
+  }
+
+  function discardComponentChanges() {
+    const action = pendingEditorAction;
+    setPendingEditorAction(null);
+    setEditingComponentDirty(false);
+    setEditingComponentId(action && action !== 'close' ? action : null);
+  }
   function handleClose() {
     if (isDirty) {
       setShowDirtyWarning(true);
@@ -440,6 +501,8 @@ function PanelDetalle({
   const graderA = pipeline?.grader_a as Record<string, unknown> | undefined;
   const graderB = pipeline?.grader_b as Record<string, unknown> | undefined;
   const comparator = pipeline?.comparator as Record<string, unknown> | undefined;
+  const timings = pipeline?.timings_ms as Record<string, number> | undefined;
+  const strategy = pipeline?.strategy as Record<string, unknown> | undefined;
   const answerKey = pipeline?.answer_key as Record<string, unknown> | undefined;
   const answerKeyIncomplete = answerKey?.complete === false;
   const evidenciaConsolidada = pipeline?.evidencia_consolidada as Record<string, unknown> | undefined;
@@ -475,12 +538,12 @@ function PanelDetalle({
           </div>
           <p className="text-xs text-muted">{cal.evaluacion_nombre} · {cal.materia_nombre}</p>
         </div>
-        <button type="button" onClick={handleClose} className="focus-ring ml-2 rounded-lg p-1.5 text-muted hover:text-fg lg:hidden">
+        <button type="button" onClick={handleClose} aria-label="Cerrar detalle de calificación" title="Cerrar detalle" className="focus-ring ml-2 grid min-h-11 min-w-11 place-items-center rounded-lg text-muted hover:text-fg lg:hidden">
           <X className="h-5 w-5" />
         </button>
       </div>
 
-      <div className="min-h-0 flex-1 space-y-5 overflow-y-auto overscroll-contain p-5">
+      <div className="min-h-0 flex-1 touch-pan-y space-y-5 overflow-x-hidden overflow-y-auto overscroll-contain p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] [-webkit-overflow-scrolling:touch]">
         {/* Nota principal */}
         <div className="flex items-center justify-between">
           <div>
@@ -608,6 +671,8 @@ function PanelDetalle({
             comparator={comparator}
             vision={vision}
             answerKeyIncomplete={answerKeyIncomplete}
+            timings={timings}
+            strategy={strategy}
           />
         )}
 
@@ -641,7 +706,21 @@ function PanelDetalle({
                 {cal.respuestas_liberadas ? 'Ocultar respuestas' : 'Liberar respuestas'}
               </Button>
             </div>
-            <GradeBreakdown breakdown={cal.desglose} onEdit={setEditingComponentId} />
+            <GradeBreakdown
+              breakdown={cal.desglose}
+              onEdit={requestComponentEdit}
+              editingComponentId={editingComponentId}
+              renderEditor={(component) => (
+                <GradeComponentEditor
+                  component={component}
+                  formula={cal.desglose!.formula}
+                  saving={breakdownMutation.isPending}
+                  onDirtyChange={setEditingComponentDirty}
+                  onCancel={requestComponentClose}
+                  onSave={(change) => breakdownMutation.mutate(change)}
+                />
+              )}
+            />
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <p className="text-sm text-muted">Si un caso excepcional cambia la nota completa, quedará separado de los puntos por respuesta.</p>
               <Button type="button" variant="outline" onClick={() => setShowGlobalAdjustment((value) => !value)}>
@@ -656,17 +735,6 @@ function PanelDetalle({
                 onSave={(adjustment) => globalAdjustmentMutation.mutate(adjustment)}
               />
             )}
-            {editingComponentId && (() => {
-              const component = cal.desglose?.componentes.find((item) => item.id === editingComponentId);
-              return component ? (
-                <GradeComponentEditor
-                  component={component}
-                  saving={breakdownMutation.isPending}
-                  onCancel={() => setEditingComponentId(null)}
-                  onSave={(change) => breakdownMutation.mutate(change)}
-                />
-              ) : null;
-            })()}
             <GradeBreakdownHistory calificacionId={cal.id} />
           </div>
         ) : cal.desglose_heredado ? (
@@ -783,6 +851,15 @@ function PanelDetalle({
       </div>
     </ConfirmDialog>
     <ConfirmDialog
+      open={pendingEditorAction !== null}
+      onClose={() => setPendingEditorAction(null)}
+      onConfirm={discardComponentChanges}
+      title="Cambios de respuesta sin guardar"
+      confirmLabel="Descartar y continuar"
+      cancelLabel="Seguir editando"
+      tone="danger"
+      description="Cambiaste el puntaje o la explicación de esta respuesta. Puedes seguir editando o descartar esos cambios antes de abrir otra respuesta."
+    />    <ConfirmDialog
       open={replacementOpen}
       onClose={() => !replacementMutation.isPending && setReplacementOpen(false)}
       onConfirm={() => replacementMutation.mutate()}
@@ -1023,7 +1100,6 @@ export function CalificacionesWorkspace() {
   const [mobileDirty, setMobileDirty] = useState(false);
   const [mobileDirtyConfirm, setMobileDirtyConfirm] = useState(false);
   const [manualGradeOpen, setManualGradeOpen] = useState(false);
-  const detailPanelRef = useRef<HTMLDivElement>(null);
 
   const { data: materias } = useMaterias();
   const directEvaluation = useQuery({
@@ -1043,14 +1119,8 @@ export function CalificacionesWorkspace() {
     if (requestedCalificacionId) setSelectedId(requestedCalificacionId);
   }, [requestedCalificacionId]);
 
-  useEffect(() => {
-    if (!selectedId || window.innerWidth >= 1024) return;
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => {
-      document.body.style.overflow = previousOverflow;
-    };
-  }, [selectedId]);
+  useBodyScrollLock(Boolean(selectedId));
+
 
   useEffect(() => {
     if (!materiaId && !evalIdParam && materias?.[0]) setMateriaId(materias[0].id);
@@ -1399,18 +1469,17 @@ export function CalificacionesWorkspace() {
 
         {/* Right panel — detail */}
         <div
-          ref={detailPanelRef}
           className={`min-h-0 flex-1 overflow-hidden ${
             selectedId
-              ? 'fixed inset-0 z-30 flex flex-col bg-surface lg:static lg:z-auto'
+              ? 'fixed inset-0 z-30 flex h-[100dvh] max-h-[100dvh] flex-col overflow-hidden bg-surface lg:static lg:z-auto lg:h-auto lg:max-h-none'
               : 'hidden lg:flex lg:items-center lg:justify-center'
           }`}
         >
           {selectedId ? (
             <>
               {/* Mobile overlay close */}
-              <div className="sticky top-0 z-10 flex shrink-0 items-center justify-between border-b border-border bg-surface px-4 py-2 lg:hidden">
-                <button type="button" onClick={() => { if (mobileDirty) setMobileDirtyConfirm(true); else setSelectedId(null); }} className="flex items-center gap-2 text-sm font-semibold text-muted">
+              <div className="sticky top-0 z-10 flex shrink-0 items-center justify-between border-b border-border bg-surface px-4 pb-2 pt-[max(0.5rem,env(safe-area-inset-top))] lg:hidden">
+                <button type="button" onClick={() => { if (mobileDirty) setMobileDirtyConfirm(true); else setSelectedId(null); }} className="flex min-h-11 items-center gap-2 rounded-lg px-2 text-sm font-semibold text-muted">
                   <ArrowLeft className="h-4 w-4" /> Volver a lista
                 </button>
                 {mobileDirty && <span className="text-[10px] font-semibold text-amber-600">Sin guardar</span>}

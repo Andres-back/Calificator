@@ -105,6 +105,25 @@ async def get_evaluation_or_404(db: AsyncSession, evaluacion_id: UUID) -> Evalua
     return evaluacion
 
 
+async def _linked_material_is_visible(db: AsyncSession, evaluacion: Evaluacion) -> bool:
+    """Las evaluaciones normales no dependen de Material; las actividades sí."""
+    material_origen_id = getattr(evaluacion, 'material_origen_id', None)
+    if not material_origen_id:
+        return True
+    return bool(
+        await db.scalar(
+            text(
+                "SELECT publicado_estudiantes FROM materiales_generados "
+                "WHERE id = :material_id AND profesor_id = :profesor_id "
+                "AND publicado_estudiantes = true"
+            ),
+            {
+                "material_id": str(material_origen_id),
+                "profesor_id": str(evaluacion.profesor_id),
+            },
+        )
+    )
+
 async def ensure_can_read_evaluation(
     db: AsyncSession,
     evaluacion_id: UUID,
@@ -116,6 +135,7 @@ async def ensure_can_read_evaluation(
     if (
         current_user.rol == UserRole.ESTUDIANTE.value
         and evaluacion.estado in STUDENT_VISIBLE_EVALUATION_STATES
+        and await _linked_material_is_visible(db, evaluacion)
         and await is_student_enrolled(db, evaluacion.materia_id, current_user.id)
     ):
         progress = await _student_progress_by_evaluation(db, [evaluacion], current_user.id)
@@ -373,16 +393,18 @@ async def get_student_activity(
         or not await is_student_enrolled(db, evaluacion.materia_id, current_user.id)
     ):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No tienes acceso a esta actividad")
-    if not evaluacion.material_origen_id:
+    material_origen_id = getattr(evaluacion, 'material_origen_id', None)
+    if not material_origen_id:
         return None
     row = (
         await db.execute(
             text(
                 "SELECT tipo, titulo, contenido_json FROM materiales_generados "
-                "WHERE id = :material_id AND profesor_id = :profesor_id"
+                "WHERE id = :material_id AND profesor_id = :profesor_id "
+                "AND publicado_estudiantes = true"
             ),
             {
-                "material_id": str(evaluacion.material_origen_id),
+                "material_id": str(material_origen_id),
                 "profesor_id": str(evaluacion.profesor_id),
             },
         )
@@ -517,10 +539,15 @@ async def list_evaluations_for_materia(
     result = await db.scalars(stmt)
     evaluaciones = list(result)
     if current_user.rol == UserRole.ESTUDIANTE.value:
-        progress = await _student_progress_by_evaluation(db, evaluaciones, current_user.id)
+        visible_evaluations = [
+            evaluacion
+            for evaluacion in evaluaciones
+            if await _linked_material_is_visible(db, evaluacion)
+        ]
+        progress = await _student_progress_by_evaluation(db, visible_evaluations, current_user.id)
         return [
             _student_safe_evaluation(evaluacion, progress.get(evaluacion.id))
-            for evaluacion in evaluaciones
+            for evaluacion in visible_evaluations
         ]
     return evaluaciones
 
@@ -723,6 +750,19 @@ async def publish_evaluation(db: AsyncSession, evaluacion: Evaluacion) -> Evalua
     transition_evaluation_state(evaluacion, EvaluacionEstado.PUBLICADA)
     evaluacion.fecha_publicacion = utcnow()
     evaluacion.recepcion_habilitada = True
+    material_origen_id = getattr(evaluacion, 'material_origen_id', None)
+    if material_origen_id:
+        await db.execute(
+            text(
+                "UPDATE materiales_generados SET publicado_estudiantes = true, "
+                "fecha_publicacion = COALESCE(fecha_publicacion, NOW()), updated_at = NOW() "
+                "WHERE id = :material_id AND profesor_id = :profesor_id"
+            ),
+            {
+                "material_id": str(material_origen_id),
+                "profesor_id": str(evaluacion.profesor_id),
+            },
+        )
     await db.commit()
     return await get_evaluation_or_404(db, evaluacion.id)
 
@@ -761,6 +801,19 @@ async def close_evaluation(db: AsyncSession, evaluacion: Evaluacion) -> Evaluaci
 async def delete_evaluation(db: AsyncSession, evaluacion: Evaluacion) -> None:
     evaluacion.recepcion_habilitada = False
     evaluacion.deleted_at = utcnow()
+    material_origen_id = getattr(evaluacion, 'material_origen_id', None)
+    if material_origen_id:
+        await db.execute(
+            text(
+                "UPDATE materiales_generados SET publicado_estudiantes = false, "
+                "fecha_publicacion = NULL, updated_at = NOW() "
+                "WHERE id = :material_id AND profesor_id = :profesor_id"
+            ),
+            {
+                "material_id": str(material_origen_id),
+                "profesor_id": str(evaluacion.profesor_id),
+            },
+        )
     await db.commit()
 
 

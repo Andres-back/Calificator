@@ -55,3 +55,14 @@ Como equipo, necesito actualizar estos artefactos cuando cambie el comportamient
 ## Inventario técnico
 
 - [Ver superficies, permisos y cobertura de este dominio](./inventory.md).
+
+
+## Evolución 018: ciclo de vida asociado a materia
+
+- Un recurso generado con materia_id conserva esa relación desde su creación y aparece con el mismo identificador tanto en la biblioteca docente como en la pestaña Recursos de la materia.
+- La relación con la materia no publica el recurso automáticamente: el estado inicial es borrador y el profesor decide entre material de apoyo o actividad evaluativa.
+- Los estados canónicos son borrador, apoyo visible/oculto y actividad visible/oculta; una actividad mantiene separada la visibilidad de su recepción de entregas.
+- Convertir un material en actividad crea como máximo una evaluación vinculada y las operaciones repetidas recuperan el vínculo existente.
+- PATCH /herramientas/{material_id}/visibilidad administra publicación u ocultamiento de forma idempotente y sincroniza la evaluación vinculada sin borrar notas, entregas ni contenido.
+- El profesor ve borradores y estados administrativos; el estudiante solo recibe recursos autorizados, publicados y pertenecientes a una matrícula activa.
+- La evolución se verifica en las pruebas de ciclo de vida, autorización, biblioteca y pestaña de materia de la especificación 018.

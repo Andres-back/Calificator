@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { AlertTriangle, CheckCircle2, EyeOff, FileSearch } from 'lucide-react';
 import { Badge } from '@/components/ui';
 import type { GradeBreakdownData } from '@/types/api';
@@ -9,7 +10,13 @@ const stateLabel: Record<string, string> = {
   revision_pendiente: 'Revisión pendiente',
 };
 
-export function GradeBreakdown({ breakdown, student = false, onEdit }: { breakdown: GradeBreakdownData; student?: boolean; onEdit?: (componentId: string) => void }) {
+export function GradeBreakdown({ breakdown, student = false, onEdit, editingComponentId, renderEditor }: {
+  breakdown: GradeBreakdownData;
+  student?: boolean;
+  onEdit?: (componentId: string) => void;
+  editingComponentId?: string | null;
+  renderEditor?: (component: GradeBreakdownData['componentes'][number]) => ReactNode;
+}) {
   return (
     <section aria-labelledby="grade-breakdown-title" className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -61,11 +68,17 @@ export function GradeBreakdown({ breakdown, student = false, onEdit }: { breakdo
             {component.evidencia_paginas.length > 0 && (
               <p className="mt-2 text-xs text-muted">Evidencia: {component.evidencia_paginas.map((page) => `hoja ${page}`).join(', ')}.</p>
             )}
-            {onEdit && (
+            {onEdit && editingComponentId !== component.id && (
               <button type="button" onClick={() => onEdit(component.id)} className="focus-ring mt-3 min-h-11 rounded-lg border border-border px-4 py-2 text-sm font-semibold text-brand-700 hover:bg-brand-50 dark:text-brand-200 dark:hover:bg-brand-500/10">
                 Ajustar puntaje y explicación
               </button>
-            )}            {!student && component.valoraciones && component.valoraciones.length > 1 && (
+            )}
+            {editingComponentId === component.id && renderEditor ? (
+              <div className="mt-4" data-testid={`grade-editor-${component.id}`}>
+                {renderEditor(component)}
+              </div>
+            ) : null}
+            {!student && component.valoraciones && component.valoraciones.length > 1 && (
               <details className="mt-3 text-xs text-muted">
                 <summary className="cursor-pointer font-semibold">Ver valoraciones independientes ({component.valoraciones.length})</summary>
                 <div className="mt-2 space-y-2">

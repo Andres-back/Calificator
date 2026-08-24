@@ -78,3 +78,88 @@ test('estudiante ve el desglose publicado y selecciona una pregunta para reclama
   await page.getByLabel(/Qué deseas que revisen/).selectOption('respuesta');
   await expect(page.getByLabel(/Pregunta o criterio/)).toBeVisible();
 });
+
+
+test('docente llega a la respuesta 20, edita y recupera el scroll móvil', async ({ page }) => {
+  const manyComponents = {
+    ...breakdown,
+    formula: { ...breakdown.formula, puntos_obtenidos: 4, puntos_posibles: 5, nota_base: 4, nota_antes_redondeo: 4, nota_final: 4 },
+    componentes: Array.from({ length: 20 }, (_, index) => ({
+      ...breakdown.componentes[0],
+      id: 'q' + String(index + 1),
+      clave: 'pregunta:' + String(index + 1),
+      orden: index,
+      numero: String(index + 1),
+      titulo: 'Pregunta ' + String(index + 1),
+      puntos_obtenidos: 0.2,
+      puntos_maximos: 0.25,
+      explicacion: 'Explicación verificable para la pregunta ' + String(index + 1) + '.',
+    })),
+  };
+  await page.setViewportSize({ width: 390, height: 844 });
+  await installMocks(page, 'profesor');
+  await page.route('**/api/calificaciones/c1/detalle', (route) => json(route, {
+    ...grade,
+    evaluacion_nombre: evaluation.nombre,
+    materia_nombre: materia.nombre,
+    estudiante_nombre: student.nombre,
+    estudiante_email: student.email,
+    nota_maxima: 5,
+    entrega_tipo: 'online',
+    entrega_archivo_url: null,
+    entrega_evidencia_paginas: 0,
+    entrega_evidencia_tipo: null,
+    entrega_respuesta_texto: 'Respuestas 1 a 20',
+    entrega_created_at: grade.created_at,
+    timeline: [],
+    guia_revision: [],
+    desglose: manyComponents,
+    desglose_heredado: false,
+    respuestas_liberadas: true,
+  }));
+  await page.goto('/login');
+  await page.getByLabel(/Correo/i).fill(teacher.email);
+  await page.locator('input[type="password"]').fill('Password123!');
+  await page.getByRole('button', { name: /Iniciar sesi.n/i }).click();
+  await page.goto('/app/calificaciones/workspace/e1');
+  await page.getByText('Estudiante Prueba', { exact: true }).click();
+
+  const lastCard = page.locator('article').filter({ has: page.getByText('Pregunta 20', { exact: true }) }).last();
+  await lastCard.scrollIntoViewIfNeeded();
+  await expect(lastCard).toBeVisible();
+  await lastCard.getByRole('button', { name: 'Ajustar puntaje y explicación' }).click();
+  await page.getByLabel(/Puntos/).fill('0.25');
+  await page.getByLabel('Motivo interno del cambio').fill('Corrección docente verificada');
+  await page.getByLabel('Explicación para el estudiante').fill('La respuesta está completa y coincide con el procedimiento esperado.');
+  await page.setViewportSize({ width: 390, height: 500 });
+  await expect(page.getByRole('button', { name: 'Guardar y recalcular' })).toBeEnabled();
+  await expect(page.getByRole('button', { name: 'Cancelar' })).toBeVisible();
+  await page.getByRole('button', { name: 'Cancelar' }).click();
+  await page.getByRole('button', { name: 'Descartar y continuar' }).click();
+  await page.getByRole('button', { name: 'Volver a lista' }).click();
+  await expect(page.getByText('Estudiante Prueba', { exact: true })).toBeVisible();
+  expect(await page.evaluate(() => document.body.style.overflow)).toBe('');
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBeTruthy();
+});
+
+
+test('un conflicto 409 no sobrescribe la revisión vigente', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await installMocks(page, 'profesor');
+  await page.route('**/api/calificaciones/c1/desglose', (route) => json(route, {
+    detail: 'La calificación cambió en otra sesión.',
+  }, 409));
+  await page.goto('/login');
+  await page.getByLabel(/Correo/i).fill(teacher.email);
+  await page.locator('input[type="password"]').fill('Password123!');
+  await page.getByRole('button', { name: /Iniciar sesi.n/i }).click();
+  await page.goto('/app/calificaciones/workspace/e1');
+  await page.getByText('Estudiante Prueba', { exact: true }).click();
+  await page.getByRole('button', { name: 'Ajustar puntaje y explicación' }).click();
+  await page.getByLabel(/Puntos/).fill('0.75');
+  await page.getByLabel('Motivo interno del cambio').fill('Revisión concurrente');
+  await page.getByLabel('Explicación para el estudiante').fill('La respuesta conserva el procedimiento revisado.');
+  await page.getByRole('button', { name: 'Guardar y recalcular' }).click();
+  await expect(page.getByText(/cambió en otra revisión/i)).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Ajustar puntaje y explicación' })).toBeVisible();
+});

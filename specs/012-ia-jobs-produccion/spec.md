@@ -58,3 +58,14 @@ Como equipo, necesito actualizar estos artefactos cuando cambie el comportamient
 ## Inventario técnico
 
 - [Ver superficies, permisos y cobertura de este dominio](./inventory.md).
+
+
+## Evolución 018: espera recuperable y telemetría segura
+
+- Los trabajos de digitalización y calificación exponen de forma aditiva timings_ms, fallbacks, terminal_reason, pipeline_run_id, slow_after_ms y deadline_ms legacy nulo.
+- Las etapas canónicas son cola, preparación, extracción, estructuración, evaluación primaria, evaluación secundaria, persistencia y total.
+- Cada intento externo produce un único evento seguro con etapa, proveedor, modelo, duración y código de error normalizado; no registra evidencia, prompts, respuestas ni mensajes del estudiante.
+- Los workers no cancelan una inferencia aceptada por duración ni por una pérdida temporal del broker. `acks_late`, idempotencia y reintento recuperan reinicios; conexión, escritura y pool sí conservan límites de transporte.
+- Un fallback permitido queda registrado sin exponer credenciales o contenido y conserva un resultado terminal explícito: completado, revisión requerida o error recuperable.
+- La estrategia de calificación registra `primary_mode`, `secondary_mode`, `arbiter_invoked` y `arbiter_reason`: Qwen extrae una vez, Flash evalúa/verifica y Pro se reserva para arbitraje excepcional.
+- La interfaz muestra etapa y duración segura mientras permite continuar navegando.

@@ -9,6 +9,7 @@ export default defineConfig({
   testMatch: '**/*.visual.spec.ts',
   timeout: 30_000,
   retries: 0,
+  snapshotPathTemplate: '{testDir}/__screenshots__/{arg}{ext}',
   use: {
     baseURL: 'http://127.0.0.1:4175',
     trace: 'retain-on-failure',

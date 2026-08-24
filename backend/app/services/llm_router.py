@@ -60,6 +60,15 @@ def _open_code_retry_delay_seconds(
     return min(exponential, OPEN_CODE_RETRY_MAX_SECONDS)
 
 
+def _persistent_inference_timeout() -> httpx.Timeout:
+    return httpx.Timeout(
+        connect=max(1.0, float(settings.AI_PROVIDER_CONNECT_TIMEOUT_SECONDS)),
+        read=None,
+        write=max(1.0, float(settings.AI_PROVIDER_WRITE_TIMEOUT_SECONDS)),
+        pool=max(1.0, float(settings.AI_PROVIDER_POOL_TIMEOUT_SECONDS)),
+    )
+
+
 class LLMRouter:
     """Cascade through configured LLM providers, then use a safe local template."""
 
@@ -120,6 +129,7 @@ class LLMRouter:
             self._provider_configs[LLMProvider.OPEN_CODE.value] = {
                 "model": settings.OPEN_CODE_DIGITALIZATION_MODEL,
                 "timeout_seconds": settings.OPEN_CODE_DIGITALIZATION_TIMEOUT_SECONDS,
+                "wait_for_completion": True,
             }
         elif task_type == "presentacion":
             self._provider_configs[LLMProvider.OPEN_CODE.value] = {
@@ -152,6 +162,7 @@ class LLMRouter:
                     document_provider["max_tokens"] = (
                         settings.OPEN_CODE_DIGITALIZATION_MAX_TOKENS
                     )
+                    document_provider["wait_for_completion"] = True
                 elif task_type == "presentacion":
                     presentation_provider = self._provider_configs.setdefault(
                         LLMProvider.OPEN_CODE.value, {}
@@ -281,8 +292,12 @@ class LLMRouter:
                 body["response_format"] = {"type": "json_object"}
             endpoint = "chat/completions"
 
-        timeout = config.get("timeout_seconds") or getattr(
-            settings, "OPEN_CODE_TIMEOUT_SECONDS", 45
+        timeout = (
+            _persistent_inference_timeout()
+            if config.get("wait_for_completion")
+            else config.get("timeout_seconds") or getattr(
+                settings, "OPEN_CODE_TIMEOUT_SECONDS", 45
+            )
         )
         base_url = str(
             config.get("base_url") or settings.OPEN_CODE_BASE_URL

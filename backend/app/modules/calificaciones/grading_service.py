@@ -5,6 +5,7 @@ Mantiene la misma interfaz pública para compatibilidad con los routers.
 """
 from __future__ import annotations
 
+from decimal import Decimal
 from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -33,9 +34,9 @@ async def grade_submission(
 
     Pipeline:
       1. Foto/PDF: Qwen 3.7+ extrae la evidencia (Qwen 3.6+/MiMo como respaldo)
-      2. Foto/PDF: Qwen 3.7+ y Qwen 3.6+ califican la evidencia visual
-      3. Online: DeepSeek V4 califica el texto; Qwen actúa como contingencia
-      4. Comparator → compara A vs B y produce la nota final
+      2. Flash genera un desglose explicable y otro pase Flash lo verifica
+      3. Pro arbitra únicamente discrepancias, baja confianza o fallos reales
+      4. La inferencia aceptada se espera en segundo plano sin read-timeout
 
     Args:
         db: Sesión de BD.

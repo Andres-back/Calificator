@@ -20,6 +20,8 @@ export interface PendingDigitalizationJob {
   evaluationId?: string;
   questionsCount?: number;
   error?: string;
+  timingsMs?: Record<string, number>;
+  terminalReason?: string;
 }
 
 type NewDigitalizationJob = Pick<
@@ -73,6 +75,12 @@ export function readPendingDigitalizations(): PendingDigitalizationJob[] {
           ? item.questionsCount
           : undefined,
         error: typeof item.error === 'string' ? item.error : undefined,
+        timingsMs: item.timingsMs && typeof item.timingsMs === 'object'
+          ? item.timingsMs as Record<string, number>
+          : undefined,
+        terminalReason: typeof item.terminalReason === 'string'
+          ? item.terminalReason
+          : undefined,
       }));
   } catch {
     return [];

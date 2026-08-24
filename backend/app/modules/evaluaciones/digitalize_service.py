@@ -221,6 +221,7 @@ async def _extract_image_text(
                 client=client,
                 prompt_override=DIGITALIZATION_VISION_PROMPT,
                 timeout=settings.OPEN_CODE_DIGITALIZATION_VISION_TIMEOUT_SECONDS,
+                max_attempts=max(1, int(settings.PHOTO_GRADING_MODEL_MAX_ATTEMPTS)),
             )
             last_result = result
             raw = result.raw_output or {}

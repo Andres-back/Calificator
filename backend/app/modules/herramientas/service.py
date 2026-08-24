@@ -416,7 +416,7 @@ async def list_materials(
         text(
             f"SELECT mg.id, mg.tipo, mg.titulo, mg.materia_id, m.nombre AS materia_nombre, "
             f"mg.archivo_url, mg.created_at, e.id AS evaluacion_id, "
-            f"e.estado AS evaluacion_estado, e.modalidad AS evaluacion_modalidad, "
+            f"e.estado AS evaluacion_estado, e.modalidad AS evaluacion_modalidad, e.recepcion_habilitada AS evaluacion_recepcion_habilitada, "
             f"mg.asignacion_tipo, mg.publicado_estudiantes, mg.fecha_publicacion, mg.updated_at "
             f"FROM materiales_generados mg LEFT JOIN materias m ON m.id = mg.materia_id "
             f"LEFT JOIN evaluaciones e ON e.material_origen_id = mg.id "
@@ -436,6 +436,7 @@ async def list_materials(
             "evaluacion_id": r.evaluacion_id,
             "evaluacion_estado": r.evaluacion_estado,
             "evaluacion_modalidad": r.evaluacion_modalidad,
+            "evaluacion_recepcion_habilitada": r.evaluacion_recepcion_habilitada,
             "asignacion_tipo": r.asignacion_tipo,
             "publicado_estudiantes": r.publicado_estudiantes,
             "fecha_publicacion": r.fecha_publicacion,
@@ -675,6 +676,7 @@ async def get_material(db: AsyncSession, material_id: UUID, profesor_id: UUID) -
         "evaluacion_id": r.evaluacion_id,
         "evaluacion_estado": r.evaluacion_estado,
         "evaluacion_modalidad": r.evaluacion_modalidad,
+        "evaluacion_recepcion_habilitada": r.evaluacion_recepcion_habilitada,
         "asignacion_tipo": r.asignacion_tipo,
         "publicado_estudiantes": r.publicado_estudiantes,
         "fecha_publicacion": r.fecha_publicacion,
@@ -695,6 +697,7 @@ def _material_row(row: object) -> dict:
         "evaluacion_id": row.evaluacion_id,
         "evaluacion_estado": row.evaluacion_estado,
         "evaluacion_modalidad": row.evaluacion_modalidad,
+        "evaluacion_recepcion_habilitada": getattr(row, "evaluacion_recepcion_habilitada", None),
         "asignacion_tipo": row.asignacion_tipo,
         "publicado_estudiantes": row.publicado_estudiantes,
         "fecha_publicacion": row.fecha_publicacion,
@@ -708,12 +711,21 @@ async def list_materials_for_materia(
     materia_id: UUID,
     current_user: User,
 ) -> list[dict]:
-    """Lista apoyos de una materia; estudiantes solo reciben los publicados."""
+    """Lista el mismo recurso en su materia sin duplicarlo.
+
+    El docente ve borradores, apoyos y actividades. El estudiante solo recibe
+    apoyos visibles o actividades visibles cuyo estado ya es consultable.
+    """
     from sqlalchemy import text
 
     if current_user.rol == UserRole.ESTUDIANTE.value:
         await materias_service.ensure_can_read_materia(db, materia_id, current_user)
-        visibility = "AND mg.publicado_estudiantes = true"
+        visibility = (
+            "AND mg.publicado_estudiantes = true "
+            "AND (mg.asignacion_tipo = 'apoyo' OR "
+            "(mg.asignacion_tipo = 'actividad' AND e.estado IN "
+            "('publicada', 'en_calificacion', 'pendiente_revision', 'cerrada')))"
+        )
     else:
         await materias_service.ensure_can_manage_materia(db, materia_id, current_user)
         visibility = ""
@@ -723,11 +735,11 @@ async def list_materials_for_materia(
             "SELECT mg.id, mg.tipo, mg.titulo, mg.materia_id, m.nombre AS materia_nombre, "
             "mg.archivo_url, mg.created_at, mg.updated_at, mg.asignacion_tipo, "
             "mg.publicado_estudiantes, mg.fecha_publicacion, e.id AS evaluacion_id, "
-            "e.estado AS evaluacion_estado, e.modalidad AS evaluacion_modalidad "
+            "e.estado AS evaluacion_estado, e.modalidad AS evaluacion_modalidad, e.recepcion_habilitada AS evaluacion_recepcion_habilitada "
             "FROM materiales_generados mg "
             "JOIN materias m ON m.id = mg.materia_id "
             "LEFT JOIN evaluaciones e ON e.material_origen_id = mg.id "
-            "WHERE mg.materia_id = :materia_id AND mg.asignacion_tipo = 'apoyo' "
+            "WHERE mg.materia_id = :materia_id "
             f"{visibility} ORDER BY COALESCE(mg.fecha_publicacion, mg.updated_at, mg.created_at) DESC"
         ),
         {"materia_id": str(materia_id)},
@@ -743,6 +755,7 @@ async def list_materials_for_materia(
             "evaluacion_id": row.evaluacion_id,
             "evaluacion_estado": row.evaluacion_estado,
             "evaluacion_modalidad": row.evaluacion_modalidad,
+            "evaluacion_recepcion_habilitada": getattr(row, "evaluacion_recepcion_habilitada", None),
             "asignacion_tipo": row.asignacion_tipo,
             "publicado_estudiantes": row.publicado_estudiantes,
             "fecha_publicacion": row.fecha_publicacion,
@@ -770,13 +783,13 @@ async def get_material_for_user(
             "mg.contenido_json, mg.archivo_url, mg.created_at, mg.updated_at, "
             "mg.asignacion_tipo, mg.publicado_estudiantes, mg.fecha_publicacion, "
             "e.id AS evaluacion_id, e.estado AS evaluacion_estado, "
-            "e.modalidad AS evaluacion_modalidad "
+            "e.modalidad AS evaluacion_modalidad, e.recepcion_habilitada AS evaluacion_recepcion_habilitada "
             "FROM materiales_generados mg "
             "JOIN materias m ON m.id = mg.materia_id "
             "LEFT JOIN evaluaciones e ON e.material_origen_id = mg.id "
             "WHERE mg.id = :material_id AND ("
             "(mg.asignacion_tipo = 'apoyo' AND mg.publicado_estudiantes = true) OR "
-            "(mg.asignacion_tipo = 'actividad' AND e.estado IN "
+            "(mg.asignacion_tipo = 'actividad' AND mg.publicado_estudiantes = true AND e.estado IN "
             "('publicada', 'en_calificacion', 'pendiente_revision', 'cerrada')))"
         ),
         {"material_id": str(material_id)},
@@ -805,6 +818,12 @@ async def assign_material_as_support(
     material = await get_material(db, material_id, current_user.id)
     if material is None:
         raise HTTPException(status_code=404, detail="Material no encontrado")
+    original_materia_id = material.get("materia_id")
+    if original_materia_id is not None and UUID(str(original_materia_id)) != UUID(str(materia_id)):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="El recurso conserva la materia elegida al generarse. Crea una copia para usarlo en otra materia.",
+        )
     if await _linked_evaluation(db, material_id, current_user.id) is not None:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
@@ -849,6 +868,54 @@ async def withdraw_support_material(
             "WHERE id = :material_id AND profesor_id = :profesor_id"
         ),
         {"material_id": str(material_id), "profesor_id": str(current_user.id)},
+    )
+    await db.commit()
+    updated = await get_material(db, material_id, current_user.id)
+    if updated is None:
+        raise HTTPException(status_code=404, detail="Material no encontrado")
+    return updated
+
+async def set_material_visibility(
+    db: AsyncSession,
+    material_id: UUID,
+    current_user: User,
+    *,
+    visible: bool,
+) -> dict:
+    """Muestra u oculta un recurso sin cambiar recepción, entregas ni notas."""
+    from sqlalchemy import text
+
+    material = await get_material(db, material_id, current_user.id)
+    if material is None:
+        raise HTTPException(status_code=404, detail="Material no encontrado")
+    assignment_type = material.get("asignacion_tipo")
+    if assignment_type not in {"apoyo", "actividad"}:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Primero asigna el recurso como apoyo o actividad.",
+        )
+    if visible and assignment_type == "actividad":
+        linked = await _linked_evaluation(db, material_id, current_user.id)
+        linked_state = str(getattr(linked, "estado", "") or "")
+        if linked is None or linked_state not in {
+            "publicada", "en_calificacion", "pendiente_revision", "cerrada"
+        }:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Publica la evaluación antes de mostrar esta actividad.",
+            )
+
+    await db.execute(
+        text(
+            "UPDATE materiales_generados SET publicado_estudiantes = :visible, "
+            "fecha_publicacion = CASE WHEN :visible THEN COALESCE(fecha_publicacion, NOW()) ELSE NULL END, "
+            "updated_at = NOW() WHERE id = :material_id AND profesor_id = :profesor_id"
+        ),
+        {
+            "visible": visible,
+            "material_id": str(material_id),
+            "profesor_id": str(current_user.id),
+        },
     )
     await db.commit()
     updated = await get_material(db, material_id, current_user.id)
@@ -1281,6 +1348,16 @@ async def convertir_a_evaluacion(
         return existing
 
     target_materia_id = getattr(request, "materia_id", None) or material.get("materia_id")
+    original_materia_id = material.get("materia_id")
+    if (
+        original_materia_id is not None
+        and getattr(request, "materia_id", None) is not None
+        and UUID(str(original_materia_id)) != UUID(str(getattr(request, "materia_id")))
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="El recurso conserva la materia elegida al generarse. Crea una copia para usarlo en otra materia.",
+        )
     if target_materia_id is None:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,

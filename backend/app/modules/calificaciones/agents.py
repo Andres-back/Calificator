@@ -13,6 +13,7 @@ from app.core.config import settings
 from app.core.logging import get_logger
 from app.modules.analytics.usage_logger import log_ai_usage
 from app.modules.calificaciones.breakdown_policy import build_component_scaffold, sanitize_component_payload
+from app.services.image_preprocessing import prepare_orientation_variants
 from app.services.llm_router import LLMRouter
 from app.services.vision_service import interpret_image
 
@@ -29,6 +30,33 @@ OPEN_CODE_RETRY_BASE_SECONDS = 0.5
 OPEN_CODE_RETRY_MAX_SECONDS = 10.0
 OPEN_CODE_RETRYABLE_STATUS_CODES = frozenset({408, 425, 429, 500, 502, 503, 504})
 OPEN_CODE_ANTHROPIC_MODEL_PREFIXES = ("qwen", "minimax-m")
+
+CANONICAL_AI_STAGES = {
+    "vision": "extraction",
+    "text": "structure",
+    "grading_primary": "grading_primary",
+    "grading_secondary": "grading_secondary",
+    "targeted_recheck": "targeted_recheck",
+    "consolidation": "consolidation",
+}
+
+
+def _canonical_stage(stage: str) -> str:
+    return CANONICAL_AI_STAGES.get(stage, stage if stage in CANONICAL_AI_STAGES.values() else "structure")
+
+
+def inference_http_timeout() -> httpx.Timeout:
+    """Protege el transporte sin abandonar una inferencia aceptada.
+
+    OpenCode puede seguir calculando aunque el cliente cierre por read-timeout. Por eso
+    conexión, escritura y pool son finitos, mientras la lectura espera la respuesta.
+    """
+    return httpx.Timeout(
+        connect=max(1.0, float(settings.AI_PROVIDER_CONNECT_TIMEOUT_SECONDS)),
+        read=None,
+        write=max(1.0, float(settings.AI_PROVIDER_WRITE_TIMEOUT_SECONDS)),
+        pool=max(1.0, float(settings.AI_PROVIDER_POOL_TIMEOUT_SECONDS)),
+    )
 
 
 def _opencode_protocol(model: str) -> str:
@@ -152,7 +180,13 @@ def _prepare_multimodal_images(
             dpi = max(72, int(settings.GRADING_PDF_RENDER_DPI))
             for page_number, page in enumerate(document, start=1):
                 pixmap = page.get_pixmap(dpi=dpi, alpha=False)
-                images.append((pixmap.tobytes("png"), "image/png", page_number))
+                page_png = pixmap.tobytes("png")
+                prepared_page = prepare_orientation_variants(
+                    page_png,
+                    "image/png",
+                    max_side=2200,
+                )[0]
+                images.append((prepared_page.data, prepared_page.mime, page_number))
         return images
     except Exception as exc:
         logger.warning("Error convirtiendo PDF a imagenes: %s", exc)
@@ -268,7 +302,7 @@ class OpenCodeClient:
     ) -> None:
         self.api_key = str(settings.OPEN_CODE_API_KEY)
         self.base_url = str(settings.OPEN_CODE_BASE_URL).rstrip("/")
-        self._client = httpx.AsyncClient(timeout=DEFAULT_TIMEOUT)
+        self._client = httpx.AsyncClient(timeout=inference_http_timeout())
         self._tracking = tracking or {}
 
     async def _log_call(
@@ -282,6 +316,7 @@ class OpenCodeClient:
         output_tokens: int | None = None,
         image_count: int = 0,
         error_code: str | None = None,
+        attempt_number: int = 1,
     ) -> None:
         """Registra una llamada en el ledger (fire-and-forget)."""
         completed_at = time.monotonic()
@@ -291,10 +326,10 @@ class OpenCodeClient:
             evaluacion_id=self._tracking.get("evaluacion_id"),
             pipeline_run_id=self._tracking.get("pipeline_run_id"),
             feature="grading",
-            stage=stage,
+            stage=_canonical_stage(stage),
             provider="opencode",
             model=model,
-            attempt_number=self._tracking.get("attempt_number", 1),
+            attempt_number=attempt_number,
             status=status,
             latency_ms=latency_ms,
             input_tokens=input_tokens,
@@ -311,13 +346,15 @@ class OpenCodeClient:
         max_tokens: int = 2048,
         temperature: float = 0.3,
         timeout: int | None = None,
+        max_attempts: int | None = None,
+        stage: str = "text",
+        image_count: int = 0,
     ) -> dict[str, Any]:
         """Llamada chat completions. Devuelve el dict completo del response.
 
         Uses DEFAULT_TIMEOUT (60s) for text-only calls; multimodal callers
         should pass ``timeout=DEFAULT_MULTIMODAL_TIMEOUT`` (180s).
         """
-        start = time.monotonic()
         protocol = _opencode_protocol(model)
         if protocol == "messages":
             system_prompt, normalized_messages = _to_anthropic_messages(messages)
@@ -350,8 +387,10 @@ class OpenCodeClient:
                 "Content-Type": "application/json",
             }
 
-        request_timeout = timeout if timeout is not None else DEFAULT_TIMEOUT
-        for attempt_number in range(1, OPEN_CODE_MAX_ATTEMPTS + 1):
+        request_timeout = inference_http_timeout()
+        attempt_limit = max(1, max_attempts if max_attempts is not None else OPEN_CODE_MAX_ATTEMPTS)
+        for attempt_number in range(1, attempt_limit + 1):
+            attempt_started = time.monotonic()
             try:
                 response = await self._client.post(
                     f"{self.base_url}/{endpoint}",
@@ -363,14 +402,21 @@ class OpenCodeClient:
                     raise RuntimeError("OpenCode API key invalid o expirada")
                 if (
                     response.status_code in OPEN_CODE_RETRYABLE_STATUS_CODES
-                    and attempt_number < OPEN_CODE_MAX_ATTEMPTS
+                    and attempt_number < attempt_limit
                 ):
+                    await self._log_call(
+                        stage=stage, model=model, status="retry",
+                        started_at=attempt_started,
+                        attempt_number=attempt_number,
+                        image_count=image_count,
+                        error_code=f"http_{response.status_code}",
+                    )
                     delay = _retry_delay_seconds(attempt_number, response)
                     logger.warning(
                         "OpenCode transitorio HTTP %s; reintento %s/%s en %.2fs",
                         response.status_code,
                         attempt_number + 1,
-                        OPEN_CODE_MAX_ATTEMPTS,
+                        attempt_limit,
                         delay,
                     )
                     await asyncio.sleep(delay)
@@ -381,25 +427,34 @@ class OpenCodeClient:
                     data = _normalize_anthropic_response(data)
                 usage = data.get("usage", {}) or {}
                 await self._log_call(
-                    stage="text",
+                    stage=_canonical_stage(stage),
                     model=model,
                     status="success",
-                    started_at=start,
+                    started_at=attempt_started,
+                    attempt_number=attempt_number,
                     input_tokens=usage.get("input_tokens") or usage.get("prompt_tokens"),
                     output_tokens=usage.get("output_tokens") or usage.get("completion_tokens"),
+                    image_count=image_count,
                 )
                 return data
             except Exception as exc:
                 if (
                     _is_retryable_transport_error(exc)
-                    and attempt_number < OPEN_CODE_MAX_ATTEMPTS
+                    and attempt_number < attempt_limit
                 ):
+                    await self._log_call(
+                        stage=stage, model=model, status="retry",
+                        started_at=attempt_started,
+                        attempt_number=attempt_number,
+                        image_count=image_count,
+                        error_code=type(exc).__name__[:60],
+                    )
                     delay = _retry_delay_seconds(attempt_number)
                     logger.warning(
                         "OpenCode error transitorio %s; reintento %s/%s en %.2fs",
                         type(exc).__name__,
                         attempt_number + 1,
-                        OPEN_CODE_MAX_ATTEMPTS,
+                        attempt_limit,
                         delay,
                     )
                     await asyncio.sleep(delay)
@@ -413,11 +468,13 @@ class OpenCodeClient:
                     else str(exc)[:60]
                 )
                 await self._log_call(
-                    stage="text",
+                    stage=_canonical_stage(stage),
                     model=model,
                     status=status_value,
-                    started_at=start,
+                    started_at=attempt_started,
+                    attempt_number=attempt_number,
                     error_code=error_code,
+                    image_count=image_count,
                 )
                 raise
 
@@ -433,6 +490,8 @@ class OpenCodeClient:
         max_tokens: int = 2048,
         temperature: float = 0.3,
         timeout: int | None = None,
+        max_attempts: int | None = None,
+        stage: str = "extraction",
     ) -> dict[str, Any]:
         """Chat completions con imagen incluida (multimodal).
 
@@ -444,7 +503,6 @@ class OpenCodeClient:
         """
         import base64
         images = _prepare_multimodal_images(image_bytes, image_mime)
-        start = time.monotonic()
         content: list[dict[str, Any]] = [{"type": "text", "text": text}]
         total_pages = len(images)
         for image_data, mime_type, page_number in images:
@@ -463,28 +521,17 @@ class OpenCodeClient:
             "role": "user",
             "content": content,
         }
-        try:
-            data = await self.chat(
-                model=model,
-                messages=[msg],
-                json_mode=json_mode,
-                max_tokens=max_tokens,
-                temperature=temperature,
-                timeout=timeout or DEFAULT_MULTIMODAL_TIMEOUT,
-            )
-            await self._log_call(
-                stage="vision",
-                model=model,
-                status="success",
-                started_at=start,
-                image_count=total_pages,
-                input_tokens=(data.get("usage") or {}).get("input_tokens"),
-                output_tokens=(data.get("usage") or {}).get("output_tokens"),
-            )
-            return data
-        except Exception as exc:
-            await self._log_call(stage="vision", model=model, status="failed", started_at=start, error_code=str(exc)[:60])
-            raise
+        return await self.chat(
+            model=model,
+            messages=[msg],
+            json_mode=json_mode,
+            max_tokens=max_tokens,
+            temperature=temperature,
+            timeout=timeout,
+            max_attempts=max_attempts,
+            stage=stage,
+            image_count=total_pages,
+        )
 
     async def close(self) -> None:
         await self._client.aclose()
@@ -531,6 +578,7 @@ async def vision_agent(
     client: OpenCodeClient | None = None,
     prompt_override: str | None = None,
     timeout: int | None = None,
+    max_attempts: int | None = None,
 ) -> AgentResult:
     """Agente de visión: extrae texto estructurado de una imagen de respuesta."""
     preguntas_context = ""
@@ -561,6 +609,7 @@ async def vision_agent(
             model=model, text=vision_text,
             image_bytes=ctx.image_bytes, image_mime=ctx.image_mime,
             json_mode=True, max_tokens=4096, timeout=timeout,
+            max_attempts=max_attempts,
         )
         ms = int((time.monotonic() - start) * 1000)
         content = raw["choices"][0]["message"]["content"]
@@ -747,6 +796,10 @@ async def grader_agent(
     model: str = "deepseek-v4-flash",
     multimodal: bool = False,
     client: OpenCodeClient | None = None,
+    timeout: int | None = None,
+    max_attempts: int | None = None,
+    stage: str = "grading_primary",
+    max_tokens: int | None = None,
 ) -> AgentResult:
     """Agente calificador. Califica la respuesta del estudiante contra el blueprint."""
     nota_maxima = ctx.nota_maxima
@@ -775,13 +828,15 @@ async def grader_agent(
             raw = await client.chat_multimodal(
                 model=model, text=prompt,
                 image_bytes=ctx.image_bytes, image_mime=ctx.image_mime,
-                json_mode=True, max_tokens=4096,
+                json_mode=True, max_tokens=max_tokens or settings.PHOTO_GRADING_PRIMARY_MAX_TOKENS,
+                timeout=timeout, max_attempts=max_attempts, stage=stage,
             )
         else:
             raw = await client.chat(
                 model=model, messages=[{"role": "user", "content": prompt}],
-                json_mode=True, max_tokens=4096,
-                timeout=DEFAULT_MULTIMODAL_TIMEOUT,
+                json_mode=True, max_tokens=max_tokens or settings.PHOTO_GRADING_PRIMARY_MAX_TOKENS,
+                timeout=timeout,
+                max_attempts=max_attempts, stage=stage,
             )
         ms = int((time.monotonic() - start) * 1000)
         content = raw["choices"][0]["message"]["content"]
@@ -817,6 +872,129 @@ async def grader_agent(
         if own_client:
             await client.close()
 
+
+VERIFIER_PROMPT_TEMPLATE = """Eres el verificador rápido de XCalificator.
+No reconstruyas toda la retroalimentación. Comprueba de manera independiente que el puntaje
+por componente, la suma y la nota propuesta sean compatibles con la evidencia extraída.
+
+Evaluación: {evaluacion_nombre}
+Nota máxima: {nota_maxima}
+Preguntas y referencias: {preguntas}
+Validación objetiva local: {objective_validation}
+Componentes esperados: {componentes_esperados}
+Respuesta extraída del estudiante:
+{student_response}
+
+Propuesta principal:
+{primary_result}
+
+Devuelve SOLO JSON válido y compacto:
+{{
+  "nota_sugerida": <número entre 0 y la nota máxima>,
+  "confianza": <0 a 1>,
+  "componentes_verificados": [
+    {{"componente_id": "...", "puntos_obtenidos": 0, "puntos_maximos": 0, "estado": "correcta|parcial|incorrecta|no_evaluable"}}
+  ],
+  "discrepancias": ["..."],
+  "requiere_arbitraje": true|false,
+  "alertas": ["..."]
+}}
+"""
+
+
+async def verification_agent(
+    ctx: AgentContext,
+    primary: AgentResult,
+    model: str = "deepseek-v4-flash",
+    client: OpenCodeClient | None = None,
+    timeout: int | None = None,
+    max_attempts: int | None = None,
+) -> AgentResult:
+    """Valida el desglose principal con una salida compacta y sin reenviar la imagen."""
+    own_client = False
+    if client is None:
+        client = OpenCodeClient()
+        own_client = True
+    prompt = VERIFIER_PROMPT_TEMPLATE.format(
+        evaluacion_nombre=ctx.evaluacion_nombre,
+        nota_maxima=ctx.nota_maxima,
+        preguntas=json.dumps(ctx.blueprint.get("preguntas", []), ensure_ascii=False),
+        objective_validation=json.dumps(ctx.objective_validation, ensure_ascii=False),
+        componentes_esperados=json.dumps(
+            [
+                {**item, "puntos_maximos": float(item["puntos_maximos"])}
+                for item in build_component_scaffold(ctx.blueprint)
+            ],
+            ensure_ascii=False,
+        ),
+        student_response=ctx.student_response_text[:5000],
+        primary_result=json.dumps(
+            {
+                "nota_sugerida": primary.nota_sugerida,
+                "confianza": primary.confianza,
+                "componentes": primary.componentes,
+            },
+            ensure_ascii=False,
+        ),
+    )
+    try:
+        started = time.monotonic()
+        raw = await client.chat(
+            model=model,
+            messages=[{"role": "user", "content": prompt}],
+            json_mode=True,
+            max_tokens=max(256, int(settings.PHOTO_GRADING_VERIFIER_MAX_TOKENS)),
+            temperature=0.1,
+            timeout=timeout,
+            max_attempts=max_attempts,
+            stage="grading_secondary",
+        )
+        elapsed_ms = int((time.monotonic() - started) * 1000)
+        content = raw["choices"][0]["message"]["content"]
+        parsed = _parse_json_content(content)
+        raw_score = parsed.get("nota_sugerida")
+        if raw_score is None:
+            return AgentResult(
+                nota_sugerida=None,
+                confianza=0,
+                feedback_estudiante="",
+                proveedor="opencode",
+                modelo=model,
+                error="verifier_missing_score",
+                requiere_revision_docente=True,
+                raw_output=parsed,
+            )
+        components = parsed.get("componentes_verificados") or parsed.get("componentes") or []
+        return AgentResult(
+            nota_sugerida=float(raw_score),
+            confianza=float(parsed.get("confianza", 0.5)),
+            feedback_estudiante="",
+            componentes=[
+                sanitize_component_payload(item)
+                for item in components
+                if isinstance(item, dict)
+            ],
+            alertas=[str(item) for item in parsed.get("alertas", [])],
+            requiere_revision_docente=bool(parsed.get("requiere_arbitraje", False)),
+            proveedor="opencode",
+            modelo=model,
+            tiempo_ms=elapsed_ms,
+            raw_output=parsed,
+        )
+    except Exception as exc:
+        logger.error("Verification agent %s failed: %s", model, exc)
+        return AgentResult(
+            nota_sugerida=None,
+            confianza=0,
+            feedback_estudiante="",
+            proveedor="opencode",
+            modelo=model,
+            error=type(exc).__name__,
+            requiere_revision_docente=True,
+        )
+    finally:
+        if own_client:
+            await client.close()
 
 async def router_grader_agent(ctx: AgentContext) -> AgentResult:
     """Calificador de respaldo mediante la cascada configurada de proveedores."""
@@ -951,7 +1129,8 @@ async def comparator_agent(
     grading_a: AgentResult,
     grading_b: AgentResult,
     umbral: float = 0.5,
-    model: str = "deepseek-v4-flash",
+    model: str = "deepseek-v4-pro",
+    force_arbitration: bool = False,
 ) -> AgentResult:
     """Compara dos calificaciones independientes y produce una nota final."""
     score_a = grading_a.nota_sugerida
@@ -969,7 +1148,7 @@ async def comparator_agent(
             error="all_graders_failed",
         )
 
-    if score_a is None or score_b is None:
+    if (score_a is None or score_b is None) and not force_arbitration:
         valid = grading_b if score_a is None else grading_a
         return AgentResult(
             nota_sugerida=valid.nota_sugerida,
@@ -984,10 +1163,16 @@ async def comparator_agent(
             raw_output={"discrepancia": True, "resultado_parcial": True},
         )
 
-    diff = abs(score_a - score_b)
+    valid_scores = [float(score) for score in (score_a, score_b) if score is not None]
+    diff = abs(score_a - score_b) if score_a is not None and score_b is not None else umbral
 
-    if not grading_a.error and not grading_b.error and diff < umbral:
-        nota_final = round((score_a + score_b) / 2, 2)
+    if (
+        not force_arbitration
+        and not grading_a.error
+        and not grading_b.error
+        and diff < umbral
+    ):
+        nota_final = round(sum(valid_scores) / len(valid_scores), 2)
         confianza = round((grading_a.confianza + grading_b.confianza) / 2, 2)
         feedback = _select_consensus_feedback(grading_a, grading_b)
         logger.info("Comparator: consenso automatico diff=%.2f nota=%.2f", diff, nota_final)
@@ -1014,11 +1199,17 @@ async def comparator_agent(
             grading_b=grading_b_str,
         )
         start = time.monotonic()
-        raw = await client.chat(model=model, messages=[{"role": "user", "content": prompt}], json_mode=True, max_tokens=1024)
+        raw = await client.chat(
+            model=model, messages=[{"role": "user", "content": prompt}],
+            json_mode=True, max_tokens=1024,
+            timeout=None,
+            max_attempts=1,
+            stage="consolidation",
+        )
         ms = int((time.monotonic() - start) * 1000)
         content = raw["choices"][0]["message"]["content"]
         parsed = _parse_json_content(content)
-        nota_final = float(parsed.get("nota_final", score_a))
+        nota_final = float(parsed.get("nota_final", valid_scores[0]))
         discrepancy = parsed.get("discrepancia", diff >= umbral)
         logger.info("Comparator via LLM: diff=%.2f nota=%.2f discrepancia=%s", diff, nota_final, discrepancy)
         return AgentResult(
@@ -1028,14 +1219,16 @@ async def comparator_agent(
             componentes=grading_a.componentes or grading_b.componentes,
             alertas=grading_a.alertas + grading_b.alertas,
             requiere_revision_docente=discrepancy or grading_a.requiere_revision_docente or grading_b.requiere_revision_docente,
-            proveedor="comparator", modelo=model if discrepancy else "consenso", tiempo_ms=ms,
+            proveedor="comparator",
+            modelo=model if force_arbitration or discrepancy else "consenso",
+            tiempo_ms=ms,
             raw_output={"discrepancia": discrepancy, "diferencia": diff, "nota_final": nota_final,
                         "grading_a": {"nota": grading_a.nota_sugerida, "modelo": grading_a.modelo},
                         "grading_b": {"nota": grading_b.nota_sugerida, "modelo": grading_b.modelo}},
         )
     except Exception as exc:
         logger.error("Comparator agent failed: %s", exc)
-        nota_final = round((score_a + score_b) / 2, 2)
+        nota_final = round(sum(valid_scores) / len(valid_scores), 2)
         return AgentResult(nota_sugerida=nota_final, confianza=0, feedback_estudiante="", proveedor="comparator", modelo="fallback", error=str(exc))
     finally:
         await client.close()
