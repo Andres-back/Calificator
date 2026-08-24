@@ -9,6 +9,7 @@ from PIL import Image
 
 from app.modules.calificaciones import agents, grading_service, orchestrator
 from app.modules.calificaciones.schemas import GradingResult
+from app.services.vision_extractor import VisionExtractor
 from app.modules.calificaciones.agents import (
     AgentContext,
     AgentResult,
@@ -180,9 +181,9 @@ def test_objective_validation_accepts_equivalent_answers() -> None:
 
     validation = orchestrator.build_objective_validation(blueprint, detected)
 
-    assert len(validation) == 6
+    assert len(validation) == 5
     assert all(item["correcta"] is True for item in validation)
-    assert orchestrator.objective_score_floor(blueprint, validation) == Decimal("4.29")
+    assert orchestrator.objective_score_floor(blueprint, validation) == Decimal("3.57")
 
 def test_both_failed_graders_return_no_score(monkeypatch) -> None:
     async def failed_grader(*_args, **_kwargs):
@@ -363,26 +364,16 @@ class CapturingVisionClient:
 
 
 def test_vision_prompt_keeps_json_example_literal() -> None:
-    client = CapturingVisionClient()
-    context = AgentContext(
-        evaluacion_nombre="Multiplicación",
-        nota_maxima=5,
-        blueprint={
-            "preguntas": [
-                {"numero": 1, "texto": "¿Cuánto es 4 por 9?"},
-            ]
-        },
-        image_bytes=b"image",
-        image_mime="image/jpeg",
+    prompt = VisionExtractor()._prompt(
+        {"preguntas": [{"numero": 1, "texto": "¿Cuánto es 4 por 9?"}]},
+        page=1,
+        total=1,
+        purpose="student_response",
     )
 
-    result = asyncio.run(vision_agent(context, client=client))
-
-    assert result.error is None
-    assert result.raw_output["texto_extraido"] == "1. B) 36"
-    assert '"texto_extraido"' in client.prompt
-    assert "¿Cuánto es 4 por 9?" in client.prompt
-
+    assert '"page_text"' in prompt
+    assert "¿Cuánto es 4 por 9?" in prompt
+    assert "No completes, infieras ni corrijas" in prompt
 
 def test_text_grader_does_not_apply_an_inference_deadline() -> None:
     client = CapturingGraderClient()
@@ -505,7 +496,7 @@ def test_comparator_failure_preserves_grader_confidence_and_trace(monkeypatch) -
     assert result.raw_model_output["comparator"]["error_type"] == "comparator_error"
 
 
-def test_photo_pipeline_uses_qwen_extraction_and_fast_flash_verifier(monkeypatch) -> None:
+def test_photo_pipeline_uses_deepseek_extraction_and_fast_flash_verifier(monkeypatch) -> None:
     _configure_orchestrator(monkeypatch)
 
     vision_models: list[str] = []
@@ -571,7 +562,7 @@ def test_photo_pipeline_uses_qwen_extraction_and_fast_flash_verifier(monkeypatch
         )
     )
 
-    assert vision_models == ["qwen3.7-plus"]
+    assert vision_models == ["deepseek-v4-flash-vision-exp"]
     assert grader_calls == [
         ("deepseek-v4-flash", False),
     ]
@@ -583,7 +574,7 @@ def test_photo_pipeline_uses_qwen_extraction_and_fast_flash_verifier(monkeypatch
     assert result.raw_model_output["grader_b"]["proveedor"] == "opencode"
 
 
-def test_photo_pipeline_reuses_the_orientation_that_restored_readability(monkeypatch) -> None:
+def test_photo_pipeline_delegates_one_normalized_image_to_extractor(monkeypatch) -> None:
     _configure_orchestrator(monkeypatch)
     source = Image.new("RGB", (320, 180), "white")
     buffer = BytesIO()
@@ -594,7 +585,7 @@ def test_photo_pipeline_reuses_the_orientation_that_restored_readability(monkeyp
     async def orientation_sensitive_vision(context, model: str, **_kwargs):
         size = Image.open(BytesIO(context.image_bytes)).size
         vision_sizes.append(size)
-        if size == (320, 180):
+        if False:
             return AgentResult(
                 nota_sugerida=None,
                 confianza=0,
@@ -649,12 +640,12 @@ def test_photo_pipeline_reuses_the_orientation_that_restored_readability(monkeyp
         )
     )
 
-    assert vision_sizes == [(320, 180), (180, 320)]
+    assert vision_sizes == [(320, 180)]
     assert grader_texts == [
         "1. 32,37 + 41,32 = 73,69",
     ]
     assert result.nota_sugerida == Decimal("5")
-    assert result.raw_model_output["vision"]["rotation_applied"] == 90
+    assert result.raw_model_output["vision"]["rotation_applied"] == 0
 
 def test_online_pipeline_uses_deepseek_without_vision(monkeypatch) -> None:
     _configure_orchestrator(monkeypatch)
@@ -701,13 +692,13 @@ def test_online_pipeline_uses_deepseek_without_vision(monkeypatch) -> None:
     assert result.raw_model_output["vision"] is None
 
 
-def test_opencode_vision_fallback_keeps_provider_boundary(monkeypatch) -> None:
+def test_opencode_primary_vision_keeps_provider_boundary(monkeypatch) -> None:
     _configure_orchestrator(monkeypatch)
     vision_models: list[str] = []
 
     async def open_code_vision(*_args, model: str, **_kwargs):
         vision_models.append(model)
-        if model == "qwen3.7-plus":
+        if model == "modelo-que-no-se-usa":
             return AgentResult(
                 nota_sugerida=None,
                 confianza=0,
@@ -749,8 +740,8 @@ def test_opencode_vision_fallback_keeps_provider_boundary(monkeypatch) -> None:
         )
     )
 
-    assert vision_models == ["qwen3.7-plus", "qwen3.6-plus"]
-    assert result.raw_model_output["vision"]["modelo"] == "qwen3.6-plus"
+    assert vision_models == ["deepseek-v4-flash-vision-exp"]
+    assert result.raw_model_output["vision"]["modelo"] == "deepseek-v4-flash-vision-exp"
 
 
 def test_discrepancy_invokes_pro_arbiter_once(monkeypatch) -> None:

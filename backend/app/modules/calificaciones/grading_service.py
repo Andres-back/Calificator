@@ -33,10 +33,10 @@ async def grade_submission(
     Califica una entrega usando orquestación multi-agente.
 
     Pipeline:
-      1. Foto/PDF: Qwen 3.7+ extrae la evidencia (Qwen 3.6+/MiMo como respaldo)
+      1. Foto/PDF: DeepSeek Vision extrae la evidencia (Qwen/MiMo como respaldo)
       2. Flash genera un desglose explicable y otro pase Flash lo verifica
       3. Pro arbitra únicamente discrepancias, baja confianza o fallos reales
-      4. La inferencia aceptada se espera en segundo plano sin read-timeout
+      4. La extracción visual usa timeouts finitos; la entrega permanece recuperable
 
     Args:
         db: Sesión de BD.

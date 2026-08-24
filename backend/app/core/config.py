@@ -59,7 +59,7 @@ class Settings(BaseSettings):
     OPEN_CODE_PRESENTATION_MODEL: str = "qwen3.7-plus"
     OPEN_CODE_PRESENTATION_TIMEOUT_SECONDS: int = 120
     OPEN_CODE_PRESENTATION_MAX_TOKENS: int = 8192
-    OPEN_CODE_DIGITALIZATION_VISION_MODEL: str = "mimo-v2.5"
+    OPEN_CODE_DIGITALIZATION_VISION_MODEL: str = "deepseek-v4-flash-vision-exp"
     OPEN_CODE_DIGITALIZATION_VISION_TIMEOUT_SECONDS: int = 60
     OPEN_CODE_DIGITALIZATION_MODEL: str = "deepseek-v4-flash"
     OPEN_CODE_DIGITALIZATION_TIMEOUT_SECONDS: int = 60
@@ -72,9 +72,19 @@ class Settings(BaseSettings):
     AI_PROVIDER_CONNECT_TIMEOUT_SECONDS: int = 15
     AI_PROVIDER_WRITE_TIMEOUT_SECONDS: int = 60
     AI_PROVIDER_POOL_TIMEOUT_SECONDS: int = 30
+    VISION_PROVIDER: str = "opencode"
+    VISION_MODEL: str = "deepseek-v4-flash-vision-exp"
+    VISION_TIMEOUT_SECONDS: int = 90
+    VISION_TOTAL_TIMEOUT_SECONDS: int = 240
+    VISION_MAX_RETRIES: int = 1
+    VISION_FALLBACK_ENABLED: bool = True
+    VISION_FALLBACK_MODELS: str = "qwen3.7-plus,mimo-v2.5"
+    VISION_MAX_CONCURRENCY: int = 3
+    VISION_MAX_IMAGE_SIDE: int = 2200
+    VISION_MAX_TOKENS: int = 3072
     DIGITALIZATION_SLOW_WARNING_SECONDS: int = 90
     PHOTO_GRADING_SLOW_WARNING_SECONDS: int = 90
-    PHOTO_GRADING_VISION_MODEL: str = "qwen3.7-plus"
+    PHOTO_GRADING_VISION_MODEL: str = "deepseek-v4-flash-vision-exp"
     PHOTO_GRADING_VISION_FALLBACK_MODEL: str = "qwen3.6-plus"
     PHOTO_GRADING_VISION_LAST_RESORT_MODEL: str = "mimo-v2.5"
     PHOTO_GRADING_TEXT_MODEL: str = "deepseek-v4-flash"
@@ -173,6 +183,10 @@ class Settings(BaseSettings):
     @property
     def trusted_hosts(self) -> list[str]:
         return [host.strip() for host in self.TRUSTED_HOSTS.split(",") if host.strip()]
+    @property
+    def vision_fallback_models(self) -> list[str]:
+        return [model.strip() for model in self.VISION_FALLBACK_MODELS.split(",") if model.strip()]
+
 
 
 @lru_cache
