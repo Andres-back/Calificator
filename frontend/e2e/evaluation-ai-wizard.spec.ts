@@ -145,7 +145,7 @@ async function reachReviewStep(page: Page) {
   await page.getByLabel(/Texto de referencia/i).fill('Texto de referencia para las preguntas.');
   await page.getByRole('button', { name: 'Siguiente' }).click();
   await page.getByRole('button', { name: 'Generar borrador' }).click();
-  await expect(page.getByText('Revisa y edita las preguntas')).toBeVisible();
+  await expect(page.getByText('Revisa y edita la evaluación')).toBeVisible();
 }
 
 test('profesor completes the six-step AI flow and sees the normal evaluation in the desktop list', async ({ page }) => {
