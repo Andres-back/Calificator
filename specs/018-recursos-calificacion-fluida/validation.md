@@ -84,3 +84,11 @@ La latencia real posterior debe medirse con un fixture autorizado después del d
 - Chromium: escritura, envío y cierre del formulario DBA aprobados con clic real. WebKit: escritura y manejador de envío aprobados.
 - Frontend completo: auditoría de 301 botones y 80 enlaces; ESLint, TypeScript, 197 pruebas en 54 archivos y build de producción aprobados.
 - Suite responsive completa Chromium: 21 de 21 recorridos aprobados entre 360×800 y 1920×1080, incluidos los tres roles y modo oscuro.
+
+## Corrección de rueda en el detalle de calificaciones (2026-08-24)
+
+- Reproducción automatizada previa: al usar la rueda sobre el panel derecho en 1366×768, el scroll principal permanecía en 542 px.
+- Causa: el detalle conservaba `overscroll-contain` en escritorio aunque su altura no formaba un scroller independiente, bloqueando el encadenamiento hacia el contenedor principal.
+- Corrección: `overscroll-contain` se mantiene en móvil y cambia a `overscroll-auto` desde `lg`, sin alterar el overlay ni el bloqueo del cuerpo en dispositivos pequeños.
+- Playwright: 8/8 recorridos de calificación aprobados en Chromium y 8/8 en WebKit; incluye rueda en escritorio, respuesta 20 en móvil, reclamo estudiantil y conflicto 409.
+- Frontend completo: auditoría de 301 botones y 80 enlaces; ESLint, TypeScript, 197 pruebas en 54 archivos y build de producción aprobados.

@@ -69,6 +69,56 @@ for (const viewport of [{ width: 360, height: 800 }, { width: 390, height: 844 }
   });
 }
 
+test('la rueda sobre el panel derecho desplaza la revisión en escritorio', async ({ page }) => {
+  const longBreakdown = {
+    ...breakdown,
+    componentes: Array.from({ length: 16 }, (_, index) => ({
+      ...breakdown.componentes[0],
+      id: `wheel-q${index + 1}`,
+      clave: `pregunta:${index + 1}`,
+      orden: index,
+      numero: String(index + 1),
+      titulo: `Pregunta extensa ${index + 1}`,
+      explicacion: `Explicación verificable para comprobar desplazamiento ${index + 1}.`,
+    })),
+  };
+  await page.setViewportSize({ width: 1366, height: 768 });
+  await installMocks(page, 'profesor');
+  await page.route('**/api/calificaciones/c1/detalle', (route) => json(route, {
+    ...grade,
+    evaluacion_nombre: evaluation.nombre,
+    materia_nombre: materia.nombre,
+    estudiante_nombre: student.nombre,
+    estudiante_email: student.email,
+    nota_maxima: 5,
+    entrega_tipo: 'online',
+    entrega_archivo_url: null,
+    entrega_evidencia_paginas: 0,
+    entrega_evidencia_tipo: null,
+    entrega_respuesta_texto: 'Respuestas extensas para validar la rueda',
+    entrega_created_at: grade.created_at,
+    timeline: [],
+    guia_revision: [],
+    desglose: longBreakdown,
+    desglose_heredado: false,
+    respuestas_liberadas: true,
+  }));
+  await page.goto('/login');
+  await page.getByLabel(/Correo/i).fill(teacher.email);
+  await page.locator('input[type="password"]').fill('Password123!');
+  await page.getByRole('button', { name: /Iniciar sesi.n/i }).click();
+  await page.goto('/app/calificaciones/workspace/e1');
+  await page.getByText('Estudiante Prueba', { exact: true }).click();
+
+  const main = page.locator('main#main-content');
+  const reviewHeading = page.getByRole('heading', { name: 'Nota explicada respuesta por respuesta' });
+  await expect(reviewHeading).toBeVisible();
+  await reviewHeading.hover();
+  const before = await main.evaluate((element) => element.scrollTop);
+  await page.mouse.wheel(0, 900);
+  await expect.poll(() => main.evaluate((element) => element.scrollTop)).toBeGreaterThan(before + 40);
+});
+
 test('estudiante ve el desglose publicado y selecciona una pregunta para reclamar', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await login(page, 'estudiante');

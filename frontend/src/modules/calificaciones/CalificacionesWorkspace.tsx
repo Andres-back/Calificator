@@ -543,7 +543,7 @@ function PanelDetalle({
         </button>
       </div>
 
-      <div className="min-h-0 flex-1 touch-pan-y space-y-5 overflow-x-hidden overflow-y-auto overscroll-contain p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] [-webkit-overflow-scrolling:touch]">
+      <div className="min-h-0 flex-1 touch-pan-y space-y-5 overflow-x-hidden overflow-y-auto overscroll-contain p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] [-webkit-overflow-scrolling:touch] lg:overscroll-auto">
         {/* Nota principal */}
         <div className="flex items-center justify-between">
           <div>
