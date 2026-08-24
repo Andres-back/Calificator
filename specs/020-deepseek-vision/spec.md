@@ -3,6 +3,7 @@
 **Rama**: `codex/020-deepseek-vision`
 **Creada**: 2026-08-24
 **Estado**: Aprobada por solicitud explícita del usuario
+**Issue**: #27
 
 ## Escenarios de usuario y pruebas
 
