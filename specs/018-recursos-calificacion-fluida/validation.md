@@ -92,3 +92,11 @@ La latencia real posterior debe medirse con un fixture autorizado después del d
 - Corrección: `overscroll-contain` se mantiene en móvil y cambia a `overscroll-auto` desde `lg`, sin alterar el overlay ni el bloqueo del cuerpo en dispositivos pequeños.
 - Playwright: 8/8 recorridos de calificación aprobados en Chromium y 8/8 en WebKit; incluye rueda en escritorio, respuesta 20 en móvil, reclamo estudiantil y conflicto 409.
 - Frontend completo: auditoría de 301 botones y 80 enlaces; ESLint, TypeScript, 197 pruebas en 54 archivos y build de producción aprobados.
+
+## Mejora del editor de preguntas (2026-08-24)
+
+- El modo de edición usa un modal de hasta 90 rem y una sola columna; Xali queda plegable encima y ya no reserva 320 px vacíos a la derecha.
+- La lista de preguntas utiliza el scroll principal del modal, evitando el desplazamiento anidado que reducía el espacio y dificultaba llegar a puntajes y acciones.
+- Tipo de pregunta y puntaje quedan juntos en escritorio y se apilan en celular; los enunciados largos muestran hasta dos líneas sin cortar el contexto.
+- Validación visual funcional aprobada con una evaluación real en 1440×900 y 390×844; campos, opciones y acciones permanecen accesibles.
+- Frontend: 198 pruebas en 54 archivos, TypeScript y build de producción aprobados. La auditoría conserva 301 botones y 80 enlaces con propósito verificable.

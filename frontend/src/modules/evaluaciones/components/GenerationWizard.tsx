@@ -72,7 +72,7 @@ function QuestionCard({
       >
         <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-brand-100 font-bold text-brand-700">{index + 1}</span>
         <span className="min-w-0 flex-1">
-          <span className="block truncate text-base font-semibold text-fg">{question.enunciado || 'Pregunta sin enunciado'}</span>
+          <span className="line-clamp-2 block break-words text-base font-semibold leading-6 text-fg">{question.enunciado || 'Pregunta sin enunciado'}</span>
           <span className="text-sm text-muted">{TYPE_COPY[question.tipo].label} · {question.puntaje || 0} puntos</span>
         </span>
         {question.expanded ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
@@ -81,27 +81,32 @@ function QuestionCard({
       {question.expanded && (
         <div id={`question-${question.clientId}`} className="space-y-4 border-t border-border p-4">
           {error && <p role="alert" className="rounded-lg bg-amber-50 p-3 text-sm text-amber-900 dark:bg-amber-500/10 dark:text-amber-100">{error}</p>}
-          <Field label="Tipo de pregunta" required>
-            <select
-              value={question.tipo}
-              onChange={(event) => {
-                const tipo = event.target.value as QuestionType;
-                onChange({
-                  tipo,
-                  opciones: tipo === 'verdadero_falso'
-                    ? ['Verdadero', 'Falso']
-                    : tipo === 'opcion_multiple'
-                      ? (question.opciones.length >= 3 ? question.opciones : ['', '', '', ''])
-                      : [],
-                  respuestaEsperada: '',
-                });
-              }}
-              className="focus-ring min-h-12 w-full rounded-lg border border-border bg-surface px-4 text-base text-fg"
-              aria-label={`Tipo de la pregunta ${index + 1}`}
-            >
-              {QUESTION_TYPES.map((type) => <option key={type} value={type}>{TYPE_COPY[type].label}</option>)}
-            </select>
-          </Field>
+          <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_10rem]">
+            <Field label="Tipo de pregunta" required>
+              <select
+                value={question.tipo}
+                onChange={(event) => {
+                  const tipo = event.target.value as QuestionType;
+                  onChange({
+                    tipo,
+                    opciones: tipo === 'verdadero_falso'
+                      ? ['Verdadero', 'Falso']
+                      : tipo === 'opcion_multiple'
+                        ? (question.opciones.length >= 3 ? question.opciones : ['', '', '', ''])
+                        : [],
+                    respuestaEsperada: '',
+                  });
+                }}
+                className="focus-ring min-h-12 w-full rounded-lg border border-border bg-surface px-4 text-base text-fg"
+                aria-label={`Tipo de la pregunta ${index + 1}`}
+              >
+                {QUESTION_TYPES.map((type) => <option key={type} value={type}>{TYPE_COPY[type].label}</option>)}
+              </select>
+            </Field>
+            <Field label="Puntaje" required>
+              <Input type="number" min={0.01} step={0.01} value={question.puntaje} onChange={(event) => onChange({ puntaje: Number(event.target.value) })} className="min-h-12 w-full text-base" aria-label={`Puntaje de la pregunta ${index + 1}`} />
+            </Field>
+          </div>
           <Field label="Enunciado" required>
             <Textarea value={question.enunciado} onChange={(event) => onChange({ enunciado: event.target.value })} className="min-h-24 text-base" />
           </Field>
@@ -175,9 +180,6 @@ function QuestionCard({
             </Field>
           )}
 
-          <Field label="Puntaje" required>
-            <Input type="number" min={0.01} step={0.01} value={question.puntaje} onChange={(event) => onChange({ puntaje: Number(event.target.value) })} className="min-h-12 max-w-40 text-base" />
-          </Field>
           <div className="flex flex-wrap gap-2 border-t border-border pt-3">
             <Button type="button" variant="outline" onClick={onDuplicate}><Copy className="h-4 w-4" /> Duplicar</Button>
             <Button type="button" variant="outline" onClick={() => onMove(-1)} disabled={index === 0}><ArrowUp className="h-4 w-4" /> Subir</Button>
@@ -474,6 +476,7 @@ export function GenerationWizard({
   const validation = validateStep(state);
   const total = totalQuestionCount(state.counts);
   const questionErrors = state.questions.filter((question, index) => validateQuestion(question, index)).length;
+  const editingQuestions = state.step === 5 && Boolean(state.generatedEvaluationId);
 
   return (
     <>
@@ -482,7 +485,7 @@ export function GenerationWizard({
         onClose={onClose}
         title=""
         ariaLabel={initialEvaluation ? 'Editar contenido de la evaluación' : 'Generar evaluación con IA'}
-        className="max-w-6xl p-0 sm:p-0"
+        className={cn(initialEvaluation ? 'max-w-[min(96vw,90rem)]' : 'max-w-6xl', 'p-0 sm:p-0')}
         showCloseButton={false}
         closeOnBackdrop={!generate.isPending && !confirm.isPending && !extractReference.isPending}
         closeOnEscape={!generate.isPending && !confirm.isPending && !extractReference.isPending}
@@ -512,8 +515,8 @@ export function GenerationWizard({
                 </div>
               </div>
             ) : (
-              <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
-                <main className="min-w-0 rounded-2xl border border-border bg-surface-2/50 p-4 sm:p-5">
+              <div className={cn('grid gap-5', !editingQuestions && 'lg:grid-cols-[minmax(0,1fr)_320px]')}>
+                <main className={cn('min-w-0 rounded-2xl border border-border bg-surface-2/50 p-4 sm:p-5', editingQuestions && 'order-2')}>
                   {state.step === 1 && (
                     <section aria-labelledby="wizard-step-title" className="space-y-5">
                       <div><h3 id="wizard-step-title" className="text-xl font-bold">Datos básicos de la evaluación</h3><p className="mt-1 text-base text-muted">Confirma la materia, escribe un nombre y elige cómo responderá el grupo.</p></div>
@@ -717,7 +720,7 @@ export function GenerationWizard({
                             </div>
                           </div>
                         )}
-                        <div className="max-h-[52vh] space-y-3 overflow-y-auto pr-1">
+                        <div role="list" aria-label="Preguntas editables" className="space-y-4">
                           {state.questions.map((question, index) => (
                             <QuestionCard
                               key={question.clientId}
@@ -756,7 +759,9 @@ export function GenerationWizard({
                     </section>
                   )}
                 </main>
-                <XaliPanel state={state} materiaNombre={materiaNombre} onSuggestion={(suggestion, target) => setXaliConfirmation({ suggestion, target })} />
+                <div className={cn(editingQuestions && 'order-1')}>
+                  <XaliPanel state={state} materiaNombre={materiaNombre} onSuggestion={(suggestion, target) => setXaliConfirmation({ suggestion, target })} />
+                </div>
               </div>
             )}
           </div>

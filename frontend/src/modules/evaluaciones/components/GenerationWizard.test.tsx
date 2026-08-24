@@ -250,6 +250,14 @@ describe('GenerationWizard', () => {
     expect(screen.getByRole('button', { name: 'Agregar pregunta' })).toBeInTheDocument();
   });
 
+  it('uses the wide single-scroll layout when editing questions', () => {
+    renderWizard(vi.fn(), { ...evaluation, estado: 'publicada', recepcion_habilitada: true });
+
+    expect(screen.getByRole('dialog', { name: /Editar contenido/i })).toHaveClass('max-w-[min(96vw,90rem)]');
+    const questionList = screen.getByRole('list', { name: 'Preguntas editables' });
+    expect(questionList).not.toHaveClass('max-h-[52vh]', 'overflow-y-auto');
+    expect(screen.getByRole('complementary', { name: 'Asistencia opcional de Xali' }).parentElement).toHaveClass('order-1');
+  });
   it('recovers, discards, and starts over from a saved draft', async () => {
     const state = createEmptyWizardState(materia.id);
     state.nombre = 'Evaluación recuperada';
