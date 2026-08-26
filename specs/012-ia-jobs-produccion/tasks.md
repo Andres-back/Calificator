@@ -11,3 +11,6 @@
 
 ## Fase 3: Integración
 - [X] T006 Incorporar el dominio a specs/README.md (FR-008)
+
+## Evolución 022: recuperación de trabajos de calificación
+- [X] T007 Registrar y ejecutar la prueba de regresión PostgreSQL UUID/VARCHAR y la recuperación idempotente documentadas en `specs/022-recuperar-trabajos-ia/`.
