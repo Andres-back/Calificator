@@ -9,6 +9,17 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.shared.enums import JobEstado
+from app.core.logging import get_logger
+
+logger = get_logger(__name__)
+
+JOB_FEATURES = {
+    "presentacion": "presentaciones",
+    "imagen": "generacion_imagenes",
+    "calificacion_lote": "calificacion_foto",
+    "rag_ingest": "rag",
+    "evaluacion_digitalizacion": "evaluacion_digitalizar",
+}
 
 
 def _json_value(value: dict[str, Any]) -> str:
@@ -24,6 +35,17 @@ async def create_job(
     job_id: UUID | None = None,
 ) -> UUID:
     created_id = job_id or uuid4()
+    persisted_input = dict(input_json)
+    feature = JOB_FEATURES.get(tipo)
+    if feature and "_ai_config" not in persisted_input:
+        try:
+            from app.services.ai_configuration_resolver import resolve_ai_configuration
+
+            persisted_input["_ai_config"] = await resolve_ai_configuration(
+                db, feature=feature, teacher_id=user_id
+            )
+        except Exception as exc:
+            logger.warning("AI configuration snapshot unavailable for %s: %s", tipo, type(exc).__name__)
     await db.execute(
         text(
             "INSERT INTO ai_jobs "
@@ -35,11 +57,17 @@ async def create_job(
             "user_id": str(user_id) if user_id else None,
             "tipo": tipo,
             "estado": JobEstado.QUEUED.value,
-            "input_json": _json_value(input_json),
+            "input_json": _json_value(persisted_input),
         },
     )
     return created_id
 
+
+async def get_job_input(db: AsyncSession, job_id: UUID) -> dict[str, Any]:
+    """Return the immutable job input, including its sanitized AI snapshot."""
+    statement = text("SELECT input_json FROM ai_jobs WHERE id=:id").bindparams(id=str(job_id))
+    value = await db.scalar(statement)
+    return dict(value) if isinstance(value, dict) else {}
 
 async def get_job_queue_time_ms(db: AsyncSession, job_id: UUID) -> int:
     """Devuelve solo duración técnica; nunca consulta el contenido del trabajo."""

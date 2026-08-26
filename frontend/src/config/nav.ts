@@ -25,6 +25,7 @@ export const profesorNav: NavItem[] = [
   { label: 'Presentaciones', to: '/app/presentaciones', icon: Presentation },
   { label: 'Reportes', to: '/app/reportes', icon: BarChart3 },
   { label: 'Asistente Xali', to: '/app/xali', icon: Sparkles },
+  { label: 'Mi configuración IA', to: '/app/configuracion-ia', icon: Settings2 },
 ];
 
 export const adminNav: NavItem[] = [

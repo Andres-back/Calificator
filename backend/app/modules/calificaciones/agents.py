@@ -302,9 +302,21 @@ class OpenCodeClient:
         tracking: dict | None = None,
     ) -> None:
         self.api_key = str(settings.OPEN_CODE_API_KEY)
+        self.fallback_api_key = ""
+        self._fallback_used = False
         self.base_url = str(settings.OPEN_CODE_BASE_URL).rstrip("/")
         self._client = httpx.AsyncClient(timeout=inference_http_timeout())
         self._tracking = tracking or {}
+
+    def _routing_telemetry(self) -> dict[str, Any]:
+        snapshot = self._tracking.get("_ai_config") or {}
+        primary = snapshot.get("primary") or {}
+        return {
+            "routing_origin": primary.get("credential_source"),
+            "config_hash": snapshot.get("config_hash"),
+            "config_version": snapshot.get("teacher_config_version") or snapshot.get("global_config_version"),
+            "fallback_used": self._fallback_used or bool(snapshot.get("runtime_fallback")),
+        }
 
     async def _log_call(
         self,
@@ -337,6 +349,7 @@ class OpenCodeClient:
             output_tokens=output_tokens,
             image_count=image_count,
             error_code=error_code,
+            **self._routing_telemetry(),
         )
 
     async def chat(
@@ -477,6 +490,32 @@ class OpenCodeClient:
                     error_code=error_code,
                     image_count=image_count,
                 )
+                if self.fallback_api_key and not self._fallback_used:
+                    self._fallback_used = True
+                    self.api_key = self.fallback_api_key
+                    fallbacks = self._tracking.setdefault("fallbacks", [])
+                    if isinstance(fallbacks, list):
+                        fallbacks.append(
+                            {
+                                "stage": _canonical_stage(stage),
+                                "reason": "teacher_provider_failed",
+                                "credential_source": "institutional",
+                            }
+                        )
+                    logger.warning(
+                        "OpenCode personal falló; usando fallback institucional autorizado"
+                    )
+                    return await self.chat(
+                        model=model,
+                        messages=messages,
+                        json_mode=json_mode,
+                        max_tokens=max_tokens,
+                        temperature=temperature,
+                        timeout=timeout,
+                        max_attempts=max_attempts,
+                        stage=stage,
+                        image_count=image_count,
+                    )
                 raise
 
         raise RuntimeError("OpenCode retry loop termino sin respuesta")
@@ -592,7 +631,7 @@ async def vision_agent(
     purpose = "evaluation_document" if prompt_override else "student_response"
     started = time.monotonic()
     try:
-        extraction = await VisionExtractor(tracking=tracking, primary_model=model).extract(
+        extraction = await VisionExtractor(tracking=tracking, primary_model=model, api_key=client.api_key if client else None).extract(
             ctx.image_bytes,
             ctx.image_mime,
             blueprint=ctx.blueprint,

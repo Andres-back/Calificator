@@ -154,6 +154,7 @@ class PresentacionEstado(StrEnum):
 
 
 class LLMProvider(StrEnum):
+    OPENAI = "openai"
     OPEN_CODE = "open_code"
     GROQ = "groq"
     OLLAMA = "ollama"

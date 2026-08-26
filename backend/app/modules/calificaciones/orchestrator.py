@@ -410,6 +410,7 @@ async def orchestrate_grading(
     image_mime: str = "image/jpeg",
     student_response_text: str | None = None,
     user_id: UUID | None = None,
+    ai_config: dict | None = None,
     vision_model: str = DEFAULT_VISION_MODEL,
     grader_a_model: str = DEFAULT_GRADER_A_MODEL,
     verifier_model: str = DEFAULT_VERIFIER_MODEL,
@@ -438,11 +439,67 @@ async def orchestrate_grading(
     """
     pipeline_run_id = str(uuid.uuid4())
     pipeline_started = time.monotonic()
+    ai_snapshot: dict = dict(ai_config) if ai_config else {}
+    resolved_open_code_key = ""
+    fallback_open_code_key = ""
+    personal_open_code_route = False
+    if user_id is not None or ai_snapshot:
+        try:
+            from app.services.ai_configuration_resolver import resolve_ai_configuration
+            from app.services.ai_credentials_service import get_effective_ai_credentials, get_teacher_ai_credential
+
+            if not ai_snapshot:
+                ai_snapshot = await resolve_ai_configuration(
+                    db, feature="calificacion_foto", teacher_id=user_id
+                )
+            selected = ai_snapshot.get("primary") or {}
+            fallback = ai_snapshot.get("fallback") or {}
+            if selected.get("provider") == "open_code" and selected.get("model"):
+                vision_model = str(selected["model"])
+            effective_credentials = await get_effective_ai_credentials(db)
+            institutional_open_code_key = effective_credentials.open_code_key
+            resolved_open_code_key = institutional_open_code_key
+            personal_open_code_route = (
+                selected.get("provider") == "open_code"
+                and selected.get("credential_source") == "teacher"
+            )
+            if personal_open_code_route:
+                teacher_secret = (
+                    await get_teacher_ai_credential(
+                        db, teacher_id=user_id, provider_id="open_code"
+                    )
+                    if user_id is not None
+                    else ""
+                )
+                resolved_open_code_key = teacher_secret
+                if (
+                    fallback.get("provider") == "open_code"
+                    and fallback.get("credential_source") == "institutional"
+                ):
+                    if teacher_secret:
+                        fallback_open_code_key = institutional_open_code_key
+                    else:
+                        resolved_open_code_key = institutional_open_code_key
+                        ai_snapshot = {
+                            **ai_snapshot,
+                            "runtime_fallback": {
+                                "reason": "teacher_credential_unavailable",
+                                "credential_source": "institutional",
+                            },
+                        }
+        except Exception as exc:
+            logger.warning("Grading AI configuration unavailable; using institutional defaults: %s", type(exc).__name__)
     client = OpenCodeClient(tracking={
         "pipeline_run_id": pipeline_run_id,
         "evaluacion_id": str(evaluacion_id),
         "calificacion_id": None,  # se asigna después de crear la calificación
+        "teacher_id": str(user_id) if user_id else None,
+        "_ai_config": ai_snapshot,
     })
+    if personal_open_code_route or resolved_open_code_key:
+        client.api_key = resolved_open_code_key
+    if fallback_open_code_key:
+        client.fallback_api_key = fallback_open_code_key
     try:
         # ── Paso 1: RAG (común para todos) ───────────────────────────
         rag_chunks = await build_context_for_grading(
@@ -466,7 +523,6 @@ async def orchestrate_grading(
         coverage_analysis: dict | None = None
         vision_requires_review = False
 
-        image_bytes_for_grading = image_bytes
         image_mime_for_grading = image_mime
         applied_rotation = 0
 

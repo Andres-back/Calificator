@@ -71,6 +71,9 @@ class AIProvider(BaseModel):
     priority: int = 0
     timeout_seconds: int = 30
     max_retries: int = 2
+    allow_teacher_credentials: bool = False
+    allow_institutional_fallback: bool = True
+    config_version: int = 1
     auth_configured: bool = False
     last_test_status: str | None = None
     last_test_latency_ms: int | None = None
@@ -85,21 +88,34 @@ class AIProviderUpdate(BaseModel):
     priority: int | None = None
     timeout_seconds: int | None = None
     max_retries: int | None = None
+    allow_teacher_credentials: bool | None = None
+    allow_institutional_fallback: bool | None = None
+    config_version: int | None = None
 
 
 class FeatureRouting(BaseModel):
     feature: str
     label: str
+    capability: str = "text"
     primary_provider: str = "groq"
     primary_model: str | None = None
     fallback_provider: str | None = None
     fallback_model: str | None = None
+    rollout_enabled: bool = True
+    config_version: int = 1
     active: bool = True
+
+
+class FeatureRoutingPublication(BaseModel):
+    expected_version: int = Field(ge=0)
+    features: list[FeatureRouting]
 
 
 class AISettingsRead(BaseModel):
     providers: list[AIProvider]
+    models: list[AIModel] = Field(default_factory=list)
     features: list[FeatureRouting]
+    version: int = 1
     global_config: GlobalAIConfigRead
     usage: UsageStatsRead
 
@@ -110,3 +126,74 @@ class AIProviderTestResponse(BaseModel):
     http_code: int | None = None
     error: str | None = None
     detail: str | None = None
+
+class AIModel(BaseModel):
+    provider_id: str
+    model_id: str
+    label: str
+    capabilities: list[str] = Field(default_factory=lambda: ["text"])
+    recommended: bool = False
+    active: bool = True
+    max_context_tokens: int | None = None
+
+
+class AIConfigurationPublication(BaseModel):
+    expected_version: int = Field(ge=0)
+    providers: list[AIProvider]
+    models: list[AIModel]
+    features: list[FeatureRouting]
+
+class TeacherAICredentialRead(BaseModel):
+    provider_id: str
+    configured: bool
+    last_four: str | None = None
+    last_test_status: str | None = None
+    last_test_latency_ms: int | None = None
+    last_test_at: datetime | None = None
+
+
+class TeacherAIPreference(BaseModel):
+    feature: str
+    provider: str | None = None
+    model: str | None = None
+    active: bool = True
+
+
+class TeacherAIConfigRead(BaseModel):
+    mode: str = "institutional"
+    allow_institutional_fallback: bool = True
+    active: bool = True
+    version: int = 0
+    providers: list[AIProvider] = Field(default_factory=list)
+    models: list[AIModel] = Field(default_factory=list)
+    features: list[FeatureRouting] = Field(default_factory=list)
+    credentials: list[TeacherAICredentialRead] = Field(default_factory=list)
+    preferences: list[TeacherAIPreference] = Field(default_factory=list)
+
+
+class TeacherAIConfigUpdate(BaseModel):
+    expected_version: int = Field(ge=0)
+    mode: str
+    allow_institutional_fallback: bool = True
+    active: bool = True
+    preferences: list[TeacherAIPreference] = Field(default_factory=list)
+
+    @field_validator("mode")
+    @classmethod
+    def validate_mode(cls, value: str) -> str:
+        if value not in {"institutional", "automatic", "advanced"}:
+            raise ValueError("Modo de IA no valido.")
+        return value
+
+
+class TeacherAICredentialUpdate(BaseModel):
+    api_key: SecretStr
+    account_id: SecretStr | None = None
+
+
+class ProviderModelTestRequest(BaseModel):
+    api_key: SecretStr | None = None
+    model: str | None = None
+    capability: str = "text"
+
+AISettingsRead.model_rebuild()

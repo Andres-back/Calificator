@@ -198,14 +198,79 @@ def _clean_warnings(values: Any) -> list[str]:
     return [str(value).strip() for value in values if str(value).strip()]
 
 
+async def _digitalization_vision_client(
+    user_id: UUID | None,
+    ai_config: dict[str, Any] | None = None,
+) -> tuple[OpenCodeClient, str]:
+    client = OpenCodeClient()
+    model = settings.OPEN_CODE_DIGITALIZATION_VISION_MODEL
+    if user_id is None and not ai_config:
+        return client, model
+    if hasattr(client, "_tracking") and user_id is not None:
+        client._tracking["teacher_id"] = str(user_id)
+    try:
+        from app.db.session import AsyncSessionLocal
+        from app.services.ai_configuration_resolver import resolve_ai_configuration
+        from app.services.ai_credentials_service import get_effective_ai_credentials, get_teacher_ai_credential
+
+        async with AsyncSessionLocal() as db:
+            snapshot = dict(ai_config) if ai_config else await resolve_ai_configuration(
+                db, feature="evaluacion_digitalizar", teacher_id=user_id
+            )
+            selected = snapshot.get("primary") or {}
+            fallback = snapshot.get("fallback") or {}
+            if selected.get("provider") == "open_code" and selected.get("model"):
+                model = str(selected["model"])
+            credentials = await get_effective_ai_credentials(db)
+            institutional_key = credentials.open_code_key
+            api_key = institutional_key
+            personal_route = (
+                selected.get("provider") == "open_code"
+                and selected.get("credential_source") == "teacher"
+            )
+            if personal_route:
+                api_key = (
+                    await get_teacher_ai_credential(
+                        db, teacher_id=user_id, provider_id="open_code"
+                    )
+                    if user_id is not None
+                    else ""
+                )
+                if (
+                    fallback.get("provider") == "open_code"
+                    and fallback.get("credential_source") == "institutional"
+                ):
+                    if api_key:
+                        client.fallback_api_key = institutional_key
+                    else:
+                        api_key = institutional_key
+                        snapshot = {
+                            **snapshot,
+                            "runtime_fallback": {
+                                "reason": "teacher_credential_unavailable",
+                                "credential_source": "institutional",
+                            },
+                        }
+            if personal_route or api_key:
+                client.api_key = api_key
+            client._tracking["_ai_config"] = snapshot
+    except Exception as exc:
+        logger.warning(
+            "Digitalization AI configuration unavailable; using institutional defaults: %s",
+            type(exc).__name__,
+        )
+    return client, model
+
 async def _extract_image_text(
     content: bytes,
     mime: str,
     name: str,
+    user_id: UUID | None = None,
+    ai_config: dict[str, Any] | None = None,
 ) -> tuple[str, list[str]]:
     variants = prepare_orientation_variants(content, mime)
     last_result = None
-    client = OpenCodeClient()
+    client, vision_model = await _digitalization_vision_client(user_id, ai_config)
     try:
         for variant in variants:
             context = AgentContext(
@@ -217,7 +282,7 @@ async def _extract_image_text(
             )
             result = await vision_agent(
                 context,
-                model=settings.OPEN_CODE_DIGITALIZATION_VISION_MODEL,
+                model=vision_model,
                 client=client,
                 prompt_override=DIGITALIZATION_VISION_PROMPT,
                 timeout=settings.OPEN_CODE_DIGITALIZATION_VISION_TIMEOUT_SECONDS,
@@ -251,6 +316,23 @@ async def _extract_image_text(
         logger.info("Primary vision did not recover usable evaluation text; trying fallback")
 
 
+
+    snapshot = (
+        client._tracking.get("_ai_config")
+        if isinstance(getattr(client, "_tracking", None), dict)
+        else None
+    )
+    if (
+        isinstance(snapshot, dict)
+        and (snapshot.get("primary") or {}).get("credential_source") == "teacher"
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=(
+                "La ruta personal y su respaldo autorizado no respondieron. "
+                "El trabajo puede reintentarse sin perder el documento."
+            ),
+        )
 
     fallback_warnings: list[str] = []
     for variant in variants:
@@ -304,7 +386,13 @@ async def _extract_image_text(
         ),
     )
 
-async def _extract_scanned_pdf(content: bytes, name: str) -> tuple[str, list[str]]:
+async def _extract_scanned_pdf(
+    content: bytes,
+    name: str,
+    user_id: UUID | None = None,
+    ai_config: dict[str, Any] | None = None,
+) -> tuple[str, list[str]]:
+    client, vision_model = await _digitalization_vision_client(user_id, ai_config)
     context = AgentContext(
         evaluacion_nombre=name,
         nota_maxima=5.0,
@@ -312,11 +400,15 @@ async def _extract_scanned_pdf(content: bytes, name: str) -> tuple[str, list[str
         image_bytes=content,
         image_mime="application/pdf",
     )
-    result = await vision_agent(
-        context,
-        model=settings.OPEN_CODE_DIGITALIZATION_VISION_MODEL,
-        prompt_override=DIGITALIZATION_VISION_PROMPT,
-    )
+    try:
+        result = await vision_agent(
+            context,
+            model=vision_model,
+            client=client,
+            prompt_override=DIGITALIZATION_VISION_PROMPT,
+        )
+    finally:
+        await client.close()
     raw = result.raw_output or {}
     text = str(raw.get("texto_extraido") or "").strip()
     if result.error:
@@ -344,17 +436,19 @@ async def extract_evaluation_text(
     content: bytes,
     mime: str,
     filename: str,
+    user_id: UUID | None = None,
+    ai_config: dict[str, Any] | None = None,
 ) -> tuple[str, list[str]]:
     """Extrae texto y devuelve advertencias no bloqueantes para revisión docente."""
     if mime == "application/pdf":
         text = extraer_texto_pdf(content).strip()
         if text:
             return text, []
-        return await _extract_scanned_pdf(content, filename)
+        return await _extract_scanned_pdf(content, filename, user_id, ai_config)
     if mime == DOCX_MIME:
         return extraer_texto_docx(content).strip(), []
     if mime.startswith("image/"):
-        return await _extract_image_text(content, mime, filename)
+        return await _extract_image_text(content, mime, filename, user_id, ai_config)
     raise HTTPException(
         status_code=status.HTTP_400_BAD_REQUEST,
         detail=f"Tipo de archivo no soportado: {mime}",
@@ -906,6 +1000,7 @@ async def detectar_estructura_evaluacion(
     *,
     nota_maxima: Decimal = Decimal("5.0"),
     initial_warnings: list[str] | None = None,
+    ai_config: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Detecta preguntas y exige una clave completa antes de crear el borrador."""
     if not contenido_texto.strip():
@@ -913,7 +1008,7 @@ async def detectar_estructura_evaluacion(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail="No se pudo extraer contenido del archivo.",
         )
-    llm = LLMRouter(user_id=user_id)
+    llm = LLMRouter(user_id=user_id, ai_config=ai_config) if ai_config is not None else LLMRouter(user_id=user_id)
     prompt = PROMPT_DETECTAR_ESTRUCTURA.format(
         contenido=contenido_texto[:12000],
         nota_maxima=str(nota_maxima),

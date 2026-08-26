@@ -1,7 +1,10 @@
 """Servicio de embeddings para RAG con pgvector."""
 from __future__ import annotations
 
-import httpx
+from typing import Any
+from uuid import UUID
+
+from sqlalchemy.ext.asyncio import AsyncSession
 from openai import AsyncOpenAI
 
 from app.core.config import settings
@@ -17,24 +20,93 @@ def _openai_client(api_key: str) -> AsyncOpenAI:
     return AsyncOpenAI(api_key=api_key)
 
 
-async def embed_texts(texts: list[str]) -> list[list[float]]:
-    """Genera embeddings para una lista de textos. Usa OpenAI text-embedding-3-small."""
+async def embed_texts(
+    texts: list[str],
+    *,
+    db: AsyncSession | None = None,
+    teacher_id: UUID | None = None,
+    ai_config: dict[str, Any] | None = None,
+) -> list[list[float]]:
+    """Generate embeddings using the captured compatible route when enabled."""
     model = getattr(settings, "EMBEDDING_MODEL", "text-embedding-3-small")
     provider = getattr(settings, "EMBEDDING_PROVIDER", "openai")
-    credentials = await get_effective_ai_credentials()
+    snapshot = dict(ai_config) if ai_config else None
+    credentials = await get_effective_ai_credentials(db)
+    api_key = credentials.openai_key
 
-    if provider == "openai" and credentials.openai_key:
-        return await _embed_openai(texts, model, credentials.openai_key)
+    if db is not None and (teacher_id is not None or snapshot):
+        try:
+            from app.services.ai_configuration_resolver import (
+                resolve_ai_configuration,
+            )
+            from app.services.ai_credentials_service import (
+                get_teacher_ai_credential,
+            )
 
-    # Fallback: embeddings simples basados en hash (solo para desarrollo sin API key)
+            if snapshot is None:
+                snapshot = await resolve_ai_configuration(
+                    db, feature="embeddings", teacher_id=teacher_id
+                )
+            if snapshot.get("rollout_enabled"):
+                selected = snapshot.get("primary") or {}
+                fallback = snapshot.get("fallback") or {}
+                provider = str(selected.get("provider") or provider)
+                model = str(selected.get("model") or model)
+                if (
+                    selected.get("credential_source") == "teacher"
+                    and provider == "openai"
+                ):
+                    teacher_key = (
+                        await get_teacher_ai_credential(
+                            db,
+                            teacher_id=teacher_id,
+                            provider_id="openai",
+                        )
+                        if teacher_id is not None
+                        else ""
+                    )
+                    if teacher_key:
+                        api_key = teacher_key
+                    elif (
+                        fallback.get("provider") == "openai"
+                        and fallback.get("credential_source") == "institutional"
+                    ):
+                        api_key = credentials.openai_key
+                    else:
+                        raise RuntimeError(
+                            "La API personal de embeddings no está disponible y "
+                            "no hay fallback institucional autorizado"
+                        )
+        except RuntimeError:
+            raise
+        except Exception as exc:
+            logger.warning(
+                "Embedding AI configuration unavailable; using institutional route: %s",
+                type(exc).__name__,
+            )
+
+    if provider == "openai" and api_key:
+        return await _embed_openai(texts, model, api_key)
+
+    # Portable development fallback when no embedding service is configured.
     logger.warning("No embedding provider configured, using zero vectors")
     return [[0.0] * DIMENSIONS for _ in texts]
 
 
-async def embed_single(text: str) -> list[float]:
-    results = await embed_texts([text])
+async def embed_single(
+    text: str,
+    *,
+    db: AsyncSession | None = None,
+    teacher_id: UUID | None = None,
+    ai_config: dict[str, Any] | None = None,
+) -> list[float]:
+    results = await embed_texts(
+        [text],
+        db=db,
+        teacher_id=teacher_id,
+        ai_config=ai_config,
+    )
     return results[0]
-
 
 async def _embed_openai(texts: list[str], model: str, api_key: str) -> list[list[float]]:
     client = _openai_client(api_key)

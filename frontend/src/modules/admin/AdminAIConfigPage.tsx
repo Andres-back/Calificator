@@ -38,11 +38,14 @@ export function AdminAIConfigPage() {
 
   const {
     draftProviders,
+    draftModels,
     draftFeatures,
     hasUnsavedChanges,
     providersChanged,
+    modelsChanged,
     featuresChanged,
     updateProvider,
+    updateModel,
     updateFeature,
     setDraftProviders,
     setHasUnsavedChanges,
@@ -55,16 +58,17 @@ export function AdminAIConfigPage() {
     clearCacheMutation,
   } = useAIMutations(
     draftProviders,
+    draftModels,
     draftFeatures,
-    providersChanged,
-    featuresChanged,
+    providersChanged || modelsChanged || featuresChanged,
+    settingsQuery.data?.version ?? 1,
     setDraftProviders,
     setHasUnsavedChanges,
     setTestingProvider,
   );
 
   function requestSave() {
-    if (!providersChanged && !featuresChanged) {
+    if (!providersChanged && !modelsChanged && !featuresChanged) {
       toast('No hay cambios por guardar.');
       return;
     }
@@ -118,7 +122,7 @@ export function AdminAIConfigPage() {
 
       <Card className="flex flex-wrap items-center gap-3 p-4">
         <Button size="sm" variant="outline" loading={restoreMutation.isPending} onClick={() => setRestoreDialogOpen(true)}>
-          Restaurar valores
+          Restaurar versión anterior
         </Button>
         <Button size="sm" variant="outline" loading={clearCacheMutation.isPending} onClick={() => clearCacheMutation.mutate()}>
           Limpiar caché
@@ -154,7 +158,7 @@ export function AdminAIConfigPage() {
             onUpdate={updateProvider}
             onTest={(providerId) => {
               setTestingProvider(providerId);
-              testMutation.mutate(providerId);
+              testMutation.mutate({ providerId });
             }}
           />
           <ProvidersSection
@@ -166,14 +170,22 @@ export function AdminAIConfigPage() {
             onUpdate={updateProvider}
             onTest={(providerId) => {
               setTestingProvider(providerId);
-              testMutation.mutate(providerId);
+              testMutation.mutate({ providerId });
             }}
           />
 
           <FeatureRoutingSection
             features={draftFeatures}
             providers={draftProviders}
+            models={draftModels}
             onUpdate={updateFeature}
+            onModelUpdate={updateModel}
+            testingProvider={testingProvider}
+            isTesting={testMutation.isPending}
+            onTest={(providerId, model, capability) => {
+              setTestingProvider(providerId);
+              testMutation.mutate({ providerId, model, capability });
+            }}
           />
 
           <UsageAndAudit usage={settingsQuery.data.usage} audit={auditQuery.data?.logs ?? []} isAuditLoading={auditQuery.isLoading} />
@@ -193,8 +205,8 @@ export function AdminAIConfigPage() {
         open={restoreDialogOpen}
         onClose={() => setRestoreDialogOpen(false)}
         onConfirm={() => restoreMutation.mutate()}
-        title="Restaurar valores predeterminados"
-        description="Esta acción reemplazará los proveedores y ruteos personalizados por los valores predeterminados de la plataforma."
+        title="Restaurar versión anterior"
+        description="Esta acción recuperará la última configuración publicada válida. Los trabajos ya iniciados conservarán su versión."
         confirmLabel="Restaurar"
         tone="danger"
         loading={restoreMutation.isPending}

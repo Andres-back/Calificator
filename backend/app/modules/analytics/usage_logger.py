@@ -4,11 +4,8 @@ from __future__ import annotations
 import re
 import uuid
 from datetime import datetime
-from typing import Any
 from uuid import UUID
 
-from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.logging import get_logger
 from app.db.session import AsyncSessionLocal
@@ -68,6 +65,10 @@ async def log_ai_usage(
     output_tokens: int | None = None,
     image_count: int = 0,
     error_code: str | None = None,
+    routing_origin: str | None = None,
+    config_hash: str | None = None,
+    config_version: int | None = None,
+    fallback_used: bool = False,
 ) -> str | None:
     """Registra una llamada a un proveedor de IA en el ledger.
 
@@ -99,12 +100,14 @@ async def log_ai_usage(
                     (id, request_id, pipeline_run_id, calificacion_id, evaluacion_id,
                      feature, stage, provider, model, attempt_number, status,
                      started_at, completed_at, latency_ms,
-                     input_tokens, output_tokens, image_count, error_code, cost)
+                     input_tokens, output_tokens, image_count, error_code, cost,
+                     routing_origin, config_hash, config_version, fallback_used)
                 VALUES
                     (:id, :request_id, :pipeline_run_id, :calificacion_id, :evaluacion_id,
                      :feature, :stage, :provider, :model, :attempt_number, :status,
                      :started_at, :completed_at, :latency_ms,
-                     :input_tokens, :output_tokens, :image_count, :error_code, :cost)
+                     :input_tokens, :output_tokens, :image_count, :error_code, :cost,
+                     :routing_origin, :config_hash, :config_version, :fallback_used)
                 ON CONFLICT (request_id) DO UPDATE SET
                     status = :status,
                     completed_at = :completed_at,
@@ -112,7 +115,11 @@ async def log_ai_usage(
                     input_tokens = COALESCE(:input_tokens, ai_usage_events.input_tokens),
                     output_tokens = COALESCE(:output_tokens, ai_usage_events.output_tokens),
                     error_code = :error_code,
-                    cost = COALESCE(:cost, ai_usage_events.cost)
+                    cost = COALESCE(:cost, ai_usage_events.cost),
+                    routing_origin = COALESCE(:routing_origin, ai_usage_events.routing_origin),
+                    config_hash = COALESCE(:config_hash, ai_usage_events.config_hash),
+                    config_version = COALESCE(:config_version, ai_usage_events.config_version),
+                    fallback_used = ai_usage_events.fallback_used OR :fallback_used
             """)
             await db.execute(stmt, {
                 "id": str(uuid.uuid4()),
@@ -134,6 +141,10 @@ async def log_ai_usage(
                 "image_count": image_count,
                 "error_code": error_code,
                 "cost": float(estimated_cost) if estimated_cost is not None else None,
+                "routing_origin": routing_origin[:30] if routing_origin else None,
+                "config_hash": config_hash[:64] if config_hash else None,
+                "config_version": config_version,
+                "fallback_used": bool(fallback_used),
             })
             await db.commit()
             logger.debug("ai_usage logged: %s %s/%s %s", rid, feature, stage, status)

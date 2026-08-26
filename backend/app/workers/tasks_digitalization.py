@@ -79,6 +79,9 @@ async def _digitalize_async(
             "slow_after_ms": int(settings.DIGITALIZATION_SLOW_WARNING_SECONDS) * 1000,
         }
         timings_ms["queue"] = await jobs_service.get_job_queue_time_ms(db, job_id)
+        job_input = await jobs_service.get_job_input(db, job_id)
+        stored_snapshot = job_input.get("_ai_config")
+        job_ai_config = stored_snapshot if isinstance(stored_snapshot, dict) else None
         try:
             state = await jobs_service.get_job_state(db, job_id)
             if state == JobEstado.CANCELLED.value:
@@ -126,6 +129,8 @@ async def _digitalize_async(
                 content,
                 mime,
                 filename or nombre,
+                user_id,
+                ai_config=job_ai_config,
             )
             timings_ms["extraction"] = int((time.monotonic() - extraction_started) * 1000)
             refresh_total()
@@ -147,6 +152,7 @@ async def _digitalize_async(
                 contenido_texto=extracted_text,
                 nota_maxima=score,
                 initial_warnings=warnings,
+                ai_config=job_ai_config,
             )
             timings_ms["structure"] = int((time.monotonic() - structure_started) * 1000)
             refresh_total()

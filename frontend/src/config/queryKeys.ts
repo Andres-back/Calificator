@@ -35,6 +35,10 @@ export const queryKeys = {
     audit: (limit = 6) => ['admin-ai-audit', { limit }] as const,
     usage: () => ['admin-ai-usage'] as const,
   },
+  teacherAI: {
+    all: ['profesor', 'ai-config'] as const,
+    config: () => ['profesor', 'ai-config'] as const,
+  },
   presentaciones: {
     all: ['presentaciones'] as const,
     list: () => ['presentaciones', 'list'] as const,

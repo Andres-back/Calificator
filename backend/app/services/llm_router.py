@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import asyncio
+import copy
 import json
 import time
 from typing import Any
@@ -72,10 +73,16 @@ def _persistent_inference_timeout() -> httpx.Timeout:
 class LLMRouter:
     """Cascade through configured LLM providers, then use a safe local template."""
 
-    def __init__(self, user_id: UUID | None = None) -> None:
+    def __init__(
+        self, user_id: UUID | None = None, *, ai_config: dict[str, Any] | None = None
+    ) -> None:
         self._user_id = user_id
+        self._ai_config = dict(ai_config) if ai_config else None
+        self._personal_route_without_fallback = False
+        self._usage_fallback_used = False
         self._tracking: dict = {}
         self._credentials = {
+            "openai": getattr(settings, "OPENAI_API_KEY", ""),
             "open_code": getattr(settings, "OPEN_CODE_API_KEY", ""),
             "groq": getattr(settings, "GROQ_API_KEY", ""),
         }
@@ -94,6 +101,16 @@ class LLMRouter:
         """Establece metadatos de tracking para logging de uso."""
         self._tracking.update(kwargs)
 
+    def _routing_telemetry(self) -> dict[str, Any]:
+        snapshot = self._ai_config or {}
+        primary = snapshot.get("primary") or {}
+        return {
+            "routing_origin": primary.get("credential_source"),
+            "config_hash": snapshot.get("config_hash"),
+            "config_version": snapshot.get("teacher_config_version") or snapshot.get("global_config_version"),
+            "fallback_used": self._usage_fallback_used,
+        }
+
     async def generate_text(self, task_type: str, prompt: str) -> str:
         return await self._generate_raw(task_type, prompt, json_mode=False)
 
@@ -106,7 +123,8 @@ class LLMRouter:
         # Build dynamic provider cascade from admin config
         providers = await self._load_providers(task_type)
 
-        for provider, fn in providers:
+        for provider_index, (provider, fn) in enumerate(providers):
+            self._usage_fallback_used = provider_index > 0
             try:
                 logger.debug("LLM call via %s for task '%s'", provider, task_type)
                 start = time.monotonic()
@@ -117,6 +135,8 @@ class LLMRouter:
             except Exception as exc:  # noqa: BLE001
                 logger.warning("LLM provider %s failed: %s", provider, exc)
 
+        if self._personal_route_without_fallback:
+            raise RuntimeError("La API personal no respondió y no autorizaste fallback institucional")
         if task_type == "evaluacion_digitalizar":
             raise RuntimeError("OpenCode no pudo completar la digitalización")
         logger.error("All LLM providers failed for task '%s'; using safe template", task_type)
@@ -125,6 +145,9 @@ class LLMRouter:
     async def _load_providers(self, task_type: str) -> list[tuple[str, Any]]:
         """Load provider cascade dynamically from DB config, fallback to defaults."""
         ordered = []
+        personal_route = False
+        resolved_fallback: dict[str, Any] = {}
+        institutional_credentials = dict(self._credentials)
         if task_type == "evaluacion_digitalizar":
             self._provider_configs[LLMProvider.OPEN_CODE.value] = {
                 "model": settings.OPEN_CODE_DIGITALIZATION_MODEL,
@@ -147,9 +170,11 @@ class LLMRouter:
                 text_providers = await svc.get_text_providers()
                 credentials = await get_effective_ai_credentials(db)
                 self._credentials = {
+                    "openai": getattr(credentials, "openai_key", ""),
                     "open_code": credentials.open_code_key,
                     "groq": credentials.groq_key,
                 }
+                institutional_credentials = dict(self._credentials)
                 self._provider_configs = {str(item["id"]): item for item in text_providers}
                 if task_type == "evaluacion_digitalizar":
                     document_provider = self._provider_configs.setdefault(
@@ -171,12 +196,95 @@ class LLMRouter:
                     presentation_provider["timeout_seconds"] = settings.OPEN_CODE_PRESENTATION_TIMEOUT_SECONDS
                     presentation_provider["max_tokens"] = settings.OPEN_CODE_PRESENTATION_MAX_TOKENS
 
+                primary_id = str(feature.get("primary_provider") or "")
+                fallback_id = str(feature.get("fallback_provider") or "")
+                if primary_id in self._provider_configs and feature.get("primary_model"):
+                    self._provider_configs[primary_id]["model"] = feature["primary_model"]
+                if fallback_id in self._provider_configs and feature.get("fallback_model"):
+                    self._provider_configs[fallback_id]["model"] = feature["fallback_model"]
 
-                # Student/teacher documents are restricted to OpenCode only.
+                if self._user_id is not None:
+                    try:
+                        from app.services.ai_configuration_resolver import resolve_ai_configuration
+                        from app.services.ai_credentials_service import get_teacher_ai_credential
+
+                        resolved = self._ai_config or await resolve_ai_configuration(
+                            db,
+                            feature=task_type,
+                            teacher_id=self._user_id,
+                        )
+                        self._ai_config = dict(resolved)
+                        selected = resolved.get("primary") or {}
+                        selected_provider = str(selected.get("provider") or "")
+                        selected_model = selected.get("model")
+                        if selected_provider in self._provider_configs and selected_model:
+                            self._provider_configs[selected_provider]["model"] = selected_model
+                        if selected.get("credential_source") == "teacher" and selected_provider in {"openai", "open_code", "groq"}:
+                            personal_route = True
+                            teacher_secret = await get_teacher_ai_credential(
+                                db,
+                                teacher_id=self._user_id,
+                                provider_id=selected_provider,
+                            )
+                            if teacher_secret:
+                                self._credentials[selected_provider] = teacher_secret
+                            else:
+                                self._credentials[selected_provider] = ""
+                        resolved_fallback = resolved.get("fallback") or {}
+                        self._personal_route_without_fallback = (
+                            personal_route and not bool(resolved_fallback)
+                        )
+                        feature = {
+                            **feature,
+                            "primary_provider": selected_provider or feature.get("primary_provider"),
+                            "primary_model": selected_model or feature.get("primary_model"),
+                            "fallback_provider": (
+                                resolved_fallback.get("provider")
+                                if personal_route
+                                else resolved_fallback.get("provider")
+                                or feature.get("fallback_provider")
+                            ),
+                            "fallback_model": (
+                                resolved_fallback.get("model")
+                                if personal_route
+                                else resolved_fallback.get("model")
+                                or feature.get("fallback_model")
+                            ),
+                        }
+                    except Exception as exc:
+                        logger.warning("Teacher AI configuration unavailable; using institutional route: %s", type(exc).__name__)
+
+                # Document extraction remains vision-capable; the resolved route decides the model.
                 if task_type == "evaluacion_digitalizar":
                     for provider in text_providers:
                         if provider["id"] == LLMProvider.OPEN_CODE.value and provider["active"]:
                             ordered.append((provider["id"], self._call_open_code))
+                            if (
+                                personal_route
+                                and resolved_fallback.get("provider") == provider["id"]
+                                and resolved_fallback.get("credential_source")
+                                == "institutional"
+                            ):
+                                institutional_router = copy.copy(self)
+                                institutional_router._credentials = dict(
+                                    institutional_credentials
+                                )
+                                institutional_router._provider_configs = {
+                                    key: dict(value)
+                                    for key, value in self._provider_configs.items()
+                                }
+                                fallback_call = (
+                                    institutional_router._call_for_provider(
+                                        provider["id"]
+                                    )
+                                )
+                                if fallback_call:
+                                    ordered.append(
+                                        (
+                                            f"{provider['id']}:institutional",
+                                            fallback_call,
+                                        )
+                                    )
                             break
                     return ordered
 
@@ -215,6 +323,27 @@ class LLMRouter:
                                 ordered.append((tp["id"], f))
                                 seen.add(tp["id"])
                                 break
+                if (
+                    personal_route
+                    and fallback
+                    and fallback == primary
+                    and fallback in seen
+                    and resolved_fallback.get("credential_source") == "institutional"
+                ):
+                    institutional_router = copy.copy(self)
+                    institutional_router._credentials = dict(institutional_credentials)
+                    institutional_router._provider_configs = {
+                        key: dict(value)
+                        for key, value in self._provider_configs.items()
+                    }
+                    fallback_call = institutional_router._call_for_provider(fallback)
+                    if fallback_call:
+                        ordered.append((f"{fallback}:institutional", fallback_call))
+
+                # A personal route may use only its captured explicit fallback.
+                if personal_route:
+                    return ordered
+
                 # Then remaining by priority.
                 for tp in text_providers:
                     if tp["id"] not in seen and tp["active"] and tp["id"] != "template":
@@ -250,6 +379,8 @@ class LLMRouter:
         return self._safe_template("fallback")
 
     def _call_for_provider(self, provider_id: str) -> Any | None:
+        if provider_id == LLMProvider.OPENAI.value:
+            return self._call_openai
         if provider_id == LLMProvider.OPEN_CODE.value:
             return self._call_open_code
         if provider_id == LLMProvider.GROQ.value:
@@ -306,6 +437,8 @@ class LLMRouter:
         try:
             async with httpx.AsyncClient(timeout=timeout) as client:
                 for credential_index, api_key in enumerate(api_keys):
+                    if credential_index > 0:
+                        self._usage_fallback_used = True
                     headers = (
                         {
                             "x-api-key": api_key,
@@ -366,6 +499,7 @@ class LLMRouter:
                                 or usage.get("completion_tokens")
                             ),
                             **self._tracking,
+                            **self._routing_telemetry(),
                         )
                         if use_messages_api:
                             return _messages_response_text(data)
@@ -382,6 +516,7 @@ class LLMRouter:
                 latency_ms=ms,
                 error_code="provider_timeout",
                 **self._tracking,
+                **self._routing_telemetry(),
             )
             raise
         except Exception as exc:
@@ -394,8 +529,31 @@ class LLMRouter:
                 latency_ms=ms,
                 error_code=str(exc)[:60],
                 **self._tracking,
+                **self._routing_telemetry(),
             )
             raise
+    async def _call_openai(self, prompt: str, json_mode: bool) -> str:
+        api_key = self._credentials.get("openai", "")
+        config = self._provider_configs.get(LLMProvider.OPENAI.value, {})
+        if not api_key:
+            raise ValueError("OPENAI_API_KEY not configured")
+        body: dict[str, Any] = {
+            "model": config.get("model") or settings.OPENAI_MODEL,
+            "messages": [{"role": "user", "content": prompt}],
+            "temperature": 0.2 if json_mode else 0.3,
+        }
+        if json_mode:
+            body["response_format"] = {"type": "json_object"}
+        timeout = config.get("timeout_seconds") or settings.OPENAI_TIMEOUT_SECONDS
+        async with httpx.AsyncClient(timeout=timeout) as client:
+            response = await client.post(
+                "https://api.openai.com/v1/chat/completions",
+                headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
+                json=body,
+            )
+        response.raise_for_status()
+        data = response.json()
+        return str(data["choices"][0]["message"].get("content") or "")
     async def _call_groq(self, prompt: str, json_mode: bool) -> str:
         api_key = self._credentials.get("groq", "")
         config = self._provider_configs.get(LLMProvider.GROQ.value, {})

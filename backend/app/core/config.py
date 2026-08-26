@@ -41,6 +41,8 @@ class Settings(BaseSettings):
 
     # AI providers
     OPENAI_API_KEY: str = ""
+    OPENAI_MODEL: str = "gpt-4.1-mini"
+    OPENAI_TIMEOUT_SECONDS: int = 60
     OPENAI_IMAGE_MODEL: str = "gpt-image-2"
     # gpt-image admite quality low|medium|high|auto. "low" = mas barato (slides).
     OPENAI_IMAGE_QUALITY: str = "low"

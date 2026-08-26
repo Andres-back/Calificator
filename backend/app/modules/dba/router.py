@@ -206,7 +206,9 @@ async def upload_document_for_dba(
 
     chunks_texto = document_service._chunk_text(texto)
     if chunks_texto:
-        embeddings = await embed_texts(chunks_texto)
+        embeddings = await embed_texts(
+            chunks_texto, db=db, teacher_id=current_user.id
+        )
         for i, (chunk, emb) in enumerate(zip(chunks_texto, embeddings, strict=False)):
             db.add(RagChunk(
                 source_id=fuente.id,

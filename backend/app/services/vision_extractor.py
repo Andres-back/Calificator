@@ -218,14 +218,15 @@ def _merge(pages: list[VisionPageResult]) -> list[ExtractedAnswer]:
 
 
 class VisionExtractor:
-    def __init__(self, tracking: dict[str, Any] | None = None, primary_model: str | None = None) -> None:
+    def __init__(self, tracking: dict[str, Any] | None = None, primary_model: str | None = None, api_key: str | None = None) -> None:
         self.tracking = tracking or {}
         self.base_url = settings.OPEN_CODE_BASE_URL.rstrip("/")
         self.primary_model = primary_model or settings.VISION_MODEL
+        self.api_key = (api_key or "").strip()
 
     async def _keys(self) -> list[str]:
         effective = await get_effective_ai_credentials()
-        return list(dict.fromkeys(key for key in (effective.open_code_key, settings.OPEN_CODE_API_KEY) if key))
+        return list(dict.fromkeys(key for key in (self.api_key, effective.open_code_key, settings.OPEN_CODE_API_KEY) if key))
 
     def _prompt(self, blueprint: dict[str, Any], page: int, total: int, purpose: str) -> str:
         allowed = ("nombre", "preguntas", "respuestas_esperadas", "criterios", "rubrica", "modalidad")

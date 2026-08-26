@@ -3,6 +3,7 @@ import { Badge, Button, Card, Field, Input } from '@/components/ui';
 import type { AIProvider } from '../../api';
 
 const PROVIDER_ICONS: Record<string, LucideIcon> = {
+  openai: Sparkles,
   open_code: Sparkles,
   groq: Activity,
   ollama: Server,
@@ -84,6 +85,21 @@ function ProviderEditor({
         />
       </label>
 
+      {!isTemplate && (
+        <label className="mt-3 flex cursor-pointer items-center justify-between gap-3 rounded-xl border border-border bg-surface-2/60 p-3 text-sm">
+          <span>
+            <span className="block font-semibold">Permitir API propia del docente</span>
+            <span className="block text-xs text-muted">El servidor conserva la URL; el docente solo aporta su clave.</span>
+          </span>
+          <input
+            type="checkbox"
+            className="h-4 w-4 accent-brand-600 focus-ring"
+            checked={Boolean(provider.allow_teacher_credentials)}
+            onChange={(event) => onUpdate(provider.id, { allow_teacher_credentials: event.currentTarget.checked })}
+            aria-label={`Permitir credenciales docentes para ${provider.label}`}
+          />
+        </label>
+      )}
       {!isTemplate && (
         <details className="mt-3 rounded-lg border border-border bg-surface-2/40 px-3 py-2">
           <summary className="cursor-pointer text-sm font-semibold text-fg">Ajustes avanzados</summary>

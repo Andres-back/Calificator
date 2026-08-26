@@ -28,12 +28,18 @@ CACHE_TTL = 60  # 60 segundos
 
 DEFAULT_PROVIDERS: list[dict[str, Any]] = [
     {
+        "id": "openai", "tipo": "texto", "label": "OpenAI",
+        "base_url": "https://api.openai.com/v1", "model": settings.OPENAI_MODEL,
+        "active": True, "priority": 1, "timeout_seconds": settings.OPENAI_TIMEOUT_SECONDS,
+        "max_retries": 2, "allow_teacher_credentials": True,
+    },
+    {
         "id": "open_code", "tipo": "texto", "label": "OpenCode",
         "base_url": settings.OPEN_CODE_BASE_URL,
         "model": settings.OPEN_CODE_MODEL,
         "active": True, "priority": 1,
         "timeout_seconds": settings.OPEN_CODE_TIMEOUT_SECONDS,
-        "max_retries": 2,
+        "max_retries": 2, "allow_teacher_credentials": True,
     },
     {
         "id": "groq", "tipo": "texto", "label": "Groq",
@@ -41,7 +47,7 @@ DEFAULT_PROVIDERS: list[dict[str, Any]] = [
         "model": settings.GROQ_MODEL,
         "active": True, "priority": 2,
         "timeout_seconds": settings.GROQ_TIMEOUT_SECONDS,
-        "max_retries": 2,
+        "max_retries": 2, "allow_teacher_credentials": True,
     },
     {
         "id": "ollama", "tipo": "texto", "label": "Ollama",
@@ -63,7 +69,7 @@ DEFAULT_PROVIDERS: list[dict[str, Any]] = [
         "model": settings.OPENAI_IMAGE_MODEL,
         "active": True, "priority": 1,
         "timeout_seconds": settings.OPENAI_IMAGE_TIMEOUT_SECONDS,
-        "max_retries": 2,
+        "max_retries": 2, "allow_teacher_credentials": True,
     },
     {
         "id": "cloudflare_image", "tipo": "imagen", "label": "Cloudflare Images",
@@ -73,6 +79,21 @@ DEFAULT_PROVIDERS: list[dict[str, Any]] = [
         "timeout_seconds": settings.CLOUDFLARE_TIMEOUT_SECONDS,
         "max_retries": 1,
     },
+]
+
+DEFAULT_MODELS: list[dict[str, Any]] = [
+    {"provider_id": "openai", "model_id": settings.OPENAI_MODEL, "label": settings.OPENAI_MODEL, "capabilities": ["text"], "recommended": True, "active": True},
+    {"provider_id": "openai", "model_id": "text-embedding-3-small", "label": "Text Embedding 3 Small", "capabilities": ["embedding"], "recommended": True, "active": True},
+    {"provider_id": "open_code", "model_id": settings.OPEN_CODE_MODEL, "label": settings.OPEN_CODE_MODEL, "capabilities": ["text"], "recommended": True, "active": True},
+    {"provider_id": "open_code", "model_id": settings.VISION_MODEL, "label": settings.VISION_MODEL, "capabilities": ["vision", "text"], "recommended": True, "active": True},
+    {"provider_id": "open_code", "model_id": settings.OPEN_CODE_DIGITALIZATION_MODEL, "label": settings.OPEN_CODE_DIGITALIZATION_MODEL, "capabilities": ["vision", "text"], "recommended": False, "active": True},
+    {"provider_id": "groq", "model_id": settings.GROQ_MODEL, "label": settings.GROQ_MODEL, "capabilities": ["text"], "recommended": True, "active": True},
+    {"provider_id": "ollama", "model_id": settings.OLLAMA_MODEL, "label": settings.OLLAMA_MODEL, "capabilities": ["text"], "recommended": True, "active": True},
+    {"provider_id": "openai_image", "model_id": settings.OPENAI_IMAGE_MODEL, "label": settings.OPENAI_IMAGE_MODEL, "capabilities": ["image"], "recommended": True, "active": True},
+    {"provider_id": "cloudflare_image", "model_id": settings.CLOUDFLARE_IMAGE_MODEL, "label": settings.CLOUDFLARE_IMAGE_MODEL, "capabilities": ["image"], "recommended": True, "active": True},
+    {"provider_id": "open_code", "model_id": "qwen3.7-plus", "label": "Qwen 3.7 Plus", "capabilities": ["text", "vision"], "recommended": True, "active": True},
+    {"provider_id": "open_code", "model_id": "qwen3.6-plus", "label": "Qwen 3.6 Plus", "capabilities": ["text", "vision"], "recommended": False, "active": True},
+    {"provider_id": "open_code", "model_id": "mimo-v2.5", "label": "MiMo 2.5", "capabilities": ["text", "vision"], "recommended": False, "active": True},
 ]
 
 DEFAULT_FEATURES: list[dict[str, Any]] = [
@@ -185,9 +206,9 @@ class AIConfigService:
         if existing.scalar() == 0:
             for p in DEFAULT_PROVIDERS:
                 await self._db.execute(
-                    sql_text("""INSERT INTO ai_provider_settings (id, tipo, label, base_url, model, active, priority, timeout_seconds, max_retries)
-                         VALUES (:id, :tipo, :label, :base_url, :model, :active, :priority, :timeout_seconds, :max_retries)"""),
-                    p
+                    sql_text("""INSERT INTO ai_provider_settings (id, tipo, label, base_url, model, active, priority, timeout_seconds, max_retries, allow_teacher_credentials)
+                         VALUES (:id, :tipo, :label, :base_url, :model, :active, :priority, :timeout_seconds, :max_retries, :allow_teacher_credentials)"""),
+                    {"allow_teacher_credentials": False, **p}
                 )
         # Seed features
         existing_f = await self._db.execute(sql_text("SELECT COUNT(*) FROM ai_feature_routing"))
@@ -198,6 +219,8 @@ class AIConfigService:
                          VALUES (:feature, :label, :primary_provider, :fallback_provider, :active)"""),
                     f
                 )
+        await self._db.execute(sql_text("UPDATE ai_feature_routing SET capability = CASE WHEN feature IN ('calificacion_foto','evaluacion_digitalizar','vision_ocr') THEN 'vision' WHEN feature = 'generacion_imagenes' THEN 'image' WHEN feature IN ('rag','embeddings') THEN 'embedding' ELSE 'text' END"))
+        await self._db.execute(sql_text("UPDATE ai_feature_routing SET primary_model = p.model FROM ai_provider_settings p WHERE p.id = ai_feature_routing.primary_provider AND ai_feature_routing.primary_model IS NULL"))
         await self._db.commit()
 
     async def init(self) -> None:
@@ -210,6 +233,18 @@ class AIConfigService:
         """Return the persisted provider configuration, falling back to defaults."""
         providers = await self._load_providers_from_db()
         return providers or [dict(provider) for provider in DEFAULT_PROVIDERS]
+
+    async def get_all_models(self) -> list[dict[str, Any]]:
+        """Return the model catalog, preserving safe defaults during rollout."""
+        if not self._db:
+            return [dict(model) for model in DEFAULT_MODELS]
+        try:
+            result = await self._db.execute(sql_text("SELECT provider_id, model_id, label, capabilities, recommended, active, max_context_tokens FROM ai_provider_models ORDER BY provider_id, recommended DESC, model_id"))
+            rows = result.fetchall()
+            return [dict(row._mapping) for row in rows] if rows else [dict(model) for model in DEFAULT_MODELS]
+        except Exception:
+            await self._db.rollback()
+            return [dict(model) for model in DEFAULT_MODELS]
 
     async def get_all_features(self) -> list[dict[str, Any]]:
         """Return the persisted feature routing, falling back to defaults."""
@@ -260,8 +295,8 @@ class AIConfigService:
         return {"feature": feature, "primary_provider": "groq", "fallback_provider": "template", "active": True}
 
     async def get_provider_config(self, provider_id: str) -> dict[str, Any]:
-        """Devuelve configuración de un proveedor específico."""
-        providers = await self.get_effective_providers()
+        """Devuelve cualquier proveedor persistido, incluidos los de imagen."""
+        providers = await self.get_all_providers()
         for p in providers:
             if p["id"] == provider_id:
                 return p
@@ -289,7 +324,8 @@ class AIConfigService:
         """Hash de la configuración actual (para comparar backend vs worker)."""
         providers = await self._load_providers_from_db() or DEFAULT_PROVIDERS
         features = await self._load_features_from_db() or DEFAULT_FEATURES
-        raw = json.dumps({"providers": providers, "features": features}, sort_keys=True, default=str)
+        models = await self.get_all_models()
+        raw = json.dumps({"providers": providers, "models": models, "features": features}, sort_keys=True, default=str)
         return hashlib.sha256(raw.encode()).hexdigest()[:16]
 
     # ── Persistencia ───────────────────────────────────────────────────
@@ -298,11 +334,21 @@ class AIConfigService:
         if not self._db:
             return
         await self._db.execute(sql_text("DELETE FROM ai_provider_settings"))
-        for p in providers:
+        for provider in providers:
+            item = {
+                "allow_teacher_credentials": False,
+                "allow_institutional_fallback": True,
+                **provider,
+                "config_version": int(provider.get("config_version", 0)) + 1,
+                "admin": str(admin_id) if admin_id else None,
+            }
             await self._db.execute(
-                sql_text("""INSERT INTO ai_provider_settings (id, tipo, label, base_url, model, active, priority, timeout_seconds, max_retries, updated_by)
-                     VALUES (:id, :tipo, :label, :base_url, :model, :active, :priority, :timeout_seconds, :max_retries, :admin)"""),
-                {"admin": str(admin_id) if admin_id else None, **p}
+                sql_text("""INSERT INTO ai_provider_settings
+                    (id, tipo, label, base_url, model, active, priority, timeout_seconds, max_retries,
+                     allow_teacher_credentials, allow_institutional_fallback, config_version, updated_by)
+                    VALUES (:id, :tipo, :label, :base_url, :model, :active, :priority, :timeout_seconds, :max_retries,
+                     :allow_teacher_credentials, :allow_institutional_fallback, :config_version, :admin)"""),
+                item,
             )
         await self._db.commit()
         await self._audit(admin_id, "save_providers", "providers", "", "", "ok")
@@ -312,22 +358,193 @@ class AIConfigService:
         if not self._db:
             return
         await self._db.execute(sql_text("DELETE FROM ai_feature_routing"))
-        for f in features:
+        for feature in features:
+            item = {
+                "capability": "text",
+                "primary_model": None,
+                "fallback_model": None,
+                "rollout_enabled": False,
+                **feature,
+                "config_version": int(feature.get("config_version", 0)) + 1,
+                "admin": str(admin_id) if admin_id else None,
+            }
             await self._db.execute(
-                sql_text("""INSERT INTO ai_feature_routing (feature, label, primary_provider, fallback_provider, active, updated_by)
-                     VALUES (:feature, :label, :primary_provider, :fallback_provider, :active, :admin)"""),
-                {"admin": str(admin_id) if admin_id else None, **f}
+                sql_text("""INSERT INTO ai_feature_routing
+                    (feature, label, capability, primary_provider, primary_model, fallback_provider,
+                     fallback_model, rollout_enabled, config_version, active, updated_by)
+                    VALUES (:feature, :label, :capability, :primary_provider, :primary_model, :fallback_provider,
+                     :fallback_model, :rollout_enabled, :config_version, :active, :admin)"""),
+                item,
             )
         await self._db.commit()
         await self._audit(admin_id, "save_features", "features", "", "", "ok")
         await self.invalidate_cache()
 
+    async def _replace_configuration(
+        self,
+        providers: list[dict[str, Any]],
+        models: list[dict[str, Any]],
+        features: list[dict[str, Any]],
+        *,
+        version: int,
+        admin_id: UUID | None,
+    ) -> None:
+        """Replace a validated global configuration inside the caller transaction."""
+        if not self._db:
+            return
+        await self._db.execute(sql_text("DELETE FROM ai_feature_routing"))
+        await self._db.execute(sql_text("DELETE FROM ai_provider_models"))
+        await self._db.execute(sql_text("DELETE FROM ai_provider_settings"))
+        actor = str(admin_id) if admin_id else None
+        for provider in providers:
+            item = {
+                "id": provider["id"],
+                "tipo": provider.get("tipo", "texto"),
+                "label": provider.get("label") or provider["id"],
+                "base_url": provider.get("base_url"),
+                "model": provider.get("model"),
+                "active": bool(provider.get("active", True)),
+                "priority": int(provider.get("priority", 99)),
+                "timeout_seconds": int(provider.get("timeout_seconds", 30)),
+                "max_retries": int(provider.get("max_retries", 2)),
+                "allow_teacher_credentials": bool(provider.get("allow_teacher_credentials", False)),
+                "allow_institutional_fallback": bool(provider.get("allow_institutional_fallback", True)),
+                "config_version": version,
+                "admin": actor,
+            }
+            await self._db.execute(sql_text("""INSERT INTO ai_provider_settings
+                (id, tipo, label, base_url, model, active, priority, timeout_seconds, max_retries,
+                 allow_teacher_credentials, allow_institutional_fallback, config_version, updated_by)
+                VALUES (:id, :tipo, :label, :base_url, :model, :active, :priority, :timeout_seconds, :max_retries,
+                 :allow_teacher_credentials, :allow_institutional_fallback, :config_version, :admin)"""), item)
+        for model in models:
+            item = {
+                "provider_id": model["provider_id"],
+                "model_id": model["model_id"],
+                "label": model.get("label") or model["model_id"],
+                "capabilities": list(model.get("capabilities") or ["text"]),
+                "recommended": bool(model.get("recommended", False)),
+                "active": bool(model.get("active", True)),
+                "max_context_tokens": model.get("max_context_tokens"),
+                "config_version": version,
+                "admin": actor,
+            }
+            await self._db.execute(sql_text("""INSERT INTO ai_provider_models
+                (provider_id, model_id, label, capabilities, recommended, active,
+                 max_context_tokens, config_version, updated_by)
+                VALUES (:provider_id, :model_id, :label, :capabilities, :recommended, :active,
+                 :max_context_tokens, :config_version, :admin)"""), item)
+        for feature in features:
+            item = {
+                "feature": feature["feature"],
+                "label": feature.get("label") or feature["feature"],
+                "capability": feature.get("capability", "text"),
+                "primary_provider": feature.get("primary_provider"),
+                "primary_model": feature.get("primary_model"),
+                "fallback_provider": feature.get("fallback_provider"),
+                "fallback_model": feature.get("fallback_model"),
+                "rollout_enabled": bool(feature.get("rollout_enabled", False)),
+                "config_version": version,
+                "active": bool(feature.get("active", True)),
+                "admin": actor,
+            }
+            await self._db.execute(sql_text("""INSERT INTO ai_feature_routing
+                (feature, label, capability, primary_provider, primary_model, fallback_provider,
+                 fallback_model, rollout_enabled, config_version, active, updated_by)
+                VALUES (:feature, :label, :capability, :primary_provider, :primary_model, :fallback_provider,
+                 :fallback_model, :rollout_enabled, :config_version, :active, :admin)"""), item)
+
+    async def publish_configuration(
+        self,
+        providers: list[dict[str, Any]],
+        models: list[dict[str, Any]],
+        features: list[dict[str, Any]],
+        *,
+        admin_id: UUID | None = None,
+    ) -> int:
+        """Publish the complete configuration atomically and keep a secret-free rollback point."""
+        if not self._db:
+            return 1
+        previous_providers = await self.get_all_providers()
+        previous_models = await self.get_all_models()
+        previous_features = await self.get_all_features()
+        previous_version = max((int(item.get("config_version") or 1) for item in previous_features), default=1)
+        snapshot = {
+            "providers": previous_providers,
+            "models": previous_models,
+            "features": previous_features,
+        }
+        await self._db.execute(
+            sql_text("""INSERT INTO ai_configuration_versions
+                (version, snapshot, reason, created_by)
+                VALUES (:version, CAST(:snapshot AS jsonb), 'publication', :admin)"""),
+            {
+                "version": previous_version,
+                "snapshot": json.dumps(snapshot, ensure_ascii=False, default=str),
+                "admin": str(admin_id) if admin_id else None,
+            },
+        )
+        next_version = previous_version + 1
+        await self._replace_configuration(
+            providers, models, features, version=next_version, admin_id=admin_id
+        )
+        await self._db.commit()
+        await self._audit(
+            admin_id,
+            "publish_configuration",
+            "config",
+            "version",
+            previous_version,
+            next_version,
+            "ok",
+        )
+        await self.invalidate_cache()
+        return next_version
+
+    async def restore_previous_configuration(self, admin_id: UUID | None = None) -> int | None:
+        """Restore and consume the latest valid publication snapshot as a stack rollback."""
+        if not self._db:
+            return None
+        result = await self._db.execute(sql_text("""SELECT id, version, snapshot
+            FROM ai_configuration_versions
+            ORDER BY created_at DESC, id DESC
+            LIMIT 1 FOR UPDATE"""))
+        row = result.fetchone()
+        if not row:
+            return None
+        current_features = await self.get_all_features()
+        current_version = max((int(item.get("config_version") or 1) for item in current_features), default=1)
+        snapshot = row.snapshot if isinstance(row.snapshot, dict) else json.loads(row.snapshot)
+        next_version = current_version + 1
+        await self._replace_configuration(
+            list(snapshot.get("providers") or []),
+            list(snapshot.get("models") or []),
+            list(snapshot.get("features") or []),
+            version=next_version,
+            admin_id=admin_id,
+        )
+        await self._db.execute(
+            sql_text("DELETE FROM ai_configuration_versions WHERE id=:id"),
+            {"id": str(row.id)},
+        )
+        await self._db.commit()
+        await self._audit(
+            admin_id,
+            "restore_previous_configuration",
+            "config",
+            "version",
+            current_version,
+            next_version,
+            "ok",
+        )
+        await self.invalidate_cache()
+        return next_version
     async def save_provider(self, provider_id: str, updates: dict[str, Any], admin_id: UUID | None = None) -> None:
         if not self._db:
             return
         sets = []
         params: dict = {"id": provider_id}
-        for key in ("active", "model", "priority", "timeout_seconds", "max_retries", "base_url"):
+        for key in ("active", "model", "priority", "timeout_seconds", "max_retries", "base_url", "allow_teacher_credentials", "allow_institutional_fallback"):
             if key in updates:
                 sets.append(f"{key}=:{key}")
                 params[key] = updates[key]
@@ -381,7 +598,7 @@ class AIConfigService:
             return None
         try:
             r = await self._db.execute(
-                sql_text("SELECT id, tipo, label, base_url, model, active, priority, timeout_seconds, max_retries FROM ai_provider_settings ORDER BY priority, id")
+                sql_text("SELECT id, tipo, label, base_url, model, active, priority, timeout_seconds, max_retries, allow_teacher_credentials, allow_institutional_fallback, config_version FROM ai_provider_settings ORDER BY priority, id")
             )
             rows = r.fetchall()
             return [dict(row._mapping) for row in rows] if rows else None
@@ -392,7 +609,7 @@ class AIConfigService:
         if not self._db:
             return None
         try:
-            r = await self._db.execute(sql_text("SELECT feature, label, primary_provider, fallback_provider, active FROM ai_feature_routing ORDER BY feature"))
+            r = await self._db.execute(sql_text("SELECT feature, label, capability, primary_provider, primary_model, fallback_provider, fallback_model, rollout_enabled, config_version, active FROM ai_feature_routing ORDER BY feature"))
             rows = r.fetchall()
             return [dict(row._mapping) for row in rows] if rows else None
         except Exception:

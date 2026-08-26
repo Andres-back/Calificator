@@ -13,6 +13,9 @@ export interface AIProvider {
   priority: number;
   timeout_seconds: number;
   max_retries: number;
+  allow_teacher_credentials?: boolean;
+  allow_institutional_fallback?: boolean;
+  config_version?: number;
   auth_configured?: boolean;
   last_test_status?: string | null;
   last_test_latency_ms?: number | null;
@@ -28,7 +31,20 @@ export interface FeatureRouting {
   primary_model?: string | null;
   fallback_provider: string | null;
   fallback_model?: string | null;
+  capability?: 'text' | 'vision' | 'image' | 'embedding' | string;
+  rollout_enabled?: boolean;
+  config_version?: number;
   active: boolean;
+}
+
+export interface AIModel {
+  provider_id: string;
+  model_id: string;
+  label: string;
+  capabilities: string[];
+  recommended: boolean;
+  active: boolean;
+  max_context_tokens?: number | null;
 }
 
 export interface GlobalAIConfig {
@@ -65,7 +81,9 @@ export interface UsageStats {
 
 export interface AISettings {
   providers: AIProvider[];
+  models?: AIModel[];
   features: FeatureRouting[];
+  version?: number;
   global_config: GlobalAIConfig;
   usage: UsageStats;
 }
@@ -121,13 +139,41 @@ export async function updateGlobalAIConfig(payload: GlobalAIConfigUpdate): Promi
   return data;
 }
 
-export async function testProvider(providerId: string): Promise<ProviderTestResult> {
-  const { data } = await api.post<ProviderTestResult>(`/admin/ai-providers/${providerId}/test`);
+export async function testProvider(
+  providerId: string,
+  payload?: { model?: string | null; capability?: string | null },
+): Promise<ProviderTestResult> {
+  const { data } = await api.post<ProviderTestResult>(
+    `/admin/ai-providers/${providerId}/test`,
+    payload ?? {},
+  );
   return data;
 }
 
+export async function publishAIConfiguration(
+  providers: AIProvider[],
+  models: AIModel[],
+  features: FeatureRouting[],
+  expectedVersion: number,
+): Promise<ApiResponse & { version?: number }> {
+  const { data } = await api.put<ApiResponse & { version?: number }>('/admin/ai-settings/publish', {
+    expected_version: expectedVersion,
+    providers: providers.map(({ id, name, tipo, label, base_url, model, active, priority, timeout_seconds, max_retries, allow_teacher_credentials, allow_institutional_fallback, config_version }) => ({
+      id, name, tipo, label, base_url, model, active, priority, timeout_seconds, max_retries,
+      allow_teacher_credentials, allow_institutional_fallback, config_version,
+    })),
+    models: models.map(({ provider_id, model_id, label, capabilities, recommended, active, max_context_tokens }) => ({
+      provider_id, model_id, label, capabilities, recommended, active, max_context_tokens,
+    })),
+    features: features.map(({ feature, label, capability, primary_provider, primary_model, fallback_provider, fallback_model, rollout_enabled, config_version, active }) => ({
+      feature, label, capability, primary_provider, primary_model, fallback_provider,
+      fallback_model, rollout_enabled, config_version, active,
+    })),
+  });
+  return data;
+}
 export async function saveProviders(providers: AIProvider[]): Promise<ApiResponse> {
-  const payload = providers.map(({ id, tipo, label, base_url, model, active, priority, timeout_seconds, max_retries }) => ({
+  const payload = providers.map(({ id, tipo, label, base_url, model, active, priority, timeout_seconds, max_retries, allow_teacher_credentials, allow_institutional_fallback, config_version }) => ({
     id,
     tipo,
     label,
@@ -137,20 +183,31 @@ export async function saveProviders(providers: AIProvider[]): Promise<ApiRespons
     priority,
     timeout_seconds,
     max_retries,
+    ...(allow_teacher_credentials !== undefined ? { allow_teacher_credentials } : {}),
+    ...(allow_institutional_fallback !== undefined ? { allow_institutional_fallback } : {}),
+    ...(config_version !== undefined ? { config_version } : {}),
   }));
   const { data } = await api.put<ApiResponse>('/admin/ai-providers', payload);
   return data;
 }
 
-export async function saveFeatures(features: FeatureRouting[]): Promise<ApiResponse> {
-  const payload = features.map(({ feature, label, primary_provider, fallback_provider, active }) => ({
+export async function saveFeatures(features: FeatureRouting[], expectedVersion: number): Promise<ApiResponse> {
+  const payload = features.map(({ feature, label, capability, primary_provider, primary_model, fallback_provider, fallback_model, rollout_enabled, config_version, active }) => ({
     feature,
     label,
+    capability,
     primary_provider,
+    primary_model,
     fallback_provider,
+    fallback_model,
+    rollout_enabled,
+    config_version,
     active,
   }));
-  const { data } = await api.put<ApiResponse>('/admin/ai-features', payload);
+  const { data } = await api.put<ApiResponse>('/admin/ai-features', {
+    expected_version: expectedVersion,
+    features: payload,
+  });
   return data;
 }
 
@@ -159,6 +216,10 @@ export async function updateProvider(id: string, updates: Partial<AIProvider>): 
   return data;
 }
 
+export async function restorePreviousConfiguration(): Promise<ApiResponse & { version?: number }> {
+  const { data } = await api.post<ApiResponse & { version?: number }>('/admin/ai-settings/restore-previous');
+  return data;
+}
 export async function restoreDefaults(): Promise<ApiResponse> {
   const { data } = await api.post<ApiResponse>('/admin/ai-settings/restore-defaults');
   return data;

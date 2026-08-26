@@ -9,8 +9,10 @@ import json
 import re
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Literal
+from typing import Any, Literal
 from uuid import UUID
+
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
 from app.core.logging import get_logger
@@ -148,7 +150,13 @@ def _write_asset_meta(path: Path, *, provider: str, title: str, prompt: str) -> 
 
 
 async def generate_ai_slide_image_detailed(
-    title: str, prompt: str, *, provider
+    title: str,
+    prompt: str,
+    *,
+    provider,
+    db: AsyncSession | None = None,
+    teacher_id: UUID | None = None,
+    ai_config: dict[str, Any] | None = None,
 ) -> dict:
     """Como `generate_ai_slide_image`, pero devuelve detalles para la biblioteca
     de imágenes: {url, path, provider, reused, placeholder, error}."""
@@ -175,7 +183,13 @@ async def generate_ai_slide_image_detailed(
     error_text: str | None = None
     try:
         result = await generate_image(
-            prompt, size="1536x1024", provider=provider, strict_provider=True
+            prompt,
+            size="1536x1024",
+            provider=provider,
+            strict_provider=True,
+            db=db,
+            teacher_id=teacher_id,
+            ai_config=ai_config,
         )
         if result.b64_data and not result.is_placeholder:
             from PIL import Image

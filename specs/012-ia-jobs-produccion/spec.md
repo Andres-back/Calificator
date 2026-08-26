@@ -69,3 +69,10 @@ Como equipo, necesito actualizar estos artefactos cuando cambie el comportamient
 - Un fallback permitido queda registrado sin exponer credenciales o contenido y conserva un resultado terminal explícito: completado, revisión requerida o error recuperable.
 - La estrategia de calificación registra `primary_mode`, `secondary_mode`, `arbiter_invoked` y `arbiter_reason`: Qwen extrae una vez, Flash evalúa/verifica y Pro se reserva para arbitraje excepcional.
 - La interfaz muestra etapa y duración segura mientras permite continuar navegando.
+
+## Evolución 021: configuración de IA global y por docente
+
+- La especificación [021](../021-configuracion-ia-docente/spec.md) pasa a ser propietaria del catálogo de modelos, las rutas por capacidad, las credenciales cifradas por docente, el consentimiento de fallback y sus paneles de administración y profesor.
+- Este dominio 012 conserva la propiedad del ciclo de vida de los jobs, workers, Redis, despliegue y observabilidad de producción.
+- Los jobs capturan una instantánea sanitizada e inmutable de la ruta resuelta por 021; nunca almacenan claves, prompts, evidencias ni respuestas del estudiante.
+- La telemetría compartida registra únicamente proveedor, modelo, origen, versión, hash de configuración y uso de fallback.

@@ -17,7 +17,6 @@ from app.modules.evaluaciones.schemas import (
     EvaluacionBlueprintRead,
     EvaluacionCreate,
     EvaluacionRead,
-    EvaluacionEstadoRead,
     EvaluacionEstructuraValidacion,
     EvaluacionGenerarRequest,
     EvaluacionSorpresaCreate,
@@ -53,7 +52,7 @@ async def extract_generation_reference(
         mime = detect_digitalization_mime(content, filename)
         if mime not in {"application/pdf", "image/jpeg", "image/png", "image/webp"}:
             raise ValueError("Selecciona un PDF o una imagen JPG, PNG o WebP")
-        extracted_text, warnings = await extract_evaluation_text(content, mime, filename)
+        extracted_text, warnings = await extract_evaluation_text(content, mime, filename, current_user.id)
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
 
