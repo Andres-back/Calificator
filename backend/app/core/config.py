@@ -107,6 +107,9 @@ class Settings(BaseSettings):
     PHOTO_GRADING_MODEL_MAX_ATTEMPTS: int = 1
     # Compatibilidad con despliegues anteriores; ya no cancela el pipeline.
     PHOTO_GRADING_TOTAL_TIMEOUT_SECONDS: int = 180
+    AI_JOB_QUEUED_RECOVERY_SECONDS: int = 300
+    AI_JOB_RECOVERY_INTERVAL_SECONDS: int = 60
+    AI_JOB_RECOVERY_BATCH_SIZE: int = 25
     EXPLAINABLE_GRADING_GENERATION_ENABLED: bool = True
     EXPLAINABLE_GRADING_AUTHORITY_ENABLED: bool = False
 

@@ -39,6 +39,10 @@ celery_app.conf.update(
             "task": "tasks.assign_overdue_grades",
             "schedule": 60.0,
         },
+        "recover-stale-grading-jobs": {
+            "task": "tasks.recover_stale_grading_jobs",
+            "schedule": float(settings.AI_JOB_RECOVERY_INTERVAL_SECONDS),
+        },
     },
 )
 
