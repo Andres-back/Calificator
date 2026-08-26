@@ -10,7 +10,6 @@ from app.core.logging import get_logger
 from app.modules.rag.models import RagChunk, RagSource
 from app.modules.rag.schemas import RagSourceCreate
 from app.services.embedding_service import chunk_text, embed_texts
-from app.shared.enums import RagTipo
 
 logger = get_logger(__name__)
 
@@ -52,7 +51,9 @@ async def ingest_source(db: AsyncSession, source_id: UUID) -> int:
         return 0
 
     logger.info("Ingesting source %s: %d chunks", source_id, len(chunks))
-    embeddings = await embed_texts(chunks)
+    embeddings = await embed_texts(
+        chunks, db=db, teacher_id=source.profesor_id
+    )
 
     for text_chunk, embedding in zip(chunks, embeddings, strict=False):
         rag_chunk = RagChunk(

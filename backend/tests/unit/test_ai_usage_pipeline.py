@@ -73,6 +73,49 @@ def test_each_external_attempt_has_one_canonical_private_event(monkeypatch) -> N
     assert events[1]["image_count"] == 0
 
 
+def test_personal_fallback_records_only_sanitized_route_metadata(monkeypatch) -> None:
+    request = httpx.Request("POST", "https://example.test/chat/completions")
+    responses = [
+        httpx.Response(503, request=request),
+        httpx.Response(200, request=request, json={
+            "choices": [{"message": {"content": "{}"}}], "usage": {},
+        }),
+    ]
+    events: list[dict] = []
+
+    class FakeHTTPClient:
+        async def post(self, *_args, **_kwargs):
+            return responses.pop(0)
+
+        async def aclose(self):
+            return None
+
+    async def capture_usage(**kwargs):
+        events.append(kwargs)
+        return "request-id"
+
+    monkeypatch.setattr(agents, "log_ai_usage", capture_usage)
+    client = agents.OpenCodeClient(tracking={"_ai_config": {
+        "primary": {"credential_source": "teacher"},
+        "config_hash": "safe-hash",
+        "teacher_config_version": 7,
+    }})
+    client.api_key = "personal-secret"
+    client.fallback_api_key = "institutional-secret"
+    client._client = FakeHTTPClient()
+
+    asyncio.run(client.chat(
+        "qwen3.7-plus", [{"role": "user", "content": "private"}],
+        max_attempts=1, stage="grading_primary",
+    ))
+
+    assert [event["fallback_used"] for event in events] == [False, True]
+    assert all(event["routing_origin"] == "teacher" for event in events)
+    assert all(event["config_hash"] == "safe-hash" for event in events)
+    assert all(event["config_version"] == 7 for event in events)
+    assert "secret" not in str(events).lower()
+
+
 def test_pipeline_timings_preserves_total_and_structure() -> None:
     from app.modules.jobs.schemas import PipelineTimings
 

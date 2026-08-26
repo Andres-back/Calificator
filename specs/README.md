@@ -24,6 +24,8 @@ actualizar la especificación propietaria, su plan y sus tareas; no debe crear d
 | 018 | [Recursos y calificación fluida](018-recursos-calificacion-fluida/spec.md) | herramientas, evaluaciones y calificaciones | recurso en materia, edición contextual y revisión responsive | sin tablas nuevas; estados y jobs existentes | [#24](https://github.com/Andres-back/Calificator/issues/24) |
 
 | 020 | [Extracción visual robusta con DeepSeek](020-deepseek-vision/spec.md) | adaptador de visión, calificaciones, digitalización y workers | estados de calificación/digitalización existentes | extracción visual, respuestas por página y telemetría | [#27](https://github.com/Andres-back/Calificator/issues/27) |
+| 021 | [Configuración de IA global y por docente](021-configuracion-ia-docente/spec.md) | configuración, catálogo, credenciales y resolvedor de IA | `/app/admin/configuracion-ia` y `/app/configuracion-ia` | `ai_provider_*`, `ai_feature_routing`, `profesor_ai_*` | [#29](https://github.com/Andres-back/Calificator/issues/29) |
+
 ## Reglas de propiedad
 
 - Cada módulo backend, módulo frontend, familia de endpoints y tabla activa pertenece a una fila.

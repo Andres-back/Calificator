@@ -51,6 +51,7 @@ export const routes = {
   presentaciones: '/app/presentaciones',
   reportes: '/app/reportes',
   adminAI: '/app/admin/configuracion-ia',
+  profesorAI: '/app/configuracion-ia',
   analytics: '/app/analytics',
 };
 

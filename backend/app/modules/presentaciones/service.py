@@ -270,11 +270,24 @@ async def create_presentacion(
         db, payload, current_user
     )
     input_data = payload.model_dump(mode="json")
+    ai_config: dict = {}
+    try:
+        from app.services.ai_configuration_resolver import resolve_ai_configuration
+
+        ai_config = await resolve_ai_configuration(
+            db, feature="presentaciones", teacher_id=profesor_id
+        )
+    except Exception as exc:
+        logger.warning(
+            "Presentation AI snapshot unavailable; using institutional route: %s",
+            type(exc).__name__,
+        )
     slides_json = {
         "input": input_data,
         "slides": [],
         "title": payload.titulo,
         "publicada": False,
+        "_ai_config": ai_config,
     }
     slides_json["canonical"] = normalize_to_canonical(slides_json, input_data)
     pres = Presentacion(
@@ -324,8 +337,14 @@ async def _run_generation(db: AsyncSession, pres: Presentacion) -> None:
     )
     await db.commit()
 
-    slides_normalized = await _generate_slides(payload, pres.profesor_id)
-    await _attach_slide_images(db, pres, slides_normalized, payload)
+    stored_snapshot = (pres.slides_json or {}).get("_ai_config")
+    ai_config = stored_snapshot if isinstance(stored_snapshot, dict) else None
+    slides_normalized = await _generate_slides(
+        payload, pres.profesor_id, ai_config=ai_config
+    )
+    await _attach_slide_images(
+        db, pres, slides_normalized, payload, ai_config=ai_config
+    )
     for slide in slides_normalized:
         slide.pop("_legacy_layout_fallback", None)
     legacy_data = {
@@ -363,9 +382,12 @@ async def _run_generation(db: AsyncSession, pres: Presentacion) -> None:
 
 
 async def _generate_slides(
-    payload: PresentacionCreate, profesor_id: UUID
+    payload: PresentacionCreate,
+    profesor_id: UUID,
+    *,
+    ai_config: dict | None = None,
 ) -> list[dict]:
-    llm = LLMRouter(user_id=profesor_id)
+    llm = LLMRouter(user_id=profesor_id, ai_config=ai_config)
     base_prompt = SLIDES_PROMPT.format(
         tema=payload.tema,
         materia=payload.materia_nombre or "General",
@@ -1102,6 +1124,8 @@ async def _attach_slide_images(
     pres: Presentacion,
     slides: list[dict],
     payload: PresentacionCreate,
+    *,
+    ai_config: dict | None = None,
 ) -> None:
     """Genera las imágenes IA de la presentación en 3 fases:
 
@@ -1227,6 +1251,9 @@ async def _attach_slide_images(
                     plan["title"],
                     plan["bundle"].prompt_usado,
                     provider=plan["provider"],
+                    db=db,
+                    teacher_id=pres.profesor_id,
+                    ai_config=ai_config,
                 )
             except Exception as exc:  # noqa: BLE001
                 logger.warning("No se pudo generar imagen para slide %d", plan["index"])

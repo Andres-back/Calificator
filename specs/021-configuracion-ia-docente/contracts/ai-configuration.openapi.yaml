@@ -1,0 +1,147 @@
+openapi: 3.1.0
+info:
+  title: Configuración de IA de XCalificator
+  version: 1.0.0
+paths:
+  /admin/ai-settings:
+    get:
+      summary: Consultar configuración global sanitizada
+      responses:
+        '200': { description: Proveedores, catálogo, rutas, políticas y estado }
+        '403': { description: Requiere rol administrador }
+  /admin/ai-features:
+    put:
+      summary: Publicar atómicamente rutas por capacidad
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [expected_version, features]
+              properties:
+                expected_version: { type: integer }
+                features:
+                  type: array
+                  items: { $ref: '#/components/schemas/FeatureRouting' }
+      responses:
+        '200': { description: Configuración publicada e invalidada en caché }
+        '409': { description: Otra sesión publicó una versión más reciente }
+        '422': { description: Proveedor o modelo incompatible }
+  /admin/ai-providers/{provider}/test:
+    post:
+      summary: Probar proveedor y modelo globales
+      parameters:
+        - in: path
+          name: provider
+          required: true
+          schema: { type: string }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                model: { type: string }
+                capability: { type: string }
+      responses:
+        '200': { description: Resultado sanitizado con latencia y código }
+        '403': { description: Requiere rol administrador }
+  /profesor/ai-config:
+    get:
+      summary: Consultar configuración personal y opciones autorizadas
+      responses:
+        '200': { description: Preferencias y presencia de credenciales sin secretos }
+        '403': { description: Requiere rol profesor }
+    put:
+      summary: Guardar modo, consentimiento y preferencias de manera atómica
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/TeacherConfigUpdate' }
+      responses:
+        '200': { description: Configuración personal actualizada }
+        '409': { description: Versión personal desactualizada }
+        '422': { description: Preferencia incompatible o no autorizada }
+  /profesor/ai-credentials/{provider}:
+    put:
+      summary: Crear o sustituir una credencial personal cifrada
+      parameters:
+        - in: path
+          name: provider
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [api_key]
+              properties:
+                api_key: { type: string, writeOnly: true, minLength: 1 }
+      responses:
+        '200': { description: Credencial almacenada; nunca retorna el valor }
+        '403': { description: Proveedor personal no autorizado }
+    delete:
+      summary: Eliminar la credencial personal del proveedor
+      parameters:
+        - in: path
+          name: provider
+          required: true
+          schema: { type: string }
+      responses:
+        '204': { description: Secreto eliminado }
+  /profesor/ai-providers/{provider}/test:
+    post:
+      summary: Probar la credencial personal almacenada o una credencial efímera
+      parameters:
+        - in: path
+          name: provider
+          required: true
+          schema: { type: string }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                api_key: { type: string, writeOnly: true }
+                model: { type: string }
+                capability: { type: string }
+      responses:
+        '200': { description: Resultado sanitizado; la clave efímera no se persiste }
+        '422': { description: Modelo incompatible }
+components:
+  schemas:
+    FeatureRouting:
+      type: object
+      required: [feature, capability, primary_provider, primary_model, active]
+      properties:
+        feature: { type: string }
+        capability: { enum: [text, vision, image, embedding] }
+        primary_provider: { type: string }
+        primary_model: { type: string }
+        fallback_provider: { type: [string, 'null'] }
+        fallback_model: { type: [string, 'null'] }
+        rollout_enabled: { type: boolean }
+        active: { type: boolean }
+    TeacherConfigUpdate:
+      type: object
+      required: [expected_version, mode, allow_institutional_fallback, active, preferences]
+      properties:
+        expected_version: { type: integer }
+        mode: { enum: [institutional, automatic, advanced] }
+        allow_institutional_fallback: { type: boolean }
+        active: { type: boolean }
+        preferences:
+          type: array
+          items:
+            type: object
+            required: [feature, provider, model, active]
+            properties:
+              feature: { type: string }
+              provider: { type: string }
+              model: { type: string }
+              active: { type: boolean }

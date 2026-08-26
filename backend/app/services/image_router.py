@@ -2,11 +2,12 @@
 from __future__ import annotations
 
 import base64
-import time
 from dataclasses import dataclass
 from typing import Any
+from uuid import UUID
 
 import httpx
+from sqlalchemy.ext.asyncio import AsyncSession
 from openai import AsyncOpenAI
 
 from app.core.config import settings
@@ -87,25 +88,105 @@ async def generate_image(
     provider: ImageProvider | str | None = None,
     strict_provider: bool = False,
     admin_config: dict | None = None,
+    db: AsyncSession | None = None,
+    teacher_id: UUID | None = None,
+    ai_config: dict[str, Any] | None = None,
 ) -> GeneratedImage:
-    """Generate an image. If admin_config is provided, it overrides defaults."""
-    model = None
-    quality = None
-    if admin_config:
-        model = admin_config.get("model")
-        quality = admin_config.get("quality", settings.OPENAI_IMAGE_QUALITY)
+    """Generate an image using the captured route when rollout is enabled."""
+    model = (admin_config or {}).get("model")
+    quality = (admin_config or {}).get(
+        "quality", settings.OPENAI_IMAGE_QUALITY
+    )
+    snapshot = dict(ai_config) if ai_config else None
+    personal_api_key: str | None = None
+    captured_fallback: dict[str, Any] | None = None
+    personal_without_fallback = False
+
+    if db is not None and (teacher_id is not None or snapshot):
+        try:
+            from app.services.ai_configuration_resolver import (
+                resolve_ai_configuration,
+            )
+            from app.services.ai_credentials_service import (
+                get_teacher_ai_credential,
+            )
+
+            if snapshot is None:
+                snapshot = await resolve_ai_configuration(
+                    db,
+                    feature="generacion_imagenes",
+                    teacher_id=teacher_id,
+                )
+            if snapshot.get("rollout_enabled"):
+                selected = snapshot.get("primary") or {}
+                selected_provider = str(selected.get("provider") or "")
+                if selected_provider == "openai_image":
+                    provider = ImageProvider.OPENAI
+                elif selected_provider == "cloudflare_image":
+                    provider = ImageProvider.CLOUDFLARE
+                model = selected.get("model") or model
+                captured_fallback = snapshot.get("fallback") or None
+                if (
+                    selected.get("credential_source") == "teacher"
+                    and selected_provider == "openai_image"
+                ):
+                    personal_api_key = (
+                        await get_teacher_ai_credential(
+                            db,
+                            teacher_id=teacher_id,
+                            provider_id="openai_image",
+                        )
+                        if teacher_id is not None
+                        else ""
+                    )
+                    personal_without_fallback = not bool(captured_fallback)
+        except Exception as exc:
+            logger.warning(
+                "Image AI configuration unavailable; using existing route: %s",
+                type(exc).__name__,
+            )
 
     if provider is not None:
         chosen = ImageProvider(provider) if isinstance(provider, str) else provider
     else:
         chosen = decide_provider(image_type)
 
+    async def captured_fallback_image() -> GeneratedImage | None:
+        if not captured_fallback:
+            return None
+        fallback_provider = str(captured_fallback.get("provider") or "")
+        fallback_model = captured_fallback.get("model")
+        if fallback_provider == "openai_image":
+            return await _call_openai_custom(
+                prompt,
+                size,
+                model=fallback_model,
+                quality=quality,
+            )
+        if fallback_provider == "cloudflare_image":
+            return await _call_cloudflare(prompt)
+        return None
+
     if chosen == ImageProvider.OPENAI:
         try:
-            if model or quality:
-                return await _call_openai_custom(prompt, size, model=model, quality=quality)
-            return await _call_openai(prompt, size)
+            return await _call_openai_custom(
+                prompt,
+                size,
+                model=model,
+                quality=quality,
+                api_key=personal_api_key,
+            )
         except Exception as exc:
+            if personal_without_fallback:
+                raise RuntimeError(
+                    "La API personal de imágenes falló y no hay fallback autorizado"
+                ) from exc
+            try:
+                fallback_result = await captured_fallback_image()
+                if fallback_result is not None:
+                    return fallback_result
+            except Exception as fallback_exc:
+                logger.warning("Captured image fallback failed: %s", fallback_exc)
             if strict_provider:
                 logger.warning("OpenAI image failed (%s), using placeholder", exc)
                 return _placeholder(prompt)
@@ -114,16 +195,29 @@ async def generate_image(
     try:
         return await _call_cloudflare(prompt)
     except Exception as exc:
+        try:
+            fallback_result = await captured_fallback_image()
+            if fallback_result is not None:
+                return fallback_result
+        except Exception as fallback_exc:
+            logger.warning("Captured image fallback failed: %s", fallback_exc)
         logger.warning("Cloudflare image failed (%s), using placeholder", exc)
 
     return _placeholder(prompt)
 
-
-async def _call_openai_custom(prompt: str, size: str, *, model: str | None = None, quality: str | None = None) -> GeneratedImage:
+async def _call_openai_custom(
+    prompt: str,
+    size: str,
+    *,
+    model: str | None = None,
+    quality: str | None = None,
+    api_key: str | None = None,
+) -> GeneratedImage:
     credentials = await get_effective_ai_credentials()
-    if not credentials.openai_key:
+    resolved_key = api_key if api_key is not None else credentials.openai_key
+    if not resolved_key:
         raise ValueError("OPENAI_API_KEY not set")
-    client = _openai_client(credentials.openai_key)
+    client = _openai_client(resolved_key)
     model_name = model or getattr(settings, "OPENAI_IMAGE_MODEL", "gpt-image-1")
     kwargs: dict[str, Any] = {"model": model_name, "prompt": prompt, "size": size, "n": 1}
     if str(model_name).startswith("gpt-image"):
@@ -136,26 +230,7 @@ async def _call_openai_custom(prompt: str, size: str, *, model: str | None = Non
 
 
 async def _call_openai(prompt: str, size: str) -> GeneratedImage:
-    credentials = await get_effective_ai_credentials()
-    if not credentials.openai_key:
-        raise ValueError("OPENAI_API_KEY not set")
-
-    client = _openai_client(credentials.openai_key)
-    model = getattr(settings, "OPENAI_IMAGE_MODEL", "gpt-image-1")
-    kwargs: dict[str, Any] = {"model": model, "prompt": prompt, "size": size, "n": 1}
-    if str(model).startswith("gpt-image"):
-        # gpt-image-1: 'quality' low|medium|high|auto; NO acepta response_format
-        # (siempre devuelve b64_json). DALL-E sí lo necesita.
-        kwargs["quality"] = getattr(settings, "OPENAI_IMAGE_QUALITY", "low")
-    else:
-        kwargs["response_format"] = "b64_json"
-    resp = await client.images.generate(**kwargs)  # type: ignore[arg-type]
-    b64 = resp.data[0].b64_json or ""
-    return GeneratedImage(
-        b64_data=b64,
-        provider="openai",
-        prompt_used=prompt,
-    )
+    return await _call_openai_custom(prompt, size)
 
 
 async def _call_cloudflare(prompt: str) -> GeneratedImage:

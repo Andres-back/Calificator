@@ -33,7 +33,7 @@
 | endpoint | `POST:/analytics/evento` | admin, estudiante, profesor | covered | `backend/app/modules/analytics/router.py:27` |
 | endpoint | `POST:/impacto/encuestas` | authenticated | missing | `backend/app/modules/impacto_tesis/router.py:73` |
 | endpoint | `POST:/reportes/export/pdf` | admin, profesor | missing | `backend/app/modules/reportes/router.py:104` |
-| frontend_route | `/app/analytics` | admin, profesor | covered | `frontend/src/config/routes.ts:54` |
+| frontend_route | `/app/analytics` | admin, profesor | covered | `frontend/src/config/routes.ts:55` |
 | frontend_route | `/app/reportes` | admin, profesor | covered | `frontend/src/config/routes.ts:52` |
 | frontend_call | `GET:/analytics/ai-quality/concordancia` | admin, profesor | covered | `frontend/src/modules/analytics/AnalyticsPage.tsx:341` |
 | frontend_call | `GET:/analytics/ai-quality/confidence` | admin, profesor | covered | `frontend/src/modules/analytics/AnalyticsPage.tsx:465` |

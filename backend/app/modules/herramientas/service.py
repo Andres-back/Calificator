@@ -60,6 +60,7 @@ from app.modules.herramientas.schemas import (
     QuizRapidoRequest,
     RubricaRequest,
     SopaLetrasRequest,
+    TallerRequest,
     UnirColumnasRequest,
 )
 from app.modules.users.models import User
@@ -67,10 +68,8 @@ from app.modules.imagenes import service as imagenes_service
 from app.services.image_router import generate_image
 from app.services.llm_router import LLMRouter
 from app.shared.enums import (
-    EvaluacionModalidad,
     EvaluacionTipoOrigen,
     MaterialTipo,
-    PoliticaIntento,
     UserRole,
 )
 
@@ -987,7 +986,10 @@ async def gen_cuento(db: AsyncSession, req: CuentoRequest, current_user: User) -
         generator=lambda: cuento.generate(req, llm),
     )
     image_prompt = cuento.build_image_prompt(req, result)
-    image = await generate_image(prompt=image_prompt, image_type="educativa_profesional", size="1024x1024")
+    image = await generate_image(
+        prompt=image_prompt, image_type="educativa_profesional", size="1024x1024",
+        db=db, teacher_id=current_user.id,
+    )
     await imagenes_service.register_imagen_generada(
         db,
         prompt_original=image_prompt,
@@ -1030,7 +1032,10 @@ async def gen_cuento(db: AsyncSession, req: CuentoRequest, current_user: User) -
 async def gen_para_colorear(db: AsyncSession, req: ParaColorearRequest, current_user: User) -> dict:
     materia_id = await _resolve_materia_id(db, req, current_user)
     prompt = para_colorear.build_prompt(req)
-    image = await generate_image(prompt=prompt, image_type="para_colorear", size="1024x1024")
+    image = await generate_image(
+        prompt=prompt, image_type="para_colorear", size="1024x1024",
+        db=db, teacher_id=current_user.id,
+    )
     await imagenes_service.register_imagen_generada(
         db,
         prompt_original=prompt,
@@ -1251,7 +1256,6 @@ async def duplicar_material(db: AsyncSession, material_id: UUID, profesor_id: UU
     """Clona un material existente con un nuevo UUID."""
     import json as _json
     from sqlalchemy import text as _sql_text
-    from uuid import uuid4 as _uuid4
 
     material = await get_material(db, material_id, profesor_id)
     if material is None:

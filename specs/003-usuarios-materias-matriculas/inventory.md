@@ -12,7 +12,7 @@
 | endpoint | `GET:/materias` | authenticated | covered | `backend/app/modules/materias/router.py:25` |
 | endpoint | `GET:/materias/{materia_id}` | authenticated | covered | `backend/app/modules/materias/router.py:33` |
 | endpoint | `GET:/materias/{materia_id}/estudiantes` | authenticated | covered | `backend/app/modules/materias/router.py:63` |
-| endpoint | `GET:/materias/{materia_id}/evaluaciones` | authenticated | covered | `backend/app/modules/evaluaciones/router.py:216` |
+| endpoint | `GET:/materias/{materia_id}/evaluaciones` | authenticated | covered | `backend/app/modules/evaluaciones/router.py:215` |
 | endpoint | `GET:/matriculas/mis-materias` | authenticated | covered | `backend/app/modules/matriculas/router.py:24` |
 | endpoint | `GET:/users/me` | authenticated | covered | `backend/app/modules/users/router.py:16` |
 | endpoint | `PATCH:/admin/users/{user_id}` | admin | covered | `backend/app/modules/users/router.py:47` |

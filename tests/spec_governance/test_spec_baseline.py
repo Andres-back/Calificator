@@ -22,11 +22,17 @@ ALL_SPECS = {
     "020-deepseek-vision",
     "017-decoracion-frontend",
     "018-recursos-calificacion-fluida",
+    "021-configuracion-ia-docente",
 }
-OWNED_SPECS = {name for name in ALL_SPECS if name.startswith(tuple(f"{number:03d}-" for number in range(2, 13)))}
+OWNED_SPECS = {
+    name
+    for name in ALL_SPECS
+    if name.startswith(tuple(f"{number:03d}-" for number in range(2, 13)))
+    or name.startswith("021-")
+}
 
 
-def test_baseline_contains_exactly_eighteen_active_specs() -> None:
+def test_baseline_contains_exactly_nineteen_active_specs() -> None:
     found = {path.name for path in (ROOT / "specs").iterdir() if path.is_dir() and path.name[:3].isdigit()}
     assert found == ALL_SPECS
 

@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { saveProviders, updateGlobalAIConfig, type AIProvider } from './api';
+import { publishAIConfiguration, restorePreviousConfiguration, saveFeatures, saveProviders, testProvider, updateGlobalAIConfig, type AIProvider } from './api';
 
-const transport = vi.hoisted(() => ({ put: vi.fn(), patch: vi.fn() }));
+const transport = vi.hoisted(() => ({ put: vi.fn(), patch: vi.fn(), post: vi.fn() }));
 
 vi.mock('@/lib/api', () => ({ api: transport }));
 
@@ -46,6 +46,49 @@ describe('saveProviders', () => {
     expect(JSON.stringify(payload)).not.toContain('secret-value');
   });
 
+  it('tests the exact model and capability selected by the administrator', async () => {
+    transport.post.mockResolvedValue({ data: { status: 'ok', detail: 'OK' } });
+
+    await testProvider('open_code', { model: 'qwen3.7-plus', capability: 'vision' });
+
+    expect(transport.post).toHaveBeenCalledWith('/admin/ai-providers/open_code/test', {
+      model: 'qwen3.7-plus',
+      capability: 'vision',
+    });
+  });
+
+  it('publishes feature routes with the version the administrator reviewed', async () => {
+    transport.put.mockResolvedValue({ data: { status: 'ok' } });
+    await saveFeatures([{
+      feature: 'calificacion_foto', label: 'Calificación por foto', capability: 'vision',
+      primary_provider: 'open_code', primary_model: 'qwen3.7-plus', fallback_provider: null,
+      rollout_enabled: true, config_version: 4, active: true,
+    }], 4);
+    expect(transport.put).toHaveBeenCalledWith('/admin/ai-features', {
+      expected_version: 4,
+      features: [expect.objectContaining({ primary_model: 'qwen3.7-plus', rollout_enabled: true })],
+    });
+  });
+
+  it('publishes providers, models and routes atomically', async () => {
+    transport.put.mockResolvedValue({ data: { status: 'ok', version: 5 } });
+    await publishAIConfiguration(
+      [{ id: 'open_code', name: 'OpenCode', tipo: 'texto', label: 'OpenCode', base_url: null, model: 'qwen3.7-plus', active: true, priority: 1, timeout_seconds: 60, max_retries: 2 }],
+      [{ provider_id: 'open_code', model_id: 'qwen3.7-plus', label: 'Qwen', capabilities: ['vision'], recommended: true, active: true }],
+      [{ feature: 'calificacion_foto', label: 'Foto', capability: 'vision', primary_provider: 'open_code', primary_model: 'qwen3.7-plus', fallback_provider: null, active: true }],
+      4,
+    );
+    expect(transport.put).toHaveBeenCalledWith('/admin/ai-settings/publish', expect.objectContaining({
+      expected_version: 4,
+      models: [expect.objectContaining({ model_id: 'qwen3.7-plus', active: true })],
+    }));
+  });
+
+  it('restores the previous published configuration', async () => {
+    transport.post.mockResolvedValue({ data: { status: 'ok', version: 6 } });
+    await restorePreviousConfiguration();
+    expect(transport.post).toHaveBeenCalledWith('/admin/ai-settings/restore-previous');
+  });
   it('uses the dedicated global config endpoint for credential updates', async () => {
     transport.patch.mockResolvedValue({ data: { status: 'updated' } });
 

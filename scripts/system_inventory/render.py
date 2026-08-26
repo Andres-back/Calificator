@@ -11,6 +11,7 @@ DOMAIN_SPECS = (
     "004-dba-asistencia-curriculo", "005-evaluaciones", "006-recursos-actividades",
     "007-entregas-estudiante", "008-calificaciones", "009-xali-rag-refuerzos",
     "010-presentaciones-imagenes", "011-reportes-analitica-impacto", "012-ia-jobs-produccion",
+    "021-configuracion-ia-docente",
 )
 
 

@@ -1,22 +1,32 @@
 import { useMutation } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
-import type { AIProvider } from '../../api';
-import { testProvider, saveProviders, saveFeatures, restoreDefaults, clearCache } from '../../api';
+import type { AIModel, AIProvider, FeatureRouting } from '../../api';
+import { clearCache, publishAIConfiguration, restorePreviousConfiguration, testProvider } from '../../api';
 import { toApiError } from '@/lib/api';
 import { queryClient } from '@/lib/queryClient';
 
 export function useAIMutations(
   draftProviders: AIProvider[],
-  draftFeatures: { feature: string; label: string; primary_provider: string; fallback_provider: string | null; active: boolean }[],
-  providersChanged: boolean,
-  featuresChanged: boolean,
+  draftModels: AIModel[],
+  draftFeatures: FeatureRouting[],
+  hasConfigurationChanges: boolean,
+  expectedVersion: number,
   setDraftProviders: (fn: (prev: AIProvider[]) => AIProvider[]) => void,
   setHasUnsavedChanges: (value: boolean) => void,
   setTestingProvider: (value: string | null) => void,
 ) {
+  const invalidateConfiguration = () => Promise.all([
+    queryClient.invalidateQueries({ queryKey: ['admin-ai-settings'] }),
+    queryClient.invalidateQueries({ queryKey: ['admin-ai-config-hash'] }),
+    queryClient.invalidateQueries({ queryKey: ['admin-ai-audit'] }),
+  ]);
+
   const testMutation = useMutation({
-    mutationFn: (providerId: string) => testProvider(providerId),
-    onSuccess: (result, providerId) => {
+    mutationFn: ({ providerId, model, capability }: { providerId: string; model?: string | null; capability?: string | null }) => (
+      testProvider(providerId, { model, capability })
+    ),
+    onSuccess: (result, variables) => {
+      const providerId = variables.providerId;
       setDraftProviders((providers) => providers.map((provider) => (
         provider.id === providerId
           ? {
@@ -37,33 +47,23 @@ export function useAIMutations(
 
   const saveMutation = useMutation({
     mutationFn: async () => {
-      const operations: Promise<unknown>[] = [];
-      if (providersChanged) operations.push(saveProviders(draftProviders));
-      if (featuresChanged) operations.push(saveFeatures(draftFeatures));
-      await Promise.all(operations);
+      if (!hasConfigurationChanges) return;
+      await publishAIConfiguration(draftProviders, draftModels, draftFeatures, expectedVersion);
     },
     onSuccess: () => {
       setHasUnsavedChanges(false);
-      void Promise.all([
-        queryClient.invalidateQueries({ queryKey: ['admin-ai-settings'] }),
-        queryClient.invalidateQueries({ queryKey: ['admin-ai-config-hash'] }),
-        queryClient.invalidateQueries({ queryKey: ['admin-ai-audit'] }),
-      ]);
-      toast.success('Configuración de IA guardada.');
+      void invalidateConfiguration();
+      toast.success('Configuración de IA publicada.');
     },
     onError: (error) => toast.error(toApiError(error).detail),
   });
 
   const restoreMutation = useMutation({
-    mutationFn: restoreDefaults,
+    mutationFn: restorePreviousConfiguration,
     onSuccess: () => {
       setHasUnsavedChanges(false);
-      void Promise.all([
-        queryClient.invalidateQueries({ queryKey: ['admin-ai-settings'] }),
-        queryClient.invalidateQueries({ queryKey: ['admin-ai-config-hash'] }),
-        queryClient.invalidateQueries({ queryKey: ['admin-ai-audit'] }),
-      ]);
-      toast.success('Configuración restaurada a valores predeterminados.');
+      void invalidateConfiguration();
+      toast.success('Se restauró la última configuración publicada.');
     },
     onError: (error) => toast.error(toApiError(error).detail),
   });

@@ -13,6 +13,8 @@ const adminApi = vi.hoisted(() => ({
   getAISettings: vi.fn(),
   getConfigHash: vi.fn(),
   restoreDefaults: vi.fn(),
+  restorePreviousConfiguration: vi.fn(),
+  publishAIConfiguration: vi.fn(),
   saveFeatures: vi.fn(),
   saveProviders: vi.fn(),
   testProvider: vi.fn(),
@@ -33,6 +35,7 @@ vi.mock('react-hot-toast', () => ({
 }));
 
 const settings: AISettings = {
+  version: 4,
   providers: [
     {
       id: 'open_code',
@@ -48,11 +51,23 @@ const settings: AISettings = {
       auth_configured: true,
     },
   ],
+  models: [
+    {
+      provider_id: 'open_code',
+      model_id: 'qwen3.7-plus',
+      label: 'Qwen 3.7 Plus',
+      capabilities: ['text', 'vision'],
+      recommended: true,
+      active: true,
+    },
+  ],
   features: [
     {
       feature: 'chat',
       label: 'Chat',
+      capability: 'text',
       primary_provider: 'open_code',
+      primary_model: 'qwen3.7-plus',
       fallback_provider: null,
       active: true,
     },
@@ -124,6 +139,8 @@ beforeEach(() => {
   adminApi.saveProviders.mockResolvedValue({ status: 'ok' });
   adminApi.saveFeatures.mockResolvedValue({ status: 'ok' });
   adminApi.restoreDefaults.mockResolvedValue({ status: 'ok' });
+  adminApi.restorePreviousConfiguration.mockResolvedValue({ status: 'ok', version: 5 });
+  adminApi.publishAIConfiguration.mockResolvedValue({ status: 'ok', version: 5 });
   adminApi.clearCache.mockResolvedValue({ status: 'ok' });
   adminApi.testProvider.mockResolvedValue({ status: 'ok', latency_ms: 1, http_code: 200, error: null, detail: 'OK' });
   adminApi.updateGlobalAIConfig.mockResolvedValue({ status: 'updated' });
@@ -141,25 +158,54 @@ describe('AdminAIConfigPage', () => {
     await user.click(await screen.findByRole('button', { name: /Guardar configuraci.n/ }));
 
     await waitFor(() => {
-      expect(adminApi.saveProviders).toHaveBeenCalledWith([
-        expect.objectContaining({ id: 'open_code', model: 'modelo-nuevo' }),
-      ]);
+      expect(adminApi.publishAIConfiguration).toHaveBeenCalledWith(
+        [expect.objectContaining({ id: 'open_code', model: 'modelo-nuevo' })],
+        settings.models,
+        settings.features,
+        4,
+      );
     });
   });
 
-  it('restores defaults only after confirmation', async () => {
+  it('tests the concrete primary model selected for a feature', async () => {
+    const user = userEvent.setup();
+    renderPage();
+
+    await user.click(await screen.findByRole('button', { name: 'Probar modelo principal' }));
+
+    await waitFor(() => expect(adminApi.testProvider).toHaveBeenCalledWith(
+      'open_code',
+      { model: 'qwen3.7-plus', capability: 'text' },
+    ));
+  });
+
+  it('detects rollout changes and saves routes with optimistic version', async () => {
+    const user = userEvent.setup();
+    renderPage();
+    await user.click(await screen.findByLabelText('Aplicar a trabajos nuevos'));
+    await user.click(screen.getByRole('button', { name: 'Guardar cambios' }));
+    await user.click(await screen.findByRole('button', { name: /Guardar configuraci.n/ }));
+    await waitFor(() => expect(adminApi.publishAIConfiguration).toHaveBeenCalledWith(
+      settings.providers,
+      settings.models,
+      [expect.objectContaining({ feature: 'chat', rollout_enabled: true })],
+      4,
+    ));
+  });
+
+  it('restores the previous version only after confirmation', async () => {
     const user = userEvent.setup();
     renderPage();
 
     await screen.findByText('Open Code');
-    await user.click(screen.getByRole('button', { name: 'Restaurar valores' }));
+    await user.click(screen.getByRole('button', { name: 'Restaurar versión anterior' }));
     await user.click(await screen.findByRole('button', { name: 'Restaurar' }));
 
-    await waitFor(() => expect(adminApi.restoreDefaults).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(adminApi.restorePreviousConfiguration).toHaveBeenCalledTimes(1));
   });
 
   it('shows a friendly backend validation message for a 422 save failure', async () => {
-    adminApi.saveProviders.mockRejectedValueOnce(apiFailure(422, 'Modelo no permitido'));
+    adminApi.publishAIConfiguration.mockRejectedValueOnce(apiFailure(422, 'Modelo no permitido'));
     const user = userEvent.setup();
     renderPage();
 

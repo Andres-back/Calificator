@@ -33,7 +33,13 @@ async def generar_imagen(
     require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
     error: str | None = None
     try:
-        result = await generate_image(prompt=req.prompt, image_type=req.image_type, size=req.size)
+        result = await generate_image(
+            prompt=req.prompt,
+            image_type=req.image_type,
+            size=req.size,
+            db=db,
+            teacher_id=current_user.id,
+        )
     except Exception as exc:  # noqa: BLE001
         error = str(exc)[:500]
         result = None

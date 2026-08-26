@@ -38,7 +38,7 @@
 | endpoint | `POST:/herramientas/{material_id}/retirar-apoyo` | admin, profesor | covered | `backend/app/modules/herramientas/router.py:322` |
 | endpoint | `POST:/xali/evaluaciones/{evaluacion_id}/recursos` | estudiante | covered | `backend/app/modules/xali/router.py:68` |
 | frontend_route | `/app/herramientas` | admin | covered | `frontend/src/config/routes.ts:43` |
-| frontend_route | `/app/herramientas/{id}` | admin | covered | `frontend/src/config/routes.ts:46` |
+| frontend_route | `/app/herramientas/{id}` | admin, profesor | covered | `frontend/src/config/routes.ts:46` |
 | frontend_route | `/app/materias/{id}/recursos` | admin, profesor | covered | `frontend/src/config/routes.ts:25` |
 | frontend_route | `/app/recursos/{id}` | estudiante | covered | `frontend/src/config/routes.ts:47` |
 | frontend_call | `DELETE:/herramientas/{id}` | admin, profesor | covered | `frontend/src/modules/herramientas/api.ts:27` |

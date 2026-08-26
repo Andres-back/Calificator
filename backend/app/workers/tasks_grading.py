@@ -128,6 +128,7 @@ async def _grade_delivery(
     evaluacion: Evaluacion,
     entrega: Entrega,
     profesor_id: UUID,
+    ai_config: dict | None = None,
 ) -> tuple[Calificacion, bool]:
     existing = await _existing_grade(db, entrega.id)
     queued_payload = (
@@ -172,6 +173,7 @@ async def _grade_delivery(
         image_bytes=submission["image_bytes"],
         image_mime=submission["image_mime"],
         user_id=profesor_id,
+        ai_config=ai_config,
     )
     evidence_metadata = queued_payload.get("evidencia_consolidada")
     if isinstance(evidence_metadata, dict):
@@ -363,8 +365,13 @@ async def _grade_batch_async(
             "secondary": 0, "consolidation": 0, "persistence": 0, "total": 0,
         }
         job_fallbacks: list[dict[str, str]] = []
+        job_ai_config: dict | None = None
         if job_id:
             job_timings["queue"] = await jobs_service.get_job_queue_time_ms(db, job_id)
+            job_input = await jobs_service.get_job_input(db, job_id)
+            snapshot = job_input.get("_ai_config")
+            if isinstance(snapshot, dict):
+                job_ai_config = snapshot
 
         def build_result(**values) -> dict:
             job_timings["total"] = max(
@@ -479,6 +486,7 @@ async def _grade_batch_async(
                         evaluacion=evaluacion,
                         entrega=entrega,
                         profesor_id=effective_profesor_id,
+                        ai_config=job_ai_config,
                     )
                     calificacion_ids.append(str(calificacion.id))
                     record_grade_telemetry(calificacion)

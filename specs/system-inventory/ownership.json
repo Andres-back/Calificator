@@ -1,6 +1,9 @@
 {
   "schema_version": 1,
   "rules": [
+    {"spec":"021-configuracion-ia-docente","priority":70,"kinds":["frontend_route","frontend_call","endpoint"],"signature_patterns":["*/profesor/ai-*","*/admin/ai-*","/app/configuracion-ia","/app/admin/configuracion-ia"]},
+    {"spec":"021-configuracion-ia-docente","priority":70,"kinds":["table"],"signature_patterns":["ai_provider_settings","ai_provider_models","ai_feature_routing","profesor_ai_configs","profesor_ai_credentials","profesor_ai_feature_preferences"]},
+    {"spec":"021-configuracion-ia-docente","priority":60,"source_patterns":["backend/app/modules/admin_ai_config/**","backend/app/services/ai_config_service.py","backend/app/services/ai_credentials_service.py","backend/app/services/ai_configuration_resolver.py","frontend/src/modules/admin/**","frontend/src/modules/profesor_ai/**"]},
     {"spec":"003-usuarios-materias-matriculas","priority":35,"kinds":["frontend_route","frontend_call","endpoint"],"signature_patterns":["*/auth*","*/users*","*/materias*","*/matriculas*","/login"]},
     {"spec":"004-dba-asistencia-curriculo","priority":36,"kinds":["frontend_route","frontend_call","endpoint"],"signature_patterns":["*/dba*","*/asistencia*"]},
     {"spec":"005-evaluaciones","priority":37,"kinds":["frontend_route","frontend_call","endpoint"],"signature_patterns":["*:/evaluaciones*","/app/evaluaciones*","/app/materias/*/evaluaciones*"]},

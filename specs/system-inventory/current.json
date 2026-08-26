@@ -1,18 +1,18 @@
 {
   "counts": {
     "by_coverage": {
-      "covered": 334,
-      "missing": 54
+      "covered": 356,
+      "missing": 51
     },
     "by_kind": {
-      "endpoint": 191,
-      "frontend_call": 121,
-      "frontend_route": 26,
+      "endpoint": 198,
+      "frontend_call": 128,
+      "frontend_route": 27,
       "integration": 7,
       "job": 8,
-      "table": 35
+      "table": 39
     },
-    "total": 388
+    "total": 407
   },
   "exceptions": [],
   "findings": [
@@ -48,41 +48,15 @@
       ]
     },
     {
-      "category": "orphan_candidate",
-      "description": "12 superficies no alcanzables o históricas se conservan como candidatas a retiro.",
-      "id": "F-7E50F91E4771",
-      "issue_url": "",
-      "severity": "low",
-      "surface_ids": [
-        "table:ai_config_audit_logs",
-        "table:ai_feature_routing",
-        "table:ai_global_config",
-        "table:ai_global_limits",
-        "table:ai_jobs",
-        "table:ai_provider_settings",
-        "table:ai_usage_events",
-        "table:ai_usage_logs",
-        "table:chat_messages",
-        "table:evaluation_blueprints",
-        "table:materiales_generados",
-        "table:profesor_ai_configs"
-      ]
-    },
-    {
       "category": "missing_coverage",
-      "description": "18 superficies de 012-ia-jobs-produccion no tienen evidencia de prueba observable.",
-      "id": "F-A64BD64B9091",
+      "description": "13 superficies de 012-ia-jobs-produccion no tienen evidencia de prueba observable.",
+      "id": "F-6F8144DB6610",
       "issue_url": "",
       "severity": "low",
       "surface_ids": [
         "backend:GET:/jobs/{job_id}",
         "backend:GET:/jobs/{job_id}/estado",
-        "backend:PATCH:/profesor/ai-config",
-        "backend:POST:/admin/ai-cache/clear",
-        "backend:POST:/admin/ai-providers/{provider}/test",
-        "backend:POST:/admin/ai-settings/restore-defaults",
         "backend:POST:/jobs/{job_id}/cancelar",
-        "backend:PUT:/admin/ai-features",
         "frontend_call:GET:/jobs/{jobId}:frontend/src/modules/evaluaciones/components/DigitalizationJobMonitor.tsx",
         "integration:celery",
         "job:tasks.assign_overdue_grades",
@@ -112,6 +86,65 @@
     },
     {
       "category": "missing_coverage",
+      "description": "5 superficies de 021-configuracion-ia-docente no tienen evidencia de prueba observable.",
+      "id": "F-B32108F587A0",
+      "issue_url": "",
+      "severity": "low",
+      "surface_ids": [
+        "backend:POST:/admin/ai-cache/clear",
+        "backend:POST:/admin/ai-providers/{provider}/test",
+        "backend:POST:/admin/ai-settings/restore-defaults",
+        "table:ai_feature_routing",
+        "table:ai_provider_settings"
+      ]
+    },
+    {
+      "category": "missing_coverage",
+      "description": "10 superficies de 002-arquitectura-roles-seguridad no tienen evidencia de prueba observable.",
+      "id": "F-B33AA9FEF7D4",
+      "issue_url": "",
+      "severity": "low",
+      "surface_ids": [
+        "backend:GET:/docs",
+        "backend:GET:/health",
+        "backend:GET:/openapi.json",
+        "backend:GET:/redoc",
+        "table:ai_config_audit_logs",
+        "table:ai_global_config",
+        "table:ai_global_limits",
+        "table:ai_jobs",
+        "table:chat_messages",
+        "table:evaluation_blueprints"
+      ]
+    },
+    {
+      "category": "orphan_candidate",
+      "description": "17 superficies no alcanzables o históricas se conservan como candidatas a retiro.",
+      "id": "F-B6C1BAFB67DC",
+      "issue_url": "",
+      "severity": "low",
+      "surface_ids": [
+        "frontend:/app/configuracion-ia",
+        "table:ai_config_audit_logs",
+        "table:ai_configuration_versions",
+        "table:ai_feature_routing",
+        "table:ai_global_config",
+        "table:ai_global_limits",
+        "table:ai_jobs",
+        "table:ai_provider_models",
+        "table:ai_provider_settings",
+        "table:ai_usage_events",
+        "table:ai_usage_logs",
+        "table:chat_messages",
+        "table:evaluation_blueprints",
+        "table:materiales_generados",
+        "table:profesor_ai_configs",
+        "table:profesor_ai_credentials",
+        "table:profesor_ai_feature_preferences"
+      ]
+    },
+    {
+      "category": "missing_coverage",
       "description": "4 superficies de 010-presentaciones-imagenes no tienen evidencia de prueba observable.",
       "id": "F-EB65DEC976DE",
       "issue_url": "",
@@ -121,28 +154,6 @@
         "backend:PATCH:/imagenes-generadas/{imagen_id}",
         "backend:POST:/imagenes/generar",
         "table:imagenes_generadas"
-      ]
-    },
-    {
-      "category": "missing_coverage",
-      "description": "13 superficies de 002-arquitectura-roles-seguridad no tienen evidencia de prueba observable.",
-      "id": "F-ED63BD62ABC8",
-      "issue_url": "",
-      "severity": "low",
-      "surface_ids": [
-        "backend:GET:/docs",
-        "backend:GET:/health",
-        "backend:GET:/openapi.json",
-        "backend:GET:/redoc",
-        "table:ai_config_audit_logs",
-        "table:ai_feature_routing",
-        "table:ai_global_config",
-        "table:ai_global_limits",
-        "table:ai_jobs",
-        "table:ai_provider_settings",
-        "table:chat_messages",
-        "table:evaluation_blueprints",
-        "table:profesor_ai_configs"
       ]
     }
   ],
@@ -277,7 +288,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "b8eeb037b8ff411f1c3ad0ba6e04db4a44d91145752916f2e1c31545a14b5d42",
+  "source_digest": "c3ebd7c1419369bad1ce63241f7a560feea9bc50aaa9322ff92916ef009e148f",
   "surfaces": [
     {
       "actors": [
@@ -413,7 +424,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "DELETE:/evaluaciones/{evaluacion_id}",
-      "source_line": 381,
+      "source_line": 380,
       "source_path": "backend/app/modules/evaluaciones/router.py",
       "states": [],
       "tests": [
@@ -743,6 +754,43 @@
     },
     {
       "actors": [
+        "profesor"
+      ],
+      "authorization": [
+        "get_current_user",
+        "require_role"
+      ],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
+        "function": "remove_teacher_ai_credential",
+        "registered": true,
+        "router": "router"
+      },
+      "id": "backend:DELETE:/profesor/ai-credentials/{provider}",
+      "kind": "endpoint",
+      "owner_spec": "021-configuracion-ia-docente",
+      "signature": "DELETE:/profesor/ai-credentials/{provider}",
+      "source_line": 946,
+      "source_path": "backend/app/modules/admin_ai_config/router.py",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "DELETE:/profesor/ai-credentials/{provider}",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_ai_configuration_api.py"
+        },
+        {
+          "level": "unit",
+          "reference": "DELETE:/profesor/ai-credentials/{provider}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/profesor_ai/api.test.ts"
+        }
+      ]
+    },
+    {
+      "actors": [
         "admin",
         "profesor"
       ],
@@ -831,9 +879,9 @@
       },
       "id": "backend:GET:/admin/ai-audit",
       "kind": "endpoint",
-      "owner_spec": "012-ia-jobs-produccion",
+      "owner_spec": "021-configuracion-ia-docente",
       "signature": "GET:/admin/ai-audit",
-      "source_line": 528,
+      "source_line": 686,
       "source_path": "backend/app/modules/admin_ai_config/router.py",
       "states": [],
       "tests": [
@@ -862,9 +910,9 @@
       },
       "id": "backend:GET:/admin/ai-config",
       "kind": "endpoint",
-      "owner_spec": "012-ia-jobs-produccion",
+      "owner_spec": "021-configuracion-ia-docente",
       "signature": "GET:/admin/ai-config",
-      "source_line": 239,
+      "source_line": 269,
       "source_path": "backend/app/modules/admin_ai_config/router.py",
       "states": [],
       "tests": [
@@ -899,9 +947,9 @@
       },
       "id": "backend:GET:/admin/ai-config-hash",
       "kind": "endpoint",
-      "owner_spec": "012-ia-jobs-produccion",
+      "owner_spec": "021-configuracion-ia-docente",
       "signature": "GET:/admin/ai-config-hash",
-      "source_line": 496,
+      "source_line": 654,
       "source_path": "backend/app/modules/admin_ai_config/router.py",
       "states": [],
       "tests": [
@@ -930,17 +978,29 @@
       },
       "id": "backend:GET:/admin/ai-settings",
       "kind": "endpoint",
-      "owner_spec": "012-ia-jobs-produccion",
+      "owner_spec": "021-configuracion-ia-docente",
       "signature": "GET:/admin/ai-settings",
-      "source_line": 314,
+      "source_line": 344,
       "source_path": "backend/app/modules/admin_ai_config/router.py",
       "states": [],
       "tests": [
+        {
+          "level": "unit",
+          "reference": "GET:/admin/ai-settings",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_ai_configuration_api.py"
+        },
         {
           "level": "e2e",
           "reference": "GET:/admin/ai-settings",
           "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/admin/ai-settings",
+          "status": "direct",
+          "test_path": "frontend/src/modules/admin/api.test.ts"
         }
       ]
     },
@@ -961,9 +1021,9 @@
       },
       "id": "backend:GET:/admin/ai-usage",
       "kind": "endpoint",
-      "owner_spec": "012-ia-jobs-produccion",
+      "owner_spec": "021-configuracion-ia-docente",
       "signature": "GET:/admin/ai-usage",
-      "source_line": 403,
+      "source_line": 443,
       "source_path": "backend/app/modules/admin_ai_config/router.py",
       "states": [],
       "tests": [
@@ -1731,6 +1791,12 @@
           "level": "e2e",
           "reference": "GET:/auth/me",
           "status": "direct",
+          "test_path": "frontend/e2e/accessibility/teacher-ai-configuration.a11y.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/auth/me",
+          "status": "direct",
           "test_path": "frontend/e2e/auth-navigation.spec.ts"
         },
         {
@@ -1762,6 +1828,12 @@
           "reference": "GET:/auth/me",
           "status": "direct",
           "test_path": "frontend/e2e/student-activity-delivery.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/auth/me",
+          "status": "direct",
+          "test_path": "frontend/e2e/teacher-ai-configuration.spec.ts"
         },
         {
           "level": "unit",
@@ -2468,7 +2540,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "GET:/evaluaciones/{evaluacion_id}",
-      "source_line": 225,
+      "source_line": 224,
       "source_path": "backend/app/modules/evaluaciones/router.py",
       "states": [],
       "tests": [
@@ -2612,7 +2684,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "GET:/evaluaciones/{evaluacion_id}/actividad",
-      "source_line": 234,
+      "source_line": 233,
       "source_path": "backend/app/modules/evaluaciones/router.py",
       "states": [],
       "tests": [
@@ -2869,7 +2941,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "GET:/evaluaciones/{evaluacion_id}/pdf",
-      "source_line": 243,
+      "source_line": 242,
       "source_path": "backend/app/modules/evaluaciones/router.py",
       "states": [],
       "tests": [
@@ -3314,7 +3386,7 @@
       "kind": "endpoint",
       "owner_spec": "010-presentaciones-imagenes",
       "signature": "GET:/imagenes-generadas",
-      "source_line": 67,
+      "source_line": 73,
       "source_path": "backend/app/modules/imagenes/router.py",
       "states": [],
       "tests": []
@@ -3992,7 +4064,7 @@
       "kind": "endpoint",
       "owner_spec": "003-usuarios-materias-matriculas",
       "signature": "GET:/materias/{materia_id}/evaluaciones",
-      "source_line": 216,
+      "source_line": 215,
       "source_path": "backend/app/modules/evaluaciones/router.py",
       "states": [],
       "tests": [
@@ -4477,6 +4549,55 @@
     },
     {
       "actors": [
+        "profesor"
+      ],
+      "authorization": [
+        "get_current_user",
+        "require_role"
+      ],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
+        "function": "get_teacher_ai_config",
+        "registered": true,
+        "router": "router"
+      },
+      "id": "backend:GET:/profesor/ai-config",
+      "kind": "endpoint",
+      "owner_spec": "021-configuracion-ia-docente",
+      "signature": "GET:/profesor/ai-config",
+      "source_line": 808,
+      "source_path": "backend/app/modules/admin_ai_config/router.py",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "GET:/profesor/ai-config",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_ai_configuration_api.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/profesor/ai-config",
+          "status": "direct",
+          "test_path": "frontend/e2e/accessibility/teacher-ai-configuration.a11y.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/profesor/ai-config",
+          "status": "direct",
+          "test_path": "frontend/e2e/teacher-ai-configuration.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/profesor/ai-config",
+          "status": "direct",
+          "test_path": "frontend/src/modules/profesor_ai/api.test.ts"
+        }
+      ]
+    },
+    {
+      "actors": [
         "admin",
         "profesor"
       ],
@@ -4832,9 +4953,9 @@
       },
       "id": "backend:PATCH:/admin/ai-config",
       "kind": "endpoint",
-      "owner_spec": "012-ia-jobs-produccion",
+      "owner_spec": "021-configuracion-ia-docente",
       "signature": "PATCH:/admin/ai-config",
-      "source_line": 252,
+      "source_line": 282,
       "source_path": "backend/app/modules/admin_ai_config/router.py",
       "states": [],
       "tests": [
@@ -4869,9 +4990,9 @@
       },
       "id": "backend:PATCH:/admin/ai-providers/{provider_id}",
       "kind": "endpoint",
-      "owner_spec": "012-ia-jobs-produccion",
+      "owner_spec": "021-configuracion-ia-docente",
       "signature": "PATCH:/admin/ai-providers/{provider_id}",
-      "source_line": 467,
+      "source_line": 608,
       "source_path": "backend/app/modules/admin_ai_config/router.py",
       "states": [],
       "tests": [
@@ -5241,7 +5362,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "PATCH:/evaluaciones/{evaluacion_id}",
-      "source_line": 320,
+      "source_line": 319,
       "source_path": "backend/app/modules/evaluaciones/router.py",
       "states": [],
       "tests": [
@@ -5447,7 +5568,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "PATCH:/evaluaciones/{evaluacion_id}/validar-estructura",
-      "source_line": 391,
+      "source_line": 390,
       "source_path": "backend/app/modules/evaluaciones/router.py",
       "states": [],
       "tests": [
@@ -5657,7 +5778,7 @@
       "kind": "endpoint",
       "owner_spec": "010-presentaciones-imagenes",
       "signature": "PATCH:/imagenes-generadas/{imagen_id}",
-      "source_line": 108,
+      "source_line": 114,
       "source_path": "backend/app/modules/imagenes/router.py",
       "states": [],
       "tests": []
@@ -5912,7 +6033,6 @@
     },
     {
       "actors": [
-        "admin",
         "profesor"
       ],
       "authorization": [
@@ -5920,7 +6040,7 @@
         "require_role"
       ],
       "consumers": [],
-      "coverage": "missing",
+      "coverage": "covered",
       "details": {
         "function": "update_profesor_config",
         "registered": true,
@@ -5928,12 +6048,37 @@
       },
       "id": "backend:PATCH:/profesor/ai-config",
       "kind": "endpoint",
-      "owner_spec": "012-ia-jobs-produccion",
+      "owner_spec": "021-configuracion-ia-docente",
       "signature": "PATCH:/profesor/ai-config",
-      "source_line": 557,
+      "source_line": 715,
       "source_path": "backend/app/modules/admin_ai_config/router.py",
       "states": [],
-      "tests": []
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "PATCH:/profesor/ai-config",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_ai_configuration_api.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/profesor/ai-config",
+          "status": "direct",
+          "test_path": "frontend/e2e/accessibility/teacher-ai-configuration.a11y.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/profesor/ai-config",
+          "status": "direct",
+          "test_path": "frontend/e2e/teacher-ai-configuration.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/profesor/ai-config",
+          "status": "direct",
+          "test_path": "frontend/src/modules/profesor_ai/api.test.ts"
+        }
+      ]
     },
     {
       "actors": [
@@ -6026,9 +6171,9 @@
       },
       "id": "backend:POST:/admin/ai-cache/clear",
       "kind": "endpoint",
-      "owner_spec": "012-ia-jobs-produccion",
+      "owner_spec": "021-configuracion-ia-docente",
       "signature": "POST:/admin/ai-cache/clear",
-      "source_line": 413,
+      "source_line": 453,
       "source_path": "backend/app/modules/admin_ai_config/router.py",
       "states": [],
       "tests": []
@@ -6050,9 +6195,9 @@
       },
       "id": "backend:POST:/admin/ai-providers/{provider}/test",
       "kind": "endpoint",
-      "owner_spec": "012-ia-jobs-produccion",
+      "owner_spec": "021-configuracion-ia-docente",
       "signature": "POST:/admin/ai-providers/{provider}/test",
-      "source_line": 367,
+      "source_line": 401,
       "source_path": "backend/app/modules/admin_ai_config/router.py",
       "states": [],
       "tests": []
@@ -6074,12 +6219,43 @@
       },
       "id": "backend:POST:/admin/ai-settings/restore-defaults",
       "kind": "endpoint",
-      "owner_spec": "012-ia-jobs-produccion",
+      "owner_spec": "021-configuracion-ia-docente",
       "signature": "POST:/admin/ai-settings/restore-defaults",
-      "source_line": 484,
+      "source_line": 625,
       "source_path": "backend/app/modules/admin_ai_config/router.py",
       "states": [],
       "tests": []
+    },
+    {
+      "actors": [
+        "admin"
+      ],
+      "authorization": [
+        "get_current_user",
+        "require_role"
+      ],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
+        "function": "restore_previous_configuration",
+        "registered": true,
+        "router": "router"
+      },
+      "id": "backend:POST:/admin/ai-settings/restore-previous",
+      "kind": "endpoint",
+      "owner_spec": "021-configuracion-ia-docente",
+      "signature": "POST:/admin/ai-settings/restore-previous",
+      "source_line": 637,
+      "source_path": "backend/app/modules/admin_ai_config/router.py",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "POST:/admin/ai-settings/restore-previous",
+          "status": "direct",
+          "test_path": "frontend/src/modules/admin/api.test.ts"
+        }
+      ]
     },
     {
       "actors": [
@@ -6258,6 +6434,12 @@
           "level": "e2e",
           "reference": "POST:/auth/login",
           "status": "direct",
+          "test_path": "frontend/e2e/accessibility/teacher-ai-configuration.a11y.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/auth/login",
+          "status": "direct",
           "test_path": "frontend/e2e/auth-navigation.spec.ts"
         },
         {
@@ -6283,6 +6465,12 @@
           "reference": "POST:/auth/login",
           "status": "direct",
           "test_path": "frontend/e2e/student-activity-delivery.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/auth/login",
+          "status": "direct",
+          "test_path": "frontend/e2e/teacher-ai-configuration.spec.ts"
         }
       ]
     },
@@ -6416,6 +6604,12 @@
           "level": "e2e",
           "reference": "POST:/auth/refresh",
           "status": "direct",
+          "test_path": "frontend/e2e/accessibility/teacher-ai-configuration.a11y.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/auth/refresh",
+          "status": "direct",
           "test_path": "frontend/e2e/auth-navigation.spec.ts"
         },
         {
@@ -6447,6 +6641,12 @@
           "reference": "POST:/auth/refresh",
           "status": "direct",
           "test_path": "frontend/e2e/student-activity-delivery.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/auth/refresh",
+          "status": "direct",
+          "test_path": "frontend/e2e/teacher-ai-configuration.spec.ts"
         },
         {
           "level": "unit",
@@ -7190,7 +7390,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "POST:/evaluaciones",
-      "source_line": 207,
+      "source_line": 206,
       "source_path": "backend/app/modules/evaluaciones/router.py",
       "states": [],
       "tests": [
@@ -7334,7 +7534,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "POST:/evaluaciones/externa/digitalizar",
-      "source_line": 189,
+      "source_line": 188,
       "source_path": "backend/app/modules/evaluaciones/router.py",
       "states": [],
       "tests": [
@@ -7376,7 +7576,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "POST:/evaluaciones/externa/digitalizar-con-archivo",
-      "source_line": 78,
+      "source_line": 77,
       "source_path": "backend/app/modules/evaluaciones/router.py",
       "states": [],
       "tests": [
@@ -7418,7 +7618,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "POST:/evaluaciones/generar-borrador",
-      "source_line": 176,
+      "source_line": 175,
       "source_path": "backend/app/modules/evaluaciones/router.py",
       "states": [],
       "tests": [
@@ -7460,7 +7660,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "POST:/evaluaciones/referencia/extraer",
-      "source_line": 39,
+      "source_line": 38,
       "source_path": "backend/app/modules/evaluaciones/router.py",
       "states": [],
       "tests": [
@@ -7490,7 +7690,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "POST:/evaluaciones/sorpresa",
-      "source_line": 198,
+      "source_line": 197,
       "source_path": "backend/app/modules/evaluaciones/router.py",
       "states": [],
       "tests": [
@@ -7526,7 +7726,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "POST:/evaluaciones/{evaluacion_id}/activar-recepcion",
-      "source_line": 361,
+      "source_line": 360,
       "source_path": "backend/app/modules/evaluaciones/router.py",
       "states": [],
       "tests": [
@@ -7618,7 +7818,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "POST:/evaluaciones/{evaluacion_id}/cerrar",
-      "source_line": 351,
+      "source_line": 350,
       "source_path": "backend/app/modules/evaluaciones/router.py",
       "states": [],
       "tests": [
@@ -7654,7 +7854,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "POST:/evaluaciones/{evaluacion_id}/crear-blueprint",
-      "source_line": 331,
+      "source_line": 330,
       "source_path": "backend/app/modules/evaluaciones/router.py",
       "states": [],
       "tests": [
@@ -7800,7 +8000,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "POST:/evaluaciones/{evaluacion_id}/pausar-recepcion",
-      "source_line": 371,
+      "source_line": 370,
       "source_path": "backend/app/modules/evaluaciones/router.py",
       "states": [],
       "tests": [
@@ -7836,7 +8036,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "POST:/evaluaciones/{evaluacion_id}/publicar",
-      "source_line": 341,
+      "source_line": 340,
       "source_path": "backend/app/modules/evaluaciones/router.py",
       "states": [],
       "tests": [
@@ -9346,6 +9546,37 @@
     },
     {
       "actors": [
+        "profesor"
+      ],
+      "authorization": [
+        "get_current_user",
+        "require_role"
+      ],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
+        "function": "test_teacher_ai_provider",
+        "registered": true,
+        "router": "router"
+      },
+      "id": "backend:POST:/profesor/ai-providers/{provider}/test",
+      "kind": "endpoint",
+      "owner_spec": "021-configuracion-ia-docente",
+      "signature": "POST:/profesor/ai-providers/{provider}/test",
+      "source_line": 963,
+      "source_path": "backend/app/modules/admin_ai_config/router.py",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "POST:/profesor/ai-providers/{provider}/test",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_ai_configuration_api.py"
+        }
+      ]
+    },
+    {
+      "actors": [
         "admin",
         "profesor"
       ],
@@ -9629,7 +9860,7 @@
         "require_role"
       ],
       "consumers": [],
-      "coverage": "missing",
+      "coverage": "covered",
       "details": {
         "function": "save_features",
         "registered": true,
@@ -9637,12 +9868,25 @@
       },
       "id": "backend:PUT:/admin/ai-features",
       "kind": "endpoint",
-      "owner_spec": "012-ia-jobs-produccion",
+      "owner_spec": "021-configuracion-ia-docente",
       "signature": "PUT:/admin/ai-features",
-      "source_line": 454,
+      "source_line": 559,
       "source_path": "backend/app/modules/admin_ai_config/router.py",
       "states": [],
-      "tests": []
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "PUT:/admin/ai-features",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_ai_configuration_api.py"
+        },
+        {
+          "level": "unit",
+          "reference": "PUT:/admin/ai-features",
+          "status": "direct",
+          "test_path": "frontend/src/modules/admin/api.test.ts"
+        }
+      ]
     },
     {
       "actors": [
@@ -9661,15 +9905,46 @@
       },
       "id": "backend:PUT:/admin/ai-providers",
       "kind": "endpoint",
-      "owner_spec": "012-ia-jobs-produccion",
+      "owner_spec": "021-configuracion-ia-docente",
       "signature": "PUT:/admin/ai-providers",
-      "source_line": 426,
+      "source_line": 531,
       "source_path": "backend/app/modules/admin_ai_config/router.py",
       "states": [],
       "tests": [
         {
           "level": "unit",
           "reference": "PUT:/admin/ai-providers",
+          "status": "direct",
+          "test_path": "frontend/src/modules/admin/api.test.ts"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "admin"
+      ],
+      "authorization": [
+        "get_current_user",
+        "require_role"
+      ],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
+        "function": "publish_ai_configuration",
+        "registered": true,
+        "router": "router"
+      },
+      "id": "backend:PUT:/admin/ai-settings/publish",
+      "kind": "endpoint",
+      "owner_spec": "021-configuracion-ia-docente",
+      "signature": "PUT:/admin/ai-settings/publish",
+      "source_line": 466,
+      "source_path": "backend/app/modules/admin_ai_config/router.py",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "PUT:/admin/ai-settings/publish",
           "status": "direct",
           "test_path": "frontend/src/modules/admin/api.test.ts"
         }
@@ -9788,6 +10063,92 @@
     },
     {
       "actors": [
+        "profesor"
+      ],
+      "authorization": [
+        "get_current_user",
+        "require_role"
+      ],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
+        "function": "save_teacher_ai_config",
+        "registered": true,
+        "router": "router"
+      },
+      "id": "backend:PUT:/profesor/ai-config",
+      "kind": "endpoint",
+      "owner_spec": "021-configuracion-ia-docente",
+      "signature": "PUT:/profesor/ai-config",
+      "source_line": 856,
+      "source_path": "backend/app/modules/admin_ai_config/router.py",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "PUT:/profesor/ai-config",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_ai_configuration_api.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "PUT:/profesor/ai-config",
+          "status": "direct",
+          "test_path": "frontend/e2e/accessibility/teacher-ai-configuration.a11y.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PUT:/profesor/ai-config",
+          "status": "direct",
+          "test_path": "frontend/e2e/teacher-ai-configuration.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "PUT:/profesor/ai-config",
+          "status": "direct",
+          "test_path": "frontend/src/modules/profesor_ai/api.test.ts"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "profesor"
+      ],
+      "authorization": [
+        "get_current_user",
+        "require_role"
+      ],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
+        "function": "save_teacher_ai_credential",
+        "registered": true,
+        "router": "router"
+      },
+      "id": "backend:PUT:/profesor/ai-credentials/{provider}",
+      "kind": "endpoint",
+      "owner_spec": "021-configuracion-ia-docente",
+      "signature": "PUT:/profesor/ai-credentials/{provider}",
+      "source_line": 921,
+      "source_path": "backend/app/modules/admin_ai_config/router.py",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "PUT:/profesor/ai-credentials/{provider}",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_ai_configuration_api.py"
+        },
+        {
+          "level": "unit",
+          "reference": "PUT:/profesor/ai-credentials/{provider}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/profesor_ai/api.test.ts"
+        }
+      ]
+    },
+    {
+      "actors": [
         "public"
       ],
       "authorization": [],
@@ -9801,7 +10162,7 @@
       "kind": "frontend_route",
       "owner_spec": "002-arquitectura-roles-seguridad",
       "signature": "/",
-      "source_line": 133,
+      "source_line": 135,
       "source_path": "frontend/src/router.tsx",
       "states": [],
       "tests": [
@@ -9810,6 +10171,18 @@
           "reference": "/",
           "status": "direct",
           "test_path": "backend/tests/fixtures/ai_pipeline.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_ai_configuration_api.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_ai_configuration_migration.py"
         },
         {
           "level": "unit",
@@ -10061,6 +10434,12 @@
           "level": "e2e",
           "reference": "/",
           "status": "direct",
+          "test_path": "frontend/e2e/accessibility/teacher-ai-configuration.a11y.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/",
+          "status": "direct",
           "test_path": "frontend/e2e/auth-navigation.spec.ts"
         },
         {
@@ -10098,6 +10477,12 @@
           "reference": "/",
           "status": "direct",
           "test_path": "frontend/e2e/student-activity-delivery.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "frontend/e2e/teacher-ai-configuration.spec.ts"
         },
         {
           "level": "e2e",
@@ -10433,6 +10818,18 @@
           "level": "unit",
           "reference": "/",
           "status": "direct",
+          "test_path": "frontend/src/modules/profesor_ai/TeacherAIConfigPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "frontend/src/modules/profesor_ai/api.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
           "test_path": "frontend/src/modules/xali/XaliPage.test.tsx"
         },
         {
@@ -10468,6 +10865,42 @@
           "level": "unit",
           "reference": "/app",
           "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_api.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_concurrency.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_migration.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_secret_safety.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_job_configuration_snapshot.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_ai_configuration_resolver.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_nginx_security_config.py"
         },
         {
@@ -10487,6 +10920,12 @@
           "reference": "/app",
           "status": "direct",
           "test_path": "frontend/e2e/accessibility/grading-review.a11y.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app",
+          "status": "direct",
+          "test_path": "frontend/e2e/accessibility/teacher-ai-configuration.a11y.spec.ts"
         },
         {
           "level": "e2e",
@@ -10523,6 +10962,12 @@
           "reference": "/app",
           "status": "direct",
           "test_path": "frontend/e2e/student-activity-delivery.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app",
+          "status": "direct",
+          "test_path": "frontend/e2e/teacher-ai-configuration.spec.ts"
         },
         {
           "level": "e2e",
@@ -10601,6 +11046,12 @@
           "reference": "/app",
           "status": "direct",
           "test_path": "frontend/src/modules/materias/teacherFlowModel.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "/app",
+          "status": "domain",
+          "test_path": "frontend/src/modules/profesor_ai/TeacherAIConfigPage.test.tsx"
         }
       ]
     },
@@ -10629,6 +11080,42 @@
           "level": "unit",
           "reference": "/app/403",
           "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_api.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/403",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_concurrency.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/403",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_migration.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/403",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_secret_safety.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/403",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_job_configuration_snapshot.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/403",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_ai_configuration_resolver.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/403",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_nginx_security_config.py"
         },
         {
@@ -10644,6 +11131,18 @@
           "test_path": "backend/tests/unit/test_worker_ai_config.py"
         },
         {
+          "level": "e2e",
+          "reference": "/app/403",
+          "status": "domain",
+          "test_path": "frontend/e2e/accessibility/teacher-ai-configuration.a11y.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app/403",
+          "status": "domain",
+          "test_path": "frontend/e2e/teacher-ai-configuration.spec.ts"
+        },
+        {
           "level": "unit",
           "reference": "/app/403",
           "status": "direct",
@@ -10654,6 +11153,12 @@
           "reference": "/app/403",
           "status": "domain",
           "test_path": "frontend/src/modules/admin/AdminAIConfigPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/403",
+          "status": "domain",
+          "test_path": "frontend/src/modules/profesor_ai/TeacherAIConfigPage.test.tsx"
         }
       ]
     },
@@ -10682,6 +11187,42 @@
           "level": "unit",
           "reference": "/app/404",
           "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_api.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/404",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_concurrency.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/404",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_migration.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/404",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_secret_safety.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/404",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_job_configuration_snapshot.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/404",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_ai_configuration_resolver.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/404",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_nginx_security_config.py"
         },
         {
@@ -10697,10 +11238,28 @@
           "test_path": "backend/tests/unit/test_worker_ai_config.py"
         },
         {
+          "level": "e2e",
+          "reference": "/app/404",
+          "status": "domain",
+          "test_path": "frontend/e2e/accessibility/teacher-ai-configuration.a11y.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app/404",
+          "status": "domain",
+          "test_path": "frontend/e2e/teacher-ai-configuration.spec.ts"
+        },
+        {
           "level": "unit",
           "reference": "/app/404",
           "status": "domain",
           "test_path": "frontend/src/modules/admin/AdminAIConfigPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/404",
+          "status": "domain",
+          "test_path": "frontend/src/modules/profesor_ai/TeacherAIConfigPage.test.tsx"
         }
       ]
     },
@@ -10719,12 +11278,48 @@
       },
       "id": "frontend:/app/admin/configuracion-ia",
       "kind": "frontend_route",
-      "owner_spec": "002-arquitectura-roles-seguridad",
+      "owner_spec": "021-configuracion-ia-docente",
       "signature": "/app/admin/configuracion-ia",
       "source_line": 53,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
+        {
+          "level": "unit",
+          "reference": "/app/admin/configuracion-ia",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_api.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/admin/configuracion-ia",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_concurrency.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/admin/configuracion-ia",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_migration.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/admin/configuracion-ia",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_secret_safety.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/admin/configuracion-ia",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_job_configuration_snapshot.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/admin/configuracion-ia",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_ai_configuration_resolver.py"
+        },
         {
           "level": "unit",
           "reference": "/app/admin/configuracion-ia",
@@ -10746,6 +11341,12 @@
         {
           "level": "e2e",
           "reference": "/app/admin/configuracion-ia",
+          "status": "domain",
+          "test_path": "frontend/e2e/accessibility/teacher-ai-configuration.a11y.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app/admin/configuracion-ia",
           "status": "direct",
           "test_path": "frontend/e2e/auth-navigation.spec.ts"
         },
@@ -10754,6 +11355,12 @@
           "reference": "/app/admin/configuracion-ia",
           "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app/admin/configuracion-ia",
+          "status": "domain",
+          "test_path": "frontend/e2e/teacher-ai-configuration.spec.ts"
         },
         {
           "level": "unit",
@@ -10766,6 +11373,12 @@
           "reference": "/app/admin/configuracion-ia",
           "status": "domain",
           "test_path": "frontend/src/modules/admin/AdminAIConfigPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/admin/configuracion-ia",
+          "status": "domain",
+          "test_path": "frontend/src/modules/profesor_ai/TeacherAIConfigPage.test.tsx"
         }
       ]
     },
@@ -10787,10 +11400,46 @@
       "kind": "frontend_route",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "/app/analytics",
-      "source_line": 54,
+      "source_line": 55,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
+        {
+          "level": "unit",
+          "reference": "/app/analytics",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_api.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/analytics",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_concurrency.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/analytics",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_migration.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/analytics",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_secret_safety.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/analytics",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_job_configuration_snapshot.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/analytics",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_ai_configuration_resolver.py"
+        },
         {
           "level": "unit",
           "reference": "/app/analytics",
@@ -10812,14 +11461,32 @@
         {
           "level": "e2e",
           "reference": "/app/analytics",
+          "status": "domain",
+          "test_path": "frontend/e2e/accessibility/teacher-ai-configuration.a11y.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app/analytics",
           "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app/analytics",
+          "status": "domain",
+          "test_path": "frontend/e2e/teacher-ai-configuration.spec.ts"
         },
         {
           "level": "unit",
           "reference": "/app/analytics",
           "status": "domain",
           "test_path": "frontend/src/modules/admin/AdminAIConfigPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/analytics",
+          "status": "domain",
+          "test_path": "frontend/src/modules/profesor_ai/TeacherAIConfigPage.test.tsx"
         }
       ]
     },
@@ -10848,6 +11515,42 @@
           "level": "unit",
           "reference": "/app/calificaciones/boletin",
           "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_api.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/calificaciones/boletin",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_concurrency.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/calificaciones/boletin",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_migration.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/calificaciones/boletin",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_secret_safety.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/calificaciones/boletin",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_job_configuration_snapshot.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/calificaciones/boletin",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_ai_configuration_resolver.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/calificaciones/boletin",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_nginx_security_config.py"
         },
         {
@@ -10865,8 +11568,20 @@
         {
           "level": "e2e",
           "reference": "/app/calificaciones/boletin",
+          "status": "domain",
+          "test_path": "frontend/e2e/accessibility/teacher-ai-configuration.a11y.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app/calificaciones/boletin",
           "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app/calificaciones/boletin",
+          "status": "domain",
+          "test_path": "frontend/e2e/teacher-ai-configuration.spec.ts"
         },
         {
           "level": "unit",
@@ -10879,6 +11594,12 @@
           "reference": "/app/calificaciones/boletin",
           "status": "domain",
           "test_path": "frontend/src/modules/admin/AdminAIConfigPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/calificaciones/boletin",
+          "status": "domain",
+          "test_path": "frontend/src/modules/profesor_ai/TeacherAIConfigPage.test.tsx"
         }
       ]
     },
@@ -10908,6 +11629,42 @@
           "level": "unit",
           "reference": "/app/calificaciones/workspace",
           "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_api.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/calificaciones/workspace",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_concurrency.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/calificaciones/workspace",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_migration.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/calificaciones/workspace",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_secret_safety.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/calificaciones/workspace",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_job_configuration_snapshot.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/calificaciones/workspace",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_ai_configuration_resolver.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/calificaciones/workspace",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_nginx_security_config.py"
         },
         {
@@ -10931,6 +11688,12 @@
         {
           "level": "e2e",
           "reference": "/app/calificaciones/workspace",
+          "status": "domain",
+          "test_path": "frontend/e2e/accessibility/teacher-ai-configuration.a11y.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app/calificaciones/workspace",
           "status": "direct",
           "test_path": "frontend/e2e/explainable-grading.spec.ts"
         },
@@ -10939,6 +11702,12 @@
           "reference": "/app/calificaciones/workspace",
           "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app/calificaciones/workspace",
+          "status": "domain",
+          "test_path": "frontend/e2e/teacher-ai-configuration.spec.ts"
         },
         {
           "level": "e2e",
@@ -10963,6 +11732,12 @@
           "reference": "/app/calificaciones/workspace",
           "status": "direct",
           "test_path": "frontend/src/modules/dashboard/DashboardPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/calificaciones/workspace",
+          "status": "domain",
+          "test_path": "frontend/src/modules/profesor_ai/TeacherAIConfigPage.test.tsx"
         }
       ]
     },
@@ -10992,6 +11767,42 @@
           "level": "unit",
           "reference": "/app/calificaciones/workspace/{evaluacionId}",
           "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_api.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/calificaciones/workspace/{evaluacionId}",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_concurrency.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/calificaciones/workspace/{evaluacionId}",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_migration.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/calificaciones/workspace/{evaluacionId}",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_secret_safety.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/calificaciones/workspace/{evaluacionId}",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_job_configuration_snapshot.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/calificaciones/workspace/{evaluacionId}",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_ai_configuration_resolver.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/calificaciones/workspace/{evaluacionId}",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_nginx_security_config.py"
         },
         {
@@ -11015,6 +11826,12 @@
         {
           "level": "e2e",
           "reference": "/app/calificaciones/workspace/{evaluacionId}",
+          "status": "domain",
+          "test_path": "frontend/e2e/accessibility/teacher-ai-configuration.a11y.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app/calificaciones/workspace/{evaluacionId}",
           "status": "direct",
           "test_path": "frontend/e2e/explainable-grading.spec.ts"
         },
@@ -11023,6 +11840,12 @@
           "reference": "/app/calificaciones/workspace/{evaluacionId}",
           "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app/calificaciones/workspace/{evaluacionId}",
+          "status": "domain",
+          "test_path": "frontend/e2e/teacher-ai-configuration.spec.ts"
         },
         {
           "level": "e2e",
@@ -11047,6 +11870,113 @@
           "reference": "/app/calificaciones/workspace/{evaluacionId}",
           "status": "direct",
           "test_path": "frontend/src/modules/dashboard/DashboardPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/calificaciones/workspace/{evaluacionId}",
+          "status": "domain",
+          "test_path": "frontend/src/modules/profesor_ai/TeacherAIConfigPage.test.tsx"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "authenticated"
+      ],
+      "authorization": [
+        "RequireAuth"
+      ],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
+        "registered": false,
+        "view": "unresolved"
+      },
+      "id": "frontend:/app/configuracion-ia",
+      "kind": "frontend_route",
+      "owner_spec": "021-configuracion-ia-docente",
+      "signature": "/app/configuracion-ia",
+      "source_line": 54,
+      "source_path": "frontend/src/config/routes.ts",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "/app/configuracion-ia",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_api.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/configuracion-ia",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_concurrency.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/configuracion-ia",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_migration.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/configuracion-ia",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_secret_safety.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/configuracion-ia",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_job_configuration_snapshot.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/configuracion-ia",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_ai_configuration_resolver.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/configuracion-ia",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_nginx_security_config.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/configuracion-ia",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_production_config.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/configuracion-ia",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_worker_ai_config.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app/configuracion-ia",
+          "status": "direct",
+          "test_path": "frontend/e2e/accessibility/teacher-ai-configuration.a11y.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app/configuracion-ia",
+          "status": "direct",
+          "test_path": "frontend/e2e/teacher-ai-configuration.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/configuracion-ia",
+          "status": "domain",
+          "test_path": "frontend/src/modules/admin/AdminAIConfigPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/configuracion-ia",
+          "status": "domain",
+          "test_path": "frontend/src/modules/profesor_ai/TeacherAIConfigPage.test.tsx"
         }
       ]
     },
@@ -11075,6 +12005,42 @@
           "level": "unit",
           "reference": "/app/evaluaciones",
           "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_api.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/evaluaciones",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_concurrency.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/evaluaciones",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_migration.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/evaluaciones",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_secret_safety.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/evaluaciones",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_job_configuration_snapshot.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/evaluaciones",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_ai_configuration_resolver.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/evaluaciones",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_nginx_security_config.py"
         },
         {
@@ -11088,6 +12054,12 @@
           "reference": "/app/evaluaciones",
           "status": "domain",
           "test_path": "backend/tests/unit/test_worker_ai_config.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app/evaluaciones",
+          "status": "domain",
+          "test_path": "frontend/e2e/accessibility/teacher-ai-configuration.a11y.spec.ts"
         },
         {
           "level": "e2e",
@@ -11114,6 +12086,12 @@
           "test_path": "frontend/e2e/student-activity-delivery.spec.ts"
         },
         {
+          "level": "e2e",
+          "reference": "/app/evaluaciones",
+          "status": "domain",
+          "test_path": "frontend/e2e/teacher-ai-configuration.spec.ts"
+        },
+        {
           "level": "unit",
           "reference": "/app/evaluaciones",
           "status": "direct",
@@ -11130,6 +12108,12 @@
           "reference": "/app/evaluaciones",
           "status": "direct",
           "test_path": "frontend/src/modules/evaluaciones/ResolverEvaluacionPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/evaluaciones",
+          "status": "domain",
+          "test_path": "frontend/src/modules/profesor_ai/TeacherAIConfigPage.test.tsx"
         }
       ]
     },
@@ -11158,6 +12142,42 @@
           "level": "unit",
           "reference": "/app/evaluaciones/{id}/resolver",
           "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_api.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/evaluaciones/{id}/resolver",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_concurrency.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/evaluaciones/{id}/resolver",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_migration.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/evaluaciones/{id}/resolver",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_secret_safety.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/evaluaciones/{id}/resolver",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_job_configuration_snapshot.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/evaluaciones/{id}/resolver",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_ai_configuration_resolver.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/evaluaciones/{id}/resolver",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_nginx_security_config.py"
         },
         {
@@ -11173,10 +12193,28 @@
           "test_path": "backend/tests/unit/test_worker_ai_config.py"
         },
         {
+          "level": "e2e",
+          "reference": "/app/evaluaciones/{id}/resolver",
+          "status": "domain",
+          "test_path": "frontend/e2e/accessibility/teacher-ai-configuration.a11y.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app/evaluaciones/{id}/resolver",
+          "status": "domain",
+          "test_path": "frontend/e2e/teacher-ai-configuration.spec.ts"
+        },
+        {
           "level": "unit",
           "reference": "/app/evaluaciones/{id}/resolver",
           "status": "domain",
           "test_path": "frontend/src/modules/admin/AdminAIConfigPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/evaluaciones/{id}/resolver",
+          "status": "domain",
+          "test_path": "frontend/src/modules/profesor_ai/TeacherAIConfigPage.test.tsx"
         }
       ]
     },
@@ -11205,6 +12243,42 @@
           "level": "unit",
           "reference": "/app/herramientas",
           "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_api.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/herramientas",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_concurrency.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/herramientas",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_migration.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/herramientas",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_secret_safety.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/herramientas",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_job_configuration_snapshot.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/herramientas",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_ai_configuration_resolver.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/herramientas",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_nginx_security_config.py"
         },
         {
@@ -11222,6 +12296,12 @@
         {
           "level": "e2e",
           "reference": "/app/herramientas",
+          "status": "domain",
+          "test_path": "frontend/e2e/accessibility/teacher-ai-configuration.a11y.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app/herramientas",
           "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
         },
@@ -11230,6 +12310,12 @@
           "reference": "/app/herramientas",
           "status": "direct",
           "test_path": "frontend/e2e/resources-creation.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app/herramientas",
+          "status": "domain",
+          "test_path": "frontend/e2e/teacher-ai-configuration.spec.ts"
         },
         {
           "level": "unit",
@@ -11242,12 +12328,19 @@
           "reference": "/app/herramientas",
           "status": "domain",
           "test_path": "frontend/src/modules/admin/AdminAIConfigPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/herramientas",
+          "status": "domain",
+          "test_path": "frontend/src/modules/profesor_ai/TeacherAIConfigPage.test.tsx"
         }
       ]
     },
     {
       "actors": [
-        "admin"
+        "admin",
+        "profesor"
       ],
       "authorization": [
         "RequireRole"
@@ -11270,6 +12363,42 @@
           "level": "unit",
           "reference": "/app/herramientas/{id}",
           "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_api.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/herramientas/{id}",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_concurrency.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/herramientas/{id}",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_migration.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/herramientas/{id}",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_secret_safety.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/herramientas/{id}",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_job_configuration_snapshot.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/herramientas/{id}",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_ai_configuration_resolver.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/herramientas/{id}",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_nginx_security_config.py"
         },
         {
@@ -11287,6 +12416,12 @@
         {
           "level": "e2e",
           "reference": "/app/herramientas/{id}",
+          "status": "domain",
+          "test_path": "frontend/e2e/accessibility/teacher-ai-configuration.a11y.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app/herramientas/{id}",
           "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
         },
@@ -11295,6 +12430,12 @@
           "reference": "/app/herramientas/{id}",
           "status": "direct",
           "test_path": "frontend/e2e/resources-creation.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app/herramientas/{id}",
+          "status": "domain",
+          "test_path": "frontend/e2e/teacher-ai-configuration.spec.ts"
         },
         {
           "level": "unit",
@@ -11307,6 +12448,12 @@
           "reference": "/app/herramientas/{id}",
           "status": "domain",
           "test_path": "frontend/src/modules/admin/AdminAIConfigPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/herramientas/{id}",
+          "status": "domain",
+          "test_path": "frontend/src/modules/profesor_ai/TeacherAIConfigPage.test.tsx"
         }
       ]
     },
@@ -11335,6 +12482,42 @@
           "level": "unit",
           "reference": "/app/materias",
           "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_api.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/materias",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_concurrency.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/materias",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_migration.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/materias",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_secret_safety.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/materias",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_job_configuration_snapshot.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/materias",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_ai_configuration_resolver.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/materias",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_nginx_security_config.py"
         },
         {
@@ -11352,8 +12535,20 @@
         {
           "level": "e2e",
           "reference": "/app/materias",
+          "status": "domain",
+          "test_path": "frontend/e2e/accessibility/teacher-ai-configuration.a11y.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app/materias",
           "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app/materias",
+          "status": "domain",
+          "test_path": "frontend/e2e/teacher-ai-configuration.spec.ts"
         },
         {
           "level": "unit",
@@ -11402,6 +12597,12 @@
           "reference": "/app/materias",
           "status": "direct",
           "test_path": "frontend/src/modules/materias/teacherFlowModel.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/materias",
+          "status": "domain",
+          "test_path": "frontend/src/modules/profesor_ai/TeacherAIConfigPage.test.tsx"
         }
       ]
     },
@@ -11431,6 +12632,42 @@
           "level": "unit",
           "reference": "/app/materias/{id}",
           "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_api.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/materias/{id}",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_concurrency.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/materias/{id}",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_migration.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/materias/{id}",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_secret_safety.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/materias/{id}",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_job_configuration_snapshot.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/materias/{id}",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_ai_configuration_resolver.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/materias/{id}",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_nginx_security_config.py"
         },
         {
@@ -11448,8 +12685,20 @@
         {
           "level": "e2e",
           "reference": "/app/materias/{id}",
+          "status": "domain",
+          "test_path": "frontend/e2e/accessibility/teacher-ai-configuration.a11y.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app/materias/{id}",
           "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app/materias/{id}",
+          "status": "domain",
+          "test_path": "frontend/e2e/teacher-ai-configuration.spec.ts"
         },
         {
           "level": "unit",
@@ -11498,6 +12747,12 @@
           "reference": "/app/materias/{id}",
           "status": "direct",
           "test_path": "frontend/src/modules/materias/teacherFlowModel.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/materias/{id}",
+          "status": "domain",
+          "test_path": "frontend/src/modules/profesor_ai/TeacherAIConfigPage.test.tsx"
         }
       ]
     },
@@ -11527,6 +12782,42 @@
           "level": "unit",
           "reference": "/app/materias/{id}/asistencia",
           "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_api.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/materias/{id}/asistencia",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_concurrency.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/materias/{id}/asistencia",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_migration.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/materias/{id}/asistencia",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_secret_safety.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/materias/{id}/asistencia",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_job_configuration_snapshot.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/materias/{id}/asistencia",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_ai_configuration_resolver.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/materias/{id}/asistencia",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_nginx_security_config.py"
         },
         {
@@ -11542,10 +12833,28 @@
           "test_path": "backend/tests/unit/test_worker_ai_config.py"
         },
         {
+          "level": "e2e",
+          "reference": "/app/materias/{id}/asistencia",
+          "status": "domain",
+          "test_path": "frontend/e2e/accessibility/teacher-ai-configuration.a11y.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app/materias/{id}/asistencia",
+          "status": "domain",
+          "test_path": "frontend/e2e/teacher-ai-configuration.spec.ts"
+        },
+        {
           "level": "unit",
           "reference": "/app/materias/{id}/asistencia",
           "status": "domain",
           "test_path": "frontend/src/modules/admin/AdminAIConfigPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/materias/{id}/asistencia",
+          "status": "domain",
+          "test_path": "frontend/src/modules/profesor_ai/TeacherAIConfigPage.test.tsx"
         }
       ]
     },
@@ -11575,6 +12884,42 @@
           "level": "unit",
           "reference": "/app/materias/{id}/boletin",
           "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_api.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/materias/{id}/boletin",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_concurrency.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/materias/{id}/boletin",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_migration.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/materias/{id}/boletin",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_secret_safety.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/materias/{id}/boletin",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_job_configuration_snapshot.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/materias/{id}/boletin",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_ai_configuration_resolver.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/materias/{id}/boletin",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_nginx_security_config.py"
         },
         {
@@ -11590,10 +12935,28 @@
           "test_path": "backend/tests/unit/test_worker_ai_config.py"
         },
         {
+          "level": "e2e",
+          "reference": "/app/materias/{id}/boletin",
+          "status": "domain",
+          "test_path": "frontend/e2e/accessibility/teacher-ai-configuration.a11y.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app/materias/{id}/boletin",
+          "status": "domain",
+          "test_path": "frontend/e2e/teacher-ai-configuration.spec.ts"
+        },
+        {
           "level": "unit",
           "reference": "/app/materias/{id}/boletin",
           "status": "domain",
           "test_path": "frontend/src/modules/admin/AdminAIConfigPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/materias/{id}/boletin",
+          "status": "domain",
+          "test_path": "frontend/src/modules/profesor_ai/TeacherAIConfigPage.test.tsx"
         }
       ]
     },
@@ -11623,6 +12986,42 @@
           "level": "unit",
           "reference": "/app/materias/{id}/calificar",
           "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_api.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/materias/{id}/calificar",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_concurrency.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/materias/{id}/calificar",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_migration.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/materias/{id}/calificar",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_secret_safety.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/materias/{id}/calificar",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_job_configuration_snapshot.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/materias/{id}/calificar",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_ai_configuration_resolver.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/materias/{id}/calificar",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_nginx_security_config.py"
         },
         {
@@ -11638,10 +13037,28 @@
           "test_path": "backend/tests/unit/test_worker_ai_config.py"
         },
         {
+          "level": "e2e",
+          "reference": "/app/materias/{id}/calificar",
+          "status": "domain",
+          "test_path": "frontend/e2e/accessibility/teacher-ai-configuration.a11y.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app/materias/{id}/calificar",
+          "status": "domain",
+          "test_path": "frontend/e2e/teacher-ai-configuration.spec.ts"
+        },
+        {
           "level": "unit",
           "reference": "/app/materias/{id}/calificar",
           "status": "domain",
           "test_path": "frontend/src/modules/admin/AdminAIConfigPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/materias/{id}/calificar",
+          "status": "domain",
+          "test_path": "frontend/src/modules/profesor_ai/TeacherAIConfigPage.test.tsx"
         }
       ]
     },
@@ -11671,6 +13088,42 @@
           "level": "unit",
           "reference": "/app/materias/{id}/dba",
           "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_api.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/materias/{id}/dba",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_concurrency.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/materias/{id}/dba",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_migration.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/materias/{id}/dba",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_secret_safety.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/materias/{id}/dba",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_job_configuration_snapshot.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/materias/{id}/dba",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_ai_configuration_resolver.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/materias/{id}/dba",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_nginx_security_config.py"
         },
         {
@@ -11686,10 +13139,28 @@
           "test_path": "backend/tests/unit/test_worker_ai_config.py"
         },
         {
+          "level": "e2e",
+          "reference": "/app/materias/{id}/dba",
+          "status": "domain",
+          "test_path": "frontend/e2e/accessibility/teacher-ai-configuration.a11y.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app/materias/{id}/dba",
+          "status": "domain",
+          "test_path": "frontend/e2e/teacher-ai-configuration.spec.ts"
+        },
+        {
           "level": "unit",
           "reference": "/app/materias/{id}/dba",
           "status": "domain",
           "test_path": "frontend/src/modules/admin/AdminAIConfigPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/materias/{id}/dba",
+          "status": "domain",
+          "test_path": "frontend/src/modules/profesor_ai/TeacherAIConfigPage.test.tsx"
         }
       ]
     },
@@ -11719,6 +13190,42 @@
           "level": "unit",
           "reference": "/app/materias/{id}/evaluaciones",
           "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_api.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/materias/{id}/evaluaciones",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_concurrency.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/materias/{id}/evaluaciones",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_migration.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/materias/{id}/evaluaciones",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_secret_safety.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/materias/{id}/evaluaciones",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_job_configuration_snapshot.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/materias/{id}/evaluaciones",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_ai_configuration_resolver.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/materias/{id}/evaluaciones",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_nginx_security_config.py"
         },
         {
@@ -11734,10 +13241,28 @@
           "test_path": "backend/tests/unit/test_worker_ai_config.py"
         },
         {
+          "level": "e2e",
+          "reference": "/app/materias/{id}/evaluaciones",
+          "status": "domain",
+          "test_path": "frontend/e2e/accessibility/teacher-ai-configuration.a11y.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app/materias/{id}/evaluaciones",
+          "status": "domain",
+          "test_path": "frontend/e2e/teacher-ai-configuration.spec.ts"
+        },
+        {
           "level": "unit",
           "reference": "/app/materias/{id}/evaluaciones",
           "status": "domain",
           "test_path": "frontend/src/modules/admin/AdminAIConfigPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/materias/{id}/evaluaciones",
+          "status": "domain",
+          "test_path": "frontend/src/modules/profesor_ai/TeacherAIConfigPage.test.tsx"
         }
       ]
     },
@@ -11767,6 +13292,42 @@
           "level": "unit",
           "reference": "/app/materias/{id}/recursos",
           "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_api.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/materias/{id}/recursos",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_concurrency.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/materias/{id}/recursos",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_migration.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/materias/{id}/recursos",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_secret_safety.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/materias/{id}/recursos",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_job_configuration_snapshot.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/materias/{id}/recursos",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_ai_configuration_resolver.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/materias/{id}/recursos",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_nginx_security_config.py"
         },
         {
@@ -11782,10 +13343,28 @@
           "test_path": "backend/tests/unit/test_worker_ai_config.py"
         },
         {
+          "level": "e2e",
+          "reference": "/app/materias/{id}/recursos",
+          "status": "domain",
+          "test_path": "frontend/e2e/accessibility/teacher-ai-configuration.a11y.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app/materias/{id}/recursos",
+          "status": "domain",
+          "test_path": "frontend/e2e/teacher-ai-configuration.spec.ts"
+        },
+        {
           "level": "unit",
           "reference": "/app/materias/{id}/recursos",
           "status": "domain",
           "test_path": "frontend/src/modules/admin/AdminAIConfigPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/materias/{id}/recursos",
+          "status": "domain",
+          "test_path": "frontend/src/modules/profesor_ai/TeacherAIConfigPage.test.tsx"
         }
       ]
     },
@@ -11815,6 +13394,42 @@
           "level": "unit",
           "reference": "/app/presentaciones",
           "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_api.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/presentaciones",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_concurrency.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/presentaciones",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_migration.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/presentaciones",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_secret_safety.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/presentaciones",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_job_configuration_snapshot.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/presentaciones",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_ai_configuration_resolver.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/presentaciones",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_nginx_security_config.py"
         },
         {
@@ -11832,8 +13447,20 @@
         {
           "level": "e2e",
           "reference": "/app/presentaciones",
+          "status": "domain",
+          "test_path": "frontend/e2e/accessibility/teacher-ai-configuration.a11y.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app/presentaciones",
           "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app/presentaciones",
+          "status": "domain",
+          "test_path": "frontend/e2e/teacher-ai-configuration.spec.ts"
         },
         {
           "level": "unit",
@@ -11846,6 +13473,12 @@
           "reference": "/app/presentaciones",
           "status": "domain",
           "test_path": "frontend/src/modules/admin/AdminAIConfigPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/presentaciones",
+          "status": "domain",
+          "test_path": "frontend/src/modules/profesor_ai/TeacherAIConfigPage.test.tsx"
         }
       ]
     },
@@ -11874,6 +13507,42 @@
           "level": "unit",
           "reference": "/app/recursos/{id}",
           "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_api.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/recursos/{id}",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_concurrency.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/recursos/{id}",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_migration.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/recursos/{id}",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_secret_safety.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/recursos/{id}",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_job_configuration_snapshot.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/recursos/{id}",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_ai_configuration_resolver.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/recursos/{id}",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_nginx_security_config.py"
         },
         {
@@ -11891,8 +13560,20 @@
         {
           "level": "e2e",
           "reference": "/app/recursos/{id}",
+          "status": "domain",
+          "test_path": "frontend/e2e/accessibility/teacher-ai-configuration.a11y.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app/recursos/{id}",
           "status": "direct",
           "test_path": "frontend/e2e/student-activity-delivery.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app/recursos/{id}",
+          "status": "domain",
+          "test_path": "frontend/e2e/teacher-ai-configuration.spec.ts"
         },
         {
           "level": "unit",
@@ -11905,6 +13586,12 @@
           "reference": "/app/recursos/{id}",
           "status": "direct",
           "test_path": "frontend/src/modules/evaluaciones/ResolverEvaluacionPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/recursos/{id}",
+          "status": "domain",
+          "test_path": "frontend/src/modules/profesor_ai/TeacherAIConfigPage.test.tsx"
         }
       ]
     },
@@ -11934,6 +13621,42 @@
           "level": "unit",
           "reference": "/app/reportes",
           "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_api.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/reportes",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_concurrency.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/reportes",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_migration.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/reportes",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_secret_safety.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/reportes",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_job_configuration_snapshot.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/reportes",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_ai_configuration_resolver.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/reportes",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_nginx_security_config.py"
         },
         {
@@ -11951,8 +13674,20 @@
         {
           "level": "e2e",
           "reference": "/app/reportes",
+          "status": "domain",
+          "test_path": "frontend/e2e/accessibility/teacher-ai-configuration.a11y.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app/reportes",
           "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app/reportes",
+          "status": "domain",
+          "test_path": "frontend/e2e/teacher-ai-configuration.spec.ts"
         },
         {
           "level": "unit",
@@ -11965,6 +13700,12 @@
           "reference": "/app/reportes",
           "status": "domain",
           "test_path": "frontend/src/modules/admin/AdminAIConfigPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/reportes",
+          "status": "domain",
+          "test_path": "frontend/src/modules/profesor_ai/TeacherAIConfigPage.test.tsx"
         }
       ]
     },
@@ -11993,6 +13734,42 @@
           "level": "unit",
           "reference": "/app/xali",
           "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_api.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/xali",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_concurrency.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/xali",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_migration.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/xali",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_secret_safety.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/xali",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_job_configuration_snapshot.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/xali",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_ai_configuration_resolver.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/xali",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_nginx_security_config.py"
         },
         {
@@ -12010,8 +13787,20 @@
         {
           "level": "e2e",
           "reference": "/app/xali",
+          "status": "domain",
+          "test_path": "frontend/e2e/accessibility/teacher-ai-configuration.a11y.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app/xali",
           "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app/xali",
+          "status": "domain",
+          "test_path": "frontend/e2e/teacher-ai-configuration.spec.ts"
         },
         {
           "level": "unit",
@@ -12024,6 +13813,12 @@
           "reference": "/app/xali",
           "status": "domain",
           "test_path": "frontend/src/modules/admin/AdminAIConfigPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/xali",
+          "status": "domain",
+          "test_path": "frontend/src/modules/profesor_ai/TeacherAIConfigPage.test.tsx"
         }
       ]
     },
@@ -12049,6 +13844,36 @@
         {
           "level": "unit",
           "reference": "/login",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_api.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/login",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_concurrency.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/login",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_migration.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/login",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_secret_safety.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/login",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_job_configuration_snapshot.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/login",
           "status": "direct",
           "test_path": "backend/tests/integration/test_api_contract.py"
         },
@@ -12057,6 +13882,12 @@
           "reference": "/login",
           "status": "direct",
           "test_path": "backend/tests/integration/test_business_flow_smoke.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/login",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_ai_configuration_resolver.py"
         },
         {
           "level": "unit",
@@ -12098,6 +13929,12 @@
           "level": "e2e",
           "reference": "/login",
           "status": "direct",
+          "test_path": "frontend/e2e/accessibility/teacher-ai-configuration.a11y.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/login",
+          "status": "direct",
           "test_path": "frontend/e2e/auth-navigation.spec.ts"
         },
         {
@@ -12125,6 +13962,12 @@
           "test_path": "frontend/e2e/student-activity-delivery.spec.ts"
         },
         {
+          "level": "e2e",
+          "reference": "/login",
+          "status": "direct",
+          "test_path": "frontend/e2e/teacher-ai-configuration.spec.ts"
+        },
+        {
           "level": "unit",
           "reference": "/login",
           "status": "direct",
@@ -12141,6 +13984,12 @@
           "reference": "/login",
           "status": "domain",
           "test_path": "frontend/src/modules/admin/AdminAIConfigPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/login",
+          "status": "domain",
+          "test_path": "frontend/src/modules/profesor_ai/TeacherAIConfigPage.test.tsx"
         }
       ]
     },
@@ -12586,6 +14435,40 @@
       "consumers": [],
       "coverage": "covered",
       "details": {
+        "backend_contract": "backend:DELETE:/profesor/ai-credentials/{provider}",
+        "backend_contract_candidates": [],
+        "contract_status": "matched"
+      },
+      "id": "frontend_call:DELETE:/profesor/ai-credentials/{provider}:frontend/src/modules/profesor_ai/api.ts",
+      "kind": "frontend_call",
+      "owner_spec": "021-configuracion-ia-docente",
+      "signature": "DELETE:/profesor/ai-credentials/{provider}",
+      "source_line": 57,
+      "source_path": "frontend/src/modules/profesor_ai/api.ts",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "DELETE:/profesor/ai-credentials/{provider}",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_ai_configuration_api.py"
+        },
+        {
+          "level": "unit",
+          "reference": "DELETE:/profesor/ai-credentials/{provider}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/profesor_ai/api.test.ts"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "ambiguous"
+      ],
+      "authorization": [],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
         "backend_contract": "backend:DELETE:/xali/history",
         "backend_contract_candidates": [],
         "contract_status": "matched"
@@ -12640,12 +14523,18 @@
       },
       "id": "frontend_call:GET:/admin/ai-audit:frontend/src/modules/admin/api.ts",
       "kind": "frontend_call",
-      "owner_spec": "012-ia-jobs-produccion",
+      "owner_spec": "021-configuracion-ia-docente",
       "signature": "GET:/admin/ai-audit",
-      "source_line": 183,
+      "source_line": 244,
       "source_path": "frontend/src/modules/admin/api.ts",
       "states": [],
       "tests": [
+        {
+          "level": "unit",
+          "reference": "GET:/admin/ai-audit",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_admin_ai_routing.py"
+        },
         {
           "level": "unit",
           "reference": "GET:/admin/ai-audit",
@@ -12682,12 +14571,18 @@
       },
       "id": "frontend_call:GET:/admin/ai-config-hash:frontend/src/modules/admin/api.ts",
       "kind": "frontend_call",
-      "owner_spec": "012-ia-jobs-produccion",
+      "owner_spec": "021-configuracion-ia-docente",
       "signature": "GET:/admin/ai-config-hash",
-      "source_line": 173,
+      "source_line": 234,
       "source_path": "frontend/src/modules/admin/api.ts",
       "states": [],
       "tests": [
+        {
+          "level": "unit",
+          "reference": "GET:/admin/ai-config-hash",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_admin_ai_routing.py"
+        },
         {
           "level": "unit",
           "reference": "GET:/admin/ai-config-hash",
@@ -12724,12 +14619,24 @@
       },
       "id": "frontend_call:GET:/admin/ai-settings:frontend/src/modules/admin/api.ts",
       "kind": "frontend_call",
-      "owner_spec": "012-ia-jobs-produccion",
+      "owner_spec": "021-configuracion-ia-docente",
       "signature": "GET:/admin/ai-settings",
-      "source_line": 115,
+      "source_line": 133,
       "source_path": "frontend/src/modules/admin/api.ts",
       "states": [],
       "tests": [
+        {
+          "level": "unit",
+          "reference": "GET:/admin/ai-settings",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_admin_ai_routing.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/admin/ai-settings",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_ai_configuration_api.py"
+        },
         {
           "level": "unit",
           "reference": "GET:/admin/ai-settings",
@@ -12747,6 +14654,12 @@
           "reference": "GET:/admin/ai-settings",
           "status": "domain",
           "test_path": "frontend/src/modules/admin/AdminAIConfigPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/admin/ai-settings",
+          "status": "direct",
+          "test_path": "frontend/src/modules/admin/api.test.ts"
         }
       ]
     },
@@ -12766,12 +14679,18 @@
       },
       "id": "frontend_call:GET:/admin/ai-usage:frontend/src/modules/admin/api.ts",
       "kind": "frontend_call",
-      "owner_spec": "012-ia-jobs-produccion",
+      "owner_spec": "021-configuracion-ia-docente",
       "signature": "GET:/admin/ai-usage",
-      "source_line": 178,
+      "source_line": 239,
       "source_path": "frontend/src/modules/admin/api.ts",
       "states": [],
       "tests": [
+        {
+          "level": "unit",
+          "reference": "GET:/admin/ai-usage",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_admin_ai_routing.py"
+        },
         {
           "level": "unit",
           "reference": "GET:/admin/ai-usage",
@@ -13315,6 +15234,12 @@
           "level": "e2e",
           "reference": "GET:/auth/me",
           "status": "direct",
+          "test_path": "frontend/e2e/accessibility/teacher-ai-configuration.a11y.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/auth/me",
+          "status": "direct",
           "test_path": "frontend/e2e/auth-navigation.spec.ts"
         },
         {
@@ -13346,6 +15271,12 @@
           "reference": "GET:/auth/me",
           "status": "direct",
           "test_path": "frontend/e2e/student-activity-delivery.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/auth/me",
+          "status": "direct",
+          "test_path": "frontend/e2e/teacher-ai-configuration.spec.ts"
         },
         {
           "level": "unit",
@@ -15154,6 +17085,52 @@
     },
     {
       "actors": [
+        "ambiguous"
+      ],
+      "authorization": [],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
+        "backend_contract": "backend:GET:/profesor/ai-config",
+        "backend_contract_candidates": [],
+        "contract_status": "matched"
+      },
+      "id": "frontend_call:GET:/profesor/ai-config:frontend/src/modules/profesor_ai/api.ts",
+      "kind": "frontend_call",
+      "owner_spec": "021-configuracion-ia-docente",
+      "signature": "GET:/profesor/ai-config",
+      "source_line": 43,
+      "source_path": "frontend/src/modules/profesor_ai/api.ts",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "GET:/profesor/ai-config",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_ai_configuration_api.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/profesor/ai-config",
+          "status": "direct",
+          "test_path": "frontend/e2e/accessibility/teacher-ai-configuration.a11y.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/profesor/ai-config",
+          "status": "direct",
+          "test_path": "frontend/e2e/teacher-ai-configuration.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/profesor/ai-config",
+          "status": "direct",
+          "test_path": "frontend/src/modules/profesor_ai/api.test.ts"
+        }
+      ]
+    },
+    {
+      "actors": [
         "admin",
         "profesor"
       ],
@@ -15331,12 +17308,18 @@
       },
       "id": "frontend_call:PATCH:/admin/ai-config:frontend/src/modules/admin/api.ts",
       "kind": "frontend_call",
-      "owner_spec": "012-ia-jobs-produccion",
+      "owner_spec": "021-configuracion-ia-docente",
       "signature": "PATCH:/admin/ai-config",
-      "source_line": 120,
+      "source_line": 138,
       "source_path": "frontend/src/modules/admin/api.ts",
       "states": [],
       "tests": [
+        {
+          "level": "unit",
+          "reference": "PATCH:/admin/ai-config",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_admin_ai_routing.py"
+        },
         {
           "level": "unit",
           "reference": "PATCH:/admin/ai-config",
@@ -15379,12 +17362,18 @@
       },
       "id": "frontend_call:PATCH:/admin/ai-providers/{id}:frontend/src/modules/admin/api.ts",
       "kind": "frontend_call",
-      "owner_spec": "012-ia-jobs-produccion",
+      "owner_spec": "021-configuracion-ia-docente",
       "signature": "PATCH:/admin/ai-providers/{id}",
-      "source_line": 158,
+      "source_line": 215,
       "source_path": "frontend/src/modules/admin/api.ts",
       "states": [],
       "tests": [
+        {
+          "level": "unit",
+          "reference": "PATCH:/admin/ai-providers/{id}",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_admin_ai_routing.py"
+        },
         {
           "level": "unit",
           "reference": "PATCH:/admin/ai-providers/{id}",
@@ -16282,12 +18271,18 @@
       },
       "id": "frontend_call:POST:/admin/ai-cache/clear:frontend/src/modules/admin/api.ts",
       "kind": "frontend_call",
-      "owner_spec": "012-ia-jobs-produccion",
+      "owner_spec": "021-configuracion-ia-docente",
       "signature": "POST:/admin/ai-cache/clear",
-      "source_line": 168,
+      "source_line": 229,
       "source_path": "frontend/src/modules/admin/api.ts",
       "states": [],
       "tests": [
+        {
+          "level": "unit",
+          "reference": "POST:/admin/ai-cache/clear",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_admin_ai_routing.py"
+        },
         {
           "level": "unit",
           "reference": "POST:/admin/ai-cache/clear",
@@ -16318,12 +18313,18 @@
       },
       "id": "frontend_call:POST:/admin/ai-providers/{providerId}/test:frontend/src/modules/admin/api.ts",
       "kind": "frontend_call",
-      "owner_spec": "012-ia-jobs-produccion",
+      "owner_spec": "021-configuracion-ia-docente",
       "signature": "POST:/admin/ai-providers/{providerId}/test",
-      "source_line": 125,
+      "source_line": 146,
       "source_path": "frontend/src/modules/admin/api.ts",
       "states": [],
       "tests": [
+        {
+          "level": "unit",
+          "reference": "POST:/admin/ai-providers/{providerId}/test",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_admin_ai_routing.py"
+        },
         {
           "level": "unit",
           "reference": "POST:/admin/ai-providers/{providerId}/test",
@@ -16354,12 +18355,18 @@
       },
       "id": "frontend_call:POST:/admin/ai-settings/restore-defaults:frontend/src/modules/admin/api.ts",
       "kind": "frontend_call",
-      "owner_spec": "012-ia-jobs-produccion",
+      "owner_spec": "021-configuracion-ia-docente",
       "signature": "POST:/admin/ai-settings/restore-defaults",
-      "source_line": 163,
+      "source_line": 224,
       "source_path": "frontend/src/modules/admin/api.ts",
       "states": [],
       "tests": [
+        {
+          "level": "unit",
+          "reference": "POST:/admin/ai-settings/restore-defaults",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_admin_ai_routing.py"
+        },
         {
           "level": "unit",
           "reference": "POST:/admin/ai-settings/restore-defaults",
@@ -16371,6 +18378,54 @@
           "reference": "POST:/admin/ai-settings/restore-defaults",
           "status": "domain",
           "test_path": "frontend/src/modules/admin/AdminAIConfigPage.test.tsx"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "admin"
+      ],
+      "authorization": [
+        "RequireRole"
+      ],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
+        "backend_contract": "backend:POST:/admin/ai-settings/restore-previous",
+        "backend_contract_candidates": [],
+        "contract_status": "matched"
+      },
+      "id": "frontend_call:POST:/admin/ai-settings/restore-previous:frontend/src/modules/admin/api.ts",
+      "kind": "frontend_call",
+      "owner_spec": "021-configuracion-ia-docente",
+      "signature": "POST:/admin/ai-settings/restore-previous",
+      "source_line": 220,
+      "source_path": "frontend/src/modules/admin/api.ts",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "POST:/admin/ai-settings/restore-previous",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_admin_ai_routing.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/admin/ai-settings/restore-previous",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_admin_ai_usage_service.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/admin/ai-settings/restore-previous",
+          "status": "domain",
+          "test_path": "frontend/src/modules/admin/AdminAIConfigPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/admin/ai-settings/restore-previous",
+          "status": "direct",
+          "test_path": "frontend/src/modules/admin/api.test.ts"
         }
       ]
     },
@@ -16483,6 +18538,12 @@
           "level": "e2e",
           "reference": "POST:/auth/login",
           "status": "direct",
+          "test_path": "frontend/e2e/accessibility/teacher-ai-configuration.a11y.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/auth/login",
+          "status": "direct",
           "test_path": "frontend/e2e/auth-navigation.spec.ts"
         },
         {
@@ -16508,6 +18569,12 @@
           "reference": "POST:/auth/login",
           "status": "direct",
           "test_path": "frontend/e2e/student-activity-delivery.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/auth/login",
+          "status": "direct",
+          "test_path": "frontend/e2e/teacher-ai-configuration.spec.ts"
         }
       ]
     },
@@ -18294,6 +20361,34 @@
       "consumers": [],
       "coverage": "covered",
       "details": {
+        "backend_contract": "backend:POST:/profesor/ai-providers/{provider}/test",
+        "backend_contract_candidates": [],
+        "contract_status": "matched"
+      },
+      "id": "frontend_call:POST:/profesor/ai-providers/{provider}/test:frontend/src/modules/profesor_ai/api.ts",
+      "kind": "frontend_call",
+      "owner_spec": "021-configuracion-ia-docente",
+      "signature": "POST:/profesor/ai-providers/{provider}/test",
+      "source_line": 64,
+      "source_path": "frontend/src/modules/profesor_ai/api.ts",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "POST:/profesor/ai-providers/{provider}/test",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_ai_configuration_api.py"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "ambiguous"
+      ],
+      "authorization": [],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
         "backend_contract": "backend:POST:/xali/chat",
         "backend_contract_candidates": [],
         "contract_status": "matched"
@@ -18462,12 +20557,24 @@
       },
       "id": "frontend_call:PUT:/admin/ai-features:frontend/src/modules/admin/api.ts",
       "kind": "frontend_call",
-      "owner_spec": "012-ia-jobs-produccion",
+      "owner_spec": "021-configuracion-ia-docente",
       "signature": "PUT:/admin/ai-features",
-      "source_line": 153,
+      "source_line": 207,
       "source_path": "frontend/src/modules/admin/api.ts",
       "states": [],
       "tests": [
+        {
+          "level": "unit",
+          "reference": "PUT:/admin/ai-features",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_admin_ai_routing.py"
+        },
+        {
+          "level": "unit",
+          "reference": "PUT:/admin/ai-features",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_ai_configuration_api.py"
+        },
         {
           "level": "unit",
           "reference": "PUT:/admin/ai-features",
@@ -18479,6 +20586,12 @@
           "reference": "PUT:/admin/ai-features",
           "status": "domain",
           "test_path": "frontend/src/modules/admin/AdminAIConfigPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "PUT:/admin/ai-features",
+          "status": "direct",
+          "test_path": "frontend/src/modules/admin/api.test.ts"
         }
       ]
     },
@@ -18498,12 +20611,18 @@
       },
       "id": "frontend_call:PUT:/admin/ai-providers:frontend/src/modules/admin/api.ts",
       "kind": "frontend_call",
-      "owner_spec": "012-ia-jobs-produccion",
+      "owner_spec": "021-configuracion-ia-docente",
       "signature": "PUT:/admin/ai-providers",
-      "source_line": 141,
+      "source_line": 190,
       "source_path": "frontend/src/modules/admin/api.ts",
       "states": [],
       "tests": [
+        {
+          "level": "unit",
+          "reference": "PUT:/admin/ai-providers",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_admin_ai_routing.py"
+        },
         {
           "level": "unit",
           "reference": "PUT:/admin/ai-providers",
@@ -18519,6 +20638,54 @@
         {
           "level": "unit",
           "reference": "PUT:/admin/ai-providers",
+          "status": "direct",
+          "test_path": "frontend/src/modules/admin/api.test.ts"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "admin"
+      ],
+      "authorization": [
+        "RequireRole"
+      ],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
+        "backend_contract": "backend:PUT:/admin/ai-settings/publish",
+        "backend_contract_candidates": [],
+        "contract_status": "matched"
+      },
+      "id": "frontend_call:PUT:/admin/ai-settings/publish:frontend/src/modules/admin/api.ts",
+      "kind": "frontend_call",
+      "owner_spec": "021-configuracion-ia-docente",
+      "signature": "PUT:/admin/ai-settings/publish",
+      "source_line": 159,
+      "source_path": "frontend/src/modules/admin/api.ts",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "PUT:/admin/ai-settings/publish",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_admin_ai_routing.py"
+        },
+        {
+          "level": "unit",
+          "reference": "PUT:/admin/ai-settings/publish",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_admin_ai_usage_service.py"
+        },
+        {
+          "level": "unit",
+          "reference": "PUT:/admin/ai-settings/publish",
+          "status": "domain",
+          "test_path": "frontend/src/modules/admin/AdminAIConfigPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "PUT:/admin/ai-settings/publish",
           "status": "direct",
           "test_path": "frontend/src/modules/admin/api.test.ts"
         }
@@ -18615,6 +20782,86 @@
     },
     {
       "actors": [
+        "ambiguous"
+      ],
+      "authorization": [],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
+        "backend_contract": "backend:PUT:/profesor/ai-config",
+        "backend_contract_candidates": [],
+        "contract_status": "matched"
+      },
+      "id": "frontend_call:PUT:/profesor/ai-config:frontend/src/modules/profesor_ai/api.ts",
+      "kind": "frontend_call",
+      "owner_spec": "021-configuracion-ia-docente",
+      "signature": "PUT:/profesor/ai-config",
+      "source_line": 48,
+      "source_path": "frontend/src/modules/profesor_ai/api.ts",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "PUT:/profesor/ai-config",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_ai_configuration_api.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "PUT:/profesor/ai-config",
+          "status": "direct",
+          "test_path": "frontend/e2e/accessibility/teacher-ai-configuration.a11y.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PUT:/profesor/ai-config",
+          "status": "direct",
+          "test_path": "frontend/e2e/teacher-ai-configuration.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "PUT:/profesor/ai-config",
+          "status": "direct",
+          "test_path": "frontend/src/modules/profesor_ai/api.test.ts"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "ambiguous"
+      ],
+      "authorization": [],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
+        "backend_contract": "backend:PUT:/profesor/ai-credentials/{provider}",
+        "backend_contract_candidates": [],
+        "contract_status": "matched"
+      },
+      "id": "frontend_call:PUT:/profesor/ai-credentials/{provider}:frontend/src/modules/profesor_ai/api.ts",
+      "kind": "frontend_call",
+      "owner_spec": "021-configuracion-ia-docente",
+      "signature": "PUT:/profesor/ai-credentials/{provider}",
+      "source_line": 53,
+      "source_path": "frontend/src/modules/profesor_ai/api.ts",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "PUT:/profesor/ai-credentials/{provider}",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_ai_configuration_api.py"
+        },
+        {
+          "level": "unit",
+          "reference": "PUT:/profesor/ai-credentials/{provider}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/profesor_ai/api.test.ts"
+        }
+      ]
+    },
+    {
+      "actors": [
         "system"
       ],
       "authorization": [],
@@ -18682,12 +20929,18 @@
       },
       "id": "integration:groq",
       "kind": "integration",
-      "owner_spec": "012-ia-jobs-produccion",
+      "owner_spec": "021-configuracion-ia-docente",
       "signature": "groq",
       "source_line": 1,
       "source_path": "backend/app/services/ai_config_service.py",
       "states": [],
       "tests": [
+        {
+          "level": "unit",
+          "reference": "groq",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_ai_configuration_resolver.py"
+        },
         {
           "level": "unit",
           "reference": "groq",
@@ -18744,7 +20997,7 @@
       },
       "id": "integration:ollama",
       "kind": "integration",
-      "owner_spec": "012-ia-jobs-produccion",
+      "owner_spec": "021-configuracion-ia-docente",
       "signature": "ollama",
       "source_line": 1,
       "source_path": "backend/app/services/ai_config_service.py",
@@ -18780,7 +21033,31 @@
           "level": "unit",
           "reference": "open_code",
           "status": "direct",
+          "test_path": "backend/tests/integration/test_admin_ai_routing.py"
+        },
+        {
+          "level": "unit",
+          "reference": "open_code",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_ai_configuration_concurrency.py"
+        },
+        {
+          "level": "unit",
+          "reference": "open_code",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_ai_job_configuration_snapshot.py"
+        },
+        {
+          "level": "unit",
+          "reference": "open_code",
+          "status": "direct",
           "test_path": "backend/tests/unit/test_admin_ai_usage_service.py"
+        },
+        {
+          "level": "unit",
+          "reference": "open_code",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_ai_configuration_resolver.py"
         },
         {
           "level": "unit",
@@ -18807,10 +21084,28 @@
           "test_path": "backend/tests/unit/test_photo_grading_failures.py"
         },
         {
+          "level": "unit",
+          "reference": "open_code",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_teacher_ai_credentials.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "open_code",
+          "status": "direct",
+          "test_path": "frontend/e2e/accessibility/teacher-ai-configuration.a11y.spec.ts"
+        },
+        {
           "level": "e2e",
           "reference": "open_code",
           "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "open_code",
+          "status": "direct",
+          "test_path": "frontend/e2e/teacher-ai-configuration.spec.ts"
         },
         {
           "level": "unit",
@@ -18823,6 +21118,18 @@
           "reference": "open_code",
           "status": "direct",
           "test_path": "frontend/src/modules/admin/api.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "open_code",
+          "status": "direct",
+          "test_path": "frontend/src/modules/profesor_ai/TeacherAIConfigPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "open_code",
+          "status": "direct",
+          "test_path": "frontend/src/modules/profesor_ai/api.test.ts"
         }
       ]
     },
@@ -18838,12 +21145,18 @@
       },
       "id": "integration:openai",
       "kind": "integration",
-      "owner_spec": "012-ia-jobs-produccion",
+      "owner_spec": "021-configuracion-ia-docente",
       "signature": "openai",
       "source_line": 1,
       "source_path": "backend/app/services/ai_config_service.py",
       "states": [],
       "tests": [
+        {
+          "level": "unit",
+          "reference": "openai",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_ai_configuration_secret_safety.py"
+        },
         {
           "level": "unit",
           "reference": "openai",
@@ -18873,6 +21186,12 @@
           "reference": "openai",
           "status": "direct",
           "test_path": "backend/tests/unit/test_presentaciones_router.py"
+        },
+        {
+          "level": "unit",
+          "reference": "openai",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_teacher_ai_credentials.py"
         },
         {
           "level": "e2e",
@@ -19000,7 +21319,7 @@
       "kind": "job",
       "owner_spec": "012-ia-jobs-produccion",
       "signature": "tasks.digitalize_evaluation",
-      "source_line": 249,
+      "source_line": 255,
       "source_path": "backend/app/workers/tasks_digitalization.py",
       "states": [
         "cancelled",
@@ -19205,7 +21524,7 @@
       "kind": "job",
       "owner_spec": "012-ia-jobs-produccion",
       "signature": "tasks.grade_batch",
-      "source_line": 629,
+      "source_line": 637,
       "source_path": "backend/app/workers/tasks_grading.py",
       "states": [
         "cancelled",
@@ -19291,6 +21610,43 @@
       ],
       "authorization": [],
       "consumers": [],
+      "coverage": "covered",
+      "details": {
+        "active": false,
+        "class": "migration_only",
+        "constraints": [],
+        "enum_refs": [],
+        "historical_only": true,
+        "identity": [],
+        "indexes": [],
+        "migrations": [
+          "backend/alembic/versions/202608250004_ai_configuration_history.py"
+        ],
+        "relationships": [],
+        "unique": []
+      },
+      "id": "table:ai_configuration_versions",
+      "kind": "table",
+      "owner_spec": "002-arquitectura-roles-seguridad",
+      "signature": "ai_configuration_versions",
+      "source_line": 19,
+      "source_path": "backend/alembic/versions/202608250004_ai_configuration_history.py",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "ai_configuration_versions",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_ai_configuration_migration.py"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "system"
+      ],
+      "authorization": [],
+      "consumers": [],
       "coverage": "missing",
       "details": {
         "active": false,
@@ -19308,7 +21664,7 @@
       },
       "id": "table:ai_feature_routing",
       "kind": "table",
-      "owner_spec": "002-arquitectura-roles-seguridad",
+      "owner_spec": "021-configuracion-ia-docente",
       "signature": "ai_feature_routing",
       "source_line": 41,
       "source_path": "backend/alembic/versions/202606290008_admin_ai_config_providers.py",
@@ -19411,6 +21767,43 @@
       ],
       "authorization": [],
       "consumers": [],
+      "coverage": "covered",
+      "details": {
+        "active": false,
+        "class": "migration_only",
+        "constraints": [],
+        "enum_refs": [],
+        "historical_only": true,
+        "identity": [],
+        "indexes": [],
+        "migrations": [
+          "backend/alembic/versions/202608250001_teacher_ai_configuration.py"
+        ],
+        "relationships": [],
+        "unique": []
+      },
+      "id": "table:ai_provider_models",
+      "kind": "table",
+      "owner_spec": "021-configuracion-ia-docente",
+      "signature": "ai_provider_models",
+      "source_line": 35,
+      "source_path": "backend/alembic/versions/202608250001_teacher_ai_configuration.py",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "ai_provider_models",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_ai_configuration_migration.py"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "system"
+      ],
+      "authorization": [],
+      "consumers": [],
       "coverage": "missing",
       "details": {
         "active": false,
@@ -19428,7 +21821,7 @@
       },
       "id": "table:ai_provider_settings",
       "kind": "table",
-      "owner_spec": "002-arquitectura-roles-seguridad",
+      "owner_spec": "021-configuracion-ia-docente",
       "signature": "ai_provider_settings",
       "source_line": 20,
       "source_path": "backend/alembic/versions/202606290008_admin_ai_config_providers.py",
@@ -21469,7 +23862,7 @@
       ],
       "authorization": [],
       "consumers": [],
-      "coverage": "missing",
+      "coverage": "covered",
       "details": {
         "active": false,
         "class": "migration_only",
@@ -21486,12 +23879,93 @@
       },
       "id": "table:profesor_ai_configs",
       "kind": "table",
-      "owner_spec": "002-arquitectura-roles-seguridad",
+      "owner_spec": "021-configuracion-ia-docente",
       "signature": "profesor_ai_configs",
       "source_line": 227,
       "source_path": "backend/alembic/versions/202606290002_phases_3_to_8.py",
       "states": [],
-      "tests": []
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "profesor_ai_configs",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_ai_configuration_migration.py"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "system"
+      ],
+      "authorization": [],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
+        "active": false,
+        "class": "migration_only",
+        "constraints": [],
+        "enum_refs": [],
+        "historical_only": true,
+        "identity": [],
+        "indexes": [],
+        "migrations": [
+          "backend/alembic/versions/202608250001_teacher_ai_configuration.py"
+        ],
+        "relationships": [],
+        "unique": []
+      },
+      "id": "table:profesor_ai_credentials",
+      "kind": "table",
+      "owner_spec": "021-configuracion-ia-docente",
+      "signature": "profesor_ai_credentials",
+      "source_line": 72,
+      "source_path": "backend/alembic/versions/202608250001_teacher_ai_configuration.py",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "profesor_ai_credentials",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_ai_configuration_migration.py"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "system"
+      ],
+      "authorization": [],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
+        "active": false,
+        "class": "migration_only",
+        "constraints": [],
+        "enum_refs": [],
+        "historical_only": true,
+        "identity": [],
+        "indexes": [],
+        "migrations": [
+          "backend/alembic/versions/202608250001_teacher_ai_configuration.py"
+        ],
+        "relationships": [],
+        "unique": []
+      },
+      "id": "table:profesor_ai_feature_preferences",
+      "kind": "table",
+      "owner_spec": "021-configuracion-ia-docente",
+      "signature": "profesor_ai_feature_preferences",
+      "source_line": 94,
+      "source_path": "backend/alembic/versions/202608250001_teacher_ai_configuration.py",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "profesor_ai_feature_preferences",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_ai_configuration_migration.py"
+        }
+      ]
     },
     {
       "actors": [

@@ -27,6 +27,7 @@ const MateriaDbaPage = lazy(() => import('@/modules/materias/MateriaDbaPage').th
 const UnirseMateriaPage = lazy(() => import('@/modules/materias/UnirseMateriaPage').then((m) => ({ default: m.UnirseMateriaPage })));
 const EvaluacionesPage = lazy(() => import('@/modules/evaluaciones/EvaluacionesPage').then((m) => ({ default: m.EvaluacionesPage })));
 const ResolverEvaluacionPage = lazy(() => import('@/modules/evaluaciones/ResolverEvaluacionPage').then((m) => ({ default: m.ResolverEvaluacionPage })));
+const TeacherAIConfigPage = lazy(() => import('@/modules/profesor_ai/TeacherAIConfigPage').then((m) => ({ default: m.TeacherAIConfigPage })));
 const AdminAIConfigPage = lazy(() => import('@/modules/admin/AdminAIConfigPage').then((m) => ({ default: m.AdminAIConfigPage })));
 const BoletinPage = lazy(() => import('@/modules/calificaciones/BoletinPage').then((m) => ({ default: m.BoletinPage })));
 const CalificacionesWorkspace = lazy(() => import('@/modules/calificaciones/CalificacionesWorkspace').then((m) => ({ default: m.CalificacionesWorkspace })));
@@ -109,6 +110,7 @@ export const router = createBrowserRouter([
           {
             element: <RequireRole allow={['profesor', 'admin']} />,
             children: [
+              { path: 'configuracion-ia', element: lazyPage(<TeacherAIConfigPage />) },
               { path: 'herramientas', element: lazyPage(<ListPage />) },
               { path: 'herramientas/nuevo', element: lazyPage(<GeneratePage />) },
               { path: 'herramientas/:id', element: lazyPage(<DetailPage />) },

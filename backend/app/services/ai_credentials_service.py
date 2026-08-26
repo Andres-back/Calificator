@@ -139,3 +139,65 @@ async def get_effective_ai_credentials(db: AsyncSession | None = None) -> Effect
         cloudflare_account_id=account_id,
         sources=sources,
     )
+
+async def list_teacher_ai_credentials(db: AsyncSession, teacher_id: Any) -> list[dict[str, Any]]:
+    """Return only masked metadata for credentials owned by one teacher."""
+    result = await db.execute(
+        text(
+            "SELECT provider_id, last_four, last_test_status, last_test_latency_ms, last_test_at "
+            "FROM profesor_ai_credentials WHERE profesor_id=:teacher AND active=true ORDER BY provider_id"
+        ),
+        {"teacher": str(teacher_id)},
+    )
+    return [
+        {**dict(row._mapping), "configured": True}
+        for row in result.fetchall()
+    ]
+
+
+async def upsert_teacher_ai_credential(
+    db: AsyncSession,
+    *,
+    teacher_id: Any,
+    provider_id: str,
+    api_key: str,
+    account_id: str | None = None,
+) -> None:
+    """Encrypt and atomically replace a teacher-owned provider credential."""
+    normalized = api_key.strip()
+    await db.execute(
+        text(
+            "INSERT INTO profesor_ai_credentials "
+            "(profesor_id, provider_id, secret_encrypted, account_id_encrypted, last_four, active, updated_at) "
+            "VALUES (:teacher, :provider, :secret, :account, :last_four, true, NOW()) "
+            "ON CONFLICT (profesor_id, provider_id) DO UPDATE SET "
+            "secret_encrypted=EXCLUDED.secret_encrypted, account_id_encrypted=EXCLUDED.account_id_encrypted, "
+            "last_four=EXCLUDED.last_four, active=true, last_test_status=NULL, last_test_error_code=NULL, updated_at=NOW()"
+        ),
+        {
+            "teacher": str(teacher_id),
+            "provider": provider_id,
+            "secret": encrypt_ai_secret(normalized),
+            "account": encrypt_ai_secret(account_id) if account_id else None,
+            "last_four": normalized[-4:] if len(normalized) >= 4 else normalized,
+        },
+    )
+
+
+async def delete_teacher_ai_credential(db: AsyncSession, *, teacher_id: Any, provider_id: str) -> bool:
+    result = await db.execute(
+        text("DELETE FROM profesor_ai_credentials WHERE profesor_id=:teacher AND provider_id=:provider"),
+        {"teacher": str(teacher_id), "provider": provider_id},
+    )
+    return bool(result.rowcount)
+
+
+async def get_teacher_ai_credential(db: AsyncSession, *, teacher_id: Any, provider_id: str) -> str:
+    value = await db.scalar(
+        text(
+            "SELECT secret_encrypted FROM profesor_ai_credentials "
+            "WHERE profesor_id=:teacher AND provider_id=:provider AND active=true"
+        ),
+        {"teacher": str(teacher_id), "provider": provider_id},
+    )
+    return decrypt_ai_secret(str(value)) if value else ""
