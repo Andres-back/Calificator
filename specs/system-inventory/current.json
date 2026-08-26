@@ -1,7 +1,7 @@
 {
   "counts": {
     "by_coverage": {
-      "covered": 356,
+      "covered": 357,
       "missing": 51
     },
     "by_kind": {
@@ -9,10 +9,10 @@
       "frontend_call": 128,
       "frontend_route": 27,
       "integration": 7,
-      "job": 8,
+      "job": 9,
       "table": 39
     },
-    "total": 407
+    "total": 408
   },
   "exceptions": [],
   "findings": [
@@ -45,28 +45,6 @@
         "backend:GET:/reportes/materia/{materia_id}",
         "backend:POST:/impacto/encuestas",
         "backend:POST:/reportes/export/pdf"
-      ]
-    },
-    {
-      "category": "missing_coverage",
-      "description": "13 superficies de 012-ia-jobs-produccion no tienen evidencia de prueba observable.",
-      "id": "F-6F8144DB6610",
-      "issue_url": "",
-      "severity": "low",
-      "surface_ids": [
-        "backend:GET:/jobs/{job_id}",
-        "backend:GET:/jobs/{job_id}/estado",
-        "backend:POST:/jobs/{job_id}/cancelar",
-        "frontend_call:GET:/jobs/{jobId}:frontend/src/modules/evaluaciones/components/DigitalizationJobMonitor.tsx",
-        "integration:celery",
-        "job:tasks.assign_overdue_grades",
-        "job:tasks.digitalize_evaluation",
-        "job:tasks.export_report",
-        "job:tasks.generate_image",
-        "job:tasks.generate_presentation",
-        "job:tasks.get_ai_config_version",
-        "job:tasks.grade_batch",
-        "job:tasks.ingest_rag"
       ]
     },
     {
@@ -141,6 +119,28 @@
         "table:profesor_ai_configs",
         "table:profesor_ai_credentials",
         "table:profesor_ai_feature_preferences"
+      ]
+    },
+    {
+      "category": "missing_coverage",
+      "description": "13 superficies de 012-ia-jobs-produccion no tienen evidencia de prueba observable.",
+      "id": "F-DA30765F9F33",
+      "issue_url": "",
+      "severity": "low",
+      "surface_ids": [
+        "backend:GET:/jobs/{job_id}",
+        "backend:GET:/jobs/{job_id}/estado",
+        "backend:POST:/jobs/{job_id}/cancelar",
+        "frontend_call:GET:/jobs/{jobId}:frontend/src/modules/evaluaciones/components/DigitalizationJobMonitor.tsx",
+        "job:tasks.assign_overdue_grades",
+        "job:tasks.digitalize_evaluation",
+        "job:tasks.export_report",
+        "job:tasks.generate_image",
+        "job:tasks.generate_presentation",
+        "job:tasks.get_ai_config_version",
+        "job:tasks.grade_batch",
+        "job:tasks.ingest_rag",
+        "job:tasks.recover_stale_grading_jobs"
       ]
     },
     {
@@ -288,7 +288,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "c3ebd7c1419369bad1ce63241f7a560feea9bc50aaa9322ff92916ef009e148f",
+  "source_digest": "c5f7791d5e0ae221014a0665564a378d1a169b4ae74a288fea138538d606954d",
   "surfaces": [
     {
       "actors": [
@@ -20866,7 +20866,7 @@
       ],
       "authorization": [],
       "consumers": [],
-      "coverage": "missing",
+      "coverage": "covered",
       "details": {
         "detected_token": "celery"
       },
@@ -20877,7 +20877,14 @@
       "source_line": 1,
       "source_path": "backend/app/workers/tasks_ai_config.py",
       "states": [],
-      "tests": []
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "celery",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_tasks_grading.py"
+        }
+      ]
     },
     {
       "actors": [
@@ -21524,7 +21531,7 @@
       "kind": "job",
       "owner_spec": "012-ia-jobs-produccion",
       "signature": "tasks.grade_batch",
-      "source_line": 637,
+      "source_line": 672,
       "source_path": "backend/app/workers/tasks_grading.py",
       "states": [
         "cancelled",
@@ -21567,6 +21574,48 @@
       "signature": "tasks.ingest_rag",
       "source_line": 5,
       "source_path": "backend/app/workers/tasks_rag.py",
+      "states": [
+        "cancelled",
+        "failed",
+        "success"
+      ],
+      "tests": []
+    },
+    {
+      "actors": [
+        "system"
+      ],
+      "authorization": [],
+      "consumers": [],
+      "coverage": "missing",
+      "details": {
+        "bind": false,
+        "effects": [
+          "not_observed"
+        ],
+        "function": "recover_stale_grading_jobs",
+        "idempotency_evidence": [
+          "not_observed"
+        ],
+        "retry_policy": [
+          "not_observed"
+        ],
+        "terminal_states": [
+          "cancelled",
+          "failed",
+          "success"
+        ],
+        "triggers": [
+          "beat:recover-stale-grading-jobs",
+          "celery_queue"
+        ]
+      },
+      "id": "job:tasks.recover_stale_grading_jobs",
+      "kind": "job",
+      "owner_spec": "012-ia-jobs-produccion",
+      "signature": "tasks.recover_stale_grading_jobs",
+      "source_line": 763,
+      "source_path": "backend/app/workers/tasks_grading.py",
       "states": [
         "cancelled",
         "failed",

@@ -409,3 +409,127 @@ def test_run_and_dispose_always_releases_async_engine(monkeypatch) -> None:
         asyncio.run(tasks_grading._run_and_dispose())
 
     assert events == ["disposed-detach", "disposed-close"]
+
+
+def test_batch_persists_failure_when_job_preparation_raises(monkeypatch) -> None:
+    db = FakeDB()
+    job_id = uuid4()
+    delivery_id = uuid4()
+    finished: list[dict] = []
+    retried: list[object] = []
+
+    monkeypatch.setattr(tasks_grading, "AsyncSessionLocal", lambda: SessionContext(db))
+
+    async def queue_time(_db, _job_id):
+        return 25
+
+    async def broken_input(_db, _job_id):
+        raise RuntimeError("uuid query failed")
+
+    async def fake_retry(_db, item_id, _error):
+        retried.append(item_id)
+
+    async def fake_finish(_db, _job_id, **kwargs):
+        finished.append(kwargs)
+        return True
+
+    monkeypatch.setattr(tasks_grading.jobs_service, "get_job_queue_time_ms", queue_time)
+    monkeypatch.setattr(tasks_grading.jobs_service, "get_job_input", broken_input)
+    monkeypatch.setattr(tasks_grading.jobs_service, "finish_job", fake_finish)
+    monkeypatch.setattr(tasks_grading, "_mark_delivery_for_retry", fake_retry)
+
+    with pytest.raises(RuntimeError, match="uuid query failed"):
+        asyncio.run(
+            tasks_grading._grade_batch_async(
+                evaluacion_id=uuid4(),
+                estudiante_ids=[],
+                entrega_ids=[delivery_id],
+                job_id=job_id,
+                profesor_id=uuid4(),
+            )
+        )
+
+    assert retried == [delivery_id]
+    assert finished[0]["estado"] == JobEstado.FAILED.value
+    assert finished[0]["resultado_json"]["terminal_reason"] == "processing_failed"
+
+
+def test_duplicate_celery_claim_does_not_run_grading_pipeline(monkeypatch) -> None:
+    db = FakeDB()
+    job_id = uuid4()
+
+    monkeypatch.setattr(tasks_grading, "AsyncSessionLocal", lambda: SessionContext(db))
+
+    async def queue_time(_db, _job_id):
+        return 10
+
+    async def job_input(_db, _job_id):
+        return {}
+
+    async def running_state(_db, _job_id):
+        return JobEstado.RUNNING.value
+
+    async def other_claim(_db, _job_id):
+        return "original-celery-task"
+
+    async def exploding_load(*_args, **_kwargs):
+        raise AssertionError("A duplicate task must not load or grade deliveries")
+
+    monkeypatch.setattr(tasks_grading.jobs_service, "get_job_queue_time_ms", queue_time)
+    monkeypatch.setattr(tasks_grading.jobs_service, "get_job_input", job_input)
+    monkeypatch.setattr(tasks_grading.jobs_service, "get_job_state", running_state)
+    monkeypatch.setattr(tasks_grading.jobs_service, "get_job_claim_token", other_claim)
+    monkeypatch.setattr(tasks_grading, "_load_deliveries", exploding_load)
+
+    result = asyncio.run(
+        tasks_grading._grade_batch_async(
+            evaluacion_id=uuid4(),
+            estudiante_ids=[],
+            entrega_ids=[uuid4()],
+            job_id=job_id,
+            profesor_id=uuid4(),
+            claim_token="duplicate-celery-task",
+        )
+    )
+
+    assert result["status"] == JobEstado.RUNNING.value
+    assert result["processed"] == 0
+
+
+def test_recovery_republishes_each_leased_job_only_once(monkeypatch) -> None:
+    job_id = uuid4()
+    teacher_id = uuid4()
+    evaluation_id = uuid4()
+    delivery_id = uuid4()
+    batches = iter(
+        [
+            ([{
+                "id": job_id,
+                "user_id": teacher_id,
+                "input_json": {
+                    "evaluacion_id": str(evaluation_id),
+                    "entrega_ids": [str(delivery_id)],
+                    "estudiante_ids": [],
+                },
+            }], 0),
+            ([], 0),
+        ]
+    )
+    enqueued: list[dict] = []
+
+    async def leased_jobs():
+        return next(batches)
+
+    def enqueue(*, kwargs):
+        enqueued.append(kwargs)
+
+    monkeypatch.setattr(tasks_grading, "_claim_stale_grading_jobs", leased_jobs)
+    monkeypatch.setattr(tasks_grading.grade_batch, "apply_async", enqueue)
+
+    first = tasks_grading.recover_stale_grading_jobs.run()
+    second = tasks_grading.recover_stale_grading_jobs.run()
+
+    assert first == {"selected": 1, "recovered": 1, "invalid": 0}
+    assert second == {"selected": 0, "recovered": 0, "invalid": 0}
+    assert len(enqueued) == 1
+    assert enqueued[0]["job_id"] == str(job_id)

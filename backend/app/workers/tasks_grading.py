@@ -260,6 +260,8 @@ async def _mark_delivery_for_retry(
     current = (
         entrega.visual_text_json if isinstance(entrega.visual_text_json, dict) else {}
     )
+    if current.get("pipeline_status") not in {"queued", "running"}:
+        return
     failed_payload = {
         **current,
         "pipeline_status": "failed",
@@ -356,6 +358,7 @@ async def _grade_batch_async(
     entrega_ids: list[UUID],
     job_id: UUID | None,
     profesor_id: UUID | None,
+    claim_token: str | None = None,
     progress_callback: ProgressCallback | None = None,
 ) -> dict:
     async with AsyncSessionLocal() as db:
@@ -366,12 +369,6 @@ async def _grade_batch_async(
         }
         job_fallbacks: list[dict[str, str]] = []
         job_ai_config: dict | None = None
-        if job_id:
-            job_timings["queue"] = await jobs_service.get_job_queue_time_ms(db, job_id)
-            job_input = await jobs_service.get_job_input(db, job_id)
-            snapshot = job_input.get("_ai_config")
-            if isinstance(snapshot, dict):
-                job_ai_config = snapshot
 
         def build_result(**values) -> dict:
             job_timings["total"] = max(
@@ -392,6 +389,8 @@ async def _grade_batch_async(
                 "deadline_ms": None,
                 "slow_after_ms": int(settings.PHOTO_GRADING_SLOW_WARNING_SECONDS) * 1000,
             })
+            if claim_token:
+                payload["claim_token"] = claim_token
             return payload
 
         def record_grade_telemetry(calificacion: Calificacion) -> None:
@@ -414,6 +413,14 @@ async def _grade_batch_async(
         calificacion_ids: list[str] = []
         try:
             if job_id:
+                job_timings["queue"] = await jobs_service.get_job_queue_time_ms(
+                    db, job_id
+                )
+                job_input = await jobs_service.get_job_input(db, job_id)
+                snapshot = job_input.get("_ai_config")
+                if isinstance(snapshot, dict):
+                    job_ai_config = snapshot
+
                 state = await jobs_service.get_job_state(db, job_id)
                 if state == JobEstado.CANCELLED.value:
                     return await _cancelled_result(
@@ -436,8 +443,27 @@ async def _grade_batch_async(
                         calificacion_ids=[],
                     )
                 if state == JobEstado.QUEUED.value:
-                    await jobs_service.mark_job_running(db, job_id)
+                    claimed = (
+                        await jobs_service.claim_job_running(
+                            db, job_id, claim_token=claim_token
+                        )
+                        if claim_token
+                        else await jobs_service.mark_job_running(db, job_id)
+                    )
                     await db.commit()
+                    if claim_token and not claimed:
+                        state = await jobs_service.get_job_state(db, job_id)
+                if state == JobEstado.RUNNING.value and claim_token:
+                    owner = await jobs_service.get_job_claim_token(db, job_id)
+                    if owner != claim_token:
+                        return build_result(
+                            evaluacion_id=evaluacion_id,
+                            status_value=JobEstado.RUNNING.value,
+                            processed=0,
+                            skipped=0,
+                            errors=[],
+                            calificacion_ids=[],
+                        )
 
             evaluacion = await db.scalar(
                 select(Evaluacion)
@@ -600,6 +626,15 @@ async def _grade_batch_async(
         except Exception as exc:
             await db.rollback()
             if job_id:
+                for entrega_id in entrega_ids:
+                    try:
+                        await _mark_delivery_for_retry(db, entrega_id, str(exc))
+                    except Exception:  # noqa: BLE001
+                        logger.warning(
+                            "Could not mark delivery recoverable after batch failure",
+                            extra={"entrega_id": str(entrega_id), "job_id": str(job_id)},
+                            exc_info=True,
+                        )
                 result = build_result(
                     evaluacion_id=evaluacion_id,
                     status_value=JobEstado.FAILED.value,
@@ -667,6 +702,7 @@ def grade_batch(
                 entrega_ids=[UUID(value) for value in raw_deliveries],
                 job_id=UUID(job_id) if job_id else None,
                 profesor_id=UUID(profesor_id) if profesor_id else None,
+                claim_token=str(self.request.id) if self.request.id and job_id else None,
                 progress_callback=publish,
             )
         )
@@ -685,3 +721,70 @@ def grade_batch(
             "errors": [{"error": str(exc)[:500]}],
             "requires_teacher_review": 0,
         }
+
+
+async def _claim_stale_grading_jobs() -> tuple[list[dict], int]:
+    await engine.dispose(close=False)
+    try:
+        async with AsyncSessionLocal() as db:
+            rows = await jobs_service.claim_stale_queued_jobs(
+                db,
+                tipo="calificacion_lote",
+                stale_seconds=settings.AI_JOB_QUEUED_RECOVERY_SECONDS,
+                limit=settings.AI_JOB_RECOVERY_BATCH_SIZE,
+            )
+            valid: list[dict] = []
+            invalid = 0
+            for row in rows:
+                payload = row.get("input_json")
+                payload = payload if isinstance(payload, dict) else {}
+                if payload.get("evaluacion_id") and (
+                    payload.get("entrega_ids") or payload.get("estudiante_ids")
+                ):
+                    valid.append(row)
+                    continue
+                invalid += 1
+                await jobs_service.finish_job(
+                    db,
+                    row["id"],
+                    estado=JobEstado.FAILED.value,
+                    resultado_json={
+                        "status": JobEstado.FAILED.value,
+                        "terminal_reason": "invalid_persisted_input",
+                    },
+                    error="El trabajo no contiene identificadores suficientes para recuperarse",
+                )
+            await db.commit()
+            return valid, invalid
+    finally:
+        await engine.dispose()
+
+
+@celery_app.task(name="tasks.recover_stale_grading_jobs")
+def recover_stale_grading_jobs() -> dict:
+    """Republish grading jobs that persisted but never started."""
+    rows, invalid = asyncio.run(_claim_stale_grading_jobs())
+    recovered = 0
+    for row in rows:
+        payload = row.get("input_json")
+        payload = payload if isinstance(payload, dict) else {}
+        evaluacion_id = payload.get("evaluacion_id")
+        entrega_ids = payload.get("entrega_ids") or []
+        estudiante_ids = payload.get("estudiante_ids") or []
+        try:
+            grade_batch.apply_async(
+                kwargs={
+                    "evaluacion_id": str(evaluacion_id),
+                    "estudiante_ids": [str(value) for value in estudiante_ids],
+                    "entrega_ids": [str(value) for value in entrega_ids],
+                    "job_id": str(row["id"]),
+                    "profesor_id": str(row["user_id"]) if row.get("user_id") else None,
+                }
+            )
+            recovered += 1
+        except Exception:  # noqa: BLE001
+            logger.exception(
+                "Could not republish stale grading job",
+                extra={"job_id": str(row.get("id"))},
+            )
+    return {"selected": len(rows), "recovered": recovered, "invalid": invalid}

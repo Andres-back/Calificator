@@ -23,6 +23,7 @@ ALL_SPECS = {
     "017-decoracion-frontend",
     "018-recursos-calificacion-fluida",
     "021-configuracion-ia-docente",
+    "022-recuperar-trabajos-ia",
 }
 OWNED_SPECS = {
     name
@@ -32,7 +33,7 @@ OWNED_SPECS = {
 }
 
 
-def test_baseline_contains_exactly_nineteen_active_specs() -> None:
+def test_baseline_contains_exactly_twenty_active_specs() -> None:
     found = {path.name for path in (ROOT / "specs").iterdir() if path.is_dir() and path.name[:3].isdigit()}
     assert found == ALL_SPECS
 
