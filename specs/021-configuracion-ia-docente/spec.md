@@ -124,3 +124,8 @@ Como administrador y docente quiero conocer qué configuración atendió cada tr
 - El sistema no garantiza acceso desde el servidor a un Ollama instalado únicamente en el computador personal del docente.
 - El fallback institucional desde una ruta personal requiere consentimiento del docente y permiso global; nunca ocurre de manera silenciosa.
 - La adopción será progresiva por capacidad y dispondrá de una reversión inmediata al comportamiento institucional actual.
+
+
+## Inventario técnico
+
+Las superficies de backend, frontend, datos y trabajos propiedad de esta especificación se mantienen en [inventory.md](./inventory.md).
