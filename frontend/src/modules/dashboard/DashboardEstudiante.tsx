@@ -43,6 +43,25 @@ export function DashboardEstudiante() {
 
   return (
     <div className="space-y-7">
+      {user?.solicitud_docente_estado && (
+        <section
+          aria-live="polite"
+          className={user.solicitud_docente_estado === 'pendiente'
+            ? 'rounded-2xl border border-amber-300 bg-amber-50 p-4 text-amber-900 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-100'
+            : user.solicitud_docente_estado === 'aprobada'
+              ? 'rounded-2xl border border-emerald-300 bg-emerald-50 p-4 text-emerald-900 dark:border-emerald-500/40 dark:bg-emerald-500/10 dark:text-emerald-100'
+              : 'rounded-2xl border border-border bg-surface-2 p-4 text-fg'}
+        >
+          <p className="font-bold">Solicitud docente {user.solicitud_docente_estado}</p>
+          <p className="mt-1 text-sm leading-6">
+            {user.solicitud_docente_estado === 'pendiente'
+              ? 'Un administrador está revisando tu solicitud. Tu cuenta continúa disponible como estudiante.'
+              : user.solicitud_docente_estado === 'aprobada'
+                ? 'Tu solicitud fue aprobada. Cierra sesión y vuelve a ingresar para actualizar tu espacio docente.'
+                : user.solicitud_docente_motivo || 'La solicitud no fue aprobada; tu cuenta continúa disponible como estudiante.'}
+          </p>
+        </section>
+      )}
       {/* Hero */}
       <motion.div
         initial={{ opacity: 0, y: 16 }}

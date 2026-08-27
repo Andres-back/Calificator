@@ -8,6 +8,7 @@ import {
   Presentation,
   FileText,
   ClipboardCheck,
+  UsersRound,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -30,6 +31,7 @@ export const profesorNav: NavItem[] = [
 
 export const adminNav: NavItem[] = [
   { label: 'Inicio', to: '/app', icon: LayoutDashboard },
+  { label: 'Usuarios y roles', to: '/app/admin/usuarios', icon: UsersRound },
   { label: 'IA y credenciales', to: '/app/admin/configuracion-ia', icon: Settings2 },
   { label: 'Presentaciones', to: '/app/presentaciones', icon: Presentation },
   { label: 'Reportes', to: '/app/reportes', icon: BarChart3 },

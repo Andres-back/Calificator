@@ -1,13 +1,14 @@
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
-import { Activity, AlertTriangle, Bot, FileText, GitCompareArrows, Presentation, Settings2, ShieldCheck, Sparkles } from 'lucide-react';
+import { Activity, AlertTriangle, Bot, FileText, GitCompareArrows, Presentation, Settings2, ShieldCheck, UsersRound, Sparkles } from 'lucide-react';
 import { ActionCard, AlertCard, Badge, Card, MetricCard, Skeleton } from '@/components/ui';
 import { getAIAudit, getAISettings, getConfigHash } from '@/modules/admin/api';
 import { toApiError } from '@/lib/api';
 import { useAuth } from '@/stores/auth';
 
 const quickLinks = [
+  { to: '/app/admin/usuarios', label: 'Usuarios y roles', description: 'Aprobar docentes y administrar accesos', icon: UsersRound, tone: 'bg-violet-50 text-violet-600 dark:bg-violet-500/15 dark:text-violet-300' },
   { to: '/app/admin/configuracion-ia', label: 'IA y credenciales', description: 'Claves, modelos, ruteo y consistencia', icon: Settings2, tone: 'bg-brand-50 text-brand-600 dark:bg-brand-500/15 dark:text-brand-300' },
   { to: '/app/presentaciones', label: 'Presentaciones', description: 'Revisar generación y exportación', icon: Presentation, tone: 'bg-sky-50 text-sky-600 dark:bg-sky-500/15 dark:text-sky-300' },
   { to: '/app/reportes', label: 'Reportes', description: 'Consultar indicadores disponibles', icon: FileText, tone: 'bg-emerald-50 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-300' },

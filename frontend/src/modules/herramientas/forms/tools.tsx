@@ -252,8 +252,8 @@ export function MapaConceptualForm({ loading, onSubmit }: ToolFormProps) {
     <div className="space-y-5">
       <BaseFields base={b.base} set={b.set} tituloPlaceholder="Mapa conceptual: el sistema solar" />
       <PedagogicalApproachSelector base={b.base} set={b.set} />
-      <FormSection title="Generación automática" hint="La IA construye la estructura jerárquica de conceptos y relaciones.">
-        <p className="text-sm text-muted">Solo necesitas definir el tema arriba. La IA se encarga del resto.</p>
+      <FormSection title="Generación automática" hint="La IA organiza 8 conceptos en tres niveles y conecta cada idea con una relación clara.">
+        <p className="text-sm text-muted">Solo necesitas definir el tema. Recibirás un diagrama a color listo para revisar, editar y descargar.</p>
       </FormSection>
       <ExtraInstructions value={b.base.instrucciones_adicionales} onChange={(v) => b.set('instrucciones_adicionales', v)} />
       <GenerateButton loading={loading} disabled={!b.valid} onClick={() => onSubmit({ ...b.payload() })} />

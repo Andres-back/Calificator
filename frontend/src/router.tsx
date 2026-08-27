@@ -9,7 +9,9 @@ import { routes } from '@/config/routes';
 import { ForbiddenPage } from '@/pages/ForbiddenPage';
 import { NotFoundPage } from '@/pages/NotFoundPage';
 
+const LandingPage = lazy(() => import('@/modules/auth/LandingPage').then((m) => ({ default: m.LandingPage })));
 const LoginPage = lazy(() => import('@/modules/auth/LoginPage').then((m) => ({ default: m.LoginPage })));
+const RegisterPage = lazy(() => import('@/modules/auth/RegisterPage').then((m) => ({ default: m.RegisterPage })));
 const DashboardPage = lazy(() => import('@/modules/dashboard/DashboardPage').then((m) => ({ default: m.DashboardPage })));
 const ListPage = lazy(() => import('@/modules/herramientas/ListPage').then((m) => ({ default: m.ListPage })));
 const GeneratePage = lazy(() => import('@/modules/herramientas/GeneratePage').then((m) => ({ default: m.GeneratePage })));
@@ -28,6 +30,7 @@ const UnirseMateriaPage = lazy(() => import('@/modules/materias/UnirseMateriaPag
 const EvaluacionesPage = lazy(() => import('@/modules/evaluaciones/EvaluacionesPage').then((m) => ({ default: m.EvaluacionesPage })));
 const ResolverEvaluacionPage = lazy(() => import('@/modules/evaluaciones/ResolverEvaluacionPage').then((m) => ({ default: m.ResolverEvaluacionPage })));
 const TeacherAIConfigPage = lazy(() => import('@/modules/profesor_ai/TeacherAIConfigPage').then((m) => ({ default: m.TeacherAIConfigPage })));
+const AdminUsersPage = lazy(() => import('@/modules/admin/AdminUsersPage').then((m) => ({ default: m.AdminUsersPage })));
 const AdminAIConfigPage = lazy(() => import('@/modules/admin/AdminAIConfigPage').then((m) => ({ default: m.AdminAIConfigPage })));
 const BoletinPage = lazy(() => import('@/modules/calificaciones/BoletinPage').then((m) => ({ default: m.BoletinPage })));
 const CalificacionesWorkspace = lazy(() => import('@/modules/calificaciones/CalificacionesWorkspace').then((m) => ({ default: m.CalificacionesWorkspace })));
@@ -39,7 +42,9 @@ const AnalyticsPage = lazy(() => import('@/modules/analytics/AnalyticsPage').the
 const lazyPage = (el: React.ReactNode) => <Suspense fallback={<LoadingScreen />}>{el}</Suspense>;
 
 export const router = createBrowserRouter([
+  { path: routes.home, element: lazyPage(<LandingPage />), errorElement: <RouterErrorBoundary /> },
   { path: routes.login, element: lazyPage(<LoginPage />), errorElement: <RouterErrorBoundary /> },
+  { path: routes.register, element: lazyPage(<RegisterPage />), errorElement: <RouterErrorBoundary /> },
 
   /* ── Páginas de error fuera del AppShell ── */
   { path: routes.notFound, element: lazyPage(<NotFoundPage />) },
@@ -103,6 +108,7 @@ export const router = createBrowserRouter([
             element: <RequireRole allow={['admin']} />,
             children: [
               { path: 'admin/configuracion-ia', element: lazyPage(<AdminAIConfigPage />) },
+              { path: 'admin/usuarios', element: lazyPage(<AdminUsersPage />) },
             ],
           },
 
@@ -131,8 +137,6 @@ export const router = createBrowserRouter([
     ],
   },
 
-  /* ── Redirecciones raíz ── */
-  { path: '/', element: <Navigate to={routes.app} replace /> },
   { path: '*', element: lazyPage(<NotFoundPage />) },
 ], {
   future: {

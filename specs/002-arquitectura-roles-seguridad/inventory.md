@@ -2,7 +2,7 @@
 
 > Archivo generado por `python scripts/build_system_inventory.py --write`. No editar manualmente.
 
-**Superficies propietarias:** 21
+**Superficies propietarias:** 23
 
 | Tipo | Firma | Actores | Cobertura | Fuente |
 |---|---|---|---|---|
@@ -10,10 +10,12 @@
 | endpoint | `GET:/health` | public | missing | `backend/app/main.py:40` |
 | endpoint | `GET:/openapi.json` | public | missing | `backend/app/main.py:56` |
 | endpoint | `GET:/redoc` | public | missing | `backend/app/main.py:50` |
-| frontend_route | `/` | public | covered | `frontend/src/router.tsx:135` |
-| frontend_route | `/app` | authenticated | covered | `frontend/src/config/routes.ts:11` |
-| frontend_route | `/app/403` | estudiante | covered | `frontend/src/config/routes.ts:12` |
-| frontend_route | `/app/404` | estudiante | covered | `frontend/src/config/routes.ts:13` |
+| frontend_route | `/` | public | covered | `frontend/src/config/routes.ts:8` |
+| frontend_route | `/app` | authenticated | covered | `frontend/src/config/routes.ts:13` |
+| frontend_route | `/app/403` | estudiante | covered | `frontend/src/config/routes.ts:14` |
+| frontend_route | `/app/404` | estudiante | covered | `frontend/src/config/routes.ts:15` |
+| frontend_route | `/app/admin/usuarios` | admin | covered | `frontend/src/config/routes.ts:56` |
+| frontend_route | `/registro` | public | covered | `frontend/src/config/routes.ts:10` |
 | integration | `cloudflare` | system | covered | `backend/app/core/config.py:1` |
 | integration | `open_code` | system | covered | `backend/app/core/config.py:1` |
 | integration | `redis` | system | covered | `backend/app/core/config.py:1` |
@@ -35,4 +37,4 @@ Sin decisiones explícitas de permiso para este dominio.
 ## Hallazgos
 
 - **low · missing_coverage**: 10 superficies de 002-arquitectura-roles-seguridad no tienen evidencia de prueba observable.
-- **low · orphan_candidate**: 17 superficies no alcanzables o históricas se conservan como candidatas a retiro.
+- **low · orphan_candidate**: 18 superficies no alcanzables o históricas se conservan como candidatas a retiro.

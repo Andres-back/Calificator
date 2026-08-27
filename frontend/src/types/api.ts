@@ -1,15 +1,27 @@
 /** Tipos compartidos del API de XCalificator. */
 
 export type UserRole = 'admin' | 'profesor' | 'estudiante';
+export type UserStatus = 'activo' | 'inactivo';
+export type TeacherRequestStatus = 'pendiente' | 'aprobada' | 'rechazada';
 
 export interface User {
   id: string;
   nombre: string;
   email: string;
   rol: UserRole;
-  estado: string;
+  estado: UserStatus;
+  solicitud_docente_estado?: TeacherRequestStatus | null;
+  solicitud_docente_solicitada_at?: string | null;
+  solicitud_docente_resuelta_at?: string | null;
+  solicitud_docente_revisada_por?: string | null;
+  solicitud_docente_motivo?: string | null;
   created_at?: string;
   updated_at?: string;
+}
+
+export interface TeacherRequestDecision {
+  decision: 'aprobar' | 'rechazar';
+  motivo?: string;
 }
 
 export interface AuthResponse {

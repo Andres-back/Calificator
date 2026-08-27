@@ -1,34 +1,56 @@
 import secrets
+from datetime import datetime, timezone
 
 from fastapi import HTTPException, Response, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
-from app.core.security import create_access_token, create_refresh_token, decode_token, verify_password
+from app.core.security import (
+    create_access_token,
+    create_refresh_token,
+    decode_token,
+    verify_password,
+)
 from app.modules.auth.schemas import RegisterRequest
 from app.modules.users import service as user_service
 from app.modules.users.models import User
 from app.modules.users.schemas import UserCreate
-from app.shared.constants import COOKIE_ACCESS_NAME, COOKIE_CSRF_NAME, COOKIE_REFRESH_NAME
-from app.shared.enums import UserRole
+from app.shared.constants import (
+    COOKIE_ACCESS_NAME,
+    COOKIE_CSRF_NAME,
+    COOKIE_REFRESH_NAME,
+)
+from app.shared.enums import SolicitudDocenteEstado, UserEstado, UserRole
 
 
 async def authenticate_user(db: AsyncSession, email: str, password: str) -> User | None:
     user = await user_service.get_user_by_email(db, email)
-    if not user or not verify_password(password, user.password_hash):
+    if (
+        not user
+        or user.estado != UserEstado.ACTIVO.value
+        or not verify_password(password, user.password_hash)
+    ):
         return None
     return user
 
 
 async def register_public_user(db: AsyncSession, payload: RegisterRequest) -> User:
-    # SEC-001: privilege is assigned server-side; public input cannot choose a role.
+    # La cuenta pública nace siempre como estudiante. La solicitud no concede privilegios.
     student = UserCreate(
         nombre=payload.nombre,
         email=payload.email,
         password=payload.password,
         rol=UserRole.ESTUDIANTE,
     )
-    return await user_service.create_user(db, student)
+    user = await user_service.create_user(db, student, commit=False)
+    if payload.solicitar_docente:
+        user.solicitud_docente_estado = SolicitudDocenteEstado.PENDIENTE.value
+        user.solicitud_docente_solicitada_at = datetime.now(timezone.utc).replace(
+            tzinfo=None
+        )
+    await db.commit()
+    await db.refresh(user)
+    return user
 
 
 def set_auth_cookies(response: Response, user: User) -> None:
@@ -71,8 +93,10 @@ async def refresh_session(db: AsyncSession, refresh_token: str) -> User:
         ) from exc
 
     user = await db.get(User, user_id)
-    if not user:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
+    if not user or user.estado != UserEstado.ACTIVO.value:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Inactive or missing user"
+        )
     return user
 
 

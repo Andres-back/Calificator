@@ -2,7 +2,7 @@
 
 > Archivo generado por `python scripts/build_system_inventory.py --write`. No editar manualmente.
 
-**Superficies propietarias:** 49
+**Superficies propietarias:** 52
 
 | Tipo | Firma | Actores | Cobertura | Fuente |
 |---|---|---|---|---|
@@ -26,16 +26,19 @@
 | endpoint | `PUT:/admin/ai-settings/publish` | admin | covered | `backend/app/modules/admin_ai_config/router.py:466` |
 | endpoint | `PUT:/profesor/ai-config` | profesor | covered | `backend/app/modules/admin_ai_config/router.py:856` |
 | endpoint | `PUT:/profesor/ai-credentials/{provider}` | profesor | covered | `backend/app/modules/admin_ai_config/router.py:921` |
-| frontend_route | `/app/admin/configuracion-ia` | admin | covered | `frontend/src/config/routes.ts:53` |
-| frontend_route | `/app/configuracion-ia` | authenticated | covered | `frontend/src/config/routes.ts:54` |
+| frontend_route | `/app/admin/configuracion-ia` | admin | covered | `frontend/src/config/routes.ts:55` |
+| frontend_route | `/app/configuracion-ia` | authenticated | covered | `frontend/src/config/routes.ts:57` |
 | frontend_call | `DELETE:/profesor/ai-credentials/{provider}` | ambiguous | covered | `frontend/src/modules/profesor_ai/api.ts:57` |
 | frontend_call | `GET:/admin/ai-audit` | admin | covered | `frontend/src/modules/admin/api.ts:244` |
 | frontend_call | `GET:/admin/ai-config-hash` | admin | covered | `frontend/src/modules/admin/api.ts:234` |
 | frontend_call | `GET:/admin/ai-settings` | admin | covered | `frontend/src/modules/admin/api.ts:133` |
 | frontend_call | `GET:/admin/ai-usage` | admin | covered | `frontend/src/modules/admin/api.ts:239` |
+| frontend_call | `GET:/admin/users` | admin | covered | `frontend/src/modules/admin/usersApi.ts:15` |
 | frontend_call | `GET:/profesor/ai-config` | ambiguous | covered | `frontend/src/modules/profesor_ai/api.ts:43` |
 | frontend_call | `PATCH:/admin/ai-config` | admin | covered | `frontend/src/modules/admin/api.ts:138` |
 | frontend_call | `PATCH:/admin/ai-providers/{id}` | admin | covered | `frontend/src/modules/admin/api.ts:215` |
+| frontend_call | `PATCH:/admin/users/{id}/solicitud-docente` | admin | covered | `frontend/src/modules/admin/usersApi.ts:25` |
+| frontend_call | `PATCH:/admin/users/{id}` | admin | covered | `frontend/src/modules/admin/usersApi.ts:20` |
 | frontend_call | `POST:/admin/ai-cache/clear` | admin | covered | `frontend/src/modules/admin/api.ts:229` |
 | frontend_call | `POST:/admin/ai-providers/{providerId}/test` | admin | covered | `frontend/src/modules/admin/api.ts:146` |
 | frontend_call | `POST:/admin/ai-settings/restore-defaults` | admin | covered | `frontend/src/modules/admin/api.ts:224` |
@@ -63,4 +66,4 @@ Sin decisiones explícitas de permiso para este dominio.
 ## Hallazgos
 
 - **low · missing_coverage**: 5 superficies de 021-configuracion-ia-docente no tienen evidencia de prueba observable.
-- **low · orphan_candidate**: 17 superficies no alcanzables o históricas se conservan como candidatas a retiro.
+- **low · orphan_candidate**: 18 superficies no alcanzables o históricas se conservan como candidatas a retiro.

@@ -28,6 +28,8 @@ actualizar la especificación propietaria, su plan y sus tareas; no debe crear d
 | 022 | [Hotfix de recuperación de trabajos IA](022-recuperar-trabajos-ia/spec.md) | corrección del ciclo de vida propiedad de 012 | estados existentes de calificación y digitalización | sin tablas nuevas; `ai_jobs`, entregas y resultados existentes | [#31](https://github.com/Andres-back/Calificator/issues/31) |
 | 023 | [Hotfix de calificación visual rápida](023-calificacion-vision-rapida/spec.md) | corrección de enrutamiento propiedad de 008, 012 y 020 | jobs de calificación, selección de modelos y estados terminales | migración condicional de rutas IA; sin cambios de API | [#33](https://github.com/Andres-back/Calificator/issues/33) |
 
+| 024 | [Landing pública, solicitudes docentes y mapas conceptuales](024-landing-publica-mapas/spec.md) | auth, users y herramientas | `/`, `/registro`, `/app/admin/usuarios` y vista de mapa | `users` y metadatos de mapas | [#35](https://github.com/Andres-back/Calificator/issues/35) |
+
 ## Reglas de propiedad
 
 - Cada módulo backend, módulo frontend, familia de endpoints y tabla activa pertenece a una fila.

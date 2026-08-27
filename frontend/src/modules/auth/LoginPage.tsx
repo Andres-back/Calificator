@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { BookOpenCheck, Eye, EyeOff, GraduationCap, LockKeyhole, Mail, School2, ShieldCheck, Sparkles } from 'lucide-react';
@@ -7,6 +7,7 @@ import { Button, Card, Field, Input, LoadingScreen, ThemeToggle } from '@/compon
 import { toApiError } from '@/lib/api';
 import { useAuth } from '@/stores/auth';
 import type { UserRole } from '@/types/api';
+import { routes } from '@/config/routes';
 
 const LAST_EMAIL_KEY = 'xcalificator:last-login-email';
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -223,6 +224,11 @@ export function LoginPage() {
                   Iniciar sesión
                 </Button>
               </form>
+
+              <p className="mt-5 text-center text-sm text-muted">
+                ¿Aún no tienes cuenta? <Link to={routes.register} className="font-bold text-brand-600 hover:underline dark:text-brand-300">Regístrate aquí</Link>
+              </p>
+              <p className="mt-2 text-center text-xs"><Link to={routes.home} className="text-muted hover:text-fg hover:underline">Volver al inicio</Link></p>
 
               <div className="mt-5 flex items-center justify-between gap-3 text-xs text-muted">
                 <span>Tu contraseña nunca se guarda en este dispositivo.</span>
