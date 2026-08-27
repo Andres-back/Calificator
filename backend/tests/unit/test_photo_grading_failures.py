@@ -208,6 +208,86 @@ def test_both_failed_graders_return_no_score(monkeypatch) -> None:
     assert result.raw_model_output["grader_a_failed"] is True
 
 
+def test_composite_job_snapshot_routes_vision_and_grading_models(monkeypatch) -> None:
+    _configure_orchestrator(monkeypatch)
+    vision_models: list[str] = []
+    grader_models: list[str] = []
+    verifier_models: list[str] = []
+
+    async def successful_vision(*_args, model: str, **_kwargs):
+        vision_models.append(model)
+        return AgentResult(
+            nota_sugerida=None,
+            confianza=0.95,
+            feedback_estudiante="",
+            proveedor="opencode",
+            modelo=model,
+            raw_output={
+                "usable": True,
+                "texto_extraido": "1. Respuesta visible",
+                "respuestas_detectadas": [],
+            },
+            requiere_revision_docente=False,
+        )
+
+    async def successful_grader(*_args, model: str, **_kwargs):
+        grader_models.append(model)
+        return AgentResult(
+            nota_sugerida=4.5,
+            confianza=0.9,
+            feedback_estudiante="Bien.",
+            proveedor="opencode",
+            modelo=model,
+            requiere_revision_docente=False,
+        )
+
+    async def successful_verifier(_ctx, primary, *, model: str, **_kwargs):
+        verifier_models.append(model)
+        return AgentResult(
+            nota_sugerida=primary.nota_sugerida,
+            confianza=0.9,
+            feedback_estudiante="",
+            proveedor="opencode",
+            modelo=model,
+            requiere_revision_docente=False,
+            raw_output={"requiere_arbitraje": False},
+        )
+
+    monkeypatch.setattr(orchestrator, "vision_agent", successful_vision)
+    monkeypatch.setattr(orchestrator, "grader_agent", successful_grader)
+    monkeypatch.setattr(orchestrator, "verification_agent", successful_verifier)
+
+    result = asyncio.run(
+        orchestrator.orchestrate_grading(
+            object(),
+            evaluacion_id=uuid4(),
+            materia_id=uuid4(),
+            blueprint={"nombre": "Prueba", "nota_maxima": 5},
+            image_bytes=b"image",
+            ai_config={
+                "schema_version": 2,
+                "vision": {
+                    "primary": {
+                        "provider": "open_code",
+                        "model": "deepseek-v4-flash-vision-exp",
+                    },
+                },
+                "grading": {
+                    "primary": {
+                        "provider": "open_code",
+                        "model": "grading-model",
+                    },
+                },
+            },
+        )
+    )
+
+    assert result.nota_sugerida == Decimal("4.5")
+    assert vision_models == ["deepseek-v4-flash-vision-exp"]
+    assert grader_models == ["grading-model"]
+    assert verifier_models == ["grading-model"]
+
+
 def test_configured_grader_router_recovers_when_opencode_fails(monkeypatch) -> None:
     monkeypatch.setattr(
         orchestrator.settings,
@@ -564,7 +644,7 @@ def test_photo_pipeline_uses_deepseek_extraction_and_fast_flash_verifier(monkeyp
 
     assert vision_models == ["deepseek-v4-flash-vision-exp"]
     assert grader_calls == [
-        ("deepseek-v4-flash", False),
+        ("deepseek-v4-flash-vision-exp", False),
     ]
     assert result.raw_model_output["strategy"]["secondary_mode"] == "fast_verifier"
     assert result.raw_model_output["strategy"]["arbiter_invoked"] is False
@@ -684,7 +764,7 @@ def test_online_pipeline_uses_deepseek_without_vision(monkeypatch) -> None:
     )
 
     assert grader_calls == [
-        ("deepseek-v4-flash", False),
+        ("deepseek-v4-flash-vision-exp", False),
     ]
     assert result.raw_model_output["strategy"]["secondary_mode"] == "fast_verifier"
     assert result.raw_model_output["strategy"]["arbiter_invoked"] is False

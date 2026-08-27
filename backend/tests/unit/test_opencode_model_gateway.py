@@ -94,6 +94,28 @@ def test_deepseek_keeps_openai_chat_completions() -> None:
     assert result is payload
 
 
+def test_deepseek_vision_disables_hidden_reasoning() -> None:
+    payload = {
+        "choices": [{"message": {"content": '{"usable": true}'}}],
+        "usage": {"prompt_tokens": 8, "completion_tokens": 3},
+    }
+
+    _result, call = _run_chat("deepseek-v4-flash-vision-exp", payload)
+
+    assert call["json"]["thinking"] == {"type": "disabled"}
+
+
+def test_regular_deepseek_does_not_receive_experimental_thinking_flag() -> None:
+    payload = {
+        "choices": [{"message": {"content": '{"nota_sugerida": 4}'}}],
+        "usage": {},
+    }
+
+    _result, call = _run_chat("deepseek-v4-flash", payload)
+
+    assert "thinking" not in call["json"]
+
+
 def test_multimodal_content_is_converted_to_anthropic_image_source() -> None:
     converted = _to_anthropic_content([
         {"type": "text", "text": "Pagina 1"},

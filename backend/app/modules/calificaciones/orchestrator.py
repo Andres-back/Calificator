@@ -1,9 +1,9 @@
 """Orquestador de calificación multi-agente.
 
 Pipeline:
-  1. Vision Agent (qwen3.7-plus; fallbacks qwen3.6-plus/mimo-v2.5) → extrae evidencia
-  2. DeepSeek V4 Flash produce el desglose transparente sobre la extracción
-  3. Un verificador Flash compacto comprueba puntajes y fórmula
+  1. DeepSeek V4 Flash Vision Exp extrae la evidencia con fallbacks configurables
+  2. El modelo textual configurado produce el desglose transparente
+  3. Un verificador compacto comprueba puntajes y formula
   4. DeepSeek V4 Pro arbitra solo discrepancias, baja confianza o fallos
 
 La imagen se procesa una sola vez; los modelos textuales reciben únicamente evidencia normalizada.
@@ -440,66 +440,106 @@ async def orchestrate_grading(
     pipeline_run_id = str(uuid.uuid4())
     pipeline_started = time.monotonic()
     ai_snapshot: dict = dict(ai_config) if ai_config else {}
-    resolved_open_code_key = ""
-    fallback_open_code_key = ""
-    personal_open_code_route = False
+    vision_snapshot: dict = dict(ai_snapshot.get("vision") or ai_snapshot)
+    grading_snapshot: dict = dict(ai_snapshot.get("grading") or {})
     if user_id is not None or ai_snapshot:
         try:
             from app.services.ai_configuration_resolver import resolve_ai_configuration
             from app.services.ai_credentials_service import get_effective_ai_credentials, get_teacher_ai_credential
 
             if not ai_snapshot:
-                ai_snapshot = await resolve_ai_configuration(
+                vision_snapshot = await resolve_ai_configuration(
                     db, feature="calificacion_foto", teacher_id=user_id
                 )
-            selected = ai_snapshot.get("primary") or {}
-            fallback = ai_snapshot.get("fallback") or {}
-            if selected.get("provider") == "open_code" and selected.get("model"):
-                vision_model = str(selected["model"])
-            effective_credentials = await get_effective_ai_credentials(db)
-            institutional_open_code_key = effective_credentials.open_code_key
-            resolved_open_code_key = institutional_open_code_key
-            personal_open_code_route = (
-                selected.get("provider") == "open_code"
-                and selected.get("credential_source") == "teacher"
-            )
-            if personal_open_code_route:
-                teacher_secret = (
-                    await get_teacher_ai_credential(
-                        db, teacher_id=user_id, provider_id="open_code"
-                    )
-                    if user_id is not None
-                    else ""
+                grading_snapshot = await resolve_ai_configuration(
+                    db, feature="calificacion_texto", teacher_id=user_id
                 )
-                resolved_open_code_key = teacher_secret
+                ai_snapshot = {
+                    "schema_version": 2,
+                    "pipeline": "calificacion_foto",
+                    "vision": vision_snapshot,
+                    "grading": grading_snapshot,
+                }
+
+            vision_selected = vision_snapshot.get("primary") or {}
+            grading_selected = grading_snapshot.get("primary") or {}
+            if (
+                vision_selected.get("provider") == "open_code"
+                and vision_selected.get("model")
+            ):
+                vision_model = str(vision_selected["model"])
+            if (
+                grading_selected.get("provider") == "open_code"
+                and grading_selected.get("model")
+            ):
+                grader_a_model = str(grading_selected["model"])
+                verifier_model = str(grading_selected["model"])
+                grading_fallback = grading_snapshot.get("fallback") or {}
                 if (
-                    fallback.get("provider") == "open_code"
-                    and fallback.get("credential_source") == "institutional"
+                    grading_fallback.get("provider") == "open_code"
+                    and grading_fallback.get("model")
                 ):
-                    if teacher_secret:
-                        fallback_open_code_key = institutional_open_code_key
-                    else:
-                        resolved_open_code_key = institutional_open_code_key
-                        ai_snapshot = {
-                            **ai_snapshot,
-                            "runtime_fallback": {
-                                "reason": "teacher_credential_unavailable",
-                                "credential_source": "institutional",
-                            },
-                        }
+                    grader_b_model = str(grading_fallback["model"])
+
         except Exception as exc:
             logger.warning("Grading AI configuration unavailable; using institutional defaults: %s", type(exc).__name__)
+
+    vision_client = OpenCodeClient(tracking={
+        "pipeline_run_id": pipeline_run_id,
+        "evaluacion_id": str(evaluacion_id),
+        "calificacion_id": None,
+        "teacher_id": str(user_id) if user_id else None,
+        "_ai_config": vision_snapshot,
+    })
     client = OpenCodeClient(tracking={
         "pipeline_run_id": pipeline_run_id,
         "evaluacion_id": str(evaluacion_id),
-        "calificacion_id": None,  # se asigna después de crear la calificación
+        "calificacion_id": None,
         "teacher_id": str(user_id) if user_id else None,
-        "_ai_config": ai_snapshot,
+        "_ai_config": grading_snapshot,
     })
-    if personal_open_code_route or resolved_open_code_key:
-        client.api_key = resolved_open_code_key
-    if fallback_open_code_key:
-        client.fallback_api_key = fallback_open_code_key
+
+    if user_id is not None or ai_snapshot:
+        try:
+            institutional_key = (
+                await get_effective_ai_credentials(db)
+            ).open_code_key
+            teacher_secret: str | None = None
+
+            async def configure_open_code_client(
+                target: OpenCodeClient,
+                snapshot: dict,
+            ) -> None:
+                nonlocal teacher_secret
+                selected = snapshot.get("primary") or {}
+                fallback = snapshot.get("fallback") or {}
+                target.api_key = institutional_key
+                if (
+                    selected.get("provider") == "open_code"
+                    and selected.get("credential_source") == "teacher"
+                    and user_id is not None
+                ):
+                    if teacher_secret is None:
+                        teacher_secret = await get_teacher_ai_credential(
+                            db,
+                            teacher_id=user_id,
+                            provider_id="open_code",
+                        )
+                    if teacher_secret:
+                        target.api_key = teacher_secret
+                        if (
+                            fallback.get("provider") == "open_code"
+                            and fallback.get("credential_source") == "institutional"
+                        ):
+                            target.fallback_api_key = institutional_key
+
+            await configure_open_code_client(vision_client, vision_snapshot)
+            await configure_open_code_client(client, grading_snapshot)
+        except Exception as exc:
+            logger.warning(
+                "Grading AI credentials unavailable; using environment defaults: %s",
+                type(exc).__name__,
+            )
     try:
         # ── Paso 1: RAG (común para todos) ───────────────────────────
         rag_chunks = await build_context_for_grading(
@@ -538,7 +578,7 @@ async def orchestrate_grading(
             vision_result = await vision_agent(
                 ctx,
                 model=vision_model,
-                client=client,
+                client=vision_client,
             )
             if (
                 vision_result.error
@@ -696,6 +736,25 @@ async def orchestrate_grading(
                     "cross_provider_fallback_enabled": (
                         settings.PHOTO_GRADING_CROSS_PROVIDER_FALLBACK_ENABLED
                     ),
+                    "pipeline_run_id": pipeline_run_id,
+                    "timings_ms": {
+                        "queue": 0,
+                        "prepare": 0,
+                        "extraction": (
+                            vision_result.tiempo_ms if vision_result else 0
+                        ),
+                        "parsing": 0,
+                        "primary": grading_a.tiempo_ms,
+                        "secondary": grading_b.tiempo_ms,
+                        "consolidation": 0,
+                        "persistence": 0,
+                        "total": max(
+                            0,
+                            int(
+                                (time.monotonic() - pipeline_started) * 1000
+                            ),
+                        ),
+                    },
                 }
                 if router_grading is not None:
                     failure_details["router_grader_failed"] = router_grading.error is not None
@@ -906,4 +965,5 @@ async def orchestrate_grading(
             },
         )
     finally:
+        await vision_client.close()
         await client.close()

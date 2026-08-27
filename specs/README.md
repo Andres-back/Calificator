@@ -26,6 +26,7 @@ actualizar la especificación propietaria, su plan y sus tareas; no debe crear d
 | 020 | [Extracción visual robusta con DeepSeek](020-deepseek-vision/spec.md) | adaptador de visión, calificaciones, digitalización y workers | estados de calificación/digitalización existentes | extracción visual, respuestas por página y telemetría | [#27](https://github.com/Andres-back/Calificator/issues/27) |
 | 021 | [Configuración de IA global y por docente](021-configuracion-ia-docente/spec.md) | configuración, catálogo, credenciales y resolvedor de IA | `/app/admin/configuracion-ia` y `/app/configuracion-ia` | `ai_provider_*`, `ai_feature_routing`, `profesor_ai_*` | [#29](https://github.com/Andres-back/Calificator/issues/29) |
 | 022 | [Hotfix de recuperación de trabajos IA](022-recuperar-trabajos-ia/spec.md) | corrección del ciclo de vida propiedad de 012 | estados existentes de calificación y digitalización | sin tablas nuevas; `ai_jobs`, entregas y resultados existentes | [#31](https://github.com/Andres-back/Calificator/issues/31) |
+| 023 | [Hotfix de calificación visual rápida](023-calificacion-vision-rapida/spec.md) | corrección de enrutamiento propiedad de 008, 012 y 020 | jobs de calificación, selección de modelos y estados terminales | migración condicional de rutas IA; sin cambios de API | [#33](https://github.com/Andres-back/Calificator/issues/33) |
 
 ## Reglas de propiedad
 

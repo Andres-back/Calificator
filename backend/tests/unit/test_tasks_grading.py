@@ -299,6 +299,66 @@ def test_batch_continues_after_one_delivery_fails(monkeypatch) -> None:
     assert finished[-1]["estado"] == JobEstado.SUCCESS.value
 
 
+def test_batch_fails_when_persisted_grade_has_no_score(monkeypatch) -> None:
+    evaluation = evaluation_fixture()
+    delivery = delivery_fixture()
+    db = FakeDB(scalar_value=evaluation)
+    job_id = uuid4()
+    grade_id = uuid4()
+    finished: list[dict] = []
+
+    monkeypatch.setattr(tasks_grading, "AsyncSessionLocal", lambda: SessionContext(db))
+
+    async def running_state(_db, _job_id):
+        return JobEstado.RUNNING.value
+
+    async def fake_load(*_args, **_kwargs):
+        return [delivery], []
+
+    async def fake_grade(*_args, **_kwargs):
+        return SimpleNamespace(
+            id=grade_id,
+            nota_sugerida=None,
+            resultado_json={
+                "pipeline_status": "requires_review",
+                "motivo_revision": "all_graders_failed",
+            },
+        ), True
+
+    async def fake_progress(*_args, **_kwargs):
+        return True
+
+    async def fake_finish(_db, _job_id, **kwargs):
+        finished.append(kwargs)
+        return True
+
+    monkeypatch.setattr(tasks_grading.jobs_service, "get_job_state", running_state)
+    monkeypatch.setattr(
+        tasks_grading.jobs_service, "update_job_progress", fake_progress
+    )
+    monkeypatch.setattr(tasks_grading.jobs_service, "finish_job", fake_finish)
+    monkeypatch.setattr(tasks_grading, "_load_deliveries", fake_load)
+    monkeypatch.setattr(tasks_grading, "_grade_delivery", fake_grade)
+
+    result = asyncio.run(
+        tasks_grading._grade_batch_async(
+            evaluacion_id=evaluation.id,
+            estudiante_ids=[],
+            entrega_ids=[delivery.id],
+            job_id=job_id,
+            profesor_id=evaluation.profesor_id,
+        )
+    )
+
+    assert result["status"] == JobEstado.FAILED.value
+    assert result["processed"] == 0
+    assert result["failed"] == 1
+    assert result["requires_teacher_review"] == 1
+    assert result["errors"][0]["reason"] == "all_graders_failed"
+    assert str(grade_id) in result["calificacion_ids"]
+    assert finished[-1]["estado"] == JobEstado.FAILED.value
+
+
 def test_batch_honors_cancellation_before_next_delivery(monkeypatch) -> None:
     evaluation = evaluation_fixture()
     delivery = delivery_fixture()

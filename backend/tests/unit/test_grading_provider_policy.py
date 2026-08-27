@@ -17,6 +17,14 @@ def test_grading_and_vision_defaults_prefer_opencode() -> None:
     for feature in ("calificacion_texto", "calificacion_foto", "vision_ocr"):
         assert routes[feature]["primary_provider"] == "open_code"
         assert routes[feature]["fallback_provider"] is None
+    assert (
+        routes["calificacion_foto"]["primary_model"]
+        == "deepseek-v4-flash-vision-exp"
+    )
+    assert (
+        routes["calificacion_texto"]["primary_model"]
+        == "deepseek-v4-flash-vision-exp"
+    )
 
 def test_presentation_defaults_prefer_opencode_with_groq_fallback() -> None:
     routes = {item["feature"]: item for item in DEFAULT_FEATURES}

@@ -270,7 +270,9 @@ def test_explicit_fallback_is_visible(monkeypatch: pytest.MonkeyPatch) -> None:
     assert result.fallback_used is True
     assert result.fallback_model == "qwen3.7-plus"
     assert calls[0]["model"] == "deepseek-v4-flash-vision-exp"
+    assert calls[0]["thinking"] == {"type": "disabled"}
     assert calls[1]["model"] == "qwen3.7-plus"
+    assert "thinking" not in calls[1]
 
 
 def test_sideways_photo_retries_orientation_without_creating_pages(monkeypatch: pytest.MonkeyPatch) -> None:
