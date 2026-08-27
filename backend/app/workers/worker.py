@@ -19,6 +19,7 @@ celery_app = Celery(
         "app.workers.tasks_ai_config",
         "app.workers.tasks_digitalization",
         "app.workers.tasks_deadlines",
+        "app.workers.tasks_password_recovery",
     ],
 )
 
@@ -38,6 +39,10 @@ celery_app.conf.update(
         "assign-overdue-grades-every-minute": {
             "task": "tasks.assign_overdue_grades",
             "schedule": 60.0,
+        },
+        "cleanup-password-reset-requests": {
+            "task": "tasks.cleanup_password_reset_requests",
+            "schedule": 86400.0,
         },
         "recover-stale-grading-jobs": {
             "task": "tasks.recover_stale_grading_jobs",

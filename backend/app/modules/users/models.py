@@ -2,7 +2,7 @@ from datetime import datetime
 from uuid import uuid4
 from uuid import UUID as PyUUID
 
-from sqlalchemy import CheckConstraint, DateTime, ForeignKey, String, Text, func, text
+from sqlalchemy import CheckConstraint, DateTime, ForeignKey, Integer, String, Text, func, text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -36,6 +36,9 @@ class User(Base):
     password_hash: Mapped[str] = mapped_column(Text, nullable=False)
     rol: Mapped[str] = mapped_column(
         String(30), nullable=False, default=UserRole.ESTUDIANTE.value
+    )
+    auth_version: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=1, server_default=text("1")
     )
     estado: Mapped[str] = mapped_column(
         String(30), nullable=False, default=UserEstado.ACTIVO.value

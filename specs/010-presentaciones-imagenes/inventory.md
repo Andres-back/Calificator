@@ -18,7 +18,7 @@
 | endpoint | `POST:/imagenes/generar` | admin, profesor | missing | `backend/app/modules/imagenes/router.py:27` |
 | endpoint | `POST:/presentaciones` | admin, profesor | covered | `backend/app/modules/presentaciones/router.py:31` |
 | endpoint | `POST:/presentaciones/{presentacion_id}/exportar` | admin, profesor | covered | `backend/app/modules/presentaciones/router.py:120` |
-| frontend_route | `/app/presentaciones` | admin, profesor | covered | `frontend/src/config/routes.ts:53` |
+| frontend_route | `/app/presentaciones` | admin, profesor | covered | `frontend/src/config/routes.ts:55` |
 | frontend_call | `DELETE:/presentaciones/{id}` | admin, profesor | covered | `frontend/src/modules/presentaciones/api.ts:60` |
 | frontend_call | `GET:/presentaciones/{id}/estado` | admin, profesor | covered | `frontend/src/modules/presentaciones/api.ts:28` |
 | frontend_call | `GET:/presentaciones/{id}/preview` | admin, profesor | covered | `frontend/src/modules/presentaciones/api.ts:56` |

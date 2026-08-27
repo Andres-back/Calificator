@@ -20,7 +20,7 @@ interface SessionRequestConfig extends InternalAxiosRequestConfig {
 
 type SessionExpiredHandler = () => void;
 
-const AUTH_PATHS_WITHOUT_REFRESH = ['/auth/login', '/auth/register', '/auth/refresh', '/auth/logout'];
+const AUTH_PATHS_WITHOUT_REFRESH = ['/auth/login', '/auth/register', '/auth/refresh', '/auth/logout', '/auth/password-recovery'];
 const pendingRequestControllers = new Set<AbortController>();
 let refreshPromise: Promise<void> | null = null;
 let sessionExpiredHandler: SessionExpiredHandler | null = null;

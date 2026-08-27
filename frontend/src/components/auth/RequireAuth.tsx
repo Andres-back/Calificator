@@ -2,17 +2,27 @@ import { useEffect } from 'react';
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '@/stores/auth';
 import { LoadingScreen } from '@/components/ui';
+import { routes } from '@/config/routes';
+
+const PUBLIC_PATHS = new Set([
+  routes.home,
+  routes.login,
+  routes.register,
+  routes.requestPasswordReset,
+  routes.resetPassword,
+]);
 
 /** Dispara la verificación de sesión una vez al montar la app. */
 export function AuthBootstrap({ children }: { children: React.ReactNode }) {
   const { status, fetchMe } = useAuth();
-  const isPublicLogin = typeof window !== 'undefined' && window.location.pathname === '/login';
+  const isPublicPath =
+    typeof window !== 'undefined' && PUBLIC_PATHS.has(window.location.pathname);
 
   useEffect(() => {
-    if (status === 'idle' && !isPublicLogin) void fetchMe();
-  }, [status, fetchMe, isPublicLogin]);
+    if (status === 'idle' && !isPublicPath) void fetchMe();
+  }, [status, fetchMe, isPublicPath]);
 
-  if (!isPublicLogin && (status === 'idle' || status === 'loading')) {
+  if (!isPublicPath && (status === 'idle' || status === 'loading')) {
     return (
       <div className="grid min-h-screen place-items-center">
         <LoadingScreen label="Iniciando XCalificator…" />

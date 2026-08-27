@@ -20,6 +20,8 @@ SQL_MANAGED_TABLES = frozenset(
         "ai_usage_events",
         "chat_messages",
         "materiales_generados",
+        "mail_global_config",
+        "password_reset_requests",
         "profesor_ai_configs",
     }
 )

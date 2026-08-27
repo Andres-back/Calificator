@@ -81,6 +81,7 @@ def rate_limit(*, limit: int, window_seconds: int, scope: str) -> RateLimitDepen
             count, retry_after = await _fallback_increment(key, window_seconds)
 
         if count > limit:
+            logger.info("Rate limit applied scope=%s", scope)
             raise HTTPException(
                 status_code=status.HTTP_429_TOO_MANY_REQUESTS,
                 detail="Demasiadas solicitudes. Espera un momento e intenta nuevamente.",

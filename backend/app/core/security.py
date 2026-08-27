@@ -24,34 +24,42 @@ def get_password_hash(password: str) -> str:
     return password_hasher.hash(password)
 
 
-def _create_token(subject: UUID, expires_delta: timedelta, token_type: str) -> str:
-    expire = datetime.now(timezone.utc) + expires_delta
+def _create_token(
+    subject: UUID,
+    expires_delta: timedelta,
+    token_type: str,
+    auth_version: int = 1,
+) -> str:
+    now = datetime.now(timezone.utc)
     payload = {
         "sub": str(subject),
         "type": token_type,
-        "exp": expire,
-        "iat": datetime.now(timezone.utc),
+        "ver": max(1, int(auth_version)),
+        "exp": now + expires_delta,
+        "iat": now,
     }
     return jwt.encode(payload, settings.SECRET_KEY, algorithm=ALGORITHM)
 
 
-def create_access_token(subject: UUID) -> str:
+def create_access_token(subject: UUID, auth_version: int = 1) -> str:
     return _create_token(
         subject=subject,
         expires_delta=timedelta(minutes=settings.JWT_ACCESS_EXPIRE_MINUTES),
         token_type="access",
+        auth_version=auth_version,
     )
 
 
-def create_refresh_token(subject: UUID) -> str:
+def create_refresh_token(subject: UUID, auth_version: int = 1) -> str:
     return _create_token(
         subject=subject,
         expires_delta=timedelta(days=settings.JWT_REFRESH_EXPIRE_DAYS),
         token_type="refresh",
+        auth_version=auth_version,
     )
 
 
-def decode_token(token: str, expected_type: str = "access") -> UUID:
+def decode_token_claims(token: str, expected_type: str = "access") -> tuple[UUID, int]:
     try:
         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[ALGORITHM])
     except PyJWTError as exc:
@@ -64,4 +72,13 @@ def decode_token(token: str, expected_type: str = "access") -> UUID:
     if not subject:
         raise ValueError("Missing subject")
 
-    return UUID(subject)
+    try:
+        version = max(1, int(payload.get("ver", 1)))
+        return UUID(subject), version
+    except (TypeError, ValueError) as exc:
+        raise ValueError("Invalid token claims") from exc
+
+
+def decode_token(token: str, expected_type: str = "access") -> UUID:
+    subject, _version = decode_token_claims(token, expected_type)
+    return subject

@@ -5,7 +5,7 @@ from fastapi import Depends, Header, HTTPException, Request, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.security import decode_token
+from app.core.security import decode_token_claims
 from app.db.session import get_db
 from app.modules.users.models import User
 from app.shared.constants import COOKIE_ACCESS_NAME
@@ -28,7 +28,7 @@ async def get_current_user(
         )
 
     try:
-        user_id: UUID = decode_token(token, expected_type="access")
+        user_id, token_version = decode_token_claims(token, expected_type="access")
     except ValueError as exc:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -36,7 +36,11 @@ async def get_current_user(
         ) from exc
 
     user = await db.get(User, user_id)
-    if not user or user.estado != UserEstado.ACTIVO.value:
+    if (
+        not user
+        or user.estado != UserEstado.ACTIVO.value
+        or int(user.auth_version or 1) != token_version
+    ):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Inactive or missing user",
