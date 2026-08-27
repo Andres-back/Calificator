@@ -24,8 +24,9 @@ def test_public_registration_rejects_role_field() -> None:
 async def test_public_registration_always_creates_student(monkeypatch) -> None:
     captured = {}
 
-    async def create_user(_db, payload):
+    async def create_user(_db, payload, *, commit=True):
         captured["payload"] = payload
+        captured["commit"] = commit
         return object()
 
     monkeypatch.setattr(service.user_service, "create_user", create_user)
@@ -38,3 +39,4 @@ async def test_public_registration_always_creates_student(monkeypatch) -> None:
     await service.register_public_user(AsyncMock(), payload)
 
     assert captured["payload"].rol == UserRole.ESTUDIANTE
+    assert captured["commit"] is False
