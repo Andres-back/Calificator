@@ -106,5 +106,7 @@ describe('renderización de herramientas', () => {
     expect(container).toHaveTextContent(/Evaporación.*se transforma en.*Condensación/);
     expect(container).not.toHaveTextContent('n1');
     expect(container).not.toHaveTextContent('n2');
+    expect(screen.getByTestId('conceptual-map')).toBeVisible();
+    expect(screen.getByRole('heading', { name: 'Nivel 1' })).toBeVisible();
   });
 });

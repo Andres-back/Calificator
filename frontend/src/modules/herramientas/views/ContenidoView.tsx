@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Eye, EyeOff, CheckCircle2 } from 'lucide-react';
+import { AlertTriangle, ArrowDown, CheckCircle2, Eye, EyeOff, Link2 } from 'lucide-react';
 import { Button, Badge } from '@/components/ui';
 import { cn } from '@/lib/cn';
 import type { MaterialTipo } from '@/types/api';
@@ -102,6 +102,8 @@ export interface ToolContent {
   descripcion?: string;
   nodos?: ConceptNodeContent[];
   relaciones?: ConceptRelationContent[];
+  mapa_valido?: boolean;
+  advertencia?: string | null;
   // flashcards
   tarjetas?: { numero: number; anverso: string; reverso: string }[];
 }
@@ -525,51 +527,83 @@ function LecturaContent({ data }: { data: ToolContent }) {
 function MapaConceptualContent({ data }: { data: ToolContent }) {
   const nodes = data.nodos ?? [];
   const relations = data.relaciones ?? [];
-  const names = new Map(nodes.map((node) => [node.id, node.concepto || node.id || 'Concepto']));
-  const levels = Array.from(new Set(nodes.map((node) => Number(node.nivel) || 1))).sort((a, b) => a - b);
+  const names = new Map<string | undefined, string>([['central', data.concepto_principal || 'Concepto principal']]);
+  nodes.forEach((node) => names.set(node.id, node.concepto || node.id || 'Concepto'));
+  const levels = Array.from(new Set(nodes.map((node) => Math.max(1, Math.min(3, Number(node.nivel) || 1))))).sort((a, b) => a - b);
+  const relationFor = (nodeId?: string) => relations.find((relation) => relation.destino === nodeId);
+  const levelTone = [
+    'border-sky-200 bg-sky-50/80 dark:border-sky-500/30 dark:bg-sky-500/10',
+    'border-violet-200 bg-violet-50/80 dark:border-violet-500/30 dark:bg-violet-500/10',
+    'border-amber-200 bg-amber-50/80 dark:border-amber-500/30 dark:bg-amber-500/10',
+  ];
+
   if (nodes.length === 0 && !data.concepto_principal) {
     return <EmptyMaterial message="El mapa no contiene conceptos. Edítalo o vuelve a generarlo." />;
   }
 
   return (
-    <div className="space-y-5">
-      {data.concepto_principal && (
-        <div className="mx-auto max-w-xl rounded-xl border-2 border-brand-300 bg-brand-50 px-5 py-4 text-center shadow-sm dark:border-brand-500/40 dark:bg-brand-500/10">
-          <p className="text-xs font-semibold uppercase tracking-wide text-brand-600 dark:text-brand-300">Concepto principal</p>
-          <p className="mt-1 font-display text-xl font-extrabold text-brand-800 dark:text-brand-200">{data.concepto_principal}</p>
-          {data.descripcion && <p className="mt-2 text-sm leading-6 text-muted">{data.descripcion}</p>}
+    <div className="space-y-5" data-testid="conceptual-map">
+      {data.advertencia && (
+        <div role="status" className="flex gap-3 rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm leading-6 text-amber-900 dark:border-amber-500/35 dark:bg-amber-500/10 dark:text-amber-100">
+          <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0" />
+          <span>{data.advertencia}</span>
         </div>
       )}
-      {levels.map((level) => (
-        <section key={level} aria-label={`Nivel ${level}`}>
-          <div className="mb-2 flex items-center gap-3">
-            <span className="h-px flex-1 bg-border" />
-            <Badge tone="brand">Nivel {level}</Badge>
-            <span className="h-px flex-1 bg-border" />
-          </div>
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {nodes.filter((node) => (Number(node.nivel) || 1) === level).map((node, index) => (
-              <Block key={node.id || `${level}-${index}`} i={index} className="text-center">
-                <p className="font-display font-bold">{node.concepto || `Concepto ${index + 1}`}</p>
-                {node.descripcion_breve && <p className="mt-1 text-sm leading-5 text-muted">{node.descripcion_breve}</p>}
-              </Block>
-            ))}
-          </div>
-        </section>
-      ))}
-      {relations.length > 0 && (
-        <section>
-          <Section title="Cómo se relacionan" />
-          <div className="grid gap-2 sm:grid-cols-2">
-            {relations.map((relation, index) => (
-              <div key={`${relation.origen}-${relation.destino}-${index}`} className="flex flex-wrap items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2 text-sm">
-                <span className="font-semibold">{names.get(relation.origen) || relation.origen || 'Concepto'}</span>
-                <span className="text-muted">— {relation.etiqueta || 'se relaciona con'} →</span>
-                <span className="font-semibold">{names.get(relation.destino) || relation.destino || 'Concepto'}</span>
+
+      <div className="relative mx-auto max-w-5xl px-1 pb-2 sm:px-4">
+        <div className="relative z-10 mx-auto max-w-xl rounded-2xl border-2 border-brand-300 bg-gradient-to-br from-brand-50 to-sky-50 px-5 py-5 text-center shadow-md dark:border-brand-500/40 dark:from-brand-500/15 dark:to-sky-500/10">
+          <p className="text-xs font-extrabold uppercase tracking-[0.16em] text-brand-600 dark:text-brand-300">Concepto principal</p>
+          <p className="mt-2 font-display text-xl font-black text-brand-900 dark:text-brand-100 sm:text-2xl">{data.concepto_principal || data.titulo || 'Mapa conceptual'}</p>
+          {data.descripcion && <p className="mx-auto mt-2 max-w-lg text-sm leading-6 text-muted">{data.descripcion}</p>}
+        </div>
+
+        {levels.map((level) => {
+          const levelNodes = nodes.filter((node) => Math.max(1, Math.min(3, Number(node.nivel) || 1)) === level);
+          return (
+            <section key={level} aria-labelledby={`map-level-${level}`} className="relative pt-12">
+              <div className="absolute left-1/2 top-0 h-7 w-px -translate-x-1/2 bg-brand-300 dark:bg-brand-500/50" />
+              <div className="absolute left-1/2 top-7 -translate-x-1/2 rounded-full border border-brand-200 bg-surface p-1 text-brand-600 dark:border-brand-500/40 dark:text-brand-300">
+                <ArrowDown className="h-4 w-4" aria-hidden="true" />
               </div>
+              <div className="mb-4 flex items-center gap-3">
+                <span className="h-px flex-1 bg-border" />
+                <h3 id={`map-level-${level}`} className="rounded-full border border-border bg-surface px-3 py-1 text-xs font-extrabold uppercase tracking-[0.12em] text-muted">Nivel {level}</h3>
+                <span className="h-px flex-1 bg-border" />
+              </div>
+              <div className={cn('grid gap-4', levelNodes.length === 1 ? 'mx-auto max-w-md' : levelNodes.length === 2 ? 'sm:grid-cols-2' : 'sm:grid-cols-2 lg:grid-cols-3')}>
+                {levelNodes.map((node, index) => {
+                  const relation = relationFor(node.id);
+                  return (
+                    <article key={node.id || `${level}-${index}`} className={cn('relative rounded-2xl border p-4 text-center shadow-sm', levelTone[(level - 1) % levelTone.length])}>
+                      {relation && (
+                        <span className="mb-3 inline-flex min-h-7 items-center gap-1 rounded-full border border-white/70 bg-white/80 px-2.5 py-1 text-[11px] font-bold text-muted shadow-sm dark:border-white/10 dark:bg-surface/85">
+                          <Link2 className="h-3 w-3" /> {relation.etiqueta || 'se relaciona con'}
+                        </span>
+                      )}
+                      <p className="font-display text-base font-extrabold text-fg">{node.concepto || `Concepto ${index + 1}`}</p>
+                      {node.descripcion_breve && <p className="mt-2 text-sm leading-6 text-muted">{node.descripcion_breve}</p>}
+                    </article>
+                  );
+                })}
+              </div>
+            </section>
+          );
+        })}
+      </div>
+
+      {relations.length > 0 && (
+        <details className="rounded-xl border border-border bg-surface-2 p-4">
+          <summary className="cursor-pointer font-display font-bold text-fg">Cómo se relacionan</summary>
+          <div className="mt-3 grid gap-2 sm:grid-cols-2">
+            {relations.map((relation, index) => (
+              <p key={`${relation.origen}-${relation.destino}-${index}`} className="rounded-lg border border-border bg-surface px-3 py-2 text-sm leading-6">
+                <b>{names.get(relation.origen) || 'Concepto principal'}</b>
+                <span className="mx-1 text-muted">— {relation.etiqueta || 'se relaciona con'} →</span>
+                <b>{names.get(relation.destino) || 'Concepto'}</b>
+              </p>
             ))}
           </div>
-        </section>
+        </details>
       )}
     </div>
   );

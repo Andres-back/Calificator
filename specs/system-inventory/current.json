@@ -1,18 +1,18 @@
 {
   "counts": {
     "by_coverage": {
-      "covered": 357,
+      "covered": 363,
       "missing": 51
     },
     "by_kind": {
-      "endpoint": 198,
-      "frontend_call": 128,
-      "frontend_route": 27,
+      "endpoint": 199,
+      "frontend_call": 131,
+      "frontend_route": 29,
       "integration": 7,
       "job": 9,
       "table": 39
     },
-    "total": 408
+    "total": 414
   },
   "exceptions": [],
   "findings": [
@@ -96,32 +96,6 @@
       ]
     },
     {
-      "category": "orphan_candidate",
-      "description": "17 superficies no alcanzables o históricas se conservan como candidatas a retiro.",
-      "id": "F-B6C1BAFB67DC",
-      "issue_url": "",
-      "severity": "low",
-      "surface_ids": [
-        "frontend:/app/configuracion-ia",
-        "table:ai_config_audit_logs",
-        "table:ai_configuration_versions",
-        "table:ai_feature_routing",
-        "table:ai_global_config",
-        "table:ai_global_limits",
-        "table:ai_jobs",
-        "table:ai_provider_models",
-        "table:ai_provider_settings",
-        "table:ai_usage_events",
-        "table:ai_usage_logs",
-        "table:chat_messages",
-        "table:evaluation_blueprints",
-        "table:materiales_generados",
-        "table:profesor_ai_configs",
-        "table:profesor_ai_credentials",
-        "table:profesor_ai_feature_preferences"
-      ]
-    },
-    {
       "category": "missing_coverage",
       "description": "13 superficies de 012-ia-jobs-produccion no tienen evidencia de prueba observable.",
       "id": "F-DA30765F9F33",
@@ -141,6 +115,33 @@
         "job:tasks.grade_batch",
         "job:tasks.ingest_rag",
         "job:tasks.recover_stale_grading_jobs"
+      ]
+    },
+    {
+      "category": "orphan_candidate",
+      "description": "18 superficies no alcanzables o históricas se conservan como candidatas a retiro.",
+      "id": "F-DC7EB801AE13",
+      "issue_url": "",
+      "severity": "low",
+      "surface_ids": [
+        "frontend:/",
+        "frontend:/app/configuracion-ia",
+        "table:ai_config_audit_logs",
+        "table:ai_configuration_versions",
+        "table:ai_feature_routing",
+        "table:ai_global_config",
+        "table:ai_global_limits",
+        "table:ai_jobs",
+        "table:ai_provider_models",
+        "table:ai_provider_settings",
+        "table:ai_usage_events",
+        "table:ai_usage_logs",
+        "table:chat_messages",
+        "table:evaluation_blueprints",
+        "table:materiales_generados",
+        "table:profesor_ai_configs",
+        "table:profesor_ai_credentials",
+        "table:profesor_ai_feature_preferences"
       ]
     },
     {
@@ -288,7 +289,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "00e2f4856f7ff99edac69937dd2cfe9125cdbf768024897801df3e8f55680fa1",
+  "source_digest": "9eb3b06b7e84638a3ec267ee0d7e8f0bd38632a3a80e5d444823a7e2c88a8914",
   "surfaces": [
     {
       "actors": [
@@ -308,7 +309,7 @@
       "kind": "endpoint",
       "owner_spec": "003-usuarios-materias-matriculas",
       "signature": "DELETE:/admin/users/{user_id}",
-      "source_line": 58,
+      "source_line": 91,
       "source_path": "backend/app/modules/users/router.py",
       "states": [],
       "tests": [
@@ -317,6 +318,12 @@
           "reference": "DELETE:/admin/users/{user_id}",
           "status": "direct",
           "test_path": "backend/tests/integration/test_api_contract.py"
+        },
+        {
+          "level": "unit",
+          "reference": "DELETE:/admin/users/{user_id}",
+          "status": "domain",
+          "test_path": "frontend/src/modules/admin/AdminUsersPage.test.tsx"
         }
       ]
     },
@@ -1053,7 +1060,7 @@
       "kind": "endpoint",
       "owner_spec": "003-usuarios-materias-matriculas",
       "signature": "GET:/admin/users",
-      "source_line": 30,
+      "source_line": 37,
       "source_path": "backend/app/modules/users/router.py",
       "states": [],
       "tests": [
@@ -1062,6 +1069,12 @@
           "reference": "GET:/admin/users",
           "status": "direct",
           "test_path": "backend/tests/integration/test_api_contract.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/admin/users",
+          "status": "domain",
+          "test_path": "frontend/src/modules/admin/AdminUsersPage.test.tsx"
         }
       ]
     },
@@ -4740,7 +4753,7 @@
       "kind": "endpoint",
       "owner_spec": "003-usuarios-materias-matriculas",
       "signature": "GET:/users/me",
-      "source_line": 16,
+      "source_line": 23,
       "source_path": "backend/app/modules/users/router.py",
       "states": [],
       "tests": [
@@ -4749,6 +4762,12 @@
           "reference": "GET:/users/me",
           "status": "direct",
           "test_path": "backend/tests/integration/test_api_contract.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/users/me",
+          "status": "domain",
+          "test_path": "frontend/src/modules/admin/AdminUsersPage.test.tsx"
         }
       ]
     },
@@ -5022,7 +5041,7 @@
       "kind": "endpoint",
       "owner_spec": "003-usuarios-materias-matriculas",
       "signature": "PATCH:/admin/users/{user_id}",
-      "source_line": 47,
+      "source_line": 70,
       "source_path": "backend/app/modules/users/router.py",
       "states": [],
       "tests": [
@@ -5031,6 +5050,42 @@
           "reference": "PATCH:/admin/users/{user_id}",
           "status": "direct",
           "test_path": "backend/tests/integration/test_api_contract.py"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/admin/users/{user_id}",
+          "status": "domain",
+          "test_path": "frontend/src/modules/admin/AdminUsersPage.test.tsx"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "admin"
+      ],
+      "authorization": [
+        "require_roles"
+      ],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
+        "function": "admin_resolve_teacher_request",
+        "registered": true,
+        "router": "router"
+      },
+      "id": "backend:PATCH:/admin/users/{user_id}/solicitud-docente",
+      "kind": "endpoint",
+      "owner_spec": "003-usuarios-materias-matriculas",
+      "signature": "PATCH:/admin/users/{user_id}/solicitud-docente",
+      "source_line": 81,
+      "source_path": "backend/app/modules/users/router.py",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "PATCH:/admin/users/{user_id}/solicitud-docente",
+          "status": "domain",
+          "test_path": "frontend/src/modules/admin/AdminUsersPage.test.tsx"
         }
       ]
     },
@@ -6098,7 +6153,7 @@
       "kind": "endpoint",
       "owner_spec": "003-usuarios-materias-matriculas",
       "signature": "PATCH:/users/me",
-      "source_line": 21,
+      "source_line": 28,
       "source_path": "backend/app/modules/users/router.py",
       "states": [],
       "tests": [
@@ -6107,6 +6162,12 @@
           "reference": "PATCH:/users/me",
           "status": "direct",
           "test_path": "backend/tests/integration/test_api_contract.py"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/users/me",
+          "status": "domain",
+          "test_path": "frontend/src/modules/admin/AdminUsersPage.test.tsx"
         }
       ]
     },
@@ -6275,7 +6336,7 @@
       "kind": "endpoint",
       "owner_spec": "003-usuarios-materias-matriculas",
       "signature": "POST:/admin/users",
-      "source_line": 38,
+      "source_line": 59,
       "source_path": "backend/app/modules/users/router.py",
       "states": [],
       "tests": [
@@ -6284,6 +6345,12 @@
           "reference": "POST:/admin/users",
           "status": "direct",
           "test_path": "backend/tests/integration/test_api_contract.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/admin/users",
+          "status": "domain",
+          "test_path": "frontend/src/modules/admin/AdminUsersPage.test.tsx"
         }
       ]
     },
@@ -10155,15 +10222,15 @@
       "consumers": [],
       "coverage": "covered",
       "details": {
-        "registered": true,
-        "view": "Navigate"
+        "registered": false,
+        "view": "unresolved"
       },
       "id": "frontend:/",
       "kind": "frontend_route",
       "owner_spec": "002-arquitectura-roles-seguridad",
       "signature": "/",
-      "source_line": 135,
-      "source_path": "frontend/src/router.tsx",
+      "source_line": 8,
+      "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
         {
@@ -10181,8 +10248,26 @@
         {
           "level": "unit",
           "reference": "/",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_concurrency.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
           "status": "direct",
           "test_path": "backend/tests/integration/test_ai_configuration_migration.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_secret_safety.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_job_configuration_snapshot.py"
         },
         {
           "level": "unit",
@@ -10219,6 +10304,12 @@
           "reference": "/",
           "status": "direct",
           "test_path": "backend/tests/unit/authorization_helpers.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_ai_configuration_resolver.py"
         },
         {
           "level": "unit",
@@ -10267,6 +10358,12 @@
           "reference": "/",
           "status": "direct",
           "test_path": "backend/tests/unit/test_calificaciones_resumen_academico.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_concept_map_normalization.py"
         },
         {
           "level": "unit",
@@ -10410,7 +10507,19 @@
           "level": "unit",
           "reference": "/",
           "status": "direct",
+          "test_path": "backend/tests/unit/test_user_teacher_requests.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
           "test_path": "backend/tests/unit/test_vision_extractor.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_worker_ai_config.py"
         },
         {
           "level": "unit",
@@ -10572,7 +10681,25 @@
           "level": "unit",
           "reference": "/",
           "status": "direct",
+          "test_path": "frontend/src/modules/admin/AdminUsersPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
           "test_path": "frontend/src/modules/admin/api.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "frontend/src/modules/auth/LandingPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "frontend/src/modules/auth/RegisterPage.test.tsx"
         },
         {
           "level": "unit",
@@ -10857,7 +10984,7 @@
       "kind": "frontend_route",
       "owner_spec": "002-arquitectura-roles-seguridad",
       "signature": "/app",
-      "source_line": 11,
+      "source_line": 13,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -11072,7 +11199,7 @@
       "kind": "frontend_route",
       "owner_spec": "002-arquitectura-roles-seguridad",
       "signature": "/app/403",
-      "source_line": 12,
+      "source_line": 14,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -11179,7 +11306,7 @@
       "kind": "frontend_route",
       "owner_spec": "002-arquitectura-roles-seguridad",
       "signature": "/app/404",
-      "source_line": 13,
+      "source_line": 15,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -11280,7 +11407,7 @@
       "kind": "frontend_route",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "/app/admin/configuracion-ia",
-      "source_line": 53,
+      "source_line": 55,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -11384,6 +11511,107 @@
     },
     {
       "actors": [
+        "admin"
+      ],
+      "authorization": [
+        "RequireRole"
+      ],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
+        "registered": true,
+        "view": "@/modules/admin/AdminUsersPage"
+      },
+      "id": "frontend:/app/admin/usuarios",
+      "kind": "frontend_route",
+      "owner_spec": "002-arquitectura-roles-seguridad",
+      "signature": "/app/admin/usuarios",
+      "source_line": 56,
+      "source_path": "frontend/src/config/routes.ts",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "/app/admin/usuarios",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_api.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/admin/usuarios",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_concurrency.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/admin/usuarios",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_migration.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/admin/usuarios",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_secret_safety.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/admin/usuarios",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_job_configuration_snapshot.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/admin/usuarios",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_ai_configuration_resolver.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/admin/usuarios",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_nginx_security_config.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/admin/usuarios",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_production_config.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/admin/usuarios",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_worker_ai_config.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app/admin/usuarios",
+          "status": "domain",
+          "test_path": "frontend/e2e/accessibility/teacher-ai-configuration.a11y.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app/admin/usuarios",
+          "status": "domain",
+          "test_path": "frontend/e2e/teacher-ai-configuration.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/admin/usuarios",
+          "status": "domain",
+          "test_path": "frontend/src/modules/admin/AdminAIConfigPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/admin/usuarios",
+          "status": "domain",
+          "test_path": "frontend/src/modules/profesor_ai/TeacherAIConfigPage.test.tsx"
+        }
+      ]
+    },
+    {
+      "actors": [
         "admin",
         "profesor"
       ],
@@ -11400,7 +11628,7 @@
       "kind": "frontend_route",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "/app/analytics",
-      "source_line": 55,
+      "source_line": 58,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -11507,7 +11735,7 @@
       "kind": "frontend_route",
       "owner_spec": "008-calificaciones",
       "signature": "/app/calificaciones/boletin",
-      "source_line": 36,
+      "source_line": 38,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -11621,7 +11849,7 @@
       "kind": "frontend_route",
       "owner_spec": "008-calificaciones",
       "signature": "/app/calificaciones/workspace",
-      "source_line": 37,
+      "source_line": 39,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -11759,7 +11987,7 @@
       "kind": "frontend_route",
       "owner_spec": "008-calificaciones",
       "signature": "/app/calificaciones/workspace/{evaluacionId}",
-      "source_line": 39,
+      "source_line": 41,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -11896,7 +12124,7 @@
       "kind": "frontend_route",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "/app/configuracion-ia",
-      "source_line": 54,
+      "source_line": 57,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -11997,7 +12225,7 @@
       "kind": "frontend_route",
       "owner_spec": "005-evaluaciones",
       "signature": "/app/evaluaciones",
-      "source_line": 32,
+      "source_line": 34,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -12134,7 +12362,7 @@
       "kind": "frontend_route",
       "owner_spec": "007-entregas-estudiante",
       "signature": "/app/evaluaciones/{id}/resolver",
-      "source_line": 33,
+      "source_line": 35,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -12220,7 +12448,8 @@
     },
     {
       "actors": [
-        "admin"
+        "admin",
+        "profesor"
       ],
       "authorization": [
         "RequireRole"
@@ -12235,7 +12464,7 @@
       "kind": "frontend_route",
       "owner_spec": "006-recursos-actividades",
       "signature": "/app/herramientas",
-      "source_line": 43,
+      "source_line": 45,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -12355,7 +12584,7 @@
       "kind": "frontend_route",
       "owner_spec": "006-recursos-actividades",
       "signature": "/app/herramientas/{id}",
-      "source_line": 46,
+      "source_line": 48,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -12474,7 +12703,7 @@
       "kind": "frontend_route",
       "owner_spec": "003-usuarios-materias-matriculas",
       "signature": "/app/materias",
-      "source_line": 19,
+      "source_line": 21,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -12624,7 +12853,7 @@
       "kind": "frontend_route",
       "owner_spec": "003-usuarios-materias-matriculas",
       "signature": "/app/materias/{id}",
-      "source_line": 23,
+      "source_line": 25,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -12774,7 +13003,7 @@
       "kind": "frontend_route",
       "owner_spec": "004-dba-asistencia-curriculo",
       "signature": "/app/materias/{id}/asistencia",
-      "source_line": 27,
+      "source_line": 29,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -12876,7 +13105,7 @@
       "kind": "frontend_route",
       "owner_spec": "008-calificaciones",
       "signature": "/app/materias/{id}/boletin",
-      "source_line": 28,
+      "source_line": 30,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -12978,7 +13207,7 @@
       "kind": "frontend_route",
       "owner_spec": "008-calificaciones",
       "signature": "/app/materias/{id}/calificar",
-      "source_line": 26,
+      "source_line": 28,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -13080,7 +13309,7 @@
       "kind": "frontend_route",
       "owner_spec": "004-dba-asistencia-curriculo",
       "signature": "/app/materias/{id}/dba",
-      "source_line": 29,
+      "source_line": 31,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -13182,7 +13411,7 @@
       "kind": "frontend_route",
       "owner_spec": "005-evaluaciones",
       "signature": "/app/materias/{id}/evaluaciones",
-      "source_line": 24,
+      "source_line": 26,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -13284,7 +13513,7 @@
       "kind": "frontend_route",
       "owner_spec": "006-recursos-actividades",
       "signature": "/app/materias/{id}/recursos",
-      "source_line": 25,
+      "source_line": 27,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -13386,7 +13615,7 @@
       "kind": "frontend_route",
       "owner_spec": "010-presentaciones-imagenes",
       "signature": "/app/presentaciones",
-      "source_line": 51,
+      "source_line": 53,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -13499,7 +13728,7 @@
       "kind": "frontend_route",
       "owner_spec": "006-recursos-actividades",
       "signature": "/app/recursos/{id}",
-      "source_line": 47,
+      "source_line": 49,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -13613,7 +13842,7 @@
       "kind": "frontend_route",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "/app/reportes",
-      "source_line": 52,
+      "source_line": 54,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -13726,7 +13955,7 @@
       "kind": "frontend_route",
       "owner_spec": "009-xali-rag-refuerzos",
       "signature": "/app/xali",
-      "source_line": 50,
+      "source_line": 52,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -13837,7 +14066,7 @@
       "kind": "frontend_route",
       "owner_spec": "003-usuarios-materias-matriculas",
       "signature": "/login",
-      "source_line": 8,
+      "source_line": 9,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -13988,6 +14217,117 @@
         {
           "level": "unit",
           "reference": "/login",
+          "status": "direct",
+          "test_path": "frontend/src/modules/auth/LandingPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/login",
+          "status": "domain",
+          "test_path": "frontend/src/modules/profesor_ai/TeacherAIConfigPage.test.tsx"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "public"
+      ],
+      "authorization": [],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
+        "registered": true,
+        "view": "@/modules/auth/RegisterPage"
+      },
+      "id": "frontend:/registro",
+      "kind": "frontend_route",
+      "owner_spec": "002-arquitectura-roles-seguridad",
+      "signature": "/registro",
+      "source_line": 10,
+      "source_path": "frontend/src/config/routes.ts",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "/registro",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_api.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/registro",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_concurrency.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/registro",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_migration.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/registro",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_secret_safety.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/registro",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_job_configuration_snapshot.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/registro",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_ai_configuration_resolver.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/registro",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_nginx_security_config.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/registro",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_production_config.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/registro",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_worker_ai_config.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "/registro",
+          "status": "domain",
+          "test_path": "frontend/e2e/accessibility/teacher-ai-configuration.a11y.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/registro",
+          "status": "domain",
+          "test_path": "frontend/e2e/teacher-ai-configuration.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "/registro",
+          "status": "domain",
+          "test_path": "frontend/src/modules/admin/AdminAIConfigPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/registro",
+          "status": "direct",
+          "test_path": "frontend/src/modules/auth/LandingPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/registro",
           "status": "domain",
           "test_path": "frontend/src/modules/profesor_ai/TeacherAIConfigPage.test.tsx"
         }
@@ -14552,6 +14892,12 @@
           "reference": "GET:/admin/ai-audit",
           "status": "domain",
           "test_path": "frontend/src/modules/admin/AdminAIConfigPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/admin/ai-audit",
+          "status": "domain",
+          "test_path": "frontend/src/modules/admin/AdminUsersPage.test.tsx"
         }
       ]
     },
@@ -14600,6 +14946,12 @@
           "reference": "GET:/admin/ai-config-hash",
           "status": "domain",
           "test_path": "frontend/src/modules/admin/AdminAIConfigPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/admin/ai-config-hash",
+          "status": "domain",
+          "test_path": "frontend/src/modules/admin/AdminUsersPage.test.tsx"
         }
       ]
     },
@@ -14658,6 +15010,12 @@
         {
           "level": "unit",
           "reference": "GET:/admin/ai-settings",
+          "status": "domain",
+          "test_path": "frontend/src/modules/admin/AdminUsersPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/admin/ai-settings",
           "status": "direct",
           "test_path": "frontend/src/modules/admin/api.test.ts"
         }
@@ -14708,6 +15066,66 @@
           "reference": "GET:/admin/ai-usage",
           "status": "domain",
           "test_path": "frontend/src/modules/admin/AdminAIConfigPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/admin/ai-usage",
+          "status": "domain",
+          "test_path": "frontend/src/modules/admin/AdminUsersPage.test.tsx"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "admin"
+      ],
+      "authorization": [
+        "RequireRole"
+      ],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
+        "backend_contract": "backend:GET:/admin/users",
+        "backend_contract_candidates": [],
+        "contract_status": "matched"
+      },
+      "id": "frontend_call:GET:/admin/users:frontend/src/modules/admin/usersApi.ts",
+      "kind": "frontend_call",
+      "owner_spec": "021-configuracion-ia-docente",
+      "signature": "GET:/admin/users",
+      "source_line": 15,
+      "source_path": "frontend/src/modules/admin/usersApi.ts",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "GET:/admin/users",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_admin_ai_routing.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/admin/users",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_api_contract.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/admin/users",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_admin_ai_usage_service.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/admin/users",
+          "status": "domain",
+          "test_path": "frontend/src/modules/admin/AdminAIConfigPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/admin/users",
+          "status": "domain",
+          "test_path": "frontend/src/modules/admin/AdminUsersPage.test.tsx"
         }
       ]
     },
@@ -17341,6 +17759,12 @@
         {
           "level": "unit",
           "reference": "PATCH:/admin/ai-config",
+          "status": "domain",
+          "test_path": "frontend/src/modules/admin/AdminUsersPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/admin/ai-config",
           "status": "direct",
           "test_path": "frontend/src/modules/admin/api.test.ts"
         }
@@ -17389,8 +17813,116 @@
         {
           "level": "unit",
           "reference": "PATCH:/admin/ai-providers/{id}",
+          "status": "domain",
+          "test_path": "frontend/src/modules/admin/AdminUsersPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/admin/ai-providers/{id}",
           "status": "direct",
           "test_path": "frontend/src/modules/admin/api.test.ts"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "admin"
+      ],
+      "authorization": [
+        "RequireRole"
+      ],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
+        "backend_contract": "backend:PATCH:/admin/users/{user_id}/solicitud-docente",
+        "backend_contract_candidates": [],
+        "contract_status": "matched"
+      },
+      "id": "frontend_call:PATCH:/admin/users/{id}/solicitud-docente:frontend/src/modules/admin/usersApi.ts",
+      "kind": "frontend_call",
+      "owner_spec": "021-configuracion-ia-docente",
+      "signature": "PATCH:/admin/users/{id}/solicitud-docente",
+      "source_line": 25,
+      "source_path": "frontend/src/modules/admin/usersApi.ts",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "PATCH:/admin/users/{id}/solicitud-docente",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_admin_ai_routing.py"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/admin/users/{id}/solicitud-docente",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_admin_ai_usage_service.py"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/admin/users/{id}/solicitud-docente",
+          "status": "domain",
+          "test_path": "frontend/src/modules/admin/AdminAIConfigPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/admin/users/{id}/solicitud-docente",
+          "status": "domain",
+          "test_path": "frontend/src/modules/admin/AdminUsersPage.test.tsx"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "admin"
+      ],
+      "authorization": [
+        "RequireRole"
+      ],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
+        "backend_contract": "backend:PATCH:/admin/users/{user_id}",
+        "backend_contract_candidates": [],
+        "contract_status": "matched"
+      },
+      "id": "frontend_call:PATCH:/admin/users/{id}:frontend/src/modules/admin/usersApi.ts",
+      "kind": "frontend_call",
+      "owner_spec": "021-configuracion-ia-docente",
+      "signature": "PATCH:/admin/users/{id}",
+      "source_line": 20,
+      "source_path": "frontend/src/modules/admin/usersApi.ts",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "PATCH:/admin/users/{id}",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_admin_ai_routing.py"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/admin/users/{id}",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_api_contract.py"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/admin/users/{id}",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_admin_ai_usage_service.py"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/admin/users/{id}",
+          "status": "domain",
+          "test_path": "frontend/src/modules/admin/AdminAIConfigPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/admin/users/{id}",
+          "status": "domain",
+          "test_path": "frontend/src/modules/admin/AdminUsersPage.test.tsx"
         }
       ]
     },
@@ -18294,6 +18826,12 @@
           "reference": "POST:/admin/ai-cache/clear",
           "status": "domain",
           "test_path": "frontend/src/modules/admin/AdminAIConfigPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/admin/ai-cache/clear",
+          "status": "domain",
+          "test_path": "frontend/src/modules/admin/AdminUsersPage.test.tsx"
         }
       ]
     },
@@ -18336,6 +18874,12 @@
           "reference": "POST:/admin/ai-providers/{providerId}/test",
           "status": "domain",
           "test_path": "frontend/src/modules/admin/AdminAIConfigPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/admin/ai-providers/{providerId}/test",
+          "status": "domain",
+          "test_path": "frontend/src/modules/admin/AdminUsersPage.test.tsx"
         }
       ]
     },
@@ -18378,6 +18922,12 @@
           "reference": "POST:/admin/ai-settings/restore-defaults",
           "status": "domain",
           "test_path": "frontend/src/modules/admin/AdminAIConfigPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/admin/ai-settings/restore-defaults",
+          "status": "domain",
+          "test_path": "frontend/src/modules/admin/AdminUsersPage.test.tsx"
         }
       ]
     },
@@ -18420,6 +18970,12 @@
           "reference": "POST:/admin/ai-settings/restore-previous",
           "status": "domain",
           "test_path": "frontend/src/modules/admin/AdminAIConfigPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/admin/ai-settings/restore-previous",
+          "status": "domain",
+          "test_path": "frontend/src/modules/admin/AdminUsersPage.test.tsx"
         },
         {
           "level": "unit",
@@ -20590,6 +21146,12 @@
         {
           "level": "unit",
           "reference": "PUT:/admin/ai-features",
+          "status": "domain",
+          "test_path": "frontend/src/modules/admin/AdminUsersPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "PUT:/admin/ai-features",
           "status": "direct",
           "test_path": "frontend/src/modules/admin/api.test.ts"
         }
@@ -20638,6 +21200,12 @@
         {
           "level": "unit",
           "reference": "PUT:/admin/ai-providers",
+          "status": "domain",
+          "test_path": "frontend/src/modules/admin/AdminUsersPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "PUT:/admin/ai-providers",
           "status": "direct",
           "test_path": "frontend/src/modules/admin/api.test.ts"
         }
@@ -20682,6 +21250,12 @@
           "reference": "PUT:/admin/ai-settings/publish",
           "status": "domain",
           "test_path": "frontend/src/modules/admin/AdminAIConfigPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "PUT:/admin/ai-settings/publish",
+          "status": "domain",
+          "test_path": "frontend/src/modules/admin/AdminUsersPage.test.tsx"
         },
         {
           "level": "unit",
@@ -24246,7 +24820,8 @@
         "active": true,
         "class": "User",
         "constraints": [
-          "rol IN ('admin', 'profesor', 'estudiante')"
+          "rol IN ('admin', 'profesor', 'estudiante')",
+          "solicitud_docente_estado IS NULL OR solicitud_docente_estado IN ('pendiente', 'aprobada', 'rechazada')"
         ],
         "enum_refs": [
           "UserEstado",
@@ -24257,12 +24832,15 @@
           "id"
         ],
         "indexes": [
-          "email"
+          "email",
+          "solicitud_docente_estado"
         ],
         "migrations": [
           "backend/alembic/versions/202606290001_initial_phase_1_2.py"
         ],
-        "relationships": [],
+        "relationships": [
+          "users.id"
+        ],
         "unique": [
           "email"
         ]
@@ -24276,9 +24854,12 @@
       "states": [
         "activo",
         "admin",
+        "aprobada",
         "estudiante",
         "inactivo",
-        "profesor"
+        "pendiente",
+        "profesor",
+        "rechazada"
       ],
       "tests": [
         {
@@ -24324,10 +24905,22 @@
           "test_path": "backend/tests/unit/test_schema_ownership.py"
         },
         {
+          "level": "unit",
+          "reference": "users",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_user_teacher_requests.py"
+        },
+        {
           "level": "e2e",
           "reference": "users",
           "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "users",
+          "status": "direct",
+          "test_path": "frontend/src/modules/admin/AdminUsersPage.test.tsx"
         }
       ]
     },

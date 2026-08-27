@@ -25,6 +25,7 @@ ALL_SPECS = {
     "021-configuracion-ia-docente",
     "022-recuperar-trabajos-ia",
     "023-calificacion-vision-rapida",
+    "024-landing-publica-mapas",
 }
 OWNED_SPECS = {
     name

@@ -579,33 +579,81 @@ def _render_flashcards(c: dict, soluciones: bool) -> str:
 
 # ── Mapa conceptual ──────────────────────────────────────────────────────────
 def _render_mapa_conceptual(c: dict, soluciones: bool) -> str:
-    out = ['<div class="sectionbar">MAPA CONCEPTUAL</div>']
+    out = [
+        '<div class="sectionbar">MAPA CONCEPTUAL</div>',
+        "<style>.map-center{margin:12px auto 0;max-width:78%;padding:14px;border:2px solid #818CF8;border-radius:14px;background:#EEF2FF;text-align:center}.map-center small{color:#4F46E5;font-weight:700;letter-spacing:.08em}.map-level{margin-top:0}.map-connector{height:24px;width:2px;background:#A5B4FC;margin:0 auto}.map-level-title{text-align:center;color:#64748B;font-size:9px;font-weight:700;letter-spacing:.1em;margin-bottom:6px}.map-grid{width:100%;border-collapse:separate;border-spacing:7px}.map-grid td{width:33%;vertical-align:top;border:1px solid #CBD5E1;border-radius:10px;padding:10px;text-align:center;background:#F8FAFC}.map-grid .l1{background:#F0F9FF;border-color:#BAE6FD}.map-grid .l2{background:#F5F3FF;border-color:#DDD6FE}.map-grid .l3{background:#FFFBEB;border-color:#FDE68A}.map-rel{display:inline-block;margin-bottom:5px;padding:2px 6px;border-radius:9px;background:#FFFFFF;color:#64748B;font-size:8px}.map-concept{font-size:11px;font-weight:700;color:#172554}.map-desc{margin-top:4px;font-size:9px;line-height:1.35;color:#475569}.map-relations{margin-top:12px;padding:9px 12px;border:1px solid #E2E8F0;border-radius:10px;background:#F8FAFC}.map-relations p{margin:3px 0;font-size:9px}</style>",
+    ]
+    if c.get("advertencia"):
+        out.append(f'<div class="instr amber">{_e(c["advertencia"])}</div>')
+
+    def node_level(node: dict) -> int:
+        try:
+            return max(1, min(3, int(node.get("nivel") or 1)))
+        except (TypeError, ValueError):
+            return 1
+
+    principal = c.get("concepto_principal") or c.get("titulo") or "Mapa conceptual"
+    out.append('<div class="map-center"><small>CONCEPTO PRINCIPAL</small>')
+    out.append(
+        f'<div style="font-size:16px;font-weight:800;color:#312E81;margin-top:4px">{_e(principal)}</div>'
+    )
     if c.get("descripcion"):
-        out.append(f'<div class="instr indigo">{_e(c["descripcion"])}</div>')
-    if c.get("concepto_principal"):
-        out.append('<div class="instr" style="text-align:center; font-size:13px; font-weight:bold;">')
-        out.append(f'Concepto principal: {_e(c["concepto_principal"])}')
-        out.append("</div>")
-    nodos = c.get("nodos") or []
-    if nodos:
-        out.append('<div class="h3">Nodos</div>')
-        # 3 columnas
-        n = nodos
-        out.append('<table class="grid"><tr>')
-        for i, nd in enumerate(n):
-            if i > 0 and i % 3 == 0:
+        out.append(
+            f'<div class="map-desc" style="font-size:10px">{_e(c["descripcion"])}</div>'
+        )
+    out.append("</div>")
+
+    nodes = [node for node in (c.get("nodos") or []) if isinstance(node, dict)]
+    relations = [
+        relation
+        for relation in (c.get("relaciones") or [])
+        if isinstance(relation, dict)
+    ]
+    names = {
+        "central": principal,
+        **{str(node.get("id")): node.get("concepto") for node in nodes},
+    }
+    incoming = {str(relation.get("destino")): relation for relation in relations}
+
+    levels = sorted({node_level(node) for node in nodes})
+    for level in levels:
+        level_nodes = [node for node in nodes if node_level(node) == level]
+        out.append('<div class="map-level"><div class="map-connector"></div>')
+        out.append(
+            f'<div class="map-level-title">NIVEL {level}</div><table class="map-grid"><tr>'
+        )
+        for index, node in enumerate(level_nodes):
+            if index and index % 3 == 0:
                 out.append("</tr><tr>")
-            out.append(f'<td><b>Nivel {_e(nd.get("nivel"))}</b><br/>{_e(nd.get("concepto"))}')
-            if nd.get("descripcion_breve"):
-                out.append(f'<br/><i>{_e(nd["descripcion_breve"])}</i>')
+            relation = incoming.get(str(node.get("id")))
+            out.append(f'<td class="l{level}">')
+            if relation:
+                out.append(
+                    f'<span class="map-rel">{_e(relation.get("etiqueta") or "se relaciona con")}</span>'
+                )
+            out.append(
+                f'<div class="map-concept">{_e(node.get("concepto") or "Concepto")}</div>'
+            )
+            if node.get("descripcion_breve"):
+                out.append(
+                    f'<div class="map-desc">{_e(node["descripcion_breve"])}</div>'
+                )
             out.append("</td>")
-        out.append("</tr></table>")
-    relaciones = c.get("relaciones") or []
-    if relaciones:
-        out.append('<div class="h3">Relaciones</div>')
-        for r in relaciones:
-            eti = f' [{_e(r.get("etiqueta"))}]' if r.get("etiqueta") else ""
-            out.append(f'<p class="p"><b>{_e(r.get("origen"))}</b> →{eti} <b>{_e(r.get("destino"))}</b></p>')
+        out.append("</tr></table></div>")
+
+    if relations:
+        out.append('<div class="map-relations"><b>Cómo se relacionan</b>')
+        for relation in relations:
+            origin = names.get(
+                str(relation.get("origen")), relation.get("origen") or principal
+            )
+            destination = names.get(
+                str(relation.get("destino")), relation.get("destino") or "Concepto"
+            )
+            out.append(
+                f"<p><b>{_e(origin)}</b> — {_e(relation.get('etiqueta') or 'se relaciona con')} → <b>{_e(destination)}</b></p>"
+            )
+        out.append("</div>")
     return "".join(out)
 
 

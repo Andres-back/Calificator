@@ -12,6 +12,12 @@ class UserEstado(StrEnum):
     INACTIVO = "inactivo"
 
 
+class SolicitudDocenteEstado(StrEnum):
+    PENDIENTE = "pendiente"
+    APROBADA = "aprobada"
+    RECHAZADA = "rechazada"
+
+
 class MateriaEstado(StrEnum):
     ACTIVA = "activa"
     ARCHIVADA = "archivada"

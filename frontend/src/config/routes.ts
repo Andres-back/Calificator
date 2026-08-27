@@ -5,7 +5,9 @@
  */
 export const routes = {
   /* ── Públicas ── */
+  home: '/',
   login: '/login',
+  register: '/registro',
 
   /* ── Genéricas protegidas ── */
   app: '/app',
@@ -51,6 +53,7 @@ export const routes = {
   presentaciones: '/app/presentaciones',
   reportes: '/app/reportes',
   adminAI: '/app/admin/configuracion-ia',
+  adminUsers: '/app/admin/usuarios',
   profesorAI: '/app/configuracion-ia',
   analytics: '/app/analytics',
 };

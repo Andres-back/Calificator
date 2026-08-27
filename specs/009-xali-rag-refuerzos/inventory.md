@@ -19,7 +19,7 @@
 | endpoint | `POST:/xali/chat` | authenticated | covered | `backend/app/modules/xali/router.py:26` |
 | endpoint | `POST:/xali/evaluaciones/{evaluacion_id}/chat` | estudiante | covered | `backend/app/modules/xali/router.py:52` |
 | endpoint | `POST:/xali/refuerzos/generar` | admin, profesor | covered | `backend/app/modules/xali/refuerzo_router.py:19` |
-| frontend_route | `/app/xali` | admin | covered | `frontend/src/config/routes.ts:50` |
+| frontend_route | `/app/xali` | admin | covered | `frontend/src/config/routes.ts:52` |
 | frontend_call | `DELETE:/xali/history` | ambiguous | covered | `frontend/src/modules/xali/api.ts:29` |
 | frontend_call | `GET:/xali/evaluaciones-entregadas` | ambiguous | covered | `frontend/src/modules/xali/api.ts:13` |
 | frontend_call | `GET:/xali/history` | ambiguous | covered | `frontend/src/modules/xali/api.ts:5` |
