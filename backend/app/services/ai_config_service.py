@@ -98,8 +98,8 @@ DEFAULT_MODELS: list[dict[str, Any]] = [
 
 DEFAULT_FEATURES: list[dict[str, Any]] = [
     {"feature": "xali", "label": "Chatbot Xali", "primary_provider": "groq", "fallback_provider": "template", "active": True},
-    {"feature": "calificacion_texto", "label": "Calificación de texto", "primary_provider": "open_code", "fallback_provider": None, "active": True},
-    {"feature": "calificacion_foto", "label": "Calificación por foto", "primary_provider": "open_code", "fallback_provider": None, "active": True},
+    {"feature": "calificacion_texto", "label": "Calificación de texto", "primary_provider": "open_code", "primary_model": settings.PHOTO_GRADING_TEXT_MODEL, "fallback_provider": None, "active": True},
+    {"feature": "calificacion_foto", "label": "Calificación por foto", "primary_provider": "open_code", "primary_model": settings.PHOTO_GRADING_VISION_MODEL, "fallback_provider": None, "active": True},
     {"feature": "retroalimentacion", "label": "Retroalimentación", "primary_provider": "groq", "fallback_provider": "template", "active": True},
     {"feature": "generacion_preguntas", "label": "Generación de preguntas", "primary_provider": "groq", "fallback_provider": "template", "active": True},
     {"feature": "evaluacion_digitalizar", "label": "Digitalización de evaluaciones", "primary_provider": "open_code", "fallback_provider": None, "active": True},
@@ -214,10 +214,12 @@ class AIConfigService:
         existing_f = await self._db.execute(sql_text("SELECT COUNT(*) FROM ai_feature_routing"))
         if existing_f.scalar() == 0:
             for f in DEFAULT_FEATURES:
+                item = {"primary_model": None, **f}
                 await self._db.execute(
-                    sql_text("""INSERT INTO ai_feature_routing (feature, label, primary_provider, fallback_provider, active)
-                         VALUES (:feature, :label, :primary_provider, :fallback_provider, :active)"""),
-                    f
+                    sql_text("""INSERT INTO ai_feature_routing
+                         (feature, label, primary_provider, primary_model, fallback_provider, active)
+                         VALUES (:feature, :label, :primary_provider, :primary_model, :fallback_provider, :active)"""),
+                    item
                 )
         await self._db.execute(sql_text("UPDATE ai_feature_routing SET capability = CASE WHEN feature IN ('calificacion_foto','evaluacion_digitalizar','vision_ocr') THEN 'vision' WHEN feature = 'generacion_imagenes' THEN 'image' WHEN feature IN ('rag','embeddings') THEN 'embedding' ELSE 'text' END"))
         await self._db.execute(sql_text("UPDATE ai_feature_routing SET primary_model = p.model FROM ai_provider_settings p WHERE p.id = ai_feature_routing.primary_provider AND ai_feature_routing.primary_model IS NULL"))

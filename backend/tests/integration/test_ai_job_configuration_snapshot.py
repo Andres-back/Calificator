@@ -59,11 +59,20 @@ async def test_job_persists_sanitized_immutable_routing_snapshot(monkeypatch):
 
     async def resolve(*_args, **kwargs):
         resolved_calls.append(kwargs)
+        feature = kwargs["feature"]
         return {
-            "feature": "calificacion_foto",
-            "primary": {"provider": "open_code", "model": "qwen3.7-plus", "credential_source": "teacher"},
+            "feature": feature,
+            "primary": {
+                "provider": "open_code",
+                "model": (
+                    "deepseek-v4-flash-vision-exp"
+                    if feature == "calificacion_foto"
+                    else "grading-model"
+                ),
+                "credential_source": "teacher",
+            },
             "fallback": None,
-            "config_hash": "abc123",
+            "config_hash": f"abc123-{feature}",
             "captured_at": "2026-08-25T00:00:00Z",
         }
 
@@ -78,11 +87,22 @@ async def test_job_persists_sanitized_immutable_routing_snapshot(monkeypatch):
     )
 
     payload = json.loads(db.params["input_json"])
-    assert resolved_calls == [{
-        "feature": "calificacion_foto",
-        "teacher_id": teacher_id,
-    }]
-    assert payload["_ai_config"]["primary"]["model"] == "qwen3.7-plus"
+    assert resolved_calls == [
+        {
+            "feature": "calificacion_foto",
+            "teacher_id": teacher_id,
+        },
+        {
+            "feature": "calificacion_texto",
+            "teacher_id": teacher_id,
+        },
+    ]
+    assert payload["_ai_config"]["schema_version"] == 2
+    assert (
+        payload["_ai_config"]["vision"]["primary"]["model"]
+        == "deepseek-v4-flash-vision-exp"
+    )
+    assert payload["_ai_config"]["grading"]["primary"]["model"] == "grading-model"
     serialized = json.dumps(payload).lower()
     assert "api_key" not in serialized
     assert "secret" not in serialized

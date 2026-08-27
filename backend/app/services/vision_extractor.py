@@ -293,6 +293,11 @@ Informa tachones, correcciones y preguntas ausentes. Devuelve SOLO JSON:
                                 {"type": "image_url", "image_url": {"url": f"data:{mime};base64,{base64.b64encode(data).decode()}"}},
                             ]}],
                         }
+                        if (
+                            model.rsplit("/", 1)[-1].lower()
+                            == "deepseek-v4-flash-vision-exp"
+                        ):
+                            body["thinking"] = {"type": "disabled"}
                         timeout = httpx.Timeout(
                             connect=settings.AI_PROVIDER_CONNECT_TIMEOUT_SECONDS,
                             read=settings.VISION_TIMEOUT_SECONDS,

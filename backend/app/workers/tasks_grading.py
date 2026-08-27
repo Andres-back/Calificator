@@ -299,6 +299,9 @@ def _build_result(
     errors: list[dict],
     calificacion_ids: list[str],
 ) -> dict:
+    reviewable_failures = sum(
+        1 for item in errors if item.get("calificacion_id")
+    )
     return {
         "status": status_value,
         "evaluacion_id": str(evaluacion_id),
@@ -307,7 +310,7 @@ def _build_result(
         "failed": len(errors),
         "calificacion_ids": calificacion_ids,
         "errors": errors,
-        "requires_teacher_review": processed + skipped,
+        "requires_teacher_review": processed + skipped + reviewable_failures,
     }
 
 
@@ -516,7 +519,23 @@ async def _grade_batch_async(
                     )
                     calificacion_ids.append(str(calificacion.id))
                     record_grade_telemetry(calificacion)
-                    if created:
+                    has_score_field = hasattr(calificacion, "nota_sugerida")
+                    if has_score_field and calificacion.nota_sugerida is None:
+                        raw_value = getattr(calificacion, "resultado_json", None)
+                        raw = raw_value if isinstance(raw_value, dict) else {}
+                        errors.append(
+                            {
+                                "entrega_id": str(entrega.id),
+                                "estudiante_id": str(entrega.estudiante_id),
+                                "calificacion_id": str(calificacion.id),
+                                "error": "La IA no produjo una nota valida",
+                                "reason": str(
+                                    raw.get("motivo_revision")
+                                    or "grading_without_score"
+                                )[:120],
+                            }
+                        )
+                    elif created:
                         processed += 1
                     else:
                         skipped += 1

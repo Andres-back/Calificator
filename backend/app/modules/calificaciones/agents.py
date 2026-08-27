@@ -68,6 +68,14 @@ def _opencode_protocol(model: str) -> str:
     return "chat_completions"
 
 
+def _opencode_thinking(model: str) -> dict[str, str] | None:
+    """Keep the experimental vision model from spending the output budget on hidden reasoning."""
+    model_id = model.rsplit("/", 1)[-1].lower()
+    if model_id == "deepseek-v4-flash-vision-exp":
+        return {"type": "disabled"}
+    return None
+
+
 def _to_anthropic_content(content: Any) -> Any:
     if isinstance(content, str):
         return content
@@ -393,6 +401,9 @@ class OpenCodeClient:
                 "max_tokens": max_tokens,
                 "temperature": temperature,
             }
+            thinking = _opencode_thinking(model)
+            if thinking:
+                body["thinking"] = thinking
             if json_mode:
                 body["response_format"] = {"type": "json_object"}
             endpoint = "chat/completions"
@@ -818,7 +829,7 @@ Devuelve SOLO JSON válido con este esquema:
 
 async def grader_agent(
     ctx: AgentContext,
-    model: str = "deepseek-v4-flash",
+    model: str = "deepseek-v4-flash-vision-exp",
     multimodal: bool = False,
     client: OpenCodeClient | None = None,
     timeout: int | None = None,
@@ -847,8 +858,8 @@ async def grader_agent(
         client = OpenCodeClient()
         own_client = True
 
+    start = time.monotonic()
     try:
-        start = time.monotonic()
         if multimodal and ctx.image_bytes:
             raw = await client.chat_multimodal(
                 model=model, text=prompt,
@@ -874,6 +885,7 @@ async def grader_agent(
                 nota_sugerida=None, confianza=0, feedback_estudiante="",
                 proveedor="opencode", modelo=model,
                 error="grader_missing_score", requiere_revision_docente=True,
+                tiempo_ms=ms, raw_output=parsed,
             )
 
         result = AgentResult(
@@ -892,7 +904,16 @@ async def grader_agent(
 
     except Exception as exc:
         logger.error("Grader agent %s failed: %s", model, exc)
-        return AgentResult(nota_sugerida=None, confianza=0, feedback_estudiante="", proveedor="opencode", modelo=model, error=str(exc), requiere_revision_docente=True)
+        return AgentResult(
+            nota_sugerida=None,
+            confianza=0,
+            feedback_estudiante="",
+            proveedor="opencode",
+            modelo=model,
+            error=type(exc).__name__,
+            requiere_revision_docente=True,
+            tiempo_ms=max(0, int((time.monotonic() - start) * 1000)),
+        )
     finally:
         if own_client:
             await client.close()
@@ -930,7 +951,7 @@ Devuelve SOLO JSON válido y compacto:
 async def verification_agent(
     ctx: AgentContext,
     primary: AgentResult,
-    model: str = "deepseek-v4-flash",
+    model: str = "deepseek-v4-flash-vision-exp",
     client: OpenCodeClient | None = None,
     timeout: int | None = None,
     max_attempts: int | None = None,
@@ -962,8 +983,8 @@ async def verification_agent(
             ensure_ascii=False,
         ),
     )
+    started = time.monotonic()
     try:
-        started = time.monotonic()
         raw = await client.chat(
             model=model,
             messages=[{"role": "user", "content": prompt}],
@@ -988,6 +1009,7 @@ async def verification_agent(
                 error="verifier_missing_score",
                 requiere_revision_docente=True,
                 raw_output=parsed,
+                tiempo_ms=elapsed_ms,
             )
         components = parsed.get("componentes_verificados") or parsed.get("componentes") or []
         return AgentResult(
@@ -1016,6 +1038,7 @@ async def verification_agent(
             modelo=model,
             error=type(exc).__name__,
             requiere_revision_docente=True,
+            tiempo_ms=max(0, int((time.monotonic() - started) * 1000)),
         )
     finally:
         if own_client:

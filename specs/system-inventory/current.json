@@ -288,7 +288,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "c5f7791d5e0ae221014a0665564a378d1a169b4ae74a288fea138538d606954d",
+  "source_digest": "00e2f4856f7ff99edac69937dd2cfe9125cdbf768024897801df3e8f55680fa1",
   "surfaces": [
     {
       "actors": [
@@ -21531,7 +21531,7 @@
       "kind": "job",
       "owner_spec": "012-ia-jobs-produccion",
       "signature": "tasks.grade_batch",
-      "source_line": 672,
+      "source_line": 691,
       "source_path": "backend/app/workers/tasks_grading.py",
       "states": [
         "cancelled",
@@ -21614,7 +21614,7 @@
       "kind": "job",
       "owner_spec": "012-ia-jobs-produccion",
       "signature": "tasks.recover_stale_grading_jobs",
-      "source_line": 763,
+      "source_line": 782,
       "source_path": "backend/app/workers/tasks_grading.py",
       "states": [
         "cancelled",

@@ -22,6 +22,35 @@ JOB_FEATURES = {
 }
 
 
+async def _resolve_job_ai_config(
+    db: AsyncSession,
+    *,
+    tipo: str,
+    feature: str,
+    user_id: UUID | None,
+) -> dict[str, Any]:
+    """Freeze the effective routes used by a job without serializing secrets."""
+    from app.services.ai_configuration_resolver import resolve_ai_configuration
+
+    if tipo != "calificacion_lote":
+        return await resolve_ai_configuration(
+            db, feature=feature, teacher_id=user_id
+        )
+
+    vision = await resolve_ai_configuration(
+        db, feature="calificacion_foto", teacher_id=user_id
+    )
+    grading = await resolve_ai_configuration(
+        db, feature="calificacion_texto", teacher_id=user_id
+    )
+    return {
+        "schema_version": 2,
+        "pipeline": "calificacion_foto",
+        "vision": vision,
+        "grading": grading,
+    }
+
+
 def _json_value(value: dict[str, Any]) -> str:
     return json.dumps(value, ensure_ascii=False, default=str)
 
@@ -39,10 +68,11 @@ async def create_job(
     feature = JOB_FEATURES.get(tipo)
     if feature and "_ai_config" not in persisted_input:
         try:
-            from app.services.ai_configuration_resolver import resolve_ai_configuration
-
-            persisted_input["_ai_config"] = await resolve_ai_configuration(
-                db, feature=feature, teacher_id=user_id
+            persisted_input["_ai_config"] = await _resolve_job_ai_config(
+                db,
+                tipo=tipo,
+                feature=feature,
+                user_id=user_id,
             )
         except Exception as exc:
             logger.warning("AI configuration snapshot unavailable for %s: %s", tipo, type(exc).__name__)
