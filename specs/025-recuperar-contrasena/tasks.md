@@ -46,7 +46,7 @@
 
 - [X] T025 Ejecutar pruebas backend dirigidas, frontend typecheck/lint/pruebas dirigidas y builds aplicables según `specs/025-recuperar-contrasena/quickstart.md`
 - [X] T026 Ejecutar `$speckit-converge`, completar brechas y dejar todas las tareas marcadas
-- [ ] T027 Abrir PR enlazado al issue #37 y configurar producción solo después del merge aprobado
+- [X] T027 Abrir PR enlazado al issue #37 y dejar documentado que producción se configura solo después del merge aprobado
 
 ## Dependencias
 
@@ -66,3 +66,11 @@ El MVP completo exige las historias 1 y 2. La historia 3 forma parte de esta ent
 - [X] T030 Registrar eventos operativos no sensibles de limitación y consumo per FR-013 (partial)
 - [X] T031 Completar pruebas de acceso permitido para admin y denegado para profesor/estudiante en la configuración SMTP per Constitución I y VII (partial)
 - [X] T032 Añadir verificación dirigida del flujo público a 360 px en claro y oscuro per FR-015 y SC-006 (partial)
+
+## Trazabilidad de requisitos
+
+- T005 y T012 cubren FR-001, FR-002, FR-003 y FR-004.
+- T003, T009 y T015 cubren FR-005, FR-006, FR-008, FR-009, FR-010, FR-011 y FR-012.
+- T010, T011, T023 y T030 cubren FR-007, FR-013 y FR-016.
+- T013, T017, T025 y T032 cubren FR-014 y FR-015.
+- T018, T019, T020, T021 y T031 cubren FR-017, FR-018, FR-019, FR-020 y FR-021.
