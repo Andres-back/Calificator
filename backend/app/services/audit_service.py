@@ -3,7 +3,6 @@ from __future__ import annotations
 
 from uuid import UUID
 
-from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.logging import get_logger
@@ -20,6 +19,9 @@ AUDIT_EVENTS = {
     "export_report",
     "ai_error",
     "api_key_updated",
+    "password_reset_created",
+    "password_reset_limited",
+    "password_reset_consumed",
 }
 
 

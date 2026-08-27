@@ -1,6 +1,7 @@
 from fastapi import APIRouter
 
 from app.modules.admin_ai_config.router import router as admin_ai_config_router
+from app.modules.admin_mail.router import router as admin_mail_router
 from app.modules.analytics.router import router as analytics_router
 from app.modules.asistencia.router import router as asistencia_router
 from app.modules.auth.router import router as auth_router
@@ -43,4 +44,5 @@ api_router.include_router(reportes_router)
 api_router.include_router(impacto_router)
 api_router.include_router(jobs_router)
 api_router.include_router(admin_ai_config_router)
+api_router.include_router(admin_mail_router)
 api_router.include_router(analytics_router)

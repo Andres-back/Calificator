@@ -8,7 +8,7 @@ from app.core.config import settings
 from app.core.security import (
     create_access_token,
     create_refresh_token,
-    decode_token,
+    decode_token_claims,
     verify_password,
 )
 from app.modules.auth.schemas import RegisterRequest
@@ -54,8 +54,8 @@ async def register_public_user(db: AsyncSession, payload: RegisterRequest) -> Us
 
 
 def set_auth_cookies(response: Response, user: User) -> None:
-    access_token = create_access_token(user.id)
-    refresh_token = create_refresh_token(user.id)
+    access_token = create_access_token(user.id, int(user.auth_version or 1))
+    refresh_token = create_refresh_token(user.id, int(user.auth_version or 1))
     cookie_kwargs = {
         "httponly": True,
         "secure": settings.cookie_secure,
@@ -85,7 +85,7 @@ def set_auth_cookies(response: Response, user: User) -> None:
 
 async def refresh_session(db: AsyncSession, refresh_token: str) -> User:
     try:
-        user_id = decode_token(refresh_token, expected_type="refresh")
+        user_id, token_version = decode_token_claims(refresh_token, expected_type="refresh")
     except ValueError as exc:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -93,7 +93,11 @@ async def refresh_session(db: AsyncSession, refresh_token: str) -> User:
         ) from exc
 
     user = await db.get(User, user_id)
-    if not user or user.estado != UserEstado.ACTIVO.value:
+    if (
+        not user
+        or user.estado != UserEstado.ACTIVO.value
+        or int(user.auth_version or 1) != token_version
+    ):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Inactive or missing user"
         )

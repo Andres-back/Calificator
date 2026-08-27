@@ -220,6 +220,11 @@ export function LoginPage() {
                   </div>
                 )}
 
+                <div className="flex justify-end">
+                  <Link to={routes.requestPasswordReset} className="text-sm font-semibold text-brand-600 hover:underline dark:text-brand-300">
+                    ¿Olvidaste tu contraseña?
+                  </Link>
+                </div>
                 <Button type="submit" size="lg" loading={loading} loadingLabel="Iniciando sesión…" disabled={loading} className="w-full">
                   Iniciar sesión
                 </Button>
@@ -232,7 +237,7 @@ export function LoginPage() {
 
               <div className="mt-5 flex items-center justify-between gap-3 text-xs text-muted">
                 <span>Tu contraseña nunca se guarda en este dispositivo.</span>
-                <span className="rounded-full bg-surface-2 px-2.5 py-1 font-semibold">Recuperar: próximamente</span>
+                <Link to={routes.requestPasswordReset} className="rounded-full bg-surface-2 px-2.5 py-1 font-semibold hover:text-brand-600">Recuperar acceso</Link>
               </div>
 
               {/* Accesos de prueba visibles solo durante desarrollo local. */}

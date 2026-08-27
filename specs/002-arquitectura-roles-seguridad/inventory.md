@@ -2,19 +2,24 @@
 
 > Archivo generado por `python scripts/build_system_inventory.py --write`. No editar manualmente.
 
-**Superficies propietarias:** 23
+**Superficies propietarias:** 28
 
 | Tipo | Firma | Actores | Cobertura | Fuente |
 |---|---|---|---|---|
+| endpoint | `GET:/admin/mail/config` | ambiguous | covered | `backend/app/modules/admin_mail/router.py:51` |
+| endpoint | `GET:/admin/mail/recovery-status` | ambiguous | covered | `backend/app/modules/admin_mail/router.py:141` |
 | endpoint | `GET:/docs` | public | missing | `backend/app/main.py:44` |
 | endpoint | `GET:/health` | public | missing | `backend/app/main.py:40` |
 | endpoint | `GET:/openapi.json` | public | missing | `backend/app/main.py:56` |
 | endpoint | `GET:/redoc` | public | missing | `backend/app/main.py:50` |
+| endpoint | `POST:/admin/mail/test` | ambiguous | covered | `backend/app/modules/admin_mail/router.py:88` |
+| endpoint | `PUT:/admin/mail/config` | ambiguous | covered | `backend/app/modules/admin_mail/router.py:60` |
 | frontend_route | `/` | public | covered | `frontend/src/config/routes.ts:8` |
-| frontend_route | `/app` | authenticated | covered | `frontend/src/config/routes.ts:13` |
-| frontend_route | `/app/403` | estudiante | covered | `frontend/src/config/routes.ts:14` |
-| frontend_route | `/app/404` | estudiante | covered | `frontend/src/config/routes.ts:15` |
-| frontend_route | `/app/admin/usuarios` | admin | covered | `frontend/src/config/routes.ts:56` |
+| frontend_route | `/app` | authenticated | covered | `frontend/src/config/routes.ts:15` |
+| frontend_route | `/app/403` | estudiante | covered | `frontend/src/config/routes.ts:16` |
+| frontend_route | `/app/404` | estudiante | covered | `frontend/src/config/routes.ts:17` |
+| frontend_route | `/app/admin/correo` | admin | covered | `frontend/src/config/routes.ts:59` |
+| frontend_route | `/app/admin/usuarios` | admin | covered | `frontend/src/config/routes.ts:58` |
 | frontend_route | `/registro` | public | covered | `frontend/src/config/routes.ts:10` |
 | integration | `cloudflare` | system | covered | `backend/app/core/config.py:1` |
 | integration | `open_code` | system | covered | `backend/app/core/config.py:1` |

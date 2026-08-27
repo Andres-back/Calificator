@@ -8,6 +8,8 @@ export const routes = {
   home: '/',
   login: '/login',
   register: '/registro',
+  requestPasswordReset: '/recuperar-contrasena',
+  resetPassword: '/restablecer-contrasena',
 
   /* ── Genéricas protegidas ── */
   app: '/app',
@@ -54,6 +56,7 @@ export const routes = {
   reportes: '/app/reportes',
   adminAI: '/app/admin/configuracion-ia',
   adminUsers: '/app/admin/usuarios',
+  adminMail: '/app/admin/correo',
   profesorAI: '/app/configuracion-ia',
   analytics: '/app/analytics',
 };

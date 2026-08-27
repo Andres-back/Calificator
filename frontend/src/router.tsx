@@ -12,6 +12,8 @@ import { NotFoundPage } from '@/pages/NotFoundPage';
 const LandingPage = lazy(() => import('@/modules/auth/LandingPage').then((m) => ({ default: m.LandingPage })));
 const LoginPage = lazy(() => import('@/modules/auth/LoginPage').then((m) => ({ default: m.LoginPage })));
 const RegisterPage = lazy(() => import('@/modules/auth/RegisterPage').then((m) => ({ default: m.RegisterPage })));
+const RequestPasswordResetPage = lazy(() => import('@/modules/auth/RequestPasswordResetPage').then((m) => ({ default: m.RequestPasswordResetPage })));
+const ResetPasswordPage = lazy(() => import('@/modules/auth/ResetPasswordPage').then((m) => ({ default: m.ResetPasswordPage })));
 const DashboardPage = lazy(() => import('@/modules/dashboard/DashboardPage').then((m) => ({ default: m.DashboardPage })));
 const ListPage = lazy(() => import('@/modules/herramientas/ListPage').then((m) => ({ default: m.ListPage })));
 const GeneratePage = lazy(() => import('@/modules/herramientas/GeneratePage').then((m) => ({ default: m.GeneratePage })));
@@ -32,6 +34,7 @@ const ResolverEvaluacionPage = lazy(() => import('@/modules/evaluaciones/Resolve
 const TeacherAIConfigPage = lazy(() => import('@/modules/profesor_ai/TeacherAIConfigPage').then((m) => ({ default: m.TeacherAIConfigPage })));
 const AdminUsersPage = lazy(() => import('@/modules/admin/AdminUsersPage').then((m) => ({ default: m.AdminUsersPage })));
 const AdminAIConfigPage = lazy(() => import('@/modules/admin/AdminAIConfigPage').then((m) => ({ default: m.AdminAIConfigPage })));
+const AdminMailConfigPage = lazy(() => import('@/modules/admin/AdminMailConfigPage').then((m) => ({ default: m.AdminMailConfigPage })));
 const BoletinPage = lazy(() => import('@/modules/calificaciones/BoletinPage').then((m) => ({ default: m.BoletinPage })));
 const CalificacionesWorkspace = lazy(() => import('@/modules/calificaciones/CalificacionesWorkspace').then((m) => ({ default: m.CalificacionesWorkspace })));
 const PresentacionesPage = lazy(() => import('@/modules/presentaciones/PresentacionesPage').then((m) => ({ default: m.PresentacionesPage })));
@@ -45,6 +48,8 @@ export const router = createBrowserRouter([
   { path: routes.home, element: lazyPage(<LandingPage />), errorElement: <RouterErrorBoundary /> },
   { path: routes.login, element: lazyPage(<LoginPage />), errorElement: <RouterErrorBoundary /> },
   { path: routes.register, element: lazyPage(<RegisterPage />), errorElement: <RouterErrorBoundary /> },
+  { path: routes.requestPasswordReset, element: lazyPage(<RequestPasswordResetPage />), errorElement: <RouterErrorBoundary /> },
+  { path: routes.resetPassword, element: lazyPage(<ResetPasswordPage />), errorElement: <RouterErrorBoundary /> },
 
   /* ── Páginas de error fuera del AppShell ── */
   { path: routes.notFound, element: lazyPage(<NotFoundPage />) },
@@ -109,6 +114,7 @@ export const router = createBrowserRouter([
             children: [
               { path: 'admin/configuracion-ia', element: lazyPage(<AdminAIConfigPage />) },
               { path: 'admin/usuarios', element: lazyPage(<AdminUsersPage />) },
+              { path: 'admin/correo', element: lazyPage(<AdminMailConfigPage />) },
             ],
           },
 

@@ -9,6 +9,7 @@ import {
   FileText,
   ClipboardCheck,
   UsersRound,
+  Mail,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -33,6 +34,7 @@ export const adminNav: NavItem[] = [
   { label: 'Inicio', to: '/app', icon: LayoutDashboard },
   { label: 'Usuarios y roles', to: '/app/admin/usuarios', icon: UsersRound },
   { label: 'IA y credenciales', to: '/app/admin/configuracion-ia', icon: Settings2 },
+  { label: 'Correo y recuperación', to: '/app/admin/correo', icon: Mail },
   { label: 'Presentaciones', to: '/app/presentaciones', icon: Presentation },
   { label: 'Reportes', to: '/app/reportes', icon: BarChart3 },
   { label: 'Asistente Xali', to: '/app/xali', icon: Sparkles },

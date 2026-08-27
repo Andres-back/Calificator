@@ -23,6 +23,18 @@ class Settings(BaseSettings):
     DISABLE_DB_POOL: bool = False
     REDIS_URL: str = "redis://redis:6379/0"
 
+    # Password recovery and transactional email. Database settings configured
+    # by an administrator take precedence over these deployment fallbacks.
+    PUBLIC_APP_URL: str = "http://localhost:5173"
+    PASSWORD_RESET_EXPIRE_MINUTES: int = 30
+    PASSWORD_RESET_EMAIL_COOLDOWN_SECONDS: int = 60
+    SMTP_HOST: str = "smtp.gmail.com"
+    SMTP_PORT: int = 587
+    SMTP_STARTTLS: bool = True
+    SMTP_USERNAME: str = ""
+    SMTP_FROM_EMAIL: str = ""
+    SMTP_PASSWORD: str = ""
+
     UPLOADS_DIR: str = "/app/uploads"
     UPLOAD_DIR: str | None = None
     PUBLIC_UPLOADS_BASE_URL: str = "/uploads"

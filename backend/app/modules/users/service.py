@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 from uuid import UUID
 
 from fastapi import HTTPException, status
-from sqlalchemy import or_, select
+from sqlalchemy import or_, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -169,8 +169,10 @@ async def update_user(
         user.email = email
     if "nombre" in data and data["nombre"] is not None:
         user.nombre = data["nombre"]
+    security_state_changed = False
     if "password" in data and data["password"]:
         user.password_hash = get_password_hash(data["password"])
+        security_state_changed = True
     if role is not None and hasattr(payload, "rol"):
         user.rol = role.value
         if (
@@ -184,7 +186,23 @@ async def update_user(
                 "Aprobada mediante gestión administrativa de rol"
             )
     if state is not None and hasattr(payload, "estado"):
+        if user.estado != state.value:
+            security_state_changed = True
         user.estado = state.value
+
+    if security_state_changed:
+        from app.modules.auth.models import PasswordResetRequest
+
+        user.auth_version = int(user.auth_version or 1) + 1
+        await db.execute(
+            update(PasswordResetRequest)
+            .where(
+                PasswordResetRequest.user_id == user.id,
+                PasswordResetRequest.consumed_at.is_(None),
+                PasswordResetRequest.invalidated_at.is_(None),
+            )
+            .values(invalidated_at=_now())
+        )
 
     try:
         await db.commit()

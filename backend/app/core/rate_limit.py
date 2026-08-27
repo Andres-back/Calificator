@@ -17,6 +17,7 @@ logger = get_logger(__name__)
 RateLimitDependency = Callable[[Request], Awaitable[None]]
 
 _redis: Any | None = None
+_redis_loop: asyncio.AbstractEventLoop | None = None
 _fallback: dict[str, tuple[int, float]] = {}
 _fallback_lock = asyncio.Lock()
 _ATOMIC_INCREMENT = """
@@ -27,8 +28,9 @@ return {count, redis.call('TTL', KEYS[1])}
 
 
 def _redis_client() -> Any:
-    global _redis
-    if _redis is None:
+    global _redis, _redis_loop
+    current_loop = asyncio.get_running_loop()
+    if _redis is None or _redis_loop is not current_loop:
         from redis.asyncio import Redis
 
         _redis = Redis.from_url(
@@ -37,6 +39,7 @@ def _redis_client() -> Any:
             socket_connect_timeout=0.25,
             socket_timeout=0.5,
         )
+        _redis_loop = current_loop
     return _redis
 
 
@@ -81,6 +84,7 @@ def rate_limit(*, limit: int, window_seconds: int, scope: str) -> RateLimitDepen
             count, retry_after = await _fallback_increment(key, window_seconds)
 
         if count > limit:
+            logger.info("Rate limit applied scope=%s", scope)
             raise HTTPException(
                 status_code=status.HTTP_429_TOO_MANY_REQUESTS,
                 detail="Demasiadas solicitudes. Espera un momento e intenta nuevamente.",

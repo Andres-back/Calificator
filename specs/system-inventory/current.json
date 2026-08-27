@@ -1,21 +1,45 @@
 {
   "counts": {
     "by_coverage": {
-      "covered": 363,
-      "missing": 51
+      "covered": 379,
+      "missing": 53
     },
     "by_kind": {
-      "endpoint": 199,
-      "frontend_call": 131,
-      "frontend_route": 29,
+      "endpoint": 206,
+      "frontend_call": 137,
+      "frontend_route": 30,
       "integration": 7,
-      "job": 9,
-      "table": 39
+      "job": 11,
+      "table": 41
     },
-    "total": 414
+    "total": 432
   },
   "exceptions": [],
   "findings": [
+    {
+      "category": "missing_coverage",
+      "description": "15 superficies de 012-ia-jobs-produccion no tienen evidencia de prueba observable.",
+      "id": "F-0ADA8208A709",
+      "issue_url": "",
+      "severity": "low",
+      "surface_ids": [
+        "backend:GET:/jobs/{job_id}",
+        "backend:GET:/jobs/{job_id}/estado",
+        "backend:POST:/jobs/{job_id}/cancelar",
+        "frontend_call:GET:/jobs/{jobId}:frontend/src/modules/evaluaciones/components/DigitalizationJobMonitor.tsx",
+        "job:tasks.assign_overdue_grades",
+        "job:tasks.cleanup_password_reset_requests",
+        "job:tasks.digitalize_evaluation",
+        "job:tasks.export_report",
+        "job:tasks.generate_image",
+        "job:tasks.generate_presentation",
+        "job:tasks.get_ai_config_version",
+        "job:tasks.grade_batch",
+        "job:tasks.ingest_rag",
+        "job:tasks.recover_stale_grading_jobs",
+        "job:tasks.send_password_reset_email"
+      ]
+    },
     {
       "category": "missing_coverage",
       "description": "5 superficies de 004-dba-asistencia-curriculo no tienen evidencia de prueba observable.",
@@ -93,28 +117,6 @@
         "table:ai_jobs",
         "table:chat_messages",
         "table:evaluation_blueprints"
-      ]
-    },
-    {
-      "category": "missing_coverage",
-      "description": "13 superficies de 012-ia-jobs-produccion no tienen evidencia de prueba observable.",
-      "id": "F-DA30765F9F33",
-      "issue_url": "",
-      "severity": "low",
-      "surface_ids": [
-        "backend:GET:/jobs/{job_id}",
-        "backend:GET:/jobs/{job_id}/estado",
-        "backend:POST:/jobs/{job_id}/cancelar",
-        "frontend_call:GET:/jobs/{jobId}:frontend/src/modules/evaluaciones/components/DigitalizationJobMonitor.tsx",
-        "job:tasks.assign_overdue_grades",
-        "job:tasks.digitalize_evaluation",
-        "job:tasks.export_report",
-        "job:tasks.generate_image",
-        "job:tasks.generate_presentation",
-        "job:tasks.get_ai_config_version",
-        "job:tasks.grade_batch",
-        "job:tasks.ingest_rag",
-        "job:tasks.recover_stale_grading_jobs"
       ]
     },
     {
@@ -289,7 +291,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "81bd8bc73a56aaa18014e32edc9d4d0359fa09e48f40a329389e8af77d8a5533",
+  "source_digest": "2d1280a44a5a8493c28cc9bb657879f14bb24fd708caa1d24b894ee655c929f3",
   "surfaces": [
     {
       "actors": [
@@ -1044,6 +1046,68 @@
     },
     {
       "actors": [
+        "ambiguous"
+      ],
+      "authorization": [],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
+        "function": "read_mail_config",
+        "registered": true,
+        "router": "router"
+      },
+      "id": "backend:GET:/admin/mail/config",
+      "kind": "endpoint",
+      "owner_spec": "002-arquitectura-roles-seguridad",
+      "signature": "GET:/admin/mail/config",
+      "source_line": 51,
+      "source_path": "backend/app/modules/admin_mail/router.py",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "GET:/admin/mail/config",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_admin_mail_config.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/admin/mail/config",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_password_recovery_api.py"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "ambiguous"
+      ],
+      "authorization": [],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
+        "function": "password_recovery_status",
+        "registered": true,
+        "router": "router"
+      },
+      "id": "backend:GET:/admin/mail/recovery-status",
+      "kind": "endpoint",
+      "owner_spec": "002-arquitectura-roles-seguridad",
+      "signature": "GET:/admin/mail/recovery-status",
+      "source_line": 141,
+      "source_path": "backend/app/modules/admin_mail/router.py",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "GET:/admin/mail/recovery-status",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_admin_mail_config.py"
+        }
+      ]
+    },
+    {
+      "actors": [
         "admin"
       ],
       "authorization": [
@@ -1760,7 +1824,7 @@
       "kind": "endpoint",
       "owner_spec": "003-usuarios-materias-matriculas",
       "signature": "GET:/auth/me",
-      "source_line": 65,
+      "source_line": 166,
       "source_path": "backend/app/modules/auth/router.py",
       "states": [],
       "tests": [
@@ -6320,6 +6384,34 @@
     },
     {
       "actors": [
+        "ambiguous"
+      ],
+      "authorization": [],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
+        "function": "test_mail_config",
+        "registered": true,
+        "router": "router"
+      },
+      "id": "backend:POST:/admin/mail/test",
+      "kind": "endpoint",
+      "owner_spec": "002-arquitectura-roles-seguridad",
+      "signature": "POST:/admin/mail/test",
+      "source_line": 88,
+      "source_path": "backend/app/modules/admin_mail/router.py",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "POST:/admin/mail/test",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_admin_mail_config.py"
+        }
+      ]
+    },
+    {
+      "actors": [
         "admin"
       ],
       "authorization": [
@@ -6439,7 +6531,7 @@
       "kind": "endpoint",
       "owner_spec": "003-usuarios-materias-matriculas",
       "signature": "POST:/auth/login",
-      "source_line": 15,
+      "source_line": 31,
       "source_path": "backend/app/modules/auth/router.py",
       "states": [],
       "tests": [
@@ -6557,7 +6649,7 @@
       "kind": "endpoint",
       "owner_spec": "003-usuarios-materias-matriculas",
       "signature": "POST:/auth/logout",
-      "source_line": 58,
+      "source_line": 159,
       "source_path": "backend/app/modules/auth/router.py",
       "states": [],
       "tests": [
@@ -6619,6 +6711,198 @@
       "consumers": [],
       "coverage": "covered",
       "details": {
+        "function": "request_password_recovery",
+        "registered": true,
+        "router": "router"
+      },
+      "id": "backend:POST:/auth/password-recovery/request",
+      "kind": "endpoint",
+      "owner_spec": "003-usuarios-materias-matriculas",
+      "signature": "POST:/auth/password-recovery/request",
+      "source_line": 60,
+      "source_path": "backend/app/modules/auth/router.py",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "POST:/auth/password-recovery/request",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_password_recovery_api.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/auth/password-recovery/request",
+          "status": "domain",
+          "test_path": "backend/tests/unit/authorization_helpers.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/auth/password-recovery/request",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_auth_logout.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/auth/password-recovery/request",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_auth_registration_security.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/auth/password-recovery/request",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_authorization_contracts.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/auth/password-recovery/request",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_breakdown_authorization.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/auth/password-recovery/request",
+          "status": "domain",
+          "test_path": "frontend/e2e/auth-navigation.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/auth/password-recovery/request",
+          "status": "direct",
+          "test_path": "frontend/e2e/password-recovery.spec.ts"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "ambiguous"
+      ],
+      "authorization": [],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
+        "function": "reset_password",
+        "registered": true,
+        "router": "router"
+      },
+      "id": "backend:POST:/auth/password-recovery/reset",
+      "kind": "endpoint",
+      "owner_spec": "003-usuarios-materias-matriculas",
+      "signature": "POST:/auth/password-recovery/reset",
+      "source_line": 115,
+      "source_path": "backend/app/modules/auth/router.py",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "POST:/auth/password-recovery/reset",
+          "status": "domain",
+          "test_path": "backend/tests/unit/authorization_helpers.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/auth/password-recovery/reset",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_auth_logout.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/auth/password-recovery/reset",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_auth_registration_security.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/auth/password-recovery/reset",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_authorization_contracts.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/auth/password-recovery/reset",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_breakdown_authorization.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/auth/password-recovery/reset",
+          "status": "domain",
+          "test_path": "frontend/e2e/auth-navigation.spec.ts"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "ambiguous"
+      ],
+      "authorization": [],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
+        "function": "validate_password_recovery",
+        "registered": true,
+        "router": "router"
+      },
+      "id": "backend:POST:/auth/password-recovery/validate",
+      "kind": "endpoint",
+      "owner_spec": "003-usuarios-materias-matriculas",
+      "signature": "POST:/auth/password-recovery/validate",
+      "source_line": 94,
+      "source_path": "backend/app/modules/auth/router.py",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "POST:/auth/password-recovery/validate",
+          "status": "domain",
+          "test_path": "backend/tests/unit/authorization_helpers.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/auth/password-recovery/validate",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_auth_logout.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/auth/password-recovery/validate",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_auth_registration_security.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/auth/password-recovery/validate",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_authorization_contracts.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/auth/password-recovery/validate",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_breakdown_authorization.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/auth/password-recovery/validate",
+          "status": "domain",
+          "test_path": "frontend/e2e/auth-navigation.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/auth/password-recovery/validate",
+          "status": "direct",
+          "test_path": "frontend/e2e/password-recovery.spec.ts"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "ambiguous"
+      ],
+      "authorization": [],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
         "function": "refresh",
         "registered": true,
         "router": "router"
@@ -6627,7 +6911,7 @@
       "kind": "endpoint",
       "owner_spec": "003-usuarios-materias-matriculas",
       "signature": "POST:/auth/refresh",
-      "source_line": 44,
+      "source_line": 145,
       "source_path": "backend/app/modules/auth/router.py",
       "states": [],
       "tests": [
@@ -6739,7 +7023,7 @@
       "kind": "endpoint",
       "owner_spec": "003-usuarios-materias-matriculas",
       "signature": "POST:/auth/register",
-      "source_line": 32,
+      "source_line": 48,
       "source_path": "backend/app/modules/auth/router.py",
       "states": [],
       "tests": [
@@ -10019,6 +10303,40 @@
     },
     {
       "actors": [
+        "ambiguous"
+      ],
+      "authorization": [],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
+        "function": "update_mail_config",
+        "registered": true,
+        "router": "router"
+      },
+      "id": "backend:PUT:/admin/mail/config",
+      "kind": "endpoint",
+      "owner_spec": "002-arquitectura-roles-seguridad",
+      "signature": "PUT:/admin/mail/config",
+      "source_line": 60,
+      "source_path": "backend/app/modules/admin_mail/router.py",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "PUT:/admin/mail/config",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_admin_mail_config.py"
+        },
+        {
+          "level": "unit",
+          "reference": "PUT:/admin/mail/config",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_password_recovery_api.py"
+        }
+      ]
+    },
+    {
+      "actors": [
         "admin",
         "profesor"
       ],
@@ -10243,6 +10561,12 @@
           "level": "unit",
           "reference": "/",
           "status": "direct",
+          "test_path": "backend/tests/integration/test_admin_mail_config.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
           "test_path": "backend/tests/integration/test_ai_configuration_api.py"
         },
         {
@@ -10292,6 +10616,12 @@
           "reference": "/",
           "status": "direct",
           "test_path": "backend/tests/integration/test_explainable_grading_pipeline.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_password_recovery_api.py"
         },
         {
           "level": "unit",
@@ -10406,6 +10736,12 @@
           "reference": "/",
           "status": "direct",
           "test_path": "backend/tests/unit/test_evidence_replacement.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_mail_configuration.py"
         },
         {
           "level": "unit",
@@ -10579,6 +10915,12 @@
           "level": "e2e",
           "reference": "/",
           "status": "direct",
+          "test_path": "frontend/e2e/password-recovery.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/",
+          "status": "direct",
           "test_path": "frontend/e2e/resources-creation.spec.ts"
         },
         {
@@ -10681,6 +11023,12 @@
           "level": "unit",
           "reference": "/",
           "status": "direct",
+          "test_path": "frontend/src/modules/admin/AdminMailPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
           "test_path": "frontend/src/modules/admin/AdminUsersPage.test.tsx"
         },
         {
@@ -10694,6 +11042,12 @@
           "reference": "/",
           "status": "direct",
           "test_path": "frontend/src/modules/auth/LandingPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "frontend/src/modules/auth/PasswordRecovery.test.tsx"
         },
         {
           "level": "unit",
@@ -10984,10 +11338,16 @@
       "kind": "frontend_route",
       "owner_spec": "002-arquitectura-roles-seguridad",
       "signature": "/app",
-      "source_line": 13,
+      "source_line": 15,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
+        {
+          "level": "unit",
+          "reference": "/app",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_admin_mail_config.py"
+        },
         {
           "level": "unit",
           "reference": "/app",
@@ -11023,6 +11383,12 @@
           "reference": "/app",
           "status": "domain",
           "test_path": "backend/tests/unit/test_ai_configuration_resolver.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_mail_configuration.py"
         },
         {
           "level": "unit",
@@ -11199,10 +11565,16 @@
       "kind": "frontend_route",
       "owner_spec": "002-arquitectura-roles-seguridad",
       "signature": "/app/403",
-      "source_line": 14,
+      "source_line": 16,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
+        {
+          "level": "unit",
+          "reference": "/app/403",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_admin_mail_config.py"
+        },
         {
           "level": "unit",
           "reference": "/app/403",
@@ -11238,6 +11610,12 @@
           "reference": "/app/403",
           "status": "domain",
           "test_path": "backend/tests/unit/test_ai_configuration_resolver.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/403",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_mail_configuration.py"
         },
         {
           "level": "unit",
@@ -11306,10 +11684,16 @@
       "kind": "frontend_route",
       "owner_spec": "002-arquitectura-roles-seguridad",
       "signature": "/app/404",
-      "source_line": 15,
+      "source_line": 17,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
+        {
+          "level": "unit",
+          "reference": "/app/404",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_admin_mail_config.py"
+        },
         {
           "level": "unit",
           "reference": "/app/404",
@@ -11345,6 +11729,12 @@
           "reference": "/app/404",
           "status": "domain",
           "test_path": "backend/tests/unit/test_ai_configuration_resolver.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/404",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_mail_configuration.py"
         },
         {
           "level": "unit",
@@ -11407,10 +11797,16 @@
       "kind": "frontend_route",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "/app/admin/configuracion-ia",
-      "source_line": 55,
+      "source_line": 57,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
+        {
+          "level": "unit",
+          "reference": "/app/admin/configuracion-ia",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_admin_mail_config.py"
+        },
         {
           "level": "unit",
           "reference": "/app/admin/configuracion-ia",
@@ -11446,6 +11842,12 @@
           "reference": "/app/admin/configuracion-ia",
           "status": "domain",
           "test_path": "backend/tests/unit/test_ai_configuration_resolver.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/admin/configuracion-ia",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_mail_configuration.py"
         },
         {
           "level": "unit",
@@ -11520,16 +11922,135 @@
       "coverage": "covered",
       "details": {
         "registered": true,
+        "view": "@/modules/admin/AdminMailConfigPage"
+      },
+      "id": "frontend:/app/admin/correo",
+      "kind": "frontend_route",
+      "owner_spec": "002-arquitectura-roles-seguridad",
+      "signature": "/app/admin/correo",
+      "source_line": 59,
+      "source_path": "frontend/src/config/routes.ts",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "/app/admin/correo",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_admin_mail_config.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/admin/correo",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_api.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/admin/correo",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_concurrency.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/admin/correo",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_migration.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/admin/correo",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_secret_safety.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/admin/correo",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_job_configuration_snapshot.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/admin/correo",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_ai_configuration_resolver.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/admin/correo",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_mail_configuration.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/admin/correo",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_nginx_security_config.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/admin/correo",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_production_config.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/admin/correo",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_worker_ai_config.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app/admin/correo",
+          "status": "domain",
+          "test_path": "frontend/e2e/accessibility/teacher-ai-configuration.a11y.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app/admin/correo",
+          "status": "domain",
+          "test_path": "frontend/e2e/teacher-ai-configuration.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/admin/correo",
+          "status": "domain",
+          "test_path": "frontend/src/modules/admin/AdminAIConfigPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/admin/correo",
+          "status": "domain",
+          "test_path": "frontend/src/modules/profesor_ai/TeacherAIConfigPage.test.tsx"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "admin"
+      ],
+      "authorization": [
+        "RequireRole"
+      ],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
+        "registered": true,
         "view": "@/modules/admin/AdminUsersPage"
       },
       "id": "frontend:/app/admin/usuarios",
       "kind": "frontend_route",
       "owner_spec": "002-arquitectura-roles-seguridad",
       "signature": "/app/admin/usuarios",
-      "source_line": 56,
+      "source_line": 58,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
+        {
+          "level": "unit",
+          "reference": "/app/admin/usuarios",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_admin_mail_config.py"
+        },
         {
           "level": "unit",
           "reference": "/app/admin/usuarios",
@@ -11565,6 +12086,12 @@
           "reference": "/app/admin/usuarios",
           "status": "domain",
           "test_path": "backend/tests/unit/test_ai_configuration_resolver.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/admin/usuarios",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_mail_configuration.py"
         },
         {
           "level": "unit",
@@ -11628,10 +12155,16 @@
       "kind": "frontend_route",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "/app/analytics",
-      "source_line": 58,
+      "source_line": 61,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
+        {
+          "level": "unit",
+          "reference": "/app/analytics",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_admin_mail_config.py"
+        },
         {
           "level": "unit",
           "reference": "/app/analytics",
@@ -11667,6 +12200,12 @@
           "reference": "/app/analytics",
           "status": "domain",
           "test_path": "backend/tests/unit/test_ai_configuration_resolver.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/analytics",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_mail_configuration.py"
         },
         {
           "level": "unit",
@@ -11735,10 +12274,16 @@
       "kind": "frontend_route",
       "owner_spec": "008-calificaciones",
       "signature": "/app/calificaciones/boletin",
-      "source_line": 38,
+      "source_line": 40,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
+        {
+          "level": "unit",
+          "reference": "/app/calificaciones/boletin",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_admin_mail_config.py"
+        },
         {
           "level": "unit",
           "reference": "/app/calificaciones/boletin",
@@ -11774,6 +12319,12 @@
           "reference": "/app/calificaciones/boletin",
           "status": "domain",
           "test_path": "backend/tests/unit/test_ai_configuration_resolver.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/calificaciones/boletin",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_mail_configuration.py"
         },
         {
           "level": "unit",
@@ -11849,10 +12400,16 @@
       "kind": "frontend_route",
       "owner_spec": "008-calificaciones",
       "signature": "/app/calificaciones/workspace",
-      "source_line": 39,
+      "source_line": 41,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
+        {
+          "level": "unit",
+          "reference": "/app/calificaciones/workspace",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_admin_mail_config.py"
+        },
         {
           "level": "unit",
           "reference": "/app/calificaciones/workspace",
@@ -11888,6 +12445,12 @@
           "reference": "/app/calificaciones/workspace",
           "status": "domain",
           "test_path": "backend/tests/unit/test_ai_configuration_resolver.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/calificaciones/workspace",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_mail_configuration.py"
         },
         {
           "level": "unit",
@@ -11987,10 +12550,16 @@
       "kind": "frontend_route",
       "owner_spec": "008-calificaciones",
       "signature": "/app/calificaciones/workspace/{evaluacionId}",
-      "source_line": 41,
+      "source_line": 43,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
+        {
+          "level": "unit",
+          "reference": "/app/calificaciones/workspace/{evaluacionId}",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_admin_mail_config.py"
+        },
         {
           "level": "unit",
           "reference": "/app/calificaciones/workspace/{evaluacionId}",
@@ -12026,6 +12595,12 @@
           "reference": "/app/calificaciones/workspace/{evaluacionId}",
           "status": "domain",
           "test_path": "backend/tests/unit/test_ai_configuration_resolver.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/calificaciones/workspace/{evaluacionId}",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_mail_configuration.py"
         },
         {
           "level": "unit",
@@ -12124,10 +12699,16 @@
       "kind": "frontend_route",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "/app/configuracion-ia",
-      "source_line": 57,
+      "source_line": 60,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
+        {
+          "level": "unit",
+          "reference": "/app/configuracion-ia",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_admin_mail_config.py"
+        },
         {
           "level": "unit",
           "reference": "/app/configuracion-ia",
@@ -12163,6 +12744,12 @@
           "reference": "/app/configuracion-ia",
           "status": "domain",
           "test_path": "backend/tests/unit/test_ai_configuration_resolver.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/configuracion-ia",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_mail_configuration.py"
         },
         {
           "level": "unit",
@@ -12225,10 +12812,16 @@
       "kind": "frontend_route",
       "owner_spec": "005-evaluaciones",
       "signature": "/app/evaluaciones",
-      "source_line": 34,
+      "source_line": 36,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
+        {
+          "level": "unit",
+          "reference": "/app/evaluaciones",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_admin_mail_config.py"
+        },
         {
           "level": "unit",
           "reference": "/app/evaluaciones",
@@ -12264,6 +12857,12 @@
           "reference": "/app/evaluaciones",
           "status": "domain",
           "test_path": "backend/tests/unit/test_ai_configuration_resolver.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/evaluaciones",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_mail_configuration.py"
         },
         {
           "level": "unit",
@@ -12362,10 +12961,16 @@
       "kind": "frontend_route",
       "owner_spec": "007-entregas-estudiante",
       "signature": "/app/evaluaciones/{id}/resolver",
-      "source_line": 35,
+      "source_line": 37,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
+        {
+          "level": "unit",
+          "reference": "/app/evaluaciones/{id}/resolver",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_admin_mail_config.py"
+        },
         {
           "level": "unit",
           "reference": "/app/evaluaciones/{id}/resolver",
@@ -12401,6 +13006,12 @@
           "reference": "/app/evaluaciones/{id}/resolver",
           "status": "domain",
           "test_path": "backend/tests/unit/test_ai_configuration_resolver.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/evaluaciones/{id}/resolver",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_mail_configuration.py"
         },
         {
           "level": "unit",
@@ -12464,10 +13075,16 @@
       "kind": "frontend_route",
       "owner_spec": "006-recursos-actividades",
       "signature": "/app/herramientas",
-      "source_line": 45,
+      "source_line": 47,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
+        {
+          "level": "unit",
+          "reference": "/app/herramientas",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_admin_mail_config.py"
+        },
         {
           "level": "unit",
           "reference": "/app/herramientas",
@@ -12503,6 +13120,12 @@
           "reference": "/app/herramientas",
           "status": "domain",
           "test_path": "backend/tests/unit/test_ai_configuration_resolver.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/herramientas",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_mail_configuration.py"
         },
         {
           "level": "unit",
@@ -12584,10 +13207,16 @@
       "kind": "frontend_route",
       "owner_spec": "006-recursos-actividades",
       "signature": "/app/herramientas/{id}",
-      "source_line": 48,
+      "source_line": 50,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
+        {
+          "level": "unit",
+          "reference": "/app/herramientas/{id}",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_admin_mail_config.py"
+        },
         {
           "level": "unit",
           "reference": "/app/herramientas/{id}",
@@ -12623,6 +13252,12 @@
           "reference": "/app/herramientas/{id}",
           "status": "domain",
           "test_path": "backend/tests/unit/test_ai_configuration_resolver.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/herramientas/{id}",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_mail_configuration.py"
         },
         {
           "level": "unit",
@@ -12703,10 +13338,16 @@
       "kind": "frontend_route",
       "owner_spec": "003-usuarios-materias-matriculas",
       "signature": "/app/materias",
-      "source_line": 21,
+      "source_line": 23,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
+        {
+          "level": "unit",
+          "reference": "/app/materias",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_admin_mail_config.py"
+        },
         {
           "level": "unit",
           "reference": "/app/materias",
@@ -12742,6 +13383,12 @@
           "reference": "/app/materias",
           "status": "domain",
           "test_path": "backend/tests/unit/test_ai_configuration_resolver.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/materias",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_mail_configuration.py"
         },
         {
           "level": "unit",
@@ -12853,10 +13500,16 @@
       "kind": "frontend_route",
       "owner_spec": "003-usuarios-materias-matriculas",
       "signature": "/app/materias/{id}",
-      "source_line": 25,
+      "source_line": 27,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
+        {
+          "level": "unit",
+          "reference": "/app/materias/{id}",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_admin_mail_config.py"
+        },
         {
           "level": "unit",
           "reference": "/app/materias/{id}",
@@ -12892,6 +13545,12 @@
           "reference": "/app/materias/{id}",
           "status": "domain",
           "test_path": "backend/tests/unit/test_ai_configuration_resolver.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/materias/{id}",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_mail_configuration.py"
         },
         {
           "level": "unit",
@@ -13003,10 +13662,16 @@
       "kind": "frontend_route",
       "owner_spec": "004-dba-asistencia-curriculo",
       "signature": "/app/materias/{id}/asistencia",
-      "source_line": 29,
+      "source_line": 31,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
+        {
+          "level": "unit",
+          "reference": "/app/materias/{id}/asistencia",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_admin_mail_config.py"
+        },
         {
           "level": "unit",
           "reference": "/app/materias/{id}/asistencia",
@@ -13042,6 +13707,12 @@
           "reference": "/app/materias/{id}/asistencia",
           "status": "domain",
           "test_path": "backend/tests/unit/test_ai_configuration_resolver.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/materias/{id}/asistencia",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_mail_configuration.py"
         },
         {
           "level": "unit",
@@ -13105,10 +13776,16 @@
       "kind": "frontend_route",
       "owner_spec": "008-calificaciones",
       "signature": "/app/materias/{id}/boletin",
-      "source_line": 30,
+      "source_line": 32,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
+        {
+          "level": "unit",
+          "reference": "/app/materias/{id}/boletin",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_admin_mail_config.py"
+        },
         {
           "level": "unit",
           "reference": "/app/materias/{id}/boletin",
@@ -13144,6 +13821,12 @@
           "reference": "/app/materias/{id}/boletin",
           "status": "domain",
           "test_path": "backend/tests/unit/test_ai_configuration_resolver.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/materias/{id}/boletin",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_mail_configuration.py"
         },
         {
           "level": "unit",
@@ -13207,10 +13890,16 @@
       "kind": "frontend_route",
       "owner_spec": "008-calificaciones",
       "signature": "/app/materias/{id}/calificar",
-      "source_line": 28,
+      "source_line": 30,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
+        {
+          "level": "unit",
+          "reference": "/app/materias/{id}/calificar",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_admin_mail_config.py"
+        },
         {
           "level": "unit",
           "reference": "/app/materias/{id}/calificar",
@@ -13246,6 +13935,12 @@
           "reference": "/app/materias/{id}/calificar",
           "status": "domain",
           "test_path": "backend/tests/unit/test_ai_configuration_resolver.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/materias/{id}/calificar",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_mail_configuration.py"
         },
         {
           "level": "unit",
@@ -13309,10 +14004,16 @@
       "kind": "frontend_route",
       "owner_spec": "004-dba-asistencia-curriculo",
       "signature": "/app/materias/{id}/dba",
-      "source_line": 31,
+      "source_line": 33,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
+        {
+          "level": "unit",
+          "reference": "/app/materias/{id}/dba",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_admin_mail_config.py"
+        },
         {
           "level": "unit",
           "reference": "/app/materias/{id}/dba",
@@ -13348,6 +14049,12 @@
           "reference": "/app/materias/{id}/dba",
           "status": "domain",
           "test_path": "backend/tests/unit/test_ai_configuration_resolver.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/materias/{id}/dba",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_mail_configuration.py"
         },
         {
           "level": "unit",
@@ -13411,10 +14118,16 @@
       "kind": "frontend_route",
       "owner_spec": "005-evaluaciones",
       "signature": "/app/materias/{id}/evaluaciones",
-      "source_line": 26,
+      "source_line": 28,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
+        {
+          "level": "unit",
+          "reference": "/app/materias/{id}/evaluaciones",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_admin_mail_config.py"
+        },
         {
           "level": "unit",
           "reference": "/app/materias/{id}/evaluaciones",
@@ -13450,6 +14163,12 @@
           "reference": "/app/materias/{id}/evaluaciones",
           "status": "domain",
           "test_path": "backend/tests/unit/test_ai_configuration_resolver.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/materias/{id}/evaluaciones",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_mail_configuration.py"
         },
         {
           "level": "unit",
@@ -13513,10 +14232,16 @@
       "kind": "frontend_route",
       "owner_spec": "006-recursos-actividades",
       "signature": "/app/materias/{id}/recursos",
-      "source_line": 27,
+      "source_line": 29,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
+        {
+          "level": "unit",
+          "reference": "/app/materias/{id}/recursos",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_admin_mail_config.py"
+        },
         {
           "level": "unit",
           "reference": "/app/materias/{id}/recursos",
@@ -13552,6 +14277,12 @@
           "reference": "/app/materias/{id}/recursos",
           "status": "domain",
           "test_path": "backend/tests/unit/test_ai_configuration_resolver.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/materias/{id}/recursos",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_mail_configuration.py"
         },
         {
           "level": "unit",
@@ -13615,10 +14346,16 @@
       "kind": "frontend_route",
       "owner_spec": "010-presentaciones-imagenes",
       "signature": "/app/presentaciones",
-      "source_line": 53,
+      "source_line": 55,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
+        {
+          "level": "unit",
+          "reference": "/app/presentaciones",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_admin_mail_config.py"
+        },
         {
           "level": "unit",
           "reference": "/app/presentaciones",
@@ -13654,6 +14391,12 @@
           "reference": "/app/presentaciones",
           "status": "domain",
           "test_path": "backend/tests/unit/test_ai_configuration_resolver.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/presentaciones",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_mail_configuration.py"
         },
         {
           "level": "unit",
@@ -13728,10 +14471,16 @@
       "kind": "frontend_route",
       "owner_spec": "006-recursos-actividades",
       "signature": "/app/recursos/{id}",
-      "source_line": 49,
+      "source_line": 51,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
+        {
+          "level": "unit",
+          "reference": "/app/recursos/{id}",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_admin_mail_config.py"
+        },
         {
           "level": "unit",
           "reference": "/app/recursos/{id}",
@@ -13767,6 +14516,12 @@
           "reference": "/app/recursos/{id}",
           "status": "domain",
           "test_path": "backend/tests/unit/test_ai_configuration_resolver.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/recursos/{id}",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_mail_configuration.py"
         },
         {
           "level": "unit",
@@ -13842,10 +14597,16 @@
       "kind": "frontend_route",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "/app/reportes",
-      "source_line": 54,
+      "source_line": 56,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
+        {
+          "level": "unit",
+          "reference": "/app/reportes",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_admin_mail_config.py"
+        },
         {
           "level": "unit",
           "reference": "/app/reportes",
@@ -13881,6 +14642,12 @@
           "reference": "/app/reportes",
           "status": "domain",
           "test_path": "backend/tests/unit/test_ai_configuration_resolver.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/reportes",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_mail_configuration.py"
         },
         {
           "level": "unit",
@@ -13955,10 +14722,16 @@
       "kind": "frontend_route",
       "owner_spec": "009-xali-rag-refuerzos",
       "signature": "/app/xali",
-      "source_line": 52,
+      "source_line": 54,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
+        {
+          "level": "unit",
+          "reference": "/app/xali",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_admin_mail_config.py"
+        },
         {
           "level": "unit",
           "reference": "/app/xali",
@@ -13994,6 +14767,12 @@
           "reference": "/app/xali",
           "status": "domain",
           "test_path": "backend/tests/unit/test_ai_configuration_resolver.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/xali",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_mail_configuration.py"
         },
         {
           "level": "unit",
@@ -14074,6 +14853,12 @@
           "level": "unit",
           "reference": "/login",
           "status": "domain",
+          "test_path": "backend/tests/integration/test_admin_mail_config.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/login",
+          "status": "domain",
           "test_path": "backend/tests/integration/test_ai_configuration_api.py"
         },
         {
@@ -14123,6 +14908,12 @@
           "reference": "/login",
           "status": "direct",
           "test_path": "backend/tests/unit/test_csrf_middleware.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/login",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_mail_configuration.py"
         },
         {
           "level": "unit",
@@ -14251,6 +15042,12 @@
           "level": "unit",
           "reference": "/registro",
           "status": "domain",
+          "test_path": "backend/tests/integration/test_admin_mail_config.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/registro",
+          "status": "domain",
           "test_path": "backend/tests/integration/test_ai_configuration_api.py"
         },
         {
@@ -14282,6 +15079,12 @@
           "reference": "/registro",
           "status": "domain",
           "test_path": "backend/tests/unit/test_ai_configuration_resolver.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/registro",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_mail_configuration.py"
         },
         {
           "level": "unit",
@@ -14879,6 +15682,12 @@
           "level": "unit",
           "reference": "GET:/admin/ai-audit",
           "status": "domain",
+          "test_path": "backend/tests/integration/test_admin_mail_config.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/admin/ai-audit",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_admin_ai_usage_service.py"
         },
         {
@@ -14892,6 +15701,12 @@
           "reference": "GET:/admin/ai-audit",
           "status": "domain",
           "test_path": "frontend/src/modules/admin/AdminAIConfigPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/admin/ai-audit",
+          "status": "domain",
+          "test_path": "frontend/src/modules/admin/AdminMailPage.test.tsx"
         },
         {
           "level": "unit",
@@ -14933,6 +15748,12 @@
           "level": "unit",
           "reference": "GET:/admin/ai-config-hash",
           "status": "domain",
+          "test_path": "backend/tests/integration/test_admin_mail_config.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/admin/ai-config-hash",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_admin_ai_usage_service.py"
         },
         {
@@ -14946,6 +15767,12 @@
           "reference": "GET:/admin/ai-config-hash",
           "status": "domain",
           "test_path": "frontend/src/modules/admin/AdminAIConfigPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/admin/ai-config-hash",
+          "status": "domain",
+          "test_path": "frontend/src/modules/admin/AdminMailPage.test.tsx"
         },
         {
           "level": "unit",
@@ -14986,6 +15813,12 @@
         {
           "level": "unit",
           "reference": "GET:/admin/ai-settings",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_admin_mail_config.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/admin/ai-settings",
           "status": "direct",
           "test_path": "backend/tests/integration/test_ai_configuration_api.py"
         },
@@ -15006,6 +15839,12 @@
           "reference": "GET:/admin/ai-settings",
           "status": "domain",
           "test_path": "frontend/src/modules/admin/AdminAIConfigPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/admin/ai-settings",
+          "status": "domain",
+          "test_path": "frontend/src/modules/admin/AdminMailPage.test.tsx"
         },
         {
           "level": "unit",
@@ -15053,6 +15892,12 @@
           "level": "unit",
           "reference": "GET:/admin/ai-usage",
           "status": "domain",
+          "test_path": "backend/tests/integration/test_admin_mail_config.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/admin/ai-usage",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_admin_ai_usage_service.py"
         },
         {
@@ -15070,6 +15915,138 @@
         {
           "level": "unit",
           "reference": "GET:/admin/ai-usage",
+          "status": "domain",
+          "test_path": "frontend/src/modules/admin/AdminMailPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/admin/ai-usage",
+          "status": "domain",
+          "test_path": "frontend/src/modules/admin/AdminUsersPage.test.tsx"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "admin"
+      ],
+      "authorization": [
+        "RequireRole"
+      ],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
+        "backend_contract": "backend:GET:/admin/mail/config",
+        "backend_contract_candidates": [],
+        "contract_status": "matched"
+      },
+      "id": "frontend_call:GET:/admin/mail/config:frontend/src/modules/admin/mailApi.ts",
+      "kind": "frontend_call",
+      "owner_spec": "021-configuracion-ia-docente",
+      "signature": "GET:/admin/mail/config",
+      "source_line": 41,
+      "source_path": "frontend/src/modules/admin/mailApi.ts",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "GET:/admin/mail/config",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_admin_ai_routing.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/admin/mail/config",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_admin_mail_config.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/admin/mail/config",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_password_recovery_api.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/admin/mail/config",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_admin_ai_usage_service.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/admin/mail/config",
+          "status": "domain",
+          "test_path": "frontend/src/modules/admin/AdminAIConfigPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/admin/mail/config",
+          "status": "domain",
+          "test_path": "frontend/src/modules/admin/AdminMailPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/admin/mail/config",
+          "status": "domain",
+          "test_path": "frontend/src/modules/admin/AdminUsersPage.test.tsx"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "admin"
+      ],
+      "authorization": [
+        "RequireRole"
+      ],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
+        "backend_contract": "backend:GET:/admin/mail/recovery-status",
+        "backend_contract_candidates": [],
+        "contract_status": "matched"
+      },
+      "id": "frontend_call:GET:/admin/mail/recovery-status:frontend/src/modules/admin/mailApi.ts",
+      "kind": "frontend_call",
+      "owner_spec": "021-configuracion-ia-docente",
+      "signature": "GET:/admin/mail/recovery-status",
+      "source_line": 56,
+      "source_path": "frontend/src/modules/admin/mailApi.ts",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "GET:/admin/mail/recovery-status",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_admin_ai_routing.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/admin/mail/recovery-status",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_admin_mail_config.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/admin/mail/recovery-status",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_admin_ai_usage_service.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/admin/mail/recovery-status",
+          "status": "domain",
+          "test_path": "frontend/src/modules/admin/AdminAIConfigPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/admin/mail/recovery-status",
+          "status": "domain",
+          "test_path": "frontend/src/modules/admin/AdminMailPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/admin/mail/recovery-status",
           "status": "domain",
           "test_path": "frontend/src/modules/admin/AdminUsersPage.test.tsx"
         }
@@ -15106,6 +16083,12 @@
         {
           "level": "unit",
           "reference": "GET:/admin/users",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_admin_mail_config.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/admin/users",
           "status": "direct",
           "test_path": "backend/tests/integration/test_api_contract.py"
         },
@@ -15120,6 +16103,12 @@
           "reference": "GET:/admin/users",
           "status": "domain",
           "test_path": "frontend/src/modules/admin/AdminAIConfigPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/admin/users",
+          "status": "domain",
+          "test_path": "frontend/src/modules/admin/AdminMailPage.test.tsx"
         },
         {
           "level": "unit",
@@ -17742,6 +18731,12 @@
           "level": "unit",
           "reference": "PATCH:/admin/ai-config",
           "status": "domain",
+          "test_path": "backend/tests/integration/test_admin_mail_config.py"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/admin/ai-config",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_admin_ai_usage_service.py"
         },
         {
@@ -17755,6 +18750,12 @@
           "reference": "PATCH:/admin/ai-config",
           "status": "domain",
           "test_path": "frontend/src/modules/admin/AdminAIConfigPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/admin/ai-config",
+          "status": "domain",
+          "test_path": "frontend/src/modules/admin/AdminMailPage.test.tsx"
         },
         {
           "level": "unit",
@@ -17802,6 +18803,12 @@
           "level": "unit",
           "reference": "PATCH:/admin/ai-providers/{id}",
           "status": "domain",
+          "test_path": "backend/tests/integration/test_admin_mail_config.py"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/admin/ai-providers/{id}",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_admin_ai_usage_service.py"
         },
         {
@@ -17809,6 +18816,12 @@
           "reference": "PATCH:/admin/ai-providers/{id}",
           "status": "domain",
           "test_path": "frontend/src/modules/admin/AdminAIConfigPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/admin/ai-providers/{id}",
+          "status": "domain",
+          "test_path": "frontend/src/modules/admin/AdminMailPage.test.tsx"
         },
         {
           "level": "unit",
@@ -17856,6 +18869,12 @@
           "level": "unit",
           "reference": "PATCH:/admin/users/{id}/solicitud-docente",
           "status": "domain",
+          "test_path": "backend/tests/integration/test_admin_mail_config.py"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/admin/users/{id}/solicitud-docente",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_admin_ai_usage_service.py"
         },
         {
@@ -17863,6 +18882,12 @@
           "reference": "PATCH:/admin/users/{id}/solicitud-docente",
           "status": "domain",
           "test_path": "frontend/src/modules/admin/AdminAIConfigPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/admin/users/{id}/solicitud-docente",
+          "status": "domain",
+          "test_path": "frontend/src/modules/admin/AdminMailPage.test.tsx"
         },
         {
           "level": "unit",
@@ -17903,6 +18928,12 @@
         {
           "level": "unit",
           "reference": "PATCH:/admin/users/{id}",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_admin_mail_config.py"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/admin/users/{id}",
           "status": "direct",
           "test_path": "backend/tests/integration/test_api_contract.py"
         },
@@ -17917,6 +18948,12 @@
           "reference": "PATCH:/admin/users/{id}",
           "status": "domain",
           "test_path": "frontend/src/modules/admin/AdminAIConfigPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/admin/users/{id}",
+          "status": "domain",
+          "test_path": "frontend/src/modules/admin/AdminMailPage.test.tsx"
         },
         {
           "level": "unit",
@@ -18819,6 +19856,12 @@
           "level": "unit",
           "reference": "POST:/admin/ai-cache/clear",
           "status": "domain",
+          "test_path": "backend/tests/integration/test_admin_mail_config.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/admin/ai-cache/clear",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_admin_ai_usage_service.py"
         },
         {
@@ -18826,6 +19869,12 @@
           "reference": "POST:/admin/ai-cache/clear",
           "status": "domain",
           "test_path": "frontend/src/modules/admin/AdminAIConfigPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/admin/ai-cache/clear",
+          "status": "domain",
+          "test_path": "frontend/src/modules/admin/AdminMailPage.test.tsx"
         },
         {
           "level": "unit",
@@ -18867,6 +19916,12 @@
           "level": "unit",
           "reference": "POST:/admin/ai-providers/{providerId}/test",
           "status": "domain",
+          "test_path": "backend/tests/integration/test_admin_mail_config.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/admin/ai-providers/{providerId}/test",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_admin_ai_usage_service.py"
         },
         {
@@ -18874,6 +19929,12 @@
           "reference": "POST:/admin/ai-providers/{providerId}/test",
           "status": "domain",
           "test_path": "frontend/src/modules/admin/AdminAIConfigPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/admin/ai-providers/{providerId}/test",
+          "status": "domain",
+          "test_path": "frontend/src/modules/admin/AdminMailPage.test.tsx"
         },
         {
           "level": "unit",
@@ -18915,6 +19976,12 @@
           "level": "unit",
           "reference": "POST:/admin/ai-settings/restore-defaults",
           "status": "domain",
+          "test_path": "backend/tests/integration/test_admin_mail_config.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/admin/ai-settings/restore-defaults",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_admin_ai_usage_service.py"
         },
         {
@@ -18922,6 +19989,12 @@
           "reference": "POST:/admin/ai-settings/restore-defaults",
           "status": "domain",
           "test_path": "frontend/src/modules/admin/AdminAIConfigPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/admin/ai-settings/restore-defaults",
+          "status": "domain",
+          "test_path": "frontend/src/modules/admin/AdminMailPage.test.tsx"
         },
         {
           "level": "unit",
@@ -18963,6 +20036,12 @@
           "level": "unit",
           "reference": "POST:/admin/ai-settings/restore-previous",
           "status": "domain",
+          "test_path": "backend/tests/integration/test_admin_mail_config.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/admin/ai-settings/restore-previous",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_admin_ai_usage_service.py"
         },
         {
@@ -18975,6 +20054,12 @@
           "level": "unit",
           "reference": "POST:/admin/ai-settings/restore-previous",
           "status": "domain",
+          "test_path": "frontend/src/modules/admin/AdminMailPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/admin/ai-settings/restore-previous",
+          "status": "domain",
           "test_path": "frontend/src/modules/admin/AdminUsersPage.test.tsx"
         },
         {
@@ -18982,6 +20067,66 @@
           "reference": "POST:/admin/ai-settings/restore-previous",
           "status": "direct",
           "test_path": "frontend/src/modules/admin/api.test.ts"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "admin"
+      ],
+      "authorization": [
+        "RequireRole"
+      ],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
+        "backend_contract": "backend:POST:/admin/mail/test",
+        "backend_contract_candidates": [],
+        "contract_status": "matched"
+      },
+      "id": "frontend_call:POST:/admin/mail/test:frontend/src/modules/admin/mailApi.ts",
+      "kind": "frontend_call",
+      "owner_spec": "021-configuracion-ia-docente",
+      "signature": "POST:/admin/mail/test",
+      "source_line": 51,
+      "source_path": "frontend/src/modules/admin/mailApi.ts",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "POST:/admin/mail/test",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_admin_ai_routing.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/admin/mail/test",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_admin_mail_config.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/admin/mail/test",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_admin_ai_usage_service.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/admin/mail/test",
+          "status": "domain",
+          "test_path": "frontend/src/modules/admin/AdminAIConfigPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/admin/mail/test",
+          "status": "domain",
+          "test_path": "frontend/src/modules/admin/AdminMailPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/admin/mail/test",
+          "status": "domain",
+          "test_path": "frontend/src/modules/admin/AdminUsersPage.test.tsx"
         }
       ]
     },
@@ -19171,6 +20316,134 @@
           "reference": "POST:/auth/logout",
           "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "ambiguous"
+      ],
+      "authorization": [],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
+        "backend_contract": "backend:POST:/auth/password-recovery/request",
+        "backend_contract_candidates": [],
+        "contract_status": "matched"
+      },
+      "id": "frontend_call:POST:/auth/password-recovery/request:frontend/src/modules/auth/passwordRecoveryApi.ts",
+      "kind": "frontend_call",
+      "owner_spec": "003-usuarios-materias-matriculas",
+      "signature": "POST:/auth/password-recovery/request",
+      "source_line": 7,
+      "source_path": "frontend/src/modules/auth/passwordRecoveryApi.ts",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "POST:/auth/password-recovery/request",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_password_recovery_api.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/auth/password-recovery/request",
+          "status": "domain",
+          "test_path": "backend/tests/unit/authorization_helpers.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/auth/password-recovery/request",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_auth_logout.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/auth/password-recovery/request",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_auth_registration_security.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/auth/password-recovery/request",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_authorization_contracts.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/auth/password-recovery/request",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_breakdown_authorization.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/auth/password-recovery/request",
+          "status": "domain",
+          "test_path": "frontend/e2e/auth-navigation.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/auth/password-recovery/request",
+          "status": "direct",
+          "test_path": "frontend/e2e/password-recovery.spec.ts"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "ambiguous"
+      ],
+      "authorization": [],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
+        "backend_contract": "backend:POST:/auth/password-recovery/reset",
+        "backend_contract_candidates": [],
+        "contract_status": "matched"
+      },
+      "id": "frontend_call:POST:/auth/password-recovery/reset:frontend/src/modules/auth/passwordRecoveryApi.ts",
+      "kind": "frontend_call",
+      "owner_spec": "003-usuarios-materias-matriculas",
+      "signature": "POST:/auth/password-recovery/reset",
+      "source_line": 24,
+      "source_path": "frontend/src/modules/auth/passwordRecoveryApi.ts",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "POST:/auth/password-recovery/reset",
+          "status": "domain",
+          "test_path": "backend/tests/unit/authorization_helpers.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/auth/password-recovery/reset",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_auth_logout.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/auth/password-recovery/reset",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_auth_registration_security.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/auth/password-recovery/reset",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_authorization_contracts.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/auth/password-recovery/reset",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_breakdown_authorization.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/auth/password-recovery/reset",
+          "status": "domain",
+          "test_path": "frontend/e2e/auth-navigation.spec.ts"
         }
       ]
     },
@@ -21128,6 +22401,12 @@
         {
           "level": "unit",
           "reference": "PUT:/admin/ai-features",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_admin_mail_config.py"
+        },
+        {
+          "level": "unit",
+          "reference": "PUT:/admin/ai-features",
           "status": "direct",
           "test_path": "backend/tests/integration/test_ai_configuration_api.py"
         },
@@ -21142,6 +22421,12 @@
           "reference": "PUT:/admin/ai-features",
           "status": "domain",
           "test_path": "frontend/src/modules/admin/AdminAIConfigPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "PUT:/admin/ai-features",
+          "status": "domain",
+          "test_path": "frontend/src/modules/admin/AdminMailPage.test.tsx"
         },
         {
           "level": "unit",
@@ -21189,6 +22474,12 @@
           "level": "unit",
           "reference": "PUT:/admin/ai-providers",
           "status": "domain",
+          "test_path": "backend/tests/integration/test_admin_mail_config.py"
+        },
+        {
+          "level": "unit",
+          "reference": "PUT:/admin/ai-providers",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_admin_ai_usage_service.py"
         },
         {
@@ -21196,6 +22487,12 @@
           "reference": "PUT:/admin/ai-providers",
           "status": "domain",
           "test_path": "frontend/src/modules/admin/AdminAIConfigPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "PUT:/admin/ai-providers",
+          "status": "domain",
+          "test_path": "frontend/src/modules/admin/AdminMailPage.test.tsx"
         },
         {
           "level": "unit",
@@ -21243,6 +22540,12 @@
           "level": "unit",
           "reference": "PUT:/admin/ai-settings/publish",
           "status": "domain",
+          "test_path": "backend/tests/integration/test_admin_mail_config.py"
+        },
+        {
+          "level": "unit",
+          "reference": "PUT:/admin/ai-settings/publish",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_admin_ai_usage_service.py"
         },
         {
@@ -21255,6 +22558,12 @@
           "level": "unit",
           "reference": "PUT:/admin/ai-settings/publish",
           "status": "domain",
+          "test_path": "frontend/src/modules/admin/AdminMailPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "PUT:/admin/ai-settings/publish",
+          "status": "domain",
           "test_path": "frontend/src/modules/admin/AdminUsersPage.test.tsx"
         },
         {
@@ -21262,6 +22571,72 @@
           "reference": "PUT:/admin/ai-settings/publish",
           "status": "direct",
           "test_path": "frontend/src/modules/admin/api.test.ts"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "admin"
+      ],
+      "authorization": [
+        "RequireRole"
+      ],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
+        "backend_contract": "backend:PUT:/admin/mail/config",
+        "backend_contract_candidates": [],
+        "contract_status": "matched"
+      },
+      "id": "frontend_call:PUT:/admin/mail/config:frontend/src/modules/admin/mailApi.ts",
+      "kind": "frontend_call",
+      "owner_spec": "021-configuracion-ia-docente",
+      "signature": "PUT:/admin/mail/config",
+      "source_line": 46,
+      "source_path": "frontend/src/modules/admin/mailApi.ts",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "PUT:/admin/mail/config",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_admin_ai_routing.py"
+        },
+        {
+          "level": "unit",
+          "reference": "PUT:/admin/mail/config",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_admin_mail_config.py"
+        },
+        {
+          "level": "unit",
+          "reference": "PUT:/admin/mail/config",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_password_recovery_api.py"
+        },
+        {
+          "level": "unit",
+          "reference": "PUT:/admin/mail/config",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_admin_ai_usage_service.py"
+        },
+        {
+          "level": "unit",
+          "reference": "PUT:/admin/mail/config",
+          "status": "domain",
+          "test_path": "frontend/src/modules/admin/AdminAIConfigPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "PUT:/admin/mail/config",
+          "status": "domain",
+          "test_path": "frontend/src/modules/admin/AdminMailPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "PUT:/admin/mail/config",
+          "status": "domain",
+          "test_path": "frontend/src/modules/admin/AdminUsersPage.test.tsx"
         }
       ]
     },
@@ -21876,6 +23251,48 @@
       "consumers": [],
       "coverage": "missing",
       "details": {
+        "bind": false,
+        "effects": [
+          "not_observed"
+        ],
+        "function": "cleanup_password_reset_requests",
+        "idempotency_evidence": [
+          "not_observed"
+        ],
+        "retry_policy": [
+          "not_observed"
+        ],
+        "terminal_states": [
+          "cancelled",
+          "failed",
+          "success"
+        ],
+        "triggers": [
+          "beat:cleanup-password-reset-requests",
+          "celery_queue"
+        ]
+      },
+      "id": "job:tasks.cleanup_password_reset_requests",
+      "kind": "job",
+      "owner_spec": "012-ia-jobs-produccion",
+      "signature": "tasks.cleanup_password_reset_requests",
+      "source_line": 156,
+      "source_path": "backend/app/workers/tasks_password_recovery.py",
+      "states": [
+        "cancelled",
+        "failed",
+        "success"
+      ],
+      "tests": []
+    },
+    {
+      "actors": [
+        "system"
+      ],
+      "authorization": [],
+      "consumers": [],
+      "coverage": "missing",
+      "details": {
         "bind": true,
         "effects": [
           "not_observed"
@@ -22190,6 +23607,49 @@
       "signature": "tasks.recover_stale_grading_jobs",
       "source_line": 782,
       "source_path": "backend/app/workers/tasks_grading.py",
+      "states": [
+        "cancelled",
+        "failed",
+        "success"
+      ],
+      "tests": []
+    },
+    {
+      "actors": [
+        "system"
+      ],
+      "authorization": [],
+      "consumers": [],
+      "coverage": "missing",
+      "details": {
+        "bind": true,
+        "effects": [
+          "not_observed"
+        ],
+        "function": "send_password_reset_email",
+        "idempotency_evidence": [
+          "not_observed"
+        ],
+        "retry_policy": [
+          "default_retry_delay",
+          "explicit_retry",
+          "max_retries"
+        ],
+        "terminal_states": [
+          "cancelled",
+          "failed",
+          "success"
+        ],
+        "triggers": [
+          "celery_queue"
+        ]
+      },
+      "id": "job:tasks.send_password_reset_email",
+      "kind": "job",
+      "owner_spec": "012-ia-jobs-produccion",
+      "signature": "tasks.send_password_reset_email",
+      "source_line": 116,
+      "source_path": "backend/app/workers/tasks_password_recovery.py",
       "states": [
         "cancelled",
         "failed",
@@ -24031,6 +25491,79 @@
       "consumers": [],
       "coverage": "covered",
       "details": {
+        "active": true,
+        "class": "MailGlobalConfig",
+        "constraints": [
+          "id = 1"
+        ],
+        "enum_refs": [],
+        "historical_only": false,
+        "identity": [
+          "id"
+        ],
+        "indexes": [],
+        "migrations": [
+          "backend/alembic/versions/202608270001_password_recovery_mail.py"
+        ],
+        "relationships": [
+          "users.id"
+        ],
+        "unique": []
+      },
+      "id": "table:mail_global_config",
+      "kind": "table",
+      "owner_spec": "003-usuarios-materias-matriculas",
+      "signature": "mail_global_config",
+      "source_line": 77,
+      "source_path": "backend/app/modules/auth/models.py",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "mail_global_config",
+          "status": "domain",
+          "test_path": "backend/tests/unit/authorization_helpers.py"
+        },
+        {
+          "level": "unit",
+          "reference": "mail_global_config",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_auth_logout.py"
+        },
+        {
+          "level": "unit",
+          "reference": "mail_global_config",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_auth_registration_security.py"
+        },
+        {
+          "level": "unit",
+          "reference": "mail_global_config",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_authorization_contracts.py"
+        },
+        {
+          "level": "unit",
+          "reference": "mail_global_config",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_breakdown_authorization.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "mail_global_config",
+          "status": "domain",
+          "test_path": "frontend/e2e/auth-navigation.spec.ts"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "system"
+      ],
+      "authorization": [],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
         "active": false,
         "class": "migration_only",
         "constraints": [],
@@ -24367,6 +25900,90 @@
           "reference": "matriculas",
           "status": "direct",
           "test_path": "backend/tests/integration/test_business_flow_smoke.py"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "system"
+      ],
+      "authorization": [],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
+        "active": true,
+        "class": "PasswordResetRequest",
+        "constraints": [
+          "delivery_status IN ('pending', 'sending', 'sent', 'failed')"
+        ],
+        "enum_refs": [],
+        "historical_only": false,
+        "identity": [
+          "id"
+        ],
+        "indexes": [
+          "created_at",
+          "expires_at",
+          "user_id"
+        ],
+        "migrations": [
+          "backend/alembic/versions/202608270001_password_recovery_mail.py"
+        ],
+        "relationships": [
+          "users.id"
+        ],
+        "unique": [
+          "token_hash"
+        ]
+      },
+      "id": "table:password_reset_requests",
+      "kind": "table",
+      "owner_spec": "003-usuarios-materias-matriculas",
+      "signature": "password_reset_requests",
+      "source_line": 25,
+      "source_path": "backend/app/modules/auth/models.py",
+      "states": [
+        "failed",
+        "pending",
+        "sending",
+        "sent"
+      ],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "password_reset_requests",
+          "status": "domain",
+          "test_path": "backend/tests/unit/authorization_helpers.py"
+        },
+        {
+          "level": "unit",
+          "reference": "password_reset_requests",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_auth_logout.py"
+        },
+        {
+          "level": "unit",
+          "reference": "password_reset_requests",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_auth_registration_security.py"
+        },
+        {
+          "level": "unit",
+          "reference": "password_reset_requests",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_authorization_contracts.py"
+        },
+        {
+          "level": "unit",
+          "reference": "password_reset_requests",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_breakdown_authorization.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "password_reset_requests",
+          "status": "domain",
+          "test_path": "frontend/e2e/auth-navigation.spec.ts"
         }
       ]
     },
@@ -24862,6 +26479,12 @@
         "rechazada"
       ],
       "tests": [
+        {
+          "level": "unit",
+          "reference": "users",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_admin_mail_config.py"
+        },
         {
           "level": "unit",
           "reference": "users",
