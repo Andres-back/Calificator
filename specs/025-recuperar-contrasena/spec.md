@@ -6,6 +6,8 @@
 
 **Estado**: Aprobada
 
+**Issue**: [#37](https://github.com/Andres-back/Calificator/issues/37)
+
 **Aprobación humana**: 2026-08-27
 
 **Entrada**: Permitir que estudiantes, docentes y administradores recuperen el acceso cuando olvidan su contraseña, sin comprometer cuentas ni datos educativos.
