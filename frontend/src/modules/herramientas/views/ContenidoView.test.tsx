@@ -28,17 +28,17 @@ const cases: Array<{ tipo: MaterialTipo; expected: string; data: ToolContent }> 
   {
     tipo: 'guia',
     expected: 'Actividad modelada',
-    data: { personajes: [], preguntas_comprension: [], uso_docente: [], objetivos: ['Comprender el ciclo'], evaluacion_formativa: ['Explica una etapa'], secciones: [{ titulo: 'Exploración', contenido: 'Observa el diagrama.', actividades: [{ titulo: 'Actividad modelada' }] }] },
+    data: { personajes: [], preguntas_comprension: [], uso_docente: [], objetivos: ['Comprender el ciclo'], saberes_previos: ['Estados del agua'], cierre: 'Resume lo aprendido.', evaluacion_formativa: ['Explica una etapa'], secciones: [{ titulo: 'Exploración', explicacion: 'Observa el diagrama.', ejemplo_guiado: 'Actividad modelada', actividades: ['Describe el cambio.'], verificacion: 'Compara tu respuesta.' }] },
   },
   {
     tipo: 'taller',
     expected: 'Representa el ciclo del agua.',
-    data: { personajes: [], preguntas_comprension: [], uso_docente: [], objetivos: [], evaluacion_formativa: [], puntos: [{ numero: 1, enunciado: 'Representa el ciclo del agua.' }] },
+    data: { personajes: [], preguntas_comprension: [], uso_docente: [], objetivos: [], evaluacion_formativa: [], instrucciones: 'Resuelve cada punto.', puntaje_total: 2, criterios_revision: ['Explica con evidencia.'], puntos: [{ numero: 1, enunciado: 'Representa el ciclo del agua.', dificultad: 'media', puntaje: 2, respuesta_esperada: 'Un esquema completo.', lineas_respuesta: 4 }] },
   },
   {
     tipo: 'plan_refuerzo',
     expected: 'Practicar vocabulario',
-    data: { personajes: [], preguntas_comprension: [], uso_docente: [], objetivos: [], evaluacion_formativa: [], semanas: [{ semana: 1, tema: 'Estados del agua', actividades: ['Practicar vocabulario'], recursos: ['Tarjetas'] }] },
+    data: { personajes: [], preguntas_comprension: [], uso_docente: [], objetivos: [], evaluacion_formativa: [], diagnostico_inicial: 'Requiere comprobar vocabulario.', comprobacion_final: 'Explica dos cambios de estado.', semanas: [{ semana: 1, tema: 'Estados del agua', meta_semana: 'Reconocer vocabulario', actividades: ['Practicar vocabulario'], recursos: ['Tarjetas'], evidencia: 'Lista clasificada', responsable: 'Docente y estudiante' }] },
   },
   {
     tipo: 'quiz_rapido',
@@ -53,7 +53,7 @@ const cases: Array<{ tipo: MaterialTipo; expected: string; data: ToolContent }> 
   {
     tipo: 'lectura_comprensiva',
     expected: 'El agua cambia de estado.',
-    data: { personajes: [], preguntas_comprension: [], uso_docente: [], objetivos: [], evaluacion_formativa: [], texto: 'El agua cambia de estado.', preguntas: [{ numero: 1, tipo: 'literal', enunciado: '¿Qué cambia?', respuesta_esperada: 'El agua' }] },
+    data: { personajes: [], preguntas_comprension: [], uso_docente: [], objetivos: [], evaluacion_formativa: [], instrucciones: 'Lee y justifica.', estrategia_lectora: 'Subraya evidencias.', texto: 'El agua cambia de estado.', preguntas: [{ numero: 1, tipo: 'literal', dificultad: 'baja', enunciado: '¿Qué cambia?', respuesta_esperada: 'El agua', evidencia_textual: 'El agua cambia' }] },
   },
   {
     tipo: 'mapa_conceptual',
@@ -96,6 +96,17 @@ describe('renderización de herramientas', () => {
     expect(screen.queryByText(/evaporación/i)).not.toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Ver soluciones' }));
     expect(screen.getByText(/evaporación/i)).toBeInTheDocument();
+  });
+
+  it('mantiene ocultas las soluciones del taller hasta que el docente las solicita', async () => {
+    const user = userEvent.setup();
+    const workshop = cases.find((item) => item.tipo === 'taller');
+    if (!workshop) throw new Error('Fixture de taller no encontrado');
+    render(<ContenidoView tipo={workshop.tipo} data={workshop.data} />);
+
+    expect(screen.queryByText('Un esquema completo.')).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Ver soluciones' }));
+    expect(screen.getByText('Un esquema completo.')).toBeInTheDocument();
   });
 
   it('traduce los identificadores del mapa a nombres pedagógicos', () => {

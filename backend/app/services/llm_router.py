@@ -754,31 +754,59 @@ class LLMRouter:
                     "Como registraron sus observaciones?",
                 ],
             },
+            "lectura_comprensiva": {
+                "titulo": "Lectura comprensiva",
+                "instrucciones": "Lee una vez para comprender la idea general y otra para buscar evidencias.",
+                "estrategia_lectora": "Subraya acciones, palabras desconocidas e ideas que permitan inferir.",
+                "fuente": "Texto original generado para la actividad",
+                "texto": "En el huerto escolar, Lina noto que una planta crecia inclinada hacia la ventana. Registro su posicion durante varios dias. Luego giro la maceta y observo que el tallo volvio a orientarse hacia la luz. Con sus notas, explico al grupo que la planta respondia a una condicion del entorno.",
+                "preguntas": [
+                    {"numero": 1, "tipo": "literal", "dificultad": "baja", "enunciado": "Que observo Lina?", "respuesta_esperada": "Que la planta crecia hacia la ventana.", "evidencia_textual": "crecia inclinada hacia la ventana", "justificacion": "Aparece expresamente en el texto."},
+                    {"numero": 2, "tipo": "inferencial", "dificultad": "media", "enunciado": "Por que registro varios dias?", "respuesta_esperada": "Para comprobar que era un patron.", "evidencia_textual": "registro su posicion durante varios dias", "justificacion": "Repetir permite comparar cambios."},
+                    {"numero": 3, "tipo": "vocabulario", "dificultad": "media", "enunciado": "Que significa orientarse?", "respuesta_esperada": "Dirigirse hacia un lugar.", "evidencia_textual": "orientarse hacia la luz", "justificacion": "La frase indica direccion."},
+                    {"numero": 4, "tipo": "critica", "dificultad": "alta", "enunciado": "La evidencia es suficiente? Explica.", "respuesta_esperada": "Es util, aunque conviene probar con mas plantas.", "evidencia_textual": "giro la maceta y observo", "justificacion": "Una muestra mayor haria la conclusion mas solida."},
+                    {"numero": 5, "tipo": "inferencial", "dificultad": "media", "enunciado": "Que aportaron las notas?", "respuesta_esperada": "Evidencia para explicar el cambio.", "evidencia_textual": "Con sus notas, explico al grupo", "justificacion": "Los registros respaldaron su explicacion."},
+                ],
+            },
             "guia": {
                 "titulo": "Guia de aprendizaje",
                 "objetivos": ["Observar un fenomeno natural", "Registrar evidencias", "Explicar resultados con palabras propias"],
+                "saberes_previos": ["Reconocer ejemplos del tema en el entorno", "Expresar observaciones con palabras propias"],
                 "introduccion": "En esta guia el estudiante explora un concepto de ciencias mediante observacion, comparacion y explicacion.",
                 "secciones": [
                     {
                         "titulo": "Exploracion",
+                        "explicacion": "Observar con atencion permite reconocer caracteristicas, semejanzas y diferencias.",
                         "contenido": "Observa objetos o situaciones del entorno relacionadas con el tema.",
+                        "ejemplo_guiado": "El docente modela como describir color, forma, material y comportamiento sin adivinar.",
                         "actividades": ["Describe lo observado", "Clasifica los ejemplos segun sus caracteristicas"],
+                        "verificacion": "Menciona una caracteristica y explica como la identificaste.",
                     },
                     {
                         "titulo": "Aplicacion",
+                        "explicacion": "La evidencia registrada sirve para construir una conclusion comprensible.",
                         "contenido": "Usa la evidencia recogida para construir una explicacion sencilla.",
-                        "actividades": ["Completa una tabla de resultados", "Escribe una conclusion corta"],
+                        "ejemplo_guiado": "Compara dos registros y conecta la diferencia con el concepto estudiado.",
+                        "actividades": ["Completa una tabla de resultados", "Escribe una conclusion corta", "Comparte una evidencia con el grupo"],
+                        "verificacion": "Subraya la evidencia que respalda tu conclusion.",
                     },
                 ],
+                "cierre": "Resume que aprendiste, que evidencia usaste y que pregunta aun tienes.",
                 "evaluacion_formativa": ["Explica con claridad", "Usa vocabulario del tema", "Relaciona evidencia y conclusion"],
             },
             "taller": {
                 "titulo": "Taller practico",
                 "objetivo": "Aplicar el concepto estudiado en situaciones observables del entorno.",
+                "instrucciones": "Resuelve cada punto en orden y muestra el procedimiento cuando sea necesario.",
+                "puntaje_total": 10,
                 "puntos": [
-                    {"numero": 1, "enunciado": "Observa dos ejemplos del fenomeno y describe sus diferencias.", "espacio_respuesta": ""},
-                    {"numero": 2, "enunciado": "Explica con tus palabras que aprendiste a partir de la actividad.", "espacio_respuesta": ""},
+                    {"numero": 1, "tipo": "aplicacion", "dificultad": "baja", "enunciado": "Observa dos ejemplos y describe sus diferencias.", "opciones": [], "puntaje": 2, "lineas_respuesta": 3, "respuesta_esperada": "Describe dos diferencias observables.", "criterio_logro": "Compara usando vocabulario del tema."},
+                    {"numero": 2, "tipo": "procedimiento", "dificultad": "baja", "enunciado": "Organiza tus observaciones en una tabla.", "opciones": [], "puntaje": 2, "lineas_respuesta": 4, "respuesta_esperada": "Tabla con ejemplos y caracteristicas.", "criterio_logro": "Registra informacion clara y ordenada."},
+                    {"numero": 3, "tipo": "abierta", "dificultad": "media", "enunciado": "Explica que patron encuentras en los resultados.", "opciones": [], "puntaje": 2, "lineas_respuesta": 4, "respuesta_esperada": "Identifica un patron respaldado por los datos.", "criterio_logro": "Relaciona resultados y explicacion."},
+                    {"numero": 4, "tipo": "aplicacion", "dificultad": "media", "enunciado": "Aplica el concepto a una situacion de tu entorno.", "opciones": [], "puntaje": 2, "lineas_respuesta": 4, "respuesta_esperada": "Ejemplo pertinente y explicado.", "criterio_logro": "Transfiere el concepto a una situacion nueva."},
+                    {"numero": 5, "tipo": "abierta", "dificultad": "alta", "enunciado": "Justifica una conclusion usando dos evidencias.", "opciones": [], "puntaje": 2, "lineas_respuesta": 5, "respuesta_esperada": "Conclusion coherente con dos evidencias.", "criterio_logro": "Argumenta con evidencia suficiente."},
                 ],
+                "criterios_revision": ["Comprension del concepto", "Uso de evidencia", "Claridad del procedimiento"],
             },
             "examen": {
                 "titulo": "Examen corto",
@@ -852,7 +880,11 @@ class LLMRouter:
             },
             "plan_refuerzo": {
                 "estudiante": "Estudiante",
+                "diagnostico_inicial": "Reconoce ideas basicas, pero necesita apoyo para aplicarlas y explicar el procedimiento.",
+                "dificultades": ["Aplicar el concepto en situaciones nuevas", "Justificar respuestas con evidencia"],
+                "fortalezas": ["Participa con preguntas guia", "Reconoce vocabulario esencial"],
                 "objetivo_general": "Fortalecer la comprension del tema mediante actividades breves, observables y guiadas.",
+                "duracion_estimada": "2 semanas, 3 sesiones por semana de 20 minutos",
                 "semanas": [
                     {
                         "semana": 1,
@@ -860,6 +892,8 @@ class LLMRouter:
                         "actividades": ["Revisar vocabulario clave", "Resolver ejemplos guiados"],
                         "recursos": ["Cuaderno", "Imagenes", "Objetos del entorno"],
                         "meta_semana": "Reconocer los conceptos principales.",
+                        "evidencia": "Organizador con conceptos y dos ejemplos correctos.",
+                        "responsable": "docente y estudiante",
                     },
                     {
                         "semana": 2,
@@ -867,10 +901,14 @@ class LLMRouter:
                         "actividades": ["Hacer una observacion practica", "Explicar resultados en una tabla"],
                         "recursos": ["Ficha de trabajo", "Materiales de aula"],
                         "meta_semana": "Aplicar el concepto en una situacion concreta.",
+                        "evidencia": "Explicacion breve respaldada por la tabla.",
+                        "responsable": "estudiante con seguimiento docente",
                     },
                 ],
                 "estrategias_apoyo": ["Acompanamiento corto diario", "Preguntas guia", "Retroalimentacion inmediata"],
                 "indicadores_mejora": ["Usa vocabulario del tema", "Explica con evidencia", "Completa actividades con autonomia"],
+                "comprobacion_final": "Resolver una situacion nueva y explicar el procedimiento sin ayuda.",
+                "recomendaciones_familia": ["Practicar con ejemplos cotidianos durante diez minutos", "Valorar el procedimiento antes que la rapidez"],
             },
         }
         return json.dumps(

@@ -29,6 +29,38 @@ class FakeDB:
         self.commits += 1
 
 
+def test_get_material_selects_delivery_visibility_alias() -> None:
+    material_id = uuid4()
+    teacher_id = uuid4()
+    row = SimpleNamespace(
+        id=material_id,
+        tipo="taller",
+        titulo="Taller",
+        materia_id=None,
+        materia_nombre=None,
+        input_json={},
+        contenido_json={},
+        archivo_url=None,
+        evaluacion_id=None,
+        evaluacion_estado=None,
+        evaluacion_modalidad=None,
+        evaluacion_recepcion_habilitada=None,
+        asignacion_tipo=None,
+        publicado_estudiantes=False,
+        fecha_publicacion=None,
+        updated_at=None,
+        created_at=datetime.now(),
+    )
+    db = FakeDB([row])
+
+    material = asyncio.run(service.get_material(db, material_id, teacher_id))
+
+    statement = str(db.executions[0][0])
+    assert "e.recepcion_habilitada AS evaluacion_recepcion_habilitada" in statement
+    assert material is not None
+    assert material["evaluacion_recepcion_habilitada"] is None
+
+
 def test_assign_support_publishes_resource_without_creating_an_evaluation(monkeypatch) -> None:
     material_id = uuid4()
     subject_id = uuid4()

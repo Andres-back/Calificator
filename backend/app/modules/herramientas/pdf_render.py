@@ -393,14 +393,23 @@ def _render_guia(c: dict, soluciones: bool) -> str:
     out = ['<div class="sectionbar">GUÍA DE APRENDIZAJE</div>']
     if c.get("objetivos"):
         out.append('<div class="h3">Objetivos</div>' + _ul(c["objetivos"]))
+    if c.get("saberes_previos"):
+        out.append('<div class="h3">Antes de empezar</div>' + _ul(c["saberes_previos"]))
     if c.get("introduccion"):
         out.append(f'<div class="instr indigo">{_e(c["introduccion"])}</div>')
     for s in c.get("secciones") or []:
         out.append('<div class="card">')
         out.append(f'<div class="h3" style="margin-top:0">{_e(s.get("titulo"))}</div>')
-        out.append(f'<p class="p">{_e(s.get("contenido"))}</p>')
-        out.append(_ul(s.get("actividades")))
+        out.append(f'<p class="p">{_e(s.get("explicacion") or s.get("contenido"))}</p>')
+        if s.get("ejemplo_guiado"):
+            out.append(f'<div class="instr indigo"><b>Ejemplo guiado:</b> {_e(s["ejemplo_guiado"])}</div>')
+        if s.get("actividades"):
+            out.append('<p class="p"><b>Ahora practica</b></p>' + _ul(s["actividades"]))
+        if s.get("verificacion"):
+            out.append(f'<div class="instr"><b>Comprueba:</b> {_e(s["verificacion"])}</div>')
         out.append("</div>")
+    if c.get("cierre"):
+        out.append(f'<div class="instr"><b>Cierre:</b> {_e(c["cierre"])}</div>')
     if c.get("evaluacion_formativa"):
         out.append('<div class="h3">Evaluación formativa</div>' + _ul(c["evaluacion_formativa"]))
     return "".join(out)
@@ -410,11 +419,35 @@ def _render_taller(c: dict, soluciones: bool) -> str:
     out = ['<div class="sectionbar">TALLER</div>']
     if c.get("objetivo"):
         out.append(f'<div class="instr">{_e(c["objetivo"])}</div>')
+    if c.get("instrucciones"):
+        out.append(f'<div class="instr indigo">{_e(c["instrucciones"])}</div>')
     for p in c.get("puntos") or []:
         out.append('<div class="card">')
-        out.append(f'<p class="p"><b>{_e(p.get("numero"))}.</b> {_e(p.get("enunciado"))}</p>')
-        out.append('<div class="line"></div><div class="line"></div>')
+        badges = []
+        if p.get("dificultad"):
+            badges.append(str(p["dificultad"]))
+        if p.get("puntaje") is not None:
+            badges.append(f'{p["puntaje"]} pts')
+        suffix = f' <span class="pts">[{" · ".join(_e(value) for value in badges)}]</span>' if badges else ""
+        out.append(f'<p class="p"><b>{_e(p.get("numero"))}.</b> {_e(p.get("enunciado"))}{suffix}</p>')
+        for idx, option in enumerate(p.get("opciones") or []):
+            out.append(f'<p class="opt"><span class="circle">○ {chr(65 + idx)})</span> {_e(option)}</p>')
+        if soluciones and (p.get("respuesta_esperada") or p.get("criterio_logro")):
+            if p.get("respuesta_esperada"):
+                out.append(f'<p class="opt" style="color:#15803D"><b>Solución:</b> {_e(p["respuesta_esperada"])}</p>')
+            if p.get("criterio_logro"):
+                out.append(f'<p class="opt" style="color:#15803D"><b>Criterio:</b> {_e(p["criterio_logro"])}</p>')
+        else:
+            try:
+                line_count = max(1, min(8, int(p.get("lineas_respuesta") or 3)))
+            except (TypeError, ValueError):
+                line_count = 3
+            out.extend('<div class="line"></div>' for _ in range(line_count))
         out.append("</div>")
+    if soluciones and c.get("criterios_revision"):
+        out.append('<div class="h3">Criterios de revisión</div>' + _ul(c["criterios_revision"]))
+    if c.get("puntaje_total") is not None:
+        out.append(f'<p class="p" style="text-align:right"><b>Total: {_e(c["puntaje_total"])} puntos</b></p>')
     return "".join(out)
 
 
@@ -469,8 +502,18 @@ def _render_rubrica(c: dict, soluciones: bool) -> str:
 
 def _render_plan(c: dict, soluciones: bool) -> str:
     out = ['<div class="sectionbar">PLAN DE REFUERZO</div>']
+    if c.get("estudiante"):
+        out.append(f'<p class="p"><b>Estudiante:</b> {_e(c["estudiante"])}</p>')
+    if c.get("diagnostico_inicial"):
+        out.append(f'<div class="instr"><b>Diagnóstico:</b> {_e(c["diagnostico_inicial"])}</div>')
+    if c.get("dificultades"):
+        out.append('<div class="h3">Necesita fortalecer</div>' + _ul(c["dificultades"]))
+    if c.get("fortalezas"):
+        out.append('<div class="h3">Fortalezas</div>' + _ul(c["fortalezas"]))
     if c.get("objetivo_general"):
         out.append(f'<div class="instr indigo">{_e(c["objetivo_general"])}</div>')
+    if c.get("duracion_estimada"):
+        out.append(f'<p class="p"><b>Duración:</b> {_e(c["duracion_estimada"])}</p>')
     for w in c.get("semanas") or []:
         out.append('<div class="card">')
         out.append(f'<div class="h3" style="margin-top:0">Semana {_e(w.get("semana"))}: {_e(w.get("tema"))}</div>')
@@ -480,11 +523,19 @@ def _render_plan(c: dict, soluciones: bool) -> str:
             out.append('<p class="p" style="margin-bottom:2px"><b>Actividades</b></p>' + _ul(w["actividades"]))
         if w.get("recursos"):
             out.append('<p class="p" style="margin-bottom:2px"><b>Recursos</b></p>' + _ul(w["recursos"]))
+        if w.get("evidencia"):
+            out.append(f'<p class="p"><b>Evidencia:</b> {_e(w["evidencia"])}</p>')
+        if w.get("responsable"):
+            out.append(f'<p class="p"><b>Responsable:</b> {_e(w["responsable"])}</p>')
         out.append("</div>")
     if c.get("estrategias_apoyo"):
         out.append('<div class="h3">Estrategias de apoyo</div>' + _ul(c["estrategias_apoyo"]))
     if c.get("indicadores_mejora"):
         out.append('<div class="h3">Indicadores de mejora</div>' + _ul(c["indicadores_mejora"]))
+    if c.get("comprobacion_final"):
+        out.append(f'<div class="instr"><b>Comprobación final:</b> {_e(c["comprobacion_final"])}</div>')
+    if c.get("recomendaciones_familia"):
+        out.append('<div class="h3">Apoyo desde casa</div>' + _ul(c["recomendaciones_familia"]))
     return "".join(out)
 
 
@@ -508,18 +559,28 @@ def _render_lectura_comprensiva(c: dict, soluciones: bool) -> str:
     out = ['<div class="sectionbar">LECTURA COMPRENSIVA</div>']
     if c.get("instrucciones"):
         out.append(f'<div class="instr indigo">{_e(c["instrucciones"])}</div>')
+    if c.get("estrategia_lectora"):
+        out.append(f'<div class="instr"><b>Estrategia:</b> {_e(c["estrategia_lectora"])}</div>')
     if c.get("texto"):
         out.append('<div class="card" style="background:#EFF6FF; border-color:#BFDBFE;">')
         out.append(f'<p class="p" style="font-size:11.5px; line-height:1.6; margin:0;">{_e(c["texto"])}</p>')
+        if c.get("fuente"):
+            out.append(f'<p class="opt"><b>Fuente:</b> {_e(c["fuente"])}</p>')
         out.append("</div>")
     if c.get("preguntas"):
         out.append('<div class="h3">Preguntas de comprensión</div>')
         for q in c["preguntas"]:
             out.append('<div class="card">')
-            tipo_badge = f' <span class="pts">[{_e(q.get("tipo"))}]</span>' if q.get("tipo") else ""
+            badge_values = [q.get("tipo"), q.get("dificultad")]
+            badge = " · ".join(_e(value) for value in badge_values if value)
+            tipo_badge = f' <span class="pts">[{badge}]</span>' if badge else ""
             out.append(f'<p class="p"><b>{_e(q.get("numero"))}.</b> {_e(q.get("enunciado"))}{tipo_badge}</p>')
             if soluciones and q.get("respuesta_esperada"):
                 out.append(f'<p class="opt" style="color:#15803D"><b>Respuesta:</b> {_e(q["respuesta_esperada"])}</p>')
+                if q.get("evidencia_textual"):
+                    out.append(f'<p class="opt" style="color:#15803D"><b>Evidencia:</b> {_e(q["evidencia_textual"])}</p>')
+                if q.get("justificacion"):
+                    out.append(f'<p class="opt" style="color:#15803D"><b>Por qué:</b> {_e(q["justificacion"])}</p>')
             else:
                 out.append('<div class="line"></div><div class="line"></div><div class="line"></div>')
             out.append("</div>")

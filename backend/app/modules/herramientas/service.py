@@ -40,7 +40,7 @@ from app.modules.herramientas.generators import (
     quiz_rapido,
     rubrica,
     sopa_letras,
-    unir_columnas,
+    taller,
 )
 from app.modules.materias import service as materias_service
 from app.modules.rag.context_builder import build_context_for_evaluation_creation
@@ -123,6 +123,15 @@ async def _generate_with_quality(
     """Genera, normaliza y reintenta una vez si el modelo omite contenido."""
     original_instructions = getattr(req, "instrucciones_adicionales", None)
     last_issues: list[str] = []
+    expected_count: int | None = None
+    count_field = {
+        MaterialTipo.GUIA: "cantidad_actividades",
+        MaterialTipo.LECTURA_COMPRENSIVA: "cantidad_preguntas",
+        MaterialTipo.TALLER: "cantidad_puntos",
+    }.get(tipo)
+    if count_field:
+        value = getattr(req, count_field, None)
+        expected_count = int(value) if value is not None else None
     try:
         for attempt in range(2):
             result = await generator()
@@ -130,6 +139,7 @@ async def _generate_with_quality(
                 tipo,
                 result,
                 fallback_title=str(getattr(req, "titulo", "Material")),
+                expected_count=expected_count,
             )
             if not issues:
                 return _ensure_alignment_metadata(normalized, req, tipo)
@@ -146,7 +156,9 @@ async def _generate_with_quality(
                 " ".join(
                     part for part in (
                         str(original_instructions or "").strip(),
-                        "La respuesta anterior quedó incompleta. Devuelve todas las secciones solicitadas, sin elementos repetidos.",
+                        "La respuesta anterior quedó incompleta. Corrige exactamente: "
+                        + "; ".join(issues)
+                        + ". Devuelve todas las secciones y cantidades solicitadas, sin elementos repetidos.",
                     ) if part
                 ),
             )
@@ -652,7 +664,9 @@ async def get_material(db: AsyncSession, material_id: UUID, profesor_id: UUID) -
             "SELECT mg.id, mg.tipo, mg.titulo, mg.materia_id, m.nombre AS materia_nombre, "
             "mg.input_json, mg.contenido_json, mg.archivo_url, mg.created_at, "
             "e.id AS evaluacion_id, e.estado AS evaluacion_estado, "
-            "e.modalidad AS evaluacion_modalidad, mg.asignacion_tipo, "
+            "e.modalidad AS evaluacion_modalidad, "
+            "e.recepcion_habilitada AS evaluacion_recepcion_habilitada, "
+            "mg.asignacion_tipo, "
             "mg.publicado_estudiantes, mg.fecha_publicacion, mg.updated_at "
             "FROM materiales_generados mg LEFT JOIN materias m ON m.id = mg.materia_id "
             "LEFT JOIN evaluaciones e ON e.material_origen_id = mg.id "
@@ -955,7 +969,9 @@ async def gen_unir_columnas(db: AsyncSession, req: UnirColumnasRequest, current_
     llm = LLMRouter(user_id=current_user.id)
     result = await _generate_with_quality(
         tipo=MaterialTipo.UNIR_COLUMNAS, req=req,
-        generator=lambda: unir_columnas.generate(req, llm),
+        # Endpoint histórico: conserva contrato y tipo persistido, pero comparte
+        # la generación canónica de relacionar pares.
+        generator=lambda: emparejar.generate(req, llm),
     )
     return await _save_material(
         db, profesor_id=current_user.id, materia_id=materia_id,
@@ -1098,20 +1114,11 @@ async def gen_guia(db: AsyncSession, req: GuiaRequest, current_user: User) -> di
 
 
 async def gen_taller(db: AsyncSession, req: TallerRequest, current_user: User) -> dict:
-    # Taller usa un prompt especializado y el mismo control de calidad común.
-    from app.modules.herramientas.generators.base import TOOLS_SYSTEM, build_base_context
     materia_id = await _resolve_materia_id(db, req, current_user)
     llm = LLMRouter(user_id=current_user.id)
-    async def generate_taller_content() -> dict[str, Any]:
-        ctx = build_base_context(req)
-        prompt = f"""{TOOLS_SYSTEM}\n\n{ctx}\nCantidad de puntos: {req.cantidad_puntos}\n
-Genera un taller pedagógico práctico. Devuelve JSON:
-{{"titulo":"...","objetivo":"...","puntos":[{{"numero":1,"enunciado":"...","espacio_respuesta":"..."}}]}}"""
-        return await llm.generate_json("taller", prompt)
-
     result = await _generate_with_quality(
         tipo=MaterialTipo.TALLER, req=req,
-        generator=generate_taller_content,
+        generator=lambda: taller.generate(req, llm),
     )
     return await _save_material(
         db, profesor_id=current_user.id, materia_id=materia_id,

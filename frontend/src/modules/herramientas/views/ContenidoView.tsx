@@ -19,6 +19,9 @@ interface ExamQuestionContent {
   opciones?: string[];
   respuesta_correcta?: string;
   respuesta_esperada?: string;
+  evidencia_textual?: string;
+  justificacion?: string;
+  dificultad?: string;
 }
 
 interface RubricCriterionContent {
@@ -31,18 +34,30 @@ interface RubricCriterionContent {
 interface GuideSectionContent {
   titulo?: string;
   contenido?: string;
+  explicacion?: string;
+  ejemplo_guiado?: string;
+  verificacion?: string;
   actividades: unknown[];
 }
 
 interface WorkshopPointContent {
   numero?: string | number;
+  tipo?: string;
+  dificultad?: string;
   enunciado?: string;
+  opciones?: string[];
+  puntaje?: number;
+  lineas_respuesta?: number;
+  respuesta_esperada?: string;
+  criterio_logro?: string;
 }
 
 interface ReinforcementWeekContent {
   semana?: string | number;
   tema?: string;
   meta_semana?: string;
+  evidencia?: string;
+  responsable?: string;
   actividades: unknown[];
   recursos: unknown[];
 }
@@ -83,20 +98,32 @@ export interface ToolContent {
   preguntas_comprension?: unknown[];
   uso_docente?: unknown[];
   objetivos?: unknown[];
+  saberes_previos?: unknown[];
   introduccion?: string;
   secciones?: GuideSectionContent[];
+  cierre?: string;
   evaluacion_formativa?: unknown[];
   objetivo?: string;
   puntos?: WorkshopPointContent[];
+  puntaje_total?: number;
+  criterios_revision?: unknown[];
   estudiante?: string;
+  diagnostico_inicial?: string;
+  dificultades?: unknown[];
+  fortalezas?: unknown[];
   objetivo_general?: string;
+  duracion_estimada?: string;
   semanas?: ReinforcementWeekContent[];
   estrategias_apoyo?: unknown[];
   indicadores_mejora?: unknown[];
+  comprobacion_final?: string;
+  recomendaciones_familia?: unknown[];
   // ficha
   ejercicios?: WorksheetExerciseContent[];
   // lectura_comprensiva
   texto?: string;
+  estrategia_lectora?: string;
+  fuente?: string;
   // mapa_conceptual
   concepto_principal?: string;
   descripcion?: string;
@@ -482,14 +509,82 @@ function FichaContent({ data }: { data: ToolContent }) {
   );
 }
 
+function TallerContent({ data }: { data: ToolContent }) {
+  const [reveal, setReveal] = useState(false);
+  const points = data.puntos ?? [];
+  if (points.length === 0) return <EmptyMaterial message="El taller no contiene ejercicios todavía." />;
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-col gap-3 rounded-xl border border-brand-200 bg-brand-50 p-4 dark:border-brand-500/30 dark:bg-brand-500/10 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0">
+          {data.objetivo && <p className="font-semibold">{data.objetivo}</p>}
+          {data.instrucciones && <p className="mt-1 text-sm leading-6 text-muted">{data.instrucciones}</p>}
+        </div>
+        <Button size="sm" variant={reveal ? 'secondary' : 'outline'} onClick={() => setReveal((value) => !value)}>
+          {reveal ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+          {reveal ? 'Ocultar soluciones' : 'Ver soluciones'}
+        </Button>
+      </div>
+      {points.map((point, index) => {
+        const answerLines = Math.max(1, Math.min(8, Number(point.lineas_respuesta) || 3));
+        return (
+          <Block key={`${point.numero}-${index}`} i={index}>
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <p className="min-w-0 flex-1 font-semibold leading-6">
+                <span className="text-brand-600">{point.numero ?? index + 1}.</span> {point.enunciado}
+              </p>
+              <div className="flex flex-wrap gap-1.5">
+                {point.tipo && <Badge tone="neutral">{point.tipo.replace(/_/g, ' ')}</Badge>}
+                {point.dificultad && <Badge tone="violet">{point.dificultad}</Badge>}
+                {point.puntaje != null && <Badge tone="brand">{point.puntaje} pts</Badge>}
+              </div>
+            </div>
+            {(point.opciones ?? []).length > 0 && (
+              <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                {(point.opciones ?? []).map((option, optionIndex) => (
+                  <p key={optionIndex} className="rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm">
+                    <b className="text-brand-600">{String.fromCharCode(65 + optionIndex)})</b> {stripPrefix(option)}
+                  </p>
+                ))}
+              </div>
+            )}
+            {!reveal && (
+              <div className="mt-4 space-y-4" aria-label="Espacio para responder">
+                {Array.from({ length: answerLines }, (_, line) => <div key={line} className="border-b border-dashed border-border" />)}
+              </div>
+            )}
+            {reveal && (point.respuesta_esperada || point.criterio_logro) && (
+              <div className="mt-3 rounded-lg bg-emerald-50 px-3 py-2 text-sm leading-6 text-emerald-800 dark:bg-emerald-500/10 dark:text-emerald-200">
+                {point.respuesta_esperada && <p><b>Solución:</b> {point.respuesta_esperada}</p>}
+                {point.criterio_logro && <p><b>Criterio:</b> {point.criterio_logro}</p>}
+              </div>
+            )}
+          </Block>
+        );
+      })}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        {(data.criterios_revision ?? []).length > 0 && <div><Section title="Criterios de revisión" />{bullets(data.criterios_revision ?? [])}</div>}
+        {data.puntaje_total != null && <p className="pt-5 text-right font-bold">Total: {data.puntaje_total} puntos</p>}
+      </div>
+    </div>
+  );
+}
+
 function LecturaContent({ data }: { data: ToolContent }) {
   const [reveal, setReveal] = useState(false);
   const questions = data.preguntas ?? [];
   return (
     <div className="space-y-5">
+      {(data.instrucciones || data.estrategia_lectora) && (
+        <div className="rounded-xl border border-brand-200 bg-brand-50 p-4 text-sm leading-6 dark:border-brand-500/30 dark:bg-brand-500/10">
+          {data.instrucciones && <p><b>Cómo trabajar:</b> {data.instrucciones}</p>}
+          {data.estrategia_lectora && <p className="mt-1"><b>Estrategia:</b> {data.estrategia_lectora}</p>}
+        </div>
+      )}
       {data.texto ? (
         <article className="rounded-xl border border-blue-200 bg-blue-50 p-5 dark:border-blue-500/30 dark:bg-blue-500/10">
           <p className="whitespace-pre-line text-[15px] leading-7 text-fg">{data.texto}</p>
+          {data.fuente && <p className="mt-4 text-xs text-muted">Fuente: {data.fuente}</p>}
         </article>
       ) : (
         <EmptyMaterial message="La lectura no contiene el texto principal." />
@@ -512,11 +607,14 @@ function LecturaContent({ data }: { data: ToolContent }) {
               <span className="text-brand-600">{question.numero ?? index + 1}.</span> {question.enunciado}
             </p>
             {question.tipo && <Badge tone="violet">{question.tipo}</Badge>}
+            {question.dificultad && <Badge tone="neutral">{question.dificultad}</Badge>}
           </div>
           {reveal && (question.respuesta_esperada || question.respuesta_correcta) && (
-            <p className="mt-3 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300">
-              <b>Respuesta:</b> {question.respuesta_esperada || question.respuesta_correcta}
-            </p>
+            <div className="mt-3 rounded-lg bg-emerald-50 px-3 py-2 text-sm leading-6 text-emerald-800 dark:bg-emerald-500/10 dark:text-emerald-200">
+              <p><b>Respuesta:</b> {question.respuesta_esperada || question.respuesta_correcta}</p>
+              {question.evidencia_textual && <p><b>Evidencia:</b> {question.evidencia_textual}</p>}
+              {question.justificacion && <p><b>Por qué:</b> {question.justificacion}</p>}
+            </div>
           )}
         </Block>
       ))}
@@ -622,40 +720,41 @@ export function ContenidoView({ tipo, data }: { tipo: MaterialTipo; data: ToolCo
     return (
       <div className="space-y-3">
         {(data.objetivos ?? []).length > 0 && <Block i={0}><b className="text-sm">Objetivos</b>{bullets(data.objetivos ?? [])}</Block>}
+        {(data.saberes_previos ?? []).length > 0 && <Block i={1}><b className="text-sm">Antes de empezar</b>{bullets(data.saberes_previos ?? [])}</Block>}
         {data.introduccion && <div className="rounded-xl border border-brand-200 bg-brand-50 px-4 py-3 text-sm dark:border-brand-500/30 dark:bg-brand-500/10">{data.introduccion}</div>}
         {(data.secciones ?? []).map((s, i) => (
-          <Block key={i} i={i + 1}>
+          <Block key={i} i={i + 2}>
             <p className="font-display font-bold">{s.titulo}</p>
-            <p className="mt-1 text-sm">{s.contenido}</p>
-            {s.actividades?.length > 0 && bullets(s.actividades)}
+            {(s.explicacion || s.contenido) && <p className="mt-2 text-sm leading-6">{s.explicacion || s.contenido}</p>}
+            {s.ejemplo_guiado && (
+              <div className="mt-3 rounded-lg border border-sky-200 bg-sky-50 p-3 text-sm leading-6 dark:border-sky-500/30 dark:bg-sky-500/10">
+                <b>Ejemplo guiado:</b> {s.ejemplo_guiado}
+              </div>
+            )}
+            {s.actividades?.length > 0 && <><p className="mt-3 text-sm font-semibold">Ahora practica</p>{bullets(s.actividades)}</>}
+            {s.verificacion && <p className="mt-3 rounded-lg bg-violet-50 p-3 text-sm dark:bg-violet-500/10"><b>Comprueba:</b> {s.verificacion}</p>}
           </Block>
         ))}
+        {data.cierre && <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm leading-6 dark:border-emerald-500/30 dark:bg-emerald-500/10"><b>Cierre:</b> {data.cierre}</div>}
         {(data.evaluacion_formativa ?? []).length > 0 && <><Section title="Evaluación formativa" />{bullets(data.evaluacion_formativa ?? [])}</>}
       </div>
     );
   }
 
-  if (tipo === 'taller') {
-    if ((data.puntos ?? []).length === 0) return <EmptyMaterial message="El taller no contiene ejercicios todavía." />;
-    return (
-      <div className="space-y-3">
-        {data.objetivo && <div className="rounded-xl border border-brand-200 bg-brand-50 px-4 py-3 text-sm dark:border-brand-500/30 dark:bg-brand-500/10">{data.objetivo}</div>}
-        {(data.puntos ?? []).map((p, i) => (
-          <Block key={i} i={i}>
-            <p className="font-semibold"><span className="text-brand-600">{p.numero}.</span> {p.enunciado}</p>
-            <div className="mt-3 space-y-3">{[0, 1, 2].map((k) => <div key={k} className="border-b border-dashed border-border" style={{ height: 1 }} />)}</div>
-          </Block>
-        ))}
-      </div>
-    );
-  }
+  if (tipo === 'taller') return <TallerContent data={data} />;
 
   if (tipo === 'plan_refuerzo') {
     if ((data.semanas ?? []).length === 0) return <EmptyMaterial message="El plan no contiene semanas o actividades de refuerzo todavía." />;
     return (
       <div className="space-y-3">
         {data.estudiante && <p className="text-sm text-muted">Estudiante: <b className="text-fg">{data.estudiante}</b></p>}
+        {data.diagnostico_inicial && <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 dark:border-amber-500/30 dark:bg-amber-500/10"><b>Diagnóstico:</b> {data.diagnostico_inicial}</div>}
+        <div className="grid gap-3 sm:grid-cols-2">
+          {(data.dificultades ?? []).length > 0 && <Block i={0}><b className="text-sm">Necesita fortalecer</b>{bullets(data.dificultades ?? [])}</Block>}
+          {(data.fortalezas ?? []).length > 0 && <Block i={1}><b className="text-sm">Fortalezas</b>{bullets(data.fortalezas ?? [])}</Block>}
+        </div>
         {data.objetivo_general && <div className="rounded-xl border border-brand-200 bg-brand-50 px-4 py-3 text-sm dark:border-brand-500/30 dark:bg-brand-500/10">{data.objetivo_general}</div>}
+        {data.duracion_estimada && <p className="text-sm text-muted"><b className="text-fg">Duración:</b> {data.duracion_estimada}</p>}
         {(data.semanas ?? []).map((w, i) => (
           <Block key={i} i={i}>
             <div className="flex items-center gap-2">
@@ -665,10 +764,14 @@ export function ContenidoView({ tipo, data }: { tipo: MaterialTipo; data: ToolCo
             {w.meta_semana && <p className="mt-2 text-sm"><b>Meta:</b> {w.meta_semana}</p>}
             {w.actividades?.length > 0 && <><p className="mt-2 text-sm font-semibold">Actividades</p>{bullets(w.actividades)}</>}
             {w.recursos?.length > 0 && <><p className="mt-2 text-sm font-semibold">Recursos</p>{bullets(w.recursos)}</>}
+            {w.evidencia && <p className="mt-2 text-sm"><b>Evidencia:</b> {w.evidencia}</p>}
+            {w.responsable && <p className="mt-1 text-sm text-muted"><b className="text-fg">Responsable:</b> {w.responsable}</p>}
           </Block>
         ))}
         {(data.estrategias_apoyo ?? []).length > 0 && <><Section title="Estrategias de apoyo" />{bullets(data.estrategias_apoyo ?? [])}</>}
         {(data.indicadores_mejora ?? []).length > 0 && <><Section title="Indicadores de mejora" />{bullets(data.indicadores_mejora ?? [])}</>}
+        {data.comprobacion_final && <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm leading-6 dark:border-emerald-500/30 dark:bg-emerald-500/10"><b>Comprobación final:</b> {data.comprobacion_final}</div>}
+        {(data.recomendaciones_familia ?? []).length > 0 && <><Section title="Apoyo desde casa" />{bullets(data.recomendaciones_familia ?? [])}</>}
       </div>
     );
   }

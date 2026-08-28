@@ -66,3 +66,11 @@ Como equipo, necesito actualizar estos artefactos cuando cambie el comportamient
 - PATCH /herramientas/{material_id}/visibilidad administra publicación u ocultamiento de forma idempotente y sincroniza la evaluación vinculada sin borrar notas, entregas ni contenido.
 - El profesor ve borradores y estados administrativos; el estudiante solo recibe recursos autorizados, publicados y pertenecientes a una matrícula activa.
 - La evolución se verifica en las pruebas de ciclo de vida, autorización, biblioteca y pestaña de materia de la especificación 018.
+
+## Evolución 026: calidad pedagógica y catálogo canónico
+
+- La especificación [026-perfeccionar-recursos](../026-perfeccionar-recursos/spec.md) diferencia guía, lectura comprensiva, taller y plan de refuerzo mediante secciones obligatorias y verificables.
+- `Relacionar pares` es la opción canónica para nuevas creaciones; `unir_columnas` se conserva como alias histórico.
+- La ficha didáctica deja de ofrecerse para nuevas creaciones y conserva compatibilidad completa para materiales existentes.
+- Vista previa, editor y exportaciones deben mantener paridad de contenido y ocultar soluciones en la versión estudiantil.
+- Una respuesta incompleta del generador no puede persistirse como material terminado.
