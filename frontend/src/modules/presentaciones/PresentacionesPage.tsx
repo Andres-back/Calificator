@@ -108,7 +108,7 @@ export function PresentacionesPage() {
             return (
               <motion.div key={p.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}>
                 <Card className={`flex flex-col gap-4 border-l-4 p-5 lg:flex-row lg:flex-wrap lg:items-center ${st.accent}`}>
-                  <span className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-brand-50 text-brand-700 dark:bg-brand-500/15 dark:text-brand-200"><EducationalIcon name="presentations" className="h-8 w-8" /></span>
+                  <span className="grid h-16 w-16 shrink-0 place-items-center rounded-2xl bg-white/90 shadow-sm ring-1 ring-border dark:bg-white/10"><EducationalIcon name="presentations" className="h-14 w-14" /></span>
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
                       <p className="font-semibold">{p.titulo}</p>
@@ -170,4 +170,3 @@ export function PresentacionesPage() {
     </div>
   );
 }
-

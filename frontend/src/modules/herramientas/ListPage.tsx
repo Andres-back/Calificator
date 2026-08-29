@@ -82,7 +82,7 @@ export function ListPage() {
               </div>
               <div className={cn('grid h-12 w-12 place-items-center rounded-xl', item.tone)}>
                 {item.label === 'Materiales' ? (
-                  <EducationalIcon name="resources" className="h-7 w-7" />
+                  <EducationalIcon name="resources" className="h-10 w-10" />
                 ) : (
                   <item.icon className="h-5 w-5" />
                 )}
@@ -142,7 +142,7 @@ export function ListPage() {
                   <motion.div key={material.id} layout initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }}>
                     <Card interactive className="group flex h-full flex-col p-5">
                       <Link to={`/app/herramientas/${material.id}`} className="flex-1">
-                        <div className={cn('mb-3 grid h-14 w-14 place-items-center rounded-2xl bg-gradient-to-br text-white shadow-sm', meta?.gradient ?? 'from-slate-400 to-slate-600')}><EducationalIcon name={TOOL_EDUCATIONAL_ICON[material.tipo]} className="h-8 w-8" /></div>
+                        <div className="mb-3 grid h-16 w-16 place-items-center rounded-2xl bg-white/90 shadow-sm ring-1 ring-border dark:bg-white/10"><EducationalIcon name={TOOL_EDUCATIONAL_ICON[material.tipo]} className="h-14 w-14" /></div>
                         <div className="flex flex-wrap items-center gap-2">
                           <Badge tone="neutral">{meta?.label ?? material.tipo}</Badge>
                           <Badge tone={stateTone}>{stateLabel}</Badge>

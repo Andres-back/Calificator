@@ -273,8 +273,8 @@ export function GeneratePage() {
                   className="flex h-full min-h-44 flex-col p-5"
                 >
                   <div className="flex items-start justify-between gap-3">
-                    <div className={cn('grid h-14 w-14 place-items-center rounded-2xl bg-gradient-to-br text-white shadow-sm', item.gradient)}>
-                      <EducationalIcon name={TOOL_EDUCATIONAL_ICON[item.tipo]} className="h-8 w-8" />
+                    <div className="grid h-16 w-16 place-items-center rounded-2xl bg-white/90 shadow-sm ring-1 ring-border dark:bg-white/10">
+                      <EducationalIcon name={TOOL_EDUCATIONAL_ICON[item.tipo]} className="h-14 w-14" />
                     </div>
                     <div className="flex flex-wrap justify-end gap-1">
                       <Badge tone="neutral">{item.category}</Badge>
@@ -379,8 +379,8 @@ export function GeneratePage() {
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_300px]">
         <Card className="p-5 sm:p-8">
           <div className="mb-6 flex items-start gap-3">
-            <div className={cn('grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-gradient-to-br text-white shadow-sm', tool.gradient)}>
-              <EducationalIcon name={TOOL_EDUCATIONAL_ICON[tool.tipo]} className="h-8 w-8" />
+            <div className="grid h-16 w-16 shrink-0 place-items-center rounded-2xl bg-white/90 shadow-sm ring-1 ring-border dark:bg-white/10">
+              <EducationalIcon name={TOOL_EDUCATIONAL_ICON[tool.tipo]} className="h-14 w-14" />
             </div>
             <div>
               <h1 className="font-display text-xl font-extrabold">
@@ -457,11 +457,10 @@ export function GeneratePage() {
                     title={item.label}
                     aria-label={`Cambiar a ${item.label}`}
                     className={cn(
-                      'focus-ring grid min-h-11 min-w-11 aspect-square place-items-center rounded-lg bg-gradient-to-br text-white transition hover:scale-105',
-                      item.gradient,
+                      'focus-ring grid h-12 w-12 place-items-center rounded-xl bg-white/90 shadow-sm ring-1 ring-border transition hover:scale-105 dark:bg-white/10',
                     )}
                   >
-                    <EducationalIcon name={TOOL_EDUCATIONAL_ICON[item.tipo]} className="h-5 w-5" />
+                    <EducationalIcon name={TOOL_EDUCATIONAL_ICON[item.tipo]} className="h-10 w-10" />
                   </button>
                 ))}
             </div>

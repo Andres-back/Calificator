@@ -1,4 +1,4 @@
-import type { SVGProps } from 'react';
+import type { HTMLAttributes, SyntheticEvent } from 'react';
 import { cn } from '@/lib/cn';
 
 export type EducationalIconName =
@@ -24,7 +24,31 @@ export type EducationalIconName =
   | 'concept-map'
   | 'flashcards';
 
-type IconProps = SVGProps<SVGSVGElement> & { name: EducationalIconName };
+type IconProps = Omit<HTMLAttributes<HTMLSpanElement>, 'children'> & { name: EducationalIconName };
+
+const EDUCATIONAL_ICON_ASSET: Record<EducationalIconName, string> = {
+  dashboard: 'dashboard',
+  subjects: 'subjects',
+  resources: 'resources',
+  presentations: 'presentations',
+  reports: 'reports',
+  xali: 'xali',
+  'ai-settings': 'ai-settings',
+  crossword: 'crossword',
+  'word-search': 'word-search',
+  matching: 'matching',
+  exam: 'workshop',
+  'learning-guide': 'learning-guide',
+  workshop: 'workshop',
+  story: 'story',
+  coloring: 'coloring',
+  rubric: 'workshop',
+  reinforcement: 'reinforcement',
+  'quick-quiz': 'workshop',
+  reading: 'reading',
+  'concept-map': 'concept-map',
+  flashcards: 'flashcards',
+};
 
 function Glyph({ name }: { name: EducationalIconName }) {
   switch (name) {
@@ -74,20 +98,40 @@ function Glyph({ name }: { name: EducationalIconName }) {
 }
 
 export function EducationalIcon({ name, className, ...props }: IconProps) {
+  const showFallback = (event: SyntheticEvent<HTMLImageElement>) => {
+    event.currentTarget.hidden = true;
+    const fallback = event.currentTarget.nextElementSibling;
+    if (fallback instanceof SVGElement) fallback.removeAttribute('style');
+  };
+
   return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={cn('shrink-0', className)}
+    <span
+      className={cn('relative inline-grid shrink-0 place-items-center', className)}
       aria-hidden="true"
       data-educational-icon={name}
+      data-icon-asset={EDUCATIONAL_ICON_ASSET[name]}
       {...props}
     >
-      <Glyph name={name} />
-    </svg>
+      <img
+        src={'/branding/semantic-icons/' + EDUCATIONAL_ICON_ASSET[name] + '.webp'}
+        alt=""
+        draggable={false}
+        className="h-full w-full select-none object-contain drop-shadow-sm"
+        onError={showFallback}
+      />
+      <svg
+        style={{ display: 'none' }}
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className="h-full w-full"
+        data-educational-icon-fallback={name}
+      >
+        <Glyph name={name} />
+      </svg>
+    </span>
   );
 }

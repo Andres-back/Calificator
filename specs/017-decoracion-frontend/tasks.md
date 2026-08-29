@@ -61,6 +61,7 @@
 - [X] T030 [US3] Integrar la correspondencia única en navegación, selector, listados, materia y vistas por rol (FR-020, FR-021, FR-022, FR-023, SC-012, SC-013)
 - [X] T031 Retirar los activos generales reemplazados, ejecutar regresión focalizada, responsive, build e inventario técnico (FR-023, SC-012–SC-013)
 - [X] T032 Corregir el contraste percibido con insignias duotono y prueba de regresión de las siete entradas docentes (FR-024)
+- [X] T033 Extraer e integrar los 18 WebP de la lámina aprobada, conservar fallback SVG y validar las superficies consumidoras (FR-024, FR-025, SC-014)
 
 - T002 y T003 preceden a la integración visual.
 - T004 precede a T005 para proteger la estructura funcional.

@@ -69,9 +69,10 @@ La aplicación tiene una identidad más rica y coherente, pero mantiene exactame
 ## Evidencia de iconografía semántica — Issue #45 (2026-08-29)
 
 - La familia raster general anterior fue reemplazada porque no ayudaba a distinguir acciones concretas.
-- La referencia generada se conserva optimizada en `specs/017-decoracion-frontend/assets/semantic-icons-reference.webp` y no forma parte del paquete servido en producción.
+- La lámina generada se conserva optimizada en `specs/017-decoracion-frontend/assets/semantic-icons-reference.webp` y es la fuente visual aprobada de los activos servidos en producción.
 - Prompt final de ImageGen: tablero de 18 conceptos para inicio, materias, recursos, presentaciones, reportes, tutor IA, configuración IA, crucigrama, sopa de letras, relacionar pares, guía, taller, cuento, colorear, refuerzo, lectura, mapa conceptual y flashcards; estilo vectorial duotono índigo/cian, siluetas redondeadas, sin texto, logotipos, sombras ni fondos.
-- La salida generada se utilizó como dirección artística; los entregables funcionales se trasladaron a símbolos vectoriales nítidos para tamaños de 18 a 48 píxeles.
+- La salida generada se separó en 18 WebP transparentes de 256×256 bajo `frontend/public/branding/semantic-icons/`; navegación y recursos usan esas miniilustraciones originales.
+- El símbolo SVG anterior permanece oculto como fallback automático si un WebP no puede cargarse.
 - Los tipos históricos `unir_columnas` y `ficha` comparten icono con `emparejar` y `taller`; continúan fuera del selector de creación.
 - La correspondencia se aplica en barra lateral, selector, cambio rápido, inicio docente, listado general, materia, detalle docente y vista estudiante.
 - Los símbolos conservan las etiquetas textuales y no modifican acciones, rutas ni permisos.

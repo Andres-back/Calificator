@@ -8,7 +8,6 @@ import { TOOL_BY_TIPO, TOOL_EDUCATIONAL_ICON } from './meta';
 import { ContenidoView, CrucigramaView, MatchingView, SopaLetrasView } from './views';
 import type { ToolContent } from './views/ContenidoView';
 import type { CrucigramaContenido, MatchingContenido, SopaContenido } from '@/types/api';
-import { cn } from '@/lib/cn';
 
 export function StudentResourcePage() {
   const { id = '' } = useParams();
@@ -41,7 +40,7 @@ export function StudentResourcePage() {
         <div className="pointer-events-none absolute -right-12 -top-16 h-40 w-40 rounded-full bg-sky-300/20 blur-3xl" />
         <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-start gap-4">
-            <div className={cn('grid h-16 w-16 shrink-0 place-items-center rounded-2xl bg-gradient-to-br text-white shadow-md', meta?.gradient ?? 'from-sky-500 to-indigo-600')}><EducationalIcon name={TOOL_EDUCATIONAL_ICON[material.tipo]} className="h-9 w-9" /></div>
+            <div className="grid h-20 w-20 shrink-0 place-items-center rounded-2xl bg-white/90 shadow-md ring-1 ring-border dark:bg-white/10"><EducationalIcon name={TOOL_EDUCATIONAL_ICON[material.tipo]} className="h-[4.5rem] w-[4.5rem]" /></div>
             <div>
               <div className="flex flex-wrap gap-2"><Badge tone={material.asignacion_tipo === 'actividad' ? 'violet' : 'sky'}>{material.asignacion_tipo === 'actividad' ? 'Actividad asignada' : 'Material de apoyo'}</Badge>{meta?.interactive && <Badge tone="violet"><Gamepad2 className="h-3 w-3" /> Interactivo</Badge>}</div>
               <h1 className="mt-2 font-display text-2xl font-extrabold sm:text-3xl">{title}</h1>
