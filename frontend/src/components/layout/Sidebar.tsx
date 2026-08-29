@@ -3,6 +3,7 @@ import { Bot, GraduationCap, ShieldCheck, X } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { adminNav, estudianteNav, profesorNav } from '@/config/nav';
 import { useAuth } from '@/stores/auth';
+import { EducationalIcon } from '@/components/ui';
 
 function Logo() {
   return (
@@ -110,7 +111,11 @@ export function Sidebar({
                       className="absolute inset-0 rounded-xl border border-brand-300 bg-brand-50 shadow-sm dark:border-brand-500/40 dark:bg-brand-500/20"
                     />
                   )}
-                  <item.icon aria-hidden="true" className={cn('relative h-[18px] w-[18px] shrink-0', isActive && !item.soon && 'text-brand-700 dark:text-brand-300')} />
+                  {item.brandIcon ? (
+                    <EducationalIcon name={item.brandIcon} className={cn('relative h-5 w-5', isActive && !item.soon && 'text-brand-700 dark:text-brand-300')} />
+                  ) : (
+                    <item.icon aria-hidden="true" className={cn('relative h-[18px] w-[18px] shrink-0', isActive && !item.soon && 'text-brand-700 dark:text-brand-300')} />
+                  )}
                   <span className="relative">{item.label}</span>
                   {item.soon && <span className="relative ml-auto rounded-full bg-surface-2 px-2 py-0.5 text-xs font-semibold text-muted">Pronto</span>}
                 </>

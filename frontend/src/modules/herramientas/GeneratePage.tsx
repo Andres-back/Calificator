@@ -15,6 +15,7 @@ import {
   Wand2,
 } from 'lucide-react';
 import {
+  EducationalIcon,
   Badge,
   Card,
   ConfirmDialog,
@@ -24,7 +25,7 @@ import {
 import { PageHeader } from '@/components/layout/PageHeader';
 import { TeachingCycle } from '@/components/business/TeachingCycle';
 import { cn } from '@/lib/cn';
-import { TOOL_BY_TIPO } from './meta';
+import { TOOL_BY_TIPO, TOOL_EDUCATIONAL_ICON } from './meta';
 import { FORMS } from './forms';
 import { generateMaterial } from './api';
 import { toApiError } from '@/lib/api';
@@ -272,13 +273,8 @@ export function GeneratePage() {
                   className="flex h-full min-h-44 flex-col p-5"
                 >
                   <div className="flex items-start justify-between gap-3">
-                    <div
-                      className={cn(
-                        'grid h-12 w-12 place-items-center rounded-xl bg-gradient-to-br text-white shadow-sm',
-                        item.gradient,
-                      )}
-                    >
-                      <item.icon className="h-6 w-6" aria-hidden="true" />
+                    <div className={cn('grid h-14 w-14 place-items-center rounded-2xl bg-gradient-to-br text-white shadow-sm', item.gradient)}>
+                      <EducationalIcon name={TOOL_EDUCATIONAL_ICON[item.tipo]} className="h-8 w-8" />
                     </div>
                     <div className="flex flex-wrap justify-end gap-1">
                       <Badge tone="neutral">{item.category}</Badge>
@@ -383,13 +379,8 @@ export function GeneratePage() {
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_300px]">
         <Card className="p-5 sm:p-8">
           <div className="mb-6 flex items-start gap-3">
-            <div
-              className={cn(
-                'grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-gradient-to-br text-white shadow-sm',
-                tool.gradient,
-              )}
-            >
-              <tool.icon className="h-6 w-6" aria-hidden="true" />
+            <div className={cn('grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-gradient-to-br text-white shadow-sm', tool.gradient)}>
+              <EducationalIcon name={TOOL_EDUCATIONAL_ICON[tool.tipo]} className="h-8 w-8" />
             </div>
             <div>
               <h1 className="font-display text-xl font-extrabold">
@@ -470,7 +461,7 @@ export function GeneratePage() {
                       item.gradient,
                     )}
                   >
-                    <item.icon className="h-4 w-4" aria-hidden="true" />
+                    <EducationalIcon name={TOOL_EDUCATIONAL_ICON[item.tipo]} className="h-5 w-5" />
                   </button>
                 ))}
             </div>

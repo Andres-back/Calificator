@@ -31,6 +31,8 @@
 - [x] La funcionalidad cumple resultados medibles.
 - [x] La especificación no filtra detalles técnicos.
 
+Revalidada para el issue #45: los requisitos FR-020–FR-023 y criterios SC-012–SC-013 son comprobables, no requieren aclaraciones y mantienen el alcance funcional protegido.
+
 ## Notas
 
 Validación completada sin aclaraciones pendientes. El alcance conservador excluye cambios de lógica, permisos, rutas y contratos.

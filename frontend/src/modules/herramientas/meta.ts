@@ -16,6 +16,7 @@ import {
   Layers,
   type LucideIcon,
 } from 'lucide-react';
+import type { EducationalIconName } from '@/components/ui';
 import type { MaterialTipo } from '@/types/api';
 
 export interface ToolField {
@@ -253,6 +254,25 @@ export const TOOLS: ToolMeta[] = [
 export const TOOL_BY_TIPO: Record<MaterialTipo, ToolMeta> = Object.fromEntries(
   TOOLS.map((t) => [t.tipo, t]),
 ) as Record<MaterialTipo, ToolMeta>;
+
+export const TOOL_EDUCATIONAL_ICON: Record<MaterialTipo, EducationalIconName> = {
+  crucigrama: 'crossword',
+  sopa_letras: 'word-search',
+  unir_columnas: 'matching',
+  emparejar: 'matching',
+  examen: 'exam',
+  guia: 'learning-guide',
+  taller: 'workshop',
+  cuento: 'story',
+  para_colorear: 'coloring',
+  rubrica: 'rubric',
+  plan_refuerzo: 'reinforcement',
+  ficha: 'workshop',
+  quiz_rapido: 'quick-quiz',
+  lectura_comprensiva: 'reading',
+  mapa_conceptual: 'concept-map',
+  flashcards: 'flashcards',
+};
 
 export const TOOL_ICON: Record<MaterialTipo, LucideIcon> = Object.fromEntries(
   TOOLS.map((t) => [t.tipo, t.icon]),

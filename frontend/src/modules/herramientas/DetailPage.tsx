@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import { useState, useCallback, useEffect, useMemo } from 'react';
 import { ArrowLeft, BookOpenCheck, Download, FileCheck2, Trash2, Gamepad2, Printer, Share2, Sparkles, Copy, ClipboardList, Pencil, Send } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { Button, LoadingScreen, Badge, Card, ConfirmDialog, Select, Input, Field, Modal } from '@/components/ui';
+import { Badge, Button, Card, ConfirmDialog, EducationalIcon, Field, Input, LoadingScreen, Modal, Select } from '@/components/ui';
 import {
   assignMaterialAsSupport,
   convertToEvaluacion,
@@ -17,7 +17,7 @@ import {
   setMaterialVisibility,
   type IntentPolicy,
 } from './api';
-import { TOOL_BY_TIPO } from './meta';
+import { TOOL_BY_TIPO, TOOL_EDUCATIONAL_ICON } from './meta';
 import { MaterialContentEditor } from './MaterialContentEditor';
 import { CrucigramaView, SopaLetrasView, MatchingView, ContenidoView } from './views';
 import { useMaterias } from '@/modules/materias/MateriaSelect';
@@ -55,7 +55,6 @@ export function DetailPage() {
   const { data: materias = [] } = useMaterias();
   const { data: material, isLoading } = useQuery({ queryKey: ['material', id], queryFn: () => getMaterial(id) });
   const meta = material ? TOOL_BY_TIPO[material.tipo] : undefined;
-  const Icon = meta?.icon ?? Gamepad2;
   const linkedEvaluationsQuery = useQuery({
     queryKey: ['material-evaluations', id],
     queryFn: () => listMaterialEvaluaciones(id),
@@ -304,7 +303,7 @@ export function DetailPage() {
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="flex items-center gap-4">
             <div className={cn('grid h-14 w-14 place-items-center rounded-xl bg-gradient-to-br text-white shadow-md', meta?.gradient ?? 'from-slate-500 to-slate-700')}>
-              <Icon className="h-7 w-7" />
+              <EducationalIcon name={TOOL_EDUCATIONAL_ICON[material.tipo]} className="h-8 w-8" />
             </div>
             <div>
               <div className="flex flex-wrap items-center gap-2">
