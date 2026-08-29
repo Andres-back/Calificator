@@ -45,6 +45,12 @@
 - [X] T023 [US2] Reforzar escenario, posición, controles y miniaturas en frontend/src/modules/presentaciones/PresentationPreviewModal.tsx (FR-016, SC-010)
 - [X] T024 Añadir regresión focalizada y ejecutar pruebas y build del frontend en frontend/src/modules/herramientas/views/StoryContent.test.tsx y frontend/package.json (FR-001, FR-005, FR-015, FR-016)
 
+## Evolución de iconografía personalizada — Issue #43
+
+- [X] T025 [US3] Generar e inspeccionar cuatro iconos transparentes originales en frontend/public/branding/icons (FR-002, FR-007, FR-017, SC-006, SC-011)
+- [X] T026 [US3] Integrar la iconografía mediante un componente con fallback sin reemplazar controles pequeños (FR-001, FR-008, FR-018, FR-019, SC-011)
+- [X] T027 Añadir pruebas focalizadas, validar build e inventario técnico y documentar los recursos generados (FR-001, FR-005, FR-017–FR-019, SC-005, SC-011)
+
 ## Dependencias
 
 - T001 precede a T002 y define qué activos se conservan.
