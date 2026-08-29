@@ -104,3 +104,11 @@ Todos los principios constitucionales continúan satisfechos. No existen excepci
 - Validar todos los símbolos mediante prueba parametrizada, catálogo canónico, navegación, modo claro/oscuro, 390 píxeles y compilación.
 - Usar el tablero generado únicamente como referencia de diseño optimizada dentro de la especificación; no enviarlo al navegador.
 - Retirar los activos raster reemplazados para evitar código y archivos sin consumidor.
+
+## Hotfix: visibilidad de iconos semánticos — Issue #47
+
+- Mantener los pictogramas SVG y su correspondencia funcional ya desplegada.
+- Presentar cada icono de navegación dentro de una insignia duotono de 36 píxeles con contraste blanco y color propio.
+- Reforzar ligeramente el trazo para conservar legibilidad en pantallas pequeñas y modo oscuro.
+- No modificar etiquetas, rutas, áreas táctiles ni acciones.
+- Añadir una regresión focalizada que exija las siete insignias docentes y ejecutar lint y build.

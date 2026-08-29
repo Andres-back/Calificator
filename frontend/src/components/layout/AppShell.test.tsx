@@ -86,6 +86,16 @@ describe('AppShell analytics', () => {
 
 
 describe('AppShell ambientación', () => {
+  it('muestra insignias semánticas visibles para toda la navegación docente', () => {
+    const { container } = renderShell();
+    const desktopNav = container.querySelector('#main-navigation-desktop');
+    const iconBadges = desktopNav?.querySelectorAll('[data-nav-icon-tone]');
+
+    expect(iconBadges).toHaveLength(7);
+    expect(desktopNav?.querySelector('[data-nav-icon-tone="resources"]')).toHaveClass('bg-gradient-to-br');
+    expect(desktopNav?.querySelector('[data-educational-icon="resources"]')).toBeInTheDocument();
+  });
+
   it('mantiene la ilustración fuera de la interacción y el contenido por encima', () => {
     const { container } = renderShell();
     const atmosphere = container.querySelector('.app-atmosphere');

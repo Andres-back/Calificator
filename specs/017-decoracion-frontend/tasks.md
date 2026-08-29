@@ -60,6 +60,7 @@
 - [X] T029 [US3] Crear la familia semántica vectorial y su tablero de referencia visual (FR-020, FR-021, FR-022, SC-012)
 - [X] T030 [US3] Integrar la correspondencia única en navegación, selector, listados, materia y vistas por rol (FR-020, FR-021, FR-022, FR-023, SC-012, SC-013)
 - [X] T031 Retirar los activos generales reemplazados, ejecutar regresión focalizada, responsive, build e inventario técnico (FR-023, SC-012–SC-013)
+- [X] T032 Corregir el contraste percibido con insignias duotono y prueba de regresión de las siete entradas docentes (FR-024)
 
 - T002 y T003 preceden a la integración visual.
 - T004 precede a T005 para proteger la estructura funcional.

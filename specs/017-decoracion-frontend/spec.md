@@ -138,6 +138,7 @@ La evolución amplía esta especificación viva sin rediseñar el logotipo ni la
 - **FR-021**: Cada formato canónico disponible para crear recursos DEBE tener un símbolo inequívoco y conservarlo en todas las superficies donde se muestra ese recurso.
 - **FR-022**: Los tipos históricos equivalentes DEBEN compartir la identidad visual del tipo canónico correspondiente y NO DEBEN reaparecer como alternativas de creación independientes.
 - **FR-023**: La renovación visual NO DEBE modificar destinos, permisos, nombres accesibles, acciones ni comportamiento de creación, asignación o resolución.
+- **FR-024**: La iconografía semántica de navegación DEBE mostrarse dentro de insignias duotono de alto contraste y tamaño visible; no puede depender únicamente de un trazo monocromo de 20 px.
 
 ### Criterios adicionales de éxito
 
