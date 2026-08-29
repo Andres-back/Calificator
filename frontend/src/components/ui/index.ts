@@ -13,6 +13,7 @@ export type { TourIdentity } from './tourState';
 export { AppIcon } from './AppIcon';
 export type { AppIconName } from './AppIcon';
 export { EducationalIcon } from './EducationalIcon';
+export { getSubjectEducationalIcon } from './educationalIconModel';
 export type { EducationalIconName } from './EducationalIcon';
 export { ThemeToggle } from './ThemeToggle';
 export { EmptyState } from './EmptyState';

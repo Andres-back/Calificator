@@ -5,7 +5,6 @@ import {
   CalendarCheck2,
   Camera,
   ClipboardCheck,
-  ListChecks,
   Plus,
   Wand2,
 } from 'lucide-react';
@@ -25,43 +24,35 @@ import type { MaterialListItem } from '@/types/api';
 const teacherActions = [
   {
     to: routes.materiasPara('calificar'),
-    icon: Camera,
     title: 'Calificar por fotografía',
     description: 'Selecciona una materia y evaluación, luego sube o toma la foto de la evidencia.',
     badge: 'Visión IA',
-    tone: 'bg-cyan-500/10 text-cyan-700 dark:text-cyan-300',
     accent: 'border-t-cyan-500',
-    brandIcon: 'exam' as const,
+    brandIcon: 'grade-evidence' as const,
   },
   {
     to: routes.materiasPara('asistencia'),
-    icon: CalendarCheck2,
     title: 'Tomar asistencia',
     description: 'Elige la materia, marca a cada estudiante y guarda la lista del día.',
     badge: 'Registro diario',
-    tone: 'bg-violet-500/10 text-violet-700 dark:text-violet-300',
     accent: 'border-t-violet-500',
-    brandIcon: null,
+    brandIcon: 'attendance' as const,
   },
   {
     to: routes.materiasPara('seguimiento'),
-    icon: ListChecks,
     title: 'Revisar calificaciones sugeridas',
     description: 'Confirma o ajusta cada resultado antes de convertirlo en nota definitiva.',
     badge: 'Decisión docente',
-    tone: 'bg-amber-500/10 text-amber-700 dark:text-amber-300',
     accent: 'border-t-amber-500',
-    brandIcon: null,
+    brandIcon: 'pending-reviews' as const,
   },
   {
     to: routes.materiasPara('evaluar'),
-    icon: ClipboardCheck,
     title: 'Preparar una evaluación',
     description: 'Organiza criterios, preguntas y nota máxima para evaluar en línea, papel o ambas.',
     badge: 'Evaluaciones',
-    tone: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300',
     accent: 'border-t-emerald-500',
-    brandIcon: null,
+    brandIcon: 'prepare-evaluation' as const,
   },
 ];
 
@@ -147,11 +138,9 @@ function DashboardDocente() {
               <Link to={action.to} className="group block h-full">
                 <Card interactive className={cn('relative flex h-full min-h-0 items-center gap-3 overflow-hidden border-t-4 p-4 transition-transform duration-200 hover:-translate-y-1 sm:min-h-44 sm:flex-col sm:items-stretch sm:gap-0 sm:p-5', action.accent)}>
                   <div className="flex shrink-0 items-start justify-between gap-3">
-                    {action.brandIcon ? (
-                      <span className="grid h-14 w-14 place-items-center rounded-2xl bg-white/85 shadow-sm ring-1 ring-border dark:bg-white/10"><EducationalIcon name={action.brandIcon} className="h-12 w-12" /></span>
-                    ) : (
-                      <span className={cn('grid h-11 w-11 place-items-center rounded-xl sm:h-12 sm:w-12 sm:rounded-2xl', action.tone)}><action.icon className="h-5 w-5 sm:h-6 sm:w-6" /></span>
-                    )}
+                    <span className="grid h-14 w-14 place-items-center rounded-2xl bg-white/85 shadow-sm ring-1 ring-border dark:bg-white/10">
+                      <EducationalIcon name={action.brandIcon} className="h-12 w-12" />
+                    </span>
                     <span className="hidden text-xs font-bold text-muted sm:inline">{action.badge}</span>
                   </div>
                   <div className="min-w-0 flex-1 sm:contents"><h3 className="font-display text-base font-bold leading-snug sm:mt-5 sm:text-lg">{action.title}</h3>

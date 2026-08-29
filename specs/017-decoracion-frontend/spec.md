@@ -150,3 +150,19 @@ La evolución amplía esta especificación viva sin rediseñar el logotipo ni la
 ### Alcance aclarado
 
 “Laderboard” se interpreta como la barra lateral mostrada por el usuario. No se crea un ranking nuevo porque el producto no dispone actualmente de ese recorrido.
+
+## Evolución: iconografía contextual docente y académica — Issue #51
+
+### Requisitos adicionales
+
+- **FR-026**: Las acciones Preparar evaluación, Calificar evidencia, Tomar asistencia y Revisar calificaciones DEBEN presentar ilustraciones distintas y coherentes con su resultado.
+- **FR-027**: La bandeja docente DEBE diferenciar visualmente reclamos y entregas pendientes sin depender únicamente del color.
+- **FR-028**: Las materias DEBEN usar una ilustración según el área reconocida y conservar el icono general como fallback para áreas libres o no clasificadas.
+- **FR-029**: Las métricas de reportes DEBEN distinguir materias, calificaciones y promedio mediante ilustraciones propias, manteniendo el valor y la etiqueta textual.
+- **FR-030**: La ampliación NO DEBE cambiar rutas, permisos, consultas, acciones ni contratos existentes.
+
+### Criterios adicionales de éxito
+
+- **SC-015**: Los 18 nuevos WebP transparentes cargan en producción y conservan legibilidad entre 40 y 72 píxeles en ambos temas.
+- **SC-016**: Matemáticas, Ciencias, Lenguaje, Sociales, Inglés, Artística y Tecnología reciben una ilustración propia; cualquier otra área usa Materias como fallback.
+- **SC-017**: En 390 píxeles no existe desbordamiento horizontal y los nombres accesibles de tarjetas, enlaces y pestañas permanecen intactos.

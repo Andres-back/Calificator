@@ -1,5 +1,6 @@
 import type { LucideIcon } from 'lucide-react';
 import { Card } from './Card';
+import { EducationalIcon, type EducationalIconName } from './EducationalIcon';
 import { cn } from '@/lib/cn';
 
 export type StatTone = 'info' | 'success' | 'warning' | 'error' | 'brand' | 'neutral';
@@ -14,7 +15,8 @@ const ICON_TONES: Record<StatTone, string> = {
 };
 
 interface StatCardProps {
-  icon: LucideIcon;
+  icon?: LucideIcon;
+  brandIcon?: EducationalIconName;
   label: string;
   value: string | number;
   tone?: StatTone;
@@ -22,19 +24,15 @@ interface StatCardProps {
   iconClassName?: string;
 }
 
-/**
- * Tarjeta de estadística con icono, valor y etiqueta.
- * `sm` → h-9 icon, text-xl value · `md` → h-11 icon, text-2xl value
- */
-export function StatCard({ icon: Icon, label, value, tone = 'neutral', size = 'md', iconClassName }: StatCardProps) {
+export function StatCard({ icon: Icon, brandIcon, label, value, tone = 'neutral', size = 'md', iconClassName }: StatCardProps) {
   const s = size === 'sm'
-    ? { iconWrap: 'h-9 w-9', iconInner: 'h-4 w-4', value: 'text-xl', label: 'text-xs', gap: 'gap-3', pad: 'p-4' }
-    : { iconWrap: 'h-11 w-11', iconInner: 'h-6 w-6', value: 'text-2xl', label: 'text-sm', gap: 'gap-4', pad: 'p-5' };
+    ? { iconWrap: 'h-9 w-9', iconInner: 'h-4 w-4', brandInner: 'h-8 w-8', value: 'text-xl', label: 'text-xs', gap: 'gap-3', pad: 'p-4' }
+    : { iconWrap: 'h-14 w-14', iconInner: 'h-6 w-6', brandInner: 'h-12 w-12', value: 'text-2xl', label: 'text-sm', gap: 'gap-4', pad: 'p-5' };
 
   return (
     <Card className={`flex items-center ${s.gap} ${s.pad}`}>
-      <span className={cn('grid place-items-center rounded-lg', s.iconWrap, ICON_TONES[tone], iconClassName)}>
-        <Icon className={s.iconInner} />
+      <span className={cn('grid place-items-center rounded-xl', s.iconWrap, brandIcon ? 'bg-white/90 shadow-sm ring-1 ring-border dark:bg-white/10' : ICON_TONES[tone], iconClassName)}>
+        {brandIcon ? <EducationalIcon name={brandIcon} className={s.brandInner} /> : Icon ? <Icon className={s.iconInner} /> : null}
       </span>
       <div>
         <p className={`font-display font-extrabold ${s.value}`}>{value}</p>

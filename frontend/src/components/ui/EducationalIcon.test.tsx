@@ -3,27 +3,49 @@ import { describe, expect, it } from 'vitest';
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { EducationalIcon, type EducationalIconName } from './EducationalIcon';
+import { getSubjectEducationalIcon } from './educationalIconModel';
 
 const icons: EducationalIconName[] = [
   'dashboard', 'subjects', 'resources', 'presentations', 'reports', 'xali',
   'ai-settings', 'crossword', 'word-search', 'matching', 'exam',
   'learning-guide', 'workshop', 'story', 'coloring', 'rubric',
   'reinforcement', 'quick-quiz', 'reading', 'concept-map', 'flashcards',
+  'prepare-evaluation', 'pending-reviews', 'student-claim', 'grade-evidence',
+  'attendance', 'gradebook', 'curriculum-dba', 'subject-math', 'subject-science',
+  'subject-language', 'subject-social', 'subject-english', 'subject-art',
+  'subject-technology', 'report-subjects', 'report-grades', 'report-average', 'student-roster',
 ];
 
 const illustratedAssets = [
   'dashboard', 'subjects', 'resources', 'presentations', 'reports', 'xali',
   'ai-settings', 'crossword', 'word-search', 'matching', 'learning-guide',
   'workshop', 'story', 'coloring', 'reinforcement', 'reading', 'concept-map',
-  'flashcards',
+  'flashcards', 'prepare-evaluation', 'pending-reviews', 'student-claim',
+  'grade-evidence', 'attendance', 'gradebook', 'curriculum-dba', 'subject-math',
+  'subject-science', 'subject-language', 'subject-social', 'subject-english',
+  'subject-art', 'subject-technology', 'report-subjects', 'report-grades',
+  'report-average', 'student-roster',
 ];
 
 describe('EducationalIcon', () => {
-  it('publica los 18 recortes aprobados dentro del paquete del frontend', () => {
-    expect(illustratedAssets).toHaveLength(18);
+  it('publica los 36 recortes aprobados dentro del paquete del frontend', () => {
+    expect(illustratedAssets).toHaveLength(36);
     for (const asset of illustratedAssets) {
       expect(existsSync(resolve(process.cwd(), 'public', 'branding', 'semantic-icons', asset + '.webp'))).toBe(true);
     }
+  });
+
+  it.each([
+    ['Matemáticas', 'subject-math'],
+    ['Ciencias Naturales y Educación Ambiental', 'subject-science'],
+    ['Lengua Castellana', 'subject-language'],
+    ['Ciencias Sociales', 'subject-social'],
+    ['Inglés', 'subject-english'],
+    ['Educación Artística', 'subject-art'],
+    ['Tecnología e Informática', 'subject-technology'],
+    ['Ética y Valores', 'subjects'],
+  ])('asigna %s a %s', (area, expected) => {
+    expect(getSubjectEducationalIcon(area)).toBe(expected);
   });
 
   it.each(icons)('renderiza %s con ilustración y fallback vectorial', (name) => {

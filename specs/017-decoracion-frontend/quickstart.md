@@ -85,3 +85,10 @@ Los cuatro WebP de Materias, Recursos, Calificar y Presentaciones y su component
 
 - Regresión focalizada: 6 archivos y 35 pruebas pasaron, incluida la cobertura parametrizada de los 21 símbolos y la navegación móvil.
 - Playwright en 390×844 confirmó siete destinos docentes distintos, once formatos canónicos distintos, modo oscuro, cero overflow horizontal y cero errores de consola.
+
+## Evidencia de iconografía contextual — Issue #51 (2026-08-29)
+
+- Se generó una segunda lámina de 18 conceptos con el mismo lenguaje visual aprobado.
+- Los recortes finales son WebP de 256×256 con alfa real bajo `frontend/public/branding/semantic-icons/`.
+- Las áreas conocidas se resuelven por nombre normalizado; las áreas libres conservan `subjects.webp` como fallback.
+- La integración cubre acciones frecuentes, bandeja docente, tarjetas y cabecera de materia, pestañas internas y métricas/detalle de reportes.

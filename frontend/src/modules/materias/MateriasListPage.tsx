@@ -21,7 +21,9 @@ import {
   Button,
   Card,
   EmptyState,
+  EducationalIcon,
   Field,
+  getSubjectEducationalIcon,
   Input,
   Modal,
   QueryState,
@@ -45,27 +47,21 @@ import {
 const COURSE_TONES = [
   {
     border: 'border-l-brand-500',
-    icon: 'bg-brand-50 text-brand-600 dark:bg-brand-500/15 dark:text-brand-300',
   },
   {
     border: 'border-l-sky-500',
-    icon: 'bg-sky-50 text-sky-600 dark:bg-sky-500/15 dark:text-sky-300',
   },
   {
     border: 'border-l-emerald-500',
-    icon: 'bg-emerald-50 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-300',
   },
   {
     border: 'border-l-amber-500',
-    icon: 'bg-amber-50 text-amber-600 dark:bg-amber-500/15 dark:text-amber-300',
   },
   {
     border: 'border-l-rose-500',
-    icon: 'bg-rose-50 text-rose-600 dark:bg-rose-500/15 dark:text-rose-300',
   },
   {
     border: 'border-l-cyan-500',
-    icon: 'bg-cyan-50 text-cyan-600 dark:bg-cyan-500/15 dark:text-cyan-300',
   },
 ];
 
@@ -334,14 +330,8 @@ export function MateriasListPage() {
                     )}
                   >
                     <div className="flex items-start justify-between gap-3">
-                      <div
-                        className={cn(
-                          'grid place-items-center',
-                          isStudent ? 'h-12 w-12 rounded-2xl shadow-sm' : 'h-10 w-10 rounded-lg',
-                          tone.icon,
-                        )}
-                      >
-                        <BookOpen className="h-5 w-5" />
+                      <div className="grid h-16 w-16 place-items-center rounded-2xl bg-white/90 shadow-sm ring-1 ring-border dark:bg-white/10">
+                        <EducationalIcon name={getSubjectEducationalIcon(materia.area)} className="h-14 w-14" />
                       </div>
                       <Badge
                         tone={
