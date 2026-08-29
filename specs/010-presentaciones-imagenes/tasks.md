@@ -11,3 +11,4 @@
 
 ## Fase 3: Integración
 - [X] T006 Incorporar el dominio a specs/README.md (FR-008)
+- [X] T007 [US1] Mejorar jerarquía, controles y miniaturas del visor responsive en frontend/src/modules/presentaciones/PresentationPreviewModal.tsx (FR-009)
