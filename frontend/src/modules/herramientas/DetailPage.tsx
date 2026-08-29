@@ -302,8 +302,8 @@ export function DetailPage() {
       >
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="flex items-center gap-4">
-            <div className={cn('grid h-14 w-14 place-items-center rounded-xl bg-gradient-to-br text-white shadow-md', meta?.gradient ?? 'from-slate-500 to-slate-700')}>
-              <EducationalIcon name={TOOL_EDUCATIONAL_ICON[material.tipo]} className="h-8 w-8" />
+            <div className="grid h-16 w-16 place-items-center rounded-2xl bg-white/90 shadow-md ring-1 ring-border dark:bg-white/10">
+              <EducationalIcon name={TOOL_EDUCATIONAL_ICON[material.tipo]} className="h-14 w-14" />
             </div>
             <div>
               <div className="flex flex-wrap items-center gap-2">

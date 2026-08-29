@@ -112,3 +112,12 @@ Todos los principios constitucionales continúan satisfechos. No existen excepci
 - Reforzar ligeramente el trazo para conservar legibilidad en pantallas pequeñas y modo oscuro.
 - No modificar etiquetas, rutas, áreas táctiles ni acciones.
 - Añadir una regresión focalizada que exija las siete insignias docentes y ejecutar lint y build.
+
+## Hotfix: integración de la lámina ilustrada — Issue #49
+
+- Usar la lámina aprobada como fuente real, no únicamente como referencia artística.
+- Separar sus 18 conceptos en WebP transparentes y optimizados de 256×256.
+- Resolver la ruta del activo desde `EducationalIcon` para aplicar la misma identidad en todas las superficies.
+- Mantener el SVG existente oculto como fallback de carga.
+- Ampliar la presencia visual en navegación, selector, listados, materia, detalle, estudiante, inicio y presentaciones.
+- Validar existencia de archivos, correspondencia canónica, carga, lint y build sin modificar lógica funcional.

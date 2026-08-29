@@ -4,31 +4,6 @@ import { cn } from '@/lib/cn';
 import { adminNav, estudianteNav, profesorNav } from '@/config/nav';
 import { useAuth } from '@/stores/auth';
 import { EducationalIcon } from '@/components/ui';
-import type { EducationalIconName } from '@/components/ui';
-
-const NAV_ICON_TONE: Record<EducationalIconName, string> = {
-  dashboard: 'from-indigo-500 to-violet-600 shadow-indigo-500/20',
-  subjects: 'from-sky-500 to-cyan-500 shadow-sky-500/20',
-  resources: 'from-amber-400 to-orange-500 shadow-orange-500/20',
-  presentations: 'from-fuchsia-500 to-pink-500 shadow-fuchsia-500/20',
-  reports: 'from-emerald-500 to-teal-500 shadow-emerald-500/20',
-  xali: 'from-cyan-500 to-indigo-500 shadow-cyan-500/20',
-  'ai-settings': 'from-slate-500 to-indigo-600 shadow-indigo-500/20',
-  crossword: 'from-violet-500 to-indigo-600 shadow-violet-500/20',
-  'word-search': 'from-cyan-500 to-sky-600 shadow-cyan-500/20',
-  matching: 'from-pink-500 to-rose-500 shadow-pink-500/20',
-  exam: 'from-emerald-500 to-teal-600 shadow-emerald-500/20',
-  'learning-guide': 'from-blue-500 to-indigo-600 shadow-blue-500/20',
-  workshop: 'from-orange-400 to-amber-600 shadow-orange-500/20',
-  story: 'from-purple-500 to-fuchsia-600 shadow-purple-500/20',
-  coloring: 'from-rose-400 to-orange-500 shadow-rose-500/20',
-  rubric: 'from-slate-500 to-blue-600 shadow-blue-500/20',
-  reinforcement: 'from-green-500 to-emerald-600 shadow-green-500/20',
-  'quick-quiz': 'from-yellow-400 to-orange-500 shadow-yellow-500/20',
-  reading: 'from-teal-500 to-cyan-600 shadow-teal-500/20',
-  'concept-map': 'from-indigo-500 to-purple-600 shadow-indigo-500/20',
-  flashcards: 'from-pink-500 to-violet-600 shadow-pink-500/20',
-};
 
 function Logo() {
   return (
@@ -139,13 +114,12 @@ export function Sidebar({
                   {item.brandIcon ? (
                     <span
                       className={cn(
-                        'relative grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-gradient-to-br text-white shadow-md transition-transform duration-200 group-hover:scale-105',
-                        NAV_ICON_TONE[item.brandIcon],
-                        isActive && !item.soon && 'ring-2 ring-white ring-offset-2 ring-offset-brand-50 dark:ring-surface dark:ring-offset-brand-950/30',
+                        'relative grid h-11 w-11 shrink-0 place-items-center rounded-xl transition-transform duration-200 group-hover:scale-105',
+                        isActive && !item.soon && 'bg-white/75 shadow-sm ring-1 ring-brand-200 dark:bg-white/10 dark:ring-white/15',
                       )}
-                      data-nav-icon-tone={item.brandIcon}
+                      data-nav-illustration={item.brandIcon}
                     >
-                      <EducationalIcon name={item.brandIcon} className="h-[22px] w-[22px] drop-shadow-sm" />
+                      <EducationalIcon name={item.brandIcon} className="h-10 w-10" />
                     </span>
                   ) : (
                     <item.icon aria-hidden="true" className={cn('relative h-[18px] w-[18px] shrink-0', isActive && !item.soon && 'text-brand-700 dark:text-brand-300')} />

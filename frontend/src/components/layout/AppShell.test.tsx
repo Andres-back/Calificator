@@ -86,14 +86,17 @@ describe('AppShell analytics', () => {
 
 
 describe('AppShell ambientación', () => {
-  it('muestra insignias semánticas visibles para toda la navegación docente', () => {
+  it('muestra las ilustraciones aprobadas para toda la navegación docente', () => {
     const { container } = renderShell();
     const desktopNav = container.querySelector('#main-navigation-desktop');
-    const iconBadges = desktopNav?.querySelectorAll('[data-nav-icon-tone]');
+    const iconBadges = desktopNav?.querySelectorAll('[data-nav-illustration]');
 
     expect(iconBadges).toHaveLength(7);
-    expect(desktopNav?.querySelector('[data-nav-icon-tone="resources"]')).toHaveClass('bg-gradient-to-br');
-    expect(desktopNav?.querySelector('[data-educational-icon="resources"]')).toBeInTheDocument();
+    expect(desktopNav?.querySelector('[data-nav-illustration="resources"]')).toBeInTheDocument();
+    expect(desktopNav?.querySelector('[data-educational-icon="resources"] img')).toHaveAttribute(
+      'src',
+      '/branding/semantic-icons/resources.webp',
+    );
   });
 
   it('mantiene la ilustración fuera de la interacción y el contenido por encima', () => {
