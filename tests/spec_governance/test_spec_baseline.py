@@ -27,6 +27,7 @@ ALL_SPECS = {
     "023-calificacion-vision-rapida",
     "024-landing-publica-mapas",
     "025-recuperar-contrasena",
+    "026-perfeccionar-recursos",
 }
 OWNED_SPECS = {
     name

@@ -63,7 +63,16 @@
 - [X] T025 Ejecutar únicamente las pruebas focalizadas de recursos y el build frontend descritos en specs/026-perfeccionar-recursos/quickstart.md
 - [X] T026 Revisar manualmente anchos 360, 390, 768 y 1366 en creación y detalle, y comprobar que los cuatro formatos se distinguen en menos de 30 segundos; documentar cualquier límite en specs/026-perfeccionar-recursos/quickstart.md
 - [X] T027 Ejecutar $speckit-converge y cerrar tareas restantes en specs/026-perfeccionar-recursos/tasks.md
-- [ ] T028 Abrir un PR enlazado al issue #39 y fusionar únicamente con CI verde
+- [X] T028 Abrir un PR enlazado al issue #39 y fusionar únicamente con CI verde
+
+## Trazabilidad de requisitos
+
+- FR-001, FR-002: T001, T002, T006, T007, T009.
+- FR-003, FR-004, FR-005, FR-006: T003, T010, T011, T012, T013, T014, T016.
+- FR-007, FR-010, FR-011: T004, T015, T022, T023, T024.
+- FR-008, FR-009: T017, T018, T019, T020, T021.
+- FR-012, FR-013: T001, T015, T025.
+- FR-014: T017, T018, T020, T026.
 
 ## Dependencias
 
