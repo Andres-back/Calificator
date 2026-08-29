@@ -4,6 +4,7 @@ import { AlertTriangle, ArrowDown, CheckCircle2, Eye, EyeOff, Link2 } from 'luci
 import { Button, Badge } from '@/components/ui';
 import { cn } from '@/lib/cn';
 import type { MaterialTipo } from '@/types/api';
+import { StoryContent } from './StoryContent';
 
 interface GeneratedImageContent {
   is_placeholder?: boolean;
@@ -297,26 +298,7 @@ function EmptyMaterial({ message }: { message: string }) {
 }
 
 function CuentoContent({ data }: { data: ToolContent }) {
-  if ((data.parrafos ?? []).length === 0 && !imageSrc(data.imagen)) {
-    return <EmptyMaterial message="El cuento no contiene narración ni ilustración todavía." />;
-  }
-  return (
-    <div className="space-y-5">
-      <div className="grid gap-5 lg:grid-cols-[minmax(260px,0.8fr)_minmax(0,1.2fr)]">
-        <ImageFrame image={data.imagen} alt={data.titulo ?? 'Ilustracion del cuento'} />
-        <div className="rounded-lg border border-amber-200 bg-amber-50 p-5 dark:border-amber-500/30 dark:bg-amber-500/10">
-          {(data.personajes ?? []).length > 0 && <p className="text-xs font-semibold uppercase tracking-wide text-amber-700 dark:text-amber-300">Personajes: {(data.personajes ?? []).join(', ')}</p>}
-          <div className="mt-3 space-y-4">
-            {(data.parrafos ?? []).map((p: string, i: number) => (
-              <p key={i} className="text-[15px] leading-7 text-fg">{p}</p>
-            ))}
-          </div>
-        </div>
-      </div>
-      {data.moraleja && <div className="rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm dark:bg-amber-500/10"><b>Moraleja:</b> {data.moraleja}</div>}
-      {(data.preguntas_comprension ?? []).length > 0 && <><Section title="Preguntas de comprensión" />{bullets(data.preguntas_comprension ?? [])}</>}
-    </div>
-  );
+  return <StoryContent data={data} />;
 }
 
 function ParaColorearContent({ data }: { data: ToolContent }) {

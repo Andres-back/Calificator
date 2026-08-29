@@ -39,6 +39,12 @@
 - [X] T021 Evitar que la ambientación cree un contexto de apilamiento que deje modales bajo la navegación y verificar los cuatro flujos del asistente IA (FR-001, FR-003, SC-001)
 - [X] T015 Ejecutar convergencia, completar specs/017-decoracion-frontend/tasks.md y preparar el PR enlazado al issue #22 (FR-001–FR-014, SC-001–SC-008)
 
+## Evolución visual de cuento y presentaciones — 2026-08-29
+
+- [X] T022 [US1] Separar portada, personajes, narración, moraleja y preguntas del cuento en frontend/src/modules/herramientas/views/StoryContent.tsx y frontend/src/modules/herramientas/views/ContenidoView.tsx (FR-015, SC-009)
+- [X] T023 [US2] Reforzar escenario, posición, controles y miniaturas en frontend/src/modules/presentaciones/PresentationPreviewModal.tsx (FR-016, SC-010)
+- [X] T024 Añadir regresión focalizada y ejecutar pruebas y build del frontend en frontend/src/modules/herramientas/views/StoryContent.test.tsx y frontend/package.json (FR-001, FR-005, FR-015, FR-016)
+
 ## Dependencias
 
 - T001 precede a T002 y define qué activos se conservan.

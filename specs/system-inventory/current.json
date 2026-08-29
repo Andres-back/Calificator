@@ -291,7 +291,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "dc95a880b52fb42f43651641c27121e545feb9bc088275332545642b69672fc8",
+  "source_digest": "1452a951e11f2887ec093bae389d7253869c8a3fc038cb34eb607aff29a5baa0",
   "surfaces": [
     {
       "actors": [
@@ -11222,6 +11222,12 @@
           "reference": "/",
           "status": "direct",
           "test_path": "frontend/src/modules/herramientas/views/PuzzleViews.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/views/StoryContent.test.tsx"
         },
         {
           "level": "unit",
