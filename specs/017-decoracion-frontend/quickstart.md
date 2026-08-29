@@ -53,3 +53,15 @@ La aplicación tiene una identidad más rica y coherente, pero mantiene exactame
 - La auditoría detectó durante la implementación dos accesos rápidos del login por debajo de 40 px; se ajustaron a 44 px y la regresión quedó cubierta.
 - Los recorridos de Calificaciones, Calificar foto, Modo salón y Boletín se presentan una vez por rol/versión y conservan su botón manual «¿Cómo se usa?».
 - Regresión de apilamiento: los cuatro recorridos de creación IA pasan y los modales permanecen por encima de la barra lateral; el contenido ambiental no crea un `z-index` contenedor.
+
+## Evidencia de iconografía personalizada — Issue #43 (2026-08-29)
+
+- Se generaron cuatro ilustraciones cuadradas originales con fondo transparente y estética 3D suave de XCalificator: libro abierto para Materias, pieza de rompecabezas con lápiz para Recursos, portapapeles con verificación para Calificar y pantalla de proyección para Presentaciones.
+- Prompt base: icono educativo amable, frontal/isométrico suave, paleta índigo-violeta-cian con acento amarillo, formas redondeadas, iluminación limpia, sin texto, letras, números, logotipos, personas ni elementos recortados; fondo totalmente transparente.
+- Variación Materias: libro abierto índigo con páginas claras y destello de aprendizaje cian.
+- Variación Recursos: rompecabezas violeta con lápiz cian y destello amarillo.
+- Variación Calificar: portapapeles índigo con marca de verificación cian y destello amarillo.
+- Variación Presentaciones: pantalla de proyección índigo con símbolo visual cian y pequeño destello.
+- Los originales de 1254×1254 se optimizaron a WebP 320×320 con alfa; los cuatro archivos en `frontend/public/branding/icons/` pesan aproximadamente 85 KB en conjunto.
+- `BrandFeatureIcon` usa carga asíncrona, semántica decorativa y fallback Lucide; los iconos funcionales de navegación y botones no fueron reemplazados.
+- Validación real: inicio, Recursos y Presentaciones cargaron los activos en 390×844 sin overflow horizontal ni errores de consola; pruebas focalizadas y build Vite pasaron.

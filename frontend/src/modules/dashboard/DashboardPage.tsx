@@ -2,7 +2,6 @@ import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import {
   ArrowRight,
-  BookOpen,
   CalendarCheck2,
   Camera,
   ClipboardCheck,
@@ -15,7 +14,7 @@ import { TOOLS } from '@/modules/herramientas/meta';
 import { MATERIAL_CREATION_TOOLS } from '@/modules/herramientas/toolPickerModel';
 import { listMaterials } from '@/modules/herramientas/api';
 import { listMaterias } from '@/modules/materias/api';
-import { Badge, Card } from '@/components/ui';
+import { Badge, BrandFeatureIcon, Card } from '@/components/ui';
 import { DashboardEstudiante } from './DashboardEstudiante';
 import { DashboardAdmin } from './DashboardAdmin';
 import { TeacherInbox } from './TeacherInbox';
@@ -32,6 +31,7 @@ const teacherActions = [
     badge: 'Visión IA',
     tone: 'bg-cyan-500/10 text-cyan-700 dark:text-cyan-300',
     accent: 'border-t-cyan-500',
+    brandIcon: 'calificar' as const,
   },
   {
     to: routes.materiasPara('asistencia'),
@@ -41,6 +41,7 @@ const teacherActions = [
     badge: 'Registro diario',
     tone: 'bg-violet-500/10 text-violet-700 dark:text-violet-300',
     accent: 'border-t-violet-500',
+    brandIcon: null,
   },
   {
     to: routes.materiasPara('seguimiento'),
@@ -50,6 +51,7 @@ const teacherActions = [
     badge: 'Decisión docente',
     tone: 'bg-amber-500/10 text-amber-700 dark:text-amber-300',
     accent: 'border-t-amber-500',
+    brandIcon: null,
   },
   {
     to: routes.materiasPara('evaluar'),
@@ -59,6 +61,7 @@ const teacherActions = [
     badge: 'Evaluaciones',
     tone: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300',
     accent: 'border-t-emerald-500',
+    brandIcon: null,
   },
 ];
 
@@ -111,12 +114,12 @@ function DashboardDocente() {
           </div>
           <div className="grid grid-cols-2 gap-3 lg:w-72">
             <div className="rounded-2xl border border-white/20 bg-white/10 p-4 backdrop-blur">
-              <BookOpen className="h-5 w-5 text-cyan-200" />
+              <BrandFeatureIcon kind="materias" className="h-9 w-9" />
               <p className="mt-3 text-3xl font-extrabold">{metricValue(materiasQuery.isLoading, materiasQuery.data?.length)}</p>
               <p className="text-sm text-indigo-100">Materias</p>
             </div>
             <div className="rounded-2xl border border-white/20 bg-white/10 p-4 backdrop-blur">
-              <Wand2 className="h-5 w-5 text-amber-200" />
+              <BrandFeatureIcon kind="recursos" className="h-9 w-9" />
               <p className="mt-3 text-3xl font-extrabold">{metricValue(materialsQuery.isLoading, materialsQuery.data?.length)}</p>
               <p className="text-sm text-indigo-100">Recursos</p>
             </div>
@@ -143,7 +146,14 @@ function DashboardDocente() {
             <div key={action.title}>
               <Link to={action.to} className="group block h-full">
                 <Card interactive className={cn('relative flex h-full min-h-0 items-center gap-3 overflow-hidden border-t-4 p-4 transition-transform duration-200 hover:-translate-y-1 sm:min-h-44 sm:flex-col sm:items-stretch sm:gap-0 sm:p-5', action.accent)}>
-                  <div className="flex shrink-0 items-start justify-between gap-3"><span className={cn('grid h-11 w-11 place-items-center rounded-xl sm:h-12 sm:w-12 sm:rounded-2xl', action.tone)}><action.icon className="h-5 w-5 sm:h-6 sm:w-6" /></span><span className="hidden text-xs font-bold text-muted sm:inline">{action.badge}</span></div>
+                  <div className="flex shrink-0 items-start justify-between gap-3">
+                    {action.brandIcon ? (
+                      <BrandFeatureIcon kind={action.brandIcon} className="h-11 w-11 sm:h-12 sm:w-12" />
+                    ) : (
+                      <span className={cn('grid h-11 w-11 place-items-center rounded-xl sm:h-12 sm:w-12 sm:rounded-2xl', action.tone)}><action.icon className="h-5 w-5 sm:h-6 sm:w-6" /></span>
+                    )}
+                    <span className="hidden text-xs font-bold text-muted sm:inline">{action.badge}</span>
+                  </div>
                   <div className="min-w-0 flex-1 sm:contents"><h3 className="font-display text-base font-bold leading-snug sm:mt-5 sm:text-lg">{action.title}</h3>
                   <p className="mt-2 hidden flex-1 text-sm leading-5 text-muted sm:block">{action.description}</p></div>
                   <span className="ml-auto inline-flex shrink-0 items-center gap-1 text-sm font-bold text-brand-600 sm:ml-0 sm:mt-4">Abrir <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" /></span>

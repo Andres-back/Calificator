@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Download, Trash2, Wrench, Gamepad2, ClipboardCheck, FileDown, Layers3, Copy, Pencil, Send } from 'lucide-react';
-import { Button, Card, Badge, Skeleton, EmptyState, QueryState, ConfirmDialog } from '@/components/ui';
+import { Badge, BrandFeatureIcon, Button, Card, ConfirmDialog, EmptyState, QueryState, Skeleton } from '@/components/ui';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { listMaterials, deleteMaterial, pdfUrl, duplicateMaterial } from './api';
 import { TOOL_BY_TIPO } from './meta';
@@ -80,8 +80,12 @@ export function ListPage() {
                 <p className="text-xs font-semibold uppercase tracking-wide text-muted">{item.label}</p>
                 <p className="mt-1 font-display text-3xl font-extrabold">{item.value}</p>
               </div>
-              <div className={cn('grid h-10 w-10 place-items-center rounded-lg', item.tone)}>
-                <item.icon className="h-5 w-5" />
+              <div className={cn('grid h-12 w-12 place-items-center rounded-xl', item.tone)}>
+                {item.label === 'Materiales' ? (
+                  <BrandFeatureIcon kind="recursos" className="h-12 w-12" />
+                ) : (
+                  <item.icon className="h-5 w-5" />
+                )}
               </div>
             </div>
           </motion.div>

@@ -108,3 +108,17 @@ Como miembro de la comunidad educativa quiero una interfaz reconocible como XCal
 - Se priorizan superficies compartidas y páginas de entrada para obtener consistencia sin modificar cada flujo individual.
 - Los recursos existentes que ya cumplen su función permanecen disponibles.
 - La solicitud del usuario autoriza el alcance conservador descrito y su implementación sin cambios funcionales.
+
+## Evolución: iconografía personalizada — Issue #43
+
+- **FR-017**: La aplicación DEBE disponer de una familia original y coherente de iconos ilustrados para Materias, Recursos, Calificar y Presentaciones, sin texto ni marcas externas.
+- **FR-018**: Los iconos ilustrados DEBEN utilizarse únicamente en tarjetas y estados destacados donde conserven un tamaño legible; la navegación, los botones y los controles pequeños DEBEN mantener símbolos vectoriales accesibles y una etiqueta comprensible.
+- **FR-019**: Cada icono ilustrado DEBE contar con un reemplazo comprensible si el recurso gráfico no carga.
+
+### Criterio adicional de éxito
+
+- **SC-011**: Los cuatro iconos se distinguen a 48 píxeles, conservan transparencia y contraste en ambos temas y su ausencia no impide reconocer ni utilizar la acción asociada.
+
+### Supuesto adicional
+
+La evolución amplía esta especificación viva sin rediseñar el logotipo ni la mascota y conserva intactos rutas, permisos y contratos.

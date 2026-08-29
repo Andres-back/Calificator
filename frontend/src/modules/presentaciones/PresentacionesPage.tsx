@@ -13,7 +13,7 @@ import {
   Presentation,
   Trash2,
 } from 'lucide-react';
-import { Button, Card, Badge, Skeleton, EmptyState, Modal, QueryError, ConfirmDialog, StatCard } from '@/components/ui';
+import { Badge, BrandFeatureIcon, Button, Card, ConfirmDialog, EmptyState, Modal, QueryError, Skeleton, StatCard } from '@/components/ui';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { useMaterias } from '@/modules/materias/MateriaSelect';
 import {
@@ -29,11 +29,11 @@ import { toApiError } from '@/lib/api';
 import { formatDate } from '@/lib/dates';
 import { PresentationPreviewModal } from './PresentationPreviewModal';
 
-const STATE: Record<string, { tone: 'warning' | 'info' | 'success' | 'error'; label: string; icon: typeof Clock; accent: string; iconTone: string }> = {
-  queued: { tone: 'warning', label: 'En cola', icon: Clock, accent: 'border-l-amber-500', iconTone: 'bg-amber-50 text-amber-600 dark:bg-amber-500/15 dark:text-amber-300' },
-  running: { tone: 'info', label: 'Generando…', icon: Loader2, accent: 'border-l-sky-500', iconTone: 'bg-sky-50 text-sky-600 dark:bg-sky-500/15 dark:text-sky-300' },
-  success: { tone: 'success', label: 'Lista', icon: CheckCircle2, accent: 'border-l-emerald-500', iconTone: 'bg-emerald-50 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-300' },
-  failed: { tone: 'error', label: 'Error', icon: AlertTriangle, accent: 'border-l-rose-500', iconTone: 'bg-rose-50 text-rose-600 dark:bg-rose-500/15 dark:text-rose-300' },
+const STATE: Record<string, { tone: 'warning' | 'info' | 'success' | 'error'; label: string; icon: typeof Clock; accent: string }> = {
+  queued: { tone: 'warning', label: 'En cola', icon: Clock, accent: 'border-l-amber-500' },
+  running: { tone: 'info', label: 'Generando…', icon: Loader2, accent: 'border-l-sky-500' },
+  success: { tone: 'success', label: 'Lista', icon: CheckCircle2, accent: 'border-l-emerald-500' },
+  failed: { tone: 'error', label: 'Error', icon: AlertTriangle, accent: 'border-l-rose-500' },
 };
 function presentationErrorMessage(error: string | null) {
   const value = (error ?? '').toLowerCase();
@@ -108,9 +108,7 @@ export function PresentacionesPage() {
             return (
               <motion.div key={p.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}>
                 <Card className={`flex flex-col gap-4 border-l-4 p-5 lg:flex-row lg:flex-wrap lg:items-center ${st.accent}`}>
-                  <div className={`grid h-10 w-10 shrink-0 place-items-center rounded-lg ${st.iconTone}`}>
-                    <Presentation className="h-5 w-5" />
-                  </div>
+                  <BrandFeatureIcon kind="presentaciones" className="h-14 w-14 shrink-0" />
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
                       <p className="font-semibold">{p.titulo}</p>

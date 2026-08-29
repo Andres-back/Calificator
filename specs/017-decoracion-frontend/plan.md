@@ -83,3 +83,13 @@ frontend/
 ## Verificación posterior al diseño
 
 Todos los principios constitucionales continúan satisfechos. No existen excepciones, cambios de datos, nuevas dependencias, interfaces públicas ni riesgos sobre el flujo de calificaciones.
+
+## Evolución: iconografía personalizada — Issue #43
+
+- Generar cuatro recursos raster transparentes y sin texto para Materias, Recursos, Calificar y Presentaciones.
+- Mantener una dirección visual común: silueta compacta, volumen suave, paleta índigo/cian y detalles cálidos compatibles con la identidad existente.
+- Incorporar un componente presentacional con reemplazo vectorial cuando un archivo no cargue.
+- Usar la familia en accesos destacados donde el tamaño mínimo sea de 48 píxeles.
+- Conservar los símbolos vectoriales actuales en navegación, botones y controles pequeños para no perder nitidez ni semántica.
+- No añadir dependencias, llamadas de red, persistencia ni cambios de contratos.
+- Validar carga, reemplazo, modo claro/oscuro y 360 píxeles mediante pruebas focalizadas y build.
