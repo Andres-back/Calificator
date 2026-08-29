@@ -121,3 +121,10 @@ Todos los principios constitucionales continúan satisfechos. No existen excepci
 - Mantener el SVG existente oculto como fallback de carga.
 - Ampliar la presencia visual en navegación, selector, listados, materia, detalle, estudiante, inicio y presentaciones.
 - Validar existencia de archivos, correspondencia canónica, carga, lint y build sin modificar lógica funcional.
+
+## Hotfix: ampliación de iconografía contextual — Issue #51
+
+- Generar una segunda familia de 18 miniilustraciones coherente con la lámina aprobada.
+- Integrarla en acciones docentes, bandeja, materias por área, navegación interna y reportes.
+- Mantener fallback SVG y fallback general de área, sin cambiar comportamiento funcional.
+- Validar alfa real, correspondencia semántica, temas, 390 píxeles, pruebas focalizadas, lint y build.

@@ -22,7 +22,25 @@ export type EducationalIconName =
   | 'quick-quiz'
   | 'reading'
   | 'concept-map'
-  | 'flashcards';
+  | 'flashcards'
+  | 'prepare-evaluation'
+  | 'pending-reviews'
+  | 'student-claim'
+  | 'grade-evidence'
+  | 'attendance'
+  | 'gradebook'
+  | 'curriculum-dba'
+  | 'subject-math'
+  | 'subject-science'
+  | 'subject-language'
+  | 'subject-social'
+  | 'subject-english'
+  | 'subject-art'
+  | 'subject-technology'
+  | 'report-subjects'
+  | 'report-grades'
+  | 'report-average'
+  | 'student-roster';
 
 type IconProps = Omit<HTMLAttributes<HTMLSpanElement>, 'children'> & { name: EducationalIconName };
 
@@ -48,9 +66,51 @@ const EDUCATIONAL_ICON_ASSET: Record<EducationalIconName, string> = {
   reading: 'reading',
   'concept-map': 'concept-map',
   flashcards: 'flashcards',
+  'prepare-evaluation': 'prepare-evaluation',
+  'pending-reviews': 'pending-reviews',
+  'student-claim': 'student-claim',
+  'grade-evidence': 'grade-evidence',
+  attendance: 'attendance',
+  gradebook: 'gradebook',
+  'curriculum-dba': 'curriculum-dba',
+  'subject-math': 'subject-math',
+  'subject-science': 'subject-science',
+  'subject-language': 'subject-language',
+  'subject-social': 'subject-social',
+  'subject-english': 'subject-english',
+  'subject-art': 'subject-art',
+  'subject-technology': 'subject-technology',
+  'report-subjects': 'report-subjects',
+  'report-grades': 'report-grades',
+  'report-average': 'report-average',
+  'student-roster': 'student-roster',
+};
+
+const FALLBACK_ICON: Partial<Record<EducationalIconName, EducationalIconName>> = {
+  'prepare-evaluation': 'exam',
+  'pending-reviews': 'reading',
+  'student-claim': 'workshop',
+  'grade-evidence': 'exam',
+  attendance: 'workshop',
+  gradebook: 'learning-guide',
+  'curriculum-dba': 'learning-guide',
+  'subject-math': 'subjects',
+  'subject-science': 'subjects',
+  'subject-language': 'subjects',
+  'subject-social': 'subjects',
+  'subject-english': 'subjects',
+  'subject-art': 'coloring',
+  'subject-technology': 'ai-settings',
+  'report-subjects': 'reports',
+  'report-grades': 'reports',
+  'report-average': 'reports',
+  'student-roster': 'subjects',
 };
 
 function Glyph({ name }: { name: EducationalIconName }) {
+  const fallbackName = FALLBACK_ICON[name];
+  if (fallbackName) return <Glyph name={fallbackName} />;
+
   switch (name) {
     case 'dashboard':
       return <><rect x="3.5" y="3.5" width="7" height="7" rx="2" /><rect x="13.5" y="3.5" width="7" height="4.5" rx="2" /><rect x="13.5" y="11" width="7" height="9.5" rx="2" /><rect x="3.5" y="13" width="7" height="7.5" rx="2" /></>;

@@ -3,12 +3,10 @@ import {
   AlertCircle,
   ArrowRight,
   CheckCircle2,
-  ClipboardCheck,
   Inbox,
-  MessageSquareWarning,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { Badge, Card, Skeleton } from '@/components/ui';
+import { Badge, Card, EducationalIcon, Skeleton } from '@/components/ui';
 import { getBandejaDocente } from '@/modules/calificaciones/api';
 import { routes } from '@/config/routes';
 import type { BandejaDocenteItem } from '@/types/api';
@@ -36,18 +34,15 @@ function CaseList({
   total: number;
   kind: 'claim' | 'pending';
 }) {
-  const Icon = kind === 'claim' ? MessageSquareWarning : ClipboardCheck;
+  const brandIcon = kind === 'claim' ? 'student-claim' : 'pending-reviews';
   const tone = kind === 'claim' ? 'amber' : 'brand';
 
   return (
     <div className="min-w-0 rounded-2xl border border-border bg-surface">
       <div className="flex items-start justify-between gap-3 border-b border-border p-4 sm:p-5">
         <div className="flex min-w-0 gap-3">
-          <span className={kind === 'claim'
-            ? 'grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-amber-500/10 text-amber-700 dark:text-amber-300'
-            : 'grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-brand-500/10 text-brand-700 dark:text-brand-300'}
-          >
-            <Icon className="h-5 w-5" aria-hidden="true" />
+          <span className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-white/90 shadow-sm ring-1 ring-border dark:bg-white/10">
+            <EducationalIcon name={brandIcon} className="h-12 w-12" />
           </span>
           <div className="min-w-0">
             <h3 className="font-display text-base font-bold sm:text-lg">{title}</h3>

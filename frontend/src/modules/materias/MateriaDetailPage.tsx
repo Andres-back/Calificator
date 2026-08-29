@@ -1,21 +1,21 @@
 import { Link, Outlet, useLocation, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
-import { ArrowLeft, BookOpen, ClipboardCheck, Camera, BarChart3, BookMarked, CalendarCheck2, LayoutGrid, Library, Users } from 'lucide-react';
-import { Badge, LoadingScreen, QueryError } from '@/components/ui';
+import { ArrowLeft, Users } from 'lucide-react';
+import { Badge, EducationalIcon, getSubjectEducationalIcon, LoadingScreen, QueryError } from '@/components/ui';
 import { getMateria, getMateriaEstudiantes } from './api';
 import { toApiError } from '@/lib/api';
 import { useAuth } from '@/stores/auth';
 import { cn } from '@/lib/cn';
 
 const ALL_TABS = [
-  { label: 'Vista general', to: '', icon: LayoutGrid },
-  { label: 'Evaluaciones', to: 'evaluaciones', icon: ClipboardCheck },
-  { label: 'Recursos', to: 'recursos', icon: Library },
-  { label: 'Calificar', to: 'calificar', icon: Camera, profesorOnly: true },
-  { label: 'Asistencia', to: 'asistencia', icon: CalendarCheck2, profesorOnly: true },
-  { label: 'Boletín', to: 'boletin', icon: BarChart3 },
-  { label: 'DBA', to: 'dba', icon: BookMarked, profesorOnly: true },
+  { label: 'Vista general', to: '', brandIcon: 'subjects' },
+  { label: 'Evaluaciones', to: 'evaluaciones', brandIcon: 'prepare-evaluation' },
+  { label: 'Recursos', to: 'recursos', brandIcon: 'resources' },
+  { label: 'Calificar', to: 'calificar', brandIcon: 'grade-evidence', profesorOnly: true },
+  { label: 'Asistencia', to: 'asistencia', brandIcon: 'attendance', profesorOnly: true },
+  { label: 'Boletín', to: 'boletin', brandIcon: 'gradebook' },
+  { label: 'DBA', to: 'dba', brandIcon: 'curriculum-dba', profesorOnly: true },
 ] as const;
 
 export function MateriaDetailPage() {
@@ -98,8 +98,8 @@ export function MateriaDetailPage() {
       >
         {canManageMateria && <div className="pointer-events-none absolute -right-16 -top-24 h-52 w-52 rounded-full bg-sky-300/20 blur-3xl" aria-hidden="true" />}
         {canManageMateria && <div className="pointer-events-none absolute -bottom-20 left-1/3 h-36 w-36 rounded-full bg-violet-300/10 blur-3xl" aria-hidden="true" />}
-        <div className="relative z-10 grid h-12 w-12 shrink-0 place-items-center rounded-xl border border-brand-200 bg-brand-50 text-brand-600 shadow-sm dark:border-brand-500/30 dark:bg-brand-500/15 dark:text-brand-300">
-          <BookOpen className="h-6 w-6" />
+        <div className="relative z-10 grid h-20 w-20 shrink-0 place-items-center rounded-2xl bg-white/90 shadow-sm ring-1 ring-border dark:bg-white/10">
+          <EducationalIcon name={getSubjectEducationalIcon(materia.area)} className="h-[4.5rem] w-[4.5rem]" />
         </div>
         <div className="relative z-10 min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
@@ -131,7 +131,10 @@ export function MateriaDetailPage() {
                   : 'text-secondary hover:bg-surface-2 hover:text-fg',
               )}
             >
-              <tab.icon className="h-4 w-4" />
+              <EducationalIcon
+                name={tab.brandIcon === 'subjects' ? getSubjectEducationalIcon(materia.area) : tab.brandIcon}
+                className="h-7 w-7"
+              />
               {tab.label}
             </Link>
           );

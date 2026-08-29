@@ -1,11 +1,7 @@
-import { type ElementType } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import {
   ArrowRight,
-  BarChart3,
-  CalendarCheck2,
-  Camera,
   CheckCircle2,
   CircleDashed,
   ClipboardCheck,
@@ -19,9 +15,11 @@ import {
   Badge,
   Button,
   Card,
+  EducationalIcon,
   EmptyState,
   Skeleton,
 } from '@/components/ui';
+import type { EducationalIconName } from '@/components/ui';
 import { listEvaluaciones } from '@/modules/evaluaciones/api';
 import { routes } from '@/config/routes';
 import { regenerateCode } from './api';
@@ -195,7 +193,7 @@ function TeacherJourney({
         'Copia el código de inscripción y compártelo con el grupo. Cuando se unan aparecerán aquí.',
       label: 'Ver código de inscripción',
       to: '#codigo-inscripcion',
-      icon: Users,
+      brandIcon: 'student-roster' as const,
     },
     evaluate: {
       eyebrow: 'Paso recomendado: prepara la actividad',
@@ -204,7 +202,7 @@ function TeacherJourney({
         'Define qué vas a evaluar y la nota máxima. Después podrás calificar las evidencias.',
       label: 'Preparar evaluación',
       to: routes.materiaEvaluaciones(materiaId),
-      icon: ClipboardCheck,
+      brandIcon: 'prepare-evaluation' as const,
     },
     grade: {
       eyebrow: 'Paso recomendado: revisa evidencias',
@@ -213,11 +211,10 @@ function TeacherJourney({
         'Selecciona estudiante y evaluación, carga la foto y confirma o ajusta la sugerencia de la IA.',
       label: 'Ir al flujo de calificación',
       to: routes.materiaCalificar(materiaId),
-      icon: Camera,
+      brandIcon: 'grade-evidence' as const,
     },
   }[state.recommendedStep];
 
-  const RecommendedIcon = recommended.icon;
 
   return (
     <Card className="overflow-hidden border-brand-200 dark:border-brand-500/30">
@@ -273,8 +270,8 @@ function TeacherJourney({
         ) : (
           <div className="rounded-xl border border-brand-200 bg-surface p-5 shadow-sm dark:border-brand-500/25">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-              <span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-brand-700 text-white">
-                <RecommendedIcon className="h-6 w-6" aria-hidden="true" />
+              <span className="grid h-16 w-16 shrink-0 place-items-center rounded-2xl bg-white/90 shadow-sm ring-1 ring-border dark:bg-white/10">
+                <EducationalIcon name={recommended.brandIcon} className="h-14 w-14" />
               </span>
               <div className="min-w-0 flex-1">
                 <p className="text-xs font-bold uppercase tracking-wide text-brand-700 dark:text-brand-200">
@@ -312,7 +309,7 @@ function TeacherJourney({
           <p className="mb-3 text-sm font-bold">Acciones frecuentes</p>
           <div className="grid gap-3 md:grid-cols-3">
             <JourneyAction
-              icon={CalendarCheck2}
+              brandIcon="attendance"
               title="Tomar asistencia"
               description={
                 state.hasStudents
@@ -323,7 +320,7 @@ function TeacherJourney({
               disabled={!state.hasStudents}
             />
             <JourneyAction
-              icon={Camera}
+              brandIcon="grade-evidence"
               title="Calificar por foto"
               description={
                 state.canGrade
@@ -334,7 +331,7 @@ function TeacherJourney({
               disabled={!state.canGrade}
             />
             <JourneyAction
-              icon={BarChart3}
+              brandIcon="gradebook"
               title="Revisar seguimiento"
               description={
                 state.canGrade
@@ -374,13 +371,13 @@ function ProgressBadge({
 }
 
 function JourneyAction({
-  icon: Icon,
+  brandIcon,
   title,
   description,
   to,
   disabled,
 }: {
-  icon: ElementType;
+  brandIcon: EducationalIconName;
   title: string;
   description: string;
   to: string;
@@ -388,8 +385,8 @@ function JourneyAction({
 }) {
   const content = (
     <>
-      <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-brand-50 text-brand-700 dark:bg-brand-500/15 dark:text-brand-200">
-        <Icon className="h-5 w-5" aria-hidden="true" />
+      <span className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-white/90 shadow-sm ring-1 ring-border dark:bg-white/10">
+        <EducationalIcon name={brandIcon} className="h-12 w-12" />
       </span>
       <span className="min-w-0 flex-1">
         <span className="block font-semibold">{title}</span>

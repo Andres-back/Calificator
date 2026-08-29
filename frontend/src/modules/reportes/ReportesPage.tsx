@@ -1,8 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
-import { BarChart3, BookOpen, ClipboardCheck, TrendingUp } from 'lucide-react';
+import { BarChart3 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, CartesianGrid } from 'recharts';
-import { Card, Skeleton, EmptyState, QueryState, StatCard } from '@/components/ui';
+import { Card, EducationalIcon, EmptyState, getSubjectEducationalIcon, QueryState, Skeleton, StatCard } from '@/components/ui';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { getResumenProfesor } from './api';
 
@@ -24,11 +24,9 @@ export function ReportesPage() {
       {/* Feature Image Banner */}
       <div className="relative overflow-hidden rounded-xl border border-border bg-surface">
         <div className="flex items-center gap-4 p-4">
-          <img 
-            src="/branding/feature-report.png" 
-            alt="" 
-            className="h-16 w-16 rounded-lg object-contain opacity-80"
-          />
+          <span className="grid h-20 w-20 shrink-0 place-items-center rounded-2xl bg-white/90 shadow-sm ring-1 ring-border dark:bg-white/10">
+            <EducationalIcon name="reports" className="h-[4.5rem] w-[4.5rem]" />
+          </span>
           <div>
             <p className="font-display font-bold">Reportes y estadísticas</p>
             <p className="mt-1 text-sm text-muted">Visualiza el rendimiento de tus materias y estudiantes con gráficas detalladas.</p>
@@ -48,9 +46,9 @@ export function ReportesPage() {
 
         <>
           <div className="grid gap-4 sm:grid-cols-3">
-            <StatCard icon={BookOpen} label="Materias" value={String(materias.length)} tone="brand" />
-            <StatCard icon={ClipboardCheck} label="Calificaciones" value={String(totalCals)} tone="success" />
-            <StatCard icon={TrendingUp} label="Promedio general" value={promGeneral.toFixed(2)} tone="warning" />
+            <StatCard brandIcon="report-subjects" label="Materias" value={String(materias.length)} tone="brand" />
+            <StatCard brandIcon="report-grades" label="Calificaciones" value={String(totalCals)} tone="success" />
+            <StatCard brandIcon="report-average" label="Promedio general" value={promGeneral.toFixed(2)} tone="warning" />
           </div>
 
           <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
@@ -83,7 +81,12 @@ export function ReportesPage() {
                 <tbody>
                   {materias.map((m, i) => (
                     <tr key={i} className="border-t border-border">
-                      <td className="px-3 py-3 font-semibold">{m.nombre}</td>
+                      <td className="px-3 py-3 font-semibold">
+                        <span className="flex items-center gap-2.5">
+                          <EducationalIcon name={getSubjectEducationalIcon(m.nombre)} className="h-9 w-9" />
+                          {m.nombre}
+                        </span>
+                      </td>
                       <td className="px-3 py-3">{m.total_calificaciones}</td>
                       <td className="px-3 py-3"><span className="font-bold text-brand-600">{m.promedio.toFixed(2)}</span></td>
                     </tr>
