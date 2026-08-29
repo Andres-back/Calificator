@@ -83,6 +83,8 @@ Como miembro de la comunidad educativa quiero una interfaz reconocible como XCal
 - **FR-012**: Un elemento únicamente explicativo NO DEBE presentarse como botón; cuando la explicación corresponda a un flujo complejo, DEBE ofrecerse mediante una guía contextual.
 - **FR-013**: Las guías contextuales de los flujos complejos DEBEN abrirse automáticamente en la primera visita de cada rol y versión, poder omitirse y volver a abrirse manualmente.
 - **FR-014**: La aplicación DEBE conservar un registro local por rol, guía y versión para no repetir automáticamente una guía ya completada.
+- **FR-015**: El cuento DEBE diferenciar visualmente portada, personajes, narración, moraleja y preguntas, conservando lectura cómoda desde 360 píxeles y un reemplazo legible cuando falte la ilustración.
+- **FR-016**: El visor de presentaciones DEBE priorizar la diapositiva activa, indicar posición, ofrecer controles táctiles claros y mantener miniaturas navegables sin bloquear el desplazamiento.
 
 ## Criterios de éxito
 
@@ -96,6 +98,8 @@ Como miembro de la comunidad educativa quiero una interfaz reconocible como XCal
 - **SC-006**: La nueva imagen carece de texto, marcas externas y elementos que puedan confundirse con controles interactivos.
 - **SC-007**: El 100 % de los botones inventariados tiene una acción, envío o navegación válida, y la auditoría automatizada no reporta controles sin propósito.
 - **SC-008**: Cada guía existente de calificaciones se abre una sola vez en la primera visita por rol y versión, permanece omitible y puede abrirse manualmente después.
+- **SC-009**: Un estudiante distingue las cinco partes del cuento en menos de 20 segundos y puede leerlo sin desplazamiento horizontal en 360, 390, 768 y 1366 píxeles.
+- **SC-010**: El visor permite identificar la diapositiva activa y avanzar o retroceder con objetivos táctiles visibles en móvil y escritorio.
 
 ## Supuestos
 

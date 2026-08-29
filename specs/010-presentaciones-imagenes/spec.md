@@ -35,6 +35,7 @@ Como equipo, necesito actualizar estos artefactos cuando cambie el comportamient
 - **FR-006**: Errores NO DEBEN exponer secretos ni datos ajenos.
 - **FR-007**: Contratos DEBEN estar trazados en contracts/interfaces.md.
 - **FR-008**: Todo cambio futuro DEBE actualizar especificación, plan, tareas y pruebas.
+- **FR-009**: La vista previa DEBE mostrar una diapositiva principal legible, su posición, navegación anterior/siguiente y miniaturas seleccionables en móvil y escritorio.
 
 ### Entidades clave
 - **Presentacion**: identidad, estado y relaciones definidos por el dominio.
@@ -48,6 +49,7 @@ Como equipo, necesito actualizar estos artefactos cuando cambie el comportamient
 - **SC-002**: Recorridos P1 se verifican sin acceso cruzado.
 - **SC-003**: Cada requisito tiene tarea o evidencia.
 - **SC-004**: No quedan marcadores pendientes, contradicciones críticas ni secretos.
+- **SC-005**: El usuario identifica la diapositiva activa y sus controles sin contenido cortado desde 360 píxeles hasta escritorio.
 
 ## Supuestos
 - Registra comportamiento vigente; no introduce cambios funcionales.
