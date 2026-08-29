@@ -31,6 +31,7 @@ actualizar la especificación propietaria, su plan y sus tareas; no debe crear d
 | 024 | [Landing pública, solicitudes docentes y mapas conceptuales](024-landing-publica-mapas/spec.md) | auth, users y herramientas | `/`, `/registro`, `/app/admin/usuarios` y vista de mapa | `users` y metadatos de mapas | [#35](https://github.com/Andres-back/Calificator/issues/35) |
 
 | 025 | [Recuperación segura de contraseña](025-recuperar-contrasena/spec.md) | auth, correo transaccional y worker | rutas públicas de recuperación y panel admin de correo | users.auth_version, password_reset_requests, mail_global_config | [#37](https://github.com/Andres-back/Calificator/issues/37) |
+| 026 | [Perfeccionamiento de recursos pedagógicos](026-perfeccionar-recursos/spec.md) | herramientas y renderizado PDF | creación, edición, vista y exportación de recursos | materiales existentes; sin tablas nuevas | [#39](https://github.com/Andres-back/Calificator/issues/39) |
 
 ## Reglas de propiedad
 

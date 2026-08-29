@@ -46,13 +46,18 @@ export function isGradableTool(type: MaterialTipo): boolean {
 }
 
 export const MATERIAL_CREATION_TOOLS = TOOLS.filter(
-  // `unir_columnas` se conserva para abrir materiales y enlaces antiguos,
-  // pero `emparejar` es la única opción canónica para nuevas creaciones.
-  (tool) => !isGradableTool(tool.tipo) && tool.tipo !== 'unir_columnas',
+  // Los tipos históricos siguen abriendo materiales antiguos, pero no se
+  // ofrecen para crear contenido redundante nuevo.
+  (tool) =>
+    !isGradableTool(tool.tipo) &&
+    tool.tipo !== 'unir_columnas' &&
+    tool.tipo !== 'ficha',
 );
 
 export function canonicalCreationTool(type: MaterialTipo): MaterialTipo {
-  return type === 'unir_columnas' ? 'emparejar' : type;
+  if (type === 'unir_columnas') return 'emparejar';
+  if (type === 'ficha') return 'taller';
+  return type;
 }
 
 const TOOL_GOAL_BY_TYPE: Record<MaterialTipo, Exclude<ToolGoal, 'todos'>> = {

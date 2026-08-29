@@ -15,12 +15,29 @@ async def generate(req: LecturaComprensivaRequest, llm: LLMRouter) -> dict:
 
 {ctx}
 
-Genera un ejercicio de lectura comprensiva con un texto breve y apropiado para
-el grado, seguido de {req.cantidad_preguntas} preguntas de comprensión. Las
-preguntas deben incluir al menos 2 de inferencia y 1 de vocabulario en
-contexto. Cada pregunta debe tener su respuesta correcta.
+Genera un ejercicio de lectura comprensiva con un texto breve, coherente y
+apropiado para el grado, seguido de exactamente {req.cantidad_preguntas}
+preguntas. La primera debe ser literal, la segunda inferencial; desde 3
+preguntas incluye vocabulario en contexto y desde 4 incluye una pregunta
+crítica. Reparte las restantes sin repetir enunciados. Cada respuesta debe
+incluir evidencia textual o una justificación verificable.
 Devuelve SOLO JSON:
-{{"titulo":"...","texto":"...","preguntas":[{{"numero":1,"tipo":"literal|inferencial|vocabulario","enunciado":"...","respuesta_esperada":"..."}}]}}"""
+{{
+  "titulo":"...",
+  "instrucciones":"...",
+  "estrategia_lectora":"...",
+  "fuente":"Texto original generado para la actividad",
+  "texto":"...",
+  "preguntas":[{{
+    "numero":1,
+    "tipo":"literal|inferencial|vocabulario|critica",
+    "dificultad":"baja|media|alta",
+    "enunciado":"...",
+    "respuesta_esperada":"...",
+    "evidencia_textual":"...",
+    "justificacion":"..."
+  }}]
+}}"""
 
     result = await llm.generate_json("lectura_comprensiva", prompt)
     if not isinstance(result, dict):
@@ -33,8 +50,4 @@ Devuelve SOLO JSON:
     titulo = (result.get("titulo") or req.titulo or "Lectura comprensiva").strip()
     texto = (result.get("texto") or "").strip()
 
-    return {
-        "titulo": titulo,
-        "texto": texto,
-        "preguntas": preguntas,
-    }
+    return {**result, "titulo": titulo, "texto": texto, "preguntas": preguntas}

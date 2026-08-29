@@ -17,17 +17,25 @@ Dificultades identificadas:
 Genera un plan de refuerzo personalizado. Devuelve JSON:
 {{
   "estudiante": "...",
+  "diagnostico_inicial": "...",
+  "dificultades": ["..."],
+  "fortalezas": ["..."],
   "objetivo_general": "...",
+  "duracion_estimada": "...",
   "semanas": [
     {{
       "semana": 1,
       "tema": "...",
+      "meta_semana": "...",
       "actividades": ["..."],
       "recursos": ["..."],
-      "meta_semana": "..."
+      "evidencia": "...",
+      "responsable": "docente|estudiante|familia"
     }}
   ],
   "estrategias_apoyo": ["..."],
-  "indicadores_mejora": ["..."]
+  "indicadores_mejora": ["..."],
+  "comprobacion_final": "...",
+  "recomendaciones_familia": ["..."]
 }}"""
     return await llm.generate_json("plan_refuerzo", prompt)

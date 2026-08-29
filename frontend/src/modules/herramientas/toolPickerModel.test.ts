@@ -39,6 +39,12 @@ describe('toolPickerModel', () => {
     expect(canonicalCreationTool('unir_columnas')).toBe('emparejar');
   });
 
+  it('consolida la ficha en taller sin romper su alias histórico', () => {
+    expect(MATERIAL_CREATION_TOOLS.map((tool) => tool.tipo)).not.toContain('ficha');
+    expect(MATERIAL_CREATION_TOOLS.map((tool) => tool.tipo)).toContain('taller');
+    expect(canonicalCreationTool('ficha')).toBe('taller');
+  });
+
   it('busca sin exigir tildes ni mayúsculas', () => {
     const result = filterTools(TOOLS, {
       goal: 'todos',

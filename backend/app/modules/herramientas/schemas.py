@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from decimal import Decimal
-from typing import Literal
+from typing import Any, Literal, TypeAlias
 from uuid import UUID
 
 from pydantic import BaseModel, Field, PrivateAttr, model_validator
@@ -12,6 +12,12 @@ from app.shared.enums import (
     MaterialTipo,
     PoliticaIntento,
 )
+
+# El contenido se mantiene extensible para poder abrir materiales históricos.
+# Los contratos específicos de guía, lectura, taller y refuerzo se validan en
+# content_quality antes de persistir; esta interfaz evita descartar campos al
+# editar o devolver recursos creados con versiones anteriores.
+ContenidoHerramienta: TypeAlias = dict[str, Any]
 
 
 class HerramientaBaseRequest(BaseModel):
@@ -139,7 +145,7 @@ class MaterialRead(BaseModel):
     titulo: str
     materia_id: UUID | None = None
     materia_nombre: str | None = None
-    contenido_json: dict
+    contenido_json: ContenidoHerramienta
     archivo_url: str | None
     evaluacion_id: UUID | None = None
     evaluacion_estado: str | None = None
@@ -177,7 +183,7 @@ class MaterialListItem(BaseModel):
 class MaterialUpdate(BaseModel):
     titulo: str | None = Field(default=None, min_length=2, max_length=220)
     materia_id: UUID | None = None
-    contenido_json: dict | None = None
+    contenido_json: ContenidoHerramienta | None = None
 
 
 class AsignarMaterialApoyoRequest(BaseModel):
