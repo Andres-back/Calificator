@@ -122,3 +122,28 @@ Como miembro de la comunidad educativa quiero una interfaz reconocible como XCal
 ### Supuesto adicional
 
 La evolución amplía esta especificación viva sin rediseñar el logotipo ni la mascota y conserva intactos rutas, permisos y contratos.
+
+## Evolución: iconografía semántica de navegación y recursos — Issue #45
+
+### Escenarios de aceptación
+
+1. Un profesor reconoce Inicio, Materias, Recursos, Presentaciones, Reportes, Xali y Configuración IA por una silueta propia, manteniendo siempre visible su etiqueta textual.
+2. Al elegir un formato, el profesor distingue visualmente crucigrama, sopa de letras, relacionar pares, guía, taller, cuento, para colorear, plan de refuerzo, lectura comprensiva, mapa conceptual y flashcards.
+3. El mismo símbolo acompaña un tipo de recurso en el selector, el listado general, la materia y las vistas de docente y estudiante.
+4. Los materiales históricos equivalentes usan el símbolo de su formato canónico sin volver a ofrecerse como opciones duplicadas de creación.
+
+### Requisitos adicionales
+
+- **FR-020**: Cada destino visible de la navegación principal docente DEBE tener un símbolo semántico propio, legible en estado normal y activo, acompañado por su etiqueta textual.
+- **FR-021**: Cada formato canónico disponible para crear recursos DEBE tener un símbolo inequívoco y conservarlo en todas las superficies donde se muestra ese recurso.
+- **FR-022**: Los tipos históricos equivalentes DEBEN compartir la identidad visual del tipo canónico correspondiente y NO DEBEN reaparecer como alternativas de creación independientes.
+- **FR-023**: La renovación visual NO DEBE modificar destinos, permisos, nombres accesibles, acciones ni comportamiento de creación, asignación o resolución.
+
+### Criterios adicionales de éxito
+
+- **SC-012**: El 100 % de los destinos docentes y formatos canónicos visibles presenta un símbolo reconocible sin depender únicamente del color.
+- **SC-013**: En una pantalla de 390 píxeles no existe desbordamiento horizontal y todas las tarjetas y enlaces conservan nombre accesible y objetivo táctil utilizable.
+
+### Alcance aclarado
+
+“Laderboard” se interpreta como la barra lateral mostrada por el usuario. No se crea un ranking nuevo porque el producto no dispone actualmente de ese recorrido.

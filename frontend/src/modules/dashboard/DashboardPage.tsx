@@ -10,11 +10,11 @@ import {
   Wand2,
 } from 'lucide-react';
 import { useAuth } from '@/stores/auth';
-import { TOOLS } from '@/modules/herramientas/meta';
+import { TOOLS, TOOL_EDUCATIONAL_ICON } from '@/modules/herramientas/meta';
 import { MATERIAL_CREATION_TOOLS } from '@/modules/herramientas/toolPickerModel';
 import { listMaterials } from '@/modules/herramientas/api';
 import { listMaterias } from '@/modules/materias/api';
-import { Badge, BrandFeatureIcon, Card } from '@/components/ui';
+import { Badge, Card, EducationalIcon } from '@/components/ui';
 import { DashboardEstudiante } from './DashboardEstudiante';
 import { DashboardAdmin } from './DashboardAdmin';
 import { TeacherInbox } from './TeacherInbox';
@@ -31,7 +31,7 @@ const teacherActions = [
     badge: 'Visión IA',
     tone: 'bg-cyan-500/10 text-cyan-700 dark:text-cyan-300',
     accent: 'border-t-cyan-500',
-    brandIcon: 'calificar' as const,
+    brandIcon: 'exam' as const,
   },
   {
     to: routes.materiasPara('asistencia'),
@@ -114,12 +114,12 @@ function DashboardDocente() {
           </div>
           <div className="grid grid-cols-2 gap-3 lg:w-72">
             <div className="rounded-2xl border border-white/20 bg-white/10 p-4 backdrop-blur">
-              <BrandFeatureIcon kind="materias" className="h-9 w-9" />
+              <EducationalIcon name="subjects" className="h-8 w-8 text-cyan-100" />
               <p className="mt-3 text-3xl font-extrabold">{metricValue(materiasQuery.isLoading, materiasQuery.data?.length)}</p>
               <p className="text-sm text-indigo-100">Materias</p>
             </div>
             <div className="rounded-2xl border border-white/20 bg-white/10 p-4 backdrop-blur">
-              <BrandFeatureIcon kind="recursos" className="h-9 w-9" />
+              <EducationalIcon name="resources" className="h-8 w-8 text-amber-100" />
               <p className="mt-3 text-3xl font-extrabold">{metricValue(materialsQuery.isLoading, materialsQuery.data?.length)}</p>
               <p className="text-sm text-indigo-100">Recursos</p>
             </div>
@@ -148,7 +148,7 @@ function DashboardDocente() {
                 <Card interactive className={cn('relative flex h-full min-h-0 items-center gap-3 overflow-hidden border-t-4 p-4 transition-transform duration-200 hover:-translate-y-1 sm:min-h-44 sm:flex-col sm:items-stretch sm:gap-0 sm:p-5', action.accent)}>
                   <div className="flex shrink-0 items-start justify-between gap-3">
                     {action.brandIcon ? (
-                      <BrandFeatureIcon kind={action.brandIcon} className="h-11 w-11 sm:h-12 sm:w-12" />
+                      <span className="grid h-11 w-11 place-items-center rounded-xl bg-cyan-500/10 text-cyan-700 dark:text-cyan-300 sm:h-12 sm:w-12 sm:rounded-2xl"><EducationalIcon name={action.brandIcon} className="h-7 w-7" /></span>
                     ) : (
                       <span className={cn('grid h-11 w-11 place-items-center rounded-xl sm:h-12 sm:w-12 sm:rounded-2xl', action.tone)}><action.icon className="h-5 w-5 sm:h-6 sm:w-6" /></span>
                     )}
@@ -170,7 +170,7 @@ function DashboardDocente() {
           <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
             {MATERIAL_CREATION_TOOLS.slice(0, 4).map((tool) => (
               <Link key={tool.tipo} to={routes.herramientaNueva(tool.tipo)} className="focus-ring rounded-2xl border border-border p-4 transition hover:border-brand-300 hover:bg-brand-50/60 dark:hover:bg-brand-500/10">
-                <span className={cn('grid h-10 w-10 place-items-center rounded-xl bg-gradient-to-br text-white', tool.gradient)}><tool.icon className="h-5 w-5" /></span>
+                <span className={cn('grid h-12 w-12 place-items-center rounded-xl bg-gradient-to-br text-white', tool.gradient)}><EducationalIcon name={TOOL_EDUCATIONAL_ICON[tool.tipo]} className="h-7 w-7" /></span>
                 <p className="mt-3 text-sm font-bold">{tool.label}</p>
               </Link>
             ))}
@@ -181,9 +181,9 @@ function DashboardDocente() {
           <div className="flex items-center justify-between gap-3"><div><p className="text-xs font-bold uppercase tracking-[0.12em] text-muted">Continuar trabajando</p><h2 className="mt-1 font-display text-xl font-bold">Material reciente</h2></div><Link to={routes.herramientaNueva()} className="grid h-10 w-10 place-items-center rounded-xl bg-brand-600 text-white" aria-label="Crear material"><Plus className="h-5 w-5" /></Link></div>
           {recentMaterials.length ? (
             <div className="mt-4 space-y-2">
-              {recentMaterials.map((item) => { const meta = TOOLS.find((tool) => tool.tipo === item.tipo); const Icon = meta?.icon ?? Wand2; return (
+              {recentMaterials.map((item) => { const meta = TOOLS.find((tool) => tool.tipo === item.tipo); return (
                 <Link key={item.id} to={routes.herramienta(item.id)} className="focus-ring flex min-h-14 items-center gap-3 rounded-xl border border-border px-3 transition hover:bg-surface-2">
-                  <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-brand-50 text-brand-700 dark:bg-brand-500/15"><Icon className="h-4 w-4" /></span>
+                  <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-brand-50 text-brand-700 dark:bg-brand-500/15"><EducationalIcon name={TOOL_EDUCATIONAL_ICON[item.tipo]} className="h-6 w-6" /></span>
                   <span className="min-w-0 flex-1"><span className="block truncate text-sm font-bold">{item.titulo ?? item.tipo}</span><span className="text-xs text-muted">{meta?.label ?? item.tipo}</span></span>
                   <ArrowRight className="h-4 w-4 text-muted" />
                 </Link>

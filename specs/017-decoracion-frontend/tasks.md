@@ -54,6 +54,13 @@
 ## Dependencias
 
 - T001 precede a T002 y define qué activos se conservan.
+## Evolución de iconografía semántica — Issue #45
+
+- [X] T028 [US3] Inventariar navegación docente, formatos canónicos y equivalencias históricas (FR-020, FR-021, FR-022, FR-023, SC-012)
+- [X] T029 [US3] Crear la familia semántica vectorial y su tablero de referencia visual (FR-020, FR-021, FR-022, SC-012)
+- [X] T030 [US3] Integrar la correspondencia única en navegación, selector, listados, materia y vistas por rol (FR-020, FR-021, FR-022, FR-023, SC-012, SC-013)
+- [X] T031 Retirar los activos generales reemplazados, ejecutar regresión focalizada, responsive, build e inventario técnico (FR-023, SC-012–SC-013)
+
 - T002 y T003 preceden a la integración visual.
 - T004 precede a T005 para proteger la estructura funcional.
 - T005–T007 completan la historia 1 y habilitan el refinamiento transversal de T008.

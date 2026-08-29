@@ -93,3 +93,14 @@ Todos los principios constitucionales continúan satisfechos. No existen excepci
 - Conservar los símbolos vectoriales actuales en navegación, botones y controles pequeños para no perder nitidez ni semántica.
 - No añadir dependencias, llamadas de red, persistencia ni cambios de contratos.
 - Validar carga, reemplazo, modo claro/oscuro y 360 píxeles mediante pruebas focalizadas y build.
+
+## Evolución: iconografía semántica — Issue #45
+
+- Sustituir los cuatro recursos generales por una familia vectorial liviana, escalable y basada en significado.
+- Definir símbolos comunes para navegación y tipos de material, conservando un reemplazo existente para destinos no cubiertos.
+- Mantener una única correspondencia entre tipo de recurso e icono para evitar diferencias entre selector, listados, materia y vistas de detalle.
+- Asociar los tipos históricos `unir_columnas` y `ficha` con sus equivalentes visuales `emparejar` y `taller` sin volver a exponerlos en creación.
+- Conservar etiquetas textuales, nombres accesibles, destinos, permisos y contratos.
+- Validar todos los símbolos mediante prueba parametrizada, catálogo canónico, navegación, modo claro/oscuro, 390 píxeles y compilación.
+- Usar el tablero generado únicamente como referencia de diseño optimizada dentro de la especificación; no enviarlo al navegador.
+- Retirar los activos raster reemplazados para evitar código y archivos sin consumidor.

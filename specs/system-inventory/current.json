@@ -291,7 +291,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "d00d41008497c16d5cce7285f69c98de9220c2754d5d4e3e1f091e0e945cae0b",
+  "source_digest": "bf1d3f541f70ca398be700755583d64941d5dca202ac61586fb4790225ad481a",
   "surfaces": [
     {
       "actors": [
@@ -3709,12 +3709,6 @@
           "level": "unit",
           "reference": "GET:/materias",
           "status": "direct",
-          "test_path": "frontend/src/components/ui/BrandFeatureIcon.test.tsx"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/materias",
-          "status": "direct",
           "test_path": "frontend/src/components/ui/P2Accessibility.test.tsx"
         },
         {
@@ -3872,12 +3866,6 @@
           "reference": "GET:/materias/{materia_id}",
           "status": "direct",
           "test_path": "frontend/src/components/auth/RouteGuards.test.tsx"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/materias/{materia_id}",
-          "status": "direct",
-          "test_path": "frontend/src/components/ui/BrandFeatureIcon.test.tsx"
         },
         {
           "level": "unit",
@@ -6063,12 +6051,6 @@
           "reference": "PATCH:/materias/{materia_id}",
           "status": "direct",
           "test_path": "frontend/src/components/auth/RouteGuards.test.tsx"
-        },
-        {
-          "level": "unit",
-          "reference": "PATCH:/materias/{materia_id}",
-          "status": "direct",
-          "test_path": "frontend/src/components/ui/BrandFeatureIcon.test.tsx"
         },
         {
           "level": "unit",
@@ -9595,12 +9577,6 @@
           "level": "unit",
           "reference": "POST:/materias",
           "status": "direct",
-          "test_path": "frontend/src/components/ui/BrandFeatureIcon.test.tsx"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/materias",
-          "status": "direct",
           "test_path": "frontend/src/components/ui/P2Accessibility.test.tsx"
         },
         {
@@ -10993,13 +10969,13 @@
           "level": "unit",
           "reference": "/",
           "status": "direct",
-          "test_path": "frontend/src/components/ui/BrandFeatureIcon.test.tsx"
+          "test_path": "frontend/src/components/ui/Contrast.test.ts"
         },
         {
           "level": "unit",
           "reference": "/",
           "status": "direct",
-          "test_path": "frontend/src/components/ui/Contrast.test.ts"
+          "test_path": "frontend/src/components/ui/EducationalIcon.test.tsx"
         },
         {
           "level": "unit",
@@ -17955,12 +17931,6 @@
           "level": "unit",
           "reference": "GET:/materias/{id}",
           "status": "direct",
-          "test_path": "frontend/src/components/ui/BrandFeatureIcon.test.tsx"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/materias/{id}",
-          "status": "direct",
           "test_path": "frontend/src/components/ui/P2Accessibility.test.tsx"
         },
         {
@@ -18286,12 +18256,6 @@
           "reference": "GET:/materias",
           "status": "direct",
           "test_path": "frontend/src/components/auth/RouteGuards.test.tsx"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/materias",
-          "status": "direct",
-          "test_path": "frontend/src/components/ui/BrandFeatureIcon.test.tsx"
         },
         {
           "level": "unit",
@@ -19769,12 +19733,6 @@
           "reference": "PATCH:/materias/{id}",
           "status": "direct",
           "test_path": "frontend/src/components/auth/RouteGuards.test.tsx"
-        },
-        {
-          "level": "unit",
-          "reference": "PATCH:/materias/{id}",
-          "status": "direct",
-          "test_path": "frontend/src/components/ui/BrandFeatureIcon.test.tsx"
         },
         {
           "level": "unit",
@@ -21999,12 +21957,6 @@
           "reference": "POST:/materias",
           "status": "direct",
           "test_path": "frontend/src/components/auth/RouteGuards.test.tsx"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/materias",
-          "status": "direct",
-          "test_path": "frontend/src/components/ui/BrandFeatureIcon.test.tsx"
         },
         {
           "level": "unit",
@@ -25829,12 +25781,6 @@
           "level": "unit",
           "reference": "materias",
           "status": "direct",
-          "test_path": "frontend/src/components/ui/BrandFeatureIcon.test.tsx"
-        },
-        {
-          "level": "unit",
-          "reference": "materias",
-          "status": "direct",
           "test_path": "frontend/src/components/ui/P2Accessibility.test.tsx"
         },
         {
@@ -26147,12 +26093,6 @@
           "reference": "presentaciones",
           "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
-        },
-        {
-          "level": "unit",
-          "reference": "presentaciones",
-          "status": "direct",
-          "test_path": "frontend/src/components/ui/BrandFeatureIcon.test.tsx"
         },
         {
           "level": "unit",

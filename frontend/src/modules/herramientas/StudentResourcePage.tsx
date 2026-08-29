@@ -2,9 +2,9 @@ import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { ArrowLeft, BookOpenCheck, Download, Gamepad2 } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
-import { Badge, Button, Card, LoadingScreen, QueryError } from '@/components/ui';
+import { Badge, Button, Card, EducationalIcon, LoadingScreen, QueryError } from '@/components/ui';
 import { getMaterial, pdfUrl } from './api';
-import { TOOL_BY_TIPO } from './meta';
+import { TOOL_BY_TIPO, TOOL_EDUCATIONAL_ICON } from './meta';
 import { ContenidoView, CrucigramaView, MatchingView, SopaLetrasView } from './views';
 import type { ToolContent } from './views/ContenidoView';
 import type { CrucigramaContenido, MatchingContenido, SopaContenido } from '@/types/api';
@@ -21,7 +21,6 @@ export function StudentResourcePage() {
   if (!material) return null;
 
   const meta = TOOL_BY_TIPO[material.tipo];
-  const Icon = meta?.icon ?? BookOpenCheck;
   const title = typeof content.titulo === 'string' ? content.titulo : material.titulo;
   const renderBody = () => {
     switch (material.tipo) {
@@ -42,7 +41,7 @@ export function StudentResourcePage() {
         <div className="pointer-events-none absolute -right-12 -top-16 h-40 w-40 rounded-full bg-sky-300/20 blur-3xl" />
         <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-start gap-4">
-            <div className={cn('grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-gradient-to-br text-white shadow-md', meta?.gradient ?? 'from-sky-500 to-indigo-600')}><Icon className="h-7 w-7" /></div>
+            <div className={cn('grid h-16 w-16 shrink-0 place-items-center rounded-2xl bg-gradient-to-br text-white shadow-md', meta?.gradient ?? 'from-sky-500 to-indigo-600')}><EducationalIcon name={TOOL_EDUCATIONAL_ICON[material.tipo]} className="h-9 w-9" /></div>
             <div>
               <div className="flex flex-wrap gap-2"><Badge tone={material.asignacion_tipo === 'actividad' ? 'violet' : 'sky'}>{material.asignacion_tipo === 'actividad' ? 'Actividad asignada' : 'Material de apoyo'}</Badge>{meta?.interactive && <Badge tone="violet"><Gamepad2 className="h-3 w-3" /> Interactivo</Badge>}</div>
               <h1 className="mt-2 font-display text-2xl font-extrabold sm:text-3xl">{title}</h1>

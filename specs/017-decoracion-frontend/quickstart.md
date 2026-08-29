@@ -65,3 +65,22 @@ La aplicación tiene una identidad más rica y coherente, pero mantiene exactame
 - Los originales de 1254×1254 se optimizaron a WebP 320×320 con alfa; los cuatro archivos en `frontend/public/branding/icons/` pesan aproximadamente 85 KB en conjunto.
 - `BrandFeatureIcon` usa carga asíncrona, semántica decorativa y fallback Lucide; los iconos funcionales de navegación y botones no fueron reemplazados.
 - Validación real: inicio, Recursos y Presentaciones cargaron los activos en 390×844 sin overflow horizontal ni errores de consola; pruebas focalizadas y build Vite pasaron.
+
+## Evidencia de iconografía semántica — Issue #45 (2026-08-29)
+
+- La familia raster general anterior fue reemplazada porque no ayudaba a distinguir acciones concretas.
+- La referencia generada se conserva optimizada en `specs/017-decoracion-frontend/assets/semantic-icons-reference.webp` y no forma parte del paquete servido en producción.
+- Prompt final de ImageGen: tablero de 18 conceptos para inicio, materias, recursos, presentaciones, reportes, tutor IA, configuración IA, crucigrama, sopa de letras, relacionar pares, guía, taller, cuento, colorear, refuerzo, lectura, mapa conceptual y flashcards; estilo vectorial duotono índigo/cian, siluetas redondeadas, sin texto, logotipos, sombras ni fondos.
+- La salida generada se utilizó como dirección artística; los entregables funcionales se trasladaron a símbolos vectoriales nítidos para tamaños de 18 a 48 píxeles.
+- Los tipos históricos `unir_columnas` y `ficha` comparten icono con `emparejar` y `taller`; continúan fuera del selector de creación.
+- La correspondencia se aplica en barra lateral, selector, cambio rápido, inicio docente, listado general, materia, detalle docente y vista estudiante.
+- Los símbolos conservan las etiquetas textuales y no modifican acciones, rutas ni permisos.
+
+### Sustitución controlada
+
+Los cuatro WebP de Materias, Recursos, Calificar y Presentaciones y su componente dedicado se retiraron al quedar reemplazados por la familia semántica. La sección anterior se conserva como historial de la evolución visual.
+
+### Validación del reemplazo
+
+- Regresión focalizada: 6 archivos y 35 pruebas pasaron, incluida la cobertura parametrizada de los 21 símbolos y la navegación móvil.
+- Playwright en 390×844 confirmó siete destinos docentes distintos, once formatos canónicos distintos, modo oscuro, cero overflow horizontal y cero errores de consola.

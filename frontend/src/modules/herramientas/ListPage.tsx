@@ -3,10 +3,10 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Download, Trash2, Wrench, Gamepad2, ClipboardCheck, FileDown, Layers3, Copy, Pencil, Send } from 'lucide-react';
-import { Badge, BrandFeatureIcon, Button, Card, ConfirmDialog, EmptyState, QueryState, Skeleton } from '@/components/ui';
+import { Badge, Button, Card, ConfirmDialog, EducationalIcon, EmptyState, QueryState, Skeleton } from '@/components/ui';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { listMaterials, deleteMaterial, pdfUrl, duplicateMaterial } from './api';
-import { TOOL_BY_TIPO } from './meta';
+import { TOOL_BY_TIPO, TOOL_EDUCATIONAL_ICON } from './meta';
 import { queryClient } from '@/lib/queryClient';
 import { routes } from '@/config/routes';
 import toast from 'react-hot-toast';
@@ -82,7 +82,7 @@ export function ListPage() {
               </div>
               <div className={cn('grid h-12 w-12 place-items-center rounded-xl', item.tone)}>
                 {item.label === 'Materiales' ? (
-                  <BrandFeatureIcon kind="recursos" className="h-12 w-12" />
+                  <EducationalIcon name="resources" className="h-7 w-7" />
                 ) : (
                   <item.icon className="h-5 w-5" />
                 )}
@@ -125,7 +125,6 @@ export function ListPage() {
             <AnimatePresence mode="popLayout">
               {filtered.map((material) => {
                 const meta = TOOL_BY_TIPO[material.tipo];
-                const Icon = meta?.icon ?? Wrench;
                 const stateLabel = material.asignacion_tipo === "actividad"
                   ? material.publicado_estudiantes
                     ? material.evaluacion_recepcion_habilitada ? "Actividad · recibe entregas" : "Actividad · entregas cerradas"
@@ -143,7 +142,7 @@ export function ListPage() {
                   <motion.div key={material.id} layout initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }}>
                     <Card interactive className="group flex h-full flex-col p-5">
                       <Link to={`/app/herramientas/${material.id}`} className="flex-1">
-                        <div className={cn('mb-3 grid h-11 w-11 place-items-center rounded-lg bg-gradient-to-br text-white shadow-sm', meta?.gradient ?? 'from-slate-400 to-slate-600')}><Icon className="h-5 w-5" /></div>
+                        <div className={cn('mb-3 grid h-14 w-14 place-items-center rounded-2xl bg-gradient-to-br text-white shadow-sm', meta?.gradient ?? 'from-slate-400 to-slate-600')}><EducationalIcon name={TOOL_EDUCATIONAL_ICON[material.tipo]} className="h-8 w-8" /></div>
                         <div className="flex flex-wrap items-center gap-2">
                           <Badge tone="neutral">{meta?.label ?? material.tipo}</Badge>
                           <Badge tone={stateTone}>{stateLabel}</Badge>

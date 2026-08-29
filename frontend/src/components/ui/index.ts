@@ -12,8 +12,8 @@ export { hasCompletedTour, markTourCompleted, resetTour, tourStorageKey } from '
 export type { TourIdentity } from './tourState';
 export { AppIcon } from './AppIcon';
 export type { AppIconName } from './AppIcon';
-export { BrandFeatureIcon } from './BrandFeatureIcon';
-export type { BrandFeatureIconKind } from './BrandFeatureIcon';
+export { EducationalIcon } from './EducationalIcon';
+export type { EducationalIconName } from './EducationalIcon';
 export { ThemeToggle } from './ThemeToggle';
 export { EmptyState } from './EmptyState';
 export { RichContent, normalizeEducationalMarkdown } from './RichContent';

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { TOOLS } from './meta';
+import { TOOLS, TOOL_EDUCATIONAL_ICON } from './meta';
 import {
   canonicalCreationTool,
   filterTools,
@@ -55,6 +55,7 @@ describe('toolPickerModel', () => {
 
   it('combina intención y texto de búsqueda', () => {
     const result = filterTools(TOOLS, {
+
       goal: 'jugar',
       search: 'palabras',
     });
@@ -62,5 +63,16 @@ describe('toolPickerModel', () => {
     expect(result.every((tool) => goalForTool(tool.tipo) === 'jugar')).toBe(
       true,
     );
+  });
+
+  it('asigna un icono semántico a todos los tipos y conserva equivalencias', () => {
+    expect(TOOLS.every((tool) => Boolean(TOOL_EDUCATIONAL_ICON[tool.tipo]))).toBe(true);
+    expect(TOOL_EDUCATIONAL_ICON.unir_columnas).toBe(TOOL_EDUCATIONAL_ICON.emparejar);
+    expect(TOOL_EDUCATIONAL_ICON.ficha).toBe(TOOL_EDUCATIONAL_ICON.taller);
+
+    const canonicalIcons = MATERIAL_CREATION_TOOLS.map(
+      (tool) => TOOL_EDUCATIONAL_ICON[tool.tipo],
+    );
+    expect(new Set(canonicalIcons).size).toBe(canonicalIcons.length);
   });
 });

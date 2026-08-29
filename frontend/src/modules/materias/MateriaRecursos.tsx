@@ -1,9 +1,9 @@
 import { useQuery } from '@tanstack/react-query';
 import { BookOpenCheck, ClipboardList, Download, Library, Pencil, Plus } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { Badge, Button, Card, EmptyState, QueryState, Skeleton } from '@/components/ui';
+import { Badge, Button, Card, EducationalIcon, EmptyState, QueryState, Skeleton } from '@/components/ui';
 import { listMateriaResources, pdfUrl } from '@/modules/herramientas/api';
-import { TOOL_BY_TIPO } from '@/modules/herramientas/meta';
+import { TOOL_BY_TIPO, TOOL_EDUCATIONAL_ICON } from '@/modules/herramientas/meta';
 import { cn } from '@/lib/cn';
 import { formatDate } from '@/lib/dates';
 import { useMateriaContext } from './MateriaContext';
@@ -56,13 +56,12 @@ export function MateriaRecursos() {
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {resources.map((resource) => {
             const meta = TOOL_BY_TIPO[resource.tipo];
-            const Icon = meta?.icon ?? BookOpenCheck;
             const destination = canManageMateria ? `/app/herramientas/${resource.id}` : `/app/recursos/${resource.id}`;
             return (
               <Card key={resource.id} className="flex h-full flex-col overflow-hidden p-0">
                 <Link to={destination} className="flex flex-1 flex-col p-5">
                   <div className="flex items-start justify-between gap-3">
-                    <div className={cn('grid h-11 w-11 place-items-center rounded-xl bg-gradient-to-br text-white shadow-sm', meta?.gradient ?? 'from-sky-500 to-indigo-600')}><Icon className="h-5 w-5" /></div>
+                    <div className={cn('grid h-14 w-14 place-items-center rounded-2xl bg-gradient-to-br text-white shadow-sm', meta?.gradient ?? 'from-sky-500 to-indigo-600')}><EducationalIcon name={TOOL_EDUCATIONAL_ICON[resource.tipo]} className="h-8 w-8" /></div>
                     <Badge tone={resource.publicado_estudiantes ? 'success' : resource.asignacion_tipo === 'actividad' ? 'violet' : 'neutral'}>
                       {resource.asignacion_tipo === 'actividad'
                         ? resource.publicado_estudiantes ? 'Actividad visible' : 'Actividad en borrador'
