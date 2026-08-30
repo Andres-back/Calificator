@@ -52,5 +52,8 @@ describe('resource library lifecycle', () => {
     expect(screen.getByText('Actividad · entregas cerradas')).toBeInTheDocument();
     expect(screen.queryByText('Apoyo publicado')).not.toBeInTheDocument();
     expect(screen.getAllByRole('button', { name: /Asignar|Administrar|Abrir actividad/ })).toHaveLength(3);
+    for (const icon of ['resources', 'interactive-games', 'archived-drafts', 'pdf-ready', 'prepare-evaluation']) {
+      expect(document.querySelector(`[data-educational-icon="${icon}"]`)).toBeInTheDocument();
+    }
   });
 });

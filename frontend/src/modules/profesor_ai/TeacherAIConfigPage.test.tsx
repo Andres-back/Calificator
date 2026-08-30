@@ -61,6 +61,9 @@ describe('TeacherAIConfigPage', () => {
   it('starts with the safe institutional mode and does not render any secret', async () => {
     renderPage();
     expect(await screen.findByRole('button', { name: /Usar IA de la institución/ })).toHaveAttribute('aria-pressed', 'true');
+    expect(document.querySelector('[data-educational-icon="ai-institutional"]')).toBeInTheDocument();
+    expect(document.querySelector('[data-educational-icon="ai-own-key"]')).toBeInTheDocument();
+    expect(document.querySelector('[data-educational-icon="ai-routing"]')).toBeInTheDocument();
     expect(screen.queryByLabelText('Sustituir clave')).not.toBeInTheDocument();
     expect(document.body.textContent).not.toContain('teacher-secret');
   });

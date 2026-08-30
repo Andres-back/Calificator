@@ -84,9 +84,9 @@ export function PresentacionesPage() {
 
       {!isLoading && data && data.length > 0 && (
         <div className="grid gap-3 sm:grid-cols-3">
-          <StatCard icon={Clock} label="En proceso" value={data.filter((item) => item.estado === 'queued' || item.estado === 'running').length} tone="info" size="sm" />
-          <StatCard icon={CheckCircle2} label="Listas" value={data.filter((item) => item.estado === 'success').length} tone="success" size="sm" />
-          <StatCard icon={AlertTriangle} label="Con error" value={data.filter((item) => item.estado === 'failed').length} tone="error" size="sm" />
+          <StatCard brandIcon="presentation-processing" label="En proceso" value={data.filter((item) => item.estado === 'queued' || item.estado === 'running').length} tone="info" size="sm" />
+          <StatCard brandIcon="presentation-ready" label="Listas" value={data.filter((item) => item.estado === 'success').length} tone="success" size="sm" />
+          <StatCard brandIcon="presentation-error" label="Con error" value={data.filter((item) => item.estado === 'failed').length} tone="error" size="sm" />
         </div>
       )}
 

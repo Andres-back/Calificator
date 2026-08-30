@@ -14,6 +14,8 @@ const icons: EducationalIconName[] = [
   'attendance', 'gradebook', 'curriculum-dba', 'subject-math', 'subject-science',
   'subject-language', 'subject-social', 'subject-english', 'subject-art',
   'subject-technology', 'report-subjects', 'report-grades', 'report-average', 'student-roster',
+  'interactive-games', 'archived-drafts', 'pdf-ready', 'presentation-processing',
+  'presentation-ready', 'presentation-error', 'ai-institutional', 'ai-own-key', 'ai-routing',
 ];
 
 const illustratedAssets = [
@@ -25,11 +27,13 @@ const illustratedAssets = [
   'subject-science', 'subject-language', 'subject-social', 'subject-english',
   'subject-art', 'subject-technology', 'report-subjects', 'report-grades',
   'report-average', 'student-roster',
+  'interactive-games', 'archived-drafts', 'pdf-ready', 'presentation-processing',
+  'presentation-ready', 'presentation-error', 'ai-institutional', 'ai-own-key', 'ai-routing',
 ];
 
 describe('EducationalIcon', () => {
-  it('publica los 36 recortes aprobados dentro del paquete del frontend', () => {
-    expect(illustratedAssets).toHaveLength(36);
+  it('publica los 45 recortes aprobados dentro del paquete del frontend', () => {
+    expect(illustratedAssets).toHaveLength(45);
     for (const asset of illustratedAssets) {
       expect(existsSync(resolve(process.cwd(), 'public', 'branding', 'semantic-icons', asset + '.webp'))).toBe(true);
     }

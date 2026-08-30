@@ -166,3 +166,19 @@ La evolución amplía esta especificación viva sin rediseñar el logotipo ni la
 - **SC-015**: Los 18 nuevos WebP transparentes cargan en producción y conservan legibilidad entre 40 y 72 píxeles en ambos temas.
 - **SC-016**: Matemáticas, Ciencias, Lenguaje, Sociales, Inglés, Artística y Tecnología reciben una ilustración propia; cualquier otra área usa Materias como fallback.
 - **SC-017**: En 390 píxeles no existe desbordamiento horizontal y los nombres accesibles de tarjetas, enlaces y pestañas permanecen intactos.
+
+## Evolución: estados y encabezados ilustrados — Issue #53
+
+### Requisitos adicionales
+
+- **FR-031**: Las métricas destacadas de Recursos DEBEN distinguir materiales, interactivos, borradores antiguos y PDF listos mediante ilustraciones propias.
+- **FR-032**: Los estados resumidos de Presentaciones DEBEN diferenciar procesamiento, resultado listo y error sin depender únicamente del color.
+- **FR-033**: Las modalidades de configuración docente de IA DEBEN representar visualmente IA institucional, clave propia y ruteo por función, manteniendo su texto explicativo.
+- **FR-034**: El encabezado contextual DEBE mostrar el nombre y la ilustración correspondientes a la ruta activa, incluida Mi configuración de IA.
+- **FR-035**: Los iconos funcionales pequeños de descargar, eliminar, advertir, navegar o confirmar DEBEN conservar símbolos universales y nombres accesibles; esta evolución NO DEBE cambiar acciones, rutas, permisos ni contratos.
+
+### Criterios adicionales de éxito
+
+- **SC-018**: Los nueve WebP nuevos conservan alfa real, tamaño 256×256, legibilidad desde 32 píxeles y carga correcta en producción.
+- **SC-019**: Recursos, Presentaciones y Configuración IA muestran todas sus ilustraciones contextuales y el encabezado de Configuración IA deja de identificarse como Inicio docente.
+- **SC-020**: En 390 píxeles no existe desbordamiento horizontal y los botones, etiquetas, contadores y estados mantienen su comportamiento y nombre accesible.

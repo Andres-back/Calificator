@@ -128,3 +128,11 @@ Todos los principios constitucionales continúan satisfechos. No existen excepci
 - Integrarla en acciones docentes, bandeja, materias por área, navegación interna y reportes.
 - Mantener fallback SVG y fallback general de área, sin cambiar comportamiento funcional.
 - Validar alfa real, correspondencia semántica, temas, 390 píxeles, pruebas focalizadas, lint y build.
+
+## Hotfix: estados y encabezados ilustrados — Issue #53
+
+- Generar nueve ilustraciones independientes con fondo transparente para métricas de Recursos, estados de Presentaciones y modalidades de configuración IA.
+- Integrarlas mediante `EducationalIcon` y `StatCard`, conservando el fallback SVG y evitando reemplazar controles pequeños universales.
+- Resolver el contexto de `/app/configuracion-ia` en la barra superior y reutilizar ilustraciones existentes para el resto de rutas de profesor y estudiante.
+- No modificar consultas, mutaciones, contadores, estados, permisos, rutas ni nombres accesibles.
+- Validar recursos, encabezado, configuración IA, modo oscuro y ancho móvil con pruebas focalizadas, tipos, lint y build.

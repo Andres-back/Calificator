@@ -40,7 +40,16 @@ export type EducationalIconName =
   | 'report-subjects'
   | 'report-grades'
   | 'report-average'
-  | 'student-roster';
+  | 'student-roster'
+  | 'interactive-games'
+  | 'archived-drafts'
+  | 'pdf-ready'
+  | 'presentation-processing'
+  | 'presentation-ready'
+  | 'presentation-error'
+  | 'ai-institutional'
+  | 'ai-own-key'
+  | 'ai-routing';
 
 type IconProps = Omit<HTMLAttributes<HTMLSpanElement>, 'children'> & { name: EducationalIconName };
 
@@ -84,6 +93,15 @@ const EDUCATIONAL_ICON_ASSET: Record<EducationalIconName, string> = {
   'report-grades': 'report-grades',
   'report-average': 'report-average',
   'student-roster': 'student-roster',
+  'interactive-games': 'interactive-games',
+  'archived-drafts': 'archived-drafts',
+  'pdf-ready': 'pdf-ready',
+  'presentation-processing': 'presentation-processing',
+  'presentation-ready': 'presentation-ready',
+  'presentation-error': 'presentation-error',
+  'ai-institutional': 'ai-institutional',
+  'ai-own-key': 'ai-own-key',
+  'ai-routing': 'ai-routing',
 };
 
 const FALLBACK_ICON: Partial<Record<EducationalIconName, EducationalIconName>> = {
@@ -105,6 +123,15 @@ const FALLBACK_ICON: Partial<Record<EducationalIconName, EducationalIconName>> =
   'report-grades': 'reports',
   'report-average': 'reports',
   'student-roster': 'subjects',
+  'interactive-games': 'matching',
+  'archived-drafts': 'resources',
+  'pdf-ready': 'learning-guide',
+  'presentation-processing': 'presentations',
+  'presentation-ready': 'presentations',
+  'presentation-error': 'presentations',
+  'ai-institutional': 'ai-settings',
+  'ai-own-key': 'xali',
+  'ai-routing': 'ai-settings',
 };
 
 function Glyph({ name }: { name: EducationalIconName }) {

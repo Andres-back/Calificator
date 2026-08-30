@@ -2,8 +2,9 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Download, Trash2, Wrench, Gamepad2, ClipboardCheck, FileDown, Layers3, Copy, Pencil, Send } from 'lucide-react';
+import { Plus, Download, Trash2, Wrench, Gamepad2, Copy, Pencil, Send } from 'lucide-react';
 import { Badge, Button, Card, ConfirmDialog, EducationalIcon, EmptyState, QueryState, Skeleton } from '@/components/ui';
+import type { EducationalIconName } from '@/components/ui/EducationalIcon';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { listMaterials, deleteMaterial, pdfUrl, duplicateMaterial } from './api';
 import { TOOL_BY_TIPO, TOOL_EDUCATIONAL_ICON } from './meta';
@@ -31,11 +32,11 @@ export function ListPage() {
   const interactive = (data ?? []).filter((m) => TOOL_BY_TIPO[m.tipo]?.interactive).length;
   const evaluable = (data ?? []).filter((m) => TOOL_BY_TIPO[m.tipo]?.category === 'Evaluación').length;
   const printable = total;
-  const stats = [
-    { label: 'Materiales', value: total, icon: Layers3, tone: 'bg-sky-50 text-sky-600 dark:bg-sky-500/15 dark:text-sky-300' },
-    { label: 'Interactivos', value: interactive, icon: Gamepad2, tone: 'bg-violet-50 text-violet-600 dark:bg-violet-500/15 dark:text-violet-300' },
-    { label: 'Borradores antiguos', value: evaluable, icon: ClipboardCheck, tone: 'bg-emerald-50 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-300' },
-    { label: 'PDF listos', value: printable, icon: FileDown, tone: 'bg-amber-50 text-amber-600 dark:bg-amber-500/15 dark:text-amber-300' },
+  const stats: Array<{ label: string; value: number; icon: EducationalIconName }> = [
+    { label: 'Materiales', value: total, icon: 'resources' },
+    { label: 'Interactivos', value: interactive, icon: 'interactive-games' },
+    { label: 'Borradores antiguos', value: evaluable, icon: 'archived-drafts' },
+    { label: 'PDF listos', value: printable, icon: 'pdf-ready' },
   ];
 
 
@@ -51,8 +52,8 @@ export function ListPage() {
 
       <Card className="flex flex-col gap-4 border-brand-200 bg-brand-50/60 p-5 dark:border-brand-500/30 dark:bg-brand-500/10 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-start gap-3">
-          <div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-brand-700 text-white">
-            <ClipboardCheck className="h-5 w-5" aria-hidden="true" />
+          <div className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-white/90 shadow-sm ring-1 ring-brand-200 dark:bg-white/10 dark:ring-brand-500/30">
+            <EducationalIcon name="prepare-evaluation" className="h-12 w-12" />
           </div>
           <div>
             <h2 className="font-display text-lg font-extrabold">Evaluaciones calificables</h2>
@@ -80,12 +81,8 @@ export function ListPage() {
                 <p className="text-xs font-semibold uppercase tracking-wide text-muted">{item.label}</p>
                 <p className="mt-1 font-display text-3xl font-extrabold">{item.value}</p>
               </div>
-              <div className={cn('grid h-12 w-12 place-items-center rounded-xl', item.tone)}>
-                {item.label === 'Materiales' ? (
-                  <EducationalIcon name="resources" className="h-10 w-10" />
-                ) : (
-                  <item.icon className="h-5 w-5" />
-                )}
+              <div className="grid h-14 w-14 place-items-center rounded-2xl bg-white/90 shadow-sm ring-1 ring-border dark:bg-white/10">
+                <EducationalIcon name={item.icon} className="h-12 w-12" />
               </div>
             </div>
           </motion.div>

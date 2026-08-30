@@ -75,3 +75,4 @@
 El incremento mínimo es T001–T007: ambientación compartida con estructura funcional protegida. Las historias 2 y 3 añaden adaptación, verificación y expresión de marca sin introducir dependencias de negocio.
 
 - [X] T034 Generar, limpiar e integrar 18 iconos contextuales para evaluación, revisión, materias y reportes, con fallback y validación responsive (FR-026, FR-027, FR-028, FR-029, FR-030, SC-015, SC-016, SC-017)
+- [X] T035 Generar e integrar nueve iconos de estados y configuración, personalizar el encabezado contextual y validar las superficies afectadas (FR-031, FR-032, FR-033, FR-034, FR-035, SC-018, SC-019, SC-020)

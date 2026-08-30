@@ -6,13 +6,14 @@ import { AppShell } from './AppShell';
 import { useAuth } from '@/stores/auth';
 import { api } from '@/lib/api';
 
-function renderShell() {
+function renderShell(initialPath = '/app') {
   return render(
-    <MemoryRouter initialEntries={['/app']}>
+    <MemoryRouter initialEntries={[initialPath]}>
       <Routes>
         <Route path="/app" element={<AppShell />}>
           <Route index element={<div>Inicio docente</div>} />
           <Route path="materias" element={<div>Materias docente</div>} />
+          <Route path="configuracion-ia" element={<div>Configuración IA docente</div>} />
         </Route>
       </Routes>
     </MemoryRouter>,
@@ -96,6 +97,17 @@ describe('AppShell ambientación', () => {
     expect(desktopNav?.querySelector('[data-educational-icon="resources"] img')).toHaveAttribute(
       'src',
       '/branding/semantic-icons/resources.webp',
+    );
+  });
+
+  it('muestra el contexto ilustrado correcto en configuración IA', () => {
+    const { container } = renderShell('/app/configuracion-ia');
+    const header = container.querySelector('header');
+
+    expect(header).toHaveTextContent('Mi configuración de IA');
+    expect(header?.querySelector('[data-educational-icon="ai-settings"] img')).toHaveAttribute(
+      'src',
+      '/branding/semantic-icons/ai-settings.webp',
     );
   });
 

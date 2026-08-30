@@ -92,3 +92,12 @@ Los cuatro WebP de Materias, Recursos, Calificar y Presentaciones y su component
 - Los recortes finales son WebP de 256×256 con alfa real bajo `frontend/public/branding/semantic-icons/`.
 - Las áreas conocidas se resuelven por nombre normalizado; las áreas libres conservan `subjects.webp` como fallback.
 - La integración cubre acciones frecuentes, bandeja docente, tarjetas y cabecera de materia, pestañas internas y métricas/detalle de reportes.
+
+## Evidencia de estados y encabezados ilustrados — Issue #53 (2026-08-30)
+
+- Se generaron nueve ilustraciones independientes para interactivos, borradores archivados, PDF listos, presentación en proceso/lista/con error e IA institucional/clave propia/ruteo por función.
+- Prompt base de ImageGen: icono educativo 3D vectorial pulido, formas redondeadas, contorno índigo, paleta violeta-cian-amarillo con acentos semánticos, objeto centrado, sin texto, marcas, contenedor ni fondo; transparencia alfa real.
+- Los archivos finales se normalizaron a WebP 256×256 bajo `frontend/public/branding/semantic-icons/` y conservan fallback SVG local.
+- La barra superior ahora resuelve Configuración IA como contexto propio y usa la familia ilustrada para profesor y estudiante.
+- Regresión focalizada: 4 archivos y 66 pruebas pasaron; TypeScript y lint estricto permanecen verdes.
+- Playwright validó Recursos, Presentaciones y Configuración IA en 390×844, además de Configuración IA en 1366×768 claro/oscuro: todos los WebP cargaron, `scrollWidth` coincidió con `clientWidth` y no hubo errores de consola.

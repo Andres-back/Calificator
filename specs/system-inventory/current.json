@@ -291,7 +291,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "d79706cba6adbdf4edca1aeb99c1b6009a852236cc9b05e34543d15079d6a7e5",
+  "source_digest": "64f6ec032a36a20443fd3ebf5b2aa4af437f5e0c5101c7861bae85898ee1da4d",
   "surfaces": [
     {
       "actors": [
@@ -12792,6 +12792,12 @@
           "reference": "/app/configuracion-ia",
           "status": "direct",
           "test_path": "frontend/e2e/teacher-ai-configuration.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/configuracion-ia",
+          "status": "direct",
+          "test_path": "frontend/src/components/layout/AppShell.test.tsx"
         },
         {
           "level": "unit",
