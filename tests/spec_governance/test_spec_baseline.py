@@ -28,6 +28,7 @@ ALL_SPECS = {
     "024-landing-publica-mapas",
     "025-recuperar-contrasena",
     "026-perfeccionar-recursos",
+    "027-listas-botones-personalizados",
 }
 OWNED_SPECS = {
     name

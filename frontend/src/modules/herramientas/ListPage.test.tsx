@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ListPage } from './ListPage';
@@ -55,5 +55,28 @@ describe('resource library lifecycle', () => {
     for (const icon of ['resources', 'interactive-games', 'archived-drafts', 'pdf-ready', 'prepare-evaluation']) {
       expect(document.querySelector(`[data-educational-icon="${icon}"]`)).toBeInTheDocument();
     }
+  });
+
+  it('filters locally and keeps occasional actions in an accessible menu', async () => {
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <MemoryRouter>
+        <QueryClientProvider client={client}><ListPage /></QueryClientProvider>
+      </MemoryRouter>,
+    );
+
+    await screen.findByText('Recurso draft');
+    fireEvent.change(screen.getByRole('searchbox', { name: 'Buscar recursos' }), { target: { value: 'support' } });
+    expect(screen.getByText('Recurso support')).toBeInTheDocument();
+    await waitFor(() => expect(screen.queryByText('Recurso draft')).not.toBeInTheDocument());
+    expect(screen.getByText('1 resultado')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Más acciones para Recurso support' }));
+    expect(screen.getByRole('menuitem', { name: 'Descargar PDF' })).toBeInTheDocument();
+    expect(screen.getByRole('menuitem', { name: 'Duplicar recurso' })).toBeInTheDocument();
+    expect(screen.getByRole('menuitem', { name: 'Eliminar recurso' })).toBeInTheDocument();
+
+    fireEvent.keyDown(document, { key: 'Escape' });
+    await waitFor(() => expect(screen.queryByRole('menu')).not.toBeInTheDocument());
   });
 });

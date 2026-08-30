@@ -32,6 +32,7 @@ actualizar la especificación propietaria, su plan y sus tareas; no debe crear d
 
 | 025 | [Recuperación segura de contraseña](025-recuperar-contrasena/spec.md) | auth, correo transaccional y worker | rutas públicas de recuperación y panel admin de correo | users.auth_version, password_reset_requests, mail_global_config | [#37](https://github.com/Andres-back/Calificator/issues/37) |
 | 026 | [Perfeccionamiento de recursos pedagógicos](026-perfeccionar-recursos/spec.md) | herramientas y renderizado PDF | creación, edición, vista y exportación de recursos | materiales existentes; sin tablas nuevas | [#39](https://github.com/Andres-back/Calificator/issues/39) |
+| 027 | [Listas y botones personalizados](027-listas-botones-personalizados/spec.md) | componentes UI y biblioteca de recursos | botones, barra de colección, filtros y menú de acciones | estado local de vista; sin tablas nuevas | [#55](https://github.com/Andres-back/Calificator/issues/55) |
 
 ## Reglas de propiedad
 

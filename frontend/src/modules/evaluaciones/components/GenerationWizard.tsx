@@ -7,7 +7,6 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Badge, Button, ConfirmDialog, Field, Input, Modal, Textarea } from '@/components/ui';
-import { BotonGrande } from '@/components/ui/BotonGrande';
 import { queryKeys } from '@/config/queryKeys';
 import { toApiError } from '@/lib/api';
 import { cn } from '@/lib/cn';
@@ -774,7 +773,7 @@ export function GenerationWizard({
                       <section aria-labelledby="wizard-step-title" className="space-y-5 text-center">
                         <div><h3 id="wizard-step-title" className="text-xl font-bold">Genera el borrador</h3><p className="mx-auto mt-2 max-w-xl text-base text-muted">La IA preparará {total} preguntas. Nada se publica sin tu revisión.</p></div>
                         {generationError && <div role="alert" className="rounded-xl border border-rose-300 bg-rose-50 p-4 text-left text-base text-rose-900 dark:bg-rose-500/10 dark:text-rose-100">{generationError}</div>}
-                        <BotonGrande onClick={generateDraft} loading={generate.isPending} disabled={generate.isPending} icon={<Sparkles className="h-5 w-5" />} className="mx-auto sm:w-auto">{generate.isPending ? 'Generando preguntas...' : 'Generar borrador'}</BotonGrande>
+                        <Button size="xl" fullWidth onClick={generateDraft} loading={generate.isPending} disabled={generate.isPending} icon={<Sparkles className="h-5 w-5" />} className="mx-auto sm:w-auto">{generate.isPending ? 'Generando preguntas...' : 'Generar borrador'}</Button>
                       </section>
                     ) : (
                       <section aria-labelledby="wizard-step-title" className="space-y-4">
@@ -842,11 +841,11 @@ export function GenerationWizard({
 
           {!restorePrompt && (
             <footer className="sticky bottom-0 z-10 flex flex-col-reverse gap-3 border-t border-border bg-surface/95 p-4 backdrop-blur sm:flex-row sm:items-center sm:justify-between sm:p-5">
-              <BotonGrande variant="outline" onClick={() => patch({ step: Math.max(1, state.step - 1) })} disabled={state.step === 1 || generate.isPending || confirm.isPending} icon={<ArrowLeft className="h-5 w-5" />} className="sm:w-auto">Atrás</BotonGrande>
+              <Button size="xl" fullWidth variant="outline" onClick={() => patch({ step: Math.max(1, state.step - 1) })} disabled={state.step === 1 || generate.isPending || confirm.isPending} icon={<ArrowLeft className="h-5 w-5" />} className="sm:w-auto">Atrás</Button>
               <div className="text-center text-sm text-muted" aria-live="polite">{validation ?? 'Paso completo. Puedes continuar.'}</div>
               {state.step === 6
-                ? <BotonGrande onClick={confirmEvaluation} loading={confirm.isPending} disabled={Boolean(validation) || confirm.isPending} icon={<Check className="h-5 w-5" />} className="sm:w-auto">{initialEvaluation ? 'Guardar cambios' : 'Crear evaluación'}</BotonGrande>
-                : <BotonGrande onClick={() => { const error = validateStep(state); if (error) toast.error(error); else patch({ step: Math.min(6, state.step + 1) }); }} disabled={Boolean(validation) || generate.isPending} icon={<ArrowRight className="h-5 w-5" />} className="sm:w-auto">Siguiente</BotonGrande>}
+                ? <Button size="xl" fullWidth onClick={confirmEvaluation} loading={confirm.isPending} disabled={Boolean(validation) || confirm.isPending} icon={<Check className="h-5 w-5" />} className="sm:w-auto">{initialEvaluation ? 'Guardar cambios' : 'Crear evaluación'}</Button>
+                : <Button size="xl" fullWidth onClick={() => { const error = validateStep(state); if (error) toast.error(error); else patch({ step: Math.min(6, state.step + 1) }); }} disabled={Boolean(validation) || generate.isPending} icon={<ArrowRight className="h-5 w-5" />} className="sm:w-auto">Siguiente</Button>}
             </footer>
           )}
         </div>

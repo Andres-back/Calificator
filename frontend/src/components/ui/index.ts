@@ -1,5 +1,7 @@
 export { Button } from './Button';
 export type { ButtonProps } from './Button';
+export { ActionMenu, CollectionToolbar, IconButton, SegmentedControl } from './CollectionControls';
+export type { ActionMenuItem, IconButtonProps } from './CollectionControls';
 export { Card, CardHeader, CardBody, CardTitle } from './Card';
 export { Input, Textarea, Select, Field } from './Input';
 export { Badge, statusTone } from './Badge';
@@ -19,8 +21,6 @@ export { ThemeToggle } from './ThemeToggle';
 export { EmptyState } from './EmptyState';
 export { RichContent, normalizeEducationalMarkdown } from './RichContent';
 export type { RichContentProps, RichContentVariant } from './RichContent';
-export { BotonGrande } from './BotonGrande';
-export type { BotonGrandeProps } from './BotonGrande';
 export { QueryLoading, QueryError, QueryEmpty, QueryState } from './QueryState';
 export { MetricCard, ActionCard, StatusCard, ContentCard, AlertCard, EmptyStateCard } from './SummaryCard';
 export type { SemanticTone } from './SummaryCard';
