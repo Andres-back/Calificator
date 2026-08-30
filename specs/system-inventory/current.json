@@ -291,7 +291,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "64f6ec032a36a20443fd3ebf5b2aa4af437f5e0c5101c7861bae85898ee1da4d",
+  "source_digest": "00f7a67d30a0269c4397a6d14ee23d40426a420f898cf65c34cbaca6dfd56463",
   "surfaces": [
     {
       "actors": [
@@ -10964,6 +10964,12 @@
           "reference": "/",
           "status": "direct",
           "test_path": "frontend/src/components/layout/AppShell.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "frontend/src/components/ui/CollectionControls.test.tsx"
         },
         {
           "level": "unit",
