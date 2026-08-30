@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
-import { Bot, KeyRound, PlugZap, ShieldCheck, SlidersHorizontal, Trash2 } from 'lucide-react';
+import { KeyRound, PlugZap, Trash2 } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
-import { Badge, Button, Card, Field, Input, QueryError, QueryLoading, Select } from '@/components/ui';
+import { Badge, Button, Card, EducationalIcon, Field, Input, QueryError, QueryLoading, Select } from '@/components/ui';
+import type { EducationalIconName } from '@/components/ui/EducationalIcon';
 import { queryClient } from '@/lib/queryClient';
 import { toApiError } from '@/lib/api';
 import { queryKeys } from '@/config/queryKeys';
@@ -18,18 +19,21 @@ import {
   type TeacherAIPreference,
 } from './api';
 
-const MODE_COPY: Record<TeacherAIMode, { title: string; description: string }> = {
+const MODE_COPY: Record<TeacherAIMode, { title: string; description: string; icon: EducationalIconName }> = {
   institutional: {
     title: 'Usar IA de la institución',
     description: 'No necesitas claves. XCalificator usa la configuración segura del administrador.',
+    icon: 'ai-institutional',
   },
   automatic: {
     title: 'Usar mi API automáticamente',
     description: 'Conecta una clave y XCalificator elige un modelo compatible para cada tarea.',
+    icon: 'ai-own-key',
   },
   advanced: {
     title: 'Personalizar por función',
     description: 'Elige proveedor y modelo para contenido, visión, imágenes y demás capacidades.',
+    icon: 'ai-routing',
   },
 };
 
@@ -143,11 +147,11 @@ export function TeacherAIConfigPage() {
               key={value}
               type="button"
               onClick={() => setMode(value)}
-              className={`min-h-36 rounded-2xl border p-5 text-left transition ${mode === value ? 'border-brand-500 bg-brand-50 ring-2 ring-brand-500/20 dark:bg-brand-500/10' : 'border-border bg-surface hover:border-brand-300'}`}
+              className={`group min-h-40 rounded-2xl border p-5 text-left transition ${mode === value ? 'border-brand-500 bg-brand-50 ring-2 ring-brand-500/20 dark:bg-brand-500/10' : 'border-border bg-surface hover:border-brand-300'}`}
               aria-pressed={mode === value}
             >
-              <span className="mb-3 grid h-10 w-10 place-items-center rounded-xl bg-brand-100 text-brand-700 dark:bg-brand-500/20 dark:text-brand-200">
-                {value === 'institutional' ? <ShieldCheck className="h-5 w-5" /> : value === 'automatic' ? <Bot className="h-5 w-5" /> : <SlidersHorizontal className="h-5 w-5" />}
+              <span className="mb-3 grid h-16 w-16 place-items-center rounded-2xl bg-white/90 shadow-sm ring-1 ring-border transition-transform group-hover:-translate-y-0.5 dark:bg-white/10">
+                <EducationalIcon name={MODE_COPY[value].icon} className="h-14 w-14" />
               </span>
               <span className="block font-semibold">{MODE_COPY[value].title}</span>
               <span className="mt-1 block text-sm leading-5 text-muted">{MODE_COPY[value].description}</span>

@@ -1,25 +1,27 @@
 import { useEffect, useId, useRef, useState, type RefObject } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { BookOpen, ChevronDown, ClipboardCheck, FileBarChart2, GraduationCap, Home, LogOut, Menu, Plus, Presentation, Sparkles, Wand2 } from 'lucide-react';
-import { ThemeToggle } from '@/components/ui';
+import { ChevronDown, ClipboardCheck, LogOut, Menu, Plus } from 'lucide-react';
+import { EducationalIcon, ThemeToggle } from '@/components/ui';
+import type { EducationalIconName } from '@/components/ui/EducationalIcon';
 import { useAuth } from '@/stores/auth';
 
-const TEACHER_CONTEXTS = [
-  { match: '/app/materias', label: 'Materias y grupos', icon: BookOpen },
-  { match: '/app/calificaciones', label: 'Revisi\u00f3n de calificaciones', icon: ClipboardCheck },
-  { match: '/app/evaluaciones', label: 'Evaluaciones', icon: ClipboardCheck },
-  { match: '/app/analytics', label: 'Anal\u00edtica de aprendizaje', icon: FileBarChart2 },
-  { match: '/app/herramientas', label: 'Recursos de clase', icon: Wand2 },
-  { match: '/app/presentaciones', label: 'Presentaciones', icon: Presentation },
-  { match: '/app/reportes', label: 'Reportes y progreso', icon: FileBarChart2 },
-  { match: '/app/xali', label: 'Asistente Xali', icon: Sparkles },
+const TEACHER_CONTEXTS: Array<{ match: string; label: string; brandIcon: EducationalIconName }> = [
+  { match: '/app/configuracion-ia', label: 'Mi configuración de IA', brandIcon: 'ai-settings' },
+  { match: '/app/materias', label: 'Materias y grupos', brandIcon: 'subjects' },
+  { match: '/app/calificaciones', label: 'Revisión de calificaciones', brandIcon: 'grade-evidence' },
+  { match: '/app/evaluaciones', label: 'Evaluaciones', brandIcon: 'prepare-evaluation' },
+  { match: '/app/analytics', label: 'Analítica de aprendizaje', brandIcon: 'reports' },
+  { match: '/app/herramientas', label: 'Recursos de clase', brandIcon: 'resources' },
+  { match: '/app/presentaciones', label: 'Presentaciones', brandIcon: 'presentations' },
+  { match: '/app/reportes', label: 'Reportes y progreso', brandIcon: 'reports' },
+  { match: '/app/xali', label: 'Asistente Xali', brandIcon: 'xali' },
 ];
 
-const STUDENT_CONTEXTS = [
-  { match: '/app/materias', label: 'Mis materias', icon: BookOpen },
-  { match: '/app/evaluaciones', label: 'Mis actividades', icon: ClipboardCheck },
-  { match: '/app/calificaciones', label: 'Mis resultados', icon: GraduationCap },
-  { match: '/app/xali', label: 'Ayuda con Xali', icon: Sparkles },
+const STUDENT_CONTEXTS: Array<{ match: string; label: string; brandIcon: EducationalIconName }> = [
+  { match: '/app/materias', label: 'Mis materias', brandIcon: 'subjects' },
+  { match: '/app/evaluaciones', label: 'Mis actividades', brandIcon: 'workshop' },
+  { match: '/app/calificaciones', label: 'Mis resultados', brandIcon: 'report-grades' },
+  { match: '/app/xali', label: 'Ayuda con Xali', brandIcon: 'xali' },
 ];
 
 export function Topbar({
@@ -44,11 +46,9 @@ export function Topbar({
     .join('')
     .toUpperCase();
   const teacherContext = TEACHER_CONTEXTS.find((item) => location.pathname.startsWith(item.match))
-    ?? { label: 'Inicio docente', icon: Sparkles };
-  const TeacherContextIcon = teacherContext.icon;
+    ?? { label: 'Inicio docente', brandIcon: 'dashboard' as const };
   const studentContext = STUDENT_CONTEXTS.find((item) => location.pathname.startsWith(item.match))
-    ?? { label: 'Mi inicio', icon: Home };
-  const StudentContextIcon = studentContext.icon;
+    ?? { label: 'Mi inicio', brandIcon: 'dashboard' as const };
   const isInsideMateria = /^\/app\/materias\/[^/]+(?:\/|$)/.test(location.pathname);
 
   useEffect(() => {
@@ -80,8 +80,8 @@ export function Topbar({
       <div className="min-w-0 flex-1">
         {user?.rol === 'profesor' && (
           <div className="flex min-w-0 items-center gap-2.5">
-            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-brand-600 to-sky-500 text-white shadow-sm">
-              <TeacherContextIcon className="h-4 w-4" aria-hidden="true" />
+            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-white/90 shadow-sm ring-1 ring-border dark:bg-white/10">
+              <EducationalIcon name={teacherContext.brandIcon} className="h-10 w-10" />
             </span>
             <div className="hidden min-w-0 sm:block">
               <p className="text-[10px] font-extrabold uppercase tracking-[0.16em] text-brand-600 dark:text-brand-300">Espacio docente</p>
@@ -91,8 +91,8 @@ export function Topbar({
         )}
         {user?.rol === 'estudiante' && (
           <div className="flex min-w-0 items-center gap-2.5">
-            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-cyan-500 to-brand-600 text-white shadow-sm">
-              <StudentContextIcon className="h-4 w-4" aria-hidden="true" />
+            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-white/90 shadow-sm ring-1 ring-border dark:bg-white/10">
+              <EducationalIcon name={studentContext.brandIcon} className="h-10 w-10" />
             </span>
             <div className="hidden min-w-0 sm:block">
               <p className="text-[10px] font-extrabold uppercase tracking-[0.16em] text-cyan-700 dark:text-cyan-300">Tu aprendizaje</p>
