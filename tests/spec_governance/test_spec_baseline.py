@@ -29,6 +29,7 @@ ALL_SPECS = {
     "025-recuperar-contrasena",
     "026-perfeccionar-recursos",
     "027-listas-botones-personalizados",
+    "028-pulir-navegacion-presentaciones",
 }
 OWNED_SPECS = {
     name

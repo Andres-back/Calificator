@@ -1,8 +1,10 @@
 import asyncio
-from uuid import uuid4
-from app.modules.imagenes import service as imagenes_service
 from io import BytesIO
+from uuid import uuid4
 
+import pytest
+
+from app.modules.imagenes import service as imagenes_service
 from app.modules.presentaciones import service
 from app.modules.presentaciones.editable_pptx_service import build_editable_pptx
 from app.modules.presentaciones.local_export import render_slide_png, _role_theme
@@ -472,6 +474,40 @@ def test_contenido_generico_del_demo_se_rechaza() -> None:
     assert any("generico" in issue or "repite" in issue for issue in issues)
 
 
+def test_explicaciones_parafraseadas_no_pasan_como_contenido_nuevo() -> None:
+    payload = PresentacionCreate(
+        titulo="La fotosintesis",
+        tema="La fotosintesis",
+        area="Ciencias Naturales",
+        grado="5",
+        cantidad_slides=8,
+    )
+    slides = service._repair_incomplete_presentation(
+        [{"title": f"Diapositiva {index + 1}", "bullets": ["Dato inicial"]} for index in range(8)],
+        payload,
+    )
+    slides[3].update({
+        "title": "Las plantas fabrican alimento",
+        "key_message": "La luz, el agua y el dioxido permiten producir alimento.",
+        "bullets": [
+            "Las hojas reciben luz y toman dioxido de carbono del aire.",
+            "Las raices absorben agua para fabricar azucares que alimentan la planta.",
+        ],
+    })
+    slides[4].update({
+        "title": "Como producen alimento las plantas",
+        "key_message": "Agua, luz y dioxido se transforman en alimento para la planta.",
+        "bullets": [
+            "La planta toma dioxido del aire y recibe luz mediante sus hojas.",
+            "El agua absorbida por las raices ayuda a fabricar azucares alimenticios.",
+        ],
+    })
+
+    issues = service._presentation_quality_issues(slides, payload)
+
+    assert any("repiten casi la misma explicación" in issue for issue in issues)
+
+
 def test_repara_borrador_incompleto_sin_perder_la_cantidad() -> None:
     payload = PresentacionCreate(
         titulo="Fracciones equivalentes",
@@ -496,7 +532,7 @@ def test_repara_borrador_incompleto_sin_perder_la_cantidad() -> None:
     repaired = service._repair_incomplete_presentation(candidate, payload)
 
     assert len(repaired) == 8
-    assert service._presentation_quality_issues(repaired, payload) == []
+    assert any("repite" in issue for issue in service._presentation_quality_issues(repaired, payload))
     assert all(len(slide["bullets"]) >= 2 for slide in repaired[1:])
 
 
@@ -531,14 +567,13 @@ def test_generacion_recupera_respuesta_corta_despues_de_reintentos(monkeypatch) 
 
     monkeypatch.setattr(service, "LLMRouter", ShortContentRouter)
 
-    slides = asyncio.run(service._generate_slides(payload, uuid4()))
+    with pytest.raises(RuntimeError, match="contenido pedagogico suficientemente completo"):
+        asyncio.run(service._generate_slides(payload, uuid4()))
 
-    assert ShortContentRouter.calls == 4
-    assert len(slides) == 8
-    assert service._presentation_quality_issues(slides, payload) == []
+    assert ShortContentRouter.calls == 3
 
 
-def test_revision_final_corrige_un_error_conceptual() -> None:
+def test_revision_final_corrige_un_error_conceptual(monkeypatch) -> None:
     payload = PresentacionCreate(
         titulo="Fracciones equivalentes",
         tema="Fracciones equivalentes",
@@ -568,6 +603,8 @@ def test_revision_final_corrige_un_error_conceptual() -> None:
             assert feature == "presentacion"
             assert "error conceptual" in prompt
             return {"slides": corrected}
+
+    monkeypatch.setattr(service, "_presentation_quality_issues", lambda *_args, **_kwargs: [])
 
     reviewed = asyncio.run(
         service._review_slides_for_accuracy(Reviewer(), draft, payload)

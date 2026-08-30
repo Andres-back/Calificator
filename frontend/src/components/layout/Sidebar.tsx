@@ -29,10 +29,10 @@ export function Sidebar({
   const user = useAuth((state) => state.user);
   const navItems = user?.rol === 'admin' ? adminNav : user?.rol === 'estudiante' ? estudianteNav : profesorNav;
   const roleMessage = user?.rol === 'admin'
-    ? { title: 'IA bajo control', detail: 'Credenciales, modelos y rutas.', icon: ShieldCheck }
+    ? { title: 'IA bajo control', detail: 'Credenciales, modelos y rutas.', icon: ShieldCheck, to: '/app/admin/configuracion-ia' }
     : user?.rol === 'estudiante'
-      ? { title: 'Tu espacio de aprendizaje', detail: 'Materias, actividades y ayuda.', icon: GraduationCap }
-      : { title: 'La IA sugiere', detail: 'Tú revisas y decides.', icon: Bot };
+      ? { title: 'Pregunta a Xali', detail: 'Practica y aclara tus dudas.', icon: GraduationCap, to: '/app/xali' }
+      : { title: 'Trabaja con Xali', detail: 'Prepara y revisa tus ideas.', icon: Bot, to: '/app/xali' };
   const RoleIcon = roleMessage.icon;
 
   return (
@@ -131,25 +131,22 @@ export function Sidebar({
             </NavLink>
           ))}
         </nav>
-        <div className={cn(
-          'flex items-start gap-3 rounded-xl border border-border bg-surface-2 p-3.5',
-          user?.rol === 'estudiante' && 'relative overflow-hidden border-brand-200 bg-white/80 pr-16 shadow-sm dark:border-brand-500/25 dark:bg-surface-2/80',
-          user?.rol === 'profesor' && 'relative overflow-hidden border-indigo-200 bg-gradient-to-br from-white to-indigo-50 pr-16 shadow-sm dark:border-indigo-500/25 dark:from-surface-2 dark:to-indigo-950/50',
+        <NavLink to={roleMessage.to} onClick={onNavigate} aria-label={`${roleMessage.title}: ${roleMessage.detail}`} className={cn(
+          'focus-ring group relative flex min-h-[5.25rem] items-start gap-3 overflow-hidden rounded-2xl border border-border bg-surface-2 p-3.5 transition hover:border-brand-300 hover:shadow-md',
+          user?.rol === 'estudiante' && 'border-brand-200 bg-gradient-to-br from-white to-cyan-50 pr-[5.25rem] shadow-sm dark:border-brand-500/25 dark:from-surface-2 dark:to-cyan-950/40',
+          user?.rol === 'profesor' && 'border-indigo-200 bg-gradient-to-br from-white to-indigo-50 pr-[5.25rem] shadow-sm dark:border-indigo-500/25 dark:from-surface-2 dark:to-indigo-950/50',
         )}>
-          {user?.rol === 'estudiante' && (
-            <img src="/branding/xali-studying.png" alt="" className="absolute -bottom-2 -right-2 h-20 w-20 object-contain opacity-90" />
-          )}
-          {user?.rol === 'profesor' && (
-            <img src="/branding/xali-hello.png" alt="" className="absolute -bottom-2 -right-3 h-20 w-20 object-contain opacity-95" />
+          {(user?.rol === 'estudiante' || user?.rol === 'profesor') && (
+            <img src="/branding/semantic-icons/xali.webp" alt="" className="pointer-events-none absolute bottom-0 right-1 h-[4.75rem] w-[4.75rem] object-contain transition-transform duration-200 group-hover:scale-105" />
           )}
           <span className="grid h-8 w-8 shrink-0 place-items-center rounded-md bg-brand-50 text-brand-700 dark:bg-brand-500/15 dark:text-brand-300">
             <RoleIcon className="h-4 w-4" aria-hidden="true" />
           </span>
-          <div className="relative min-w-0">
+          <div className="relative min-w-0 flex-1">
             <p className="font-display text-sm font-bold text-fg">{roleMessage.title}</p>
-            <p className="mt-0.5 text-xs text-secondary">{roleMessage.detail}</p>
+            <p className="mt-1 text-xs leading-4 text-secondary">{roleMessage.detail}</p>
           </div>
-        </div>
+        </NavLink>
       </div>
     </aside>
   );
