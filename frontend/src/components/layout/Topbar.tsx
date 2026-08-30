@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef, useState, type RefObject } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { ChevronDown, ClipboardCheck, LogOut, Menu, Plus } from 'lucide-react';
+import { ChevronDown, ClipboardCheck, LogOut, Menu } from 'lucide-react';
 import { EducationalIcon, ThemeToggle } from '@/components/ui';
 import type { EducationalIconName } from '@/components/ui/EducationalIcon';
 import { useAuth } from '@/stores/auth';
@@ -49,7 +49,6 @@ export function Topbar({
     ?? { label: 'Inicio docente', brandIcon: 'dashboard' as const };
   const studentContext = STUDENT_CONTEXTS.find((item) => location.pathname.startsWith(item.match))
     ?? { label: 'Mi inicio', brandIcon: 'dashboard' as const };
-  const isInsideMateria = /^\/app\/materias\/[^/]+(?:\/|$)/.test(location.pathname);
 
   useEffect(() => {
     if (!open) return;
@@ -101,14 +100,6 @@ export function Topbar({
           </div>
         )}
       </div>
-      {user?.rol === 'profesor' && !isInsideMateria && (
-        <Link
-          to="/app/herramientas/nuevo"
-          className="focus-ring hidden min-h-10 items-center gap-2 rounded-xl bg-brand-600 px-3 text-sm font-bold text-white shadow-sm transition hover:bg-brand-700 md:inline-flex"
-        >
-          <Plus className="h-4 w-4" aria-hidden="true" /> Crear recurso
-        </Link>
-      )}
       {user?.rol === 'estudiante' && !location.pathname.startsWith('/app/evaluaciones') && (
         <Link
           to="/app/evaluaciones"

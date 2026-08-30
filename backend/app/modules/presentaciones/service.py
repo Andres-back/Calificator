@@ -120,6 +120,12 @@ CALIDAD PEDAGOGICA OBLIGATORIA
 - El ejemplo debe estar resuelto o explicado. La actividad debe indicar una accion y un producto observable.
 - La comprobacion debe contener una pregunta que pueda responderse con lo enseñado en las slides anteriores.
 - No repitas el mismo key_message entre slides.
+- Cada diapositiva debe responder una pregunta de aprendizaje diferente y agregar conocimiento nuevo.
+- Un concepto define que es y que lo distingue; una explicacion responde como o por que ocurre.
+- Un ejemplo presenta un caso concreto y muestra el razonamiento, no solo menciona que existe.
+- Un proceso ordena pasos y explica que se comprueba en cada uno; una comparacion usa criterios explicitos.
+- Ningun bullet puede limitarse a reformular el titulo o el mensaje central.
+- No reutilices el mismo ejemplo, analogia o situacion cotidiana en dos diapositivas.
 - Prohibido usar frases genericas como "reconocer el tema central", "conectar con situaciones conocidas",
   "comprender que se espera aprender", "relacionar el tema con la clase", "identificar vocabulario esencial",
   "registrar evidencias y dudas" o "ajusta ejemplos al contexto".
@@ -173,6 +179,9 @@ REVISION OBLIGATORIA
 - Conserva EXACTAMENTE {cantidad} slides y el mismo esquema JSON.
 - Mantiene 2 a 4 bullets completos de 8 a 16 palabras en cada slide de contenido.
 - Elimina instrucciones genericas; cada bullet debe ensenar contenido del tema.
+- Compara las diapositivas entre si y reescribe ideas equivalentes aunque usen palabras distintas.
+- Comprueba que concepto, explicacion y ejemplo cumplan funciones diferentes y progresivas.
+- Reemplaza resúmenes prematuros por definiciones, mecanismos, criterios o casos concretos.
 - No agregues informacion incierta. Si una frase es ambigua, reemplazala por una verificable.
 - Devuelve el arreglo completo corregido, no una lista de observaciones.
 
@@ -193,6 +202,12 @@ GENERIC_PRESENTATION_MARKERS = (
     "registrar evidencias y dudas",
     "ajusta ejemplos al contexto",
 )
+
+PRESENTATION_STOPWORDS = {
+    "para", "como", "sobre", "entre", "desde", "hasta", "este", "esta", "estos",
+    "estas", "cada", "tambien", "puede", "pueden", "porque", "cuando", "donde",
+    "mediante", "usando", "tema", "clase", "ejemplo", "concepto", "aprendizaje",
+}
 
 
 PEDAGOGICAL_ROLES = {
@@ -508,6 +523,26 @@ def _contains_generic_marker(value: Any) -> bool:
     return any(marker in normalized for marker in GENERIC_PRESENTATION_MARKERS)
 
 
+def _semantic_tokens(value: Any, *, topic: str = "") -> set[str]:
+    def stem(token: str) -> str:
+        for suffix in ("amientos", "imiento", "aciones", "mente", "ando", "iendo", "ados", "adas", "idos", "idas", "aron", "ieron", "es", "s"):
+            if token.endswith(suffix) and len(token) - len(suffix) >= 4:
+                return token[:-len(suffix)]
+        return token
+
+    tokens = {stem(token) for token in re.findall(r"[a-záéíóúñü]{4,}", str(value or "").lower())}
+    topic_tokens = {stem(token) for token in re.findall(r"[a-záéíóúñü]{4,}", str(topic or "").lower())}
+    return tokens - PRESENTATION_STOPWORDS - topic_tokens
+
+
+def _semantic_overlap(left: Any, right: Any, *, topic: str = "") -> float:
+    left_tokens = _semantic_tokens(left, topic=topic)
+    right_tokens = _semantic_tokens(right, topic=topic)
+    if min(len(left_tokens), len(right_tokens)) < 5:
+        return 0.0
+    return len(left_tokens & right_tokens) / min(len(left_tokens), len(right_tokens))
+
+
 def _repair_role_bullets(
     role: str,
     *,
@@ -645,6 +680,8 @@ def _presentation_quality_issues(
             f"Se esperaban {payload.cantidad_slides} diapositivas y llegaron {len(slides)}."
         )
     messages: dict[str, int] = {}
+    repeated_statements: dict[str, int] = {}
+    instructional_content: list[tuple[int, str]] = []
     for index, slide in enumerate(slides):
         role = str(slide.get("role") or "concept")
         bullets = _clean_text_list(slide.get("bullets"), max_items=4, max_chars=160)
@@ -685,8 +722,23 @@ def _presentation_quality_issues(
         message = " ".join(str(slide.get("key_message") or "").lower().split())
         if message:
             messages[message] = messages.get(message, 0) + 1
+        if role in {"concept", "explanation", "example", "process", "comparison"}:
+            instructional_content.append((index, visible))
+        for bullet in bullets:
+            statement = " ".join(re.findall(r"[a-záéíóúñü0-9]+", bullet.lower()))
+            if len(statement.split()) >= 6:
+                repeated_statements[statement] = repeated_statements.get(statement, 0) + 1
     if any(count > max(2, len(slides) // 3) for count in messages.values()):
         issues.append("El mismo mensaje central se repite en demasiadas diapositivas.")
+    if any(count > 1 for count in repeated_statements.values()):
+        issues.append("Una misma explicación visible se repite en varias diapositivas.")
+    for position, (left_index, left_content) in enumerate(instructional_content):
+        for right_index, right_content in instructional_content[position + 1:]:
+            if _semantic_overlap(left_content, right_content, topic=payload.tema) >= 0.55:
+                issues.append(
+                    f"Las diapositivas {left_index + 1} y {right_index + 1} repiten casi la misma explicación."
+                )
+                break
     return issues[:20]
 
 
@@ -945,17 +997,12 @@ def _role_sequence_for_count(count: int) -> dict[int, str]:
         return {0: "cover", 1: "objective", 2: "concept", 3: "activity"}
     if count == 5:
         return {0: "cover", 1: "objective", 2: "concept", 3: "activity", 4: "summary"}
-    if count <= 8:
-        sequence = {
-            0: "cover",
-            1: "objective",
-            2: "prior_knowledge",
-            3: "concept",
-            count - 3: "activity",
-            count - 2: "comprehension_check",
-            count - 1: "summary",
-        }
-        return {index: role for index, role in sequence.items() if 0 <= index < count}
+    if count == 6:
+        return {0: "cover", 1: "objective", 2: "concept", 3: "example", 4: "activity", 5: "summary"}
+    if count == 7:
+        return {0: "cover", 1: "objective", 2: "prior_knowledge", 3: "concept", 4: "example", 5: "activity", 6: "summary"}
+    if count == 8:
+        return {0: "cover", 1: "objective", 2: "prior_knowledge", 3: "concept", 4: "explanation", 5: "activity", 6: "comprehension_check", 7: "summary"}
     sequence = {
         0: "cover",
         1: "objective",
@@ -966,6 +1013,9 @@ def _role_sequence_for_count(count: int) -> dict[int, str]:
         count - 2: "summary",
         count - 1: "closing",
     }
+    development_roles = ("explanation", "example", "process", "comparison")
+    for index in range(4, count - 4):
+        sequence[index] = development_roles[(index - 4) % len(development_roles)]
     return {index: role for index, role in sequence.items() if 0 <= index < count}
 
 

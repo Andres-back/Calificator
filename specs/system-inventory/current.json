@@ -291,7 +291,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "00f7a67d30a0269c4397a6d14ee23d40426a420f898cf65c34cbaca6dfd56463",
+  "source_digest": "ddcb312f0980879d6c8925bcab75e03ec3d0831f1a958d4f99f2d7043ff8c8af",
   "surfaces": [
     {
       "actors": [
@@ -14833,6 +14833,12 @@
           "reference": "/app/xali",
           "status": "domain",
           "test_path": "frontend/e2e/teacher-ai-configuration.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/xali",
+          "status": "direct",
+          "test_path": "frontend/src/components/layout/AppShell.test.tsx"
         },
         {
           "level": "unit",

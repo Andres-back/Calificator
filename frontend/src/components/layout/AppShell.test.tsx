@@ -111,6 +111,17 @@ describe('AppShell ambientación', () => {
     );
   });
 
+  it('evita el acceso redundante de crear recurso y usa la mascota transparente en la guía lateral', () => {
+    const { container } = renderShell();
+    const header = container.querySelector('header');
+    const desktopNav = container.querySelector('#main-navigation-desktop');
+
+    expect(within(header as HTMLElement).queryByRole('link', { name: 'Crear recurso' })).not.toBeInTheDocument();
+    expect(within(desktopNav as HTMLElement).getByRole('link', { name: /Trabaja con Xali/ })).toHaveAttribute('href', '/app/xali');
+    expect(desktopNav?.querySelector('img[src="/branding/semantic-icons/xali.webp"]')).toBeInTheDocument();
+    expect(desktopNav?.querySelector('img[src="/branding/xali-hello.png"]')).not.toBeInTheDocument();
+  });
+
   it('mantiene la ilustración fuera de la interacción y el contenido por encima', () => {
     const { container } = renderShell();
     const atmosphere = container.querySelector('.app-atmosphere');
