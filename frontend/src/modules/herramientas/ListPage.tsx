@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Download, Trash2, Wrench, Gamepad2, Copy, Pencil, Send } from 'lucide-react';
-import { Badge, Button, Card, ConfirmDialog, EducationalIcon, EmptyState, QueryState, Skeleton } from '@/components/ui';
+import { ActionMenu, Badge, Button, Card, CollectionToolbar, ConfirmDialog, EducationalIcon, EmptyState, QueryState, Skeleton } from '@/components/ui';
 import type { EducationalIconName } from '@/components/ui/EducationalIcon';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { listMaterials, deleteMaterial, pdfUrl, duplicateMaterial } from './api';
@@ -13,13 +13,13 @@ import { routes } from '@/config/routes';
 import toast from 'react-hot-toast';
 import { useDeleteConfirm } from '@/lib/hooks';
 import { formatDate } from '@/lib/dates';
-import { cn } from '@/lib/cn';
 
 const CATEGORIES = ['Todos', 'Juego', 'Evaluación', 'Material'] as const;
 
 export function ListPage() {
   const navigate = useNavigate();
   const [cat, setCat] = useState<(typeof CATEGORIES)[number]>('Todos');
+  const [query, setQuery] = useState('');
   const { target: deleteTarget, setTarget: setDeleteTarget, mutation: deleteMutation } = useDeleteConfirm({
     mutationFn: deleteMaterial,
     queryKey: ['materials'],
@@ -27,7 +27,15 @@ export function ListPage() {
   });
   const { data, isLoading, isError, error, refetch } = useQuery({ queryKey: ['materials'], queryFn: () => listMaterials() });
 
-  const filtered = (data ?? []).filter((m) => cat === 'Todos' || TOOL_BY_TIPO[m.tipo]?.category === cat);
+  const normalizedQuery = query.trim().toLocaleLowerCase('es');
+  const filtered = (data ?? []).filter((material) => {
+    const matchesCategory = cat === 'Todos' || TOOL_BY_TIPO[material.tipo]?.category === cat;
+    const searchable = [material.titulo, material.materia_nombre, TOOL_BY_TIPO[material.tipo]?.label, material.tipo]
+      .filter(Boolean)
+      .join(' ')
+      .toLocaleLowerCase('es');
+    return matchesCategory && (!normalizedQuery || searchable.includes(normalizedQuery));
+  });
   const total = data?.length ?? 0;
   const interactive = (data ?? []).filter((m) => TOOL_BY_TIPO[m.tipo]?.interactive).length;
   const evaluable = (data ?? []).filter((m) => TOOL_BY_TIPO[m.tipo]?.category === 'Evaluación').length;
@@ -89,22 +97,16 @@ export function ListPage() {
         ))}
       </div>
 
-      {/* Chips de filtro */}
-      <div className="inline-flex max-w-full gap-1 overflow-x-auto rounded-lg border border-border bg-surface-2 p-1" aria-label="Filtrar materiales">
-        {CATEGORIES.map((c) => (
-          <button
-            key={c}
-            onClick={() => setCat(c)}
-            className={cn(
-              'focus-ring min-h-9 shrink-0 rounded-md px-4 text-sm font-semibold transition-colors',
-              cat === c ? 'bg-surface text-brand-700 shadow-sm dark:text-brand-300' : 'text-muted hover:text-fg',
-            )}
-            aria-pressed={cat === c}
-          >
-            {c === 'Evaluación' ? 'Borradores antiguos' : c}
-          </button>
-        ))}
-      </div>
+      <CollectionToolbar
+        query={query}
+        onQueryChange={setQuery}
+        placeholder="Buscar por título, materia o tipo…"
+        resultCount={filtered.length}
+        value={cat}
+        onChange={setCat}
+        ariaLabel="Filtrar materiales"
+        options={CATEGORIES.map((category) => ({ value: category, label: category === 'Evaluación' ? 'Borradores antiguos' : category }))}
+      />
 
       <QueryState
         isLoading={isLoading}
@@ -116,7 +118,7 @@ export function ListPage() {
         empty={<EmptyState icon={Wrench} title="Sin material todavía" description="Crea tu primer crucigrama, sopa de letras o guía en segundos." action={<Link to="/app/herramientas/nuevo"><Button><Plus className="h-4 w-4" /> Crear material</Button></Link>} />}
       >
         {filtered.length === 0 ? (
-          <EmptyState icon={Wrench} title="No hay materiales en esta categoría" description="Cambia el filtro o crea un recurso nuevo." />
+          <EmptyState icon={Wrench} title="No encontramos recursos" description={query ? 'Prueba otro término o cambia el filtro.' : 'Cambia el filtro o crea un recurso nuevo.'} />
         ) : (
           <motion.div layout className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <AnimatePresence mode="popLayout">
@@ -151,16 +153,21 @@ export function ListPage() {
                         <p className="mt-2 font-semibold line-clamp-2">{material.titulo}</p>
                         <p className="mt-1 text-xs text-muted">{formatDate(material.created_at)}</p>
                       </Link>
-                      <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-border pt-3">
-                        <Link to={`/app/herramientas/${material.id}?action=edit`} className="min-w-[7rem] flex-1">
+                      <div className="mt-4 flex items-center gap-2 border-t border-border pt-3">
+                        <Link to={`/app/herramientas/${material.id}?action=edit`} className="min-w-0 flex-1">
                           <Button size="sm" variant="outline" className="w-full"><Pencil className="h-4 w-4" /> Editar</Button>
                         </Link>
-                        <Link to={material.evaluacion_id && material.materia_id ? routes.materiaEvaluaciones(material.materia_id) : `/app/herramientas/${material.id}?action=assign`} className="min-w-[7rem] flex-1">
+                        <Link to={material.evaluacion_id && material.materia_id ? routes.materiaEvaluaciones(material.materia_id) : `/app/herramientas/${material.id}?action=assign`} className="min-w-0 flex-1">
                           <Button size="sm" className="w-full"><Send className="h-4 w-4" /> {assignmentLabel}</Button>
                         </Link>
-                        <a href={pdfUrl(material.id)} target="_blank" rel="noreferrer"><Button size="icon" variant="ghost" title="Descargar PDF" aria-label={`Descargar ${material.titulo} en PDF`}><Download className="h-4 w-4" /></Button></a>
-                        <Button size="icon" variant="ghost" onClick={async () => { try { const n = await duplicateMaterial(material.id); await queryClient.invalidateQueries({ queryKey: ['materials'] }); toast.success('Duplicado'); navigate(`/app/herramientas/${n.id}`); } catch { toast.error('Error al duplicar'); } }} title="Duplicar material" aria-label={`Duplicar ${material.titulo}`}><Copy className="h-4 w-4" /></Button>
-                        <Button size="icon" variant="ghost" className="text-rose-700 hover:bg-rose-50 dark:text-rose-300 dark:hover:bg-rose-500/10" onClick={() => setDeleteTarget({ id: material.id, title: material.titulo })} aria-label={`Eliminar ${material.titulo}`} title="Eliminar material"><Trash2 className="h-4 w-4" /></Button>
+                        <ActionMenu
+                          label={`Más acciones para ${material.titulo}`}
+                          items={[
+                            { label: 'Descargar PDF', href: pdfUrl(material.id), icon: <Download className="h-4 w-4" aria-hidden="true" /> },
+                            { label: 'Duplicar recurso', icon: <Copy className="h-4 w-4" aria-hidden="true" />, onSelect: async () => { try { const duplicated = await duplicateMaterial(material.id); await queryClient.invalidateQueries({ queryKey: ['materials'] }); toast.success('Duplicado'); navigate(`/app/herramientas/${duplicated.id}`); } catch { toast.error('Error al duplicar'); } } },
+                            { label: 'Eliminar recurso', tone: 'danger', icon: <Trash2 className="h-4 w-4" aria-hidden="true" />, onSelect: () => setDeleteTarget({ id: material.id, title: material.titulo }) },
+                          ]}
+                        />
                       </div>
                     </Card>
                   </motion.div>
