@@ -70,7 +70,6 @@ from app.services.llm_router import LLMRouter
 from app.shared.enums import (
     EvaluacionTipoOrigen,
     MaterialTipo,
-    UserRole,
 )
 
 logger = get_logger(__name__)
@@ -731,7 +730,11 @@ async def list_materials_for_materia(
     """
     from sqlalchemy import text
 
-    if current_user.rol == UserRole.ESTUDIANTE.value:
+    manages_subject = str(current_user.rol) in {"profesor", "admin"}
+    if manages_subject:
+        await materias_service.ensure_can_manage_materia(db, materia_id, current_user)
+        visibility = ""
+    else:
         await materias_service.ensure_can_read_materia(db, materia_id, current_user)
         visibility = (
             "AND mg.publicado_estudiantes = true "
@@ -739,10 +742,6 @@ async def list_materials_for_materia(
             "(mg.asignacion_tipo = 'actividad' AND e.estado IN "
             "('publicada', 'en_calificacion', 'pendiente_revision', 'cerrada')))"
         )
-    else:
-        await materias_service.ensure_can_manage_materia(db, materia_id, current_user)
-        visibility = ""
-
     rows = await db.execute(
         text(
             "SELECT mg.id, mg.tipo, mg.titulo, mg.materia_id, m.nombre AS materia_nombre, "
@@ -787,8 +786,9 @@ async def get_material_for_user(
     """Permite al autor administrar y al estudiante leer todo material asignado."""
     from sqlalchemy import text
 
-    if current_user.rol != UserRole.ESTUDIANTE.value:
-        return await get_material(db, material_id, current_user.id)
+    owned = await get_material(db, material_id, current_user.id)
+    if owned is not None:
+        return owned
 
     result = await db.execute(
         text(

@@ -63,9 +63,24 @@ async def _teacher_configuration(db: AsyncSession, teacher_id: UUID) -> tuple[di
             ),
             {"teacher": str(teacher_id)},
         )
-        return config, [dict(item._mapping) for item in preference_result.fetchall()], {
+        credential_providers = {
             str(item.provider_id) for item in credential_result.fetchall()
         }
+        connector_available = await db.scalar(
+            text(
+                "SELECT EXISTS(SELECT 1 FROM ollama_connectors c "
+                "JOIN ollama_connector_models m ON m.connector_id=c.id "
+                "WHERE c.profesor_id=:teacher AND c.active=true AND m.available=true)"
+            ),
+            {"teacher": str(teacher_id)},
+        )
+        if connector_available:
+            credential_providers.add("ollama_local")
+        return (
+            config,
+            [dict(item._mapping) for item in preference_result.fetchall()],
+            credential_providers,
+        )
     except Exception:
         await db.rollback()
         return {
@@ -95,6 +110,42 @@ async def _recommended_model(db: AsyncSession, provider: str, capability: str) -
     models = await service.get_all_models()
     match = next((item for item in models if item.get("provider_id") == provider and item.get("active") and capability in (item.get("capabilities") or []) and item.get("recommended")), None)
     return str(match["model_id"]) if match else None
+
+
+async def _recommended_teacher_model(
+    db: AsyncSession,
+    *,
+    teacher_id: UUID,
+    provider: str,
+    capability: str,
+) -> str | None:
+    if provider == "ollama":
+        value = await db.scalar(
+            text(
+                "SELECT model_id FROM profesor_ai_provider_models "
+                "WHERE profesor_id=:teacher AND provider_id='ollama' AND active=true "
+                "AND CAST(:capability AS text) IN (SELECT jsonb_array_elements_text(capabilities)) "
+                "ORDER BY updated_at DESC, model_id LIMIT 1"
+            ),
+            {"teacher": str(teacher_id), "capability": capability},
+        )
+        if value:
+            return str(value)
+    if provider == "ollama_local":
+        value = await db.scalar(
+            text(
+                "SELECT m.model_id FROM ollama_connector_models m "
+                "JOIN ollama_connectors c ON c.id=m.connector_id "
+                "WHERE c.profesor_id=:teacher AND c.active=true AND m.available=true "
+                "AND CAST(:capability AS text) IN "
+                "(SELECT jsonb_array_elements_text(m.capabilities)) "
+                "ORDER BY c.last_seen_at DESC NULLS LAST, m.model_id LIMIT 1"
+            ),
+            {"teacher": str(teacher_id), "capability": capability},
+        )
+        if value:
+            return str(value)
+    return await _recommended_model(db, provider, capability)
 
 
 async def resolve_ai_configuration(
@@ -138,7 +189,14 @@ async def resolve_ai_configuration(
             )
         elif rollout_enabled and mode == "automatic" and credential_providers:
             for provider_id in sorted(credential_providers):
-                model_id = await _recommended_model(db, provider_id, capability)
+                if provider_id == "ollama_local" and feature != "presentaciones":
+                    continue
+                model_id = await _recommended_teacher_model(
+                    db,
+                    teacher_id=teacher_id,
+                    provider=provider_id,
+                    capability=capability,
+                )
                 if model_id:
                     chosen = {"provider_id": provider_id, "model_id": model_id}
                     break
@@ -150,10 +208,13 @@ async def resolve_ai_configuration(
             selection = {
                 "provider": str(chosen["provider_id"]),
                 "model": chosen.get("model_id")
-                or await _recommended_model(
-                    db, str(chosen["provider_id"]), capability
+                or await _recommended_teacher_model(
+                    db,
+                    teacher_id=teacher_id,
+                    provider=str(chosen["provider_id"]),
+                    capability=capability,
                 ),
-                "credential_source": "teacher",
+                "credential_source": "connector" if chosen.get("provider_id") == "ollama_local" else "teacher",
             }
             if (
                 teacher.get("allow_institutional_fallback", True)

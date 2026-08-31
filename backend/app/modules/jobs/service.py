@@ -101,6 +101,139 @@ async def get_job_input(db: AsyncSession, job_id: UUID) -> dict[str, Any]:
     value = await db.scalar(statement)
     return dict(value) if isinstance(value, dict) else {}
 
+
+async def mark_job_waiting_connector(
+    db: AsyncSession,
+    job_id: UUID,
+    *,
+    connector_job_id: UUID,
+    stage: str,
+) -> bool:
+    """Suspend a running job without making it terminal.
+
+    The public job remains ``running`` so clients keep showing background work,
+    while ``pipeline_status`` records the durable suspension point.  The
+    connector callback is the only writer allowed to move this exact suspension
+    back to ``queued``.
+    """
+    result = await db.execute(
+        text(
+            "UPDATE ai_jobs SET resultado_json="
+            "COALESCE(resultado_json, '{}'::jsonb) || "
+            "jsonb_build_object('pipeline_status', 'waiting_connector', "
+            "'connector_job_id', CAST(:connector_job_id AS text), "
+            "'connector_stage', CAST(:stage AS text)) "
+            "WHERE id=CAST(:id AS uuid) AND estado=:running"
+        ),
+        {
+            "id": str(job_id),
+            "running": JobEstado.RUNNING.value,
+            "connector_job_id": str(connector_job_id),
+            "stage": stage[:80],
+        },
+    )
+    return bool(result.rowcount)
+
+
+async def resume_job_after_connector(
+    db: AsyncSession,
+    *,
+    source_job_id: UUID,
+    connector_job_id: UUID,
+) -> dict[str, Any] | None:
+    """Atomically make one suspended source job eligible for redelivery.
+
+    Matching the connector id prevents a late or duplicated callback from
+    waking a newer suspension point.  The returned payload contains no secret;
+    encrypted connector output remains in ``ollama_connector_jobs``.
+    """
+    row = await db.execute(
+        text(
+            "UPDATE ai_jobs SET estado=:queued, started_at=NULL, error=NULL, "
+            "resultado_json=(COALESCE(resultado_json, '{}'::jsonb) - 'claim_token') || "
+            "jsonb_build_object('pipeline_status', 'connector_completed', "
+            "'connector_job_id', CAST(:connector_job_id AS text), "
+            "'recovery_enqueued_at', NULL) "
+            "WHERE id=CAST(:id AS uuid) AND estado=:running "
+            "AND resultado_json->>'pipeline_status'='waiting_connector' "
+            "AND resultado_json->>'connector_job_id'=CAST(:connector_job_id AS text) "
+            "RETURNING id, user_id, tipo, input_json"
+        ),
+        {
+            "id": str(source_job_id),
+            "connector_job_id": str(connector_job_id),
+            "running": JobEstado.RUNNING.value,
+            "queued": JobEstado.QUEUED.value,
+        },
+    )
+    value = row.mappings().first()
+    return dict(value) if value else None
+
+
+def dispatch_persisted_job(job: dict[str, Any]) -> bool:
+    """Republish a supported persisted job using only its durable input."""
+    from app.workers.worker import celery_app
+
+    job_id = str(job.get("id") or "")
+    job_type = str(job.get("tipo") or "")
+    user_id = str(job.get("user_id") or "") or None
+    payload = job.get("input_json")
+    payload = payload if isinstance(payload, dict) else {}
+    if not job_id:
+        return False
+
+    if job_type == "calificacion_lote":
+        if not payload.get("evaluacion_id") or not (
+            payload.get("entrega_ids") or payload.get("estudiante_ids")
+        ):
+            return False
+        celery_app.send_task(
+            "tasks.grade_batch",
+            kwargs={
+                "evaluacion_id": str(payload["evaluacion_id"]),
+                "estudiante_ids": [str(item) for item in payload.get("estudiante_ids") or []],
+                "entrega_ids": [str(item) for item in payload.get("entrega_ids") or []],
+                "job_id": job_id,
+                "profesor_id": user_id,
+            },
+        )
+        return True
+
+    if job_type == "evaluacion_digitalizacion":
+        required = {
+            "materia_id", "file_key", "filename", "nombre", "nota_maxima", "modalidad"
+        }
+        if not user_id or not required.issubset(payload):
+            return False
+        celery_app.send_task(
+            "tasks.digitalize_evaluation",
+            kwargs={
+                "job_id": job_id,
+                "user_id": user_id,
+                "materia_id": str(payload["materia_id"]),
+                "file_key": str(payload["file_key"]),
+                "filename": str(payload["filename"]),
+                "nombre": str(payload["nombre"]),
+                "descripcion": payload.get("descripcion"),
+                "nota_maxima": str(payload["nota_maxima"]),
+                "modalidad": str(payload["modalidad"]),
+            },
+        )
+        return True
+
+    if job_type == "presentacion":
+        presentation_id = payload.get("presentacion_id")
+        if not presentation_id:
+            return False
+        celery_app.send_task(
+            "tasks.generate_presentation",
+            args=[str(presentation_id)],
+        )
+        return True
+
+    logger.warning("Unsupported persisted AI job type for dispatch: %s", job_type)
+    return False
+
 async def get_job_queue_time_ms(db: AsyncSession, job_id: UUID) -> int:
     """Devuelve solo duración técnica; nunca consulta el contenido del trabajo."""
     statement = text(

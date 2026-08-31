@@ -5,7 +5,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.permissions import get_current_user, require_role
+from app.core.permissions import get_current_user, require_permission_now
 from app.db.session import get_db
 from app.modules.evaluaciones.schemas import EvaluacionRead
 from app.modules.herramientas import service
@@ -35,7 +35,6 @@ from app.modules.herramientas.schemas import (
     UnirColumnasRequest,
 )
 from app.modules.users.models import User
-from app.shared.enums import UserRole
 
 router = APIRouter(prefix="/herramientas", tags=["herramientas"])
 
@@ -48,7 +47,7 @@ async def listar_materiales(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> list[dict]:
-    require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
+    require_permission_now(current_user, "resources.read")
     return await service.list_materials(
         db, current_user.id, tipo=tipo, limit=min(limit, 100), offset=offset
     )
@@ -60,7 +59,7 @@ async def sopa_letras(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> dict:
-    require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
+    require_permission_now(current_user, "resources.create")
     return await service.gen_sopa_letras(db, req, current_user)
 
 
@@ -70,7 +69,7 @@ async def crucigrama(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> dict:
-    require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
+    require_permission_now(current_user, "resources.create")
     return await service.gen_crucigrama(db, req, current_user)
 
 
@@ -80,7 +79,7 @@ async def unir_columnas(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> dict:
-    require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
+    require_permission_now(current_user, "resources.create")
     return await service.gen_unir_columnas(db, req, current_user)
 
 
@@ -90,7 +89,7 @@ async def emparejar(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> dict:
-    require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
+    require_permission_now(current_user, "resources.create")
     return await service.gen_emparejar(db, req, current_user)
 
 
@@ -100,7 +99,7 @@ async def cuento(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> dict:
-    require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
+    require_permission_now(current_user, "resources.create")
     return await service.gen_cuento(db, req, current_user)
 
 
@@ -110,7 +109,7 @@ async def para_colorear(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> dict:
-    require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
+    require_permission_now(current_user, "resources.create")
     return await service.gen_para_colorear(db, req, current_user)
 
 
@@ -120,7 +119,7 @@ async def guia(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> dict:
-    require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
+    require_permission_now(current_user, "resources.create")
     return await service.gen_guia(db, req, current_user)
 
 
@@ -130,7 +129,7 @@ async def taller(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> dict:
-    require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
+    require_permission_now(current_user, "resources.create")
     return await service.gen_taller(db, req, current_user)
 
 
@@ -140,7 +139,7 @@ async def examen_from_chat(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> dict:
-    require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
+    require_permission_now(current_user, "resources.create")
     return await service.gen_examen_from_chat(db, req, current_user)
 
 
@@ -150,7 +149,7 @@ async def examen(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> dict:
-    require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
+    require_permission_now(current_user, "resources.create")
     return await service.gen_examen(db, req, current_user)
 
 
@@ -160,7 +159,7 @@ async def rubrica(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> dict:
-    require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
+    require_permission_now(current_user, "resources.create")
     return await service.gen_rubrica(db, req, current_user)
 
 
@@ -170,7 +169,7 @@ async def ficha(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> dict:
-    require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
+    require_permission_now(current_user, "resources.create")
     return await service.gen_ficha(db, req, current_user)
 
 
@@ -180,7 +179,7 @@ async def quiz_rapido(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> dict:
-    require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
+    require_permission_now(current_user, "resources.create")
     return await service.gen_quiz_rapido(db, req, current_user)
 
 
@@ -190,7 +189,7 @@ async def lectura_comprensiva(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> dict:
-    require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
+    require_permission_now(current_user, "resources.create")
     return await service.gen_lectura_comprensiva(db, req, current_user)
 
 
@@ -200,7 +199,7 @@ async def mapa_conceptual(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> dict:
-    require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
+    require_permission_now(current_user, "resources.create")
     return await service.gen_mapa_conceptual(db, req, current_user)
 
 
@@ -210,7 +209,7 @@ async def flashcards(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> dict:
-    require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
+    require_permission_now(current_user, "resources.create")
     return await service.gen_flashcards(db, req, current_user)
 
 
@@ -220,7 +219,7 @@ async def plan_refuerzo(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> dict:
-    require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
+    require_permission_now(current_user, "resources.create")
     return await service.gen_plan_refuerzo(db, req, current_user)
 
 
@@ -230,6 +229,7 @@ async def listar_recursos_de_materia(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> list[dict]:
+    require_permission_now(current_user, "resources.read")
     return await service.list_materials_for_materia(db, materia_id, current_user)
 
 @router.get("/{material_id}", response_model=MaterialRead)
@@ -238,6 +238,7 @@ async def ver_material(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> dict:
+    require_permission_now(current_user, "resources.read")
     material = await service.get_material_for_user(db, material_id, current_user)
     if material is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Material no encontrado")
@@ -250,7 +251,7 @@ async def borrar_material(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> Response:
-    require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
+    require_permission_now(current_user, "resources.delete")
     deleted = await service.delete_material(db, material_id, current_user.id)
     if not deleted:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Material no encontrado")
@@ -266,13 +267,14 @@ async def material_pdf(
     db: AsyncSession = Depends(get_db),
 ) -> Response:
     """Devuelve el material renderizado como PDF (estética de la app)."""
+    require_permission_now(current_user, "resources.read")
     from app.modules.herramientas.pdf_render import render_material_pdf
 
-    if current_user.rol == UserRole.ESTUDIANTE.value and soluciones:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Las soluciones son exclusivas del docente")
     material = await service.get_material_for_user(db, material_id, current_user)
     if material is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Material no encontrado")
+    if soluciones and await service.get_material(db, material_id, current_user.id) is None:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Las soluciones son exclusivas del autor del recurso")
 
     pdf = render_material_pdf(material, soluciones=soluciones)
     slug = (material.get("titulo") or "material").strip().replace('"', "")
@@ -296,7 +298,7 @@ async def actualizar_material(
     db: AsyncSession = Depends(get_db),
 ) -> dict:
     """Actualiza campos del material (titulo, materia_id, contenido_json)."""
-    require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
+    require_permission_now(current_user, "resources.update")
     material = await service.get_material(db, material_id, current_user.id)
     if material is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Material no encontrado")
@@ -313,7 +315,7 @@ async def asignar_como_apoyo(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> dict:
-    require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
+    require_permission_now(current_user, "resources.assign")
     return await service.assign_material_as_support(
         db, material_id, current_user, req.materia_id
     )
@@ -325,7 +327,7 @@ async def retirar_apoyo(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> dict:
-    require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
+    require_permission_now(current_user, "resources.assign")
     return await service.withdraw_support_material(db, material_id, current_user)
 
 @router.patch("/{material_id}/visibilidad", response_model=MaterialRead)
@@ -335,7 +337,7 @@ async def cambiar_visibilidad_material(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> dict:
-    require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
+    require_permission_now(current_user, "resources.assign")
     return await service.set_material_visibility(
         db, material_id, current_user, visible=req.visible
     )
@@ -347,7 +349,7 @@ async def duplicar_material(
     db: AsyncSession = Depends(get_db),
 ) -> dict:
     """Clona un material existente como copia editable."""
-    require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
+    require_permission_now(current_user, "resources.create")
     return await service.duplicar_material(db, material_id, current_user.id)
 
 
@@ -357,7 +359,7 @@ async def listar_evaluaciones_del_material(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> list[object]:
-    require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
+    require_permission_now(current_user, "resources.read")
     return await service.list_evaluations_for_material(db, material_id, current_user)
 
 
@@ -373,5 +375,6 @@ async def convertir_a_evaluacion(
     db: AsyncSession = Depends(get_db),
 ) -> dict:
     """Asigna cualquier material evaluable al ciclo canonico de evaluaciones."""
-    require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
+    require_permission_now(current_user, "resources.assign")
+    require_permission_now(current_user, "evaluations.create")
     return await service.convertir_a_evaluacion(db, material_id, current_user, req)

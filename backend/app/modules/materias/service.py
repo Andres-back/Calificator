@@ -1,7 +1,7 @@
 from uuid import UUID
 
 from fastapi import HTTPException, status
-from sqlalchemy import func, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modules.materias.code_generator import generate_matricula_code
@@ -14,6 +14,30 @@ from app.shared.enums import MateriaEstado, MatriculaEstado, UserRole
 
 MAX_ACTIVE_MATERIAS_PER_PROFESOR = 6
 MATERIA_LIMIT_REACHED_MESSAGE = "Has alcanzado el límite máximo de 6 materias."
+
+TEACHER_CONTEXT_PERMISSIONS = frozenset(
+    {
+        "subjects.create",
+        "subjects.update",
+        "evaluations.create",
+        "evaluations.update",
+        "evaluations.publish",
+        "resources.create",
+        "resources.update",
+        "resources.assign",
+        "grading.grade",
+        "grading.publish",
+        "attendance.manage",
+        "dba.manage",
+    }
+)
+
+
+def _has_teacher_context(user: User) -> bool:
+    if str(user.rol) in {UserRole.ADMIN.value, UserRole.PROFESOR.value}:
+        return True
+    effective = getattr(user, "_effective_permissions", frozenset())
+    return bool(TEACHER_CONTEXT_PERMISSIONS.intersection(effective))
 
 
 async def _generate_unique_code(db: AsyncSession) -> str:
@@ -29,7 +53,7 @@ async def _generate_unique_code(db: AsyncSession) -> str:
 
 
 def _ensure_can_create_materia_for_count(active_count: int, user: User) -> None:
-    if str(user.rol) == UserRole.PROFESOR.value and active_count >= MAX_ACTIVE_MATERIAS_PER_PROFESOR:
+    if str(user.rol) != UserRole.ADMIN.value and active_count >= MAX_ACTIVE_MATERIAS_PER_PROFESOR:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail=MATERIA_LIMIT_REACHED_MESSAGE,
@@ -68,10 +92,19 @@ async def create_materia(db: AsyncSession, payload: MateriaCreate, profesor: Use
 async def list_materias(db: AsyncSession, current_user: User) -> list[Materia]:
     if current_user.rol == UserRole.ADMIN.value:
         stmt = select(Materia).order_by(Materia.created_at.desc())
-    elif current_user.rol == UserRole.PROFESOR.value:
+    elif _has_teacher_context(current_user):
+        enrolled_subjects = select(Matricula.materia_id).where(
+            Matricula.estudiante_id == current_user.id,
+            Matricula.estado == MatriculaEstado.ACTIVO.value,
+        )
         stmt = (
             select(Materia)
-            .where(Materia.profesor_id == current_user.id)
+            .where(
+                or_(
+                    Materia.profesor_id == current_user.id,
+                    Materia.id.in_(enrolled_subjects),
+                )
+            )
             .order_by(Materia.created_at.desc())
         )
     else:
@@ -99,16 +132,15 @@ async def ensure_can_read_materia(db: AsyncSession, materia_id: UUID, current_us
     materia = await get_materia_or_404(db, materia_id)
     if current_user.rol == UserRole.ADMIN.value or materia.profesor_id == current_user.id:
         return materia
-    if current_user.rol == UserRole.ESTUDIANTE.value:
-        enrollment = await db.scalar(
-            select(Matricula.id).where(
-                Matricula.materia_id == materia_id,
-                Matricula.estudiante_id == current_user.id,
-                Matricula.estado == MatriculaEstado.ACTIVO.value,
-            )
+    enrollment = await db.scalar(
+        select(Matricula.id).where(
+            Matricula.materia_id == materia_id,
+            Matricula.estudiante_id == current_user.id,
+            Matricula.estado == MatriculaEstado.ACTIVO.value,
         )
-        if enrollment:
-            return materia
+    )
+    if enrollment:
+        return materia
     raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not enough permissions")
 
 

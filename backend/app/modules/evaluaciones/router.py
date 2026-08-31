@@ -4,7 +4,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Response, UploadFile, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.permissions import get_current_user
+from app.core.permissions import get_current_user, require_permission_now
 from app.core.rate_limit import rate_limit
 from app.db.session import get_db
 from app.modules.evaluaciones import generation_service, service
@@ -43,6 +43,7 @@ async def extract_generation_reference(
     db: AsyncSession = Depends(get_db),
 ) -> dict:
     """Extrae texto de un PDF o imagen para orientar una generación posterior."""
+    require_permission_now(current_user, "evaluations.create")
     from app.modules.materias.service import ensure_can_manage_materia
 
     await ensure_can_manage_materia(db, materia_id, current_user)
@@ -96,6 +97,7 @@ async def digitalize_from_file(
     ),
 ) -> dict:
     """Valida y encola una digitalización persistente; no bloquea la navegación."""
+    require_permission_now(current_user, "evaluations.create")
     from app.modules.materias.service import ensure_can_manage_materia
 
     await ensure_can_manage_materia(db, materia_id, current_user)
@@ -124,6 +126,10 @@ async def digitalize_from_file(
                 "materia_id": str(materia_id),
                 "nombre": nombre,
                 "filename": filename,
+                "file_key": file_key,
+                "descripcion": descripcion,
+                "nota_maxima": str(nota_maxima),
+                "modalidad": modalidad.value,
             },
         )
         await db.commit()
@@ -182,6 +188,7 @@ async def generate_evaluation_draft(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> object:
+    require_permission_now(current_user, "evaluations.create")
     return await generation_service.generate_evaluation_draft(db, payload, current_user)
 
 
@@ -191,6 +198,7 @@ async def digitalize_external_evaluation(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> object:
+    require_permission_now(current_user, "evaluations.create")
     return await service.digitalize_external_evaluation(db, payload, current_user)
 
 
@@ -200,6 +208,7 @@ async def create_surprise_evaluation(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> object:
+    require_permission_now(current_user, "evaluations.create")
     return await service.create_surprise_evaluation(db, payload, current_user)
 
 
@@ -209,6 +218,7 @@ async def create_evaluation(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> object:
+    require_permission_now(current_user, "evaluations.create")
     return await service.create_evaluation(db, payload, current_user)
 
 
@@ -218,6 +228,7 @@ async def list_evaluations_for_materia(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> list[object]:
+    require_permission_now(current_user, "evaluations.read")
     return await service.list_evaluations_for_materia(db, materia_id, current_user)
 
 
@@ -227,6 +238,7 @@ async def get_evaluation(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> object:
+    require_permission_now(current_user, "evaluations.read")
     return await service.ensure_can_read_evaluation(db, evaluacion_id, current_user)
 
 
@@ -236,6 +248,7 @@ async def get_student_activity(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> dict | None:
+    require_permission_now(current_user, "evaluations.read")
     return await service.get_student_activity(db, evaluacion_id, current_user)
 
 
@@ -248,9 +261,13 @@ async def download_evaluation_pdf(
     db: AsyncSession = Depends(get_db),
 ) -> Response:
     """Muestra o descarga la evaluación/material asignado sin filtrar soluciones."""
+    require_permission_now(current_user, "evaluations.read")
     await service.ensure_can_read_evaluation(db, evaluacion_id, current_user)
     evaluacion = await service.get_evaluation_or_404(db, evaluacion_id)
-    if current_user.rol == UserRole.ESTUDIANTE.value and soluciones:
+    if soluciones and not (
+        current_user.rol == UserRole.ADMIN.value
+        or evaluacion.profesor_id == current_user.id
+    ):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Las soluciones son exclusivas del docente",
@@ -323,6 +340,7 @@ async def update_evaluation(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> object:
+    require_permission_now(current_user, "evaluations.update")
     evaluacion = await service.ensure_can_manage_evaluation(db, evaluacion_id, current_user)
     return await service.update_evaluation(db, evaluacion, payload)
 
@@ -333,6 +351,7 @@ async def rebuild_blueprint(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> object:
+    require_permission_now(current_user, "evaluations.update")
     evaluacion = await service.ensure_can_manage_evaluation(db, evaluacion_id, current_user)
     return await service.rebuild_blueprint(db, evaluacion)
 
@@ -343,6 +362,7 @@ async def publish_evaluation(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> object:
+    require_permission_now(current_user, "evaluations.publish")
     evaluacion = await service.ensure_can_manage_evaluation(db, evaluacion_id, current_user)
     return await service.publish_evaluation(db, evaluacion)
 
@@ -353,6 +373,7 @@ async def close_evaluation(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> object:
+    require_permission_now(current_user, "evaluations.update")
     evaluacion = await service.ensure_can_manage_evaluation(db, evaluacion_id, current_user)
     return await service.close_evaluation(db, evaluacion)
 
@@ -363,6 +384,7 @@ async def activate_reception(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> object:
+    require_permission_now(current_user, "evaluations.publish")
     evaluacion = await service.ensure_can_manage_evaluation(db, evaluacion_id, current_user)
     return await service.activate_reception(db, evaluacion)
 
@@ -373,6 +395,7 @@ async def pause_reception(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> object:
+    require_permission_now(current_user, "evaluations.publish")
     evaluacion = await service.ensure_can_manage_evaluation(db, evaluacion_id, current_user)
     return await service.pause_reception(db, evaluacion)
 
@@ -383,6 +406,7 @@ async def delete_evaluation(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> None:
+    require_permission_now(current_user, "evaluations.delete")
     evaluacion = await service.ensure_can_manage_evaluation(db, evaluacion_id, current_user)
     await service.delete_evaluation(db, evaluacion)
 
@@ -394,5 +418,6 @@ async def validate_structure(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> object:
+    require_permission_now(current_user, "evaluations.update")
     evaluacion = await service.ensure_can_manage_evaluation(db, evaluacion_id, current_user)
     return await service.validate_structure(db, evaluacion, payload)

@@ -75,9 +75,25 @@ Se guarda bajo `ai_jobs.input_json._ai_config`:
 
 Nunca contiene claves, tokens, base URLs privadas ni contenido de evidencia.
 
+## Configuración de Ollama Cloud
+
+La configuración institucional reutiliza el proveedor global, su credencial cifrada y el catálogo de modelos. La configuración personal reutiliza la credencial cifrada del docente. Ambas distinguen el origen institutional_cloud o teacher_cloud, y la consulta de modelos se realiza con la conexión efectiva.
+
+## Conector local del docente
+
+- Identidad del conector, propietario, nombre visible, estado, versión y última conexión.
+- Credencial de emparejamiento almacenada de forma no reversible y revocable.
+- Catálogo de modelos locales anunciado por el conector, capacidades conocidas y fecha de actualización.
+- Trabajos locales con identificador idempotente, docente propietario, modelo, estado, vencimiento y resultado sanitizado.
+- Código de emparejamiento temporal, de un solo uso y sin secretos persistentes en texto claro.
+
+El conector inicia la comunicación con el servidor, solo acepta trabajos de su propietario y nunca recibe claves de proveedores Cloud.
+
 ## Transiciones
 
 1. Configuración global: borrador → validada → publicada; una publicación inválida no modifica filas.
 2. Credencial docente: no configurada → configurada/no probada → disponible o error → sustituida/eliminada.
 3. Preferencia: institucional → automática → avanzada; volver a institucional conserva auditoría y desactiva preferencias.
 4. Trabajo: captura instantánea → en cola → ejecuta exactamente esa selección; si la credencial falta, aplica el fallback capturado o falla de forma reintentable.
+5. Conector: no vinculado → código emitido → emparejado/desconectado → conectado → revocado.
+6. Trabajo local: en espera de conector → entregado → ejecutando → completado o error/reintento; una repetición conserva el mismo resultado lógico.

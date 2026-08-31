@@ -1,0 +1,136 @@
+openapi: 3.1.0
+info:
+  title: XCalificator - Usuarios, roles y permisos
+  version: 1.0.0
+paths:
+  /admin/authorization/modules:
+    get:
+      summary: Consultar catálogo agrupado de módulos y permisos
+      responses:
+        "200":
+          description: Catálogo permitido para el actor
+  /admin/roles:
+    get:
+      summary: Listar roles del sistema y personalizados
+      responses:
+        "200":
+          description: Lista paginada
+    post:
+      summary: Crear un rol personalizado
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RoleWrite"
+      responses:
+        "201":
+          description: Rol creado
+        "403":
+          description: El actor intenta conceder un permiso que no posee
+        "409":
+          description: Nombre duplicado o versión en conflicto
+  /admin/roles/{role_id}:
+    get:
+      summary: Consultar rol, permisos y usuarios asignados
+      parameters:
+        - $ref: "#/components/parameters/RoleId"
+      responses:
+        "200":
+          description: Detalle del rol
+    patch:
+      summary: Editar rol con control de versión
+      parameters:
+        - $ref: "#/components/parameters/RoleId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RoleWrite"
+      responses:
+        "200":
+          description: Rol actualizado
+        "409":
+          description: Versión desactualizada
+    delete:
+      summary: Archivar o eliminar un rol sin asignaciones
+      parameters:
+        - $ref: "#/components/parameters/RoleId"
+      responses:
+        "204":
+          description: Rol retirado
+        "409":
+          description: Rol protegido o con asignaciones
+  /admin/roles/{role_id}/duplicate:
+    post:
+      summary: Duplicar un rol dentro del alcance del actor
+      parameters:
+        - $ref: "#/components/parameters/RoleId"
+      responses:
+        "201":
+          description: Copia creada
+  /admin/users:
+    post:
+      summary: Crear usuario con rol opcional
+      responses:
+        "201":
+          description: Usuario creado
+  /admin/users/{user_id}:
+    patch:
+      summary: Editar datos, estado, perfil y rol
+      responses:
+        "200":
+          description: Usuario actualizado
+        "403":
+          description: Elevación no autorizada
+    delete:
+      summary: Retirar o eliminar una cuenta según su impacto
+      responses:
+        "204":
+          description: Cuenta retirada
+        "409":
+          description: Requiere retiro seguro o está protegida
+  /admin/users/{user_id}/deletion-impact:
+    get:
+      summary: Consultar si la cuenta puede eliminarse definitivamente
+      responses:
+        "200":
+          description: Impacto y modo permitido
+  /users/me/authorization:
+    get:
+      summary: Consultar permisos efectivos y versión de autorización
+      responses:
+        "200":
+          description: Perfil, rol, permisos y capacidades de navegación
+components:
+  parameters:
+    RoleId:
+      name: role_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+  schemas:
+    RoleWrite:
+      type: object
+      required: [name, active, permission_keys, expected_version]
+      properties:
+        name:
+          type: string
+          minLength: 2
+          maxLength: 100
+        description:
+          type: string
+          maxLength: 500
+        active:
+          type: boolean
+        permission_keys:
+          type: array
+          uniqueItems: true
+          items:
+            type: string
+        expected_version:
+          type: integer
+          minimum: 0

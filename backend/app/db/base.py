@@ -7,6 +7,7 @@ class Base(DeclarativeBase):
 
 def import_models() -> None:
     from app.modules.analytics import models as analytics_models  # noqa: F401
+    from app.modules.authorization import models as authorization_models  # noqa: F401
     from app.modules.auth import models as auth_models  # noqa: F401
     from app.modules.asistencia import models as asistencia_models  # noqa: F401
     from app.modules.calificaciones import incidencia_models as incidencia_models  # noqa: F401
@@ -17,6 +18,7 @@ def import_models() -> None:
     from app.modules.imagenes import models as imagenes_models  # noqa: F401
     from app.modules.materias import models as materias_models  # noqa: F401
     from app.modules.matriculas import models as matriculas_models  # noqa: F401
+    from app.modules.ollama_connector import models as ollama_connector_models  # noqa: F401
     from app.modules.presentaciones import models as presentaciones_models  # noqa: F401
     from app.modules.rag import models as rag_models  # noqa: F401
     from app.modules.users import models as users_models  # noqa: F401

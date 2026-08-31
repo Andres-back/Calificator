@@ -15,6 +15,7 @@ const adminApi = vi.hoisted(() => ({
   restoreDefaults: vi.fn(),
   restorePreviousConfiguration: vi.fn(),
   publishAIConfiguration: vi.fn(),
+  refreshGlobalOllamaModels: vi.fn(),
   saveFeatures: vi.fn(),
   saveProviders: vi.fn(),
   testProvider: vi.fn(),
@@ -78,11 +79,13 @@ const settings: AISettings = {
     has_cloudflare: false,
     has_groq_key: false,
     has_open_code_key: true,
+    has_ollama_key: false,
     cloudflare_account_id: null,
     credential_sources: {
       openai: 'database',
       groq: 'not_configured',
       open_code: 'environment',
+      ollama: 'not_configured',
       cloudflare: 'not_configured',
     },
   },
@@ -141,6 +144,7 @@ beforeEach(() => {
   adminApi.restoreDefaults.mockResolvedValue({ status: 'ok' });
   adminApi.restorePreviousConfiguration.mockResolvedValue({ status: 'ok', version: 5 });
   adminApi.publishAIConfiguration.mockResolvedValue({ status: 'ok', version: 5 });
+  adminApi.refreshGlobalOllamaModels.mockResolvedValue([]);
   adminApi.clearCache.mockResolvedValue({ status: 'ok' });
   adminApi.testProvider.mockResolvedValue({ status: 'ok', latency_ms: 1, http_code: 200, error: null, detail: 'OK' });
   adminApi.updateGlobalAIConfig.mockResolvedValue({ status: 'updated' });
@@ -228,5 +232,27 @@ describe('AdminAIConfigPage', () => {
 
     await waitFor(() => expect(adminApi.updateGlobalAIConfig).toHaveBeenCalledWith({ groq_key: 'gsk-new-secret' }));
     expect(groqInput).toHaveValue('');
+  });
+
+  it('saves Ollama Cloud credentials and refreshes its discovered models', async () => {
+    const user = userEvent.setup();
+    adminApi.getAISettings.mockResolvedValue({
+      ...settings,
+      global_config: {
+        ...settings.global_config,
+        has_ollama_key: true,
+        credential_sources: { ...settings.global_config.credential_sources, ollama: 'database' },
+      },
+    });
+    adminApi.refreshGlobalOllamaModels.mockResolvedValue([settings.models![0]]);
+    renderPage();
+
+    const input = await screen.findByPlaceholderText('Clave de Ollama Cloud');
+    await user.type(input, 'ollama-synthetic-key');
+    await user.click(screen.getByRole('button', { name: 'Guardar credenciales' }));
+    await waitFor(() => expect(adminApi.updateGlobalAIConfig).toHaveBeenCalledWith({ ollama_key: 'ollama-synthetic-key' }));
+    expect(input).toHaveValue('');
+    await user.click(screen.getByRole('button', { name: 'Actualizar modelos' }));
+    await waitFor(() => expect(adminApi.refreshGlobalOllamaModels).toHaveBeenCalled());
   });
 });

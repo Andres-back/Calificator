@@ -397,6 +397,13 @@ function EvaluationFormModal({
 
 export function EvaluacionesPage() {
   const user = useAuth((state) => state.user);
+  const permissions = new Set(user?.permissions ?? []);
+  const canCreate = permissions.has('evaluations.create');
+  const canUpdate = permissions.has('evaluations.update');
+  const canPublish = permissions.has('evaluations.publish');
+  const canSubmit = permissions.has('evaluations.submit');
+  const canEnroll = permissions.has('subjects.enroll');
+  const isStudent = canSubmit && !canCreate && !canUpdate && !canPublish;
   const [params, setParams] = useSearchParams();
   const { data: materias, isLoading: loadingMaterias } = useMaterias();
   const materiaId = params.get('materia') || materias?.[0]?.id || '';
@@ -414,7 +421,7 @@ export function EvaluacionesPage() {
     queryKey: queryKeys.evaluaciones.list(materiaId),
     queryFn: () => listEvaluaciones(materiaId),
     enabled: !!materiaId,
-    refetchInterval: user?.rol === 'estudiante' ? 10_000 : false,
+    refetchInterval: isStudent ? 10_000 : false,
     refetchOnWindowFocus: true,
   });
 
@@ -483,7 +490,6 @@ export function EvaluacionesPage() {
   });
 
   const noMaterias = !loadingMaterias && (!materias || materias.length === 0);
-  const isStudent = user?.rol === 'estudiante';
 
   function openCreateModal() {
     setEditingEval(null);
@@ -606,7 +612,7 @@ export function EvaluacionesPage() {
             title="Evaluaciones"
             eyebrow={isStudent ? 'Tu aprendizaje' : 'Diseño evaluativo'}
             subtitle={isStudent ? 'Consulta las evaluaciones de tus materias y resuelve las que estén disponibles.' : 'Crea, publica y revisa evaluaciones con apoyo de IA.'}
-            action={!isStudent && !noMaterias && <div className="flex flex-wrap gap-2"><Button onClick={() => setWizardOpen(true)}><Sparkles className="h-4 w-4" /> Generar con IA</Button><Button variant="outline" onClick={openCreateModal} disabled={!materiaId}><Plus className="h-4 w-4" /> Crear manualmente</Button></div>}
+            action={canCreate && !noMaterias && <div className="flex flex-wrap gap-2"><Button onClick={() => setWizardOpen(true)}><Sparkles className="h-4 w-4" /> Generar con IA</Button><Button variant="outline" onClick={openCreateModal} disabled={!materiaId}><Plus className="h-4 w-4" /> Crear manualmente</Button></div>}
           />
         </div>
       </div>
@@ -616,7 +622,7 @@ export function EvaluacionesPage() {
           icon={ClipboardCheck}
           title={isStudent ? 'Aún no tienes materias inscritas' : 'Primero crea una materia'}
           description={isStudent ? 'Únete a una materia con el código que te compartió tu docente para consultar sus evaluaciones.' : 'Las evaluaciones pertenecen a una materia.'}
-          action={isStudent ? (
+          action={isStudent && canEnroll ? (
             <Link to="/app/materias?unirse=1" className="focus-ring inline-flex h-11 items-center justify-center gap-2 rounded-lg border border-brand-600 bg-brand-600 px-5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-brand-700">
               <UserPlus className="h-4 w-4" /> Unirme a materia
             </Link>
@@ -648,7 +654,7 @@ export function EvaluacionesPage() {
               image="/branding/empty-no-evals.png"
               title="Sin evaluaciones"
               description={isStudent ? 'No hay evaluaciones disponibles para esta materia.' : 'Crea la primera evaluación de esta materia.'}
-              action={!isStudent && <div className="flex flex-wrap justify-center gap-2"><Button onClick={() => setWizardOpen(true)}><Sparkles className="h-4 w-4" /> Generar con IA</Button><Button variant="outline" onClick={openCreateModal}><Plus className="h-4 w-4" /> Crear manualmente</Button></div>}
+              action={canCreate && <div className="flex flex-wrap justify-center gap-2"><Button onClick={() => setWizardOpen(true)}><Sparkles className="h-4 w-4" /> Generar con IA</Button><Button variant="outline" onClick={openCreateModal}><Plus className="h-4 w-4" /> Crear manualmente</Button></div>}
             />
           ) : (
             <div className="grid gap-3">
@@ -687,7 +693,7 @@ export function EvaluacionesPage() {
                       </div>
                     </div>
                     <div className="flex w-full flex-wrap gap-2 sm:w-auto sm:justify-end">
-                      {isStudent
+                      {isStudent && canSubmit
                         && ['publicada', 'en_calificacion', 'pendiente_revision', 'cerrada'].includes(ev.estado) && (
                         <Link
                           to={`/app/evaluaciones/${ev.id}/resolver`}
@@ -699,17 +705,17 @@ export function EvaluacionesPage() {
                           {getStudentEvaluationAction(ev)}
                         </Link>
                       )}
-                      {!isStudent && ev.estado === 'borrador' && (
+                      {ev.estado === 'borrador' && (canUpdate || canPublish) && (
                         <>
-                          <Button size="sm" variant="outline" onClick={() => openEditModal(ev)}>
+                          {canUpdate && <Button size="sm" variant="outline" onClick={() => openEditModal(ev)}>
                             <Pencil className="h-4 w-4" /> Editar
-                          </Button>
-                          <Button size="sm" loading={publicar.isPending} onClick={() => publicar.mutate(ev.id)}>
+                          </Button>}
+                          {canPublish && <Button size="sm" loading={publicar.isPending} onClick={() => publicar.mutate(ev.id)}>
                             <Send className="h-4 w-4" /> Publicar
-                          </Button>
+                          </Button>}
                         </>
                       )}
-                      {!isStudent && (ev.estado === 'publicada' || ev.estado === 'en_calificacion' || ev.estado === 'pendiente_revision') && (
+                      {canUpdate && (ev.estado === 'publicada' || ev.estado === 'en_calificacion' || ev.estado === 'pendiente_revision') && (
                         <Button size="sm" variant="outline" loading={cerrar.isPending} onClick={() => cerrar.mutate(ev.id)}><Lock className="h-4 w-4" /> Cerrar</Button>
                       )}
                     </div>
@@ -721,7 +727,7 @@ export function EvaluacionesPage() {
         </>
       )}
 
-      {user && !isStudent && (
+      {user && canCreate && (
         <GenerationWizard
           open={wizardOpen}
           onClose={() => { setWizardOpen(false); }}

@@ -39,6 +39,33 @@ export interface TeacherAIConfigUpdate {
   preferences: TeacherAIPreference[];
 }
 
+export interface OllamaModelEntry {
+  provider_id: 'ollama' | 'ollama_local';
+  model_id: string;
+  label: string;
+  capabilities: string[];
+  origin: 'cloud_personal' | 'local_connector';
+  connector_id?: string | null;
+  connector_name?: string | null;
+  available: boolean;
+}
+
+export interface OllamaConnector {
+  id: string;
+  name: string;
+  platform: 'windows';
+  version?: string | null;
+  status: string;
+  active: boolean;
+  last_seen_at?: string | null;
+  models: Array<{ model_id: string; capabilities: string[] }>;
+}
+
+export interface OllamaPairingCode {
+  code: string;
+  expires_at: string;
+}
+
 export async function getTeacherAIConfig(): Promise<TeacherAIConfig> {
   const { data } = await api.get<TeacherAIConfig>('/profesor/ai-config');
   return data;
@@ -63,4 +90,28 @@ export async function testTeacherProvider(
 ): Promise<ProviderTestResult> {
   const { data } = await api.post<ProviderTestResult>(`/profesor/ai-providers/${provider}/test`, options);
   return data;
+}
+
+export async function refreshTeacherOllamaModels(): Promise<OllamaModelEntry[]> {
+  const { data } = await api.post<OllamaModelEntry[]>('/profesor/ai-providers/ollama/models/refresh');
+  return data;
+}
+
+export async function getTeacherOllamaModels(): Promise<OllamaModelEntry[]> {
+  const { data } = await api.get<OllamaModelEntry[]>('/profesor/ai-providers/ollama/models');
+  return data;
+}
+
+export async function getOllamaConnectors(): Promise<OllamaConnector[]> {
+  const { data } = await api.get<OllamaConnector[]>('/profesor/ollama-connectors');
+  return data;
+}
+
+export async function createOllamaPairingCode(): Promise<OllamaPairingCode> {
+  const { data } = await api.post<OllamaPairingCode>('/profesor/ollama-connectors/pairing');
+  return data;
+}
+
+export async function revokeOllamaConnector(connectorId: string): Promise<void> {
+  await api.delete(`/profesor/ollama-connectors/${connectorId}`);
 }

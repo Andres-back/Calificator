@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
-import { KeyRound, PlugZap, Trash2 } from 'lucide-react';
+import { Cloud, Copy, KeyRound, MonitorCog, PlugZap, RefreshCw, Trash2, Unplug } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Badge, Button, Card, EducationalIcon, Field, Input, QueryError, QueryLoading, Select } from '@/components/ui';
 import type { EducationalIconName } from '@/components/ui/EducationalIcon';
@@ -10,7 +10,12 @@ import { toApiError } from '@/lib/api';
 import { queryKeys } from '@/config/queryKeys';
 import {
   deleteTeacherCredential,
+  createOllamaPairingCode,
+  getOllamaConnectors,
+  getTeacherOllamaModels,
   getTeacherAIConfig,
+  refreshTeacherOllamaModels,
+  revokeOllamaConnector,
   saveTeacherAIConfig,
   saveTeacherCredential,
   testTeacherProvider,
@@ -53,6 +58,19 @@ export function TeacherAIConfigPage() {
   const [allowFallback, setAllowFallback] = useState(true);
   const [preferences, setPreferences] = useState<TeacherAIPreference[]>([]);
   const [keys, setKeys] = useState<Record<string, string>>({});
+  const [pairing, setPairing] = useState<{ code: string; expires_at: string } | null>(null);
+
+  const connectorsQuery = useQuery({
+    queryKey: queryKeys.teacherAI.ollamaConnectors(),
+    queryFn: getOllamaConnectors,
+    retry: false,
+    refetchInterval: 15_000,
+  });
+  const ollamaModelsQuery = useQuery({
+    queryKey: queryKeys.teacherAI.ollamaModels(),
+    queryFn: getTeacherOllamaModels,
+    retry: false,
+  });
 
   useEffect(() => {
     if (!configQuery.data) return;
@@ -61,10 +79,11 @@ export function TeacherAIConfigPage() {
     setPreferences(configQuery.data.preferences);
   }, [configQuery.data]);
 
-  const configuredProviders = useMemo(
-    () => new Set(configQuery.data?.credentials.filter((item) => item.configured).map((item) => item.provider_id) ?? []),
-    [configQuery.data?.credentials],
-  );
+  const configuredProviders = useMemo(() => {
+    const configured = new Set(configQuery.data?.credentials.filter((item) => item.configured).map((item) => item.provider_id) ?? []);
+    if (connectorsQuery.data?.some((item) => item.active && item.models.length > 0)) configured.add('ollama_local');
+    return configured;
+  }, [configQuery.data?.credentials, connectorsQuery.data]);
 
   const saveConfigMutation = useMutation({
     mutationFn: () => saveTeacherAIConfig({
@@ -109,6 +128,30 @@ export function TeacherAIConfigPage() {
     onSuccess: (result) => result.status === 'ok'
       ? toast.success(result.detail || 'Conexión comprobada.')
       : toast.error(result.detail || 'No fue posible conectar.'),
+    onError: (error) => toast.error(toApiError(error).detail),
+  });
+
+  const refreshModelsMutation = useMutation({
+    mutationFn: refreshTeacherOllamaModels,
+    onSuccess: (models) => {
+      queryClient.setQueryData(queryKeys.teacherAI.ollamaModels(), models);
+      void queryClient.invalidateQueries({ queryKey: queryKeys.teacherAI.config() });
+      toast.success(`${models.length} modelo${models.length === 1 ? '' : 's'} de Ollama Cloud actualizado${models.length === 1 ? '' : 's'}.`);
+    },
+    onError: (error) => toast.error(toApiError(error).detail),
+  });
+  const pairingMutation = useMutation({
+    mutationFn: createOllamaPairingCode,
+    onSuccess: (value) => setPairing(value),
+    onError: (error) => toast.error(toApiError(error).detail),
+  });
+  const revokeConnectorMutation = useMutation({
+    mutationFn: revokeOllamaConnector,
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.teacherAI.ollamaConnectors() });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.teacherAI.config() });
+      toast.success('Conector revocado. Ya no podrá reclamar trabajos.');
+    },
     onError: (error) => toast.error(toApiError(error).detail),
   });
 
@@ -167,7 +210,7 @@ export function TeacherAIConfigPage() {
             <p className="text-sm text-muted">Solo puedes conectar proveedores previamente autorizados por el administrador.</p>
           </div>
           <div className="grid gap-4 lg:grid-cols-2">
-            {config.providers.map((provider) => {
+            {config.providers.filter((provider) => provider.id !== 'ollama_local').map((provider) => {
               const metadata = config.credentials.find((item) => item.provider_id === provider.id);
               const apiKey = keys[provider.id] ?? '';
               const configured = configuredProviders.has(provider.id);
@@ -196,10 +239,49 @@ export function TeacherAIConfigPage() {
                     <Button size="sm" disabled={!apiKey.trim()} loading={credentialMutation.isPending} onClick={() => credentialMutation.mutate({ provider: provider.id, apiKey })}>Guardar clave</Button>
                     <Button size="sm" variant="outline" loading={testMutation.isPending} disabled={!configured && !apiKey.trim()} onClick={() => testMutation.mutate({ provider: provider.id, apiKey: apiKey.trim() || undefined })}><PlugZap className="h-4 w-4" /> Probar</Button>
                     {configured && <Button size="sm" variant="ghost" loading={deleteMutation.isPending} onClick={() => deleteMutation.mutate(provider.id)}><Trash2 className="h-4 w-4" /> Eliminar</Button>}
+                    {provider.id === 'ollama' && configured && <Button size="sm" variant="outline" loading={refreshModelsMutation.isPending} onClick={() => refreshModelsMutation.mutate()}><RefreshCw className="h-4 w-4" /> Actualizar modelos</Button>}
                   </div>
+                  {provider.id === 'ollama' && <p className="mt-3 flex items-center gap-2 text-xs text-muted"><Cloud className="h-4 w-4" /> {ollamaModelsQuery.data?.filter((item) => item.origin === 'cloud_personal' && item.available).length ?? 0} modelos Cloud disponibles.</p>}
                 </Card>
               );
             })}
+          </div>
+        </section>
+      )}
+
+      {mode !== 'institutional' && (
+        <section className="space-y-3" aria-labelledby="ollama-local-title">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <h2 id="ollama-local-title" className="font-display text-xl font-bold">Ollama local en tu computador</h2>
+              <p className="text-sm text-muted">El conector Windows consulta XCalificator de forma saliente y llama únicamente a 127.0.0.1:11434. No abre tu Ollama a Internet.</p>
+              <p className="mt-1 text-xs font-semibold text-amber-700 dark:text-amber-300">Disponible para generar presentaciones en segundo plano. Las calificaciones, entregas y documentos estudiantiles nunca se envían al conector local.</p>
+            </div>
+            <Button variant="outline" loading={pairingMutation.isPending} onClick={() => pairingMutation.mutate()}><MonitorCog className="h-4 w-4" /> Vincular computador</Button>
+          </div>
+          {pairing && (
+            <Card className="border-brand-300 p-5 dark:border-brand-500/40">
+              <p className="text-sm font-semibold">Código de un solo uso</p>
+              <div className="mt-2 flex flex-wrap items-center gap-3">
+                <code className="rounded-xl bg-surface-2 px-4 py-3 font-mono text-xl font-bold tracking-widest">{pairing.code}</code>
+                <Button size="sm" variant="outline" onClick={() => void navigator.clipboard.writeText(pairing.code).then(() => toast.success('Código copiado.'))}><Copy className="h-4 w-4" /> Copiar</Button>
+              </div>
+              <p className="mt-2 text-xs text-muted">Caduca {new Date(pairing.expires_at).toLocaleString()}. El token permanente se entrega solo al conector y nunca aparece aquí.</p>
+            </Card>
+          )}
+          <div className="grid gap-3 lg:grid-cols-2">
+            {(connectorsQuery.data ?? []).map((connector) => (
+              <Card key={connector.id} className="p-5">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-center gap-3"><span className="grid h-10 w-10 place-items-center rounded-xl bg-cyan-500/10 text-cyan-600"><MonitorCog className="h-5 w-5" /></span><div><p className="font-semibold">{connector.name}</p><p className="text-xs text-muted">Windows · {connector.version ?? 'versión no informada'}</p></div></div>
+                  <Badge tone={connector.status === 'connected' ? 'success' : 'neutral'}>{connector.status === 'connected' ? 'Conectado' : connector.status === 'revoked' ? 'Revocado' : 'Sin conexión'}</Badge>
+                </div>
+                <p className="mt-4 text-sm text-secondary">{connector.models.length} modelo{connector.models.length === 1 ? '' : 's'} detectado{connector.models.length === 1 ? '' : 's'}.</p>
+                <p className="mt-1 text-xs text-muted">Última señal: {connector.last_seen_at ? new Date(connector.last_seen_at).toLocaleString() : 'aún no recibida'}</p>
+                <Button size="sm" variant="ghost" className="mt-3 text-rose-600 dark:text-rose-300" loading={revokeConnectorMutation.isPending} onClick={() => revokeConnectorMutation.mutate(connector.id)}><Unplug className="h-4 w-4" /> Revocar</Button>
+              </Card>
+            ))}
+            {!connectorsQuery.isLoading && (connectorsQuery.data?.length ?? 0) === 0 && <Card className="p-5 text-sm text-muted">No hay computadores vinculados. Genera un código y escríbelo en el conector Windows.</Card>}
           </div>
         </section>
       )}
@@ -212,7 +294,11 @@ export function TeacherAIConfigPage() {
             {config.features.map((feature) => {
               const current = preferences.find((item) => item.feature === feature.feature);
               const capability = feature.capability ?? 'text';
-              const providers = config.providers.filter((provider) => configuredProviders.has(provider.id) && compatibleModels(config, provider.id, capability).length > 0);
+              const providers = config.providers.filter((provider) => (
+                configuredProviders.has(provider.id)
+                && (provider.id !== 'ollama_local' || feature.feature === 'presentaciones')
+                && compatibleModels(config, provider.id, capability).length > 0
+              ));
               const selectedProvider = current?.provider ?? '';
               const models = compatibleModels(config, selectedProvider, capability);
               return (
@@ -248,7 +334,7 @@ export function TeacherAIConfigPage() {
             <span><span className="block font-semibold">Usar IA institucional si mi proveedor falla</span><span className="block text-sm text-muted">Con tu consentimiento, el trabajo continúa con la ruta segura de la institución. Si lo desactivas, el trabajo se marca para reintento sin perderse.</span></span>
           </label>
           <div className="rounded-xl bg-surface-2 p-4 text-sm leading-6 text-secondary">
-            <strong>Antes de conectar:</strong> una suscripción de ChatGPT no incluye automáticamente crédito de OpenAI API. OpenCode usa su propia clave. Ollama solo puede utilizarse si el servidor de XCalificator tiene conectividad con esa instalación; por seguridad el docente no puede escribir URLs privadas.
+            <strong>Antes de conectar:</strong> una suscripción de ChatGPT no incluye automáticamente crédito de OpenAI API. OpenCode y Ollama Cloud usan sus propias claves. Para Ollama local utiliza el conector Windows; por seguridad no se aceptan URLs privadas escritas por el docente.
           </div>
         </Card>
       )}

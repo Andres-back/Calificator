@@ -3,7 +3,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Query, Response, UploadFile, File, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.permissions import get_current_user, require_roles
+from app.core.permissions import get_current_user, require_permission, require_permission_now
 from app.db.session import get_db
 from app.modules.dba import service
 from app.modules.dba.models import DBAPersonalizado
@@ -29,16 +29,17 @@ router = APIRouter(prefix="/dba", tags=["dba"])
 async def list_dba(
     area: str | None = Query(default=None),
     grado: str | None = Query(default=None),
-    _: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> list[object]:
+    require_permission_now(current_user, "dba.read")
     return await service.search_dba(db, area=area, grado=grado)
 
 
 @router.post("/importar", response_model=list[DBARead], status_code=status.HTTP_201_CREATED)
 async def import_dba(
     payload: DBAImportRequest,
-    _: User = Depends(require_roles(UserRole.ADMIN)),
+    _: User = Depends(require_permission("dba.manage")),
     db: AsyncSession = Depends(get_db),
 ) -> list[object]:
     return await service.import_dba(db, payload.items)
@@ -68,6 +69,7 @@ async def list_dba_personalizados(
     db: AsyncSession = Depends(get_db),
 ) -> list[object]:
     # Lectura permitida a dueño/admin y estudiantes matriculados de la materia.
+    require_permission_now(current_user, "dba.read")
     await materias_service.ensure_can_read_materia(db, materia_id, current_user)
     return await service.list_dba_personalizados_by_materia(db, materia_id)
 
@@ -85,6 +87,7 @@ async def create_dba_personalizado(
     db: AsyncSession = Depends(get_db),
 ) -> object:
     # Solo el profesor dueño de la materia (o admin) puede crear DBA en ella.
+    require_permission_now(current_user, "dba.manage")
     materia = await materias_service.ensure_can_manage_materia(db, materia_id, current_user)
     return await service.create_dba_personalizado(
         db,
@@ -107,6 +110,7 @@ async def update_dba_personalizado(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> object:
+    require_permission_now(current_user, "dba.manage")
     row = await service.get_dba_personalizado_or_404(db, dba_id)
     _ensure_can_manage_dba(row, current_user)
     return await service.update_dba_personalizado(db, row, payload)
@@ -122,6 +126,7 @@ async def delete_dba_personalizado(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> Response:
+    require_permission_now(current_user, "dba.manage")
     row = await service.get_dba_personalizado_or_404(db, dba_id)
     _ensure_can_manage_dba(row, current_user)
     await service.deactivate_dba_personalizado(db, row)
@@ -138,6 +143,7 @@ async def list_materia_dba_combined(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> list[dict]:
+    require_permission_now(current_user, "dba.read")
     materia = await materias_service.ensure_can_read_materia(db, materia_id, current_user)
     return await service.list_combined_dba(db, materia)
 
@@ -158,6 +164,7 @@ async def upload_document_for_dba(
     db: AsyncSession = Depends(get_db),
 ) -> object:
     """Sube un PDF o DOCX, extrae texto, genera sugerencias de DBA vía RAG+LLM."""
+    require_permission_now(current_user, "dba.manage")
     materia = await materias_service.ensure_can_manage_materia(db, materia_id, current_user)
 
     contenido = await read_upload_limited(file, 20 * 1024 * 1024)

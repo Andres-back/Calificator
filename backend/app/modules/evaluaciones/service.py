@@ -133,8 +133,7 @@ async def ensure_can_read_evaluation(
     if current_user.rol == UserRole.ADMIN.value or evaluacion.profesor_id == current_user.id:
         return evaluacion
     if (
-        current_user.rol == UserRole.ESTUDIANTE.value
-        and evaluacion.estado in STUDENT_VISIBLE_EVALUATION_STATES
+        evaluacion.estado in STUDENT_VISIBLE_EVALUATION_STATES
         and await _linked_material_is_visible(db, evaluacion)
         and await is_student_enrolled(db, evaluacion.materia_id, current_user.id)
     ):
@@ -385,8 +384,6 @@ async def get_student_activity(
     evaluacion_id: UUID,
     current_user: User,
 ) -> dict | None:
-    if current_user.rol != UserRole.ESTUDIANTE.value:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Solo disponible para estudiantes")
     evaluacion = await get_evaluation_or_404(db, evaluacion_id)
     if (
         evaluacion.estado not in STUDENT_VISIBLE_EVALUATION_STATES
@@ -522,7 +519,11 @@ async def list_evaluations_for_materia(
     materia_id: UUID,
     current_user: User,
 ) -> list[Evaluacion | dict]:
-    await ensure_can_read_materia(db, materia_id, current_user)
+    materia = await ensure_can_read_materia(db, materia_id, current_user)
+    manages_context = (
+        current_user.rol == UserRole.ADMIN.value
+        or materia.profesor_id == current_user.id
+    )
     stmt = (
         select(Evaluacion)
         .options(selectinload(Evaluacion.blueprint))
@@ -532,13 +533,13 @@ async def list_evaluations_for_materia(
         )
         .order_by(Evaluacion.created_at.desc())
     )
-    if current_user.rol == UserRole.ESTUDIANTE.value:
+    if not manages_context:
         stmt = stmt.where(
             Evaluacion.estado.in_(STUDENT_VISIBLE_EVALUATION_STATES)
         )
     result = await db.scalars(stmt)
     evaluaciones = list(result)
-    if current_user.rol == UserRole.ESTUDIANTE.value:
+    if not manages_context:
         visible_evaluations = [
             evaluacion
             for evaluacion in evaluaciones

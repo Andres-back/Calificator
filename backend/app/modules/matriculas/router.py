@@ -3,7 +3,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.permissions import get_current_user
+from app.core.permissions import get_current_user, require_permission_now
 from app.db.session import get_db
 from app.modules.matriculas import service
 from app.modules.matriculas.schemas import MatriculaEstadoUpdate, MatriculaJoinRequest, MatriculaRead, MisMateriasRead
@@ -18,6 +18,7 @@ async def join_materia(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> object:
+    require_permission_now(current_user, "subjects.enroll")
     return await service.join_by_code(db, payload.codigo_matricula, current_user)
 
 
@@ -26,6 +27,7 @@ async def mis_materias(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> MisMateriasRead:
+    require_permission_now(current_user, "subjects.read")
     materias = await service.list_mis_materias(db, current_user)
     return MisMateriasRead(materias=materias)
 
@@ -37,4 +39,5 @@ async def update_estado(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> object:
+    require_permission_now(current_user, "subjects.update")
     return await service.update_estado(db, matricula_id, payload.estado, current_user)

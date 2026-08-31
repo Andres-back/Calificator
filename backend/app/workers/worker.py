@@ -48,6 +48,14 @@ celery_app.conf.update(
             "task": "tasks.recover_stale_grading_jobs",
             "schedule": float(settings.AI_JOB_RECOVERY_INTERVAL_SECONDS),
         },
+        "recover-stale-presentation-jobs": {
+            "task": "tasks.recover_stale_presentation_jobs",
+            "schedule": float(settings.AI_JOB_RECOVERY_INTERVAL_SECONDS),
+        },
+        "recover-expired-local-jobs": {
+            "task": "tasks.recover_expired_local_jobs",
+            "schedule": 60.0,
+        },
     },
 )
 

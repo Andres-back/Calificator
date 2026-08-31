@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from datetime import datetime, timezone
 from typing import Any
 
@@ -10,7 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
 from app.core.logging import get_logger
-from app.core.permissions import get_current_user, require_role
+from app.core.permissions import get_current_user, require_permission_now
 from app.db.session import get_db
 from app.services.ai_credentials_service import (
     EffectiveAICredentials,
@@ -22,6 +23,7 @@ from app.services.ai_credentials_service import (
     get_teacher_ai_credential,
 )
 from app.services.ai_config_service import AIConfigService
+from app.services.ollama_provider import OllamaCloudProvider, OllamaProviderError
 from app.modules.admin_ai_config.usage_service import (
     get_recent_provider_errors,
     get_usage_summary,
@@ -39,9 +41,10 @@ from app.modules.admin_ai_config.schemas import (
     ProviderModelTestRequest,
     FeatureRoutingPublication,
     AIConfigurationPublication,
+    AIModel,
+    OllamaModelRead,
 )
 from app.modules.users.models import User
-from app.shared.enums import UserRole
 
 logger = get_logger(__name__)
 
@@ -60,6 +63,7 @@ def _global_config_payload(
         "has_cloudflare": credentials.configured_for("cloudflare"),
         "has_groq_key": credentials.configured_for("groq"),
         "has_open_code_key": credentials.configured_for("open_code"),
+        "has_ollama_key": credentials.configured_for("ollama"),
         "cloudflare_account_id": credentials.cloudflare_account_id or None,
         "credential_sources": credentials.sources or {},
     }
@@ -100,13 +104,13 @@ def _provider_list() -> list[dict[str, Any]]:
         },
         {
             "name": "ollama",
-            "label": "Ollama",
-            "base_url": settings.OLLAMA_ENDPOINT,
+            "label": "Ollama Cloud",
+            "base_url": settings.OLLAMA_CLOUD_BASE_URL,
             "model": settings.OLLAMA_MODEL,
             "priority": 3,
             "timeout_seconds": settings.OLLAMA_TIMEOUT_SECONDS,
             "max_retries": 1,
-            "auth_configured": True,
+            "auth_configured": bool(settings.OLLAMA_API_KEY),
         },
         {
             "name": "template",
@@ -208,14 +212,16 @@ async def _test_provider_connection(
                 result["error"] = r.text[:200]
 
         elif provider == "ollama":
-            async with httpx.AsyncClient(timeout=10) as c:
-                r = await c.get(f"{settings.OLLAMA_ENDPOINT}/api/tags")
+            client = OllamaCloudProvider(
+                credentials.ollama_key,
+                base_url=str(provider_config.get("base_url") or settings.OLLAMA_CLOUD_BASE_URL),
+                timeout_seconds=float(provider_config.get("timeout_seconds") or 10),
+            )
+            await client.list_models()
             elapsed = (datetime.now(timezone.utc) - start).total_seconds() * 1000
-            result["status"] = "ok" if r.status_code == 200 else "error"
-            result["http_code"] = r.status_code
+            result["status"] = "ok"
+            result["http_code"] = 200
             result["latency_ms"] = int(elapsed)
-            if r.status_code != 200:
-                result["error"] = r.text[:200]
 
         elif provider in {"openai", "openai_image"}:
             if not credentials.openai_key:
@@ -250,11 +256,11 @@ async def _test_provider_connection(
             result["latency_ms"] = 0
             result["http_code"] = 200
 
-    except httpx.TimeoutException:
+    except (httpx.TimeoutException, OllamaProviderError) as exc:
         elapsed = (datetime.now(timezone.utc) - start).total_seconds() * 1000
         result["status"] = "error"
         result["latency_ms"] = int(elapsed)
-        result["error"] = "Timeout de conexión"
+        result["error"] = str(exc)[:200] if isinstance(exc, OllamaProviderError) else "Timeout de conexión"
     except Exception as exc:
         elapsed = (datetime.now(timezone.utc) - start).total_seconds() * 1000
         result["status"] = "error"
@@ -264,6 +270,85 @@ async def _test_provider_connection(
     return result
 
 
+async def _persist_global_ollama_models(
+    db: AsyncSession,
+    models: list[Any],
+    *,
+    actor_id: Any,
+) -> list[dict[str, Any]]:
+    await db.execute(text("UPDATE ai_provider_models SET active=false, updated_at=NOW() WHERE provider_id='ollama'"))
+    for model in models:
+        await db.execute(
+            text(
+                "INSERT INTO ai_provider_models "
+                "(provider_id, model_id, label, capabilities, recommended, active, updated_at, updated_by) "
+                "VALUES ('ollama', :model_id, :label, :capabilities, false, true, NOW(), :actor) "
+                "ON CONFLICT (provider_id, model_id) DO UPDATE SET "
+                "label=EXCLUDED.label, capabilities=EXCLUDED.capabilities, active=true, "
+                "updated_at=NOW(), updated_by=EXCLUDED.updated_by"
+            ),
+            {
+                "model_id": model.model_id,
+                "label": model.label,
+                "capabilities": list(model.capabilities),
+                "actor": str(actor_id),
+            },
+        )
+    return [
+        {
+            "provider_id": "ollama",
+            "model_id": model.model_id,
+            "label": model.label,
+            "capabilities": list(model.capabilities),
+            "recommended": False,
+            "active": True,
+            "max_context_tokens": None,
+        }
+        for model in models
+    ]
+
+
+async def _persist_teacher_ollama_models(
+    db: AsyncSession,
+    teacher_id: Any,
+    models: list[Any],
+) -> list[dict[str, Any]]:
+    await db.execute(
+        text(
+            "UPDATE profesor_ai_provider_models SET active=false, updated_at=NOW() "
+            "WHERE profesor_id=:teacher AND provider_id='ollama'"
+        ),
+        {"teacher": str(teacher_id)},
+    )
+    for model in models:
+        await db.execute(
+            text(
+                "INSERT INTO profesor_ai_provider_models "
+                "(profesor_id, provider_id, model_id, label, capabilities, active, updated_at) "
+                "VALUES (:teacher, 'ollama', :model_id, :label, CAST(:capabilities AS jsonb), true, NOW()) "
+                "ON CONFLICT (profesor_id, provider_id, model_id) DO UPDATE SET "
+                "label=EXCLUDED.label, capabilities=EXCLUDED.capabilities, active=true, updated_at=NOW()"
+            ),
+            {
+                "teacher": str(teacher_id),
+                "model_id": model.model_id,
+                "label": model.label,
+                "capabilities": json.dumps(list(model.capabilities)),
+            },
+        )
+    return [
+        {
+            "provider_id": "ollama",
+            "model_id": model.model_id,
+            "label": model.label,
+            "capabilities": list(model.capabilities),
+            "origin": "cloud_personal",
+            "available": True,
+        }
+        for model in models
+    ]
+
+
 # ── Config global ─────────────────────────────────────────────────────────────
 
 @router.get("/admin/ai-config", response_model=GlobalAIConfigRead)
@@ -271,7 +356,7 @@ async def get_global_config(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> dict:
-    require_role(current_user, [UserRole.ADMIN])
+    require_permission_now(current_user, "admin_ai.manage")
     row = await db.execute(text("SELECT * FROM ai_global_config ORDER BY created_at DESC LIMIT 1"))
     stored_row = row.fetchone()
     stored = dict(stored_row._mapping) if stored_row else {}
@@ -285,7 +370,7 @@ async def update_global_config(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> dict:
-    require_role(current_user, [UserRole.ADMIN])
+    require_permission_now(current_user, "admin_ai.manage")
     existing = await db.execute(text("SELECT id FROM ai_global_config LIMIT 1"))
     row = existing.fetchone()
     secret_mapping = {
@@ -293,12 +378,14 @@ async def update_global_config(
         "groq_key": "groq_key_encrypted",
         "cloudflare_token": "cloudflare_token_encrypted",
         "open_code_key": "open_code_key_encrypted",
+        "ollama_key": "ollama_key_encrypted",
     }
     clear_mapping = {
         "openai_key": payload.clear_openai_key,
         "groq_key": payload.clear_groq_key,
         "cloudflare_token": payload.clear_cloudflare_token,
         "open_code_key": payload.clear_open_code_key,
+        "ollama_key": payload.clear_ollama_key,
     }
     updates: dict[str, Any] = {}
     provided_fields = payload.model_fields_set
@@ -347,7 +434,7 @@ async def get_full_ai_settings(
     db: AsyncSession = Depends(get_db),
 ) -> dict:
     """Return the effective persisted IA configuration plus non-sensitive runtime status."""
-    require_role(current_user, [UserRole.ADMIN])
+    require_permission_now(current_user, "admin_ai.manage")
     svc = AIConfigService(db=db)
     await svc.init()
     credentials = await get_effective_ai_credentials(db)
@@ -406,7 +493,7 @@ async def test_provider(
     db: AsyncSession = Depends(get_db),
 ) -> dict:
     """Prueba la conexión con un proveedor de IA específico."""
-    require_role(current_user, [UserRole.ADMIN])
+    require_permission_now(current_user, "admin_ai.manage")
     valid_providers = {p["name"] for p in _provider_list()}
     if provider not in valid_providers:
         return {"status": "error", "detail": f"Proveedor desconocido: {provider}"}
@@ -432,6 +519,25 @@ async def test_provider(
     }
 
 
+@router.post("/admin/ai-providers/ollama/models/refresh", response_model=list[AIModel])
+async def refresh_global_ollama_models(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> list[dict[str, Any]]:
+    require_permission_now(current_user, "admin_ai.manage")
+    credentials = await get_effective_ai_credentials(db)
+    if not credentials.ollama_key:
+        raise HTTPException(status_code=422, detail="Configura primero la clave institucional de Ollama Cloud.")
+    client = OllamaCloudProvider(credentials.ollama_key, base_url=settings.OLLAMA_CLOUD_BASE_URL)
+    try:
+        discovered = await client.discover_models()
+    except OllamaProviderError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+    models = await _persist_global_ollama_models(db, discovered, actor_id=current_user.id)
+    await db.commit()
+    return models
+
+
 def _test_detail_message(result: dict, provider: str) -> str:
     if result["status"] == "ok":
         return f"Conexión exitosa ({result['latency_ms']}ms)"
@@ -445,7 +551,7 @@ async def get_usage_stats(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> dict:
-    require_role(current_user, [UserRole.ADMIN])
+    require_permission_now(current_user, "admin_ai.manage")
     return await get_usage_summary(db)
 
 
@@ -455,7 +561,7 @@ async def clear_ai_cache(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> dict:
-    require_role(current_user, [UserRole.ADMIN])
+    require_permission_now(current_user, "admin_ai.manage")
     svc = AIConfigService(db=db)
     await svc.init()
     await svc.invalidate_cache()
@@ -470,7 +576,7 @@ async def publish_ai_configuration(
     db: AsyncSession = Depends(get_db),
 ) -> dict:
     """Publish providers, models and routes in one version-checked transaction."""
-    require_role(current_user, [UserRole.ADMIN])
+    require_permission_now(current_user, "admin_ai.manage")
     svc = AIConfigService(db=db)
     await svc.init()
     locked = await db.execute(text("SELECT config_version FROM ai_feature_routing FOR UPDATE"))
@@ -534,7 +640,7 @@ async def save_providers(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> dict:
-    require_role(current_user, [UserRole.ADMIN])
+    require_permission_now(current_user, "admin_ai.manage")
     svc = AIConfigService(db=db)
     await svc.init()
 
@@ -562,7 +668,7 @@ async def save_features(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> dict:
-    require_role(current_user, [UserRole.ADMIN])
+    require_permission_now(current_user, "admin_ai.manage")
     svc = AIConfigService(db=db)
     await svc.init()
     if isinstance(payload, FeatureRoutingPublication):
@@ -612,7 +718,7 @@ async def update_provider(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> dict:
-    require_role(current_user, [UserRole.ADMIN])
+    require_permission_now(current_user, "admin_ai.manage")
     svc = AIConfigService(db=db)
     await svc.init()
     updates = payload.model_dump(exclude_none=True)
@@ -627,7 +733,7 @@ async def restore_defaults(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> dict:
-    require_role(current_user, [UserRole.ADMIN])
+    require_permission_now(current_user, "admin_ai.manage")
     svc = AIConfigService(db=db)
     await svc.init()
     await svc.restore_defaults(admin_id=current_user.id)
@@ -639,7 +745,7 @@ async def restore_previous_configuration(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> dict:
-    require_role(current_user, [UserRole.ADMIN])
+    require_permission_now(current_user, "admin_ai.manage")
     svc = AIConfigService(db=db)
     await svc.init()
     version = await svc.restore_previous_configuration(admin_id=current_user.id)
@@ -656,7 +762,7 @@ async def get_config_hash(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> dict:
-    require_role(current_user, [UserRole.ADMIN])
+    require_permission_now(current_user, "admin_ai.manage")
     svc = AIConfigService(db=db)
     await svc.init()
     backend_hash = await svc.get_config_hash()
@@ -690,7 +796,7 @@ async def get_audit_logs(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> dict:
-    require_role(current_user, [UserRole.ADMIN])
+    require_permission_now(current_user, "admin_ai.manage")
     total = await db.execute(text("SELECT COUNT(*) FROM ai_config_audit_logs"))
     total_count = total.scalar()
     rows = await db.execute(
@@ -718,7 +824,7 @@ async def update_profesor_config(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> dict:
-    require_role(current_user, [UserRole.PROFESOR])
+    require_permission_now(current_user, "ai_settings.personal")
     if payload.openai_key is not None:
         await _teacher_allowed_provider(db, "openai")
         await upsert_teacher_ai_credential(
@@ -785,6 +891,8 @@ async def _teacher_allowed_provider(db: AsyncSession, provider: str) -> dict[str
 async def _validate_teacher_preferences(
     db: AsyncSession,
     preferences: list[Any],
+    *,
+    teacher_id: Any,
 ) -> None:
     service = AIConfigService(db=db)
     providers = {item["id"]: item for item in await service.get_all_providers()}
@@ -793,14 +901,38 @@ async def _validate_teacher_preferences(
     for preference in preferences:
         if not preference.active:
             continue
-        provider = providers.get(preference.provider or "")
+        provider_id = preference.provider or ""
         feature = features.get(preference.feature)
-        model = models.get((preference.provider or "", preference.model or ""))
         if not feature or not feature.get("active"):
             raise HTTPException(status_code=422, detail=f"Funcionalidad desconocida o inactiva: {preference.feature}.")
+        capability = str(feature.get("capability") or "text")
+        if provider_id == "ollama_local":
+            if preference.feature != "presentaciones":
+                raise HTTPException(
+                    status_code=422,
+                    detail="Ollama local está habilitado únicamente para presentaciones sin datos estudiantiles.",
+                )
+            local_model = await db.scalar(
+                text(
+                    "SELECT m.model_id FROM ollama_connector_models m "
+                    "JOIN ollama_connectors c ON c.id=m.connector_id "
+                    "WHERE c.profesor_id=:teacher AND c.active=true AND m.available=true "
+                    "AND m.model_id=:model AND CAST(:capability AS text) IN "
+                    "(SELECT jsonb_array_elements_text(m.capabilities)) LIMIT 1"
+                ),
+                {
+                    "teacher": str(teacher_id),
+                    "model": preference.model or "",
+                    "capability": capability,
+                },
+            )
+            if not local_model:
+                raise HTTPException(status_code=422, detail="El modelo local ya no está disponible en el conector.")
+            continue
+        provider = providers.get(provider_id)
+        model = models.get((provider_id, preference.model or ""))
         if not provider or not provider.get("active") or not provider.get("allow_teacher_credentials"):
             raise HTTPException(status_code=422, detail=f"Proveedor no autorizado para {preference.feature}.")
-        capability = str((feature or {}).get("capability") or "text")
         if not model or not model.get("active") or capability not in (model.get("capabilities") or []):
             raise HTTPException(status_code=422, detail=f"Modelo incompatible con {capability} en {preference.feature}.")
 
@@ -810,7 +942,7 @@ async def get_teacher_ai_config(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> dict[str, Any]:
-    require_role(current_user, [UserRole.PROFESOR])
+    require_permission_now(current_user, "ai_settings.personal")
     service = AIConfigService(db=db)
     await service.init()
     providers = [
@@ -820,6 +952,52 @@ async def get_teacher_ai_config(
     ]
     provider_ids = {str(item["id"]) for item in providers}
     models = [item for item in await service.get_all_models() if item.get("active") and item.get("provider_id") in provider_ids]
+    personal_models_result = await db.execute(
+        text(
+            "SELECT provider_id, model_id, label, capabilities, active "
+            "FROM profesor_ai_provider_models WHERE profesor_id=:teacher AND active=true"
+        ),
+        {"teacher": str(current_user.id)},
+    )
+    personal_models = [
+        {
+            **dict(row._mapping),
+            "recommended": False,
+            "max_context_tokens": None,
+        }
+        for row in personal_models_result.fetchall()
+    ]
+    if personal_models:
+        personal_keys = {(item["provider_id"], item["model_id"]) for item in personal_models}
+        models = [item for item in models if (item.get("provider_id"), item.get("model_id")) not in personal_keys]
+        models.extend(personal_models)
+    local_models_result = await db.execute(
+        text(
+            "SELECT DISTINCT ON (m.model_id) 'ollama_local' AS provider_id, "
+            "m.model_id, m.model_id AS label, m.capabilities, false AS recommended, "
+            "m.available AS active, NULL::integer AS max_context_tokens "
+            "FROM ollama_connector_models m JOIN ollama_connectors c ON c.id=m.connector_id "
+            "WHERE c.profesor_id=:teacher AND c.active=true AND m.available=true "
+            "ORDER BY m.model_id, c.last_seen_at DESC NULLS LAST"
+        ),
+        {"teacher": str(current_user.id)},
+    )
+    local_models = [dict(row._mapping) for row in local_models_result.fetchall()]
+    if local_models:
+        providers.append({
+            "id": "ollama_local",
+            "name": "ollama_local",
+            "tipo": "texto",
+            "label": "Ollama local (este computador)",
+            "active": True,
+            "priority": 99,
+            "timeout_seconds": 0,
+            "max_retries": 0,
+            "allow_teacher_credentials": True,
+            "allow_institutional_fallback": True,
+            "config_version": 1,
+        })
+        models.extend(local_models)
     features = [item for item in await service.get_all_features() if item.get("active")]
 
     config_result = await db.execute(
@@ -859,8 +1037,8 @@ async def save_teacher_ai_config(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> dict[str, Any]:
-    require_role(current_user, [UserRole.PROFESOR])
-    await _validate_teacher_preferences(db, payload.preferences)
+    require_permission_now(current_user, "ai_settings.personal")
+    await _validate_teacher_preferences(db, payload.preferences, teacher_id=current_user.id)
     current_version = await db.scalar(
         text("SELECT version FROM profesor_ai_configs WHERE profesor_id=:teacher FOR UPDATE"),
         {"teacher": str(current_user.id)},
@@ -925,7 +1103,7 @@ async def save_teacher_ai_credential(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> dict[str, Any]:
-    require_role(current_user, [UserRole.PROFESOR])
+    require_permission_now(current_user, "ai_settings.personal")
     await _teacher_allowed_provider(db, provider)
     await upsert_teacher_ai_credential(
         db,
@@ -949,8 +1127,13 @@ async def remove_teacher_ai_credential(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> Response:
-    require_role(current_user, [UserRole.PROFESOR])
+    require_permission_now(current_user, "ai_settings.personal")
     await delete_teacher_ai_credential(db, teacher_id=current_user.id, provider_id=provider)
+    if provider == "ollama":
+        await db.execute(
+            text("DELETE FROM profesor_ai_provider_models WHERE profesor_id=:teacher AND provider_id='ollama'"),
+            {"teacher": str(current_user.id)},
+        )
     await _record_teacher_ai_audit(
         db, actor_id=current_user.id, action="delete_teacher_ai_credential",
         entity="teacher_ai_credential", entity_id=provider, new_value="deleted",
@@ -960,6 +1143,61 @@ async def remove_teacher_ai_credential(
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
+@router.post("/profesor/ai-providers/ollama/models/refresh", response_model=list[OllamaModelRead])
+async def refresh_teacher_ollama_models(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> list[dict[str, Any]]:
+    require_permission_now(current_user, "ai_settings.personal")
+    await _teacher_allowed_provider(db, "ollama")
+    secret = await get_teacher_ai_credential(db, teacher_id=current_user.id, provider_id="ollama")
+    if not secret:
+        raise HTTPException(status_code=422, detail="Configura primero tu clave de Ollama Cloud.")
+    client = OllamaCloudProvider(secret, base_url=settings.OLLAMA_CLOUD_BASE_URL)
+    try:
+        discovered = await client.discover_models()
+    except OllamaProviderError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+    models = await _persist_teacher_ollama_models(db, current_user.id, discovered)
+    await db.commit()
+    return models
+
+
+@router.get("/profesor/ai-providers/ollama/models", response_model=list[OllamaModelRead])
+async def list_teacher_ollama_models(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> list[dict[str, Any]]:
+    require_permission_now(current_user, "ai_settings.personal")
+    cloud_result = await db.execute(
+        text(
+            "SELECT model_id, label, capabilities, active AS available "
+            "FROM profesor_ai_provider_models "
+            "WHERE profesor_id=:teacher AND provider_id='ollama' ORDER BY label"
+        ),
+        {"teacher": str(current_user.id)},
+    )
+    result = [
+        {**dict(row._mapping), "provider_id": "ollama", "origin": "cloud_personal"}
+        for row in cloud_result.fetchall()
+    ]
+    local_result = await db.execute(
+        text(
+            "SELECT m.model_id, m.model_id AS label, m.capabilities, m.available, "
+            "c.id AS connector_id, c.name AS connector_name "
+            "FROM ollama_connector_models m JOIN ollama_connectors c ON c.id=m.connector_id "
+            "WHERE c.profesor_id=:teacher AND c.active=true "
+            "ORDER BY c.name, m.model_id"
+        ),
+        {"teacher": str(current_user.id)},
+    )
+    result.extend(
+        {**dict(row._mapping), "provider_id": "ollama_local", "origin": "local_connector"}
+        for row in local_result.fetchall()
+    )
+    return result
+
+
 @router.post("/profesor/ai-providers/{provider}/test", response_model=AIProviderTestResponse)
 async def test_teacher_ai_provider(
     provider: str,
@@ -967,7 +1205,7 @@ async def test_teacher_ai_provider(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> dict[str, Any]:
-    require_role(current_user, [UserRole.PROFESOR])
+    require_permission_now(current_user, "ai_settings.personal")
     await _teacher_allowed_provider(db, provider)
     service = AIConfigService(db=db)
     models = await service.get_all_models()
@@ -991,6 +1229,7 @@ async def test_teacher_ai_provider(
         groq_key=secret if provider in {"groq", "groq_vision"} else "",
         open_code_key=secret if provider == "open_code" else "",
         cloudflare_token=secret if provider in {"cloudflare", "cloudflare_image"} else "",
+        ollama_key=secret if provider == "ollama" else "",
         sources={provider: "teacher"},
     )
     provider_config = next((item for item in await service.get_all_providers() if item.get("id") == provider), {})

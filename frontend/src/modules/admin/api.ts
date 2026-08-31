@@ -53,6 +53,7 @@ export interface GlobalAIConfig {
   has_cloudflare: boolean;
   has_groq_key: boolean;
   has_open_code_key: boolean;
+  has_ollama_key?: boolean;
   cloudflare_account_id?: string | null;
   credential_sources?: Record<string, 'database' | 'environment' | 'mixed' | 'not_configured' | string>;
 }
@@ -61,12 +62,14 @@ export interface GlobalAIConfigUpdate {
   openai_key?: string;
   groq_key?: string;
   open_code_key?: string;
+  ollama_key?: string;
   cloudflare_token?: string;
   cloudflare_account_id?: string | null;
   modelo_llm_default?: string | null;
   clear_openai_key?: boolean;
   clear_groq_key?: boolean;
   clear_open_code_key?: boolean;
+  clear_ollama_key?: boolean;
   clear_cloudflare_token?: boolean;
   clear_cloudflare_account_id?: boolean;
 }
@@ -147,6 +150,11 @@ export async function testProvider(
     `/admin/ai-providers/${providerId}/test`,
     payload ?? {},
   );
+  return data;
+}
+
+export async function refreshGlobalOllamaModels(): Promise<AIModel[]> {
+  const { data } = await api.post<AIModel[]>('/admin/ai-providers/ollama/models/refresh');
   return data;
 }
 

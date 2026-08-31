@@ -26,6 +26,7 @@ import {
 } from '@/components/ui';
 import { cn } from '@/lib/cn';
 import { toApiError } from '@/lib/api';
+import { useAuth } from '@/stores/auth';
 import { useMateriaContext } from './MateriaContext';
 import {
   getAsistenciaDia,
@@ -129,7 +130,11 @@ function SummaryItem({
 }
 
 export function MateriaAsistencia() {
-  const { materia, canManageMateria } = useMateriaContext();
+  const { materia } = useMateriaContext();
+  const user = useAuth((state) => state.user);
+  const permissions = new Set(user?.permissions ?? []);
+  const canReadAttendance = permissions.has('attendance.read');
+  const canManageAttendance = permissions.has('attendance.manage');
   const queryClient = useQueryClient();
   const today = useMemo(() => localDateIso(), []);
   const [selectedDate, setSelectedDate] = useState(today);
@@ -139,7 +144,7 @@ export function MateriaAsistencia() {
   const attendanceQuery = useQuery({
     queryKey: ['asistencia', materia.id, selectedDate],
     queryFn: () => getAsistenciaDia(materia.id, selectedDate),
-    enabled: canManageMateria && Boolean(materia.id),
+    enabled: canReadAttendance && Boolean(materia.id),
   });
 
   useEffect(() => {
@@ -228,7 +233,32 @@ export function MateriaAsistencia() {
     setDraft((current) => markPendingPresent(current));
   };
 
-  if (!canManageMateria) return null;
+  if (!canReadAttendance) return null;
+
+  if (!canManageAttendance) {
+    return (
+      <div className="space-y-6">
+        <Card className="border-brand-200 bg-brand-50/60 p-5 dark:border-brand-500/25 dark:bg-brand-500/10">
+          <div className="flex items-start gap-3">
+            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-brand-700 text-white">
+              <FileBarChart2 className="h-5 w-5" aria-hidden="true" />
+            </span>
+            <div>
+              <h2 className="font-display text-xl font-extrabold">Reporte de asistencia</h2>
+              <p className="mt-1 text-sm leading-6 text-muted">
+                Puedes consultar el seguimiento del grupo. Para marcar o modificar asistencia necesitas el permiso de gestión.
+              </p>
+            </div>
+          </div>
+        </Card>
+        <MateriaAsistenciaReporte
+          materiaId={materia.id}
+          materiaNombre={materia.nombre}
+          today={today}
+        />
+      </div>
+    );
+  }
 
   return (
     <>

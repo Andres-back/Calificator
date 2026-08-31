@@ -1,0 +1,91 @@
+openapi: 3.1.0
+info:
+  title: XCalificator - Ollama Cloud y conector local
+  version: 1.0.0
+paths:
+  /admin/ai-providers/ollama/credential:
+    put:
+      summary: Sustituir credencial institucional de Ollama Cloud
+      responses:
+        "204":
+          description: Secreto cifrado y actualizado
+    delete:
+      summary: Retirar credencial institucional
+      responses:
+        "204":
+          description: Credencial retirada
+  /admin/ai-providers/ollama/models/refresh:
+    post:
+      summary: Descubrir modelos Cloud con la conexión institucional
+      responses:
+        "200":
+          description: Modelos y capacidades actualizados
+  /profesor/ai-credentials/ollama:
+    put:
+      summary: Guardar credencial personal de Ollama Cloud
+      responses:
+        "204":
+          description: Credencial cifrada
+    delete:
+      summary: Retirar credencial personal
+      responses:
+        "204":
+          description: Credencial retirada
+  /profesor/ai-providers/ollama/models:
+    get:
+      summary: Listar modelos Cloud o locales del docente
+      responses:
+        "200":
+          description: Catálogo aislado por origen
+  /profesor/ollama-connectors/pairing:
+    post:
+      summary: Crear código temporal de emparejamiento
+      responses:
+        "201":
+          description: Código de un solo uso y fecha de expiración
+  /profesor/ollama-connectors:
+    get:
+      summary: Consultar dispositivos, estado y modelos
+      responses:
+        "200":
+          description: Conectores del docente autenticado
+  /profesor/ollama-connectors/{connector_id}:
+    delete:
+      summary: Revocar un conector
+      responses:
+        "204":
+          description: Dispositivo revocado y trabajos no reclamables
+  /connector/pair:
+    post:
+      summary: Intercambiar código temporal por identidad del dispositivo
+      responses:
+        "201":
+          description: Identidad emparejada y secreto entregado una vez
+        "409":
+          description: Código vencido, usado o no válido
+  /connector/jobs/claim:
+    post:
+      summary: Reclamar el siguiente trabajo mediante espera larga
+      responses:
+        "200":
+          description: Trabajo y lease o respuesta vacía
+  /connector/jobs/{job_id}/heartbeat:
+    post:
+      summary: Renovar el lease del trabajo
+      responses:
+        "204":
+          description: Lease renovado
+  /connector/jobs/{job_id}/complete:
+    post:
+      summary: Entregar resultado autenticado
+      responses:
+        "202":
+          description: Resultado aceptado para reanudar el trabajo original
+        "409":
+          description: Trabajo completado, vencido o con lease ajeno
+  /connector/jobs/{job_id}/fail:
+    post:
+      summary: Informar error sanitizado y recuperable
+      responses:
+        "202":
+          description: Fallo registrado

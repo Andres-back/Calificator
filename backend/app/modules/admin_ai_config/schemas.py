@@ -11,14 +11,16 @@ class GlobalAIConfigUpdate(BaseModel):
     cloudflare_account_id: str | None = None
     groq_key: SecretStr | None = None
     open_code_key: SecretStr | None = None
+    ollama_key: SecretStr | None = None
     modelo_llm_default: str | None = None
     clear_openai_key: bool = False
     clear_cloudflare_token: bool = False
     clear_cloudflare_account_id: bool = False
     clear_groq_key: bool = False
     clear_open_code_key: bool = False
+    clear_ollama_key: bool = False
 
-    @field_validator("openai_key", "cloudflare_token", "groq_key", "open_code_key", mode="before")
+    @field_validator("openai_key", "cloudflare_token", "groq_key", "open_code_key", "ollama_key", mode="before")
     @classmethod
     def validate_secret(cls, value: object) -> object:
         if isinstance(value, str) and not value.strip():
@@ -39,6 +41,7 @@ class GlobalAIConfigRead(BaseModel):
     has_cloudflare: bool
     has_groq_key: bool
     has_open_code_key: bool
+    has_ollama_key: bool = False
     cloudflare_account_id: str | None = None
     credential_sources: dict[str, str] = Field(default_factory=dict)
 
@@ -135,6 +138,17 @@ class AIModel(BaseModel):
     recommended: bool = False
     active: bool = True
     max_context_tokens: int | None = None
+
+
+class OllamaModelRead(BaseModel):
+    provider_id: str = "ollama"
+    model_id: str
+    label: str
+    capabilities: list[str] = Field(default_factory=lambda: ["text"])
+    origin: str
+    connector_id: str | None = None
+    connector_name: str | None = None
+    available: bool = True
 
 
 class AIConfigurationPublication(BaseModel):

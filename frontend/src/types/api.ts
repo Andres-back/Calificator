@@ -10,6 +10,12 @@ export interface User {
   email: string;
   rol: UserRole;
   estado: UserStatus;
+  is_primary_admin?: boolean;
+  custom_role_id?: string | null;
+  custom_role_name?: string | null;
+  role_version?: number | null;
+  auth_version?: number;
+  permissions?: string[];
   solicitud_docente_estado?: TeacherRequestStatus | null;
   solicitud_docente_solicitada_at?: string | null;
   solicitud_docente_resuelta_at?: string | null;

@@ -1,6 +1,12 @@
 {
   "schema_version": 1,
   "rules": [
+    {"spec":"029-roles-permisos-modulares","priority":90,"kinds":["frontend_route","frontend_call","endpoint"],"signature_patterns":["*/admin/authorization*","*/admin/roles*","*/admin/users*","*/users/me/authorization","/app/admin/roles","/app/admin/usuarios"]},
+    {"spec":"029-roles-permisos-modulares","priority":90,"kinds":["table"],"signature_patterns":["authorization_roles","authorization_permissions","authorization_role_permissions","authorization_user_roles","audit_events"]},
+    {"spec":"029-roles-permisos-modulares","priority":85,"source_patterns":["backend/app/modules/authorization/**","frontend/src/modules/admin/AdminRolesPage.tsx","frontend/src/modules/admin/AdminUsersPage.tsx","frontend/src/modules/admin/authorizationApi.ts","frontend/src/components/auth/RequirePermission.tsx"]},
+    {"spec":"021-configuracion-ia-docente","priority":90,"kinds":["frontend_call","endpoint"],"signature_patterns":["*/ollama-connectors*","*/connector/*","*/ai-providers/ollama/*"]},
+    {"spec":"021-configuracion-ia-docente","priority":90,"kinds":["table"],"signature_patterns":["profesor_ai_provider_models","ollama_connectors","ollama_pairing_codes","ollama_connector_models","ollama_connector_jobs"]},
+    {"spec":"021-configuracion-ia-docente","priority":85,"source_patterns":["backend/app/modules/ollama_connector/**","backend/app/services/ollama_provider.py","connector/windows/**"]},
     {"spec":"021-configuracion-ia-docente","priority":70,"kinds":["frontend_route","frontend_call","endpoint"],"signature_patterns":["*/profesor/ai-*","*/admin/ai-*","/app/configuracion-ia","/app/admin/configuracion-ia"]},
     {"spec":"021-configuracion-ia-docente","priority":70,"kinds":["table"],"signature_patterns":["ai_provider_settings","ai_provider_models","ai_feature_routing","profesor_ai_configs","profesor_ai_credentials","profesor_ai_feature_preferences"]},
     {"spec":"021-configuracion-ia-docente","priority":60,"source_patterns":["backend/app/modules/admin_ai_config/**","backend/app/services/ai_config_service.py","backend/app/services/ai_credentials_service.py","backend/app/services/ai_configuration_resolver.py","frontend/src/modules/admin/**","frontend/src/modules/profesor_ai/**"]},

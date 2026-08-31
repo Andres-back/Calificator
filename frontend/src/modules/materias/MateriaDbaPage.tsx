@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { Navigate, useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
@@ -224,7 +224,7 @@ function DocumentUploader({
 
 /* ─── Gestor de DBA existente ─── */
 
-function DbaContent({ materiaId }: { materiaId: string }) {
+function DbaContent({ materiaId, canManage }: { materiaId: string; canManage: boolean }) {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<DBAPersonalizado | null>(null);
   const [form, setForm] = useState(EMPTY);
@@ -277,18 +277,18 @@ function DbaContent({ materiaId }: { materiaId: string }) {
             subtitle={materia ? `Gestiona los DBA para ${materia.nombre}.` : 'Crea y gestiona DBA personalizados.'}
           />
         </div>
-        <div className="flex shrink-0 flex-wrap items-center gap-2">
+        {canManage && <div className="flex shrink-0 flex-wrap items-center gap-2">
           <Button variant="secondary" onClick={() => setShowUploader(!showUploader)}>
             <Upload className="h-4 w-4" /> {showUploader ? 'Cerrar subida' : 'Subir PDF o Word'}
           </Button>
           <Button onClick={openCreate} disabled={save.isPending}>
             <Plus className="h-4 w-4" /> Nuevo DBA
           </Button>
-        </div>
+        </div>}
       </div>
 
       {/* Uploader expandible */}
-      {showUploader && (
+      {canManage && showUploader && (
         <Card className="p-5">
           <DocumentUploader
             materiaId={materiaId}
@@ -310,14 +310,14 @@ function DbaContent({ materiaId }: { materiaId: string }) {
         <EmptyState
           icon={BookMarked}
           title="Sin DBA personalizados"
-          description="Crea tu primer DBA manualmente o sube un documento PDF/Word para generarlos automáticamente."
-          action={
+          description={canManage ? 'Crea tu primer DBA manualmente o sube un documento PDF/Word para generarlos automáticamente.' : 'No hay DBA personalizados disponibles para esta materia.'}
+          action={canManage ?
             <div className="flex flex-wrap gap-2">
               <Button onClick={openCreate}><Plus className="h-4 w-4" /> Nuevo DBA</Button>
               <Button variant="secondary" onClick={() => setShowUploader(true)}>
                 <Upload className="h-4 w-4" /> Subir documento
               </Button>
-            </div>
+            </div> : undefined
           }
         />
       ) : (
@@ -332,14 +332,14 @@ function DbaContent({ materiaId }: { materiaId: string }) {
                       {dba.evidencias_aprendizaje && <p className="mt-2 text-sm text-muted"><b>Evidencias:</b> {dba.evidencias_aprendizaje}</p>}
                       {dba.ejemplo && <p className="mt-1 text-sm text-muted"><b>Ejemplo:</b> {dba.ejemplo}</p>}
                     </div>
-                    <div className="flex shrink-0 gap-1">
+                    {canManage && <div className="flex shrink-0 gap-1">
                       <Button size="icon" variant="ghost" onClick={() => openEdit(dba)} aria-label={`Editar DBA ${dba.enunciado}`} title="Editar">
                         <Pencil className="h-4 w-4" />
                       </Button>
                       <Button size="icon" variant="ghost" onClick={() => setConfirmDeleteTarget({ id: dba.id, title: dba.enunciado })} className="text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10" aria-label={`Eliminar DBA ${dba.enunciado}`} title="Eliminar">
                         <Trash2 className="h-4 w-4" />
                       </Button>
-                    </div>
+                    </div>}
                   </div>
                 </Card>
               </motion.div>
@@ -349,7 +349,7 @@ function DbaContent({ materiaId }: { materiaId: string }) {
       )}
 
       {/* Modal crear/editar */}
-      <Modal open={open} onClose={() => setOpen(false)} title={editing ? 'Editar DBA' : 'Nuevo DBA'}>
+      {canManage && <Modal open={open} onClose={() => setOpen(false)} title={editing ? 'Editar DBA' : 'Nuevo DBA'}>
         <div className="space-y-4">
           <Field label="Enunciado" required hint="Describe el derecho básico de aprendizaje. Mínimo 10 caracteres.">
             <Textarea
@@ -392,9 +392,9 @@ function DbaContent({ materiaId }: { materiaId: string }) {
             </Button>
           </div>
         </div>
-      </Modal>
+      </Modal>}
 
-      <ConfirmDialog
+      {canManage && <ConfirmDialog
         open={Boolean(confirmDeleteTarget)}
         onClose={() => setConfirmDeleteTarget(null)}
         onConfirm={() => remove.mutate()}
@@ -403,7 +403,7 @@ function DbaContent({ materiaId }: { materiaId: string }) {
         confirmLabel="Desactivar"
         tone="danger"
         loading={remove.isPending}
-      />
+      />}
     </div>
   );
 }
@@ -413,9 +413,5 @@ export function MateriaDbaPage() {
   const user = useAuth((state) => state.user);
   const materiaId = id;
 
-  if (user?.rol === 'estudiante') {
-    return <Navigate to={`/app/materias/${materiaId}`} replace />;
-  }
-
-  return <DbaContent materiaId={materiaId} />;
+  return <DbaContent materiaId={materiaId} canManage={user?.permissions?.includes('dba.manage') ?? false} />;
 }

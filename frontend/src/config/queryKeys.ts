@@ -35,9 +35,16 @@ export const queryKeys = {
     audit: (limit = 6) => ['admin-ai-audit', { limit }] as const,
     usage: () => ['admin-ai-usage'] as const,
   },
+  authorization: {
+    all: ['admin', 'authorization'] as const,
+    roles: () => ['admin', 'authorization', 'roles'] as const,
+    modules: () => ['admin', 'authorization', 'modules'] as const,
+  },
   teacherAI: {
     all: ['profesor', 'ai-config'] as const,
     config: () => ['profesor', 'ai-config'] as const,
+    ollamaModels: () => ['profesor', 'ai-config', 'ollama-models'] as const,
+    ollamaConnectors: () => ['profesor', 'ai-config', 'ollama-connectors'] as const,
   },
   presentaciones: {
     all: ['presentaciones'] as const,

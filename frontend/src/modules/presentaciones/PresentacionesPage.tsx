@@ -28,6 +28,7 @@ import { queryClient } from '@/lib/queryClient';
 import { toApiError } from '@/lib/api';
 import { formatDate } from '@/lib/dates';
 import { PresentationPreviewModal } from './PresentationPreviewModal';
+import { useAuth } from '@/stores/auth';
 
 const STATE: Record<string, { tone: 'warning' | 'info' | 'success' | 'error'; label: string; icon: typeof Clock; accent: string }> = {
   queued: { tone: 'warning', label: 'En cola', icon: Clock, accent: 'border-l-amber-500' },
@@ -44,6 +45,9 @@ function presentationErrorMessage(error: string | null) {
 }
 
 export function PresentacionesPage() {
+  const permissions = new Set(useAuth((state) => state.user?.permissions ?? []));
+  const canCreate = permissions.has('presentations.create');
+  const canDelete = permissions.has('presentations.delete');
   const [open, setOpen] = useState(false);
   const [previewPresentation, setPreviewPresentation] = useState<{ id: string; title: string } | null>(null);
   const { target: presentationToDelete, setTarget: setPresentationToDelete, mutation: remove } = useDeleteConfirm({
@@ -79,7 +83,7 @@ export function PresentacionesPage() {
         eyebrow="Contenido educativo"
         subtitle="Genera, revisa y exporta material de clase sin perder el control editorial."
         breadcrumbs={[{ label: 'Inicio', to: '/app' }, { label: 'Presentaciones' }]}
-        primaryAction={<Button onClick={() => setOpen(true)}><Plus className="h-4 w-4" aria-hidden="true" /> Nueva presentación</Button>}
+        primaryAction={canCreate ? <Button onClick={() => setOpen(true)}><Plus className="h-4 w-4" aria-hidden="true" /> Nueva presentación</Button> : undefined}
       />
 
       {!isLoading && data && data.length > 0 && (
@@ -99,7 +103,7 @@ export function PresentacionesPage() {
           icon={Presentation}
           title="Sin presentaciones"
           description="Crea tu primera presentación: XCalificator genera el contenido, las imágenes y los archivos descargables."
-          action={<Button onClick={() => setOpen(true)}><Plus className="h-4 w-4" /> Nueva presentación</Button>}
+          action={canCreate ? <Button onClick={() => setOpen(true)}><Plus className="h-4 w-4" /> Nueva presentación</Button> : undefined}
         />
       ) : (
         <div className="grid gap-3">
@@ -132,16 +136,16 @@ export function PresentacionesPage() {
                     {p.pdf_url && (
                       <PresentationFileLink id={p.id} format="pdf" />
                     )}
-                    <Button size="icon" variant="ghost" className="text-rose-700 dark:text-rose-300" onClick={() => setPresentationToDelete({ id: p.id, title: p.titulo })} loading={remove.isPending} aria-label={`Eliminar ${p.titulo}`} title="Eliminar presentación">
+                    {canDelete && <Button size="icon" variant="ghost" className="text-rose-700 dark:text-rose-300" onClick={() => setPresentationToDelete({ id: p.id, title: p.titulo })} loading={remove.isPending} aria-label={`Eliminar ${p.titulo}`} title="Eliminar presentación">
                       <Trash2 className="h-4 w-4" />
-                    </Button>
+                    </Button>}
                   </div>
 
                   {p.estado === 'failed' && (
                     <div className="flex w-full basis-full flex-wrap items-center gap-3 rounded-lg border border-rose-200 bg-rose-50 p-3 text-xs text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-300">
                       <AlertTriangle className="h-4 w-4 shrink-0" />
                       <span className="min-w-0 flex-1">{presentationErrorMessage(p.error)}</span>
-                      <Button size="sm" variant="outline" onClick={() => setOpen(true)}>Crear otra</Button>
+                      {canCreate && <Button size="sm" variant="outline" onClick={() => setOpen(true)}>Crear otra</Button>}
                     </div>
                   )}
                 </Card>

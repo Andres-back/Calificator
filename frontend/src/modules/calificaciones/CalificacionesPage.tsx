@@ -18,7 +18,9 @@ import { routes } from '@/config/routes';
 import type { Calificacion } from '@/types/api';
 
 export function CalificacionesPage() {
-  const role = useAuth((state) => state.user?.rol ?? 'profesor');
+  const user = useAuth((state) => state.user);
+  const role = user?.rol ?? 'profesor';
+  const canGrade = user?.permissions?.includes('grading.grade') ?? false;
   const { data: materias } = useMaterias();
   const [materiaId, setMateriaId] = useState('');
   const [evalId, setEvalId] = useState('');
@@ -89,10 +91,10 @@ export function CalificacionesPage() {
               <HelpCircle className="h-4 w-4" />
               ¿Cómo se usa?
             </Button>
-            <Link to={routes.materiasPara('calificar')} className="focus-ring inline-flex h-11 items-center justify-center gap-2 rounded-lg border border-border bg-surface px-5 text-sm font-semibold text-fg transition-colors hover:bg-surface-2">
+            {canGrade && <Link to={routes.materiasPara('calificar')} className="focus-ring inline-flex h-11 items-center justify-center gap-2 rounded-lg border border-border bg-surface px-5 text-sm font-semibold text-fg transition-colors hover:bg-surface-2">
               <Camera className="h-4 w-4" />
               Calificar foto
-            </Link>
+            </Link>}
           </div>
         }
       />
@@ -208,8 +210,8 @@ export function CalificacionesPage() {
                           <p className="text-xs text-muted">{c.nota_confirmada != null ? 'confirmada' : 'sugerida'}</p>
                         </div>
                         <div className="flex w-full flex-wrap gap-2 sm:w-auto sm:justify-end">
-                          {!confirmada && <Button data-tour="calificaciones-confirmar" size="sm" title="Acepta la nota sugerida como nota final." onClick={() => setConfirming(c)}><CheckCircle2 className="h-4 w-4" /> Confirmar nota</Button>}
-                          <Button data-tour="calificaciones-ajustar" size="sm" variant="outline" title="Modifica la nota sugerida antes de confirmarla." onClick={() => { setEditing(c); setAdjForm({ nota: Number(c.nota_confirmada ?? c.nota_sugerida ?? 0), feedback: c.feedback ?? '' }); setAdjError(''); }}><Pencil className="h-4 w-4" /> Ajustar</Button>
+                          {canGrade && !confirmada && <Button data-tour="calificaciones-confirmar" size="sm" title="Acepta la nota sugerida como nota final." onClick={() => setConfirming(c)}><CheckCircle2 className="h-4 w-4" /> Confirmar nota</Button>}
+                          {canGrade && <Button data-tour="calificaciones-ajustar" size="sm" variant="outline" title="Modifica la nota sugerida antes de confirmarla." onClick={() => { setEditing(c); setAdjForm({ nota: Number(c.nota_confirmada ?? c.nota_sugerida ?? 0), feedback: c.feedback ?? '' }); setAdjError(''); }}><Pencil className="h-4 w-4" /> Ajustar</Button>}
                         </div>
                       </div>
                       {c.feedback && (

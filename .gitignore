@@ -51,6 +51,9 @@ output/
 tmp/
 *.zip
 *.rar
+connector/windows/build/
+connector/windows/dist/
+connector/windows/*.spec
 
 # OS / IDE
 .DS_Store

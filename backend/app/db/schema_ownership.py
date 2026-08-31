@@ -23,6 +23,7 @@ SQL_MANAGED_TABLES = frozenset(
         "mail_global_config",
         "password_reset_requests",
         "profesor_ai_configs",
+        "profesor_ai_provider_models",
     }
 )
 

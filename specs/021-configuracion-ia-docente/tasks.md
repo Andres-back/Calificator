@@ -104,3 +104,43 @@
 - **FR-016, FR-021**: T020, T024, T026, T028 y T029 cubren estados comprensibles, móvil y orientación sobre proveedores externos/locales.
 - **FR-017**: T027, T030, T033–T038 garantizan que el modo institucional existente continúa como comportamiento predeterminado.
 - **FR-018, FR-019, FR-020**: T012, T014, T015, T037 y T047 cubren restauración, publicación atómica y auditoría sin secretos.
+- **FR-033, FR-034**: T051, T059, T064–T066 limitan Ollama local a Presentaciones, bloquean evidencia estudiantil y separan builds de desarrollo de artefactos firmados.
+
+## Fase 8: Ampliación Ollama Cloud y conector local Windows
+
+**Objetivo**: permitir Ollama Cloud institucional o personal y Ollama local del docente sin exponer el puerto local ni bloquear la cola principal.
+**Prueba independiente**: seleccionar un modelo Cloud descubierto, emparejar un conector Windows, ejecutar un trabajo local persistente y recuperar el resultado una sola vez tras una desconexión.
+
+- [x] T048 [P] [US5] Crear pruebas de autenticación Bearer, descubrimiento tags y capacidades show de Ollama Cloud en backend/tests/unit/test_ollama_cloud_provider.py
+- [x] T049 [P] [US5] Crear pruebas de cifrado, aislamiento docente y ausencia de secretos de Ollama Cloud, consolidadas en backend/tests/unit/test_teacher_ai_credentials.py
+- [x] T050 [P] [US5] Crear pruebas de emparejamiento, revocación, lease, heartbeat e idempotencia del conector, consolidadas en backend/tests/unit/test_ollama_cloud_provider.py
+- [x] T051 [P] [US5] Crear pruebas de selección Cloud o local y estados del conector en frontend/src/modules/profesor_ai/TeacherAIConfigPage.test.tsx y frontend/src/modules/admin/AdminAIConfigPage.test.tsx (la selección local queda limitada y probada únicamente para Presentaciones)
+- [x] T052 [US5] Crear migración de conectores, códigos de emparejamiento y trabajos locales persistentes en backend/alembic/versions/202608300002_ollama_connectors.py
+- [x] T053 [US5] Implementar cliente Ollama Cloud compatible con chat, tags y show en backend/app/services/ollama_provider.py
+- [x] T054 [US5] Permitir credenciales Ollama Cloud cifradas globales y por docente en backend/app/services/ai_credentials_service.py y backend/app/modules/admin_ai_config/router.py
+- [x] T055 [US5] Integrar modelos Ollama descubiertos y capacidades reales al resolvedor en backend/app/services/ai_configuration_resolver.py y backend/app/services/ai_config_service.py
+- [x] T056 [US5] Implementar modelos, esquemas y servicio de emparejamiento y dispositivos en backend/app/modules/ollama_connector/models.py, schemas.py y service.py
+- [x] T057 [US5] Implementar endpoints autenticados de profesor y conector en backend/app/modules/ollama_connector/router.py y backend/app/api.py
+- [x] T058 [US5] Implementar trabajos locales persistentes con lease renovable, finalización idempotente, expiración recuperable y reanudación del job original en backend/app/modules/ollama_connector/service.py y backend/app/modules/jobs/service.py
+- [x] T059 [US5] Integrar Ollama Cloud por capacidad y Ollama local únicamente para Presentaciones, sin cambiar contratos de negocio ni enviar evidencias estudiantiles al conector, en backend/app/services/llm_router.py, backend/app/services/vision_extractor.py y backend/app/modules/presentaciones/service.py, según FR-033
+- [x] T060 [US5] Ampliar panel global y docente con credencial enmascarada, modelos Cloud y emparejamiento local seguro en frontend/src/modules/admin/AdminAIConfigPage.tsx y frontend/src/modules/profesor_ai/TeacherAIConfigPage.tsx
+- [x] T061 [US5] Crear conector Windows saliente, almacenamiento seguro y cliente local 127.0.0.1 en connector/windows/xcalificator_ollama_connector
+- [x] T062 [US5] Documentar instalación, revocación, recuperación y prohibición de exponer el puerto local de Ollama en connector/windows/README.md
+- [x] T063 [US5] Reanudar de forma idempotente el trabajo original tras callback, fallo o expiración local, consolidado sin archivo nuevo en backend/app/modules/ollama_connector/service.py, backend/app/modules/jobs/service.py, backend/app/workers/tasks_ai_config.py y backend/app/workers/tasks_presentations.py
+- [x] T064 [US5] Empaquetar ejecutable para Windows 10 22H2 y Windows 11 23H2 o posteriores, separando desarrollo sin firma de distribución con Authenticode y SHA-256 en connector/windows/installer
+- [x] T065 Ejecutar pruebas específicas Ollama, desconexión y concurrencia sin usar credenciales reales en backend/tests y connector/windows
+- [x] T066 Ejecutar TypeScript, lint, Vitest y build para las superficies Ollama en frontend
+- [x] T067 Actualizar inventario técnico y ejecutar convergencia en specs/021-configuracion-ia-docente/tasks.md y specs/system-inventory/current.json
+
+## Dependencias de la ampliación Ollama
+
+- T048 a T051 definen contratos antes de implementación.
+- T052 bloquea persistencia del conector; T053 y T054 bloquean el flujo Cloud.
+- T055 depende de T053 y T054; T056 a T058 dependen de T052.
+- T059 depende de T055 y T058; T060 puede avanzar después de contratos API estables.
+- T061 consume T057 y T058 y nunca abre un puerto entrante en el equipo docente.
+- T063 reanuda el trabajo original y T064 produce el instalador; T065 a T067 se ejecutan únicamente cuando el usuario autoriza pruebas y publicación.
+
+## Fase 9: Convergencia
+
+- [ ] T068 Ejecutar aceptación cronometrada de emparejamiento, detección de Ollama y finalización de una Presentación sin datos estudiantiles en Windows 10 22H2 y Windows 11 23H2 o posteriores per SC-011 y SC-014 (partial: E2E Windows 11 completado en 29,43 s con dos modelos; falta repetir la matriz en Windows 10)

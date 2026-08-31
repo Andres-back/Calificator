@@ -11,6 +11,7 @@ from fastapi.testclient import TestClient
 from app.core.permissions import get_current_user
 from app.db.session import get_db
 from app.main import create_app
+from app.modules.authorization.catalog import default_permissions_for_role
 from app.modules.users.models import User
 from app.shared.enums import UserRole
 
@@ -31,7 +32,7 @@ AUTHORIZATION_SURFACES = {
 
 def make_user(role: UserRole | str, *, user_id: UUID | None = None) -> User:
     role_value = role.value if isinstance(role, UserRole) else role
-    return User(
+    user = User(
         id=user_id or uuid4(),
         nombre=f"Usuario {role_value}",
         email=f"{role_value}-{uuid4().hex[:10]}@example.test",
@@ -39,6 +40,9 @@ def make_user(role: UserRole | str, *, user_id: UUID | None = None) -> User:
         rol=role_value,
         estado="activo",
     )
+    user._effective_permissions = default_permissions_for_role(role_value)
+    user._auth_version = 1
+    return user
 
 
 async def empty_db_override():

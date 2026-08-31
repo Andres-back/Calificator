@@ -31,4 +31,4 @@
 
 ## Notes
 
-- La revisión no encontró ambigüedades críticas pendientes.
+- La ampliación queda definida para Ollama Cloud institucional/personal y conector local de Windows.

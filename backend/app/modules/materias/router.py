@@ -3,12 +3,11 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.permissions import get_current_user, require_roles
+from app.core.permissions import get_current_user, require_permission, require_permission_now
 from app.db.session import get_db
 from app.modules.materias import service
 from app.modules.materias.schemas import MateriaCreate, MateriaRead, MateriaStudentsRead, MateriaUpdate
 from app.modules.users.models import User
-from app.shared.enums import UserRole
 
 router = APIRouter(prefix="/materias", tags=["materias"])
 
@@ -16,7 +15,7 @@ router = APIRouter(prefix="/materias", tags=["materias"])
 @router.post("", response_model=MateriaRead, status_code=status.HTTP_201_CREATED)
 async def create_materia(
     payload: MateriaCreate,
-    profesor: User = Depends(require_roles(UserRole.PROFESOR)),
+    profesor: User = Depends(require_permission("subjects.create")),
     db: AsyncSession = Depends(get_db),
 ) -> object:
     return await service.create_materia(db, payload, profesor)
@@ -27,6 +26,7 @@ async def list_materias(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> list[object]:
+    require_permission_now(current_user, "subjects.read")
     return await service.list_materias(db, current_user)
 
 
@@ -36,6 +36,7 @@ async def get_materia(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> object:
+    require_permission_now(current_user, "subjects.read")
     return await service.ensure_can_read_materia(db, materia_id, current_user)
 
 
@@ -46,6 +47,7 @@ async def update_materia(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> object:
+    require_permission_now(current_user, "subjects.update")
     materia = await service.ensure_can_manage_materia(db, materia_id, current_user)
     return await service.update_materia(db, materia, payload)
 
@@ -56,6 +58,7 @@ async def regenerate_code(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> object:
+    require_permission_now(current_user, "subjects.update")
     materia = await service.ensure_can_manage_materia(db, materia_id, current_user)
     return await service.regenerate_code(db, materia)
 
@@ -66,6 +69,7 @@ async def list_students(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> MateriaStudentsRead:
+    require_permission_now(current_user, "subjects.read")
     materia = await service.ensure_can_manage_materia(db, materia_id, current_user)
     estudiantes = await service.list_students(db, materia)
     return MateriaStudentsRead.model_validate(materia, from_attributes=True).model_copy(

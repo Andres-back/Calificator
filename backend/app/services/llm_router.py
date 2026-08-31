@@ -15,6 +15,7 @@ from app.core.config import settings
 from app.core.logging import get_logger
 from app.modules.analytics.usage_logger import log_ai_usage
 from app.services.ai_credentials_service import get_effective_ai_credentials
+from app.services.ollama_provider import OllamaCloudProvider
 from app.shared.enums import LLMProvider
 
 logger = get_logger(__name__)
@@ -85,6 +86,7 @@ class LLMRouter:
             "openai": getattr(settings, "OPENAI_API_KEY", ""),
             "open_code": getattr(settings, "OPEN_CODE_API_KEY", ""),
             "groq": getattr(settings, "GROQ_API_KEY", ""),
+            "ollama": getattr(settings, "OLLAMA_API_KEY", ""),
         }
         self._provider_configs: dict[str, dict[str, Any]] = {}
 
@@ -173,6 +175,7 @@ class LLMRouter:
                     "openai": getattr(credentials, "openai_key", ""),
                     "open_code": credentials.open_code_key,
                     "groq": credentials.groq_key,
+                    "ollama": credentials.ollama_key,
                 }
                 institutional_credentials = dict(self._credentials)
                 self._provider_configs = {str(item["id"]): item for item in text_providers}
@@ -219,7 +222,7 @@ class LLMRouter:
                         selected_model = selected.get("model")
                         if selected_provider in self._provider_configs and selected_model:
                             self._provider_configs[selected_provider]["model"] = selected_model
-                        if selected.get("credential_source") == "teacher" and selected_provider in {"openai", "open_code", "groq"}:
+                        if selected.get("credential_source") == "teacher" and selected_provider in {"openai", "open_code", "groq", "ollama"}:
                             personal_route = True
                             teacher_secret = await get_teacher_ai_credential(
                                 db,
@@ -572,20 +575,25 @@ class LLMRouter:
         return resp.choices[0].message.content or ""
 
     async def _call_ollama(self, prompt: str, json_mode: bool) -> str:
-        endpoint = getattr(settings, "OLLAMA_ENDPOINT", "http://ollama:11434")
-        model = getattr(settings, "OLLAMA_MODEL", "llama3.1:8b")
-        body: dict[str, Any] = {
-            "model": model,
-            "prompt": prompt,
-            "stream": False,
-        }
-        if json_mode:
-            body["format"] = "json"
-        timeout = getattr(settings, "OLLAMA_TIMEOUT_SECONDS", 120)
-        async with httpx.AsyncClient(timeout=timeout) as client:
-            resp = await client.post(f"{endpoint}/api/generate", json=body)
-            resp.raise_for_status()
-            return resp.json().get("response", "")
+        api_key = str(self._credentials.get("ollama", "") or "").strip()
+        if not api_key:
+            raise ValueError("OLLAMA_API_KEY not configured")
+        config = self._provider_configs.get(LLMProvider.OLLAMA.value, {})
+        model = str(config.get("model") or getattr(settings, "OLLAMA_MODEL", "")).strip()
+        if not model:
+            raise ValueError("No hay un modelo de Ollama Cloud seleccionado")
+        client = OllamaCloudProvider(
+            api_key,
+            base_url=getattr(settings, "OLLAMA_CLOUD_BASE_URL", "https://ollama.com/api"),
+            timeout_seconds=float(config.get("timeout_seconds") or getattr(settings, "OLLAMA_TIMEOUT_SECONDS", 120)),
+        )
+        response = await client.chat(
+            model=model,
+            messages=[{"role": "user", "content": prompt}],
+            options={"temperature": 0.1 if json_mode else 0.3},
+        )
+        message = response.get("message") or {}
+        return str(message.get("content") or response.get("response") or "")
 
     @staticmethod
     def _parse_json(raw: str, task_type: str) -> dict[str, Any]:

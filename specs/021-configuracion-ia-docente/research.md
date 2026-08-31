@@ -1,5 +1,90 @@
 # Investigación: configuración de IA global y por docente
 
+## Ampliación 2026-08-30: Ollama
+
+### Decisión: API Cloud oficial
+
+**Decisión**: utilizar https://ollama.com/api con autenticación Bearer para el origen Cloud.
+
+**Rationale**: la documentación oficial define esa dirección para acceso directo, tags para modelos y chat para inferencia. La dirección de Docker no representa la cuenta Cloud del VPS.
+
+**Alternatives considered**: conservar http://ollama:11434 en producción o usar solo compatibilidad OpenAI. El API nativo expone mejor catálogo y capacidades.
+
+### Decisión: descubrimiento por tags y show
+
+**Decisión**: listar modelos con tags e inspeccionar cada selección con show.
+
+**Rationale**: tags ofrece identificadores disponibles y show declara capacidades como completion y vision.
+
+**Alternatives considered**: catálogo escrito manualmente. Cloud y los modelos locales cambian por cuenta y dispositivo.
+
+### Decisión: conector local saliente
+
+**Decisión**: un ejecutable Windows emparejado reclama trabajos por HTTPS y llama solo al Ollama loopback.
+
+**Rationale**: el VPS no puede alcanzar el computador docente; la conexión saliente funciona detrás de NAT y no publica el puerto 11434.
+
+**Alternatives considered**: navegador a localhost, túneles públicos o URL arbitraria. Se rechazan por CORS, red privada, exposición y SSRF.
+
+### Decisión: trabajos persistentes con lease
+
+**Decisión**: persistir solicitudes locales, permitir reclamación exclusiva temporal y reanudar la operación original al recibir resultado.
+
+**Rationale**: soporta modelos lentos, desconexiones, cierre del navegador y reintentos sin duplicar ni ocupar la cola principal.
+
+**Alternatives considered**: WebSocket solo en memoria o mantener el worker esperando. Se rechazan por pérdida al reiniciar y consumo innecesario de concurrencia.
+
+### Decisión: instalador Windows inicial
+
+**Decisión**: empaquetar el conector como ejecutable e instalador Windows con credencial protegida por el sistema.
+
+**Rationale**: coincide con el entorno inicial y no exige Python al docente.
+
+**Alternatives considered**: script manual, extensión de navegador o tres plataformas simultáneas.
+
+
+## Ampliación 2026-08-30: Ollama
+
+### Decisión: API Cloud oficial
+
+**Decisión**: utilizar https://ollama.com/api con autenticación Bearer para el origen Cloud.
+
+**Rationale**: la documentación oficial define esa dirección para acceso directo, tags para modelos y chat para inferencia. La dirección de Docker no representa la cuenta Cloud del VPS.
+
+**Alternatives considered**: conservar http://ollama:11434 en producción o usar compatibilidad OpenAI. Se rechaza la primera porque depende de un servicio local lento y la segunda porque el API nativo expone mejor catálogo y capacidades.
+
+### Decisión: descubrimiento por tags y show
+
+**Decisión**: listar modelos con tags e inspeccionar cada selección con show.
+
+**Rationale**: tags ofrece identificadores disponibles y show declara capacidades como completion y vision, necesarias para validar rutas.
+
+**Alternatives considered**: catálogo escrito manualmente. Se rechaza porque Cloud y modelos locales cambian por cuenta y dispositivo.
+
+### Decisión: conector local saliente
+
+**Decisión**: un ejecutable Windows emparejado reclama trabajos por HTTPS y llama solo al Ollama loopback.
+
+**Rationale**: el VPS no puede alcanzar el computador del docente; la conexión saliente funciona detrás de NAT y no publica el puerto 11434.
+
+**Alternatives considered**: llamadas del navegador a localhost, túneles públicos o URL arbitraria. Se rechazan por CORS, red privada, exposición y SSRF.
+
+### Decisión: trabajos persistentes con lease
+
+**Decisión**: persistir solicitudes locales, permitir reclamación exclusiva temporal y reanudar la operación original al recibir resultado.
+
+**Rationale**: soporta modelos lentos, desconexiones, cierre del navegador y reintentos sin duplicar ni ocupar la cola principal.
+
+**Alternatives considered**: WebSocket exclusivamente en memoria o mantener el worker esperando. Se rechazan por pérdida al reiniciar y consumo innecesario de concurrencia.
+
+### Decisión: instalador Windows inicial
+
+**Decisión**: empaquetar el conector como ejecutable e instalador Windows con credencial de dispositivo protegida por el sistema.
+
+**Rationale**: coincide con el entorno inicial acordado y permite una experiencia guiada sin exigir Python al docente.
+
+**Alternatives considered**: script manual, extensión de navegador o tres plataformas simultáneas. Se rechazan por fricción, limitaciones de red y alcance.
+
 ## Decisión 1: resolución central por capacidad
 
 **Decisión**: Crear un resolvedor único que reciba capacidad y docente, valide compatibilidad y produzca una instantánea sanitizada con principal, fallback, origen y versión.
@@ -54,4 +139,20 @@
 
 **Razón**: Una URL arbitraria puede atacar servicios internos; además, `localhost` del docente no es el servidor. Ollama solo aparece disponible cuando el endpoint administrado es alcanzable.
 
-**Alternativas consideradas**: Permitir base URL docente fue descartado por SSRF, conectividad y soporte. Un agente instalado en el computador queda fuera de esta entrega.
+**Alternativas consideradas**: Permitir base URL docente fue descartado por SSRF, conectividad y soporte. La ampliación aprobada incorpora un conector saliente, nunca una URL arbitraria aportada por el navegador.
+
+## Decisión 8: minimización de datos en Ollama local
+
+**Decisión**: La primera versión del conector local solo procesa prompts de Presentaciones. Visión, digitalización, entregas y calificación no ofrecen Ollama local y continúan en proveedores Cloud autorizados.
+
+**Razón**: Una evidencia estudiantil puede contener identidad, escritura y datos académicos. El conector del computador docente no debe recibirlos sin un modelo de consentimiento y gobierno de datos específico. Presentaciones permite validar emparejamiento, leases, reanudación y experiencia local sin ampliar esa superficie sensible.
+
+**Alternativas consideradas**: Habilitar todas las capacidades por tener soporte de visión fue descartado por privacidad. Un consentimiento genérico del docente fue descartado porque no representa al estudiante ni resuelve retención, eliminación y auditoría de la evidencia local.
+
+## Decisión 9: compilación Windows verificable
+
+**Decisión**: El script de empaquetado distingue desarrollo sin firma de distribución firmada. La primera requiere una bandera explícita; la segunda valida clave privada, uso de firma de código, estado Authenticode y SHA-256.
+
+**Razón**: Un ejecutable sin firma puede usarse para pruebas locales, pero no debe presentarse como instalador confiable a docentes.
+
+**Alternativas consideradas**: Firmar con un certificado autofirmado fue descartado porque no establece confianza pública. Descargar PyInstaller automáticamente durante cada build fue descartado para mantener dependencias controladas.

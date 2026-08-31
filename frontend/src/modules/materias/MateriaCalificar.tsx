@@ -49,6 +49,7 @@ import {
 import { confidenceLabel } from '@/lib/utils';
 import type { Calificacion } from '@/types/api';
 import { addPendingGrading } from '@/modules/calificaciones/gradingJobs';
+import { useAuth } from '@/stores/auth';
 import { useMateriaContext } from './MateriaContext';
 import { GradingProgress } from './GradingProgress';
 import {
@@ -102,7 +103,9 @@ function initials(name: string): string {
 }
 
 export function MateriaCalificar() {
-  const { materia, canManageMateria } = useMateriaContext();
+  const { materia } = useMateriaContext();
+  const user = useAuth((state) => state.user);
+  const canGradeEvaluation = new Set(user?.permissions ?? []).has('grading.grade');
   const [searchParams, setSearchParams] = useSearchParams();
   const evaluacionIdParam = searchParams.get('evaluacion') || '';
   const estudianteIdParam = searchParams.get('estudiante') || '';
@@ -157,7 +160,7 @@ export function MateriaCalificar() {
   const calificacionesQuery = useQuery({
     queryKey: ['calificaciones', evaluacionId],
     queryFn: () => listCalificaciones(evaluacionId),
-    enabled: Boolean(evaluacionId) && canManageMateria,
+    enabled: Boolean(evaluacionId) && canGradeEvaluation,
     refetchInterval: 3000,
   });
 
@@ -467,12 +470,12 @@ export function MateriaCalificar() {
 
   return (
     <div className="space-y-5">
-      {!canManageMateria ? (
+      {!canGradeEvaluation ? (
         <Card className="p-5 text-center text-muted">
           <Users className="mx-auto mb-2 h-8 w-8" />
           <p>
-            Tu docente usará esta sección para calificar tus evaluaciones
-            escritas.
+            Puedes consultar las calificaciones disponibles, pero necesitas el
+            permiso de calificar para cargar evidencia o tomar decisiones.
           </p>
         </Card>
       ) : (

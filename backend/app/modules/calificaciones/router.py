@@ -20,7 +20,7 @@ from fastapi.responses import FileResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.permissions import get_current_user, is_student_enrolled, require_role
+from app.core.permissions import get_current_user, is_student_enrolled, require_any_permission_now, require_permission_now
 from app.db.session import get_db
 from app.modules.calificaciones import breakdown_service, photo_service, service
 from app.modules.calificaciones.breakdown_schemas import (
@@ -265,7 +265,7 @@ async def calificar_foto(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> object:
-    require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
+    require_permission_now(current_user, "grading.grade")
     evaluacion = await evaluaciones_service.ensure_can_manage_evaluation(
         db, evaluacion_id, current_user
     )
@@ -401,7 +401,7 @@ async def reintentar_calificacion_foto(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> object:
-    require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
+    require_permission_now(current_user, "grading.grade")
     calificacion = await service.get_calificacion_or_404(
         db,
         calificacion_id,
@@ -466,7 +466,7 @@ async def solicitar_reemplazo_evidencia(
     db: AsyncSession = Depends(get_db),
 ) -> object:
     """Permite al docente reabrir una entrega para reenviar el paquete completo."""
-    require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
+    require_permission_now(current_user, "submissions.review")
     calificacion = await service.get_calificacion_or_404(db, calificacion_id)
     await evaluaciones_service.ensure_can_manage_evaluation(
         db,
@@ -513,7 +513,7 @@ async def calificar_lote(
     - files: lista de archivos de imagen (mismo orden que estudiantes).
     - estudiantes: JSON array de UUIDs de estudiantes ["id1", "id2", ...].
     """
-    require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
+    require_permission_now(current_user, "grading.grade")
     evaluacion = await evaluaciones_service.ensure_can_manage_evaluation(
         db, evaluacion_id, current_user
     )
@@ -619,7 +619,7 @@ async def calificar_lote_asincrono(
     db: AsyncSession = Depends(get_db),
 ) -> dict:
     """Persist photos first, then grade them in a cancellable background job."""
-    require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
+    require_permission_now(current_user, "grading.grade")
     evaluacion = await evaluaciones_service.ensure_can_manage_evaluation(
         db,
         evaluacion_id,
@@ -777,7 +777,7 @@ async def confirmar(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> object:
-    require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
+    require_permission_now(current_user, "grading.grade")
     cal = await service.get_calificacion_or_404(db, calificacion_id)
     await evaluaciones_service.ensure_can_manage_evaluation(
         db, cal.evaluacion_id, current_user
@@ -794,7 +794,7 @@ async def ajustar(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> object:
-    require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
+    require_permission_now(current_user, "grading.grade")
     cal = await service.get_calificacion_or_404(db, calificacion_id)
     await evaluaciones_service.ensure_can_manage_evaluation(
         db, cal.evaluacion_id, current_user
@@ -811,7 +811,7 @@ async def marcar_revision_manual(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> object:
-    require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
+    require_permission_now(current_user, "grading.grade")
     cal = await service.get_calificacion_or_404(db, calificacion_id)
     await evaluaciones_service.ensure_can_manage_evaluation(
         db, cal.evaluacion_id, current_user
@@ -829,7 +829,7 @@ async def establecer_nota_manual(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> object:
-    require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
+    require_permission_now(current_user, "grading.grade")
     evaluacion = await evaluaciones_service.ensure_can_manage_evaluation(
         db, evaluacion_id, current_user
     )
@@ -845,7 +845,7 @@ async def list_calificaciones(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> list:
-    require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
+    require_permission_now(current_user, "grading.read")
     evaluacion = await evaluaciones_service.ensure_can_manage_evaluation(
         db, evaluacion_id, current_user
     )
@@ -861,6 +861,7 @@ async def get_resumen_academico(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> dict:
+    require_any_permission_now(current_user, "gradebook.read", "reports.read")
     if current_user.rol == UserRole.ESTUDIANTE.value:
         if current_user.id != estudiante_id:
             raise HTTPException(status_code=403, detail="No autorizado")
@@ -880,6 +881,7 @@ async def get_boletin(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> list:
+    require_permission_now(current_user, "gradebook.read")
     materia = await materias_service.get_materia_or_404(db, materia_id)
     if current_user.rol == UserRole.ADMIN.value:
         pass
@@ -911,7 +913,7 @@ async def iniciar_salon(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> dict:
-    require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
+    require_permission_now(current_user, "grading.grade")
     evaluacion = await evaluaciones_service.ensure_can_manage_evaluation(
         db, evaluacion_id, current_user
     )
@@ -952,7 +954,7 @@ async def obtener_salon(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> dict:
-    require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
+    require_permission_now(current_user, "grading.read")
     sesion = await db.scalar(select(SalonSesion).where(SalonSesion.id == sesion_id))
     if not sesion:
         raise HTTPException(status_code=404, detail="Sesión no encontrada")
@@ -979,7 +981,7 @@ async def salon_estudiantes(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> dict:
-    require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
+    require_permission_now(current_user, "grading.read")
     sesion = await db.scalar(select(SalonSesion).where(SalonSesion.id == sesion_id))
     if not sesion:
         raise HTTPException(status_code=404, detail="Sesión no encontrada")
@@ -1027,7 +1029,7 @@ async def salon_actualizar_estudiante(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> dict:
-    require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
+    require_permission_now(current_user, "grading.grade")
     sesion = await db.scalar(select(SalonSesion).where(SalonSesion.id == sesion_id))
     if not sesion:
         raise HTTPException(status_code=404, detail="Sesión no encontrada")
@@ -1071,7 +1073,7 @@ async def salon_foto(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> object:
-    require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
+    require_permission_now(current_user, "grading.grade")
     sesion = await db.scalar(select(SalonSesion).where(SalonSesion.id == sesion_id))
     if not sesion:
         raise HTTPException(status_code=404, detail="Sesion no encontrada")
@@ -1144,7 +1146,7 @@ async def cerrar_salon(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> Response:
-    require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
+    require_permission_now(current_user, "grading.grade")
     sesion = await db.scalar(select(SalonSesion).where(SalonSesion.id == sesion_id))
     if not sesion:
         raise HTTPException(status_code=404, detail="Sesion no encontrada")
@@ -1169,7 +1171,7 @@ async def get_my_delivery(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> Entrega | None:
-    require_role(current_user, [UserRole.ESTUDIANTE])
+    require_permission_now(current_user, "evaluations.submit")
     evaluacion = await evaluaciones_service.get_evaluation_or_404(db, evaluacion_id)
     if not await is_student_enrolled(db, evaluacion.materia_id, current_user.id):
         raise HTTPException(
@@ -1200,7 +1202,7 @@ async def crear_entrega_online(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> object:
-    require_role(current_user, [UserRole.ESTUDIANTE])
+    require_permission_now(current_user, "evaluations.submit")
     evaluacion = await evaluaciones_service.get_evaluation_or_404(db, evaluacion_id)
     service.ensure_evaluation_accepts_grading(evaluacion)
     if evaluacion.modalidad not in {
@@ -1297,7 +1299,7 @@ async def crear_entrega_archivo_estudiante(
     db: AsyncSession = Depends(get_db),
 ) -> object:
     """Entrega atómica de una o varias hojas para evaluaciones físicas/mixtas."""
-    require_role(current_user, [UserRole.ESTUDIANTE])
+    require_permission_now(current_user, "evaluations.submit")
     evaluacion = await evaluaciones_service.get_evaluation_or_404(db, evaluacion_id)
     service.ensure_evaluation_accepts_grading(evaluacion)
     if evaluacion.modalidad not in {
@@ -1428,11 +1430,10 @@ async def get_entrega_evidencia(
     if not entrega:
         raise HTTPException(status_code=404, detail="Entrega no encontrada")
 
-    if current_user.rol == UserRole.ESTUDIANTE.value:
-        if entrega.estudiante_id != current_user.id:
-            raise HTTPException(status_code=403, detail="No autorizado")
+    if entrega.estudiante_id == current_user.id:
+        require_permission_now(current_user, "grading.read")
     else:
-        require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
+        require_permission_now(current_user, "submissions.read")
         await evaluaciones_service.ensure_can_manage_evaluation(
             db,
             entrega.evaluacion_id,
@@ -1472,7 +1473,7 @@ async def get_calificacion_detalle(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> object:
-    require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
+    require_permission_now(current_user, "grading.read")
     cal = await service.get_calificacion_or_404(db, calificacion_id)
     await evaluaciones_service.ensure_can_manage_evaluation(
         db,
@@ -1493,7 +1494,7 @@ async def publicar(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> object:
-    require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
+    require_permission_now(current_user, "grading.publish")
     cal = await service.get_calificacion_or_404(db, calificacion_id)
     await evaluaciones_service.ensure_can_manage_evaluation(
         db, cal.evaluacion_id, current_user
@@ -1510,7 +1511,7 @@ async def publicar_lote(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> object:
-    require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
+    require_permission_now(current_user, "grading.publish")
     return await service.publicar_nota_batch(db, payload, current_user)
 
 
@@ -1520,7 +1521,7 @@ async def confirmar_lote(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> object:
-    require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
+    require_permission_now(current_user, "grading.grade")
     return await service.confirmar_nota_batch(db, payload.items, current_user)
 
 
@@ -1530,7 +1531,7 @@ async def ajustar_lote(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> object:
-    require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
+    require_permission_now(current_user, "grading.grade")
     return await service.ajustar_nota_batch(db, payload.items, current_user)
 
 
@@ -1542,7 +1543,7 @@ async def obtener_bandeja_docente(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> object:
-    require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
+    require_permission_now(current_user, "submissions.review")
     profesor_id = None if current_user.rol == UserRole.ADMIN.value else current_user.id
     return await service.obtener_bandeja_docente(
         db,
@@ -1559,7 +1560,7 @@ async def obtener_mi_solicitud_revision(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> object:
-    require_role(current_user, [UserRole.ESTUDIANTE])
+    require_permission_now(current_user, "grading.read")
     return await service.obtener_solicitud_revision_estudiante(
         db,
         evaluacion_id=evaluacion_id,
@@ -1578,7 +1579,7 @@ async def solicitar_revision_calificacion(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> object:
-    require_role(current_user, [UserRole.ESTUDIANTE])
+    require_permission_now(current_user, "grading.read")
     return await service.crear_solicitud_revision_estudiante(
         db,
         evaluacion_id=evaluacion_id,
@@ -1599,7 +1600,7 @@ async def crear_incidencia(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> object:
-    require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
+    require_permission_now(current_user, "submissions.review")
     cal = await service.get_calificacion_or_404(db, calificacion_id)
     await evaluaciones_service.ensure_can_manage_evaluation(
         db, cal.evaluacion_id, current_user
@@ -1617,7 +1618,7 @@ async def listar_incidencias(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> object:
-    require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
+    require_permission_now(current_user, "submissions.review")
     cal = await service.get_calificacion_or_404(db, calificacion_id)
     await evaluaciones_service.ensure_can_manage_evaluation(
         db, cal.evaluacion_id, current_user
@@ -1632,7 +1633,7 @@ async def resolver_incidencia(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> object:
-    require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
+    require_permission_now(current_user, "submissions.review")
     from app.modules.calificaciones.incidencia_models import CalificacionIncidencia
 
     incidencia = await db.scalar(
@@ -1662,7 +1663,7 @@ async def get_desglose_docente(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> object:
-    require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
+    require_permission_now(current_user, "grading.read")
     cal = await service.get_calificacion_or_404(db, calificacion_id)
     await evaluaciones_service.ensure_can_manage_evaluation(db, cal.evaluacion_id, current_user)
     desglose = await breakdown_service.get_active_breakdown(db, cal.id)
@@ -1678,7 +1679,7 @@ async def update_desglose_docente(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> object:
-    require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
+    require_permission_now(current_user, "grading.grade")
     cal = await service.get_calificacion_or_404(db, calificacion_id)
     await evaluaciones_service.ensure_can_manage_evaluation(db, cal.evaluacion_id, current_user)
     updated = await breakdown_service.update_breakdown(
@@ -1698,7 +1699,7 @@ async def get_historial_desglose(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> object:
-    require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
+    require_permission_now(current_user, "grading.read")
     cal = await service.get_calificacion_or_404(db, calificacion_id)
     await evaluaciones_service.ensure_can_manage_evaluation(db, cal.evaluacion_id, current_user)
     return await breakdown_service.list_versions(db, cal.id)
@@ -1711,7 +1712,7 @@ async def set_respuestas_liberadas(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> dict:
-    require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
+    require_permission_now(current_user, "grading.publish")
     evaluacion = await evaluaciones_service.ensure_can_manage_evaluation(db, evaluacion_id, current_user)
     released = await breakdown_service.set_answers_released(db, evaluacion, payload.liberadas)
     return {"evaluacion_id": evaluacion_id, "liberadas": released}
@@ -1723,7 +1724,7 @@ async def get_mi_desglose(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> object:
-    require_role(current_user, [UserRole.ESTUDIANTE])
+    require_permission_now(current_user, "grading.read")
     cal = await db.scalar(
         select(Calificacion)
         .where(

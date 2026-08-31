@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.permissions import require_roles
+from app.core.permissions import require_permission
 from app.db.session import get_db
 from app.modules.admin_mail.schemas import (
     MailConfigRead,
@@ -25,7 +25,7 @@ from app.services.mail_service import (
 from app.shared.enums import UserRole
 
 router = APIRouter(prefix="/admin/mail", tags=["admin_mail"])
-_admin_only = require_roles(UserRole.ADMIN)
+_admin_only = require_permission("admin_settings.manage")
 
 
 def _read_payload(

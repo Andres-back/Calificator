@@ -13,7 +13,7 @@ from typing import Any
 from uuid import UUID
 
 from fastapi import HTTPException, status
-from sqlalchemy import select
+from sqlalchemy import and_, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.logging import get_logger
@@ -42,7 +42,14 @@ from app.modules.presentaciones.assets_service import (
     save_export_file,
 )
 from app.modules.presentaciones.image_prompts import build_presentation_image_prompt
+from app.modules.jobs import service as jobs_service
+from app.modules.ollama_connector.service import (
+    LocalInferenceFailed,
+    LocalInferencePending,
+    request_local_inference,
+)
 from app.modules.presentaciones.schemas import PresentacionCreate
+from app.shared.enums import JobEstado, JobTipo
 from app.modules.imagenes import service as imagenes_service
 from app.modules.users.models import User
 from app.services.llm_router import LLMRouter
@@ -249,14 +256,6 @@ def _is_admin(user: User) -> bool:
     return user.rol == UserRole.ADMIN.value
 
 
-def _is_profesor(user: User) -> bool:
-    return user.rol == UserRole.PROFESOR.value
-
-
-def _is_estudiante(user: User) -> bool:
-    return user.rol == UserRole.ESTUDIANTE.value
-
-
 async def _resolve_presentacion_context(
     db: AsyncSession, payload: PresentacionCreate, current_user: User
 ) -> tuple[UUID, PresentacionCreate]:
@@ -313,16 +312,53 @@ async def create_presentacion(
         slides_json=slides_json,
     )
     db.add(pres)
+    await db.flush()
+    await jobs_service.create_job(
+        db,
+        user_id=profesor_id,
+        tipo=JobTipo.PRESENTACION.value,
+        input_json={"presentacion_id": str(pres.id)},
+        job_id=pres.id,
+    )
     await db.commit()
     await db.refresh(pres)
     return pres
 
 
-async def generate_presentacion_assets(presentacion_id: UUID) -> None:
+async def generate_presentacion_assets(presentacion_id: UUID) -> str:
     async with AsyncSessionLocal() as db:
         pres = await get_presentacion_or_404(db, presentacion_id)
         try:
+            state = await jobs_service.get_job_state(db, presentacion_id)
+            if state in {JobEstado.SUCCESS.value, JobEstado.FAILED.value}:
+                return state
+            await jobs_service.mark_job_running(db, presentacion_id)
+            await db.commit()
             await _run_generation(db, pres)
+            await jobs_service.finish_job(
+                db,
+                presentacion_id,
+                estado=JobEstado.SUCCESS.value,
+                resultado_json={
+                    "status": JobEstado.SUCCESS.value,
+                    "presentacion_id": str(presentacion_id),
+                },
+            )
+            await db.commit()
+            return JobEstado.SUCCESS.value
+        except LocalInferencePending:
+            pres.estado = PresentacionEstado.RUNNING.value
+            pres.error = None
+            pres.slides_json = _with_canonical_generation(
+                pres,
+                estado=PresentacionEstado.RUNNING.value,
+                etapa="esperando_ollama_local",
+                progreso=25,
+                mensaje="Esperando el resultado de Ollama en tu computador.",
+                error_amigable=None,
+            )
+            await db.commit()
+            return "waiting_connector"
         except Exception as exc:  # noqa: BLE001
             logger.exception("Presentation generation failed for %s", presentacion_id)
             pres.estado = PresentacionEstado.FAILED.value
@@ -335,7 +371,18 @@ async def generate_presentacion_assets(presentacion_id: UUID) -> None:
                 mensaje=None,
                 error_amigable="No se pudo generar la presentacion.",
             )
+            await jobs_service.finish_job(
+                db,
+                presentacion_id,
+                estado=JobEstado.FAILED.value,
+                resultado_json={
+                    "status": JobEstado.FAILED.value,
+                    "presentacion_id": str(presentacion_id),
+                },
+                error=str(exc),
+            )
             await db.commit()
+            return JobEstado.FAILED.value
 
 
 async def _run_generation(db: AsyncSession, pres: Presentacion) -> None:
@@ -355,7 +402,10 @@ async def _run_generation(db: AsyncSession, pres: Presentacion) -> None:
     stored_snapshot = (pres.slides_json or {}).get("_ai_config")
     ai_config = stored_snapshot if isinstance(stored_snapshot, dict) else None
     slides_normalized = await _generate_slides(
-        payload, pres.profesor_id, ai_config=ai_config
+        payload,
+        pres.profesor_id,
+        ai_config=ai_config,
+        source_job_id=pres.id,
     )
     await _attach_slide_images(
         db, pres, slides_normalized, payload, ai_config=ai_config
@@ -396,13 +446,79 @@ async def _run_generation(db: AsyncSession, pres: Presentacion) -> None:
     await db.commit()
 
 
+class _PresentationLLM:
+    """Presentation-only adapter; it never receives student evidence."""
+
+    def __init__(
+        self,
+        *,
+        profesor_id: UUID,
+        source_job_id: UUID | None,
+        ai_config: dict | None,
+    ) -> None:
+        self.profesor_id = profesor_id
+        self.source_job_id = source_job_id
+        self.ai_config = dict(ai_config) if ai_config else {}
+        self.primary = self.ai_config.get("primary") or {}
+        self.call_index = 0
+        self.router = LLMRouter(user_id=profesor_id, ai_config=ai_config)
+
+    async def generate_json(self, task_type: str, prompt: str) -> dict:
+        if self.primary.get("provider") != "ollama_local":
+            return await self.router.generate_json(task_type, prompt)
+        if self.source_job_id is None:
+            raise RuntimeError("La presentación local no tiene un trabajo persistente")
+
+        model = str(self.primary.get("model") or "").strip()
+        if not model:
+            raise RuntimeError("No hay un modelo local seleccionado para presentaciones")
+        self.call_index += 1
+        try:
+            async with AsyncSessionLocal() as local_db:
+                response = await request_local_inference(
+                    local_db,
+                    profesor_id=self.profesor_id,
+                    source_job_id=self.source_job_id,
+                    stage=f"presentacion:{self.call_index}",
+                    feature=task_type,
+                    model_id=model,
+                    payload={
+                        "operation": "chat",
+                        "messages": [{"role": "user", "content": prompt}],
+                        "format": "json",
+                    },
+                )
+        except LocalInferenceFailed:
+            fallback = self.ai_config.get("fallback") or {}
+            if fallback.get("credential_source") != "institutional":
+                raise
+            fallback_snapshot = {
+                **self.ai_config,
+                "primary": fallback,
+                "fallback": None,
+            }
+            return await LLMRouter(
+                user_id=self.profesor_id,
+                ai_config=fallback_snapshot,
+            ).generate_json(task_type, prompt)
+
+        message = response.get("message") or {}
+        raw = str(message.get("content") or response.get("response") or "")
+        return LLMRouter._parse_json(raw, task_type)
+
+
 async def _generate_slides(
     payload: PresentacionCreate,
     profesor_id: UUID,
     *,
     ai_config: dict | None = None,
+    source_job_id: UUID | None = None,
 ) -> list[dict]:
-    llm = LLMRouter(user_id=profesor_id, ai_config=ai_config)
+    llm = _PresentationLLM(
+        profesor_id=profesor_id,
+        source_job_id=source_job_id,
+        ai_config=ai_config,
+    )
     base_prompt = SLIDES_PROMPT.format(
         tema=payload.tema,
         materia=payload.materia_nombre or "General",
@@ -474,7 +590,7 @@ async def _generate_slides(
 
 
 async def _review_slides_for_accuracy(
-    llm: LLMRouter,
+    llm: _PresentationLLM,
     slides: list[dict],
     payload: PresentacionCreate,
 ) -> list[dict]:
@@ -488,6 +604,8 @@ async def _review_slides_for_accuracy(
     )
     try:
         raw = await llm.generate_json("presentacion", prompt)
+    except LocalInferencePending:
+        raise
     except Exception:  # noqa: BLE001
         logger.exception("Presentation factual review provider failed")
         return slides
@@ -1587,26 +1705,21 @@ async def list_presentaciones(
 ) -> list[Presentacion]:
     if _is_admin(current_user):
         stmt = select(Presentacion).order_by(Presentacion.created_at.desc())
-    elif _is_profesor(current_user):
-        stmt = (
-            select(Presentacion)
-            .where(Presentacion.profesor_id == current_user.id)
-            .order_by(Presentacion.created_at.desc())
-        )
-    elif _is_estudiante(current_user):
+    else:
         materia_ids = await _student_materia_ids(db, current_user.id)
-        if not materia_ids:
-            return []
         stmt = (
             select(Presentacion)
             .where(
-                Presentacion.materia_id.in_(materia_ids),
-                Presentacion.slides_json["publicada"].as_boolean().is_(True),
+                or_(
+                    Presentacion.profesor_id == current_user.id,
+                    and_(
+                        Presentacion.materia_id.in_(materia_ids),
+                        Presentacion.slides_json["publicada"].as_boolean().is_(True),
+                    ),
+                )
             )
             .order_by(Presentacion.created_at.desc())
         )
-    else:
-        return []
 
     result = await db.scalars(stmt)
     return list(result)
@@ -1642,8 +1755,7 @@ async def ensure_can_read_presentacion(
     if _is_admin(current_user) or pres.profesor_id == current_user.id:
         return pres
     if (
-        _is_estudiante(current_user)
-        and pres.materia_id
+        pres.materia_id
         and (pres.slides_json or {}).get("publicada") is True
     ):
         materia_ids = await _student_materia_ids(db, current_user.id)

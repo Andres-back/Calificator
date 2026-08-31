@@ -4,7 +4,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.permissions import get_current_user
+from app.core.permissions import get_current_user, require_permission_now
 from app.db.session import get_db
 from app.modules.asistencia import service
 from app.modules.asistencia.schemas import AsistenciaDiaRead, AsistenciaDiaUpsert, AsistenciaReporteRead
@@ -21,6 +21,7 @@ async def get_attendance_day(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> AsistenciaDiaRead:
+    require_permission_now(current_user, "attendance.read")
     materia = await materias_service.ensure_can_manage_materia(db, materia_id, current_user)
     return await service.get_attendance_day(db, materia, fecha)
 
@@ -33,6 +34,7 @@ async def get_attendance_report(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> AsistenciaReporteRead:
+    require_permission_now(current_user, "attendance.read")
     materia = await materias_service.ensure_can_manage_materia(db, materia_id, current_user)
     return await service.get_attendance_report(db, materia, fecha_desde, fecha_hasta)
 
@@ -44,5 +46,6 @@ async def save_attendance_day(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> AsistenciaDiaRead:
+    require_permission_now(current_user, "attendance.manage")
     materia = await materias_service.ensure_can_manage_materia(db, materia_id, current_user)
     return await service.save_attendance_day(db, materia, payload, current_user)

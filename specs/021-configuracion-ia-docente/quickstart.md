@@ -53,6 +53,34 @@
 2. Restaurar modo institucional y verificar que nuevos trabajos usan la ruta global.
 3. Desactivar el rollout de calificación y comprobar que el flujo estable anterior continúa operativo.
 
+## Escenario H: Ollama Cloud institucional
+
+1. Elegir Ollama Cloud en administración y guardar una credencial nueva.
+2. Probarla, actualizar modelos y verificar capacidades con un modelo de visión y otro de texto.
+3. Ejecutar un trabajo y comprobar origen institutional_cloud, modelo y versión sin clave.
+
+## Escenario I: Ollama Cloud personal
+
+1. Habilitar credenciales docentes para Ollama.
+2. Guardar una credencial Cloud desde un docente y probarla.
+3. Seleccionar un modelo personal y confirmar aislamiento frente a otro docente.
+4. Forzar un fallo y validar el fallback según consentimiento.
+
+## Escenario J: conector local Windows
+
+1. Instalar el conector en Windows con Ollama activo.
+2. Generar un código, emparejar y actualizar los modelos locales.
+3. Entrar en modo avanzado y seleccionar un modelo local únicamente para Presentaciones.
+4. Cerrar el navegador y comprobar que el trabajo se completa y reanuda una sola vez.
+5. Desconectar durante otro trabajo, reconectar y verificar recuperación por lease.
+6. Revocar el último conector y confirmar que deja de reclamar trabajos y que la presentación suspendida pasa al fallback autorizado o a un error visible.
+7. Confirmar que calificación, visión, digitalización y entregas no ofrecen Ollama local ni envían evidencia al conector.
+
+> Alcance seguro actual: Ollama Cloud continúa disponible según capacidades para
+> las funciones configuradas. Ollama local solo procesa prompts de Presentaciones;
+> su integración con evidencia estudiantil permanece bloqueada hasta implementar
+> persistencia y consentimiento explícito por trabajo.
+
 ## Comandos de validación
 
 ```powershell
@@ -78,3 +106,31 @@ npm run test:mock
 - Convergencia: T045–T047 satisfechas; no quedaron tareas funcionales pendientes.
 
 Advertencias no bloqueantes observadas: una cancelación asíncrona emitida por una prueba de fallo de visión, una API de Pillow marcada para deprecación futura y un chunk principal de frontend superior a 500 kB. No afectan los criterios de aceptación de esta funcionalidad.
+
+## Validación incremental — 2026-08-31
+
+- Backend focalizado de configuración y presentaciones: `43 passed`; conector y cliente Windows: `16 passed`.
+- Frontend de administración y preferencias: `20 passed`; TypeScript, ESLint y build de producción correctos.
+- Ruff focalizado y `git diff --check`: sin errores funcionales.
+- Reanudación cubierta para callback correcto, callback duplicado, error, expiración y revocación del último conector.
+- Inventario técnico regenerado con `485` superficies y convergencia T067 completada; el script rechaza presentar como distribuible un ejecutable sin firma.
+
+## Validación de privacidad y empaquetado — 2026-08-31
+
+- Ollama local queda disponible solo para Presentaciones; `calificacion_texto`, `calificacion_foto`, `evaluacion_digitalizar` y `vision_ocr` se rechazan antes de consultar un modelo local.
+- Regresión Ollama, credenciales y resolvedor: `33 passed` sin claves reales.
+- El script rechaza una distribución sin `CertificateThumbprint` y exige `-AllowUnsignedDevelopment` para una compilación local no distribuible.
+- PyInstaller `6.15.0` produjo un ejecutable Windows de desarrollo de `8.916.778` bytes; `--help` funcionó, Authenticode reportó `NotSigned` como se esperaba y el SHA-256 tuvo 64 caracteres.
+- Los artefactos temporales `build`, `dist` y `.spec` se eliminaron después de validar y quedaron excluidos de Git.
+
+## Aceptación local Windows 11 — 2026-08-31
+
+- El equipo real ejecutó Windows 11 Pro `10.0.26200` y Ollama en un puerto loopback alternativo (`11435`).
+- El conector ahora acepta un puerto local configurable, conserva `11434` por defecto y rechaza HTTPS, credenciales embebidas, nombres de red y direcciones que no sean `127.0.0.1`, `localhost` o `::1`.
+- Descubrimiento real: dos modelos detectados en `0,09 s`; `qwen3.5:9b` identificó capacidades de texto y visión.
+- Inferencia de presentación sin información estudiantil: respuesta válida de 395 caracteres en `5,4 s`.
+- Regresión focalizada: `17 passed`; Ruff sin hallazgos.
+- Ejecutable de desarrollo reconstruido: `8.916.774` bytes, ayuda y opción `--ollama-url` operativas, SHA-256 de 64 caracteres y estado `NotSigned` esperado. Los artefactos temporales volvieron a eliminarse.
+- E2E local completo: emparejamiento, publicación de dos modelos, suspensión/reanudación del worker y presentación de tres diapositivas en estado `success` en `29,43 s`.
+- La prueba restauró la configuración del docente, eliminó la presentación temporal y revocó el conector; la comprobación posterior reportó cero presentaciones temporales y cero conectores de prueba activos.
+- T068 permanece parcial únicamente hasta repetir la matriz en Windows 10 22H2.

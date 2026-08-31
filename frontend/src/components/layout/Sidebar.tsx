@@ -27,13 +27,21 @@ export function Sidebar({
   mobile?: boolean;
 }) {
   const user = useAuth((state) => state.user);
-  const navItems = user?.rol === 'admin' ? adminNav : user?.rol === 'estudiante' ? estudianteNav : profesorNav;
+  const baseNav = user?.rol === 'admin' ? adminNav : user?.rol === 'estudiante' ? estudianteNav : profesorNav;
+  const mixedNav = [...adminNav, ...profesorNav, ...estudianteNav].filter(
+    (item, index, items) => items.findIndex((candidate) => candidate.to === item.to) === index,
+  );
+  const allowed = new Set(user?.permissions ?? []);
+  const navItems = (user?.custom_role_id ? mixedNav : baseNav).filter(
+    (item) => !item.permission || allowed.has(item.permission),
+  );
   const roleMessage = user?.rol === 'admin'
-    ? { title: 'IA bajo control', detail: 'Credenciales, modelos y rutas.', icon: ShieldCheck, to: '/app/admin/configuracion-ia' }
+    ? { title: 'IA bajo control', detail: 'Credenciales, modelos y rutas.', icon: ShieldCheck, to: '/app/admin/configuracion-ia', permission: 'admin_ai.manage' }
     : user?.rol === 'estudiante'
-      ? { title: 'Pregunta a Xali', detail: 'Practica y aclara tus dudas.', icon: GraduationCap, to: '/app/xali' }
-      : { title: 'Trabaja con Xali', detail: 'Prepara y revisa tus ideas.', icon: Bot, to: '/app/xali' };
+      ? { title: 'Pregunta a Xali', detail: 'Practica y aclara tus dudas.', icon: GraduationCap, to: '/app/xali', permission: 'xali.use' }
+      : { title: 'Trabaja con Xali', detail: 'Prepara y revisa tus ideas.', icon: Bot, to: '/app/xali', permission: 'xali.use' };
   const RoleIcon = roleMessage.icon;
+  const showRoleMessage = allowed.has(roleMessage.permission);
 
   return (
     <aside
@@ -131,7 +139,7 @@ export function Sidebar({
             </NavLink>
           ))}
         </nav>
-        <NavLink to={roleMessage.to} onClick={onNavigate} aria-label={`${roleMessage.title}: ${roleMessage.detail}`} className={cn(
+        {showRoleMessage && <NavLink to={roleMessage.to} onClick={onNavigate} aria-label={`${roleMessage.title}: ${roleMessage.detail}`} className={cn(
           'focus-ring group relative flex min-h-[5.25rem] items-start gap-3 overflow-hidden rounded-2xl border border-border bg-surface-2 p-3.5 transition hover:border-brand-300 hover:shadow-md',
           user?.rol === 'estudiante' && 'border-brand-200 bg-gradient-to-br from-white to-cyan-50 pr-[5.25rem] shadow-sm dark:border-brand-500/25 dark:from-surface-2 dark:to-cyan-950/40',
           user?.rol === 'profesor' && 'border-indigo-200 bg-gradient-to-br from-white to-indigo-50 pr-[5.25rem] shadow-sm dark:border-indigo-500/25 dark:from-surface-2 dark:to-indigo-950/50',
@@ -146,7 +154,7 @@ export function Sidebar({
             <p className="font-display text-sm font-bold text-fg">{roleMessage.title}</p>
             <p className="mt-1 text-xs leading-4 text-secondary">{roleMessage.detail}</p>
           </div>
-        </NavLink>
+        </NavLink>}
       </div>
     </aside>
   );
