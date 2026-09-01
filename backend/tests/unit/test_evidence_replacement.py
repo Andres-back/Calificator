@@ -8,6 +8,7 @@ from uuid import uuid4
 from app.modules.calificaciones import router
 from app.modules.calificaciones.models import Entrega
 from app.modules.calificaciones.schemas import ReemplazoEvidenciaCreate
+from app.modules.authorization.catalog import default_permissions_for_role
 from app.shared.enums import CalificacionEstado, EntregaEstado, EntregaTipo, UserRole
 
 
@@ -24,7 +25,10 @@ class FakeDB:
 
 
 def test_teacher_requests_complete_replacement_without_deleting_current_file(monkeypatch) -> None:
-    teacher = SimpleNamespace(id=uuid4(), rol=UserRole.PROFESOR.value)
+    teacher = SimpleNamespace(
+        id=uuid4(), rol=UserRole.PROFESOR.value,
+        _effective_permissions=default_permissions_for_role(UserRole.PROFESOR.value),
+    )
     delivery = Entrega(
         id=uuid4(),
         evaluacion_id=uuid4(),

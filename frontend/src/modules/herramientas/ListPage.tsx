@@ -18,7 +18,8 @@ import { useAuth } from '@/stores/auth';
 const CATEGORIES = ['Todos', 'Juego', 'Evaluación', 'Material'] as const;
 
 export function ListPage() {
-  const permissions = new Set(useAuth((state) => state.user?.permissions ?? []));
+  const user = useAuth((state) => state.user);
+  const permissions = new Set(user?.permissions ?? []);
   const canCreate = permissions.has('resources.create');
   const canUpdate = permissions.has('resources.update');
   const canDelete = permissions.has('resources.delete');

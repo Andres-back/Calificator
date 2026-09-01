@@ -61,7 +61,10 @@ class OllamaConnectorJob(Base):
     )
 
     id: Mapped[PyUUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid4, server_default=text("uuid_generate_v4()"))
-    source_job_id: Mapped[PyUUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("ai_jobs.id", ondelete="SET NULL"), nullable=True, index=True)
+    # ai_jobs se administra mediante SQL explícito y migraciones, no como
+    # modelo ORM. La migración conserva la FK real; aquí evitamos registrar
+    # una referencia ORM hacia una tabla ausente de Base.metadata.
+    source_job_id: Mapped[PyUUID | None] = mapped_column(UUID(as_uuid=True), nullable=True, index=True)
     profesor_id: Mapped[PyUUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
     connector_id: Mapped[PyUUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("ollama_connectors.id", ondelete="SET NULL"), nullable=True)
     idempotency_key: Mapped[str] = mapped_column(String(160), nullable=False)

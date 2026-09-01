@@ -324,7 +324,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "ab87b884f4c0451273e8cbb7250cb5304cf209f73f1c25086d0fbec776de2bf8",
+  "source_digest": "9261c5964162f0da1155f825693e606962d765ccb237d653500b945dbd563918",
   "surfaces": [
     {
       "actors": [
@@ -29527,7 +29527,6 @@
           "backend/alembic/versions/202608300002_ollama_connectors.py"
         ],
         "relationships": [
-          "ai_jobs.id",
           "ollama_connectors.id",
           "users.id"
         ],

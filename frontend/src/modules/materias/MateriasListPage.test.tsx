@@ -85,6 +85,7 @@ beforeEach(() => {
       email: 'docente@example.com',
       rol: 'profesor',
       estado: 'activo',
+      permissions: ['subjects.read', 'subjects.create', 'subjects.update', 'evaluations.create'],
     },
     status: 'authenticated',
   });
@@ -174,6 +175,7 @@ describe('MateriasListPage student enrollment', () => {
         email: 'estudiante@example.com',
         rol: 'estudiante',
         estado: 'activo',
+        permissions: ['subjects.read', 'subjects.enroll'],
       },
       status: 'authenticated',
     });

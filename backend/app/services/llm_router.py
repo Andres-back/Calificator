@@ -154,6 +154,7 @@ class LLMRouter:
             self._provider_configs[LLMProvider.OPEN_CODE.value] = {
                 "model": settings.OPEN_CODE_DIGITALIZATION_MODEL,
                 "timeout_seconds": settings.OPEN_CODE_DIGITALIZATION_TIMEOUT_SECONDS,
+                "max_tokens": settings.OPEN_CODE_DIGITALIZATION_MAX_TOKENS,
                 "wait_for_completion": True,
             }
         elif task_type == "presentacion":
@@ -173,9 +174,9 @@ class LLMRouter:
                 credentials = await get_effective_ai_credentials(db)
                 self._credentials = {
                     "openai": getattr(credentials, "openai_key", ""),
-                    "open_code": credentials.open_code_key,
-                    "groq": credentials.groq_key,
-                    "ollama": credentials.ollama_key,
+                    "open_code": getattr(credentials, "open_code_key", ""),
+                    "groq": getattr(credentials, "groq_key", ""),
+                    "ollama": getattr(credentials, "ollama_key", ""),
                 }
                 institutional_credentials = dict(self._credentials)
                 self._provider_configs = {str(item["id"]): item for item in text_providers}

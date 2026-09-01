@@ -206,7 +206,7 @@ async def update_user(
     data = payload.model_dump(exclude_unset=True)
     original_role = user.rol
     original_state = user.estado
-    original_primary_admin = bool(user.is_primary_admin)
+    original_primary_admin = bool(getattr(user, "is_primary_admin", False))
     custom_role_supplied = "custom_role_id" in data
     custom_role_id = data.pop("custom_role_id", None)
     primary_admin_supplied = "is_primary_admin" in data
@@ -218,12 +218,12 @@ async def update_user(
             status_code=status.HTTP_409_CONFLICT,
             detail="No puedes modificar tu propio acceso administrativo",
         )
-    if actor and user.is_primary_admin and not actor.is_primary_admin:
+    if actor and getattr(user, "is_primary_admin", False) and not getattr(actor, "is_primary_admin", False):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Solo un Administrador principal puede gestionar otra cuenta principal",
         )
-    if user.is_primary_admin and (
+    if getattr(user, "is_primary_admin", False) and (
         (role is not None and role != UserRole.ADMIN)
         or (state is not None and state != UserEstado.ACTIVO)
         or (custom_role_supplied and custom_role_id is not None)

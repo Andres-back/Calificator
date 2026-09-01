@@ -9,6 +9,7 @@ import pytest
 from fastapi import HTTPException
 
 from app.modules.calificaciones import router, service
+from app.modules.authorization.catalog import default_permissions_for_role
 from app.modules.calificaciones.schemas import ResolverIncidencia
 from app.shared.enums import UserRole
 
@@ -132,7 +133,10 @@ def test_resolve_review_request_uses_naive_utc_for_database(monkeypatch) -> None
 
 
 def test_teacher_cannot_resolve_another_teachers_review_request(monkeypatch) -> None:
-    teacher = SimpleNamespace(id=uuid4(), rol=UserRole.PROFESOR.value)
+    teacher = SimpleNamespace(
+        id=uuid4(), rol=UserRole.PROFESOR.value,
+        _effective_permissions=default_permissions_for_role(UserRole.PROFESOR.value),
+    )
     incidence = SimpleNamespace(id=uuid4(), calificacion_id=uuid4())
     grade = SimpleNamespace(evaluacion_id=uuid4())
 
@@ -170,7 +174,10 @@ def test_teacher_cannot_resolve_another_teachers_review_request(monkeypatch) -> 
     assert exc.value.status_code == 403
 
 def test_owner_teacher_can_resolve_their_review_request(monkeypatch) -> None:
-    teacher = SimpleNamespace(id=uuid4(), rol=UserRole.PROFESOR.value)
+    teacher = SimpleNamespace(
+        id=uuid4(), rol=UserRole.PROFESOR.value,
+        _effective_permissions=default_permissions_for_role(UserRole.PROFESOR.value),
+    )
     incidence = SimpleNamespace(id=uuid4(), calificacion_id=uuid4())
     grade = SimpleNamespace(evaluacion_id=uuid4())
     expected = {"id": incidence.id, "estado": "resuelta"}
@@ -209,7 +216,10 @@ def test_owner_teacher_can_resolve_their_review_request(monkeypatch) -> None:
     assert result == expected
 
 def test_student_cannot_resolve_review_request() -> None:
-    student = SimpleNamespace(id=uuid4(), rol=UserRole.ESTUDIANTE.value)
+    student = SimpleNamespace(
+        id=uuid4(), rol=UserRole.ESTUDIANTE.value,
+        _effective_permissions=default_permissions_for_role(UserRole.ESTUDIANTE.value),
+    )
 
     class MustNotQueryDB:
         async def scalar(self, _statement):
@@ -229,7 +239,10 @@ def test_student_cannot_resolve_review_request() -> None:
 
 
 def test_student_consults_only_their_review_request(monkeypatch) -> None:
-    student = SimpleNamespace(id=uuid4(), rol=UserRole.ESTUDIANTE.value)
+    student = SimpleNamespace(
+        id=uuid4(), rol=UserRole.ESTUDIANTE.value,
+        _effective_permissions=default_permissions_for_role(UserRole.ESTUDIANTE.value),
+    )
     evaluation_id = uuid4()
     expected = {"id": uuid4(), "estado": "abierta"}
     captured: dict[str, object] = {}
@@ -252,7 +265,10 @@ def test_student_consults_only_their_review_request(monkeypatch) -> None:
 
 
 def test_admin_resolution_preserves_actor_and_auditable_result(monkeypatch) -> None:
-    admin = SimpleNamespace(id=uuid4(), rol=UserRole.ADMIN.value)
+    admin = SimpleNamespace(
+        id=uuid4(), rol=UserRole.ADMIN.value,
+        _effective_permissions=default_permissions_for_role(UserRole.ADMIN.value),
+    )
     incidence = SimpleNamespace(id=uuid4(), calificacion_id=uuid4())
     grade = SimpleNamespace(evaluacion_id=uuid4())
     now = datetime.now()

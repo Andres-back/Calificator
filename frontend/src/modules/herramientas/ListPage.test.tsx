@@ -3,6 +3,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ListPage } from './ListPage';
+import { useAuth } from '@/stores/auth';
 
 const mocks = vi.hoisted(() => ({
   listMaterials: vi.fn(), deleteMaterial: vi.fn(), duplicateMaterial: vi.fn(),
@@ -31,6 +32,17 @@ function resource(id: string, assignment: null | 'apoyo' | 'actividad', visible:
 
 beforeEach(() => {
   vi.clearAllMocks();
+  useAuth.setState({
+    user: {
+      id: 'teacher-1', nombre: 'Docente', email: 'docente@example.com',
+      rol: 'profesor', estado: 'activo',
+      permissions: [
+        'resources.read', 'resources.create', 'resources.update',
+        'resources.delete', 'resources.assign', 'evaluations.read',
+      ],
+    },
+    status: 'authenticated',
+  });
   mocks.listMaterials.mockResolvedValue([
     resource('draft', null, false),
     resource('support', 'apoyo', true),

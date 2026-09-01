@@ -14,6 +14,14 @@ class EmptyMailDb:
     async def get(self, _model, _identifier):
         return None
 
+    async def execute(self, _statement):
+        class EmptyResult:
+            @staticmethod
+            def first():
+                return None
+
+        return EmptyResult()
+
 
 async def empty_mail_db() -> AsyncGenerator[EmptyMailDb, None]:
     yield EmptyMailDb()

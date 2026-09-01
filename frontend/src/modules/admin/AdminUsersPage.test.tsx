@@ -231,7 +231,7 @@ describe('AdminRolesPage', () => {
     expect(screen.queryByRole('button', { name: /Editar/ })).not.toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: /Ver detalle/ }));
     const dialog = screen.getByRole('dialog', { name: 'Auxiliar académico' });
-    expect(within(dialog).getByText('resources.read')).toBeVisible();
+    await waitFor(() => expect(within(dialog).getByText('resources.read')).toBeVisible());
     expect(await within(dialog).findByText('authorization role updated')).toBeVisible();
   });
 });

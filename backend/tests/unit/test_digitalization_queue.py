@@ -6,6 +6,7 @@ import pytest
 from fastapi import UploadFile
 
 from app.modules.evaluaciones import router
+from app.modules.authorization.catalog import default_permissions_for_role
 from app.modules.materias import service as materias_service
 from app.shared.enums import EvaluacionModalidad, JobEstado, JobTipo, UserRole
 
@@ -25,7 +26,10 @@ class FakeDB:
 @pytest.mark.anyio
 async def test_digitalization_is_persisted_and_enqueued(monkeypatch) -> None:
     materia_id = uuid4()
-    user = SimpleNamespace(id=uuid4(), rol=UserRole.PROFESOR.value)
+    user = SimpleNamespace(
+        id=uuid4(), rol=UserRole.PROFESOR.value,
+        _effective_permissions=default_permissions_for_role(UserRole.PROFESOR.value),
+    )
     job_id = uuid4()
     created: list[dict] = []
     queued: list[dict] = []

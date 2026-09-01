@@ -9,6 +9,7 @@ from app.db.session import get_db
 from app.main import create_app
 from app.modules.calificaciones import router as calificaciones_router
 from app.modules.calificaciones import service as calificaciones_service
+from app.modules.authorization.catalog import default_permissions_for_role
 from app.modules.users.models import User
 
 
@@ -60,7 +61,7 @@ async def test_resumen_academico_normaliza_notas_y_agrega_por_materia() -> None:
 
 
 def _user(role: str, user_id=None) -> User:
-    return User(
+    user = User(
         id=user_id or uuid4(),
         nombre=f"Usuario {role}",
         email=f"{role}-{uuid4().hex[:8]}@example.com",
@@ -68,6 +69,8 @@ def _user(role: str, user_id=None) -> User:
         rol=role,
         estado="activo",
     )
+    user._effective_permissions = default_permissions_for_role(role)
+    return user
 
 
 async def _db_override():

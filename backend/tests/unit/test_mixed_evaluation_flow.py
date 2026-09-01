@@ -9,6 +9,7 @@ import pytest
 from fastapi import UploadFile
 
 from app.modules.calificaciones import router
+from app.modules.authorization.catalog import default_permissions_for_role
 from app.modules.calificaciones.models import Entrega
 from app.modules.calificaciones.orchestrator import (
     build_objective_validation,
@@ -184,7 +185,11 @@ def test_photo_endpoint_reuses_online_delivery_and_grades_both_mixed_sections(mo
             evaluacion_id=evaluation.id,
             estudiante_id=student_id,
             foto=UploadFile(filename="evidencia.jpg", file=BytesIO(b"image")),
-            current_user=SimpleNamespace(id=evaluation.profesor_id, rol=UserRole.PROFESOR.value),
+            current_user=SimpleNamespace(
+                id=evaluation.profesor_id,
+                rol=UserRole.PROFESOR.value,
+                _effective_permissions=default_permissions_for_role(UserRole.PROFESOR.value),
+            ),
             db=FakeDB(),
         )
     )
