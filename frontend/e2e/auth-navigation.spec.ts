@@ -6,6 +6,7 @@ const profesor = {
   email: 'profesor@example.test',
   rol: 'profesor',
   estado: 'activo',
+  permissions: ['subjects.read'],
 };
 
 test('login mocks a professor session and protects the admin navigation', async ({ page }) => {
@@ -25,6 +26,19 @@ test('login mocks a professor session and protects the admin navigation', async 
       ? { status: 200, contentType: 'application/json', body: JSON.stringify({ user: profesor }) }
       : { status: 401, contentType: 'application/json', body: JSON.stringify({ detail: 'No session' }) },
   ));
+  await page.route('**/api/users/me/authorization', (route) => route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify({
+      profile: profesor.rol,
+      is_primary_admin: false,
+      custom_role_id: null,
+      custom_role_name: null,
+      role_version: null,
+      auth_version: 1,
+      permissions: profesor.permissions,
+    }),
+  }));
 
   await page.goto('/login');
   await expect(page.getByRole('button', { name: /Iniciar sesi.n/i })).toBeVisible();

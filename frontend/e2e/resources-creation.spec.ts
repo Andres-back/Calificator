@@ -6,6 +6,7 @@ const teacher = {
   email: 'recursos@example.test',
   rol: 'profesor',
   estado: 'activo',
+  permissions: ['subjects.read', 'dba.read', 'resources.read', 'resources.create', 'resources.update', 'resources.assign'],
 };
 
 const materia = {
@@ -71,6 +72,11 @@ async function mockApplication(page: Page) {
 
     if (path === '/auth/refresh') return json({});
     if (path === '/auth/me') return json({ user: teacher });
+    if (path === '/users/me/authorization') return json({
+      profile: teacher.rol, is_primary_admin: false, custom_role_id: null,
+      custom_role_name: null, role_version: null, auth_version: 1,
+      permissions: teacher.permissions,
+    });
     if (path === '/materias') return json([materia]);
     if (path === `/materias/${materia.id}/dba`) {
       return json([{

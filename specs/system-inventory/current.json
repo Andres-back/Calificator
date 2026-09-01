@@ -324,7 +324,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "2f2c958e7d7986c93ace9c3b56d1319209be56e90eeac426c4cab1b05fd0614d",
+  "source_digest": "7c5418e0e6f51e5e5b32c7f2cdcd6f3bb86cfbc53f10075c6a88c45344f62d18",
   "surfaces": [
     {
       "actors": [
@@ -5513,7 +5513,55 @@
           "level": "e2e",
           "reference": "GET:/users/me",
           "status": "direct",
+          "test_path": "frontend/e2e/accessibility/teacher-ai-configuration.a11y.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/users/me",
+          "status": "direct",
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/users/me",
+          "status": "direct",
+          "test_path": "frontend/e2e/auth-navigation.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/users/me",
+          "status": "direct",
+          "test_path": "frontend/e2e/evaluation-ai-wizard.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/users/me",
+          "status": "direct",
+          "test_path": "frontend/e2e/explainable-grading.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/users/me",
+          "status": "direct",
+          "test_path": "frontend/e2e/p2-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/users/me",
+          "status": "direct",
+          "test_path": "frontend/e2e/resources-creation.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/users/me",
+          "status": "direct",
+          "test_path": "frontend/e2e/student-activity-delivery.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/users/me",
+          "status": "direct",
+          "test_path": "frontend/e2e/teacher-ai-configuration.spec.ts"
         },
         {
           "level": "unit",
@@ -5579,7 +5627,55 @@
           "level": "e2e",
           "reference": "GET:/users/me/authorization",
           "status": "direct",
+          "test_path": "frontend/e2e/accessibility/teacher-ai-configuration.a11y.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/users/me/authorization",
+          "status": "direct",
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/users/me/authorization",
+          "status": "direct",
+          "test_path": "frontend/e2e/auth-navigation.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/users/me/authorization",
+          "status": "direct",
+          "test_path": "frontend/e2e/evaluation-ai-wizard.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/users/me/authorization",
+          "status": "direct",
+          "test_path": "frontend/e2e/explainable-grading.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/users/me/authorization",
+          "status": "direct",
+          "test_path": "frontend/e2e/p2-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/users/me/authorization",
+          "status": "direct",
+          "test_path": "frontend/e2e/resources-creation.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/users/me/authorization",
+          "status": "direct",
+          "test_path": "frontend/e2e/student-activity-delivery.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/users/me/authorization",
+          "status": "direct",
+          "test_path": "frontend/e2e/teacher-ai-configuration.spec.ts"
         }
       ]
     },
@@ -7089,7 +7185,55 @@
           "level": "e2e",
           "reference": "PATCH:/users/me",
           "status": "direct",
+          "test_path": "frontend/e2e/accessibility/teacher-ai-configuration.a11y.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/users/me",
+          "status": "direct",
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/users/me",
+          "status": "direct",
+          "test_path": "frontend/e2e/auth-navigation.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/users/me",
+          "status": "direct",
+          "test_path": "frontend/e2e/evaluation-ai-wizard.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/users/me",
+          "status": "direct",
+          "test_path": "frontend/e2e/explainable-grading.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/users/me",
+          "status": "direct",
+          "test_path": "frontend/e2e/p2-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/users/me",
+          "status": "direct",
+          "test_path": "frontend/e2e/resources-creation.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/users/me",
+          "status": "direct",
+          "test_path": "frontend/e2e/student-activity-delivery.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/users/me",
+          "status": "direct",
+          "test_path": "frontend/e2e/teacher-ai-configuration.spec.ts"
         },
         {
           "level": "unit",
@@ -20897,7 +21041,55 @@
           "level": "e2e",
           "reference": "GET:/users/me/authorization",
           "status": "direct",
+          "test_path": "frontend/e2e/accessibility/teacher-ai-configuration.a11y.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/users/me/authorization",
+          "status": "direct",
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/users/me/authorization",
+          "status": "direct",
+          "test_path": "frontend/e2e/auth-navigation.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/users/me/authorization",
+          "status": "direct",
+          "test_path": "frontend/e2e/evaluation-ai-wizard.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/users/me/authorization",
+          "status": "direct",
+          "test_path": "frontend/e2e/explainable-grading.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/users/me/authorization",
+          "status": "direct",
+          "test_path": "frontend/e2e/p2-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/users/me/authorization",
+          "status": "direct",
+          "test_path": "frontend/e2e/resources-creation.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/users/me/authorization",
+          "status": "direct",
+          "test_path": "frontend/e2e/student-activity-delivery.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/users/me/authorization",
+          "status": "direct",
+          "test_path": "frontend/e2e/teacher-ai-configuration.spec.ts"
         },
         {
           "level": "unit",
@@ -30407,13 +30599,55 @@
           "level": "e2e",
           "reference": "users",
           "status": "direct",
+          "test_path": "frontend/e2e/accessibility/teacher-ai-configuration.a11y.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "users",
+          "status": "direct",
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
         },
         {
           "level": "e2e",
           "reference": "users",
           "status": "direct",
+          "test_path": "frontend/e2e/auth-navigation.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "users",
+          "status": "direct",
+          "test_path": "frontend/e2e/evaluation-ai-wizard.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "users",
+          "status": "direct",
+          "test_path": "frontend/e2e/explainable-grading.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "users",
+          "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "users",
+          "status": "direct",
+          "test_path": "frontend/e2e/resources-creation.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "users",
+          "status": "direct",
+          "test_path": "frontend/e2e/student-activity-delivery.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "users",
+          "status": "direct",
+          "test_path": "frontend/e2e/teacher-ai-configuration.spec.ts"
         },
         {
           "level": "unit",

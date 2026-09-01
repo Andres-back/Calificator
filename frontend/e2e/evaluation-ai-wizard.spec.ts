@@ -6,6 +6,10 @@ const teacher = {
   email: 'profesora@example.test',
   rol: 'profesor',
   estado: 'activo',
+  permissions: [
+    'subjects.read', 'dba.read', 'evaluations.read', 'evaluations.create',
+    'evaluations.update', 'evaluations.publish', 'xali.use',
+  ],
 };
 
 const student = {
@@ -14,6 +18,7 @@ const student = {
   nombre: 'Estudiante E2E',
   email: 'estudiante@example.test',
   rol: 'estudiante',
+  permissions: ['subjects.read', 'evaluations.read', 'evaluations.submit'],
 };
 
 const materia = {
@@ -101,6 +106,11 @@ async function mockApplication(page: Page, role: 'profesor' | 'estudiante' = 'pr
         ? json({ user: activeUser })
         : json({ detail: 'No session' }, 401);
     }
+    if (path === '/users/me/authorization') return json({
+      profile: activeUser.rol, is_primary_admin: false, custom_role_id: null,
+      custom_role_name: null, role_version: null, auth_version: 1,
+      permissions: activeUser.permissions,
+    });
     if (path === '/materias' && method === 'GET') return json([materia]);
     if (path === `/materias/${materia.id}/dba`) return json([dba]);
     if (path === `/materias/${materia.id}/evaluaciones` && method === 'GET') return json(evaluations);

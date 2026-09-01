@@ -6,6 +6,7 @@ const student = {
   email: 'student-authorization@example.test',
   rol: 'estudiante',
   estado: 'activo',
+  permissions: ['subjects.read', 'evaluations.read', 'evaluations.submit', 'resources.read'],
 };
 
 const material = {
@@ -48,6 +49,11 @@ async function mockStudentApplication(page: Page) {
     if (path === '/auth/me') {
       return authenticated ? json({ user: student }) : json({ detail: 'No session' }, 401);
     }
+    if (path === '/users/me/authorization') return json({
+      profile: student.rol, is_primary_admin: false, custom_role_id: null,
+      custom_role_name: null, role_version: null, auth_version: 1,
+      permissions: student.permissions,
+    });
     if (path === `/herramientas/${material.id}`) return json(material);
     if (path === '/materias') return json([]);
     return json([]);

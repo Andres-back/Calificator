@@ -1,6 +1,6 @@
 import { expect, test, type Page, type Route } from '@playwright/test';
 
-const profesor = { id: 'teacher-a11y', nombre: 'Profesora IA', email: 'teacher@example.test', rol: 'profesor', estado: 'activo' };
+const profesor = { id: 'teacher-a11y', nombre: 'Profesora IA', email: 'teacher@example.test', rol: 'profesor', estado: 'activo', permissions: ['ai_settings.personal'] };
 const config = {
   mode: 'institutional', allow_institutional_fallback: true, active: true, version: 2,
   providers: [{ id: 'open_code', name: 'open_code', tipo: 'texto', label: 'OpenCode', base_url: null, model: 'qwen3.7-plus', active: true, priority: 1, timeout_seconds: 60, max_retries: 2 }],
@@ -15,6 +15,7 @@ async function prepare(page: Page) {
     const path = new URL(route.request().url()).pathname.replace(/^\/api/, '');
     if (path === '/auth/login') { loggedIn = true; return json(route, {}); }
     if (path === '/auth/me') return loggedIn ? json(route, { user: profesor }) : json(route, {}, 401);
+    if (path === '/users/me/authorization') return json(route, { profile: profesor.rol, is_primary_admin: false, custom_role_id: null, custom_role_name: null, role_version: null, auth_version: 1, permissions: profesor.permissions });
     if (path === '/auth/refresh') return json(route, {}, 401);
     if (path === '/profesor/ai-config') return json(route, config);
     return json(route, []);

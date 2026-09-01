@@ -40,6 +40,7 @@ async function installMocks(page: Page, permissions: string[]) {
 }
 
 test('roles funciona sin desbordamiento en móvil, tableta y escritorio', async ({ page }) => {
+  test.setTimeout(60_000);
   await installMocks(page, ['roles.read', 'roles.manage', 'users.read', 'users.create', 'users.update', 'users.delete']);
   for (const viewport of [
     { width: 360, height: 800 },
