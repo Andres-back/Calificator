@@ -76,6 +76,18 @@
 - [x] T042 Ejecutar convergencia y cerrar tareas restantes en specs/029-roles-permisos-modulares/tasks.md
 - [x] T043 Medir resolución de permisos menor a 50 ms p95 y listado paginado de 10.000 usuarios, consolidado en backend/tests/integration/test_permission_matrix.py
 
+## Cobertura de requisitos
+
+- **FR-001, FR-002, FR-003, FR-004, FR-005**: T004–T008 y T022–T024 cubren listado, creación, edición, retiro seguro y protecciones administrativas.
+- **FR-006, FR-007, FR-008**: T009–T015 y T017–T021 cubren ciclo de vida, versión, asignación única y permisos seleccionados de roles personalizados.
+- **FR-009, FR-010, FR-011, FR-012**: T001, T002, T010, T013, T017 y T020 cubren catálogo, acciones, dependencias y combinaciones modulares sin perder contexto.
+- **FR-013, FR-014, FR-015**: T025–T031 cubren autorización backend/frontend, propiedad académica e invalidación de sesiones tras cambios de acceso.
+- **FR-016**: T032, T034 y T035 cubren auditoría sanitizada de usuarios, roles, permisos y asignaciones.
+- **FR-017, FR-018**: T016, T020, T021, T033, T036, T039 y T040 cubren estados visibles, confirmaciones, accesibilidad y viewports.
+- **FR-019**: T002, T003, T005, T027–T031 y T038–T040 conservan y prueban los recorridos históricos de los tres perfiles.
+- **FR-020**: T017, T020 y T021 implementan el resumen de menú, módulos y capacidades antes de guardar.
+- **FR-021, FR-022, FR-023**: T002, T005, T010–T014, T018, T022–T024, T032, T034 y T035 cubren alcance delegado, Administrador principal y prohibición de elevación indirecta.
+
 ## Dependencias
 
 - Fase 1 define cobertura antes de tocar autorización.

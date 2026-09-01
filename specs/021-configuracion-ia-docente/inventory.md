@@ -6,38 +6,38 @@
 
 | Tipo | Firma | Actores | Cobertura | Fuente |
 |---|---|---|---|---|
-| endpoint | `DELETE:/profesor/ai-credentials/{provider}` | authenticated | covered | `backend/app/modules/admin_ai_config/router.py:1124` |
-| endpoint | `DELETE:/profesor/ollama-connectors/{connector_id}` | ambiguous | missing | `backend/app/modules/ollama_connector/router.py:54` |
-| endpoint | `GET:/admin/ai-audit` | authenticated | covered | `backend/app/modules/admin_ai_config/router.py:792` |
-| endpoint | `GET:/admin/ai-config` | authenticated | covered | `backend/app/modules/admin_ai_config/router.py:354` |
-| endpoint | `GET:/admin/ai-config-hash` | authenticated | covered | `backend/app/modules/admin_ai_config/router.py:760` |
-| endpoint | `GET:/admin/ai-settings` | authenticated | covered | `backend/app/modules/admin_ai_config/router.py:431` |
-| endpoint | `GET:/admin/ai-usage` | authenticated | covered | `backend/app/modules/admin_ai_config/router.py:549` |
-| endpoint | `GET:/profesor/ai-config` | authenticated | covered | `backend/app/modules/admin_ai_config/router.py:940` |
-| endpoint | `GET:/profesor/ai-providers/ollama/models` | authenticated | missing | `backend/app/modules/admin_ai_config/router.py:1166` |
-| endpoint | `GET:/profesor/ollama-connectors` | ambiguous | missing | `backend/app/modules/ollama_connector/router.py:46` |
-| endpoint | `PATCH:/admin/ai-config` | authenticated | covered | `backend/app/modules/admin_ai_config/router.py:367` |
-| endpoint | `PATCH:/admin/ai-providers/{provider_id}` | authenticated | covered | `backend/app/modules/admin_ai_config/router.py:714` |
-| endpoint | `PATCH:/profesor/ai-config` | authenticated | covered | `backend/app/modules/admin_ai_config/router.py:821` |
-| endpoint | `POST:/admin/ai-cache/clear` | authenticated | missing | `backend/app/modules/admin_ai_config/router.py:559` |
-| endpoint | `POST:/admin/ai-providers/ollama/models/refresh` | authenticated | missing | `backend/app/modules/admin_ai_config/router.py:522` |
-| endpoint | `POST:/admin/ai-providers/{provider}/test` | authenticated | missing | `backend/app/modules/admin_ai_config/router.py:488` |
-| endpoint | `POST:/admin/ai-settings/restore-defaults` | authenticated | missing | `backend/app/modules/admin_ai_config/router.py:731` |
-| endpoint | `POST:/admin/ai-settings/restore-previous` | authenticated | covered | `backend/app/modules/admin_ai_config/router.py:743` |
+| endpoint | `DELETE:/profesor/ai-credentials/{provider}` | admin, profesor | covered | `backend/app/modules/admin_ai_config/router.py:1124` |
+| endpoint | `DELETE:/profesor/ollama-connectors/{connector_id}` | admin, profesor | missing | `backend/app/modules/ollama_connector/router.py:54` |
+| endpoint | `GET:/admin/ai-audit` | admin | covered | `backend/app/modules/admin_ai_config/router.py:792` |
+| endpoint | `GET:/admin/ai-config` | admin | covered | `backend/app/modules/admin_ai_config/router.py:354` |
+| endpoint | `GET:/admin/ai-config-hash` | admin | covered | `backend/app/modules/admin_ai_config/router.py:760` |
+| endpoint | `GET:/admin/ai-settings` | admin | covered | `backend/app/modules/admin_ai_config/router.py:431` |
+| endpoint | `GET:/admin/ai-usage` | admin | covered | `backend/app/modules/admin_ai_config/router.py:549` |
+| endpoint | `GET:/profesor/ai-config` | admin, profesor | covered | `backend/app/modules/admin_ai_config/router.py:940` |
+| endpoint | `GET:/profesor/ai-providers/ollama/models` | admin, profesor | missing | `backend/app/modules/admin_ai_config/router.py:1166` |
+| endpoint | `GET:/profesor/ollama-connectors` | admin, profesor | missing | `backend/app/modules/ollama_connector/router.py:46` |
+| endpoint | `PATCH:/admin/ai-config` | admin | covered | `backend/app/modules/admin_ai_config/router.py:367` |
+| endpoint | `PATCH:/admin/ai-providers/{provider_id}` | admin | covered | `backend/app/modules/admin_ai_config/router.py:714` |
+| endpoint | `PATCH:/profesor/ai-config` | admin, profesor | covered | `backend/app/modules/admin_ai_config/router.py:821` |
+| endpoint | `POST:/admin/ai-cache/clear` | admin | missing | `backend/app/modules/admin_ai_config/router.py:559` |
+| endpoint | `POST:/admin/ai-providers/ollama/models/refresh` | admin | missing | `backend/app/modules/admin_ai_config/router.py:522` |
+| endpoint | `POST:/admin/ai-providers/{provider}/test` | admin | missing | `backend/app/modules/admin_ai_config/router.py:488` |
+| endpoint | `POST:/admin/ai-settings/restore-defaults` | admin | missing | `backend/app/modules/admin_ai_config/router.py:731` |
+| endpoint | `POST:/admin/ai-settings/restore-previous` | admin | covered | `backend/app/modules/admin_ai_config/router.py:743` |
 | endpoint | `POST:/connector/jobs/claim` | ambiguous | missing | `backend/app/modules/ollama_connector/router.py:80` |
 | endpoint | `POST:/connector/jobs/{job_id}/complete` | ambiguous | missing | `backend/app/modules/ollama_connector/router.py:110` |
 | endpoint | `POST:/connector/jobs/{job_id}/fail` | ambiguous | missing | `backend/app/modules/ollama_connector/router.py:121` |
 | endpoint | `POST:/connector/jobs/{job_id}/heartbeat` | ambiguous | missing | `backend/app/modules/ollama_connector/router.py:99` |
 | endpoint | `POST:/connector/pair` | ambiguous | missing | `backend/app/modules/ollama_connector/router.py:64` |
-| endpoint | `POST:/profesor/ai-providers/ollama/models/refresh` | authenticated | missing | `backend/app/modules/admin_ai_config/router.py:1146` |
-| endpoint | `POST:/profesor/ai-providers/{provider}/test` | authenticated | covered | `backend/app/modules/admin_ai_config/router.py:1201` |
-| endpoint | `POST:/profesor/ollama-connectors/pairing` | ambiguous | missing | `backend/app/modules/ollama_connector/router.py:37` |
-| endpoint | `PUT:/admin/ai-features` | authenticated | covered | `backend/app/modules/admin_ai_config/router.py:665` |
-| endpoint | `PUT:/admin/ai-providers` | authenticated | covered | `backend/app/modules/admin_ai_config/router.py:637` |
-| endpoint | `PUT:/admin/ai-settings/publish` | authenticated | covered | `backend/app/modules/admin_ai_config/router.py:572` |
+| endpoint | `POST:/profesor/ai-providers/ollama/models/refresh` | admin, profesor | missing | `backend/app/modules/admin_ai_config/router.py:1146` |
+| endpoint | `POST:/profesor/ai-providers/{provider}/test` | admin, profesor | covered | `backend/app/modules/admin_ai_config/router.py:1201` |
+| endpoint | `POST:/profesor/ollama-connectors/pairing` | admin, profesor | missing | `backend/app/modules/ollama_connector/router.py:37` |
+| endpoint | `PUT:/admin/ai-features` | admin | covered | `backend/app/modules/admin_ai_config/router.py:665` |
+| endpoint | `PUT:/admin/ai-providers` | admin | covered | `backend/app/modules/admin_ai_config/router.py:637` |
+| endpoint | `PUT:/admin/ai-settings/publish` | admin | covered | `backend/app/modules/admin_ai_config/router.py:572` |
 | endpoint | `PUT:/connector/models` | ambiguous | missing | `backend/app/modules/ollama_connector/router.py:70` |
-| endpoint | `PUT:/profesor/ai-config` | authenticated | covered | `backend/app/modules/admin_ai_config/router.py:1034` |
-| endpoint | `PUT:/profesor/ai-credentials/{provider}` | authenticated | covered | `backend/app/modules/admin_ai_config/router.py:1099` |
+| endpoint | `PUT:/profesor/ai-config` | admin, profesor | covered | `backend/app/modules/admin_ai_config/router.py:1034` |
+| endpoint | `PUT:/profesor/ai-credentials/{provider}` | admin, profesor | covered | `backend/app/modules/admin_ai_config/router.py:1099` |
 | frontend_route | `/app/admin/configuracion-ia` | admin | covered | `frontend/src/config/routes.ts:57` |
 | frontend_route | `/app/configuracion-ia` | authenticated | covered | `frontend/src/config/routes.ts:61` |
 | frontend_call | `DELETE:/profesor/ai-credentials/{provider}` | ambiguous | covered | `frontend/src/modules/profesor_ai/api.ts:84` |
@@ -89,19 +89,5 @@ Sin decisiones explícitas de permiso para este dominio.
 
 ## Hallazgos
 
-- **medium · authorization_mismatch**: Permisos observables distintos para GET:/admin/ai-config-hash: backend=['authenticated'], frontend=['admin'].
-- **medium · authorization_mismatch**: Permisos observables distintos para GET:/admin/ai-audit: backend=['authenticated'], frontend=['admin'].
-- **medium · authorization_mismatch**: Permisos observables distintos para POST:/admin/ai-settings/restore-previous: backend=['authenticated'], frontend=['admin'].
-- **medium · authorization_mismatch**: Permisos observables distintos para PUT:/admin/ai-providers: backend=['authenticated'], frontend=['admin'].
-- **medium · authorization_mismatch**: Permisos observables distintos para POST:/admin/ai-providers/{}/test: backend=['authenticated'], frontend=['admin'].
 - **low · missing_coverage**: 27 superficies de 021-configuracion-ia-docente no tienen evidencia de prueba observable.
-- **medium · authorization_mismatch**: Permisos observables distintos para PUT:/admin/ai-features: backend=['authenticated'], frontend=['admin'].
-- **medium · authorization_mismatch**: Permisos observables distintos para POST:/admin/ai-providers/ollama/models/refresh: backend=['authenticated'], frontend=['admin'].
-- **medium · authorization_mismatch**: Permisos observables distintos para PATCH:/admin/ai-config: backend=['authenticated'], frontend=['admin'].
-- **medium · authorization_mismatch**: Permisos observables distintos para POST:/admin/ai-settings/restore-defaults: backend=['authenticated'], frontend=['admin'].
-- **medium · authorization_mismatch**: Permisos observables distintos para PATCH:/admin/ai-providers/{}: backend=['authenticated'], frontend=['admin'].
 - **low · orphan_candidate**: 19 superficies no alcanzables o históricas se conservan como candidatas a retiro.
-- **medium · authorization_mismatch**: Permisos observables distintos para POST:/admin/ai-cache/clear: backend=['authenticated'], frontend=['admin'].
-- **medium · authorization_mismatch**: Permisos observables distintos para PUT:/admin/ai-settings/publish: backend=['authenticated'], frontend=['admin'].
-- **medium · authorization_mismatch**: Permisos observables distintos para GET:/admin/ai-usage: backend=['authenticated'], frontend=['admin'].
-- **medium · authorization_mismatch**: Permisos observables distintos para GET:/admin/ai-settings: backend=['authenticated'], frontend=['admin'].

@@ -17,61 +17,6 @@
   "exceptions": [],
   "findings": [
     {
-      "category": "authorization_mismatch",
-      "description": "Permisos observables distintos para GET:/admin/ai-config-hash: backend=['authenticated'], frontend=['admin'].",
-      "id": "F-014CD74B535C",
-      "issue_url": "",
-      "severity": "medium",
-      "surface_ids": [
-        "backend:GET:/admin/ai-config-hash",
-        "frontend_call:GET:/admin/ai-config-hash:frontend/src/modules/admin/api.ts"
-      ]
-    },
-    {
-      "category": "authorization_mismatch",
-      "description": "Permisos observables distintos para GET:/admin/ai-audit: backend=['authenticated'], frontend=['admin'].",
-      "id": "F-0840DA6F96FF",
-      "issue_url": "",
-      "severity": "medium",
-      "surface_ids": [
-        "backend:GET:/admin/ai-audit",
-        "frontend_call:GET:/admin/ai-audit:frontend/src/modules/admin/api.ts"
-      ]
-    },
-    {
-      "category": "authorization_mismatch",
-      "description": "Permisos observables distintos para POST:/admin/ai-settings/restore-previous: backend=['authenticated'], frontend=['admin'].",
-      "id": "F-084F06A4C6F0",
-      "issue_url": "",
-      "severity": "medium",
-      "surface_ids": [
-        "backend:POST:/admin/ai-settings/restore-previous",
-        "frontend_call:POST:/admin/ai-settings/restore-previous:frontend/src/modules/admin/api.ts"
-      ]
-    },
-    {
-      "category": "authorization_mismatch",
-      "description": "Permisos observables distintos para PUT:/admin/ai-providers: backend=['authenticated'], frontend=['admin'].",
-      "id": "F-0BC847DD4E8F",
-      "issue_url": "",
-      "severity": "medium",
-      "surface_ids": [
-        "backend:PUT:/admin/ai-providers",
-        "frontend_call:PUT:/admin/ai-providers:frontend/src/modules/admin/api.ts"
-      ]
-    },
-    {
-      "category": "authorization_mismatch",
-      "description": "Permisos observables distintos para POST:/admin/ai-providers/{}/test: backend=['authenticated'], frontend=['admin'].",
-      "id": "F-1156425A3E16",
-      "issue_url": "",
-      "severity": "medium",
-      "surface_ids": [
-        "backend:POST:/admin/ai-providers/{provider}/test",
-        "frontend_call:POST:/admin/ai-providers/{providerId}/test:frontend/src/modules/admin/api.ts"
-      ]
-    },
-    {
       "category": "missing_coverage",
       "description": "27 superficies de 021-configuracion-ia-docente no tienen evidencia de prueba observable.",
       "id": "F-11C83E93D3DC",
@@ -139,83 +84,6 @@
       ]
     },
     {
-      "category": "authorization_mismatch",
-      "description": "Permisos observables distintos para POST:/presentaciones: backend=['authenticated'], frontend=['admin', 'profesor'].",
-      "id": "F-218E50D7A6C3",
-      "issue_url": "",
-      "severity": "medium",
-      "surface_ids": [
-        "backend:POST:/presentaciones",
-        "frontend_call:POST:/presentaciones:frontend/src/modules/presentaciones/api.ts"
-      ]
-    },
-    {
-      "category": "authorization_mismatch",
-      "description": "Permisos observables distintos para PUT:/admin/ai-features: backend=['authenticated'], frontend=['admin'].",
-      "id": "F-327F2E0E9BD0",
-      "issue_url": "",
-      "severity": "medium",
-      "surface_ids": [
-        "backend:PUT:/admin/ai-features",
-        "frontend_call:PUT:/admin/ai-features:frontend/src/modules/admin/api.ts"
-      ]
-    },
-    {
-      "category": "authorization_mismatch",
-      "description": "Permisos observables distintos para POST:/admin/ai-providers/ollama/models/refresh: backend=['authenticated'], frontend=['admin'].",
-      "id": "F-3E84C69D5112",
-      "issue_url": "",
-      "severity": "medium",
-      "surface_ids": [
-        "backend:POST:/admin/ai-providers/ollama/models/refresh",
-        "frontend_call:POST:/admin/ai-providers/ollama/models/refresh:frontend/src/modules/admin/api.ts"
-      ]
-    },
-    {
-      "category": "authorization_mismatch",
-      "description": "Permisos observables distintos para PATCH:/admin/ai-config: backend=['authenticated'], frontend=['admin'].",
-      "id": "F-4D1E8C655419",
-      "issue_url": "",
-      "severity": "medium",
-      "surface_ids": [
-        "backend:PATCH:/admin/ai-config",
-        "frontend_call:PATCH:/admin/ai-config:frontend/src/modules/admin/api.ts"
-      ]
-    },
-    {
-      "category": "authorization_mismatch",
-      "description": "Permisos observables distintos para POST:/admin/ai-settings/restore-defaults: backend=['authenticated'], frontend=['admin'].",
-      "id": "F-651CD7C0345B",
-      "issue_url": "",
-      "severity": "medium",
-      "surface_ids": [
-        "backend:POST:/admin/ai-settings/restore-defaults",
-        "frontend_call:POST:/admin/ai-settings/restore-defaults:frontend/src/modules/admin/api.ts"
-      ]
-    },
-    {
-      "category": "authorization_mismatch",
-      "description": "Permisos observables distintos para POST:/herramientas/{}/convertir-evaluacion: backend=['authenticated'], frontend=['admin', 'profesor'].",
-      "id": "F-6B2D93E0FFEC",
-      "issue_url": "",
-      "severity": "medium",
-      "surface_ids": [
-        "backend:POST:/herramientas/{material_id}/convertir-evaluacion",
-        "frontend_call:POST:/herramientas/{id}/convertir-evaluacion:frontend/src/modules/herramientas/api.ts"
-      ]
-    },
-    {
-      "category": "authorization_mismatch",
-      "description": "Permisos observables distintos para PATCH:/admin/ai-providers/{}: backend=['authenticated'], frontend=['admin'].",
-      "id": "F-75978EA5AA99",
-      "issue_url": "",
-      "severity": "medium",
-      "surface_ids": [
-        "backend:PATCH:/admin/ai-providers/{provider_id}",
-        "frontend_call:PATCH:/admin/ai-providers/{id}:frontend/src/modules/admin/api.ts"
-      ]
-    },
-    {
       "category": "orphan_candidate",
       "description": "19 superficies no alcanzables o históricas se conservan como candidatas a retiro.",
       "id": "F-851F561E6272",
@@ -244,17 +112,6 @@
       ]
     },
     {
-      "category": "authorization_mismatch",
-      "description": "Permisos observables distintos para POST:/herramientas/{}/retirar-apoyo: backend=['authenticated'], frontend=['admin', 'profesor'].",
-      "id": "F-899ABF935C99",
-      "issue_url": "",
-      "severity": "medium",
-      "surface_ids": [
-        "backend:POST:/herramientas/{material_id}/retirar-apoyo",
-        "frontend_call:POST:/herramientas/{id}/retirar-apoyo:frontend/src/modules/herramientas/api.ts"
-      ]
-    },
-    {
       "category": "contract_mismatch",
       "description": "2 llamadas frontend no tienen endpoint backend canónico coincidente en el análisis estático.",
       "id": "F-8FF8AD719093",
@@ -263,39 +120,6 @@
       "surface_ids": [
         "frontend_call:GET:/admin/users/{id}:frontend/src/modules/admin/usersApi.ts",
         "frontend_call:POST:/admin/roles/{id}:frontend/src/modules/admin/authorizationApi.ts"
-      ]
-    },
-    {
-      "category": "authorization_mismatch",
-      "description": "Permisos observables distintos para GET:/reportes/profesor/resumen: backend=['authenticated'], frontend=['admin', 'profesor'].",
-      "id": "F-9AB39D8E089F",
-      "issue_url": "",
-      "severity": "medium",
-      "surface_ids": [
-        "backend:GET:/reportes/profesor/resumen",
-        "frontend_call:GET:/reportes/profesor/resumen:frontend/src/modules/reportes/api.ts"
-      ]
-    },
-    {
-      "category": "authorization_mismatch",
-      "description": "Permisos observables distintos para POST:/herramientas/{}/asignar-apoyo: backend=['authenticated'], frontend=['admin', 'profesor'].",
-      "id": "F-A3F54D10A00E",
-      "issue_url": "",
-      "severity": "medium",
-      "surface_ids": [
-        "backend:POST:/herramientas/{material_id}/asignar-apoyo",
-        "frontend_call:POST:/herramientas/{id}/asignar-apoyo:frontend/src/modules/herramientas/api.ts"
-      ]
-    },
-    {
-      "category": "authorization_mismatch",
-      "description": "Permisos observables distintos para PATCH:/herramientas/{}: backend=['authenticated'], frontend=['admin', 'profesor'].",
-      "id": "F-A6C7FCA83008",
-      "issue_url": "",
-      "severity": "medium",
-      "surface_ids": [
-        "backend:PATCH:/herramientas/{material_id}",
-        "frontend_call:PATCH:/herramientas/{id}:frontend/src/modules/herramientas/api.ts"
       ]
     },
     {
@@ -311,28 +135,6 @@
         "backend:POST:/rag/search",
         "backend:POST:/rag/sources",
         "table:rag_sources"
-      ]
-    },
-    {
-      "category": "authorization_mismatch",
-      "description": "Permisos observables distintos para POST:/admin/ai-cache/clear: backend=['authenticated'], frontend=['admin'].",
-      "id": "F-A8211A270300",
-      "issue_url": "",
-      "severity": "medium",
-      "surface_ids": [
-        "backend:POST:/admin/ai-cache/clear",
-        "frontend_call:POST:/admin/ai-cache/clear:frontend/src/modules/admin/api.ts"
-      ]
-    },
-    {
-      "category": "authorization_mismatch",
-      "description": "Permisos observables distintos para PUT:/admin/ai-settings/publish: backend=['authenticated'], frontend=['admin'].",
-      "id": "F-AAD174ED858E",
-      "issue_url": "",
-      "severity": "medium",
-      "surface_ids": [
-        "backend:PUT:/admin/ai-settings/publish",
-        "frontend_call:PUT:/admin/ai-settings/publish:frontend/src/modules/admin/api.ts"
       ]
     },
     {
@@ -352,72 +154,6 @@
         "table:ai_jobs",
         "table:chat_messages",
         "table:evaluation_blueprints"
-      ]
-    },
-    {
-      "category": "authorization_mismatch",
-      "description": "Permisos observables distintos para GET:/admin/ai-usage: backend=['authenticated'], frontend=['admin'].",
-      "id": "F-B6C5E3836D42",
-      "issue_url": "",
-      "severity": "medium",
-      "surface_ids": [
-        "backend:GET:/admin/ai-usage",
-        "frontend_call:GET:/admin/ai-usage:frontend/src/modules/admin/api.ts"
-      ]
-    },
-    {
-      "category": "authorization_mismatch",
-      "description": "Permisos observables distintos para DELETE:/presentaciones/{}: backend=['authenticated'], frontend=['admin', 'profesor'].",
-      "id": "F-B75B9E38B3E3",
-      "issue_url": "",
-      "severity": "medium",
-      "surface_ids": [
-        "backend:DELETE:/presentaciones/{presentacion_id}",
-        "frontend_call:DELETE:/presentaciones/{id}:frontend/src/modules/presentaciones/api.ts"
-      ]
-    },
-    {
-      "category": "authorization_mismatch",
-      "description": "Permisos observables distintos para POST:/presentaciones/{}/exportar: backend=['authenticated'], frontend=['admin', 'profesor'].",
-      "id": "F-B8E0F5968BDB",
-      "issue_url": "",
-      "severity": "medium",
-      "surface_ids": [
-        "backend:POST:/presentaciones/{presentacion_id}/exportar",
-        "frontend_call:POST:/presentaciones/{id}/exportar:frontend/src/modules/presentaciones/api.ts"
-      ]
-    },
-    {
-      "category": "authorization_mismatch",
-      "description": "Permisos observables distintos para DELETE:/herramientas/{}: backend=['authenticated'], frontend=['admin', 'profesor'].",
-      "id": "F-BCA5DAAA1A17",
-      "issue_url": "",
-      "severity": "medium",
-      "surface_ids": [
-        "backend:DELETE:/herramientas/{material_id}",
-        "frontend_call:DELETE:/herramientas/{id}:frontend/src/modules/herramientas/api.ts"
-      ]
-    },
-    {
-      "category": "authorization_mismatch",
-      "description": "Permisos observables distintos para GET:/herramientas/{}/evaluaciones: backend=['authenticated'], frontend=['admin', 'profesor'].",
-      "id": "F-BD9E0097A535",
-      "issue_url": "",
-      "severity": "medium",
-      "surface_ids": [
-        "backend:GET:/herramientas/{material_id}/evaluaciones",
-        "frontend_call:GET:/herramientas/{id}/evaluaciones:frontend/src/modules/herramientas/api.ts"
-      ]
-    },
-    {
-      "category": "authorization_mismatch",
-      "description": "Permisos observables distintos para PATCH:/herramientas/{}/visibilidad: backend=['authenticated'], frontend=['admin', 'profesor'].",
-      "id": "F-CF8D47EF3BCB",
-      "issue_url": "",
-      "severity": "medium",
-      "surface_ids": [
-        "backend:PATCH:/herramientas/{material_id}/visibilidad",
-        "frontend_call:PATCH:/herramientas/{id}/visibilidad:frontend/src/modules/herramientas/api.ts"
       ]
     },
     {
@@ -444,17 +180,6 @@
       ]
     },
     {
-      "category": "authorization_mismatch",
-      "description": "Permisos observables distintos para GET:/admin/ai-settings: backend=['authenticated'], frontend=['admin'].",
-      "id": "F-E663A650EB22",
-      "issue_url": "",
-      "severity": "medium",
-      "surface_ids": [
-        "backend:GET:/admin/ai-settings",
-        "frontend_call:GET:/admin/ai-settings:frontend/src/modules/admin/api.ts"
-      ]
-    },
-    {
       "category": "missing_coverage",
       "description": "4 superficies de 010-presentaciones-imagenes no tienen evidencia de prueba observable.",
       "id": "F-EB65DEC976DE",
@@ -465,28 +190,6 @@
         "backend:PATCH:/imagenes-generadas/{imagen_id}",
         "backend:POST:/imagenes/generar",
         "table:imagenes_generadas"
-      ]
-    },
-    {
-      "category": "authorization_mismatch",
-      "description": "Permisos observables distintos para POST:/herramientas/{}/duplicar: backend=['authenticated'], frontend=['admin', 'profesor'].",
-      "id": "F-FDE15AE7770D",
-      "issue_url": "",
-      "severity": "medium",
-      "surface_ids": [
-        "backend:POST:/herramientas/{material_id}/duplicar",
-        "frontend_call:POST:/herramientas/{id}/duplicar:frontend/src/modules/herramientas/api.ts"
-      ]
-    },
-    {
-      "category": "authorization_mismatch",
-      "description": "Permisos observables distintos para PATCH:/incidencias/{}/resolver: backend=['authenticated'], frontend=['admin', 'profesor'].",
-      "id": "F-FEC12516A03B",
-      "issue_url": "",
-      "severity": "medium",
-      "surface_ids": [
-        "backend:PATCH:/incidencias/{incidencia_id}/resolver",
-        "frontend_call:PATCH:/incidencias/{incidenciaId}/resolver:frontend/src/modules/calificaciones/api.ts"
       ]
     }
   ],
@@ -625,9 +328,11 @@
   "surfaces": [
     {
       "actors": [
-        "ambiguous"
+        "admin"
       ],
-      "authorization": [],
+      "authorization": [
+        "require_permission:roles.manage"
+      ],
       "consumers": [],
       "coverage": "covered",
       "details": {
@@ -689,9 +394,11 @@
     },
     {
       "actors": [
-        "ambiguous"
+        "admin"
       ],
-      "authorization": [],
+      "authorization": [
+        "require_permission:users.delete"
+      ],
       "consumers": [],
       "coverage": "covered",
       "details": {
@@ -735,10 +442,12 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin",
+        "profesor"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:grading.grade"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -789,10 +498,12 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin",
+        "profesor"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:dba.manage"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -819,10 +530,12 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin",
+        "profesor"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:evaluations.delete"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -963,10 +676,12 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin",
+        "profesor"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:resources.delete"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -1083,10 +798,12 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin",
+        "profesor"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:presentations.delete"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -1167,10 +884,12 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin",
+        "profesor"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:ai_settings.personal"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -1203,9 +922,12 @@
     },
     {
       "actors": [
-        "ambiguous"
+        "admin",
+        "profesor"
       ],
-      "authorization": [],
+      "authorization": [
+        "require_permission:ai_settings.personal"
+      ],
       "consumers": [],
       "coverage": "missing",
       "details": {
@@ -1249,10 +971,13 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin",
+        "estudiante",
+        "profesor"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:xali.use"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -1297,10 +1022,11 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:admin_ai.manage"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -1327,10 +1053,11 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:admin_ai.manage"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -1363,10 +1090,11 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:admin_ai.manage"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -1393,10 +1121,11 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:admin_ai.manage"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -1435,10 +1164,11 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:admin_ai.manage"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -1465,9 +1195,11 @@
     },
     {
       "actors": [
-        "ambiguous"
+        "admin"
       ],
-      "authorization": [],
+      "authorization": [
+        "require_permission:roles.read"
+      ],
       "consumers": [],
       "coverage": "covered",
       "details": {
@@ -1523,9 +1255,11 @@
     },
     {
       "actors": [
-        "ambiguous"
+        "admin"
       ],
-      "authorization": [],
+      "authorization": [
+        "require_permission:roles.read"
+      ],
       "consumers": [],
       "coverage": "covered",
       "details": {
@@ -1643,9 +1377,11 @@
     },
     {
       "actors": [
-        "ambiguous"
+        "admin"
       ],
-      "authorization": [],
+      "authorization": [
+        "require_permission:roles.read"
+      ],
       "consumers": [],
       "coverage": "covered",
       "details": {
@@ -1707,9 +1443,11 @@
     },
     {
       "actors": [
-        "ambiguous"
+        "admin"
       ],
-      "authorization": [],
+      "authorization": [
+        "require_permission:roles.read"
+      ],
       "consumers": [],
       "coverage": "covered",
       "details": {
@@ -1771,9 +1509,11 @@
     },
     {
       "actors": [
-        "ambiguous"
+        "admin"
       ],
-      "authorization": [],
+      "authorization": [
+        "require_permission:users.read"
+      ],
       "consumers": [],
       "coverage": "covered",
       "details": {
@@ -1817,9 +1557,11 @@
     },
     {
       "actors": [
-        "ambiguous"
+        "admin"
       ],
-      "authorization": [],
+      "authorization": [
+        "require_permission:users.read"
+      ],
       "consumers": [],
       "coverage": "covered",
       "details": {
@@ -1875,9 +1617,11 @@
     },
     {
       "actors": [
-        "ambiguous"
+        "admin"
       ],
-      "authorization": [],
+      "authorization": [
+        "require_permission:users.delete"
+      ],
       "consumers": [],
       "coverage": "covered",
       "details": {
@@ -2705,10 +2449,12 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin",
+        "profesor"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:submissions.review"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -2771,10 +2517,14 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin",
+        "estudiante",
+        "profesor"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:grading.read",
+        "require_permission_now:submissions.read"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -2825,10 +2575,13 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin",
+        "estudiante",
+        "profesor"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:grading.read"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -2879,10 +2632,13 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin",
+        "estudiante",
+        "profesor"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:grading.read"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -2933,10 +2689,13 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin",
+        "estudiante",
+        "profesor"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:grading.read"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -2993,10 +2752,13 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin",
+        "estudiante",
+        "profesor"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:grading.read"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -3053,10 +2815,13 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin",
+        "estudiante",
+        "profesor"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:grading.read"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -3107,10 +2872,12 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin",
+        "profesor"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:submissions.review"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -3161,10 +2928,13 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin",
+        "estudiante",
+        "profesor"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:dba.read"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -3260,10 +3030,13 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin",
+        "estudiante",
+        "profesor"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:gradebook.read"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -3314,10 +3087,14 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin",
+        "estudiante",
+        "profesor"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_any_permission_now:gradebook.read",
+        "require_any_permission_now:reports.read"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -3368,10 +3145,13 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin",
+        "estudiante",
+        "profesor"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:evaluations.read"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -3512,10 +3292,13 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin",
+        "estudiante",
+        "profesor"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:evaluations.read"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -3542,10 +3325,13 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin",
+        "estudiante",
+        "profesor"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:grading.read"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -3596,10 +3382,13 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin",
+        "estudiante",
+        "profesor"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:grading.read"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -3656,10 +3445,12 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin",
+        "estudiante"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:evaluations.submit"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -3710,10 +3501,13 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin",
+        "estudiante",
+        "profesor"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:grading.read"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -3764,10 +3558,13 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin",
+        "estudiante",
+        "profesor"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:evaluations.read"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -3815,10 +3612,13 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin",
+        "estudiante",
+        "profesor"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:resources.read"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -3941,7 +3741,8 @@
       ],
       "authorization": [
         "explicit_permission_override",
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:resources.read"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -3991,7 +3792,8 @@
       ],
       "authorization": [
         "explicit_permission_override",
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:resources.read"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -4113,10 +3915,13 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin",
+        "estudiante",
+        "profesor"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:resources.read"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -4161,10 +3966,13 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin",
+        "estudiante",
+        "profesor"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:resources.read"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -4378,10 +4186,13 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin",
+        "estudiante",
+        "profesor"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:subjects.read"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -4540,10 +4351,13 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin",
+        "estudiante",
+        "profesor"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:subjects.read"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -4707,7 +4521,8 @@
       ],
       "authorization": [
         "explicit_permission_override",
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:attendance.read"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -4751,10 +4566,12 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin",
+        "profesor"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:attendance.read"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -4793,7 +4610,8 @@
       ],
       "authorization": [
         "explicit_permission_override",
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:dba.read"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -4825,10 +4643,13 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin",
+        "estudiante",
+        "profesor"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:dba.read"
       ],
       "consumers": [],
       "coverage": "missing",
@@ -4848,10 +4669,13 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin",
+        "estudiante",
+        "profesor"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:subjects.read"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -4890,10 +4714,13 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin",
+        "estudiante",
+        "profesor"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:evaluations.read"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -4926,10 +4753,13 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin",
+        "estudiante",
+        "profesor"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:subjects.read"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -4983,7 +4813,8 @@
       ],
       "authorization": [
         "explicit_permission_override",
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:presentations.read"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -5069,10 +4900,13 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin",
+        "estudiante",
+        "profesor"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:presentations.read"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -5111,10 +4945,13 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin",
+        "estudiante",
+        "profesor"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:presentations.read"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -5195,10 +5032,13 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin",
+        "estudiante",
+        "profesor"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:presentations.read"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -5249,7 +5089,8 @@
       ],
       "authorization": [
         "explicit_permission_override",
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:presentations.read"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -5305,7 +5146,8 @@
       ],
       "authorization": [
         "explicit_permission_override",
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:presentations.read"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -5355,10 +5197,13 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin",
+        "estudiante",
+        "profesor"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:presentations.read"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -5403,10 +5248,12 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin",
+        "profesor"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:ai_settings.personal"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -5451,10 +5298,12 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin",
+        "profesor"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:ai_settings.personal"
       ],
       "consumers": [],
       "coverage": "missing",
@@ -5474,9 +5323,12 @@
     },
     {
       "actors": [
-        "ambiguous"
+        "admin",
+        "profesor"
       ],
-      "authorization": [],
+      "authorization": [
+        "require_permission:ai_settings.personal"
+      ],
       "consumers": [],
       "coverage": "missing",
       "details": {
@@ -5541,10 +5393,14 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin",
+        "estudiante",
+        "profesor"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_any_permission_now:gradebook.read",
+        "require_any_permission_now:reports.read"
       ],
       "consumers": [],
       "coverage": "missing",
@@ -5564,10 +5420,12 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin",
+        "profesor"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:reports.read"
       ],
       "consumers": [],
       "coverage": "missing",
@@ -5587,10 +5445,12 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin",
+        "profesor"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:reports.read"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -5725,10 +5585,13 @@
     },
     {
       "actors": [
-        "estudiante"
+        "admin",
+        "estudiante",
+        "profesor"
       ],
       "authorization": [
         "get_current_user",
+        "require_permission_now:xali.use",
         "require_role"
       ],
       "consumers": [],
@@ -5774,10 +5637,13 @@
     },
     {
       "actors": [
-        "estudiante"
+        "admin",
+        "estudiante",
+        "profesor"
       ],
       "authorization": [
         "get_current_user",
+        "require_permission_now:xali.use",
         "require_role"
       ],
       "consumers": [],
@@ -5817,10 +5683,13 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin",
+        "estudiante",
+        "profesor"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:xali.use"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -5909,10 +5778,11 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:admin_ai.manage"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -5945,10 +5815,11 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:admin_ai.manage"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -5975,9 +5846,11 @@
     },
     {
       "actors": [
-        "ambiguous"
+        "admin"
       ],
-      "authorization": [],
+      "authorization": [
+        "require_permission:roles.manage"
+      ],
       "consumers": [],
       "coverage": "covered",
       "details": {
@@ -6039,9 +5912,11 @@
     },
     {
       "actors": [
-        "ambiguous"
+        "admin"
       ],
-      "authorization": [],
+      "authorization": [
+        "require_permission:users.update"
+      ],
       "consumers": [],
       "coverage": "covered",
       "details": {
@@ -6085,9 +5960,11 @@
     },
     {
       "actors": [
-        "ambiguous"
+        "admin"
       ],
-      "authorization": [],
+      "authorization": [
+        "require_permission:users.update"
+      ],
       "consumers": [],
       "coverage": "covered",
       "details": {
@@ -6119,10 +5996,12 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin",
+        "profesor"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:grading.grade"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -6173,10 +6052,12 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin",
+        "profesor"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:grading.grade"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -6227,10 +6108,12 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin",
+        "profesor"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:grading.grade"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -6281,10 +6164,12 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin",
+        "profesor"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:grading.publish"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -6335,10 +6220,12 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin",
+        "profesor"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:grading.grade"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -6389,10 +6276,12 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin",
+        "profesor"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:dba.manage"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -6419,10 +6308,12 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin",
+        "profesor"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:evaluations.update"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -6563,10 +6454,12 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin",
+        "profesor"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:grading.publish"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -6623,10 +6516,12 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin",
+        "profesor"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:evaluations.update"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -6659,10 +6554,12 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin",
+        "profesor"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:resources.update"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -6779,10 +6676,12 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin",
+        "profesor"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:resources.assign"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -6852,10 +6751,12 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin",
+        "profesor"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:submissions.review"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -6906,10 +6807,12 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin",
+        "profesor"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:subjects.update"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -7068,10 +6971,12 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin",
+        "profesor"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:subjects.update"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -7098,10 +7003,12 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin",
+        "profesor"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:ai_settings.personal"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -7238,10 +7145,11 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:admin_ai.manage"
       ],
       "consumers": [],
       "coverage": "missing",
@@ -7261,10 +7169,11 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:admin_ai.manage"
       ],
       "consumers": [],
       "coverage": "missing",
@@ -7284,10 +7193,11 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:admin_ai.manage"
       ],
       "consumers": [],
       "coverage": "missing",
@@ -7307,10 +7217,11 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:admin_ai.manage"
       ],
       "consumers": [],
       "coverage": "missing",
@@ -7330,10 +7241,11 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:admin_ai.manage"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -7388,9 +7300,11 @@
     },
     {
       "actors": [
-        "ambiguous"
+        "admin"
       ],
-      "authorization": [],
+      "authorization": [
+        "require_permission:roles.manage"
+      ],
       "consumers": [],
       "coverage": "covered",
       "details": {
@@ -7452,9 +7366,11 @@
     },
     {
       "actors": [
-        "ambiguous"
+        "admin"
       ],
-      "authorization": [],
+      "authorization": [
+        "require_permission:roles.manage"
+      ],
       "consumers": [],
       "coverage": "covered",
       "details": {
@@ -7510,9 +7426,11 @@
     },
     {
       "actors": [
-        "ambiguous"
+        "admin"
       ],
-      "authorization": [],
+      "authorization": [
+        "require_permission:users.create"
+      ],
       "consumers": [],
       "coverage": "covered",
       "details": {
@@ -8313,10 +8231,12 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin",
+        "profesor"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:grading.grade"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -8367,10 +8287,12 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin",
+        "profesor"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:grading.grade"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -8421,10 +8343,12 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin",
+        "profesor"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:grading.grade"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -8475,10 +8399,12 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin",
+        "profesor"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:grading.grade"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -8529,10 +8455,12 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin",
+        "profesor"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:grading.grade"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -8583,10 +8511,12 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin",
+        "profesor"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:grading.publish"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -8637,10 +8567,12 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin",
+        "profesor"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:grading.grade"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -8691,10 +8623,12 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin",
+        "profesor"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:grading.grade"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -8745,10 +8679,12 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin",
+        "profesor"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:submissions.review"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -8799,10 +8735,12 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin",
+        "profesor"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:grading.grade"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -8853,10 +8791,12 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin",
+        "profesor"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:submissions.review"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -9012,9 +8952,12 @@
     },
     {
       "actors": [
-        "ambiguous"
+        "admin",
+        "profesor"
       ],
-      "authorization": [],
+      "authorization": [
+        "require_permission:dba.manage"
+      ],
       "consumers": [],
       "coverage": "covered",
       "details": {
@@ -9040,10 +8983,12 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin",
+        "profesor"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:evaluations.create"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -9184,10 +9129,12 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin",
+        "profesor"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:evaluations.create"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -9226,10 +9173,12 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin",
+        "profesor"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:evaluations.create"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -9268,10 +9217,12 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin",
+        "profesor"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:evaluations.create"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -9310,10 +9261,12 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin",
+        "profesor"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:evaluations.create"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -9340,10 +9293,12 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin",
+        "profesor"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:evaluations.create"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -9376,10 +9331,12 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin",
+        "profesor"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:evaluations.publish"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -9412,10 +9369,12 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin",
+        "profesor"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:grading.grade"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -9466,10 +9425,12 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin",
+        "profesor"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:evaluations.update"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -9502,10 +9463,12 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin",
+        "profesor"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:evaluations.update"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -9538,10 +9501,12 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin",
+        "estudiante"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:evaluations.submit"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -9592,10 +9557,12 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin",
+        "estudiante"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:evaluations.submit"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -9646,10 +9613,12 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin",
+        "profesor"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:evaluations.publish"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -9682,10 +9651,12 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin",
+        "profesor"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:evaluations.publish"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -9718,10 +9689,13 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin",
+        "estudiante",
+        "profesor"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:grading.read"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -9772,10 +9746,12 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin",
+        "profesor"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:resources.create"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -9814,10 +9790,12 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin",
+        "profesor"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:resources.create"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -9856,10 +9834,12 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin",
+        "profesor"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:resources.create"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -9898,10 +9878,12 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin",
+        "profesor"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:resources.create"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -9940,10 +9922,12 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin",
+        "profesor"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:resources.create"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -9982,10 +9966,12 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin",
+        "profesor"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:resources.create"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -10024,10 +10010,12 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin",
+        "profesor"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:resources.create"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -10066,10 +10054,12 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin",
+        "profesor"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:resources.create"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -10114,10 +10104,12 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin",
+        "profesor"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:resources.create"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -10156,10 +10148,12 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin",
+        "profesor"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:resources.create"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -10198,10 +10192,12 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin",
+        "profesor"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:resources.create"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -10240,10 +10236,12 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin",
+        "profesor"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:resources.create"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -10282,10 +10280,12 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin",
+        "profesor"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:resources.create"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -10324,10 +10324,12 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin",
+        "profesor"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:resources.create"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -10366,10 +10368,12 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin",
+        "profesor"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:resources.create"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -10408,10 +10412,12 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin",
+        "profesor"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:resources.create"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -10450,10 +10456,12 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin",
+        "profesor"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:resources.create"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -10492,10 +10500,12 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin",
+        "profesor"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:resources.assign"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -10540,10 +10550,13 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin",
+        "profesor"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:evaluations.create",
+        "require_permission_now:resources.assign"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -10594,10 +10607,12 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin",
+        "profesor"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:resources.create"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -10636,10 +10651,12 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin",
+        "profesor"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:resources.assign"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -10749,9 +10766,12 @@
     },
     {
       "actors": [
-        "ambiguous"
+        "admin",
+        "profesor"
       ],
-      "authorization": [],
+      "authorization": [
+        "require_permission:subjects.create"
+      ],
       "consumers": [],
       "coverage": "covered",
       "details": {
@@ -10909,10 +10929,12 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin",
+        "profesor"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:dba.manage"
       ],
       "consumers": [],
       "coverage": "missing",
@@ -10932,10 +10954,12 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin",
+        "profesor"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:dba.manage"
       ],
       "consumers": [],
       "coverage": "missing",
@@ -10955,10 +10979,12 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin",
+        "profesor"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:subjects.update"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -10997,10 +11023,12 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin",
+        "estudiante"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:subjects.enroll"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -11033,10 +11061,12 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin",
+        "profesor"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:presentations.create"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -11117,10 +11147,12 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin",
+        "profesor"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:presentations.update"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -11165,10 +11197,12 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin",
+        "profesor"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:ai_settings.personal"
       ],
       "consumers": [],
       "coverage": "missing",
@@ -11188,10 +11222,12 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin",
+        "profesor"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:ai_settings.personal"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -11218,9 +11254,12 @@
     },
     {
       "actors": [
-        "ambiguous"
+        "admin",
+        "profesor"
       ],
-      "authorization": [],
+      "authorization": [
+        "require_permission:ai_settings.personal"
+      ],
       "consumers": [],
       "coverage": "missing",
       "details": {
@@ -11312,10 +11351,12 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin",
+        "profesor"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:reports.read"
       ],
       "consumers": [],
       "coverage": "missing",
@@ -11335,10 +11376,13 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin",
+        "estudiante",
+        "profesor"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:xali.use"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -11383,10 +11427,13 @@
     },
     {
       "actors": [
-        "estudiante"
+        "admin",
+        "estudiante",
+        "profesor"
       ],
       "authorization": [
         "get_current_user",
+        "require_permission_now:xali.use",
         "require_role"
       ],
       "consumers": [],
@@ -11426,10 +11473,13 @@
     },
     {
       "actors": [
-        "estudiante"
+        "admin",
+        "estudiante",
+        "profesor"
       ],
       "authorization": [
         "get_current_user",
+        "require_permission_now:xali.use",
         "require_role"
       ],
       "consumers": [],
@@ -11513,10 +11563,11 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:admin_ai.manage"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -11549,10 +11600,11 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:admin_ai.manage"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -11579,10 +11631,11 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:admin_ai.manage"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -11643,10 +11696,12 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin",
+        "profesor"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:grading.grade"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -11729,7 +11784,8 @@
       ],
       "authorization": [
         "explicit_permission_override",
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:attendance.manage"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -11773,10 +11829,12 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin",
+        "profesor"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:ai_settings.personal"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -11821,10 +11879,12 @@
     },
     {
       "actors": [
-        "authenticated"
+        "admin",
+        "profesor"
       ],
       "authorization": [
-        "get_current_user"
+        "get_current_user",
+        "require_permission_now:ai_settings.personal"
       ],
       "consumers": [],
       "coverage": "covered",

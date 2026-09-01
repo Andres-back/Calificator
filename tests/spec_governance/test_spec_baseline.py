@@ -30,12 +30,14 @@ ALL_SPECS = {
     "026-perfeccionar-recursos",
     "027-listas-botones-personalizados",
     "028-pulir-navegacion-presentaciones",
+    "029-roles-permisos-modulares",
 }
 OWNED_SPECS = {
     name
     for name in ALL_SPECS
     if name.startswith(tuple(f"{number:03d}-" for number in range(2, 13)))
     or name.startswith("021-")
+    or name.startswith("029-")
 }
 
 

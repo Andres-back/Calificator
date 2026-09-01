@@ -7,14 +7,14 @@
 | Tipo | Firma | Actores | Cobertura | Fuente |
 |---|---|---|---|---|
 | endpoint | `GET:/auth/me` | authenticated | covered | `backend/app/modules/auth/router.py:166` |
-| endpoint | `GET:/materias` | authenticated | covered | `backend/app/modules/materias/router.py:24` |
-| endpoint | `GET:/materias/{materia_id}` | authenticated | covered | `backend/app/modules/materias/router.py:33` |
-| endpoint | `GET:/materias/{materia_id}/estudiantes` | authenticated | covered | `backend/app/modules/materias/router.py:66` |
-| endpoint | `GET:/materias/{materia_id}/evaluaciones` | authenticated | covered | `backend/app/modules/evaluaciones/router.py:225` |
-| endpoint | `GET:/matriculas/mis-materias` | authenticated | covered | `backend/app/modules/matriculas/router.py:25` |
+| endpoint | `GET:/materias` | admin, estudiante, profesor | covered | `backend/app/modules/materias/router.py:24` |
+| endpoint | `GET:/materias/{materia_id}` | admin, estudiante, profesor | covered | `backend/app/modules/materias/router.py:33` |
+| endpoint | `GET:/materias/{materia_id}/estudiantes` | admin, estudiante, profesor | covered | `backend/app/modules/materias/router.py:66` |
+| endpoint | `GET:/materias/{materia_id}/evaluaciones` | admin, estudiante, profesor | covered | `backend/app/modules/evaluaciones/router.py:225` |
+| endpoint | `GET:/matriculas/mis-materias` | admin, estudiante, profesor | covered | `backend/app/modules/matriculas/router.py:25` |
 | endpoint | `GET:/users/me` | authenticated | covered | `backend/app/modules/users/router.py:25` |
-| endpoint | `PATCH:/materias/{materia_id}` | authenticated | covered | `backend/app/modules/materias/router.py:43` |
-| endpoint | `PATCH:/matriculas/{matricula_id}/estado` | authenticated | covered | `backend/app/modules/matriculas/router.py:35` |
+| endpoint | `PATCH:/materias/{materia_id}` | admin, profesor | covered | `backend/app/modules/materias/router.py:43` |
+| endpoint | `PATCH:/matriculas/{matricula_id}/estado` | admin, profesor | covered | `backend/app/modules/matriculas/router.py:35` |
 | endpoint | `PATCH:/users/me` | authenticated | covered | `backend/app/modules/users/router.py:30` |
 | endpoint | `POST:/auth/login` | ambiguous | covered | `backend/app/modules/auth/router.py:31` |
 | endpoint | `POST:/auth/logout` | ambiguous | covered | `backend/app/modules/auth/router.py:159` |
@@ -23,9 +23,9 @@
 | endpoint | `POST:/auth/password-recovery/validate` | ambiguous | covered | `backend/app/modules/auth/router.py:94` |
 | endpoint | `POST:/auth/refresh` | ambiguous | covered | `backend/app/modules/auth/router.py:145` |
 | endpoint | `POST:/auth/register` | ambiguous | covered | `backend/app/modules/auth/router.py:48` |
-| endpoint | `POST:/materias` | ambiguous | covered | `backend/app/modules/materias/router.py:15` |
-| endpoint | `POST:/materias/{materia_id}/regenerar-codigo` | authenticated | covered | `backend/app/modules/materias/router.py:55` |
-| endpoint | `POST:/matriculas/unirse` | authenticated | covered | `backend/app/modules/matriculas/router.py:15` |
+| endpoint | `POST:/materias` | admin, profesor | covered | `backend/app/modules/materias/router.py:15` |
+| endpoint | `POST:/materias/{materia_id}/regenerar-codigo` | admin, profesor | covered | `backend/app/modules/materias/router.py:55` |
+| endpoint | `POST:/matriculas/unirse` | admin, estudiante | covered | `backend/app/modules/matriculas/router.py:15` |
 | frontend_route | `/app/materias` | authenticated | covered | `frontend/src/config/routes.ts:23` |
 | frontend_route | `/app/materias/{id}` | authenticated | covered | `frontend/src/config/routes.ts:27` |
 | frontend_route | `/login` | public | covered | `frontend/src/config/routes.ts:9` |

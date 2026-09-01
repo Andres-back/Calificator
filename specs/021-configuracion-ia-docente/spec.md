@@ -165,6 +165,12 @@ Como administrador quiero conectar el VPS a Ollama Cloud y como docente quiero e
 - **SC-012**: El 100 % de los trabajos de Ollama identifica si utilizó Cloud institucional, Cloud personal o conector local sin registrar la clave.
 - **SC-013**: Ningún trabajo local puede ser leído, aceptado o respondido por el conector de otro docente.
 - **SC-014**: El conector se instala, empareja, detecta Ollama y completa un trabajo en Windows 10 22H2 y Windows 11 23H2 o posteriores sin configuración manual de red.
+
+**Excepción temporal de aceptación (2026-08-31)**: Windows 11 superó el recorrido
+E2E completo. La distribución declarada compatible con Windows 10 permanece
+bloqueada hasta cerrar [#62](https://github.com/Andres-back/Calificator/issues/62)
+con evidencia en Windows 10 22H2. Responsable: mantenedor del repositorio;
+fecha límite: antes de publicar el conector Windows al público.
 - **SC-015**: El 100 % de las rutas de visión, digitalización, entregas y calificación rechaza Ollama local antes de crear un trabajo con evidencia estudiantil.
 
 ## Supuestos

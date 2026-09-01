@@ -7,17 +7,17 @@
 | Tipo | Firma | Actores | Cobertura | Fuente |
 |---|---|---|---|---|
 | endpoint | `DELETE:/rag/sources/{source_id}` | admin, profesor | missing | `backend/app/modules/rag/router.py:83` |
-| endpoint | `DELETE:/xali/history` | authenticated | covered | `backend/app/modules/xali/router.py:119` |
+| endpoint | `DELETE:/xali/history` | admin, estudiante, profesor | covered | `backend/app/modules/xali/router.py:119` |
 | endpoint | `GET:/rag/sources` | admin, profesor | missing | `backend/app/modules/rag/router.py:67` |
-| endpoint | `GET:/xali/evaluaciones-entregadas` | estudiante | covered | `backend/app/modules/xali/router.py:44` |
-| endpoint | `GET:/xali/history` | authenticated | covered | `backend/app/modules/xali/router.py:109` |
+| endpoint | `GET:/xali/evaluaciones-entregadas` | admin, estudiante, profesor | covered | `backend/app/modules/xali/router.py:44` |
+| endpoint | `GET:/xali/history` | admin, estudiante, profesor | covered | `backend/app/modules/xali/router.py:109` |
 | endpoint | `GET:/xali/refuerzos/{refuerzo_id}` | admin, profesor | covered | `backend/app/modules/xali/refuerzo_router.py:39` |
 | endpoint | `PATCH:/xali/refuerzos/{refuerzo_id}` | admin, profesor | covered | `backend/app/modules/xali/refuerzo_router.py:53` |
 | endpoint | `POST:/rag/ingest` | admin, profesor | missing | `backend/app/modules/rag/router.py:40` |
 | endpoint | `POST:/rag/search` | authenticated | missing | `backend/app/modules/rag/router.py:51` |
 | endpoint | `POST:/rag/sources` | admin, profesor | missing | `backend/app/modules/rag/router.py:27` |
-| endpoint | `POST:/xali/chat` | authenticated | covered | `backend/app/modules/xali/router.py:26` |
-| endpoint | `POST:/xali/evaluaciones/{evaluacion_id}/chat` | estudiante | covered | `backend/app/modules/xali/router.py:54` |
+| endpoint | `POST:/xali/chat` | admin, estudiante, profesor | covered | `backend/app/modules/xali/router.py:26` |
+| endpoint | `POST:/xali/evaluaciones/{evaluacion_id}/chat` | admin, estudiante, profesor | covered | `backend/app/modules/xali/router.py:54` |
 | endpoint | `POST:/xali/refuerzos/generar` | admin, profesor | covered | `backend/app/modules/xali/refuerzo_router.py:19` |
 | frontend_route | `/app/xali` | authenticated | covered | `frontend/src/config/routes.ts:54` |
 | frontend_call | `DELETE:/xali/history` | ambiguous | covered | `frontend/src/modules/xali/api.ts:29` |

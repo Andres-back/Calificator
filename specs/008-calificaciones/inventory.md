@@ -6,34 +6,34 @@
 
 | Tipo | Firma | Actores | Cobertura | Fuente |
 |---|---|---|---|---|
-| endpoint | `DELETE:/calificaciones/modo-salon/{sesion_id}` | authenticated | covered | `backend/app/modules/calificaciones/router.py:1139` |
-| endpoint | `GET:/calificaciones/bandeja-docente` | authenticated | covered | `backend/app/modules/calificaciones/router.py:1541` |
-| endpoint | `GET:/calificaciones/modo-salon/{sesion_id}` | authenticated | covered | `backend/app/modules/calificaciones/router.py:951` |
-| endpoint | `GET:/calificaciones/modo-salon/{sesion_id}/estudiantes` | authenticated | covered | `backend/app/modules/calificaciones/router.py:975` |
-| endpoint | `GET:/calificaciones/{calificacion_id}/desglose` | authenticated | covered | `backend/app/modules/calificaciones/router.py:1660` |
-| endpoint | `GET:/calificaciones/{calificacion_id}/desglose/historial` | authenticated | covered | `backend/app/modules/calificaciones/router.py:1696` |
-| endpoint | `GET:/calificaciones/{calificacion_id}/detalle` | authenticated | covered | `backend/app/modules/calificaciones/router.py:1468` |
-| endpoint | `GET:/calificaciones/{calificacion_id}/incidencias` | authenticated | covered | `backend/app/modules/calificaciones/router.py:1613` |
-| endpoint | `GET:/estudiantes/{estudiante_id}/boletin` | authenticated | covered | `backend/app/modules/calificaciones/router.py:877` |
-| endpoint | `GET:/estudiantes/{estudiante_id}/resumen-academico` | authenticated | covered | `backend/app/modules/calificaciones/router.py:856` |
-| endpoint | `PATCH:/calificaciones/modo-salon/{sesion_id}/estudiantes/{estudiante_id}` | authenticated | covered | `backend/app/modules/calificaciones/router.py:1021` |
-| endpoint | `PATCH:/calificaciones/{calificacion_id}/ajustar` | authenticated | covered | `backend/app/modules/calificaciones/router.py:788` |
-| endpoint | `PATCH:/calificaciones/{calificacion_id}/confirmar` | authenticated | covered | `backend/app/modules/calificaciones/router.py:771` |
-| endpoint | `PATCH:/calificaciones/{calificacion_id}/publicar` | authenticated | covered | `backend/app/modules/calificaciones/router.py:1489` |
-| endpoint | `PATCH:/calificaciones/{calificacion_id}/revision-manual` | authenticated | covered | `backend/app/modules/calificaciones/router.py:805` |
-| endpoint | `PATCH:/incidencias/{incidencia_id}/resolver` | authenticated | covered | `backend/app/modules/calificaciones/router.py:1629` |
-| endpoint | `POST:/calificaciones/foto` | authenticated | covered | `backend/app/modules/calificaciones/router.py:255` |
-| endpoint | `POST:/calificaciones/lote` | authenticated | covered | `backend/app/modules/calificaciones/router.py:503` |
-| endpoint | `POST:/calificaciones/lote/ajustar` | authenticated | covered | `backend/app/modules/calificaciones/router.py:1528` |
-| endpoint | `POST:/calificaciones/lote/asincrono` | authenticated | covered | `backend/app/modules/calificaciones/router.py:609` |
-| endpoint | `POST:/calificaciones/lote/confirmar` | authenticated | covered | `backend/app/modules/calificaciones/router.py:1518` |
-| endpoint | `POST:/calificaciones/lote/publicar` | authenticated | covered | `backend/app/modules/calificaciones/router.py:1508` |
-| endpoint | `POST:/calificaciones/modo-salon/iniciar` | authenticated | covered | `backend/app/modules/calificaciones/router.py:910` |
-| endpoint | `POST:/calificaciones/modo-salon/{sesion_id}/foto` | authenticated | covered | `backend/app/modules/calificaciones/router.py:1064` |
-| endpoint | `POST:/calificaciones/{calificacion_id}/incidencias` | authenticated | covered | `backend/app/modules/calificaciones/router.py:1592` |
-| endpoint | `POST:/calificaciones/{calificacion_id}/reintentar-foto` | authenticated | covered | `backend/app/modules/calificaciones/router.py:395` |
-| endpoint | `POST:/calificaciones/{calificacion_id}/solicitar-reemplazo` | authenticated | covered | `backend/app/modules/calificaciones/router.py:458` |
-| endpoint | `PUT:/calificaciones/{calificacion_id}/desglose` | authenticated | covered | `backend/app/modules/calificaciones/router.py:1675` |
+| endpoint | `DELETE:/calificaciones/modo-salon/{sesion_id}` | admin, profesor | covered | `backend/app/modules/calificaciones/router.py:1139` |
+| endpoint | `GET:/calificaciones/bandeja-docente` | admin, profesor | covered | `backend/app/modules/calificaciones/router.py:1541` |
+| endpoint | `GET:/calificaciones/modo-salon/{sesion_id}` | admin, estudiante, profesor | covered | `backend/app/modules/calificaciones/router.py:951` |
+| endpoint | `GET:/calificaciones/modo-salon/{sesion_id}/estudiantes` | admin, estudiante, profesor | covered | `backend/app/modules/calificaciones/router.py:975` |
+| endpoint | `GET:/calificaciones/{calificacion_id}/desglose` | admin, estudiante, profesor | covered | `backend/app/modules/calificaciones/router.py:1660` |
+| endpoint | `GET:/calificaciones/{calificacion_id}/desglose/historial` | admin, estudiante, profesor | covered | `backend/app/modules/calificaciones/router.py:1696` |
+| endpoint | `GET:/calificaciones/{calificacion_id}/detalle` | admin, estudiante, profesor | covered | `backend/app/modules/calificaciones/router.py:1468` |
+| endpoint | `GET:/calificaciones/{calificacion_id}/incidencias` | admin, profesor | covered | `backend/app/modules/calificaciones/router.py:1613` |
+| endpoint | `GET:/estudiantes/{estudiante_id}/boletin` | admin, estudiante, profesor | covered | `backend/app/modules/calificaciones/router.py:877` |
+| endpoint | `GET:/estudiantes/{estudiante_id}/resumen-academico` | admin, estudiante, profesor | covered | `backend/app/modules/calificaciones/router.py:856` |
+| endpoint | `PATCH:/calificaciones/modo-salon/{sesion_id}/estudiantes/{estudiante_id}` | admin, profesor | covered | `backend/app/modules/calificaciones/router.py:1021` |
+| endpoint | `PATCH:/calificaciones/{calificacion_id}/ajustar` | admin, profesor | covered | `backend/app/modules/calificaciones/router.py:788` |
+| endpoint | `PATCH:/calificaciones/{calificacion_id}/confirmar` | admin, profesor | covered | `backend/app/modules/calificaciones/router.py:771` |
+| endpoint | `PATCH:/calificaciones/{calificacion_id}/publicar` | admin, profesor | covered | `backend/app/modules/calificaciones/router.py:1489` |
+| endpoint | `PATCH:/calificaciones/{calificacion_id}/revision-manual` | admin, profesor | covered | `backend/app/modules/calificaciones/router.py:805` |
+| endpoint | `PATCH:/incidencias/{incidencia_id}/resolver` | admin, profesor | covered | `backend/app/modules/calificaciones/router.py:1629` |
+| endpoint | `POST:/calificaciones/foto` | admin, profesor | covered | `backend/app/modules/calificaciones/router.py:255` |
+| endpoint | `POST:/calificaciones/lote` | admin, profesor | covered | `backend/app/modules/calificaciones/router.py:503` |
+| endpoint | `POST:/calificaciones/lote/ajustar` | admin, profesor | covered | `backend/app/modules/calificaciones/router.py:1528` |
+| endpoint | `POST:/calificaciones/lote/asincrono` | admin, profesor | covered | `backend/app/modules/calificaciones/router.py:609` |
+| endpoint | `POST:/calificaciones/lote/confirmar` | admin, profesor | covered | `backend/app/modules/calificaciones/router.py:1518` |
+| endpoint | `POST:/calificaciones/lote/publicar` | admin, profesor | covered | `backend/app/modules/calificaciones/router.py:1508` |
+| endpoint | `POST:/calificaciones/modo-salon/iniciar` | admin, profesor | covered | `backend/app/modules/calificaciones/router.py:910` |
+| endpoint | `POST:/calificaciones/modo-salon/{sesion_id}/foto` | admin, profesor | covered | `backend/app/modules/calificaciones/router.py:1064` |
+| endpoint | `POST:/calificaciones/{calificacion_id}/incidencias` | admin, profesor | covered | `backend/app/modules/calificaciones/router.py:1592` |
+| endpoint | `POST:/calificaciones/{calificacion_id}/reintentar-foto` | admin, profesor | covered | `backend/app/modules/calificaciones/router.py:395` |
+| endpoint | `POST:/calificaciones/{calificacion_id}/solicitar-reemplazo` | admin, profesor | covered | `backend/app/modules/calificaciones/router.py:458` |
+| endpoint | `PUT:/calificaciones/{calificacion_id}/desglose` | admin, profesor | covered | `backend/app/modules/calificaciones/router.py:1675` |
 | frontend_route | `/app/calificaciones/boletin` | estudiante | covered | `frontend/src/config/routes.ts:40` |
 | frontend_route | `/app/calificaciones/workspace` | admin, profesor | covered | `frontend/src/config/routes.ts:41` |
 | frontend_route | `/app/calificaciones/workspace/{evaluacionId}` | admin, profesor | covered | `frontend/src/config/routes.ts:43` |
@@ -78,4 +78,4 @@
 
 ## Hallazgos
 
-- **medium · authorization_mismatch**: Permisos observables distintos para PATCH:/incidencias/{}/resolver: backend=['authenticated'], frontend=['admin', 'profesor'].
+Sin hallazgos específicos del dominio.

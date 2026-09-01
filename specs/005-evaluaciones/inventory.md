@@ -6,30 +6,30 @@
 
 | Tipo | Firma | Actores | Cobertura | Fuente |
 |---|---|---|---|---|
-| endpoint | `DELETE:/evaluaciones/{evaluacion_id}` | authenticated | covered | `backend/app/modules/evaluaciones/router.py:403` |
-| endpoint | `GET:/evaluaciones/{evaluacion_id}` | authenticated | covered | `backend/app/modules/evaluaciones/router.py:235` |
-| endpoint | `GET:/evaluaciones/{evaluacion_id}/actividad` | authenticated | covered | `backend/app/modules/evaluaciones/router.py:245` |
-| endpoint | `GET:/evaluaciones/{evaluacion_id}/calificaciones` | authenticated | covered | `backend/app/modules/calificaciones/router.py:839` |
-| endpoint | `GET:/evaluaciones/{evaluacion_id}/mi-desglose` | authenticated | covered | `backend/app/modules/calificaciones/router.py:1721` |
-| endpoint | `GET:/evaluaciones/{evaluacion_id}/mi-entrega` | authenticated | covered | `backend/app/modules/calificaciones/router.py:1166` |
-| endpoint | `GET:/evaluaciones/{evaluacion_id}/mi-solicitud-revision` | authenticated | covered | `backend/app/modules/calificaciones/router.py:1554` |
-| endpoint | `GET:/evaluaciones/{evaluacion_id}/pdf` | authenticated | covered | `backend/app/modules/evaluaciones/router.py:255` |
-| endpoint | `PATCH:/evaluaciones/{evaluacion_id}` | authenticated | covered | `backend/app/modules/evaluaciones/router.py:336` |
-| endpoint | `PATCH:/evaluaciones/{evaluacion_id}/respuestas-liberadas` | authenticated | covered | `backend/app/modules/calificaciones/router.py:1708` |
-| endpoint | `PATCH:/evaluaciones/{evaluacion_id}/validar-estructura` | authenticated | covered | `backend/app/modules/evaluaciones/router.py:414` |
-| endpoint | `POST:/evaluaciones` | authenticated | covered | `backend/app/modules/evaluaciones/router.py:215` |
-| endpoint | `POST:/evaluaciones/externa/digitalizar` | authenticated | covered | `backend/app/modules/evaluaciones/router.py:195` |
-| endpoint | `POST:/evaluaciones/externa/digitalizar-con-archivo` | authenticated | covered | `backend/app/modules/evaluaciones/router.py:78` |
-| endpoint | `POST:/evaluaciones/generar-borrador` | authenticated | covered | `backend/app/modules/evaluaciones/router.py:181` |
-| endpoint | `POST:/evaluaciones/referencia/extraer` | authenticated | covered | `backend/app/modules/evaluaciones/router.py:38` |
-| endpoint | `POST:/evaluaciones/sorpresa` | authenticated | covered | `backend/app/modules/evaluaciones/router.py:205` |
-| endpoint | `POST:/evaluaciones/{evaluacion_id}/activar-recepcion` | authenticated | covered | `backend/app/modules/evaluaciones/router.py:381` |
-| endpoint | `POST:/evaluaciones/{evaluacion_id}/calificaciones/manual` | authenticated | covered | `backend/app/modules/calificaciones/router.py:822` |
-| endpoint | `POST:/evaluaciones/{evaluacion_id}/cerrar` | authenticated | covered | `backend/app/modules/evaluaciones/router.py:370` |
-| endpoint | `POST:/evaluaciones/{evaluacion_id}/crear-blueprint` | authenticated | covered | `backend/app/modules/evaluaciones/router.py:348` |
-| endpoint | `POST:/evaluaciones/{evaluacion_id}/pausar-recepcion` | authenticated | covered | `backend/app/modules/evaluaciones/router.py:392` |
-| endpoint | `POST:/evaluaciones/{evaluacion_id}/publicar` | authenticated | covered | `backend/app/modules/evaluaciones/router.py:359` |
-| endpoint | `POST:/evaluaciones/{evaluacion_id}/solicitud-revision` | authenticated | covered | `backend/app/modules/calificaciones/router.py:1571` |
+| endpoint | `DELETE:/evaluaciones/{evaluacion_id}` | admin, profesor | covered | `backend/app/modules/evaluaciones/router.py:403` |
+| endpoint | `GET:/evaluaciones/{evaluacion_id}` | admin, estudiante, profesor | covered | `backend/app/modules/evaluaciones/router.py:235` |
+| endpoint | `GET:/evaluaciones/{evaluacion_id}/actividad` | admin, estudiante, profesor | covered | `backend/app/modules/evaluaciones/router.py:245` |
+| endpoint | `GET:/evaluaciones/{evaluacion_id}/calificaciones` | admin, estudiante, profesor | covered | `backend/app/modules/calificaciones/router.py:839` |
+| endpoint | `GET:/evaluaciones/{evaluacion_id}/mi-desglose` | admin, estudiante, profesor | covered | `backend/app/modules/calificaciones/router.py:1721` |
+| endpoint | `GET:/evaluaciones/{evaluacion_id}/mi-entrega` | admin, estudiante | covered | `backend/app/modules/calificaciones/router.py:1166` |
+| endpoint | `GET:/evaluaciones/{evaluacion_id}/mi-solicitud-revision` | admin, estudiante, profesor | covered | `backend/app/modules/calificaciones/router.py:1554` |
+| endpoint | `GET:/evaluaciones/{evaluacion_id}/pdf` | admin, estudiante, profesor | covered | `backend/app/modules/evaluaciones/router.py:255` |
+| endpoint | `PATCH:/evaluaciones/{evaluacion_id}` | admin, profesor | covered | `backend/app/modules/evaluaciones/router.py:336` |
+| endpoint | `PATCH:/evaluaciones/{evaluacion_id}/respuestas-liberadas` | admin, profesor | covered | `backend/app/modules/calificaciones/router.py:1708` |
+| endpoint | `PATCH:/evaluaciones/{evaluacion_id}/validar-estructura` | admin, profesor | covered | `backend/app/modules/evaluaciones/router.py:414` |
+| endpoint | `POST:/evaluaciones` | admin, profesor | covered | `backend/app/modules/evaluaciones/router.py:215` |
+| endpoint | `POST:/evaluaciones/externa/digitalizar` | admin, profesor | covered | `backend/app/modules/evaluaciones/router.py:195` |
+| endpoint | `POST:/evaluaciones/externa/digitalizar-con-archivo` | admin, profesor | covered | `backend/app/modules/evaluaciones/router.py:78` |
+| endpoint | `POST:/evaluaciones/generar-borrador` | admin, profesor | covered | `backend/app/modules/evaluaciones/router.py:181` |
+| endpoint | `POST:/evaluaciones/referencia/extraer` | admin, profesor | covered | `backend/app/modules/evaluaciones/router.py:38` |
+| endpoint | `POST:/evaluaciones/sorpresa` | admin, profesor | covered | `backend/app/modules/evaluaciones/router.py:205` |
+| endpoint | `POST:/evaluaciones/{evaluacion_id}/activar-recepcion` | admin, profesor | covered | `backend/app/modules/evaluaciones/router.py:381` |
+| endpoint | `POST:/evaluaciones/{evaluacion_id}/calificaciones/manual` | admin, profesor | covered | `backend/app/modules/calificaciones/router.py:822` |
+| endpoint | `POST:/evaluaciones/{evaluacion_id}/cerrar` | admin, profesor | covered | `backend/app/modules/evaluaciones/router.py:370` |
+| endpoint | `POST:/evaluaciones/{evaluacion_id}/crear-blueprint` | admin, profesor | covered | `backend/app/modules/evaluaciones/router.py:348` |
+| endpoint | `POST:/evaluaciones/{evaluacion_id}/pausar-recepcion` | admin, profesor | covered | `backend/app/modules/evaluaciones/router.py:392` |
+| endpoint | `POST:/evaluaciones/{evaluacion_id}/publicar` | admin, profesor | covered | `backend/app/modules/evaluaciones/router.py:359` |
+| endpoint | `POST:/evaluaciones/{evaluacion_id}/solicitud-revision` | admin, estudiante, profesor | covered | `backend/app/modules/calificaciones/router.py:1571` |
 | frontend_route | `/app/evaluaciones` | authenticated | covered | `frontend/src/config/routes.ts:36` |
 | frontend_route | `/app/materias/{id}/evaluaciones` | authenticated | covered | `frontend/src/config/routes.ts:28` |
 | frontend_call | `DELETE:/evaluaciones/{id}` | ambiguous | covered | `frontend/src/modules/evaluaciones/api.ts:101` |

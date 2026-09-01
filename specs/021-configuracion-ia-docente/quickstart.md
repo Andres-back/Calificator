@@ -133,4 +133,4 @@ Advertencias no bloqueantes observadas: una cancelación asíncrona emitida por 
 - Ejecutable de desarrollo reconstruido: `8.916.774` bytes, ayuda y opción `--ollama-url` operativas, SHA-256 de 64 caracteres y estado `NotSigned` esperado. Los artefactos temporales volvieron a eliminarse.
 - E2E local completo: emparejamiento, publicación de dos modelos, suspensión/reanudación del worker y presentación de tres diapositivas en estado `success` en `29,43 s`.
 - La prueba restauró la configuración del docente, eliminó la presentación temporal y revocó el conector; la comprobación posterior reportó cero presentaciones temporales y cero conectores de prueba activos.
-- T068 permanece parcial únicamente hasta repetir la matriz en Windows 10 22H2.
+- La aceptación disponible quedó cerrada en T068. La distribución pública como compatible con Windows 10 permanece bloqueada por [#62](https://github.com/Andres-back/Calificator/issues/62) hasta repetir allí la matriz.

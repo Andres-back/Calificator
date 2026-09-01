@@ -6,37 +6,37 @@
 
 | Tipo | Firma | Actores | Cobertura | Fuente |
 |---|---|---|---|---|
-| endpoint | `DELETE:/herramientas/{material_id}` | authenticated | covered | `backend/app/modules/herramientas/router.py:248` |
-| endpoint | `GET:/herramientas` | authenticated | covered | `backend/app/modules/herramientas/router.py:42` |
+| endpoint | `DELETE:/herramientas/{material_id}` | admin, profesor | covered | `backend/app/modules/herramientas/router.py:248` |
+| endpoint | `GET:/herramientas` | admin, estudiante, profesor | covered | `backend/app/modules/herramientas/router.py:42` |
 | endpoint | `GET:/herramientas/materias/{materia_id}/recursos` | admin, estudiante, profesor | covered | `backend/app/modules/herramientas/router.py:226` |
 | endpoint | `GET:/herramientas/{material_id}` | admin, estudiante, profesor | covered | `backend/app/modules/herramientas/router.py:235` |
-| endpoint | `GET:/herramientas/{material_id}/evaluaciones` | authenticated | covered | `backend/app/modules/herramientas/router.py:356` |
-| endpoint | `GET:/herramientas/{material_id}/pdf` | authenticated | covered | `backend/app/modules/herramientas/router.py:261` |
-| endpoint | `GET:/xali/evaluaciones/{evaluacion_id}/recursos` | estudiante | covered | `backend/app/modules/xali/router.py:91` |
-| endpoint | `PATCH:/herramientas/{material_id}` | authenticated | covered | `backend/app/modules/herramientas/router.py:293` |
-| endpoint | `PATCH:/herramientas/{material_id}/visibilidad` | authenticated | covered | `backend/app/modules/herramientas/router.py:333` |
-| endpoint | `POST:/herramientas/crucigrama` | authenticated | covered | `backend/app/modules/herramientas/router.py:66` |
-| endpoint | `POST:/herramientas/cuento` | authenticated | covered | `backend/app/modules/herramientas/router.py:96` |
-| endpoint | `POST:/herramientas/emparejar` | authenticated | covered | `backend/app/modules/herramientas/router.py:86` |
-| endpoint | `POST:/herramientas/examen` | authenticated | covered | `backend/app/modules/herramientas/router.py:146` |
-| endpoint | `POST:/herramientas/examen-from-chat` | authenticated | covered | `backend/app/modules/herramientas/router.py:136` |
-| endpoint | `POST:/herramientas/ficha` | authenticated | covered | `backend/app/modules/herramientas/router.py:166` |
-| endpoint | `POST:/herramientas/flashcards` | authenticated | covered | `backend/app/modules/herramientas/router.py:206` |
-| endpoint | `POST:/herramientas/guia` | authenticated | covered | `backend/app/modules/herramientas/router.py:116` |
-| endpoint | `POST:/herramientas/lectura-comprensiva` | authenticated | covered | `backend/app/modules/herramientas/router.py:186` |
-| endpoint | `POST:/herramientas/mapa-conceptual` | authenticated | covered | `backend/app/modules/herramientas/router.py:196` |
-| endpoint | `POST:/herramientas/para-colorear` | authenticated | covered | `backend/app/modules/herramientas/router.py:106` |
-| endpoint | `POST:/herramientas/plan-refuerzo` | authenticated | covered | `backend/app/modules/herramientas/router.py:216` |
-| endpoint | `POST:/herramientas/quiz-rapido` | authenticated | covered | `backend/app/modules/herramientas/router.py:176` |
-| endpoint | `POST:/herramientas/rubrica` | authenticated | covered | `backend/app/modules/herramientas/router.py:156` |
-| endpoint | `POST:/herramientas/sopa-letras` | authenticated | covered | `backend/app/modules/herramientas/router.py:56` |
-| endpoint | `POST:/herramientas/taller` | authenticated | covered | `backend/app/modules/herramientas/router.py:126` |
-| endpoint | `POST:/herramientas/unir-columnas` | authenticated | covered | `backend/app/modules/herramientas/router.py:76` |
-| endpoint | `POST:/herramientas/{material_id}/asignar-apoyo` | authenticated | covered | `backend/app/modules/herramientas/router.py:311` |
-| endpoint | `POST:/herramientas/{material_id}/convertir-evaluacion` | authenticated | covered | `backend/app/modules/herramientas/router.py:366` |
-| endpoint | `POST:/herramientas/{material_id}/duplicar` | authenticated | covered | `backend/app/modules/herramientas/router.py:345` |
-| endpoint | `POST:/herramientas/{material_id}/retirar-apoyo` | authenticated | covered | `backend/app/modules/herramientas/router.py:324` |
-| endpoint | `POST:/xali/evaluaciones/{evaluacion_id}/recursos` | estudiante | covered | `backend/app/modules/xali/router.py:71` |
+| endpoint | `GET:/herramientas/{material_id}/evaluaciones` | admin, estudiante, profesor | covered | `backend/app/modules/herramientas/router.py:356` |
+| endpoint | `GET:/herramientas/{material_id}/pdf` | admin, estudiante, profesor | covered | `backend/app/modules/herramientas/router.py:261` |
+| endpoint | `GET:/xali/evaluaciones/{evaluacion_id}/recursos` | admin, estudiante, profesor | covered | `backend/app/modules/xali/router.py:91` |
+| endpoint | `PATCH:/herramientas/{material_id}` | admin, profesor | covered | `backend/app/modules/herramientas/router.py:293` |
+| endpoint | `PATCH:/herramientas/{material_id}/visibilidad` | admin, profesor | covered | `backend/app/modules/herramientas/router.py:333` |
+| endpoint | `POST:/herramientas/crucigrama` | admin, profesor | covered | `backend/app/modules/herramientas/router.py:66` |
+| endpoint | `POST:/herramientas/cuento` | admin, profesor | covered | `backend/app/modules/herramientas/router.py:96` |
+| endpoint | `POST:/herramientas/emparejar` | admin, profesor | covered | `backend/app/modules/herramientas/router.py:86` |
+| endpoint | `POST:/herramientas/examen` | admin, profesor | covered | `backend/app/modules/herramientas/router.py:146` |
+| endpoint | `POST:/herramientas/examen-from-chat` | admin, profesor | covered | `backend/app/modules/herramientas/router.py:136` |
+| endpoint | `POST:/herramientas/ficha` | admin, profesor | covered | `backend/app/modules/herramientas/router.py:166` |
+| endpoint | `POST:/herramientas/flashcards` | admin, profesor | covered | `backend/app/modules/herramientas/router.py:206` |
+| endpoint | `POST:/herramientas/guia` | admin, profesor | covered | `backend/app/modules/herramientas/router.py:116` |
+| endpoint | `POST:/herramientas/lectura-comprensiva` | admin, profesor | covered | `backend/app/modules/herramientas/router.py:186` |
+| endpoint | `POST:/herramientas/mapa-conceptual` | admin, profesor | covered | `backend/app/modules/herramientas/router.py:196` |
+| endpoint | `POST:/herramientas/para-colorear` | admin, profesor | covered | `backend/app/modules/herramientas/router.py:106` |
+| endpoint | `POST:/herramientas/plan-refuerzo` | admin, profesor | covered | `backend/app/modules/herramientas/router.py:216` |
+| endpoint | `POST:/herramientas/quiz-rapido` | admin, profesor | covered | `backend/app/modules/herramientas/router.py:176` |
+| endpoint | `POST:/herramientas/rubrica` | admin, profesor | covered | `backend/app/modules/herramientas/router.py:156` |
+| endpoint | `POST:/herramientas/sopa-letras` | admin, profesor | covered | `backend/app/modules/herramientas/router.py:56` |
+| endpoint | `POST:/herramientas/taller` | admin, profesor | covered | `backend/app/modules/herramientas/router.py:126` |
+| endpoint | `POST:/herramientas/unir-columnas` | admin, profesor | covered | `backend/app/modules/herramientas/router.py:76` |
+| endpoint | `POST:/herramientas/{material_id}/asignar-apoyo` | admin, profesor | covered | `backend/app/modules/herramientas/router.py:311` |
+| endpoint | `POST:/herramientas/{material_id}/convertir-evaluacion` | admin, profesor | covered | `backend/app/modules/herramientas/router.py:366` |
+| endpoint | `POST:/herramientas/{material_id}/duplicar` | admin, profesor | covered | `backend/app/modules/herramientas/router.py:345` |
+| endpoint | `POST:/herramientas/{material_id}/retirar-apoyo` | admin, profesor | covered | `backend/app/modules/herramientas/router.py:324` |
+| endpoint | `POST:/xali/evaluaciones/{evaluacion_id}/recursos` | admin, estudiante, profesor | covered | `backend/app/modules/xali/router.py:71` |
 | frontend_route | `/app/herramientas` | admin, profesor | covered | `frontend/src/config/routes.ts:47` |
 | frontend_route | `/app/herramientas/{id}` | admin, profesor | covered | `frontend/src/config/routes.ts:50` |
 | frontend_route | `/app/materias/{id}/recursos` | authenticated | covered | `frontend/src/config/routes.ts:29` |
@@ -62,11 +62,4 @@
 
 ## Hallazgos
 
-- **medium · authorization_mismatch**: Permisos observables distintos para POST:/herramientas/{}/convertir-evaluacion: backend=['authenticated'], frontend=['admin', 'profesor'].
-- **medium · authorization_mismatch**: Permisos observables distintos para POST:/herramientas/{}/retirar-apoyo: backend=['authenticated'], frontend=['admin', 'profesor'].
-- **medium · authorization_mismatch**: Permisos observables distintos para POST:/herramientas/{}/asignar-apoyo: backend=['authenticated'], frontend=['admin', 'profesor'].
-- **medium · authorization_mismatch**: Permisos observables distintos para PATCH:/herramientas/{}: backend=['authenticated'], frontend=['admin', 'profesor'].
-- **medium · authorization_mismatch**: Permisos observables distintos para DELETE:/herramientas/{}: backend=['authenticated'], frontend=['admin', 'profesor'].
-- **medium · authorization_mismatch**: Permisos observables distintos para GET:/herramientas/{}/evaluaciones: backend=['authenticated'], frontend=['admin', 'profesor'].
-- **medium · authorization_mismatch**: Permisos observables distintos para PATCH:/herramientas/{}/visibilidad: backend=['authenticated'], frontend=['admin', 'profesor'].
-- **medium · authorization_mismatch**: Permisos observables distintos para POST:/herramientas/{}/duplicar: backend=['authenticated'], frontend=['admin', 'profesor'].
+Sin hallazgos específicos del dominio.

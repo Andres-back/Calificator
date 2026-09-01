@@ -122,3 +122,9 @@ Como administrador quiero comprender qué permite un rol, quién lo usa y quién
 - Sin rol personalizado, el usuario conserva el comportamiento completo de su perfil actual.
 - Eliminar prioriza desactivar cuando existen datos relacionados.
 - La primera versión no incluye permisos por horario, sede, materia concreta o estudiante concreto.
+
+## Inventario técnico
+
+Las rutas, tablas, componentes y pruebas bajo responsabilidad de esta función se
+mantienen en el [inventario generado](./inventory.md), enlazado al inventario
+global para detectar superficies sin propietario o desajustes de autorización.

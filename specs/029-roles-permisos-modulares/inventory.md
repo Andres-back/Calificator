@@ -6,22 +6,22 @@
 
 | Tipo | Firma | Actores | Cobertura | Fuente |
 |---|---|---|---|---|
-| endpoint | `DELETE:/admin/roles/{role_id}` | ambiguous | covered | `backend/app/modules/authorization/router.py:71` |
-| endpoint | `DELETE:/admin/users/{user_id}` | ambiguous | covered | `backend/app/modules/users/router.py:131` |
-| endpoint | `GET:/admin/authorization/audit` | ambiguous | covered | `backend/app/modules/authorization/router.py:25` |
-| endpoint | `GET:/admin/authorization/modules` | ambiguous | covered | `backend/app/modules/authorization/router.py:20` |
-| endpoint | `GET:/admin/roles` | ambiguous | covered | `backend/app/modules/authorization/router.py:46` |
-| endpoint | `GET:/admin/roles/{role_id}` | ambiguous | covered | `backend/app/modules/authorization/router.py:56` |
-| endpoint | `GET:/admin/users` | ambiguous | covered | `backend/app/modules/users/router.py:39` |
-| endpoint | `GET:/admin/users/{user_id}/authorization/explain/{permission_key:path}` | ambiguous | covered | `backend/app/modules/authorization/router.py:36` |
-| endpoint | `GET:/admin/users/{user_id}/deletion-impact` | ambiguous | covered | `backend/app/modules/users/router.py:122` |
+| endpoint | `DELETE:/admin/roles/{role_id}` | admin | covered | `backend/app/modules/authorization/router.py:71` |
+| endpoint | `DELETE:/admin/users/{user_id}` | admin | covered | `backend/app/modules/users/router.py:131` |
+| endpoint | `GET:/admin/authorization/audit` | admin | covered | `backend/app/modules/authorization/router.py:25` |
+| endpoint | `GET:/admin/authorization/modules` | admin | covered | `backend/app/modules/authorization/router.py:20` |
+| endpoint | `GET:/admin/roles` | admin | covered | `backend/app/modules/authorization/router.py:46` |
+| endpoint | `GET:/admin/roles/{role_id}` | admin | covered | `backend/app/modules/authorization/router.py:56` |
+| endpoint | `GET:/admin/users` | admin | covered | `backend/app/modules/users/router.py:39` |
+| endpoint | `GET:/admin/users/{user_id}/authorization/explain/{permission_key:path}` | admin | covered | `backend/app/modules/authorization/router.py:36` |
+| endpoint | `GET:/admin/users/{user_id}/deletion-impact` | admin | covered | `backend/app/modules/users/router.py:122` |
 | endpoint | `GET:/users/me/authorization` | authenticated | covered | `backend/app/modules/authorization/router.py:15` |
-| endpoint | `PATCH:/admin/roles/{role_id}` | ambiguous | covered | `backend/app/modules/authorization/router.py:61` |
-| endpoint | `PATCH:/admin/users/{user_id}` | ambiguous | covered | `backend/app/modules/users/router.py:99` |
-| endpoint | `PATCH:/admin/users/{user_id}/solicitud-docente` | ambiguous | covered | `backend/app/modules/users/router.py:111` |
-| endpoint | `POST:/admin/roles` | ambiguous | covered | `backend/app/modules/authorization/router.py:51` |
-| endpoint | `POST:/admin/roles/{role_id}/duplicate` | ambiguous | covered | `backend/app/modules/authorization/router.py:66` |
-| endpoint | `POST:/admin/users` | ambiguous | covered | `backend/app/modules/users/router.py:64` |
+| endpoint | `PATCH:/admin/roles/{role_id}` | admin | covered | `backend/app/modules/authorization/router.py:61` |
+| endpoint | `PATCH:/admin/users/{user_id}` | admin | covered | `backend/app/modules/users/router.py:99` |
+| endpoint | `PATCH:/admin/users/{user_id}/solicitud-docente` | admin | covered | `backend/app/modules/users/router.py:111` |
+| endpoint | `POST:/admin/roles` | admin | covered | `backend/app/modules/authorization/router.py:51` |
+| endpoint | `POST:/admin/roles/{role_id}/duplicate` | admin | covered | `backend/app/modules/authorization/router.py:66` |
+| endpoint | `POST:/admin/users` | admin | covered | `backend/app/modules/users/router.py:64` |
 | frontend_route | `/app/admin/roles` | admin | covered | `frontend/src/config/routes.ts:59` |
 | frontend_route | `/app/admin/usuarios` | admin | covered | `frontend/src/config/routes.ts:58` |
 | frontend_call | `DELETE:/admin/roles/{id}` | admin | covered | `frontend/src/modules/admin/authorizationApi.ts:92` |

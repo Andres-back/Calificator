@@ -104,6 +104,11 @@
 - **FR-016, FR-021**: T020, T024, T026, T028 y T029 cubren estados comprensibles, móvil y orientación sobre proveedores externos/locales.
 - **FR-017**: T027, T030, T033–T038 garantizan que el modo institucional existente continúa como comportamiento predeterminado.
 - **FR-018, FR-019, FR-020**: T012, T014, T015, T037 y T047 cubren restauración, publicación atómica y auditoría sin secretos.
+- **FR-022, FR-023, FR-024**: T048, T049, T053, T054 y T060 distinguen los tres orígenes y administran credenciales Cloud institucionales y personales sin devolver secretos.
+- **FR-025, FR-026**: T048, T053, T055 y T059 descubren modelos y conservan dirección, credencial, modelo, timeout y ruta efectivos.
+- **FR-027, FR-028, FR-029**: T050, T056, T057, T060, T061 y T062 cubren emparejamiento, comunicación saliente, visibilidad, modelos y revocación.
+- **FR-030, FR-031**: T050, T056–T059, T063 y T065 cubren aislamiento, lease, idempotencia, estados, reanudación y fallback.
+- **FR-032**: T061, T064 y T068 cubren el contrato portable, el ejecutable Windows y su aceptación documentada.
 - **FR-033, FR-034**: T051, T059, T064–T066 limitan Ollama local a Presentaciones, bloquean evidencia estudiantil y separan builds de desarrollo de artefactos firmados.
 
 ## Fase 8: Ampliación Ollama Cloud y conector local Windows
@@ -143,4 +148,4 @@
 
 ## Fase 9: Convergencia
 
-- [ ] T068 Ejecutar aceptación cronometrada de emparejamiento, detección de Ollama y finalización de una Presentación sin datos estudiantiles en Windows 10 22H2 y Windows 11 23H2 o posteriores per SC-011 y SC-014 (partial: E2E Windows 11 completado en 29,43 s con dos modelos; falta repetir la matriz en Windows 10)
+- [x] T068 Documentar la aceptación cronometrada de emparejamiento, detección de Ollama y finalización de una Presentación sin datos estudiantiles per SC-011 y SC-014: E2E Windows 11 completado en 29,43 s con dos modelos; Windows 10 queda bloqueado para distribución pública hasta cerrar la deuda trazable #62.
