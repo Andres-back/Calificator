@@ -5,6 +5,7 @@ import pytest
 from fastapi import HTTPException
 
 import app.modules.admin_ai_config.router as router
+from app.modules.authorization.catalog import default_permissions_for_role
 from app.modules.admin_ai_config.schemas import (
     AIConfigurationPublication,
     AIModel,
@@ -77,12 +78,20 @@ def publication(version=4, capability="vision"):
     )
 
 
+def admin_user(admin_id=None):
+    return SimpleNamespace(
+        id=admin_id or uuid4(),
+        rol="admin",
+        _effective_permissions=default_permissions_for_role("admin"),
+    )
+
+
 @pytest.mark.asyncio
 async def test_feature_publication_rejects_a_stale_admin_version():
     with pytest.raises(HTTPException) as exc:
         await router.save_features(
             publication(version=3),
-            current_user=SimpleNamespace(id=uuid4(), rol="admin"),
+            current_user=admin_user(),
             db=FakeDB((4,)),
         )
     assert exc.value.status_code == 409
@@ -94,7 +103,7 @@ async def test_feature_publication_validates_then_saves_the_complete_set():
     admin_id = uuid4()
     result = await router.save_features(
         publication(version=4),
-        current_user=SimpleNamespace(id=admin_id, rol="admin"),
+        current_user=admin_user(admin_id),
         db=FakeDB((4, 4)),
     )
     assert result["status"] == "ok"
@@ -110,7 +119,7 @@ async def test_incompatible_model_rolls_back_before_persistence():
     with pytest.raises(HTTPException) as exc:
         await router.save_features(
             publication(version=4, capability="embedding"),
-            current_user=SimpleNamespace(id=uuid4(), rol="admin"),
+            current_user=admin_user(),
             db=FakeDB((4,)),
         )
     assert exc.value.status_code == 422
@@ -147,7 +156,7 @@ async def test_atomic_publication_accepts_disabling_an_unused_model():
     admin_id = uuid4()
     result = await router.publish_ai_configuration(
         atomic_publication(),
-        current_user=SimpleNamespace(id=admin_id, rol="admin"),
+        current_user=admin_user(admin_id),
         db=FakeDB((4,)),
     )
     assert result["version"] == 5
@@ -160,7 +169,7 @@ async def test_atomic_publication_rejects_disabling_a_referenced_model():
     with pytest.raises(HTTPException) as exc:
         await router.publish_ai_configuration(
             atomic_publication(referenced_model_active=False),
-            current_user=SimpleNamespace(id=uuid4(), rol="admin"),
+            current_user=admin_user(),
             db=FakeDB((4,)),
         )
     assert exc.value.status_code == 422
@@ -170,7 +179,7 @@ async def test_atomic_publication_rejects_disabling_a_referenced_model():
 @pytest.mark.asyncio
 async def test_restore_previous_configuration_returns_new_version():
     result = await router.restore_previous_configuration(
-        current_user=SimpleNamespace(id=uuid4(), rol="admin"),
+        current_user=admin_user(),
         db=FakeDB((4,)),
     )
     assert result["version"] == 8
