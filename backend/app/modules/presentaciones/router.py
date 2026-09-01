@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
 from app.core.logging import get_logger
-from app.core.permissions import get_current_user, require_role
+from app.core.permissions import get_current_user, require_permission_now
 from app.db.session import get_db
 from app.modules.presentaciones import service
 from app.modules.presentaciones.schemas import (
@@ -21,7 +21,6 @@ from app.modules.presentaciones.schemas import (
     PresentacionRead,
 )
 from app.modules.users.models import User
-from app.shared.enums import UserRole
 from app.workers.tasks_presentations import generate_presentation
 
 router = APIRouter(prefix="/presentaciones", tags=["presentaciones"])
@@ -34,7 +33,7 @@ async def create(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> object:
-    require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
+    require_permission_now(current_user, "presentations.create")
     pres = await service.create_presentacion(db, payload, current_user)
     generate_presentation.delay(str(pres.id))
     logger.info(
@@ -48,6 +47,7 @@ async def list_presentaciones(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> list:
+    require_permission_now(current_user, "presentations.read")
     return await service.list_presentaciones(db, current_user)
 
 
@@ -57,6 +57,7 @@ async def get_generated_asset(
     current_user: User = Depends(get_current_user),
 ) -> FileResponse:
     """Serve only generated presentation PNGs to authenticated users."""
+    require_permission_now(current_user, "presentations.read")
     if not re.fullmatch(r"[0-9a-f]{18}", asset_id):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Archivo no encontrado"
@@ -75,6 +76,7 @@ async def get(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> object:
+    require_permission_now(current_user, "presentations.read")
     return await service.ensure_can_read_presentacion(db, presentacion_id, current_user)
 
 
@@ -84,6 +86,7 @@ async def get_estado(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> object:
+    require_permission_now(current_user, "presentations.read")
     pres = await service.ensure_can_read_presentacion(db, presentacion_id, current_user)
     return service.build_estado(pres)
 
@@ -94,6 +97,7 @@ async def preview_metadata(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> dict:
+    require_permission_now(current_user, "presentations.read")
     pres = await service.ensure_can_read_presentacion(db, presentacion_id, current_user)
     return service.build_preview_metadata(pres)
 
@@ -105,6 +109,7 @@ async def preview_slide(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> Response:
+    require_permission_now(current_user, "presentations.read")
     pres = await service.ensure_can_read_presentacion(db, presentacion_id, current_user)
     content = service.render_preview_slide(pres, slide_number)
     return Response(
@@ -124,7 +129,7 @@ async def exportar(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> object:
-    require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
+    require_permission_now(current_user, "presentations.update")
     pres = await service.ensure_can_manage_presentacion(
         db, presentacion_id, current_user
     )
@@ -138,6 +143,7 @@ async def descargar_archivo(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> FileResponse:
+    require_permission_now(current_user, "presentations.read")
     if fmt not in {"pptx", "pdf"}:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Formato invalido"
@@ -170,7 +176,7 @@ async def delete(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> Response:
-    require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
+    require_permission_now(current_user, "presentations.delete")
     pres = await service.ensure_can_manage_presentacion(
         db, presentacion_id, current_user
     )

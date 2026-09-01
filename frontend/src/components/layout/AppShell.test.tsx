@@ -29,6 +29,14 @@ beforeEach(() => {
       email: 'docente.mobile@example.com',
       rol: 'profesor',
       estado: 'activo',
+      permissions: [
+        'subjects.read',
+        'resources.read',
+        'presentations.read',
+        'reports.read',
+        'xali.use',
+        'ai_settings.personal',
+      ],
     },
     status: 'authenticated',
   });

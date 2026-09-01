@@ -5,6 +5,7 @@ from app.modules.admin_mail.router import router as admin_mail_router
 from app.modules.analytics.router import router as analytics_router
 from app.modules.asistencia.router import router as asistencia_router
 from app.modules.auth.router import router as auth_router
+from app.modules.authorization.router import router as authorization_router
 from app.modules.calificaciones.router import router as calificaciones_router
 from app.modules.dba.router import custom_router as dba_custom_router
 from app.modules.dba.router import router as dba_router
@@ -16,6 +17,7 @@ from app.modules.impacto_tesis.router import router as impacto_router
 from app.modules.jobs.router import router as jobs_router
 from app.modules.materias.router import router as materias_router
 from app.modules.matriculas.router import router as matriculas_router
+from app.modules.ollama_connector.router import router as ollama_connector_router
 from app.modules.presentaciones.router import router as presentaciones_router
 from app.modules.rag.router import router as rag_router
 from app.modules.reportes.router import router as reportes_router
@@ -25,10 +27,12 @@ from app.modules.xali.refuerzo_router import router as xali_refuerzos_router
 
 api_router = APIRouter()
 api_router.include_router(auth_router)
+api_router.include_router(authorization_router)
 api_router.include_router(users_router)
 api_router.include_router(materias_router)
 api_router.include_router(asistencia_router)
 api_router.include_router(matriculas_router)
+api_router.include_router(ollama_connector_router)
 api_router.include_router(dba_router)
 api_router.include_router(dba_custom_router)
 api_router.include_router(evaluaciones_router)

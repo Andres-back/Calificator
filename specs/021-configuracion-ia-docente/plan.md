@@ -1,6 +1,8 @@
 # Plan: Configuración de IA global y por docente
 
-**Rama**: `codex/021-configuracion-ia-docente` | **Fecha**: 2026-08-25 | **Spec**: [spec.md](./spec.md) | **Issue**: #29
+**Rama**: codex/021-configuracion-ia-docente | **Fecha**: 2026-08-25 | **Spec**: [spec.md](./spec.md) | **Issue**: #29
+
+**Ampliación aprobada**: 2026-08-30 | **Issue**: #60 | Ollama Cloud institucional/personal y conector local Windows
 
 ## Resumen
 
@@ -54,3 +56,29 @@ frontend/
 - La publicación global y personal usa control optimista por versión y una sola transacción. Se rechaza el conjunto completo si una ruta es incompatible.
 - La configuración actual es el perfil institucional inicial. Un interruptor de adopción por capacidad permite volver al comportamiento anterior sin migrar ni recalificar trabajos.
 - Se rechaza guardar una única clave/modelo universal porque visión, texto, imágenes y embeddings tienen contratos incompatibles.
+
+## Ampliación técnica: Ollama Cloud y conector Windows
+
+- El proveedor global Ollama del VPS usa exclusivamente https://ollama.com/api con credencial institucional cifrada.
+- La configuración guardada es la fuente efectiva de dirección, clave, modelo, timeout y fallback; el adaptador no sustituye esos valores por constantes del entorno.
+- El docente puede registrar una credencial Cloud propia usando el almacén cifrado existente; Ollama requiere clave cuando el origen sea Cloud.
+- Los modelos se descubren con tags y se inspeccionan con show para registrar capacidades como completion o vision.
+- El origen local se representa como conector y no como URL editable por el navegador, evitando SSRF y errores de localhost remoto.
+- El conector Windows se distribuye como ejecutable firmado, se empareja con código temporal y protege su token mediante el almacén seguro del sistema.
+- La comunicación usa HTTPS saliente con reclamación de trabajos y espera larga. No se abre el puerto local de Ollama.
+- Los trabajos locales son persistentes, idempotentes y tienen lease renovable. Una desconexión permite reintento o fallback autorizado.
+- La cola principal no espera bloqueada: persiste el trabajo local y finaliza la etapa; la respuesta del conector reanuda el trabajo original con la misma identidad.
+- El conector consulta únicamente 127.0.0.1:11434, anuncia modelos y capacidades y elimina contenido temporal al confirmar la entrega.
+- Por minimización de datos, la primera versión solo enruta Presentaciones al conector local. Fotos, PDF, entregas, respuestas, digitalización, visión y calificación quedan restringidas a proveedores Cloud autorizados.
+- Una compilación Windows sin firma requiere una bandera explícita de desarrollo y no es distribuible. El empaquetado de publicación exige certificado válido de firma de código y reporta SHA-256.
+- Windows es la única plataforma inicial; el contrato permitirá añadir macOS y Linux después.
+
+## Estructura adicional
+
+- backend/app/modules/ollama_connector: emparejamiento, dispositivos, modelos, trabajos, leases y callbacks.
+- backend/app/services/ollama_provider.py: cliente Cloud y normalización del API oficial.
+- backend/app/workers: reanudación idempotente de trabajos atendidos por conector.
+- frontend/src/modules/profesor_ai: selector Cloud/local, emparejamiento, estado y modelos.
+- frontend/src/modules/admin: credencial institucional Cloud y catálogo.
+- connector/windows: agente local, Ollama loopback, empaquetado e instalador.
+- backend/tests, frontend/src y frontend/e2e: aislamiento, secretos, reconexión y regresión.

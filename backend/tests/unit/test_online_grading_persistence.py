@@ -11,6 +11,7 @@ from fastapi import HTTPException
 from app.modules.calificaciones import router
 from app.modules.calificaciones.models import Entrega
 from app.modules.calificaciones.schemas import EntregaOnlineCreate
+from app.modules.authorization.catalog import default_permissions_for_role
 from app.shared.enums import (
     EntregaEstado,
     EntregaTipo,
@@ -67,7 +68,10 @@ def _evaluation(modality: str = EvaluacionModalidad.ONLINE.value) -> SimpleNames
 
 
 def _student() -> SimpleNamespace:
-    return SimpleNamespace(id=uuid4(), rol=UserRole.ESTUDIANTE.value)
+    return SimpleNamespace(
+        id=uuid4(), rol=UserRole.ESTUDIANTE.value,
+        _effective_permissions=default_permissions_for_role(UserRole.ESTUDIANTE.value),
+    )
 
 
 def _configure(monkeypatch, evaluation: SimpleNamespace) -> None:

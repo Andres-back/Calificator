@@ -52,7 +52,7 @@ def fake_service(monkeypatch):
     monkeypatch.setattr(resolver, "AIConfigService", FakeConfigService)
 
 
-@pytest.mark.asyncio
+@pytest.mark.anyio
 async def test_rollout_disabled_keeps_institutional_route(monkeypatch):
     FakeConfigService.route = {**FakeConfigService.route, "rollout_enabled": False}
     async def teacher_config(*_args, **_kwargs):
@@ -71,7 +71,7 @@ async def test_rollout_disabled_keeps_institutional_route(monkeypatch):
     FakeConfigService.route = {**FakeConfigService.route, "rollout_enabled": True}
 
 
-@pytest.mark.asyncio
+@pytest.mark.anyio
 async def test_advanced_personal_route_requires_consent_for_fallback(monkeypatch):
     async def teacher_config(*_args, **_kwargs):
         return (
@@ -95,7 +95,7 @@ async def test_advanced_personal_route_requires_consent_for_fallback(monkeypatch
     assert len(snapshot["config_hash"]) == 20
 
 
-@pytest.mark.asyncio
+@pytest.mark.anyio
 async def test_automatic_mode_selects_recommended_compatible_model(monkeypatch):
     async def teacher_config(*_args, **_kwargs):
         return (
@@ -117,3 +117,33 @@ async def test_automatic_mode_selects_recommended_compatible_model(monkeypatch):
     assert snapshot["primary"]["model"] == "qwen3.7-plus"
     assert snapshot["fallback"]["credential_source"] == "institutional"
     assert "api_key" not in str(snapshot).lower()
+
+
+@pytest.mark.anyio
+async def test_local_connector_is_limited_to_presentations(monkeypatch):
+    async def teacher_config(*_args, **_kwargs):
+        return (
+            {"mode": "automatic", "allow_institutional_fallback": True, "active": True, "version": 4},
+            [],
+            {"ollama_local"},
+        )
+
+    async def recommended(*_args, provider, **_kwargs):
+        return "qwen3:8b" if provider == "ollama_local" else None
+
+    monkeypatch.setattr(resolver, "_teacher_configuration", teacher_config)
+    monkeypatch.setattr(resolver, "_recommended_teacher_model", recommended)
+
+    grading = await resolver.resolve_ai_configuration(
+        SimpleNamespace(), feature="calificacion_texto", teacher_id=uuid4()
+    )
+    presentation = await resolver.resolve_ai_configuration(
+        SimpleNamespace(), feature="presentaciones", teacher_id=uuid4()
+    )
+
+    assert grading["primary"]["credential_source"] == "institutional"
+    assert presentation["primary"] == {
+        "provider": "ollama_local",
+        "model": "qwen3:8b",
+        "credential_source": "connector",
+    }

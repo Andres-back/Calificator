@@ -187,6 +187,7 @@ def test_student_can_open_visible_activity_without_receiving_solution_keys(monke
         titulo="Sopa de multiplicación",
         materia_id=subject_id,
         materia_nombre="Matemáticas",
+        input_json={},
         contenido_json={
             "titulo": "Sopa de multiplicación",
             "banco_palabras": ["PRODUCTO"],
@@ -209,7 +210,13 @@ def test_student_can_open_visible_activity_without_receiving_solution_keys(monke
         assert selected_subject_id == subject_id
         assert user is student
 
+    async def not_owned(_db, selected_material_id, owner_id):
+        assert selected_material_id == material_id
+        assert owner_id == student.id
+        return None
+
     monkeypatch.setattr(service.materias_service, "ensure_can_read_materia", can_read)
+    monkeypatch.setattr(service, "get_material", not_owned)
     db = FakeDB([row])
 
     result = asyncio.run(service.get_material_for_user(db, material_id, student))

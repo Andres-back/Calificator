@@ -3,6 +3,7 @@ import { render, screen } from '@testing-library/react';
 import { MemoryRouter, Outlet, Route, Routes, useOutletContext } from 'react-router-dom';
 import { AuthBootstrap, RequireAuth } from './RequireAuth';
 import { RequireRole } from './RequireRole';
+import { RequirePermission } from './RequirePermission';
 import { useAuth } from '@/stores/auth';
 import type { User, UserRole } from '@/types/api';
 
@@ -107,5 +108,55 @@ describe('route guards', () => {
     );
 
     expect(screen.getByText('Matemáticas 8°')).toBeInTheDocument();
+  });
+
+  it('allows a mixed profile by effective permission instead of its base role', () => {
+    useAuth.setState({
+      user: {
+        ...userFor('estudiante'),
+        custom_role_id: 'role-1',
+        permissions: ['presentations.read'],
+      },
+      status: 'authenticated',
+    });
+
+    render(
+      <MemoryRouter initialEntries={['/app/presentaciones']}>
+        <Routes>
+          <Route element={<RequirePermission anyOf={['presentations.read']} />}>
+            <Route path="/app/presentaciones" element={<p>Presentaciones permitidas</p>} />
+          </Route>
+          <Route path="/app/403" element={<p>Acceso denegado</p>} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText('Presentaciones permitidas')).toBeInTheDocument();
+    expect(screen.queryByText('Acceso denegado')).not.toBeInTheDocument();
+  });
+
+  it('redirects when the effective permission is absent', () => {
+    useAuth.setState({
+      user: {
+        ...userFor('profesor'),
+        custom_role_id: 'role-2',
+        permissions: ['grading.read'],
+      },
+      status: 'authenticated',
+    });
+
+    render(
+      <MemoryRouter initialEntries={['/app/calificar']}>
+        <Routes>
+          <Route element={<RequirePermission anyOf={['grading.grade']} />}>
+            <Route path="/app/calificar" element={<p>Calificación habilitada</p>} />
+          </Route>
+          <Route path="/app/403" element={<p>Acceso denegado</p>} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText('Acceso denegado')).toBeInTheDocument();
+    expect(screen.queryByText('Calificación habilitada')).not.toBeInTheDocument();
   });
 });

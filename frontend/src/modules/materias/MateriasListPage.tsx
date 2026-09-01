@@ -122,14 +122,32 @@ export function MateriasListPage() {
     queryKey: ['materias'],
     queryFn: listMaterias,
   });
-  const isStudent = user?.rol === 'estudiante';
-  const isProfesor = user?.rol === 'profesor';
-  const canCreateMateria = isProfesor;
+  const permissions = new Set(user?.permissions ?? []);
+  const canCreateMateria = permissions.has('subjects.create');
+  const canEnroll = permissions.has('subjects.enroll');
+  const canManageCourses = user?.rol === 'admin'
+    || user?.rol === 'profesor'
+    || [
+      'subjects.create',
+      'subjects.update',
+      'evaluations.create',
+      'evaluations.update',
+      'evaluations.publish',
+      'resources.create',
+      'resources.update',
+      'resources.assign',
+      'grading.grade',
+      'grading.publish',
+      'attendance.manage',
+      'dba.manage',
+    ].some((permission) => permissions.has(permission));
+  const isStudent = canEnroll && !canManageCourses;
+  const isProfesor = canManageCourses;
   const activeMateriaCount =
     data?.filter((materia) => materia.estado === 'activa').length ?? 0;
   const reachedMateriaLimit =
-    isProfesor && activeMateriaCount >= MAX_ACTIVE_MATERIAS;
-  const requestedAction = isProfesor ? searchParams.get('accion') : null;
+    canCreateMateria && activeMateriaCount >= MAX_ACTIVE_MATERIAS;
+  const requestedAction = canManageCourses ? searchParams.get('accion') : null;
   const actionGuide = getTeacherActionGuide(requestedAction);
   const ActionGuideIcon = actionGuide
     ? ACTION_ICONS[actionGuide.intent]
@@ -210,7 +228,7 @@ export function MateriasListPage() {
           ) : undefined
         }
         action={
-          isStudent ? (
+          isStudent && canEnroll ? (
             <Button type="button" onClick={() => setJoinOpen(true)}>
               <UserPlus className="h-4 w-4" />
               Unirme a materia
@@ -286,7 +304,7 @@ export function MateriasListPage() {
                 : 'Crea tu primera clase. Después te guiaremos para invitar estudiantes.'
             }
             action={
-              isStudent ? (
+              isStudent && canEnroll ? (
                 <Button type="button" onClick={() => setJoinOpen(true)}>
                   <UserPlus className="h-4 w-4" /> Unirme a materia
                 </Button>
@@ -393,7 +411,7 @@ export function MateriasListPage() {
         </div>
       </QueryState>
 
-      {isStudent && (
+      {isStudent && canEnroll && (
         <JoinMateriaModal open={joinOpen} onClose={closeJoinModal} />
       )}
 

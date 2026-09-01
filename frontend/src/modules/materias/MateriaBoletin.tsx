@@ -189,7 +189,11 @@ function GradeCell({ cell }: { cell: FollowUpCell }) {
 }
 
 function TeacherGradebook() {
-  const { materia, canManageMateria } = useMateriaContext();
+  const { materia } = useMateriaContext();
+  const user = useAuth((state) => state.user);
+  const permissions = new Set(user?.permissions ?? []);
+  const canReadGrades = permissions.has('grading.read');
+  const canGrade = permissions.has('grading.grade');
   const [filter, setFilter] = useState<FollowUpFilter>('todos');
   const [search, setSearch] = useState('');
 
@@ -229,7 +233,7 @@ function TeacherGradebook() {
     queries: trackedEvaluations.map((evaluation) => ({
       queryKey: ['calificaciones', evaluation.id],
       queryFn: () => listCalificaciones(evaluation.id),
-      enabled: Boolean(evaluation.id) && canManageMateria,
+      enabled: Boolean(evaluation.id) && canReadGrades,
     })),
   });
 
@@ -540,7 +544,7 @@ function TeacherGradebook() {
                   </div>
                 </div>
 
-                {action ? (
+                {action && canGrade ? (
                   <div className="flex flex-col gap-3 border-t border-border bg-surface-2/40 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
                     <p className="text-sm text-muted">
                       Siguiente paso sugerido:{' '}

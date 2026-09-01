@@ -34,6 +34,7 @@ actualizar la especificación propietaria, su plan y sus tareas; no debe crear d
 | 026 | [Perfeccionamiento de recursos pedagógicos](026-perfeccionar-recursos/spec.md) | herramientas y renderizado PDF | creación, edición, vista y exportación de recursos | materiales existentes; sin tablas nuevas | [#39](https://github.com/Andres-back/Calificator/issues/39) |
 | 027 | [Listas y botones personalizados](027-listas-botones-personalizados/spec.md) | componentes UI y biblioteca de recursos | botones, barra de colección, filtros y menú de acciones | estado local de vista; sin tablas nuevas | [#55](https://github.com/Andres-back/Calificator/issues/55) |
 | 028 | [Pulido de navegación y presentaciones](028-pulir-navegacion-presentaciones/spec.md) | layout y presentaciones | topbar, tarjeta lateral y generación pedagógica | sin tablas nuevas ni cambios de API | [#57](https://github.com/Andres-back/Calificator/issues/57) |
+| 029 | [Usuarios, roles y permisos modulares](029-roles-permisos-modulares/spec.md) | administración y autorización | usuarios, roles, permisos, navegación y rutas protegidas | users y nuevas relaciones de autorización | [#59](https://github.com/Andres-back/Calificator/issues/59) |
 
 ## Reglas de propiedad
 

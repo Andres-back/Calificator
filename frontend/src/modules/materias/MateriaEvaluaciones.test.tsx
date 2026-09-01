@@ -119,6 +119,15 @@ beforeEach(() => {
       email: 'docente@example.com',
       rol: 'profesor',
       estado: 'activo',
+      permissions: [
+        'evaluations.read',
+        'evaluations.create',
+        'evaluations.update',
+        'evaluations.publish',
+        'evaluations.delete',
+        'grading.read',
+        'grading.grade',
+      ],
     },
     status: 'authenticated',
   });

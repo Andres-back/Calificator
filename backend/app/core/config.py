@@ -132,6 +132,8 @@ class Settings(BaseSettings):
     OCR_GROQ_FALLBACK_MODEL: str = "meta-llama/llama-4-scout-17b-16e-instruct"
 
     OLLAMA_ENDPOINT: str = "http://ollama:11434"
+    OLLAMA_CLOUD_BASE_URL: str = "https://ollama.com/api"
+    OLLAMA_API_KEY: str = ""
     OLLAMA_MODEL: str = "llama3.1:8b"
     OLLAMA_TIMEOUT_SECONDS: int = 120
 

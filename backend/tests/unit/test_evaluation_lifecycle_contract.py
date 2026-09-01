@@ -220,6 +220,7 @@ def test_student_list_query_includes_every_visible_lifecycle_state(monkeypatch) 
     async def can_read(_db, materia_id, user):
         assert materia_id is not None
         assert user is student
+        return SimpleNamespace(profesor_id=uuid4())
 
     monkeypatch.setattr(evaluation_service, "ensure_can_read_materia", can_read)
 

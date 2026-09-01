@@ -15,6 +15,8 @@ class UserBase(BaseModel):
 
 class UserCreate(UserBase):
     password: str = Field(min_length=8, max_length=128)
+    estado: UserEstado = UserEstado.ACTIVO
+    custom_role_id: UUID | None = None
 
 
 class UserUpdate(BaseModel):
@@ -23,6 +25,8 @@ class UserUpdate(BaseModel):
     password: str | None = Field(default=None, min_length=8, max_length=128)
     rol: UserRole | None = None
     estado: UserEstado | None = None
+    custom_role_id: UUID | None = None
+    is_primary_admin: bool | None = None
 
 
 class UserSelfUpdate(BaseModel):
@@ -54,6 +58,7 @@ class UserRead(BaseModel):
 
 
 class UserSelfRead(UserRead):
+    is_primary_admin: bool = False
     solicitud_docente_estado: SolicitudDocenteEstado | None = None
     solicitud_docente_solicitada_at: datetime | None = None
     solicitud_docente_resuelta_at: datetime | None = None
@@ -62,3 +67,13 @@ class UserSelfRead(UserRead):
 
 class AdminUserRead(UserSelfRead):
     solicitud_docente_revisada_por: UUID | None = None
+    custom_role_id: UUID | None = None
+    custom_role_name: str | None = None
+
+
+class UserDeletionImpactRead(BaseModel):
+    user_id: UUID
+    can_hard_delete: bool
+    action: str
+    total_references: int
+    references: dict[str, int]

@@ -57,6 +57,7 @@ class EffectiveAICredentials:
     open_code_key: str = ""
     cloudflare_token: str = ""
     cloudflare_account_id: str = ""
+    ollama_key: str = ""
     sources: dict[str, str] | None = None
 
     def source_for(self, provider: str) -> str:
@@ -71,7 +72,9 @@ class EffectiveAICredentials:
             return bool(self.open_code_key)
         if provider in {"cloudflare", "cloudflare_image"}:
             return bool(self.cloudflare_token and self.cloudflare_account_id)
-        return provider in {"ollama", "template"}
+        if provider == "ollama":
+            return bool(self.ollama_key)
+        return provider == "template"
 
 
 async def _read_database_credentials(db: AsyncSession) -> dict[str, Any]:
@@ -105,12 +108,14 @@ async def get_effective_ai_credentials(db: AsyncSession | None = None) -> Effect
         "groq": decrypt_ai_secret(stored.get("groq_key_encrypted")),
         "open_code": decrypt_ai_secret(stored.get("open_code_key_encrypted")),
         "cloudflare": decrypt_ai_secret(stored.get("cloudflare_token_encrypted")),
+        "ollama": decrypt_ai_secret(stored.get("ollama_key_encrypted")),
     }
     environment = {
         "openai": getattr(settings, "OPENAI_API_KEY", ""),
         "groq": getattr(settings, "GROQ_API_KEY", ""),
         "open_code": getattr(settings, "OPEN_CODE_API_KEY", ""),
         "cloudflare": getattr(settings, "CLOUDFLARE_API_TOKEN", ""),
+        "ollama": getattr(settings, "OLLAMA_API_KEY", ""),
     }
     resolved: dict[str, str] = {}
     sources: dict[str, str] = {}
@@ -137,6 +142,7 @@ async def get_effective_ai_credentials(db: AsyncSession | None = None) -> Effect
         open_code_key=resolved["open_code"],
         cloudflare_token=resolved["cloudflare"],
         cloudflare_account_id=account_id,
+        ollama_key=resolved["ollama"],
         sources=sources,
     )
 

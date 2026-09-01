@@ -1,26 +1,35 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
-import { Database, Eye, EyeOff, KeyRound, LockKeyhole, Save, ServerCog, Trash2 } from 'lucide-react';
+import { Database, Eye, EyeOff, KeyRound, LockKeyhole, RefreshCw, Save, ServerCog, Trash2 } from 'lucide-react';
 import { Badge, Button, Card, ConfirmDialog, Field, Input } from '@/components/ui';
 import { queryClient } from '@/lib/queryClient';
 import { toApiError } from '@/lib/api';
 import {
   updateGlobalAIConfig,
+  refreshGlobalOllamaModels,
   type GlobalAIConfig,
   type GlobalAIConfigUpdate,
 } from './api';
 
-type CredentialId = 'openai' | 'groq' | 'open_code' | 'cloudflare';
+type CredentialId = 'openai' | 'groq' | 'open_code' | 'ollama' | 'cloudflare';
 
 const CREDENTIALS: Array<{
   id: CredentialId;
   label: string;
   description: string;
   placeholder: string;
-  configured: keyof Pick<GlobalAIConfig, 'has_openai_key' | 'has_groq_key' | 'has_open_code_key' | 'has_cloudflare'>;
-  payloadKey: keyof Pick<GlobalAIConfigUpdate, 'openai_key' | 'groq_key' | 'open_code_key' | 'cloudflare_token'>;
+  configured: keyof Pick<GlobalAIConfig, 'has_openai_key' | 'has_groq_key' | 'has_open_code_key' | 'has_ollama_key' | 'has_cloudflare'>;
+  payloadKey: keyof Pick<GlobalAIConfigUpdate, 'openai_key' | 'groq_key' | 'open_code_key' | 'ollama_key' | 'cloudflare_token'>;
 }> = [
+  {
+    id: 'ollama',
+    label: 'Ollama Cloud',
+    description: 'Modelos Cloud descubiertos desde el catálogo oficial de Ollama.',
+    placeholder: 'Clave de Ollama Cloud',
+    configured: 'has_ollama_key',
+    payloadKey: 'ollama_key',
+  },
   {
     id: 'openai',
     label: 'OpenAI',
@@ -59,6 +68,7 @@ const EMPTY_SECRETS: Record<CredentialId, string> = {
   openai: '',
   groq: '',
   open_code: '',
+  ollama: '',
   cloudflare: '',
 };
 
@@ -75,7 +85,7 @@ function sourceIcon(source: string | undefined) {
 
 export function AICredentialsPanel({ config }: { config: GlobalAIConfig }) {
   const [secrets, setSecrets] = useState(EMPTY_SECRETS);
-  const [visible, setVisible] = useState<Record<CredentialId, boolean>>({ openai: false, groq: false, open_code: false, cloudflare: false });
+  const [visible, setVisible] = useState<Record<CredentialId, boolean>>({ openai: false, groq: false, open_code: false, ollama: false, cloudflare: false });
   const [accountId, setAccountId] = useState(config.cloudflare_account_id ?? '');
   const [accountTouched, setAccountTouched] = useState(false);
   const [clearTarget, setClearTarget] = useState<CredentialId | null>(null);
@@ -110,6 +120,15 @@ export function AICredentialsPanel({ config }: { config: GlobalAIConfig }) {
       setAccountTouched(false);
       void queryClient.invalidateQueries({ queryKey: ['admin-ai-settings'] });
       toast.success('Credencial retirada de la plataforma.');
+    },
+    onError: (error) => toast.error(toApiError(error).detail),
+  });
+
+  const refreshOllamaMutation = useMutation({
+    mutationFn: refreshGlobalOllamaModels,
+    onSuccess: (models) => {
+      void queryClient.invalidateQueries({ queryKey: ['admin-ai-settings'] });
+      toast.success(`${models.length} modelo${models.length === 1 ? '' : 's'} de Ollama actualizado${models.length === 1 ? '' : 's'}.`);
     },
     onError: (error) => toast.error(toApiError(error).detail),
   });
@@ -210,6 +229,11 @@ export function AICredentialsPanel({ config }: { config: GlobalAIConfig }) {
               {canClearStored && (
                 <Button size="sm" variant="ghost" className="mt-3 text-rose-600 dark:text-rose-300" onClick={() => setClearTarget(item.id)}>
                   <Trash2 className="h-4 w-4" /> Retirar credencial guardada
+                </Button>
+              )}
+              {item.id === 'ollama' && configured && (
+                <Button size="sm" variant="outline" className="mt-3" loading={refreshOllamaMutation.isPending} onClick={() => refreshOllamaMutation.mutate()}>
+                  <RefreshCw className="h-4 w-4" /> Actualizar modelos
                 </Button>
               )}
               {source === 'environment' && <p className="mt-3 text-xs text-muted">Esta credencial se administra en el entorno del servidor y no puede retirarse desde el navegador.</p>}

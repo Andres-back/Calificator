@@ -6,11 +6,10 @@ from fastapi import APIRouter, Depends, Response
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.permissions import get_current_user, require_role
+from app.core.permissions import get_current_user, require_any_permission_now, require_permission_now
 from app.db.session import get_db
 from app.modules.users.models import User
 from app.services.pdf_service import generate_report_pdf
-from app.shared.enums import UserRole
 
 router = APIRouter(prefix="/reportes", tags=["reportes"])
 
@@ -21,7 +20,7 @@ async def reporte_materia(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> dict:
-    require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
+    require_permission_now(current_user, "reports.read")
     # Estadísticas de calificaciones por materia
     stats = await db.execute(
         text(
@@ -51,7 +50,9 @@ async def reporte_estudiante(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> dict:
-    if current_user.rol == UserRole.ESTUDIANTE.value and current_user.id != estudiante_id:
+    require_any_permission_now(current_user, "reports.read", "gradebook.read")
+    effective = getattr(current_user, "_effective_permissions", frozenset())
+    if "reports.read" not in effective and current_user.id != estudiante_id:
         from fastapi import HTTPException
         raise HTTPException(status_code=403, detail="No autorizado")
 
@@ -81,7 +82,7 @@ async def resumen_profesor(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> dict:
-    require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
+    require_permission_now(current_user, "reports.read")
     rows = await db.execute(
         text(
             "SELECT m.nombre, COUNT(c.id) as total_cals, AVG(c.nota_confirmada) as promedio "
@@ -107,7 +108,7 @@ async def export_pdf(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> Response:
-    require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
+    require_permission_now(current_user, "reports.read")
     data = await reporte_materia(materia_id, current_user, db)
     pdf_bytes = generate_report_pdf(data, f"Reporte Materia {materia_id}")
     return Response(

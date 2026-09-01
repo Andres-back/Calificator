@@ -1,7 +1,7 @@
 import { expect, test, type Page, type Route } from '@playwright/test';
 
-const teacher = { id: 'p1', nombre: 'Profesora Prueba', email: 'profesora@example.test', rol: 'profesor', estado: 'activo' };
-const student = { id: 's1', nombre: 'Estudiante Prueba', email: 'estudiante@example.test', rol: 'estudiante', estado: 'activo' };
+const teacher = { id: 'p1', nombre: 'Profesora Prueba', email: 'profesora@example.test', rol: 'profesor', estado: 'activo', permissions: ['subjects.read', 'evaluations.read', 'grading.read', 'grading.grade', 'grading.publish'] };
+const student = { id: 's1', nombre: 'Estudiante Prueba', email: 'estudiante@example.test', rol: 'estudiante', estado: 'activo', permissions: ['subjects.read', 'evaluations.read', 'evaluations.submit', 'grading.read', 'gradebook.read'] };
 const materia = { id: 'm1', profesor_id: 'p1', nombre: 'Matemáticas', area: 'Matemáticas', grado: '4', codigo_matricula: 'MATE4', estado: 'activa' };
 const evaluation = {
   id: 'e1', materia_id: 'm1', profesor_id: 'p1', nombre: 'Multiplicación', descripcion: '', tipo_origen: 'nativa',
@@ -30,6 +30,10 @@ async function installMocks(page: Page, role: 'profesor' | 'estudiante') {
     if (path === '/auth/login') { authenticated = true; return json(route, {}); }
     if (path === '/auth/refresh') return json(route, { detail: 'Sin sesión' }, 401);
     if (path === '/auth/me') return authenticated ? json(route, { user: role === 'profesor' ? teacher : student }) : json(route, { detail: 'Sin sesión' }, 401);
+    if (path === '/users/me/authorization') {
+      const activeUser = role === 'profesor' ? teacher : student;
+      return json(route, { profile: activeUser.rol, is_primary_admin: false, custom_role_id: null, custom_role_name: null, role_version: null, auth_version: 1, permissions: activeUser.permissions });
+    }
     if (path === '/materias') return json(route, [materia]);
     if (path === '/materias/m1/evaluaciones') return json(route, [evaluation]);
     if (path === '/materias/m1/estudiantes') return json(route, { ...materia, estudiantes: [student] });

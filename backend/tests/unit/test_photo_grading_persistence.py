@@ -6,6 +6,7 @@ from types import SimpleNamespace
 from uuid import uuid4
 
 from app.modules.calificaciones import photo_service, router
+from app.modules.authorization.catalog import default_permissions_for_role
 from app.modules.calificaciones.models import Entrega
 from app.modules.calificaciones.schemas import GradingResult
 from app.services.evidence_bundle_service import EvidenceBundle
@@ -210,6 +211,7 @@ def test_endpoint_commits_delivery_before_invoking_grading(
     teacher = SimpleNamespace(
         id=evaluation.profesor_id,
         rol=UserRole.PROFESOR.value,
+        _effective_permissions=default_permissions_for_role(UserRole.PROFESOR.value),
     )
     db = FakeDB()
     sentinel = object()
@@ -272,7 +274,10 @@ def test_endpoint_commits_delivery_before_invoking_grading(
 def test_two_photos_create_one_delivery_and_one_queue_entry(monkeypatch) -> None:
     evaluation = evaluation_fixture()
     student_id = uuid4()
-    teacher = SimpleNamespace(id=evaluation.profesor_id, rol=UserRole.PROFESOR.value)
+    teacher = SimpleNamespace(
+        id=evaluation.profesor_id, rol=UserRole.PROFESOR.value,
+        _effective_permissions=default_permissions_for_role(UserRole.PROFESOR.value),
+    )
     db = FakeDB()
     queued: list[dict] = []
 
@@ -351,6 +356,7 @@ def test_teacher_replaces_existing_delivery_without_consuming_student_attempt(
     teacher = SimpleNamespace(
         id=evaluation.profesor_id,
         rol=UserRole.PROFESOR.value,
+        _effective_permissions=default_permissions_for_role(UserRole.PROFESOR.value),
     )
     delivery = delivery_fixture(evaluation, student_id)
     delivery.archivo_url = "/uploads/entregas/anterior.jpg"
@@ -428,7 +434,10 @@ def test_student_file_submission_returns_received_delivery_and_enqueues(monkeypa
     evaluation = evaluation_fixture()
     evaluation.modalidad = EvaluacionModalidad.FISICA.value
     evaluation.recepcion_habilitada = True
-    student = SimpleNamespace(id=uuid4(), rol=UserRole.ESTUDIANTE.value)
+    student = SimpleNamespace(
+        id=uuid4(), rol=UserRole.ESTUDIANTE.value,
+        _effective_permissions=default_permissions_for_role(UserRole.ESTUDIANTE.value),
+    )
     db = FakeDB()
     queued: list[Entrega] = []
 

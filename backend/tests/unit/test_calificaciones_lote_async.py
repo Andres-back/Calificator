@@ -7,6 +7,7 @@ from uuid import uuid4
 
 from app.modules.calificaciones import router
 from app.modules.calificaciones.models import Entrega
+from app.modules.authorization.catalog import default_permissions_for_role
 from app.shared.enums import (
     EntregaEstado,
     EvaluacionEstado,
@@ -59,7 +60,10 @@ def test_async_batch_endpoint_persists_then_enqueues_exact_deliveries(monkeypatc
         politica_intento=PoliticaIntento.PRACTICA_LIBRE.value,
         intentos_permitidos=None,
     )
-    teacher = SimpleNamespace(id=uuid4(), rol=UserRole.PROFESOR.value)
+    teacher = SimpleNamespace(
+        id=uuid4(), rol=UserRole.PROFESOR.value,
+        _effective_permissions=default_permissions_for_role(UserRole.PROFESOR.value),
+    )
     student_ids = [uuid4(), uuid4()]
     db = FakeDB()
     job_id = uuid4()

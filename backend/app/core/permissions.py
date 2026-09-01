@@ -45,6 +45,9 @@ async def get_current_user(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Inactive or missing user",
         )
+    from app.modules.authorization.service import effective_permissions
+
+    user._effective_permissions = await effective_permissions(db, user)  # type: ignore[attr-defined]
     return user
 
 
@@ -66,6 +69,55 @@ def require_roles(*roles: UserRole) -> Callable:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Not enough permissions",
+            )
+        return current_user
+
+    return dependency
+
+
+def require_permission(permission_key: str) -> Callable:
+    async def dependency(
+        current_user: User = Depends(get_current_user),
+        db: AsyncSession = Depends(get_db),
+    ) -> User:
+        from app.modules.authorization.service import ensure_permission
+
+        await ensure_permission(db, current_user, permission_key)
+        return current_user
+
+    return dependency
+
+
+def require_permission_now(current_user: User, permission_key: str) -> None:
+    effective = getattr(current_user, "_effective_permissions", None)
+    if effective is None or permission_key not in effective:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="No tienes permiso para realizar esta acción",
+        )
+
+
+def require_any_permission_now(current_user: User, *permission_keys: str) -> None:
+    effective = getattr(current_user, "_effective_permissions", None)
+    if effective is None or not set(permission_keys).intersection(effective):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="No tienes permiso para realizar esta acción",
+        )
+
+
+def require_any_permission(*permission_keys: str) -> Callable:
+    async def dependency(
+        current_user: User = Depends(get_current_user),
+        db: AsyncSession = Depends(get_db),
+    ) -> User:
+        from app.modules.authorization.service import effective_permissions
+
+        effective = await effective_permissions(db, current_user)
+        if not effective.intersection(permission_keys):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="No tienes permiso para realizar esta acción",
             )
         return current_user
 

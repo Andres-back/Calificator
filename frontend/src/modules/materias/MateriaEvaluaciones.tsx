@@ -73,8 +73,23 @@ const emptyForm = (): EvaluationForm => ({
 });
 
 export function MateriaEvaluaciones() {
-  const { materia, canManageMateria } = useMateriaContext();
+  const { materia } = useMateriaContext();
   const user = useAuth((state) => state.user);
+  const permissions = new Set(user?.permissions ?? []);
+  const canCreateEvaluation = permissions.has('evaluations.create');
+  const canUpdateEvaluation = permissions.has('evaluations.update');
+  const canPublishEvaluation = permissions.has('evaluations.publish');
+  const canDeleteEvaluation = permissions.has('evaluations.delete');
+  const canGradeEvaluation = permissions.has('grading.grade');
+  const canReviewGrades = permissions.has('grading.read');
+  const canSubmitEvaluation = permissions.has('evaluations.submit');
+  const canManageEvaluations = canCreateEvaluation
+    || canUpdateEvaluation
+    || canPublishEvaluation
+    || canDeleteEvaluation
+    || canGradeEvaluation
+    || canReviewGrades;
+  const isLearnerView = canSubmitEvaluation && !canManageEvaluations;
   const [manualOpen, setManualOpen] = useState(false);
   const [wizardOpen, setWizardOpen] = useState(false);
   const [digitalizeOpen, setDigitalizeOpen] = useState(false);
@@ -85,18 +100,18 @@ export function MateriaEvaluaciones() {
   const [searchParams, setSearchParams] = useSearchParams();
 
   useEffect(() => {
-    if (!canManageMateria || searchParams.get('digitalizar') !== '1') return;
+    if (!canCreateEvaluation || searchParams.get('digitalizar') !== '1') return;
     setDigitalizeOpen(true);
     const nextParams = new URLSearchParams(searchParams);
     nextParams.delete('digitalizar');
     setSearchParams(nextParams, { replace: true });
-  }, [canManageMateria, searchParams, setSearchParams]);
+  }, [canCreateEvaluation, searchParams, setSearchParams]);
 
   const evaluationsQuery = useQuery({
     queryKey: ['evaluaciones', materia.id],
     queryFn: () => listEvaluaciones(materia.id),
     enabled: Boolean(materia.id),
-    refetchInterval: !canManageMateria ? 10_000 : false,
+    refetchInterval: isLearnerView ? 10_000 : false,
     refetchOnWindowFocus: true,
   });
 
@@ -200,7 +215,7 @@ export function MateriaEvaluaciones() {
 
   return (
     <div className="space-y-5">
-      {canManageMateria && (
+      {canCreateEvaluation && (
         <Card className="border-brand-200 bg-brand-50/50 p-5 dark:border-brand-500/25 dark:bg-brand-500/10">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex items-start gap-3">
@@ -237,7 +252,7 @@ export function MateriaEvaluaciones() {
         </Card>
       )}
 
-      {canManageMateria && (
+      {canManageEvaluations && (
         <div className="flex items-center gap-3">
           <p className="text-sm text-muted">
             {evaluations?.length ?? 0} evaluaciones · {closedCount} cerradas
@@ -286,12 +301,12 @@ export function MateriaEvaluaciones() {
                       <Badge tone="brand">
                         {MODALITY_LABELS[modality]}
                       </Badge>
-                      {!canManageMateria && (
+                      {isLearnerView && (
                         <Badge tone={getStudentEvaluationStatus(evaluation).tone}>
                           {getStudentEvaluationStatus(evaluation).label}
                         </Badge>
                       )}
-                      {canManageMateria && !isDraft && (
+                      {canPublishEvaluation && !isDraft && (
                         <Badge tone={receptionEnabled ? 'success' : 'warning'}>
                           {receptionEnabled ? 'Entregas abiertas' : 'Entregas cerradas'}
                         </Badge>
@@ -320,7 +335,7 @@ export function MateriaEvaluaciones() {
                     <p className="mt-2 text-xs text-muted">
                       {evaluation.preguntas?.length ?? 0} pregunta
                       {(evaluation.preguntas?.length ?? 0) === 1 ? '' : 's'}
-                      {!canManageMateria && (evaluation.intentos_realizados ?? 0) > 0
+                      {isLearnerView && (evaluation.intentos_realizados ?? 0) > 0
                         ? ` · Intento ${evaluation.intentos_realizados}`
                         : ''}
                     </p>
@@ -328,16 +343,20 @@ export function MateriaEvaluaciones() {
                 </div>
 
                 <div className="mt-4 flex flex-wrap gap-2">
-                  {canManageMateria ? (
+                  {canManageEvaluations ? (
                     <>
-                      <Button size="sm" variant="outline" onClick={() => openEdit(evaluation)}>
-                        <Pencil className="h-4 w-4" /> Editar datos
-                      </Button>
-                      <Button size="sm" variant="secondary" onClick={() => { setContentEditingEval(evaluation); setWizardOpen(true); }}>
-                        <ClipboardCheck className="h-4 w-4" /> Editar preguntas
-                      </Button>
+                      {canUpdateEvaluation && (
+                        <>
+                          <Button size="sm" variant="outline" onClick={() => openEdit(evaluation)}>
+                            <Pencil className="h-4 w-4" /> Editar datos
+                          </Button>
+                          <Button size="sm" variant="secondary" onClick={() => { setContentEditingEval(evaluation); setWizardOpen(true); }}>
+                            <ClipboardCheck className="h-4 w-4" /> Editar preguntas
+                          </Button>
+                        </>
+                      )}
 
-                      {isDraft && (
+                      {canPublishEvaluation && isDraft && (
                         <Button
                           size="sm"
                           loading={publish.isPending}
@@ -347,7 +366,7 @@ export function MateriaEvaluaciones() {
                         </Button>
                       )}
 
-                      {!isDraft && (
+                      {canPublishEvaluation && !isDraft && (
                         <>
                           {receptionEnabled ? (
                             <Button
@@ -369,17 +388,18 @@ export function MateriaEvaluaciones() {
                             </Button>
                           )}
 
-                          {modality !== 'online' && (
-                            <Link to={photoRoute}>
-                              <Button size="sm" variant="secondary">
-                                <ClipboardCheck className="h-4 w-4" /> Calificar foto
-                              </Button>
-                            </Link>
-                          )}
                         </>
                       )}
 
-                      {!isDraft && (
+                      {canGradeEvaluation && !isDraft && modality !== 'online' && (
+                        <Link to={photoRoute}>
+                          <Button size="sm" variant="secondary">
+                            <ClipboardCheck className="h-4 w-4" /> Calificar foto
+                          </Button>
+                        </Link>
+                      )}
+
+                      {canReviewGrades && !isDraft && (
                         <Link to={reviewRoute}>
                           <Button size="sm" variant={modality === 'online' ? 'secondary' : 'outline'}>
                             <Eye className="h-4 w-4" /> Revisar notas
@@ -387,17 +407,19 @@ export function MateriaEvaluaciones() {
                         </Link>
                       )}
 
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="text-rose-700 dark:text-rose-300"
-                        onClick={() => setDeleteTarget(evaluation)}
-                      >
-                        <Trash2 className="h-4 w-4" /> Eliminar
-                      </Button>
+                      {canDeleteEvaluation && (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="text-rose-700 dark:text-rose-300"
+                          onClick={() => setDeleteTarget(evaluation)}
+                        >
+                          <Trash2 className="h-4 w-4" /> Eliminar
+                        </Button>
+                      )}
 
                     </>
-                  ) : canOpenOnline ? (
+                  ) : isLearnerView && canOpenOnline ? (
                     <Link to={routes.resolverEvaluacion(evaluation.id)}>
                       <Button size="sm" variant="secondary">
                         <Eye className="h-4 w-4" />
@@ -414,7 +436,7 @@ export function MateriaEvaluaciones() {
             );
           })}
         </div>
-      ) : canManageMateria ? (
+      ) : canManageEvaluations ? (
         <EmptyState
           icon={ClipboardCheck}
           title="Aún no hay evaluaciones"
@@ -428,7 +450,7 @@ export function MateriaEvaluaciones() {
         />
       )}
 
-      {canManageMateria && (
+      {canCreateEvaluation && (
         <DigitalizarEvaluacionModal
           open={digitalizeOpen}
           onClose={() => setDigitalizeOpen(false)}
@@ -440,7 +462,7 @@ export function MateriaEvaluaciones() {
         />
       )}
 
-      {canManageMateria && user && (
+      {(canCreateEvaluation || canUpdateEvaluation) && user && (
         <GenerationWizard
           open={wizardOpen}
           onClose={() => { setWizardOpen(false); setContentEditingEval(null); }}
@@ -457,7 +479,7 @@ export function MateriaEvaluaciones() {
         />
       )}
 
-      {canManageMateria && (
+      {canUpdateEvaluation && (
         <Modal
           open={manualOpen}
           onClose={closeManual}
@@ -560,7 +582,7 @@ export function MateriaEvaluaciones() {
         </Modal>
       )}
       <ConfirmDialog
-        open={Boolean(deleteTarget)}
+        open={canDeleteEvaluation && Boolean(deleteTarget)}
         onClose={() => setDeleteTarget(null)}
         onConfirm={() => {
           if (deleteTarget) removeEvaluation.mutate(deleteTarget.id);

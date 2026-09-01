@@ -5,7 +5,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Response, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.permissions import get_current_user, require_role
+from app.core.permissions import get_current_user, require_permission_now, require_role
 from app.db.session import get_db
 from app.modules.xali import service
 from app.modules.xali.schemas import (
@@ -29,6 +29,7 @@ async def chat(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> dict:
+    require_permission_now(current_user, "xali.use")
     is_teacher = current_user.rol in (UserRole.PROFESOR, UserRole.ADMIN)
     respuesta = await service.chat(
         db,
@@ -45,6 +46,7 @@ async def list_evaluaciones_entregadas(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> list[dict]:
+    require_permission_now(current_user, "xali.use")
     require_role(current_user, [UserRole.ESTUDIANTE])
     return await service.list_delivered_evaluations_for_student(db, current_user.id)
 
@@ -56,6 +58,7 @@ async def chat_evaluacion_entregada(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> dict:
+    require_permission_now(current_user, "xali.use")
     require_role(current_user, [UserRole.ESTUDIANTE])
     return await service.chat_about_delivered_evaluation(
         db,
@@ -75,6 +78,7 @@ async def generar_recurso_evaluacion_entregada(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> dict:
+    require_permission_now(current_user, "xali.use")
     require_role(current_user, [UserRole.ESTUDIANTE])
     return await service.generate_student_resource(
         db,
@@ -93,6 +97,7 @@ async def listar_recursos_evaluacion_entregada(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> list[dict]:
+    require_permission_now(current_user, "xali.use")
     require_role(current_user, [UserRole.ESTUDIANTE])
     return await service.list_student_resources(
         db,
@@ -107,6 +112,7 @@ async def get_history(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> list:
+    require_permission_now(current_user, "xali.use")
     return await service.get_history(db, current_user.id, materia_id)
 
 
@@ -116,5 +122,6 @@ async def clear_history(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> Response:
+    require_permission_now(current_user, "xali.use")
     await service.clear_history(db, current_user.id, materia_id)
     return Response(status_code=status.HTTP_204_NO_CONTENT)

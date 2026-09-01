@@ -13,9 +13,7 @@ from fastapi import HTTPException
 from app.modules.asistencia import router as asistencia_router
 from app.modules.dba import router as dba_router
 from app.modules.evaluaciones import service as evaluaciones_service
-from app.modules.herramientas import router as herramientas_router
 from app.modules.herramientas import service as herramientas_service
-from app.modules.materias import service as materias_service
 from app.shared.enums import UserRole
 from authorization_helpers import (
     AUTHORIZATION_SURFACES,
@@ -311,7 +309,11 @@ def test_student_activity_resource_is_enrolled_visible_and_sanitized(monkeypatch
     async def allow(*_args, **_kwargs):
         return SimpleNamespace(id=materia_id)
 
+    async def not_owned(*_args, **_kwargs):
+        return None
+
     monkeypatch.setattr(herramientas_service.materias_service, "ensure_can_read_materia", allow)
+    monkeypatch.setattr(herramientas_service, "get_material", not_owned)
     result = asyncio.run(
         herramientas_service.get_material_for_user(db, row.id, student)
     )

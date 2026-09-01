@@ -56,6 +56,7 @@ export const routes = {
   reportes: '/app/reportes',
   adminAI: '/app/admin/configuracion-ia',
   adminUsers: '/app/admin/usuarios',
+  adminRoles: '/app/admin/roles',
   adminMail: '/app/admin/correo',
   profesorAI: '/app/configuracion-ia',
   analytics: '/app/analytics',

@@ -34,7 +34,45 @@ def _roles(node: ast.AST) -> set[str]:
     return found
 
 
-def _authorization(function: ast.AsyncFunctionDef | ast.FunctionDef) -> tuple[list[str], list[str]]:
+def _permission_actors(reader: SourceReader) -> dict[str, set[str]]:
+    """Derive legacy actors from the canonical modular-permission catalog."""
+    path = reader.root / "backend/app/modules/authorization/catalog.py"
+    if not path.exists():
+        return {}
+    tree = ast.parse(reader.read_text(path), filename=reader.relative(path))
+    role_assignments = {
+        "STUDENT_DEFAULT_PERMISSIONS": "estudiante",
+        "PROFESSOR_DEFAULT_PERMISSIONS": "profesor",
+    }
+    result: dict[str, set[str]] = {}
+    for node in tree.body:
+        if not isinstance(node, (ast.Assign, ast.AnnAssign)):
+            continue
+        targets = node.targets if isinstance(node, ast.Assign) else [node.target]
+        names = {target.id for target in targets if isinstance(target, ast.Name)}
+        role = next((value for name, value in role_assignments.items() if name in names), None)
+        if not role:
+            continue
+        for child in ast.walk(node.value):
+            if isinstance(child, ast.Constant) and isinstance(child.value, str) and "." in child.value:
+                result.setdefault(child.value, {"admin"}).add(role)
+    return result
+
+
+def _permission_keys(node: ast.Call) -> set[str]:
+    return {
+        child.value
+        for child in node.args
+        if isinstance(child, ast.Constant)
+        and isinstance(child.value, str)
+        and "." in child.value
+    }
+
+
+def _authorization(
+    function: ast.AsyncFunctionDef | ast.FunctionDef,
+    permission_actors: dict[str, set[str]],
+) -> tuple[list[str], list[str]]:
     actors: set[str] = set()
     auth: set[str] = set()
     for node in ast.walk(function):
@@ -56,6 +94,16 @@ def _authorization(function: ast.AsyncFunctionDef | ast.FunctionDef) -> tuple[li
         elif name == "require_role":
             auth.add("require_role")
             actors.update(_roles(node))
+        elif name in {
+            "require_permission",
+            "require_permission_now",
+            "require_any_permission",
+            "require_any_permission_now",
+        }:
+            keys = _permission_keys(node)
+            for key in keys:
+                auth.add(f"{name}:{key}")
+                actors.update(permission_actors.get(key, {"admin"}))
         elif name == "get_current_user":
             auth.add("get_current_user")
             if not actors:
@@ -104,6 +152,7 @@ def _registered_router_sources(reader: SourceReader) -> set[str]:
 def extract_backend(reader: SourceReader) -> list[Surface]:
     surfaces: list[Surface] = []
     registered_sources = _registered_router_sources(reader)
+    permission_actors = _permission_actors(reader)
     for path in reader.files(("backend/app",), {".py"}):
         source_path = reader.relative(path)
         try:
@@ -121,7 +170,7 @@ def extract_backend(reader: SourceReader) -> list[Surface]:
                     continue
                 route = _string(decorator.args[0]) if decorator.args else ""
                 full_path = normalize_path(prefixes.get(router_name, "") + route)
-                actors, authorization = _authorization(function)
+                actors, authorization = _authorization(function, permission_actors)
                 if router_name == "app" and not authorization:
                     actors = ["public"]
                 surfaces.append(Surface(

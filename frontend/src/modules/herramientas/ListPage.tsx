@@ -13,10 +13,18 @@ import { routes } from '@/config/routes';
 import toast from 'react-hot-toast';
 import { useDeleteConfirm } from '@/lib/hooks';
 import { formatDate } from '@/lib/dates';
+import { useAuth } from '@/stores/auth';
 
 const CATEGORIES = ['Todos', 'Juego', 'Evaluación', 'Material'] as const;
 
 export function ListPage() {
+  const user = useAuth((state) => state.user);
+  const permissions = new Set(user?.permissions ?? []);
+  const canCreate = permissions.has('resources.create');
+  const canUpdate = permissions.has('resources.update');
+  const canDelete = permissions.has('resources.delete');
+  const canAssign = permissions.has('resources.assign');
+  const canReadEvaluations = permissions.has('evaluations.read');
   const navigate = useNavigate();
   const [cat, setCat] = useState<(typeof CATEGORIES)[number]>('Todos');
   const [query, setQuery] = useState('');
@@ -55,7 +63,7 @@ export function ListPage() {
         title="Recursos didácticos"
         eyebrow="Recursos didácticos"
         subtitle="Crea, revisa y descarga materiales de práctica y apoyo para tu clase."
-        action={<Link to="/app/herramientas/nuevo"><Button><Plus className="h-4 w-4" /> Crear material</Button></Link>}
+        action={canCreate ? <Link to="/app/herramientas/nuevo"><Button><Plus className="h-4 w-4" /> Crear material</Button></Link> : undefined}
       />
 
       <Card className="flex flex-col gap-4 border-brand-200 bg-brand-50/60 p-5 dark:border-brand-500/30 dark:bg-brand-500/10 sm:flex-row sm:items-center sm:justify-between">
@@ -70,9 +78,9 @@ export function ListPage() {
             </p>
           </div>
         </div>
-        <Link to={routes.materiasPara('evaluar')} className="shrink-0">
+        {canReadEvaluations && <Link to={routes.materiasPara('evaluar')} className="shrink-0">
           <Button variant="outline">Ir a Evaluaciones</Button>
-        </Link>
+        </Link>}
       </Card>
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -115,7 +123,7 @@ export function ListPage() {
         onRetry={() => void refetch()}
         isEmpty={!data || data.length === 0}
         loading={<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{Array.from({ length: 6 }).map((_, index) => <Skeleton key={index} className="h-40" />)}</div>}
-        empty={<EmptyState icon={Wrench} title="Sin material todavía" description="Crea tu primer crucigrama, sopa de letras o guía en segundos." action={<Link to="/app/herramientas/nuevo"><Button><Plus className="h-4 w-4" /> Crear material</Button></Link>} />}
+        empty={<EmptyState icon={Wrench} title="Sin material todavía" description={canCreate ? 'Crea tu primer crucigrama, sopa de letras o guía en segundos.' : 'Todavía no hay materiales disponibles.'} action={canCreate ? <Link to="/app/herramientas/nuevo"><Button><Plus className="h-4 w-4" /> Crear material</Button></Link> : undefined} />}
       >
         {filtered.length === 0 ? (
           <EmptyState icon={Wrench} title="No encontramos recursos" description={query ? 'Prueba otro término o cambia el filtro.' : 'Cambia el filtro o crea un recurso nuevo.'} />
@@ -154,18 +162,18 @@ export function ListPage() {
                         <p className="mt-1 text-xs text-muted">{formatDate(material.created_at)}</p>
                       </Link>
                       <div className="mt-4 flex items-center gap-2 border-t border-border pt-3">
-                        <Link to={`/app/herramientas/${material.id}?action=edit`} className="min-w-0 flex-1">
+                        {canUpdate && <Link to={`/app/herramientas/${material.id}?action=edit`} className="min-w-0 flex-1">
                           <Button size="sm" variant="outline" className="w-full"><Pencil className="h-4 w-4" /> Editar</Button>
-                        </Link>
-                        <Link to={material.evaluacion_id && material.materia_id ? routes.materiaEvaluaciones(material.materia_id) : `/app/herramientas/${material.id}?action=assign`} className="min-w-0 flex-1">
+                        </Link>}
+                        {canAssign && <Link to={material.evaluacion_id && material.materia_id ? routes.materiaEvaluaciones(material.materia_id) : `/app/herramientas/${material.id}?action=assign`} className="min-w-0 flex-1">
                           <Button size="sm" className="w-full"><Send className="h-4 w-4" /> {assignmentLabel}</Button>
-                        </Link>
+                        </Link>}
                         <ActionMenu
                           label={`Más acciones para ${material.titulo}`}
                           items={[
                             { label: 'Descargar PDF', href: pdfUrl(material.id), icon: <Download className="h-4 w-4" aria-hidden="true" /> },
-                            { label: 'Duplicar recurso', icon: <Copy className="h-4 w-4" aria-hidden="true" />, onSelect: async () => { try { const duplicated = await duplicateMaterial(material.id); await queryClient.invalidateQueries({ queryKey: ['materials'] }); toast.success('Duplicado'); navigate(`/app/herramientas/${duplicated.id}`); } catch { toast.error('Error al duplicar'); } } },
-                            { label: 'Eliminar recurso', tone: 'danger', icon: <Trash2 className="h-4 w-4" aria-hidden="true" />, onSelect: () => setDeleteTarget({ id: material.id, title: material.titulo }) },
+                            ...(canCreate ? [{ label: 'Duplicar recurso', icon: <Copy className="h-4 w-4" aria-hidden="true" />, onSelect: async () => { try { const duplicated = await duplicateMaterial(material.id); await queryClient.invalidateQueries({ queryKey: ['materials'] }); toast.success('Duplicado'); navigate(`/app/herramientas/${duplicated.id}`); } catch { toast.error('Error al duplicar'); } } }] : []),
+                            ...(canDelete ? [{ label: 'Eliminar recurso', tone: 'danger' as const, icon: <Trash2 className="h-4 w-4" aria-hidden="true" />, onSelect: () => setDeleteTarget({ id: material.id, title: material.titulo }) }] : []),
                           ]}
                         />
                       </div>

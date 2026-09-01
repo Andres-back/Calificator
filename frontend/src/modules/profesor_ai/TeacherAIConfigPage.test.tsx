@@ -6,8 +6,13 @@ import { MemoryRouter } from 'react-router-dom';
 import { TeacherAIConfigPage } from './TeacherAIConfigPage';
 
 const teacherApi = vi.hoisted(() => ({
+  createOllamaPairingCode: vi.fn(),
   deleteTeacherCredential: vi.fn(),
+  getOllamaConnectors: vi.fn(),
+  getTeacherOllamaModels: vi.fn(),
   getTeacherAIConfig: vi.fn(),
+  refreshTeacherOllamaModels: vi.fn(),
+  revokeOllamaConnector: vi.fn(),
   saveTeacherAIConfig: vi.fn(),
   saveTeacherCredential: vi.fn(),
   testTeacherProvider: vi.fn(),
@@ -52,6 +57,11 @@ function renderPage() {
 beforeEach(() => {
   vi.clearAllMocks();
   teacherApi.getTeacherAIConfig.mockResolvedValue(config);
+  teacherApi.getOllamaConnectors.mockResolvedValue([]);
+  teacherApi.getTeacherOllamaModels.mockResolvedValue([]);
+  teacherApi.refreshTeacherOllamaModels.mockResolvedValue([]);
+  teacherApi.createOllamaPairingCode.mockResolvedValue({ code: 'ABCD-EFGH', expires_at: '2026-08-30T23:59:00Z' });
+  teacherApi.revokeOllamaConnector.mockResolvedValue(undefined);
   teacherApi.saveTeacherAIConfig.mockResolvedValue(config);
   teacherApi.saveTeacherCredential.mockResolvedValue({ status: 'updated' });
   teacherApi.testTeacherProvider.mockResolvedValue({ status: 'ok', detail: 'Conexión exitosa' });
@@ -90,5 +100,65 @@ describe('TeacherAIConfigPage', () => {
     await waitFor(() => expect(teacherApi.saveTeacherAIConfig).toHaveBeenCalledWith(expect.objectContaining({
       mode: 'advanced', allow_institutional_fallback: false, expected_version: 2,
     })));
+  });
+
+  it('shows connector state, pairs a computer and allows revocation', async () => {
+    const user = userEvent.setup();
+    teacherApi.getOllamaConnectors.mockResolvedValue([{
+      id: 'connector-1', name: 'Portátil del aula', platform: 'windows', version: '1.0.0',
+      status: 'connected', active: true, last_seen_at: '2026-08-30T20:00:00Z',
+      models: [{ model_id: 'qwen3:8b', capabilities: ['text'], available: true }],
+    }]);
+    renderPage();
+
+    await user.click(await screen.findByRole('button', { name: /Usar mi API automáticamente/ }));
+    expect(await screen.findByText('Portátil del aula')).toBeInTheDocument();
+    expect(screen.getByText('Conectado')).toBeInTheDocument();
+    expect(screen.getByText(/Disponible para generar presentaciones/)).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /Vincular computador/ }));
+    expect(await screen.findByText('ABCD-EFGH')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /Revocar/ }));
+    await waitFor(() => expect(teacherApi.revokeOllamaConnector.mock.calls[0][0]).toBe('connector-1'));
+  });
+
+  it('offers Ollama local for presentations but never for photo grading', async () => {
+    const user = userEvent.setup();
+    teacherApi.getTeacherAIConfig.mockResolvedValue({
+      ...config,
+      providers: [
+        ...config.providers,
+        {
+          id: 'ollama_local', name: 'ollama_local', tipo: 'texto',
+          label: 'Ollama local (este computador)', base_url: null, model: null,
+          active: true, priority: 99, timeout_seconds: 0, max_retries: 0,
+        },
+      ],
+      models: [
+        ...config.models,
+        {
+          provider_id: 'ollama_local', model_id: 'qwen3:8b', label: 'qwen3:8b',
+          capabilities: ['text'], recommended: false, active: true,
+        },
+      ],
+      features: [
+        ...config.features,
+        {
+          feature: 'presentaciones', label: 'Presentaciones', capability: 'text',
+          primary_provider: 'open_code', primary_model: 'qwen3.7-plus',
+          fallback_provider: null, rollout_enabled: true, active: true,
+        },
+      ],
+    });
+    teacherApi.getOllamaConnectors.mockResolvedValue([{
+      id: 'connector-1', name: 'Equipo', platform: 'windows', version: '1.0.0',
+      status: 'connected', active: true, last_seen_at: '2026-08-30T20:00:00Z',
+      models: [{ model_id: 'qwen3:8b', capabilities: ['text'], available: true }],
+    }]);
+    renderPage();
+
+    await user.click(await screen.findByRole('button', { name: /Personalizar por función/ }));
+    const localOptions = await screen.findAllByRole('option', { name: 'Ollama local (este computador)' });
+    expect(localOptions).toHaveLength(1);
+    expect(screen.getByText(/nunca se envían al conector local/)).toBeInTheDocument();
   });
 });

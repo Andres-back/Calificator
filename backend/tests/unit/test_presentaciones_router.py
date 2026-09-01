@@ -2,6 +2,7 @@ import asyncio
 from datetime import datetime, timezone
 from io import BytesIO
 from types import SimpleNamespace
+from unittest.mock import AsyncMock
 from uuid import uuid4
 
 import pytest
@@ -23,9 +24,11 @@ from app.modules.presentaciones.local_export import (
 )
 from app.modules.presentaciones import assets_service
 from app.modules.presentaciones import service
+from app.modules.ollama_connector.service import LocalInferencePending
 from app.modules.presentaciones.template_library import choose_layout, layout_family
 from app.workers import tasks_presentations
 from app.modules.users.models import User
+from app.modules.authorization.catalog import default_permissions_for_role
 from app.shared.enums import ImageProvider
 
 
@@ -39,7 +42,7 @@ def test_presentation_worker_detaches_stale_pool_before_generation(monkeypatch) 
     async def fake_generate(_presentation_id) -> None:
         events.append("generate")
 
-    monkeypatch.setattr("app.db.session.engine", FakeEngine())
+    monkeypatch.setattr(tasks_presentations, "engine", FakeEngine())
     monkeypatch.setattr(
         tasks_presentations,
         "generate_presentacion_assets",
@@ -51,13 +54,84 @@ def test_presentation_worker_detaches_stale_pool_before_generation(monkeypatch) 
     assert events == ["detach", "generate", "close"]
 
 
+def test_presentation_local_adapter_sends_only_the_prompt(monkeypatch) -> None:
+    teacher_id, job_id = uuid4(), uuid4()
+    fake_db = object()
+
+    class SessionContext:
+        async def __aenter__(self):
+            return fake_db
+
+        async def __aexit__(self, *_args):
+            return False
+
+    request = AsyncMock(
+        return_value={"message": {"content": '{"slides": [{"title": "Tema"}]}'}}
+    )
+    monkeypatch.setattr(service, "AsyncSessionLocal", lambda: SessionContext())
+    monkeypatch.setattr(service, "request_local_inference", request)
+    client = service._PresentationLLM(
+        profesor_id=teacher_id,
+        source_job_id=job_id,
+        ai_config={
+            "primary": {
+                "provider": "ollama_local",
+                "model": "qwen3:8b",
+                "credential_source": "connector",
+            },
+            "fallback": None,
+        },
+    )
+
+    result = asyncio.run(client.generate_json("presentacion", "Explica fracciones"))
+
+    assert result["slides"][0]["title"] == "Tema"
+    sent = request.await_args.kwargs
+    assert sent["source_job_id"] == job_id
+    assert sent["stage"] == "presentacion:1"
+    assert sent["payload"]["messages"] == [
+        {"role": "user", "content": "Explica fracciones"}
+    ]
+    assert "student" not in str(sent["payload"]).lower()
+
+
+def test_presentation_local_adapter_propagates_durable_wait(monkeypatch) -> None:
+    class SessionContext:
+        async def __aenter__(self):
+            return object()
+
+        async def __aexit__(self, *_args):
+            return False
+
+    monkeypatch.setattr(service, "AsyncSessionLocal", lambda: SessionContext())
+    monkeypatch.setattr(
+        service,
+        "request_local_inference",
+        AsyncMock(side_effect=LocalInferencePending(uuid4())),
+    )
+    client = service._PresentationLLM(
+        profesor_id=uuid4(),
+        source_job_id=uuid4(),
+        ai_config={
+            "primary": {
+                "provider": "ollama_local",
+                "model": "qwen3:8b",
+                "credential_source": "connector",
+            }
+        },
+    )
+
+    with pytest.raises(LocalInferencePending):
+        asyncio.run(client.generate_json("presentacion", "Tema"))
+
+
 @pytest.fixture
 def anyio_backend() -> str:
     return "asyncio"
 
 
 def _user(role: str) -> User:
-    return User(
+    user = User(
         id=uuid4(),
         nombre=f"Usuario {role}",
         email=f"{role}-{uuid4().hex[:8]}@example.com",
@@ -65,6 +139,8 @@ def _user(role: str) -> User:
         rol=role,
         estado="activo",
     )
+    user._effective_permissions = default_permissions_for_role(role)
+    return user
 
 
 def _presentation(**overrides):
@@ -533,8 +609,8 @@ def test_presentation_object_authorization_matrix(monkeypatch) -> None:
         async def scalar(self, _statement):
             return pres
 
-    async def active_enrollment(_db, _student_id):
-        return [materia_id]
+    async def active_enrollment(_db, student_id):
+        return [materia_id] if student_id == student.id else []
 
     monkeypatch.setattr(service, "_student_materia_ids", active_enrollment)
 

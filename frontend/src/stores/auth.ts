@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { api, resetSessionExpiryState, setSessionExpiredHandler } from '@/lib/api';
 import { queryClient } from '@/lib/queryClient';
 import type { User } from '@/types/api';
+import { getAuthorizationContext } from '@/modules/admin/authorizationApi';
 
 interface AuthState {
   user: User | null;
@@ -18,6 +19,22 @@ function clearAuthenticatedState() {
   queryClient.clear();
 }
 
+async function loadAuthenticatedUser(): Promise<User> {
+  const [{ data }, authorization] = await Promise.all([
+    api.get<{ user: User }>('/auth/me'),
+    getAuthorizationContext(),
+  ]);
+  return {
+    ...data.user,
+    is_primary_admin: authorization.is_primary_admin,
+    custom_role_id: authorization.custom_role_id,
+    custom_role_name: authorization.custom_role_name,
+    role_version: authorization.role_version,
+    auth_version: authorization.auth_version,
+    permissions: authorization.permissions,
+  };
+}
+
 export const useAuth = create<AuthState>((set) => ({
   user: null,
   status: 'idle',
@@ -25,9 +42,9 @@ export const useAuth = create<AuthState>((set) => ({
   fetchMe: async () => {
     set({ status: 'loading' });
     try {
-      const { data } = await api.get<{ user: User }>('/auth/me');
+      const user = await loadAuthenticatedUser();
       resetSessionExpiryState();
-      set({ user: data.user, status: 'authenticated' });
+      set({ user, status: 'authenticated' });
     } catch {
       set({ user: null, status: 'unauthenticated' });
     }
@@ -37,19 +54,19 @@ export const useAuth = create<AuthState>((set) => ({
     await api.post('/auth/login', { email, password });
     // Nunca servir datos cacheados de una sesión/cuenta anterior.
     queryClient.clear();
-    const { data } = await api.get<{ user: User }>('/auth/me');
+    const user = await loadAuthenticatedUser();
     resetSessionExpiryState();
-    set({ user: data.user, status: 'authenticated' });
-    return data.user;
+    set({ user, status: 'authenticated' });
+    return user;
   },
 
   register: async (payload) => {
     await api.post('/auth/register', payload);
     queryClient.clear();
-    const { data } = await api.get<{ user: User }>('/auth/me');
+    const user = await loadAuthenticatedUser();
     resetSessionExpiryState();
-    set({ user: data.user, status: 'authenticated' });
-    return data.user;
+    set({ user, status: 'authenticated' });
+    return user;
   },
 
   logout: async () => {

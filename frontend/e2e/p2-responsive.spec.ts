@@ -12,9 +12,23 @@ const viewports = [
 ] as const;
 
 const users = {
-  admin: { id: 'admin-e2e', nombre: 'Administradora Prueba', email: 'admin@example.test', rol: 'admin', estado: 'activo' },
-  profesor: { id: 'profesor-e2e', nombre: 'Profesor Prueba', email: 'profesor@example.test', rol: 'profesor', estado: 'activo' },
-  estudiante: { id: 'estudiante-e2e', nombre: 'Estudiante Prueba', email: 'estudiante@example.test', rol: 'estudiante', estado: 'activo' },
+  admin: { id: 'admin-e2e', nombre: 'Administradora Prueba', email: 'admin@example.test', rol: 'admin', estado: 'activo', permissions: ['admin_ai.manage', 'presentations.read', 'reports.read', 'xali.use'] },
+  profesor: {
+    id: 'profesor-e2e', nombre: 'Profesor Prueba', email: 'profesor@example.test', rol: 'profesor', estado: 'activo',
+    permissions: [
+      'subjects.read', 'subjects.create', 'subjects.update',
+      'dba.read', 'dba.manage', 'attendance.read', 'attendance.manage',
+      'evaluations.read', 'evaluations.create', 'evaluations.update', 'evaluations.delete', 'evaluations.publish',
+      'resources.read', 'resources.create', 'resources.update', 'resources.delete', 'resources.assign',
+      'presentations.read', 'presentations.create', 'presentations.update', 'presentations.delete',
+      'submissions.read', 'submissions.review', 'grading.read', 'grading.grade', 'grading.publish',
+      'gradebook.read', 'reports.read', 'xali.use', 'ai_settings.personal',
+    ],
+  },
+  estudiante: {
+    id: 'estudiante-e2e', nombre: 'Estudiante Prueba', email: 'estudiante@example.test', rol: 'estudiante', estado: 'activo',
+    permissions: ['subjects.read', 'subjects.enroll', 'dba.read', 'evaluations.read', 'evaluations.submit', 'resources.read', 'presentations.read', 'grading.read', 'gradebook.read', 'xali.use'],
+  },
 } as const;
 
 const materia = {
@@ -71,6 +85,11 @@ async function installApiMocks(page: Page, targetRole: Role) {
       return fulfillJson(route, {});
     }
     if (path === '/auth/me') return currentUser ? fulfillJson(route, { user: currentUser }) : fulfillJson(route, { detail: 'Sin sesión' }, 401);
+    if (path === '/users/me/authorization' && currentUser) return fulfillJson(route, {
+      profile: currentUser.rol, is_primary_admin: currentUser.rol === 'admin',
+      custom_role_id: null, custom_role_name: null, role_version: null,
+      auth_version: 1, permissions: currentUser.permissions,
+    });
     if (path === '/auth/refresh') return fulfillJson(route, { detail: 'Sin sesión' }, 401);
     if (path === '/auth/logout') { currentUser = null; return fulfillJson(route, {}); }
 
@@ -167,7 +186,6 @@ for (const role of ['profesor', 'estudiante', 'admin'] as const) {
 
       for (const route of routesByRole[role]) {
         await page.goto(route);
-        await page.waitForLoadState('networkidle');
         await expect(page.locator('main#main-content')).toBeVisible();
         await expect.poll(
           () => page.evaluate(() => {
@@ -214,7 +232,6 @@ test('profesor recorre las siete vistas de una materia y escribe un DBA sin perd
   const navigation = page.getByRole('navigation', { name: 'Secciones de la materia' });
   for (const tab of ['Vista general', 'Evaluaciones', 'Recursos', 'Calificar', 'Asistencia', 'Boletín', 'DBA']) {
     await navigation.getByRole('link', { name: tab, exact: true }).click();
-    await page.waitForLoadState('networkidle');
     await expect(page.locator('main#main-content')).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
   }
@@ -250,7 +267,6 @@ for (const viewport of [viewports[1], viewports[4]]) {
 
     for (const route of routesByRole.profesor) {
       await page.goto(route);
-      await page.waitForLoadState('networkidle');
       await expect(page.locator('main#main-content')).toBeVisible();
       await expect(page.locator('html')).toHaveClass(/dark/);
       await expect.poll(
