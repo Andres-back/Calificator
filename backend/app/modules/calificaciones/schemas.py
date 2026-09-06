@@ -132,6 +132,8 @@ class LoteAsincronoRead(BaseModel):
     job_id: UUID
     estado: str
     entrega_ids: list[UUID]
+    total: int
+    summary_url: str
 
 
 class SalonSesionCreate(BaseModel):

@@ -92,6 +92,7 @@ class EntregaEstado(StrEnum):
 
 
 class CalificacionEstado(StrEnum):
+    PROCESANDO = "procesando"
     SUGERIDA = "sugerida"
     CONFIRMADA = "confirmada"
     AJUSTADA = "ajustada"
@@ -103,6 +104,9 @@ class CalificacionEstado(StrEnum):
 class JobEstado(StrEnum):
     QUEUED = "queued"
     RUNNING = "running"
+    RETRYING = "retrying"
+    REQUIRES_REVIEW = "requires_review"
+    FAILED_PERMANENT = "failed_permanent"
     SUCCESS = "success"
     FAILED = "failed"
     CANCELLED = "cancelled"
@@ -112,6 +116,7 @@ class JobTipo(StrEnum):
     PRESENTACION = "presentacion"
     IMAGEN = "imagen"
     CALIFICACION_LOTE = "calificacion_lote"
+    CALIFICACION_ENTREGA = "calificacion_entrega"
     RAG_INGEST = "rag_ingest"
     REPORTE_EXPORT = "reporte_export"
     EVALUACION_DIGITALIZACION = "evaluacion_digitalizacion"

@@ -15,6 +15,7 @@ from app.core.config import settings
 from app.core.logging import get_logger
 from app.modules.analytics.usage_logger import log_ai_usage
 from app.services.ai_credentials_service import get_effective_ai_credentials
+from app.services.ai_provider_capacity import provider_capacity
 from app.services.ollama_provider import OllamaCloudProvider
 from app.shared.enums import LLMProvider
 
@@ -25,6 +26,10 @@ OPEN_CODE_RETRYABLE_STATUS_CODES = frozenset({408, 425, 429, 500, 502, 503, 504}
 OPEN_CODE_RETRY_BASE_SECONDS = 0.5
 OPEN_CODE_RETRY_MAX_SECONDS = 10.0
 OPEN_CODE_ANTHROPIC_MODEL_PREFIXES = ("qwen", "minimax-m")
+
+
+class LLMOutputTruncatedError(RuntimeError):
+    """El proveedor terminó por presupuesto antes de completar el contrato."""
 
 
 def _open_code_uses_messages_api(model: str) -> bool:
@@ -89,6 +94,8 @@ class LLMRouter:
             "ollama": getattr(settings, "OLLAMA_API_KEY", ""),
         }
         self._provider_configs: dict[str, dict[str, Any]] = {}
+        self._output_budget: int | None = None
+        self._active_task_type = "content_generation"
 
     async def generate_json(
         self,
@@ -102,6 +109,11 @@ class LLMRouter:
     def set_tracking(self, **kwargs) -> None:
         """Establece metadatos de tracking para logging de uso."""
         self._tracking.update(kwargs)
+
+    def set_output_budget(self, max_tokens: int | None) -> None:
+        self._output_budget = (
+            max(256, int(max_tokens)) if max_tokens is not None else None
+        )
 
     def _routing_telemetry(self) -> dict[str, Any]:
         snapshot = self._ai_config or {}
@@ -122,6 +134,7 @@ class LLMRouter:
         prompt: str,
         json_mode: bool,
     ) -> str:
+        self._active_task_type = task_type
         # Build dynamic provider cascade from admin config
         providers = await self._load_providers(task_type)
 
@@ -130,7 +143,8 @@ class LLMRouter:
             try:
                 logger.debug("LLM call via %s for task '%s'", provider, task_type)
                 start = time.monotonic()
-                result = await fn(prompt, json_mode)
+                async with provider_capacity():
+                    result = await fn(prompt, json_mode)
                 ms = int((time.monotonic() - start) * 1000)
                 logger.info("LLM ok via %s (%dms) task=%s", provider, ms, task_type)
                 return result
@@ -414,13 +428,13 @@ class LLMRouter:
             "model": model,
             "messages": [{"role": "user", "content": prompt}],
             "temperature": 0.1 if json_mode else 0.3,
+            "max_tokens": self._output_budget or int(
+                config.get("max_tokens")
+                or getattr(settings, "OPEN_CODE_MAX_TOKENS", 8192)
+            ),
         }
         use_messages_api = _open_code_uses_messages_api(model)
         if use_messages_api:
-            body["max_tokens"] = int(
-                config.get("max_tokens")
-                or getattr(settings, "OPEN_CODE_MAX_TOKENS", 8192)
-            )
             endpoint = "messages"
         else:
             if json_mode:
@@ -488,8 +502,29 @@ class LLMRouter:
                         data = resp.json()
                         ms = int((time.monotonic() - start) * 1000)
                         usage = data.get("usage", {}) or {}
+                        finish_reason = (
+                            data.get("stop_reason")
+                            if use_messages_api
+                            else ((data.get("choices") or [{}])[0].get("finish_reason"))
+                        )
+                        if str(finish_reason or "").lower() in {"max_tokens", "length"}:
+                            await log_ai_usage(
+                                feature=self._active_task_type,
+                                provider="opencode",
+                                model=model,
+                                status="failed",
+                                latency_ms=ms,
+                                input_tokens=usage.get("input_tokens") or usage.get("prompt_tokens"),
+                                output_tokens=usage.get("output_tokens") or usage.get("completion_tokens"),
+                                error_code="output_budget_exhausted",
+                                **self._tracking,
+                                **self._routing_telemetry(),
+                            )
+                            raise LLMOutputTruncatedError(
+                                f"OpenCode terminó la respuesta por límite de salida ({finish_reason})"
+                            )
                         await log_ai_usage(
-                            feature="content_generation",
+                            feature=self._active_task_type,
                             provider="opencode",
                             model=model,
                             status="success",
@@ -510,10 +545,13 @@ class LLMRouter:
                         return data["choices"][0]["message"]["content"]
 
             raise RuntimeError("OpenCode rechazó las credenciales configuradas")
+        except LLMOutputTruncatedError:
+            # El consumo del intento ya fue registrado al detectar el truncado.
+            raise
         except httpx.TimeoutException:
             ms = int((time.monotonic() - start) * 1000)
             await log_ai_usage(
-                feature="content_generation",
+                feature=self._active_task_type,
                 provider="opencode",
                 model=model,
                 status="timeout",
@@ -526,7 +564,7 @@ class LLMRouter:
         except Exception as exc:
             ms = int((time.monotonic() - start) * 1000)
             await log_ai_usage(
-                feature="content_generation",
+                feature=self._active_task_type,
                 provider="opencode",
                 model=model,
                 status="failed",
@@ -545,6 +583,9 @@ class LLMRouter:
             "model": config.get("model") or settings.OPENAI_MODEL,
             "messages": [{"role": "user", "content": prompt}],
             "temperature": 0.2 if json_mode else 0.3,
+            "max_tokens": self._output_budget or int(
+                config.get("max_tokens") or settings.OPEN_CODE_MAX_TOKENS
+            ),
         }
         if json_mode:
             body["response_format"] = {"type": "json_object"}
@@ -568,6 +609,9 @@ class LLMRouter:
             "messages": [{"role": "user", "content": prompt}],
             "temperature": 0.3,
             "timeout": config.get("timeout_seconds") or getattr(settings, "GROQ_TIMEOUT_SECONDS", 30),
+            "max_tokens": self._output_budget or int(
+                config.get("max_tokens") or settings.OPEN_CODE_MAX_TOKENS
+            ),
         }
         if json_mode:
             kwargs["response_format"] = {"type": "json_object"}
@@ -591,7 +635,11 @@ class LLMRouter:
         response = await client.chat(
             model=model,
             messages=[{"role": "user", "content": prompt}],
-            options={"temperature": 0.1 if json_mode else 0.3},
+            options={
+                "temperature": 0.1 if json_mode else 0.3,
+                "num_predict": self._output_budget
+                or int(config.get("max_tokens") or settings.OPEN_CODE_MAX_TOKENS),
+            },
         )
         message = response.get("message") or {}
         return str(message.get("content") or response.get("response") or "")

@@ -31,10 +31,22 @@ celery_app.conf.update(
     enable_utc=True,
     task_track_started=True,
     worker_prefetch_multiplier=1,
+    worker_concurrency=max(1, settings.AI_PROVIDER_MAX_CONCURRENCY),
     task_acks_late=True,
     task_reject_on_worker_lost=True,
     worker_cancel_long_running_tasks_on_connection_loss=False,
     broker_connection_retry_on_startup=True,
+    task_default_queue="default",
+    task_routes={
+        "tasks.grade_batch": {"queue": "grading"},
+        "tasks.grade_delivery": {"queue": "grading"},
+        "tasks.recover_stale_grading_jobs": {"queue": "grading"},
+        "tasks.digitalize_evaluation": {"queue": "digitalization"},
+        "tasks.recover_stale_digitalization_jobs": {"queue": "digitalization"},
+        "tasks.generate_presentation": {"queue": "presentations"},
+        "tasks.recover_stale_presentation_jobs": {"queue": "presentations"},
+        "tasks.generate_image": {"queue": "presentations"},
+    },
     beat_schedule={
         "assign-overdue-grades-every-minute": {
             "task": "tasks.assign_overdue_grades",
@@ -50,6 +62,10 @@ celery_app.conf.update(
         },
         "recover-stale-presentation-jobs": {
             "task": "tasks.recover_stale_presentation_jobs",
+            "schedule": float(settings.AI_JOB_RECOVERY_INTERVAL_SECONDS),
+        },
+        "recover-stale-digitalization-jobs": {
+            "task": "tasks.recover_stale_digitalization_jobs",
             "schedule": float(settings.AI_JOB_RECOVERY_INTERVAL_SECONDS),
         },
         "recover-expired-local-jobs": {

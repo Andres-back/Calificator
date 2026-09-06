@@ -281,7 +281,11 @@ async def _student_progress_by_evaluation(
             "intentos_realizados": attempt_counts.get(evaluacion.id, 0),
             "entrega_realizada": delivered,
             "mi_nota_confirmada": grade.nota_confirmada if grade else None,
-            "mi_calificacion_estado": grade.estado if grade else None,
+            "mi_calificacion_estado": (
+                CalificacionEstado.PROCESANDO.value
+                if delivery and delivery.estado == EntregaEstado.PROCESANDO.value
+                else grade.estado if grade else None
+            ),
         }
     return progress
 

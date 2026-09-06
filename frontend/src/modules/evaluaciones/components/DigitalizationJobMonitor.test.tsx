@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import {
   addPendingDigitalization,
@@ -9,13 +9,14 @@ import { DigitalizationJobMonitor } from './DigitalizationJobMonitor';
 
 const mocks = vi.hoisted(() => ({
   get: vi.fn(),
+  post: vi.fn(),
   success: vi.fn(),
   error: vi.fn(),
   invalidateQueries: vi.fn(),
 }));
 
 vi.mock('@/lib/api', () => ({
-  api: { get: mocks.get },
+  api: { get: mocks.get, post: mocks.post },
 }));
 vi.mock('@/lib/queryClient', () => ({
   queryClient: { invalidateQueries: mocks.invalidateQueries },
@@ -72,9 +73,13 @@ describe('DigitalizationJobMonitor', () => {
     expect(
       screen.getByText('OpenCode no pudo analizar el archivo.'),
     ).toBeInTheDocument();
-    expect(
-      screen.getByRole('button', { name: 'Intentar de nuevo' }),
-    ).toBeEnabled();
+    const retry = screen.getByRole('button', { name: 'Reintentar sin subir de nuevo' });
+    expect(retry).toBeEnabled();
+    mocks.post.mockResolvedValue({ data: { enqueued: 1 } });
+    fireEvent.click(retry);
+    await waitFor(() => {
+      expect(mocks.post).toHaveBeenCalledWith('/jobs/job-1/reintentar', {});
+    });
 
     const [stored] = readPendingDigitalizations();
     expect(stored).toMatchObject({

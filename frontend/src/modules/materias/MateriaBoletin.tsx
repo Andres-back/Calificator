@@ -7,6 +7,7 @@ import {
   CheckCircle2,
   CircleHelp,
   ClipboardCheck,
+  LoaderCircle,
   Search,
   TriangleAlert,
   UserRoundSearch,
@@ -29,6 +30,7 @@ import {
 import { routes } from '@/config/routes';
 import { useAuth } from '@/stores/auth';
 import type { Calificacion } from '@/types/api';
+import { isGradeProcessing } from '@/modules/calificaciones/gradePresentation';
 import { useMateriaContext } from './MateriaContext';
 import {
   buildFollowUpRows,
@@ -123,6 +125,15 @@ function nextAction(row: FollowUpRow): {
 }
 
 function GradeCell({ cell }: { cell: FollowUpCell }) {
+  if (cell.status === 'calificando') {
+    return (
+      <div className="rounded-xl border border-brand-200 bg-brand-50/70 p-3 dark:border-brand-500/30 dark:bg-brand-500/10" role="status">
+        <p className="truncate text-sm font-semibold" title={cell.evaluationName}>{cell.evaluationName}</p>
+        <Badge tone="brand" className="mt-2"><LoaderCircle className="h-4 w-4 animate-spin" aria-hidden="true" /> Calificando</Badge>
+        <p className="mt-2 text-xs text-muted">La evidencia está guardada. Aún no hay una nota.</p>
+      </div>
+    );
+  }
   if (cell.status === 'decidida') {
     return (
       <div className="rounded-xl border border-emerald-200 bg-emerald-50/70 p-3 dark:border-emerald-500/30 dark:bg-emerald-500/10">
@@ -234,6 +245,7 @@ function TeacherGradebook() {
       queryKey: ['calificaciones', evaluation.id],
       queryFn: () => listCalificaciones(evaluation.id),
       enabled: Boolean(evaluation.id) && canReadGrades,
+      refetchInterval: (query: { state: { data: Calificacion[] | undefined } }) => query.state.data?.some(isGradeProcessing) ? 5_000 : false,
     })),
   });
 

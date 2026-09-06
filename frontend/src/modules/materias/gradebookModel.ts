@@ -1,5 +1,6 @@
 import type { Calificacion, Evaluacion } from '@/types/api';
 import { hasTeacherDecision } from './gradingFlowModel';
+import { isGradeProcessing } from '@/modules/calificaciones/gradePresentation';
 
 export type FollowUpPriority =
   | 'alta'
@@ -7,7 +8,7 @@ export type FollowUpPriority =
   | 'estable'
   | 'sin_datos';
 
-export type FollowUpCellStatus = 'decidida' | 'por_revisar' | 'sin_nota';
+export type FollowUpCellStatus = 'decidida' | 'por_revisar' | 'sin_nota' | 'calificando';
 
 export type FollowUpCell = {
   evaluationId: string;
@@ -144,7 +145,9 @@ export function buildFollowUpRows({
         percentage,
         status: decision
           ? 'decidida'
-          : grade
+          : grade && isGradeProcessing(grade)
+            ? 'calificando'
+            : grade
             ? 'por_revisar'
             : 'sin_nota',
       };
@@ -167,6 +170,11 @@ export function buildFollowUpRows({
       pendingReview,
       missing,
     });
+    const processing = cells.filter((cell) => cell.status === 'calificando').length;
+    if (processing > 0 && pendingReview === 0 && missing === 0 && priority.priority !== 'alta') {
+      priority.priority = 'seguimiento';
+      priority.reason = `${processing} entrega${processing === 1 ? '' : 's'} en calificación; todavía no requiere decisión docente.`;
+    }
 
     return {
       ...student,

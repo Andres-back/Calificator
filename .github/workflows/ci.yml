@@ -55,6 +55,7 @@ jobs:
       DATABASE_URL: postgresql+asyncpg://xcalificator:test-password@127.0.0.1:5432/xcalificator_test
       REDIS_URL: redis://127.0.0.1:6379/0
       RUN_DB_SMOKE: '1'
+      SPEC031_TEST_DATABASE_URL: postgresql+asyncpg://xcalificator:test-password@127.0.0.1:5432/xcalificator_test
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4

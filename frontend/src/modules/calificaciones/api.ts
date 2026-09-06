@@ -83,6 +83,26 @@ export async function salonFoto(sesionId: string, estudianteId: string, file: Fi
   const { data } = await api.post<Calificacion>(`/calificaciones/modo-salon/${sesionId}/foto`, formData);
   return data;
 }
+
+export interface LoteCalificacionRead {
+  job_id: string;
+  estado: 'queued';
+  entrega_ids: string[];
+  total: number;
+  summary_url: string;
+}
+
+export async function calificarLoteAsincrono(
+  evaluacionId: string,
+  items: { estudianteId: string; file: File }[],
+): Promise<LoteCalificacionRead> {
+  const formData = new FormData();
+  formData.append('evaluacion_id', evaluacionId);
+  formData.append('estudiantes', JSON.stringify(items.map((item) => item.estudianteId)));
+  items.forEach((item) => formData.append('files', item.file));
+  const { data } = await api.post<LoteCalificacionRead>('/calificaciones/lote/asincrono', formData);
+  return data;
+}
 export async function cerrarSalon(sesionId: string): Promise<void> {
   await api.delete(`/calificaciones/modo-salon/${sesionId}`);
 }

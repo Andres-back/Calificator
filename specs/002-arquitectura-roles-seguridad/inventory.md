@@ -27,7 +27,7 @@
 | table | `ai_configuration_versions` | system | covered | `backend/alembic/versions/202608250004_ai_configuration_history.py:19` |
 | table | `ai_global_config` | system | missing | `backend/alembic/versions/202606290002_phases_3_to_8.py:213` |
 | table | `ai_global_limits` | system | missing | `backend/alembic/versions/202606290008_admin_ai_config_providers.py:53` |
-| table | `ai_jobs` | system | missing | `backend/alembic/versions/202606290002_phases_3_to_8.py:174` |
+| table | `ai_jobs` | system | covered | `backend/alembic/versions/202606290002_phases_3_to_8.py:174` |
 | table | `ai_usage_events` | system | covered | `backend/alembic/versions/202607280002a_create_ai_usage_events.py:22` |
 | table | `ai_usage_logs` | system | covered | `backend/alembic/versions/202606290002_phases_3_to_8.py:193` |
 | table | `chat_messages` | system | missing | `backend/alembic/versions/202606290002_phases_3_to_8.py:158` |
@@ -41,4 +41,4 @@ Sin decisiones explícitas de permiso para este dominio.
 ## Hallazgos
 
 - **low · orphan_candidate**: 19 superficies no alcanzables o históricas se conservan como candidatas a retiro.
-- **low · missing_coverage**: 10 superficies de 002-arquitectura-roles-seguridad no tienen evidencia de prueba observable.
+- **low · missing_coverage**: 9 superficies de 002-arquitectura-roles-seguridad no tienen evidencia de prueba observable.

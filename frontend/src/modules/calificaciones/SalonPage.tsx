@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
-import { ArrowLeft, Camera, CheckCircle2, DoorClosed, HelpCircle, ImageUp, LoaderCircle, Play, SkipForward, Users } from 'lucide-react';
+import { ArrowLeft, Camera, CheckCircle2, DoorClosed, HelpCircle, Images, ImageUp, LoaderCircle, Play, SkipForward, Trash2, Users } from 'lucide-react';
 import { Badge, Button, Card, ConfirmDialog, EmptyState, Field, Input, Select, Skeleton, GuidedTour, useFirstVisitTour, RichContent } from '@/components/ui';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { useMaterias } from '@/modules/materias/MateriaSelect';
@@ -12,10 +12,11 @@ import { toApiError } from '@/lib/api';
 import { confidenceLabel } from '@/lib/utils';
 import { useAuth } from '@/stores/auth';
 import { queryClient } from '@/lib/queryClient';
-import { cerrarSalon, getSalonSesion, iniciarSalon, listCalificaciones, salonFoto } from './api';
+import { calificarLoteAsincrono, cerrarSalon, getSalonSesion, iniciarSalon, listCalificaciones, salonFoto } from './api';
 import { salonTour } from './tourSteps';
 import type { Calificacion, User } from '@/types/api';
-import { addPendingGrading } from './gradingJobs';
+import { addPendingGrading, addPendingGradingBatch } from './gradingJobs';
+import { gradePresentation } from './gradePresentation';
 
 const ACCEPTED_IMAGE_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
 
@@ -45,6 +46,9 @@ export function SalonPage() {
   const [processedIds, setProcessedIds] = useState<string[]>([]);
   const [confirmClose, setConfirmClose] = useState(false);
   const [confirmLeave, setConfirmLeave] = useState(false);
+  const [batchOpen, setBatchOpen] = useState(false);
+  const [confirmBatch, setConfirmBatch] = useState(false);
+  const [batchFiles, setBatchFiles] = useState<Record<string, File>>({});
   const { open: tourOpen, openTour, closeTour } = useFirstVisitTour({ tourId: 'modo-salon', role: user?.rol ?? 'profesor', version: 1 });
 
   const storageKey = user?.id ? salonStorageKey(user.id) : null;
@@ -64,6 +68,8 @@ export function SalonPage() {
     setFoto(null);
     setResultado(null);
     setProcessedIds([]);
+    setBatchFiles({});
+    setBatchOpen(false);
   }
 
   function persistSession(session: StoredSalonSession) {
@@ -193,6 +199,13 @@ export function SalonPage() {
     () => estudiantes.filter((student) => !processedIds.includes(student.id)),
     [estudiantes, processedIds],
   );
+  const batchItems = useMemo(
+    () => pendingStudents
+      .filter((student) => batchFiles[student.id])
+      .slice(0, 30)
+      .map((student) => ({ estudianteId: student.id, file: batchFiles[student.id] })),
+    [batchFiles, pendingStudents],
+  );
 
   const startSession = useMutation({
     mutationFn: () => iniciarSalon(evaluacionId),
@@ -248,6 +261,31 @@ export function SalonPage() {
     },
   });
 
+  const gradeBatch = useMutation({
+    mutationFn: () => calificarLoteAsincrono(evaluacionId, batchItems),
+    onSuccess: (data) => {
+      addPendingGradingBatch({
+        jobId: data.job_id,
+        evaluacionId,
+        materiaId,
+        total: data.total,
+      });
+      setProcessedIds((current) => Array.from(new Set([
+        ...current,
+        ...batchItems.map((item) => item.estudianteId),
+      ])));
+      setBatchFiles({});
+      setBatchOpen(false);
+      setConfirmBatch(false);
+      void queryClient.invalidateQueries({ queryKey: ['calificaciones', evaluacionId] });
+      toast.success(`${data.total} evidencias quedaron guardadas y calificándose en segundo plano.`);
+    },
+    onError: (error) => {
+      setConfirmBatch(false);
+      toast.error(toApiError(error).detail);
+    },
+  });
+
   const closeSession = useMutation({
     mutationFn: () => cerrarSalon(sesionId),
     onSuccess: () => {
@@ -284,6 +322,22 @@ export function SalonPage() {
     setFoto(file);
   }
 
+  function handleBatchFile(studentId: string, file: File | undefined) {
+    if (!file) {
+      setBatchFiles((current) => {
+        const next = { ...current };
+        delete next[studentId];
+        return next;
+      });
+      return;
+    }
+    if (![...ACCEPTED_IMAGE_TYPES, 'application/pdf'].includes(file.type)) {
+      toast.error('Selecciona una imagen JPG, PNG, WebP o un PDF.');
+      return;
+    }
+    setBatchFiles((current) => ({ ...current, [studentId]: file }));
+  }
+
   function handleGrade() {
     if (!sessionActive) {
       toast.error('Inicia o reanuda una sesión de Modo Salón.');
@@ -310,8 +364,8 @@ export function SalonPage() {
     if (next) setEstudianteId(next.id);
   }
 
-  const gradingQueued = resultado?.resultado_json?.pipeline_status === 'queued'
-    || resultado?.resultado_json?.pipeline_status === 'running';
+  const presentation = resultado ? gradePresentation(resultado) : null;
+  const gradingQueued = presentation?.processing ?? false;
 
   const noMaterias = !loadingMaterias && (!materias || materias.length === 0);
 
@@ -475,8 +529,76 @@ export function SalonPage() {
               <Card data-tour="salon-procesados" className="space-y-4 p-5">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div><h2 className="font-display text-lg font-bold">Estudiantes</h2><p className="text-sm text-muted">Pendientes: {pendingStudents.length} · Calificados: {processedIds.length}</p></div>
-                  <Badge tone="neutral">{estudiantes.length} matriculados</Badge>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Badge tone="neutral">{estudiantes.length} matriculados</Badge>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant={batchOpen ? 'secondary' : 'outline'}
+                      onClick={() => setBatchOpen((open) => !open)}
+                      disabled={gradeBatch.isPending || pendingStudents.length === 0}
+                    >
+                      <Images className="h-4 w-4" />
+                      {batchOpen ? 'Cerrar lote' : 'Preparar lote'}
+                    </Button>
+                  </div>
                 </div>
+                {batchOpen && (
+                  <div className="space-y-3 rounded-2xl border border-brand-200 bg-brand-50/60 p-4 dark:border-brand-500/30 dark:bg-brand-500/10">
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div>
+                        <h3 className="font-semibold text-fg">Cola grupal</h3>
+                        <p className="text-sm text-muted">Añade una evidencia a cada estudiante. El sistema valida todo antes de guardar.</p>
+                      </div>
+                      <Badge tone="brand">{batchItems.length}/30 listas</Badge>
+                    </div>
+                    {pendingStudents.length > 30 && (
+                      <p className="text-xs text-amber-700 dark:text-amber-300">Se muestran los primeros 30 pendientes. Envía este lote antes de preparar el siguiente.</p>
+                    )}
+                    <div className="max-h-[min(26rem,55vh)] space-y-2 overflow-y-auto overscroll-contain pr-1">
+                      {pendingStudents.slice(0, 30).map((student) => {
+                        const selectedFile = batchFiles[student.id];
+                        return (
+                          <div key={student.id} className="grid gap-2 rounded-xl border border-border bg-surface p-3 sm:grid-cols-[minmax(0,1fr)_minmax(12rem,1.2fr)_auto] sm:items-center">
+                            <div className="min-w-0">
+                              <p className="truncate text-sm font-semibold">{studentLabel(student)}</p>
+                              <p className="truncate text-xs text-muted">{student.email}</p>
+                            </div>
+                            <Input
+                              aria-label={`Evidencia de ${studentLabel(student)}`}
+                              type="file"
+                              accept="image/jpeg,image/png,image/webp,application/pdf"
+                              onChange={(event) => handleBatchFile(student.id, event.target.files?.[0])}
+                              disabled={gradeBatch.isPending}
+                            />
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="ghost"
+                              aria-label={`Quitar evidencia de ${studentLabel(student)}`}
+                              onClick={() => handleBatchFile(student.id, undefined)}
+                              disabled={!selectedFile || gradeBatch.isPending}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-3">
+                      <p className="text-xs text-muted">Cada archivo quedará unido al estudiante mostrado antes de entrar en cola.</p>
+                      <Button
+                        type="button"
+                        onClick={() => setConfirmBatch(true)}
+                        disabled={batchItems.length === 0 || gradeBatch.isPending}
+                        loading={gradeBatch.isPending}
+                      >
+                        <Images className="h-4 w-4" />
+                        Confirmar {batchItems.length} evidencias
+                      </Button>
+                    </div>
+                  </div>
+                )}
                 {calificacionesSesionQuery.isLoading || loadingEstudiantes ? (
                   <div className="grid gap-2">{Array.from({ length: 4 }).map((_, index) => <Skeleton key={index} className="h-12" />)}</div>
                 ) : estudiantes.length === 0 ? (
@@ -508,9 +630,9 @@ export function SalonPage() {
                 {gradingQueued ? (
                   <div className="flex items-start gap-3 rounded-xl border border-cyan-200 bg-cyan-50 p-4 text-cyan-900 dark:border-cyan-500/30 dark:bg-cyan-500/10 dark:text-cyan-100"><LoaderCircle className="mt-0.5 h-6 w-6 shrink-0 animate-spin" /><div><p className="font-bold">Calificación en cola</p><p className="mt-1 text-sm">Continúa fotografiando estudiantes; te avisaremos cuando esté lista.</p></div></div>
                 ) : (
-                  <div className="rounded-lg border border-amber-200 bg-amber-50 p-5 dark:border-amber-500/30 dark:bg-amber-500/10"><p className="text-sm font-semibold text-amber-800 dark:text-amber-200">Nota sugerida por IA</p><p className="mt-1 font-display text-4xl font-extrabold text-fg">{Number(resultado.nota_sugerida ?? 0).toFixed(1)}</p><p className="mt-1 text-xs text-muted">Requiere confirmación docente.</p></div>
+                  <div className="rounded-lg border border-amber-200 bg-amber-50 p-5 dark:border-amber-500/30 dark:bg-amber-500/10"><p className="text-sm font-semibold text-amber-800 dark:text-amber-200">{presentation?.label}</p><p className="mt-1 font-display text-4xl font-extrabold text-fg">{presentation?.score?.toFixed(1) ?? 'Sin nota automática'}</p><p className="mt-1 text-xs text-muted">Requiere revisión docente.</p></div>
                 )}
-                <div className="flex flex-wrap gap-2"><Badge tone="neutral">Confianza {confidenceLabel(resultado.confianza)}</Badge><Badge tone={resultado.estado === 'sugerida' ? 'warning' : 'brand'}>{resultado.estado}</Badge><Badge tone="warning">Pendiente de confirmación docente</Badge></div>
+                {!gradingQueued && <div className="flex flex-wrap gap-2"><Badge tone="neutral">Confianza {confidenceLabel(resultado.confianza)}</Badge><Badge tone={resultado.estado === 'sugerida' ? 'warning' : 'brand'}>{presentation?.label}</Badge></div>}
                 {resultado.feedback && <div className="rounded-xl bg-surface-2 p-4 text-sm text-muted"><RichContent content={resultado.feedback} variant="feedback" /></div>}
               </div>
             )}
@@ -520,6 +642,15 @@ export function SalonPage() {
 
       <ConfirmDialog open={confirmClose} onClose={() => setConfirmClose(false)} onConfirm={() => closeSession.mutate()} title="Cerrar sesión de salón" confirmLabel="Cerrar sesión" tone="danger" loading={closeSession.isPending} description="Esta acción cerrará la sesión de calificación en curso. Asegúrate de haber procesado a los estudiantes necesarios." />
       <ConfirmDialog open={confirmLeave} onClose={() => setConfirmLeave(false)} onConfirm={() => navigate('/app/calificaciones')} title="Salir sin cerrar la sesión" confirmLabel="Salir y reanudar después" loading={false} description="La sesión seguirá activa en el servidor y se podrá reanudar desde este navegador. Cierra la sesión cuando finalices la jornada." />
+      <ConfirmDialog
+        open={confirmBatch}
+        onClose={() => setConfirmBatch(false)}
+        onConfirm={() => gradeBatch.mutate()}
+        title="Confirmar cola grupal"
+        confirmLabel={`Calificar ${batchItems.length} evidencias`}
+        loading={gradeBatch.isPending}
+        description={`Vas a guardar ${batchItems.length} evidencias asociadas a ${batchItems.length} estudiantes. Cada caso se procesará de forma independiente y podrás seguir navegando.`}
+      />
     </div>
   );
 }

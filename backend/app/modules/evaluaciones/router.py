@@ -133,6 +133,22 @@ async def digitalize_from_file(
             },
         )
         await db.commit()
+    except Exception as exc:
+        await db.rollback()
+        try:
+            resolve_private_upload_path(file_key).unlink(missing_ok=True)
+        except OSError:
+            pass
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=(
+                "No fue posible guardar la digitalización. "
+                "Intenta nuevamente en unos momentos."
+            ),
+        ) from exc
+
+    response_state = JobEstado.QUEUED.value
+    try:
         digitalize_evaluation.apply_async(kwargs={
             "job_id": str(job_id),
             "user_id": str(current_user.id),
@@ -143,37 +159,22 @@ async def digitalize_from_file(
             "descripcion": descripcion,
             "nota_maxima": str(nota_maxima),
             "modalidad": modalidad.value,
-        })
+        }, queue="digitalization")
     except Exception as exc:
-        await db.rollback()
-        if job_id is not None:
-            await jobs_service.finish_job(
-                db,
-                job_id,
-                estado=JobEstado.FAILED.value,
-                resultado_json={
-                    "status": JobEstado.FAILED.value,
-                    "materia_id": str(materia_id),
-                    "nombre": nombre,
-                },
-                error="No fue posible iniciar la digitalización",
-            )
-            await db.commit()
-        try:
-            resolve_private_upload_path(file_key).unlink(missing_ok=True)
-        except OSError:
-            pass
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail=(
-                "No fue posible iniciar la digitalización. "
-                "Intenta nuevamente en unos momentos."
-            ),
-        ) from exc
+        # The durable job and its evidence are already committed. An ambiguous
+        # broker acknowledgement must not discard either one; recovery republishes
+        # the same idempotent job later.
+        await jobs_service.mark_job_retrying(
+            db,
+            job_id,
+            error="Publicación pendiente; se reintentará automáticamente",
+        )
+        await db.commit()
+        response_state = JobEstado.RETRYING.value
 
     return {
         "job_id": job_id,
-        "estado": JobEstado.QUEUED.value,
+        "estado": response_state,
         "materia_id": materia_id,
         "nombre": nombre,
     }

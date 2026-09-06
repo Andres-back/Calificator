@@ -43,6 +43,23 @@ const evaluations = [
 ] as Evaluacion[];
 
 describe('gradebookModel', () => {
+  it('no cuenta evidencia en proceso como nota cero, faltante ni decisión pendiente', () => {
+    const [row] = buildFollowUpRows({
+      students: [{ id: 'student-1', nombre: 'Estudiante', email: 'student@example.test' }],
+      evaluations: [evaluations[0]],
+      gradesByEvaluation: new Map([['eval-1', [grade({
+        estudiante_id: 'student-1', evaluacion_id: 'eval-1', estado: 'procesando',
+        resultado_json: { pipeline_status: 'running' },
+      })]]]),
+    });
+    expect(row.cells[0].status).toBe('calificando');
+    expect(row.cells[0].score).toBeNull();
+    expect(row.averagePercent).toBeNull();
+    expect(row.pendingReview).toBe(0);
+    expect(row.missing).toBe(0);
+    expect(row.reason).toContain('en calificación');
+  });
+
   it('normaliza números aunque la API serialice decimales como texto', () => {
     expect(normalizeNumeric('4.20')).toBe(4.2);
     expect(normalizeNumeric(3.8)).toBe(3.8);

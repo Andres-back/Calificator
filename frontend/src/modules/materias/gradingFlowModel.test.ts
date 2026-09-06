@@ -48,10 +48,15 @@ describe('gradingFlowModel', () => {
           calificacion: grade({ estado: 'ajustada', nota_confirmada: 3.5 }),
         },
       ]),
-    ).toEqual({ total: 3, pendientes: 1, porRevisar: 1, decididas: 1 });
+    ).toEqual({ total: 3, pendientes: 1, porRevisar: 1, calificando: 0, decididas: 1 });
   });
 
   it('reports the visible workflow step from the actual selection state', () => {
+    const processing = grade({ estado: 'procesando', nota_sugerida: null, resultado_json: { pipeline_status: 'running' } });
+    expect(summarizeGradingStudents([{ id: 'busy', calificacion: processing }]))
+      .toEqual({ total: 1, pendientes: 0, porRevisar: 0, calificando: 1, decididas: 0 });
+    expect(currentGradingStep({ evaluationId: 'evaluation-1', studentId: 'busy', result: processing })).toBe(3);
+    expect(nextStudentNeedingAttention([{ id: 'busy', calificacion: processing }, { id: 'new' }], 'new')).toBe('new');
     expect(currentGradingStep({ evaluationId: '', studentId: '', result: null })).toBe(1);
     expect(
       currentGradingStep({ evaluationId: 'evaluation-1', studentId: '', result: null }),

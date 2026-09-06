@@ -1,3 +1,5 @@
+import { api } from '@/lib/api';
+
 const STORAGE_KEY = 'xcalificator.pending-gradings.v1';
 const CHANGE_EVENT = 'xcalificator:gradings-changed';
 
@@ -8,6 +10,40 @@ export interface PendingGradingJob {
   estudianteId: string;
   estudianteNombre: string;
   createdAt: string;
+  kind?: 'individual' | 'batch';
+  total?: number;
+  completed?: boolean;
+  summary?: GradingJobSummary;
+}
+
+export interface GradingJobSummary {
+  total: number;
+  queued: number;
+  running: number;
+  retrying: number;
+  success: number;
+  requires_review: number;
+  failed_permanent: number;
+  cancelled: number;
+}
+
+export interface GradingJobRead {
+  id: string;
+  estado: 'queued' | 'running' | 'retrying' | 'success' | 'failed' | 'requires_review' | 'failed_permanent' | 'cancelled';
+  progreso: number;
+  error: string | null;
+  summary?: GradingJobSummary | null;
+}
+
+export interface GradingJobItem {
+  job_id: string;
+  entrega_id: string | null;
+  estudiante_id: string | null;
+  estado: string;
+  stage: string | null;
+  progreso: number;
+  attempt_count: number;
+  error_code: string | null;
 }
 
 export function readPendingGradings(): PendingGradingJob[] {
@@ -37,6 +73,58 @@ export function addPendingGrading(job: Omit<PendingGradingJob, 'createdAt'>) {
   if (typeof window === 'undefined') return;
   const jobs = readPendingGradings().filter((item) => item.jobId !== job.jobId);
   writePendingGradings([...jobs, { ...job, createdAt: new Date().toISOString() }]);
+}
+
+export function addPendingGradingBatch(job: {
+  jobId: string;
+  evaluacionId: string;
+  materiaId: string;
+  total: number;
+}) {
+  addPendingGrading({
+    ...job,
+    estudianteId: '',
+    estudianteNombre: `Lote de ${job.total} estudiantes`,
+    kind: 'batch',
+  });
+}
+
+export function updatePendingGrading(
+  jobId: string,
+  changes: Partial<Omit<PendingGradingJob, 'jobId' | 'createdAt'>>,
+) {
+  if (typeof window === 'undefined') return;
+  const jobs = readPendingGradings();
+  let changed = false;
+  const updated = jobs.map((job) => {
+    if (job.jobId !== jobId) return job;
+    const next = { ...job, ...changes };
+    if (JSON.stringify(job) === JSON.stringify(next)) return job;
+    changed = true;
+    return next;
+  });
+  if (changed) writePendingGradings(updated);
+}
+
+export async function getGradingJob(jobId: string): Promise<GradingJobRead> {
+  const { data } = await api.get<GradingJobRead>(`/jobs/${jobId}`);
+  return data;
+}
+
+export async function getGradingJobItems(jobId: string, offset = 0, limit = 30) {
+  const { data } = await api.get<{ items: GradingJobItem[]; total: number; limit: number; offset: number }>(
+    `/jobs/${jobId}/items`,
+    { params: { offset, limit } },
+  );
+  return data;
+}
+
+export async function retryGradingJob(jobId: string, jobIds?: string[]) {
+  const { data } = await api.post<{ requested: number; enqueued: number; skipped: number }>(
+    `/jobs/${jobId}/reintentar`,
+    jobIds?.length ? { job_ids: jobIds } : {},
+  );
+  return data;
 }
 
 export function removePendingGrading(jobId: string) {

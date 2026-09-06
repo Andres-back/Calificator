@@ -96,6 +96,52 @@ def delivery_fixture(evaluation, student_id) -> Entrega:
     )
 
 
+def test_publish_failure_keeps_saved_grade_processing_for_recovery(monkeypatch) -> None:
+    evaluation = evaluation_fixture()
+    student_id = uuid4()
+    delivery = delivery_fixture(evaluation, student_id)
+    db = FakeDB()
+    jobs = []
+    retries = []
+
+    async def create_job(_db, **kwargs):
+        job_id = uuid4()
+        jobs.append((job_id, kwargs))
+        return job_id
+
+    async def job_input(*_args):
+        return {"_ai_config": {}}
+
+    async def aggregate(*_args):
+        return {}
+
+    async def retry(_db, job_id, **kwargs):
+        retries.append(job_id)
+        return True
+
+    def unavailable(**_kwargs):
+        assert db.events[0] == "commit"
+        raise ConnectionError("acknowledgement lost")
+
+    monkeypatch.setattr(router.jobs_service, "create_job", create_job)
+    monkeypatch.setattr(router.jobs_service, "get_job_input", job_input)
+    monkeypatch.setattr(router.jobs_service, "aggregate_parent_job", aggregate)
+    monkeypatch.setattr(router.jobs_service, "mark_job_retrying", retry)
+    monkeypatch.setattr(router.grade_delivery, "apply_async", unavailable)
+    result = asyncio.run(router._enqueue_persisted_grading(
+        db, evaluacion=evaluation, entrega=delivery, estudiante_id=student_id,
+        profesor_id=evaluation.profesor_id,
+    ))
+    assert len(jobs) == 2
+    assert jobs[1][1]["parent_job_id"] == jobs[0][0]
+    assert retries == [jobs[1][0]]
+    assert result.estado == CalificacionEstado.PROCESANDO.value
+    assert result.nota_sugerida is None
+    assert result.nota_confirmada is None
+    assert delivery.estado == EntregaEstado.PROCESANDO.value
+    assert result.resultado_json["pipeline_status"] == "queued"
+
+
 def test_null_result_marks_retry_and_review() -> None:
     evaluation = evaluation_fixture()
     student_id = uuid4()
@@ -162,11 +208,12 @@ def test_prepare_queued_grading_resets_previous_decision_and_keeps_job() -> None
         job_id=job_id,
     )
 
-    assert delivery.estado == EntregaEstado.RECIBIDA.value
+    assert delivery.estado == EntregaEstado.PROCESANDO.value
     assert delivery.visual_text_json["pipeline_status"] == "queued"
     assert grade.nota_sugerida is None
     assert grade.resultado_json["job_id"] == str(job_id)
-    assert grade.estado == CalificacionEstado.REQUIERE_REVISION.value
+    assert grade.estado == CalificacionEstado.PROCESANDO.value
+    assert grade.resultado_json["requiere_revision_docente"] is False
 
 def test_provider_exception_keeps_persisted_delivery_and_creates_review_grade(
     monkeypatch,

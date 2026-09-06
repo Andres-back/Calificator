@@ -24,7 +24,20 @@ export async function createPresentacion(payload: PresentacionCreate): Promise<P
   const { data } = await api.post<Presentacion>('/presentaciones', payload);
   return data;
 }
-export async function getPresentacionEstado(id: string): Promise<{ id: string; estado: string; progreso: number; pptx_url: string | null; error: string | null }> {
+export async function getPresentacionEstado(id: string): Promise<{
+  id: string;
+  estado: string;
+  progreso: number;
+  pptx_url: string | null;
+  pdf_url: string | null;
+  error: string | null;
+  etapa?: string | null;
+  mensaje?: string | null;
+  elapsed_ms?: number;
+  imagenes_completadas?: number;
+  imagenes_total?: number;
+  timings_ms?: Record<string, number>;
+}> {
   const { data } = await api.get(`/presentaciones/${id}/estado`);
   return data;
 }

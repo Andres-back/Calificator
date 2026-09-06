@@ -15,10 +15,17 @@ export function getStudentEvaluationStatus(evaluation: Evaluacion): {
       tone: 'success',
     };
   }
-  if (evaluation.entrega_realizada) return { label: 'Entregada', tone: 'brand' };
   if (evaluation.mi_entrega_estado === 'requiere_reintento') {
-    return { label: 'Debes volver a intentar', tone: 'warning' };
+    return { label: 'Pendiente de revisión docente', tone: 'warning' };
   }
+  if (
+    evaluation.mi_calificacion_estado === 'procesando'
+    || evaluation.mi_entrega_estado === 'procesando'
+    || (evaluation.mi_entrega_estado === 'recibida' && evaluation.modalidad !== 'mixta')
+  ) {
+    return { label: 'Calificando', tone: 'brand' };
+  }
+  if (evaluation.entrega_realizada) return { label: 'Entregada', tone: 'brand' };
   if (evaluation.estado === 'cerrada' || evaluation.recepcion_habilitada === false) {
     return { label: 'Recepción cerrada', tone: 'neutral' };
   }

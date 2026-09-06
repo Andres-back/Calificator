@@ -536,7 +536,7 @@ def test_repara_borrador_incompleto_sin_perder_la_cantidad() -> None:
     assert all(len(slide["bullets"]) >= 2 for slide in repaired[1:])
 
 
-def test_generacion_recupera_respuesta_corta_despues_de_reintentos(monkeypatch) -> None:
+def test_generacion_no_regenera_toda_la_presentacion_tres_veces(monkeypatch) -> None:
     payload = PresentacionCreate(
         titulo="Fracciones equivalentes",
         tema="Fracciones equivalentes",
@@ -570,7 +570,7 @@ def test_generacion_recupera_respuesta_corta_despues_de_reintentos(monkeypatch) 
     with pytest.raises(RuntimeError, match="contenido pedagogico suficientemente completo"):
         asyncio.run(service._generate_slides(payload, uuid4()))
 
-    assert ShortContentRouter.calls == 3
+    assert ShortContentRouter.calls == 2
 
 
 def test_revision_final_corrige_un_error_conceptual(monkeypatch) -> None:

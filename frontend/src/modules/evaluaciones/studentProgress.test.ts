@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Evaluacion } from '@/types/api';
-import { getStudentEvaluationAction } from './studentProgress';
+import { getStudentEvaluationAction, getStudentEvaluationStatus } from './studentProgress';
 
 function evaluation(overrides: Partial<Evaluacion> = {}): Evaluacion {
   return {
@@ -38,5 +38,25 @@ describe('getStudentEvaluationAction', () => {
 
   it('mantiene el acceso a la entrega cuando el estudiante ya respondió', () => {
     expect(getStudentEvaluationAction(evaluation({ entrega_realizada: true, material_origen_id: 'material-id' }))).toBe('Ver entrega');
+  });
+});
+
+describe('getStudentEvaluationStatus', () => {
+  it('muestra Calificando mientras la evidencia está en proceso y no inventa una nota', () => {
+    expect(getStudentEvaluationStatus(evaluation({
+      entrega_realizada: true,
+      mi_entrega_estado: 'procesando',
+      mi_calificacion_estado: 'procesando',
+      mi_nota_confirmada: null,
+    }))).toEqual({ label: 'Calificando', tone: 'brand' });
+  });
+
+  it('conserva una nota cero real cuando ya fue confirmada', () => {
+    expect(getStudentEvaluationStatus(evaluation({
+      entrega_realizada: true,
+      mi_entrega_estado: 'calificada',
+      mi_calificacion_estado: 'confirmada',
+      mi_nota_confirmada: 0,
+    }))).toEqual({ label: 'Calificada: 0.0 / 5.0', tone: 'success' });
   });
 });

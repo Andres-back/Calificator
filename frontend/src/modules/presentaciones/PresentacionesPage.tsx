@@ -44,6 +44,28 @@ function presentationErrorMessage(error: string | null) {
   return 'La presentación no pudo completarse. Puedes crear una nueva presentación o intentarlo más tarde.';
 }
 
+function presentationStageLabel(stage?: string | null) {
+  const labels: Record<string, string> = {
+    generacion: 'Creando contenido',
+    content: 'Creando contenido',
+    deterministic_validation: 'Verificando calidad',
+    targeted_repair: 'Corrigiendo una diapositiva',
+    images: 'Preparando imágenes',
+    exportacion: 'Creando PDF y PowerPoint',
+    exports: 'Creando PDF y PowerPoint',
+    finalizado: 'Archivos listos',
+    completed: 'Archivos listos',
+    esperando_ollama_local: 'Esperando Ollama local',
+  };
+  return stage ? labels[stage] ?? 'Generando presentación' : 'Generando presentación';
+}
+
+function formatElapsed(milliseconds?: number) {
+  const seconds = Math.max(0, Math.round((milliseconds ?? 0) / 1000));
+  if (seconds < 60) return `${seconds} s`;
+  return `${Math.floor(seconds / 60)} min ${seconds % 60} s`;
+}
+
 export function PresentacionesPage() {
   const permissions = new Set(useAuth((state) => state.user?.permissions ?? []));
   const canCreate = permissions.has('presentations.create');
@@ -60,7 +82,7 @@ export function PresentacionesPage() {
   const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['presentaciones'],
     queryFn: listPresentaciones,
-    refetchInterval: (query) => ((query.state.data ?? []).some((presentation) => presentation.estado === 'running' || presentation.estado === 'queued') ? 4000 : false),
+    refetchInterval: (query) => ((query.state.data ?? []).some((presentation) => presentation.estado === 'running' || presentation.estado === 'queued') ? 6000 : false),
     refetchIntervalInBackground: false,
     refetchOnWindowFocus: false,
     retry: false,
@@ -70,7 +92,7 @@ export function PresentacionesPage() {
     mutationFn: (payload: PresentacionCreate) => createPresentacion(payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['presentaciones'] });
-      toast.success('Generando presentación… puede tardar unos minutos.');
+      toast.success('Presentación añadida a la cola. Puedes seguir navegando.');
       setOpen(false);
     },
     onError: (e) => toast.error(toApiError(e).detail),
@@ -122,6 +144,25 @@ export function PresentacionesPage() {
                       <span>{formatDate(p.created_at, { day: '2-digit', month: 'short' })}</span>
                       {(p.pptx_url || p.pdf_url) && <span>Archivos listos para descarga</span>}
                     </div>
+                    {(p.estado === 'queued' || p.estado === 'running') && (
+                      <div className="mt-3 max-w-xl" aria-live="polite">
+                        <div className="mb-1 flex flex-wrap justify-between gap-2 text-xs font-medium text-muted">
+                          <span>{presentationStageLabel(p.etapa)}</span>
+                          <span>
+                            {p.imagenes_total
+                              ? `${p.imagenes_completadas ?? 0}/${p.imagenes_total} imágenes · `
+                              : ''}
+                            {formatElapsed(p.elapsed_ms)}
+                          </span>
+                        </div>
+                        <div className="h-1.5 overflow-hidden rounded-full bg-surface-2">
+                          <div
+                            className="h-full rounded-full bg-gradient-to-r from-brand-600 to-cyan-400 transition-[width] duration-500"
+                            style={{ width: `${Math.max(5, p.progreso ?? 10)}%` }}
+                          />
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   <div className="flex flex-wrap items-center gap-2 lg:justify-end">

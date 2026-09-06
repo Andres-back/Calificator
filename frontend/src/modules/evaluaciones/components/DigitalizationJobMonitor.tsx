@@ -23,8 +23,9 @@ import { DocumentProcessingAnimation } from './DocumentProcessingAnimation';
 
 interface JobRead {
   id: string;
-  estado: 'queued' | 'running' | 'success' | 'failed' | 'cancelled';
+  estado: 'queued' | 'running' | 'retrying' | 'success' | 'failed' | 'requires_review' | 'failed_permanent' | 'cancelled';
   progreso: number;
+  stage?: string | null;
   resultado_json: {
     evaluacion_id?: string;
     materia_id?: string;
@@ -61,36 +62,53 @@ function timingSummary(timings?: Record<string, number>) {
   };
 }
 
+function stageLabel(stage?: string) {
+  const labels: Record<string, string> = {
+    queued: 'Esperando turno',
+    reading: 'Leyendo el documento',
+    structuring: 'Organizando preguntas y respuestas',
+    saving: 'Guardando el borrador',
+    completed: 'Borrador completado',
+  };
+  return stage ? labels[stage] ?? 'Procesando el documento' : 'Procesando el documento';
+}
+
 function sortJobs(jobs: PendingDigitalizationJob[]) {
   const active = jobs
-    .filter((job) => job.status === 'queued' || job.status === 'running')
+    .filter((job) => ['queued', 'running', 'retrying'].includes(job.status))
     .sort((left, right) => left.createdAt.localeCompare(right.createdAt));
   const finished = jobs
-    .filter((job) => job.status !== 'queued' && job.status !== 'running')
+    .filter((job) => !['queued', 'running', 'retrying'].includes(job.status))
     .sort((left, right) => right.updatedAt.localeCompare(left.updatedAt));
   return [...active, ...finished];
 }
 
 export function DigitalizationJobMonitor() {
   const [jobs, setJobs] = useState(readPendingDigitalizations);
+  const [retryingJob, setRetryingJob] = useState(false);
   const polling = useRef(false);
   const navigate = useNavigate();
+  const activeJobIds = jobs
+    .filter((job) => ['queued', 'running', 'retrying'].includes(job.status))
+    .map((job) => job.jobId)
+    .sort()
+    .join('|');
 
   useEffect(() => subscribePendingDigitalizations(
     () => setJobs(readPendingDigitalizations()),
   ), []);
 
   useEffect(() => {
-    const activeJobs = jobs.filter(
-      (job) => job.status === 'queued' || job.status === 'running',
-    );
-    if (activeJobs.length === 0) return undefined;
+    if (!activeJobIds) return undefined;
 
     let disposed = false;
     const poll = async () => {
       if (polling.current || disposed) return;
       polling.current = true;
       try {
+        const activeJobs = readPendingDigitalizations().filter(
+          (job) => activeJobIds.split('|').includes(job.jobId),
+        );
         const states = await Promise.all(activeJobs.map(async (job) => {
           try {
             const { data } = await api.get<JobRead>('/jobs/' + job.jobId);
@@ -112,13 +130,15 @@ export function DigitalizationJobMonitor() {
           }
           if (!state.data) continue;
 
-          if (state.data.estado === 'queued' || state.data.estado === 'running') {
+          if (['queued', 'running', 'retrying'].includes(state.data.estado)) {
+            const activeStatus = state.data.estado as 'queued' | 'running' | 'retrying';
             updatePendingDigitalization(state.job.jobId, {
-              status: state.data.estado,
+              status: activeStatus,
               progress: state.data.progreso,
               error: undefined,
               timingsMs: state.data.timings_ms,
               terminalReason: state.data.terminal_reason ?? undefined,
+              stage: state.data.stage ?? undefined,
             });
             continue;
           }
@@ -143,7 +163,7 @@ export function DigitalizationJobMonitor() {
             continue;
           }
 
-          if (state.data.estado === 'failed') {
+          if (['failed', 'requires_review', 'failed_permanent'].includes(state.data.estado)) {
             updatePendingDigitalization(state.job.jobId, {
               status: 'failed',
               progress: 100,
@@ -175,13 +195,13 @@ export function DigitalizationJobMonitor() {
       disposed = true;
       window.clearInterval(interval);
     };
-  }, [jobs]);
+  }, [activeJobIds]);
 
   if (jobs.length === 0) return null;
 
   const orderedJobs = sortJobs(jobs);
   const visibleJob = orderedJobs[0];
-  const active = visibleJob.status === 'queued' || visibleJob.status === 'running';
+  const active = ['queued', 'running', 'retrying'].includes(visibleJob.status);
   const success = visibleJob.status === 'success';
   const currentProgress = visibleJob.progress || 5;
   const timing = timingSummary(visibleJob.timingsMs);
@@ -196,11 +216,23 @@ export function DigitalizationJobMonitor() {
     dismiss();
     navigate('/app/materias/' + visibleJob.materiaId + '/evaluaciones');
   };
-  const retry = () => {
-    dismiss();
-    navigate(
-      '/app/materias/' + visibleJob.materiaId + '/evaluaciones?digitalizar=1',
-    );
+  const retry = async () => {
+    if (retryingJob) return;
+    setRetryingJob(true);
+    try {
+      await api.post('/jobs/' + visibleJob.jobId + '/reintentar', {});
+      updatePendingDigitalization(visibleJob.jobId, {
+        status: 'retrying',
+        progress: 5,
+        error: undefined,
+        stage: 'queued',
+      });
+      toast.success('Reintento añadido a la cola sin volver a subir el documento.');
+    } catch {
+      toast.error('No fue posible reintentar este proceso. Puedes iniciar uno nuevo.');
+    } finally {
+      setRetryingJob(false);
+    }
   };
 
   return (
@@ -257,6 +289,11 @@ export function DigitalizationJobMonitor() {
                   {timing.totalSeconds > 0 ? ' · ' + timing.totalSeconds + ' s transcurridos' : ''}
                 </p>
               ) : null}
+              <p className="mt-1 font-semibold text-brand-700 dark:text-brand-300">
+                {visibleJob.status === 'retrying'
+                  ? 'Reintentando de forma segura'
+                  : stageLabel(visibleJob.stage)}
+              </p>
             </div>
           ) : success ? (
             <p className="mt-1 text-xs leading-5 text-muted">
@@ -309,10 +346,11 @@ export function DigitalizationJobMonitor() {
             <button
               type="button"
               className="focus-ring inline-flex items-center gap-2 rounded-xl bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700"
-              onClick={retry}
+              onClick={() => void retry()}
+              disabled={retryingJob}
             >
-              <RefreshCw className="h-4 w-4" />
-              Intentar de nuevo
+              <RefreshCw className={retryingJob ? 'h-4 w-4 animate-spin' : 'h-4 w-4'} />
+              {retryingJob ? 'Añadiendo…' : 'Reintentar sin subir de nuevo'}
             </button>
           )}
         </div>

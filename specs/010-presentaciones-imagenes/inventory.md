@@ -6,24 +6,24 @@
 
 | Tipo | Firma | Actores | Cobertura | Fuente |
 |---|---|---|---|---|
-| endpoint | `DELETE:/presentaciones/{presentacion_id}` | admin, profesor | covered | `backend/app/modules/presentaciones/router.py:173` |
+| endpoint | `DELETE:/presentaciones/{presentacion_id}` | admin, profesor | covered | `backend/app/modules/presentaciones/router.py:191` |
 | endpoint | `GET:/imagenes-generadas` | admin, profesor | missing | `backend/app/modules/imagenes/router.py:73` |
-| endpoint | `GET:/presentaciones` | admin, estudiante, profesor | covered | `backend/app/modules/presentaciones/router.py:45` |
-| endpoint | `GET:/presentaciones/assets/{asset_id}` | admin, estudiante, profesor | covered | `backend/app/modules/presentaciones/router.py:54` |
-| endpoint | `GET:/presentaciones/{presentacion_id}` | admin, estudiante, profesor | covered | `backend/app/modules/presentaciones/router.py:73` |
-| endpoint | `GET:/presentaciones/{presentacion_id}/estado` | admin, estudiante, profesor | covered | `backend/app/modules/presentaciones/router.py:83` |
-| endpoint | `GET:/presentaciones/{presentacion_id}/preview` | admin, estudiante, profesor | covered | `backend/app/modules/presentaciones/router.py:94` |
-| endpoint | `GET:/presentaciones/{presentacion_id}/preview/{slide_number}.png` | admin, estudiante, profesor | covered | `backend/app/modules/presentaciones/router.py:105` |
+| endpoint | `GET:/presentaciones` | admin, estudiante, profesor | covered | `backend/app/modules/presentaciones/router.py:63` |
+| endpoint | `GET:/presentaciones/assets/{asset_id}` | admin, estudiante, profesor | covered | `backend/app/modules/presentaciones/router.py:72` |
+| endpoint | `GET:/presentaciones/{presentacion_id}` | admin, estudiante, profesor | covered | `backend/app/modules/presentaciones/router.py:91` |
+| endpoint | `GET:/presentaciones/{presentacion_id}/estado` | admin, estudiante, profesor | covered | `backend/app/modules/presentaciones/router.py:101` |
+| endpoint | `GET:/presentaciones/{presentacion_id}/preview` | admin, estudiante, profesor | covered | `backend/app/modules/presentaciones/router.py:112` |
+| endpoint | `GET:/presentaciones/{presentacion_id}/preview/{slide_number}.png` | admin, estudiante, profesor | covered | `backend/app/modules/presentaciones/router.py:123` |
 | endpoint | `PATCH:/imagenes-generadas/{imagen_id}` | admin, profesor | missing | `backend/app/modules/imagenes/router.py:114` |
 | endpoint | `POST:/imagenes/generar` | admin, profesor | missing | `backend/app/modules/imagenes/router.py:27` |
 | endpoint | `POST:/presentaciones` | admin, profesor | covered | `backend/app/modules/presentaciones/router.py:30` |
-| endpoint | `POST:/presentaciones/{presentacion_id}/exportar` | admin, profesor | covered | `backend/app/modules/presentaciones/router.py:125` |
+| endpoint | `POST:/presentaciones/{presentacion_id}/exportar` | admin, profesor | covered | `backend/app/modules/presentaciones/router.py:143` |
 | frontend_route | `/app/presentaciones` | admin, profesor | covered | `frontend/src/config/routes.ts:55` |
-| frontend_call | `DELETE:/presentaciones/{id}` | admin, profesor | covered | `frontend/src/modules/presentaciones/api.ts:60` |
-| frontend_call | `GET:/presentaciones/{id}/estado` | admin, profesor | covered | `frontend/src/modules/presentaciones/api.ts:28` |
-| frontend_call | `GET:/presentaciones/{id}/preview` | admin, profesor | covered | `frontend/src/modules/presentaciones/api.ts:56` |
+| frontend_call | `DELETE:/presentaciones/{id}` | admin, profesor | covered | `frontend/src/modules/presentaciones/api.ts:73` |
+| frontend_call | `GET:/presentaciones/{id}/estado` | admin, profesor | covered | `frontend/src/modules/presentaciones/api.ts:41` |
+| frontend_call | `GET:/presentaciones/{id}/preview` | admin, profesor | covered | `frontend/src/modules/presentaciones/api.ts:69` |
 | frontend_call | `GET:/presentaciones` | admin, profesor | covered | `frontend/src/modules/presentaciones/api.ts:20` |
-| frontend_call | `POST:/presentaciones/{id}/exportar` | admin, profesor | covered | `frontend/src/modules/presentaciones/api.ts:33` |
+| frontend_call | `POST:/presentaciones/{id}/exportar` | admin, profesor | covered | `frontend/src/modules/presentaciones/api.ts:46` |
 | frontend_call | `POST:/presentaciones` | admin, profesor | covered | `frontend/src/modules/presentaciones/api.ts:24` |
 | table | `imagenes_generadas` | system | missing | `backend/app/modules/imagenes/models.py:14` |
 | table | `presentaciones` | system | covered | `backend/app/modules/presentaciones/models.py:14` |
