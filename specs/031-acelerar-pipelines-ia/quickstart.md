@@ -139,3 +139,7 @@ No registrar prompts completos, evidencia, respuestas, claves ni nombres de estu
 4. Smoke de una calificación, una digitalización y una presentación.
 5. Prueba grupal controlada; detener ampliación si aparecen 429, memoria sostenida alta, duplicados o regresión de calidad.
 6. Comparar p50/p95 durante la primera ventana con la línea base y conservar rollback por configuración.
+
+## Cierre de auditoría de dependencias 2026-09-09
+
+CI detectó CVE-2026-55073 en `weasyprint==69.0` antes de ejecutar las pruebas backend. Se actualizó únicamente a `weasyprint==70.0`, versión corregida indicada por `pip-audit`; el cambio conserva la API diferida usada por el render de recursos PDF y debe permanecer cubierto por el build backend y la regresión de exportación.
