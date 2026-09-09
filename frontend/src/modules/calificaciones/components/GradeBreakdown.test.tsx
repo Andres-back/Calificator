@@ -1,5 +1,5 @@
-import { render, screen } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { fireEvent, render, screen } from '@testing-library/react';
+import { describe, expect, it, vi } from 'vitest';
 import { GradeBreakdown } from './GradeBreakdown';
 import type { GradeBreakdownData } from '@/types/api';
 
@@ -13,6 +13,8 @@ const breakdown: GradeBreakdownData = {
     puntos_obtenidos: 1, puntos_maximos: 1, estado: 'correcta',
     explicacion: 'Coincide con la clave oficial.', origen: 'objetivo', requiere_revision: false,
     evidencia_paginas: [2], valoraciones: [],
+    orientacion_mejora: 'Practica explicar el procedimiento paso a paso.',
+    fuentes: [{ source_id: 's1', chunk_id: 'ch1', titulo: 'Guía de multiplicación', version: '3', fragmento: 'Seis grupos de cuatro forman veinticuatro.' }],
   }],
 };
 
@@ -24,6 +26,12 @@ describe('GradeBreakdown', () => {
     expect(screen.getAllByText('24')).toHaveLength(2);
     expect(screen.getByText(/Coincide con la clave oficial/)).toBeInTheDocument();
     expect(screen.getByText('Evidencia: hoja 2.')).toBeInTheDocument();
+    expect(screen.getByText(/Practica explicar el procedimiento/)).toBeInTheDocument();
+    expect(screen.getByText(/evidencia extraída → valoración objetiva/)).toBeInTheDocument();
+    expect(screen.getByText('Material de apoyo consultado (1)')).toBeInTheDocument();
+    fireEvent.click(screen.getByText('Material de apoyo consultado (1)'));
+    expect(screen.getByText('Guía de multiplicación')).toBeInTheDocument();
+    expect(screen.getByText('Versión: 3')).toBeInTheDocument();
   });
 
   it('renderiza el editor dentro de la tarjeta activa', () => {
@@ -36,10 +44,23 @@ describe('GradeBreakdown', () => {
     expect(screen.getByTestId('grade-editor-p1')).toHaveTextContent('Editor contextual');
     expect(screen.queryByRole('button', { name: 'Ajustar puntaje y explicación' })).not.toBeInTheDocument();
   });
+  it('abre directamente la hoja asociada a una respuesta', () => {
+    const onEvidencePage = vi.fn();
+    render(<GradeBreakdown breakdown={breakdown} onEvidencePage={onEvidencePage} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Ver hoja 2 de la evidencia' }));
+    expect(onEvidencePage).toHaveBeenCalledWith(2);
+  });
   it('no filtra una referencia oculta al estudiante', () => {
     const hidden = { ...breakdown, componentes: [{ ...breakdown.componentes[0], respuesta_referencia: null, referencia_oculta: true }] };
     render(<GradeBreakdown breakdown={hidden} student />);
     expect(screen.getByText('Se mostrará cuando el docente libere las respuestas.')).toBeInTheDocument();
+    expect(screen.queryByText(/Material de apoyo consultado/)).not.toBeInTheDocument();
+  });
+
+  it('declara cuando no existe una fuente RAG pertinente', () => {
+    const withoutSources = { ...breakdown, componentes: [{ ...breakdown.componentes[0], fuentes: [] }] };
+    render(<GradeBreakdown breakdown={withoutSources} />);
+    expect(screen.getByText('Sin material adicional pertinente')).toBeInTheDocument();
   });
   it('muestra el ajuste docente como línea separada y explicado', () => {
     render(<GradeBreakdown breakdown={{

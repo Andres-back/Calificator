@@ -133,3 +133,7 @@ Los nombres exactos de pruebas pueden agruparse con suites existentes durante `t
 - [Modelo de datos](./data-model.md)
 - [Contrato REST](./contracts/calificacion-explicable.openapi.yaml)
 - [Guía de validación](./quickstart.md)
+
+## Coordinación con 032
+
+La evolución [032](../032-calificacion-impacto-docente/plan.md) amplía el desglose con orientación separada, contexto versionado y una mesa de revisión recuperable; 016 conserva la fórmula y autoridad del desglose.

@@ -6,6 +6,7 @@ import base64
 import json
 import re
 import time
+import unicodedata
 from io import BytesIO
 from typing import Any, Literal
 from uuid import uuid4
@@ -24,6 +25,23 @@ from app.services.image_preprocessing import prepare_orientation_variants
 logger = get_logger(__name__)
 RETRYABLE_HTTP = {429, 502, 503, 504}
 RETRYABLE_ERRORS = (httpx.TimeoutException, httpx.NetworkError, httpx.RemoteProtocolError)
+_SOLUTION_CONTEXT_KEYS = {
+    "answer",
+    "answer_key",
+    "correct",
+    "correct_answer",
+    "correcta",
+    "es_correcta",
+    "expected",
+    "expected_answer",
+    "respuesta_correcta",
+    "respuesta_esperada",
+    "respuestas_esperadas",
+    "rubrica",
+    "rubric",
+    "solucion",
+    "solution",
+}
 
 
 class ExtractedAnswer(BaseModel):
@@ -218,6 +236,34 @@ def _merge(pages: list[VisionPageResult]) -> list[ExtractedAnswer]:
     return list(merged.values())
 
 
+def _context_key(value: object) -> str:
+    normalized = unicodedata.normalize("NFKD", str(value))
+    return "".join(char for char in normalized if not unicodedata.combining(char)).casefold()
+
+
+def _without_solutions(value: Any) -> Any:
+    """Crea contexto visual mínimo sin claves, soluciones ni rúbricas anidadas."""
+    if isinstance(value, dict):
+        return {
+            key: _without_solutions(item)
+            for key, item in value.items()
+            if _context_key(key) not in _SOLUTION_CONTEXT_KEYS
+        }
+    if isinstance(value, list):
+        return [_without_solutions(item) for item in value]
+    return value
+
+
+def build_extraction_context(blueprint: dict[str, Any]) -> dict[str, Any]:
+    """Devuelve únicamente estructura útil para leer, nunca para resolver."""
+    allowed = ("nombre", "preguntas", "modalidad")
+    return _without_solutions({
+        key: blueprint.get(key)
+        for key in allowed
+        if blueprint.get(key) is not None
+    })
+
+
 class VisionExtractor:
     def __init__(self, tracking: dict[str, Any] | None = None, primary_model: str | None = None, api_key: str | None = None) -> None:
         self.tracking = tracking or {}
@@ -230,8 +276,7 @@ class VisionExtractor:
         return list(dict.fromkeys(key for key in (self.api_key, effective.open_code_key, settings.OPEN_CODE_API_KEY) if key))
 
     def _prompt(self, blueprint: dict[str, Any], page: int, total: int, purpose: str) -> str:
-        allowed = ("nombre", "preguntas", "respuestas_esperadas", "criterios", "rubrica", "modalidad")
-        context = {key: blueprint.get(key) for key in allowed if blueprint.get(key) is not None}
+        context = build_extraction_context(blueprint)
         action = "Extrae respuestas sin calificarlas." if purpose == "student_response" else "Transcribe preguntas, opciones, instrucciones y respuestas visibles."
         return f"""Eres VisionExtractor. {action} Página {page} de {total}.
 Contexto: {json.dumps(context, ensure_ascii=False)}

@@ -1,13 +1,14 @@
 from __future__ import annotations
 
 import asyncio
+from datetime import datetime, timedelta
 from types import SimpleNamespace
 from uuid import uuid4
 
 import pytest
 from fastapi import HTTPException
 
-from app.modules.analytics import event_policy, service
+from app.modules.analytics import event_policy, router, service
 from app.shared.enums import UserRole
 
 
@@ -153,6 +154,7 @@ def test_foreign_and_missing_reference_share_404_and_never_persist(monkeypatch) 
                     tipo="calificacion_confirmed",
                     current_user=actor,
                     evaluacion_id=uuid4(),
+                    calificacion_id=uuid4(),
                     metadata_json={},
                 )
             )
@@ -279,6 +281,7 @@ def test_analytics_http_contract_uses_201_403_404_and_422(monkeypatch) -> None:
             {
                 "tipo": "calificacion_confirmed",
                 "evaluacion_id": str(uuid4()),
+                "calificacion_id": str(uuid4()),
                 "metadata_json": {},
             },
             404,
@@ -297,3 +300,76 @@ def test_analytics_http_contract_uses_201_403_404_and_422(monkeypatch) -> None:
     assert forbidden.json()["detail"] == "Evento no permitido para este rol"
     assert missing.json()["detail"] == "Referencia no encontrada"
     assert invalid.json()["detail"] == "Evento analítico desconocido"
+
+
+def test_review_intervals_keep_short_long_adjusted_and_incomplete_data() -> None:
+    start = datetime(2026, 9, 9, 8, 0, 0)
+    first, second, incomplete = uuid4(), uuid4(), uuid4()
+    opened = [
+        SimpleNamespace(calificacion_id=first, created_at=start),
+        # Segunda pestaña: no debe reiniciar ni duplicar el intervalo.
+        SimpleNamespace(calificacion_id=first, created_at=start + timedelta(seconds=2)),
+        SimpleNamespace(calificacion_id=second, created_at=start + timedelta(minutes=1)),
+        SimpleNamespace(calificacion_id=incomplete, created_at=start + timedelta(minutes=2)),
+    ]
+    completed = [
+        # Se conservan cinco segundos; no se descartan por ser menos de diez.
+        SimpleNamespace(calificacion_id=first, created_at=start + timedelta(seconds=5)),
+        # Se conservan 3.700 segundos; no se descartan por superar una hora.
+        SimpleNamespace(calificacion_id=second, created_at=start + timedelta(minutes=62, seconds=40)),
+    ]
+
+    result = service._summarize_review_events(opened, completed)
+
+    assert result == {
+        "total_segundos": 3705,
+        "promedio_segundos": 1852.5,
+        "conteo": 2,
+        "incompletos": 1,
+    }
+
+
+def test_observed_work_summary_requires_pairs_and_preserves_negative_savings() -> None:
+    evaluation_id = uuid4()
+    assisted_only = [
+        SimpleNamespace(
+            estado="completed", condicion="asistida", evaluacion_id=evaluation_id,
+            calificacion_id=None, batch_job_id=None,
+            duracion_confirmada_ms=12_000, incertidumbre_ms=0,
+        )
+    ]
+
+    unavailable = service._summarize_observed_work_sessions(assisted_only)
+    assert unavailable["datos_suficientes"] is False
+    assert unavailable["ahorro_porcentaje"] is None
+    assert unavailable["motivo_no_disponible"] == "Faltan mediciones manuales y asistidas comparables"
+
+    paired = service._summarize_observed_work_sessions([
+        SimpleNamespace(
+            estado="completed", condicion="manual", evaluacion_id=evaluation_id,
+            calificacion_id=None, batch_job_id=None,
+            duracion_confirmada_ms=10_000, incertidumbre_ms=500,
+        ),
+        *assisted_only,
+    ])
+    assert paired["datos_suficientes"] is True
+    assert paired["ahorro_ms"] == -2_000
+    assert paired["ahorro_porcentaje"] == -20.0
+    assert paired["cobertura"] == {
+        "sesiones_manual": 1,
+        "sesiones_asistida": 1,
+        "unidades_comparables": 1,
+        "incertidumbre_ms": 500,
+    }
+
+
+def test_ai_usage_scope_is_private_for_teacher_and_institutional_for_admin() -> None:
+    teacher = user(UserRole.PROFESOR)
+    clauses, params = router._ai_usage_owner_scope(teacher)
+    assert len(clauses) == 1
+    assert "evaluaciones" in clauses[0]
+    assert params == {"profesor_id": str(teacher.id)}
+
+    admin_clauses, admin_params = router._ai_usage_owner_scope(user(UserRole.ADMIN))
+    assert admin_clauses == []
+    assert admin_params == {}

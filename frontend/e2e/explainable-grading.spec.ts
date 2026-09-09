@@ -214,6 +214,33 @@ test('un conflicto 409 no sobrescribe la revisión vigente', async ({ page }) =>
   await page.getByLabel('Motivo interno del cambio').fill('Revisión concurrente');
   await page.getByLabel('Explicación para el estudiante').fill('La respuesta conserva el procedimiento revisado.');
   await page.getByRole('button', { name: 'Guardar y recalcular' }).click();
-  await expect(page.getByText(/cambió en otra revisión/i)).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Ajustar puntaje y explicación' })).toBeVisible();
+  await expect(page.getByRole('alert').filter({ hasText: /cambió en otra revisión/i })).toBeVisible();
+  await expect(page.getByLabel(/Puntos/)).toHaveValue('0.75');
+  await expect(page.getByLabel('Motivo interno del cambio')).toHaveValue('Revisión concurrente');
+  await expect(page.getByRole('button', { name: 'Recargar versión vigente' })).toBeVisible();
+});
+
+
+test('guardar el último ajuste termina la lista sin confirmar ni publicar', async ({ page }) => {
+  await page.setViewportSize({ width: 1366, height: 768 });
+  await installMocks(page, 'profesor');
+  let savedPayload: Record<string, unknown> | null = null;
+  await page.route('**/api/calificaciones/c1/desglose', async (route) => {
+    savedPayload = route.request().postDataJSON() as Record<string, unknown>;
+    return json(route, { ...breakdown, version: 2 });
+  });
+  await page.goto('/login');
+  await page.getByLabel(/Correo/i).fill(teacher.email);
+  await page.locator('input[type="password"]').fill('Password123!');
+  await page.getByRole('button', { name: /Iniciar sesi.n/i }).click();
+  await page.goto('/app/calificaciones/workspace/e1');
+  await page.getByText('Estudiante Prueba', { exact: true }).click();
+  await page.getByRole('button', { name: 'Ajustar puntaje y explicación' }).click();
+  await page.getByLabel('Motivo interno del cambio').fill('Validación final docente');
+  await page.getByLabel('Explicación para el estudiante').fill('La respuesta fue verificada con la evidencia entregada.');
+  await page.getByRole('button', { name: 'Guardar y siguiente' }).click();
+
+  await expect(page.getByText('Revisión completada')).toBeVisible();
+  expect(savedPayload).toMatchObject({ version_esperada: 1 });
+  await expect(page.getByText(/no se publicaron automáticamente/i)).toBeVisible();
 });

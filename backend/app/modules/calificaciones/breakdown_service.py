@@ -43,9 +43,13 @@ def _component_dict(component: CalificacionComponente, *, student: bool = False,
         "estado": component.estado,
         "explicacion": component.explicacion_estudiante if student else component.explicacion_verificable,
         "explicacion_estudiante": None if student else component.explicacion_estudiante,
+        "orientacion_mejora": str((component.evidencia_json or {}).get("orientacion_mejora") or "") or None,
         "origen": component.origen,
         "requiere_revision": component.requiere_revision,
         "evidencia_paginas": list((component.evidencia_json or {}).get("paginas") or []),
+        # Las fuentes de apoyo pueden contener fragmentos privados del docente.
+        # El estudiante recibe la explicación, nunca esa procedencia interna.
+        "fuentes": [] if student else list((component.evidencia_json or {}).get("fuentes") or []),
     }
     if student:
         data["referencia_oculta"] = bool(component.respuesta_referencia and not reveal_key)
@@ -92,6 +96,51 @@ def serialize_breakdown(breakdown: CalificacionDesglose, *, student: bool = Fals
     return payload
 
 
+def _automatic_provenance(
+    *,
+    active: CalificacionDesglose | None,
+    raw_output: dict,
+    pipeline_run_id: str | None,
+    version: int,
+    note: object,
+) -> dict:
+    """Conserva la primera sugerencia y distingue cada intento posterior."""
+    previous = dict(active.procedencia_json or {}) if active else {}
+    first = previous.get("primera_sugerencia")
+    if not isinstance(first, dict):
+        if active is not None:
+            first = {
+                "version": active.version,
+                "pipeline_run_id": active.pipeline_run_id,
+                "nota_final": float(active.nota_final),
+            }
+        else:
+            first = {
+                "version": version,
+                "pipeline_run_id": pipeline_run_id,
+                "nota_final": float(note),
+            }
+    return {
+        "orchestrator": raw_output.get("orchestrator"),
+        "provider_policy": raw_output.get("provider_policy"),
+        "primera_sugerencia": first,
+        "intento_actual": {
+            "version": version,
+            "pipeline_run_id": pipeline_run_id,
+            "nota_final": float(note),
+        },
+    }
+
+
+def _is_initial_automatic_breakdown(breakdown: CalificacionDesglose) -> bool:
+    first = dict(breakdown.procedencia_json or {}).get("primera_sugerencia")
+    return bool(
+        breakdown.origen == "automatico"
+        and isinstance(first, dict)
+        and first.get("version") == breakdown.version
+    )
+
+
 async def create_automatic_breakdown(
     db: AsyncSession,
     *,
@@ -124,6 +173,15 @@ async def create_automatic_breakdown(
         list(grader_b.get("componentes") or []),
         list(raw_output.get("objective_validation") or []),
     )
+    sources_by_question: dict[str, list[dict]] = {}
+    for source in raw_output.get("rag_sources_by_question") or []:
+        if isinstance(source, dict) and source.get("pregunta") is not None:
+            sources_by_question.setdefault(str(source["pregunta"]), []).append(source)
+    for component in components:
+        component["evidencia_json"]["fuentes"] = sources_by_question.get(
+            str(component.get("numero")),
+            [],
+        )
     coverage = dict(raw_output.get("evidence_coverage") or {})
     if coverage.get("requiere_revision"):
         blockers.append("cobertura_evidencia_incompleta")
@@ -153,13 +211,20 @@ async def create_automatic_breakdown(
         nota_final=formula["nota_final"],
         requiere_revision=bool(blockers),
         bloqueos_json=blockers,
-        procedencia_json={"orchestrator": raw_output.get("orchestrator"), "provider_policy": raw_output.get("provider_policy")},
+        procedencia_json=_automatic_provenance(
+            active=active,
+            raw_output=raw_output,
+            pipeline_run_id=pipeline_run_id,
+            version=version,
+            note=formula["nota_final"],
+        ),
     )
     breakdown.componentes = [CalificacionComponente(**item) for item in components]
     db.add(breakdown)
     await db.flush()
     result = dict(calificacion.resultado_json or {})
     result["desglose"] = {"id": str(breakdown.id), "version": version, "modo": "autoridad" if settings.EXPLAINABLE_GRADING_AUTHORITY_ENABLED else "controlado", "nota_calculada": float(breakdown.nota_final)}
+    result.setdefault("primera_sugerencia", breakdown.procedencia_json["primera_sugerencia"])
     calificacion.resultado_json = result
     if settings.EXPLAINABLE_GRADING_AUTHORITY_ENABLED:
         calificacion.nota_sugerida = breakdown.nota_final
@@ -266,8 +331,10 @@ async def list_versions(db: AsyncSession, calificacion_id: UUID) -> list[dict]:
             "id": breakdown.id,
             "version": breakdown.version,
             "origen": breakdown.origen,
+            "pipeline_run_id": breakdown.pipeline_run_id,
             "nota_final": breakdown.nota_final,
             "activo": breakdown.activo,
+            "es_sugerencia_inicial": _is_initial_automatic_breakdown(breakdown),
             "actor_nombre": actor_name,
             "created_at": breakdown.created_at,
         }

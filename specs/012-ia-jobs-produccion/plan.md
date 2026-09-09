@@ -15,3 +15,7 @@ Roles, trazabilidad, datos, accesibilidad, asincronía y gobernanza quedan cubie
 
 ## Decisión
 Conservar arquitectura; discrepancias pasan a backlog.
+
+## Coordinación con 032
+
+La evolución [032](../032-calificacion-impacto-docente/plan.md) añade checkpoints y control del escritor vigente sin cambiar proveedores; 012 conserva propiedad del ciclo de vida y observabilidad de jobs.

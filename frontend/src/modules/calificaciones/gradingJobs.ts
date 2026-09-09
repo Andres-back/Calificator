@@ -44,6 +44,23 @@ export interface GradingJobItem {
   progreso: number;
   attempt_count: number;
   error_code: string | null;
+  estudiante_nombre?: string | null;
+  timings_ms?: Record<string, number> | null;
+  elapsed_ms?: number;
+}
+
+interface PendingGradingJobFromServer {
+  job_id: string;
+  evaluacion_id: string;
+  materia_id: string;
+  estudiante_id: string | null;
+  estudiante_nombre: string;
+  kind: 'individual' | 'batch';
+  total: number;
+  estado: 'queued' | 'running' | 'retrying';
+  progreso: number;
+  stage: string | null;
+  created_at: string;
 }
 
 export function readPendingGradings(): PendingGradingJob[] {
@@ -67,6 +84,35 @@ export function readPendingGradings(): PendingGradingJob[] {
 function writePendingGradings(jobs: PendingGradingJob[]) {
   window.localStorage.setItem(STORAGE_KEY, JSON.stringify(jobs));
   window.dispatchEvent(new Event(CHANGE_EVENT));
+}
+
+export async function recoverPendingGradings(): Promise<PendingGradingJob[]> {
+  const { data } = await api.get<{ items: PendingGradingJobFromServer[] }>(
+    '/jobs/pendientes',
+  );
+  if (!Array.isArray(data?.items)) return readPendingGradings();
+  const localById = new Map(readPendingGradings().map((job) => [job.jobId, job]));
+  const recovered = data.items.map((item): PendingGradingJob => {
+    const local = localById.get(item.job_id);
+    return {
+      jobId: item.job_id,
+      evaluacionId: item.evaluacion_id,
+      materiaId: item.materia_id,
+      estudianteId: item.estudiante_id ?? '',
+      estudianteNombre: item.kind === 'batch'
+        ? `Lote de ${item.total} estudiantes`
+        : item.estudiante_nombre || local?.estudianteNombre || 'Estudiante',
+      createdAt: item.created_at,
+      kind: item.kind,
+      total: item.total,
+    };
+  });
+  const activeIds = new Set(recovered.map((job) => job.jobId));
+  const completedLocal = [...localById.values()].filter(
+    (job) => job.completed && !activeIds.has(job.jobId),
+  );
+  writePendingGradings([...completedLocal, ...recovered]);
+  return [...completedLocal, ...recovered];
 }
 
 export function addPendingGrading(job: Omit<PendingGradingJob, 'createdAt'>) {

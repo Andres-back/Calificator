@@ -175,6 +175,10 @@ Como profesor quiero preparar una cola de hasta 30 evidencias pertenecientes a e
 - **SC-012**: Un fallo aislado inducido dentro de una cola de 30 trabajos deja 29 trabajos avanzando normalmente y el caso afectado en un estado reintentable o de revisión claramente identificado.
 - **SC-013**: En el 100 % de las vistas de estudiante y profesor incluidas en la prueba de regresión, una entrega recién enviada muestra “Calificando” y ninguna nota numérica hasta que exista un resultado real.
 
+## Evolución 032: recuperación compatible implementada; metas reales pendientes de medición
+
+[032 Calificación e impacto docente](../032-calificacion-impacto-docente/spec.md), FR-004–006 y FR-024–025: reintentos consistentes, reutilización compatible, identidad/estados grupales y separación de espera de capacidad. Mantiene metas de velocidad y configuraciones; no retira verificadores, no cambia modelos y no acredita benchmarks de proveedor sin una corrida real autorizada.
+
 ## Supuestos
 
 - DeepSeek V4 Flash Vision Exp se conserva como referencia visual inicial porque las métricas actuales muestran el mejor tiempo exitoso en calificación por imagen.

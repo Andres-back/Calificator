@@ -89,6 +89,10 @@ Como mantenedor, necesito límites, reintentos controlados, fallback explícito 
 - **SC-005**: Backend, frontend, tipos, lint y build permanecen verdes.
 - **SC-006**: Respuestas objetivas con clave no generan una segunda inferencia.
 
+## Evolución 032: entrada completa y partición excepcional implementadas
+
+[032 Calificación e impacto docente](../032-calificacion-impacto-docente/spec.md), FR-001–003: visión recibe evidencia sin soluciones esperadas y preserva continuidad/páginas. El camino habitual envía el contexto completo; solo al superar el presupuesto se divide por pregunta sin truncar respuestas y se consolida una vez. No cambia proveedores ni modelos.
+
 ## Supuestos
 
 - OpenCode documenta este modelo en `/zen/go/v1/chat/completions`.

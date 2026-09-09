@@ -1,10 +1,17 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { api } from './api';
-import { surfaceForPath, trackEvent } from './analytics';
+import {
+  elapsedFromMonotonic,
+  sendTeacherWorkCommand,
+  startTeacherWorkSession,
+  surfaceForPath,
+  trackEvent,
+} from './analytics';
 
 vi.mock('./api', () => ({
   api: {
+    get: vi.fn(),
     post: vi.fn(),
   },
 }));
@@ -60,7 +67,10 @@ describe('analytics event contract', () => {
     post.mockRejectedValueOnce(new Error('telemetry unavailable'));
 
     expect(() => {
-      trackEvent('calificacion_confirmed', { evaluacion_id: 'evaluation-1' });
+      trackEvent('calificacion_confirmed', {
+        evaluacion_id: 'evaluation-1',
+        calificacion_id: 'grade-1',
+      });
     }).not.toThrow();
     await Promise.resolve();
 
@@ -77,5 +87,50 @@ describe('analytics event contract', () => {
     ['/app/presentaciones', 'presentaciones'],
   ] as const)('maps %s to the closed surface %s', (path, surface) => {
     expect(surfaceForPath(path)).toBe(surface);
+  });
+
+  it('measures physical reading time from a monotonic clock without requiring clicks', () => {
+    expect(elapsedFromMonotonic(1_000, 16_000)).toBe(15_000);
+    expect(elapsedFromMonotonic(16_000, 1_000)).toBe(0);
+  });
+
+  it('starts timing only after an explicit opt-in', async () => {
+    post.mockResolvedValueOnce({ data: { id: 'session-1', owner_token: 'owner' } });
+
+    await startTeacherWorkSession({
+      condicion: 'asistida',
+      fase: 'revision',
+      evaluacion_id: 'evaluation-1',
+    });
+
+    expect(post).toHaveBeenCalledWith('/analytics/sesiones-trabajo', expect.objectContaining({
+      condicion: 'asistida',
+      fase: 'revision',
+      evaluacion_id: 'evaluation-1',
+      acepta_medicion: true,
+      event_id: expect.any(String),
+    }));
+  });
+
+  it('sends a versioned explicit transfer so another tab can take ownership', async () => {
+    post.mockResolvedValueOnce({ data: { id: 'session-1', owner_token: 'new-owner' } });
+
+    await sendTeacherWorkCommand({
+      sessionId: 'session-1',
+      expectedVersion: 4,
+      ownerToken: '0'.repeat(64),
+      accion: 'traspasar',
+      eventId: 'event-1',
+    });
+
+    expect(post).toHaveBeenCalledWith('/analytics/sesiones-trabajo/session-1/eventos', {
+      event_id: 'event-1',
+      expected_version: 4,
+      owner_token: '0'.repeat(64),
+      accion: 'traspasar',
+      elapsed_ms: 0,
+      fase: undefined,
+      motivo: undefined,
+    });
   });
 });

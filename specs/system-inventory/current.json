@@ -1,18 +1,18 @@
 {
   "counts": {
     "by_coverage": {
-      "covered": 421,
-      "missing": 70
+      "covered": 444,
+      "missing": 79
     },
     "by_kind": {
-      "endpoint": 231,
-      "frontend_call": 156,
+      "endpoint": 249,
+      "frontend_call": 167,
       "frontend_route": 31,
       "integration": 7,
       "job": 15,
-      "table": 51
+      "table": 54
     },
-    "total": 491
+    "total": 523
   },
   "exceptions": [],
   "findings": [
@@ -88,31 +88,29 @@
     },
     {
       "category": "missing_coverage",
-      "description": "8 superficies de 011-reportes-analitica-impacto no tienen evidencia de prueba observable.",
-      "id": "F-17340D58792D",
+      "description": "18 superficies de 011-reportes-analitica-impacto no tienen evidencia de prueba observable.",
+      "id": "F-324D81DB301E",
       "issue_url": "",
       "severity": "low",
       "surface_ids": [
         "backend:GET:/impacto/cualitativo",
+        "backend:GET:/impacto/estudios/{study_id}/export",
+        "backend:GET:/impacto/estudios/{study_id}/indicadores",
+        "backend:GET:/impacto/estudios/{study_id}/observaciones",
         "backend:GET:/impacto/kappa",
         "backend:GET:/impacto/likert",
         "backend:GET:/impacto/tiempo-ahorrado",
         "backend:GET:/reportes/estudiante/{estudiante_id}",
         "backend:GET:/reportes/materia/{materia_id}",
         "backend:POST:/impacto/encuestas",
-        "backend:POST:/reportes/export/pdf"
-      ]
-    },
-    {
-      "category": "contract_mismatch",
-      "description": "3 llamadas frontend no tienen endpoint backend canónico coincidente en el análisis estático.",
-      "id": "F-320F41980DED",
-      "issue_url": "",
-      "severity": "medium",
-      "surface_ids": [
-        "frontend_call:GET:/admin/users/{id}:frontend/src/modules/admin/usersApi.ts",
-        "frontend_call:POST:/admin/roles/{id}:frontend/src/modules/admin/authorizationApi.ts",
-        "frontend_call:POST:/jobs/{jobId}:frontend/src/modules/evaluaciones/components/DigitalizationJobMonitor.tsx"
+        "backend:POST:/impacto/estudios/{study_id}/activar",
+        "backend:POST:/impacto/estudios/{study_id}/cerrar",
+        "backend:POST:/impacto/estudios/{study_id}/concesiones",
+        "backend:POST:/impacto/estudios/{study_id}/concesiones/revocar",
+        "backend:POST:/impacto/estudios/{study_id}/observaciones",
+        "backend:POST:/impacto/estudios/{study_id}/retencion/aplicar",
+        "backend:POST:/reportes/export/pdf",
+        "frontend_call:POST:/analytics/sesiones-trabajo/{sessionId}/eventos:frontend/src/lib/analytics.ts"
       ]
     },
     {
@@ -144,18 +142,16 @@
       ]
     },
     {
-      "category": "missing_coverage",
-      "description": "6 superficies de 009-xali-rag-refuerzos no tienen evidencia de prueba observable.",
-      "id": "F-A80F7D19FC85",
+      "category": "contract_mismatch",
+      "description": "4 llamadas frontend no tienen endpoint backend canónico coincidente en el análisis estático.",
+      "id": "F-D1DBF5E00BFE",
       "issue_url": "",
-      "severity": "low",
+      "severity": "medium",
       "surface_ids": [
-        "backend:DELETE:/rag/sources/{source_id}",
-        "backend:GET:/rag/sources",
-        "backend:POST:/rag/ingest",
-        "backend:POST:/rag/search",
-        "backend:POST:/rag/sources",
-        "table:rag_sources"
+        "frontend_call:GET:/admin/users/{id}:frontend/src/modules/admin/usersApi.ts",
+        "frontend_call:POST:/admin/roles/{id}:frontend/src/modules/admin/authorizationApi.ts",
+        "frontend_call:POST:/impacto/estudios/{id}/{action}:frontend/src/modules/analytics/AnalyticsPage.tsx",
+        "frontend_call:POST:/jobs/{jobId}:frontend/src/modules/evaluaciones/components/DigitalizationJobMonitor.tsx"
       ]
     },
     {
@@ -169,6 +165,20 @@
         "backend:PATCH:/imagenes-generadas/{imagen_id}",
         "backend:POST:/imagenes/generar",
         "table:imagenes_generadas"
+      ]
+    },
+    {
+      "category": "missing_coverage",
+      "description": "5 superficies de 009-xali-rag-refuerzos no tienen evidencia de prueba observable.",
+      "id": "F-FB433EA6ABD4",
+      "issue_url": "",
+      "severity": "low",
+      "surface_ids": [
+        "backend:DELETE:/rag/sources/{source_id}",
+        "backend:GET:/rag/sources",
+        "backend:POST:/rag/ingest",
+        "backend:POST:/rag/search",
+        "backend:POST:/rag/sources"
       ]
     },
     {
@@ -321,7 +331,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "ce055e101fd26d34bb6908e9e8ef8abbb46a8826b6b85a6ff2108985c60d2675",
+  "source_digest": "70db98e5b8530f9a1cc1907d470c2660a5bb915da6e744fb3b84eee08ad99e70",
   "surfaces": [
     {
       "actors": [
@@ -457,7 +467,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "DELETE:/calificaciones/modo-salon/{sesion_id}",
-      "source_line": 1177,
+      "source_line": 1266,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -1674,7 +1684,7 @@
       "kind": "endpoint",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "GET:/analytics/ai-quality/concordancia",
-      "source_line": 221,
+      "source_line": 349,
       "source_path": "backend/app/modules/analytics/router.py",
       "states": [],
       "tests": [
@@ -1712,7 +1722,7 @@
       "kind": "endpoint",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "GET:/analytics/ai-quality/confidence",
-      "source_line": 266,
+      "source_line": 394,
       "source_path": "backend/app/modules/analytics/router.py",
       "states": [],
       "tests": [
@@ -1750,7 +1760,7 @@
       "kind": "endpoint",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "GET:/analytics/ai-quality/costs",
-      "source_line": 338,
+      "source_line": 468,
       "source_path": "backend/app/modules/analytics/router.py",
       "states": [],
       "tests": [
@@ -1788,7 +1798,7 @@
       "kind": "endpoint",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "GET:/analytics/ai-quality/costs/provider-comparison",
-      "source_line": 355,
+      "source_line": 485,
       "source_path": "backend/app/modules/analytics/router.py",
       "states": [],
       "tests": [
@@ -1826,7 +1836,7 @@
       "kind": "endpoint",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "GET:/analytics/ai-quality/errors",
-      "source_line": 252,
+      "source_line": 380,
       "source_path": "backend/app/modules/analytics/router.py",
       "states": [],
       "tests": [
@@ -1864,7 +1874,7 @@
       "kind": "endpoint",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "GET:/analytics/ai-quality/latency",
-      "source_line": 238,
+      "source_line": 366,
       "source_path": "backend/app/modules/analytics/router.py",
       "states": [],
       "tests": [
@@ -1889,6 +1899,8 @@
       ],
       "authorization": [
         "get_current_user",
+        "require_any_permission_now:admin_ai.manage",
+        "require_any_permission_now:reports.read",
         "require_role"
       ],
       "consumers": [],
@@ -1902,7 +1914,7 @@
       "kind": "endpoint",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "GET:/analytics/ai-quality/usage",
-      "source_line": 280,
+      "source_line": 408,
       "source_path": "backend/app/modules/analytics/router.py",
       "states": [],
       "tests": [
@@ -1940,7 +1952,7 @@
       "kind": "endpoint",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "GET:/analytics/criterios",
-      "source_line": 94,
+      "source_line": 222,
       "source_path": "backend/app/modules/analytics/router.py",
       "states": [],
       "tests": [
@@ -1978,7 +1990,7 @@
       "kind": "endpoint",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "GET:/analytics/estudiantes",
-      "source_line": 127,
+      "source_line": 255,
       "source_path": "backend/app/modules/analytics/router.py",
       "states": [],
       "tests": [
@@ -2016,7 +2028,7 @@
       "kind": "endpoint",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "GET:/analytics/estudiantes/{estudiante_id}",
-      "source_line": 144,
+      "source_line": 272,
       "source_path": "backend/app/modules/analytics/router.py",
       "states": [],
       "tests": [
@@ -2054,7 +2066,7 @@
       "kind": "endpoint",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "GET:/analytics/evaluaciones",
-      "source_line": 64,
+      "source_line": 192,
       "source_path": "backend/app/modules/analytics/router.py",
       "states": [],
       "tests": [
@@ -2098,7 +2110,7 @@
       "kind": "endpoint",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "GET:/analytics/evaluaciones/{evaluacion_id}",
-      "source_line": 80,
+      "source_line": 208,
       "source_path": "backend/app/modules/analytics/router.py",
       "states": [],
       "tests": [
@@ -2142,7 +2154,7 @@
       "kind": "endpoint",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "GET:/analytics/export/criterios.csv",
-      "source_line": 175,
+      "source_line": 303,
       "source_path": "backend/app/modules/analytics/router.py",
       "states": [],
       "tests": [
@@ -2180,7 +2192,7 @@
       "kind": "endpoint",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "GET:/analytics/export/estudiantes.csv",
-      "source_line": 198,
+      "source_line": 326,
       "source_path": "backend/app/modules/analytics/router.py",
       "states": [],
       "tests": [
@@ -2218,7 +2230,7 @@
       "kind": "endpoint",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "GET:/analytics/overview",
-      "source_line": 48,
+      "source_line": 176,
       "source_path": "backend/app/modules/analytics/router.py",
       "states": [],
       "tests": [
@@ -2262,7 +2274,7 @@
       "kind": "endpoint",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "GET:/analytics/preguntas",
-      "source_line": 111,
+      "source_line": 239,
       "source_path": "backend/app/modules/analytics/router.py",
       "states": [],
       "tests": [
@@ -2276,6 +2288,47 @@
           "level": "unit",
           "reference": "GET:/analytics/preguntas",
           "status": "domain",
+          "test_path": "frontend/src/lib/analytics.test.ts"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "admin",
+        "estudiante",
+        "profesor"
+      ],
+      "authorization": [
+        "get_current_user",
+        "require_any_permission_now:grading.read",
+        "require_any_permission_now:reports.read",
+        "require_role"
+      ],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
+        "function": "listar_sesiones_trabajo",
+        "registered": true,
+        "router": "router"
+      },
+      "id": "backend:GET:/analytics/sesiones-trabajo",
+      "kind": "endpoint",
+      "owner_spec": "011-reportes-analitica-impacto",
+      "signature": "GET:/analytics/sesiones-trabajo",
+      "source_line": 130,
+      "source_path": "backend/app/modules/analytics/router.py",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "GET:/analytics/sesiones-trabajo",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_analytics_events.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/analytics/sesiones-trabajo",
+          "status": "direct",
           "test_path": "frontend/src/lib/analytics.test.ts"
         }
       ]
@@ -2300,7 +2353,7 @@
       "kind": "endpoint",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "GET:/analytics/sintesis",
-      "source_line": 158,
+      "source_line": 286,
       "source_path": "backend/app/modules/analytics/router.py",
       "states": [],
       "tests": [
@@ -2470,7 +2523,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "GET:/calificaciones/bandeja-docente",
-      "source_line": 1579,
+      "source_line": 1724,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -2540,7 +2593,7 @@
       "kind": "endpoint",
       "owner_spec": "007-entregas-estudiante",
       "signature": "GET:/calificaciones/entregas/{entrega_id}/evidencia",
-      "source_line": 1461,
+      "source_line": 1550,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -2584,6 +2637,64 @@
       ],
       "authorization": [
         "get_current_user",
+        "require_permission_now:grading.read",
+        "require_permission_now:submissions.read"
+      ],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
+        "function": "get_entrega_evidencia_page",
+        "registered": true,
+        "router": "router"
+      },
+      "id": "backend:GET:/calificaciones/entregas/{entrega_id}/evidencia/paginas/{numero}",
+      "kind": "endpoint",
+      "owner_spec": "007-entregas-estudiante",
+      "signature": "GET:/calificaciones/entregas/{entrega_id}/evidencia/paginas/{numero}",
+      "source_line": 1586,
+      "source_path": "backend/app/modules/calificaciones/router.py",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/entregas/{entrega_id}/evidencia/paginas/{numero}",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_calificaciones_boletin_permissions.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/entregas/{entrega_id}/evidencia/paginas/{numero}",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_calificaciones_lote_async.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/entregas/{entrega_id}/evidencia/paginas/{numero}",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_calificaciones_resumen_academico.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/entregas/{entrega_id}/evidencia/paginas/{numero}",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_calificaciones_revision_workspace.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/entregas/{entrega_id}/evidencia/paginas/{numero}",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/CalificacionesTimeline.test.tsx"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "admin",
+        "estudiante",
+        "profesor"
+      ],
+      "authorization": [
+        "get_current_user",
         "require_permission_now:grading.read"
       ],
       "consumers": [],
@@ -2597,7 +2708,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "GET:/calificaciones/modo-salon/{sesion_id}",
-      "source_line": 989,
+      "source_line": 1078,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -2654,7 +2765,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "GET:/calificaciones/modo-salon/{sesion_id}/estudiantes",
-      "source_line": 1013,
+      "source_line": 1102,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -2711,7 +2822,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "GET:/calificaciones/{calificacion_id}/desglose",
-      "source_line": 1698,
+      "source_line": 1843,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -2774,7 +2885,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "GET:/calificaciones/{calificacion_id}/desglose/historial",
-      "source_line": 1734,
+      "source_line": 1879,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -2837,7 +2948,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "GET:/calificaciones/{calificacion_id}/detalle",
-      "source_line": 1506,
+      "source_line": 1651,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -2893,7 +3004,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "GET:/calificaciones/{calificacion_id}/incidencias",
-      "source_line": 1651,
+      "source_line": 1796,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -3052,7 +3163,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "GET:/estudiantes/{estudiante_id}/boletin",
-      "source_line": 915,
+      "source_line": 1004,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -3110,7 +3221,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "GET:/estudiantes/{estudiante_id}/resumen-academico",
-      "source_line": 894,
+      "source_line": 983,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -3347,7 +3458,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "GET:/evaluaciones/{evaluacion_id}/calificaciones",
-      "source_line": 877,
+      "source_line": 966,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -3404,7 +3515,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "GET:/evaluaciones/{evaluacion_id}/mi-desglose",
-      "source_line": 1759,
+      "source_line": 1904,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -3466,7 +3577,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "GET:/evaluaciones/{evaluacion_id}/mi-entrega",
-      "source_line": 1204,
+      "source_line": 1293,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -3523,7 +3634,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "GET:/evaluaciones/{evaluacion_id}/mi-solicitud-revision",
-      "source_line": 1592,
+      "source_line": 1737,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -4056,7 +4167,166 @@
       "kind": "endpoint",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "GET:/impacto/cualitativo",
-      "source_line": 92,
+      "source_line": 532,
+      "source_path": "backend/app/modules/impacto_tesis/router.py",
+      "states": [],
+      "tests": []
+    },
+    {
+      "actors": [
+        "authenticated"
+      ],
+      "authorization": [
+        "get_current_user"
+      ],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
+        "function": "list_studies",
+        "registered": true,
+        "router": "router"
+      },
+      "id": "backend:GET:/impacto/estudios",
+      "kind": "endpoint",
+      "owner_spec": "011-reportes-analitica-impacto",
+      "signature": "GET:/impacto/estudios",
+      "source_line": 136,
+      "source_path": "backend/app/modules/impacto_tesis/router.py",
+      "states": [],
+      "tests": [
+        {
+          "level": "e2e",
+          "reference": "GET:/impacto/estudios",
+          "status": "direct",
+          "test_path": "frontend/e2e/p2-responsive.spec.ts"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "authenticated"
+      ],
+      "authorization": [
+        "get_current_user"
+      ],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
+        "function": "study_availability",
+        "registered": true,
+        "router": "router"
+      },
+      "id": "backend:GET:/impacto/estudios/disponibilidad",
+      "kind": "endpoint",
+      "owner_spec": "011-reportes-analitica-impacto",
+      "signature": "GET:/impacto/estudios/disponibilidad",
+      "source_line": 94,
+      "source_path": "backend/app/modules/impacto_tesis/router.py",
+      "states": [],
+      "tests": [
+        {
+          "level": "e2e",
+          "reference": "GET:/impacto/estudios/disponibilidad",
+          "status": "direct",
+          "test_path": "frontend/e2e/p2-responsive.spec.ts"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "authenticated"
+      ],
+      "authorization": [
+        "get_current_user"
+      ],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
+        "function": "get_study",
+        "registered": true,
+        "router": "router"
+      },
+      "id": "backend:GET:/impacto/estudios/{study_id}",
+      "kind": "endpoint",
+      "owner_spec": "011-reportes-analitica-impacto",
+      "signature": "GET:/impacto/estudios/{study_id}",
+      "source_line": 146,
+      "source_path": "backend/app/modules/impacto_tesis/router.py",
+      "states": [],
+      "tests": [
+        {
+          "level": "e2e",
+          "reference": "GET:/impacto/estudios/{study_id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/p2-responsive.spec.ts"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "authenticated"
+      ],
+      "authorization": [
+        "get_current_user"
+      ],
+      "consumers": [],
+      "coverage": "missing",
+      "details": {
+        "function": "export_study",
+        "registered": true,
+        "router": "router"
+      },
+      "id": "backend:GET:/impacto/estudios/{study_id}/export",
+      "kind": "endpoint",
+      "owner_spec": "011-reportes-analitica-impacto",
+      "signature": "GET:/impacto/estudios/{study_id}/export",
+      "source_line": 358,
+      "source_path": "backend/app/modules/impacto_tesis/router.py",
+      "states": [],
+      "tests": []
+    },
+    {
+      "actors": [
+        "authenticated"
+      ],
+      "authorization": [
+        "get_current_user"
+      ],
+      "consumers": [],
+      "coverage": "missing",
+      "details": {
+        "function": "study_metrics",
+        "registered": true,
+        "router": "router"
+      },
+      "id": "backend:GET:/impacto/estudios/{study_id}/indicadores",
+      "kind": "endpoint",
+      "owner_spec": "011-reportes-analitica-impacto",
+      "signature": "GET:/impacto/estudios/{study_id}/indicadores",
+      "source_line": 383,
+      "source_path": "backend/app/modules/impacto_tesis/router.py",
+      "states": [],
+      "tests": []
+    },
+    {
+      "actors": [
+        "authenticated"
+      ],
+      "authorization": [
+        "get_current_user"
+      ],
+      "consumers": [],
+      "coverage": "missing",
+      "details": {
+        "function": "list_observations",
+        "registered": true,
+        "router": "router"
+      },
+      "id": "backend:GET:/impacto/estudios/{study_id}/observaciones",
+      "kind": "endpoint",
+      "owner_spec": "011-reportes-analitica-impacto",
+      "signature": "GET:/impacto/estudios/{study_id}/observaciones",
+      "source_line": 339,
       "source_path": "backend/app/modules/impacto_tesis/router.py",
       "states": [],
       "tests": []
@@ -4081,7 +4351,7 @@
       "kind": "endpoint",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "GET:/impacto/kappa",
-      "source_line": 45,
+      "source_line": 454,
       "source_path": "backend/app/modules/impacto_tesis/router.py",
       "states": [],
       "tests": []
@@ -4104,7 +4374,7 @@
       "kind": "endpoint",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "GET:/impacto/likert",
-      "source_line": 84,
+      "source_line": 524,
       "source_path": "backend/app/modules/impacto_tesis/router.py",
       "states": [],
       "tests": []
@@ -4129,10 +4399,40 @@
       "kind": "endpoint",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "GET:/impacto/tiempo-ahorrado",
-      "source_line": 18,
+      "source_line": 427,
       "source_path": "backend/app/modules/impacto_tesis/router.py",
       "states": [],
       "tests": []
+    },
+    {
+      "actors": [
+        "authenticated"
+      ],
+      "authorization": [
+        "get_current_user"
+      ],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
+        "function": "get_pending_grading_jobs",
+        "registered": true,
+        "router": "router"
+      },
+      "id": "backend:GET:/jobs/pendientes",
+      "kind": "endpoint",
+      "owner_spec": "012-ia-jobs-produccion",
+      "signature": "GET:/jobs/pendientes",
+      "source_line": 53,
+      "source_path": "backend/app/modules/jobs/router.py",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "GET:/jobs/pendientes",
+          "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/GradingJobMonitor.test.tsx"
+        }
+      ]
     },
     {
       "actors": [
@@ -4152,7 +4452,7 @@
       "kind": "endpoint",
       "owner_spec": "012-ia-jobs-produccion",
       "signature": "GET:/jobs/{job_id}",
-      "source_line": 40,
+      "source_line": 115,
       "source_path": "backend/app/modules/jobs/router.py",
       "states": [],
       "tests": [
@@ -4200,7 +4500,7 @@
       "kind": "endpoint",
       "owner_spec": "012-ia-jobs-produccion",
       "signature": "GET:/jobs/{job_id}/estado",
-      "source_line": 87,
+      "source_line": 167,
       "source_path": "backend/app/modules/jobs/router.py",
       "states": [],
       "tests": []
@@ -4223,7 +4523,7 @@
       "kind": "endpoint",
       "owner_spec": "012-ia-jobs-produccion",
       "signature": "GET:/jobs/{job_id}/items",
-      "source_line": 97,
+      "source_line": 177,
       "source_path": "backend/app/modules/jobs/router.py",
       "states": [],
       "tests": []
@@ -6196,7 +6496,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "PATCH:/calificaciones/modo-salon/{sesion_id}/estudiantes/{estudiante_id}",
-      "source_line": 1059,
+      "source_line": 1148,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -6252,7 +6552,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "PATCH:/calificaciones/{calificacion_id}/ajustar",
-      "source_line": 826,
+      "source_line": 915,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -6308,7 +6608,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "PATCH:/calificaciones/{calificacion_id}/confirmar",
-      "source_line": 809,
+      "source_line": 898,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -6364,7 +6664,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "PATCH:/calificaciones/{calificacion_id}/publicar",
-      "source_line": 1527,
+      "source_line": 1672,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -6420,7 +6720,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "PATCH:/calificaciones/{calificacion_id}/revision-manual",
-      "source_line": 843,
+      "source_line": 932,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -6654,7 +6954,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "PATCH:/evaluaciones/{evaluacion_id}/respuestas-liberadas",
-      "source_line": 1746,
+      "source_line": 1891,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -6951,7 +7251,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "PATCH:/incidencias/{incidencia_id}/resolver",
-      "source_line": 1667,
+      "source_line": 1812,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -7729,7 +8029,7 @@
       "kind": "endpoint",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "POST:/analytics/evento",
-      "source_line": 27,
+      "source_line": 85,
       "source_path": "backend/app/modules/analytics/router.py",
       "states": [],
       "tests": [
@@ -7767,6 +8067,84 @@
           "level": "unit",
           "reference": "POST:/analytics/evento",
           "status": "direct",
+          "test_path": "frontend/src/lib/analytics.test.ts"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "admin",
+        "profesor"
+      ],
+      "authorization": [
+        "get_current_user",
+        "require_permission_now:grading.grade",
+        "require_role"
+      ],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
+        "function": "crear_sesion_trabajo",
+        "registered": true,
+        "router": "router"
+      },
+      "id": "backend:POST:/analytics/sesiones-trabajo",
+      "kind": "endpoint",
+      "owner_spec": "011-reportes-analitica-impacto",
+      "signature": "POST:/analytics/sesiones-trabajo",
+      "source_line": 106,
+      "source_path": "backend/app/modules/analytics/router.py",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "POST:/analytics/sesiones-trabajo",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_analytics_events.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/analytics/sesiones-trabajo",
+          "status": "direct",
+          "test_path": "frontend/src/lib/analytics.test.ts"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "admin",
+        "profesor"
+      ],
+      "authorization": [
+        "get_current_user",
+        "require_permission_now:grading.grade",
+        "require_role"
+      ],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
+        "function": "registrar_evento_sesion_trabajo",
+        "registered": true,
+        "router": "router"
+      },
+      "id": "backend:POST:/analytics/sesiones-trabajo/{session_id}/eventos",
+      "kind": "endpoint",
+      "owner_spec": "011-reportes-analitica-impacto",
+      "signature": "POST:/analytics/sesiones-trabajo/{session_id}/eventos",
+      "source_line": 151,
+      "source_path": "backend/app/modules/analytics/router.py",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "POST:/analytics/sesiones-trabajo/{session_id}/eventos",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_analytics_events.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/analytics/sesiones-trabajo/{session_id}/eventos",
+          "status": "domain",
           "test_path": "frontend/src/lib/analytics.test.ts"
         }
       ]
@@ -8479,7 +8857,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "POST:/calificaciones/foto",
-      "source_line": 257,
+      "source_line": 346,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -8535,7 +8913,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "POST:/calificaciones/lote",
-      "source_line": 505,
+      "source_line": 594,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -8597,7 +8975,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "POST:/calificaciones/lote/ajustar",
-      "source_line": 1566,
+      "source_line": 1711,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -8653,7 +9031,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "POST:/calificaciones/lote/asincrono",
-      "source_line": 611,
+      "source_line": 700,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -8715,7 +9093,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "POST:/calificaciones/lote/confirmar",
-      "source_line": 1556,
+      "source_line": 1701,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -8771,7 +9149,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "POST:/calificaciones/lote/publicar",
-      "source_line": 1546,
+      "source_line": 1691,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -8827,7 +9205,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "POST:/calificaciones/modo-salon/iniciar",
-      "source_line": 948,
+      "source_line": 1037,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -8883,7 +9261,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "POST:/calificaciones/modo-salon/{sesion_id}/foto",
-      "source_line": 1102,
+      "source_line": 1191,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -8939,7 +9317,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "POST:/calificaciones/{calificacion_id}/incidencias",
-      "source_line": 1630,
+      "source_line": 1775,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -8995,7 +9373,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "POST:/calificaciones/{calificacion_id}/reintentar-foto",
-      "source_line": 397,
+      "source_line": 486,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -9051,7 +9429,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "POST:/calificaciones/{calificacion_id}/solicitar-reemplazo",
-      "source_line": 460,
+      "source_line": 549,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -9629,7 +10007,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "POST:/evaluaciones/{evaluacion_id}/calificaciones/manual",
-      "source_line": 860,
+      "source_line": 949,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -9761,7 +10139,7 @@
       "kind": "endpoint",
       "owner_spec": "007-entregas-estudiante",
       "signature": "POST:/evaluaciones/{evaluacion_id}/entregas",
-      "source_line": 1232,
+      "source_line": 1321,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -9817,7 +10195,7 @@
       "kind": "endpoint",
       "owner_spec": "007-entregas-estudiante",
       "signature": "POST:/evaluaciones/{evaluacion_id}/entregas/archivo",
-      "source_line": 1327,
+      "source_line": 1416,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -9950,7 +10328,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "POST:/evaluaciones/{evaluacion_id}/solicitud-revision",
-      "source_line": 1609,
+      "source_line": 1754,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -10978,7 +11356,175 @@
       "kind": "endpoint",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "POST:/impacto/encuestas",
-      "source_line": 73,
+      "source_line": 489,
+      "source_path": "backend/app/modules/impacto_tesis/router.py",
+      "states": [],
+      "tests": []
+    },
+    {
+      "actors": [
+        "authenticated"
+      ],
+      "authorization": [
+        "get_current_user"
+      ],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
+        "function": "create_study",
+        "registered": true,
+        "router": "router"
+      },
+      "id": "backend:POST:/impacto/estudios",
+      "kind": "endpoint",
+      "owner_spec": "011-reportes-analitica-impacto",
+      "signature": "POST:/impacto/estudios",
+      "source_line": 104,
+      "source_path": "backend/app/modules/impacto_tesis/router.py",
+      "states": [],
+      "tests": [
+        {
+          "level": "e2e",
+          "reference": "POST:/impacto/estudios",
+          "status": "direct",
+          "test_path": "frontend/e2e/p2-responsive.spec.ts"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "authenticated"
+      ],
+      "authorization": [
+        "get_current_user"
+      ],
+      "consumers": [],
+      "coverage": "missing",
+      "details": {
+        "function": "activate_study",
+        "registered": true,
+        "router": "router"
+      },
+      "id": "backend:POST:/impacto/estudios/{study_id}/activar",
+      "kind": "endpoint",
+      "owner_spec": "011-reportes-analitica-impacto",
+      "signature": "POST:/impacto/estudios/{study_id}/activar",
+      "source_line": 209,
+      "source_path": "backend/app/modules/impacto_tesis/router.py",
+      "states": [],
+      "tests": []
+    },
+    {
+      "actors": [
+        "authenticated"
+      ],
+      "authorization": [
+        "get_current_user"
+      ],
+      "consumers": [],
+      "coverage": "missing",
+      "details": {
+        "function": "close_study",
+        "registered": true,
+        "router": "router"
+      },
+      "id": "backend:POST:/impacto/estudios/{study_id}/cerrar",
+      "kind": "endpoint",
+      "owner_spec": "011-reportes-analitica-impacto",
+      "signature": "POST:/impacto/estudios/{study_id}/cerrar",
+      "source_line": 242,
+      "source_path": "backend/app/modules/impacto_tesis/router.py",
+      "states": [],
+      "tests": []
+    },
+    {
+      "actors": [
+        "authenticated"
+      ],
+      "authorization": [
+        "get_current_user"
+      ],
+      "consumers": [],
+      "coverage": "missing",
+      "details": {
+        "function": "grant_study_access",
+        "registered": true,
+        "router": "router"
+      },
+      "id": "backend:POST:/impacto/estudios/{study_id}/concesiones",
+      "kind": "endpoint",
+      "owner_spec": "011-reportes-analitica-impacto",
+      "signature": "POST:/impacto/estudios/{study_id}/concesiones",
+      "source_line": 158,
+      "source_path": "backend/app/modules/impacto_tesis/router.py",
+      "states": [],
+      "tests": []
+    },
+    {
+      "actors": [
+        "authenticated"
+      ],
+      "authorization": [
+        "get_current_user"
+      ],
+      "consumers": [],
+      "coverage": "missing",
+      "details": {
+        "function": "revoke_study_access",
+        "registered": true,
+        "router": "router"
+      },
+      "id": "backend:POST:/impacto/estudios/{study_id}/concesiones/revocar",
+      "kind": "endpoint",
+      "owner_spec": "011-reportes-analitica-impacto",
+      "signature": "POST:/impacto/estudios/{study_id}/concesiones/revocar",
+      "source_line": 184,
+      "source_path": "backend/app/modules/impacto_tesis/router.py",
+      "states": [],
+      "tests": []
+    },
+    {
+      "actors": [
+        "authenticated"
+      ],
+      "authorization": [
+        "get_current_user"
+      ],
+      "consumers": [],
+      "coverage": "missing",
+      "details": {
+        "function": "import_observations",
+        "registered": true,
+        "router": "router"
+      },
+      "id": "backend:POST:/impacto/estudios/{study_id}/observaciones",
+      "kind": "endpoint",
+      "owner_spec": "011-reportes-analitica-impacto",
+      "signature": "POST:/impacto/estudios/{study_id}/observaciones",
+      "source_line": 258,
+      "source_path": "backend/app/modules/impacto_tesis/router.py",
+      "states": [],
+      "tests": []
+    },
+    {
+      "actors": [
+        "authenticated"
+      ],
+      "authorization": [
+        "get_current_user"
+      ],
+      "consumers": [],
+      "coverage": "missing",
+      "details": {
+        "function": "apply_retention",
+        "registered": true,
+        "router": "router"
+      },
+      "id": "backend:POST:/impacto/estudios/{study_id}/retencion/aplicar",
+      "kind": "endpoint",
+      "owner_spec": "011-reportes-analitica-impacto",
+      "signature": "POST:/impacto/estudios/{study_id}/retencion/aplicar",
+      "source_line": 394,
       "source_path": "backend/app/modules/impacto_tesis/router.py",
       "states": [],
       "tests": []
@@ -11001,7 +11547,7 @@
       "kind": "endpoint",
       "owner_spec": "012-ia-jobs-produccion",
       "signature": "POST:/jobs/{job_id}/cancelar",
-      "source_line": 279,
+      "source_line": 364,
       "source_path": "backend/app/modules/jobs/router.py",
       "states": [],
       "tests": []
@@ -11024,7 +11570,7 @@
       "kind": "endpoint",
       "owner_spec": "012-ia-jobs-produccion",
       "signature": "POST:/jobs/{job_id}/reintentar",
-      "source_line": 148,
+      "source_line": 233,
       "source_path": "backend/app/modules/jobs/router.py",
       "states": [],
       "tests": []
@@ -11991,7 +12537,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "PUT:/calificaciones/{calificacion_id}/desglose",
-      "source_line": 1713,
+      "source_line": 1858,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -12378,6 +12924,12 @@
           "reference": "/",
           "status": "direct",
           "test_path": "backend/tests/unit/test_calificaciones_resumen_academico.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_calificaciones_revision_workspace.py"
         },
         {
           "level": "unit",
@@ -18737,7 +19289,7 @@
       "kind": "frontend_call",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "GET:/analytics/ai-quality/concordancia",
-      "source_line": 341,
+      "source_line": 425,
       "source_path": "frontend/src/modules/analytics/AnalyticsPage.tsx",
       "states": [],
       "tests": [
@@ -18774,7 +19326,7 @@
       "kind": "frontend_call",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "GET:/analytics/ai-quality/confidence",
-      "source_line": 465,
+      "source_line": 549,
       "source_path": "frontend/src/modules/analytics/AnalyticsPage.tsx",
       "states": [],
       "tests": [
@@ -18811,7 +19363,7 @@
       "kind": "frontend_call",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "GET:/analytics/ai-quality/costs/provider-comparison",
-      "source_line": 536,
+      "source_line": 620,
       "source_path": "frontend/src/modules/analytics/AnalyticsPage.tsx",
       "states": [],
       "tests": [
@@ -18848,7 +19400,7 @@
       "kind": "frontend_call",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "GET:/analytics/ai-quality/costs",
-      "source_line": 532,
+      "source_line": 616,
       "source_path": "frontend/src/modules/analytics/AnalyticsPage.tsx",
       "states": [],
       "tests": [
@@ -18885,7 +19437,7 @@
       "kind": "frontend_call",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "GET:/analytics/ai-quality/errors",
-      "source_line": 500,
+      "source_line": 584,
       "source_path": "frontend/src/modules/analytics/AnalyticsPage.tsx",
       "states": [],
       "tests": [
@@ -18922,7 +19474,7 @@
       "kind": "frontend_call",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "GET:/analytics/ai-quality/latency",
-      "source_line": 464,
+      "source_line": 548,
       "source_path": "frontend/src/modules/analytics/AnalyticsPage.tsx",
       "states": [],
       "tests": [
@@ -18959,7 +19511,7 @@
       "kind": "frontend_call",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "GET:/analytics/criterios",
-      "source_line": 162,
+      "source_line": 246,
       "source_path": "frontend/src/modules/analytics/AnalyticsPage.tsx",
       "states": [],
       "tests": [
@@ -18996,7 +19548,7 @@
       "kind": "frontend_call",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "GET:/analytics/estudiantes/{selected}",
-      "source_line": 398,
+      "source_line": 482,
       "source_path": "frontend/src/modules/analytics/AnalyticsPage.tsx",
       "states": [],
       "tests": [
@@ -19033,7 +19585,7 @@
       "kind": "frontend_call",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "GET:/analytics/estudiantes",
-      "source_line": 389,
+      "source_line": 473,
       "source_path": "frontend/src/modules/analytics/AnalyticsPage.tsx",
       "states": [],
       "tests": [
@@ -19070,7 +19622,7 @@
       "kind": "frontend_call",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "GET:/analytics/evaluaciones",
-      "source_line": 124,
+      "source_line": 179,
       "source_path": "frontend/src/modules/analytics/AnalyticsPage.tsx",
       "states": [],
       "tests": [
@@ -19113,7 +19665,7 @@
       "kind": "frontend_call",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "GET:/analytics/overview",
-      "source_line": 123,
+      "source_line": 178,
       "source_path": "frontend/src/modules/analytics/AnalyticsPage.tsx",
       "states": [],
       "tests": [
@@ -19156,7 +19708,7 @@
       "kind": "frontend_call",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "GET:/analytics/preguntas",
-      "source_line": 163,
+      "source_line": 247,
       "source_path": "frontend/src/modules/analytics/AnalyticsPage.tsx",
       "states": [],
       "tests": [
@@ -19185,6 +19737,37 @@
       "consumers": [],
       "coverage": "covered",
       "details": {
+        "backend_contract": "backend:GET:/analytics/sesiones-trabajo",
+        "backend_contract_candidates": [],
+        "contract_status": "matched"
+      },
+      "id": "frontend_call:GET:/analytics/sesiones-trabajo:frontend/src/lib/analytics.ts",
+      "kind": "frontend_call",
+      "owner_spec": "011-reportes-analitica-impacto",
+      "signature": "GET:/analytics/sesiones-trabajo",
+      "source_line": 129,
+      "source_path": "frontend/src/lib/analytics.ts",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "GET:/analytics/sesiones-trabajo",
+          "status": "direct",
+          "test_path": "frontend/src/lib/analytics.test.ts"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "admin",
+        "profesor"
+      ],
+      "authorization": [
+        "RequireRole"
+      ],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
         "backend_contract": "backend:GET:/analytics/sintesis",
         "backend_contract_candidates": [],
         "contract_status": "matched"
@@ -19193,7 +19776,7 @@
       "kind": "frontend_call",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "GET:/analytics/sintesis",
-      "source_line": 164,
+      "source_line": 248,
       "source_path": "frontend/src/modules/analytics/AnalyticsPage.tsx",
       "states": [],
       "tests": [
@@ -20330,6 +20913,252 @@
       "consumers": [],
       "coverage": "covered",
       "details": {
+        "backend_contract": "backend:GET:/impacto/estudios/disponibilidad",
+        "backend_contract_candidates": [],
+        "contract_status": "matched"
+      },
+      "id": "frontend_call:GET:/impacto/estudios/disponibilidad:frontend/src/modules/analytics/AnalyticsPage.tsx",
+      "kind": "frontend_call",
+      "owner_spec": "011-reportes-analitica-impacto",
+      "signature": "GET:/impacto/estudios/disponibilidad",
+      "source_line": 1032,
+      "source_path": "frontend/src/modules/analytics/AnalyticsPage.tsx",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "GET:/impacto/estudios/disponibilidad",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_analytics_events.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/impacto/estudios/disponibilidad",
+          "status": "direct",
+          "test_path": "frontend/e2e/p2-responsive.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/impacto/estudios/disponibilidad",
+          "status": "domain",
+          "test_path": "frontend/src/lib/analytics.test.ts"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "ambiguous"
+      ],
+      "authorization": [],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
+        "backend_contract": "backend:GET:/impacto/estudios/{study_id}/indicadores",
+        "backend_contract_candidates": [],
+        "contract_status": "matched"
+      },
+      "id": "frontend_call:GET:/impacto/estudios/{effectiveId}/indicadores:frontend/src/modules/analytics/AnalyticsPage.tsx",
+      "kind": "frontend_call",
+      "owner_spec": "011-reportes-analitica-impacto",
+      "signature": "GET:/impacto/estudios/{effectiveId}/indicadores",
+      "source_line": 874,
+      "source_path": "frontend/src/modules/analytics/AnalyticsPage.tsx",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "GET:/impacto/estudios/{effectiveId}/indicadores",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_analytics_events.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/impacto/estudios/{effectiveId}/indicadores",
+          "status": "domain",
+          "test_path": "frontend/src/lib/analytics.test.ts"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "ambiguous"
+      ],
+      "authorization": [],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
+        "backend_contract": "backend:GET:/impacto/estudios/{study_id}",
+        "backend_contract_candidates": [],
+        "contract_status": "matched"
+      },
+      "id": "frontend_call:GET:/impacto/estudios/{effectiveId}:frontend/src/modules/analytics/AnalyticsPage.tsx",
+      "kind": "frontend_call",
+      "owner_spec": "011-reportes-analitica-impacto",
+      "signature": "GET:/impacto/estudios/{effectiveId}",
+      "source_line": 869,
+      "source_path": "frontend/src/modules/analytics/AnalyticsPage.tsx",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "GET:/impacto/estudios/{effectiveId}",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_analytics_events.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/impacto/estudios/{effectiveId}",
+          "status": "direct",
+          "test_path": "frontend/e2e/p2-responsive.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/impacto/estudios/{effectiveId}",
+          "status": "domain",
+          "test_path": "frontend/src/lib/analytics.test.ts"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "ambiguous"
+      ],
+      "authorization": [],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
+        "backend_contract": "backend:GET:/impacto/estudios/{study_id}/export",
+        "backend_contract_candidates": [],
+        "contract_status": "matched"
+      },
+      "id": "frontend_call:GET:/impacto/estudios/{id}/export:frontend/src/modules/analytics/AnalyticsPage.tsx",
+      "kind": "frontend_call",
+      "owner_spec": "011-reportes-analitica-impacto",
+      "signature": "GET:/impacto/estudios/{id}/export",
+      "source_line": 920,
+      "source_path": "frontend/src/modules/analytics/AnalyticsPage.tsx",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "GET:/impacto/estudios/{id}/export",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_analytics_events.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/impacto/estudios/{id}/export",
+          "status": "domain",
+          "test_path": "frontend/src/lib/analytics.test.ts"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "ambiguous"
+      ],
+      "authorization": [],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
+        "backend_contract": "backend:GET:/impacto/estudios",
+        "backend_contract_candidates": [],
+        "contract_status": "matched"
+      },
+      "id": "frontend_call:GET:/impacto/estudios:frontend/src/modules/analytics/AnalyticsPage.tsx",
+      "kind": "frontend_call",
+      "owner_spec": "011-reportes-analitica-impacto",
+      "signature": "GET:/impacto/estudios",
+      "source_line": 864,
+      "source_path": "frontend/src/modules/analytics/AnalyticsPage.tsx",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "GET:/impacto/estudios",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_analytics_events.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/impacto/estudios",
+          "status": "direct",
+          "test_path": "frontend/e2e/p2-responsive.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/impacto/estudios",
+          "status": "domain",
+          "test_path": "frontend/src/lib/analytics.test.ts"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "ambiguous"
+      ],
+      "authorization": [],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
+        "backend_contract": "backend:GET:/jobs/pendientes",
+        "backend_contract_candidates": [],
+        "contract_status": "matched"
+      },
+      "id": "frontend_call:GET:/jobs/pendientes:frontend/src/modules/calificaciones/gradingJobs.ts",
+      "kind": "frontend_call",
+      "owner_spec": "012-ia-jobs-produccion",
+      "signature": "GET:/jobs/pendientes",
+      "source_line": 90,
+      "source_path": "frontend/src/modules/calificaciones/gradingJobs.ts",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "GET:/jobs/pendientes",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_calificaciones_boletin_permissions.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/jobs/pendientes",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_calificaciones_lote_async.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/jobs/pendientes",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_calificaciones_resumen_academico.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/jobs/pendientes",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_calificaciones_revision_workspace.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/jobs/pendientes",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/CalificacionesTimeline.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/jobs/pendientes",
+          "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/GradingJobMonitor.test.tsx"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "ambiguous"
+      ],
+      "authorization": [],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
         "backend_contract": "backend:GET:/jobs/{job_id}",
         "backend_contract_candidates": [],
         "contract_status": "matched"
@@ -20338,7 +21167,7 @@
       "kind": "frontend_call",
       "owner_spec": "012-ia-jobs-produccion",
       "signature": "GET:/jobs/{jobId}",
-      "source_line": 110,
+      "source_line": 156,
       "source_path": "frontend/src/modules/calificaciones/gradingJobs.ts",
       "states": [],
       "tests": [
@@ -23636,7 +24465,7 @@
       "kind": "frontend_call",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "POST:/analytics/evento",
-      "source_line": 40,
+      "source_line": 139,
       "source_path": "frontend/src/lib/analytics.ts",
       "states": [],
       "tests": [
@@ -23673,6 +24502,61 @@
         {
           "level": "unit",
           "reference": "POST:/analytics/evento",
+          "status": "direct",
+          "test_path": "frontend/src/lib/analytics.test.ts"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "admin",
+        "profesor"
+      ],
+      "authorization": [
+        "RequireRole"
+      ],
+      "consumers": [],
+      "coverage": "missing",
+      "details": {
+        "backend_contract": "backend:POST:/analytics/sesiones-trabajo/{session_id}/eventos",
+        "backend_contract_candidates": [],
+        "contract_status": "matched"
+      },
+      "id": "frontend_call:POST:/analytics/sesiones-trabajo/{sessionId}/eventos:frontend/src/lib/analytics.ts",
+      "kind": "frontend_call",
+      "owner_spec": "011-reportes-analitica-impacto",
+      "signature": "POST:/analytics/sesiones-trabajo/{sessionId}/eventos",
+      "source_line": 113,
+      "source_path": "frontend/src/lib/analytics.ts",
+      "states": [],
+      "tests": []
+    },
+    {
+      "actors": [
+        "admin",
+        "profesor"
+      ],
+      "authorization": [
+        "RequireRole"
+      ],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
+        "backend_contract": "backend:POST:/analytics/sesiones-trabajo",
+        "backend_contract_candidates": [],
+        "contract_status": "matched"
+      },
+      "id": "frontend_call:POST:/analytics/sesiones-trabajo:frontend/src/lib/analytics.ts",
+      "kind": "frontend_call",
+      "owner_spec": "011-reportes-analitica-impacto",
+      "signature": "POST:/analytics/sesiones-trabajo",
+      "source_line": 95,
+      "source_path": "frontend/src/lib/analytics.ts",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "POST:/analytics/sesiones-trabajo",
           "status": "direct",
           "test_path": "frontend/src/lib/analytics.test.ts"
         }
@@ -25330,6 +26214,86 @@
           "reference": "POST:/herramientas/{id}/retirar-apoyo",
           "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_render_contracts.py"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "ambiguous"
+      ],
+      "authorization": [],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
+        "backend_contract": null,
+        "backend_contract_candidates": [],
+        "contract_status": "unmatched"
+      },
+      "id": "frontend_call:POST:/impacto/estudios/{id}/{action}:frontend/src/modules/analytics/AnalyticsPage.tsx",
+      "kind": "frontend_call",
+      "owner_spec": "011-reportes-analitica-impacto",
+      "signature": "POST:/impacto/estudios/{id}/{action}",
+      "source_line": 906,
+      "source_path": "frontend/src/modules/analytics/AnalyticsPage.tsx",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "POST:/impacto/estudios/{id}/{action}",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_analytics_events.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/impacto/estudios/{id}/{action}",
+          "status": "direct",
+          "test_path": "frontend/e2e/p2-responsive.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/impacto/estudios/{id}/{action}",
+          "status": "domain",
+          "test_path": "frontend/src/lib/analytics.test.ts"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "ambiguous"
+      ],
+      "authorization": [],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
+        "backend_contract": "backend:POST:/impacto/estudios",
+        "backend_contract_candidates": [],
+        "contract_status": "matched"
+      },
+      "id": "frontend_call:POST:/impacto/estudios:frontend/src/modules/analytics/AnalyticsPage.tsx",
+      "kind": "frontend_call",
+      "owner_spec": "011-reportes-analitica-impacto",
+      "signature": "POST:/impacto/estudios",
+      "source_line": 894,
+      "source_path": "frontend/src/modules/analytics/AnalyticsPage.tsx",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "POST:/impacto/estudios",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_analytics_events.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/impacto/estudios",
+          "status": "direct",
+          "test_path": "frontend/e2e/p2-responsive.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/impacto/estudios",
+          "status": "domain",
+          "test_path": "frontend/src/lib/analytics.test.ts"
         }
       ]
     },
@@ -27392,7 +28356,7 @@
       "kind": "job",
       "owner_spec": "012-ia-jobs-produccion",
       "signature": "tasks.grade_batch",
-      "source_line": 767,
+      "source_line": 857,
       "source_path": "backend/app/workers/tasks_grading.py",
       "states": [
         "cancelled",
@@ -27446,7 +28410,7 @@
       "kind": "job",
       "owner_spec": "012-ia-jobs-produccion",
       "signature": "tasks.grade_delivery",
-      "source_line": 821,
+      "source_line": 911,
       "source_path": "backend/app/workers/tasks_grading.py",
       "states": [
         "cancelled",
@@ -27627,7 +28591,7 @@
       "kind": "job",
       "owner_spec": "012-ia-jobs-produccion",
       "signature": "tasks.recover_stale_grading_jobs",
-      "source_line": 928,
+      "source_line": 1018,
       "source_path": "backend/app/workers/tasks_grading.py",
       "states": [
         "cancelled",
@@ -28116,6 +29080,61 @@
         {
           "level": "unit",
           "reference": "analytics_eventos",
+          "status": "domain",
+          "test_path": "frontend/src/lib/analytics.test.ts"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "system"
+      ],
+      "authorization": [],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
+        "active": true,
+        "class": "AnalyticsWorkSession",
+        "constraints": [],
+        "enum_refs": [],
+        "historical_only": false,
+        "identity": [
+          "id"
+        ],
+        "indexes": [],
+        "migrations": [
+          "backend/alembic/versions/202609090001_analytics_work_sessions.py"
+        ],
+        "relationships": [
+          "calificaciones.id",
+          "evaluaciones.id",
+          "users.id"
+        ],
+        "unique": []
+      },
+      "id": "table:analytics_work_sessions",
+      "kind": "table",
+      "owner_spec": "011-reportes-analitica-impacto",
+      "signature": "analytics_work_sessions",
+      "source_line": 32,
+      "source_path": "backend/app/modules/analytics/models.py",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "analytics_work_sessions",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_ai_job_leases.py"
+        },
+        {
+          "level": "unit",
+          "reference": "analytics_work_sessions",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_analytics_events.py"
+        },
+        {
+          "level": "unit",
+          "reference": "analytics_work_sessions",
           "status": "domain",
           "test_path": "frontend/src/lib/analytics.test.ts"
         }
@@ -29163,6 +30182,12 @@
           "test_path": "backend/tests/unit/test_teacher_review_inbox.py"
         },
         {
+          "level": "unit",
+          "reference": "calificaciones",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_vision_extractor.py"
+        },
+        {
           "level": "e2e",
           "reference": "calificaciones",
           "status": "direct",
@@ -29403,6 +30428,12 @@
         {
           "level": "unit",
           "reference": "entregas",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_explainable_grading_pipeline.py"
+        },
+        {
+          "level": "unit",
+          "reference": "entregas",
           "status": "domain",
           "test_path": "backend/tests/unit/test_calificaciones_boletin_permissions.py"
         },
@@ -29421,7 +30452,7 @@
         {
           "level": "unit",
           "reference": "entregas",
-          "status": "domain",
+          "status": "direct",
           "test_path": "backend/tests/unit/test_calificaciones_revision_workspace.py"
         },
         {
@@ -29640,6 +30671,12 @@
           "level": "unit",
           "reference": "evaluaciones",
           "status": "direct",
+          "test_path": "backend/tests/integration/test_ai_job_leases.py"
+        },
+        {
+          "level": "unit",
+          "reference": "evaluaciones",
+          "status": "direct",
           "test_path": "backend/tests/integration/test_api_contract.py"
         },
         {
@@ -29659,6 +30696,12 @@
           "reference": "evaluaciones",
           "status": "direct",
           "test_path": "backend/tests/integration/test_resource_assignment_access.py"
+        },
+        {
+          "level": "unit",
+          "reference": "evaluaciones",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_analytics_events.py"
         },
         {
           "level": "unit",
@@ -29971,6 +31014,103 @@
       "coverage": "covered",
       "details": {
         "active": true,
+        "class": "ImpactObservation",
+        "constraints": [],
+        "enum_refs": [],
+        "historical_only": false,
+        "identity": [
+          "id"
+        ],
+        "indexes": [],
+        "migrations": [
+          "backend/alembic/versions/202609090002_impact_studies.py"
+        ],
+        "relationships": [
+          "calificaciones.id",
+          "evaluaciones.id",
+          "impacto_observations.id",
+          "impacto_studies.id",
+          "users.id"
+        ],
+        "unique": [
+          "external_id",
+          "revision",
+          "study_id"
+        ]
+      },
+      "id": "table:impacto_observations",
+      "kind": "table",
+      "owner_spec": "011-reportes-analitica-impacto",
+      "signature": "impacto_observations",
+      "source_line": 43,
+      "source_path": "backend/app/modules/impacto_tesis/models.py",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "impacto_observations",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_ai_job_leases.py"
+        },
+        {
+          "level": "unit",
+          "reference": "impacto_observations",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_explainable_grading_pipeline.py"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "system"
+      ],
+      "authorization": [],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
+        "active": true,
+        "class": "ImpactStudy",
+        "constraints": [],
+        "enum_refs": [],
+        "historical_only": false,
+        "identity": [
+          "id"
+        ],
+        "indexes": [],
+        "migrations": [
+          "backend/alembic/versions/202609090002_impact_studies.py"
+        ],
+        "relationships": [
+          "impacto_studies.id",
+          "users.id"
+        ],
+        "unique": []
+      },
+      "id": "table:impacto_studies",
+      "kind": "table",
+      "owner_spec": "011-reportes-analitica-impacto",
+      "signature": "impacto_studies",
+      "source_line": 14,
+      "source_path": "backend/app/modules/impacto_tesis/models.py",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "impacto_studies",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_ai_job_leases.py"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "system"
+      ],
+      "authorization": [],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
+        "active": true,
         "class": "MailGlobalConfig",
         "constraints": [
           "id = 1"
@@ -30147,6 +31287,12 @@
           "reference": "materias",
           "status": "direct",
           "test_path": "backend/tests/integration/test_business_flow_smoke.py"
+        },
+        {
+          "level": "unit",
+          "reference": "materias",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_explainable_grading_pipeline.py"
         },
         {
           "level": "unit",
@@ -31019,7 +32165,7 @@
       ],
       "authorization": [],
       "consumers": [],
-      "coverage": "missing",
+      "coverage": "covered",
       "details": {
         "active": true,
         "class": "RagSource",
@@ -31046,7 +32192,14 @@
       "source_line": 15,
       "source_path": "backend/app/modules/rag/models.py",
       "states": [],
-      "tests": []
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "rag_sources",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_explainable_grading_pipeline.py"
+        }
+      ]
     },
     {
       "actors": [
@@ -31259,6 +32412,12 @@
           "reference": "users",
           "status": "direct",
           "test_path": "backend/tests/integration/test_admin_users_rbac.py"
+        },
+        {
+          "level": "unit",
+          "reference": "users",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_ai_job_leases.py"
         },
         {
           "level": "unit",

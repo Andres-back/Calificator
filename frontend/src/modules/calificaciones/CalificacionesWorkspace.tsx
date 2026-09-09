@@ -6,7 +6,7 @@ import toast from 'react-hot-toast';
 import {
   ArrowLeft, BookOpenCheck, Camera, CheckCircle2, ChevronDown, ChevronRight,
   Clock, ExternalLink, FileImage, FileText, GraduationCap, Pencil, RotateCcw,
-  LoaderCircle, Search, ShieldAlert, Sparkles, X,
+  LoaderCircle, Pause, Play, Search, ShieldAlert, Sparkles, Square, X,
 } from 'lucide-react';
 import { Badge, Button, Card, ConfirmDialog, Field, Input, Modal, Select, Skeleton, Textarea } from '@/components/ui';
 import { PageHeader } from '@/components/layout/PageHeader';
@@ -16,7 +16,16 @@ import { getEvaluacion, listEvaluaciones } from '@/modules/evaluaciones/api';
 import { queryClient } from '@/lib/queryClient';
 import { toApiError } from '@/lib/api';
 import { cn } from '@/lib/cn';
-import { trackEvent } from '@/lib/analytics';
+import {
+  elapsedFromMonotonic,
+  listTeacherWorkSessions,
+  sendTeacherWorkCommand,
+  startTeacherWorkSession,
+  trackEvent,
+  type TeacherWorkCondition,
+  type TeacherWorkPhase,
+  type TeacherWorkSession,
+} from '@/lib/analytics';
 import { routes } from '@/config/routes';
 import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 import {
@@ -38,6 +47,14 @@ import type { BatchResult, Calificacion, CalificacionDetalle, GradeComponentChan
 const CONFIRMADA = 'confirmada';
 const AJUSTADA = 'ajustada';
 const PUBLICADA = 'publicada';
+
+// Los rediseños de revisión y la medición observada se activan de forma
+// independiente. Ausentes en el entorno significa apagados.
+const gradingFeatureFlags = Object.freeze({
+  reviewWorkspaceV2: import.meta.env.VITE_GRADING_REVIEW_WORKSPACE_V2_ENABLED === 'true',
+  teacherWorkTiming: import.meta.env.VITE_TEACHER_WORK_TIMING_ENABLED === 'true',
+  impactStudy: import.meta.env.VITE_IMPACT_STUDY_ENABLED === 'true',
+});
 
 
 /* States considered "teacher approved" */
@@ -349,6 +366,7 @@ function PanelDetalle({
   onPublish,
   onRechazar,
   onDirtyChange,
+  onMoveNext,
   confirmPending,
   adjustPending,
   publishPending,
@@ -362,6 +380,7 @@ function PanelDetalle({
   onPublish: (id: string) => void;
   onRechazar: (id: string) => void;
   onDirtyChange?: (dirty: boolean) => void;
+  onMoveNext?: () => void;
   confirmPending: boolean;
   adjustPending: boolean;
   publishPending: boolean;
@@ -375,8 +394,12 @@ function PanelDetalle({
   const [replacementReason, setReplacementReason] = useState('');
   const [editingComponentId, setEditingComponentId] = useState<string | null>(null);
   const [editingComponentDirty, setEditingComponentDirty] = useState(false);
+  const [breakdownSaveError, setBreakdownSaveError] = useState('');
   const [pendingEditorAction, setPendingEditorAction] = useState<string | 'close' | null>(null);
   const [showGlobalAdjustment, setShowGlobalAdjustment] = useState(false);
+  const [evidencePage, setEvidencePage] = useState(1);
+  const [evidenceLoadError, setEvidenceLoadError] = useState(false);
+  const evidenceSectionRef = useRef<HTMLElement | null>(null);
   const pendingClose = useRef<(() => void) | null>(null);
 
   const replacementMutation = useMutation({
@@ -400,30 +423,31 @@ function PanelDetalle({
     onError: (error) => toast.error(toApiError(error).detail),
   });
   const breakdownMutation = useMutation({
-    mutationFn: (change: GradeComponentChange) => {
+    mutationFn: ({ change }: { change: GradeComponentChange; advance: boolean }) => {
       if (!cal.desglose) throw new Error('No hay desglose vigente');
       return updateGradeBreakdown(cal.id, {
         version_esperada: cal.desglose.version,
         cambios_componentes: [change],
       });
     },
-    onSuccess: () => {
+    onSuccess: (_data, variables) => {
+      setBreakdownSaveError('');
       setEditingComponentDirty(false);
       setEditingComponentId(null);
       void queryClient.invalidateQueries({ queryKey: ['calificacion-detalle', cal.id] });
       void queryClient.invalidateQueries({ queryKey: ['calificaciones', cal.evaluacion_id] });
       void queryClient.invalidateQueries({ queryKey: ['grade-breakdown-history', cal.id] });
       toast.success('Puntaje actualizado y nota recalculada.');
+      if (variables.advance) onMoveNext?.();
     },
     onError: (error) => {
       const parsed = toApiError(error);
       if (parsed.status === 409) {
-        setEditingComponentDirty(false);
-        setEditingComponentId(null);
-        void queryClient.invalidateQueries({ queryKey: ['calificacion-detalle', cal.id] });
-        toast.error('La calificación cambió en otra revisión. Recargamos la versión vigente sin sobrescribirla.');
+        setBreakdownSaveError('La calificación cambió en otra revisión.');
+        toast.error('La calificación cambió en otra revisión. Conservamos tu borrador para que puedas compararlo.');
         return;
       }
+      setBreakdownSaveError(parsed.detail);
       toast.error(parsed.detail);
     },
   });
@@ -459,7 +483,10 @@ function PanelDetalle({
     setShowAjustar(cal.estado === 'requiere_revision');
     setAdjError('');
     setShowDirtyWarning(false);
+    setBreakdownSaveError('');
     pendingClose.current = null;
+    setEvidencePage(1);
+    setEvidenceLoadError(false);
   }, [cal.id, cal.estado, originalNota, originalFeedback]);
 
   // Notify parent about dirty state
@@ -473,6 +500,7 @@ function PanelDetalle({
       return;
     }
     setEditingComponentDirty(false);
+    setBreakdownSaveError('');
     setEditingComponentId(componentId);
   }
 
@@ -519,6 +547,14 @@ function PanelDetalle({
     || /\.pdf(?:$|[?#])/i.test(evidenceUrl ?? '')
   );
   const manualReview = cal.estado === 'requiere_revision';
+  const evidencePageUrl = evidenceUrl ? `${evidenceUrl}/paginas/${evidencePage}` : null;
+
+  function showEvidencePage(page: number) {
+    const normalized = Math.min(evidencePages, Math.max(1, page));
+    setEvidencePage(normalized);
+    setEvidenceLoadError(false);
+    evidenceSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
 
   function submitAjuste() {
     if (adjNota === '') { setAdjError('Escribe la nota que deseas asignar.'); return; }
@@ -626,7 +662,7 @@ function PanelDetalle({
         <div className="grid gap-4 xl:grid-cols-[minmax(0,1.15fr)_minmax(22rem,0.85fr)] xl:items-start">
           <div className="space-y-4">
             {evidenceUrl ? (
-              <section aria-labelledby="evidence-title" className="rounded-xl border border-border bg-surface-2">
+              <section ref={evidenceSectionRef} aria-labelledby="evidence-title" className="scroll-mt-4 rounded-xl border border-border bg-surface-2 xl:sticky xl:top-4">
                 <div className="flex items-center justify-between border-b border-border px-4 py-3 text-sm font-semibold text-muted">
                   <h2 id="evidence-title" className="flex items-center gap-2 text-base font-bold text-fg">
                     {isPdfEvidence ? <FileText className="h-5 w-5" /> : <FileImage className="h-5 w-5" />}
@@ -634,7 +670,7 @@ function PanelDetalle({
                     <Badge tone="neutral">{evidencePages} {evidencePages === 1 ? 'hoja' : 'hojas'}</Badge>
                   </h2>
                   <a
-                    href={evidenceUrl}
+                    href={evidencePageUrl ?? evidenceUrl}
                     target="_blank"
                     rel="noreferrer"
                     className="focus-ring inline-flex min-h-11 items-center gap-2 rounded-lg px-3 py-2 text-brand-700 hover:bg-brand-50 hover:text-brand-800 dark:text-brand-200 dark:hover:bg-brand-500/10 dark:hover:text-brand-100"
@@ -642,16 +678,33 @@ function PanelDetalle({
                     Abrir en grande <ExternalLink className="h-4 w-4" />
                   </a>
                 </div>
-                {isPdfEvidence ? (
-                  <iframe
-                    src={evidenceUrl}
-                    title="Evidencia PDF del estudiante"
-                    className="h-[34rem] w-full bg-white"
-                  />
+                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-3 py-2">
+                  <Button type="button" size="sm" variant="ghost" disabled={evidencePage <= 1} onClick={() => showEvidencePage(evidencePage - 1)}>Anterior</Button>
+                  <div className="flex max-w-full gap-1 overflow-x-auto py-1" aria-label="Páginas de evidencia">
+                    {Array.from({ length: evidencePages }, (_, index) => index + 1).map((page) => (
+                      <button
+                        key={page}
+                        type="button"
+                        onClick={() => showEvidencePage(page)}
+                        aria-current={page === evidencePage ? 'page' : undefined}
+                        className={cn('focus-ring min-h-9 min-w-9 rounded-lg px-2 text-xs font-bold', page === evidencePage ? 'bg-brand-600 text-white' : 'bg-surface text-muted hover:text-fg')}
+                      >{page}</button>
+                    ))}
+                  </div>
+                  <Button type="button" size="sm" variant="ghost" disabled={evidencePage >= evidencePages} onClick={() => showEvidencePage(evidencePage + 1)}>Siguiente</Button>
+                </div>
+                {evidenceLoadError ? (
+                  <div role="alert" className="flex min-h-56 flex-col items-center justify-center gap-3 bg-surface p-5 text-center">
+                    <FileImage className="h-8 w-8 text-muted" />
+                    <p className="text-sm text-muted">No se pudo mostrar esta hoja. Puedes abrir la evidencia completa.</p>
+                    <a href={evidenceUrl} target="_blank" rel="noreferrer" className="font-semibold text-brand-700 dark:text-brand-200">Abrir evidencia completa</a>
+                  </div>
                 ) : (
                   <img
-                    src={evidenceUrl}
-                    alt="Evidencia del estudiante"
+                    key={evidencePageUrl}
+                    src={evidencePageUrl ?? evidenceUrl}
+                    alt={`Hoja ${evidencePage} de la evidencia del estudiante`}
+                    onError={() => setEvidenceLoadError(true)}
                     className="max-h-[34rem] w-full bg-white object-contain p-2"
                   />
                 )}
@@ -727,15 +780,24 @@ function PanelDetalle({
             <GradeBreakdown
               breakdown={cal.desglose}
               onEdit={requestComponentEdit}
+              onEvidencePage={evidenceUrl ? showEvidencePage : undefined}
               editingComponentId={editingComponentId}
               renderEditor={(component) => (
                 <GradeComponentEditor
                   component={component}
                   formula={cal.desglose!.formula}
                   saving={breakdownMutation.isPending}
+                  saveError={breakdownSaveError}
                   onDirtyChange={setEditingComponentDirty}
                   onCancel={requestComponentClose}
-                  onSave={(change) => breakdownMutation.mutate(change)}
+                  onReload={() => {
+                    setBreakdownSaveError('');
+                    setEditingComponentDirty(false);
+                    setEditingComponentId(null);
+                    void queryClient.invalidateQueries({ queryKey: ['calificacion-detalle', cal.id] });
+                  }}
+                  onSave={(change) => breakdownMutation.mutate({ change, advance: false })}
+                  onSaveAndNext={onMoveNext ? (change) => breakdownMutation.mutate({ change, advance: true }) : undefined}
                 />
               )}
             />
@@ -1102,6 +1164,253 @@ function ManualGradeModal({
   );
 }
 
+const WORK_TIMER_STORAGE_KEY = 'xcalificator.teacher-work-session.v1';
+const TAKEOVER_TOKEN = '0'.repeat(64);
+
+function formatWorkDuration(milliseconds: number) {
+  const totalSeconds = Math.max(0, Math.floor(milliseconds / 1_000));
+  const hours = Math.floor(totalSeconds / 3_600);
+  const minutes = Math.floor((totalSeconds % 3_600) / 60);
+  const seconds = totalSeconds % 60;
+  return hours > 0
+    ? `${hours}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
+    : `${minutes}:${String(seconds).padStart(2, '0')}`;
+}
+
+function TeacherWorkTimer({ evaluacionId }: { evaluacionId: string }) {
+  const [session, setSession] = useState<TeacherWorkSession | null>(null);
+  const [ownerToken, setOwnerToken] = useState<string | null>(null);
+  const [condition, setCondition] = useState<TeacherWorkCondition>('asistida');
+  const [loading, setLoading] = useState(true);
+  const [sending, setSending] = useState(false);
+  const [message, setMessage] = useState('');
+  const [, setTick] = useState(0);
+  const lastAcknowledgedAt = useRef(performance.now());
+  const automaticRequest = useRef(false);
+
+  const persistOwner = useCallback((nextSession: TeacherWorkSession, token: string) => {
+    sessionStorage.setItem(WORK_TIMER_STORAGE_KEY, JSON.stringify({
+      id: nextSession.id,
+      ownerToken: token,
+    }));
+  }, []);
+
+  const applyResponse = useCallback((response: TeacherWorkSession) => {
+    const nextSession = response.rollover && response.continuation
+      ? response.continuation
+      : response;
+    const nextToken = response.owner_token ?? ownerToken;
+    setSession(nextSession);
+    if (nextToken) {
+      setOwnerToken(nextToken);
+      persistOwner(nextSession, nextToken);
+    }
+    if (nextSession.estado === 'completed' || nextSession.estado === 'incomplete') {
+      sessionStorage.removeItem(WORK_TIMER_STORAGE_KEY);
+      setOwnerToken(null);
+    }
+    lastAcknowledgedAt.current = performance.now();
+  }, [ownerToken, persistOwner]);
+
+  const recover = useCallback(async () => {
+    setLoading(true);
+    try {
+      const page = await listTeacherWorkSessions();
+      const open = page.items.find((item) => item.estado === 'active' || item.estado === 'paused') ?? null;
+      setSession(open);
+      setOwnerToken(null);
+      if (open) {
+        const raw = sessionStorage.getItem(WORK_TIMER_STORAGE_KEY);
+        if (raw) {
+          try {
+            const stored = JSON.parse(raw) as { id?: string; ownerToken?: string };
+            if (stored.id === open.id && stored.ownerToken) setOwnerToken(stored.ownerToken);
+          } catch {
+            sessionStorage.removeItem(WORK_TIMER_STORAGE_KEY);
+          }
+        }
+      } else {
+        sessionStorage.removeItem(WORK_TIMER_STORAGE_KEY);
+      }
+      lastAcknowledgedAt.current = performance.now();
+    } catch (error) {
+      setMessage(toApiError(error).detail);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void recover();
+  }, [recover]);
+
+  useEffect(() => {
+    if (session?.estado !== 'active' || !ownerToken) return undefined;
+    const interval = window.setInterval(() => setTick((value) => value + 1), 1_000);
+    return () => window.clearInterval(interval);
+  }, [ownerToken, session?.estado]);
+
+  const send = useCallback(async (
+    accion: 'heartbeat' | 'pausar' | 'reanudar' | 'cambiar_fase' | 'finalizar' | 'traspasar',
+    options: { automatic?: boolean; fase?: TeacherWorkPhase } = {},
+  ) => {
+    if (!session || automaticRequest.current) return;
+    const token = accion === 'traspasar' ? (ownerToken ?? TAKEOVER_TOKEN) : ownerToken;
+    if (!token) return;
+    const accumulates = session.estado === 'active'
+      && ['heartbeat', 'pausar', 'cambiar_fase', 'finalizar'].includes(accion);
+    const elapsedMs = accumulates
+      ? elapsedFromMonotonic(lastAcknowledgedAt.current, performance.now())
+      : 0;
+    automaticRequest.current = true;
+    if (!options.automatic) setSending(true);
+    setMessage('');
+    try {
+      const response = await sendTeacherWorkCommand({
+        sessionId: session.id,
+        expectedVersion: session.version,
+        ownerToken: token,
+        accion,
+        elapsedMs,
+        fase: options.fase,
+      });
+      applyResponse(response);
+    } catch (error) {
+      const apiError = toApiError(error);
+      setMessage(apiError.detail);
+      if (apiError.status === 409) {
+        setOwnerToken(null);
+        sessionStorage.removeItem(WORK_TIMER_STORAGE_KEY);
+        await recover();
+      }
+    } finally {
+      automaticRequest.current = false;
+      if (!options.automatic) setSending(false);
+    }
+  }, [applyResponse, ownerToken, recover, session]);
+
+  useEffect(() => {
+    if (session?.estado !== 'active' || !ownerToken) return undefined;
+    const interval = window.setInterval(() => {
+      void send('heartbeat', { automatic: true });
+    }, 15_000);
+    return () => window.clearInterval(interval);
+  }, [ownerToken, send, session?.estado]);
+
+  const start = async () => {
+    if (!evaluacionId) return;
+    setSending(true);
+    setMessage('');
+    try {
+      const response = await startTeacherWorkSession({
+        condicion: condition,
+        fase: 'revision',
+        evaluacion_id: evaluacionId,
+      });
+      applyResponse(response);
+    } catch (error) {
+      setMessage(toApiError(error).detail);
+      await recover();
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const liveElapsed = session?.estado === 'active' && ownerToken
+    ? elapsedFromMonotonic(lastAcknowledgedAt.current, performance.now())
+    : 0;
+  const displayedDuration = (session?.duracion_confirmada_ms ?? 0) + liveElapsed;
+
+  if (loading) {
+    return <Card className="mx-4 mb-4 h-16 animate-pulse" aria-label="Cargando medición de tiempo" />;
+  }
+
+  if (!session) {
+    return (
+      <Card className="mx-4 mb-4 flex flex-col gap-3 border-dashed p-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex min-w-0 items-start gap-3">
+          <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-sky-50 text-sky-600 dark:bg-sky-500/15 dark:text-sky-300">
+            <Clock className="h-5 w-5" />
+          </div>
+          <div>
+            <p className="font-semibold text-fg">Medir mi tiempo de revisión</p>
+            <p className="text-sm text-muted">Opcional. Separa tu trabajo activo de la espera de la IA.</p>
+            {message && <p className="mt-1 text-xs text-rose-600">{message}</p>}
+          </div>
+        </div>
+        <div className="flex flex-col gap-2 xs:flex-row">
+          <Select value={condition} onChange={(event) => setCondition(event.target.value as TeacherWorkCondition)} aria-label="Condición de trabajo">
+            <option value="asistida">Con asistencia de IA</option>
+            <option value="manual">Trabajo manual</option>
+          </Select>
+          <Button type="button" onClick={() => void start()} loading={sending}>
+            <Play className="h-4 w-4" /> Iniciar voluntariamente
+          </Button>
+        </div>
+      </Card>
+    );
+  }
+
+  const ownsSession = Boolean(ownerToken);
+  return (
+    <Card className="mx-4 mb-4 flex flex-col gap-3 p-4 xl:flex-row xl:items-center xl:justify-between" aria-live="polite">
+      <div className="flex min-w-0 items-center gap-3">
+        <div className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl ${session.estado === 'active' ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-300' : 'bg-amber-50 text-amber-600 dark:bg-amber-500/15 dark:text-amber-300'}`}>
+          <Clock className="h-5 w-5" />
+        </div>
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="font-semibold text-fg">Tiempo observado</p>
+            <Badge tone={session.estado === 'active' ? 'success' : 'warning'}>
+              {session.estado === 'active' ? 'En curso' : 'En pausa'}
+            </Badge>
+            <span className="font-mono text-lg font-bold tabular-nums text-fg">{formatWorkDuration(displayedDuration)}</span>
+          </div>
+          <p className="text-xs text-muted">
+            {session.condicion === 'asistida' ? 'Con asistencia de IA' : 'Trabajo manual'}
+            {session.incertidumbre_ms > 0 && ` · ${formatWorkDuration(session.incertidumbre_ms)} por revisar`}
+            {session.evaluacion_id !== evaluacionId && ' · vinculada a otra evaluación'}
+          </p>
+          {message && <p className="mt-1 text-xs text-rose-600">{message}</p>}
+        </div>
+      </div>
+      <div className="flex flex-wrap items-center gap-2">
+        {ownsSession ? (
+          <>
+            <Select
+              value={session.fase}
+              disabled={sending}
+              aria-label="Fase del trabajo"
+              onChange={(event) => void send('cambiar_fase', { fase: event.target.value as TeacherWorkPhase })}
+            >
+              <option value="preparacion">Preparación</option>
+              <option value="revision">Revisión</option>
+              <option value="correccion">Corrección</option>
+              <option value="finalizacion">Finalización</option>
+            </Select>
+            {session.estado === 'active' ? (
+              <Button type="button" variant="outline" disabled={sending} onClick={() => void send('pausar')}>
+                <Pause className="h-4 w-4" /> Pausar
+              </Button>
+            ) : (
+              <Button type="button" variant="outline" disabled={sending} onClick={() => void send('reanudar')}>
+                <Play className="h-4 w-4" /> Reanudar
+              </Button>
+            )}
+            <Button type="button" variant="outline" disabled={sending} onClick={() => void send('finalizar')}>
+              <Square className="h-4 w-4" /> Finalizar
+            </Button>
+          </>
+        ) : (
+          <Button type="button" disabled={sending} onClick={() => void send('traspasar')}>
+            Continuar en este dispositivo
+          </Button>
+        )}
+      </div>
+    </Card>
+  );
+}
+
 /* ─── Componente principal ─── */
 export function CalificacionesWorkspace() {
   const navigate = useNavigate();
@@ -1119,6 +1428,7 @@ export function CalificacionesWorkspace() {
   const [mobileDirty, setMobileDirty] = useState(false);
   const [mobileDirtyConfirm, setMobileDirtyConfirm] = useState(false);
   const [manualGradeOpen, setManualGradeOpen] = useState(false);
+  const [reviewCompleted, setReviewCompleted] = useState(false);
 
   const { data: materias } = useMaterias();
   const directEvaluation = useQuery({
@@ -1221,12 +1531,12 @@ export function CalificacionesWorkspace() {
       if (c.nota_sugerida == null) throw new Error('La calificación todavía está en proceso.');
       return confirmarNota(c.id, Number(c.nota_sugerida));
     },
-    onSuccess: () => { invalidate(); toast.success('Nota confirmada'); setConfirmingSingle(null); trackEvent('calificacion_confirmed', { evaluacion_id: evalId }); },
+    onSuccess: (_data, grade) => { invalidate(); toast.success('Nota confirmada'); setConfirmingSingle(null); trackEvent('calificacion_confirmed', { evaluacion_id: evalId, calificacion_id: grade.id }); },
     onError: (e) => toast.error(toApiError(e).detail),
   });
   const ajustarMut = useMutation({
     mutationFn: (args: { id: string; nota: number; feedback?: string }) => ajustarNota(args.id, args.nota, args.feedback),
-    onSuccess: () => { invalidate(); toast.success('Nota ajustada'); trackEvent('grade_adjusted', { evaluacion_id: evalId }); },
+    onSuccess: (_data, args) => { invalidate(); toast.success('Nota ajustada'); trackEvent('grade_adjusted', { evaluacion_id: evalId, calificacion_id: args.id }); },
     onError: (e) => toast.error(toApiError(e).detail),
   });
   const revisionMut = useMutation({
@@ -1236,7 +1546,7 @@ export function CalificacionesWorkspace() {
       invalidate();
       void queryClient.invalidateQueries({ queryKey: ['calificacion-detalle', cal.id] });
       toast.success('Sugerencia de IA descartada. Revisa y guarda la nota correcta.');
-      trackEvent('grade_marked_manual_review', { evaluacion_id: evalId });
+      trackEvent('grade_marked_manual_review', { evaluacion_id: evalId, calificacion_id: cal.id });
     },
     onError: (e) => toast.error(toApiError(e).detail),
   });
@@ -1264,7 +1574,7 @@ export function CalificacionesWorkspace() {
   });
   const publishMut = useMutation({
     mutationFn: (id: string) => publicarNota(id),
-    onSuccess: () => { invalidate(); toast.success('Nota publicada al estudiante'); trackEvent('calificacion_published', { evaluacion_id: evalId }); },
+    onSuccess: (_data, gradeId) => { invalidate(); toast.success('Nota publicada al estudiante'); trackEvent('calificacion_published', { evaluacion_id: evalId, calificacion_id: gradeId }); },
     onError: (e) => toast.error(toApiError(e).detail),
   });
   const publishBatchMut = useMutation({
@@ -1324,6 +1634,20 @@ export function CalificacionesWorkspace() {
     return { total: items.length, confirmed, pending: items.length - confirmed };
   }, [cals]);
 
+  const moveToNextGrade = useCallback(() => {
+    const currentIndex = displayedCals.findIndex((grade) => grade.id === selectedId);
+    const nextGrade = currentIndex >= 0 ? displayedCals[currentIndex + 1] : undefined;
+    setMobileDirty(false);
+    if (nextGrade) {
+      setSelectedId(nextGrade.id);
+      setReviewCompleted(false);
+      trackEvent('calificacion_opened', { calificacion_id: nextGrade.id, evaluacion_id: evalId });
+      return;
+    }
+    setSelectedId(null);
+    setReviewCompleted(true);
+  }, [displayedCals, evalId, selectedId]);
+
   function toggleSelect(id: string) {
     setSelectedBatch((prev) => {
       const next = new Set(prev);
@@ -1369,6 +1693,10 @@ export function CalificacionesWorkspace() {
         }
       />
 
+      {gradingFeatureFlags.teacherWorkTiming && evalId && (
+        <TeacherWorkTimer key={evalId} evaluacionId={evalId} />
+      )}
+
       {/* Selectores */}
       <Card className="mx-4 mb-4 grid gap-4 p-4 sm:grid-cols-2">
         <Field label="Materia">
@@ -1407,10 +1735,11 @@ export function CalificacionesWorkspace() {
                   <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
                   <input
                     type="text"
+                    aria-label="Buscar estudiante"
                     placeholder="Buscar estudiante…"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="focus-ring h-9 w-full rounded-lg border border-border bg-surface-2 pl-9 pr-3 text-sm"
+                    className="focus-ring h-11 w-full rounded-lg border border-border bg-surface-2 pl-9 pr-3 text-sm"
                   />
                 </div>
                 <div className="flex rounded-lg bg-surface-2 p-0.5">
@@ -1457,7 +1786,7 @@ export function CalificacionesWorkspace() {
                     <button
                       key={c.id}
                       type="button"
-                      onClick={() => { setSelectedId(c.id); trackEvent('calificacion_opened', { calificacion_id: c.id, evaluacion_id: evalId }); if (window.innerWidth < 1024) setSelectedBatch(new Set()); }}
+                      onClick={() => { setSelectedId(c.id); setReviewCompleted(false); trackEvent('calificacion_opened', { calificacion_id: c.id, evaluacion_id: evalId }); if (window.innerWidth < 1024) setSelectedBatch(new Set()); }}
                       className={`focus-ring flex w-full items-center gap-3 rounded-xl border p-3 text-left transition-all ${
                         selected ? 'border-brand-300 bg-brand-50 dark:bg-brand-500/10' : 'border-border bg-surface hover:bg-surface-2'
                       }`}
@@ -1539,6 +1868,7 @@ export function CalificacionesWorkspace() {
                     onPublish={(id) => publishMut.mutate(id)}
                     onRechazar={(id) => setRejectId(id)}
                     onDirtyChange={setMobileDirty}
+                    onMoveNext={moveToNextGrade}
                     confirmPending={confirmarMut.isPending}
                     adjustPending={ajustarMut.isPending}
                     publishPending={publishMut.isPending}
@@ -1550,7 +1880,13 @@ export function CalificacionesWorkspace() {
             </>
           ) : (
             <div className="hidden items-center justify-center p-5 text-sm text-muted lg:flex">
-              Selecciona un estudiante para ver el detalle.
+              {reviewCompleted ? (
+                <Card className="max-w-md border-emerald-200 p-6 text-center dark:border-emerald-500/30">
+                  <CheckCircle2 className="mx-auto h-10 w-10 text-emerald-500" />
+                  <p className="mt-3 text-lg font-bold text-fg">Revisión completada</p>
+                  <p className="mt-1 text-sm text-muted">Guardaste el último ajuste de esta lista. Las notas no se publicaron automáticamente.</p>
+                </Card>
+              ) : 'Selecciona un estudiante para ver el detalle.'}
             </div>
           )}
         </div>

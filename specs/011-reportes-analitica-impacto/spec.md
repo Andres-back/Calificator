@@ -53,6 +53,10 @@ Como equipo, necesito actualizar estos artefactos cuando cambie el comportamient
 - Registra comportamiento vigente; no introduce cambios funcionales.
 - Inconsistencias se convierten en issues separados.
 - Se conservan arquitectura y contratos públicos.
+## Evolución 032: medición y estudio implementados bajo bandera
+
+[032 Calificación e impacto docente](../032-calificacion-impacto-docente/spec.md), FR-014–023: medición observada por condición/fase, espera automática separada, comparación reproducible, instrumentos versionados y exportación minimizada. El estudio exige bandera, permisos y concesión por conjunto; inicia sintético y no altera notas. Las estimaciones históricas siguen separadas y no prueban ahorro.
+
 ## Inventario técnico
 
 - [Ver superficies, permisos y cobertura de este dominio](./inventory.md).

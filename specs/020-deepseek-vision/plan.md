@@ -56,3 +56,7 @@
 ## Aprobación
 
 El usuario entregó modelo, arquitectura, estados, pruebas y criterios de aceptación explícitos; se registra como aprobación humana de especificación y plan para esta implementación.
+
+## Coordinación con 032
+
+La evolución [032](../032-calificacion-impacto-docente/plan.md) garantiza entrada completa y partición excepcional sin cambiar el extractor configurado; 020 conserva la propiedad de visión y normalización.

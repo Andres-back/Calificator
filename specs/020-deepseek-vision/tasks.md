@@ -59,3 +59,5 @@ T001-T003 preceden T004-T007. T004-T007 preceden T008-T020. T021-T024 cierran la
 - FR-014, FR-015: T008, T010, T016 y T024.
 - FR-016: T003, T021 y T022.
 El MVP es T001-T016: extractor principal válido, multipágina y calificación desacoplada. La fase operativa y la medición son obligatorias antes de considerar completa la función.
+
+- [X] T032-REF Enlazar no truncamiento, continuidad multihoja y partición excepcional implementados en `specs/032-calificacion-impacto-docente/` (FR-001, FR-002, FR-003).

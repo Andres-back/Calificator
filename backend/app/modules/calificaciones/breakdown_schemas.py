@@ -35,9 +35,11 @@ class ComponenteRead(BaseModel):
     estado: str
     explicacion: str = ""
     explicacion_estudiante: str | None = None
+    orientacion_mejora: str | None = None
     origen: str = ""
     requiere_revision: bool = False
     evidencia_paginas: list[int] = Field(default_factory=list)
+    fuentes: list[dict] = Field(default_factory=list)
     valoraciones: list[dict] = Field(default_factory=list)
 
 
@@ -95,8 +97,10 @@ class ResumenVersion(BaseModel):
     id: UUID
     version: int
     origen: str
+    pipeline_run_id: str | None = None
     nota_final: Decimal
     activo: bool
+    es_sugerencia_inicial: bool = False
     actor_nombre: str | None = None
     created_at: datetime
 

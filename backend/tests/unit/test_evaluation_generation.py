@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+from datetime import datetime
 from decimal import Decimal
 from types import SimpleNamespace
 from uuid import uuid4
@@ -334,9 +335,13 @@ def test_rag_fallback_runs_after_native_query_savepoint(monkeypatch) -> None:
     class Result:
         def fetchall(self):
             return [
-                SimpleNamespace(
-                    id=uuid4(),
-                    chunk_text="Contexto recuperado",
+                    SimpleNamespace(
+                        id=uuid4(),
+                        source_id=uuid4(),
+                        source_title="Material local",
+                        source_metadata={"version": "v1"},
+                        source_created_at=datetime(2026, 9, 9),
+                        chunk_text="Contexto recuperado",
                     tipo="material",
                     similarity=0.5,
                     metadata={"fuente": "local"},

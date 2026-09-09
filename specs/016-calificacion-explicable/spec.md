@@ -169,6 +169,10 @@ Como responsable académico, necesito que calificaciones online, por visión, mi
 - Un DBA expresa alineación curricular y puede aparecer en la explicación, pero no representa puntos. Una rúbrica solo participa en la fórmula cuando el profesor definió criterios puntuables y pesos; de lo contrario es descriptiva.
 
 
+## Evolución 032: desglose semántico y contexto implementados bajo bandera
+
+[032 Calificación e impacto docente](../032-calificacion-impacto-docente/spec.md), FR-005, FR-007–011, FR-013 y FR-018: conserva identidad/fórmula, separa justificación de orientación, reconoce paráfrasis/crédito parcial y vincula fuentes autorizadas por pregunta. Guardar y continuar espera persistencia y los conflictos conservan el borrador. La verificación informada por la primera valoración se rotula como comprobación, no como juicio independiente.
+
 ## Evolución 018: edición contextual y regresión extensa
 
 - El editor de componente vive dentro de la respuesta seleccionada y conserva identidad, orden y posición aun cuando se invalidan consultas.

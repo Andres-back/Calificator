@@ -288,9 +288,11 @@ export interface GradeComponentData {
   estado: string;
   explicacion: string;
   explicacion_estudiante?: string | null;
+  orientacion_mejora?: string | null;
   origen: string;
   requiere_revision: boolean;
   evidencia_paginas: number[];
+  fuentes?: Array<{ source_id?: string; chunk_id?: string; titulo?: string; version?: string; fragmento?: string }>;
   valoraciones?: Record<string, unknown>[];
 }
 
@@ -333,8 +335,10 @@ export interface GradeBreakdownVersion {
   id: string;
   version: number;
   origen: string;
+  pipeline_run_id?: string | null;
   nota_final: number | string;
   activo: boolean;
+  es_sugerencia_inicial?: boolean;
   actor_nombre: string | null;
   created_at: string;
 }

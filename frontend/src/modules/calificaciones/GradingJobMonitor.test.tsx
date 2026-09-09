@@ -92,6 +92,7 @@ describe('GradingJobMonitor', () => {
       'Tu evidencia está guardada',
     );
     expect(screen.getByText('Estudiante Demo')).toBeInTheDocument();
+    expect(mocks.get).toHaveBeenCalledWith('/jobs/pendientes');
   });
 
   it.each(['requires_review', 'failed_permanent'])('stops the monitor on %s and preserves a recovery notice', async (estado) => {
@@ -116,8 +117,31 @@ describe('GradingJobMonitor', () => {
     } });
     render(<MemoryRouter><GradingJobMonitor /></MemoryRouter>);
     expect(await screen.findByText('14 listas · 13 en curso · 3 por revisar')).toBeInTheDocument();
-    expect(mocks.get).toHaveBeenCalledTimes(1);
+    expect(mocks.get).toHaveBeenCalledWith('/jobs/pendientes');
     expect(mocks.get).toHaveBeenCalledWith('/jobs/parent-job');
+  });
+
+  it('recovers an active grading monitor from the server after local storage is lost', async () => {
+    mocks.get.mockImplementation((url: string) => {
+      if (url === '/jobs/pendientes') {
+        return Promise.resolve({ data: { items: [{
+          job_id: 'recovered-job', evaluacion_id: 'evaluation-2', materia_id: 'subject-2',
+          estudiante_id: 'student-2', estudiante_nombre: 'Ana Recuperada', kind: 'individual',
+          total: 1, estado: 'running', progreso: 35, stage: 'vision',
+          created_at: new Date().toISOString(),
+        }] } });
+      }
+      return Promise.resolve({ data: {
+        id: 'recovered-job', estado: 'running', progreso: 35, error: null,
+      } });
+    });
+
+    render(<MemoryRouter><GradingJobMonitor /></MemoryRouter>);
+
+    expect(await screen.findByText('Ana Recuperada')).toBeInTheDocument();
+    expect(readPendingGradings()[0]).toMatchObject({
+      jobId: 'recovered-job', evaluacionId: 'evaluation-2', materiaId: 'subject-2',
+    });
   });
 
   it('keeps a completed batch with failures visible and retries only the selected child', async () => {

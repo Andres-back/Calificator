@@ -28,7 +28,7 @@
 | frontend_call | `POST:/xali/evaluaciones/{evaluacionId}/chat` | ambiguous | covered | `frontend/src/modules/xali/api.ts:17` |
 | frontend_call | `POST:/xali/refuerzos/generar` | ambiguous | covered | `frontend/src/modules/analytics/XaliRefuerzoModal.tsx:53` |
 | table | `rag_chunks` | system | covered | `backend/app/modules/rag/models.py:38` |
-| table | `rag_sources` | system | missing | `backend/app/modules/rag/models.py:15` |
+| table | `rag_sources` | system | covered | `backend/app/modules/rag/models.py:15` |
 | table | `xali_refuerzos` | system | covered | `backend/app/modules/xali/refuerzo_models.py:14` |
 | table | `xali_student_resources` | system | covered | `backend/app/modules/xali/student_resource_models.py:14` |
 
@@ -38,4 +38,4 @@ Sin decisiones explícitas de permiso para este dominio.
 
 ## Hallazgos
 
-- **low · missing_coverage**: 6 superficies de 009-xali-rag-refuerzos no tienen evidencia de prueba observable.
+- **low · missing_coverage**: 5 superficies de 009-xali-rag-refuerzos no tienen evidencia de prueba observable.

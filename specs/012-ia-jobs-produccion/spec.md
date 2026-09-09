@@ -83,3 +83,7 @@ Como equipo, necesito actualizar estos artefactos cuando cambie el comportamient
 - Un trabajo `queued` que no fue iniciado y perdió su mensaje de broker puede volver a publicarse de manera idempotente sin crear otra entrega, calificación o evidencia.
 - La recuperación automática solo reclama trabajos vencidos que continúan en `queued`; no interrumpe ni duplica inferencias `running`.
 - La especificación [022](../022-recuperar-trabajos-ia/spec.md) documenta el incidente, la regresión y la aceptación del hotfix; este dominio 012 conserva la propiedad técnica.
+
+## Evolución 032: checkpoints y escritor vigente
+
+[032 Calificación e impacto docente](../032-calificacion-impacto-docente/spec.md) agrega checkpoints reutilizables por huella compatible, intentos versionados y validación del escritor vigente antes de persistir. Un resultado tardío no sobrescribe revisión humana y un reintento no repite extracción válida. No se reducen verificadores ni se cancelan inferencias solo por demora.

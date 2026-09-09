@@ -132,3 +132,5 @@
 - T027, T028 y T029 cubren FR-005, FR-006, FR-007, FR-023 y FR-024.
 - T011, T030, T031 y T032 cubren FR-018 y FR-019.
 - T033, T034, T035, T036, T037, T038, T039, T046, T047 y T048 cubren FR-026, FR-027, FR-028, FR-029, FR-030, FR-031 y FR-032.
+
+- [X] T032-REF Enlazar checkpoints, estados de lote y separación de espera implementados en `specs/032-calificacion-impacto-docente/` (FR-004, FR-005, FR-006, FR-024, FR-025, FR-026); las metas reales de latencia siguen sujetas a benchmark autorizado.

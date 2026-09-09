@@ -1,8 +1,14 @@
 import { expect, test } from '@playwright/test';
 import { login } from '../fixtures/explainableGrading';
 
-test('revisión móvil conserva nombres, foco y objetivos táctiles', async ({ page }) => {
-  await page.setViewportSize({ width: 390, height: 844 });
+for (const viewport of [
+  { width: 360, height: 800 },
+  { width: 390, height: 844 },
+  { width: 768, height: 1024 },
+  { width: 1366, height: 768 },
+  { width: 1920, height: 1080 },
+]) test(`revisión conserva foco, scroll y controles en ${viewport.width}px`, async ({ page }) => {
+  await page.setViewportSize(viewport);
   await login(page, 'profesor');
   await page.goto('/app/calificaciones/workspace/e1');
   await page.getByText('Estudiante Prueba', { exact: true }).click();

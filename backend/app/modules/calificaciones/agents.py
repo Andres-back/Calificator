@@ -818,13 +818,158 @@ Devuelve SOLO JSON válido con este esquema:
     {{"nombre": "...", "puntaje": <número>, "maximo": <número>, "observacion": "..."}}
   ],
   "componentes": [
-    {{"clave": "pregunta:1", "respuesta_estudiante": "...", "puntaje": <número>, "estado": "correcta|parcial|incorrecta|sin_respuesta|ilegible|no_evaluable", "explicacion": "Razón verificable y concreta", "confianza": <0.0-1.0>, "paginas": [1]}}
+    {{"clave": "pregunta:1", "respuesta_estudiante": "...", "puntaje": <número>, "estado": "correcta|parcial|incorrecta|sin_respuesta|ilegible|no_evaluable", "explicacion": "Por qué esta evidencia obtiene ese puntaje", "orientacion_mejora": "Acción breve y concreta para mejorar, o vacío si no hace falta", "confianza": <0.0-1.0>, "paginas": [1]}}
   ],
   "feedback_estudiante": "...",
   "alertas": [],
   "requiere_revision_docente": true
 }}
 """
+
+
+def render_grader_prompt(ctx: AgentContext) -> str:
+    """Construye la entrada completa sin cortes silenciosos."""
+    return GRADER_PROMPT_TEMPLATE.format(
+        evaluacion_nombre=ctx.evaluacion_nombre,
+        nota_maxima=ctx.nota_maxima,
+        preguntas=json.dumps(ctx.blueprint.get("preguntas", []), ensure_ascii=False),
+        dba_text=json.dumps(ctx.blueprint.get("dba", []), ensure_ascii=False),
+        metas=json.dumps(ctx.blueprint.get("metas", []), ensure_ascii=False),
+        criterios=json.dumps(ctx.blueprint.get("criterios", []), ensure_ascii=False),
+        respuestas_esperadas=json.dumps(ctx.blueprint.get("respuestas_esperadas", []), ensure_ascii=False),
+        objective_validation=json.dumps(ctx.objective_validation, ensure_ascii=False),
+        errores_comunes=json.dumps(ctx.blueprint.get("errores_comunes", []), ensure_ascii=False),
+        rag_context=ctx.rag_context or "(sin contexto adicional)",
+        componentes_esperados=json.dumps(
+            [{**item, "puntos_maximos": float(item["puntos_maximos"])} for item in build_component_scaffold(ctx.blueprint)],
+            ensure_ascii=False,
+        ),
+        student_response=ctx.student_response_text,
+    )
+
+
+def _answer_text(item: dict | None) -> str:
+    if not item:
+        return "[sin respuesta detectada]"
+    response = item.get("respuesta")
+    if response is not None and str(response).strip():
+        return str(response)
+    if item.get("legible") is False or item.get("needs_review") or item.get("requiere_revision"):
+        return "[evidencia ilegible o ambigua; requiere revisión]"
+    if item.get("blank") or item.get("en_blanco"):
+        return "[sin respuesta]"
+    return "[sin respuesta detectada]"
+
+
+def partition_grading_context(
+    ctx: AgentContext,
+    detected_answers: list[dict],
+    *,
+    rag_context_by_question: dict[str, list[dict]] | None = None,
+    max_chars: int | None = None,
+) -> list[AgentContext]:
+    """Divide solo cuando la entrada completa no cabe; nunca recorta evidencia."""
+    budget = max(1000, int(max_chars or settings.PHOTO_GRADING_CONTEXT_BUDGET_CHARS))
+    if len(render_grader_prompt(ctx)) <= budget:
+        return [ctx]
+    questions = list(ctx.blueprint.get("preguntas") or [])
+    if len(questions) <= 1:
+        return [ctx]
+
+    scaffold = build_component_scaffold(ctx.blueprint)
+    points_by_number = {str(item.get("numero")): float(item["puntos_maximos"]) for item in scaffold}
+    answers = {
+        str(item.get("pregunta", item.get("numero"))): item
+        for item in detected_answers
+        if item.get("pregunta", item.get("numero")) is not None
+    }
+    expected = list(ctx.blueprint.get("respuestas_esperadas") or [])
+    partitions: list[AgentContext] = []
+    for index, question in enumerate(questions):
+        number = str(question.get("numero") or index + 1)
+        question_copy = dict(question)
+        question_copy["numero"] = question.get("numero") or index + 1
+        question_copy["puntaje"] = points_by_number.get(number, float(ctx.nota_maxima) / len(questions))
+        expected_subset = [
+            item for item in expected
+            if isinstance(item, dict) and str(item.get("numero") or item.get("id")) == number
+        ]
+        if not expected_subset and index < len(expected) and not isinstance(expected[index], dict):
+            expected_subset = [{"numero": question_copy["numero"], "respuesta": expected[index]}]
+        blueprint = {
+            **ctx.blueprint,
+            "nota_maxima": question_copy["puntaje"],
+            "preguntas": [question_copy],
+            "respuestas_esperadas": expected_subset,
+        }
+        rag_chunks = (rag_context_by_question or {}).get(number, [])
+        rag_text = "\n\n".join(
+            f"[Pregunta {number} · {chunk.get('source_title') or chunk.get('tipo') or 'Fuente'}]\n{chunk.get('chunk_text', '')}"
+            for chunk in rag_chunks
+        ) or "(sin fuentes adicionales pertinentes)"
+        partitions.append(AgentContext(
+            evaluacion_nombre=ctx.evaluacion_nombre,
+            nota_maxima=float(question_copy["puntaje"]),
+            blueprint=blueprint,
+            rag_context=rag_text,
+            student_response_text=f"P{number}: {_answer_text(answers.get(number))}",
+            objective_validation=[
+                item for item in ctx.objective_validation
+                if str(item.get("numero")) == number
+            ],
+            image_bytes=None,
+            image_mime=ctx.image_mime,
+        ))
+    return partitions
+
+
+def merge_partition_results(results: list[AgentResult], *, nota_maxima: float) -> AgentResult:
+    """Consolida resultados por clave una sola vez y conserva fallos visibles."""
+    successful = [result for result in results if result.nota_sugerida is not None]
+    components: list[dict] = []
+    seen: set[str] = set()
+    for result in results:
+        for component in result.componentes:
+            key = str(component.get("clave") or "")
+            if key and key not in seen:
+                seen.add(key)
+                components.append(component)
+    score = None if not successful else min(
+        float(nota_maxima),
+        sum(float(result.nota_sugerida or 0) for result in successful),
+    )
+    alerts = list(dict.fromkeys(
+        alert
+        for result in results
+        for alert in result.alertas
+    ))
+    if len(successful) != len(results):
+        alerts.append("Una o más preguntas no pudieron valorarse y requieren revisión docente.")
+    feedback = " ".join(dict.fromkeys(
+        result.feedback_estudiante.strip()
+        for result in successful
+        if result.feedback_estudiante.strip()
+    ))
+    return AgentResult(
+        nota_sugerida=score,
+        confianza=(
+            sum(float(result.confianza) for result in successful) / len(successful)
+            if successful else 0
+        ),
+        feedback_estudiante=feedback,
+        criterios=[criterion for result in results for criterion in result.criterios],
+        componentes=components,
+        alertas=alerts,
+        requiere_revision_docente=(
+            len(successful) != len(results)
+            or any(result.requiere_revision_docente for result in results)
+        ),
+        proveedor="particionado",
+        modelo=",".join(dict.fromkeys(result.modelo for result in results if result.modelo)),
+        tiempo_ms=sum(max(0, result.tiempo_ms) for result in results),
+        raw_output={"partition_count": len(results), "failed_partitions": len(results) - len(successful)},
+        error=None if successful else "all_partitions_failed",
+    )
 
 
 async def grader_agent(
@@ -839,20 +984,7 @@ async def grader_agent(
 ) -> AgentResult:
     """Agente calificador. Califica la respuesta del estudiante contra el blueprint."""
     nota_maxima = ctx.nota_maxima
-    prompt = GRADER_PROMPT_TEMPLATE.format(
-        evaluacion_nombre=ctx.evaluacion_nombre,
-        nota_maxima=nota_maxima,
-        preguntas=json.dumps(ctx.blueprint.get("preguntas", []), ensure_ascii=False),
-        dba_text=json.dumps(ctx.blueprint.get("dba", []), ensure_ascii=False),
-        metas=json.dumps(ctx.blueprint.get("metas", []), ensure_ascii=False),
-        criterios=json.dumps(ctx.blueprint.get("criterios", []), ensure_ascii=False),
-        respuestas_esperadas=json.dumps(ctx.blueprint.get("respuestas_esperadas", []), ensure_ascii=False),
-        objective_validation=json.dumps(ctx.objective_validation, ensure_ascii=False),
-        errores_comunes=json.dumps(ctx.blueprint.get("errores_comunes", []), ensure_ascii=False),
-        rag_context=ctx.rag_context or "(sin contexto adicional)",
-        componentes_esperados=json.dumps([{**item, "puntos_maximos": float(item["puntos_maximos"])} for item in build_component_scaffold(ctx.blueprint)], ensure_ascii=False),
-        student_response=ctx.student_response_text[:5000],
-    )
+    prompt = render_grader_prompt(ctx)
     own_client = False
     if client is None:
         client = OpenCodeClient()
@@ -973,7 +1105,7 @@ async def verification_agent(
             ],
             ensure_ascii=False,
         ),
-        student_response=ctx.student_response_text[:5000],
+        student_response=ctx.student_response_text,
         primary_result=json.dumps(
             {
                 "nota_sugerida": primary.nota_sugerida,
@@ -1064,7 +1196,7 @@ async def router_grader_agent(ctx: AgentContext) -> AgentResult:
         ),
         rag_context=ctx.rag_context or "(sin contexto adicional)",
         componentes_esperados=json.dumps([{**item, "puntos_maximos": float(item["puntos_maximos"])} for item in build_component_scaffold(ctx.blueprint)], ensure_ascii=False),
-        student_response=ctx.student_response_text[:5000],
+        student_response=ctx.student_response_text,
     )
     start = time.monotonic()
     try:

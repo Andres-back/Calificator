@@ -36,6 +36,7 @@ actualizar la especificación propietaria, su plan y sus tareas; no debe crear d
 | 028 | [Pulido de navegación y presentaciones](028-pulir-navegacion-presentaciones/spec.md) | layout y presentaciones | topbar, tarjeta lateral y generación pedagógica | sin tablas nuevas ni cambios de API | [#57](https://github.com/Andres-back/Calificator/issues/57) |
 | 029 | [Usuarios, roles y permisos modulares](029-roles-permisos-modulares/spec.md) | administración y autorización | usuarios, roles, permisos, navegación y rutas protegidas | users y nuevas relaciones de autorización | [#59](https://github.com/Andres-back/Calificator/issues/59) |
 | 031 | [Aceleración de pipelines de IA](031-acelerar-pipelines-ia/spec.md) | jobs, calificaciones, digitalización, presentaciones y routing IA | progreso, cola grupal, estados de nota y métricas por modelo | `ai_jobs`, `entregas`, `calificaciones`, `presentaciones`, telemetría | [#64](https://github.com/Andres-back/Calificator/issues/64) |
+| 032 | [Calificación confiable e impacto docente medible](032-calificacion-impacto-docente/spec.md) | calificaciones, jobs, analytics, rag e impacto_tesis | revisión explicable, tiempos observados y estudio autorizado | `calificaciones`, `ai_jobs`, `analytics_work_sessions`, `impacto_studies`, `impacto_observations` | [#65](https://github.com/Andres-back/Calificator/issues/65) |
 
 ## Reglas de propiedad
 
@@ -43,6 +44,12 @@ actualizar la especificación propietaria, su plan y sus tareas; no debe crear d
 - Los componentes compartidos se documentan en 002; su comportamiento de negocio se documenta en el dominio consumidor.
 - Una nueva superficie requiere actualizar este índice dentro del mismo PR.
 - Las inconsistencias detectadas se registran como issues; la línea base no cambia funcionalidad silenciosamente.
+## Evolución 032: implementación local completada bajo banderas
+
+- [Calificación confiable e impacto docente medible](032-calificacion-impacto-docente/spec.md) — [issue #65](https://github.com/Andres-back/Calificator/issues/65), alcance y [plan](032-calificacion-impacto-docente/plan.md) aprobados el 2026-09-09; historias US1–US5 implementadas y verificadas localmente. Banderas apagadas; sin piloto real ni despliegue.
+- Coordina 008/016, 009, 011, 020 y 012/031 sin trasladar propiedad de módulos, endpoints o tablas; su matriz identifica los requisitos de cada dominio.
+- No activa el piloto ni acredita metas de tiempo, Kappa o impacto antes de una medición real autorizada.
+
 ## Inventario técnico global
 
 - [Inventario canónico JSON](system-inventory/current.json)

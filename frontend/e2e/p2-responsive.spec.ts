@@ -12,7 +12,7 @@ const viewports = [
 ] as const;
 
 const users = {
-  admin: { id: 'admin-e2e', nombre: 'Administradora Prueba', email: 'admin@example.test', rol: 'admin', estado: 'activo', permissions: ['admin_ai.manage', 'presentations.read', 'reports.read', 'xali.use'] },
+  admin: { id: 'admin-e2e', nombre: 'Administradora Prueba', email: 'admin@example.test', rol: 'admin', estado: 'activo', permissions: ['admin_ai.manage', 'admin_settings.manage', 'presentations.read', 'reports.read', 'xali.use'] },
   profesor: {
     id: 'profesor-e2e', nombre: 'Profesor Prueba', email: 'profesor@example.test', rol: 'profesor', estado: 'activo',
     permissions: [
@@ -130,6 +130,12 @@ async function installApiMocks(page: Page, targetRole: Role) {
     if (path === '/reportes/profesor/resumen') return fulfillJson(route, { profesor_id: users.profesor.id, materias: [{ nombre: materia.nombre, total_calificaciones: 2, promedio: 4.4 }] });
     if (path === '/analytics/overview') return fulfillJson(route, analyticsOverview);
     if (path === '/analytics/evaluaciones') return fulfillJson(route, [{ id: 'e1', nombre: evaluacion.nombre, estado: 'publicada', total_entregas: 2, pendientes: 1, confirmadas: 1, publicadas: 1, promedio: 4.2, tasa_aprobacion: 0.8 }]);
+    if (path === '/impacto/estudios/disponibilidad') return fulfillJson(route, { enabled: true });
+    if (path === '/impacto/estudios') return fulfillJson(route, [{ id: 'study-1', nombre: 'Piloto sintético', estado: 'draft', synthetic_only: true, version: 1, participant_count: 0, created_at: '2026-09-09T00:00:00Z' }]);
+    if (path === '/impacto/estudios/study-1') return fulfillJson(route, { id: 'study-1', nombre: 'Piloto sintético', estado: 'draft', synthetic_only: true, version: 1, participant_count: 0, created_at: '2026-09-09T00:00:00Z', protocol: {} });
+    if (path === '/impacto/estudios/study-1/indicadores') return fulfillJson(route, { observations_current: 4, missing_count: 1, time_savings: { available: true, paired_units: 2, mean_percent: -8.5, reason: null }, kappa_independent: { available: false, value: null, reason: 'insufficient_sample', n: 1 }, exposed_grade_pairs: 3, feedback_quality: { available: true, n: 2, mean: 4.2 } });
+    if (path === '/impacto/estudios/study-1/observaciones') return fulfillJson(route, { items: [{ external_id: 'obs-1', revision: 1, teacher_pseudonym: 'doc-a1', condition: 'asistida', observed_at: '2026-09-09T00:00:00Z', payload: { type: 'timing' }, missing_reason: null, exclusion_reason: null }], page: 1, page_size: 20, total: 1 });
+    if (path === '/impacto/estudios/study-1/activar' && method === 'POST') return fulfillJson(route, { id: 'study-1', nombre: 'Piloto sintético', estado: 'active', synthetic_only: true, version: 2, participant_count: 0, created_at: '2026-09-09T00:00:00Z' });
     if (path === '/xali/history' || path === '/xali/evaluaciones-entregadas') return fulfillJson(route, []);
     if (path === '/admin/ai-settings') return fulfillJson(route, aiSettings);
     if (path === '/admin/ai-config-hash') return fulfillJson(route, { backend_hash: 'abc', worker_hash: 'abc', consistent: true, backend_source: 'database', worker_source: 'database', worker_error: null });
@@ -149,7 +155,7 @@ const routesByRole: Record<Role, string[]> = {
     '/app/analytics', '/app/presentaciones', '/app/reportes', '/app/xali',
   ],
   estudiante: ['/app', '/app/materias', '/app/evaluaciones', '/app/calificaciones/boletin', '/app/materias/m1', '/app/xali'],
-  admin: ['/app', '/app/admin/configuracion-ia', '/app/presentaciones', '/app/reportes', '/app/xali'],
+  admin: ['/app', '/app/admin/configuracion-ia', '/app/analytics', '/app/presentaciones', '/app/reportes', '/app/xali'],
 };
 
 for (const role of ['profesor', 'estudiante', 'admin'] as const) {
@@ -251,6 +257,33 @@ test('profesor recorre las siete vistas de una materia y escribe un DBA sin perd
   }
   await expect(page.getByRole('dialog')).toBeHidden();
   expect(errors, errors.join('\n')).toEqual([]);
+});
+
+test('el estudio solo aparece al administrador autorizado y diferencia sus métricas', async ({ page }) => {
+  await installApiMocks(page, 'admin');
+  await page.goto('/login');
+  await page.getByLabel(/Correo/i).fill(users.admin.email);
+  await page.locator('input[type="password"]').fill('password-for-test');
+  await page.getByRole('button', { name: /Iniciar sesión/i }).click();
+  await page.goto('/app/analytics');
+  await page.getByRole('button', { name: 'Estudio de impacto' }).click();
+
+  await expect(page.getByRole('heading', { name: 'Medición separada de las notas' })).toBeVisible();
+  await expect(page.getByText('-8.5%')).toBeVisible();
+  await expect(page.getByText('Kappa independiente · n=1')).toBeVisible();
+  await expect(page.getByText(/Los pares expuestos a la sugerencia \(3\)/)).toBeVisible();
+  await page.getByRole('button', { name: 'Activar sintético' }).click();
+  await expect(page.getByText('Piloto sintético activado.')).toBeVisible();
+});
+
+test('el docente con reportes no ve controles de estudio', async ({ page }) => {
+  await installApiMocks(page, 'profesor');
+  await page.goto('/login');
+  await page.getByLabel(/Correo/i).fill(users.profesor.email);
+  await page.locator('input[type="password"]').fill('password-for-test');
+  await page.getByRole('button', { name: /Iniciar sesión/i }).click();
+  await page.goto('/app/analytics');
+  await expect(page.getByRole('button', { name: 'Estudio de impacto' })).toHaveCount(0);
 });
 for (const viewport of [viewports[1], viewports[4]]) {
   test(`profesor mantiene modo oscuro y responsive en todas sus vistas en ${viewport.name}`, async ({ page }) => {

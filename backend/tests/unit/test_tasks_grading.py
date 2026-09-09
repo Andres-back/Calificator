@@ -107,6 +107,65 @@ def test_resolve_upload_path_rejects_traversal_and_external_urls(
         tasks_grading.resolve_upload_path(url)
 
 
+def test_extraction_fingerprint_invalidates_only_visual_dependencies() -> None:
+    base = {
+        "nombre": "Historia",
+        "preguntas": [{
+            "id": "q1",
+            "texto": "Explica",
+            "respuesta_correcta": "Primera clave",
+            "opciones": [{"texto": "A", "es_correcta": True}],
+        }],
+        "rubrica": {"respuesta_esperada": "Primera clave"},
+    }
+    first = tasks_grading._extraction_fingerprint(
+        image_bytes=b"same-evidence",
+        image_mime="image/jpeg",
+        blueprint=base,
+        ai_config={"vision": {"primary": {"model": "vision-1"}}},
+    )
+    solution_changed = {
+        **base,
+        "preguntas": [{
+            **base["preguntas"][0],
+            "respuesta_correcta": "Clave corregida",
+            "opciones": [{"texto": "A", "es_correcta": False}],
+        }],
+        "rubrica": {"respuesta_esperada": "Clave corregida"},
+    }
+    same_extraction = tasks_grading._extraction_fingerprint(
+        image_bytes=b"same-evidence",
+        image_mime="image/jpeg",
+        blueprint=solution_changed,
+        ai_config={"vision": {"primary": {"model": "vision-1"}}},
+    )
+    changed_question = tasks_grading._extraction_fingerprint(
+        image_bytes=b"same-evidence",
+        image_mime="image/jpeg",
+        blueprint={
+            **base,
+            "preguntas": [{**base["preguntas"][0], "texto": "Argumenta"}],
+        },
+        ai_config={"vision": {"primary": {"model": "vision-1"}}},
+    )
+    changed_model = tasks_grading._extraction_fingerprint(
+        image_bytes=b"same-evidence",
+        image_mime="image/jpeg",
+        blueprint=base,
+        ai_config={"vision": {"primary": {"model": "vision-2"}}},
+    )
+
+    assert first == same_extraction
+    assert first != changed_question
+    assert first != changed_model
+    assert first != tasks_grading._extraction_fingerprint(
+        image_bytes=b"different-evidence",
+        image_mime="image/jpeg",
+        blueprint=base,
+        ai_config={"vision": {"primary": {"model": "vision-1"}}},
+    )
+
+
 def test_grade_delivery_is_idempotent_when_grade_exists(monkeypatch) -> None:
     existing = SimpleNamespace(id=uuid4(), estado=CalificacionEstado.SUGERIDA.value)
     delivery = delivery_fixture()
@@ -219,17 +278,98 @@ def test_grade_delivery_creates_only_a_teacher_pending_suggestion(monkeypatch) -
     assert evaluation.estado == EvaluacionEstado.EN_CALIFICACION.value
 
 
-def test_grade_delivery_processes_existing_queued_placeholder(monkeypatch) -> None:
+def test_grade_delivery_reuses_a_compatible_vision_checkpoint(monkeypatch) -> None:
     evaluation = evaluation_fixture()
     delivery = delivery_fixture()
     delivery.evaluacion_id = evaluation.id
     delivery.materia_id = evaluation.materia_id
-    delivery.visual_text_json = {"pipeline_status": "queued", "job_id": "job-1"}
+    delivery.tipo = "foto"
+    delivery.visual_text_json = {"pipeline_status": "retrying"}
+    db = FakeDB()
+    job_id = uuid4()
+    evidence = b"same-photo"
+    blueprint = tasks_grading.evaluation_to_grading_blueprint(evaluation)
+    fingerprint = tasks_grading._extraction_fingerprint(
+        image_bytes=evidence,
+        image_mime="image/jpeg",
+        blueprint=blueprint,
+        ai_config={"vision": {"primary": {"model": "vision-1"}}},
+    )
+    checkpoint = {
+        "schema_version": 1,
+        "fingerprint": fingerprint,
+        "vision_result": {"content": {"response_text": "texto recuperado"}},
+    }
+
+    async def no_existing(_db, _entrega_id):
+        return None
+
+    async def fake_submission(_delivery):
+        return {
+            "student_response_text": "",
+            "image_bytes": evidence,
+            "image_mime": "image/jpeg",
+        }
+
+    async def owned(*_args, **_kwargs):
+        return None
+
+    async def job_result(*_args, **_kwargs):
+        return {"_checkpoint_v1": checkpoint}
+
+    async def fake_grade(*_args, **kwargs):
+        assert kwargs["vision_checkpoint"] == checkpoint
+        return GradingResult(
+            nota_sugerida=Decimal("4"),
+            nota_maxima=Decimal("5"),
+            confianza=0.9,
+            feedback_estudiante="Continúa así.",
+            raw_model_output={"source": "checkpoint-test"},
+        )
+
+    async def no_breakdown(*_args, **_kwargs):
+        return None
+
+    monkeypatch.setattr(tasks_grading.settings, "GRADING_RETRY_CHECKPOINTS_ENABLED", True)
+    monkeypatch.setattr(tasks_grading, "_existing_grade", no_existing)
+    monkeypatch.setattr(tasks_grading, "_load_submission", fake_submission)
+    monkeypatch.setattr(tasks_grading.jobs_service, "lock_owned_job", owned)
+    monkeypatch.setattr(tasks_grading.jobs_service, "get_job_result", job_result)
+    monkeypatch.setattr(tasks_grading, "grade_submission", fake_grade)
+    monkeypatch.setattr(tasks_grading, "create_automatic_breakdown", no_breakdown)
+
+    grade, created = asyncio.run(tasks_grading._grade_delivery(
+        db,
+        evaluacion=evaluation,
+        entrega=delivery,
+        profesor_id=evaluation.profesor_id,
+        ai_config={"vision": {"primary": {"model": "vision-1"}}},
+        job_id=job_id,
+        claim_token="owner-token",
+    ))
+
+    assert created is True
+    assert grade.nota_sugerida == Decimal("4")
+
+
+@pytest.mark.parametrize("pipeline_status", ["queued", "retrying"])
+def test_grade_delivery_processes_existing_retryable_placeholder(
+    monkeypatch,
+    pipeline_status: str,
+) -> None:
+    evaluation = evaluation_fixture()
+    delivery = delivery_fixture()
+    delivery.evaluacion_id = evaluation.id
+    delivery.materia_id = evaluation.materia_id
+    delivery.visual_text_json = {
+        "pipeline_status": pipeline_status,
+        "job_id": "job-1",
+    }
     existing = SimpleNamespace(
         id=uuid4(),
         nota_sugerida=None,
         revisado_por_docente=False,
-        resultado_json={"pipeline_status": "queued", "job_id": "job-1"},
+        resultado_json={"pipeline_status": pipeline_status, "job_id": "job-1"},
     )
     db = FakeDB()
 
