@@ -130,8 +130,6 @@ def _render_cached_evidence_page(
 ) -> tuple[Path, int, str]:
     """Renderiza una página acotada y reutiliza el PNG por huella del archivo."""
     fingerprint = _file_sha256(evidence_path)
-    cache_dir = get_upload_dir().resolve() / ".private" / "evidence-page-cache"
-    cache_path = cache_dir / f"{fingerprint}-p{page_number}.png"
 
     with evidence_path.open("rb") as source:
         signature = source.read(8)
@@ -148,6 +146,8 @@ def _render_cached_evidence_page(
                     )
                 if page_number > total_pages:
                     raise EvidencePageError("Página de evidencia no encontrada", not_found=True)
+                cache_dir = get_upload_dir().resolve() / ".private" / "evidence-page-cache"
+                cache_path = cache_dir / f"{fingerprint}-p{page_number}.png"
                 if cache_path.is_file():
                     return cache_path, total_pages, fingerprint
                 page = document.load_page(page_number - 1)
@@ -163,6 +163,8 @@ def _render_cached_evidence_page(
         if page_number != 1:
             raise EvidencePageError("Página de evidencia no encontrada", not_found=True)
         total_pages = 1
+        cache_dir = get_upload_dir().resolve() / ".private" / "evidence-page-cache"
+        cache_path = cache_dir / f"{fingerprint}-p{page_number}.png"
         if cache_path.is_file():
             return cache_path, total_pages, fingerprint
         try:

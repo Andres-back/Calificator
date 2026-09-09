@@ -154,5 +154,6 @@ No se activó un estudio, no se incorporaron docentes, no se usaron datos reales
 - E2E: los 50 escenarios del conjunto completo aprobaron individualmente. La primera ejecución concurrente cerró 49/50 por un único timeout de arranque de Vite en el caso docente 360x800; la matriz responsive se repitió secuencialmente y aprobó 23/23, incluido ese caso en 17,9 s.
 - Accesibilidad/visual: 5 resoluciones y 10 referencias claro/oscuro aprobadas en Chromium. Safari/iPhone y Brave físicos continúan como validación manual previa al piloto; no se afirma compatibilidad física basándose solo en emulación.
 - Empaquetado: `docker compose --profile production config --quiet`, imagen backend y web de producción aprobados. El inventario se regeneró con 523 superficies.
+- Regresión CI Linux: una solicitud inválida de página de evidencia ahora se rechaza antes de crear la caché; el caso dirigido aprobó y evita escrituras en `/app` para imágenes de una sola hoja o PDF sobre el límite.
 
 No se ejecutaron benchmarks con proveedores reales, llamadas pagadas, producción ni datos estudiantiles. Los objetivos de latencia, ahorro del 40 % y Kappa de 0,75 siguen siendo hipótesis por contrastar en un piloto institucional autorizado.
