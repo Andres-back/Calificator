@@ -107,6 +107,11 @@ class FeatureRouting(BaseModel):
     rollout_enabled: bool = True
     config_version: int = 1
     active: bool = True
+    recommended_for_feature: bool = False
+    sample_size: int = 0
+    p50_ms: int | None = None
+    p95_ms: int | None = None
+    efficiency_warning: str | None = None
 
 
 class FeatureRoutingPublication(BaseModel):
@@ -130,6 +135,17 @@ class AIProviderTestResponse(BaseModel):
     error: str | None = None
     detail: str | None = None
 
+
+class AIModelPerformance(BaseModel):
+    feature: str
+    sample_size: int = 0
+    p50_ms: int | None = None
+    p95_ms: int | None = None
+    success_rate: float | None = None
+    sample_sufficient: bool = False
+    inefficient: bool = False
+
+
 class AIModel(BaseModel):
     provider_id: str
     model_id: str
@@ -138,6 +154,7 @@ class AIModel(BaseModel):
     recommended: bool = False
     active: bool = True
     max_context_tokens: int | None = None
+    performance: list[AIModelPerformance] = Field(default_factory=list)
 
 
 class OllamaModelRead(BaseModel):

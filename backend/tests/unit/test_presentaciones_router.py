@@ -232,6 +232,9 @@ def test_profesor_creates_presentacion(monkeypatch) -> None:
 
     assert response.status_code == 201, response.text
     assert response.json()["estado"] == "queued"
+    fake_task.apply_async.assert_called_once_with(
+        args=[str(pres.id)], queue="presentations"
+    )
 
 
 def test_student_cannot_create_or_export_presentacion(monkeypatch) -> None:

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
-import { ArrowLeft, BookOpenCheck, CheckCircle2, ClipboardCheck, Clock3, Download, FileUp, MessageSquareWarning, PauseCircle, Send, TriangleAlert } from 'lucide-react';
+import { ArrowLeft, BookOpenCheck, CheckCircle2, ClipboardCheck, Clock3, Download, FileUp, LoaderCircle, MessageSquareWarning, PauseCircle, Send, TriangleAlert } from 'lucide-react';
 import { Badge, Button, Card, ConfirmDialog, EmptyState, Field, Modal, RichContent, Select, Skeleton, statusTone, Textarea } from '@/components/ui';
 import { MultiPageEvidencePicker } from '@/components/evidence/MultiPageEvidencePicker';
 import { evidenceFiles, evidenceRotations, type EvidencePage } from '@/components/evidence/evidencePayload';
@@ -80,6 +80,12 @@ export function ResolverEvaluacionPage() {
     queryFn: () => getMiEntrega(evaluacionId),
     enabled: Boolean(evaluacionId),
     retry: false,
+    refetchInterval: (query) => {
+      const delivery = query.state.data;
+      const queued = delivery?.estado === 'recibida' && (evaluacion?.modalidad !== 'mixta' || Boolean(delivery.archivo_url));
+      return delivery?.estado === 'procesando' || queued ? 5_000 : false;
+    },
+    refetchOnWindowFocus: true,
   });
 
   const activityQuery = useQuery({
@@ -127,6 +133,8 @@ export function ResolverEvaluacionPage() {
   const existingDelivery = myDelivery.data ?? null;
   const replacementRequested = Boolean(existingDelivery?.reemplazo_solicitado);
   const deliveryRequiresTeacherAttention = existingDelivery?.estado === 'requiere_reintento' && !replacementRequested;
+  const deliveryIsGrading = existingDelivery?.estado === 'procesando'
+    || (existingDelivery?.estado === 'recibida' && (modalidad !== 'mixta' || Boolean(existingDelivery.archivo_url)));
   const needsRetry = Boolean(submissionIssue && !enviada);
   const allowsMultipleAttempts = MULTIPLE_ATTEMPT_POLICIES.has(
     evaluacion?.politica_intento ?? 'un_intento',
@@ -220,7 +228,11 @@ export function ResolverEvaluacionPage() {
       toast.success(
         modalidad === 'mixta'
           ? 'Parte online guardada.'
-          : 'Entrega realizada. Quedó pendiente de calificación docente.',
+          : delivery.estado === 'requiere_reintento'
+            ? 'Entrega realizada. Quedó pendiente de calificación docente.'
+            : delivery.estado === 'procesando' || delivery.estado === 'recibida'
+              ? 'Entrega realizada. Ya estamos calificándola.'
+              : 'Entrega realizada.',
       );
     },
     onError: (error) => {
@@ -244,7 +256,10 @@ export function ResolverEvaluacionPage() {
           ? 'Tu entrega fue recibida. El docente fue notificado para revisarla o reprocesarla; no necesitas volver a enviarla.'
           : null,
       );
-      toast.success('Entrega realizada. Tu evidencia quedó pendiente de calificación docente.');
+      void queryClient.invalidateQueries({ queryKey: ['evaluacion', evaluacionId] });
+      toast.success(delivery.estado === 'procesando' || delivery.estado === 'recibida'
+        ? 'Entrega realizada. Ya estamos calificándola en segundo plano.'
+        : 'Entrega realizada. Tu evidencia está guardada.');
     },
     onError: (error) => {
       const detail = toApiError(error).detail;
@@ -488,15 +503,19 @@ export function ResolverEvaluacionPage() {
             </Card>
           )}
           {showDeliverySummary ? (
-            <Card className="space-y-4 border-emerald-200 p-5 dark:border-emerald-500/30">
+            <Card className={`space-y-4 p-5 ${deliveryIsGrading ? 'border-brand-200 dark:border-brand-500/30' : 'border-emerald-200 dark:border-emerald-500/30'}`}>
               <div className="flex items-start gap-3">
-                <CheckCircle2 className="mt-0.5 h-5 w-5 text-emerald-500" />
+                {deliveryIsGrading
+                  ? <LoaderCircle className="mt-0.5 h-5 w-5 animate-spin text-brand-500" aria-hidden="true" />
+                  : <CheckCircle2 className="mt-0.5 h-5 w-5 text-emerald-500" />}
                 <div>
                   <p className="font-semibold">
                     {evaluacion?.mi_nota_confirmada != null
                       ? 'Calificación confirmada'
                       : modalidad === 'mixta' && !physicalSubmitted
                         ? 'Parte online guardada'
+                        : deliveryIsGrading
+                          ? 'Calificando tu entrega'
                         : deliveryRequiresTeacherAttention
                           ? 'Entrega recibida'
                           : 'Entrega realizada'}
@@ -506,6 +525,8 @@ export function ResolverEvaluacionPage() {
                       ? `Tu nota es ${Number(evaluacion.mi_nota_confirmada).toFixed(1)} de ${Number(evaluacion.nota_maxima).toFixed(1)}.`
                       : modalidad === 'mixta' && !physicalSubmitted
                         ? 'Ahora entrega la parte física adjuntando una foto o PDF.'
+                        : deliveryIsGrading
+                          ? 'La evidencia está segura y se está calificando en segundo plano. Puedes seguir navegando; te avisaremos cuando esté lista.'
                         : deliveryRequiresTeacherAttention
                           ? 'Tu evidencia está segura. El docente debe revisarla o reprocesarla; no necesitas volver a enviarla.'
                           : 'Tu respuesta fue recibida y está pendiente de calificación docente.'}

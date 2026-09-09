@@ -6,7 +6,7 @@ import toast from 'react-hot-toast';
 import {
   ArrowLeft, BookOpenCheck, Camera, CheckCircle2, ChevronDown, ChevronRight,
   Clock, ExternalLink, FileImage, FileText, GraduationCap, Pencil, RotateCcw,
-  Search, ShieldAlert, Sparkles, X,
+  LoaderCircle, Search, ShieldAlert, Sparkles, X,
 } from 'lucide-react';
 import { Badge, Button, Card, ConfirmDialog, Field, Input, Modal, Select, Skeleton, Textarea } from '@/components/ui';
 import { PageHeader } from '@/components/layout/PageHeader';
@@ -31,6 +31,7 @@ import { GradeComponentEditor } from './components/GradeComponentEditor';
 import { GradeGlobalAdjustmentEditor } from './components/GradeGlobalAdjustmentEditor';
 import { GradeBreakdownHistory } from './components/GradeBreakdownHistory';
 import { formatAIModelSource } from './aiPipelineLabels';
+import { effectiveGradeScore, gradePresentation, isGradeProcessing } from './gradePresentation';
 import { formatTimelineScore } from './timeline';
 import type { BatchResult, Calificacion, CalificacionDetalle, GradeComponentChange, GradeFilter } from '@/types/api';
 
@@ -365,7 +366,7 @@ function PanelDetalle({
   adjustPending: boolean;
   publishPending: boolean;
 }) {
-  const [adjNota, setAdjNota] = useState(Number(cal.nota_confirmada ?? cal.nota_sugerida ?? 0));
+  const [adjNota, setAdjNota] = useState<number | ''>(effectiveGradeScore(cal) ?? '');
   const [adjFeedback, setAdjFeedback] = useState(cal.feedback ?? '');
   const [showAjustar, setShowAjustar] = useState(cal.estado === 'requiere_revision');
   const [adjError, setAdjError] = useState('');
@@ -446,19 +447,20 @@ function PanelDetalle({
   });
   const done = DONE_STATES.has(cal.estado);
   const published = cal.estado === PUBLICADA;
-  const originalNota = Number(cal.nota_confirmada ?? cal.nota_sugerida ?? 0);
+  const presentation = gradePresentation(cal);
+  const originalNota = effectiveGradeScore(cal) ?? '';
   const originalFeedback = cal.feedback ?? '';
   const isDirty = adjNota !== originalNota || adjFeedback !== originalFeedback;
 
   // Reset dirty state when cal changes
   useEffect(() => {
-    setAdjNota(Number(cal.nota_confirmada ?? cal.nota_sugerida ?? 0));
-    setAdjFeedback(cal.feedback ?? '');
+    setAdjNota(originalNota);
+    setAdjFeedback(originalFeedback);
     setShowAjustar(cal.estado === 'requiere_revision');
     setAdjError('');
     setShowDirtyWarning(false);
     pendingClose.current = null;
-  }, [cal.id, cal.estado, cal.nota_confirmada, cal.nota_sugerida, cal.feedback]);
+  }, [cal.id, cal.estado, originalNota, originalFeedback]);
 
   // Notify parent about dirty state
   useEffect(() => {
@@ -519,6 +521,7 @@ function PanelDetalle({
   const manualReview = cal.estado === 'requiere_revision';
 
   function submitAjuste() {
+    if (adjNota === '') { setAdjError('Escribe la nota que deseas asignar.'); return; }
     const n = Number(adjNota);
     if (isNaN(n) || n < 0) { setAdjError('Nota inválida'); return; }
     if (notaMaxima != null && n > notaMaxima) { setAdjError(`Máximo ${notaMaxima}`); return; }
@@ -547,18 +550,33 @@ function PanelDetalle({
         {/* Nota principal */}
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm text-muted">
-              {done ? (published ? 'Nota publicada' : 'Nota confirmada') : 'Nota sugerida'}
-            </p>
-            <p className="font-display text-4xl font-extrabold text-fg">
-              {Number(cal.nota_confirmada ?? cal.nota_sugerida ?? 0).toFixed(1)}
-              {notaMaxima != null && <span className="ml-2 text-lg font-semibold text-muted">/ {notaMaxima.toFixed(1)}</span>}
-            </p>
+            <p className="text-sm text-muted">{presentation.label}</p>
+            {presentation.score == null ? (
+              <div className="mt-2 flex items-center gap-2 font-semibold text-brand-600 dark:text-brand-300">
+                {presentation.processing && <LoaderCircle className="h-5 w-5 animate-spin" aria-hidden="true" />}
+                <span>{presentation.processing ? 'Analizando evidencia…' : 'Sin nota automática'}</span>
+              </div>
+            ) : (
+              <p className="font-display text-4xl font-extrabold text-fg">
+                {presentation.score.toFixed(1)}
+                {notaMaxima != null && <span className="ml-2 text-lg font-semibold text-muted">/ {notaMaxima.toFixed(1)}</span>}
+              </p>
+            )}
           </div>
-          <Badge tone={done ? (published ? 'brand' : 'success') : 'warning'}>
-            {published ? 'Publicada' : done ? 'Confirmada' : manualReview ? 'Revisión manual' : 'Por revisar'}
+          <Badge tone={presentation.processing ? 'brand' : done ? (published ? 'brand' : 'success') : 'warning'}>
+            {published ? 'Publicada' : done ? 'Confirmada' : presentation.processing ? 'Calificando' : manualReview ? 'Revisión manual' : 'Por revisar'}
           </Badge>
         </div>
+
+        {presentation.processing && (
+          <Card className="flex items-start gap-3 border-brand-200 bg-brand-50 p-4 dark:border-brand-500/30 dark:bg-brand-500/10">
+            <LoaderCircle className="mt-0.5 h-5 w-5 shrink-0 animate-spin text-brand-600" />
+            <div>
+              <p className="font-semibold">Calificando en segundo plano</p>
+              <p className="mt-1 text-sm text-muted">La evidencia está segura. Esta vista se actualizará cuando la sugerencia esté lista.</p>
+            </div>
+          </Card>
+        )}
 
         {answerKeyIncomplete && (
           <Card className="flex items-start gap-3 border-rose-200 bg-rose-50 p-4 dark:border-rose-500/30 dark:bg-rose-500/10">
@@ -744,14 +762,14 @@ function PanelDetalle({
           </Card>
         ) : null}
         {/* Feedback */}
-        <Field label="Retroalimentación">
+        {!presentation.processing && <Field label="Retroalimentación">
           <Textarea
             value={adjFeedback}
             onChange={(e) => setAdjFeedback(e.target.value)}
             placeholder="Escribe o edita el feedback para el estudiante…"
             rows={4}
           />
-        </Field>
+        </Field>}
 
         {/* Alertas */}
         {alertas.length > 0 && (
@@ -761,17 +779,17 @@ function PanelDetalle({
         )}
 
         {/* Acciones */}
-        {!done && (
+        {!done && !presentation.processing && (
           <div className="flex flex-wrap gap-2">
-            <Button
-              onClick={() => onConfirm(cal.id, adjNota)}
+            {presentation.score != null && <Button
+              onClick={() => onConfirm(cal.id, Number(adjNota))}
               loading={confirmPending}
-              disabled={confirmPending}
+              disabled={confirmPending || adjNota === ''}
             >
               <CheckCircle2 className="h-4 w-4" /> Confirmar nota
-            </Button>
+            </Button>}
             <Button variant="outline" onClick={() => setShowAjustar(!showAjustar)}>
-              <Pencil className="h-4 w-4" /> Ajustar
+              <Pencil className="h-4 w-4" /> {presentation.score == null ? 'Establecer nota' : 'Ajustar'}
             </Button>
             {!manualReview && (
               <Button variant="ghost" onClick={() => onRechazar(cal.id)}>
@@ -797,7 +815,7 @@ function PanelDetalle({
           </Card>
         )}
 
-        {showAjustar && (
+        {showAjustar && !presentation.processing && (
           <Card className="space-y-3 p-4">
             <Field label="Nota" hint={notaMaxima != null ? `0 - ${notaMaxima}` : undefined}>
               <Input
@@ -806,7 +824,7 @@ function PanelDetalle({
                 min={0}
                 max={notaMaxima}
                 value={adjNota}
-                onChange={(e) => { setAdjNota(Number(e.target.value)); setAdjError(''); }}
+                onChange={(e) => { setAdjNota(e.target.value === '' ? '' : Number(e.target.value)); setAdjError(''); }}
               />
               {adjError && <span className="mt-1 block text-xs text-rose-500">{adjError}</span>}
             </Field>
@@ -837,6 +855,7 @@ function PanelDetalle({
         <Button
           size="sm"
           onClick={() => {
+            if (adjNota === '') { setShowAjustar(true); setShowDirtyWarning(false); setAdjError('Escribe la nota que deseas asignar.'); return; }
             setShowDirtyWarning(false);
             if (!done) {
               onConfirm(cal.id, adjNota);
@@ -921,7 +940,7 @@ function BatchActions({
             size="sm"
             onClick={() => onConfirmBatch(selected.map((c) => ({
               calificacion_id: c.id,
-              nota_confirmada: Number(c.nota_sugerida ?? 0),
+              nota_confirmada: effectiveGradeScore(c)!,
             })))}
             loading={batchPending}
             disabled={batchPending}
@@ -1156,6 +1175,10 @@ export function CalificacionesWorkspace() {
     queryKey: ['calificaciones', evalId],
     queryFn: () => listCalificaciones(evalId),
     enabled: !!evalId,
+    refetchInterval: (query) => {
+      const grades = query.state.data as Calificacion[] | undefined;
+      return grades?.some(isGradeProcessing) ? 5_000 : false;
+    },
   });
   const { data: teacherInbox } = useQuery({
     queryKey: ['bandeja-docente'],
@@ -1180,6 +1203,10 @@ export function CalificacionesWorkspace() {
     queryKey: ['calificacion-detalle', selectedId],
     queryFn: () => getCalificacionDetalle(selectedId!),
     enabled: !!selectedId,
+    refetchInterval: (query) => {
+      const grade = query.state.data as CalificacionDetalle | undefined;
+      return grade && isGradeProcessing(grade) ? 5_000 : false;
+    },
   });
 
   const invalidate = useCallback(() => {
@@ -1190,7 +1217,10 @@ export function CalificacionesWorkspace() {
 
   // Mutations
   const confirmarMut = useMutation({
-    mutationFn: (c: Calificacion) => confirmarNota(c.id, Number(c.nota_sugerida ?? 0)),
+    mutationFn: (c: Calificacion) => {
+      if (c.nota_sugerida == null) throw new Error('La calificación todavía está en proceso.');
+      return confirmarNota(c.id, Number(c.nota_sugerida));
+    },
     onSuccess: () => { invalidate(); toast.success('Nota confirmada'); setConfirmingSingle(null); trackEvent('calificacion_confirmed', { evaluacion_id: evalId }); },
     onError: (e) => toast.error(toApiError(e).detail),
   });
@@ -1303,7 +1333,7 @@ export function CalificacionesWorkspace() {
   }
 
   const selectedArray = useMemo(
-    () => (cals ?? []).filter((c) => selectedBatch.has(c.id)),
+    () => (cals ?? []).filter((c) => selectedBatch.has(c.id) && effectiveGradeScore(c) != null),
     [cals, selectedBatch],
   );
 
@@ -1420,6 +1450,7 @@ export function CalificacionesWorkspace() {
                 {displayedCals.map((c) => {
                   const done = DONE_STATES.has(c.estado);
                   const published = c.estado === PUBLICADA;
+                  const presentation = gradePresentation(c);
                   const selected = selectedId === c.id;
                   const checked = selectedBatch.has(c.id);
                   return (
@@ -1433,12 +1464,13 @@ export function CalificacionesWorkspace() {
                     >
                       <div className="flex items-center gap-2 truncate">
                         <div
-                          onClick={(e) => { e.stopPropagation(); toggleSelect(c.id); }}
+                          onClick={(e) => { e.stopPropagation(); if (presentation.score != null) toggleSelect(c.id); }}
                           className={`grid h-5 w-5 shrink-0 place-items-center rounded border-2 transition ${
                             checked ? 'border-brand-500 bg-brand-500 text-white' : 'border-muted'
                           }`}
                           role="checkbox"
                           aria-checked={checked}
+                          aria-disabled={presentation.score == null}
                           tabIndex={-1}
                         >
                           {checked && <CheckCircle2 className="h-3.5 w-3.5" />}
@@ -1449,7 +1481,7 @@ export function CalificacionesWorkspace() {
                         <div className="min-w-0">
                           <p className="truncate text-sm font-semibold">{studentLabel(c, studentMap)}</p>
                           <div className="flex flex-wrap items-center gap-1.5">
-                            <Badge tone={done ? (published ? 'brand' : 'success') : 'warning'}>{published ? 'Publicada' : done ? 'Confirmada' : 'Pendiente'}</Badge>
+                            <Badge tone={presentation.processing ? 'brand' : done ? (published ? 'brand' : 'success') : 'warning'}>{published ? 'Publicada' : done ? 'Confirmada' : presentation.label}</Badge>
                             {Number(c.confianza ?? 0) < 0.5 && Number(c.confianza ?? 0) > 0 && (
                               <Badge tone="error">Conf. baja</Badge>
                             )}
@@ -1457,7 +1489,11 @@ export function CalificacionesWorkspace() {
                         </div>
                       </div>
                       <span className={`ml-auto shrink-0 font-display text-xl font-extrabold ${done && !published ? 'text-fg' : done ? 'text-brand-600' : 'text-amber-600'}`}>
-                        {Number(c.nota_confirmada ?? c.nota_sugerida ?? 0).toFixed(1)}
+                        {presentation.score == null
+                          ? presentation.processing
+                            ? <LoaderCircle className="h-5 w-5 animate-spin text-brand-500" aria-label="Calificando" />
+                            : <span aria-label="Sin nota">—</span>
+                          : presentation.score.toFixed(1)}
                       </span>
                     </button>
                   );
@@ -1552,7 +1588,7 @@ export function CalificacionesWorkspace() {
         description={
           <span>
             Vas a confirmar la nota de <strong>{confirmingSingle ? studentLabel(confirmingSingle, studentMap) : ''}</strong>
-            {' '}con <strong>{Number(confirmingSingle?.nota_sugerida ?? 0).toFixed(1)}</strong>.
+            {confirmingSingle?.nota_sugerida != null && <> con <strong>{Number(confirmingSingle.nota_sugerida).toFixed(1)}</strong></>}.
           </span>
         }
       />

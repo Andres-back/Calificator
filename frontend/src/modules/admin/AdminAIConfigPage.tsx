@@ -15,6 +15,11 @@ import { FeatureRoutingSection } from './ai/sections/FeatureRoutingSection';
 import { ConfigConsistencyCard } from './ai/sections/ConsistencySection';
 import { UsageAndAudit } from './ai/sections/AuditSection';
 
+const PERFORMANCE_FEATURE_ALIASES: Record<string, string[]> = {
+  presentaciones: ['presentaciones', 'presentacion'],
+  calificacion_foto: ['calificacion_foto', 'grading'],
+};
+
 export function AdminAIConfigPage() {
   const [testingProvider, setTestingProvider] = useState<string | null>(null);
   const [saveDialogOpen, setSaveDialogOpen] = useState(false);
@@ -74,6 +79,14 @@ export function AdminAIConfigPage() {
     }
     setSaveDialogOpen(true);
   }
+
+  const inefficientRoutes = draftFeatures.filter((feature) => {
+    const selected = draftModels.find((model) => (
+      model.provider_id === feature.primary_provider && model.model_id === feature.primary_model
+    ));
+    const aliases = PERFORMANCE_FEATURE_ALIASES[feature.feature] ?? [feature.feature];
+    return selected?.performance?.some((metric) => aliases.includes(metric.feature) && metric.inefficient);
+  });
 
   if (settingsQuery.isError) {
     const apiError = toApiError(settingsQuery.error);
@@ -197,7 +210,9 @@ export function AdminAIConfigPage() {
         onClose={() => setSaveDialogOpen(false)}
         onConfirm={() => saveMutation.mutate()}
         title="Guardar configuración de IA"
-        description="Los cambios se aplicarán al ruteo persistido de la plataforma y se invalidará la caché de configuración."
+        description={inefficientRoutes.length > 0
+          ? `Hay ${inefficientRoutes.length} ruta(s) con rendimiento inferior al mejor observado. Si confirmas, se respetará tu elección y no se sustituirá el modelo.`
+          : 'Los cambios se aplicarán al ruteo persistido de la plataforma y se invalidará la caché de configuración.'}
         confirmLabel="Guardar configuración"
         loading={saveMutation.isPending}
       />

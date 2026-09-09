@@ -18,6 +18,7 @@ import { calificarFoto } from './api';
 import { fotoTour } from './tourSteps';
 import type { Calificacion } from '@/types/api';
 import { addPendingGrading } from './gradingJobs';
+import { gradePresentation } from './gradePresentation';
 
 
 function gradingErrorMessage(error: unknown) {
@@ -150,8 +151,8 @@ export function CalificarFotoPage() {
   const noMaterias = !loadingMaterias && (!materias || materias.length === 0);
   const submissionPending = isSubmitting || calificar.isPending;
   const contextReady = Boolean(materiaId && evaluacionId && estudianteId && !evaluationClosed);
-  const gradingQueued = resultado?.resultado_json?.pipeline_status === 'queued'
-    || resultado?.resultado_json?.pipeline_status === 'running';
+  const presentation = resultado ? gradePresentation(resultado) : null;
+  const gradingQueued = presentation?.processing ?? false;
 
   return (
     <div className="space-y-6">
@@ -263,7 +264,7 @@ export function CalificarFotoPage() {
                     <div><p className="font-bold">Calificación en cola</p><p className="mt-1 text-sm">Puedes seguir navegando o cargar otra evidencia. Te avisaremos cuando esté lista.</p></div>
                   </div>
                 ) : (
-                  <div className="rounded-xl bg-brand-600 p-5 text-white shadow-sm"><p className="text-sm text-white/80">Nota sugerida</p><p className="font-display text-4xl font-extrabold">{Number(resultado.nota_sugerida ?? 0).toFixed(1)}{evaluacionSeleccionada?.nota_maxima != null && <span className="ml-2 text-lg font-semibold text-white/70">/ {Number(evaluacionSeleccionada.nota_maxima).toFixed(1)}</span>}</p></div>
+                  <div className="rounded-xl bg-brand-600 p-5 text-white shadow-sm"><p className="text-sm text-white/80">{presentation?.label}</p><p className="font-display text-4xl font-extrabold">{presentation?.score?.toFixed(1) ?? 'Sin nota automática'}{presentation?.score != null && evaluacionSeleccionada?.nota_maxima != null && <span className="ml-2 text-lg font-semibold text-white/70">/ {Number(evaluacionSeleccionada.nota_maxima).toFixed(1)}</span>}</p></div>
                 )}
                 {!gradingQueued && <div className="flex flex-wrap gap-2"><Badge tone="neutral">Confianza {confidenceLabel(resultado.confianza)}</Badge><Badge tone={resultado.estado === 'sugerida' ? 'warning' : 'brand'}>{resultado.estado}</Badge></div>}
                 {resultado.feedback && <div className="rounded-xl bg-surface-2 p-4 text-sm text-muted"><RichContent content={resultado.feedback} variant="feedback" /></div>}

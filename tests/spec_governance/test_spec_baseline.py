@@ -31,6 +31,7 @@ ALL_SPECS = {
     "027-listas-botones-personalizados",
     "028-pulir-navegacion-presentaciones",
     "029-roles-permisos-modulares",
+    "031-acelerar-pipelines-ia",
 }
 OWNED_SPECS = {
     name

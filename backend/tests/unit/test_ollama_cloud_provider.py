@@ -362,6 +362,7 @@ def test_dispatch_persisted_grading_uses_original_identifiers(monkeypatch: pytes
             "job_id": str(source_id),
             "profesor_id": str(teacher_id),
         },
+        queue="grading",
     )
 
 

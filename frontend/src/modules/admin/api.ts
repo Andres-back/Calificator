@@ -35,6 +35,11 @@ export interface FeatureRouting {
   rollout_enabled?: boolean;
   config_version?: number;
   active: boolean;
+  recommended_for_feature?: boolean;
+  sample_size?: number;
+  p50_ms?: number | null;
+  p95_ms?: number | null;
+  efficiency_warning?: string | null;
 }
 
 export interface AIModel {
@@ -45,6 +50,17 @@ export interface AIModel {
   recommended: boolean;
   active: boolean;
   max_context_tokens?: number | null;
+  performance?: AIModelPerformance[];
+}
+
+export interface AIModelPerformance {
+  feature: string;
+  sample_size: number;
+  p50_ms: number | null;
+  p95_ms: number | null;
+  success_rate: number | null;
+  sample_sufficient: boolean;
+  inefficient: boolean;
 }
 
 export interface GlobalAIConfig {

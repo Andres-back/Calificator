@@ -1,4 +1,5 @@
 import type { Calificacion } from '@/types/api';
+import { isGradeProcessing } from '@/modules/calificaciones/gradePresentation';
 
 export const TEACHER_DECISION_STATES = new Set([
   'confirmada',
@@ -15,6 +16,7 @@ export type GradingCounts = {
   total: number;
   pendientes: number;
   porRevisar: number;
+  calificando: number;
   decididas: number;
 };
 
@@ -34,10 +36,11 @@ export function summarizeGradingStudents(students: GradingStudent[]): GradingCou
       summary.total += 1;
       if (!student.calificacion) summary.pendientes += 1;
       else if (hasTeacherDecision(student.calificacion)) summary.decididas += 1;
+      else if (isGradeProcessing(student.calificacion)) summary.calificando += 1;
       else summary.porRevisar += 1;
       return summary;
     },
-    { total: 0, pendientes: 0, porRevisar: 0, decididas: 0 },
+    { total: 0, pendientes: 0, porRevisar: 0, calificando: 0, decididas: 0 },
   );
 }
 
@@ -52,7 +55,7 @@ export function currentGradingStep({
 }): 1 | 2 | 3 | 4 {
   if (!evaluationId) return 1;
   if (!studentId) return 2;
-  if (result) return 4;
+  if (result && !isGradeProcessing(result)) return 4;
   return 3;
 }
 
@@ -87,7 +90,7 @@ export function nextStudentNeedingAttention(
   );
   for (let offset = 1; offset <= students.length; offset += 1) {
     const candidate = students[(currentIndex + offset) % students.length];
-    if (!candidate.calificacion || !hasTeacherDecision(candidate.calificacion)) {
+    if (!candidate.calificacion || (!hasTeacherDecision(candidate.calificacion) && !isGradeProcessing(candidate.calificacion))) {
       return candidate.id;
     }
   }

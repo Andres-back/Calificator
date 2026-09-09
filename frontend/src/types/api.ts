@@ -219,6 +219,12 @@ export interface Presentacion {
   pptx_url: string | null;
   pdf_url: string | null;
   error: string | null;
+  etapa?: string | null;
+  mensaje?: string | null;
+  progreso?: number;
+  elapsed_ms?: number;
+  imagenes_completadas?: number;
+  imagenes_total?: number;
   created_at: string;
   updated_at: string;
 }
@@ -349,7 +355,7 @@ export interface Calificacion {
   updated_at: string;
 }
 
-export type CalificacionEstado = 'sugerida' | 'confirmada' | 'ajustada' | 'requiere_revision' | 'publicada' | 'anulada';
+export type CalificacionEstado = 'procesando' | 'sugerida' | 'confirmada' | 'ajustada' | 'requiere_revision' | 'publicada' | 'anulada';
 
 export interface CalificacionTimelineEvent {
   tipo: string;

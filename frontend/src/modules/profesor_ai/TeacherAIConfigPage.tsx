@@ -48,6 +48,13 @@ function compatibleModels(config: TeacherAIConfig, provider: string, capability:
   ));
 }
 
+function modelPerformance(config: TeacherAIConfig, preference: TeacherAIPreference | undefined) {
+  if (!preference?.provider || !preference.model) return undefined;
+  return config.models
+    .find((model) => model.provider_id === preference.provider && model.model_id === preference.model)
+    ?.performance?.find((metric) => metric.feature === preference.feature);
+}
+
 export function TeacherAIConfigPage() {
   const configQuery = useQuery({
     queryKey: queryKeys.teacherAI.config(),
@@ -103,6 +110,16 @@ export function TeacherAIConfigPage() {
       if (apiError.status === 409) void configQuery.refetch();
     },
   });
+
+  function requestConfigSave() {
+    const inefficient = preferences.filter((preference) => (
+      preference.active && modelPerformance(configQuery.data!, preference)?.inefficient
+    ));
+    if (inefficient.length > 0 && !window.confirm(
+      `Hay ${inefficient.length} modelo(s) con rendimiento inferior al mejor observado. ¿Deseas conservar tu selección?`,
+    )) return;
+    saveConfigMutation.mutate();
+  }
 
   const credentialMutation = useMutation({
     mutationFn: ({ provider, apiKey }: { provider: string; apiKey: string }) => saveTeacherCredential(provider, apiKey),
@@ -176,7 +193,7 @@ export function TeacherAIConfigPage() {
         title="Mi configuración de IA"
         subtitle="Puedes seguir usando la IA institucional o conectar una API propia. Tus claves son privadas y nunca se muestran de nuevo."
         breadcrumbs={[{ label: 'Inicio', to: '/app' }, { label: 'Mi configuración de IA' }]}
-        primaryAction={<Button loading={saveConfigMutation.isPending} onClick={() => saveConfigMutation.mutate()}>Guardar preferencias</Button>}
+        primaryAction={<Button loading={saveConfigMutation.isPending} onClick={requestConfigSave}>Guardar preferencias</Button>}
       />
 
       <section aria-labelledby="ai-mode-title">
@@ -301,6 +318,7 @@ export function TeacherAIConfigPage() {
               ));
               const selectedProvider = current?.provider ?? '';
               const models = compatibleModels(config, selectedProvider, capability);
+              const performance = modelPerformance(config, current);
               return (
                 <Card key={feature.feature} className="grid gap-3 p-4 md:grid-cols-[minmax(180px,1fr)_minmax(180px,1fr)_minmax(220px,1.2fr)] md:items-end">
                   <div><p className="font-semibold text-sm">{feature.label}</p><p className="mt-1 text-xs text-muted">Capacidad: {capability}</p></div>
@@ -320,6 +338,15 @@ export function TeacherAIConfigPage() {
                       {models.map((model) => <option key={model.model_id} value={model.model_id}>{model.label}{model.recommended ? ' · recomendado' : ''}</option>)}
                     </Select>
                   </Field>
+                  {selectedProvider && current?.model && (
+                    <p className={`text-xs md:col-span-3 ${performance?.inefficient ? 'text-amber-700 dark:text-amber-300' : 'text-muted'}`}>
+                      {!performance
+                        ? 'Sin mediciones todavía para esta función.'
+                        : performance.sample_sufficient
+                          ? `Rendimiento observado: p50 ${Math.round((performance.p50_ms ?? 0) / 1000)} s · p95 ${Math.round((performance.p95_ms ?? 0) / 1000)} s · ${performance.sample_size} casos${performance.inefficient ? ' · más lento que la mejor opción observada' : ''}.`
+                          : `Muestra insuficiente: ${performance.sample_size} de 5 casos mínimos.`}
+                    </p>
+                  )}
                 </Card>
               );
             })}

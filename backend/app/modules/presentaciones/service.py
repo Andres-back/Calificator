@@ -9,6 +9,7 @@ from __future__ import annotations
 import asyncio
 import json
 import re
+import time
 from typing import Any
 from uuid import UUID
 
@@ -16,6 +17,7 @@ from fastapi import HTTPException, status
 from sqlalchemy import and_, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import settings
 from app.core.logging import get_logger
 from app.db.session import AsyncSessionLocal
 from app.modules.materias import service as materias_service
@@ -197,6 +199,25 @@ BORRADOR
 
 Devuelve SOLO JSON valido con la forma {{"slides": [...]}}."""
 
+SLIDES_TARGETED_REPAIR_PROMPT = """Eres editor de una presentacion escolar.
+Corrige UNICAMENTE las diapositivas indicadas; no regeneres las demas.
+
+Tema: {tema}
+Area: {area}
+Grado: {grado}
+
+Problemas detectados:
+{issues}
+
+Diapositivas a corregir:
+{slides}
+
+Conserva el esquema de cada diapositiva, aporta contenido verificable del tema,
+evita repeticiones y corrige errores conceptuales o matematicos.
+Devuelve SOLO JSON con esta forma:
+{{"repairs":[{{"index": 1, "slide": {{...}}}}]}}
+El indice es base uno y debe coincidir con los indices recibidos."""
+
 
 GENERIC_PRESENTATION_MARKERS = (
     "reconocer el tema central",
@@ -335,11 +356,15 @@ async def generate_presentacion_assets(presentacion_id: UUID) -> str:
             await jobs_service.mark_job_running(db, presentacion_id)
             await db.commit()
             await _run_generation(db, pres)
+            persisted_result = await jobs_service.get_job_result(
+                db, presentacion_id
+            )
             await jobs_service.finish_job(
                 db,
                 presentacion_id,
                 estado=JobEstado.SUCCESS.value,
                 resultado_json={
+                    **persisted_result,
                     "status": JobEstado.SUCCESS.value,
                     "presentacion_id": str(presentacion_id),
                 },
@@ -386,6 +411,13 @@ async def generate_presentacion_assets(presentacion_id: UUID) -> str:
 
 
 async def _run_generation(db: AsyncSession, pres: Presentacion) -> None:
+    pipeline_started = time.monotonic()
+    timings_ms = {
+        "content": 0,
+        "images": 0,
+        "exports": 0,
+        "total": 0,
+    }
     payload = _payload_from_presentacion(pres)
     pres.estado = PresentacionEstado.RUNNING.value
     pres.error = None
@@ -398,17 +430,70 @@ async def _run_generation(db: AsyncSession, pres: Presentacion) -> None:
         error_amigable=None,
     )
     await db.commit()
+    await jobs_service.update_job_progress(
+        db,
+        pres.id,
+        progreso=20,
+        resultado_json={
+            "status": JobEstado.RUNNING.value,
+            "stage": "content",
+            "timings_ms": timings_ms,
+        },
+    )
+    await db.commit()
 
     stored_snapshot = (pres.slides_json or {}).get("_ai_config")
     ai_config = stored_snapshot if isinstance(stored_snapshot, dict) else None
+    content_started = time.monotonic()
     slides_normalized = await _generate_slides(
         payload,
         pres.profesor_id,
         ai_config=ai_config,
         source_job_id=pres.id,
     )
+    timings_ms["content"] = int(
+        (time.monotonic() - content_started) * 1000
+    )
+    timings_ms["total"] = int(
+        (time.monotonic() - pipeline_started) * 1000
+    )
+    generation_data = {
+        **(pres.slides_json or {}),
+        "slides": slides_normalized,
+    }
+    pres.slides_json = generation_data
+    pres.slides_json = _with_canonical_generation(
+        pres,
+        estado=PresentacionEstado.RUNNING.value,
+        etapa="images",
+        progreso=45,
+        mensaje="Preparando las imágenes educativas.",
+        error_amigable=None,
+    )
+    canonical = dict((pres.slides_json or {}).get("canonical") or {})
+    generation = dict(canonical.get("generation") or {})
+    generation["imagenes_total"] = _planned_image_count(slides_normalized, payload)
+    canonical["generation"] = generation
+    pres.slides_json = {**(pres.slides_json or {}), "canonical": canonical}
+    await db.commit()
+    await jobs_service.update_job_progress(
+        db,
+        pres.id,
+        progreso=45,
+        resultado_json={
+            "status": JobEstado.RUNNING.value,
+            "stage": "images",
+            "timings_ms": timings_ms,
+        },
+    )
+    await db.commit()
+    images_started = time.monotonic()
     await _attach_slide_images(
         db, pres, slides_normalized, payload, ai_config=ai_config
+    )
+    timings_ms["images"] = int((time.monotonic() - images_started) * 1000)
+    timings_ms["total"] = int(
+        (time.monotonic() - pipeline_started) * 1000
     )
     for slide in slides_normalized:
         slide.pop("_legacy_layout_fallback", None)
@@ -430,9 +515,25 @@ async def _run_generation(db: AsyncSession, pres: Presentacion) -> None:
     )
     pres.slides_json = legacy_data
     await db.commit()
+    await jobs_service.update_job_progress(
+        db,
+        pres.id,
+        progreso=75,
+        resultado_json={
+            "status": JobEstado.RUNNING.value,
+            "stage": "exports",
+            "timings_ms": timings_ms,
+        },
+    )
+    await db.commit()
 
+    exports_started = time.monotonic()
     await _store_local_export_result(db, pres, "pptx")
     await _store_local_export_result(db, pres, "pdf")
+    timings_ms["exports"] = int((time.monotonic() - exports_started) * 1000)
+    timings_ms["total"] = int(
+        (time.monotonic() - pipeline_started) * 1000
+    )
     pres.estado = PresentacionEstado.SUCCESS.value
     pres.error = None
     pres.slides_json = _with_canonical_generation(
@@ -443,6 +544,9 @@ async def _run_generation(db: AsyncSession, pres: Presentacion) -> None:
         mensaje="Presentacion generada correctamente.",
         error_amigable=None,
     )
+    slides_json = dict(pres.slides_json or {})
+    slides_json["job_metadata"] = {"timings_ms": timings_ms}
+    pres.slides_json = slides_json
     await db.commit()
 
 
@@ -519,6 +623,13 @@ async def _generate_slides(
         source_job_id=source_job_id,
         ai_config=ai_config,
     )
+    if hasattr(llm.router, "set_output_budget"):
+        llm.router.set_output_budget(
+            min(
+                int(settings.OPEN_CODE_PRESENTATION_MAX_TOKENS),
+                max(2304, 640 * payload.cantidad_slides + 512),
+            )
+        )
     base_prompt = SLIDES_PROMPT.format(
         tema=payload.tema,
         materia=payload.materia_nombre or "General",
@@ -531,61 +642,105 @@ async def _generate_slides(
         cantidad=payload.cantidad_slides,
         instrucciones=payload.instrucciones or "ninguna",
     )
-    prompt = base_prompt
-    last_issues = ["La IA no devolvio una lista de diapositivas."]
-    best_candidate: list[dict] = []
-    best_score: tuple[int, int] | None = None
-    for attempt in range(1, 4):
-        raw = await llm.generate_json("presentacion", prompt)
-        if isinstance(raw, dict):
-            slides_raw: Any = raw.get("slides", [])
-        elif isinstance(raw, list):
-            slides_raw = raw
-        else:
-            slides_raw = []
-        if isinstance(slides_raw, list) and slides_raw:
-            polished = _polish_slides_for_export(
-                normalize_presentation(slides_raw), topic=payload.tema
-            )
-            candidate = _apply_pedagogical_slide_defaults(polished, payload)
-            last_issues = _presentation_quality_issues(candidate, payload)
-            score = (abs(len(candidate) - payload.cantidad_slides), len(last_issues))
-            if best_score is None or score < best_score:
-                best_candidate = candidate
-                best_score = score
-            if not last_issues:
-                return await _review_slides_for_accuracy(llm, candidate, payload)
-        else:
-            candidate = []
-            last_issues = ["La respuesta no contiene el arreglo slides."]
-        logger.warning(
-            "Presentation content rejected on attempt %d: %s",
-            attempt,
-            "; ".join(last_issues[:8]),
-        )
-        previous = json.dumps(candidate, ensure_ascii=False)[:9000]
-        prompt = (
-            base_prompt
-            + "\n\nCORRECCION OBLIGATORIA\n"
-            + "El borrador anterior fue rechazado por estas razones:\n- "
-            + "\n- ".join(last_issues[:12])
-            + "\nReescribe TODA la presentacion, conserva la cantidad exacta y devuelve solo JSON."
-            + (f"\nBORRADOR RECHAZADO:\n{previous}" if previous else "")
-        )
-    if best_candidate:
-        repaired = _repair_incomplete_presentation(best_candidate, payload)
-        repair_issues = _presentation_quality_issues(repaired, payload)
-        if not repair_issues:
-            logger.warning(
-                "Presentation content required deterministic completion after provider retries: %s",
-                "; ".join(last_issues[:8]),
-            )
-            return await _review_slides_for_accuracy(llm, repaired, payload)
-        last_issues = repair_issues
+    raw = await llm.generate_json("presentacion", base_prompt)
+    if isinstance(raw, dict):
+        slides_raw: Any = raw.get("slides", [])
+    elif isinstance(raw, list):
+        slides_raw = raw
+    else:
+        slides_raw = []
+    if not isinstance(slides_raw, list) or not slides_raw:
+        raise RuntimeError("La IA no devolvio el arreglo de diapositivas")
 
-    raise RuntimeError(
-        "La IA no produjo contenido pedagogico suficientemente completo: "
-        + "; ".join(last_issues[:5])
+    candidate = _apply_pedagogical_slide_defaults(
+        _polish_slides_for_export(
+            normalize_presentation(slides_raw),
+            topic=payload.tema,
+        ),
+        payload,
+    )
+    issues = _presentation_quality_issues(candidate, payload)
+    if issues:
+        candidate = _repair_incomplete_presentation(candidate, payload)
+        issues = _presentation_quality_issues(candidate, payload)
+    if issues:
+        repaired = await _repair_targeted_slides(llm, candidate, payload, issues)
+        repaired_issues = _presentation_quality_issues(repaired, payload)
+        if repaired_issues:
+            raise RuntimeError(
+                "La IA no produjo contenido pedagogico suficientemente completo: "
+                + "; ".join(repaired_issues[:5])
+            )
+        return repaired
+    if _needs_accuracy_review(candidate, payload):
+        return await _review_slides_for_accuracy(llm, candidate, payload)
+    return candidate
+
+
+def _issue_slide_indices(issues: list[str], slide_count: int) -> list[int]:
+    indices: set[int] = set()
+    for issue in issues:
+        for raw_index in re.findall(r"diapositiva(?:s)?\s+(\d+)", issue.lower()):
+            index = int(raw_index) - 1
+            if 0 <= index < slide_count:
+                indices.add(index)
+    return sorted(indices)
+
+
+def _needs_accuracy_review(
+    slides: list[dict], payload: PresentacionCreate
+) -> bool:
+    area = " ".join(
+        str(value or "").lower()
+        for value in (payload.area, payload.materia_nombre, payload.tema)
+    )
+    high_risk_area = any(
+        marker in area
+        for marker in ("matemat", "fisica", "quimica", "estadistic", "geometr")
+    )
+    visible = json.dumps(slides, ensure_ascii=False)
+    return high_risk_area or bool(re.search(r"\d\s*[=+*/-]\s*\d", visible))
+
+
+async def _repair_targeted_slides(
+    llm: _PresentationLLM,
+    slides: list[dict],
+    payload: PresentacionCreate,
+    issues: list[str],
+) -> list[dict]:
+    indices = _issue_slide_indices(issues, len(slides))
+    if not indices:
+        return await _review_slides_for_accuracy(llm, slides, payload)
+    subset = [
+        {"index": index + 1, "slide": slides[index]}
+        for index in indices
+    ]
+    prompt = SLIDES_TARGETED_REPAIR_PROMPT.format(
+        tema=payload.tema,
+        area=payload.area or payload.materia_nombre or "General",
+        grado=payload.grado or payload.nivel or "",
+        issues="\n".join(f"- {issue}" for issue in issues[:12]),
+        slides=json.dumps(subset, ensure_ascii=False),
+    )
+    raw = await llm.generate_json("presentacion", prompt)
+    repairs = raw.get("repairs", []) if isinstance(raw, dict) else []
+    merged = [dict(slide) for slide in slides]
+    for repair in repairs if isinstance(repairs, list) else []:
+        if not isinstance(repair, dict):
+            continue
+        try:
+            index = int(repair.get("index")) - 1
+        except (TypeError, ValueError):
+            continue
+        replacement = repair.get("slide")
+        if 0 <= index < len(merged) and isinstance(replacement, dict):
+            merged[index] = replacement
+    return _apply_pedagogical_slide_defaults(
+        _polish_slides_for_export(
+            normalize_presentation(merged),
+            topic=payload.tema,
+        ),
+        payload,
     )
 
 
@@ -869,6 +1024,29 @@ def _eligible_image_indices(n: int, densidad: str) -> set[int]:
     if densidad == "baja":
         return set(range(0, n, 3))
     return set(range(0, n, 2))  # media (default)
+
+
+def _planned_image_count(
+    slides: list[dict], payload: PresentacionCreate
+) -> int:
+    if not getattr(payload, "incluir_imagenes", True):
+        return 0
+    legacy_full_idx = _full_image_index(slides)
+    eligible = _eligible_image_indices(
+        len(slides),
+        getattr(payload, "densidad_imagenes", "alta") or "alta",
+    )
+    for index, slide in enumerate(slides):
+        if _should_be_full_image(
+            slide,
+            index=index,
+            legacy_full_idx=legacy_full_idx,
+        ):
+            eligible.add(index)
+    return sum(
+        1 for index in eligible
+        if not _slide_has_exact_math_content(slides[index])
+    )
 
 
 SLIDE_IMAGE_SIZE = "1536x1024"
@@ -1811,13 +1989,21 @@ def build_estado(pres: Presentacion) -> dict:
         PresentacionEstado.SUCCESS.value: 100,
         PresentacionEstado.FAILED.value: 0,
     }
+    job_metadata = (pres.slides_json or {}).get("job_metadata")
+    job_metadata = job_metadata if isinstance(job_metadata, dict) else {}
     return {
         "id": pres.id,
         "estado": pres.estado,
-        "progreso": progress_by_state.get(pres.estado, 0),
+        "progreso": getattr(pres, "progreso", 0) or progress_by_state.get(pres.estado, 0),
         "pptx_url": pres.pptx_url,
         "pdf_url": pres.pdf_url,
         "error": pres.error,
+        "etapa": getattr(pres, "etapa", None),
+        "mensaje": getattr(pres, "mensaje", None),
+        "elapsed_ms": getattr(pres, "elapsed_ms", 0),
+        "imagenes_completadas": getattr(pres, "imagenes_completadas", 0),
+        "imagenes_total": getattr(pres, "imagenes_total", 0),
+        "timings_ms": job_metadata.get("timings_ms", {}),
     }
 
 

@@ -35,10 +35,28 @@ async def create(
 ) -> object:
     require_permission_now(current_user, "presentations.create")
     pres = await service.create_presentacion(db, payload, current_user)
-    generate_presentation.delay(str(pres.id))
-    logger.info(
-        "Presentation generation enqueued", extra={"presentation_id": str(pres.id)}
-    )
+    try:
+        generate_presentation.apply_async(
+            args=[str(pres.id)], queue="presentations"
+        )
+        logger.info(
+            "Presentation generation enqueued",
+            extra={"presentation_id": str(pres.id)},
+        )
+    except Exception as exc:  # noqa: BLE001
+        await service.jobs_service.mark_job_retrying(
+            db,
+            pres.id,
+            error="Publication pending; it will retry automatically",
+        )
+        await db.commit()
+        logger.warning(
+            "Presentation publication deferred",
+            extra={
+                "presentation_id": str(pres.id),
+                "error_type": type(exc).__name__,
+            },
+        )
     return pres
 
 

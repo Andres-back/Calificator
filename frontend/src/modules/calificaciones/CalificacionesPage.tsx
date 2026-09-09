@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
-import { GraduationCap, CheckCircle2, Pencil, ShieldCheck, AlertTriangle, Camera, Sparkles, HelpCircle } from 'lucide-react';
+import { GraduationCap, CheckCircle2, Pencil, ShieldCheck, AlertTriangle, Camera, Sparkles, HelpCircle, LoaderCircle } from 'lucide-react';
 import { Button, Card, Badge, statusTone, Select, Skeleton, EmptyState, Modal, ConfirmDialog, GuidedTour, useFirstVisitTour, Input, Field, Textarea, RichContent } from '@/components/ui';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { useMaterias } from '@/modules/materias/MateriaSelect';
@@ -16,6 +16,7 @@ import { toApiError } from '@/lib/api';
 import { useAuth } from '@/stores/auth';
 import { routes } from '@/config/routes';
 import type { Calificacion } from '@/types/api';
+import { gradePresentation, isGradeProcessing } from './gradePresentation';
 
 export function CalificacionesPage() {
   const user = useAuth((state) => state.user);
@@ -25,7 +26,7 @@ export function CalificacionesPage() {
   const [materiaId, setMateriaId] = useState('');
   const [evalId, setEvalId] = useState('');
   const [editing, setEditing] = useState<Calificacion | null>(null);
-  const [adjForm, setAdjForm] = useState({ nota: 0, feedback: '' });
+  const [adjForm, setAdjForm] = useState<{ nota: number | ''; feedback: string }>({ nota: '', feedback: '' });
   const [adjError, setAdjError] = useState('');
   const [confirming, setConfirming] = useState<Calificacion | null>(null);
   const { open: tourOpen, openTour, closeTour } = useFirstVisitTour({ tourId: 'calificaciones', role, version: 1 });
@@ -36,7 +37,15 @@ export function CalificacionesPage() {
   const { data: evals } = useQuery({ queryKey: ['evaluaciones', materiaId], queryFn: () => listEvaluaciones(materiaId), enabled: !!materiaId });
   useEffect(() => { if (evals && evals.length && !evals.find((e) => e.id === evalId)) setEvalId(evals[0].id); }, [evals, evalId]);
 
-  const { data: cals, isLoading } = useQuery({ queryKey: ['calificaciones', evalId], queryFn: () => listCalificaciones(evalId), enabled: !!evalId });
+  const { data: cals, isLoading } = useQuery({
+    queryKey: ['calificaciones', evalId],
+    queryFn: () => listCalificaciones(evalId),
+    enabled: !!evalId,
+    refetchInterval: (query) => {
+      const grades = query.state.data as Calificacion[] | undefined;
+      return grades?.some(isGradeProcessing) ? 5_000 : false;
+    },
+  });
 
   // Opción A: mapa estudiante_id -> User desde los matriculados de la materia (sin tocar backend).
   const { data: materiaEstudiantes } = useQuery({ queryKey: ['materia-estudiantes', materiaId], queryFn: () => getMateriaEstudiantes(materiaId), enabled: !!materiaId });
@@ -65,10 +74,18 @@ export function CalificacionesPage() {
   }, [cals, gradeFilter]);
 
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ['calificaciones', evalId] });
-  const confirmar = useMutation({ mutationFn: (c: Calificacion) => confirmarNota(c.id, Number(c.nota_sugerida ?? 0)), onSuccess: () => { invalidate(); toast.success('Nota confirmada'); setConfirming(null); }, onError: (e) => toast.error(toApiError(e).detail) });
-  const ajustar = useMutation({ mutationFn: () => ajustarNota(editing!.id, adjForm.nota, adjForm.feedback || undefined), onSuccess: () => { invalidate(); toast.success('Nota ajustada'); setEditing(null); }, onError: (e) => toast.error(toApiError(e).detail) });
+  const confirmar = useMutation({
+    mutationFn: (c: Calificacion) => {
+      if (c.nota_sugerida == null) throw new Error('La calificación aún no tiene una nota sugerida.');
+      return confirmarNota(c.id, Number(c.nota_sugerida));
+    },
+    onSuccess: () => { invalidate(); toast.success('Nota confirmada'); setConfirming(null); },
+    onError: (e) => toast.error(toApiError(e).detail),
+  });
+  const ajustar = useMutation({ mutationFn: () => ajustarNota(editing!.id, Number(adjForm.nota), adjForm.feedback || undefined), onSuccess: () => { invalidate(); toast.success('Nota ajustada'); setEditing(null); }, onError: (e) => toast.error(toApiError(e).detail) });
 
   function submitAjuste() {
+    if (adjForm.nota === '') { setAdjError('Escribe la nota que deseas asignar.'); return; }
     const n = Number(adjForm.nota);
     if (Number.isNaN(n) || n < 0) { setAdjError('La nota no puede ser menor que 0.'); return; }
     if (notaMaxima != null && n > notaMaxima) { setAdjError('La nota no puede superar la nota máxima de esta evaluación.'); return; }
@@ -177,6 +194,7 @@ export function CalificacionesPage() {
             <div className="grid gap-3" data-tour="calificaciones-lista">
               {visibleGrades.map((c, i) => {
                 const confirmada = c.estado === 'confirmada' || c.nota_confirmada != null;
+                const presentation = gradePresentation(c);
                 const conf = Number(c.confianza ?? 0);
                 return (
                   <motion.div key={c.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.03 }}>
@@ -201,17 +219,26 @@ export function CalificacionesPage() {
                             );
                           })()}
                           <div className="mt-1 flex flex-wrap items-center gap-2">
-                            <Badge tone={statusTone[c.estado] ?? (confirmada ? 'success' : 'warning')}>{confirmada ? <ShieldCheck className="h-3 w-3" /> : <AlertTriangle className="h-3 w-3" />} {confirmada ? 'Confirmada' : 'Por revisar'}</Badge>
+                            <Badge tone={presentation.processing ? 'brand' : (statusTone[c.estado] ?? (confirmada ? 'success' : 'warning'))}>
+                              {presentation.processing
+                                ? <LoaderCircle className="h-3 w-3 animate-spin" />
+                                : confirmada ? <ShieldCheck className="h-3 w-3" /> : <AlertTriangle className="h-3 w-3" />}
+                              {presentation.label}
+                            </Badge>
                             {conf > 0 && <Badge tone="neutral">Confianza {(conf * 100).toFixed(0)}%</Badge>}
                           </div>
                         </div>
                         <div className="min-w-[92px] rounded-lg bg-surface-2 px-3 py-2 text-left sm:text-right" data-tour="calificaciones-nota">
-                          <p className="font-display text-2xl font-extrabold text-fg">{Number(c.nota_confirmada ?? c.nota_sugerida ?? 0).toFixed(1)}</p>
-                          <p className="text-xs text-muted">{c.nota_confirmada != null ? 'confirmada' : 'sugerida'}</p>
+                          {presentation.processing ? (
+                            <LoaderCircle className="mx-auto h-6 w-6 animate-spin text-brand-500 sm:ml-auto sm:mr-0" aria-label="Calificando" />
+                          ) : (
+                            <p className="font-display text-2xl font-extrabold text-fg">{presentation.score?.toFixed(1) ?? '—'}</p>
+                          )}
+                          <p className="text-xs text-muted">{presentation.label.toLowerCase()}</p>
                         </div>
                         <div className="flex w-full flex-wrap gap-2 sm:w-auto sm:justify-end">
-                          {canGrade && !confirmada && <Button data-tour="calificaciones-confirmar" size="sm" title="Acepta la nota sugerida como nota final." onClick={() => setConfirming(c)}><CheckCircle2 className="h-4 w-4" /> Confirmar nota</Button>}
-                          {canGrade && <Button data-tour="calificaciones-ajustar" size="sm" variant="outline" title="Modifica la nota sugerida antes de confirmarla." onClick={() => { setEditing(c); setAdjForm({ nota: Number(c.nota_confirmada ?? c.nota_sugerida ?? 0), feedback: c.feedback ?? '' }); setAdjError(''); }}><Pencil className="h-4 w-4" /> Ajustar</Button>}
+                          {canGrade && !confirmada && presentation.score != null && <Button data-tour="calificaciones-confirmar" size="sm" title="Acepta la nota sugerida como nota final." onClick={() => setConfirming(c)}><CheckCircle2 className="h-4 w-4" /> Confirmar nota</Button>}
+                          {canGrade && !presentation.processing && <Button data-tour="calificaciones-ajustar" size="sm" variant="outline" title="Introduce o modifica la nota; tú decides." onClick={() => { setEditing(c); setAdjForm({ nota: presentation.score ?? '', feedback: c.feedback ?? '' }); setAdjError(''); }}><Pencil className="h-4 w-4" /> {presentation.score == null ? 'Establecer nota' : 'Ajustar'}</Button>}
                         </div>
                       </div>
                       {c.feedback && (
@@ -241,7 +268,7 @@ export function CalificacionesPage() {
               min={0}
               max={notaMaxima}
               value={adjForm.nota}
-              onChange={(e) => { setAdjForm({ ...adjForm, nota: Number(e.target.value) }); if (adjError) setAdjError(''); }}
+              onChange={(e) => { setAdjForm({ ...adjForm, nota: e.target.value === '' ? '' : Number(e.target.value) }); if (adjError) setAdjError(''); }}
             />
             {adjError && <span className="mt-1 block text-xs text-rose-500">{adjError}</span>}
           </Field>

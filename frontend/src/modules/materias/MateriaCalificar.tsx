@@ -49,6 +49,7 @@ import {
 import { confidenceLabel } from '@/lib/utils';
 import type { Calificacion } from '@/types/api';
 import { addPendingGrading } from '@/modules/calificaciones/gradingJobs';
+import { isGradeProcessing } from '@/modules/calificaciones/gradePresentation';
 import { useAuth } from '@/stores/auth';
 import { useMateriaContext } from './MateriaContext';
 import { GradingProgress } from './GradingProgress';
@@ -89,8 +90,7 @@ function firstName(name: string): string {
 }
 
 function isQueuedGrading(grade: Calificacion | null | undefined): boolean {
-  const status = grade?.resultado_json?.pipeline_status;
-  return status === 'queued' || status === 'running';
+  return Boolean(grade && isGradeProcessing(grade));
 }
 function initials(name: string): string {
   return name
@@ -435,6 +435,9 @@ export function MateriaCalificar() {
   };
 
   const getStudentStatusIcon = (student: EstudianteStatus) => {
+    if (isQueuedGrading(student.calificacion)) {
+      return <LoaderCircle className="h-5 w-5 animate-spin text-brand-500" aria-label="Calificando" />;
+    }
     if (!student.calificacion) {
       return <span className="text-muted/50">—</span>;
     }
@@ -528,7 +531,7 @@ export function MateriaCalificar() {
 
               {evaluacionId ? (
                 <div
-                  className="grid grid-cols-3 gap-2"
+                  className="grid grid-cols-2 gap-2 sm:grid-cols-4"
                   aria-live="polite"
                   aria-label="Resumen de calificación"
                 >
@@ -541,6 +544,10 @@ export function MateriaCalificar() {
                       {summary.porRevisar}
                     </strong>
                     <span className="text-xs text-muted">Por revisar</span>
+                  </div>
+                  <div className="rounded-xl bg-brand-50 p-3 text-center dark:bg-brand-500/10">
+                    <strong className="block text-xl text-brand-700 dark:text-brand-200">{summary.calificando}</strong>
+                    <span className="text-xs text-muted">Calificando</span>
                   </div>
                   <div className="rounded-xl bg-emerald-50 p-3 text-center dark:bg-emerald-500/10">
                     <strong className="block text-xl text-emerald-800 dark:text-emerald-200">
@@ -600,7 +607,9 @@ export function MateriaCalificar() {
                         aria-label={`${student.nombre}. ${
                           decided
                             ? 'Decisión guardada'
-                            : student.calificacion
+                            : isQueuedGrading(student.calificacion)
+                              ? 'Calificando'
+                              : student.calificacion
                               ? 'Sugerencia pendiente de revisión'
                               : 'Sin evidencia'
                         }`}
@@ -799,7 +808,7 @@ export function MateriaCalificar() {
                         >
                           <LoaderCircle className="mt-0.5 h-6 w-6 shrink-0 animate-spin" aria-hidden="true" />
                           <div>
-                            <h3 className="font-display text-lg font-extrabold">Calificación en cola</h3>
+                            <h3 className="font-display text-lg font-extrabold">Calificando</h3>
                             <p className="mt-1 text-sm leading-6">
                               La evidencia está segura. Puedes seleccionar otro estudiante o salir de esta página; te avisaremos cuando la sugerencia esté lista.
                             </p>

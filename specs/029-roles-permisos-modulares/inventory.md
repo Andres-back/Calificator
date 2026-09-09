@@ -50,4 +50,4 @@ Sin decisiones explícitas de permiso para este dominio.
 
 ## Hallazgos
 
-- **medium · contract_mismatch**: 2 llamadas frontend no tienen endpoint backend canónico coincidente en el análisis estático.
+- **medium · contract_mismatch**: 3 llamadas frontend no tienen endpoint backend canónico coincidente en el análisis estático.

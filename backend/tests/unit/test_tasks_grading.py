@@ -137,6 +137,41 @@ def test_grade_delivery_is_idempotent_when_grade_exists(monkeypatch) -> None:
     assert db.events == ["commit"]
 
 
+def test_retry_rechecks_ownership_after_rollback(monkeypatch) -> None:
+    db = FakeDB()
+
+    async def lost_owner(_db, _job_id, _token):
+        assert db.events == ["rollback"]
+        raise tasks_grading.jobs_service.JobOwnershipLost()
+
+    monkeypatch.setattr(tasks_grading.jobs_service, "lock_owned_job", lost_owner)
+    with pytest.raises(tasks_grading.jobs_service.JobOwnershipLost):
+        asyncio.run(tasks_grading._mark_delivery_for_retry(
+            db, uuid4(), "failure", job_id=uuid4(), claim_token="old-worker",
+        ))
+    assert db.events == ["rollback"]
+
+
+def test_retry_does_not_overwrite_a_teacher_decision() -> None:
+    delivery = delivery_fixture()
+    delivery.estado = EntregaEstado.CALIFICADA.value
+    delivery.visual_text_json = {"pipeline_status": "running"}
+    grade = SimpleNamespace(revisado_por_docente=True, nota_confirmada=Decimal("0"))
+
+    class DecisionDB(FakeDB):
+        async def scalar(self, _query):
+            if not hasattr(self, "read_delivery"):
+                self.read_delivery = True
+                return delivery
+            return grade
+
+    db = DecisionDB()
+    asyncio.run(tasks_grading._mark_delivery_for_retry(db, delivery.id, "late failure"))
+    assert delivery.estado == EntregaEstado.CALIFICADA.value
+    assert grade.nota_confirmada == Decimal("0")
+    assert db.events == ["rollback"]
+
+
 def test_grade_delivery_creates_only_a_teacher_pending_suggestion(monkeypatch) -> None:
     evaluation = evaluation_fixture()
     delivery = delivery_fixture()
@@ -262,7 +297,7 @@ def test_batch_continues_after_one_delivery_fails(monkeypatch) -> None:
             raise RuntimeError("imagen borrosa")
         return SimpleNamespace(id=uuid4()), True
 
-    async def fake_retry(_db, entrega_id, _error):
+    async def fake_retry(_db, entrega_id, _error, **_ownership):
         retried.append(entrega_id)
 
     async def fake_progress(*_args, **_kwargs):
@@ -486,7 +521,7 @@ def test_batch_persists_failure_when_job_preparation_raises(monkeypatch) -> None
     async def broken_input(_db, _job_id):
         raise RuntimeError("uuid query failed")
 
-    async def fake_retry(_db, item_id, _error):
+    async def fake_retry(_db, item_id, _error, **_ownership):
         retried.append(item_id)
 
     async def fake_finish(_db, _job_id, **kwargs):
@@ -580,7 +615,8 @@ def test_recovery_republishes_each_leased_job_only_once(monkeypatch) -> None:
     async def leased_jobs():
         return next(batches)
 
-    def enqueue(*, kwargs):
+    def enqueue(*, kwargs, queue):
+        assert queue == "grading"
         enqueued.append(kwargs)
 
     monkeypatch.setattr(tasks_grading, "_claim_stale_grading_jobs", leased_jobs)

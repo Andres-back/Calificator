@@ -111,12 +111,12 @@ def prepare_queued_grading(
     payload = {
         "pipeline_status": "queued",
         "job_id": str(job_id),
-        "requiere_revision_docente": True,
+        "requiere_revision_docente": False,
     }
     if evidence_metadata:
         payload["evidencia_consolidada"] = evidence_metadata
 
-    entrega.estado = EntregaEstado.RECIBIDA.value
+    entrega.estado = EntregaEstado.PROCESANDO.value
     entrega.visual_text_json = payload
 
     if calificacion is None:
@@ -134,7 +134,7 @@ def prepare_queued_grading(
     calificacion.feedback = None
     calificacion.resultado_json = payload
     calificacion.revisado_por_docente = False
-    calificacion.estado = CalificacionEstado.REQUIERE_REVISION.value
+    calificacion.estado = CalificacionEstado.PROCESANDO.value
     return calificacion
 
 async def grade_persisted_photo(

@@ -1,21 +1,41 @@
 {
   "counts": {
     "by_coverage": {
-      "covered": 411,
-      "missing": 74
+      "covered": 421,
+      "missing": 70
     },
     "by_kind": {
-      "endpoint": 229,
-      "frontend_call": 154,
+      "endpoint": 231,
+      "frontend_call": 156,
       "frontend_route": 31,
       "integration": 7,
-      "job": 13,
+      "job": 15,
       "table": 51
     },
-    "total": 485
+    "total": 491
   },
   "exceptions": [],
   "findings": [
+    {
+      "category": "missing_coverage",
+      "description": "11 superficies de 012-ia-jobs-produccion no tienen evidencia de prueba observable.",
+      "id": "F-082A2532CEB0",
+      "issue_url": "",
+      "severity": "low",
+      "surface_ids": [
+        "backend:GET:/jobs/{job_id}/estado",
+        "backend:GET:/jobs/{job_id}/items",
+        "backend:POST:/jobs/{job_id}/cancelar",
+        "backend:POST:/jobs/{job_id}/reintentar",
+        "job:tasks.assign_overdue_grades",
+        "job:tasks.cleanup_password_reset_requests",
+        "job:tasks.export_report",
+        "job:tasks.get_ai_config_version",
+        "job:tasks.ingest_rag",
+        "job:tasks.recover_expired_local_jobs",
+        "job:tasks.send_password_reset_email"
+      ]
+    },
     {
       "category": "missing_coverage",
       "description": "27 superficies de 021-configuracion-ia-docente no tienen evidencia de prueba observable.",
@@ -84,6 +104,18 @@
       ]
     },
     {
+      "category": "contract_mismatch",
+      "description": "3 llamadas frontend no tienen endpoint backend canónico coincidente en el análisis estático.",
+      "id": "F-320F41980DED",
+      "issue_url": "",
+      "severity": "medium",
+      "surface_ids": [
+        "frontend_call:GET:/admin/users/{id}:frontend/src/modules/admin/usersApi.ts",
+        "frontend_call:POST:/admin/roles/{id}:frontend/src/modules/admin/authorizationApi.ts",
+        "frontend_call:POST:/jobs/{jobId}:frontend/src/modules/evaluaciones/components/DigitalizationJobMonitor.tsx"
+      ]
+    },
+    {
       "category": "orphan_candidate",
       "description": "19 superficies no alcanzables o históricas se conservan como candidatas a retiro.",
       "id": "F-851F561E6272",
@@ -112,17 +144,6 @@
       ]
     },
     {
-      "category": "contract_mismatch",
-      "description": "2 llamadas frontend no tienen endpoint backend canónico coincidente en el análisis estático.",
-      "id": "F-8FF8AD719093",
-      "issue_url": "",
-      "severity": "medium",
-      "surface_ids": [
-        "frontend_call:GET:/admin/users/{id}:frontend/src/modules/admin/usersApi.ts",
-        "frontend_call:POST:/admin/roles/{id}:frontend/src/modules/admin/authorizationApi.ts"
-      ]
-    },
-    {
       "category": "missing_coverage",
       "description": "6 superficies de 009-xali-rag-refuerzos no tienen evidencia de prueba observable.",
       "id": "F-A80F7D19FC85",
@@ -139,8 +160,21 @@
     },
     {
       "category": "missing_coverage",
-      "description": "10 superficies de 002-arquitectura-roles-seguridad no tienen evidencia de prueba observable.",
-      "id": "F-B33AA9FEF7D4",
+      "description": "4 superficies de 010-presentaciones-imagenes no tienen evidencia de prueba observable.",
+      "id": "F-EB65DEC976DE",
+      "issue_url": "",
+      "severity": "low",
+      "surface_ids": [
+        "backend:GET:/imagenes-generadas",
+        "backend:PATCH:/imagenes-generadas/{imagen_id}",
+        "backend:POST:/imagenes/generar",
+        "table:imagenes_generadas"
+      ]
+    },
+    {
+      "category": "missing_coverage",
+      "description": "9 superficies de 002-arquitectura-roles-seguridad no tienen evidencia de prueba observable.",
+      "id": "F-FD43C9E01B67",
       "issue_url": "",
       "severity": "low",
       "surface_ids": [
@@ -151,45 +185,8 @@
         "table:ai_config_audit_logs",
         "table:ai_global_config",
         "table:ai_global_limits",
-        "table:ai_jobs",
         "table:chat_messages",
         "table:evaluation_blueprints"
-      ]
-    },
-    {
-      "category": "missing_coverage",
-      "description": "14 superficies de 012-ia-jobs-produccion no tienen evidencia de prueba observable.",
-      "id": "F-E2C907B856CB",
-      "issue_url": "",
-      "severity": "low",
-      "surface_ids": [
-        "backend:GET:/jobs/{job_id}/estado",
-        "backend:POST:/jobs/{job_id}/cancelar",
-        "job:tasks.assign_overdue_grades",
-        "job:tasks.cleanup_password_reset_requests",
-        "job:tasks.digitalize_evaluation",
-        "job:tasks.export_report",
-        "job:tasks.generate_image",
-        "job:tasks.generate_presentation",
-        "job:tasks.get_ai_config_version",
-        "job:tasks.ingest_rag",
-        "job:tasks.recover_expired_local_jobs",
-        "job:tasks.recover_stale_grading_jobs",
-        "job:tasks.recover_stale_presentation_jobs",
-        "job:tasks.send_password_reset_email"
-      ]
-    },
-    {
-      "category": "missing_coverage",
-      "description": "4 superficies de 010-presentaciones-imagenes no tienen evidencia de prueba observable.",
-      "id": "F-EB65DEC976DE",
-      "issue_url": "",
-      "severity": "low",
-      "surface_ids": [
-        "backend:GET:/imagenes-generadas",
-        "backend:PATCH:/imagenes-generadas/{imagen_id}",
-        "backend:POST:/imagenes/generar",
-        "table:imagenes_generadas"
       ]
     }
   ],
@@ -324,7 +321,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "7c5418e0e6f51e5e5b32c7f2cdcd6f3bb86cfbc53f10075c6a88c45344f62d18",
+  "source_digest": "ce055e101fd26d34bb6908e9e8ef8abbb46a8826b6b85a6ff2108985c60d2675",
   "surfaces": [
     {
       "actors": [
@@ -460,7 +457,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "DELETE:/calificaciones/modo-salon/{sesion_id}",
-      "source_line": 1139,
+      "source_line": 1177,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -548,7 +545,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "DELETE:/evaluaciones/{evaluacion_id}",
-      "source_line": 403,
+      "source_line": 404,
       "source_path": "backend/app/modules/evaluaciones/router.py",
       "states": [],
       "tests": [
@@ -816,7 +813,7 @@
       "kind": "endpoint",
       "owner_spec": "010-presentaciones-imagenes",
       "signature": "DELETE:/presentaciones/{presentacion_id}",
-      "source_line": 173,
+      "source_line": 191,
       "source_path": "backend/app/modules/presentaciones/router.py",
       "states": [],
       "tests": [
@@ -849,6 +846,12 @@
           "reference": "DELETE:/presentaciones/{presentacion_id}",
           "status": "direct",
           "test_path": "backend/tests/unit/test_presentaciones_pedagogical_planning.py"
+        },
+        {
+          "level": "unit",
+          "reference": "DELETE:/presentaciones/{presentacion_id}",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_presentaciones_performance.py"
         },
         {
           "level": "unit",
@@ -902,7 +905,7 @@
       "kind": "endpoint",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "DELETE:/profesor/ai-credentials/{provider}",
-      "source_line": 1124,
+      "source_line": 1159,
       "source_path": "backend/app/modules/admin_ai_config/router.py",
       "states": [],
       "tests": [
@@ -1039,7 +1042,7 @@
       "kind": "endpoint",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "GET:/admin/ai-audit",
-      "source_line": 792,
+      "source_line": 809,
       "source_path": "backend/app/modules/admin_ai_config/router.py",
       "states": [],
       "tests": [
@@ -1070,7 +1073,7 @@
       "kind": "endpoint",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "GET:/admin/ai-config",
-      "source_line": 354,
+      "source_line": 356,
       "source_path": "backend/app/modules/admin_ai_config/router.py",
       "states": [],
       "tests": [
@@ -1107,7 +1110,7 @@
       "kind": "endpoint",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "GET:/admin/ai-config-hash",
-      "source_line": 760,
+      "source_line": 777,
       "source_path": "backend/app/modules/admin_ai_config/router.py",
       "states": [],
       "tests": [
@@ -1138,7 +1141,7 @@
       "kind": "endpoint",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "GET:/admin/ai-settings",
-      "source_line": 431,
+      "source_line": 433,
       "source_path": "backend/app/modules/admin_ai_config/router.py",
       "states": [],
       "tests": [
@@ -1181,7 +1184,7 @@
       "kind": "endpoint",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "GET:/admin/ai-usage",
-      "source_line": 549,
+      "source_line": 566,
       "source_path": "backend/app/modules/admin_ai_config/router.py",
       "states": [],
       "tests": [
@@ -2467,7 +2470,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "GET:/calificaciones/bandeja-docente",
-      "source_line": 1541,
+      "source_line": 1579,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -2537,7 +2540,7 @@
       "kind": "endpoint",
       "owner_spec": "007-entregas-estudiante",
       "signature": "GET:/calificaciones/entregas/{entrega_id}/evidencia",
-      "source_line": 1423,
+      "source_line": 1461,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -2594,7 +2597,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "GET:/calificaciones/modo-salon/{sesion_id}",
-      "source_line": 951,
+      "source_line": 989,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -2651,7 +2654,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "GET:/calificaciones/modo-salon/{sesion_id}/estudiantes",
-      "source_line": 975,
+      "source_line": 1013,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -2708,7 +2711,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "GET:/calificaciones/{calificacion_id}/desglose",
-      "source_line": 1660,
+      "source_line": 1698,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -2771,7 +2774,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "GET:/calificaciones/{calificacion_id}/desglose/historial",
-      "source_line": 1696,
+      "source_line": 1734,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -2834,7 +2837,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "GET:/calificaciones/{calificacion_id}/detalle",
-      "source_line": 1468,
+      "source_line": 1506,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -2890,7 +2893,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "GET:/calificaciones/{calificacion_id}/incidencias",
-      "source_line": 1613,
+      "source_line": 1651,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -3049,7 +3052,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "GET:/estudiantes/{estudiante_id}/boletin",
-      "source_line": 877,
+      "source_line": 915,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -3107,7 +3110,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "GET:/estudiantes/{estudiante_id}/resumen-academico",
-      "source_line": 856,
+      "source_line": 894,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -3164,7 +3167,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "GET:/evaluaciones/{evaluacion_id}",
-      "source_line": 235,
+      "source_line": 236,
       "source_path": "backend/app/modules/evaluaciones/router.py",
       "states": [],
       "tests": [
@@ -3311,7 +3314,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "GET:/evaluaciones/{evaluacion_id}/actividad",
-      "source_line": 245,
+      "source_line": 246,
       "source_path": "backend/app/modules/evaluaciones/router.py",
       "states": [],
       "tests": [
@@ -3344,7 +3347,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "GET:/evaluaciones/{evaluacion_id}/calificaciones",
-      "source_line": 839,
+      "source_line": 877,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -3401,7 +3404,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "GET:/evaluaciones/{evaluacion_id}/mi-desglose",
-      "source_line": 1721,
+      "source_line": 1759,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -3463,7 +3466,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "GET:/evaluaciones/{evaluacion_id}/mi-entrega",
-      "source_line": 1166,
+      "source_line": 1204,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -3520,7 +3523,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "GET:/evaluaciones/{evaluacion_id}/mi-solicitud-revision",
-      "source_line": 1554,
+      "source_line": 1592,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -3577,7 +3580,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "GET:/evaluaciones/{evaluacion_id}/pdf",
-      "source_line": 255,
+      "source_line": 256,
       "source_path": "backend/app/modules/evaluaciones/router.py",
       "states": [],
       "tests": [
@@ -4149,7 +4152,7 @@
       "kind": "endpoint",
       "owner_spec": "012-ia-jobs-produccion",
       "signature": "GET:/jobs/{job_id}",
-      "source_line": 28,
+      "source_line": 40,
       "source_path": "backend/app/modules/jobs/router.py",
       "states": [],
       "tests": [
@@ -4157,7 +4160,25 @@
           "level": "unit",
           "reference": "GET:/jobs/{job_id}",
           "status": "direct",
+          "test_path": "backend/tests/unit/test_calificaciones_lote_async.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/jobs/{job_id}",
+          "status": "direct",
           "test_path": "backend/tests/unit/test_ollama_cloud_provider.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/jobs/{job_id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/GradingJobMonitor.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/jobs/{job_id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/evaluaciones/components/DigitalizationJobMonitor.test.tsx"
         }
       ]
     },
@@ -4179,7 +4200,30 @@
       "kind": "endpoint",
       "owner_spec": "012-ia-jobs-produccion",
       "signature": "GET:/jobs/{job_id}/estado",
-      "source_line": 45,
+      "source_line": 87,
+      "source_path": "backend/app/modules/jobs/router.py",
+      "states": [],
+      "tests": []
+    },
+    {
+      "actors": [
+        "authenticated"
+      ],
+      "authorization": [
+        "get_current_user"
+      ],
+      "consumers": [],
+      "coverage": "missing",
+      "details": {
+        "function": "get_job_items",
+        "registered": true,
+        "router": "router"
+      },
+      "id": "backend:GET:/jobs/{job_id}/items",
+      "kind": "endpoint",
+      "owner_spec": "012-ia-jobs-produccion",
+      "signature": "GET:/jobs/{job_id}/items",
+      "source_line": 97,
       "source_path": "backend/app/modules/jobs/router.py",
       "states": [],
       "tests": []
@@ -4733,7 +4777,7 @@
       "kind": "endpoint",
       "owner_spec": "003-usuarios-materias-matriculas",
       "signature": "GET:/materias/{materia_id}/evaluaciones",
-      "source_line": 225,
+      "source_line": 226,
       "source_path": "backend/app/modules/evaluaciones/router.py",
       "states": [],
       "tests": [
@@ -4832,7 +4876,7 @@
       "kind": "endpoint",
       "owner_spec": "010-presentaciones-imagenes",
       "signature": "GET:/presentaciones",
-      "source_line": 45,
+      "source_line": 63,
       "source_path": "backend/app/modules/presentaciones/router.py",
       "states": [],
       "tests": [
@@ -4865,6 +4909,12 @@
           "reference": "GET:/presentaciones",
           "status": "direct",
           "test_path": "backend/tests/unit/test_presentaciones_pedagogical_planning.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/presentaciones",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_presentaciones_performance.py"
         },
         {
           "level": "unit",
@@ -4919,7 +4969,7 @@
       "kind": "endpoint",
       "owner_spec": "010-presentaciones-imagenes",
       "signature": "GET:/presentaciones/assets/{asset_id}",
-      "source_line": 54,
+      "source_line": 72,
       "source_path": "backend/app/modules/presentaciones/router.py",
       "states": [],
       "tests": [
@@ -4934,6 +4984,12 @@
           "reference": "GET:/presentaciones/assets/{asset_id}",
           "status": "direct",
           "test_path": "backend/tests/unit/test_presentaciones_pedagogical_planning.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/presentaciones/assets/{asset_id}",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_presentaciones_performance.py"
         },
         {
           "level": "unit",
@@ -4964,7 +5020,7 @@
       "kind": "endpoint",
       "owner_spec": "010-presentaciones-imagenes",
       "signature": "GET:/presentaciones/{presentacion_id}",
-      "source_line": 73,
+      "source_line": 91,
       "source_path": "backend/app/modules/presentaciones/router.py",
       "states": [],
       "tests": [
@@ -4997,6 +5053,12 @@
           "reference": "GET:/presentaciones/{presentacion_id}",
           "status": "direct",
           "test_path": "backend/tests/unit/test_presentaciones_pedagogical_planning.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/presentaciones/{presentacion_id}",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_presentaciones_performance.py"
         },
         {
           "level": "unit",
@@ -5051,7 +5113,7 @@
       "kind": "endpoint",
       "owner_spec": "007-entregas-estudiante",
       "signature": "GET:/presentaciones/{presentacion_id}/archivo/{fmt}",
-      "source_line": 139,
+      "source_line": 157,
       "source_path": "backend/app/modules/presentaciones/router.py",
       "states": [],
       "tests": [
@@ -5072,6 +5134,12 @@
           "reference": "GET:/presentaciones/{presentacion_id}/archivo/{fmt}",
           "status": "domain",
           "test_path": "backend/tests/unit/test_presentaciones_pedagogical_planning.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/presentaciones/{presentacion_id}/archivo/{fmt}",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_presentaciones_performance.py"
         },
         {
           "level": "unit",
@@ -5108,7 +5176,7 @@
       "kind": "endpoint",
       "owner_spec": "010-presentaciones-imagenes",
       "signature": "GET:/presentaciones/{presentacion_id}/estado",
-      "source_line": 83,
+      "source_line": 101,
       "source_path": "backend/app/modules/presentaciones/router.py",
       "states": [],
       "tests": [
@@ -5129,6 +5197,12 @@
           "reference": "GET:/presentaciones/{presentacion_id}/estado",
           "status": "domain",
           "test_path": "backend/tests/unit/test_presentaciones_pedagogical_planning.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/presentaciones/{presentacion_id}/estado",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_presentaciones_performance.py"
         },
         {
           "level": "unit",
@@ -5165,7 +5239,7 @@
       "kind": "endpoint",
       "owner_spec": "010-presentaciones-imagenes",
       "signature": "GET:/presentaciones/{presentacion_id}/preview",
-      "source_line": 94,
+      "source_line": 112,
       "source_path": "backend/app/modules/presentaciones/router.py",
       "states": [],
       "tests": [
@@ -5186,6 +5260,12 @@
           "reference": "GET:/presentaciones/{presentacion_id}/preview",
           "status": "domain",
           "test_path": "backend/tests/unit/test_presentaciones_pedagogical_planning.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/presentaciones/{presentacion_id}/preview",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_presentaciones_performance.py"
         },
         {
           "level": "unit",
@@ -5216,7 +5296,7 @@
       "kind": "endpoint",
       "owner_spec": "010-presentaciones-imagenes",
       "signature": "GET:/presentaciones/{presentacion_id}/preview/{slide_number}.png",
-      "source_line": 105,
+      "source_line": 123,
       "source_path": "backend/app/modules/presentaciones/router.py",
       "states": [],
       "tests": [
@@ -5237,6 +5317,12 @@
           "reference": "GET:/presentaciones/{presentacion_id}/preview/{slide_number}.png",
           "status": "domain",
           "test_path": "backend/tests/unit/test_presentaciones_pedagogical_planning.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/presentaciones/{presentacion_id}/preview/{slide_number}.png",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_presentaciones_performance.py"
         },
         {
           "level": "unit",
@@ -5266,7 +5352,7 @@
       "kind": "endpoint",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "GET:/profesor/ai-config",
-      "source_line": 940,
+      "source_line": 957,
       "source_path": "backend/app/modules/admin_ai_config/router.py",
       "states": [],
       "tests": [
@@ -5316,7 +5402,7 @@
       "kind": "endpoint",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "GET:/profesor/ai-providers/ollama/models",
-      "source_line": 1166,
+      "source_line": 1201,
       "source_path": "backend/app/modules/admin_ai_config/router.py",
       "states": [],
       "tests": []
@@ -5891,7 +5977,7 @@
       "kind": "endpoint",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "PATCH:/admin/ai-config",
-      "source_line": 367,
+      "source_line": 369,
       "source_path": "backend/app/modules/admin_ai_config/router.py",
       "states": [],
       "tests": [
@@ -5928,7 +6014,7 @@
       "kind": "endpoint",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "PATCH:/admin/ai-providers/{provider_id}",
-      "source_line": 714,
+      "source_line": 731,
       "source_path": "backend/app/modules/admin_ai_config/router.py",
       "states": [],
       "tests": [
@@ -6110,7 +6196,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "PATCH:/calificaciones/modo-salon/{sesion_id}/estudiantes/{estudiante_id}",
-      "source_line": 1021,
+      "source_line": 1059,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -6166,7 +6252,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "PATCH:/calificaciones/{calificacion_id}/ajustar",
-      "source_line": 788,
+      "source_line": 826,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -6222,7 +6308,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "PATCH:/calificaciones/{calificacion_id}/confirmar",
-      "source_line": 771,
+      "source_line": 809,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -6278,7 +6364,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "PATCH:/calificaciones/{calificacion_id}/publicar",
-      "source_line": 1489,
+      "source_line": 1527,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -6334,7 +6420,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "PATCH:/calificaciones/{calificacion_id}/revision-manual",
-      "source_line": 805,
+      "source_line": 843,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -6422,7 +6508,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "PATCH:/evaluaciones/{evaluacion_id}",
-      "source_line": 336,
+      "source_line": 337,
       "source_path": "backend/app/modules/evaluaciones/router.py",
       "states": [],
       "tests": [
@@ -6568,7 +6654,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "PATCH:/evaluaciones/{evaluacion_id}/respuestas-liberadas",
-      "source_line": 1708,
+      "source_line": 1746,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -6630,7 +6716,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "PATCH:/evaluaciones/{evaluacion_id}/validar-estructura",
-      "source_line": 414,
+      "source_line": 415,
       "source_path": "backend/app/modules/evaluaciones/router.py",
       "states": [],
       "tests": [
@@ -6865,7 +6951,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "PATCH:/incidencias/{incidencia_id}/resolver",
-      "source_line": 1629,
+      "source_line": 1667,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -7117,7 +7203,7 @@
       "kind": "endpoint",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "PATCH:/profesor/ai-config",
-      "source_line": 821,
+      "source_line": 838,
       "source_path": "backend/app/modules/admin_ai_config/router.py",
       "states": [],
       "tests": [
@@ -7306,7 +7392,7 @@
       "kind": "endpoint",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "POST:/admin/ai-cache/clear",
-      "source_line": 559,
+      "source_line": 576,
       "source_path": "backend/app/modules/admin_ai_config/router.py",
       "states": [],
       "tests": []
@@ -7330,7 +7416,7 @@
       "kind": "endpoint",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "POST:/admin/ai-providers/ollama/models/refresh",
-      "source_line": 522,
+      "source_line": 539,
       "source_path": "backend/app/modules/admin_ai_config/router.py",
       "states": [],
       "tests": []
@@ -7354,7 +7440,7 @@
       "kind": "endpoint",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "POST:/admin/ai-providers/{provider}/test",
-      "source_line": 488,
+      "source_line": 505,
       "source_path": "backend/app/modules/admin_ai_config/router.py",
       "states": [],
       "tests": []
@@ -7378,7 +7464,7 @@
       "kind": "endpoint",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "POST:/admin/ai-settings/restore-defaults",
-      "source_line": 731,
+      "source_line": 748,
       "source_path": "backend/app/modules/admin_ai_config/router.py",
       "states": [],
       "tests": []
@@ -7402,7 +7488,7 @@
       "kind": "endpoint",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "POST:/admin/ai-settings/restore-previous",
-      "source_line": 743,
+      "source_line": 760,
       "source_path": "backend/app/modules/admin_ai_config/router.py",
       "states": [],
       "tests": [
@@ -8393,7 +8479,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "POST:/calificaciones/foto",
-      "source_line": 255,
+      "source_line": 257,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -8449,7 +8535,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "POST:/calificaciones/lote",
-      "source_line": 503,
+      "source_line": 505,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -8482,6 +8568,12 @@
           "reference": "POST:/calificaciones/lote",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/CalificacionesTimeline.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/lote",
+          "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/GradingJobMonitor.test.tsx"
         }
       ]
     },
@@ -8505,7 +8597,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "POST:/calificaciones/lote/ajustar",
-      "source_line": 1528,
+      "source_line": 1566,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -8561,7 +8653,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "POST:/calificaciones/lote/asincrono",
-      "source_line": 609,
+      "source_line": 611,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -8594,6 +8686,12 @@
           "reference": "POST:/calificaciones/lote/asincrono",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/CalificacionesTimeline.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/lote/asincrono",
+          "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/GradingJobMonitor.test.tsx"
         }
       ]
     },
@@ -8617,7 +8715,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "POST:/calificaciones/lote/confirmar",
-      "source_line": 1518,
+      "source_line": 1556,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -8673,7 +8771,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "POST:/calificaciones/lote/publicar",
-      "source_line": 1508,
+      "source_line": 1546,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -8729,7 +8827,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "POST:/calificaciones/modo-salon/iniciar",
-      "source_line": 910,
+      "source_line": 948,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -8785,7 +8883,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "POST:/calificaciones/modo-salon/{sesion_id}/foto",
-      "source_line": 1064,
+      "source_line": 1102,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -8841,7 +8939,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "POST:/calificaciones/{calificacion_id}/incidencias",
-      "source_line": 1592,
+      "source_line": 1630,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -8897,7 +8995,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "POST:/calificaciones/{calificacion_id}/reintentar-foto",
-      "source_line": 395,
+      "source_line": 397,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -8953,7 +9051,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "POST:/calificaciones/{calificacion_id}/solicitar-reemplazo",
-      "source_line": 458,
+      "source_line": 460,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -9145,7 +9243,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "POST:/evaluaciones",
-      "source_line": 215,
+      "source_line": 216,
       "source_path": "backend/app/modules/evaluaciones/router.py",
       "states": [],
       "tests": [
@@ -9291,7 +9389,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "POST:/evaluaciones/externa/digitalizar",
-      "source_line": 195,
+      "source_line": 196,
       "source_path": "backend/app/modules/evaluaciones/router.py",
       "states": [],
       "tests": [
@@ -9379,7 +9477,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "POST:/evaluaciones/generar-borrador",
-      "source_line": 181,
+      "source_line": 182,
       "source_path": "backend/app/modules/evaluaciones/router.py",
       "states": [],
       "tests": [
@@ -9455,7 +9553,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "POST:/evaluaciones/sorpresa",
-      "source_line": 205,
+      "source_line": 206,
       "source_path": "backend/app/modules/evaluaciones/router.py",
       "states": [],
       "tests": [
@@ -9493,7 +9591,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "POST:/evaluaciones/{evaluacion_id}/activar-recepcion",
-      "source_line": 381,
+      "source_line": 382,
       "source_path": "backend/app/modules/evaluaciones/router.py",
       "states": [],
       "tests": [
@@ -9531,7 +9629,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "POST:/evaluaciones/{evaluacion_id}/calificaciones/manual",
-      "source_line": 822,
+      "source_line": 860,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -9587,7 +9685,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "POST:/evaluaciones/{evaluacion_id}/cerrar",
-      "source_line": 370,
+      "source_line": 371,
       "source_path": "backend/app/modules/evaluaciones/router.py",
       "states": [],
       "tests": [
@@ -9625,7 +9723,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "POST:/evaluaciones/{evaluacion_id}/crear-blueprint",
-      "source_line": 348,
+      "source_line": 349,
       "source_path": "backend/app/modules/evaluaciones/router.py",
       "states": [],
       "tests": [
@@ -9663,7 +9761,7 @@
       "kind": "endpoint",
       "owner_spec": "007-entregas-estudiante",
       "signature": "POST:/evaluaciones/{evaluacion_id}/entregas",
-      "source_line": 1194,
+      "source_line": 1232,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -9719,7 +9817,7 @@
       "kind": "endpoint",
       "owner_spec": "007-entregas-estudiante",
       "signature": "POST:/evaluaciones/{evaluacion_id}/entregas/archivo",
-      "source_line": 1289,
+      "source_line": 1327,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -9775,7 +9873,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "POST:/evaluaciones/{evaluacion_id}/pausar-recepcion",
-      "source_line": 392,
+      "source_line": 393,
       "source_path": "backend/app/modules/evaluaciones/router.py",
       "states": [],
       "tests": [
@@ -9813,7 +9911,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "POST:/evaluaciones/{evaluacion_id}/publicar",
-      "source_line": 359,
+      "source_line": 360,
       "source_path": "backend/app/modules/evaluaciones/router.py",
       "states": [],
       "tests": [
@@ -9852,7 +9950,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "POST:/evaluaciones/{evaluacion_id}/solicitud-revision",
-      "source_line": 1571,
+      "source_line": 1609,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -10903,7 +11001,30 @@
       "kind": "endpoint",
       "owner_spec": "012-ia-jobs-produccion",
       "signature": "POST:/jobs/{job_id}/cancelar",
-      "source_line": 55,
+      "source_line": 279,
+      "source_path": "backend/app/modules/jobs/router.py",
+      "states": [],
+      "tests": []
+    },
+    {
+      "actors": [
+        "authenticated"
+      ],
+      "authorization": [
+        "get_current_user"
+      ],
+      "consumers": [],
+      "coverage": "missing",
+      "details": {
+        "function": "retry_job",
+        "registered": true,
+        "router": "router"
+      },
+      "id": "backend:POST:/jobs/{job_id}/reintentar",
+      "kind": "endpoint",
+      "owner_spec": "012-ia-jobs-produccion",
+      "signature": "POST:/jobs/{job_id}/reintentar",
+      "source_line": 148,
       "source_path": "backend/app/modules/jobs/router.py",
       "states": [],
       "tests": []
@@ -11260,6 +11381,12 @@
         {
           "level": "unit",
           "reference": "POST:/presentaciones",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_presentaciones_performance.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/presentaciones",
           "status": "direct",
           "test_path": "backend/tests/unit/test_presentaciones_router.py"
         },
@@ -11309,7 +11436,7 @@
       "kind": "endpoint",
       "owner_spec": "010-presentaciones-imagenes",
       "signature": "POST:/presentaciones/{presentacion_id}/exportar",
-      "source_line": 125,
+      "source_line": 143,
       "source_path": "backend/app/modules/presentaciones/router.py",
       "states": [],
       "tests": [
@@ -11330,6 +11457,12 @@
           "reference": "POST:/presentaciones/{presentacion_id}/exportar",
           "status": "domain",
           "test_path": "backend/tests/unit/test_presentaciones_pedagogical_planning.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/presentaciones/{presentacion_id}/exportar",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_presentaciones_performance.py"
         },
         {
           "level": "unit",
@@ -11359,7 +11492,7 @@
       "kind": "endpoint",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "POST:/profesor/ai-providers/ollama/models/refresh",
-      "source_line": 1146,
+      "source_line": 1181,
       "source_path": "backend/app/modules/admin_ai_config/router.py",
       "states": [],
       "tests": []
@@ -11384,7 +11517,7 @@
       "kind": "endpoint",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "POST:/profesor/ai-providers/{provider}/test",
-      "source_line": 1201,
+      "source_line": 1236,
       "source_path": "backend/app/modules/admin_ai_config/router.py",
       "states": [],
       "tests": [
@@ -11724,7 +11857,7 @@
       "kind": "endpoint",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "PUT:/admin/ai-features",
-      "source_line": 665,
+      "source_line": 682,
       "source_path": "backend/app/modules/admin_ai_config/router.py",
       "states": [],
       "tests": [
@@ -11761,7 +11894,7 @@
       "kind": "endpoint",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "PUT:/admin/ai-providers",
-      "source_line": 637,
+      "source_line": 654,
       "source_path": "backend/app/modules/admin_ai_config/router.py",
       "states": [],
       "tests": [
@@ -11792,7 +11925,7 @@
       "kind": "endpoint",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "PUT:/admin/ai-settings/publish",
-      "source_line": 572,
+      "source_line": 589,
       "source_path": "backend/app/modules/admin_ai_config/router.py",
       "states": [],
       "tests": [
@@ -11858,7 +11991,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "PUT:/calificaciones/{calificacion_id}/desglose",
-      "source_line": 1675,
+      "source_line": 1713,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -11991,7 +12124,7 @@
       "kind": "endpoint",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "PUT:/profesor/ai-config",
-      "source_line": 1034,
+      "source_line": 1069,
       "source_path": "backend/app/modules/admin_ai_config/router.py",
       "states": [],
       "tests": [
@@ -12041,7 +12174,7 @@
       "kind": "endpoint",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "PUT:/profesor/ai-credentials/{provider}",
-      "source_line": 1099,
+      "source_line": 1134,
       "source_path": "backend/app/modules/admin_ai_config/router.py",
       "states": [],
       "tests": [
@@ -12083,6 +12216,12 @@
           "reference": "/",
           "status": "direct",
           "test_path": "backend/tests/fixtures/ai_pipeline.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "backend/tests/fixtures/ai_pipeline_performance.py"
         },
         {
           "level": "unit",
@@ -12131,6 +12270,12 @@
           "reference": "/",
           "status": "domain",
           "test_path": "backend/tests/integration/test_ai_job_configuration_snapshot.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_ai_job_leases.py"
         },
         {
           "level": "unit",
@@ -12286,6 +12431,12 @@
           "level": "unit",
           "reference": "/",
           "status": "direct",
+          "test_path": "backend/tests/unit/test_llm_router_output_budget.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
           "test_path": "backend/tests/unit/test_mail_configuration.py"
         },
         {
@@ -12407,6 +12558,12 @@
           "reference": "/",
           "status": "domain",
           "test_path": "backend/tests/unit/test_worker_ai_config.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_worker_queue_routing.py"
         },
         {
           "level": "unit",
@@ -12677,6 +12834,12 @@
           "reference": "/",
           "status": "direct",
           "test_path": "frontend/src/modules/calificaciones/components/GradeGlobalAdjustmentEditor.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/gradePresentation.test.ts"
         },
         {
           "level": "unit",
@@ -16906,6 +17069,12 @@
           "level": "unit",
           "reference": "DELETE:/admin/roles/{id}",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_admin_ai_model_performance.py"
+        },
+        {
+          "level": "unit",
+          "reference": "DELETE:/admin/roles/{id}",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_admin_ai_usage_service.py"
         },
         {
@@ -16990,6 +17159,12 @@
           "level": "unit",
           "reference": "DELETE:/admin/users/{id}",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_admin_ai_model_performance.py"
+        },
+        {
+          "level": "unit",
+          "reference": "DELETE:/admin/users/{id}",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_admin_ai_usage_service.py"
         },
         {
@@ -17034,7 +17209,7 @@
       "kind": "frontend_call",
       "owner_spec": "008-calificaciones",
       "signature": "DELETE:/calificaciones/modo-salon/{sesionId}",
-      "source_line": 87,
+      "source_line": 107,
       "source_path": "frontend/src/modules/calificaciones/api.ts",
       "states": [],
       "tests": [
@@ -17392,7 +17567,7 @@
       "kind": "frontend_call",
       "owner_spec": "010-presentaciones-imagenes",
       "signature": "DELETE:/presentaciones/{id}",
-      "source_line": 60,
+      "source_line": 73,
       "source_path": "frontend/src/modules/presentaciones/api.ts",
       "states": [],
       "tests": [
@@ -17425,6 +17600,12 @@
           "reference": "DELETE:/presentaciones/{id}",
           "status": "direct",
           "test_path": "backend/tests/unit/test_presentaciones_pedagogical_planning.py"
+        },
+        {
+          "level": "unit",
+          "reference": "DELETE:/presentaciones/{id}",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_presentaciones_performance.py"
         },
         {
           "level": "unit",
@@ -17577,7 +17758,7 @@
       "kind": "frontend_call",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "GET:/admin/ai-audit",
-      "source_line": 252,
+      "source_line": 268,
       "source_path": "frontend/src/modules/admin/api.ts",
       "states": [],
       "tests": [
@@ -17604,6 +17785,12 @@
           "reference": "GET:/admin/ai-audit",
           "status": "domain",
           "test_path": "backend/tests/integration/test_admin_users_rbac.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/admin/ai-audit",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_admin_ai_model_performance.py"
         },
         {
           "level": "unit",
@@ -17661,7 +17848,7 @@
       "kind": "frontend_call",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "GET:/admin/ai-config-hash",
-      "source_line": 242,
+      "source_line": 258,
       "source_path": "frontend/src/modules/admin/api.ts",
       "states": [],
       "tests": [
@@ -17688,6 +17875,12 @@
           "reference": "GET:/admin/ai-config-hash",
           "status": "domain",
           "test_path": "backend/tests/integration/test_admin_users_rbac.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/admin/ai-config-hash",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_admin_ai_model_performance.py"
         },
         {
           "level": "unit",
@@ -17745,7 +17938,7 @@
       "kind": "frontend_call",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "GET:/admin/ai-settings",
-      "source_line": 136,
+      "source_line": 152,
       "source_path": "frontend/src/modules/admin/api.ts",
       "states": [],
       "tests": [
@@ -17778,6 +17971,12 @@
           "reference": "GET:/admin/ai-settings",
           "status": "direct",
           "test_path": "backend/tests/integration/test_ai_configuration_api.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/admin/ai-settings",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_admin_ai_model_performance.py"
         },
         {
           "level": "unit",
@@ -17841,7 +18040,7 @@
       "kind": "frontend_call",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "GET:/admin/ai-usage",
-      "source_line": 247,
+      "source_line": 263,
       "source_path": "frontend/src/modules/admin/api.ts",
       "states": [],
       "tests": [
@@ -17868,6 +18067,12 @@
           "reference": "GET:/admin/ai-usage",
           "status": "domain",
           "test_path": "backend/tests/integration/test_admin_users_rbac.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/admin/ai-usage",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_admin_ai_model_performance.py"
         },
         {
           "level": "unit",
@@ -17957,6 +18162,12 @@
           "level": "unit",
           "reference": "GET:/admin/authorization/audit",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_admin_ai_model_performance.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/admin/authorization/audit",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_admin_ai_usage_service.py"
         },
         {
@@ -18030,6 +18241,12 @@
           "reference": "GET:/admin/authorization/modules",
           "status": "domain",
           "test_path": "backend/tests/integration/test_admin_users_rbac.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/admin/authorization/modules",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_admin_ai_model_performance.py"
         },
         {
           "level": "unit",
@@ -18119,6 +18336,12 @@
           "level": "unit",
           "reference": "GET:/admin/mail/config",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_admin_ai_model_performance.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/admin/mail/config",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_admin_ai_usage_service.py"
         },
         {
@@ -18197,6 +18420,12 @@
           "level": "unit",
           "reference": "GET:/admin/mail/recovery-status",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_admin_ai_model_performance.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/admin/mail/recovery-status",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_admin_ai_usage_service.py"
         },
         {
@@ -18270,6 +18499,12 @@
           "reference": "GET:/admin/roles",
           "status": "domain",
           "test_path": "backend/tests/integration/test_admin_users_rbac.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/admin/roles",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_admin_ai_model_performance.py"
         },
         {
           "level": "unit",
@@ -18359,6 +18594,12 @@
           "level": "unit",
           "reference": "GET:/admin/users/{id}",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_admin_ai_model_performance.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/admin/users/{id}",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_admin_ai_usage_service.py"
         },
         {
@@ -18438,6 +18679,12 @@
           "reference": "GET:/admin/users",
           "status": "direct",
           "test_path": "backend/tests/integration/test_api_contract.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/admin/users",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_admin_ai_model_performance.py"
         },
         {
           "level": "unit",
@@ -19184,7 +19431,7 @@
       "kind": "frontend_call",
       "owner_spec": "008-calificaciones",
       "signature": "GET:/calificaciones/{calificacionId}/desglose/historial",
-      "source_line": 162,
+      "source_line": 182,
       "source_path": "frontend/src/modules/calificaciones/api.ts",
       "states": [],
       "tests": [
@@ -19236,7 +19483,7 @@
       "kind": "frontend_call",
       "owner_spec": "008-calificaciones",
       "signature": "GET:/calificaciones/{calificacionId}/desglose",
-      "source_line": 152,
+      "source_line": 172,
       "source_path": "frontend/src/modules/calificaciones/api.ts",
       "states": [],
       "tests": [
@@ -19288,7 +19535,7 @@
       "kind": "frontend_call",
       "owner_spec": "008-calificaciones",
       "signature": "GET:/calificaciones/{calificacionId}/detalle",
-      "source_line": 104,
+      "source_line": 124,
       "source_path": "frontend/src/modules/calificaciones/api.ts",
       "states": [],
       "tests": [
@@ -19340,7 +19587,7 @@
       "kind": "frontend_call",
       "owner_spec": "008-calificaciones",
       "signature": "GET:/calificaciones/{calificacionId}/incidencias",
-      "source_line": 138,
+      "source_line": 158,
       "source_path": "frontend/src/modules/calificaciones/api.ts",
       "states": [],
       "tests": [
@@ -19474,7 +19721,7 @@
       "kind": "frontend_call",
       "owner_spec": "008-calificaciones",
       "signature": "GET:/estudiantes/{estudianteId}/boletin",
-      "source_line": 90,
+      "source_line": 110,
       "source_path": "frontend/src/modules/calificaciones/api.ts",
       "states": [],
       "tests": [
@@ -19526,7 +19773,7 @@
       "kind": "frontend_call",
       "owner_spec": "008-calificaciones",
       "signature": "GET:/estudiantes/{estudianteId}/resumen-academico",
-      "source_line": 96,
+      "source_line": 116,
       "source_path": "frontend/src/modules/calificaciones/api.ts",
       "states": [],
       "tests": [
@@ -20087,12 +20334,12 @@
         "backend_contract_candidates": [],
         "contract_status": "matched"
       },
-      "id": "frontend_call:GET:/jobs/{jobId}:frontend/src/modules/calificaciones/GradingJobMonitor.tsx",
+      "id": "frontend_call:GET:/jobs/{jobId}:frontend/src/modules/calificaciones/gradingJobs.ts",
       "kind": "frontend_call",
       "owner_spec": "012-ia-jobs-produccion",
       "signature": "GET:/jobs/{jobId}",
-      "source_line": 42,
-      "source_path": "frontend/src/modules/calificaciones/GradingJobMonitor.tsx",
+      "source_line": 110,
+      "source_path": "frontend/src/modules/calificaciones/gradingJobs.ts",
       "states": [],
       "tests": [
         {
@@ -20104,7 +20351,7 @@
         {
           "level": "unit",
           "reference": "GET:/jobs/{jobId}",
-          "status": "domain",
+          "status": "direct",
           "test_path": "backend/tests/unit/test_calificaciones_lote_async.py"
         },
         {
@@ -20130,6 +20377,18 @@
           "reference": "GET:/jobs/{jobId}",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/CalificacionesTimeline.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/jobs/{jobId}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/GradingJobMonitor.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/jobs/{jobId}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/evaluaciones/components/DigitalizationJobMonitor.test.tsx"
         }
       ]
     },
@@ -20149,7 +20408,7 @@
       "kind": "frontend_call",
       "owner_spec": "012-ia-jobs-produccion",
       "signature": "GET:/jobs/{jobId}",
-      "source_line": 96,
+      "source_line": 114,
       "source_path": "frontend/src/modules/evaluaciones/components/DigitalizationJobMonitor.tsx",
       "states": [],
       "tests": [
@@ -20157,7 +20416,25 @@
           "level": "unit",
           "reference": "GET:/jobs/{jobId}",
           "status": "direct",
+          "test_path": "backend/tests/unit/test_calificaciones_lote_async.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/jobs/{jobId}",
+          "status": "direct",
           "test_path": "backend/tests/unit/test_ollama_cloud_provider.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/jobs/{jobId}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/GradingJobMonitor.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/jobs/{jobId}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/evaluaciones/components/DigitalizationJobMonitor.test.tsx"
         }
       ]
     },
@@ -20704,7 +20981,7 @@
       "kind": "frontend_call",
       "owner_spec": "010-presentaciones-imagenes",
       "signature": "GET:/presentaciones/{id}/estado",
-      "source_line": 28,
+      "source_line": 41,
       "source_path": "frontend/src/modules/presentaciones/api.ts",
       "states": [],
       "tests": [
@@ -20725,6 +21002,12 @@
           "reference": "GET:/presentaciones/{id}/estado",
           "status": "domain",
           "test_path": "backend/tests/unit/test_presentaciones_pedagogical_planning.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/presentaciones/{id}/estado",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_presentaciones_performance.py"
         },
         {
           "level": "unit",
@@ -20753,7 +21036,7 @@
       "kind": "frontend_call",
       "owner_spec": "010-presentaciones-imagenes",
       "signature": "GET:/presentaciones/{id}/preview",
-      "source_line": 56,
+      "source_line": 69,
       "source_path": "frontend/src/modules/presentaciones/api.ts",
       "states": [],
       "tests": [
@@ -20774,6 +21057,12 @@
           "reference": "GET:/presentaciones/{id}/preview",
           "status": "domain",
           "test_path": "backend/tests/unit/test_presentaciones_pedagogical_planning.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/presentaciones/{id}/preview",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_presentaciones_performance.py"
         },
         {
           "level": "unit",
@@ -20835,6 +21124,12 @@
           "reference": "GET:/presentaciones",
           "status": "direct",
           "test_path": "backend/tests/unit/test_presentaciones_pedagogical_planning.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/presentaciones",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_presentaciones_performance.py"
         },
         {
           "level": "unit",
@@ -21030,6 +21325,12 @@
           "reference": "GET:/users/me/authorization",
           "status": "domain",
           "test_path": "backend/tests/integration/test_admin_users_rbac.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/users/me/authorization",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_admin_ai_model_performance.py"
         },
         {
           "level": "unit",
@@ -21261,7 +21562,7 @@
       "kind": "frontend_call",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "PATCH:/admin/ai-config",
-      "source_line": 141,
+      "source_line": 157,
       "source_path": "frontend/src/modules/admin/api.ts",
       "states": [],
       "tests": [
@@ -21288,6 +21589,12 @@
           "reference": "PATCH:/admin/ai-config",
           "status": "domain",
           "test_path": "backend/tests/integration/test_admin_users_rbac.py"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/admin/ai-config",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_admin_ai_model_performance.py"
         },
         {
           "level": "unit",
@@ -21351,7 +21658,7 @@
       "kind": "frontend_call",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "PATCH:/admin/ai-providers/{id}",
-      "source_line": 223,
+      "source_line": 239,
       "source_path": "frontend/src/modules/admin/api.ts",
       "states": [],
       "tests": [
@@ -21378,6 +21685,12 @@
           "reference": "PATCH:/admin/ai-providers/{id}",
           "status": "domain",
           "test_path": "backend/tests/integration/test_admin_users_rbac.py"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/admin/ai-providers/{id}",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_admin_ai_model_performance.py"
         },
         {
           "level": "unit",
@@ -21467,6 +21780,12 @@
           "level": "unit",
           "reference": "PATCH:/admin/roles/{id}",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_admin_ai_model_performance.py"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/admin/roles/{id}",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_admin_ai_usage_service.py"
         },
         {
@@ -21540,6 +21859,12 @@
           "reference": "PATCH:/admin/users/{id}/solicitud-docente",
           "status": "domain",
           "test_path": "backend/tests/integration/test_admin_users_rbac.py"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/admin/users/{id}/solicitud-docente",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_admin_ai_model_performance.py"
         },
         {
           "level": "unit",
@@ -21629,6 +21954,12 @@
           "level": "unit",
           "reference": "PATCH:/admin/users/{id}",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_admin_ai_model_performance.py"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/admin/users/{id}",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_admin_ai_usage_service.py"
         },
         {
@@ -21673,7 +22004,7 @@
       "kind": "frontend_call",
       "owner_spec": "008-calificaciones",
       "signature": "PATCH:/calificaciones/{calificacionId}/publicar",
-      "source_line": 125,
+      "source_line": 145,
       "source_path": "frontend/src/modules/calificaciones/api.ts",
       "states": [],
       "tests": [
@@ -21921,7 +22252,7 @@
       "kind": "frontend_call",
       "owner_spec": "005-evaluaciones",
       "signature": "PATCH:/evaluaciones/{evaluacionId}/respuestas-liberadas",
-      "source_line": 167,
+      "source_line": 187,
       "source_path": "frontend/src/modules/calificaciones/api.ts",
       "states": [],
       "tests": [
@@ -22288,7 +22619,7 @@
       "kind": "frontend_call",
       "owner_spec": "008-calificaciones",
       "signature": "PATCH:/incidencias/{incidenciaId}/resolver",
-      "source_line": 148,
+      "source_line": 168,
       "source_path": "frontend/src/modules/calificaciones/api.ts",
       "states": [],
       "tests": [
@@ -22536,7 +22867,7 @@
       "kind": "frontend_call",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "POST:/admin/ai-cache/clear",
-      "source_line": 237,
+      "source_line": 253,
       "source_path": "frontend/src/modules/admin/api.ts",
       "states": [],
       "tests": [
@@ -22563,6 +22894,12 @@
           "reference": "POST:/admin/ai-cache/clear",
           "status": "domain",
           "test_path": "backend/tests/integration/test_admin_users_rbac.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/admin/ai-cache/clear",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_admin_ai_model_performance.py"
         },
         {
           "level": "unit",
@@ -22614,7 +22951,7 @@
       "kind": "frontend_call",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "POST:/admin/ai-providers/ollama/models/refresh",
-      "source_line": 157,
+      "source_line": 173,
       "source_path": "frontend/src/modules/admin/api.ts",
       "states": [],
       "tests": [
@@ -22641,6 +22978,12 @@
           "reference": "POST:/admin/ai-providers/ollama/models/refresh",
           "status": "domain",
           "test_path": "backend/tests/integration/test_admin_users_rbac.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/admin/ai-providers/ollama/models/refresh",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_admin_ai_model_performance.py"
         },
         {
           "level": "unit",
@@ -22692,7 +23035,7 @@
       "kind": "frontend_call",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "POST:/admin/ai-providers/{providerId}/test",
-      "source_line": 149,
+      "source_line": 165,
       "source_path": "frontend/src/modules/admin/api.ts",
       "states": [],
       "tests": [
@@ -22719,6 +23062,12 @@
           "reference": "POST:/admin/ai-providers/{providerId}/test",
           "status": "domain",
           "test_path": "backend/tests/integration/test_admin_users_rbac.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/admin/ai-providers/{providerId}/test",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_admin_ai_model_performance.py"
         },
         {
           "level": "unit",
@@ -22770,7 +23119,7 @@
       "kind": "frontend_call",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "POST:/admin/ai-settings/restore-defaults",
-      "source_line": 232,
+      "source_line": 248,
       "source_path": "frontend/src/modules/admin/api.ts",
       "states": [],
       "tests": [
@@ -22797,6 +23146,12 @@
           "reference": "POST:/admin/ai-settings/restore-defaults",
           "status": "domain",
           "test_path": "backend/tests/integration/test_admin_users_rbac.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/admin/ai-settings/restore-defaults",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_admin_ai_model_performance.py"
         },
         {
           "level": "unit",
@@ -22848,7 +23203,7 @@
       "kind": "frontend_call",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "POST:/admin/ai-settings/restore-previous",
-      "source_line": 228,
+      "source_line": 244,
       "source_path": "frontend/src/modules/admin/api.ts",
       "states": [],
       "tests": [
@@ -22875,6 +23230,12 @@
           "reference": "POST:/admin/ai-settings/restore-previous",
           "status": "domain",
           "test_path": "backend/tests/integration/test_admin_users_rbac.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/admin/ai-settings/restore-previous",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_admin_ai_model_performance.py"
         },
         {
           "level": "unit",
@@ -22964,6 +23325,12 @@
           "level": "unit",
           "reference": "POST:/admin/mail/test",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_admin_ai_model_performance.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/admin/mail/test",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_admin_ai_usage_service.py"
         },
         {
@@ -23042,6 +23409,12 @@
           "level": "unit",
           "reference": "POST:/admin/roles/{id}",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_admin_ai_model_performance.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/admin/roles/{id}",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_admin_ai_usage_service.py"
         },
         {
@@ -23115,6 +23488,12 @@
           "reference": "POST:/admin/roles",
           "status": "domain",
           "test_path": "backend/tests/integration/test_admin_users_rbac.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/admin/roles",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_admin_ai_model_performance.py"
         },
         {
           "level": "unit",
@@ -23199,6 +23578,12 @@
           "reference": "POST:/admin/users",
           "status": "direct",
           "test_path": "backend/tests/integration/test_api_contract.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/admin/users",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_admin_ai_model_performance.py"
         },
         {
           "level": "unit",
@@ -23687,7 +24072,7 @@
       "kind": "frontend_call",
       "owner_spec": "008-calificaciones",
       "signature": "POST:/calificaciones/lote/ajustar",
-      "source_line": 117,
+      "source_line": 137,
       "source_path": "frontend/src/modules/calificaciones/api.ts",
       "states": [],
       "tests": [
@@ -23731,6 +24116,64 @@
       "consumers": [],
       "coverage": "covered",
       "details": {
+        "backend_contract": "backend:POST:/calificaciones/lote/asincrono",
+        "backend_contract_candidates": [],
+        "contract_status": "matched"
+      },
+      "id": "frontend_call:POST:/calificaciones/lote/asincrono:frontend/src/modules/calificaciones/api.ts",
+      "kind": "frontend_call",
+      "owner_spec": "008-calificaciones",
+      "signature": "POST:/calificaciones/lote/asincrono",
+      "source_line": 103,
+      "source_path": "frontend/src/modules/calificaciones/api.ts",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/lote/asincrono",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_calificaciones_boletin_permissions.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/lote/asincrono",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_calificaciones_lote_async.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/lote/asincrono",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_calificaciones_resumen_academico.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/lote/asincrono",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_calificaciones_revision_workspace.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/lote/asincrono",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/CalificacionesTimeline.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/lote/asincrono",
+          "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/GradingJobMonitor.test.tsx"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "ambiguous"
+      ],
+      "authorization": [],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
         "backend_contract": "backend:POST:/calificaciones/lote/confirmar",
         "backend_contract_candidates": [],
         "contract_status": "matched"
@@ -23739,7 +24182,7 @@
       "kind": "frontend_call",
       "owner_spec": "008-calificaciones",
       "signature": "POST:/calificaciones/lote/confirmar",
-      "source_line": 112,
+      "source_line": 132,
       "source_path": "frontend/src/modules/calificaciones/api.ts",
       "states": [],
       "tests": [
@@ -23791,7 +24234,7 @@
       "kind": "frontend_call",
       "owner_spec": "008-calificaciones",
       "signature": "POST:/calificaciones/lote/publicar",
-      "source_line": 130,
+      "source_line": 150,
       "source_path": "frontend/src/modules/calificaciones/api.ts",
       "states": [],
       "tests": [
@@ -23947,7 +24390,7 @@
       "kind": "frontend_call",
       "owner_spec": "008-calificaciones",
       "signature": "POST:/calificaciones/{calificacionId}/incidencias",
-      "source_line": 143,
+      "source_line": 163,
       "source_path": "frontend/src/modules/calificaciones/api.ts",
       "states": [],
       "tests": [
@@ -24898,6 +25341,52 @@
       "consumers": [],
       "coverage": "covered",
       "details": {
+        "backend_contract": null,
+        "backend_contract_candidates": [],
+        "contract_status": "unmatched"
+      },
+      "id": "frontend_call:POST:/jobs/{jobId}:frontend/src/modules/evaluaciones/components/DigitalizationJobMonitor.tsx",
+      "kind": "frontend_call",
+      "owner_spec": "012-ia-jobs-produccion",
+      "signature": "POST:/jobs/{jobId}",
+      "source_line": 223,
+      "source_path": "frontend/src/modules/evaluaciones/components/DigitalizationJobMonitor.tsx",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "POST:/jobs/{jobId}",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_calificaciones_lote_async.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/jobs/{jobId}",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_ollama_cloud_provider.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/jobs/{jobId}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/GradingJobMonitor.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/jobs/{jobId}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/evaluaciones/components/DigitalizationJobMonitor.test.tsx"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "ambiguous"
+      ],
+      "authorization": [],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
         "backend_contract": "backend:POST:/materias/{materia_id}/regenerar-codigo",
         "backend_contract_candidates": [],
         "contract_status": "matched"
@@ -25217,7 +25706,7 @@
       "kind": "frontend_call",
       "owner_spec": "010-presentaciones-imagenes",
       "signature": "POST:/presentaciones/{id}/exportar",
-      "source_line": 33,
+      "source_line": 46,
       "source_path": "frontend/src/modules/presentaciones/api.ts",
       "states": [],
       "tests": [
@@ -25232,6 +25721,12 @@
           "reference": "POST:/presentaciones/{id}/exportar",
           "status": "domain",
           "test_path": "backend/tests/unit/test_presentaciones_pedagogical_planning.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/presentaciones/{id}/exportar",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_presentaciones_performance.py"
         },
         {
           "level": "unit",
@@ -25293,6 +25788,12 @@
           "reference": "POST:/presentaciones",
           "status": "direct",
           "test_path": "backend/tests/unit/test_presentaciones_pedagogical_planning.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/presentaciones",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_presentaciones_performance.py"
         },
         {
           "level": "unit",
@@ -25574,7 +26075,7 @@
       "kind": "frontend_call",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "PUT:/admin/ai-features",
-      "source_line": 215,
+      "source_line": 231,
       "source_path": "frontend/src/modules/admin/api.ts",
       "states": [],
       "tests": [
@@ -25607,6 +26108,12 @@
           "reference": "PUT:/admin/ai-features",
           "status": "direct",
           "test_path": "backend/tests/integration/test_ai_configuration_api.py"
+        },
+        {
+          "level": "unit",
+          "reference": "PUT:/admin/ai-features",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_admin_ai_model_performance.py"
         },
         {
           "level": "unit",
@@ -25664,7 +26171,7 @@
       "kind": "frontend_call",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "PUT:/admin/ai-providers",
-      "source_line": 198,
+      "source_line": 214,
       "source_path": "frontend/src/modules/admin/api.ts",
       "states": [],
       "tests": [
@@ -25691,6 +26198,12 @@
           "reference": "PUT:/admin/ai-providers",
           "status": "domain",
           "test_path": "backend/tests/integration/test_admin_users_rbac.py"
+        },
+        {
+          "level": "unit",
+          "reference": "PUT:/admin/ai-providers",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_admin_ai_model_performance.py"
         },
         {
           "level": "unit",
@@ -25748,7 +26261,7 @@
       "kind": "frontend_call",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "PUT:/admin/ai-settings/publish",
-      "source_line": 167,
+      "source_line": 183,
       "source_path": "frontend/src/modules/admin/api.ts",
       "states": [],
       "tests": [
@@ -25775,6 +26288,12 @@
           "reference": "PUT:/admin/ai-settings/publish",
           "status": "domain",
           "test_path": "backend/tests/integration/test_admin_users_rbac.py"
+        },
+        {
+          "level": "unit",
+          "reference": "PUT:/admin/ai-settings/publish",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_admin_ai_model_performance.py"
         },
         {
           "level": "unit",
@@ -25870,6 +26389,12 @@
           "level": "unit",
           "reference": "PUT:/admin/mail/config",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_admin_ai_model_performance.py"
+        },
+        {
+          "level": "unit",
+          "reference": "PUT:/admin/mail/config",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_admin_ai_usage_service.py"
         },
         {
@@ -25914,7 +26439,7 @@
       "kind": "frontend_call",
       "owner_spec": "008-calificaciones",
       "signature": "PUT:/calificaciones/{calificacionId}/desglose",
-      "source_line": 157,
+      "source_line": 177,
       "source_path": "frontend/src/modules/calificaciones/api.ts",
       "states": [],
       "tests": [
@@ -26096,6 +26621,12 @@
           "reference": "celery",
           "status": "direct",
           "test_path": "backend/tests/unit/test_tasks_grading.py"
+        },
+        {
+          "level": "unit",
+          "reference": "celery",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_worker_queue_routing.py"
         }
       ]
     },
@@ -26307,6 +26838,12 @@
           "level": "unit",
           "reference": "open_code",
           "status": "direct",
+          "test_path": "backend/tests/unit/test_admin_ai_model_performance.py"
+        },
+        {
+          "level": "unit",
+          "reference": "open_code",
+          "status": "direct",
           "test_path": "backend/tests/unit/test_admin_ai_usage_service.py"
         },
         {
@@ -26332,6 +26869,12 @@
           "reference": "open_code",
           "status": "direct",
           "test_path": "backend/tests/unit/test_legacy_usage_adapter.py"
+        },
+        {
+          "level": "unit",
+          "reference": "open_code",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_llm_router_output_budget.py"
         },
         {
           "level": "unit",
@@ -26498,6 +27041,12 @@
           "reference": "redis",
           "status": "direct",
           "test_path": "backend/tests/unit/test_rate_limit.py"
+        },
+        {
+          "level": "unit",
+          "reference": "redis",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_worker_queue_routing.py"
         }
       ]
     },
@@ -26591,7 +27140,7 @@
       ],
       "authorization": [],
       "consumers": [],
-      "coverage": "missing",
+      "coverage": "covered",
       "details": {
         "bind": true,
         "effects": [
@@ -26617,14 +27166,21 @@
       "kind": "job",
       "owner_spec": "012-ia-jobs-produccion",
       "signature": "tasks.digitalize_evaluation",
-      "source_line": 255,
+      "source_line": 390,
       "source_path": "backend/app/workers/tasks_digitalization.py",
       "states": [
         "cancelled",
         "failed",
         "success"
       ],
-      "tests": []
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "tasks.digitalize_evaluation",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_worker_queue_routing.py"
+        }
+      ]
     },
     {
       "actors": [
@@ -26673,7 +27229,7 @@
       ],
       "authorization": [],
       "consumers": [],
-      "coverage": "missing",
+      "coverage": "covered",
       "details": {
         "bind": true,
         "effects": [
@@ -26706,7 +27262,14 @@
         "failed",
         "success"
       ],
-      "tests": []
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "tasks.generate_image",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_worker_queue_routing.py"
+        }
+      ]
     },
     {
       "actors": [
@@ -26714,7 +27277,7 @@
       ],
       "authorization": [],
       "consumers": [],
-      "coverage": "missing",
+      "coverage": "covered",
       "details": {
         "bind": true,
         "effects": [
@@ -26747,7 +27310,14 @@
         "failed",
         "success"
       ],
-      "tests": []
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "tasks.generate_presentation",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_worker_queue_routing.py"
+        }
+      ]
     },
     {
       "actors": [
@@ -26822,7 +27392,7 @@
       "kind": "job",
       "owner_spec": "012-ia-jobs-produccion",
       "signature": "tasks.grade_batch",
-      "source_line": 691,
+      "source_line": 767,
       "source_path": "backend/app/workers/tasks_grading.py",
       "states": [
         "cancelled",
@@ -26835,6 +27405,60 @@
           "reference": "tasks.grade_batch",
           "status": "direct",
           "test_path": "backend/tests/unit/test_ollama_cloud_provider.py"
+        },
+        {
+          "level": "unit",
+          "reference": "tasks.grade_batch",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_worker_queue_routing.py"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "system"
+      ],
+      "authorization": [],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
+        "bind": true,
+        "effects": [
+          "not_observed"
+        ],
+        "function": "grade_delivery",
+        "idempotency_evidence": [
+          "explicit_marker"
+        ],
+        "retry_policy": [
+          "not_observed"
+        ],
+        "terminal_states": [
+          "cancelled",
+          "failed",
+          "success"
+        ],
+        "triggers": [
+          "celery_queue"
+        ]
+      },
+      "id": "job:tasks.grade_delivery",
+      "kind": "job",
+      "owner_spec": "012-ia-jobs-produccion",
+      "signature": "tasks.grade_delivery",
+      "source_line": 821,
+      "source_path": "backend/app/workers/tasks_grading.py",
+      "states": [
+        "cancelled",
+        "failed",
+        "success"
+      ],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "tasks.grade_delivery",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_worker_queue_routing.py"
         }
       ]
     },
@@ -26927,7 +27551,56 @@
       ],
       "authorization": [],
       "consumers": [],
-      "coverage": "missing",
+      "coverage": "covered",
+      "details": {
+        "bind": false,
+        "effects": [
+          "not_observed"
+        ],
+        "function": "recover_stale_digitalization_jobs",
+        "idempotency_evidence": [
+          "not_observed"
+        ],
+        "retry_policy": [
+          "not_observed"
+        ],
+        "terminal_states": [
+          "cancelled",
+          "failed",
+          "success"
+        ],
+        "triggers": [
+          "beat:recover-stale-digitalization-jobs",
+          "celery_queue"
+        ]
+      },
+      "id": "job:tasks.recover_stale_digitalization_jobs",
+      "kind": "job",
+      "owner_spec": "012-ia-jobs-produccion",
+      "signature": "tasks.recover_stale_digitalization_jobs",
+      "source_line": 453,
+      "source_path": "backend/app/workers/tasks_digitalization.py",
+      "states": [
+        "cancelled",
+        "failed",
+        "success"
+      ],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "tasks.recover_stale_digitalization_jobs",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_worker_queue_routing.py"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "system"
+      ],
+      "authorization": [],
+      "consumers": [],
+      "coverage": "covered",
       "details": {
         "bind": false,
         "effects": [
@@ -26954,14 +27627,21 @@
       "kind": "job",
       "owner_spec": "012-ia-jobs-produccion",
       "signature": "tasks.recover_stale_grading_jobs",
-      "source_line": 782,
+      "source_line": 928,
       "source_path": "backend/app/workers/tasks_grading.py",
       "states": [
         "cancelled",
         "failed",
         "success"
       ],
-      "tests": []
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "tasks.recover_stale_grading_jobs",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_worker_queue_routing.py"
+        }
+      ]
     },
     {
       "actors": [
@@ -26969,7 +27649,7 @@
       ],
       "authorization": [],
       "consumers": [],
-      "coverage": "missing",
+      "coverage": "covered",
       "details": {
         "bind": false,
         "effects": [
@@ -27003,7 +27683,14 @@
         "failed",
         "success"
       ],
-      "tests": []
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "tasks.recover_stale_presentation_jobs",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_worker_queue_routing.py"
+        }
+      ]
     },
     {
       "actors": [
@@ -27211,7 +27898,7 @@
       ],
       "authorization": [],
       "consumers": [],
-      "coverage": "missing",
+      "coverage": "covered",
       "details": {
         "active": false,
         "class": "migration_only",
@@ -27233,7 +27920,14 @@
       "source_line": 174,
       "source_path": "backend/alembic/versions/202606290002_phases_3_to_8.py",
       "states": [],
-      "tests": []
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "ai_jobs",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_ai_job_leases.py"
+        }
+      ]
     },
     {
       "actors": [
@@ -28203,7 +28897,7 @@
         "active": true,
         "class": "Calificacion",
         "constraints": [
-          "estado IN ('sugerida','confirmada','ajustada','requiere_revision','publicada','anulada')"
+          "estado IN ('procesando','sugerida','confirmada','ajustada','requiere_revision','publicada','anulada')"
         ],
         "enum_refs": [
           "CalificacionEstado"
@@ -28234,11 +28928,18 @@
         "ajustada",
         "anulada",
         "confirmada",
+        "procesando",
         "publicada",
         "requiere_revision",
         "sugerida"
       ],
       "tests": [
+        {
+          "level": "unit",
+          "reference": "calificaciones",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_ai_job_leases.py"
+        },
         {
           "level": "unit",
           "reference": "calificaciones",
@@ -28513,6 +29214,12 @@
           "level": "unit",
           "reference": "calificaciones",
           "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/GradingJobMonitor.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "calificaciones",
+          "status": "direct",
           "test_path": "frontend/src/modules/calificaciones/api.revision.test.ts"
         },
         {
@@ -28690,13 +29397,19 @@
         {
           "level": "unit",
           "reference": "entregas",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_ai_job_leases.py"
+        },
+        {
+          "level": "unit",
+          "reference": "entregas",
           "status": "domain",
           "test_path": "backend/tests/unit/test_calificaciones_boletin_permissions.py"
         },
         {
           "level": "unit",
           "reference": "entregas",
-          "status": "domain",
+          "status": "direct",
           "test_path": "backend/tests/unit/test_calificaciones_lote_async.py"
         },
         {
@@ -30004,6 +30717,12 @@
           "level": "unit",
           "reference": "presentaciones",
           "status": "direct",
+          "test_path": "backend/tests/unit/test_admin_ai_model_performance.py"
+        },
+        {
+          "level": "unit",
+          "reference": "presentaciones",
+          "status": "direct",
           "test_path": "backend/tests/unit/test_ai_configuration_resolver.py"
         },
         {
@@ -30041,6 +30760,12 @@
           "reference": "presentaciones",
           "status": "direct",
           "test_path": "backend/tests/unit/test_presentaciones_pedagogical_planning.py"
+        },
+        {
+          "level": "unit",
+          "reference": "presentaciones",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_presentaciones_performance.py"
         },
         {
           "level": "unit",

@@ -10,6 +10,24 @@ function compatibleModels(models: AIModel[], providerId: string, capability: str
   ));
 }
 
+const FEATURE_ALIASES: Record<string, string[]> = {
+  presentaciones: ['presentaciones', 'presentacion'],
+  calificacion_foto: ['calificacion_foto', 'grading'],
+  evaluacion_digitalizar: ['evaluacion_digitalizar'],
+};
+
+function performanceFor(model: AIModel | undefined, feature: string) {
+  const aliases = FEATURE_ALIASES[feature] ?? [feature];
+  return model?.performance?.find((metric) => aliases.includes(metric.feature));
+}
+
+function performanceLabel(model: AIModel, feature: string) {
+  const metric = performanceFor(model, feature);
+  if (!metric) return '';
+  if (!metric.sample_sufficient) return ` · muestra ${metric.sample_size}/5`;
+  return ` · p95 ${Math.round((metric.p95_ms ?? 0) / 1000)} s`;
+}
+
 function FeatureRoutingEditor({
   feature,
   providers,
@@ -40,6 +58,8 @@ function FeatureRoutingEditor({
   const fallbackModels = feature.fallback_provider
     ? compatibleModels(models, feature.fallback_provider, capability)
     : [];
+  const selectedModel = primaryModels.find((model) => model.model_id === feature.primary_model);
+  const selectedPerformance = performanceFor(selectedModel, feature.feature);
 
   return (
     <Card className="space-y-4 p-4">
@@ -70,7 +90,7 @@ function FeatureRoutingEditor({
         <Field label="Modelo principal">
           <Select value={feature.primary_model ?? ''} onChange={(event) => onUpdate(feature.feature, { primary_model: event.currentTarget.value || null })}>
             <option value="">Predeterminado del proveedor</option>
-            {primaryModels.map((model) => <option key={model.model_id} value={model.model_id}>{model.label}{model.recommended ? ' · recomendado' : ''}</option>)}
+            {primaryModels.map((model) => <option key={model.model_id} value={model.model_id}>{model.label}{model.recommended ? ' · recomendado' : ''}{performanceLabel(model, feature.feature)}</option>)}
           </Select>
         </Field>
         <ChevronRight className="hidden h-5 w-5 self-center text-muted xl:block" aria-hidden="true" />
@@ -97,6 +117,17 @@ function FeatureRoutingEditor({
         </Field>
       </div>
 
+      {selectedModel && (
+        <div className={`rounded-lg px-3 py-2 text-xs ${selectedPerformance?.inefficient ? 'border border-amber-300 bg-amber-50 text-amber-900 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-100' : 'bg-surface-2 text-muted'}`}>
+          <strong className="text-fg">{selectedModel.capabilities.join(', ')}</strong>
+          {' · '}
+          {!selectedPerformance
+            ? 'Sin mediciones para esta función.'
+            : selectedPerformance.sample_sufficient
+              ? `p50 ${Math.round((selectedPerformance.p50_ms ?? 0) / 1000)} s · p95 ${Math.round((selectedPerformance.p95_ms ?? 0) / 1000)} s · ${selectedPerformance.sample_size} muestras${selectedPerformance.inefficient ? ' · rendimiento inferior al mejor observado' : ''}`
+              : `Muestra insuficiente: ${selectedPerformance.sample_size} de 5 casos mínimos.`}
+        </div>
+      )}
       <div className="flex flex-wrap gap-3">
         <label className="flex min-h-11 items-center gap-2 rounded-lg border border-border px-3 text-sm font-medium text-fg">
           <input
@@ -177,6 +208,11 @@ export function FeatureRoutingSection({
                 <span className="min-w-0">
                   <span className="block truncate font-semibold">{model.label}</span>
                   <span className="block truncate text-xs text-muted">{model.provider_id} · {model.capabilities.join(', ')}</span>
+                  <span className="block text-xs text-muted">
+                    {model.performance?.length
+                      ? `${model.performance.length} función(es) medida(s)`
+                      : 'Sin telemetría todavía'}
+                  </span>
                   {inUse && <span className="block text-xs text-amber-700 dark:text-amber-300">Usado por una ruta activa</span>}
                 </span>
                 <input

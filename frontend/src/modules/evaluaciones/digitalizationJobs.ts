@@ -4,6 +4,7 @@ const CHANGE_EVENT = 'xcalificator:digitalizations-changed';
 export type DigitalizationJobStatus =
   | 'queued'
   | 'running'
+  | 'retrying'
   | 'success'
   | 'failed'
   | 'cancelled'
@@ -22,6 +23,7 @@ export interface PendingDigitalizationJob {
   error?: string;
   timingsMs?: Record<string, number>;
   terminalReason?: string;
+  stage?: string;
 }
 
 type NewDigitalizationJob = Pick<
@@ -32,6 +34,7 @@ type NewDigitalizationJob = Pick<
 const VALID_STATUSES = new Set<DigitalizationJobStatus>([
   'queued',
   'running',
+  'retrying',
   'success',
   'failed',
   'cancelled',
@@ -81,6 +84,7 @@ export function readPendingDigitalizations(): PendingDigitalizationJob[] {
         terminalReason: typeof item.terminalReason === 'string'
           ? item.terminalReason
           : undefined,
+        stage: typeof item.stage === 'string' ? item.stage : undefined,
       }));
   } catch {
     return [];
@@ -115,11 +119,23 @@ export function updatePendingDigitalization(
   >,
 ) {
   if (typeof window === 'undefined') return;
-  writePendingDigitalizations(readPendingDigitalizations().map((job) => (
-    job.jobId === jobId
-      ? { ...job, ...changes, updatedAt: new Date().toISOString() }
-      : job
-  )));
+  const jobs = readPendingDigitalizations();
+  let changed = false;
+  const updatedJobs = jobs.map((job) => {
+    if (job.jobId !== jobId) return job;
+
+    const next = { ...job, ...changes };
+    const comparableCurrent = { ...job, updatedAt: undefined };
+    const comparableNext = { ...next, updatedAt: undefined };
+    if (JSON.stringify(comparableCurrent) === JSON.stringify(comparableNext)) {
+      return job;
+    }
+
+    changed = true;
+    return { ...next, updatedAt: new Date().toISOString() };
+  });
+
+  if (changed) writePendingDigitalizations(updatedJobs);
 }
 
 export function removePendingDigitalization(jobId: string) {

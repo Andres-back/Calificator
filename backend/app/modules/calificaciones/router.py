@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import json
+import hashlib
 from copy import copy
+from contextlib import suppress
 import mimetypes
 from datetime import datetime, timezone
 from uuid import UUID
@@ -90,10 +92,10 @@ from app.shared.enums import (
     JobTipo,
     UserRole,
 )
-from app.workers.tasks_grading import grade_batch
+from app.workers.tasks_grading import grade_delivery
 
 router = APIRouter(tags=["calificaciones"])
-MAX_ASYNC_BATCH_FILES = 50
+MAX_ASYNC_BATCH_FILES = 30
 MAX_ASYNC_BATCH_BYTES = 100 * 1024 * 1024
 MAX_EVIDENCE_BYTES = 15 * 1024 * 1024
 MAX_EVIDENCE_TOTAL_BYTES = 40 * 1024 * 1024
@@ -190,7 +192,7 @@ async def _enqueue_persisted_grading(
     calificacion: Calificacion | None = None,
 ) -> Calificacion:
     """Crea un trabajo persistente y devuelve sin esperar a los modelos."""
-    job_id = await jobs_service.create_job(
+    parent_job_id = await jobs_service.create_job(
         db,
         user_id=profesor_id,
         tipo=JobTipo.CALIFICACION_LOTE.value,
@@ -199,6 +201,22 @@ async def _enqueue_persisted_grading(
             "entrega_ids": [str(entrega.id)],
             "estudiante_ids": [str(estudiante_id)],
             "modalidad": "vision",
+        },
+    )
+    parent_input = await jobs_service.get_job_input(db, parent_job_id)
+    job_id = await jobs_service.create_job(
+        db,
+        user_id=profesor_id,
+        tipo=JobTipo.CALIFICACION_ENTREGA.value,
+        parent_job_id=parent_job_id,
+        entrega_id=entrega.id,
+        stage="queued",
+        input_json={
+            "evaluacion_id": str(evaluacion.id),
+            "entrega_ids": [str(entrega.id)],
+            "estudiante_ids": [str(estudiante_id)],
+            "modalidad": "vision",
+            "_ai_config": parent_input.get("_ai_config"),
         },
     )
     queued_grade = photo_service.prepare_queued_grading(
@@ -212,43 +230,27 @@ async def _enqueue_persisted_grading(
     )
     if calificacion is None:
         db.add(queued_grade)
+    await jobs_service.aggregate_parent_job(db, parent_job_id)
     await db.commit()
     await db.refresh(queued_grade)
 
     try:
-        grade_batch.apply_async(
+        grade_delivery.apply_async(
             kwargs={
                 "evaluacion_id": str(evaluacion.id),
-                "estudiante_ids": [],
-                "entrega_ids": [str(entrega.id)],
+                "entrega_id": str(entrega.id),
                 "job_id": str(job_id),
                 "profesor_id": str(profesor_id),
-            }
+            },
+            queue="grading",
         )
-    except Exception as exc:  # noqa: BLE001
-        entrega.estado = EntregaEstado.REQUIERE_REINTENTO.value
-        failed_payload = {
-            **(queued_grade.resultado_json or {}),
-            "pipeline_status": "failed",
-            "error_type": "queue_unavailable",
-        }
-        entrega.visual_text_json = failed_payload
-        queued_grade.resultado_json = failed_payload
-        await jobs_service.finish_job(
-            db,
-            job_id,
-            estado=JobEstado.FAILED.value,
-            resultado_json={"entrega_ids": [str(entrega.id)]},
-            error=str(exc),
+    except Exception:  # noqa: BLE001
+        # Un acuse perdido no significa que el worker no haya recibido el
+        # mensaje. Solo marcamos jobs todavía no reclamados para republicación.
+        await jobs_service.mark_job_retrying(
+            db, job_id, error="Publicación pendiente; se reintentará automáticamente",
         )
         await db.commit()
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail=(
-                "La evidencia quedó guardada, pero la cola no está disponible. "
-                "Puedes reintentar sin subir el archivo nuevamente."
-            ),
-        ) from exc
     return queued_grade
 
 
@@ -672,6 +674,7 @@ async def calificar_lote_asincrono(
         )
 
     prepared_files: list[tuple[bytes, str, str]] = []
+    evidence_hashes: set[str] = set()
     total_bytes = 0
     for index, foto in enumerate(files):
         content = await read_upload_limited(foto, MAX_EVIDENCE_BYTES)
@@ -688,9 +691,17 @@ async def calificar_lote_asincrono(
                 status_code=413,
                 detail="El tamano total del lote supera 100 MB",
             )
+        evidence_hash = hashlib.sha256(content).hexdigest()
+        if evidence_hash in evidence_hashes:
+            raise HTTPException(
+                status_code=400,
+                detail=f"El archivo {index + 1} está duplicado dentro del lote",
+            )
+        evidence_hashes.add(evidence_hash)
         prepared_files.append((content, foto.filename or f"lote_{index}.jpg", mime))
 
     entregas: list[Entrega] = []
+    stored_urls: list[str] = []
     try:
         for estudiante_id, (content, filename, mime) in zip(
             estudiante_ids,
@@ -703,6 +714,7 @@ async def calificar_lote_asincrono(
                 subfolder="entregas",
                 max_size_bytes=MAX_EVIDENCE_BYTES,
             )
+            stored_urls.append(archivo_url)
             entrega = Entrega(
                 evaluacion_id=evaluacion.id,
                 estudiante_id=estudiante_id,
@@ -730,41 +742,67 @@ async def calificar_lote_asincrono(
                 "modalidad": "foto",
             },
         )
+        parent_input = await jobs_service.get_job_input(db, job_id)
+        child_jobs: list[tuple[UUID, Entrega]] = []
+        for entrega in entregas:
+            child_job_id = await jobs_service.create_job(
+                db,
+                user_id=current_user.id,
+                tipo=JobTipo.CALIFICACION_ENTREGA.value,
+                parent_job_id=job_id,
+                entrega_id=entrega.id,
+                stage="queued",
+                input_json={
+                    "evaluacion_id": str(evaluacion.id),
+                    "entrega_ids": [str(entrega.id)],
+                    "estudiante_ids": [str(entrega.estudiante_id)],
+                    "modalidad": "foto",
+                    "_ai_config": parent_input.get("_ai_config"),
+                },
+            )
+            queued_grade = photo_service.prepare_queued_grading(
+                entrega=entrega,
+                evaluacion=evaluacion,
+                estudiante_id=entrega.estudiante_id,
+                profesor_id=current_user.id,
+                job_id=child_job_id,
+            )
+            db.add(queued_grade)
+            child_jobs.append((child_job_id, entrega))
+        await jobs_service.aggregate_parent_job(db, job_id)
         await db.commit()
     except Exception:
         await db.rollback()
+        for stored_url in stored_urls:
+            with suppress(OSError, ValueError):
+                resolve_upload_path(stored_url).unlink(missing_ok=True)
         raise
 
-    try:
-        grade_batch.apply_async(
-            kwargs={
-                "evaluacion_id": str(evaluacion.id),
-                "estudiante_ids": [],
-                "entrega_ids": [str(value) for value in entrega_ids],
-                "job_id": str(job_id),
-                "profesor_id": str(current_user.id),
-            }
-        )
-    except Exception as exc:  # noqa: BLE001
-        for entrega in entregas:
-            entrega.estado = EntregaEstado.REQUIERE_REINTENTO.value
-        await jobs_service.finish_job(
-            db,
-            job_id,
-            estado=JobEstado.FAILED.value,
-            resultado_json={"entrega_ids": [str(value) for value in entrega_ids]},
-            error=str(exc),
-        )
+    publish_failures = 0
+    for child_job_id, entrega in child_jobs:
+        try:
+            grade_delivery.apply_async(
+                kwargs={
+                    "evaluacion_id": str(evaluacion.id),
+                    "entrega_id": str(entrega.id),
+                    "job_id": str(child_job_id),
+                    "profesor_id": str(current_user.id),
+                },
+                queue="grading",
+            )
+        except Exception as exc:  # noqa: BLE001
+            publish_failures += 1
+            await jobs_service.mark_job_retrying(db, child_job_id, error=str(exc))
+    if publish_failures:
+        await jobs_service.aggregate_parent_job(db, job_id)
         await db.commit()
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="No fue posible encolar la calificacion; las entregas quedaron disponibles para reintento",
-        ) from exc
 
     return {
         "job_id": job_id,
         "estado": JobEstado.QUEUED.value,
         "entrega_ids": entrega_ids,
+        "total": len(entrega_ids),
+        "summary_url": f"/api/jobs/{job_id}",
     }
 
 

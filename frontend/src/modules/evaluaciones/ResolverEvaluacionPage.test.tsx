@@ -296,11 +296,11 @@ describe('ResolverEvaluacionPage', () => {
     await user.click(screen.getByRole('button', { name: 'Entregar 1 hoja' }));
 
     await waitFor(() => expect(mocks.createFileDelivery).toHaveBeenCalledWith('evaluation-1', [file], [0]));
-    expect(await screen.findByText(/Evidencia recibida/)).toBeInTheDocument();
-    expect(screen.getByText('Entrega realizada')).toBeInTheDocument();
-    expect(screen.getByText(/pendiente de calificación docente/i)).toBeInTheDocument();
+    expect(await screen.findByText('Calificando tu entrega')).toBeInTheDocument();
+    expect(screen.queryByText('0.0')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Revisar y entregar 1 hoja' })).not.toBeInTheDocument();
     expect(mocks.success).toHaveBeenCalledWith(
-      'Entrega realizada. Tu evidencia quedó pendiente de calificación docente.',
+      'Entrega realizada. Ya estamos calificándola en segundo plano.',
     );
   });
   it('allows resending the complete package when the teacher requests replacement', async () => {

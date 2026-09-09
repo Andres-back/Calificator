@@ -36,6 +36,12 @@ class PresentacionRead(BaseModel):
     pptx_url: str | None
     pdf_url: str | None
     error: str | None
+    etapa: str | None = None
+    mensaje: str | None = None
+    progreso: int = 0
+    elapsed_ms: int = 0
+    imagenes_completadas: int = 0
+    imagenes_total: int = 0
     created_at: datetime
     updated_at: datetime
 
@@ -49,6 +55,12 @@ class PresentacionEstadoRead(BaseModel):
     pptx_url: str | None
     pdf_url: str | None = None
     error: str | None
+    etapa: str | None = None
+    mensaje: str | None = None
+    elapsed_ms: int = 0
+    imagenes_completadas: int = 0
+    imagenes_total: int = 0
+    timings_ms: dict[str, int] = Field(default_factory=dict)
 
     model_config = {"from_attributes": True}
 

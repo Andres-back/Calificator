@@ -76,7 +76,7 @@ services:
 
   worker:
     build: *backend-build
-    command: celery -A app.workers.worker.celery_app worker --loglevel=info --concurrency=${CELERY_CONCURRENCY:-2}
+    command: celery -A app.workers.worker.celery_app worker --loglevel=info -Q default,celery --concurrency=${CELERY_DEFAULT_CONCURRENCY:-1} -n default@%h
     env_file:
       - .env
     volumes:
@@ -91,7 +91,79 @@ services:
     healthcheck:
       test:
         - CMD-SHELL
-        - "celery -A app.workers.worker.celery_app inspect ping --destination celery@$$HOSTNAME --timeout=5 | grep -q pong"
+        - "celery -A app.workers.worker.celery_app inspect ping --destination default@$$HOSTNAME --timeout=5 | grep -q pong"
+      interval: 60s
+      timeout: 15s
+      retries: 3
+      start_period: 45s
+    restart: unless-stopped
+
+  worker-grading:
+    build: *backend-build
+    command: celery -A app.workers.worker.celery_app worker --loglevel=info -Q grading --concurrency=${CELERY_GRADING_CONCURRENCY:-4} -n grading@%h
+    env_file:
+      - .env
+    volumes:
+      - ./uploads:/app/uploads
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      storage-init:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - "celery -A app.workers.worker.celery_app inspect ping --destination grading@$$HOSTNAME --timeout=5 | grep -q pong"
+      interval: 60s
+      timeout: 15s
+      retries: 3
+      start_period: 45s
+    restart: unless-stopped
+
+  worker-digitalization:
+    build: *backend-build
+    command: celery -A app.workers.worker.celery_app worker --loglevel=info -Q digitalization --concurrency=${CELERY_DIGITALIZATION_CONCURRENCY:-1} -n digitalization@%h
+    env_file:
+      - .env
+    volumes:
+      - ./uploads:/app/uploads
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      storage-init:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - "celery -A app.workers.worker.celery_app inspect ping --destination digitalization@$$HOSTNAME --timeout=5 | grep -q pong"
+      interval: 60s
+      timeout: 15s
+      retries: 3
+      start_period: 45s
+    restart: unless-stopped
+
+  worker-presentations:
+    build: *backend-build
+    command: celery -A app.workers.worker.celery_app worker --loglevel=info -Q presentations --concurrency=${CELERY_PRESENTATIONS_CONCURRENCY:-1} -n presentations@%h
+    env_file:
+      - .env
+    volumes:
+      - ./uploads:/app/uploads
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      storage-init:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - "celery -A app.workers.worker.celery_app inspect ping --destination presentations@$$HOSTNAME --timeout=5 | grep -q pong"
       interval: 60s
       timeout: 15s
       retries: 3

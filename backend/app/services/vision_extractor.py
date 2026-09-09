@@ -17,6 +17,7 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 from app.core.config import settings
 from app.core.logging import get_logger
 from app.modules.analytics.usage_logger import log_ai_usage
+from app.services.ai_provider_capacity import provider_capacity
 from app.services.ai_credentials_service import get_effective_ai_credentials
 from app.services.image_preprocessing import prepare_orientation_variants
 
@@ -306,11 +307,12 @@ Informa tachones, correcciones y preguntas ausentes. Devuelve SOLO JSON:
                         )
                         async with httpx.AsyncClient(timeout=timeout) as client:
                             for key_index, key in enumerate(keys):
-                                response = await client.post(
-                                    f"{self.base_url}/chat/completions",
-                                    headers={"Authorization": f"Bearer {key}"},
-                                    json=body,
-                                )
+                                async with provider_capacity():
+                                    response = await client.post(
+                                        f"{self.base_url}/chat/completions",
+                                        headers={"Authorization": f"Bearer {key}"},
+                                        json=body,
+                                    )
                                 if response.status_code != 401 or key_index == len(keys) - 1:
                                     break
                         assert response is not None

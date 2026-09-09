@@ -25,6 +25,8 @@ from app.services.ai_credentials_service import (
 from app.services.ai_config_service import AIConfigService
 from app.services.ollama_provider import OllamaCloudProvider, OllamaProviderError
 from app.modules.admin_ai_config.usage_service import (
+    enrich_feature_performance,
+    get_model_performance,
     get_recent_provider_errors,
     get_usage_summary,
 )
@@ -467,6 +469,21 @@ async def get_full_ai_settings(
 
     features = await svc.get_all_features()
     models = await svc.get_all_models()
+    try:
+        performance = await get_model_performance(db)
+    except Exception:
+        await db.rollback()
+        performance = {}
+    models = [
+        {
+            **model,
+            "performance": performance.get(
+                (str(model.get("provider_id")), str(model.get("model_id"))), []
+            ),
+        }
+        for model in models
+    ]
+    features = enrich_feature_performance(features, models, performance)
     config_version = max((int(item.get("config_version") or 1) for item in features), default=1)
 
     usage_summary = await get_usage_summary(db)
@@ -952,6 +969,20 @@ async def get_teacher_ai_config(
     ]
     provider_ids = {str(item["id"]) for item in providers}
     models = [item for item in await service.get_all_models() if item.get("active") and item.get("provider_id") in provider_ids]
+    try:
+        performance = await get_model_performance(db)
+    except Exception:
+        await db.rollback()
+        performance = {}
+    models = [
+        {
+            **model,
+            "performance": performance.get(
+                (str(model.get("provider_id")), str(model.get("model_id"))), []
+            ),
+        }
+        for model in models
+    ]
     personal_models_result = await db.execute(
         text(
             "SELECT provider_id, model_id, label, capabilities, active "
@@ -964,6 +995,9 @@ async def get_teacher_ai_config(
             **dict(row._mapping),
             "recommended": False,
             "max_context_tokens": None,
+            "performance": performance.get(
+                (str(row.provider_id), str(row.model_id)), []
+            ),
         }
         for row in personal_models_result.fetchall()
     ]
@@ -999,6 +1033,7 @@ async def get_teacher_ai_config(
         })
         models.extend(local_models)
     features = [item for item in await service.get_all_features() if item.get("active")]
+    features = enrich_feature_performance(features, models, performance)
 
     config_result = await db.execute(
         text(
