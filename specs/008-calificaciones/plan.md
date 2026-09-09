@@ -15,3 +15,7 @@ Roles, trazabilidad, datos, accesibilidad, asincronía y gobernanza quedan cubie
 
 ## Decisión
 Conservar arquitectura; discrepancias pasan a backlog.
+
+## Coordinación con 032
+
+La evolución [032](../032-calificacion-impacto-docente/plan.md) implementa recuperación, revisión contextual y autoridad del escritor dentro de este dominio; las tablas y rutas académicas continúan siendo propiedad de 008.

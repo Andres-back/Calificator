@@ -32,6 +32,7 @@ ALL_SPECS = {
     "028-pulir-navegacion-presentaciones",
     "029-roles-permisos-modulares",
     "031-acelerar-pipelines-ia",
+    "032-calificacion-impacto-docente",
 }
 OWNED_SPECS = {
     name
@@ -76,7 +77,8 @@ def test_every_requirement_is_mapped_to_a_task() -> None:
         requirements = set(pattern.findall((feature / "spec.md").read_text(encoding="utf-8")))
         task_links = set(pattern.findall((feature / "tasks.md").read_text(encoding="utf-8")))
         assert requirements
-        assert requirements <= task_links
+        missing = requirements - task_links
+        assert not missing, f"{name}: requisitos sin tarea: {sorted(missing)}"
 
 
 def test_inventory_ownership_is_limited_to_functional_domains() -> None:

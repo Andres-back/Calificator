@@ -15,15 +15,28 @@ from app.modules.jobs.schemas import (
     JobRead,
     JobRetryRead,
     JobRetryRequest,
+    PendingGradingJobsPage,
 )
 from app.modules.users.models import User
 from app.shared.enums import JobEstado, UserRole
 
 router = APIRouter(prefix="/jobs", tags=["jobs"])
+_PRIVATE_RESULT_KEYS = {"claim_token", "checkpoint_v1", "_checkpoint_v1"}
 
 
 def _owner_filter(current_user: User) -> UUID | None:
     return None if current_user.rol == UserRole.ADMIN.value else current_user.id
+
+
+def _public_result(value: object) -> dict:
+    """Oculta estado interno recuperable sin romper campos públicos existentes."""
+    if not isinstance(value, dict):
+        return {}
+    return {
+        key: item
+        for key, item in value.items()
+        if key not in _PRIVATE_RESULT_KEYS and not str(key).startswith("_")
+    }
 
 
 async def _get_job(db: AsyncSession, job_id: UUID, user_id: UUID | None) -> dict:
@@ -37,6 +50,68 @@ async def _get_job(db: AsyncSession, job_id: UUID, user_id: UUID | None) -> dict
     return dict(r._mapping)
 
 
+@router.get("/pendientes", response_model=PendingGradingJobsPage)
+async def get_pending_grading_jobs(
+    limit: int = Query(default=30, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    """Recupera monitores activos después de recargar o cambiar de dispositivo."""
+    # Incluso un administrador recupera únicamente los monitores que inició.
+    # La inspección global pertenece a las superficies administrativas auditadas.
+    owner_id = current_user.id
+    params = {
+        "owner_id": str(owner_id),
+        "limit": limit,
+        "offset": offset,
+    }
+    where_sql = (
+        "job.tipo='calificacion_lote' AND job.parent_job_id IS NULL "
+        "AND job.estado IN ('queued','running','retrying') "
+        "AND job.user_id=CAST(:owner_id AS uuid)"
+    )
+    total = await db.scalar(text(f"SELECT COUNT(*) FROM ai_jobs AS job WHERE {where_sql}"), params)
+    rows = (
+        await db.execute(
+            text(
+                "SELECT job.id AS job_id, evaluation.id AS evaluacion_id, "
+                "evaluation.materia_id, first_delivery.estudiante_id, "
+                "COALESCE(first_delivery.estudiante_nombre, '') AS estudiante_nombre, "
+                "CASE WHEN COALESCE(children.total, 0) > 1 THEN 'batch' ELSE 'individual' END AS kind, "
+                "GREATEST(COALESCE(children.total, 0), 1) AS total, "
+                "job.estado, job.progreso, job.stage, "
+                "GREATEST(0, EXTRACT(EPOCH FROM (NOW() - job.created_at)) * 1000)::bigint AS elapsed_ms, "
+                "job.created_at "
+                "FROM ai_jobs AS job "
+                "JOIN evaluaciones AS evaluation "
+                "ON evaluation.id=(job.input_json->>'evaluacion_id')::uuid "
+                "LEFT JOIN LATERAL ("
+                " SELECT COUNT(*)::int AS total FROM ai_jobs AS child "
+                " WHERE child.parent_job_id=job.id"
+                ") AS children ON TRUE "
+                "LEFT JOIN LATERAL ("
+                " SELECT delivery.estudiante_id, student.nombre AS estudiante_nombre "
+                " FROM ai_jobs AS child "
+                " JOIN entregas AS delivery ON delivery.id=child.entrega_id "
+                " LEFT JOIN users AS student ON student.id=delivery.estudiante_id "
+                " WHERE child.parent_job_id=job.id "
+                " ORDER BY child.created_at, child.id LIMIT 1"
+                ") AS first_delivery ON TRUE "
+                f"WHERE {where_sql} "
+                "ORDER BY job.created_at DESC, job.id DESC LIMIT :limit OFFSET :offset"
+            ),
+            params,
+        )
+    ).mappings().all()
+    return {
+        "items": [dict(row) for row in rows],
+        "total": int(total or 0),
+        "limit": limit,
+        "offset": offset,
+    }
+
+
 @router.get("/{job_id}", response_model=JobRead)
 async def get_job(
     job_id: UUID,
@@ -44,7 +119,12 @@ async def get_job(
     db: AsyncSession = Depends(get_db),
 ) -> dict:
     job = await _get_job(db, job_id, _owner_filter(current_user))
-    result = job.get("resultado_json") if isinstance(job.get("resultado_json"), dict) else {}
+    result = (
+        job.get("resultado_json")
+        if isinstance(job.get("resultado_json"), dict)
+        else {}
+    )
+    job["resultado_json"] = _public_result(result)
     job["timings_ms"] = result.get("timings_ms", {})
     job["terminal_reason"] = result.get("terminal_reason")
     job["fallbacks"] = result.get("fallbacks", [])
@@ -125,11 +205,16 @@ async def get_job_items(
         await db.execute(
             text(
                 "SELECT job.id AS job_id, job.entrega_id, entrega.estudiante_id, "
+                "student.nombre AS estudiante_nombre, "
                 "job.estado, job.stage, job.progreso, job.attempt_count, "
                 "COALESCE(job.resultado_json->>'terminal_reason', "
-                "job.resultado_json->>'error_code') AS error_code "
+                "job.resultado_json->>'error_code') AS error_code, "
+                "job.resultado_json->'timings_ms' AS timings_ms, "
+                "GREATEST(0, EXTRACT(EPOCH FROM "
+                "(COALESCE(job.finished_at, NOW()) - job.created_at)) * 1000)::bigint AS elapsed_ms "
                 "FROM ai_jobs AS job "
                 "LEFT JOIN entregas AS entrega ON entrega.id=job.entrega_id "
+                "LEFT JOIN users AS student ON student.id=entrega.estudiante_id "
                 "WHERE job.parent_job_id=CAST(:id AS uuid) "
                 "AND (CAST(:estado AS text) IS NULL OR job.estado=:estado) "
                 "ORDER BY job.created_at, job.id LIMIT :limit OFFSET :offset"

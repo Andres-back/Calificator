@@ -1,15 +1,17 @@
 import { useEffect, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import {
   AlertTriangle, BarChart3, BookOpen, CheckCircle2, Clock,
   GraduationCap, HelpCircle, Sparkles, TrendingDown, TrendingUp,
   Users, ShieldAlert, Search,
+  Download, FlaskConical, LockKeyhole, Play, Square,
 } from 'lucide-react';
-import { Badge, Card, EmptyState, Field, Select, Skeleton } from '@/components/ui';
+import { Badge, Button, Card, EmptyState, Field, Input, Select, Skeleton } from '@/components/ui';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { useMaterias } from '@/modules/materias/MateriaSelect';
 import { api, toApiError } from '@/lib/api';
+import { useAuth } from '@/stores/auth';
 import { XaliRefuerzoModal } from './XaliRefuerzoModal';
 
 /* ─── Types ─── */
@@ -18,7 +20,27 @@ interface Overview {
   evaluaciones_activas: number;
   entregas: { total: number; pendientes_revision: number; confirmadas: number; publicadas: number };
   ia: { coincidencia_exacta: number; tasa_ajustes: number; confianza_promedio: number; incidencias_abiertas: number };
-  productividad: { tiempo_revision_segundos: number; tiempo_promedio_por_entrega: number; tiempo_estimado_ahorrado_segundos: number; entregas_con_tiempo: number };
+  productividad: {
+    tiempo_revision_segundos: number;
+    tiempo_promedio_por_entrega: number;
+    tiempo_estimado_ahorrado_segundos: number;
+    entregas_con_tiempo: number;
+    tiempos_observados: {
+      metodo: string;
+      datos_suficientes: boolean;
+      motivo_no_disponible: string | null;
+      tiempo_manual_promedio_ms: number | null;
+      tiempo_asistido_promedio_ms: number | null;
+      ahorro_ms: number | null;
+      ahorro_porcentaje: number | null;
+      cobertura: {
+        sesiones_manual: number;
+        sesiones_asistida: number;
+        unidades_comparables: number;
+        incertidumbre_ms: number;
+      };
+    };
+  };
 }
 interface EvalRow { id: string; nombre: string; estado: string; total_entregas: number; pendientes: number; confirmadas: number; publicadas: number; promedio: number; tasa_aprobacion: number; }
 interface CriterioRow { nombre: string; porcentaje_logro: number; estudiantes_evaluados: number; estudiantes_con_dificultad: number; nivel_atencion: string; }
@@ -70,7 +92,34 @@ interface EstudianteDetalle {
   criterios?: { nombre: string; promedio_pct: number }[];
   evaluaciones?: { nombre: string; nota: number; nota_maxima: number; porcentaje: number }[];
 }
-type Tab = 'resumen' | 'rendimiento' | 'estudiantes' | 'calidad_ia';
+interface ImpactStudy {
+  id: string;
+  nombre: string;
+  estado: 'draft' | 'active' | 'closed';
+  synthetic_only: boolean;
+  version: number;
+  participant_count: number;
+  created_at: string;
+}
+interface ImpactIndicators {
+  observations_current: number;
+  missing_count: number;
+  time_savings: { available: boolean; paired_units: number; mean_percent: number | null; reason: string | null };
+  kappa_independent: { available: boolean; value: number | null; reason: string | null; n: number };
+  exposed_grade_pairs: number;
+  feedback_quality: { available: boolean; n: number; mean: number | null };
+}
+interface ImpactObservationSummary {
+  external_id: string;
+  revision: number;
+  teacher_pseudonym: string;
+  condition: 'manual' | 'asistida';
+  observed_at: string;
+  payload: { type?: string };
+  missing_reason: string | null;
+  exclusion_reason: string | null;
+}
+type Tab = 'resumen' | 'rendimiento' | 'estudiantes' | 'calidad_ia' | 'estudio';
 
 const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
   { id: 'resumen', label: 'Resumen', icon: <BarChart3 className="h-4 w-4" /> },
@@ -79,10 +128,16 @@ const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
   { id: 'calidad_ia', label: 'Calidad de IA', icon: <Sparkles className="h-4 w-4" /> },
 ];
 
+const IMPACT_TAB = { id: 'estudio' as const, label: 'Estudio de impacto', icon: <FlaskConical className="h-4 w-4" /> };
+
 function formatSegundos(s: number) {
   if (s < 60) return `${s}s`;
   if (s < 3600) return `${Math.round(s / 60)}m`;
   return `${(s / 3600).toFixed(1)}h`;
+}
+function formatMilisegundos(ms: number) {
+  const prefix = ms < 0 ? '−' : '';
+  return `${prefix}${formatSegundos(Math.abs(ms) / 1_000)}`;
 }
 function formatNumber(n: number) {
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
@@ -130,11 +185,21 @@ function ResumenTab({ materiaId }: { materiaId: string }) {
   const totalPendientes = data.entregas.pendientes_revision;
   const sinPublicar = data.entregas.confirmadas - data.entregas.publicadas;
   const necesitaAtencion = data.ia.incidencias_abiertas + totalPendientes;
+  const observed = data.productividad.tiempos_observados;
+  const observedAvailable = observed?.datos_suficientes && observed.ahorro_ms != null;
   return (<>
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
       <MetricCard icon={<GraduationCap className="h-5 w-5" />} label="Entregas procesadas" value={String(data.entregas.total)} sub={`${data.evaluaciones_activas} evaluaciones activas`} />
       <MetricCard icon={<Clock className="h-5 w-5" />} label="Pendientes de revisión" value={String(totalPendientes)} sub={totalPendientes > 0 ? `${sinPublicar} confirmadas sin publicar` : 'Todo al día'} trend={totalPendientes > 5 ? 'down' : 'up'} />
-      <MetricCard icon={<Sparkles className="h-5 w-5" />} label="Tiempo estimado ahorrado" value={formatSegundos(data.productividad.tiempo_estimado_ahorrado_segundos)} sub={`${formatSegundos(data.productividad.tiempo_promedio_por_entrega)} promedio por entrega`} />
+      <MetricCard
+        icon={<Sparkles className="h-5 w-5" />}
+        label="Ahorro observado"
+        value={observedAvailable ? formatMilisegundos(observed.ahorro_ms!) : '—'}
+        sub={observedAvailable
+          ? `${observed.ahorro_porcentaje}% · ${observed.cobertura.unidades_comparables} comparación(es)`
+          : (observed?.motivo_no_disponible ?? 'Sin mediciones comparables')}
+        trend={observedAvailable ? (observed.ahorro_ms! >= 0 ? 'up' : 'down') : undefined}
+      />
       <MetricCard icon={<CheckCircle2 className="h-5 w-5" />} label="Coincidencia docente–IA" value={`${(data.ia.coincidencia_exacta * 100).toFixed(0)}%`} sub={`${(data.ia.tasa_ajustes * 100).toFixed(0)}% ajustadas`} trend={data.ia.coincidencia_exacta >= 0.7 ? 'up' : 'down'} />
     </div>
     <div className="grid gap-6 lg:grid-cols-2">
@@ -146,8 +211,27 @@ function ResumenTab({ materiaId }: { materiaId: string }) {
         {data.ia.incidencias_abiertas > 0 && <div className="flex items-start gap-2 rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-200"><AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />{data.ia.incidencias_abiertas} incidencia(s) abierta(s).</div>}
       </Card>
       <Card className="space-y-4 p-5">
-        <h3 className="font-display font-bold">Tiempo de revisión</h3>
-        {data.productividad.entregas_con_tiempo > 0 ? (<div className="space-y-2"><p className="text-3xl font-extrabold text-fg">{formatSegundos(data.productividad.tiempo_revision_segundos)}</p><p className="text-xs text-muted">Total ({data.productividad.entregas_con_tiempo} entregas medidas)</p><p className="text-xs text-muted"><strong>{formatSegundos(data.productividad.tiempo_promedio_por_entrega)}</strong>/entrega · <strong>{formatSegundos(data.productividad.tiempo_estimado_ahorrado_segundos)}</strong> estimado ahorrados</p></div>) : <p className="text-sm text-muted">Sin datos de tiempo aún.</p>}
+        <h3 className="font-display font-bold">Tiempo docente observado</h3>
+        {observedAvailable ? (
+          <div className="space-y-2">
+            <p className="text-3xl font-extrabold text-fg">{formatMilisegundos(observed.ahorro_ms!)}</p>
+            <p className="text-xs text-muted">Diferencia promedio entre trabajo manual y asistido comparable.</p>
+            <p className="text-xs text-muted">
+              Manual <strong>{formatMilisegundos(observed.tiempo_manual_promedio_ms!)}</strong>
+              {' · '}Asistido <strong>{formatMilisegundos(observed.tiempo_asistido_promedio_ms!)}</strong>
+            </p>
+            {observed.cobertura.incertidumbre_ms > 0 && (
+              <p className="text-xs text-amber-700 dark:text-amber-300">
+                {formatMilisegundos(observed.cobertura.incertidumbre_ms)} quedaron señalados para revisión y no se imputaron como ahorro.
+              </p>
+            )}
+          </div>
+        ) : (
+          <div className="space-y-2">
+            <p className="text-sm text-muted">{observed?.motivo_no_disponible ?? 'Sin datos observados todavía.'}</p>
+            <p className="text-xs text-muted">La estimación histórica no se presenta como evidencia del impacto.</p>
+          </div>
+        )}
       </Card>
     </div>
     {evs && evs.length > 0 && <Card className="p-5"><h3 className="mb-4 font-display font-bold">Evaluaciones recientes</h3>
@@ -769,12 +853,190 @@ function DetalleEstudiante({ data }: { data: EstudianteDetalle }) {
   );
 }
 
+/* ═══════════════════════ ESTUDIO DE IMPACTO ═══════════════════════ */
+function ImpactStudyTab({ canManage }: { canManage: boolean }) {
+  const queryClient = useQueryClient();
+  const [name, setName] = useState('');
+  const [selectedId, setSelectedId] = useState('');
+  const [notice, setNotice] = useState<{ tone: 'success' | 'error'; text: string } | null>(null);
+  const studies = useQuery<ImpactStudy[]>({
+    queryKey: ['impact-studies'],
+    queryFn: () => api.get<ImpactStudy[]>('/impacto/estudios').then((response) => response.data),
+  });
+  const effectiveId = selectedId || studies.data?.[0]?.id || '';
+  const detail = useQuery<ImpactStudy>({
+    queryKey: ['impact-study', effectiveId],
+    queryFn: () => api.get<ImpactStudy>(`/impacto/estudios/${effectiveId}`).then((response) => response.data),
+    enabled: Boolean(effectiveId),
+  });
+  const indicators = useQuery<ImpactIndicators>({
+    queryKey: ['impact-study-indicators', effectiveId],
+    queryFn: () => api.get<ImpactIndicators>(`/impacto/estudios/${effectiveId}/indicadores`).then((response) => response.data),
+    enabled: Boolean(effectiveId),
+  });
+  const observations = useQuery<{ items: ImpactObservationSummary[]; total: number }>({
+    queryKey: ['impact-study-observations', effectiveId],
+    queryFn: () => api.get<{ items: ImpactObservationSummary[]; total: number }>(`/impacto/estudios/${effectiveId}/observaciones`, { params: { page: 1, page_size: 20 } }).then((response) => response.data),
+    enabled: Boolean(effectiveId),
+  });
+
+  const refresh = async (id?: string) => {
+    await queryClient.invalidateQueries({ queryKey: ['impact-studies'] });
+    if (id) {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['impact-study', id] }),
+        queryClient.invalidateQueries({ queryKey: ['impact-study-indicators', id] }),
+        queryClient.invalidateQueries({ queryKey: ['impact-study-observations', id] }),
+      ]);
+    }
+  };
+  const create = useMutation({
+    mutationFn: () => api.post<ImpactStudy>('/impacto/estudios', {
+      nombre: name.trim(), synthetic_only: true, teacher_ids: [], protocol: {},
+    }).then((response) => response.data),
+    onSuccess: async (created) => {
+      setSelectedId(created.id);
+      setName('');
+      setNotice({ tone: 'success', text: 'Borrador sintético creado. No contiene datos académicos.' });
+      await refresh(created.id);
+    },
+    onError: (error) => setNotice({ tone: 'error', text: toApiError(error).detail }),
+  });
+  const changeState = useMutation({
+    mutationFn: ({ study, action }: { study: ImpactStudy; action: 'activar' | 'cerrar' }) => api.post<ImpactStudy>(
+      `/impacto/estudios/${study.id}/${action}`,
+      { expected_version: study.version, ...(action === 'activar' ? { real_data: false } : {}) },
+    ).then((response) => response.data),
+    onSuccess: async (updated) => {
+      setNotice({ tone: 'success', text: updated.estado === 'active' ? 'Piloto sintético activado.' : 'Estudio cerrado.' });
+      await refresh(updated.id);
+    },
+    onError: (error) => setNotice({ tone: 'error', text: toApiError(error).detail }),
+  });
+
+  const downloadExport = async (study: ImpactStudy) => {
+    setNotice(null);
+    try {
+      const response = await api.get(`/impacto/estudios/${study.id}/export`);
+      const blob = new Blob([JSON.stringify(response.data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement('a');
+      anchor.href = url;
+      anchor.download = `estudio-impacto-${study.id}.json`;
+      anchor.click();
+      URL.revokeObjectURL(url);
+      setNotice({ tone: 'success', text: 'Exportación minimizada descargada.' });
+    } catch (error) {
+      setNotice({ tone: 'error', text: toApiError(error).detail });
+    }
+  };
+
+  if (studies.isLoading) return <div className="grid gap-4 sm:grid-cols-2"><Skeleton className="h-36" /><Skeleton className="h-36" /></div>;
+  if (studies.error) return <EmptyState icon={LockKeyhole} title="Acceso no disponible" description={toApiError(studies.error).detail} />;
+  const selected = detail.data ?? studies.data?.find((study) => study.id === effectiveId);
+  const metrics = indicators.data;
+  const statusLabel = selected?.estado === 'draft' ? 'Borrador' : selected?.estado === 'active' ? 'Activo' : 'Cerrado';
+
+  return (
+    <div className="space-y-5">
+      <Card className="border-brand-200 bg-brand-50/40 p-5 dark:border-brand-500/30 dark:bg-brand-500/5">
+        <div className="flex items-start gap-3">
+          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-brand-600 text-white"><FlaskConical className="h-5 w-5" /></span>
+          <div>
+            <h2 className="font-display text-lg font-bold">Medición separada de las notas</h2>
+            <p className="mt-1 text-sm leading-6 text-muted">Este espacio mide tiempo docente, concordancia independiente y calidad de retroalimentación. Nunca cambia calificaciones, entregas ni evidencias.</p>
+          </div>
+        </div>
+      </Card>
+
+      {canManage && (
+        <Card className="p-5">
+          <h3 className="font-display font-bold">Nuevo piloto sintético</h3>
+          <p className="mt-1 text-xs text-muted">La creación siempre inicia sin datos reales ni docentes inscritos.</p>
+          <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+            <Input aria-label="Nombre del piloto" placeholder="Ej. Piloto de validación septiembre" value={name} onChange={(event) => setName(event.target.value)} />
+            <Button onClick={() => create.mutate()} loading={create.isPending} disabled={name.trim().length < 3}>Crear borrador</Button>
+          </div>
+        </Card>
+      )}
+
+      {notice && <div role="status" className={`rounded-xl border p-3 text-sm ${notice.tone === 'success' ? 'border-emerald-300 bg-emerald-50 text-emerald-800 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-200' : 'border-rose-300 bg-rose-50 text-rose-800 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-200'}`}>{notice.text}</div>}
+
+      {!studies.data?.length ? (
+        <EmptyState icon={FlaskConical} title="Sin estudios autorizados" description={canManage ? 'Crea un borrador sintético para validar instrumentos antes de usar datos reales.' : 'No tienes una concesión vigente para ningún estudio.'} />
+      ) : (
+        <div className="grid min-w-0 gap-5 lg:grid-cols-[minmax(220px,0.7fr)_minmax(0,1.3fr)]">
+          <Card className="p-3">
+            <p className="px-2 pb-2 text-xs font-semibold uppercase tracking-wide text-muted">Estudios autorizados</p>
+            <div className="space-y-2">
+              {studies.data.map((study) => (
+                <button key={study.id} type="button" onClick={() => setSelectedId(study.id)} className={`focus-ring w-full rounded-xl border p-3 text-left transition ${effectiveId === study.id ? 'border-brand-500 bg-brand-50 dark:bg-brand-500/10' : 'border-border hover:bg-surface-2'}`}>
+                  <span className="block truncate text-sm font-bold">{study.nombre}</span>
+                  <span className="mt-1 flex items-center gap-2 text-xs text-muted"><Badge tone={study.estado === 'active' ? 'success' : 'neutral'}>{study.estado === 'draft' ? 'Borrador' : study.estado === 'active' ? 'Activo' : 'Cerrado'}</Badge>{study.synthetic_only ? 'Sintético' : 'Datos autorizados'}</span>
+                </button>
+              ))}
+            </div>
+          </Card>
+
+          {selected && (
+            <Card className="min-w-0 p-5">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                <div className="min-w-0"><h3 className="truncate font-display text-xl font-bold">{selected.nombre}</h3><p className="mt-1 text-xs text-muted">{statusLabel} · {selected.synthetic_only ? 'solo datos sintéticos' : 'datos reales autorizados'} · versión {selected.version}</p></div>
+                <div className="flex flex-wrap gap-2">
+                  <Button variant="secondary" size="sm" icon={<Download className="h-4 w-4" />} onClick={() => void downloadExport(selected)}>Exportar</Button>
+                  {canManage && selected.estado === 'draft' && <Button size="sm" icon={<Play className="h-4 w-4" />} loading={changeState.isPending} onClick={() => changeState.mutate({ study: selected, action: 'activar' })}>Activar sintético</Button>}
+                  {canManage && selected.estado === 'active' && <Button variant="secondary" size="sm" icon={<Square className="h-4 w-4" />} loading={changeState.isPending} onClick={() => changeState.mutate({ study: selected, action: 'cerrar' })}>Cerrar estudio</Button>}
+                </div>
+              </div>
+
+              {indicators.isLoading ? <Skeleton className="mt-5 h-32" /> : metrics ? (
+                <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                  <div className="rounded-xl border border-border bg-surface-2 p-4"><p className="text-2xl font-extrabold">{metrics.observations_current}</p><p className="text-xs text-muted">Observaciones vigentes</p></div>
+                  <div className="rounded-xl border border-border bg-surface-2 p-4"><p className="text-2xl font-extrabold">{metrics.time_savings.available ? `${metrics.time_savings.mean_percent?.toFixed(1)}%` : '—'}</p><p className="text-xs text-muted">Ahorro observado · {metrics.time_savings.paired_units} pares</p></div>
+                  <div className="rounded-xl border border-border bg-surface-2 p-4"><p className="text-2xl font-extrabold">{metrics.kappa_independent.available ? metrics.kappa_independent.value?.toFixed(2) : '—'}</p><p className="text-xs text-muted">Kappa independiente · n={metrics.kappa_independent.n}</p></div>
+                  <div className="rounded-xl border border-border bg-surface-2 p-4"><p className="text-2xl font-extrabold">{metrics.feedback_quality.available ? `${metrics.feedback_quality.mean?.toFixed(1)}/5` : '—'}</p><p className="text-xs text-muted">Calidad de retroalimentación · n={metrics.feedback_quality.n}</p></div>
+                </div>
+              ) : indicators.error ? <p role="alert" className="mt-5 text-sm text-rose-700 dark:text-rose-300">{toApiError(indicators.error).detail}</p> : null}
+              <p className="mt-4 text-xs text-muted">{metrics?.missing_count ?? 0} dato(s) faltante(s) registrados. Los pares expuestos a la sugerencia ({metrics?.exposed_grade_pairs ?? 0}) no se presentan como referencia independiente.</p>
+
+              <div className="mt-5 border-t border-border pt-5">
+                <h4 className="font-display font-bold">Observaciones minimizadas</h4>
+                <p className="mt-1 text-xs text-muted">Solo se muestran seudónimos, condición, instrumento y estado; no nombres, correos ni evidencias académicas.</p>
+                {observations.isLoading ? <Skeleton className="mt-3 h-24" /> : observations.data?.items.length ? (
+                  <div className="teacher-scroll-region mt-3 min-w-0 max-w-full overflow-x-auto">
+                    <table className="w-full text-left text-xs">
+                      <thead><tr className="border-b border-border text-muted"><th className="pb-2 pr-3">Referencia</th><th className="pb-2 pr-3">Docente</th><th className="pb-2 pr-3">Condición</th><th className="pb-2 pr-3">Instrumento</th><th className="pb-2">Estado</th></tr></thead>
+                      <tbody>{observations.data.items.map((item) => <tr key={`${item.external_id}-${item.revision}`} className="border-b border-border/50 last:border-0"><td className="py-2 pr-3 font-medium">{item.external_id} · r{item.revision}</td><td className="py-2 pr-3">{item.teacher_pseudonym}</td><td className="py-2 pr-3"><Badge tone={item.condition === 'asistida' ? 'violet' : 'neutral'}>{item.condition}</Badge></td><td className="py-2 pr-3">{item.payload.type ?? '—'}</td><td className="py-2">{item.exclusion_reason ? 'Excluida' : item.missing_reason ? 'Faltante' : 'Válida'}</td></tr>)}</tbody>
+                    </table>
+                  </div>
+                ) : <p className="mt-3 text-sm text-muted">Aún no hay observaciones en este conjunto.</p>}
+              </div>
+            </Card>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* ═══════════════════════ PAGE PRINCIPAL ═══════════════════════ */
 export function AnalyticsPage() {
+  const user = useAuth((state) => state.user);
   const { data: materias } = useMaterias();
   const [materiaId, setMateriaId] = useState('');
   const [tab, setTab] = useState<Tab>('resumen');
+  const canReadStudy = user?.rol === 'admin' && Boolean(user.permissions?.includes('reports.read'));
+  const canManageStudy = canReadStudy && Boolean(user?.permissions?.includes('admin_settings.manage'));
+  const availability = useQuery<{ enabled: boolean }>({
+    queryKey: ['impact-study-availability'],
+    queryFn: () => api.get<{ enabled: boolean }>('/impacto/estudios/disponibilidad').then((response) => response.data),
+    enabled: canReadStudy,
+    retry: false,
+  });
+  const impactEnabled = canReadStudy && availability.data?.enabled === true;
+  const visibleTabs = impactEnabled ? [...TABS, IMPACT_TAB] : TABS;
   useEffect(() => { if (!materiaId && materias?.[0]) setMateriaId(materias[0].id); }, [materias, materiaId]);
+  useEffect(() => { if (tab === 'estudio' && !impactEnabled) setTab('resumen'); }, [impactEnabled, tab]);
 
   return (
     <div className="space-y-6">
@@ -787,7 +1049,7 @@ export function AnalyticsPage() {
           <p className="text-xs text-muted sm:pb-3">Período: últimos 30 días</p>
         </div>
         <div className="teacher-scroll-region -mx-1 mt-4 flex max-w-[calc(100%+0.5rem)] gap-1 overflow-x-auto rounded-xl bg-surface-2 p-1">
-          {TABS.map(t => (
+          {visibleTabs.map(t => (
             <button key={t.id} type="button" onClick={() => setTab(t.id)}
               className={`focus-ring flex min-h-10 shrink-0 items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition ${tab === t.id ? 'bg-surface text-fg shadow-sm' : 'text-muted hover:text-fg'}`}>
               {t.icon}{t.label}
@@ -800,6 +1062,7 @@ export function AnalyticsPage() {
       {tab === 'rendimiento' && <RendimientoTab materiaId={materiaId} />}
       {tab === 'estudiantes' && <EstudiantesTab materiaId={materiaId} />}
       {tab === 'calidad_ia' && <CalidadIaTab materiaId={materiaId} />}
+      {tab === 'estudio' && impactEnabled && <ImpactStudyTab canManage={canManageStudy} />}
 
       <p className="text-center text-[10px] text-muted"><HelpCircle className="mr-1 inline h-3 w-3" />Tiempo estimado ahorrado — calculado contra línea base de 3 min por corrección manual. Datos pueden tardar hasta 1 minuto.</p>
     </div>

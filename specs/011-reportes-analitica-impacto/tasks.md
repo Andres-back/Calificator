@@ -11,3 +11,4 @@
 
 ## Fase 3: Integración
 - [X] T006 Incorporar el dominio a specs/README.md (FR-008)
+- [X] T032-REF Inventariar sesiones, indicadores, observaciones minimizadas y retención implementadas en `specs/032-calificacion-impacto-docente/` (FR-014, FR-015, FR-016, FR-017, FR-018, FR-019, FR-020, FR-021, FR-022, FR-023, FR-026).

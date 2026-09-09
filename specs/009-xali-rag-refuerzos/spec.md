@@ -53,6 +53,10 @@ Como equipo, necesito actualizar estos artefactos cuando cambie el comportamient
 - Registra comportamiento vigente; no introduce cambios funcionales.
 - Inconsistencias se convierten en issues separados.
 - Se conservan arquitectura y contratos públicos.
+## Evolución 032: contexto de calificación implementado bajo bandera
+
+[032 Calificación e impacto docente](../032-calificacion-impacto-docente/spec.md), FR-012: el contexto se recupera después de extraer la respuesta, se limita por materia y propietario tanto en fragmento como fuente, y conserva título/versión o ausencia explícita. Los fragmentos privados no se serializan al estudiante. La existencia del recuperador no demuestra por sí sola validez pedagógica.
+
 ## Inventario técnico
 
 - [Ver superficies, permisos y cobertura de este dominio](./inventory.md).

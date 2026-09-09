@@ -8,6 +8,7 @@ import {
   getGradingJob,
   getGradingJobItems,
   readPendingGradings,
+  recoverPendingGradings,
   removePendingGrading,
   retryGradingJob,
   subscribePendingGradings,
@@ -16,6 +17,10 @@ import {
   type GradingJobSummary,
   type PendingGradingJob,
 } from './gradingJobs';
+
+function keepStableJobs(current: PendingGradingJob[], next: PendingGradingJob[]) {
+  return JSON.stringify(current) === JSON.stringify(next) ? current : next;
+}
 
 export function GradingJobMonitor() {
   const [jobs, setJobs] = useState(readPendingGradings);
@@ -28,8 +33,22 @@ export function GradingJobMonitor() {
   const polling = useRef(false);
   const navigate = useNavigate();
 
+  useEffect(() => {
+    let disposed = false;
+    void recoverPendingGradings()
+      .then((recovered) => {
+        if (!disposed) setJobs((current) => keepStableJobs(current, recovered));
+      })
+      .catch(() => {
+        // El almacenamiento local sigue siendo un respaldo si la red no está disponible.
+      });
+    return () => {
+      disposed = true;
+    };
+  }, []);
+
   useEffect(() => subscribePendingGradings(
-    () => setJobs(readPendingGradings()),
+    () => setJobs((current) => keepStableJobs(current, readPendingGradings())),
   ), []);
 
   useEffect(() => {
@@ -253,7 +272,9 @@ export function GradingJobMonitor() {
                 return (
                   <div key={item.job_id} className="flex items-center justify-between gap-2 rounded-xl border border-border bg-surface p-2.5 text-xs">
                     <div className="min-w-0">
-                      <p className="truncate font-semibold">Caso {index + 1} · {item.estudiante_id?.slice(0, 8) ?? 'sin estudiante'}</p>
+                      <p className="truncate font-semibold">
+                        Caso {index + 1} · {item.estudiante_nombre || item.estudiante_id?.slice(0, 8) || 'sin estudiante'}
+                      </p>
                       <p className="text-muted">{item.estado.replace(/_/g, ' ')} · {item.progreso}%</p>
                     </div>
                     {retryable && (

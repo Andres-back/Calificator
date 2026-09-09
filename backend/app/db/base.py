@@ -16,6 +16,7 @@ def import_models() -> None:
     from app.modules.dba import models as dba_models  # noqa: F401
     from app.modules.evaluaciones import models as evaluaciones_models  # noqa: F401
     from app.modules.imagenes import models as imagenes_models  # noqa: F401
+    from app.modules.impacto_tesis import models as impacto_models  # noqa: F401
     from app.modules.materias import models as materias_models  # noqa: F401
     from app.modules.matriculas import models as matriculas_models  # noqa: F401
     from app.modules.ollama_connector import models as ollama_connector_models  # noqa: F401

@@ -33,11 +33,13 @@ class CapturingGraderClient:
         self.timeout = None
         self.max_tokens = None
         self.stage = None
+        self.prompt = ""
 
     async def chat(self, **kwargs):
         self.timeout = kwargs.get("timeout")
         self.max_tokens = kwargs.get("max_tokens")
         self.stage = kwargs.get("stage")
+        self.prompt = kwargs["messages"][0]["content"]
         return {
             "choices": [
                 {
@@ -62,10 +64,10 @@ def _configure_orchestrator(monkeypatch) -> None:
     )
 
     async def no_context(*_args, **_kwargs):
-        return []
+        return {}, []
 
-    monkeypatch.setattr(orchestrator, "build_context_for_grading", no_context)
-    monkeypatch.setattr(orchestrator, "format_context_as_text", lambda _chunks: "")
+    monkeypatch.setattr(orchestrator, "build_question_context_for_grading", no_context)
+    monkeypatch.setattr(orchestrator, "format_question_context_as_text", lambda _chunks: "")
 
     async def default_fast_verifier(_ctx, primary, *, model: str, **_kwargs):
         return AgentResult(
@@ -402,7 +404,7 @@ def test_pipeline_exception_returns_sanitized_failure(monkeypatch) -> None:
 
     monkeypatch.setattr(
         orchestrator,
-        "build_context_for_grading",
+        "build_question_context_for_grading",
         exploding_context,
     )
 
@@ -502,6 +504,30 @@ def test_fast_verifier_uses_compact_output_budget() -> None:
     assert client.timeout == 15
     assert client.max_tokens <= 1536
     assert client.stage == "grading_secondary"
+
+
+def test_graders_receive_the_complete_extracted_response() -> None:
+    tail = "FINAL_RELEVANTE_DESPUES_DEL_LIMITE"
+    response = ("a" * 5_100) + tail
+    context = AgentContext(
+        evaluacion_nombre="Prueba extensa",
+        nota_maxima=5,
+        blueprint={"preguntas": [{"id": "q1", "texto": "Argumenta"}]},
+        student_response_text=response,
+    )
+    primary_client = CapturingGraderClient()
+    primary = asyncio.run(grader_agent(context, client=primary_client))
+    assert tail in primary_client.prompt
+
+    verifier_client = CapturingGraderClient()
+    asyncio.run(
+        agents.verification_agent(
+            context,
+            primary,
+            client=verifier_client,
+        )
+    )
+    assert tail in verifier_client.prompt
 
 def test_grader_exception_uses_none_instead_of_zero() -> None:
     context = AgentContext(
@@ -937,6 +963,61 @@ def test_low_confidence_invokes_pro_arbiter(monkeypatch) -> None:
     assert comparator_calls == [("deepseek-v4-pro", True)]
     assert result.raw_model_output["strategy"]["arbiter_invoked"] is True
     assert result.raw_model_output["strategy"]["arbiter_reason"] == "low_confidence"
+
+
+def test_oversized_context_is_graded_by_question_and_consolidated_once(monkeypatch) -> None:
+    _configure_orchestrator(monkeypatch)
+    monkeypatch.setattr(orchestrator.settings, "PHOTO_GRADING_CONTEXT_BUDGET_CHARS", 1000)
+    seen_responses: list[str] = []
+
+    async def per_question_grader(ctx, **_kwargs):
+        seen_responses.append(ctx.student_response_text)
+        question = ctx.blueprint["preguntas"][0]
+        number = str(question["numero"])
+        return AgentResult(
+            nota_sugerida=ctx.nota_maxima,
+            confianza=0.95,
+            feedback_estudiante=f"Pregunta {number} valorada.",
+            componentes=[{
+                "clave": f"pregunta:{number}",
+                "respuesta_estudiante": ctx.student_response_text,
+                "puntaje": ctx.nota_maxima,
+                "estado": "correcta",
+                "explicacion": "La respuesta satisface el criterio.",
+                "paginas": [1],
+            }],
+            requiere_revision_docente=False,
+            proveedor="fake",
+            modelo="fake",
+        )
+
+    async def local_comparator(primary, _secondary, **_kwargs):
+        return primary
+
+    monkeypatch.setattr(orchestrator, "grader_agent", per_question_grader)
+    monkeypatch.setattr(orchestrator, "comparator_agent", local_comparator)
+    marker = "MARCADOR_AL_FINAL"
+    result = asyncio.run(orchestrator.orchestrate_grading(
+        object(),
+        evaluacion_id=uuid4(),
+        materia_id=uuid4(),
+        blueprint={
+            "nombre": "Respuestas extensas",
+            "nota_maxima": 5,
+            "preguntas": [
+                {"numero": 1, "enunciado": "Explica", "puntaje": 2},
+                {"numero": 2, "enunciado": "Argumenta", "puntaje": 3},
+            ],
+        },
+        student_response_text=f"P1: inicio\nP2: {'argumento ' * 700}{marker}",
+    ))
+
+    assert result.nota_sugerida == Decimal("5")
+    assert len(seen_responses) == 2
+    assert seen_responses[0] == "P1: inicio"
+    assert marker in seen_responses[1]
+    assert result.raw_model_output["strategy"]["primary_mode"] == "partitioned_by_question"
+    assert result.raw_model_output["strategy"]["input_partition_count"] == 2
 
 def test_delayed_provider_response_is_not_discarded_by_elapsed_time(monkeypatch) -> None:
     async def delayed_result(*_args, **_kwargs):

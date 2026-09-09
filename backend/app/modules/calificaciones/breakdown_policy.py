@@ -6,7 +6,7 @@ from typing import Any
 
 PENDING_STATES = {"ilegible", "no_evaluable", "revision_pendiente"}
 VALID_STATES = {"correcta", "parcial", "incorrecta", "sin_respuesta", *PENDING_STATES}
-ALLOWED_VALUATION_FIELDS = {"evaluador", "puntaje", "estado", "explicacion", "confianza", "proveedor", "modelo", "tiempo_ms"}
+ALLOWED_VALUATION_FIELDS = {"evaluador", "puntaje", "estado", "explicacion", "orientacion_mejora", "confianza", "proveedor", "modelo", "tiempo_ms"}
 
 
 def _decimal(value: object, default: str = "0") -> Decimal:
@@ -67,6 +67,11 @@ def build_component_scaffold(blueprint: dict, *, manual_key: str | None = None) 
 def sanitize_valuation(value: dict) -> dict:
     clean = {key: value.get(key) for key in ALLOWED_VALUATION_FIELDS if value.get(key) is not None}
     clean["explicacion"] = " ".join(str(clean.get("explicacion") or "").split())[:2000]
+    orientation = " ".join(str(clean.get("orientacion_mejora") or "").split())[:2000]
+    if orientation:
+        clean["orientacion_mejora"] = orientation
+    else:
+        clean.pop("orientacion_mejora", None)
     if clean.get("estado") not in VALID_STATES:
         clean["estado"] = "revision_pendiente"
     return clean
@@ -77,7 +82,7 @@ def sanitize_component_payload(value: dict) -> dict:
     clean = sanitize_valuation(value)
     clean["clave"] = str(value.get("clave") or "")[:160]
     response = value.get("respuesta_estudiante")
-    clean["respuesta_estudiante"] = str(response)[:4000] if response is not None else None
+    clean["respuesta_estudiante"] = str(response) if response is not None else None
     clean["paginas"] = [page for page in (value.get("paginas") or []) if isinstance(page, int) and page > 0][:20]
     return clean
 
@@ -97,11 +102,12 @@ def component_consensus(scaffold: list[dict], components_a: list[dict], componen
         if validated and validated.get("correcta") is True:
             score, state, origin = maximum, "correcta", "objetivo"
             explanation = "La respuesta coincide con la clave oficial y recibe el puntaje completo."
+            orientation = ""
             response = validated.get("respuesta_detectada") or response
             review = False
         elif not a and not b:
             score, state, origin = None, "revision_pendiente", "consenso_ia"
-            explanation, review = "No se obtuvo una valoración verificable para esta respuesta.", True
+            explanation, orientation, review = "No se obtuvo una valoración verificable para esta respuesta.", "Revisa esta respuesta junto con tu docente.", True
         else:
             scores = [_decimal(item.get("puntaje")) for item in (a, b) if item and item.get("puntaje") is not None]
             score = sum(scores, Decimal("0")) / Decimal(len(scores)) if scores else None
@@ -112,6 +118,7 @@ def component_consensus(scaffold: list[dict], components_a: list[dict], componen
             material = material or (len(set(states)) > 1 and {"correcta", "incorrecta"}.issubset(set(states)))
             state = states[0] if len(set(states)) == 1 else ("revision_pendiente" if material else "parcial")
             explanation = str((a or b or {}).get("explicacion") or "Valoración automática sin explicación suficiente.")
+            orientation = str((a or b or {}).get("orientacion_mejora") or "")
             review, origin = material or state in PENDING_STATES, "consenso_ia"
         if review:
             blockers.append(f"componente_pendiente:{key}")
@@ -120,7 +127,7 @@ def component_consensus(scaffold: list[dict], components_a: list[dict], componen
             for page in (item or {}).get("paginas", []) or []:
                 if isinstance(page, int) and page > 0 and page not in pages:
                     pages.append(page)
-        result.append({**base, "respuesta_estudiante": response, "puntos_obtenidos": score, "estado": state, "explicacion_verificable": explanation, "explicacion_estudiante": explanation, "origen": origin, "requiere_revision": review, "evidencia_json": {"paginas": sorted(pages)}, "valoraciones_json": [item for item in (a, b) if item]})
+        result.append({**base, "respuesta_estudiante": response, "puntos_obtenidos": score, "estado": state, "explicacion_verificable": explanation, "explicacion_estudiante": explanation, "origen": origin, "requiere_revision": review, "evidencia_json": {"paginas": sorted(pages), "orientacion_mejora": orientation}, "valoraciones_json": [item for item in (a, b) if item]})
     return result, blockers
 
 

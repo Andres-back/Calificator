@@ -134,6 +134,35 @@ async def get_job_result(db: AsyncSession, job_id: UUID) -> dict[str, Any]:
     return dict(value) if isinstance(value, dict) else {}
 
 
+async def save_grading_checkpoint(
+    db: AsyncSession,
+    job_id: UUID,
+    *,
+    claim_token: str,
+    checkpoint: dict[str, Any],
+) -> bool:
+    """Guarda una etapa recuperable solo si este intento conserva el lease."""
+    result = await db.execute(
+        text(
+            "UPDATE ai_jobs SET resultado_json="
+            "COALESCE(resultado_json, '{}'::jsonb) || "
+            "jsonb_build_object('_checkpoint_v1', CAST(:checkpoint AS jsonb)), "
+            "heartbeat_at=NOW(), "
+            "lease_expires_at=NOW() + (:lease_seconds * INTERVAL '1 second') "
+            "WHERE id=CAST(:id AS uuid) AND estado=:running "
+            "AND claim_token=:claim_token"
+        ),
+        {
+            "id": str(job_id),
+            "running": JobEstado.RUNNING.value,
+            "claim_token": claim_token,
+            "checkpoint": _json_value(checkpoint),
+            "lease_seconds": max(60, settings.AI_JOB_LEASE_SECONDS),
+        },
+    )
+    return bool(result.rowcount)
+
+
 async def mark_job_waiting_connector(
     db: AsyncSession,
     job_id: UUID,
@@ -416,7 +445,9 @@ async def update_job_progress(
 ) -> bool:
     result = await db.execute(
         text(
-            "UPDATE ai_jobs SET progreso=:progreso, resultado_json=CAST(:resultado AS jsonb), "
+            "UPDATE ai_jobs SET progreso=:progreso, "
+            "resultado_json=COALESCE(resultado_json, '{}'::jsonb) || "
+            "CAST(:resultado AS jsonb), "
             "stage=COALESCE(CAST(:stage AS text), stage), "
             "heartbeat_at=NOW(), lease_expires_at=NOW() + (:lease_seconds * INTERVAL '1 second') "
             "WHERE id=:id AND estado=:running "
@@ -448,7 +479,9 @@ async def finish_job(
     result = await db.execute(
         text(
             "UPDATE ai_jobs SET estado=:estado, progreso=100, "
-            "resultado_json=CAST(:resultado AS jsonb), error=:error, finished_at=NOW(), "
+            "resultado_json=(COALESCE(resultado_json, '{}'::jsonb) "
+            "- 'claim_token' - 'terminal_reason') || CAST(:resultado AS jsonb), "
+            "error=:error, finished_at=NOW(), "
             "heartbeat_at=NOW(), lease_expires_at=NULL "
             "WHERE id=:id AND estado IN ('queued','running','retrying') "
             "AND (CAST(:claim_token AS text) IS NULL OR claim_token=:claim_token)"

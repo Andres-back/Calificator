@@ -2,12 +2,15 @@ import { useEffect, useState } from 'react';
 import { Button, Field, Input, Select, Textarea } from '@/components/ui';
 import type { GradeComponentData, GradeComponentChange, GradeFormulaData } from '@/types/api';
 
-export function GradeComponentEditor({ component, formula, saving, onCancel, onSave, onDirtyChange }: {
+export function GradeComponentEditor({ component, formula, saving, saveError, onCancel, onSave, onSaveAndNext, onReload, onDirtyChange }: {
   component: GradeComponentData;
   formula: GradeFormulaData;
   saving?: boolean;
+  saveError?: string;
   onCancel: () => void;
   onSave: (change: GradeComponentChange) => void;
+  onSaveAndNext?: (change: GradeComponentChange) => void;
+  onReload?: () => void;
   onDirtyChange?: (dirty: boolean) => void;
 }) {
   const [points, setPoints] = useState(String(component.puntos_obtenidos ?? ''));
@@ -46,6 +49,13 @@ export function GradeComponentEditor({ component, formula, saving, onCancel, onS
     && numeric <= Number(component.puntos_maximos)
     && reason.trim().length >= 3
     && studentExplanation.trim().length >= 3;
+  const change = (): GradeComponentChange => ({
+    componente_id: component.id,
+    puntos_obtenidos: numeric,
+    estado: state,
+    motivo_interno: reason.trim(),
+    explicacion_estudiante: studentExplanation.trim(),
+  });
 
   return (
     <div className="space-y-4 rounded-xl border border-brand-200 bg-brand-50/40 p-4 dark:border-brand-500/30 dark:bg-brand-500/10">
@@ -73,10 +83,26 @@ export function GradeComponentEditor({ component, formula, saving, onCancel, onS
       <Field label="Explicación para el estudiante" required>
         <Textarea value={studentExplanation} onChange={(event) => setStudentExplanation(event.target.value)} rows={3} />
       </Field>
+      {saveError && (
+        <div role="alert" className="flex flex-col gap-2 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-100 sm:flex-row sm:items-center sm:justify-between">
+          <span>{saveError} Tu borrador sigue aquí.</span>
+          {onReload && (
+            <Button type="button" variant="outline" onClick={onReload} disabled={saving}>
+              Recargar versión vigente
+            </Button>
+          )}
+        </div>
+      )}
       <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
         <Button type="button" variant="ghost" onClick={onCancel} disabled={saving}>Cancelar</Button>
-        <Button type="button" onClick={() => valid && onSave({ componente_id: component.id, puntos_obtenidos: numeric, estado: state, motivo_interno: reason.trim(), explicacion_estudiante: studentExplanation.trim() })} disabled={!valid || saving} loading={saving}>Guardar y recalcular</Button>
+        <Button type="button" variant="outline" onClick={() => valid && onSave(change())} disabled={!valid || saving} loading={saving}>Guardar y recalcular</Button>
+        {onSaveAndNext && (
+          <Button type="button" onClick={() => valid && onSaveAndNext(change())} disabled={!valid || saving} loading={saving}>
+            Guardar y siguiente
+          </Button>
+        )}
       </div>
+      {onSaveAndNext && <p className="text-right text-xs text-muted">Guarda este ajuste y avanza; no confirma ni publica la nota.</p>}
     </div>
   );
 }

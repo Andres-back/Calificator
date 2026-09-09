@@ -130,3 +130,7 @@ frontend/e2e/                          # flujos críticos simulados
 - [Modelo de datos](./data-model.md)
 - [Contratos HTTP y de trabajos](./contracts/performance-api.md)
 - [Guía de validación](./quickstart.md)
+
+## Coordinación con 032
+
+La evolución [032](../032-calificacion-impacto-docente/plan.md) refuerza recuperación y medición humana sin sustituir los objetivos ni benchmarks pendientes de 031.

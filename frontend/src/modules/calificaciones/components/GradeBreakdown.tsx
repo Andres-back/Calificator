@@ -10,10 +10,11 @@ const stateLabel: Record<string, string> = {
   revision_pendiente: 'Revisión pendiente',
 };
 
-export function GradeBreakdown({ breakdown, student = false, onEdit, editingComponentId, renderEditor }: {
+export function GradeBreakdown({ breakdown, student = false, onEdit, onEvidencePage, editingComponentId, renderEditor }: {
   breakdown: GradeBreakdownData;
   student?: boolean;
   onEdit?: (componentId: string) => void;
+  onEvidencePage?: (page: number) => void;
   editingComponentId?: string | null;
   renderEditor?: (component: GradeBreakdownData['componentes'][number]) => ReactNode;
 }) {
@@ -65,7 +66,50 @@ export function GradeBreakdown({ breakdown, student = false, onEdit, editingComp
               {component.requiere_revision ? <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" /> : <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />}
               <p><strong>Por qué:</strong> {component.explicacion || 'No hay una explicación verificable; debe revisarla el docente.'}</p>
             </div>
-            {component.evidencia_paginas.length > 0 && (
+            {component.orientacion_mejora && (
+              <div className="mt-2 rounded-lg border border-sky-200 bg-sky-50 p-3 text-sm leading-6 text-sky-950 dark:border-sky-500/30 dark:bg-sky-500/10 dark:text-sky-100">
+                <strong>Para mejorar:</strong> {component.orientacion_mejora}
+              </div>
+            )}
+            {!student && (
+              <details className="mt-2 rounded-lg border border-border bg-surface-2 px-3 py-2 text-xs text-muted">
+                <summary className="cursor-pointer font-semibold text-fg">
+                  {component.fuentes?.length
+                    ? `Material de apoyo consultado (${component.fuentes.length})`
+                    : 'Sin material adicional pertinente'}
+                </summary>
+                {component.fuentes?.length ? (
+                  <div className="mt-2 space-y-2">
+                    {component.fuentes.map((source, index) => (
+                      <div key={`${source.source_id ?? 'fuente'}-${source.chunk_id ?? index}`} className="rounded-lg border border-border bg-surface p-2">
+                        <p className="font-semibold text-fg">{source.titulo || 'Fuente autorizada'}</p>
+                        <p>Versión: {source.version || 'sin versión registrada'}</p>
+                        {source.fragmento ? <p className="mt-1 line-clamp-3 whitespace-pre-wrap">{source.fragmento}</p> : null}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="mt-2">La valoración no atribuyó esta respuesta a una fuente RAG inexistente.</p>
+                )}
+              </details>
+            )}
+            {component.evidencia_paginas.length > 0 && onEvidencePage && (
+              <div className="mt-2 flex flex-wrap items-center gap-1.5 text-xs text-muted">
+                <span>Evidencia:</span>
+                {component.evidencia_paginas.map((page) => (
+                  <button
+                    key={page}
+                    type="button"
+                    onClick={() => onEvidencePage(page)}
+                    className="focus-ring min-h-9 rounded-lg border border-border bg-surface-2 px-3 font-semibold text-brand-700 hover:border-brand-300 hover:bg-brand-50 dark:text-brand-200 dark:hover:bg-brand-500/10"
+                    aria-label={`Ver hoja ${page} de la evidencia`}
+                  >
+                    Hoja {page}
+                  </button>
+                ))}
+              </div>
+            )}
+            {component.evidencia_paginas.length > 0 && !onEvidencePage && (
               <p className="mt-2 text-xs text-muted">Evidencia: {component.evidencia_paginas.map((page) => `hoja ${page}`).join(', ')}.</p>
             )}
             {onEdit && editingComponentId !== component.id && (
@@ -80,13 +124,18 @@ export function GradeBreakdown({ breakdown, student = false, onEdit, editingComp
             ) : null}
             {!student && component.valoraciones && component.valoraciones.length > 1 && (
               <details className="mt-3 text-xs text-muted">
-                <summary className="cursor-pointer font-semibold">Ver valoraciones independientes ({component.valoraciones.length})</summary>
+                <summary className="cursor-pointer font-semibold">Ver verificaciones registradas ({component.valoraciones.length})</summary>
                 <div className="mt-2 space-y-2">
                   {component.valoraciones.map((valuation, index) => (
-                    <p key={index} className="rounded-lg bg-surface-2 p-2">Evaluador {String(valuation.evaluador ?? index + 1)}: {String(valuation.puntaje ?? '—')} puntos. {String(valuation.explicacion ?? '')}</p>
+                    <p key={index} className="rounded-lg bg-surface-2 p-2">Valoración {String(valuation.evaluador ?? index + 1)}: {String(valuation.puntaje ?? '—')} puntos. {String(valuation.explicacion ?? '')}</p>
                   ))}
                 </div>
               </details>
+            )}
+            {!student && (
+              <p className="mt-3 text-xs text-muted">
+                Proceso: evidencia extraída → valoración {component.origen === 'objetivo' ? 'objetiva' : component.origen === 'docente' ? 'docente' : 'asistida por IA'} → {component.valoraciones && component.valoraciones.length > 1 ? 'comparación registrada' : 'comprobación disponible'}.
+              </p>
             )}
           </article>
         ))}

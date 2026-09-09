@@ -14,3 +14,4 @@
 
 ## Evolución 022: recuperación de trabajos de calificación
 - [X] T007 Registrar y ejecutar la prueba de regresión PostgreSQL UUID/VARCHAR y la recuperación idempotente documentadas en `specs/022-recuperar-trabajos-ia/`.
+- [X] T032-REF Enlazar checkpoints compatibles, leases y recuperación implementados en `specs/032-calificacion-impacto-docente/` (FR-004, FR-005, FR-006, FR-024, FR-025).

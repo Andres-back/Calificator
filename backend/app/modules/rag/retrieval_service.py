@@ -16,6 +16,7 @@ async def search_chunks(
     db: AsyncSession,
     query: str,
     materia_id: UUID | None = None,
+    profesor_id: UUID | None = None,
     tipo: str | None = None,
     limit: int = 8,
 ) -> list[dict]:
@@ -28,10 +29,20 @@ async def search_chunks(
     filters: list[str] = []
     params: dict = {"embedding": embedding_str, "limit": limit}
     if materia_id:
-        filters.append("(materia_id = CAST(:materia_id AS uuid) OR tipo = 'dba')")
+        filters.append(
+            "((c.materia_id = CAST(:materia_id AS uuid) "
+            "AND s.materia_id = CAST(:materia_id AS uuid)) "
+            "OR (c.tipo = 'dba' AND c.profesor_id IS NULL AND s.profesor_id IS NULL))"
+        )
         params["materia_id"] = str(materia_id)
+    if profesor_id:
+        filters.append(
+            "((c.profesor_id = CAST(:profesor_id AS uuid) OR c.profesor_id IS NULL) "
+            "AND (s.profesor_id = CAST(:profesor_id AS uuid) OR s.profesor_id IS NULL))"
+        )
+        params["profesor_id"] = str(profesor_id)
     if tipo:
-        filters.append("tipo = :tipo")
+        filters.append("c.tipo = :tipo")
         params["tipo"] = tipo
     where_sql = f"WHERE {' AND '.join(filters)}" if filters else ""
 
@@ -42,15 +53,20 @@ async def search_chunks(
         async with db.begin_nested():
             sql = f"""
                 SELECT
-                    id,
-                    chunk_text,
-                    tipo,
-                    metadata,
-                    1 - (embedding_vec <=> CAST(:embedding AS vector)) AS similarity
-                FROM rag_chunks
+                    c.id,
+                    c.source_id,
+                    c.chunk_text,
+                    c.tipo,
+                    c.metadata,
+                    s.titulo AS source_title,
+                    s.metadata AS source_metadata,
+                    s.created_at AS source_created_at,
+                    1 - (c.embedding_vec <=> CAST(:embedding AS vector)) AS similarity
+                FROM rag_chunks c
+                JOIN rag_sources s ON s.id = c.source_id
                 {where_sql}
-                {"AND" if where_sql else "WHERE"} embedding_vec IS NOT NULL
-                ORDER BY embedding_vec <=> CAST(:embedding AS vector)
+                {"AND" if where_sql else "WHERE"} c.embedding_vec IS NOT NULL
+                ORDER BY c.embedding_vec <=> CAST(:embedding AS vector)
                 LIMIT :limit
             """
             result = await db.execute(
@@ -62,8 +78,11 @@ async def search_chunks(
         logger.warning("pgvector similarity search unavailable, falling back to text search")
         fallback_params = {k: v for k, v in params.items() if k != "embedding"}
         sql_fallback = f"""
-            SELECT id, chunk_text, tipo, metadata, 0.5 AS similarity
-            FROM rag_chunks
+            SELECT c.id, c.source_id, c.chunk_text, c.tipo, c.metadata,
+                   s.titulo AS source_title, s.metadata AS source_metadata,
+                   s.created_at AS source_created_at, 0.5 AS similarity
+            FROM rag_chunks c
+            JOIN rag_sources s ON s.id = c.source_id
             {where_sql}
             LIMIT :limit
         """
@@ -76,6 +95,12 @@ async def search_chunks(
     return [
         {
             "id": str(row.id),
+            "source_id": str(row.source_id),
+            "source_title": row.source_title,
+            "source_version": str(
+                (row.source_metadata or {}).get("version")
+                or row.source_created_at.isoformat()
+            ),
             "chunk_text": row.chunk_text,
             "tipo": row.tipo,
             "similarity": float(row.similarity),

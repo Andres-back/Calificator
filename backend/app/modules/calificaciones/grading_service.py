@@ -6,6 +6,7 @@ Mantiene la misma interfaz pública para compatibilidad con los routers.
 from __future__ import annotations
 
 from uuid import UUID
+from collections.abc import Awaitable, Callable
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -28,6 +29,8 @@ async def grade_submission(
     image_mime: str = "image/jpeg",
     user_id: UUID | None = None,
     ai_config: dict | None = None,
+    vision_checkpoint: dict | None = None,
+    on_vision_checkpoint: Callable[[dict], Awaitable[None]] | None = None,
 ) -> GradingResult:
     """
     Califica una entrega usando orquestación multi-agente.
@@ -61,6 +64,8 @@ async def grade_submission(
         student_response_text=student_response_text,
         user_id=user_id,
         ai_config=ai_config,
+        vision_checkpoint=vision_checkpoint,
+        on_vision_checkpoint=on_vision_checkpoint,
     )
     key_complete, missing_answers = grading_answer_key_status(blueprint)
     if not key_complete:

@@ -145,3 +145,62 @@ def test_job_detail_is_scoped_to_owner_and_admin() -> None:
     with pytest.raises(HTTPException) as exc_info:
         asyncio.run(jobs_router._get_job(DB(), job_id, uuid4()))
     assert exc_info.value.status_code == 404
+
+
+def test_public_job_result_excludes_recovery_checkpoint_and_claim() -> None:
+    assert jobs_router._public_result({
+        "pipeline_status": "retrying",
+        "calificacion_ids": ["grade-1"],
+        "_checkpoint_v1": {"vision_result": {"raw_output": "private"}},
+        "claim_token": "private-token",
+    }) == {
+        "pipeline_status": "retrying",
+        "calificacion_ids": ["grade-1"],
+    }
+
+
+def test_pending_gradings_are_scoped_to_the_authenticated_owner() -> None:
+    owner_id = uuid4()
+    evaluation_id = uuid4()
+    subject_id = uuid4()
+    seen_params: list[dict] = []
+
+    class Rows:
+        def mappings(self):
+            return self
+
+        def all(self):
+            return [{
+                "job_id": uuid4(),
+                "evaluacion_id": evaluation_id,
+                "materia_id": subject_id,
+                "estudiante_id": None,
+                "estudiante_nombre": "",
+                "kind": "individual",
+                "total": 1,
+                "estado": "running",
+                "progreso": 25,
+                "stage": "vision",
+                "elapsed_ms": 1500,
+                "created_at": "2026-09-09T00:00:00Z",
+            }]
+
+    class DB:
+        async def scalar(self, _statement, params):
+            seen_params.append(params)
+            return 1
+
+        async def execute(self, _statement, params):
+            seen_params.append(params)
+            return Rows()
+
+    result = asyncio.run(jobs_router.get_pending_grading_jobs(
+        current_user=SimpleNamespace(id=owner_id, rol="admin"),
+        db=DB(),
+        limit=30,
+        offset=0,
+    ))
+
+    assert result["total"] == 1
+    assert result["items"][0]["evaluacion_id"] == evaluation_id
+    assert all(params["owner_id"] == str(owner_id) for params in seen_params)

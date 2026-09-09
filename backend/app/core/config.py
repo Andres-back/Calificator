@@ -114,6 +114,8 @@ class Settings(BaseSettings):
     PHOTO_GRADING_ARBITER_TIMEOUT_SECONDS: int = 30
     PHOTO_GRADING_PRIMARY_MAX_TOKENS: int = 3072
     PHOTO_GRADING_VERIFIER_MAX_TOKENS: int = 1536
+    # Presupuesto de entrada aproximado. No trunca: activa partición por pregunta.
+    PHOTO_GRADING_CONTEXT_BUDGET_CHARS: int = 320000
     PHOTO_GRADING_ARBITRATION_MIN_CONFIDENCE: float = 0.75
     PHOTO_GRADING_ARBITRATION_SCORE_DELTA: float = 0.5
     PHOTO_GRADING_MODEL_MAX_ATTEMPTS: int = 1
@@ -128,6 +130,12 @@ class Settings(BaseSettings):
     AI_PROVIDER_MAX_CONCURRENCY: int = 4
     EXPLAINABLE_GRADING_GENERATION_ENABLED: bool = True
     EXPLAINABLE_GRADING_AUTHORITY_ENABLED: bool = False
+    # Despliegue progresivo de la evolución 032. Las correcciones de
+    # integridad e idempotencia no dependen de estos interruptores.
+    GRADING_RETRY_CHECKPOINTS_ENABLED: bool = False
+    GRADING_REVIEW_WORKSPACE_V2_ENABLED: bool = False
+    TEACHER_WORK_TIMING_ENABLED: bool = False
+    IMPACT_STUDY_ENABLED: bool = False
 
     GROQ_API_KEY: str = ""
     # llama-3.1-70b-versatile fue dado de baja por Groq; usar el sucesor vigente.

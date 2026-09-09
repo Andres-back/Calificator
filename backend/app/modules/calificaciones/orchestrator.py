@@ -14,6 +14,7 @@ import re
 import time
 import unicodedata
 import uuid
+from collections.abc import Awaitable, Callable
 from decimal import Decimal
 from typing import Any
 from uuid import UUID
@@ -32,13 +33,18 @@ from app.modules.calificaciones.agents import (
     router_grader_agent,
     comparator_agent,
     AgentResult,
+    merge_partition_results,
+    partition_grading_context,
 )
 from app.modules.calificaciones.schemas import GradingResult
 from app.modules.evaluaciones.modality_service import (
     normalize_question_modalities,
     question_numbers_by_section,
 )
-from app.modules.rag.context_builder import build_context_for_grading, format_context_as_text
+from app.modules.rag.context_builder import (
+    build_question_context_for_grading,
+    format_question_context_as_text,
+)
 
 logger = get_logger(__name__)
 
@@ -411,6 +417,8 @@ async def orchestrate_grading(
     student_response_text: str | None = None,
     user_id: UUID | None = None,
     ai_config: dict | None = None,
+    vision_checkpoint: dict | None = None,
+    on_vision_checkpoint: Callable[[dict], Awaitable[None]] | None = None,
     vision_model: str = DEFAULT_VISION_MODEL,
     grader_a_model: str = DEFAULT_GRADER_A_MODEL,
     verifier_model: str = DEFAULT_VERIFIER_MODEL,
@@ -541,16 +549,9 @@ async def orchestrate_grading(
                 type(exc).__name__,
             )
     try:
-        # ── Paso 1: RAG (común para todos) ───────────────────────────
-        rag_chunks = await build_context_for_grading(
-            db,
-            materia_id=materia_id,
-            evaluacion_nombre=blueprint.get("nombre", ""),
-            student_response=blueprint.get("student_response", student_response_text or ""),
-        )
-        rag_context = format_context_as_text(rag_chunks)
-
-        # ── Paso 2: Visión (si hay imagen) ───────────────────────────
+        # ── Paso 1: extracción (si hay imagen) ───────────────────────
+        # RAG se recupera después: primero debemos conocer la respuesta real.
+        rag_context = ""
         online_text = student_response_text or ""
         texto_extraido = online_text
         online_answers = parse_numbered_answers(online_text)
@@ -575,11 +576,31 @@ async def orchestrate_grading(
                 image_bytes=image_bytes,
                 image_mime=image_mime,
             )
-            vision_result = await vision_agent(
-                ctx,
-                model=vision_model,
-                client=vision_client,
+            checkpoint_result = (
+                vision_checkpoint.get("vision_result")
+                if isinstance(vision_checkpoint, dict)
+                else None
             )
+            if isinstance(checkpoint_result, dict):
+                vision_result = AgentResult(
+                    nota_sugerida=None,
+                    confianza=float(checkpoint_result.get("confianza") or 0),
+                    feedback_estudiante="",
+                    alertas=list(checkpoint_result.get("alertas") or []),
+                    proveedor=str(checkpoint_result.get("proveedor") or ""),
+                    modelo=str(checkpoint_result.get("modelo") or vision_model),
+                    tiempo_ms=int(checkpoint_result.get("tiempo_ms") or 0),
+                    raw_output=dict(checkpoint_result.get("raw_output") or {}),
+                    requiere_revision_docente=bool(
+                        checkpoint_result.get("requiere_revision_docente", False)
+                    ),
+                )
+            else:
+                vision_result = await vision_agent(
+                    ctx,
+                    model=vision_model,
+                    client=vision_client,
+                )
             if (
                 vision_result.error
                 and settings.PHOTO_GRADING_CROSS_PROVIDER_FALLBACK_ENABLED
@@ -605,6 +626,25 @@ async def orchestrate_grading(
                         "vision_result": failure_payload,
                     },
                 )
+
+            if (
+                not isinstance(checkpoint_result, dict)
+                and on_vision_checkpoint is not None
+                and vision_result.raw_output
+            ):
+                await on_vision_checkpoint({
+                    "vision_result": {
+                        "confianza": vision_result.confianza,
+                        "alertas": list(vision_result.alertas),
+                        "proveedor": vision_result.proveedor,
+                        "modelo": vision_result.modelo,
+                        "tiempo_ms": vision_result.tiempo_ms,
+                        "raw_output": dict(vision_result.raw_output),
+                        "requiere_revision_docente": (
+                            vision_result.requiere_revision_docente
+                        ),
+                    },
+                })
 
             if vision_result.raw_output:
                 physical_text = str(
@@ -666,6 +706,22 @@ async def orchestrate_grading(
                 raw_output={"orchestrator": "vision_failed"},
             )
 
+        # ── Paso 2: contexto pertinente por pregunta ────────────────
+        detected_for_context = merge_detected_answers(
+            blueprint,
+            online_answers,
+            physical_answers,
+        )
+        question_context, rag_provenance = await build_question_context_for_grading(
+            db,
+            materia_id=materia_id,
+            profesor_id=user_id,
+            evaluacion_nombre=blueprint.get("nombre", ""),
+            questions=list(blueprint.get("preguntas") or []),
+            detected_answers=detected_for_context,
+        )
+        rag_context = format_question_context_as_text(question_context)
+
         # ── Paso 3: Calificación dual (en paralelo) ──────────────────
         ctx_grading = AgentContext(
             evaluacion_nombre=blueprint.get("nombre", ""),
@@ -677,21 +733,74 @@ async def orchestrate_grading(
             image_bytes=None,
             image_mime=image_mime_for_grading,
         )
+        grading_contexts = partition_grading_context(
+            ctx_grading,
+            detected_for_context,
+            rag_context_by_question=question_context,
+        )
+        context_partitioned = len(grading_contexts) > 1
 
         # La evidencia visual ya quedó transcrita y normalizada. El camino
         # habitual usa un desglose Flash completo y una verificación Flash
         # compacta. El modelo Pro solo aparece cuando existe una razón concreta.
-        grading_a = await _run_grader_until_complete(
-            ctx_grading,
-            models=[grader_a_model],
-            client=client,
-            stage="grading_primary",
-        )
         arbiter_invoked = False
         arbiter_reason: str | None = None
         secondary_mode = "fast_verifier"
 
-        if grading_a.nota_sugerida is None:
+        if context_partitioned:
+            primary_parts: list[AgentResult] = []
+            verifier_parts: list[AgentResult] = []
+            partition_recovery = False
+            for partition in grading_contexts:
+                primary_part = await _run_grader_until_complete(
+                    partition,
+                    models=[grader_a_model],
+                    client=client,
+                    stage="grading_primary",
+                )
+                if primary_part.nota_sugerida is None:
+                    partition_recovery = True
+                    primary_part = await _run_grader_until_complete(
+                        partition,
+                        models=[grader_b_model],
+                        client=client,
+                        stage="grading_secondary",
+                    )
+                    primary_part.requiere_revision_docente = True
+                primary_parts.append(primary_part)
+                if primary_part.nota_sugerida is None:
+                    verifier_parts.append(primary_part)
+                else:
+                    verifier_parts.append(await verification_agent(
+                        partition,
+                        primary_part,
+                        model=verifier_model,
+                        client=client,
+                        timeout=None,
+                        max_attempts=max(1, int(settings.PHOTO_GRADING_MODEL_MAX_ATTEMPTS)),
+                    ))
+            grading_a = merge_partition_results(
+                primary_parts,
+                nota_maxima=ctx_grading.nota_maxima,
+            )
+            grading_b = merge_partition_results(
+                verifier_parts,
+                nota_maxima=ctx_grading.nota_maxima,
+            )
+            secondary_mode = "partitioned_verifier"
+            arbiter_reason = _arbitration_reason(grading_a, grading_b)
+            if partition_recovery and arbiter_reason is None:
+                arbiter_reason = "partition_recovery"
+            arbiter_invoked = arbiter_reason is not None
+        else:
+            grading_a = await _run_grader_until_complete(
+                ctx_grading,
+                models=[grader_a_model],
+                client=client,
+                stage="grading_primary",
+            )
+
+        if not context_partitioned and grading_a.nota_sugerida is None:
             # Contingencia excepcional: si Flash no produjo ningún desglose, Pro
             # intenta rescatar una única valoración; seguirá marcada para revisión.
             arbiter_invoked = True
@@ -703,7 +812,7 @@ async def orchestrate_grading(
                 client=client,
                 stage="grading_secondary",
             )
-        else:
+        elif not context_partitioned:
             grading_b = await verification_agent(
                 ctx_grading,
                 grading_a,
@@ -891,12 +1000,14 @@ async def orchestrate_grading(
             "slow_after_ms": int(settings.PHOTO_GRADING_SLOW_WARNING_SECONDS) * 1000,
             "strategy": {
                 "vision_model": vision_result.modelo if vision_result else None,
-                "primary_mode": "full_explainable_flash",
+                "primary_mode": "partitioned_by_question" if context_partitioned else "full_explainable_flash",
+                "input_partition_count": len(grading_contexts),
                 "secondary_mode": secondary_mode,
                 "arbiter_invoked": arbiter_invoked,
                 "arbiter_reason": arbiter_reason,
             },
             "evidence_coverage": coverage_analysis,
+            "rag_sources_by_question": rag_provenance,
             "vision": {
                 "proveedor": vision_result.proveedor if vision_result else None,
                 "modelo": vision_result.modelo if vision_result else None,

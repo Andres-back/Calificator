@@ -8,6 +8,11 @@ import httpx
 import pytest
 from PIL import Image, ImageFilter
 
+from app.modules.calificaciones.agents import (
+    AgentContext,
+    partition_grading_context,
+    render_grader_prompt,
+)
 from app.services import vision_extractor as module
 from app.services.vision_extractor import (
     ExtractedAnswer,
@@ -148,6 +153,89 @@ def test_multipage_merge_keeps_source_and_uncertainty() -> None:
     assert merged[0].source_pages == [1, 2]
     assert merged[0].answer is None
     assert merged[0].needs_review is True
+
+
+def test_student_extraction_prompt_excludes_nested_solutions_and_rubrics() -> None:
+    prompt = VisionExtractor()._prompt(
+        {
+            "nombre": "Historia",
+            "preguntas": [{
+                "id": "q1",
+                "texto": "Explica una causa",
+                "opciones": [
+                    {"texto": "A", "es_correcta": True},
+                    {"texto": "B", "es_correcta": False},
+                ],
+                "respuesta_correcta": "A",
+            }],
+            "respuestas_esperadas": ["A"],
+            "criterios": [{"nombre": "Causalidad"}],
+            "rubrica": {"solucion": "A"},
+        },
+        page=1,
+        total=2,
+        purpose="student_response",
+    )
+
+    assert "Explica una causa" in prompt
+    assert "es_correcta" not in prompt
+    assert "respuesta_correcta" not in prompt
+    assert "respuestas_esperadas" not in prompt
+    assert "rubrica" not in prompt
+    assert "Causalidad" not in prompt
+
+
+def test_grading_prompt_preserves_content_after_character_five_thousand() -> None:
+    marker = "RESPUESTA_FINAL_NO_TRUNCADA"
+    response = "P1: " + ("argumento " * 700) + marker
+    ctx = AgentContext(
+        evaluacion_nombre="Lectura extensa",
+        nota_maxima=5,
+        blueprint={
+            "nota_maxima": 5,
+            "preguntas": [{"numero": 1, "enunciado": "Argumenta", "puntaje": 5}],
+        },
+        student_response_text=response,
+    )
+    prompt = render_grader_prompt(ctx)
+    assert len(response) > 5000
+    assert marker in prompt
+    assert prompt.endswith("\n")
+
+
+def test_forced_partition_keeps_every_question_and_marks_ambiguity() -> None:
+    final_marker = "FINAL_SEGUNDA_RESPUESTA"
+    ctx = AgentContext(
+        evaluacion_nombre="Dos respuestas extensas",
+        nota_maxima=5,
+        blueprint={
+            "nota_maxima": 5,
+            "preguntas": [
+                {"numero": 1, "enunciado": "Explica el proceso", "puntaje": 2},
+                {"numero": 2, "enunciado": "Justifica la decisión", "puntaje": 3},
+            ],
+            "respuestas_esperadas": [
+                {"numero": 1, "respuesta": "Criterio uno"},
+                {"numero": 2, "respuesta": "Criterio dos"},
+            ],
+        },
+        student_response_text="contenido completo que excede presupuesto",
+    )
+    partitions = partition_grading_context(
+        ctx,
+        [
+            {"pregunta": 1, "respuesta": None, "legible": False, "needs_review": True},
+            {"pregunta": 2, "respuesta": ("desarrollo " * 700) + final_marker},
+        ],
+        max_chars=1000,
+    )
+    assert len(partitions) == 2
+    prompts = [render_grader_prompt(partition) for partition in partitions]
+    assert "evidencia ilegible o ambigua" in prompts[0]
+    assert final_marker in prompts[1]
+    assert partitions[0].nota_maxima == 2
+    assert partitions[1].nota_maxima == 3
+    assert [partition.blueprint["preguntas"][0]["numero"] for partition in partitions] == [1, 2]
 
 
 class _Response:

@@ -1,39 +1,41 @@
-"""Kappa de Cohen entre calificación IA y calificación docente."""
+"""Kappa con categorías fijadas previamente y faltantes explícitos."""
 from __future__ import annotations
 
 
-def cohen_kappa(ia_notas: list[float], docente_notas: list[float], bins: int = 5) -> float:
-    """
-    Calcula kappa de Cohen discretizando notas en bins.
-    Devuelve -1 si no hay suficientes datos.
-    """
-    if len(ia_notas) != len(docente_notas) or len(ia_notas) < 2:
-        return -1.0
+def cohen_kappa(
+    first: list[float],
+    second: list[float],
+    *,
+    boundaries: list[float],
+) -> dict:
+    if len(first) != len(second):
+        return {"available": False, "value": None, "reason": "different_lengths", "n": 0}
+    if len(first) < 2:
+        return {"available": False, "value": None, "reason": "insufficient_sample", "n": len(first)}
+    fixed = sorted(set(float(value) for value in boundaries))
+    if not fixed:
+        return {"available": False, "value": None, "reason": "categories_not_configured", "n": len(first)}
 
-    # Discretizar en categorías
-    max_val = max(max(ia_notas), max(docente_notas), 1)
-    def _bin(v: float) -> int:
-        return min(int(v / max_val * bins), bins - 1)
+    def category(value: float) -> int:
+        return sum(float(value) > boundary for boundary in fixed)
 
-    ia_cats = [_bin(v) for v in ia_notas]
-    doc_cats = [_bin(v) for v in docente_notas]
-
-    n = len(ia_cats)
-    categories = list(range(bins))
-
-    # Matriz de confusión
-    matrix: list[list[int]] = [[0] * bins for _ in range(bins)]
-    for i, d in zip(ia_cats, doc_cats):
-        matrix[i][d] += 1
-
-    # Po: acuerdo observado
-    po = sum(matrix[c][c] for c in categories) / n
-
-    # Pe: acuerdo esperado por azar
-    row_sums = [sum(matrix[c]) / n for c in categories]
-    col_sums = [sum(matrix[r][c] for r in categories) / n for c in categories]
-    pe = sum(row_sums[c] * col_sums[c] for c in categories)
-
-    if pe == 1.0:
-        return 1.0
-    return (po - pe) / (1 - pe)
+    first_categories = [category(value) for value in first]
+    second_categories = [category(value) for value in second]
+    category_count = len(fixed) + 1
+    matrix = [[0] * category_count for _ in range(category_count)]
+    for left, right in zip(first_categories, second_categories):
+        matrix[left][right] += 1
+    count = len(first_categories)
+    observed = sum(matrix[index][index] for index in range(category_count)) / count
+    rows = [sum(matrix[index]) / count for index in range(category_count)]
+    columns = [sum(matrix[row][column] for row in range(category_count)) / count for column in range(category_count)]
+    expected = sum(rows[index] * columns[index] for index in range(category_count))
+    if expected >= 1.0:
+        return {"available": False, "value": None, "reason": "degenerate_distribution", "n": count}
+    return {
+        "available": True,
+        "value": (observed - expected) / (1 - expected),
+        "reason": None,
+        "n": count,
+        "boundaries": fixed,
+    }

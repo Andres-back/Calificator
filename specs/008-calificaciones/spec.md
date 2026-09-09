@@ -70,3 +70,7 @@ La especificación [016-calificacion-explicable](../016-calificacion-explicable/
 - La extracción visual se ejecuta una vez con `qwen3.7-plus` como principal configurable. Un evaluador Flash genera el desglose y un verificador Flash compacto valida puntajes y fórmula; el modelo Pro solo arbitra discrepancia, confianza baja, ambigüedad o fallo. Una demora mantiene el job activo; solo un fallo real de transporte o respuesta inválida termina en revisión docente y nunca en publicación automática.
 - Los tiempos técnicos son diagnósticos aditivos y no alteran la fórmula, la autoridad docente ni la única calificación vigente.
 - La regresión de veinte componentes, Chromium, WebKit, accesibilidad y modo claro/oscuro se conserva en la especificación 018.
+
+## Evolución 032: recuperación y autoridad docente implementadas bajo banderas
+
+[032 Calificación e impacto docente](../032-calificacion-impacto-docente/spec.md) añade checkpoints compatibles, escritor vigente por lease, protección frente a resultados tardíos y estados grupales sin cambiar la única nota oficial. Los desgloses y tiempos de estudio son aditivos: nunca publican ni sustituyen una decisión docente. La activación gradual permanece apagada por defecto.

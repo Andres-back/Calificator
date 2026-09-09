@@ -15,3 +15,7 @@ Roles, trazabilidad, datos, accesibilidad, asincronía y gobernanza quedan cubie
 
 ## Decisión
 Conservar arquitectura; discrepancias pasan a backlog.
+
+## Coordinación con 032
+
+La evolución [032](../032-calificacion-impacto-docente/plan.md) consume RAG después de extracción y endurece materia/propietario/procedencia; 009 conserva la propiedad de fuentes, fragmentos y recuperación.

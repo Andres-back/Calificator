@@ -1,17 +1,22 @@
 """Servicio de analítica — consultas desde datos canónicos."""
 from __future__ import annotations
 
-from datetime import datetime, timedelta
+import hashlib
+import hmac
+import json
+from datetime import UTC, datetime, timedelta
 from decimal import Decimal
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from fastapi import HTTPException, status
-from sqlalchemy import and_, case, func, select
+from sqlalchemy import and_, case, func, select, text
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import settings
 from app.core.logging import get_logger
 from app.modules.analytics.event_policy import AnalyticsValidationError, validate_event_payload
-from app.modules.analytics.models import AnalyticsEvento
+from app.modules.analytics.models import AnalyticsEvento, AnalyticsWorkSession
 from app.modules.calificaciones.incidencia_models import CalificacionIncidencia
 from app.modules.calificaciones.models import Calificacion
 from app.modules.evaluaciones.models import Evaluacion
@@ -20,6 +25,61 @@ from app.modules.users.models import User
 from app.shared.enums import CalificacionEstado, UserRole
 
 logger = get_logger(__name__)
+
+WORK_SESSION_COMMAND_LIMIT = 10_000
+WORK_SESSION_UNCERTAIN_GAP_MS = 45_000
+WORK_SESSION_CONDITIONS = {"manual", "asistida"}
+WORK_SESSION_PHASES = {"preparacion", "revision", "correccion", "finalizacion"}
+WORK_SESSION_ACTIONS = {
+    "iniciar_intervalo",
+    "heartbeat",
+    "pausar",
+    "reanudar",
+    "cambiar_fase",
+    "finalizar",
+    "ajustar",
+    "traspasar",
+}
+
+
+def _work_token(session_id: UUID, event_id: UUID, *, purpose: str = "owner") -> str:
+    """Deriva un token reproducible para replays sin persistirlo en texto plano."""
+    message = f"work-session:{session_id}:{event_id}:{purpose}".encode("utf-8")
+    return hmac.new(settings.SECRET_KEY.encode("utf-8"), message, hashlib.sha256).hexdigest()
+
+
+def _work_token_hash(token: str) -> str:
+    return hashlib.sha256(token.encode("utf-8")).hexdigest()
+
+
+def _command_digest(payload: dict) -> str:
+    serialized = json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":"), default=str)
+    return hashlib.sha256(serialized.encode("utf-8")).hexdigest()
+
+
+def _work_session_payload(session: AnalyticsWorkSession) -> dict:
+    """Proyección JSON segura; nunca incluye el hash ni el ledger interno."""
+    return {
+        "id": str(session.id),
+        "version": int(session.version),
+        "estado": session.estado,
+        "condicion": session.condicion,
+        "fase": session.fase,
+        "evaluacion_id": str(session.evaluacion_id) if session.evaluacion_id else None,
+        "calificacion_id": str(session.calificacion_id) if session.calificacion_id else None,
+        "batch_job_id": str(session.batch_job_id) if session.batch_job_id else None,
+        "duracion_confirmada_ms": int(session.duracion_confirmada_ms),
+        "incertidumbre_ms": int(session.incertidumbre_ms),
+        "origen": session.origen,
+        "motivo_ajuste": session.motivo_ajuste,
+        "started_at": session.started_at.isoformat() if session.started_at else None,
+        "updated_at": session.updated_at.isoformat() if session.updated_at else None,
+        "finished_at": session.finished_at.isoformat() if session.finished_at else None,
+    }
+
+
+def _raise_work_conflict(detail: str) -> None:
+    raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=detail)
 
 
 async def _get_allowed_evaluation(
@@ -134,6 +194,527 @@ async def registrar_evento(
     return evento
 
 
+async def _validate_work_session_references(
+    db: AsyncSession,
+    *,
+    current_user: User,
+    evaluacion_id: UUID | None,
+    calificacion_id: UUID | None,
+    batch_job_id: UUID | None,
+) -> UUID | None:
+    """Valida propiedad y devuelve la evaluación canónica cuando puede inferirse."""
+    evaluation = None
+    if evaluacion_id is not None:
+        evaluation = await _get_allowed_evaluation(db, evaluacion_id, current_user)
+        if evaluation is None:
+            raise HTTPException(status_code=404, detail="Referencia no encontrada")
+
+    if calificacion_id is not None:
+        grade = await _get_allowed_calificacion(db, calificacion_id, current_user)
+        if grade is None:
+            raise HTTPException(status_code=404, detail="Referencia no encontrada")
+        if evaluation is not None and grade.evaluacion_id != evaluation.id:
+            raise HTTPException(status_code=422, detail="Las referencias académicas no son coherentes")
+        if evaluation is None:
+            evaluation = await _get_allowed_evaluation(db, grade.evaluacion_id, current_user)
+            if evaluation is None:
+                raise HTTPException(status_code=404, detail="Referencia no encontrada")
+
+    if batch_job_id is not None:
+        owns_batch = await db.scalar(
+            text(
+                "SELECT EXISTS(SELECT 1 FROM ai_jobs "
+                "WHERE id=CAST(:job_id AS uuid) AND user_id=CAST(:actor_id AS uuid) "
+                "AND tipo='calificacion_lote')"
+            ),
+            {"job_id": str(batch_job_id), "actor_id": str(current_user.id)},
+        )
+        if not owns_batch:
+            raise HTTPException(status_code=404, detail="Referencia no encontrada")
+
+    return evaluation.id if evaluation is not None else evaluacion_id
+
+
+def _find_command(ledger: dict, event_id: UUID) -> dict | None:
+    event_key = str(event_id)
+    return next((item for item in ledger.get("commands", []) if item.get("event_id") == event_key), None)
+
+
+def _replay_response(
+    session: AnalyticsWorkSession,
+    command: dict,
+    *,
+    digest: str,
+    request_token_hash: str | None = None,
+) -> dict:
+    if command.get("digest") != digest:
+        _raise_work_conflict("El event_id ya fue utilizado con otro contenido")
+    if request_token_hash is not None and not hmac.compare_digest(
+        str(command.get("request_token_hash", "")), request_token_hash
+    ):
+        _raise_work_conflict("La sesión pertenece a otra pestaña o dispositivo")
+    response = dict(command.get("response") or {})
+    token_event = command.get("owner_token_event")
+    if token_event:
+        token_session_id = command.get("token_session_id") or response["id"]
+        response["owner_token"] = _work_token(
+            UUID(token_session_id), UUID(token_event), purpose=command.get("token_purpose", "owner")
+        )
+    response["replayed"] = True
+    return response
+
+
+async def create_work_session(
+    db: AsyncSession,
+    *,
+    current_user: User,
+    condicion: str,
+    fase: str,
+    event_id: UUID,
+    evaluacion_id: UUID | None = None,
+    calificacion_id: UUID | None = None,
+    batch_job_id: UUID | None = None,
+) -> dict:
+    if condicion not in WORK_SESSION_CONDITIONS or fase not in WORK_SESSION_PHASES:
+        raise HTTPException(status_code=422, detail="Condición o fase no válida")
+
+    canonical_evaluation_id = await _validate_work_session_references(
+        db,
+        current_user=current_user,
+        evaluacion_id=evaluacion_id,
+        calificacion_id=calificacion_id,
+        batch_job_id=batch_job_id,
+    )
+    request_payload = {
+        "action": "crear",
+        "condicion": condicion,
+        "fase": fase,
+        "evaluacion_id": str(canonical_evaluation_id) if canonical_evaluation_id else None,
+        "calificacion_id": str(calificacion_id) if calificacion_id else None,
+        "batch_job_id": str(batch_job_id) if batch_job_id else None,
+    }
+    digest = _command_digest(request_payload)
+
+    existing_sessions = list(await db.scalars(
+        select(AnalyticsWorkSession)
+        .where(AnalyticsWorkSession.actor_id == current_user.id)
+        .order_by(AnalyticsWorkSession.started_at.desc())
+        .limit(100)
+    ))
+    for existing in existing_sessions:
+        previous = _find_command(existing.intervals_json or {}, event_id)
+        if previous is not None:
+            return _replay_response(existing, previous, digest=digest)
+    if any(item.estado in {"active", "paused"} for item in existing_sessions):
+        _raise_work_conflict("Ya tienes una sesión de medición abierta")
+
+    session = AnalyticsWorkSession(
+        actor_id=current_user.id,
+        condicion=condicion,
+        fase=fase,
+        evaluacion_id=canonical_evaluation_id,
+        calificacion_id=calificacion_id,
+        batch_job_id=batch_job_id,
+        version=1,
+        estado="active",
+        owner_token_hash="pending",
+        intervals_json={"schema_version": 1, "commands": [], "intervals": []},
+        duracion_confirmada_ms=0,
+        incertidumbre_ms=0,
+        origen="observado",
+    )
+    db.add(session)
+    try:
+        await db.flush()
+    except IntegrityError as exc:
+        await db.rollback()
+        current = await db.scalar(
+            select(AnalyticsWorkSession)
+            .where(
+                AnalyticsWorkSession.actor_id == current_user.id,
+                AnalyticsWorkSession.estado.in_(("active", "paused")),
+            )
+            .order_by(AnalyticsWorkSession.started_at.desc())
+        )
+        if current is not None:
+            previous = _find_command(current.intervals_json or {}, event_id)
+            if previous is not None:
+                return _replay_response(current, previous, digest=digest)
+        raise HTTPException(status_code=409, detail="Ya tienes una sesión de medición abierta") from exc
+
+    owner_token = _work_token(session.id, event_id)
+    session.owner_token_hash = _work_token_hash(owner_token)
+    response = _work_session_payload(session)
+    ledger = dict(session.intervals_json or {})
+    ledger["intervals"] = [{
+        "sequence": 1,
+        "phase": fase,
+        "confirmed_ms": 0,
+        "uncertain_ms": 0,
+    }]
+    ledger["commands"] = [{
+        "event_id": str(event_id),
+        "digest": digest,
+        "action": "crear",
+        "response": response,
+        "owner_token_event": str(event_id),
+        "token_purpose": "owner",
+    }]
+    session.intervals_json = ledger
+    await db.commit()
+    await db.refresh(session)
+    response = _work_session_payload(session)
+    response["owner_token"] = owner_token
+    response["replayed"] = False
+    return response
+
+
+def _record_elapsed(session: AnalyticsWorkSession, ledger: dict, elapsed_ms: int) -> None:
+    if elapsed_ms < 0:
+        raise HTTPException(status_code=422, detail="elapsed_ms no puede ser negativo")
+    if elapsed_ms == 0:
+        return
+    intervals = list(ledger.get("intervals") or [])
+    if not intervals:
+        intervals.append({
+            "sequence": 1,
+            "phase": session.fase,
+            "confirmed_ms": 0,
+            "uncertain_ms": 0,
+        })
+    interval = dict(intervals[-1])
+    if elapsed_ms > WORK_SESSION_UNCERTAIN_GAP_MS:
+        session.incertidumbre_ms += elapsed_ms
+        interval["uncertain_ms"] = int(interval.get("uncertain_ms", 0)) + elapsed_ms
+    else:
+        session.duracion_confirmada_ms += elapsed_ms
+        interval["confirmed_ms"] = int(interval.get("confirmed_ms", 0)) + elapsed_ms
+    intervals[-1] = interval
+    ledger["intervals"] = intervals
+
+
+def _start_interval(session: AnalyticsWorkSession, ledger: dict) -> None:
+    intervals = list(ledger.get("intervals") or [])
+    intervals.append({
+        "sequence": len(intervals) + 1,
+        "phase": session.fase,
+        "confirmed_ms": 0,
+        "uncertain_ms": 0,
+    })
+    ledger["intervals"] = intervals
+
+
+async def command_work_session(
+    db: AsyncSession,
+    *,
+    session_id: UUID,
+    current_user: User,
+    event_id: UUID,
+    expected_version: int,
+    owner_token: str,
+    action: str,
+    elapsed_ms: int = 0,
+    fase: str | None = None,
+    motivo: str | None = None,
+) -> dict:
+    if action not in WORK_SESSION_ACTIONS:
+        raise HTTPException(status_code=422, detail="Acción no válida")
+    if fase is not None and fase not in WORK_SESSION_PHASES:
+        raise HTTPException(status_code=422, detail="Fase no válida")
+
+    session = await db.scalar(
+        select(AnalyticsWorkSession)
+        .where(
+            AnalyticsWorkSession.id == session_id,
+            AnalyticsWorkSession.actor_id == current_user.id,
+        )
+        .with_for_update()
+    )
+    if session is None:
+        raise HTTPException(status_code=404, detail="Sesión no encontrada")
+
+    request_payload = {
+        "action": action,
+        "elapsed_ms": elapsed_ms,
+        "fase": fase,
+        "motivo": motivo,
+        "expected_version": expected_version,
+    }
+    digest = _command_digest(request_payload)
+    request_token_hash = _work_token_hash(owner_token)
+    ledger = dict(session.intervals_json or {})
+    previous = _find_command(ledger, event_id)
+    if previous is not None:
+        return _replay_response(
+            session,
+            previous,
+            digest=digest,
+            request_token_hash=request_token_hash,
+        )
+
+    # El traspaso es una toma de control explícita por el mismo actor
+    # autenticado; permite recuperar la medición desde otro dispositivo.
+    # El resto de acciones sí exige el token vigente.
+    if action != "traspasar" and not hmac.compare_digest(session.owner_token_hash, request_token_hash):
+        _raise_work_conflict("La sesión pertenece a otra pestaña o dispositivo")
+    if session.version != expected_version:
+        _raise_work_conflict(f"La sesión cambió; la versión actual es {session.version}")
+    commands = list(ledger.get("commands") or [])
+    if len(commands) >= WORK_SESSION_COMMAND_LIMIT:
+        _raise_work_conflict("La sesión alcanzó el límite de eventos; finalízala e inicia otra")
+
+    if action == "ajustar":
+        normalized_reason = (motivo or "").strip()
+        if not normalized_reason:
+            raise HTTPException(status_code=422, detail="El ajuste requiere un motivo")
+        corrected = session.duracion_confirmada_ms + elapsed_ms
+        if corrected < 0:
+            raise HTTPException(status_code=422, detail="El ajuste dejaría una duración negativa")
+        session.duracion_confirmada_ms = corrected
+        session.origen = "ajustado"
+        session.motivo_ajuste = normalized_reason
+        adjustments = list(ledger.get("adjustments") or [])
+        adjustments.append({
+            "event_id": str(event_id),
+            "delta_ms": elapsed_ms,
+            "reason": normalized_reason,
+            "previous_confirmed_ms": corrected - elapsed_ms,
+            "result_confirmed_ms": corrected,
+        })
+        ledger["adjustments"] = adjustments
+    elif session.estado in {"completed", "incomplete"}:
+        _raise_work_conflict("La sesión ya terminó y no puede reabrirse")
+    elif action == "heartbeat":
+        if session.estado != "active":
+            _raise_work_conflict("Reanuda la sesión antes de registrar tiempo")
+        _record_elapsed(session, ledger, elapsed_ms)
+    elif action == "pausar":
+        if session.estado != "active":
+            _raise_work_conflict("La sesión no está activa")
+        _record_elapsed(session, ledger, elapsed_ms)
+        session.estado = "paused"
+    elif action in {"reanudar", "iniciar_intervalo"}:
+        if elapsed_ms != 0:
+            raise HTTPException(status_code=422, detail="Reanudar no acepta tiempo acumulado")
+        if session.estado != "paused":
+            _raise_work_conflict("La sesión no está pausada")
+        session.estado = "active"
+        _start_interval(session, ledger)
+    elif action == "cambiar_fase":
+        if fase is None:
+            raise HTTPException(status_code=422, detail="Debes indicar la nueva fase")
+        if session.estado == "active":
+            _record_elapsed(session, ledger, elapsed_ms)
+        elif elapsed_ms != 0:
+            raise HTTPException(status_code=422, detail="Una sesión pausada no acepta tiempo acumulado")
+        session.fase = fase
+        if session.estado == "active":
+            _start_interval(session, ledger)
+    elif action == "finalizar":
+        if session.estado == "active":
+            _record_elapsed(session, ledger, elapsed_ms)
+        elif elapsed_ms != 0:
+            raise HTTPException(status_code=422, detail="Una sesión pausada no acepta tiempo acumulado")
+        session.estado = "completed"
+        session.finished_at = datetime.now(UTC).replace(tzinfo=None)
+    elif action == "traspasar":
+        if elapsed_ms != 0:
+            raise HTTPException(status_code=422, detail="El traspaso no acepta tiempo acumulado")
+        new_owner_token = _work_token(session.id, event_id, purpose="transfer")
+        session.owner_token_hash = _work_token_hash(new_owner_token)
+
+    session.version += 1
+    session.updated_at = datetime.now(UTC).replace(tzinfo=None)
+    should_rollover = (
+        len(commands) + 1 >= WORK_SESSION_COMMAND_LIMIT
+        and session.estado in {"active", "paused"}
+    )
+    continuation = None
+    rollover_token = None
+    if should_rollover:
+        continuation_state = session.estado
+        session.estado = "completed"
+        session.finished_at = datetime.now(UTC).replace(tzinfo=None)
+        await db.flush()
+        continuation = AnalyticsWorkSession(
+            id=uuid4(),
+            actor_id=session.actor_id,
+            condicion=session.condicion,
+            fase=session.fase,
+            evaluacion_id=session.evaluacion_id,
+            calificacion_id=session.calificacion_id,
+            batch_job_id=session.batch_job_id,
+            study_id=session.study_id,
+            version=1,
+            estado=continuation_state,
+            owner_token_hash="pending",
+            intervals_json={
+                "schema_version": 1,
+                "commands": [],
+                "intervals": ([{
+                    "sequence": 1,
+                    "phase": session.fase,
+                    "confirmed_ms": 0,
+                    "uncertain_ms": 0,
+                }] if continuation_state == "active" else []),
+                "predecessor_id": str(session.id),
+            },
+            duracion_confirmada_ms=0,
+            incertidumbre_ms=0,
+            origen=session.origen,
+        )
+        rollover_token = _work_token(continuation.id, event_id, purpose="rollover")
+        continuation.owner_token_hash = _work_token_hash(rollover_token)
+        db.add(continuation)
+        await db.flush()
+
+    response = _work_session_payload(session)
+    if continuation is not None:
+        response["continuation"] = _work_session_payload(continuation)
+        response["rollover"] = True
+    command = {
+        "event_id": str(event_id),
+        "digest": digest,
+        "action": action,
+        "request_token_hash": request_token_hash,
+        "response": response,
+    }
+    if continuation is not None:
+        command["owner_token_event"] = str(event_id)
+        command["token_purpose"] = "rollover"
+        command["token_session_id"] = str(continuation.id)
+        ledger["successor_id"] = str(continuation.id)
+    elif action == "traspasar":
+        command["owner_token_event"] = str(event_id)
+        command["token_purpose"] = "transfer"
+    commands.append(command)
+    ledger["commands"] = commands
+    session.intervals_json = ledger
+    await db.commit()
+    await db.refresh(session)
+    response = _work_session_payload(session)
+    if continuation is not None:
+        response["continuation"] = _work_session_payload(continuation)
+        response["rollover"] = True
+        response["owner_token"] = rollover_token
+    elif action == "traspasar":
+        response["owner_token"] = new_owner_token
+    response["replayed"] = False
+    return response
+
+
+async def list_work_sessions(
+    db: AsyncSession,
+    *,
+    current_user: User,
+    estado: str | None = None,
+    limit: int = 30,
+    offset: int = 0,
+) -> dict:
+    filters = [AnalyticsWorkSession.actor_id == current_user.id]
+    if estado is not None:
+        filters.append(AnalyticsWorkSession.estado == estado)
+    total = int(await db.scalar(
+        select(func.count(AnalyticsWorkSession.id)).where(*filters)
+    ) or 0)
+    rows = list(await db.scalars(
+        select(AnalyticsWorkSession)
+        .where(*filters)
+        .order_by(AnalyticsWorkSession.started_at.desc())
+        .limit(limit)
+        .offset(offset)
+    ))
+    return {
+        "total": total,
+        "limit": limit,
+        "offset": offset,
+        "items": [_work_session_payload(item) for item in rows],
+    }
+
+
+def _summarize_observed_work_sessions(rows: list) -> dict:
+    """Compara promedios por unidad; nunca imputa faltantes ni recorta deterioros."""
+    completed = [
+        row for row in rows
+        if row.estado == "completed" and row.condicion in WORK_SESSION_CONDITIONS
+    ]
+    groups: dict[tuple[str, str], dict[str, list[int]]] = {}
+    for row in completed:
+        if row.evaluacion_id:
+            unit = ("evaluacion", str(row.evaluacion_id))
+        elif row.calificacion_id:
+            unit = ("calificacion", str(row.calificacion_id))
+        elif row.batch_job_id:
+            unit = ("lote", str(row.batch_job_id))
+        else:
+            continue
+        groups.setdefault(unit, {"manual": [], "asistida": []})[row.condicion].append(
+            int(row.duracion_confirmada_ms)
+        )
+
+    paired = [values for values in groups.values() if values["manual"] and values["asistida"]]
+    coverage = {
+        "sesiones_manual": sum(1 for row in completed if row.condicion == "manual"),
+        "sesiones_asistida": sum(1 for row in completed if row.condicion == "asistida"),
+        "unidades_comparables": len(paired),
+        "incertidumbre_ms": sum(int(row.incertidumbre_ms) for row in completed),
+    }
+    base = {
+        "metodo": "promedios_pareados_por_unidad",
+        "cobertura": coverage,
+        "datos_suficientes": False,
+        "motivo_no_disponible": "Faltan mediciones manuales y asistidas comparables",
+        "tiempo_manual_promedio_ms": None,
+        "tiempo_asistido_promedio_ms": None,
+        "ahorro_ms": None,
+        "ahorro_porcentaje": None,
+    }
+    if not paired:
+        return base
+
+    manual_mean = sum(sum(item["manual"]) / len(item["manual"]) for item in paired) / len(paired)
+    assisted_mean = sum(sum(item["asistida"]) / len(item["asistida"]) for item in paired) / len(paired)
+    if manual_mean <= 0:
+        return {
+            **base,
+            "motivo_no_disponible": "La línea base manual comparable es cero",
+            "tiempo_manual_promedio_ms": round(manual_mean),
+            "tiempo_asistido_promedio_ms": round(assisted_mean),
+        }
+    savings = manual_mean - assisted_mean
+    return {
+        **base,
+        "datos_suficientes": True,
+        "motivo_no_disponible": None,
+        "tiempo_manual_promedio_ms": round(manual_mean),
+        "tiempo_asistido_promedio_ms": round(assisted_mean),
+        "ahorro_ms": round(savings),
+        "ahorro_porcentaje": round((savings / manual_mean) * 100, 2),
+    }
+
+
+async def _get_observed_work_summary(
+    db: AsyncSession,
+    *,
+    profesor_id: UUID,
+    desde: datetime,
+    hasta: datetime,
+    materia_id: UUID | None,
+) -> dict:
+    stmt = select(AnalyticsWorkSession).where(
+        AnalyticsWorkSession.actor_id == profesor_id,
+        AnalyticsWorkSession.started_at >= desde,
+        AnalyticsWorkSession.started_at <= hasta,
+    )
+    if materia_id is not None:
+        stmt = stmt.join(
+            Evaluacion,
+            Evaluacion.id == AnalyticsWorkSession.evaluacion_id,
+        ).where(Evaluacion.materia_id == materia_id)
+    rows = list(await db.scalars(stmt))
+    return _summarize_observed_work_sessions(rows)
+
+
 def _default_date_range() -> tuple[datetime, datetime]:
     hasta = datetime.utcnow()
     desde = hasta - timedelta(days=30)
@@ -221,12 +802,22 @@ async def get_overview(
         select(func.count(CalificacionIncidencia.id)).where(*inc_filter)
     )
 
-    # ── Tiempo ahorrado estimado ──
-    # Línea base: 3 min por entrega manual (estimado docente)
+    # ── Tiempo histórico estimado (compatibilidad, no evidencia de impacto) ──
     TIEMPO_MANUAL_POR_ENTREGA = 180  # segundos
     tiempo_real = time_data.get("total_segundos", 0)
     tiempo_manual = total * TIEMPO_MANUAL_POR_ENTREGA
     tiempo_ahorrado = max(0, tiempo_manual - tiempo_real)
+    if settings.TEACHER_WORK_TIMING_ENABLED:
+        observed_work = await _get_observed_work_summary(
+            db,
+            profesor_id=profesor_id,
+            desde=desde,
+            hasta=hasta,
+            materia_id=materia_id,
+        )
+    else:
+        observed_work = _summarize_observed_work_sessions([])
+        observed_work["motivo_no_disponible"] = "La medición observada no está habilitada"
 
     return {
         "periodo": {"desde": desde.isoformat(), "hasta": hasta.isoformat()},
@@ -246,8 +837,15 @@ async def get_overview(
         "productividad": {
             "tiempo_revision_segundos": time_data.get("total_segundos", 0),
             "tiempo_promedio_por_entrega": round(time_data.get("promedio_segundos", 0), 1),
+            # Campo legado: mantener hasta retirar consumidores antiguos.
             "tiempo_estimado_ahorrado_segundos": tiempo_ahorrado,
             "entregas_con_tiempo": time_data.get("conteo", 0),
+            "estimacion_historica": {
+                "metodo": "supuesto_180_segundos_por_entrega",
+                "ahorro_segundos": tiempo_ahorrado,
+                "es_evidencia_observada": False,
+            },
+            "tiempos_observados": observed_work,
         },
     }
 
@@ -259,49 +857,68 @@ async def _calculate_review_time(
     hasta: datetime,
     materia_id: UUID | None = None,
 ) -> dict:
-    """Calcula tiempo de revisión desde eventos calificacion_opened → review_completed."""
-    # Obtener eventos calificacion_opened con su timestamp
+    """Calcula intervalos históricos sin descartar duraciones ni duplicar aperturas."""
+    event_filters = [
+        AnalyticsEvento.actor_id == profesor_id,
+        AnalyticsEvento.created_at >= desde,
+        AnalyticsEvento.created_at <= hasta,
+    ]
+    if materia_id:
+        event_filters.append(Evaluacion.materia_id == materia_id)
     opened = await db.execute(
         select(AnalyticsEvento.calificacion_id, AnalyticsEvento.created_at)
+        .join(Calificacion, Calificacion.id == AnalyticsEvento.calificacion_id)
+        .join(Evaluacion, Evaluacion.id == Calificacion.evaluacion_id)
         .where(
             AnalyticsEvento.tipo == "calificacion_opened",
-            AnalyticsEvento.actor_id == profesor_id,
-            AnalyticsEvento.created_at >= desde,
-            AnalyticsEvento.created_at <= hasta,
+            *event_filters,
         )
-        .order_by(AnalyticsEvento.calificacion_id, AnalyticsEvento.created_at)
+        .order_by(AnalyticsEvento.created_at)
     )
-    opened_rows = opened.all()
-
-    # Obtener review_completed
     completed = await db.execute(
         select(AnalyticsEvento.calificacion_id, AnalyticsEvento.created_at)
+        .join(Calificacion, Calificacion.id == AnalyticsEvento.calificacion_id)
+        .join(Evaluacion, Evaluacion.id == Calificacion.evaluacion_id)
         .where(
-            AnalyticsEvento.tipo == "calificacion_confirmed",
-            AnalyticsEvento.actor_id == profesor_id,
-            AnalyticsEvento.created_at >= desde,
-            AnalyticsEvento.created_at <= hasta,
+            AnalyticsEvento.tipo.in_(("calificacion_confirmed", "grade_adjusted")),
+            *event_filters,
         )
-        .order_by(AnalyticsEvento.calificacion_id, AnalyticsEvento.created_at)
+        .order_by(AnalyticsEvento.created_at)
     )
-    completed_map: dict[str, datetime] = {}
-    for row in completed:
-        cid = str(row.calificacion_id) if row.calificacion_id else ""
-        if cid:
-            completed_map[cid] = row.created_at
+    return _summarize_review_events(opened.all(), completed.all())
 
+
+def _summarize_review_events(opened_rows: list, completed_rows: list) -> dict:
+    """Empareja aperturas/cierres: un duplicado de pestaña no reinicia el reloj."""
+    timeline: list[tuple[datetime, str, str]] = []
+    for row in opened_rows:
+        if row.calificacion_id:
+            timeline.append((row.created_at, "open", str(row.calificacion_id)))
+    for row in completed_rows:
+        if row.calificacion_id:
+            timeline.append((row.created_at, "complete", str(row.calificacion_id)))
+    timeline.sort(key=lambda item: (item[0], 0 if item[1] == "open" else 1))
+    active: dict[str, datetime] = {}
     total_segundos = 0
     conteo = 0
-    for row in opened_rows:
-        cid = str(row.calificacion_id) if row.calificacion_id else ""
-        if cid and cid in completed_map:
-            delta = (completed_map[cid] - row.created_at).total_seconds()
-            if 10 <= delta <= 3600:  # Ignorar <10s (clicks accidentales) y >1h (pausas)
-                total_segundos += delta
-                conteo += 1
+    for timestamp, action, grade_id in timeline:
+        if action == "open":
+            active.setdefault(grade_id, timestamp)
+            continue
+        started = active.pop(grade_id, None)
+        if started is None:
+            continue
+        delta = max(0, int((timestamp - started).total_seconds()))
+        total_segundos += delta
+        conteo += 1
 
     promedio = total_segundos / conteo if conteo > 0 else 0
-    return {"total_segundos": int(total_segundos), "promedio_segundos": promedio, "conteo": conteo}
+    return {
+        "total_segundos": int(total_segundos),
+        "promedio_segundos": promedio,
+        "conteo": conteo,
+        "incompletos": len(active),
+    }
 
 
 async def get_evaluaciones_list(

@@ -30,7 +30,14 @@ export function GradeBreakdownHistory({ calificacionId }: { calificacionId: stri
           ) : history.data?.length ? history.data.map((version) => (
             <article key={version.id} className="flex flex-col gap-2 rounded-lg bg-surface-2 p-3 text-sm sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <p className="font-semibold text-fg">Versión {version.version} {version.activo ? '· vigente' : ''}</p>
+                <p className="flex flex-wrap items-center gap-1.5 font-semibold text-fg">
+                  <span>Versión {version.version} {version.activo ? '· vigente' : ''}</span>
+                  {version.es_sugerencia_inicial && (
+                    <span className="rounded-full bg-brand-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-brand-700 dark:bg-brand-500/15 dark:text-brand-200">
+                      Primera sugerencia IA
+                    </span>
+                  )}
+                </p>
                 <p className="text-xs text-muted">Origen: {version.origen} · {version.actor_nombre ? `Por ${version.actor_nombre} · ` : ''}{new Date(version.created_at).toLocaleString('es-CO')}</p>
               </div>
               <strong className="text-fg">Nota {Number(version.nota_final).toFixed(2)}</strong>

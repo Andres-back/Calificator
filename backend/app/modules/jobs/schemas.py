@@ -83,10 +83,35 @@ class JobItemRead(BaseModel):
     progreso: int
     attempt_count: int = 0
     error_code: str | None = None
+    estudiante_nombre: str | None = None
+    timings_ms: PipelineTimings | None = None
+    elapsed_ms: int = 0
 
 
 class JobItemsPage(BaseModel):
     items: list[JobItemRead] = Field(default_factory=list)
+    total: int = 0
+    limit: int
+    offset: int
+
+
+class PendingGradingJobRead(BaseModel):
+    job_id: UUID
+    evaluacion_id: UUID
+    materia_id: UUID
+    estudiante_id: UUID | None = None
+    estudiante_nombre: str
+    kind: str
+    total: int = 1
+    estado: str
+    progreso: int = 0
+    stage: str | None = None
+    elapsed_ms: int = 0
+    created_at: datetime
+
+
+class PendingGradingJobsPage(BaseModel):
+    items: list[PendingGradingJobRead] = Field(default_factory=list)
     total: int = 0
     limit: int
     offset: int

@@ -2,13 +2,20 @@
 from __future__ import annotations
 
 from datetime import datetime
+from typing import Literal
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.permissions import get_current_user, require_role
+from app.core.config import settings
+from app.core.permissions import (
+    get_current_user,
+    require_any_permission_now,
+    require_permission_now,
+    require_role,
+)
 from app.db.session import get_db
 from app.modules.analytics import service
 from app.modules.users.models import User
@@ -22,6 +29,57 @@ class EventoCreate(BaseModel):
     evaluacion_id: UUID | None = None
     calificacion_id: UUID | None = None
     metadata_json: dict = Field(default_factory=dict)
+
+
+WorkCondition = Literal["manual", "asistida"]
+WorkPhase = Literal["preparacion", "revision", "correccion", "finalizacion"]
+WorkState = Literal["active", "paused", "completed", "incomplete"]
+WorkAction = Literal[
+    "iniciar_intervalo",
+    "heartbeat",
+    "pausar",
+    "reanudar",
+    "cambiar_fase",
+    "finalizar",
+    "ajustar",
+    "traspasar",
+]
+
+
+class WorkSessionCreate(BaseModel):
+    condicion: WorkCondition
+    fase: WorkPhase
+    event_id: UUID
+    acepta_medicion: bool
+    evaluacion_id: UUID | None = None
+    calificacion_id: UUID | None = None
+    batch_job_id: UUID | None = None
+
+
+class WorkSessionCommand(BaseModel):
+    event_id: UUID
+    expected_version: int = Field(..., ge=1)
+    owner_token: str = Field(..., min_length=32, max_length=256)
+    accion: WorkAction
+    elapsed_ms: int = Field(0, ge=-86_400_000, le=86_400_000)
+    fase: WorkPhase | None = None
+    motivo: str | None = Field(None, max_length=500)
+
+
+def _require_work_timing() -> None:
+    if not settings.TEACHER_WORK_TIMING_ENABLED:
+        raise HTTPException(status_code=404, detail="Medición de trabajo no disponible")
+
+
+def _ai_usage_owner_scope(current_user: User) -> tuple[list[str], dict]:
+    if current_user.rol != UserRole.PROFESOR.value:
+        return [], {}
+    return [
+        "(evaluacion_id IN (SELECT id FROM evaluaciones WHERE profesor_id = :profesor_id) "
+        "OR calificacion_id IN ("
+        "SELECT c.id FROM calificaciones c JOIN evaluaciones ev ON ev.id = c.evaluacion_id "
+        "WHERE ev.profesor_id = :profesor_id))"
+    ], {"profesor_id": str(current_user.id)}
 
 
 @router.post("/analytics/evento", status_code=201)
@@ -43,6 +101,76 @@ async def registrar_evento(
         metadata_json=payload.metadata_json,
     )
     return {"status": "ok"}
+
+
+@router.post("/analytics/sesiones-trabajo", status_code=201)
+async def crear_sesion_trabajo(
+    payload: WorkSessionCreate,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    """Inicia una medición personal y voluntaria del trabajo docente."""
+    _require_work_timing()
+    require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
+    require_permission_now(current_user, "grading.grade")
+    if not payload.acepta_medicion:
+        raise HTTPException(status_code=422, detail="La medición requiere aceptación explícita")
+    return await service.create_work_session(
+        db,
+        current_user=current_user,
+        condicion=payload.condicion,
+        fase=payload.fase,
+        event_id=payload.event_id,
+        evaluacion_id=payload.evaluacion_id,
+        calificacion_id=payload.calificacion_id,
+        batch_job_id=payload.batch_job_id,
+    )
+
+
+@router.get("/analytics/sesiones-trabajo")
+async def listar_sesiones_trabajo(
+    estado: WorkState | None = Query(None),
+    limit: int = Query(30, ge=1, le=100),
+    offset: int = Query(0, ge=0),
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    """Lista únicamente las sesiones del usuario autenticado, nunca sus tokens."""
+    _require_work_timing()
+    require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
+    require_any_permission_now(current_user, "grading.read", "reports.read")
+    return await service.list_work_sessions(
+        db,
+        current_user=current_user,
+        estado=estado,
+        limit=limit,
+        offset=offset,
+    )
+
+
+@router.post("/analytics/sesiones-trabajo/{session_id}/eventos")
+async def registrar_evento_sesion_trabajo(
+    session_id: UUID,
+    payload: WorkSessionCommand,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    """Aplica un comando versionado e idempotente a la sesión propia."""
+    _require_work_timing()
+    require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
+    require_permission_now(current_user, "grading.grade")
+    return await service.command_work_session(
+        db,
+        session_id=session_id,
+        current_user=current_user,
+        event_id=payload.event_id,
+        expected_version=payload.expected_version,
+        owner_token=payload.owner_token,
+        action=payload.accion,
+        elapsed_ms=payload.elapsed_ms,
+        fase=payload.fase,
+        motivo=payload.motivo,
+    )
 
 
 @router.get("/analytics/overview")
@@ -294,10 +422,12 @@ async def ai_usage(
 ) -> dict:
     """Ledger de llamadas a proveedores de IA (solo admin ve todo, profesor solo suyo)."""
     require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
-    # El profesor solo ve sus evaluaciones; el admin ve todo
+    require_any_permission_now(current_user, "reports.read", "admin_ai.manage")
+    # El profesor solo ve llamadas enlazadas a evaluaciones propias; el admin
+    # autorizado puede consultar el ledger institucional.
     from sqlalchemy import text
-    params: dict = {"limit": limit, "offset": offset}
-    where = []
+    where, owner_params = _ai_usage_owner_scope(current_user)
+    params: dict = {"limit": limit, "offset": offset, **owner_params}
     if provider:
         where.append("provider = :provider"); params["provider"] = provider
     if model:

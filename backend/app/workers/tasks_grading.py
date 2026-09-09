@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import asyncio
+import hashlib
+import json
 from contextlib import suppress
 import time
 from collections.abc import Callable
@@ -28,6 +30,7 @@ from app.modules.evaluaciones.blueprint_service import evaluation_to_grading_blu
 from app.modules.evaluaciones.models import Evaluacion
 from app.modules.jobs import service as jobs_service
 from app.services.storage_service import resolve_upload_path, validate_mime
+from app.services.vision_extractor import build_extraction_context
 from app.shared.enums import (
     CalificacionEstado,
     EntregaEstado,
@@ -124,6 +127,40 @@ async def _existing_grade(db: AsyncSession, entrega_id: UUID) -> Calificacion | 
     )
 
 
+def _extraction_fingerprint(
+    *,
+    image_bytes: bytes | None,
+    image_mime: str,
+    blueprint: dict,
+    ai_config: dict | None,
+) -> str | None:
+    if not image_bytes:
+        return None
+    vision_config = (
+        (ai_config or {}).get("vision")
+        if isinstance((ai_config or {}).get("vision"), dict)
+        else ai_config or {}
+    )
+    metadata = json.dumps(
+        {
+            "schema_version": 1,
+            "mime": image_mime,
+            "context": build_extraction_context(blueprint),
+            "vision": vision_config,
+            "max_side": settings.VISION_MAX_IMAGE_SIDE,
+            "pdf_dpi": settings.GRADING_PDF_RENDER_DPI,
+        },
+        ensure_ascii=False,
+        sort_keys=True,
+        default=str,
+    ).encode("utf-8")
+    digest = hashlib.sha256()
+    digest.update(image_bytes)
+    digest.update(b"\0")
+    digest.update(metadata)
+    return digest.hexdigest()
+
+
 async def _keep_job_alive(job_id: UUID, claim_token: str | None) -> None:
     """Renueva el lease mientras el proveedor continúa trabajando."""
     while True:
@@ -170,7 +207,12 @@ async def _grade_delivery(
     queued_marker = queued_payload.get("pipeline_status") in {
         "queued",
         "running",
-    } or existing_payload.get("pipeline_status") in {"queued", "running"}
+        "retrying",
+    } or existing_payload.get("pipeline_status") in {
+        "queued",
+        "running",
+        "retrying",
+    }
     if existing and (not queued_marker or getattr(existing, "revisado_por_docente", False)):
         expected_state = (
             EntregaEstado.REQUIERE_REINTENTO.value
@@ -194,16 +236,64 @@ async def _grade_delivery(
     await db.commit()
 
     submission = await _load_submission(entrega)
+    blueprint = evaluation_to_grading_blueprint(evaluacion)
+    checkpoint: dict | None = None
+    fingerprint = _extraction_fingerprint(
+        image_bytes=submission["image_bytes"],
+        image_mime=submission["image_mime"],
+        blueprint=blueprint,
+        ai_config=ai_config,
+    )
+    if (
+        settings.GRADING_RETRY_CHECKPOINTS_ENABLED
+        and job_id
+        and fingerprint
+    ):
+        job_result = await jobs_service.get_job_result(db, job_id)
+        candidate = job_result.get("_checkpoint_v1")
+        if (
+            isinstance(candidate, dict)
+            and candidate.get("fingerprint") == fingerprint
+            and candidate.get("schema_version") == 1
+        ):
+            checkpoint = candidate
+
+    async def persist_checkpoint(payload: dict) -> None:
+        if not (
+            settings.GRADING_RETRY_CHECKPOINTS_ENABLED
+            and job_id
+            and claim_token
+            and fingerprint
+        ):
+            return
+        saved = await jobs_service.save_grading_checkpoint(
+            db,
+            job_id,
+            claim_token=claim_token,
+            checkpoint={
+                "schema_version": 1,
+                "fingerprint": fingerprint,
+                **payload,
+            },
+        )
+        if not saved:
+            raise jobs_service.JobOwnershipLost(
+                "La ejecución perdió el trabajo al guardar la extracción"
+            )
+        await db.commit()
+
     grading = await grade_submission(
         db,
         evaluacion_id=evaluacion.id,
         materia_id=evaluacion.materia_id,
-        blueprint=evaluation_to_grading_blueprint(evaluacion),
+        blueprint=blueprint,
         student_response_text=submission["student_response_text"],
         image_bytes=submission["image_bytes"],
         image_mime=submission["image_mime"],
         user_id=profesor_id,
         ai_config=ai_config,
+        vision_checkpoint=checkpoint,
+        on_vision_checkpoint=persist_checkpoint,
     )
     if job_id and claim_token:
         await jobs_service.lock_owned_job(db, job_id, claim_token)
@@ -244,7 +334,7 @@ async def _grade_delivery(
     await create_automatic_breakdown(
         db,
         calificacion=calificacion,
-        blueprint=evaluation_to_grading_blueprint(evaluacion),
+        blueprint=blueprint,
         raw_output=grading.raw_model_output,
         pipeline_run_id=str(queued_payload.get("job_id") or "") or None,
     )
