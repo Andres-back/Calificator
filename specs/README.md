@@ -50,6 +50,11 @@ actualizar la especificación propietaria, su plan y sus tareas; no debe crear d
 - Coordina 008/016, 009, 011, 020 y 012/031 sin trasladar propiedad de módulos, endpoints o tablas; su matriz identifica los requisitos de cada dominio.
 - No activa el piloto ni acredita metas de tiempo, Kappa o impacto antes de una medición real autorizada.
 
+## Evolución 033: diseño para revisión
+
+- [Centro unificado de calificación](033-centro-calificacion/spec.md), [plan y distribución](033-centro-calificacion/plan.md), [issue #68](https://github.com/Andres-back/Calificator/issues/68). Creación del diseño autorizada; implementación pendiente.
+- Coordina 002, 008/016, 007, 012/031 y 011/032. La navegación y alertas se consolidarán sin transferir propiedad de notas ni tablas. Los comportamientos actuales de las bases no se cambian por documentar este diseño.
+
 ## Inventario técnico global
 
 - [Inventario canónico JSON](system-inventory/current.json)
