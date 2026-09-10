@@ -1,6 +1,6 @@
 # Especificación: Centro unificado de calificación
 
-**Rama**: `codex/033-centro-calificacion` | **Creada**: 2026-09-09 | **Estado**: Especificación y plan aprobados por «adelante» el 2026-09-09; implementación en curso | **Issue**: [#68](https://github.com/Andres-back/Calificator/issues/68)
+**Rama**: `codex/033-centro-calificacion` | **Creada**: 2026-09-09 | **Estado**: Implementación y revisión visual completadas; promoción sujeta al CI del PR #69 | **Issue**: [#68](https://github.com/Andres-back/Calificator/issues/68)
 
 El docente necesita revisar un examen y encontrar inconsistencias sin reconstruir el contexto entre carga, revisión y boletín. Esta evolución concreta la navegación que 032 no consolidó. La especificación responsable de calificaciones continúa siendo 008 y la del desglose 016; 033 coordina su evolución, no crea otra fuente de notas.
 

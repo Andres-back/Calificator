@@ -425,6 +425,7 @@ function PanelDetalle({
   const [breakdownSaveError, setBreakdownSaveError] = useState('');
   const [pendingEditorAction, setPendingEditorAction] = useState<string | 'close' | null>(null);
   const [showGlobalAdjustment, setShowGlobalAdjustment] = useState(false);
+  const [globalAdjustmentSnapshot, setGlobalAdjustmentSnapshot] = useState<GradeBreakdownData | null>(null);
   const [detailParams, setDetailParams] = useSearchParams();
   const evidencePage = Math.max(1, Math.min(cal.entrega_evidencia_paginas || 1, Number(detailParams.get('hoja')) || 1));
   const setEvidencePage = (page: number) => setDetailParams((previous) => { const next = new URLSearchParams(previous); next.set('hoja', String(page)); return next; }, { replace: true });
@@ -504,17 +505,19 @@ function PanelDetalle({
   });
   const globalAdjustmentMutation = useMutation({
     mutationFn: (adjustment: { valor: number; motivo_interno: string; explicacion_estudiante: string }) => {
-      if (!cal.desglose) throw new Error('No hay desglose vigente');
+      if (!globalAdjustmentSnapshot) throw new Error('No hay desglose vigente');
       return updateGradeBreakdown(cal.id, {
-        version_esperada: cal.desglose.version,
+        version_esperada: globalAdjustmentSnapshot.version,
         cambios_componentes: [],
         ajuste_global: adjustment,
       });
     },
     onSuccess: () => {
       setShowGlobalAdjustment(false);
+      setGlobalAdjustmentSnapshot(null);
       void queryClient.invalidateQueries({ queryKey: ['calificacion-detalle', cal.id] });
       void queryClient.invalidateQueries({ queryKey: ['calificaciones', cal.evaluacion_id] });
+      void queryClient.invalidateQueries({ queryKey: ['evaluation-review', cal.evaluacion_id] });
       void queryClient.invalidateQueries({ queryKey: ['grade-breakdown-history', cal.id] });
       toast.success('Ajuste global registrado y nota recalculada.');
     },
@@ -877,13 +880,13 @@ function PanelDetalle({
             </div>
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <p className="text-sm text-muted">Si un caso excepcional cambia la nota completa, quedará separado de los puntos por respuesta.</p>
-              {canGrade && <Button type="button" variant="outline" onClick={() => setShowGlobalAdjustment((value) => !value)}>
+              {canGrade && <Button type="button" variant="outline" onClick={() => { setGlobalAdjustmentSnapshot(showGlobalAdjustment ? null : cal.desglose ?? null); setShowGlobalAdjustment((value) => !value); }}>
                 {showGlobalAdjustment ? 'Cancelar ajuste global' : 'Registrar ajuste global'}
               </Button>}
             </div>
-            {showGlobalAdjustment && (
+            {showGlobalAdjustment && globalAdjustmentSnapshot && (
               <GradeGlobalAdjustmentEditor
-                formula={cal.desglose.formula}
+                formula={globalAdjustmentSnapshot.formula}
                 saving={globalAdjustmentMutation.isPending}
                 onCancel={() => setShowGlobalAdjustment(false)}
                 onSave={(adjustment) => globalAdjustmentMutation.mutate(adjustment)}
@@ -1915,7 +1918,7 @@ function GradingCenter() {
           className={`min-h-0 min-w-0 flex-1 ${
             selectedId
               ? 'fixed inset-0 z-30 flex h-[100dvh] max-h-[100dvh] flex-col overflow-hidden bg-surface lg:static lg:z-auto lg:h-auto lg:max-h-none'
-              : 'hidden lg:flex lg:items-center lg:justify-center'
+              : reviewCompleted ? 'flex items-center justify-center' : 'hidden lg:flex lg:items-center lg:justify-center'
           }`}
         >
           {selectedId && mode !== 'carga' ? (
@@ -1966,7 +1969,7 @@ function GradingCenter() {
               </div>
             </>
           ) : (
-            <div className="hidden items-center justify-center p-5 text-sm text-muted lg:flex">
+            <div className={cn('items-center justify-center p-5 text-sm text-muted lg:flex', reviewCompleted ? 'flex' : 'hidden')}>
               {reviewCompleted ? (
                 <Card className="max-w-md border-emerald-200 p-6 text-center dark:border-emerald-500/30">
                   <CheckCircle2 className="mx-auto h-10 w-10 text-emerald-500" />

@@ -258,6 +258,36 @@ test('guardar el último ajuste termina la lista sin confirmar ni publicar', asy
   await expect(page.getByText(/1 alumnos con ajustes guardados/)).toBeVisible();
   expect(savedPayload).toMatchObject({ version_esperada: 1 });
   await expect(page.getByText(/no se publicaron automáticamente/i)).toBeVisible();
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(page.getByText('Revisión completada')).toBeVisible();
+  await expect(page.getByText(/1 alumnos con ajustes guardados/)).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBeTruthy();
+});
+
+test('ajuste global conserva borrador tras conflicto y refresca la lista al guardar', async ({ page }) => {
+  await login(page, 'profesor');
+  let revisionReads = 0;
+  let attempt = 0;
+  page.on('request', (request) => {
+    if (new URL(request.url()).pathname === '/api/evaluaciones/e1/revision') revisionReads += 1;
+  });
+  await page.route('**/api/calificaciones/c1/desglose', async (route) => {
+    expect(route.request().postDataJSON()).toMatchObject({ version_esperada: 1, ajuste_global: { valor: -1 } });
+    attempt += 1;
+    return attempt === 1 ? json(route, { detail: 'La calificación cambió en otra revisión.' }, 409) : json(route, { ...breakdown, version: 2 });
+  });
+  await page.goto('/app/calificaciones?evaluacion=e1&calificacion=c1');
+  await page.getByRole('button', { name: 'Registrar ajuste global' }).click();
+  await page.getByLabel('Ajuste a la nota').fill('-1');
+  await page.getByLabel('Motivo interno').fill('Ajuste excepcional documentado');
+  await page.getByLabel('Explicación para el estudiante').fill('La decisión docente queda registrada por separado.');
+  const readsBeforeSave = revisionReads;
+  await page.getByRole('button', { name: 'Guardar ajuste y recalcular' }).click();
+  await expect(page.getByText('La calificación cambió en otra revisión.', { exact: true })).toBeVisible();
+  await expect(page.getByLabel('Ajuste a la nota')).toHaveValue('-1');
+  await page.getByRole('button', { name: 'Guardar ajuste y recalcular' }).click();
+  await expect(page.getByRole('heading', { name: 'Ajuste global excepcional' })).toHaveCount(0);
+  await expect.poll(() => revisionReads).toBeGreaterThan(readsBeforeSave);
 });
 
 test('conserva borrador al cambiar pregunta, query y atrás; hoja y vista sobreviven', async ({ page }) => {

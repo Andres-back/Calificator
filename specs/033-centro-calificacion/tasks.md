@@ -53,7 +53,7 @@ Meta independiente: dos alumnos cargados, cola recuperable, revisión y publicac
 - [X] T019 Ajustar layout/foco/scroll/teclado a cinco tamaños y temas en frontend/src/modules/calificaciones/CalificacionesWorkspace.tsx; verificar frontend/e2e/p2-responsive.spec.ts, accessibility/grading-review.a11y.spec.ts y visual/grading-review.visual.spec.ts con revisión humana de capturas (FR-012, SC-005).
 - [X] T020 Confirmar ausencia de consumidores antes de retirar frontend/src/modules/calificaciones/{CalificacionesPage,CalificarFotoPage,SalonPage}.tsx y tours huérfanos; conservar boletinTour y servicios activos; documentar búsqueda en quickstart.md (FR-015).
 - [X] T021 Verificar/cablear o retirar bandera sin uso en frontend/src/modules/calificaciones/CalificacionesWorkspace.tsx y frontend/.env.example; acreditar comportamiento servido y reversión, conservando medición opt-in y configuración IA (FR-015, SC-008).
-- [ ] T022 Actualizar specs/002-arquitectura-roles-seguridad, specs/008-calificaciones, specs/016-calificacion-explicable y otros propietarios afectados; regenerar specs/system-inventory/current.json, ejecutar pruebas proporcionales/CI y Converge, registrar evidencia en specs/033-centro-calificacion/quickstart.md antes del PR (FR-001–016).
+- [X] T022 Actualizar specs/002-arquitectura-roles-seguridad, specs/008-calificaciones, specs/016-calificacion-explicable y otros propietarios afectados; regenerar specs/system-inventory/current.json, ejecutar pruebas proporcionales/CI y Converge, registrar evidencia en specs/033-centro-calificacion/quickstart.md antes del PR (FR-001–016).
 
 ## Dependencias y estrategia
 
@@ -87,4 +87,9 @@ Oportunidades independientes: tras fundamentos se pueden preparar fixtures E2E d
 - [X] T023 Conservar contexto de revisión anterior al añadir entregas de otros alumnos y restaurarlo al volver, sin descartar borradores; probar en CalificacionesWorkspace.tsx y explainable-grading.spec.ts conforme SC-007 y US4/AC1–2 (partial, HIGH).
 - [X] T024 Mostrar cantidad de alumnos con ajustes guardados en la sesión junto a pendientes del examen al finalizar, conforme US2/AC3 en CalificacionesWorkspace.tsx (partial, MEDIUM).
 - [X] T025 Retirar frontend/src/modules/materias/GradingProgress.tsx, sin consumidores tras extraer el panel de carga; conservar gradingFlowModel consumido por gradebookModel y documentar recuperación Git conforme FR-015 (partial, LOW).
-- [ ] T026 Completar pruebas finales, revisión humana de capturas, resultados y PR/CI sin promover trabajo no validado, conforme SC-005 y Constitución VII–VIII (partial, HIGH).
+- [X] T026 Completar pruebas finales, revisión humana de capturas, resultados y PR/CI sin promover trabajo no validado, conforme SC-005 y Constitución VII–VIII (partial, HIGH).
+
+## Phase 9: Convergence
+
+- [X] T027 Mostrar también en móvil el resumen final de alumnos con ajustes guardados y pendientes: el contenedor y la tarjeta estaban restringidos a escritorio. Cubrir el último guardado a 390 px en CalificacionesWorkspace.tsx y explainable-grading.spec.ts conforme US2/AC3, FR-012 y SC-005 (partial, MEDIUM).
+- [X] T028 Conservar la versión inicial del ajuste global y refrescar la proyección tras persistir: el editor usaba la versión recibida más reciente y la lista no se invalidaba. Cubrir ajuste y conflicto en CalificacionesWorkspace.tsx y explainable-grading.spec.ts conforme FR-002, FR-005, FR-008 y US3/AC4 (partial, HIGH).
