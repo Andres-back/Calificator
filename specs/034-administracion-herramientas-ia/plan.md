@@ -2,7 +2,7 @@
 
 **Rama**: `codex/034-administracion-herramientas-ia` | **Fecha**: 2026-09-10 | **Spec**: [spec.md](./spec.md) | **Issue**: [#70](https://github.com/Andres-back/Calificator/issues/70)
 
-**Estado**: especificación aprobada; diseño técnico pendiente de aprobación humana. No se modifica código funcional antes de `plan-approved`.
+**Estado**: especificación y diseño técnico aprobados por el usuario el 2026-09-10. Implementación autorizada; trazabilidad en #70 con `spec-approved` y `plan-approved`.
 
 ## Resumen
 

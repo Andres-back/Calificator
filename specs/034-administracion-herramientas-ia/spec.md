@@ -1,6 +1,6 @@
 # Especificación: Administración efectiva de herramientas e IA
 
-**Rama**: `codex/034-administracion-herramientas-ia` | **Creada**: 2026-09-10 | **Estado**: Especificación aprobada; plan técnico pendiente de aprobación | **Issue**: [#70](https://github.com/Andres-back/Calificator/issues/70)
+**Rama**: `codex/034-administracion-herramientas-ia` | **Creada**: 2026-09-10 | **Estado**: Especificación y plan técnico aprobados; implementación autorizada | **Issue**: [#70](https://github.com/Andres-back/Calificator/issues/70)
 
 El administrador necesita gestionar las funciones existentes sin depender de conocer nombres internos o de editar el servidor. Debe distinguir qué eligió, qué resolverá el sistema para un trabajo nuevo y qué modelo ejecutó realmente un trabajo anterior. Esta evolución conserva como propietarios 012 para operación IA, 029 para permisos, 006/026 para recursos y 008/016 para calificación.
 
