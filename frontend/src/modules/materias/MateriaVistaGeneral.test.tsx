@@ -135,8 +135,8 @@ describe('MateriaVistaGeneral teacher journey', () => {
       await screen.findByRole('heading', { name: 'Califica una evaluación' }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole('link', { name: /Ir al flujo de calificación/i }),
-    ).toHaveAttribute('href', '/app/materias/materia-1/calificar');
+      screen.getAllByRole('link', { name: /Calificar y revisar/i })[0],
+    ).toHaveAttribute('href', '/app/calificaciones?materia=materia-1');
     expect(
       screen.getByRole('link', { name: /Revisar seguimiento/i }),
     ).toHaveAttribute('href', '/app/materias/materia-1/boletin');

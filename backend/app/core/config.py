@@ -133,7 +133,6 @@ class Settings(BaseSettings):
     # Despliegue progresivo de la evolución 032. Las correcciones de
     # integridad e idempotencia no dependen de estos interruptores.
     GRADING_RETRY_CHECKPOINTS_ENABLED: bool = False
-    GRADING_REVIEW_WORKSPACE_V2_ENABLED: bool = False
     TEACHER_WORK_TIMING_ENABLED: bool = False
     IMPACT_STUDY_ENABLED: bool = False
 

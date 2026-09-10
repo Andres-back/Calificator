@@ -84,7 +84,7 @@ describe('DashboardPage docente', () => {
     expect(screen.getByText('Luis Díaz')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /Revisar Ana Pérez/i })).toHaveAttribute(
       'href',
-      '/app/calificaciones/workspace/evaluation-1?calificacion=grade-1',
+      '/app/calificaciones?evaluacion=evaluation-1&calificacion=grade-1',
     );
   });
 

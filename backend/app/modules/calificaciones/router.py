@@ -16,6 +16,7 @@ from fastapi import (
     Depends,
     File,
     Form,
+    Query,
     HTTPException,
     Path as ApiPath,
     Response,
@@ -63,6 +64,7 @@ from app.modules.calificaciones.schemas import (
     ResolverIncidencia,
     ReemplazoEvidenciaCreate,
     RevisionManualCreate,
+    RevisionEvaluacionRead,
     SalonEstudianteRead,
     SalonEstudianteUpdate,
     SalonResumen,
@@ -964,6 +966,30 @@ async def establecer_nota_manual(
 
 
 @router.get(
+    "/evaluaciones/{evaluacion_id}/revision",
+    response_model=RevisionEvaluacionRead,
+)
+async def revision_evaluacion(
+    evaluacion_id: UUID,
+    estudiante_id: UUID | None = None,
+    cursor: UUID | None = None,
+    limit: int = Query(default=30, ge=1, le=100),
+    filtro: str = Query(default="todas", pattern="^(todas|pendientes|alertas|procesando|publicadas)$"),
+    q: str = Query(default="", max_length=120),
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    require_permission_now(current_user, "grading.read")
+    if current_user.rol == UserRole.ESTUDIANTE.value:
+        raise HTTPException(status_code=403, detail="La revisión del grupo es exclusiva del docente.")
+    evaluation = await evaluaciones_service.ensure_can_manage_evaluation(db, evaluacion_id, current_user)
+    return await service.revision_evaluacion(
+        db, evaluation, cursor=cursor, limit=limit, filtro=filtro, q=q, estudiante_id=estudiante_id,
+        include_pqrs="submissions.review" in getattr(current_user, "_effective_permissions", set()),
+    )
+
+
+@router.get(
     "/evaluaciones/{evaluacion_id}/calificaciones",
     response_model=list[CalificacionRead],
 )
@@ -1769,6 +1795,8 @@ async def solicitar_revision_calificacion(
         estudiante_id=current_user.id,
         motivo=payload.motivo,
         descripcion=payload.descripcion,
+        componente_id=payload.componente_id,
+        desglose_version=payload.desglose_version,
     )
 
 

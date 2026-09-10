@@ -52,7 +52,7 @@ describe('GradeComponentEditor', () => {
     }} formula={{ puntos_obtenidos: 0, puntos_posibles: 1, nota_maxima: 5, nota_base: 0, ajuste_global: 0, nota_antes_redondeo: 0, regla_redondeo: 'half_up', decimales: 2, nota_final: 0 }} onCancel={() => undefined} onSave={() => undefined} onSaveAndNext={onSaveAndNext} />);
     fireEvent.change(screen.getByLabelText(/Motivo interno/), { target: { value: 'Ajuste sustentado' } });
     fireEvent.change(screen.getByLabelText(/Explicación para/), { target: { value: 'Debes revisar el procedimiento.' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Guardar y siguiente' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar y siguiente alumno' }));
     expect(onSaveAndNext).toHaveBeenCalledWith(expect.objectContaining({ componente_id: 'p1' }));
     expect(screen.getByText(/no confirma ni publica/i)).toBeInTheDocument();
   });

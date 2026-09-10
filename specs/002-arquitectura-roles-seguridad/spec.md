@@ -56,3 +56,7 @@ Como equipo, necesito actualizar estos artefactos cuando cambie el comportamient
 ## Inventario técnico
 
 - [Ver superficies, permisos y cobertura de este dominio](./inventory.md).
+
+## Evolución 033: navegación docente unificada
+
+El acceso «Calificar y revisar» abre `/app/calificaciones` con contexto de materia/evaluación/alumno/pregunta/hoja/filtro en query. Los enlaces antiguos workspace, foto y materia/calificar son adaptadores; el boletín mantiene su ruta. La proyección exige `grading.read` y pertenencia a la evaluación; el estudiante no accede al centro aunque pueda leer sus propias notas. Carga/edición requieren `grading.grade`, publicación `grading.publish` y PQRS `submissions.review`, sin ampliar permisos por reunir controles. El detalle valida la correspondencia con la selección antes de renderizar.

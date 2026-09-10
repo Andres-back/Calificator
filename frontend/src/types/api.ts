@@ -416,6 +416,7 @@ export interface BatchResult {
 /* ── Incidencias ── */
 
 export interface IncidenciaRead {
+  componente_clave?: string | null;
   id: string;
   calificacion_id: string;
   tipo: string;
@@ -624,4 +625,31 @@ export interface AIJobRead {
   deadline_ms: number | null;
   slow_after_ms: number | null;
   error: string | null;
+}
+export type ReviewFilter = 'todas' | 'pendientes' | 'alertas' | 'procesando' | 'publicadas';
+export interface ReviewStudent {
+  estudiante_id: string;
+  nombre: string;
+  calificacion_id: string | null;
+  entrega_id: string | null;
+  job_id: string | null;
+  estado: string;
+  nota: number | string | null;
+  resumen_revision: {
+    version: number | null;
+    cobertura: string | null;
+    bloqueos: string[];
+    componentes_pendientes: number | null;
+    componentes_ilegibles: number | null;
+    pqrs_abiertas: number | null;
+    tiene_alertas: boolean;
+  };
+}
+export interface ReviewEvaluation {
+  evaluacion_id: string;
+  materia_id: string;
+  total_alumnos: number;
+  contadores: Record<ReviewFilter, number>;
+  siguiente_cursor: string | null;
+  alumnos: ReviewStudent[];
 }

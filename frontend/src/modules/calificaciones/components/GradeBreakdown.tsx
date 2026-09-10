@@ -10,13 +10,15 @@ const stateLabel: Record<string, string> = {
   revision_pendiente: 'Revisión pendiente',
 };
 
-export function GradeBreakdown({ breakdown, student = false, onEdit, onEvidencePage, editingComponentId, renderEditor }: {
+export function GradeBreakdown({ breakdown, student = false, onEdit, onEvidencePage, editingComponentId, renderEditor, selectedComponentId, onSelectComponent }: {
   breakdown: GradeBreakdownData;
   student?: boolean;
   onEdit?: (componentId: string) => void;
   onEvidencePage?: (page: number) => void;
   editingComponentId?: string | null;
   renderEditor?: (component: GradeBreakdownData['componentes'][number]) => ReactNode;
+  selectedComponentId?: string;
+  onSelectComponent?: (componentId: string) => void;
 }) {
   return (
     <section aria-labelledby="grade-breakdown-title" className="space-y-4">
@@ -29,11 +31,21 @@ export function GradeBreakdown({ breakdown, student = false, onEdit, onEvidenceP
           {breakdown.requiere_revision ? 'Requiere revisión' : 'Desglose completo'}
         </Badge>
       </div>
-      <GradeFormula formula={breakdown.formula} adjustmentDetail={breakdown.ajuste_global_detalle} />
+      {onSelectComponent && !student ? <>
+        <nav aria-label="Preguntas y criterios" className="flex flex-wrap gap-2">
+          {breakdown.componentes.map((component) => <button
+            key={component.id} type="button" onClick={() => onSelectComponent(component.id)}
+            aria-current={component.id === selectedComponentId ? 'step' : undefined}
+            aria-label={`${component.tipo === 'pregunta' ? 'Pregunta' : 'Criterio'} ${component.numero ?? component.orden + 1}${component.requiere_revision ? ', requiere revisión' : ''}`}
+            className={`focus-ring min-h-11 min-w-11 rounded-lg border px-3 font-semibold ${component.id === selectedComponentId ? 'border-brand-500 bg-brand-600 text-white' : 'border-border bg-surface text-fg'}`}
+          >{component.numero ?? component.orden + 1}{component.requiere_revision ? ' !' : ''}</button>)}
+        </nav>
+        <details className="rounded-lg border border-border p-3"><summary className="min-h-7 cursor-pointer font-semibold">Cómo se calcula la nota · {Number(breakdown.formula.nota_final).toFixed(2)}</summary><GradeFormula formula={breakdown.formula} adjustmentDetail={breakdown.ajuste_global_detalle} /></details>
+      </> : <GradeFormula formula={breakdown.formula} adjustmentDetail={breakdown.ajuste_global_detalle} />}
       <div className="space-y-3">
-        {breakdown.componentes.map((component) => (
+        {breakdown.componentes.filter((component) => student || !selectedComponentId || component.id === selectedComponentId).map((component) => (
           <article key={component.id} className="rounded-xl border border-border bg-surface p-4">
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+            <div className={`flex flex-col gap-2 ${selectedComponentId && !student ? '' : 'sm:flex-row sm:items-start sm:justify-between'}`}>
               <div className="min-w-0">
                 <p className="text-xs font-bold uppercase tracking-wide text-brand-700 dark:text-brand-200">
                   {component.tipo === 'pregunta' ? `Pregunta ${component.numero ?? component.orden + 1}` : component.tipo === 'rubrica' ? 'Criterio de rúbrica' : 'Valoración docente'}
@@ -47,7 +59,7 @@ export function GradeBreakdown({ breakdown, student = false, onEdit, onEvidenceP
                 <strong className="whitespace-nowrap text-base">{component.puntos_obtenidos == null ? '—' : Number(component.puntos_obtenidos).toFixed(2)} / {Number(component.puntos_maximos).toFixed(2)}</strong>
               </div>
             </div>
-            <div className="mt-4 grid gap-3 lg:grid-cols-2">
+            <div className={`mt-4 grid gap-3 ${selectedComponentId && !student ? '' : 'lg:grid-cols-2'}`}>
               <div className="rounded-lg bg-surface-2 p-3">
                 <p className="text-xs font-semibold text-muted">Respuesta del estudiante</p>
                 <p className="mt-1 whitespace-pre-wrap text-sm leading-6 text-fg">{component.respuesta_estudiante || 'No se detectó una respuesta.'}</p>
@@ -101,7 +113,7 @@ export function GradeBreakdown({ breakdown, student = false, onEdit, onEvidenceP
                     key={page}
                     type="button"
                     onClick={() => onEvidencePage(page)}
-                    className="focus-ring min-h-9 rounded-lg border border-border bg-surface-2 px-3 font-semibold text-brand-700 hover:border-brand-300 hover:bg-brand-50 dark:text-brand-200 dark:hover:bg-brand-500/10"
+                    className="focus-ring min-h-11 rounded-lg border border-border bg-surface-2 px-3 font-semibold text-brand-700 hover:border-brand-300 hover:bg-brand-50 dark:text-brand-200 dark:hover:bg-brand-500/10"
                     aria-label={`Ver hoja ${page} de la evidencia`}
                   >
                     Hoja {page}

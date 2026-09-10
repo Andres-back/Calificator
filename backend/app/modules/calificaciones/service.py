@@ -7,7 +7,7 @@ from decimal import Decimal
 from uuid import UUID
 
 from fastapi import HTTPException, status
-from sqlalchemy import func, select
+from sqlalchemy import case, func, select, text
 from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -463,6 +463,133 @@ async def _update_salon_estudiante_estado(
     )
     if sse:
         sse.estado = estado
+
+
+def _revision_row(student, grade, delivery, job, breakdown, claims: int | None) -> dict:
+    """Proyección sin respuestas: desconocido no equivale a correcto ni a cero."""
+    state = grade.estado if grade else (delivery.estado if delivery else "sin_entrega")
+    job_state = job["estado"] if job else None
+    if job_state in {"queued", "running", "retrying", "waiting_connector", "pending"} and state not in {"confirmada", "ajustada", "publicada"}:
+        state = "procesando"
+    elif job_state in {"failed", "failed_permanent", "cancelled"} and (not grade or grade.estado == "procesando"):
+        state = "error"
+    score = None
+    if grade and state not in {"procesando", "error"}:
+        score = grade.nota_confirmada if grade.nota_confirmada is not None else grade.nota_sugerida
+    summary = {
+        "version": breakdown.version if breakdown else None,
+        "cobertura": breakdown.cobertura_estado if breakdown else None,
+        "bloqueos": list(breakdown.bloqueos_json or []) if breakdown else [],
+        "componentes_pendientes": int(breakdown.pendientes or 0) if breakdown else None,
+        "componentes_ilegibles": int(breakdown.ilegibles or 0) if breakdown else None,
+        "pqrs_abiertas": claims,
+    }
+    # La política de consenso ya materializa los desacuerdos en requiere_revision.
+    # No reactivar alertas del JSON histórico después de una corrección docente.
+    summary["tiene_alertas"] = bool(
+        state in {"requiere_revision", "error", "requiere_reintento"}
+        or claims or (breakdown and (
+            breakdown.requiere_revision or breakdown.cobertura_estado != "completa"
+            or summary["bloqueos"] or summary["componentes_pendientes"] or summary["componentes_ilegibles"]
+        ))
+    )
+    return {
+        "estudiante_id": student.id, "nombre": student.nombre,
+        "calificacion_id": grade.id if grade else None,
+        "entrega_id": delivery.id if delivery else (grade.entrega_id if grade else None),
+        "job_id": job["id"] if job else None, "estado": state, "nota": score,
+        "resumen_revision": summary,
+    }
+
+
+def _revision_page(rows: list[dict], *, cursor: UUID | None, limit: int, filtro: str, q: str, estudiante_id: UUID | None = None) -> dict:
+    predicates = {
+        "todas": lambda row: True,
+        "pendientes": lambda row: row["estado"] not in {"publicada", "confirmada", "ajustada", "procesando"},
+        "alertas": lambda row: row["resumen_revision"]["tiene_alertas"],
+        "procesando": lambda row: row["estado"] == "procesando",
+        "publicadas": lambda row: row["estado"] == "publicada",
+    }
+    if filtro not in predicates or not 1 <= limit <= 100:
+        raise HTTPException(status_code=422, detail="Filtro o límite de revisión inválido.")
+    counters = {name: sum(bool(predicate(row)) for row in rows) for name, predicate in predicates.items()}
+    ordered = sorted(rows, key=lambda row: (
+        not row["resumen_revision"]["tiene_alertas"], row["nombre"].casefold(), str(row["estudiante_id"]),
+    ))
+    filtered = [row for row in ordered if predicates[filtro](row) and q.strip().casefold() in row["nombre"].casefold()
+                and (estudiante_id is None or row["estudiante_id"] == estudiante_id)]
+    start = 0
+    if cursor is not None:
+        position = next((i for i, row in enumerate(filtered) if row["estudiante_id"] == cursor), None)
+        if position is None:
+            raise HTTPException(status_code=409, detail="La lista cambió. Actualiza la revisión desde el inicio.")
+        start = position + 1
+    page = filtered[start:start + limit]
+    return {"total_alumnos": len(rows), "contadores": counters, "alumnos": page,
+            "siguiente_cursor": page[-1]["estudiante_id"] if page and start + limit < len(filtered) else None}
+
+
+async def revision_evaluacion(
+    db: AsyncSession, evaluacion: Evaluacion, *, include_pqrs: bool,
+    cursor: UUID | None = None, limit: int = 30, filtro: str = "todas", q: str = "",
+    estudiante_id: UUID | None = None,
+) -> dict:
+    """Seis consultas agrupadas, independientes del número de alumnos/hojas.
+
+    Solo lectura. No dispara calificaciones por vencimiento ni devuelve evidencias,
+    claves o texto privado. La autorización de la evaluación ocurre en el router.
+    """
+    from app.modules.calificaciones.breakdown_models import CalificacionComponente as Component, CalificacionDesglose as Breakdown
+    from app.modules.calificaciones.incidencia_models import CalificacionIncidencia as Incidence
+
+    students = (await db.execute(select(User.id, User.nombre).join(
+        Matricula, Matricula.estudiante_id == User.id,
+    ).where(Matricula.materia_id == evaluacion.materia_id, Matricula.estado == MatriculaEstado.ACTIVO.value))).all()
+    grades = (await db.execute(select(
+        Calificacion.id, Calificacion.estudiante_id, Calificacion.entrega_id, Calificacion.estado,
+        Calificacion.nota_confirmada, Calificacion.nota_sugerida, Calificacion.created_at,
+    ).where(Calificacion.evaluacion_id == evaluacion.id))).all()
+    current = {grade.estudiante_id: grade for grade in _select_current_calificaciones(grades, evaluacion.politica_intento)}
+    deliveries = (await db.execute(select(Entrega.id, Entrega.estudiante_id, Entrega.estado).where(
+        Entrega.evaluacion_id == evaluacion.id,
+    ).order_by(Entrega.created_at.desc(), Entrega.id))).all()
+    by_delivery = {delivery.id: delivery for delivery in deliveries}
+    latest_delivery = {}
+    for delivery in deliveries:
+        latest_delivery.setdefault(delivery.estudiante_id, delivery)
+    breakdowns = (await db.execute(select(
+        Breakdown.calificacion_id, Breakdown.version, Breakdown.cobertura_estado, Breakdown.bloqueos_json,
+        Breakdown.requiere_revision,
+        func.sum(case((Component.requiere_revision.is_(True), 1), else_=0)).label("pendientes"),
+        func.sum(case((Component.estado.in_(["ilegible", "no_evaluable"]), 1), else_=0)).label("ilegibles"),
+    ).join(Calificacion, Calificacion.id == Breakdown.calificacion_id)
+      .outerjoin(Component, Component.desglose_id == Breakdown.id)
+      .where(Calificacion.evaluacion_id == evaluacion.id, Breakdown.activo.is_(True))
+      .group_by(Breakdown.id))).all()
+    by_grade = {item.calificacion_id: item for item in breakdowns}
+    claims = {}
+    if include_pqrs:
+        claim_rows = (await db.execute(select(Incidence.calificacion_id, func.count(Incidence.id)).join(
+            Calificacion, Calificacion.id == Incidence.calificacion_id,
+        ).where(Calificacion.evaluacion_id == evaluacion.id, Incidence.estado == "abierta",
+                Incidence.tipo == "solicitud_revision").group_by(Incidence.calificacion_id))).all()
+        claims = dict(claim_rows)
+    jobs = (await db.execute(text(
+        "SELECT DISTINCT ON (j.entrega_id) j.id, j.entrega_id, j.estado FROM ai_jobs j "
+        "JOIN entregas e ON e.id=j.entrega_id WHERE e.evaluacion_id=CAST(:evaluation AS uuid) "
+        "AND j.tipo='calificacion_entrega' ORDER BY j.entrega_id, j.created_at DESC, j.id"
+    ), {"evaluation": str(evaluacion.id)})).mappings().all()
+    by_job = {job["entrega_id"]: job for job in jobs}
+    rows = []
+    for student in students:
+        grade = current.get(student.id)
+        delivery = by_delivery.get(grade.entrega_id) if grade else latest_delivery.get(student.id)
+        rows.append(_revision_row(
+            student, grade, delivery, by_job.get(delivery.id) if delivery else None,
+            by_grade.get(grade.id) if grade else None, claims.get(grade.id, 0) if include_pqrs and grade else (0 if include_pqrs else None),
+        ))
+    return {"evaluacion_id": evaluacion.id, "materia_id": evaluacion.materia_id,
+            **_revision_page(rows, cursor=cursor, limit=limit, filtro=filtro, q=q, estudiante_id=estudiante_id)}
 
 
 def _grade_score(calificacion: Calificacion) -> Decimal:
@@ -1358,17 +1485,27 @@ async def crear_solicitud_revision_estudiante(
             "evaluacion_id": str(evaluacion_id),
             "motivo": motivo,
         },
+        componente_id=componente_id,
+        desglose_version=desglose_version,
     )
 
 
 async def listar_incidencias(db: AsyncSession, calificacion_id: UUID) -> list[dict]:
     from app.modules.calificaciones.incidencia_models import CalificacionIncidencia
+    from app.modules.calificaciones.breakdown_models import CalificacionComponente, CalificacionDesglose
 
     result = await db.scalars(
         select(CalificacionIncidencia)
         .where(CalificacionIncidencia.calificacion_id == calificacion_id)
         .order_by(CalificacionIncidencia.created_at.desc())
     )
+    incidents = list(result.all())
+    component_ids = [inc.componente_id for inc in incidents if inc.componente_id]
+    keys = {}
+    if component_ids:
+        keys = dict((await db.execute(select(CalificacionComponente.id, CalificacionComponente.clave)
+            .join(CalificacionDesglose, CalificacionDesglose.id == CalificacionComponente.desglose_id)
+            .where(CalificacionComponente.id.in_(component_ids), CalificacionDesglose.calificacion_id == calificacion_id))).all())
     return [
         {
             "id": inc.id,
@@ -1377,15 +1514,16 @@ async def listar_incidencias(db: AsyncSession, calificacion_id: UUID) -> list[di
             "descripcion": inc.descripcion,
             "estado": inc.estado,
             "metadata_json": inc.metadata_json,
-        "componente_id": getattr(inc, "componente_id", None),
-        "desglose_version": getattr(inc, "desglose_version", None),
+            "componente_id": getattr(inc, "componente_id", None),
+            "componente_clave": keys.get(inc.componente_id),
+            "desglose_version": getattr(inc, "desglose_version", None),
             "resolucion": inc.resolucion,
             "resuelto_por": inc.resuelto_por,
             "resolved_at": inc.resolved_at,
             "created_at": inc.created_at,
             "updated_at": inc.updated_at,
         }
-        for inc in result.all()
+        for inc in incidents
     ]
 
 

@@ -15,8 +15,138 @@ from app.modules.calificaciones.models import Entrega
 from app.modules.calificaciones.service import (
     _build_revision_guide,
     _select_current_calificaciones,
+    _revision_row,
+    _revision_page,
 )
 from app.shared.enums import EntregaEstado, EntregaTipo, PoliticaIntento, UserRole
+
+
+def test_revision_30_enrolled_all_eight_claims_and_complete_counters():
+    from tests.fixtures.grading_batch import synthetic_review_rows
+    from app.modules.calificaciones.schemas import RevisionAlumno
+    rows = synthetic_review_rows()
+    first = _revision_page(rows, cursor=None, limit=5, filtro="alertas", q="")
+    second = _revision_page(rows, cursor=first["siguiente_cursor"], limit=5, filtro="alertas", q="")
+    assert len(first["alumnos"]) == 5 and len(second["alumnos"]) == 3
+    assert first["contadores"] == {"todas": 30, "pendientes": 28, "alertas": 8, "procesando": 1, "publicadas": 1}
+    assert second["siguiente_cursor"] is None
+    assert {row["estudiante_id"] for row in first["alumnos"]}.isdisjoint(row["estudiante_id"] for row in second["alumnos"])
+    assert rows[10]["nota"] == 0 and rows[9]["nota"] is None
+    assert RevisionAlumno.model_validate(rows[11]).resumen_revision.version is None
+    with pytest.raises(Exception) as stale:
+        _revision_page(rows, cursor=uuid4(), limit=5, filtro="todas", q="")
+    assert stale.value.status_code == 409
+    assert _revision_page(rows, cursor=None, limit=5, filtro="todas", q="Alumno 29")["contadores"]["todas"] == 30
+
+
+@pytest.mark.parametrize("state,score,expected", [("sugerida", 0, 0), ("procesando", 0, None)])
+def test_revision_zero_and_unknown_without_false_alert(state, score, expected):
+    grade = SimpleNamespace(id=uuid4(), entrega_id=None, estado=state, nota_confirmada=None, nota_sugerida=score)
+    row = _revision_row(SimpleNamespace(id=uuid4(), nombre="Prueba"), grade, None, None, None, None)
+    assert row["nota"] == expected
+    assert row["resumen_revision"]["version"] is None
+    assert row["resumen_revision"]["pqrs_abiertas"] is None
+    assert row["resumen_revision"]["componentes_pendientes"] is None
+    assert not row["resumen_revision"]["tiene_alertas"]
+
+
+def test_revision_resolved_breakdown_does_not_resurrect_historical_disagreement():
+    student = SimpleNamespace(id=uuid4(), nombre="Prueba")
+    grade = SimpleNamespace(id=uuid4(), entrega_id=None, estado="ajustada", nota_confirmada=4, nota_sugerida=0,
+                            resultado_json={"comparador": {"discrepancia": True}})
+    breakdown = SimpleNamespace(version=2, cobertura_estado="completa", bloqueos_json=[], pendientes=0,
+                                ilegibles=0, requiere_revision=False)
+    row = _revision_row(student, grade, None, None, breakdown, 0)
+    assert not row["resumen_revision"]["tiene_alertas"]
+    breakdown.ilegibles = 1
+    assert _revision_row(student, grade, None, None, breakdown, 0)["resumen_revision"]["tiene_alertas"]
+
+
+def test_revision_projection_is_teacher_only_even_with_grading_read():
+    actor = SimpleNamespace(rol="estudiante", _effective_permissions={"grading.read"})
+    with pytest.raises(Exception) as denied:
+        asyncio.run(router.revision_evaluacion(uuid4(), current_user=actor, db=None))
+    assert denied.value.status_code == 403
+
+
+def test_revision_projection_checks_ownership_and_permissions(monkeypatch):
+    from app.modules.evaluaciones import service as evaluation_service
+    evaluation = SimpleNamespace(id=uuid4(), profesor_id=uuid4())
+
+    async def get_evaluation(*args):
+        return evaluation
+
+    monkeypatch.setattr(evaluation_service, "get_evaluation_or_404", get_evaluation)
+    for actor in [
+        SimpleNamespace(id=uuid4(), rol="profesor", _effective_permissions={"grading.read"}),
+        SimpleNamespace(id=evaluation.profesor_id, rol="profesor", _effective_permissions=set()),
+    ]:
+        with pytest.raises(Exception) as denied:
+            asyncio.run(router.revision_evaluacion(evaluation.id, current_user=actor, db=None))
+        assert denied.value.status_code == 403
+
+
+def test_revision_projection_allows_owned_read_only_without_claims(monkeypatch):
+    from app.modules.evaluaciones import service as evaluation_service
+    from app.modules.calificaciones import service
+    evaluation = SimpleNamespace(id=uuid4(), profesor_id=uuid4())
+    captured = {}
+
+    async def get_evaluation(*args):
+        return evaluation
+
+    async def project(db, selected, **kwargs):
+        captured.update(kwargs)
+        assert selected is evaluation
+        return {"total_alumnos": 0}
+
+    monkeypatch.setattr(evaluation_service, "get_evaluation_or_404", get_evaluation)
+    monkeypatch.setattr(service, "revision_evaluacion", project)
+    actor = SimpleNamespace(id=evaluation.profesor_id, rol="profesor", _effective_permissions={"grading.read"})
+    result = asyncio.run(router.revision_evaluacion(evaluation.id, current_user=actor, db=None))
+    assert result == {"total_alumnos": 0}
+    assert captured["include_pqrs"] is False
+
+
+def test_revision_projection_constant_queries_no_private_payload_and_pqrs_scope():
+    from app.modules.calificaciones import service
+    from sqlalchemy.dialects import postgresql
+    from tests.fixtures.grading_batch import synthetic_review_rows
+    rows = synthetic_review_rows()
+    evaluation = SimpleNamespace(id=uuid4(), materia_id=uuid4(), politica_intento="un_intento")
+
+    class Result:
+        def __init__(self, rows):
+            self.rows = rows
+
+        def all(self):
+            return self.rows
+
+        def mappings(self):
+            return self
+
+    class DB:
+        def __init__(self):
+            self.queries = []
+
+        async def execute(self, query, *args):
+            sql = str(query.compile(dialect=postgresql.dialect()))
+            self.queries.append(sql)
+            if len(self.queries) == 1:
+                return Result([SimpleNamespace(id=row["estudiante_id"], nombre=row["nombre"]) for row in rows])
+            return Result([])
+
+    for include_claims in (True, False):
+        db = DB()
+        result = asyncio.run(service.revision_evaluacion(db, evaluation, include_pqrs=include_claims))
+        assert len(db.queries) == (6 if include_claims else 5)
+        assert result["total_alumnos"] == 30
+        assert all(row["estado"] == "sin_entrega" for row in result["alumnos"])
+        assert result["alumnos"][0]["resumen_revision"]["pqrs_abiertas"] == (0 if include_claims else None)
+        sql = " ".join(db.queries)
+        for field in ("respuesta_referencia", "respuesta_estudiante", "archivo_url", "resultado_json", "visual_text_json"):
+            assert field not in sql
+        assert ("calificacion_incidencias" in sql) is include_claims
 
 
 def _grade(*, student_id, created_at, score, estado="sugerida"):

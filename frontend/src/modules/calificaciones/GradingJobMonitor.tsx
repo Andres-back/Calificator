@@ -4,6 +4,7 @@ import toast from 'react-hot-toast';
 import { AlertTriangle, CheckCircle2, ChevronDown, LoaderCircle, RefreshCw, ScanLine, X } from 'lucide-react';
 
 import { queryClient } from '@/lib/queryClient';
+import { routes } from '@/config/routes';
 import {
   getGradingJob,
   getGradingJobItems,
@@ -22,7 +23,7 @@ function keepStableJobs(current: PendingGradingJob[], next: PendingGradingJob[])
   return JSON.stringify(current) === JSON.stringify(next) ? current : next;
 }
 
-export function GradingJobMonitor() {
+export function GradingJobMonitor({ embedded = false }: { embedded?: boolean }) {
   const [jobs, setJobs] = useState(readPendingGradings);
   const [progress, setProgress] = useState<Record<string, number>>({});
   const [summaries, setSummaries] = useState<Record<string, GradingJobSummary>>({});
@@ -80,6 +81,7 @@ export function GradingJobMonitor() {
             continue;
           }
           if (state.data?.estado === 'success') {
+            void queryClient.invalidateQueries({ queryKey: ['evaluation-review', state.job.evaluacionId] });
             await queryClient.invalidateQueries({
               queryKey: ['calificaciones', state.job.evaluacionId],
             });
@@ -105,7 +107,7 @@ export function GradingJobMonitor() {
                   className="focus-ring rounded-lg px-3 py-2 text-sm font-semibold text-brand-700 hover:bg-brand-50 dark:text-brand-200 dark:hover:bg-brand-500/10"
                   onClick={() => {
                     toast.dismiss(item.id);
-                    navigate(`/app/materias/${state.job.materiaId}/calificar?evaluacion=${state.job.evaluacionId}${state.job.estudianteId ? `&estudiante=${state.job.estudianteId}` : ''}`);
+                    navigate(`${routes.calificacionesEvaluacion(state.job.evaluacionId)}${state.job.estudianteId ? `&estudiante=${encodeURIComponent(state.job.estudianteId)}` : ''}`);
                   }}
                 >
                   Revisar
@@ -115,6 +117,7 @@ export function GradingJobMonitor() {
             continue;
           }
           if (state.data && ['failed', 'requires_review', 'failed_permanent'].includes(state.data.estado)) {
+            void queryClient.invalidateQueries({ queryKey: ['evaluation-review', state.job.evaluacionId] });
             await queryClient.invalidateQueries({
               queryKey: ['calificaciones', state.job.evaluacionId],
             });
@@ -201,7 +204,7 @@ export function GradingJobMonitor() {
     <aside
       aria-live="polite"
       aria-label="Calificaciones en cola"
-      className="fixed bottom-[max(1rem,env(safe-area-inset-bottom))] left-4 z-40 w-[min(23rem,calc(100vw-2rem))] rounded-2xl border border-cyan-200 bg-surface-elevated/95 p-4 shadow-2xl shadow-cyan-950/15 backdrop-blur-xl dark:border-cyan-500/30"
+      className={`${embedded ? 'relative mx-4 mb-4' : 'fixed bottom-[max(1rem,env(safe-area-inset-bottom))] left-4 z-40 w-[min(23rem,calc(100vw-2rem))]'} rounded-2xl border border-cyan-200 bg-surface-elevated/95 p-4 shadow-2xl shadow-cyan-950/15 backdrop-blur-xl dark:border-cyan-500/30`}
     >
       <div className="flex items-center gap-3">
         <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-cyan-50 text-cyan-700 dark:bg-cyan-500/15 dark:text-cyan-200">

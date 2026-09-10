@@ -33,6 +33,7 @@ ALL_SPECS = {
     "029-roles-permisos-modulares",
     "031-acelerar-pipelines-ia",
     "032-calificacion-impacto-docente",
+    "033-centro-calificacion",
 }
 OWNED_SPECS = {
     name

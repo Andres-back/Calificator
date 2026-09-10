@@ -9,6 +9,36 @@ from pydantic import BaseModel, Field
 from app.shared.enums import EntregaTipo
 
 
+class RevisionResumen(BaseModel):
+    version: int | None = None
+    cobertura: str | None = None
+    bloqueos: list[str] = Field(default_factory=list)
+    componentes_pendientes: int | None = None
+    componentes_ilegibles: int | None = None
+    pqrs_abiertas: int | None = None
+    tiene_alertas: bool = False
+
+
+class RevisionAlumno(BaseModel):
+    estudiante_id: UUID
+    nombre: str
+    calificacion_id: UUID | None = None
+    entrega_id: UUID | None = None
+    job_id: UUID | None = None
+    estado: str
+    nota: Decimal | None = None
+    resumen_revision: RevisionResumen
+
+
+class RevisionEvaluacionRead(BaseModel):
+    evaluacion_id: UUID
+    materia_id: UUID
+    total_alumnos: int
+    contadores: dict[str, int]
+    siguiente_cursor: UUID | None = None
+    alumnos: list[RevisionAlumno]
+
+
 # ── Entregas ────────────────────────────────────────────────────────────────────
 
 
@@ -315,6 +345,7 @@ class IncidenciaCreate(BaseModel):
 
 
 class IncidenciaRead(BaseModel):
+    componente_clave: str | None = None
     id: UUID
     calificacion_id: UUID
     tipo: str

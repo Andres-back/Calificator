@@ -92,10 +92,11 @@ function gradingHref(
   studentId: string,
 ): string {
   const params = new URLSearchParams({
+    materia: materiaId,
     evaluacion: evaluationId,
     estudiante: studentId,
   });
-  return `${routes.materiaCalificar(materiaId)}?${params.toString()}`;
+  return `${routes.calificacionesWorkspace}?${params.toString()}`;
 }
 
 function suggestedScore(cell: FollowUpCell): number | null {

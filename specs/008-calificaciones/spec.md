@@ -74,3 +74,11 @@ La especificación [016-calificacion-explicable](../016-calificacion-explicable/
 ## Evolución 032: recuperación y autoridad docente implementadas bajo banderas
 
 [032 Calificación e impacto docente](../032-calificacion-impacto-docente/spec.md) añade checkpoints compatibles, escritor vigente por lease, protección frente a resultados tardíos y estados grupales sin cambiar la única nota oficial. Los desgloses y tiempos de estudio son aditivos: nunca publican ni sustituyen una decisión docente. La activación gradual permanece apagada por defecto.
+
+## Evolución 033: centro unificado
+
+[033 Centro de calificación](../033-centro-calificacion/spec.md) reúne carga, revisión y publicación en `/app/calificaciones`. La proyección docente `GET /evaluaciones/{id}/revision` incluye toda la matrícula, nota nullable, versión/cobertura y contadores exhaustivos. Realiza seis consultas agrupadas (cinco sin permiso de PQRS), sin archivos, respuestas ni inferencias al consultar. La política de intento vigente se conserva.
+
+La lista distingue cero real, sin entrega, procesamiento, error y nota publicada. Los filtros son independientes de la paginación; la búsqueda limita filas, no cambia los contadores del examen. Un cursor que deja de pertenecer al filtro responde 409 para reiniciar la lista explícitamente.
+
+Carga, nota manual, reemplazo, ajuste, confirmación y publicación conservan sus endpoints y permisos. Los resultados grupales mantienen seleccionados solo los fallos. Se retiran tres páginas React sin consumidores, no sus APIs de salón/boletín. No se modifica fórmula, configuración de IA ni base de datos.

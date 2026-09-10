@@ -1,5 +1,5 @@
 import { api } from '@/lib/api';
-import type { BandejaDocenteRead, BatchResult, BoletinItem, Calificacion, CalificacionDetalle, EntregaRead, GradeBreakdownData, GradeBreakdownUpdate, GradeBreakdownVersion, IncidenciaRead, ResumenAcademico, SalonSesionRead } from '@/types/api';
+import type { ReviewEvaluation, ReviewFilter, BandejaDocenteRead, BatchResult, BoletinItem, Calificacion, CalificacionDetalle, EntregaRead, GradeBreakdownData, GradeBreakdownUpdate, GradeBreakdownVersion, IncidenciaRead, ResumenAcademico, SalonSesionRead } from '@/types/api';
 
 export async function getBandejaDocente(): Promise<BandejaDocenteRead> {
   const { data } = await api.get<BandejaDocenteRead>('/calificaciones/bandeja-docente');
@@ -8,6 +8,11 @@ export async function getBandejaDocente(): Promise<BandejaDocenteRead> {
 
 export async function listCalificaciones(evaluacionId: string): Promise<Calificacion[]> {
   const { data } = await api.get<Calificacion[]>(`/evaluaciones/${evaluacionId}/calificaciones`);
+  return data;
+}
+
+export async function getEvaluationReview(evaluationId: string, params: { filtro?: ReviewFilter; q?: string; cursor?: string; limit?: number; estudiante_id?: string } = {}, signal?: AbortSignal): Promise<ReviewEvaluation> {
+  const { data } = await api.get<ReviewEvaluation>(`/evaluaciones/${evaluationId}/revision`, { params, signal });
   return data;
 }
 

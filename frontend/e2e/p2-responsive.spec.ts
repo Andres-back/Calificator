@@ -118,6 +118,7 @@ async function installApiMocks(page: Page, targetRole: Role) {
     if (path === '/materias/m1/dba' || path === '/materias/m1/dba-personalizados') return fulfillJson(route, []);
     if (path === '/evaluaciones/e1' && method === 'GET') return fulfillJson(route, evaluacion);
     if (path === '/evaluaciones/e1/calificaciones') return fulfillJson(route, []);
+    if (path === '/evaluaciones/e1/revision') return fulfillJson(route, { evaluacion_id: 'e1', materia_id: 'm1', total_alumnos: 0, siguiente_cursor: null, alumnos: [], contadores: { todas: 0, pendientes: 0, alertas: 0, procesando: 0, publicadas: 0 } });
     if (path === '/calificaciones/bandeja-docente') return fulfillJson(route, {
       reclamos_abiertos: 0, pendientes_revision: 0, reclamos: [], pendientes: [],
     });
@@ -240,6 +241,10 @@ test('profesor recorre las siete vistas de una materia y escribe un DBA sin perd
     await navigation.getByRole('link', { name: tab, exact: true }).click();
     await expect(page.locator('main#main-content')).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
+    if (tab === 'Calificar') {
+      await expect(page).toHaveURL(/\/app\/calificaciones\?.*materia=m1/);
+      await page.goto('/app/materias/m1');
+    }
   }
 
   await page.getByRole('button', { name: 'Nuevo DBA' }).first().click();

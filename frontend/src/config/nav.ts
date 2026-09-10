@@ -27,6 +27,7 @@ export interface NavItem {
 export const profesorNav: NavItem[] = [
   { label: 'Inicio', to: '/app', icon: LayoutDashboard, brandIcon: 'dashboard' },
   { label: 'Materias', to: '/app/materias', icon: BookOpen, brandIcon: 'subjects', permission: 'subjects.read' },
+  { label: 'Calificar y revisar', to: '/app/calificaciones', icon: ClipboardCheck, brandIcon: 'grade-evidence', permission: 'grading.read' },
   { label: 'Recursos', to: '/app/herramientas', icon: Wrench, brandIcon: 'resources', permission: 'resources.read' },
   { label: 'Presentaciones', to: '/app/presentaciones', icon: Presentation, brandIcon: 'presentations', permission: 'presentations.read' },
   { label: 'Reportes', to: '/app/reportes', icon: BarChart3, brandIcon: 'reports', permission: 'reports.read' },

@@ -209,8 +209,8 @@ function TeacherJourney({
       title: 'Califica una evaluación',
       description:
         'Selecciona estudiante y evaluación, carga la foto y confirma o ajusta la sugerencia de la IA.',
-      label: 'Ir al flujo de calificación',
-      to: routes.materiaCalificar(materiaId),
+      label: 'Calificar y revisar',
+      to: `${routes.calificacionesWorkspace}?materia=${encodeURIComponent(materiaId)}`,
       brandIcon: 'grade-evidence' as const,
     },
   }[state.recommendedStep];
@@ -321,13 +321,13 @@ function TeacherJourney({
             />
             <JourneyAction
               brandIcon="grade-evidence"
-              title="Calificar por foto"
+              title="Calificar y revisar"
               description={
                 state.canGrade
                   ? 'La IA sugiere y tú confirmas o ajustas.'
                   : 'Necesitas estudiantes y una evaluación.'
               }
-              to={routes.materiaCalificar(materiaId)}
+              to={`${routes.calificacionesWorkspace}?materia=${encodeURIComponent(materiaId)}`}
               disabled={!state.canGrade}
             />
             <JourneyAction

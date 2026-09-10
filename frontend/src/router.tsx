@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react';
-import { createBrowserRouter, Navigate } from 'react-router-dom';
+import { createBrowserRouter } from 'react-router-dom';
 import { AppShell } from '@/components/layout/AppShell';
 import { RequireAuth } from '@/components/auth/RequireAuth';
 import { RequirePermission } from '@/components/auth/RequirePermission';
@@ -24,7 +24,7 @@ const MateriaDetailPage = lazy(() => import('@/modules/materias/MateriaDetailPag
 const MateriaVistaGeneral = lazy(() => import('@/modules/materias/MateriaVistaGeneral').then((m) => ({ default: m.MateriaVistaGeneral })));
 const MateriaEvaluaciones = lazy(() => import('@/modules/materias/MateriaEvaluaciones').then((m) => ({ default: m.MateriaEvaluaciones })));
 const MateriaRecursos = lazy(() => import('@/modules/materias/MateriaRecursos').then((m) => ({ default: m.MateriaRecursos })));
-const MateriaCalificar = lazy(() => import('@/modules/materias/MateriaCalificar').then((m) => ({ default: m.MateriaCalificar })));
+const GradingLegacyRedirect = lazy(() => import('@/modules/calificaciones/CalificacionesWorkspace').then((m) => ({ default: m.GradingLegacyRedirect })));
 const MateriaAsistencia = lazy(() => import('@/modules/materias/MateriaAsistencia').then((m) => ({ default: m.MateriaAsistencia })));
 const MateriaBoletin = lazy(() => import('@/modules/materias/MateriaBoletin').then((m) => ({ default: m.MateriaBoletin })));
 const MateriaDbaPage = lazy(() => import('@/modules/materias/MateriaDbaPage').then((m) => ({ default: m.MateriaDbaPage })));
@@ -85,7 +85,7 @@ export const router = createBrowserRouter([
               { element: <RequirePermission anyOf={['evaluations.read']} />, children: [{ path: 'evaluaciones', element: lazyPage(<MateriaEvaluaciones />) }] },
               { element: <RequirePermission anyOf={['resources.read']} />, children: [{ path: 'recursos', element: lazyPage(<MateriaRecursos />) }] },
               // Solo docente/admin
-              { element: <RequirePermission anyOf={['grading.read', 'grading.grade']} />, children: [{ path: 'calificar', element: lazyPage(<MateriaCalificar />) }] },
+              { element: <RequirePermission anyOf={['grading.read', 'grading.grade']} />, children: [{ path: 'calificar', element: lazyPage(<GradingLegacyRedirect />) }] },
               { element: <RequirePermission anyOf={['attendance.read', 'attendance.manage']} />, children: [{ path: 'asistencia', element: lazyPage(<MateriaAsistencia />) }] },
               { element: <RequirePermission anyOf={['dba.read', 'dba.manage']} />, children: [{ path: 'dba', element: lazyPage(<MateriaDbaPage />) }] },
               // Estudiante ve su boletín propio, profesor ve boletín del grupo
@@ -106,8 +106,8 @@ export const router = createBrowserRouter([
           { element: <RequirePermission anyOf={['ai_settings.personal']} />, children: [{ path: 'configuracion-ia', element: lazyPage(<TeacherAIConfigPage />) }] },
           { element: <RequirePermission anyOf={['resources.read']} />, children: [{ path: 'herramientas', element: lazyPage(<ListPage />) }, { path: 'herramientas/:id', element: lazyPage(<DetailPage />) }] },
           { element: <RequirePermission anyOf={['resources.create']} />, children: [{ path: 'herramientas/nuevo', element: lazyPage(<GeneratePage />) }] },
-          { element: <RequirePermission anyOf={['grading.grade']} />, children: [{ path: 'calificaciones/foto', element: <Navigate to={routes.materiasPara('calificar')} replace /> }] },
-          { element: <RequirePermission anyOf={['grading.read', 'grading.grade']} />, children: [{ path: 'calificaciones/workspace', element: lazyPage(<CalificacionesWorkspace />) }, { path: 'calificaciones/workspace/:evaluacionId', element: lazyPage(<CalificacionesWorkspace />) }] },
+          { element: <RequirePermission anyOf={['grading.grade']} />, children: [{ path: 'calificaciones/foto', element: lazyPage(<GradingLegacyRedirect />) }] },
+          { element: <RequirePermission anyOf={['grading.read', 'grading.grade']} />, children: [{ path: 'calificaciones', element: lazyPage(<CalificacionesWorkspace />) }, { path: 'calificaciones/workspace', element: lazyPage(<GradingLegacyRedirect />) }, { path: 'calificaciones/workspace/:evaluacionId', element: lazyPage(<GradingLegacyRedirect />) }] },
           { element: <RequirePermission anyOf={['reports.read']} />, children: [{ path: 'analytics', element: lazyPage(<AnalyticsPage />) }, { path: 'reportes', element: lazyPage(<ReportesPage />) }] },
           { element: <RequirePermission anyOf={['presentations.read']} />, children: [{ path: 'presentaciones', element: lazyPage(<PresentacionesPage />) }] },
 

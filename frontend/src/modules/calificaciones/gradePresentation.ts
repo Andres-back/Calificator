@@ -15,7 +15,7 @@ export function isGradeProcessing(grade: Pick<Calificacion, 'estado' | 'resultad
   return grade.estado === 'procesando' || ACTIVE_PIPELINE_STATES.has(pipelineStatus);
 }
 
-export function gradePresentation(grade: Calificacion): {
+export function gradePresentation(grade: Pick<Calificacion, 'estado' | 'resultado_json' | 'nota_sugerida' | 'nota_confirmada'>): {
   label: string;
   score: number | null;
   processing: boolean;
