@@ -203,8 +203,10 @@ test('docente llega a la respuesta 20, edita y recupera el scroll móvil', async
   await page.getByRole('button', { name: 'Cancelar' }).click();
   await page.getByRole('button', { name: 'Descartar y continuar' }).click();
   await page.getByRole('button', { name: 'Volver a lista' }).click();
-  await expect(page.getByText('Estudiante Prueba', { exact: true })).toBeVisible();
-  expect(await page.evaluate(() => document.body.style.overflow)).toBe('');
+  await expect(page).toHaveURL((url) => !url.searchParams.has('calificacion') && !url.searchParams.has('estudiante'));
+  await expect(page.getByRole('button', { name: 'Volver a lista' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: /Estudiante Prueba/ })).toBeVisible();
+  await expect.poll(() => page.evaluate(() => document.body.style.overflow)).toBe('');
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBeTruthy();
 });
 

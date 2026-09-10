@@ -50,7 +50,7 @@ Meta independiente: dos alumnos cargados, cola recuperable, revisión y publicac
 
 ## Fase final: Validación y entrega
 
-- [ ] T019 Ajustar layout/foco/scroll/teclado a cinco tamaños y temas en frontend/src/modules/calificaciones/CalificacionesWorkspace.tsx; verificar frontend/e2e/p2-responsive.spec.ts, accessibility/grading-review.a11y.spec.ts y visual/grading-review.visual.spec.ts con revisión humana de capturas (FR-012, SC-005).
+- [X] T019 Ajustar layout/foco/scroll/teclado a cinco tamaños y temas en frontend/src/modules/calificaciones/CalificacionesWorkspace.tsx; verificar frontend/e2e/p2-responsive.spec.ts, accessibility/grading-review.a11y.spec.ts y visual/grading-review.visual.spec.ts con revisión humana de capturas (FR-012, SC-005).
 - [X] T020 Confirmar ausencia de consumidores antes de retirar frontend/src/modules/calificaciones/{CalificacionesPage,CalificarFotoPage,SalonPage}.tsx y tours huérfanos; conservar boletinTour y servicios activos; documentar búsqueda en quickstart.md (FR-015).
 - [X] T021 Verificar/cablear o retirar bandera sin uso en frontend/src/modules/calificaciones/CalificacionesWorkspace.tsx y frontend/.env.example; acreditar comportamiento servido y reversión, conservando medición opt-in y configuración IA (FR-015, SC-008).
 - [ ] T022 Actualizar specs/002-arquitectura-roles-seguridad, specs/008-calificaciones, specs/016-calificacion-explicable y otros propietarios afectados; regenerar specs/system-inventory/current.json, ejecutar pruebas proporcionales/CI y Converge, registrar evidencia en specs/033-centro-calificacion/quickstart.md antes del PR (FR-001–016).

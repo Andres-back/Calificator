@@ -66,3 +66,9 @@ Verificar centro servido y compatibilidad real; actualizar propietarios/inventar
 - GradingProgress se retiró tras búsqueda global sin consumidores. Es recuperable en Git junto a las tres páginas antiguas; no se borraron archivos de entregas ni tablas.
 - Pendiente de promoción: aprobación humana de capturas (T019), CI remoto/PR y cierre documental (T022/T026). El proceso de investigación sigue desactivado, sin afirmar reducción de tiempos antes de medirla.
 - Entrega de revisión: PR #69 en borrador, https://github.com/Andres-back/Calificator/pull/69, implementación f398a45. El primer control remoto detectó que faltaba 033 en el catálogo explícito de specs; se añadió sin relajar la exigencia de tareas completas. La gobernanza continuará bloqueando el merge hasta cerrar T019/T022/T026. Contenedor PostgreSQL sintético retirado; no afecta servicios locales del usuario.
+
+## Revisión humana y cierre remoto — 2026-09-10
+
+- Aprobación humana: el usuario respondió «adelante» tras recibir las capturas de escritorio y móvil. Se cierra T019 con las diez combinaciones de resolución/tema y siete pruebas de accesibilidad registradas; no se atribuye cobertura a Safari/Brave físicos.
+- CI 34428635638: backend y construcción de contenedores aprobados. Frontend pasó tipos, lint, unitarias y build; E2E obtuvo 58/59. La prueba móvil restante encontraba dos nombres durante la transición detalle/lista. Se corrige la sincronización del test: espera URL sin alumno/calificación, desaparición del botón de detalle, fila de alumno visible y liberación del bloqueo de scroll. Repetición local aprobada.
+- T022/T026 continúan pendientes hasta obtener el pase remoto completo y cerrar la convergencia. No se omiten controles ni se promueve una rama con CI fallido.
