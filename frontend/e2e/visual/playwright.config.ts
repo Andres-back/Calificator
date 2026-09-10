@@ -1,8 +1,7 @@
 import { defineConfig, devices } from '@playwright/test';
 
 /**
- * Visual regression tests — placeholder.
- * Will use Percy, Chromatic, or Playwright's native screenshot diffing.
+ * Regresión visual con capturas nativas de Playwright revisadas antes de actualizar.
  */
 export default defineConfig({
   testDir: './',

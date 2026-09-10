@@ -39,6 +39,12 @@ export async function installMocks(page: Page, role: 'profesor' | 'estudiante') 
     if (path === '/materias/m1/estudiantes') return json(route, { ...materia, estudiantes: [student] });
     if (path === '/evaluaciones/e1') return json(route, evaluation);
     if (path === '/evaluaciones/e1/calificaciones') return json(route, [grade]);
+    if (path === '/evaluaciones/e1/revision') return json(route, {
+      evaluacion_id: 'e1', materia_id: 'm1', total_alumnos: 1, siguiente_cursor: null,
+      contadores: { todas: 1, pendientes: 0, alertas: 0, procesando: 0, publicadas: 1 },
+      alumnos: [{ estudiante_id: 's1', nombre: student.nombre, calificacion_id: 'c1', entrega_id: 't1', job_id: null, estado: 'publicada', nota: 5,
+        resumen_revision: { version: 1, cobertura: 'completa', bloqueos: [], componentes_pendientes: 0, componentes_ilegibles: 0, pqrs_abiertas: null, tiene_alertas: false } }],
+    });
     if (path === '/calificaciones/bandeja-docente') return json(route, { items: [], total: 0, solicitudes_revision: 0, pendientes_calificacion: 0 });
     if (path === '/calificaciones/c1/detalle') return json(route, { ...grade, evaluacion_nombre: evaluation.nombre, materia_nombre: materia.nombre, estudiante_nombre: student.nombre, estudiante_email: student.email, nota_maxima: 5, entrega_tipo: 'online', entrega_archivo_url: null, entrega_evidencia_paginas: 0, entrega_evidencia_tipo: null, entrega_respuesta_texto: 'P1: 24', entrega_created_at: grade.created_at, timeline: [], guia_revision: [], desglose: breakdown, desglose_heredado: false, respuestas_liberadas: true });
     if (path === '/calificaciones/c1/incidencias') return json(route, []);

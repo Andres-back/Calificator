@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import os
 from pathlib import Path
 from uuid import uuid4
 
@@ -44,6 +45,124 @@ from types import SimpleNamespace
 from datetime import datetime
 
 FIXTURE = Path(__file__).parents[1] / "fixtures" / "resource_grading_sanitized.json"
+
+
+@pytest.mark.skipif(not os.getenv('SPEC031_TEST_DATABASE_URL'), reason='Requiere PostgreSQL de pruebas aislado')
+def test_review_projection_sql_30_students_in_isolated_schema():
+    from sqlalchemy import event, text
+    from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
+    from app.modules.calificaciones import service
+    from tests.fixtures.grading_batch import synthetic_grading_batch
+
+    async def exercise():
+        schema = 'spec033_' + uuid4().hex
+        url = os.environ['SPEC031_TEST_DATABASE_URL']
+        admin = create_async_engine(url)
+        async with admin.begin() as conn:
+            await conn.execute(text(f'CREATE SCHEMA {schema}'))
+        engine = create_async_engine(url, connect_args={'server_settings': {'search_path': schema}})
+        try:
+            ddl = [
+                'CREATE TABLE users (id uuid PRIMARY KEY, nombre text)',
+                'CREATE TABLE matriculas (materia_id uuid, estudiante_id uuid, estado text)',
+                'CREATE TABLE calificaciones (id uuid PRIMARY KEY, evaluacion_id uuid, estudiante_id uuid, entrega_id uuid, estado text, nota_confirmada numeric, nota_sugerida numeric, created_at timestamp DEFAULT NOW())',
+                'CREATE TABLE entregas (id uuid PRIMARY KEY, evaluacion_id uuid, estudiante_id uuid, estado text, created_at timestamp DEFAULT NOW())',
+                'CREATE TABLE calificacion_desgloses (id uuid PRIMARY KEY, calificacion_id uuid, version int, cobertura_estado text, bloqueos_json jsonb, requiere_revision bool, activo bool)',
+                'CREATE TABLE calificacion_componentes (id uuid PRIMARY KEY, desglose_id uuid, requiere_revision bool, estado text)',
+                'CREATE TABLE calificacion_incidencias (id uuid PRIMARY KEY, calificacion_id uuid, estado text, tipo text)',
+                'CREATE TABLE ai_jobs (id uuid PRIMARY KEY, entrega_id uuid, estado text, tipo text, created_at timestamp DEFAULT NOW())',
+            ]
+            evaluation = SimpleNamespace(id=uuid4(), materia_id=uuid4(), politica_intento='un_intento')
+            batch = synthetic_grading_batch()
+            async with engine.begin() as conn:
+                for statement in ddl:
+                    await conn.execute(text(statement))
+                for index, item in enumerate(batch):
+                    await conn.execute(text('INSERT INTO users VALUES (:id,:name)'), {'id': item.student_id, 'name': f'Alumno {index:02}'})
+                    await conn.execute(text("INSERT INTO matriculas VALUES (:subject,:student,'activo')"), {'subject': evaluation.materia_id, 'student': item.student_id})
+                    if index == 29:
+                        continue
+                    gid, bid = uuid4(), uuid4()
+                    await conn.execute(text("INSERT INTO entregas (id,evaluacion_id,estudiante_id,estado) VALUES (:id,:evaluation,:student,'calificada')"), {'id': item.delivery_id, 'evaluation': evaluation.id, 'student': item.student_id})
+                    await conn.execute(text("INSERT INTO calificaciones (id,evaluacion_id,estudiante_id,entrega_id,estado,nota_sugerida) VALUES (:id,:evaluation,:student,:delivery,:state,:score)"), {'id': gid, 'evaluation': evaluation.id, 'student': item.student_id, 'delivery': item.delivery_id, 'state': 'procesando' if index == 8 else 'sugerida', 'score': None if index == 8 else 0 if index == 9 else 4})
+                    if index < 8:
+                        await conn.execute(text("INSERT INTO calificacion_incidencias VALUES (:id,:grade,'abierta','solicitud_revision')"), {'id': uuid4(), 'grade': gid})
+                    if index == 8:
+                        await conn.execute(text("INSERT INTO ai_jobs (id,entrega_id,estado,tipo) VALUES (:id,:delivery,'running','calificacion_entrega')"), {'id': uuid4(), 'delivery': item.delivery_id})
+                    if index == 10:  # Una nota antigua no tiene desglose.
+                        continue
+                    await conn.execute(text("INSERT INTO calificacion_desgloses VALUES (:id,:grade,1,'completa','[]',false,true)"), {'id': bid, 'grade': gid})
+                    await conn.execute(text("INSERT INTO calificacion_componentes VALUES (:id,:breakdown,false,'incorrecta')"), {'id': uuid4(), 'breakdown': bid})
+            statements = []
+            event.listen(engine.sync_engine, 'before_cursor_execute', lambda conn, cursor, statement, parameters, context, many: statements.append(statement))
+            async with async_sessionmaker(engine)() as db:
+                result = await service.revision_evaluacion(db, evaluation, include_pqrs=True, limit=30)
+                assert len(statements) == 6
+                assert result['total_alumnos'] == 30 and result['contadores']['alertas'] == 8
+                by_student = {row['estudiante_id']: row for row in result['alumnos']}
+                assert by_student[batch[8].student_id]['estado'] == 'procesando'
+                assert by_student[batch[8].student_id]['nota'] is None
+                assert by_student[batch[9].student_id]['nota'] == 0
+                assert by_student[batch[10].student_id]['resumen_revision']['version'] is None
+                assert by_student[batch[29].student_id]['estado'] == 'sin_entrega'
+                first = await service.revision_evaluacion(db, evaluation, include_pqrs=False, limit=5)
+                second = await service.revision_evaluacion(db, evaluation, include_pqrs=False, limit=5, cursor=first['siguiente_cursor'])
+                assert set(row['estudiante_id'] for row in first['alumnos']).isdisjoint(row['estudiante_id'] for row in second['alumnos'])
+                assert all(row['resumen_revision']['pqrs_abiertas'] is None for row in first['alumnos'])
+        finally:
+            await engine.dispose()
+            async with admin.begin() as conn:
+                await conn.execute(text(f'DROP SCHEMA {schema} CASCADE'))
+            await admin.dispose()
+    asyncio.run(exercise())
+
+
+def test_student_claim_forwards_component_version_through_router_and_service(monkeypatch):
+    from app.modules.calificaciones import router, service
+    from app.modules.calificaciones.schemas import SolicitudRevisionCreate
+    grade_id, component_id, evaluation_id, student_id = uuid4(), uuid4(), uuid4(), uuid4()
+    captured = {}
+
+    async def reviewed_grade(*args, **kwargs):
+        return SimpleNamespace(id=grade_id)
+
+    async def create_claim(*args, **kwargs):
+        captured.update(kwargs)
+        return {"ok": True}
+
+    class DB:
+        calls = 0
+
+        async def scalar(self, query):
+            self.calls += 1
+            return component_id if self.calls == 1 else None
+
+    monkeypatch.setattr(service, "_calificacion_revisada_del_estudiante", reviewed_grade)
+    monkeypatch.setattr(service, "crear_incidencia", create_claim)
+    result = asyncio.run(router.solicitar_revision_calificacion(
+        evaluation_id,
+        SolicitudRevisionCreate(motivo="respuesta", descripcion="Solicito revisar la respuesta dos", componente_id=component_id, desglose_version=3),
+        current_user=SimpleNamespace(id=student_id, _effective_permissions={"grading.read"}), db=DB(),
+    ))
+    assert result == {"ok": True}
+    assert captured == {"componente_id": component_id, "desglose_version": 3}
+
+
+def test_student_claim_rejects_foreign_or_stale_component(monkeypatch):
+    from app.modules.calificaciones import service
+
+    async def reviewed_grade(*args, **kwargs):
+        return SimpleNamespace(id=uuid4())
+
+    class DB:
+        async def scalar(self, query):
+            return None
+
+    monkeypatch.setattr(service, "_calificacion_revisada_del_estudiante", reviewed_grade)
+    with pytest.raises(HTTPException) as error:
+        asyncio.run(service.crear_solicitud_revision_estudiante(DB(), evaluacion_id=uuid4(), estudiante_id=uuid4(),
+            motivo="respuesta", descripcion="Revisar pregunta", componente_id=uuid4(), desglose_version=1))
+    assert error.value.status_code == 409
 
 
 def test_twenty_component_regression_keeps_formula_and_identity_stable() -> None:

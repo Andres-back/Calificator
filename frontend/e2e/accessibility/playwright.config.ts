@@ -1,8 +1,7 @@
 import { defineConfig, devices } from '@playwright/test';
 
 /**
- * Accessibility test suite — placeholder.
- * Will use @axe-core/playwright or Lighthouse CI for automated a11y checks.
+ * Verificaciones reales de nombres accesibles, foco, tamaño táctil y desbordamiento.
  */
 export default defineConfig({
   testDir: './',

@@ -38,10 +38,10 @@ export const routes = {
 
   /* ── Calificaciones ── */
   calificacionesBoletin: '/app/calificaciones/boletin',
-  calificacionesWorkspace: '/app/calificaciones/workspace',
-  calificacionesEvaluacion: (id: string) => `/app/calificaciones/workspace/${id}` as const,
+  calificacionesWorkspace: '/app/calificaciones',
+  calificacionesEvaluacion: (id: string) => `/app/calificaciones?evaluacion=${encodeURIComponent(id)}` as const,
   calificacionesRevision: (evaluacionId: string, calificacionId: string) =>
-    `/app/calificaciones/workspace/${evaluacionId}?calificacion=${encodeURIComponent(calificacionId)}` as const,
+    `/app/calificaciones?evaluacion=${encodeURIComponent(evaluacionId)}&calificacion=${encodeURIComponent(calificacionId)}` as const,
 
   /* ── Herramientas ── */
   herramientas: '/app/herramientas',

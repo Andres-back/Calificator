@@ -50,6 +50,18 @@ describe('GradeBreakdown', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Ver hoja 2 de la evidencia' }));
     expect(onEvidencePage).toHaveBeenCalledWith(2);
   });
+  it('enfoca una pregunta sin ocultar el resto al estudiante', () => {
+    const two = { ...breakdown, componentes: [breakdown.componentes[0], { ...breakdown.componentes[0], id: 'p2', clave: 'pregunta:2', numero: '2', titulo: 'Segunda pregunta', requiere_revision: true }] };
+    const select = vi.fn();
+    const view = render(<GradeBreakdown breakdown={two} selectedComponentId="p2" onSelectComponent={select} />);
+    expect(screen.getAllByRole('article')).toHaveLength(1);
+    expect(screen.getByRole('button', { name: 'Pregunta 2, requiere revisión' })).toHaveAttribute('aria-current', 'step');
+    fireEvent.click(screen.getByRole('button', { name: 'Pregunta 1' }));
+    expect(select).toHaveBeenCalledWith(breakdown.componentes[0].id);
+    view.rerender(<GradeBreakdown breakdown={two} student selectedComponentId="p2" />);
+    expect(screen.getAllByRole('article')).toHaveLength(2);
+    expect(screen.queryByRole('navigation', { name: 'Preguntas y criterios' })).not.toBeInTheDocument();
+  });
   it('no filtra una referencia oculta al estudiante', () => {
     const hidden = { ...breakdown, componentes: [{ ...breakdown.componentes[0], respuesta_referencia: null, referencia_oculta: true }] };
     render(<GradeBreakdown breakdown={hidden} student />);

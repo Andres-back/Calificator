@@ -22,16 +22,16 @@ function json(route: Route, body: unknown, status = 200) {
   return route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(body) });
 }
 
-async function installMocks(page: Page, role: 'profesor' | 'estudiante') {
+async function installMocks(page: Page, role: 'profesor' | 'estudiante', permissions?: string[]) {
+  const activeUser = { ...(role === 'profesor' ? teacher : student), ...(permissions ? { permissions } : {}) };
   let authenticated = false;
   await page.route('**/api/**', async (route) => {
     const request = route.request();
     const path = new URL(request.url()).pathname.replace(/^\/api/, '');
     if (path === '/auth/login') { authenticated = true; return json(route, {}); }
     if (path === '/auth/refresh') return json(route, { detail: 'Sin sesión' }, 401);
-    if (path === '/auth/me') return authenticated ? json(route, { user: role === 'profesor' ? teacher : student }) : json(route, { detail: 'Sin sesión' }, 401);
+    if (path === '/auth/me') return authenticated ? json(route, { user: activeUser }) : json(route, { detail: 'Sin sesión' }, 401);
     if (path === '/users/me/authorization') {
-      const activeUser = role === 'profesor' ? teacher : student;
       return json(route, { profile: activeUser.rol, is_primary_admin: false, custom_role_id: null, custom_role_name: null, role_version: null, auth_version: 1, permissions: activeUser.permissions });
     }
     if (path === '/materias') return json(route, [materia]);
@@ -39,6 +39,12 @@ async function installMocks(page: Page, role: 'profesor' | 'estudiante') {
     if (path === '/materias/m1/estudiantes') return json(route, { ...materia, estudiantes: [student] });
     if (path === '/evaluaciones/e1') return json(route, evaluation);
     if (path === '/evaluaciones/e1/calificaciones') return json(route, [grade]);
+    if (path === '/evaluaciones/e1/revision') return json(route, {
+      evaluacion_id: 'e1', materia_id: 'm1', total_alumnos: 1, siguiente_cursor: null,
+      contadores: { todas: 1, pendientes: 0, alertas: 0, procesando: 0, publicadas: 1 },
+      alumnos: [{ estudiante_id: 's1', nombre: student.nombre, calificacion_id: 'c1', entrega_id: 't1', job_id: null, estado: 'publicada', nota: 5,
+        resumen_revision: { version: 1, cobertura: 'completa', bloqueos: [], componentes_pendientes: 0, componentes_ilegibles: 0, pqrs_abiertas: null, tiene_alertas: false } }],
+    });
     if (path === '/calificaciones/bandeja-docente') return json(route, { items: [], total: 0, solicitudes_revision: 0, pendientes_calificacion: 0 });
     if (path === '/calificaciones/c1/detalle') return json(route, { ...grade, evaluacion_nombre: evaluation.nombre, materia_nombre: materia.nombre, estudiante_nombre: student.nombre, estudiante_email: student.email, nota_maxima: 5, entrega_tipo: 'online', entrega_archivo_url: null, entrega_evidencia_paginas: 0, entrega_evidencia_tipo: null, entrega_respuesta_texto: 'P1: 24', entrega_created_at: grade.created_at, timeline: [], guia_revision: [], desglose: breakdown, desglose_heredado: false, respuestas_liberadas: true });
     if (path === '/calificaciones/c1/incidencias') return json(route, []);
@@ -52,8 +58,8 @@ async function installMocks(page: Page, role: 'profesor' | 'estudiante') {
   });
 }
 
-async function login(page: Page, role: 'profesor' | 'estudiante') {
-  await installMocks(page, role);
+async function login(page: Page, role: 'profesor' | 'estudiante', permissions?: string[]) {
+  await installMocks(page, role, permissions);
   await page.goto('/login');
   await page.getByLabel(/Correo/i).fill(role === 'profesor' ? teacher.email : student.email);
   await page.locator('input[type="password"]').fill('Password123!');
@@ -61,7 +67,7 @@ async function login(page: Page, role: 'profesor' | 'estudiante') {
   await expect(page).toHaveURL(/\/app/);
 }
 
-for (const viewport of [{ width: 360, height: 800 }, { width: 390, height: 844 }, { width: 768, height: 1024 }, { width: 1366, height: 768 }]) {
+for (const viewport of [{ width: 360, height: 800 }, { width: 390, height: 844 }, { width: 768, height: 1024 }, { width: 1366, height: 768 }, { width: 1920, height: 1080 }]) {
   test(`docente comprende fórmula y pregunta en ${viewport.width}px`, async ({ page }) => {
     await page.setViewportSize(viewport);
     await login(page, 'profesor');
@@ -70,6 +76,11 @@ for (const viewport of [{ width: 360, height: 800 }, { width: 390, height: 844 }
     await expect(page.getByRole('heading', { name: 'Nota explicada respuesta por respuesta' })).toBeVisible();
     await expect(page.getByText('Coincide con la clave oficial.', { exact: false })).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBeTruthy();
+    await page.screenshot({ path: `output/playwright/centro-${viewport.width}-claro.png`, fullPage: true });
+    await page.evaluate(() => document.documentElement.classList.add('dark'));
+    await expect(page.getByRole('button', { name: 'Ajustar puntaje y explicación' })).toBeVisible();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBeTruthy();
+    await page.screenshot({ path: `output/playwright/centro-${viewport.width}-oscuro.png`, fullPage: true });
   });
 }
 
@@ -178,6 +189,7 @@ test('docente llega a la respuesta 20, edita y recupera el scroll móvil', async
   await page.goto('/app/calificaciones/workspace/e1');
   await page.getByText('Estudiante Prueba', { exact: true }).click();
 
+  await page.getByRole('button', { name: 'Pregunta 20', exact: true }).click();
   const lastCard = page.locator('article').filter({ has: page.getByText('Pregunta 20', { exact: true }) }).last();
   await lastCard.scrollIntoViewIfNeeded();
   await expect(lastCard).toBeVisible();
@@ -238,9 +250,183 @@ test('guardar el último ajuste termina la lista sin confirmar ni publicar', asy
   await page.getByRole('button', { name: 'Ajustar puntaje y explicación' }).click();
   await page.getByLabel('Motivo interno del cambio').fill('Validación final docente');
   await page.getByLabel('Explicación para el estudiante').fill('La respuesta fue verificada con la evidencia entregada.');
-  await page.getByRole('button', { name: 'Guardar y siguiente' }).click();
+  await page.getByRole('button', { name: 'Guardar y siguiente alumno' }).click();
 
   await expect(page.getByText('Revisión completada')).toBeVisible();
+  await expect(page.getByText(/1 alumnos con ajustes guardados/)).toBeVisible();
   expect(savedPayload).toMatchObject({ version_esperada: 1 });
   await expect(page.getByText(/no se publicaron automáticamente/i)).toBeVisible();
+});
+
+test('conserva borrador al cambiar pregunta, query y atrás; hoja y vista sobreviven', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await login(page, 'profesor');
+  await page.route('**/api/calificaciones/c1/detalle', (route) => json(route, {
+    ...grade, evaluacion_nombre: evaluation.nombre, materia_nombre: materia.nombre, estudiante_nombre: student.nombre,
+    entrega_tipo: 'pdf', entrega_archivo_url: '/api/entregas/t1/archivo', entrega_evidencia_paginas: 2, entrega_evidencia_tipo: 'pdf',
+    timeline: [], guia_revision: [], desglose: { ...breakdown, componentes: [breakdown.componentes[0], { ...breakdown.componentes[0], id: 'q2', clave: 'pregunta:2', numero: '2', titulo: 'Segunda pregunta', evidencia_paginas: [2] }] },
+  }));
+  await page.route('**/api/entregas/t1/archivo/paginas/*', (route) => route.fulfill({ contentType: 'image/svg+xml', body: '<svg xmlns="http://www.w3.org/2000/svg" width="600" height="800"><rect width="600" height="800" fill="white"/><text x="40" y="80" fill="black">Evidencia sintética · 6 × 4 = 24</text></svg>' }));
+  await page.goto('/app/calificaciones/workspace/e1?calificacion=c1');
+  await expect(page).toHaveURL(/\/app\/calificaciones\?evaluacion=e1|\/app\/calificaciones\?calificacion=c1/);
+  await page.getByRole('button', { name: 'Pregunta 2', exact: true }).click();
+  await expect(page).toHaveURL(/pregunta=pregunta%3A2/);
+  await page.getByRole('button', { name: 'Ajustar puntaje y explicación' }).click();
+  await page.getByLabel('Motivo interno del cambio').fill('No perder este borrador');
+  await page.getByRole('button', { name: 'Evidencia', exact: true }).click();
+  await expect(page.getByAltText('Hoja 2 de la evidencia del estudiante')).toBeVisible();
+  await page.getByRole('button', { name: 'Revisar respuestas' }).click();
+  await expect(page.getByLabel('Motivo interno del cambio')).toHaveValue('No perder este borrador');
+  await page.getByRole('button', { name: 'Pregunta 1', exact: true }).click();
+  await expect(page.getByRole('dialog', { name: 'Cambios sin guardar' })).toBeVisible();
+  await page.getByRole('button', { name: 'Seguir editando', exact: true }).click();
+  await expect(page).toHaveURL(/pregunta=pregunta%3A2/);
+  await page.goBack();
+  await expect(page.getByRole('dialog', { name: 'Cambios sin guardar' })).toBeVisible();
+  await page.getByRole('button', { name: 'Seguir editando', exact: true }).click();
+  await expect(page.getByLabel('Motivo interno del cambio')).toHaveValue('No perder este borrador');
+  await page.getByRole('button', { name: 'Pregunta 1', exact: true }).click();
+  await page.getByRole('button', { name: 'Descartar y continuar', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Pregunta 1', exact: true })).toHaveAttribute('aria-current', 'step');
+  await page.reload();
+  await expect(page.getByRole('button', { name: 'Pregunta 1', exact: true })).toHaveAttribute('aria-current', 'step');
+});
+
+test('30 matriculados, ocho reclamos y alumno sin entrega sin nota ficticia', async ({ page }) => {
+  await login(page, 'profesor');
+  const rows = Array.from({ length: 30 }, (_, index) => ({
+    estudiante_id: `s${index + 1}`, nombre: `Alumno ${String(index + 1).padStart(2, '0')}`, calificacion_id: index === 29 ? null : `c${index + 1}`, entrega_id: null, job_id: null,
+    estado: index === 29 ? 'sin_entrega' : index === 28 ? 'procesando' : 'sugerida', nota: index >= 28 ? null : index === 27 ? 0 : 4,
+    resumen_revision: { version: index === 26 ? null : 1, cobertura: index === 26 ? null : 'completa', bloqueos: [], componentes_pendientes: null, componentes_ilegibles: null, pqrs_abiertas: index < 8 ? 1 : 0, tiene_alertas: index < 8 },
+  }));
+  await page.route('**/api/evaluaciones/e1/revision**', (route) => {
+    const params = new URL(route.request().url()).searchParams;
+    const filtered = params.get('estudiante_id') ? rows.filter((row) => row.estudiante_id === params.get('estudiante_id')) : params.get('filtro') === 'alertas' ? rows.slice(0, 8) : rows;
+    return json(route, { evaluacion_id: 'e1', materia_id: 'm1', total_alumnos: 30, siguiente_cursor: null, contadores: { todas: 30, pendientes: 29, alertas: 8, procesando: 1, publicadas: 0 }, alumnos: filtered });
+  });
+  await page.goto('/app/calificaciones?evaluacion=e1');
+  await page.getByRole('button', { name: 'alertas (8)' }).click();
+  await expect(page.getByRole('button', { name: /Alumno 08/ })).toBeVisible();
+  await expect(page.getByRole('button', { name: /Alumno 09/ })).toHaveCount(0);
+  await page.getByRole('button', { name: 'todas (30)' }).click();
+  await expect(page.getByRole('button', { name: /Alumno 29/ })).not.toContainText('0.0');
+  await expect(page.getByRole('button', { name: /Alumno 28/ })).toContainText('0.0');
+  await page.getByRole('button', { name: /Alumno 30/ }).click();
+  await expect(page.getByText(/Aún no tiene una calificación/)).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Añadir su entrega' })).toBeVisible();
+});
+
+test('estudiante no accede al centro docente ni consulta su proyección', async ({ page }) => {
+  await login(page, 'estudiante');
+  let called = false;
+  page.on('request', (request) => { if (request.url().includes('/revision?')) called = true; });
+  await page.goto('/app/calificaciones?evaluacion=e1');
+  await expect(page).toHaveURL(/\/app\/403/);
+  expect(called).toBe(false);
+});
+
+test('dos paquetes quedan en cola, un fallo conserva hojas para reintentar', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await login(page, 'profesor');
+  await page.route('**/api/materias/m1/estudiantes', (route) => json(route, { ...materia, estudiantes: [student, { ...student, id: 's2', nombre: 'Segundo estudiante' }] }));
+  let uploads = 0;
+  const owners: string[] = [];
+  await page.route('**/api/calificaciones/foto', (route) => {
+    uploads++;
+    const raw = route.request().postDataBuffer()?.toString() ?? '';
+    const id = raw.includes('\r\n\r\ns2\r\n') ? 's2' : 's1';
+    owners.push(id);
+    if (uploads === 2) return json(route, { detail: 'Fallo controlado de subida' }, 503);
+    return json(route, { ...grade, id: `queued-${id}`, estudiante_id: id, estado: 'procesando', nota_sugerida: null, nota_confirmada: null, resultado_json: { job_id: `job-${id}`, pipeline_status: 'queued' } });
+  });
+  await page.goto('/app/calificaciones?evaluacion=e1&modo=carga&estudiante=s1');
+  const file = { name: 'hoja.png', mimeType: 'image/png', buffer: Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+j6N0AAAAASUVORK5CYII=', 'base64') };
+  await page.locator('input[type=file]').first().setInputFiles([file, { ...file, name: 'hoja2.png' }]);
+  await page.getByRole('button', { name: 'Enviar a calificar', exact: true }).click();
+  await expect(page.getByRole('dialog', { name: 'Vas a entregar 2 hojas' })).toBeVisible();
+  await page.getByRole('button', { name: 'Confirmar y enviar' }).click();
+  await expect(page.getByText(/Entrega de Estudiante Prueba guardada/)).toBeVisible();
+  await page.getByLabel('Estudiante de esta entrega').selectOption('s2');
+  await page.locator('input[type=file]').first().setInputFiles(file);
+  await page.getByRole('button', { name: 'Enviar a calificar', exact: true }).click();
+  await page.getByRole('button', { name: 'Confirmar y enviar' }).click();
+  await expect(page.getByRole('alert').filter({ hasText: 'Fallo controlado de subida' })).toBeVisible();
+  await page.getByRole('button', { name: 'Enviar a calificar', exact: true }).click();
+  await page.getByRole('button', { name: 'Confirmar y enviar' }).click();
+  await expect(page.getByText(/Entrega de Segundo estudiante guardada/)).toBeVisible();
+  expect(owners).toEqual(['s1', 's2', 's2']);
+  await page.reload();
+  expect(await page.evaluate(() => JSON.parse(localStorage.getItem('xcalificator.pending-gradings.v1') ?? '[]').length)).toBe(2);
+});
+
+test('lectura docente y enlaces antiguos conservan contexto sin habilitar escritura', async ({ page }) => {
+  await login(page, 'profesor', ['subjects.read', 'evaluations.read', 'grading.read']);
+  await page.goto('/app/materias/m1/calificar?evaluacion=e1&estudiante=s1&pregunta=pregunta%3A1&hoja=1');
+  await expect(page).toHaveURL(/\/app\/calificaciones\?/);
+  await expect(page.getByRole('heading', { name: 'Nota explicada respuesta por respuesta' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Pregunta 1', exact: true })).toHaveAttribute('aria-current', 'step');
+  for (const name of ['Añadir entregas', 'Establecer nota', 'Ajustar puntaje y explicación', 'Publicar al estudiante', 'Resumen y publicación']) {
+    await expect(page.getByRole('button', { name, exact: true })).toHaveCount(0);
+  }
+  await expect(page.getByText('Incidencias y solicitudes', { exact: false })).toHaveCount(0);
+  await page.reload();
+  await expect(page.getByRole('button', { name: 'Pregunta 1', exact: true })).toHaveAttribute('aria-current', 'step');
+});
+
+test('añadir otra entrega permite volver al alumno y pregunta anteriores', async ({ page }) => {
+  await login(page, 'profesor');
+  await page.route('**/api/materias/m1/estudiantes', (route) => json(route, { ...materia, estudiantes: [student, { ...student, id: 's2', nombre: 'Segundo estudiante' }] }));
+  await page.goto('/app/calificaciones?evaluacion=e1&calificacion=c1&estudiante=s1&pregunta=pregunta%3A1&hoja=1');
+  await expect(page.getByRole('button', { name: 'Pregunta 1', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Añadir entregas', exact: true }).click();
+  await page.getByLabel('Estudiante de esta entrega').selectOption('s2');
+  await expect(page).toHaveURL(/estudiante=s2/);
+  await page.getByRole('button', { name: 'Volver a revisión', exact: true }).last().click();
+  await expect(page).toHaveURL(/estudiante=s1/);
+  await expect(page.getByRole('button', { name: 'Pregunta 1', exact: true })).toHaveAttribute('aria-current', 'step');
+});
+
+test('PQRS versionada abre su pregunta; error de consulta no se muestra como lista vacía', async ({ page }) => {
+  await login(page, 'profesor', [...teacher.permissions, 'submissions.review']);
+  let available = false;
+  await page.route('**/api/calificaciones/c1/incidencias', (route) => available ? json(route, [{
+    id: 'claim-1', tipo: 'solicitud_revision', estado: 'abierta', descripcion: 'Revisar el procedimiento de la primera respuesta.',
+    componente_id: 'old-q1', componente_clave: 'pregunta:1', desglose_version: 1, metadata_json: { motivo: 'respuesta' },
+  }]) : json(route, { detail: 'No disponible' }, 503));
+  await page.goto('/app/calificaciones?evaluacion=e1&calificacion=c1');
+  await expect(page.getByText('No se pudieron consultar las incidencias.')).toBeVisible({ timeout: 15000 });
+  await expect(page.getByText('Sin incidencias registradas.')).toHaveCount(0);
+  available = true;
+  await page.getByRole('button', { name: 'Reintentar consulta', exact: true }).click();
+  await page.getByRole('button', { name: 'Ver pregunta vinculada · versión 1' }).click();
+  await expect(page).toHaveURL(/pregunta=pregunta%3A1/);
+  await expect(page.getByRole('button', { name: 'Pregunta 1', exact: true })).toHaveAttribute('aria-current', 'step');
+});
+
+test('publicación parcial conserva solo el fallo y no repite notas exitosas', async ({ page }) => {
+  await login(page, 'profesor');
+  const rows = ['s1', 's2'].map((id, index) => ({ estudiante_id: id, nombre: `Alumno ${index + 1}`, calificacion_id: `c${index + 1}`, entrega_id: null, job_id: null, estado: 'confirmada', nota: 4,
+    resumen_revision: { version: 1, cobertura: 'completa', bloqueos: [], componentes_pendientes: 0, componentes_ilegibles: 0, pqrs_abiertas: 0, tiene_alertas: false } }));
+  await page.route('**/api/evaluaciones/e1/revision**', (route) => json(route, { evaluacion_id: 'e1', materia_id: 'm1', total_alumnos: 2, siguiente_cursor: null, contadores: { todas: 2, pendientes: 0, alertas: 0, procesando: 0, publicadas: 0 }, alumnos: rows }));
+  const calls: string[][] = [];
+  await page.route('**/api/calificaciones/lote/publicar', (route) => {
+    calls.push(route.request().postDataJSON());
+    return json(route, { exitosos: calls.length === 1 ? 1 : 0, fallidos: 1, results: [
+      ...(calls.length === 1 ? [{ calificacion_id: 'c1', success: true }] : []),
+      { calificacion_id: 'c2', success: false, error: 'Requiere revisión humana.' },
+    ] });
+  });
+  await page.goto('/app/calificaciones?evaluacion=e1');
+  await page.getByRole('button', { name: 'Resumen y publicación' }).click();
+  await expect(page.getByRole('heading', { name: 'Resumen de notas del examen' })).toBeVisible();
+  await page.getByRole('checkbox', { name: 'Seleccionar nota de Alumno 1' }).click();
+  await page.getByRole('checkbox', { name: 'Seleccionar nota de Alumno 2' }).click();
+  expect(calls).toHaveLength(0);
+  await page.getByRole('button', { name: 'Publicar seleccionados' }).click();
+  await expect(page.getByText('1 operaciones completadas · 1 pendientes')).toBeVisible();
+  await expect(page.getByRole('checkbox', { name: 'Seleccionar nota de Alumno 1' })).not.toBeChecked();
+  await expect(page.getByRole('checkbox', { name: 'Seleccionar nota de Alumno 2' })).toBeChecked();
+  await page.getByRole('button', { name: 'Publicar seleccionados' }).click();
+  await expect.poll(() => calls.length).toBe(2);
+  expect(calls).toEqual([['c1', 'c2'], ['c2']]);
 });

@@ -30,7 +30,8 @@ def test_student_review_request_is_attached_to_their_confirmed_grade(monkeypatch
         async def scalar(self, _statement):
             return None
 
-    async def fake_create(_db, calificacion_id, tipo, descripcion, metadata):
+    async def fake_create(_db, calificacion_id, tipo, descripcion, metadata, *, componente_id=None, desglose_version=None):
+        assert componente_id is None and desglose_version is None
         captured.update(
             calificacion_id=calificacion_id,
             tipo=tipo,

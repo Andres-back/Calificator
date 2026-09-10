@@ -107,7 +107,7 @@ export function AppShell() {
         </main>
       </div>
       {isTeacher && <DigitalizationJobMonitor />}
-      {isTeacher && <GradingJobMonitor />}
+      {isTeacher && location.pathname !== '/app/calificaciones' && <GradingJobMonitor />}
     </div>
   );
 }

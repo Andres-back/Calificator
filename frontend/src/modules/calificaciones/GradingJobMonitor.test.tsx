@@ -177,6 +177,7 @@ describe('GradingJobMonitor', () => {
 
     expect(await screen.findByText('Lote terminado con casos por revisar')).toBeInTheDocument();
     expect(readPendingGradings()[0]).toMatchObject({ completed: true });
+    expect(mocks.invalidateQueries).toHaveBeenCalledWith({ queryKey: ['evaluation-review', 'evaluation-1'] });
     fireEvent.click(screen.getByRole('button', { name: 'Ver casos' }));
     const retry = await screen.findByRole('button', { name: 'Reintentar' });
     fireEvent.click(retry);

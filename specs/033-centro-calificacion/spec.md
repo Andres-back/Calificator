@@ -1,6 +1,6 @@
 # Especificación: Centro unificado de calificación
 
-**Rama**: `codex/033-centro-calificacion` | **Creada**: 2026-09-09 | **Estado**: Diseño para revisión; creación autorizada por «haslo» | **Issue**: [#68](https://github.com/Andres-back/Calificator/issues/68)
+**Rama**: `codex/033-centro-calificacion` | **Creada**: 2026-09-09 | **Estado**: Especificación y plan aprobados por «adelante» el 2026-09-09; implementación en curso | **Issue**: [#68](https://github.com/Andres-back/Calificator/issues/68)
 
 El docente necesita revisar un examen y encontrar inconsistencias sin reconstruir el contexto entre carga, revisión y boletín. Esta evolución concreta la navegación que 032 no consolidó. La especificación responsable de calificaciones continúa siendo 008 y la del desglose 016; 033 coordina su evolución, no crea otra fuente de notas.
 
@@ -121,7 +121,7 @@ Como docente quiero incorporar evidencias de varios alumnos, consultar la cola y
 - Se conserva el boletín completo para seguimiento transversal; creación/edición del examen permanece en Evaluaciones. Esas funciones no son pasos obligatorios para revisar una entrega.
 - Alcance: diseño e implementación futura de experiencia docente y proyecciones mínimas de lectura si hacen falta. No cambia modelos, prompts, fórmula, permisos ni inicia piloto o llamadas de IA reales.
 - Retirar código desconectado no supone retirar APIs de salón o lote que puedan tener otros consumidores.
-- La aprobación actual autoriza concretar especificación y diseño. La revisión del diseño resultante precede a cambios funcionales y despliegue.
+- El usuario aprobó el diseño resultante con «adelante» el 2026-09-09. La implementación sigue rama, PR y CI; este registro no equivale a despliegue realizado.
 
 ## Aclaraciones
 
@@ -129,3 +129,4 @@ Como docente quiero incorporar evidencias de varios alumnos, consultar la cola y
 
 - El usuario autorizó crear y diseñar 033 mediante «haslo» tras la propuesta de centro unificado. Las decisiones de presentación se concretan aquí para revisión; no se registra aprobación inexistente de implementación.
 - No se necesitan preguntas adicionales para documentar el alcance: autorización, privacidad, estados, historia, dispositivos y compatibilidad se conservan de las especificaciones vigentes.
+- Posteriormente el usuario aprobó el diseño y la implementación con «adelante». Las etiquetas spec-approved y plan-approved se registraron en #68.

@@ -2,7 +2,7 @@
 
 **Rama**: `codex/033-centro-calificacion` | **Fecha**: 2026-09-09 | **Spec**: [spec.md](./spec.md) | **Issue**: [#68](https://github.com/Andres-back/Calificator/issues/68)
 
-**Estado**: Diseño preparado para revisión. Creación autorizada por «haslo»; aprobación del diseño resultante pendiente. No hay cambios funcionales.
+**Estado**: Diseño y especificación aprobados por el usuario mediante «adelante» el 2026-09-09, después de presentar el centro propuesto. Implementación autorizada; trazabilidad en #68 con spec-approved y plan-approved. Los resultados de validación se registrarán en quickstart.md.
 
 ## Resumen
 

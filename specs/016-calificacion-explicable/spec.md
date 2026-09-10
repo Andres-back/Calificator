@@ -181,3 +181,9 @@ Como responsable académico, necesito que calificaciones online, por visión, mi
 - El contrato se verificó con veinte componentes estables, claves únicas, suma de 4,00 sobre 5,00 y cobertura completa.
 - Las pruebas responsivas alcanzan la última respuesta en 360×800, 390×844, 768×1024 y escritorio; WebKit valida el comportamiento equivalente a Safari/iPhone.
 - Las explicaciones continúan siendo pedagógicas y verificables; los tiempos o nombres técnicos del proveedor no sustituyen el porqué de cada puntaje.
+
+## Evolución 033: mesa por pregunta
+
+El docente selecciona una pregunta/criterio y contrasta evidencia, respuesta, referencia, puntos, motivo y orientación en el mismo panel. La vista estudiante conserva el desglose completo autorizado. El editor captura la versión inicial: polling no reemplaza el borrador y 409 exige recargar o conservarlo. «Guardar y siguiente pregunta» y «Guardar y siguiente alumno» esperan persistencia, sin confirmar ni publicar implícitamente.
+
+Las PQRS conservan componente_id/desglose_version originales; el listado devuelve además la clave estable comprobada en su desglose de origen para abrir el equivalente actual. Si no existe equivalencia, muestra referencia obsoleta sin inventar asociación. La resolución y los ajustes invalidan el resumen del centro después de guardarse.

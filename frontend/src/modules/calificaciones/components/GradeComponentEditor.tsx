@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Button, Field, Input, Select, Textarea } from '@/components/ui';
 import type { GradeComponentData, GradeComponentChange, GradeFormulaData } from '@/types/api';
 
-export function GradeComponentEditor({ component, formula, saving, saveError, onCancel, onSave, onSaveAndNext, onReload, onDirtyChange }: {
+export function GradeComponentEditor({ component, formula, saving, saveError, onCancel, onSave, onSaveAndNext, onSaveAndNextQuestion, onReload, onDirtyChange }: {
   component: GradeComponentData;
   formula: GradeFormulaData;
   saving?: boolean;
@@ -10,6 +10,7 @@ export function GradeComponentEditor({ component, formula, saving, saveError, on
   onCancel: () => void;
   onSave: (change: GradeComponentChange) => void;
   onSaveAndNext?: (change: GradeComponentChange) => void;
+  onSaveAndNextQuestion?: (change: GradeComponentChange) => void;
   onReload?: () => void;
   onDirtyChange?: (dirty: boolean) => void;
 }) {
@@ -44,7 +45,8 @@ export function GradeComponentEditor({ component, formula, saving, saveError, on
     + (Number.isFinite(numeric) ? numeric : originalPoints);
   const previewRaw = possible > 0 ? (previewPoints / possible) * maxGrade + adjustment : 0;
   const previewGrade = Math.min(maxGrade, Math.max(0, previewRaw));
-  const valid = Number.isFinite(numeric)
+  const valid = points.trim() !== '' && Number.isFinite(numeric)
+    && ['correcta', 'parcial', 'incorrecta', 'sin_respuesta'].includes(state)
     && numeric >= 0
     && numeric <= Number(component.puntos_maximos)
     && reason.trim().length >= 3
@@ -66,6 +68,7 @@ export function GradeComponentEditor({ component, formula, saving, saveError, on
         </Field>
         <Field label="Estado" required>
           <Select value={state} onChange={(event) => setState(event.target.value)}>
+            {!['correcta', 'parcial', 'incorrecta', 'sin_respuesta'].includes(state) && <option value={state}>Selecciona un estado tras revisar</option>}
             <option value="correcta">Correcta</option>
             <option value="parcial">Parcial</option>
             <option value="incorrecta">Incorrecta</option>
@@ -96,9 +99,10 @@ export function GradeComponentEditor({ component, formula, saving, saveError, on
       <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
         <Button type="button" variant="ghost" onClick={onCancel} disabled={saving}>Cancelar</Button>
         <Button type="button" variant="outline" onClick={() => valid && onSave(change())} disabled={!valid || saving} loading={saving}>Guardar y recalcular</Button>
+        {onSaveAndNextQuestion && <Button type="button" variant="outline" onClick={() => valid && onSaveAndNextQuestion(change())} disabled={!valid || saving}>Guardar y siguiente pregunta</Button>}
         {onSaveAndNext && (
           <Button type="button" onClick={() => valid && onSaveAndNext(change())} disabled={!valid || saving} loading={saving}>
-            Guardar y siguiente
+            Guardar y siguiente alumno
           </Button>
         )}
       </div>
