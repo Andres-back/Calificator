@@ -43,6 +43,13 @@ export function useAISettingsDraft(settingsData: { providers: AIProvider[]; mode
     setHasUnsavedChanges(true);
   }
 
+  function replaceProviderModels(providerId: string, nextModels: AIModel[]) {
+    setDraftModels((models) => [
+      ...models.filter((model) => model.provider_id !== providerId),
+      ...nextModels.map((model) => ({ ...model, capabilities: [...model.capabilities] })),
+    ]);
+  }
+
   function updateFeature(featureId: string, changes: Partial<FeatureRouting>) {
     setDraftFeatures((features) => features.map((feature) => (
       feature.feature === featureId ? { ...feature, ...changes } : feature
@@ -75,6 +82,7 @@ export function useAISettingsDraft(settingsData: { providers: AIProvider[]; mode
     featuresChanged,
     updateProvider,
     updateModel,
+    replaceProviderModels,
     updateFeature,
     upsertFeature,
     removeFeature,

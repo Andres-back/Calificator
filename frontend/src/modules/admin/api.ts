@@ -322,8 +322,8 @@ export async function testProvider(
   return data;
 }
 
-export async function refreshGlobalOllamaModels(): Promise<AIModel[]> {
-  const { data } = await api.post<AIModel[]>('/admin/ai-providers/ollama/models/refresh');
+export async function refreshGlobalProviderModels(providerId: string): Promise<AIModel[]> {
+  const { data } = await api.post<AIModel[]>(`/admin/ai-providers/${providerId}/models/refresh`);
   return data;
 }
 

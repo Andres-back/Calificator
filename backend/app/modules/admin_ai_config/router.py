@@ -23,6 +23,12 @@ from app.services.ai_credentials_service import (
     get_teacher_ai_credential,
 )
 from app.services.ai_config_service import AIConfigService
+from app.services.ai_model_discovery import (
+    AIModelDiscoveryError,
+    DISCOVERABLE_PROVIDERS,
+    discover_provider_models,
+    persist_discovered_models,
+)
 from app.services.ollama_provider import OllamaCloudProvider, OllamaProviderError
 from app.modules.admin_ai_config.usage_service import (
     enrich_feature_performance,
@@ -277,44 +283,6 @@ async def _test_provider_connection(
         result["error"] = str(exc)[:200]
 
     return result
-
-
-async def _persist_global_ollama_models(
-    db: AsyncSession,
-    models: list[Any],
-    *,
-    actor_id: Any,
-) -> list[dict[str, Any]]:
-    await db.execute(text("UPDATE ai_provider_models SET active=false, updated_at=NOW() WHERE provider_id='ollama'"))
-    for model in models:
-        await db.execute(
-            text(
-                "INSERT INTO ai_provider_models "
-                "(provider_id, model_id, label, capabilities, recommended, active, updated_at, updated_by) "
-                "VALUES ('ollama', :model_id, :label, :capabilities, false, true, NOW(), :actor) "
-                "ON CONFLICT (provider_id, model_id) DO UPDATE SET "
-                "label=EXCLUDED.label, capabilities=EXCLUDED.capabilities, active=true, "
-                "updated_at=NOW(), updated_by=EXCLUDED.updated_by"
-            ),
-            {
-                "model_id": model.model_id,
-                "label": model.label,
-                "capabilities": list(model.capabilities),
-                "actor": str(actor_id),
-            },
-        )
-    return [
-        {
-            "provider_id": "ollama",
-            "model_id": model.model_id,
-            "label": model.label,
-            "capabilities": list(model.capabilities),
-            "recommended": False,
-            "active": True,
-            "max_context_tokens": None,
-        }
-        for model in models
-    ]
 
 
 async def _persist_teacher_ollama_models(
@@ -665,22 +633,34 @@ async def test_provider(
     }
 
 
-@router.post("/admin/ai-providers/ollama/models/refresh", response_model=list[AIModel])
-async def refresh_global_ollama_models(
+@router.post("/admin/ai-providers/{provider}/models/refresh", response_model=list[AIModel])
+async def refresh_global_provider_models(
+    provider: str,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> list[dict[str, Any]]:
     require_permission_now(current_user, "admin_ai.manage")
+    if provider not in DISCOVERABLE_PROVIDERS:
+        raise HTTPException(status_code=422, detail="Este proveedor no ofrece un catálogo actualizable.")
     credentials = await get_effective_ai_credentials(db)
-    if not credentials.ollama_key:
-        raise HTTPException(status_code=422, detail="Configura primero la clave institucional de Ollama Cloud.")
-    client = OllamaCloudProvider(credentials.ollama_key, base_url=settings.OLLAMA_CLOUD_BASE_URL)
+    service = AIConfigService(db=db)
+    provider_config = next(
+        (item for item in await service.get_all_providers() if item.get("id") == provider),
+        {},
+    )
     try:
-        discovered = await client.discover_models()
-    except OllamaProviderError as exc:
+        discovered = await discover_provider_models(provider, provider_config, credentials)
+        models = await persist_discovered_models(
+            db, provider=provider, models=discovered, actor_id=current_user.id,
+        )
+        await db.commit()
+        await service.invalidate_cache()
+    except AIModelDiscoveryError as exc:
+        await db.rollback()
         raise HTTPException(status_code=502, detail=str(exc)) from exc
-    models = await _persist_global_ollama_models(db, discovered, actor_id=current_user.id)
-    await db.commit()
+    except Exception:
+        await db.rollback()
+        raise
     return models
 
 

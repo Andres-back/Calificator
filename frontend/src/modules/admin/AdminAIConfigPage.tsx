@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { BarChart3, BrainCircuit, ImageIcon, KeyRound, MessageSquare, Server, Wrench } from 'lucide-react';
 import { Badge, Button, Card, ConfirmDialog, QueryError, Skeleton } from '@/components/ui';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { toApiError } from '@/lib/api';
-import { getAISettings, getConfigHash, getAIAudit, getAIControlCenter, getAIControlCenterUsage, validateAIControlCenter, type AIToolControl } from './api';
+import { getAISettings, getConfigHash, getAIAudit, getAIControlCenter, getAIControlCenterUsage, refreshGlobalProviderModels, validateAIControlCenter, type AIModel, type AIToolControl } from './api';
 import { AICredentialsPanel } from './AICredentialsPanel';
 import { useAISettingsDraft } from './ai/hooks/useAISettingsDraft';
 import { useAIMutations } from './ai/hooks/useAIMutations';
@@ -23,6 +23,7 @@ const PERFORMANCE_FEATURE_ALIASES: Record<string, string[]> = {
 
 export function AdminAIConfigPage() {
   const [testingProvider, setTestingProvider] = useState<string | null>(null);
+  const [refreshingProvider, setRefreshingProvider] = useState<string | null>(null);
   const [saveDialogOpen, setSaveDialogOpen] = useState(false);
   const [restoreDialogOpen, setRestoreDialogOpen] = useState(false);
   const [activeSection, setActiveSection] = useState<'functions' | 'tools' | 'providers' | 'usage'>('functions');
@@ -69,11 +70,33 @@ export function AdminAIConfigPage() {
     featuresChanged,
     updateProvider,
     updateModel,
+    replaceProviderModels,
     upsertFeature,
     removeFeature,
     setDraftProviders,
     setHasUnsavedChanges,
   } = useAISettingsDraft(settingsQuery.data);
+
+  const refreshModelsMutation = useMutation({
+    mutationFn: refreshGlobalProviderModels,
+    onSuccess: (models, providerId) => {
+      replaceProviderModels(providerId, models);
+      void settingsQuery.refetch();
+      toast.success(`${models.filter((model) => model.active).length} modelos disponibles en ${providerId}.`);
+    },
+    onError: (error) => toast.error(toApiError(error).detail),
+    onSettled: () => setRefreshingProvider(null),
+  });
+
+  function refreshProviderModels(providerId: string) {
+    setRefreshingProvider(providerId);
+    refreshModelsMutation.mutate(providerId);
+  }
+
+  function mergeCredentialModels(providerId: string, models: AIModel[]) {
+    replaceProviderModels(providerId, models);
+    void settingsQuery.refetch();
+  }
 
   useEffect(() => {
     if (controlCenterQuery.data && !toolsDirty) {
@@ -257,7 +280,7 @@ export function AdminAIConfigPage() {
           />}
 
           {activeSection === 'providers' && <div className="space-y-6">
-          <AICredentialsPanel config={settingsQuery.data.global_config} />
+          <AICredentialsPanel config={settingsQuery.data.global_config} onModelsRefreshed={mergeCredentialModels} />
           <ProvidersSection
             title="Proveedores de texto"
             icon={MessageSquare}
@@ -269,6 +292,8 @@ export function AdminAIConfigPage() {
               setTestingProvider(providerId);
               testMutation.mutate({ providerId });
             }}
+            onRefreshModels={refreshProviderModels}
+            refreshingProvider={refreshingProvider}
           />
           <ProvidersSection
             title="Proveedores de imágenes"
@@ -281,6 +306,8 @@ export function AdminAIConfigPage() {
               setTestingProvider(providerId);
               testMutation.mutate({ providerId });
             }}
+            onRefreshModels={refreshProviderModels}
+            refreshingProvider={refreshingProvider}
           />
           <details className="rounded-xl border border-border bg-surface p-4"><summary className="cursor-pointer font-semibold"><KeyRound className="mr-2 inline h-4 w-4" />Catálogo avanzado de modelos</summary><div className="mt-4 grid gap-2 md:grid-cols-2">{draftModels.map((model) => <label key={`${model.provider_id}:${model.model_id}`} className="flex min-h-12 items-center justify-between gap-3 rounded-lg bg-surface-2 px-3 py-2 text-sm"><span><strong className="block">{model.label}</strong><span className="text-xs text-muted">{model.provider_id} · {model.capabilities.join(', ')}</span></span><input type="checkbox" checked={model.active} onChange={(event) => updateModel(model.provider_id, model.model_id, { active: event.currentTarget.checked })} className="h-4 w-4 accent-brand-600" /></label>)}</div></details>
           </div>}

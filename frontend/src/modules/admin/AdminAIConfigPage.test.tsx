@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router-dom';
@@ -19,7 +19,7 @@ const adminApi = vi.hoisted(() => ({
   publishAIConfiguration: vi.fn(),
   publishAIControlCenter: vi.fn(),
   validateAIControlCenter: vi.fn(),
-  refreshGlobalOllamaModels: vi.fn(),
+  refreshGlobalProviderModels: vi.fn(),
   saveFeatures: vi.fn(),
   saveProviders: vi.fn(),
   testProvider: vi.fn(),
@@ -172,7 +172,7 @@ beforeEach(() => {
   adminApi.publishAIConfiguration.mockResolvedValue({ status: 'ok', version: 5 });
   adminApi.publishAIControlCenter.mockResolvedValue({ status: 'ok', version: 5 });
   adminApi.validateAIControlCenter.mockResolvedValue({ valid: true, errors: [], warnings: [] });
-  adminApi.refreshGlobalOllamaModels.mockResolvedValue([]);
+  adminApi.refreshGlobalProviderModels.mockResolvedValue([]);
   adminApi.clearCache.mockResolvedValue({ status: 'ok' });
   adminApi.testProvider.mockResolvedValue({ status: 'ok', latency_ms: 1, http_code: 200, error: null, detail: 'OK' });
   adminApi.updateGlobalAIConfig.mockResolvedValue({ status: 'updated' });
@@ -264,27 +264,73 @@ describe('AdminAIConfigPage', () => {
     expect(groqInput).toHaveValue('');
   });
 
-  it('saves Ollama Cloud credentials and refreshes its discovered models', async () => {
+  it('refreshes the provider catalog automatically after saving its credential', async () => {
     const user = userEvent.setup();
-    adminApi.getAISettings.mockResolvedValue({
-      ...settings,
-      global_config: {
-        ...settings.global_config,
-        has_ollama_key: true,
-        credential_sources: { ...settings.global_config.credential_sources, ollama: 'database' },
-      },
-    });
-    adminApi.refreshGlobalOllamaModels.mockResolvedValue([settings.models![0]]);
+    adminApi.refreshGlobalProviderModels.mockResolvedValue([settings.models![0]]);
     renderPage();
 
     await user.click(await screen.findByRole('button', { name: 'Proveedores y claves' }));
 
-    const input = await screen.findByPlaceholderText('Clave de Ollama Cloud');
-    await user.type(input, 'ollama-synthetic-key');
+    const input = await screen.findByPlaceholderText('Clave del proveedor');
+    await user.type(input, 'open-code-synthetic-key');
     await user.click(screen.getByRole('button', { name: 'Guardar credenciales' }));
-    await waitFor(() => expect(adminApi.updateGlobalAIConfig).toHaveBeenCalledWith({ ollama_key: 'ollama-synthetic-key' }));
+    await waitFor(() => expect(adminApi.updateGlobalAIConfig).toHaveBeenCalledWith({ open_code_key: 'open-code-synthetic-key' }));
+    await waitFor(() => expect(adminApi.refreshGlobalProviderModels.mock.calls[0]?.[0]).toBe('open_code'));
     expect(input).toHaveValue('');
-    await user.click(screen.getByRole('button', { name: 'Actualizar modelos' }));
-    await waitFor(() => expect(adminApi.refreshGlobalOllamaModels).toHaveBeenCalled());
+  });
+
+  it('updates one provider catalog on demand and exposes the discovered model', async () => {
+    const user = userEvent.setup();
+    adminApi.refreshGlobalProviderModels.mockResolvedValue([
+      ...settings.models!,
+      { provider_id: 'open_code', model_id: 'modelo-nuevo', label: 'Modelo nuevo', capabilities: ['text'], recommended: false, active: true },
+    ]);
+    renderPage();
+
+    await user.click(await screen.findByRole('button', { name: 'Proveedores y claves' }));
+    await user.click(await screen.findByRole('button', { name: 'Actualizar modelos' }));
+    await waitFor(() => expect(adminApi.refreshGlobalProviderModels.mock.calls[0]?.[0]).toBe('open_code'));
+    await user.click(screen.getByRole('button', { name: 'Funciones' }));
+    expect(await screen.findByRole('option', { name: 'Modelo nuevo' })).toBeInTheDocument();
+  });
+
+  it('offers every configured compatible provider as a fallback', async () => {
+    const user = userEvent.setup();
+    adminApi.getAISettings.mockResolvedValue({
+      ...settings,
+      providers: [
+        ...settings.providers,
+        { ...settings.providers[0], id: 'groq', name: 'Groq', label: 'Groq', model: 'groq-fast' },
+      ],
+      models: [
+        ...settings.models!,
+        { provider_id: 'groq', model_id: 'groq-fast', label: 'Groq Fast', capabilities: ['text'], recommended: true, active: true },
+      ],
+    });
+    adminApi.getAIControlCenter.mockResolvedValue({
+      ...controlCenter,
+      functions: [{
+        ...controlCenter.functions[0],
+        stages: [{ ...controlCenter.functions[0].stages[0], supported_providers: ['open_code', 'groq'] }],
+      }],
+    });
+
+    renderPage();
+
+    const fallbackProvider = await screen.findByLabelText('Proveedor de respaldo');
+    expect(within(fallbackProvider).getByRole('option', { name: 'Groq' })).toBeInTheDocument();
+    await user.selectOptions(fallbackProvider, 'groq');
+    expect(within(screen.getByLabelText('Modelo de respaldo')).getByRole('option', { name: 'Groq Fast' })).toBeInTheDocument();
+  });
+
+  it('keeps a removed selected model visible until the administrator replaces it', async () => {
+    adminApi.getAISettings.mockResolvedValue({
+      ...settings,
+      models: settings.models!.map((model) => ({ ...model, active: false })),
+    });
+
+    renderPage();
+
+    expect(await screen.findByRole('option', { name: 'Qwen 3.7 Plus (no disponible)' })).toBeInTheDocument();
   });
 });

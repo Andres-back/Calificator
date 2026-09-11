@@ -1,4 +1,4 @@
-import { Activity, Cpu, ImageIcon, Server, ShieldCheck, Sparkles, type LucideIcon } from 'lucide-react';
+import { Activity, Cpu, ImageIcon, RefreshCw, Server, ShieldCheck, Sparkles, type LucideIcon } from 'lucide-react';
 import { Badge, Button, Card, Field, Input } from '@/components/ui';
 import type { AIProvider } from '../../api';
 
@@ -25,12 +25,16 @@ function ProviderEditor({
   testsDisabled,
   onUpdate,
   onTest,
+  onRefreshModels,
+  isRefreshingModels,
 }: {
   provider: AIProvider;
   isTesting: boolean;
   testsDisabled: boolean;
   onUpdate: (providerId: string, changes: Partial<AIProvider>) => void;
   onTest: (providerId: string) => void;
+  onRefreshModels: (providerId: string) => void;
+  isRefreshingModels: boolean;
 }) {
   const Icon = PROVIDER_ICONS[provider.id] ?? Cpu;
   const isTemplate = provider.id === 'template';
@@ -148,6 +152,11 @@ function ProviderEditor({
       <Button size="sm" variant="outline" className="mt-3 w-full" loading={isTesting} disabled={testsDisabled} onClick={() => onTest(provider.id)}>
         Probar conexión
       </Button>
+      {!isTemplate && (
+        <Button size="sm" variant="outline" className="mt-2 w-full" loading={isRefreshingModels} disabled={!provider.auth_configured || isRefreshingModels} onClick={() => onRefreshModels(provider.id)}>
+          <RefreshCw className="h-4 w-4" /> Actualizar modelos
+        </Button>
+      )}
     </Card>
   );
 }
@@ -160,6 +169,8 @@ export function ProvidersSection({
   isTesting,
   onUpdate,
   onTest,
+  onRefreshModels,
+  refreshingProvider,
 }: {
   title: string;
   icon: LucideIcon;
@@ -168,6 +179,8 @@ export function ProvidersSection({
   isTesting: boolean;
   onUpdate: (providerId: string, changes: Partial<AIProvider>) => void;
   onTest: (providerId: string) => void;
+  onRefreshModels: (providerId: string) => void;
+  refreshingProvider: string | null;
 }) {
   return (
     <section>
@@ -185,6 +198,8 @@ export function ProvidersSection({
             testsDisabled={isTesting}
             onUpdate={onUpdate}
             onTest={onTest}
+            onRefreshModels={onRefreshModels}
+            isRefreshingModels={refreshingProvider === provider.id}
           />
         ))}
       </div>
