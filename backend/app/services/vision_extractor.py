@@ -21,6 +21,7 @@ from app.modules.analytics.usage_logger import log_ai_usage
 from app.services.ai_provider_capacity import provider_capacity
 from app.services.ai_credentials_service import get_effective_ai_credentials
 from app.services.image_preprocessing import prepare_orientation_variants
+from app.services.ollama_provider import OllamaCloudProvider, OllamaProviderError
 
 logger = get_logger(__name__)
 RETRYABLE_HTTP = {429, 502, 503, 504}
@@ -265,15 +266,29 @@ def build_extraction_context(blueprint: dict[str, Any]) -> dict[str, Any]:
 
 
 class VisionExtractor:
-    def __init__(self, tracking: dict[str, Any] | None = None, primary_model: str | None = None, api_key: str | None = None) -> None:
+    def __init__(
+        self,
+        tracking: dict[str, Any] | None = None,
+        primary_model: str | None = None,
+        api_key: str | None = None,
+        provider: Literal["open_code", "ollama"] = "open_code",
+    ) -> None:
         self.tracking = tracking or {}
+        if provider not in {"open_code", "ollama"}:
+            raise ValueError("Proveedor visual no compatible")
+        self.provider = provider
         self.base_url = settings.OPEN_CODE_BASE_URL.rstrip("/")
         self.primary_model = primary_model or settings.VISION_MODEL
         self.api_key = (api_key or "").strip()
 
     async def _keys(self) -> list[str]:
         effective = await get_effective_ai_credentials()
-        return list(dict.fromkeys(key for key in (self.api_key, effective.open_code_key, settings.OPEN_CODE_API_KEY) if key))
+        configured = (
+            (effective.ollama_key, settings.OLLAMA_API_KEY)
+            if self.provider == "ollama"
+            else (effective.open_code_key, settings.OPEN_CODE_API_KEY)
+        )
+        return list(dict.fromkeys(key for key in (self.api_key, *configured) if key))
 
     def _prompt(self, blueprint: dict[str, Any], page: int, total: int, purpose: str) -> str:
         context = build_extraction_context(blueprint)
@@ -289,7 +304,7 @@ Informa tachones, correcciones y preguntas ausentes. Devuelve SOLO JSON:
         duration = int((time.monotonic() - started) * 1000)
         logger.info(event, extra={
             "grading_id": self.tracking.get("calificacion_id"), "entrega_id": self.tracking.get("entrega_id"),
-            "model": model, "provider": "opencode", "duration_ms": duration,
+            "model": model, "provider": "opencode" if self.provider == "open_code" else "ollama", "duration_ms": duration,
             "page": page, "size_bytes": size, "retry_count": attempt - 1, "error_code": error,
             "http_status": http_status,
             "total_pages": getattr(self, "_total_pages", None),
@@ -297,7 +312,7 @@ Informa tachones, correcciones y preguntas ausentes. Devuelve SOLO JSON:
         await log_ai_usage(
             request_id=request_id, pipeline_run_id=self.tracking.get("pipeline_run_id"),
             calificacion_id=self.tracking.get("calificacion_id"), evaluacion_id=self.tracking.get("evaluacion_id"),
-            feature="grading", stage="extraction", provider="opencode", model=model,
+            feature="grading", stage="extraction", provider="opencode" if self.provider == "open_code" else "ollama", model=model,
             attempt_number=attempt, status=status, latency_ms=duration,
             input_tokens=(usage or {}).get("prompt_tokens"), output_tokens=(usage or {}).get("completion_tokens"),
             image_count=1, error_code=error,
@@ -305,7 +320,9 @@ Informa tachones, correcciones y preguntas ausentes. Devuelve SOLO JSON:
 
     async def _one(self, item: tuple[int, bytes, str, bool], total: int, blueprint: dict, purpose: str) -> VisionPageResult:
         page, prepared_data, prepared_mime, allow_rotation = item
-        models = [self.primary_model] + (settings.vision_fallback_models if settings.VISION_FALLBACK_ENABLED else [])
+        models = [self.primary_model]
+        if self.provider == "open_code" and settings.VISION_FALLBACK_ENABLED:
+            models.extend(settings.vision_fallback_models)
         keys = await self._keys()
         if not keys:
             raise VisionExtractionError("vision_auth_missing")
@@ -329,46 +346,77 @@ Informa tachones, correcciones y preguntas ausentes. Devuelve SOLO JSON:
                     response = None
                     await self._event("vision.request_started", request_id, model, attempt, started, page, len(data), "started")
                     try:
-                        body = {
-                            "model": model,
-                            "temperature": 0,
-                            "max_tokens": settings.VISION_MAX_TOKENS,
-                            "response_format": {"type": "json_object"},
-                            "messages": [{"role": "user", "content": [
-                                {"type": "text", "text": self._prompt(blueprint, page, total, purpose)},
-                                {"type": "image_url", "image_url": {"url": f"data:{mime};base64,{base64.b64encode(data).decode()}"}},
-                            ]}],
-                        }
-                        if (
-                            model.rsplit("/", 1)[-1].lower()
-                            == "deepseek-v4-flash-vision-exp"
-                        ):
-                            body["thinking"] = {"type": "disabled"}
-                        timeout = httpx.Timeout(
-                            connect=settings.AI_PROVIDER_CONNECT_TIMEOUT_SECONDS,
-                            read=settings.VISION_TIMEOUT_SECONDS,
-                            write=settings.AI_PROVIDER_WRITE_TIMEOUT_SECONDS,
-                            pool=settings.AI_PROVIDER_POOL_TIMEOUT_SECONDS,
-                        )
-                        async with httpx.AsyncClient(timeout=timeout) as client:
-                            for key_index, key in enumerate(keys):
+                        encoded_image = base64.b64encode(data).decode()
+                        prompt = self._prompt(blueprint, page, total, purpose)
+                        if self.provider == "ollama":
+                            payload = {}
+                            for key in keys:
+                                provider = OllamaCloudProvider(
+                                    key,
+                                    base_url=settings.OLLAMA_CLOUD_BASE_URL,
+                                    timeout_seconds=settings.VISION_TIMEOUT_SECONDS,
+                                )
                                 async with provider_capacity():
-                                    response = await client.post(
-                                        f"{self.base_url}/chat/completions",
-                                        headers={"Authorization": f"Bearer {key}"},
-                                        json=body,
+                                    payload = await provider.chat(
+                                        model=model,
+                                        messages=[{
+                                            "role": "user",
+                                            "content": prompt,
+                                            "images": [encoded_image],
+                                        }],
+                                        options={
+                                            "temperature": 0,
+                                            "num_predict": settings.VISION_MAX_TOKENS,
+                                        },
                                     )
-                                if response.status_code != 401 or key_index == len(keys) - 1:
-                                    break
-                        assert response is not None
-                        if response.status_code in RETRYABLE_HTTP:
-                            raise VisionExtractionError(f"vision_http_{response.status_code}", True)
-                        if response.status_code in {401, 403}:
-                            raise VisionExtractionError("vision_auth_failed")
-                        response.raise_for_status()
-                        payload = response.json()
+                                break
+                            content = str((payload.get("message") or {}).get("content") or payload.get("response") or "")
+                            usage = {
+                                "prompt_tokens": payload.get("prompt_eval_count"),
+                                "completion_tokens": payload.get("eval_count"),
+                            }
+                            http_status = 200
+                        else:
+                            body = {
+                                "model": model,
+                                "temperature": 0,
+                                "max_tokens": settings.VISION_MAX_TOKENS,
+                                "response_format": {"type": "json_object"},
+                                "messages": [{"role": "user", "content": [
+                                    {"type": "text", "text": prompt},
+                                    {"type": "image_url", "image_url": {"url": f"data:{mime};base64,{encoded_image}"}},
+                                ]}],
+                            }
+                            if model.rsplit("/", 1)[-1].lower() == "deepseek-v4-flash-vision-exp":
+                                body["thinking"] = {"type": "disabled"}
+                            timeout = httpx.Timeout(
+                                connect=settings.AI_PROVIDER_CONNECT_TIMEOUT_SECONDS,
+                                read=settings.VISION_TIMEOUT_SECONDS,
+                                write=settings.AI_PROVIDER_WRITE_TIMEOUT_SECONDS,
+                                pool=settings.AI_PROVIDER_POOL_TIMEOUT_SECONDS,
+                            )
+                            async with httpx.AsyncClient(timeout=timeout) as client:
+                                for key_index, key in enumerate(keys):
+                                    async with provider_capacity():
+                                        response = await client.post(
+                                            f"{self.base_url}/chat/completions",
+                                            headers={"Authorization": f"Bearer {key}"},
+                                            json=body,
+                                        )
+                                    if response.status_code != 401 or key_index == len(keys) - 1:
+                                        break
+                            assert response is not None
+                            if response.status_code in RETRYABLE_HTTP:
+                                raise VisionExtractionError(f"vision_http_{response.status_code}", True)
+                            if response.status_code in {401, 403}:
+                                raise VisionExtractionError("vision_auth_failed")
+                            response.raise_for_status()
+                            payload = response.json()
+                            content = payload["choices"][0]["message"]["content"]
+                            usage = payload.get("usage") or {}
+                            http_status = response.status_code
                         parsing_started = time.monotonic()
-                        raw, repaired = _parse_json(payload["choices"][0]["message"]["content"])
+                        raw, repaired = _parse_json(content)
                         result = _normalize(raw, page, len(data))
                         result.parsing_ms = int((time.monotonic() - parsing_started) * 1000)
                         if not result.page_text and not result.answers:
@@ -377,7 +425,7 @@ Informa tachones, correcciones y preguntas ausentes. Devuelve SOLO JSON:
                             await self._event(
                                 "vision.request_failed", request_id, model, attempt,
                                 started, page, len(data), "failed", last_error,
-                                usage=payload.get("usage"), http_status=response.status_code,
+                                usage=usage, http_status=http_status,
                             )
                             break
                         result.duration_ms = int((time.monotonic() - started) * 1000)
@@ -391,7 +439,7 @@ Informa tachones, correcciones y preguntas ausentes. Devuelve SOLO JSON:
                         await self._event(
                             "vision.request_completed", request_id, model, attempt,
                             started, page, len(data), "success",
-                            usage=payload.get("usage"), http_status=response.status_code,
+                            usage=usage, http_status=http_status,
                         )
                         return result
                     except VisionExtractionError as exc:
@@ -400,6 +448,9 @@ Informa tachones, correcciones y preguntas ausentes. Devuelve SOLO JSON:
                     except RETRYABLE_ERRORS as exc:
                         last_error = "vision_timeout" if isinstance(exc, httpx.TimeoutException) else "vision_transport"
                         retry = attempt <= settings.VISION_MAX_RETRIES
+                    except OllamaProviderError as exc:
+                        last_error = "vision_provider_failed"
+                        retry = exc.temporary and attempt <= settings.VISION_MAX_RETRIES
                     except Exception:
                         last_error, retry = "vision_invalid_schema", False
                     await self._event(
@@ -468,6 +519,7 @@ Informa tachones, correcciones y preguntas ausentes. Devuelve SOLO JSON:
             document_quality=round(sum(item.document_quality for item in success) / len(success), 4),
             pages_processed=len(results), answers=answers, pages=results, warnings=warnings,
             requires_review=bool(failures) or any(answer.needs_review for answer in answers),
+            provider="opencode" if self.provider == "open_code" else "ollama",
             primary_model=self.primary_model, fallback_used=fallback is not None,
             rotation_applied=next((item.rotation_applied for item in success if item.rotation_applied), 0),
             fallback_model=fallback.model if fallback else None,

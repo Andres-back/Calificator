@@ -336,7 +336,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "3f5f41f42990ff1199e45c6498c98a83bca721dd833f4086726ed7da37912106",
+  "source_digest": "89ce91039c9eaa2d7c8d7c5b519114e57d80a0743ab7a9d41f1e5345c6f2d567",
   "surfaces": [
     {
       "actors": [
@@ -28989,6 +28989,12 @@
           "level": "unit",
           "reference": "ollama",
           "status": "direct",
+          "test_path": "backend/tests/integration/test_admin_ai_control_center.py"
+        },
+        {
+          "level": "unit",
+          "reference": "ollama",
+          "status": "direct",
           "test_path": "backend/tests/unit/test_ai_configuration_resolver.py"
         },
         {
@@ -29007,6 +29013,12 @@
           "level": "unit",
           "reference": "ollama",
           "status": "direct",
+          "test_path": "backend/tests/unit/test_photo_grading_failures.py"
+        },
+        {
+          "level": "unit",
+          "reference": "ollama",
+          "status": "direct",
           "test_path": "backend/tests/unit/test_presentaciones_router.py"
         },
         {
@@ -29014,6 +29026,12 @@
           "reference": "ollama",
           "status": "direct",
           "test_path": "backend/tests/unit/test_teacher_ai_credentials.py"
+        },
+        {
+          "level": "unit",
+          "reference": "ollama",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_vision_extractor.py"
         },
         {
           "level": "e2e",

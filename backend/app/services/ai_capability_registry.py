@@ -28,7 +28,7 @@ class AIStage:
 
 STAGES: tuple[AIStage, ...] = (
     AIStage("calificacion", "Calificación", "prepare", "Preparación de evidencia", None, "deterministic", "grading.evidence_preparation", "Siempre", False),
-    AIStage("calificacion", "Calificación", "extraction", "Extracción visual", "calificacion.extraccion", "vision", "grading.vision_extractor", "Foto o PDF escaneado", True, "calificacion_foto", ("open_code",)),
+    AIStage("calificacion", "Calificación", "extraction", "Extracción visual", "calificacion.extraccion", "vision", "grading.vision_extractor", "Foto o PDF escaneado", True, "calificacion_foto", ("open_code", "ollama")),
     AIStage("calificacion", "Calificación", "grading_primary", "Valoración principal", "calificacion.valoracion", "text", "grading.primary_evaluator", "Siempre", True, "calificacion_texto", ("open_code",)),
     AIStage("calificacion", "Calificación", "grading_secondary", "Verificación", "calificacion.verificacion", "text", "grading.secondary_evaluator", "Cuando la política de verificación lo exige", True, "calificacion_texto", ("open_code",)),
     AIStage("calificacion", "Calificación", "targeted_recheck", "Revisión adicional", "calificacion.revision_adicional", "text", "grading.targeted_recheck", "Solo discrepancias o baja confianza", True, "calificacion_texto", ("open_code",)),

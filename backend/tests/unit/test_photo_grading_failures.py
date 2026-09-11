@@ -14,7 +14,6 @@ from app.modules.calificaciones.agents import (
     AgentContext,
     AgentResult,
     grader_agent,
-    vision_agent,
 )
 
 
@@ -665,6 +664,14 @@ def test_photo_pipeline_uses_deepseek_extraction_and_fast_flash_verifier(monkeyp
             materia_id=uuid4(),
             blueprint={"nombre": "Prueba", "nota_maxima": 5},
             image_bytes=b"image",
+            ai_config={
+                "stages": {
+                    "extraction": {
+                        "primary": {"provider": "open_code", "model": "deepseek-v4-flash-vision-exp"},
+                        "fallback": {"provider": "ollama", "model": "qwen3-vl:235b"},
+                    },
+                },
+            },
         )
     )
 
@@ -678,6 +685,73 @@ def test_photo_pipeline_uses_deepseek_extraction_and_fast_flash_verifier(monkeyp
     assert result.raw_model_output["vision"]["proveedor"] == "opencode"
     assert result.raw_model_output["grader_a"]["proveedor"] == "opencode"
     assert result.raw_model_output["grader_b"]["proveedor"] == "opencode"
+
+
+def test_photo_pipeline_uses_configured_ollama_cloud_visual_fallback(monkeypatch) -> None:
+    _configure_orchestrator(monkeypatch)
+    calls: list[tuple[str, str]] = []
+
+    async def routed_vision(*_args, model: str, provider: str = "open_code", **_kwargs):
+        calls.append((provider, model))
+        if provider == "open_code":
+            return AgentResult(
+                nota_sugerida=None,
+                confianza=0,
+                feedback_estudiante="",
+                proveedor="opencode",
+                modelo=model,
+                error="vision_provider_failed",
+                raw_output={"usable": False, "vision_failure_temporary": True},
+            )
+        return AgentResult(
+            nota_sugerida=None,
+            confianza=0.93,
+            feedback_estudiante="",
+            proveedor="ollama",
+            modelo=model,
+            raw_output={
+                "usable": True,
+                "texto_extraido": "1. B) 36",
+                "preguntas_detectadas": [1],
+                "respuestas_detectadas": [{"pregunta": 1, "respuesta": "B) 36"}],
+                "vision_extraction": {"provider": "ollama", "fallback_used": False},
+            },
+        )
+
+    async def successful_grader(*_args, **_kwargs):
+        return AgentResult(
+            nota_sugerida=5,
+            confianza=0.95,
+            feedback_estudiante="Correcto.",
+            proveedor="opencode",
+            modelo="grader",
+            requiere_revision_docente=False,
+        )
+
+    monkeypatch.setattr(orchestrator, "vision_agent", routed_vision)
+    monkeypatch.setattr(orchestrator, "grader_agent", successful_grader)
+    monkeypatch.setattr(orchestrator.settings, "PHOTO_GRADING_CROSS_PROVIDER_FALLBACK_ENABLED", False)
+
+    result = asyncio.run(orchestrator.orchestrate_grading(
+        object(),
+        evaluacion_id=uuid4(),
+        materia_id=uuid4(),
+        blueprint={"nombre": "Prueba", "nota_maxima": 5},
+        image_bytes=b"image",
+        ai_config={
+            "stages": {
+                "extraction": {
+                    "primary": {"provider": "open_code", "model": "qwen3.7-plus"},
+                    "fallback": {"provider": "ollama", "model": "qwen3-vl:235b", "credential_source": "institutional"},
+                },
+            },
+        },
+    ))
+
+    assert calls == [("open_code", "qwen3.7-plus"), ("ollama", "qwen3-vl:235b")]
+    assert result.nota_sugerida == Decimal("5.0")
+    assert result.raw_model_output["vision"]["proveedor"] == "ollama"
+    assert result.raw_model_output["vision"]["extraction"]["fallback_used"] is True
 
 
 def test_photo_pipeline_delegates_one_normalized_image_to_extractor(monkeypatch) -> None:

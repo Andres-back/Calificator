@@ -627,6 +627,8 @@ async def vision_agent(
     ctx: AgentContext,
     model: str = "deepseek-v4-flash-vision-exp",
     client: OpenCodeClient | None = None,
+    provider: str = "open_code",
+    api_key: str | None = None,
     prompt_override: str | None = None,
     timeout: int | None = None,
     max_attempts: int | None = None,
@@ -636,13 +638,19 @@ async def vision_agent(
     if not ctx.image_bytes:
         return AgentResult(
             nota_sugerida=None, confianza=0, feedback_estudiante="",
-            proveedor="opencode", modelo=model, error="No hay imagen para procesar",
+            proveedor="ollama" if provider == "ollama" else "opencode",
+            modelo=model, error="No hay imagen para procesar",
         )
     tracking = getattr(client, "_tracking", {}) if client else {}
     purpose = "evaluation_document" if prompt_override else "student_response"
     started = time.monotonic()
     try:
-        extraction = await VisionExtractor(tracking=tracking, primary_model=model, api_key=client.api_key if client else None).extract(
+        extraction = await VisionExtractor(
+            tracking=tracking,
+            primary_model=model,
+            api_key=api_key or (client.api_key if client else None),
+            provider="ollama" if provider == "ollama" else "open_code",
+        ).extract(
             ctx.image_bytes,
             ctx.image_mime,
             blueprint=ctx.blueprint,
@@ -664,7 +672,7 @@ async def vision_agent(
         logger.error("Vision extraction failed: %s", exc.code)
         return AgentResult(
             nota_sugerida=None, confianza=0, feedback_estudiante="",
-            proveedor="opencode", modelo=model,
+            proveedor="ollama" if provider == "ollama" else "opencode", modelo=model,
             tiempo_ms=int((time.monotonic() - started) * 1000),
             raw_output={
                 "usable": False,
