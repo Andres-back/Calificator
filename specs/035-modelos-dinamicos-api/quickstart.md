@@ -16,3 +16,4 @@
 - Build de producción Vite: aprobado.
 - Inventario técnico: vigente, 536 superficies.
 - Docker local: no se ejecutó porque el motor de Docker Desktop no estaba disponible; los builds de contenedores quedan a cargo del CI.
+- Entrega: PR [#73](https://github.com/Andres-back/Calificator/pull/73), sujeto a CI completo antes de fusionar.

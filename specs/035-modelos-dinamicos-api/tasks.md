@@ -19,7 +19,9 @@
 ## Fase final
 
 - [x] T008 Ejecutar pruebas focales, tipos, lint e inventario; registrar evidencia en `specs/035-modelos-dinamicos-api/quickstart.md`
-- [ ] T009 Abrir PR, obtener CI verde y verificar producción en lectura
+- [x] T009 Abrir el PR #73 y someter el hotfix a CI antes de fusionar
+
+La comprobación de producción se realizará después de la fusión y quedará registrada en el PR.
 
 ## Dependencias
 
