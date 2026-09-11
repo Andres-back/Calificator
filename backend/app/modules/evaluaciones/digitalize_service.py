@@ -214,9 +214,11 @@ async def _digitalization_vision_client(
         from app.services.ai_credentials_service import get_effective_ai_credentials, get_teacher_ai_credential
 
         async with AsyncSessionLocal() as db:
-            snapshot = dict(ai_config) if ai_config else await resolve_ai_configuration(
-                db, feature="evaluacion_digitalizar", teacher_id=user_id
+            captured = dict(ai_config) if ai_config else await resolve_ai_configuration(
+                db, feature="digitalizacion.extraccion", teacher_id=user_id
             )
+            stages = captured.get("stages") if isinstance(captured.get("stages"), dict) else {}
+            snapshot = dict(stages.get("extraction") or captured)
             selected = snapshot.get("primary") or {}
             fallback = snapshot.get("fallback") or {}
             if selected.get("provider") == "open_code" and selected.get("model"):
@@ -1008,7 +1010,12 @@ async def detectar_estructura_evaluacion(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail="No se pudo extraer contenido del archivo.",
         )
-    llm = LLMRouter(user_id=user_id, ai_config=ai_config) if ai_config is not None else LLMRouter(user_id=user_id)
+    stages = ai_config.get("stages") if isinstance(ai_config, dict) and isinstance(ai_config.get("stages"), dict) else {}
+    structure_snapshot = stages.get("structure") or ai_config
+    llm = LLMRouter(user_id=user_id, ai_config=structure_snapshot) if structure_snapshot is not None else LLMRouter(user_id=user_id)
+    set_tracking = getattr(llm, "set_tracking", None)
+    if callable(set_tracking):
+        set_tracking(stage="structure")
     prompt = PROMPT_DETECTAR_ESTRUCTURA.format(
         contenido=contenido_texto[:12000],
         nota_maxima=str(nota_maxima),

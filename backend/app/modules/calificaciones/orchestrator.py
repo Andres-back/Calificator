@@ -448,8 +448,23 @@ async def orchestrate_grading(
     pipeline_run_id = str(uuid.uuid4())
     pipeline_started = time.monotonic()
     ai_snapshot: dict = dict(ai_config) if ai_config else {}
-    vision_snapshot: dict = dict(ai_snapshot.get("vision") or ai_snapshot)
-    grading_snapshot: dict = dict(ai_snapshot.get("grading") or {})
+    stage_snapshots = (
+        ai_snapshot.get("stages")
+        if isinstance(ai_snapshot.get("stages"), dict)
+        else {}
+    )
+    vision_snapshot: dict = dict(
+        stage_snapshots.get("extraction") or ai_snapshot.get("vision") or ai_snapshot
+    )
+    grading_snapshot: dict = dict(
+        stage_snapshots.get("grading_primary") or ai_snapshot.get("grading") or {}
+    )
+    verification_snapshot: dict = dict(
+        stage_snapshots.get("grading_secondary") or grading_snapshot
+    )
+    recheck_snapshot: dict = dict(
+        stage_snapshots.get("targeted_recheck") or grading_snapshot
+    )
     if user_id is not None or ai_snapshot:
         try:
             from app.services.ai_configuration_resolver import resolve_ai_configuration
@@ -457,20 +472,34 @@ async def orchestrate_grading(
 
             if not ai_snapshot:
                 vision_snapshot = await resolve_ai_configuration(
-                    db, feature="calificacion_foto", teacher_id=user_id
+                    db, feature="calificacion.extraccion", teacher_id=user_id
                 )
                 grading_snapshot = await resolve_ai_configuration(
-                    db, feature="calificacion_texto", teacher_id=user_id
+                    db, feature="calificacion.valoracion", teacher_id=user_id
+                )
+                verification_snapshot = await resolve_ai_configuration(
+                    db, feature="calificacion.verificacion", teacher_id=user_id
+                )
+                recheck_snapshot = await resolve_ai_configuration(
+                    db, feature="calificacion.revision_adicional", teacher_id=user_id
                 )
                 ai_snapshot = {
                     "schema_version": 2,
                     "pipeline": "calificacion_foto",
                     "vision": vision_snapshot,
                     "grading": grading_snapshot,
+                    "stages": {
+                        "extraction": vision_snapshot,
+                        "grading_primary": grading_snapshot,
+                        "grading_secondary": verification_snapshot,
+                        "targeted_recheck": recheck_snapshot,
+                    },
                 }
 
             vision_selected = vision_snapshot.get("primary") or {}
             grading_selected = grading_snapshot.get("primary") or {}
+            verification_selected = verification_snapshot.get("primary") or {}
+            recheck_selected = recheck_snapshot.get("primary") or {}
             if (
                 vision_selected.get("provider") == "open_code"
                 and vision_selected.get("model")
@@ -481,13 +510,17 @@ async def orchestrate_grading(
                 and grading_selected.get("model")
             ):
                 grader_a_model = str(grading_selected["model"])
-                verifier_model = str(grading_selected["model"])
                 grading_fallback = grading_snapshot.get("fallback") or {}
                 if (
                     grading_fallback.get("provider") == "open_code"
                     and grading_fallback.get("model")
                 ):
                     grader_b_model = str(grading_fallback["model"])
+            if verification_selected.get("provider") == "open_code" and verification_selected.get("model"):
+                verifier_model = str(verification_selected["model"])
+            if recheck_selected.get("provider") == "open_code" and recheck_selected.get("model"):
+                comparator_model = str(recheck_selected["model"])
+                grader_b_model = str(recheck_selected["model"])
 
         except Exception as exc:
             logger.warning("Grading AI configuration unavailable; using institutional defaults: %s", type(exc).__name__)
@@ -505,6 +538,20 @@ async def orchestrate_grading(
         "calificacion_id": None,
         "teacher_id": str(user_id) if user_id else None,
         "_ai_config": grading_snapshot,
+    })
+    verification_client = OpenCodeClient(tracking={
+        "pipeline_run_id": pipeline_run_id,
+        "evaluacion_id": str(evaluacion_id),
+        "calificacion_id": None,
+        "teacher_id": str(user_id) if user_id else None,
+        "_ai_config": verification_snapshot,
+    })
+    recheck_client = OpenCodeClient(tracking={
+        "pipeline_run_id": pipeline_run_id,
+        "evaluacion_id": str(evaluacion_id),
+        "calificacion_id": None,
+        "teacher_id": str(user_id) if user_id else None,
+        "_ai_config": recheck_snapshot,
     })
 
     if user_id is not None or ai_snapshot:
@@ -543,6 +590,8 @@ async def orchestrate_grading(
 
             await configure_open_code_client(vision_client, vision_snapshot)
             await configure_open_code_client(client, grading_snapshot)
+            await configure_open_code_client(verification_client, verification_snapshot)
+            await configure_open_code_client(recheck_client, recheck_snapshot)
         except Exception as exc:
             logger.warning(
                 "Grading AI credentials unavailable; using environment defaults: %s",
@@ -763,8 +812,8 @@ async def orchestrate_grading(
                     primary_part = await _run_grader_until_complete(
                         partition,
                         models=[grader_b_model],
-                        client=client,
-                        stage="grading_secondary",
+                        client=recheck_client,
+                        stage="targeted_recheck",
                     )
                     primary_part.requiere_revision_docente = True
                 primary_parts.append(primary_part)
@@ -775,7 +824,7 @@ async def orchestrate_grading(
                         partition,
                         primary_part,
                         model=verifier_model,
-                        client=client,
+                        client=verification_client,
                         timeout=None,
                         max_attempts=max(1, int(settings.PHOTO_GRADING_MODEL_MAX_ATTEMPTS)),
                     ))
@@ -809,15 +858,15 @@ async def orchestrate_grading(
             grading_b = await _run_grader_until_complete(
                 ctx_grading,
                 models=[grader_b_model],
-                client=client,
-                stage="grading_secondary",
+                client=recheck_client,
+                stage="targeted_recheck",
             )
         elif not context_partitioned:
             grading_b = await verification_agent(
                 ctx_grading,
                 grading_a,
                 model=verifier_model,
-                client=client,
+                client=verification_client,
                 timeout=None,
                 max_attempts=max(
                     1,
@@ -885,6 +934,7 @@ async def orchestrate_grading(
                 arbiter_invoked
                 and grading_a.nota_sugerida is not None
             ),
+            client=recheck_client,
         )
         comparator_failed = bool(final.error)
         if comparator_failed and final.nota_sugerida is not None:
@@ -1078,3 +1128,5 @@ async def orchestrate_grading(
     finally:
         await vision_client.close()
         await client.close()
+        await verification_client.close()
+        await recheck_client.close()

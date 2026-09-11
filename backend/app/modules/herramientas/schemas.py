@@ -9,7 +9,6 @@ from pydantic import BaseModel, Field, PrivateAttr, model_validator
 
 from app.shared.enums import (
     EvaluacionModalidad,
-    MaterialTipo,
     PoliticaIntento,
 )
 

@@ -124,6 +124,23 @@ test('un enlace anterior de unir columnas abre la herramienta consolidada', asyn
   await expect(page.getByPlaceholder('Relacionar pares: estados del agua')).toBeVisible();
 });
 
+test('una herramienta pausada no se ofrece y el enlace directo explica el estado', async ({ page }) => {
+  await page.route('**/api/herramientas/catalogo', (route) => route.fulfill({
+    contentType: 'application/json',
+    body: JSON.stringify([{
+      tool_id: 'cuento', label: 'Cuento', category: 'Material', description: 'Relato educativo.',
+      aliases: [], uses_ai: true, uses_image_ai: true, generation_enabled: false,
+      unavailable_reason: 'No admite nuevas generaciones por el momento.', config_version: 5,
+    }]),
+  }));
+
+  await page.goto('/app/herramientas/nuevo');
+  await expect(page.getByRole('button', { name: /Elegir Cuento/i })).toHaveCount(0);
+  await page.goto('/app/herramientas/nuevo?tipo=cuento');
+  await expect(page.getByText('Herramienta temporalmente pausada')).toBeVisible();
+  await expect(page.getByText('Tus materiales anteriores siguen disponibles.')).toBeVisible();
+});
+
 test('todos los recursos permiten llegar a revisión con generación libre', async ({ page }) => {
   test.setTimeout(60_000);
   for (const type of resourceTypes) {

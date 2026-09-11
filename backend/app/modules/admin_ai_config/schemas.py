@@ -113,6 +113,30 @@ class FeatureRouting(BaseModel):
     p95_ms: int | None = None
     efficiency_warning: str | None = None
 
+    @property
+    def teacher_override_allowed(self) -> bool:
+        return self.rollout_enabled
+
+
+class AIToolSetting(BaseModel):
+    tool_id: str
+    generation_enabled: bool = True
+    pause_reason: str | None = Field(default=None, max_length=300)
+    config_version: int = 1
+
+
+class AIToolSettingUpdate(BaseModel):
+    tool_id: str
+    generation_enabled: bool = True
+    pause_reason: str | None = Field(default=None, max_length=300)
+
+    @field_validator("pause_reason", mode="before")
+    @classmethod
+    def normalize_reason(cls, value: object) -> object:
+        if isinstance(value, str):
+            return value.strip() or None
+        return value
+
 
 class FeatureRoutingPublication(BaseModel):
     expected_version: int = Field(ge=0)
@@ -173,6 +197,11 @@ class AIConfigurationPublication(BaseModel):
     providers: list[AIProvider]
     models: list[AIModel]
     features: list[FeatureRouting]
+    tools: list[AIToolSettingUpdate] | None = None
+
+
+class AIControlCenterPublication(AIConfigurationPublication):
+    reason: str | None = Field(default=None, max_length=300)
 
 class TeacherAICredentialRead(BaseModel):
     provider_id: str

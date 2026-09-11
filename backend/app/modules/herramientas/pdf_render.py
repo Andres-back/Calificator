@@ -270,7 +270,7 @@ def _render_matching(c: dict, soluciones: bool, *, label: str, verb: str) -> str
     def y_center(i: int) -> float:
         return HEAD + i * (CARD_H + GAP) + CARD_H / 2
 
-    cards = [f'<div class="colhead" style="position:absolute; left:6px; top:0;">Columna A</div>',
+    cards = ['<div class="colhead" style="position:absolute; left:6px; top:0;">Columna A</div>',
              f'<div class="colhead" style="position:absolute; left:{AREA_W - CARD_W + 6}px; top:0;">Columna B</div>']
 
     # Mapa letra -> índice de fila en la columna derecha (para anclar cables).
@@ -323,7 +323,7 @@ def _render_matching(c: dict, soluciones: bool, *, label: str, verb: str) -> str
     area = (f'<div style="position:relative; width:{AREA_W}px; height:{height}px; margin:0 auto;">'
             f'{cables}{"".join(cards)}</div>')
 
-    instr = c.get("instrucciones") or f"Une cada elemento de la columna A con su correspondiente de la columna B."
+    instr = c.get("instrucciones") or "Une cada elemento de la columna A con su correspondiente de la columna B."
     body = f"""
     <div class="instr">{_e(instr)}</div>
     <div class="sectionbar">{escape(label.upper())}</div>

@@ -34,6 +34,7 @@ ALL_SPECS = {
     "031-acelerar-pipelines-ia",
     "032-calificacion-impacto-docente",
     "033-centro-calificacion",
+    "034-administracion-herramientas-ia",
 }
 OWNED_SPECS = {
     name

@@ -50,12 +50,12 @@ export const MATERIAL_CREATION_TOOLS = TOOLS.filter(
   // ofrecen para crear contenido redundante nuevo.
   (tool) =>
     !isGradableTool(tool.tipo) &&
-    tool.tipo !== 'unir_columnas' &&
+    tool.tipo !== 'emparejar' &&
     tool.tipo !== 'ficha',
 );
 
 export function canonicalCreationTool(type: MaterialTipo): MaterialTipo {
-  if (type === 'unir_columnas') return 'emparejar';
+  if (type === 'emparejar') return 'unir_columnas';
   if (type === 'ficha') return 'taller';
   return type;
 }

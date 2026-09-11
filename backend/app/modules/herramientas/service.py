@@ -937,6 +937,8 @@ async def set_material_visibility(
     return updated
 
 async def gen_sopa_letras(db: AsyncSession, req: SopaLetrasRequest, current_user: User) -> dict:
+    from app.modules.herramientas.tool_control_service import ensure_generation_enabled
+    await ensure_generation_enabled(db, MaterialTipo.SOPA_LETRAS.value)
     materia_id = await _resolve_materia_id(db, req, current_user)
     llm = LLMRouter(user_id=current_user.id)
     result = await _generate_with_quality(
@@ -951,6 +953,8 @@ async def gen_sopa_letras(db: AsyncSession, req: SopaLetrasRequest, current_user
 
 
 async def gen_crucigrama(db: AsyncSession, req: CrucigramaRequest, current_user: User) -> dict:
+    from app.modules.herramientas.tool_control_service import ensure_generation_enabled
+    await ensure_generation_enabled(db, MaterialTipo.CRUCIGRAMA.value)
     materia_id = await _resolve_materia_id(db, req, current_user)
     llm = LLMRouter(user_id=current_user.id)
     result = await _generate_with_quality(
@@ -965,6 +969,8 @@ async def gen_crucigrama(db: AsyncSession, req: CrucigramaRequest, current_user:
 
 
 async def gen_unir_columnas(db: AsyncSession, req: UnirColumnasRequest, current_user: User) -> dict:
+    from app.modules.herramientas.tool_control_service import ensure_generation_enabled
+    await ensure_generation_enabled(db, MaterialTipo.UNIR_COLUMNAS.value)
     materia_id = await _resolve_materia_id(db, req, current_user)
     llm = LLMRouter(user_id=current_user.id)
     result = await _generate_with_quality(
@@ -981,6 +987,8 @@ async def gen_unir_columnas(db: AsyncSession, req: UnirColumnasRequest, current_
 
 
 async def gen_emparejar(db: AsyncSession, req: EmparejarRequest, current_user: User) -> dict:
+    from app.modules.herramientas.tool_control_service import ensure_generation_enabled
+    await ensure_generation_enabled(db, MaterialTipo.EMPAREJAR.value)
     materia_id = await _resolve_materia_id(db, req, current_user)
     llm = LLMRouter(user_id=current_user.id)
     result = await _generate_with_quality(
@@ -995,6 +1003,8 @@ async def gen_emparejar(db: AsyncSession, req: EmparejarRequest, current_user: U
 
 
 async def gen_cuento(db: AsyncSession, req: CuentoRequest, current_user: User) -> dict:
+    from app.modules.herramientas.tool_control_service import ensure_generation_enabled
+    await ensure_generation_enabled(db, MaterialTipo.CUENTO.value)
     materia_id = await _resolve_materia_id(db, req, current_user)
     llm = LLMRouter(user_id=current_user.id)
     result = await _generate_with_quality(
@@ -1046,6 +1056,8 @@ async def gen_cuento(db: AsyncSession, req: CuentoRequest, current_user: User) -
 
 
 async def gen_para_colorear(db: AsyncSession, req: ParaColorearRequest, current_user: User) -> dict:
+    from app.modules.herramientas.tool_control_service import ensure_generation_enabled
+    await ensure_generation_enabled(db, MaterialTipo.PARA_COLOREAR.value)
     materia_id = await _resolve_materia_id(db, req, current_user)
     prompt = para_colorear.build_prompt(req)
     image = await generate_image(
@@ -1100,6 +1112,8 @@ async def gen_para_colorear(db: AsyncSession, req: ParaColorearRequest, current_
 
 
 async def gen_guia(db: AsyncSession, req: GuiaRequest, current_user: User) -> dict:
+    from app.modules.herramientas.tool_control_service import ensure_generation_enabled
+    await ensure_generation_enabled(db, MaterialTipo.GUIA.value)
     materia_id = await _resolve_materia_id(db, req, current_user)
     llm = LLMRouter(user_id=current_user.id)
     result = await _generate_with_quality(
@@ -1114,6 +1128,8 @@ async def gen_guia(db: AsyncSession, req: GuiaRequest, current_user: User) -> di
 
 
 async def gen_taller(db: AsyncSession, req: TallerRequest, current_user: User) -> dict:
+    from app.modules.herramientas.tool_control_service import ensure_generation_enabled
+    await ensure_generation_enabled(db, MaterialTipo.TALLER.value)
     materia_id = await _resolve_materia_id(db, req, current_user)
     llm = LLMRouter(user_id=current_user.id)
     result = await _generate_with_quality(
@@ -1132,6 +1148,8 @@ async def gen_examen_from_chat(
     req: ExamenFromChatRequest,
     current_user: User,
 ) -> dict:
+    from app.modules.herramientas.tool_control_service import ensure_generation_enabled
+    await ensure_generation_enabled(db, MaterialTipo.EXAMEN.value)
     materia_id = await _resolve_materia_id(db, req, current_user)
     contenido = {
         "titulo": req.titulo,
@@ -1148,6 +1166,8 @@ async def gen_examen_from_chat(
 
 
 async def gen_examen(db: AsyncSession, req: ExamenRequest, current_user: User) -> dict:
+    from app.modules.herramientas.tool_control_service import ensure_generation_enabled
+    await ensure_generation_enabled(db, MaterialTipo.EXAMEN.value)
     materia_id = await _resolve_materia_id(db, req, current_user)
     llm = LLMRouter(user_id=current_user.id)
     result = await _generate_with_quality(
@@ -1162,6 +1182,8 @@ async def gen_examen(db: AsyncSession, req: ExamenRequest, current_user: User) -
 
 
 async def gen_rubrica(db: AsyncSession, req: RubricaRequest, current_user: User) -> dict:
+    from app.modules.herramientas.tool_control_service import ensure_generation_enabled
+    await ensure_generation_enabled(db, MaterialTipo.RUBRICA.value)
     materia_id = await _resolve_materia_id(db, req, current_user)
     llm = LLMRouter(user_id=current_user.id)
     result = await _generate_with_quality(
@@ -1176,6 +1198,8 @@ async def gen_rubrica(db: AsyncSession, req: RubricaRequest, current_user: User)
 
 
 async def gen_ficha(db: AsyncSession, req: FichaRequest, current_user: User) -> dict:
+    from app.modules.herramientas.tool_control_service import ensure_generation_enabled
+    await ensure_generation_enabled(db, MaterialTipo.FICHA.value)
     materia_id = await _resolve_materia_id(db, req, current_user)
     llm = LLMRouter(user_id=current_user.id)
     result = await _generate_with_quality(
@@ -1190,6 +1214,8 @@ async def gen_ficha(db: AsyncSession, req: FichaRequest, current_user: User) -> 
 
 
 async def gen_quiz_rapido(db: AsyncSession, req: QuizRapidoRequest, current_user: User) -> dict:
+    from app.modules.herramientas.tool_control_service import ensure_generation_enabled
+    await ensure_generation_enabled(db, MaterialTipo.QUIZ_RAPIDO.value)
     materia_id = await _resolve_materia_id(db, req, current_user)
     llm = LLMRouter(user_id=current_user.id)
     result = await _generate_with_quality(
@@ -1204,6 +1230,8 @@ async def gen_quiz_rapido(db: AsyncSession, req: QuizRapidoRequest, current_user
 
 
 async def gen_lectura_comprensiva(db: AsyncSession, req: LecturaComprensivaRequest, current_user: User) -> dict:
+    from app.modules.herramientas.tool_control_service import ensure_generation_enabled
+    await ensure_generation_enabled(db, MaterialTipo.LECTURA_COMPRENSIVA.value)
     materia_id = await _resolve_materia_id(db, req, current_user)
     llm = LLMRouter(user_id=current_user.id)
     result = await _generate_with_quality(
@@ -1218,6 +1246,8 @@ async def gen_lectura_comprensiva(db: AsyncSession, req: LecturaComprensivaReque
 
 
 async def gen_mapa_conceptual(db: AsyncSession, req: MapaConceptualRequest, current_user: User) -> dict:
+    from app.modules.herramientas.tool_control_service import ensure_generation_enabled
+    await ensure_generation_enabled(db, MaterialTipo.MAPA_CONCEPTUAL.value)
     materia_id = await _resolve_materia_id(db, req, current_user)
     llm = LLMRouter(user_id=current_user.id)
     result = await _generate_with_quality(
@@ -1232,6 +1262,8 @@ async def gen_mapa_conceptual(db: AsyncSession, req: MapaConceptualRequest, curr
 
 
 async def gen_flashcards(db: AsyncSession, req: FlashcardsRequest, current_user: User) -> dict:
+    from app.modules.herramientas.tool_control_service import ensure_generation_enabled
+    await ensure_generation_enabled(db, MaterialTipo.FLASHCARDS.value)
     materia_id = await _resolve_materia_id(db, req, current_user)
     llm = LLMRouter(user_id=current_user.id)
     result = await _generate_with_quality(
@@ -1246,6 +1278,8 @@ async def gen_flashcards(db: AsyncSession, req: FlashcardsRequest, current_user:
 
 
 async def gen_plan_refuerzo(db: AsyncSession, req: PlanRefuerzoRequest, current_user: User) -> dict:
+    from app.modules.herramientas.tool_control_service import ensure_generation_enabled
+    await ensure_generation_enabled(db, MaterialTipo.PLAN_REFUERZO.value)
     materia_id = await _resolve_materia_id(db, req, current_user)
     llm = LLMRouter(user_id=current_user.id)
     result = await _generate_with_quality(

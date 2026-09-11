@@ -6,7 +6,7 @@ estructura que ya consumen Evaluacion, Entrega y Calificacion.
 from __future__ import annotations
 
 from decimal import Decimal, ROUND_HALF_UP
-from typing import Any, Iterable
+from typing import Any
 
 from app.shared.enums import EvaluacionModalidad, MaterialTipo
 

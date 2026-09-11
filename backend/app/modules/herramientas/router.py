@@ -39,6 +39,17 @@ from app.modules.users.models import User
 router = APIRouter(prefix="/herramientas", tags=["herramientas"])
 
 
+@router.get("/catalogo")
+async def catalogo_herramientas(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> list[dict]:
+    require_permission_now(current_user, "resources.read")
+    from app.modules.herramientas.tool_control_service import get_tool_catalog
+
+    return await get_tool_catalog(db)
+
+
 @router.get("", response_model=list[MaterialListItem])
 async def listar_materiales(
     tipo: str | None = None,

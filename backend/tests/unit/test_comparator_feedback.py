@@ -89,4 +89,4 @@ def test_forced_arbitration_calls_pro_once_when_verifier_failed(monkeypatch) -> 
     assert len(calls) == 1
     assert calls[0]["model"] == "deepseek-v4-pro"
     assert calls[0]["max_tokens"] == 1024
-    assert calls[0]["stage"] == "consolidation"
+    assert calls[0]["stage"] == "targeted_recheck"

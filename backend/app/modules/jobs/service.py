@@ -48,22 +48,49 @@ async def _resolve_job_ai_config(
     """Freeze the effective routes used by a job without serializing secrets."""
     from app.services.ai_configuration_resolver import resolve_ai_configuration
 
+    if tipo == "evaluacion_digitalizacion":
+        extraction = await resolve_ai_configuration(
+            db, feature="digitalizacion.extraccion", teacher_id=user_id
+        )
+        structure = await resolve_ai_configuration(
+            db, feature="digitalizacion.estructura", teacher_id=user_id
+        )
+        return {
+            **extraction,
+            "schema_version": 3,
+            "pipeline": "digitalizacion",
+            "stages": {"extraction": extraction, "structure": structure},
+        }
+
     if tipo not in {"calificacion_lote", "calificacion_entrega"}:
         return await resolve_ai_configuration(
             db, feature=feature, teacher_id=user_id
         )
 
-    vision = await resolve_ai_configuration(
-        db, feature="calificacion_foto", teacher_id=user_id
+    extraction = await resolve_ai_configuration(
+        db, feature="calificacion.extraccion", teacher_id=user_id
     )
-    grading = await resolve_ai_configuration(
-        db, feature="calificacion_texto", teacher_id=user_id
+    primary = await resolve_ai_configuration(
+        db, feature="calificacion.valoracion", teacher_id=user_id
+    )
+    verification = await resolve_ai_configuration(
+        db, feature="calificacion.verificacion", teacher_id=user_id
+    )
+    recheck = await resolve_ai_configuration(
+        db, feature="calificacion.revision_adicional", teacher_id=user_id
     )
     return {
         "schema_version": 2,
         "pipeline": "calificacion_foto",
-        "vision": vision,
-        "grading": grading,
+        # Compatibility aliases consumed by jobs admitted before stage routing.
+        "vision": extraction,
+        "grading": primary,
+        "stages": {
+            "extraction": extraction,
+            "grading_primary": primary,
+            "grading_secondary": verification,
+            "targeted_recheck": recheck,
+        },
     }
 
 

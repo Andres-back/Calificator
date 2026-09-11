@@ -37,6 +37,7 @@ actualizar la especificación propietaria, su plan y sus tareas; no debe crear d
 | 029 | [Usuarios, roles y permisos modulares](029-roles-permisos-modulares/spec.md) | administración y autorización | usuarios, roles, permisos, navegación y rutas protegidas | users y nuevas relaciones de autorización | [#59](https://github.com/Andres-back/Calificator/issues/59) |
 | 031 | [Aceleración de pipelines de IA](031-acelerar-pipelines-ia/spec.md) | jobs, calificaciones, digitalización, presentaciones y routing IA | progreso, cola grupal, estados de nota y métricas por modelo | `ai_jobs`, `entregas`, `calificaciones`, `presentaciones`, telemetría | [#64](https://github.com/Andres-back/Calificator/issues/64) |
 | 032 | [Calificación confiable e impacto docente medible](032-calificacion-impacto-docente/spec.md) | calificaciones, jobs, analytics, rag e impacto_tesis | revisión explicable, tiempos observados y estudio autorizado | `calificaciones`, `ai_jobs`, `analytics_work_sessions`, `impacto_studies`, `impacto_observations` | [#65](https://github.com/Andres-back/Calificator/issues/65) |
+| 034 | [Administración efectiva de herramientas e IA](034-administracion-herramientas-ia/spec.md) | coordinación de admin_ai_config, jobs, routing IA y catálogo de herramientas | `/app/admin/configuracion-ia` y creación de recursos | `ai_feature_routing`, `ai_tool_settings`, `ai_usage_events`; sin trasladar propiedad de 006/012/021 | [#70](https://github.com/Andres-back/Calificator/issues/70) |
 
 ## Reglas de propiedad
 
@@ -54,6 +55,12 @@ actualizar la especificación propietaria, su plan y sus tareas; no debe crear d
 
 - [Centro unificado de calificación](033-centro-calificacion/spec.md), [plan y distribución](033-centro-calificacion/plan.md), [issue #68](https://github.com/Andres-back/Calificator/issues/68). Creación del diseño autorizada; implementación pendiente.
 - Coordina 002, 008/016, 007, 012/031 y 011/032. La navegación y alertas se consolidarán sin transferir propiedad de notas ni tablas. Los comportamientos actuales de las bases no se cambian por documentar este diseño.
+
+## Evolución 034: centro administrativo efectivo
+
+- [Administración efectiva de herramientas e IA](034-administracion-herramientas-ia/spec.md) coordina las propiedades vigentes de 006, 008/016, 010, 012/031 y 021.
+- Añade visibilidad de configuración guardada, resolución efectiva y ejecución observada por etapa; controla generaciones nuevas de herramientas sin afectar recursos existentes.
+- `unir_columnas` es el identificador canónico visible y `emparejar` continúa como alias compatible para enlaces y datos históricos.
 
 ## Inventario técnico global
 

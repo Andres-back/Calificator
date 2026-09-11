@@ -34,9 +34,9 @@ describe('toolPickerModel', () => {
       ['unir_columnas', 'emparejar'].includes(tool.tipo),
     );
 
-    expect(matchingTools.map((tool) => tool.tipo)).toEqual(['emparejar']);
+    expect(matchingTools.map((tool) => tool.tipo)).toEqual(['unir_columnas']);
     expect(matchingTools[0]?.label).toBe('Relacionar pares');
-    expect(canonicalCreationTool('unir_columnas')).toBe('emparejar');
+    expect(canonicalCreationTool('emparejar')).toBe('unir_columnas');
   });
 
   it('consolida la ficha en taller sin romper su alias histórico', () => {

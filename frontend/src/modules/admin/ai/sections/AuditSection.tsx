@@ -1,5 +1,6 @@
 import { Activity, BarChart3 } from 'lucide-react';
-import { Badge, Card, Skeleton } from '@/components/ui';
+import { Badge, Card, Select, Skeleton } from '@/components/ui';
+import type { AIControlCenterUsage } from '../../api';
 import { formatDate } from '../utils/validation';
 
 function Metric({ value, label }: { value: string; label: string }) {
@@ -62,5 +63,55 @@ export function UsageAndAudit({
         )}
       </Card>
     </section>
+  );
+}
+
+function Duration({ value }: { value: number | null }) {
+  if (value === null) return <span className="text-muted">Sin medición</span>;
+  return <>{value >= 1000 ? `${(value / 1000).toFixed(1)} s` : `${value} ms`}</>;
+}
+
+export function ControlCenterUsageExplorer({
+  data,
+  loading,
+  period,
+  onPeriodChange,
+}: {
+  data?: AIControlCenterUsage;
+  loading: boolean;
+  period: number;
+  onPeriodChange: (days: number) => void;
+}) {
+  return (
+    <Card className="p-5">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h2 className="font-display text-lg font-bold">Rendimiento por etapa</h2>
+          <p className="mt-1 text-sm text-muted">Datos observados; la espera en cola y la revisión humana solo aparecen cuando fueron medidas.</p>
+        </div>
+        <label className="w-full sm:w-44">
+          <span className="sr-only">Periodo de métricas</span>
+          <Select value={String(period)} onChange={(event) => onPeriodChange(Number(event.currentTarget.value))}>
+            <option value="7">Últimos 7 días</option>
+            <option value="30">Últimos 30 días</option>
+            <option value="90">Últimos 90 días</option>
+          </Select>
+        </label>
+      </div>
+      {loading ? <Skeleton className="mt-4 h-40" /> : !data?.rows.length ? (
+        <p className="mt-4 rounded-xl bg-surface-2 p-4 text-sm text-muted">No hay ejecuciones registradas para este periodo.</p>
+      ) : (
+        <div className="mt-4 overflow-x-auto">
+          <table className="w-full min-w-[980px] text-left text-sm">
+            <thead className="text-xs uppercase tracking-wide text-muted"><tr><th className="px-3 py-2">Función / etapa</th><th className="px-3 py-2">Modelo observado</th><th className="px-3 py-2">Muestra</th><th className="px-3 py-2">Éxito</th><th className="px-3 py-2">Fallos</th><th className="px-3 py-2">p50 ejecución</th><th className="px-3 py-2">p95 ejecución</th><th className="px-3 py-2">Cola</th><th className="px-3 py-2">Revisión humana</th></tr></thead>
+            <tbody className="divide-y divide-border">{data.rows.map((row) => {
+              const total = row.successes + row.failures;
+              const successRate = total ? Math.round((row.successes / total) * 100) : null;
+              return <tr key={`${row.feature}:${row.stage}:${row.provider}:${row.model}`}><td className="px-3 py-3"><strong className="block">{row.feature}</strong><span className="text-xs text-muted">{row.stage}</span></td><td className="px-3 py-3"><strong className="block">{row.model || 'No registrado'}</strong><span className="text-xs text-muted">{row.provider || 'Proveedor desconocido'}</span></td><td className="px-3 py-3">{row.sample_size}</td><td className="px-3 py-3">{successRate === null ? 'Sin datos' : `${successRate}%`}</td><td className="px-3 py-3">{row.failures}</td><td className="px-3 py-3"><Duration value={row.p50_ms} /></td><td className="px-3 py-3"><Duration value={row.p95_ms} /></td><td className="px-3 py-3"><Duration value={row.queue_ms} /></td><td className="px-3 py-3"><Duration value={row.human_review_ms} /></td></tr>;
+            })}</tbody>
+          </table>
+        </div>
+      )}
+    </Card>
   );
 }

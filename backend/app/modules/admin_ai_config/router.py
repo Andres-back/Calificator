@@ -29,6 +29,12 @@ from app.modules.admin_ai_config.usage_service import (
     get_model_performance,
     get_recent_provider_errors,
     get_usage_summary,
+    get_control_center_usage,
+)
+from app.modules.admin_ai_config.control_center_service import (
+    get_control_center,
+    get_effective_route,
+    validate_control_center_payload,
 )
 from app.modules.admin_ai_config.schemas import (
     AIProviderTestResponse,
@@ -43,6 +49,7 @@ from app.modules.admin_ai_config.schemas import (
     ProviderModelTestRequest,
     FeatureRoutingPublication,
     AIConfigurationPublication,
+    AIControlCenterPublication,
     AIModel,
     OllamaModelRead,
 )
@@ -502,6 +509,128 @@ async def get_full_ai_settings(
         "usage": usage_summary,
     }
 
+
+@router.get("/admin/ai-control-center")
+async def read_ai_control_center(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    require_permission_now(current_user, "admin_ai.manage")
+    return await get_control_center(db)
+
+
+@router.get("/admin/ai-control-center/usage")
+async def read_ai_control_center_usage(
+    days: int = 30,
+    feature: str | None = None,
+    stage: str | None = None,
+    provider: str | None = None,
+    model: str | None = None,
+    usage_status: str | None = None,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    require_permission_now(current_user, "admin_ai.manage")
+    return await get_control_center_usage(
+        db,
+        days=days,
+        feature=feature,
+        stage=stage,
+        provider=provider,
+        model=model,
+        status=usage_status,
+    )
+
+
+@router.get("/admin/ai-control-center/effective")
+async def read_effective_ai_route(
+    function_id: str,
+    stage_id: str,
+    teacher_id: str | None = None,
+    tool_id: str | None = None,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    require_permission_now(current_user, "admin_ai.manage")
+    parsed_teacher = None
+    if teacher_id:
+        try:
+            from uuid import UUID
+            parsed_teacher = UUID(teacher_id)
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail="Docente inválido.") from exc
+        role = await db.scalar(text("SELECT rol FROM users WHERE id=:id"), {"id": teacher_id})
+        if str(role) not in {"profesor", "teacher"}:
+            raise HTTPException(status_code=404, detail="Docente no encontrado.")
+    return await get_effective_route(
+        db,
+        function_id=function_id,
+        stage_id=stage_id,
+        teacher_id=parsed_teacher,
+        tool_id=tool_id,
+    )
+
+
+@router.post("/admin/ai-control-center/validate")
+async def validate_ai_control_center(
+    payload: AIControlCenterPublication,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    require_permission_now(current_user, "admin_ai.manage")
+    del db
+    return validate_control_center_payload(
+        [item.model_dump() for item in payload.providers],
+        [item.model_dump() for item in payload.models],
+        [item.model_dump() for item in payload.features],
+        [item.model_dump() for item in payload.tools] if payload.tools is not None else None,
+    )
+
+
+@router.put("/admin/ai-control-center/publish")
+async def publish_ai_control_center(
+    payload: AIControlCenterPublication,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    require_permission_now(current_user, "admin_ai.manage")
+    providers = [item.model_dump() for item in payload.providers]
+    models = [item.model_dump() for item in payload.models]
+    features = [item.model_dump() for item in payload.features]
+    tools = [item.model_dump() for item in payload.tools] if payload.tools is not None else None
+    validation = validate_control_center_payload(providers, models, features, tools)
+    if not validation["valid"]:
+        raise HTTPException(
+            status_code=422,
+            detail={"code": "invalid_ai_configuration", "errors": validation["errors"]},
+        )
+    locked = await db.execute(text("SELECT config_version FROM ai_feature_routing FOR UPDATE"))
+    current_version = max((int(row.config_version or 1) for row in locked.fetchall()), default=1)
+    if current_version != payload.expected_version:
+        raise HTTPException(
+            status_code=409,
+            detail={
+                "code": "config_version_conflict",
+                "message": "La configuración cambió en otra sesión.",
+                "current_version": current_version,
+            },
+        )
+    normalized = validation["normalized"]
+    service = AIConfigService(db=db)
+    version = await service.publish_configuration(
+        normalized["providers"],
+        normalized["models"],
+        normalized["features"],
+        tools=normalized["tools"],
+        admin_id=current_user.id,
+    )
+    return {
+        "status": "ok",
+        "detail": "Configuración de IA publicada.",
+        "version": version,
+        "warnings": validation["warnings"],
+    }
+
 @router.post("/admin/ai-providers/{provider}/test", response_model=AIProviderTestResponse)
 async def test_provider(
     provider: str,
@@ -643,7 +772,8 @@ async def publish_ai_configuration(
                 raise HTTPException(status_code=422, detail="La ruta principal y el respaldo deben ser distintos.")
 
     version = await svc.publish_configuration(
-        providers, models, features, admin_id=current_user.id
+        providers, models, features, admin_id=current_user.id,
+        tools=[item.model_dump() for item in payload.tools] if payload.tools is not None else None,
     )
     return {
         "status": "ok",

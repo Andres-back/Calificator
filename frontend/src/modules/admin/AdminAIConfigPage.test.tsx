@@ -10,11 +10,15 @@ import type { AISettings } from './api';
 const adminApi = vi.hoisted(() => ({
   clearCache: vi.fn(),
   getAIAudit: vi.fn(),
+  getAIControlCenter: vi.fn(),
+  getAIControlCenterUsage: vi.fn(),
   getAISettings: vi.fn(),
   getConfigHash: vi.fn(),
   restoreDefaults: vi.fn(),
   restorePreviousConfiguration: vi.fn(),
   publishAIConfiguration: vi.fn(),
+  publishAIControlCenter: vi.fn(),
+  validateAIControlCenter: vi.fn(),
   refreshGlobalOllamaModels: vi.fn(),
   saveFeatures: vi.fn(),
   saveProviders: vi.fn(),
@@ -64,12 +68,13 @@ const settings: AISettings = {
   ],
   features: [
     {
-      feature: 'chat',
-      label: 'Chat',
+      feature: 'calificacion.valoracion',
+      label: 'Valoración principal',
       capability: 'text',
       primary_provider: 'open_code',
       primary_model: 'qwen3.7-plus',
       fallback_provider: null,
+      rollout_enabled: false,
       active: true,
     },
   ],
@@ -96,6 +101,25 @@ const settings: AISettings = {
     total_cost: 0,
     by_provider: [],
   },
+};
+
+const controlCenter = {
+  version: 4,
+  functions: [{
+    function_id: 'calificacion', label: 'Calificación', stages: [{
+      function_id: 'calificacion', function_label: 'Calificación', stage_id: 'grading_primary',
+      label: 'Valoración principal', runtime_feature: 'calificacion.valoracion', capability: 'text',
+      consumer: 'grading.primary_evaluator', condition: 'Siempre', editable: true,
+      inherits_from: null, supported_providers: ['open_code'],
+      configured: { provider: 'open_code', model: 'qwen3.7-plus', fallback_provider: null, fallback_model: null, teacher_override_allowed: false, config_version: 4 },
+      effective: { provider: 'open_code', model: 'qwen3.7-plus', fallback_provider: null, fallback_model: null, teacher_override_allowed: false, config_version: 4 },
+      observed: null,
+    }],
+  }],
+  tools: [{ tool_id: 'taller', label: 'Taller', category: 'Material', description: 'Práctica gradual.', aliases: [], uses_ai: true, uses_image_ai: false, generation_enabled: true, unavailable_reason: null, pause_reason: null, config_version: 4, route_override: null, inherits_from: 'herramientas_educativas' }],
+  providers: settings.providers,
+  models: settings.models,
+  deployment: { provider_max_concurrency: 3, slow_warning_seconds: 120, managed_by: 'deployment', editable: false },
 };
 
 function apiFailure(status: number, detail: string) {
@@ -139,11 +163,15 @@ beforeEach(() => {
     worker_error: null,
   });
   adminApi.getAIAudit.mockResolvedValue({ total: 0, limit: 6, offset: 0, logs: [] });
+  adminApi.getAIControlCenter.mockResolvedValue(controlCenter);
+  adminApi.getAIControlCenterUsage.mockResolvedValue({ period_days: 30, from: '', to: '', sample_size: 0, rows: [] });
   adminApi.saveProviders.mockResolvedValue({ status: 'ok' });
   adminApi.saveFeatures.mockResolvedValue({ status: 'ok' });
   adminApi.restoreDefaults.mockResolvedValue({ status: 'ok' });
   adminApi.restorePreviousConfiguration.mockResolvedValue({ status: 'ok', version: 5 });
   adminApi.publishAIConfiguration.mockResolvedValue({ status: 'ok', version: 5 });
+  adminApi.publishAIControlCenter.mockResolvedValue({ status: 'ok', version: 5 });
+  adminApi.validateAIControlCenter.mockResolvedValue({ valid: true, errors: [], warnings: [] });
   adminApi.refreshGlobalOllamaModels.mockResolvedValue([]);
   adminApi.clearCache.mockResolvedValue({ status: 'ok' });
   adminApi.testProvider.mockResolvedValue({ status: 'ok', latency_ms: 1, http_code: 200, error: null, detail: 'OK' });
@@ -151,49 +179,36 @@ beforeEach(() => {
 });
 
 describe('AdminAIConfigPage', () => {
-  it('saves an edited provider only after confirmation', async () => {
+  it('saves an edited stage only after validation and confirmation', async () => {
     const user = userEvent.setup();
     renderPage();
 
-    const modelInput = await screen.findByLabelText('Modelo');
-    await user.clear(modelInput);
-    await user.type(modelInput, 'modelo-nuevo');
+    await user.click(await screen.findByLabelText('Permitir API del docente'));
     await user.click(screen.getByRole('button', { name: 'Guardar cambios' }));
     await user.click(await screen.findByRole('button', { name: /Guardar configuraci.n/ }));
 
     await waitFor(() => {
-      expect(adminApi.publishAIConfiguration).toHaveBeenCalledWith(
-        [expect.objectContaining({ id: 'open_code', model: 'modelo-nuevo' })],
+      expect(adminApi.publishAIControlCenter).toHaveBeenCalledWith(
+        settings.providers,
         settings.models,
-        settings.features,
+        [expect.objectContaining({ feature: 'calificacion.valoracion', rollout_enabled: true })],
+        controlCenter.tools,
         4,
       );
     });
   });
 
-  it('tests the concrete primary model selected for a feature', async () => {
+  it('pauses new generations with an explicit reason', async () => {
     const user = userEvent.setup();
     renderPage();
-
-    await user.click(await screen.findByRole('button', { name: 'Probar modelo principal' }));
-
-    await waitFor(() => expect(adminApi.testProvider).toHaveBeenCalledWith(
-      'open_code',
-      { model: 'qwen3.7-plus', capability: 'text' },
-    ));
-  });
-
-  it('detects rollout changes and saves routes with optimistic version', async () => {
-    const user = userEvent.setup();
-    renderPage();
-    await user.click(await screen.findByLabelText('Aplicar a trabajos nuevos'));
+    await user.click(await screen.findByRole('button', { name: 'Herramientas' }));
+    await user.click(await screen.findByRole('checkbox', { name: /Nuevas generaciones/ }));
+    await user.type(screen.getByLabelText('Motivo de la pausa'), 'Mantenimiento programado');
     await user.click(screen.getByRole('button', { name: 'Guardar cambios' }));
     await user.click(await screen.findByRole('button', { name: /Guardar configuraci.n/ }));
-    await waitFor(() => expect(adminApi.publishAIConfiguration).toHaveBeenCalledWith(
-      settings.providers,
-      settings.models,
-      [expect.objectContaining({ feature: 'chat', rollout_enabled: true })],
-      4,
+    await waitFor(() => expect(adminApi.publishAIControlCenter).toHaveBeenCalledWith(
+      settings.providers, settings.models, settings.features,
+      [expect.objectContaining({ tool_id: 'taller', generation_enabled: false, pause_reason: 'Mantenimiento programado' })], 4,
     ));
   });
 
@@ -209,22 +224,37 @@ describe('AdminAIConfigPage', () => {
   });
 
   it('shows a friendly backend validation message for a 422 save failure', async () => {
-    adminApi.publishAIConfiguration.mockRejectedValueOnce(apiFailure(422, 'Modelo no permitido'));
+    adminApi.publishAIControlCenter.mockRejectedValueOnce(apiFailure(422, 'Modelo no permitido'));
     const user = userEvent.setup();
     renderPage();
 
-    const modelInput = await screen.findByLabelText('Modelo');
-    await user.clear(modelInput);
-    await user.type(modelInput, 'modelo-invalido');
+    await user.click(await screen.findByLabelText('Permitir API del docente'));
     await user.click(screen.getByRole('button', { name: 'Guardar cambios' }));
     await user.click(await screen.findByRole('button', { name: /Guardar configuraci.n/ }));
 
     await waitFor(() => expect(toastMocks.error).toHaveBeenCalledWith('Modelo no permitido'));
   });
 
+  it('keeps the draft when another administrator publishes first', async () => {
+    adminApi.publishAIControlCenter.mockRejectedValueOnce(apiFailure(409, 'La configuración cambió en otra sesión.'));
+    const user = userEvent.setup();
+    renderPage();
+
+    const override = await screen.findByLabelText('Permitir API del docente');
+    await user.click(override);
+    await user.click(screen.getByRole('button', { name: 'Guardar cambios' }));
+    await user.click(await screen.findByRole('button', { name: /Guardar configuraci.n/ }));
+
+    await waitFor(() => expect(toastMocks.error).toHaveBeenCalledWith('La configuración cambió en otra sesión.'));
+    expect(override).toBeChecked();
+    expect(screen.getByText('Cambios sin guardar')).toBeVisible();
+  });
+
   it('saves a new provider credential without displaying the stored value', async () => {
     const user = userEvent.setup();
     renderPage();
+
+    await user.click(await screen.findByRole('button', { name: 'Proveedores y claves' }));
 
     const groqInput = await screen.findByPlaceholderText('gsk_...');
     await user.type(groqInput, 'gsk-new-secret');
@@ -246,6 +276,8 @@ describe('AdminAIConfigPage', () => {
     });
     adminApi.refreshGlobalOllamaModels.mockResolvedValue([settings.models![0]]);
     renderPage();
+
+    await user.click(await screen.findByRole('button', { name: 'Proveedores y claves' }));
 
     const input = await screen.findByPlaceholderText('Clave de Ollama Cloud');
     await user.type(input, 'ollama-synthetic-key');

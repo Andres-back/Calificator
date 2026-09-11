@@ -983,7 +983,6 @@ async def grader_agent(
     max_tokens: int | None = None,
 ) -> AgentResult:
     """Agente calificador. Califica la respuesta del estudiante contra el blueprint."""
-    nota_maxima = ctx.nota_maxima
     prompt = render_grader_prompt(ctx)
     own_client = False
     if client is None:
@@ -1311,6 +1310,7 @@ async def comparator_agent(
     umbral: float = 0.5,
     model: str = "deepseek-v4-pro",
     force_arbitration: bool = False,
+    client: OpenCodeClient | None = None,
 ) -> AgentResult:
     """Compara dos calificaciones independientes y produce una nota final."""
     score_a = grading_a.nota_sugerida
@@ -1367,7 +1367,9 @@ async def comparator_agent(
                         "grading_b": {"nota": grading_b.nota_sugerida, "modelo": grading_b.modelo}},
         )
 
-    client = OpenCodeClient()
+    own_client = client is None
+    if client is None:
+        client = OpenCodeClient()
     try:
         grading_a_str = json.dumps({"nota_sugerida": grading_a.nota_sugerida, "confianza": grading_a.confianza, "feedback": grading_a.feedback_estudiante[:300], "criterios": grading_a.criterios, "componentes": grading_a.componentes, "alertas": grading_a.alertas, "error": grading_a.error}, ensure_ascii=False)
         grading_b_str = json.dumps({"nota_sugerida": grading_b.nota_sugerida, "confianza": grading_b.confianza, "feedback": grading_b.feedback_estudiante[:300], "criterios": grading_b.criterios, "componentes": grading_b.componentes, "alertas": grading_b.alertas, "error": grading_b.error}, ensure_ascii=False)
@@ -1384,7 +1386,7 @@ async def comparator_agent(
             json_mode=True, max_tokens=1024,
             timeout=None,
             max_attempts=1,
-            stage="consolidation",
+            stage="targeted_recheck",
         )
         ms = int((time.monotonic() - start) * 1000)
         content = raw["choices"][0]["message"]["content"]
@@ -1411,4 +1413,5 @@ async def comparator_agent(
         nota_final = round(sum(valid_scores) / len(valid_scores), 2)
         return AgentResult(nota_sugerida=nota_final, confianza=0, feedback_estudiante="", proveedor="comparator", modelo="fallback", error=str(exc))
     finally:
-        await client.close()
+        if own_client:
+            await client.close()

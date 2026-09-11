@@ -7,9 +7,11 @@ from fastapi import HTTPException
 import app.modules.admin_ai_config.router as router
 from app.modules.authorization.catalog import default_permissions_for_role
 from app.modules.admin_ai_config.schemas import (
+    AIControlCenterPublication,
     AIConfigurationPublication,
     AIModel,
     AIProvider,
+    AIToolSettingUpdate,
     FeatureRouting,
     FeatureRoutingPublication,
 )
@@ -51,8 +53,8 @@ class FakeService:
     async def save_features(self, features, admin_id=None):
         self.saved.append((features, admin_id))
 
-    async def publish_configuration(self, providers, models, features, admin_id=None):
-        self.published.append((providers, models, features, admin_id))
+    async def publish_configuration(self, providers, models, features, tools=None, admin_id=None):
+        self.published.append((providers, models, features, admin_id, tools))
         return 5
 
     async def restore_previous_configuration(self, admin_id=None):
@@ -130,7 +132,7 @@ def atomic_publication(*, referenced_model_active=True):
         expected_version=4,
         providers=[AIProvider(
             id="open_code", name="open_code", tipo="texto", label="OpenCode",
-            model="qwen3.7-plus", active=True, priority=1,
+            model="qwen3.7-plus", active=True, priority=1, auth_configured=True,
         )],
         models=[
             AIModel(
@@ -174,6 +176,32 @@ async def test_atomic_publication_rejects_disabling_a_referenced_model():
         )
     assert exc.value.status_code == 422
     assert FakeService.published == []
+
+
+@pytest.mark.asyncio
+async def test_control_center_publishes_tool_state_in_the_same_versioned_operation():
+    base = atomic_publication()
+    payload = AIControlCenterPublication(
+        **base.model_dump(exclude={"tools"}),
+        tools=[AIToolSettingUpdate(
+            tool_id="taller",
+            generation_enabled=False,
+            pause_reason="Mantenimiento programado",
+        )],
+    )
+
+    result = await router.publish_ai_control_center(
+        payload,
+        current_user=admin_user(),
+        db=FakeDB((4,)),
+    )
+
+    assert result["version"] == 5
+    assert FakeService.published[0][4] == [{
+        "tool_id": "taller",
+        "generation_enabled": False,
+        "pause_reason": "Mantenimiento programado",
+    }]
 
 
 @pytest.mark.asyncio

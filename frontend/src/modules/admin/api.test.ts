@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { publishAIConfiguration, restorePreviousConfiguration, saveFeatures, saveProviders, testProvider, updateGlobalAIConfig, type AIProvider } from './api';
+import { getAIControlCenterUsage, publishAIConfiguration, publishAIControlCenter, restorePreviousConfiguration, saveFeatures, saveProviders, testProvider, updateGlobalAIConfig, type AIProvider } from './api';
 
-const transport = vi.hoisted(() => ({ put: vi.fn(), patch: vi.fn(), post: vi.fn() }));
+const transport = vi.hoisted(() => ({ get: vi.fn(), put: vi.fn(), patch: vi.fn(), post: vi.fn() }));
 
 vi.mock('@/lib/api', () => ({ api: transport }));
 
@@ -82,6 +82,29 @@ describe('saveProviders', () => {
       expected_version: 4,
       models: [expect.objectContaining({ model_id: 'qwen3.7-plus', active: true })],
     }));
+  });
+
+  it('publishes tool availability in the same versioned request', async () => {
+    transport.put.mockResolvedValue({ data: { status: 'ok', version: 6 } });
+    await publishAIControlCenter(
+      [{ id: 'open_code', name: 'OpenCode', tipo: 'texto', label: 'OpenCode', base_url: null, model: 'qwen3.7-plus', active: true, priority: 1, timeout_seconds: 60, max_retries: 2 }],
+      [{ provider_id: 'open_code', model_id: 'qwen3.7-plus', label: 'Qwen', capabilities: ['text'], recommended: true, active: true }],
+      [{ feature: 'herramientas_educativas', label: 'Recursos', capability: 'text', primary_provider: 'open_code', primary_model: 'qwen3.7-plus', fallback_provider: null, active: true }],
+      [{ tool_id: 'taller', label: 'Taller', category: 'Material', description: '', aliases: [], uses_ai: true, uses_image_ai: false, generation_enabled: false, unavailable_reason: null, pause_reason: 'Mantenimiento', config_version: 5, route_override: null, inherits_from: 'herramientas_educativas' }],
+      5,
+    );
+    expect(transport.put).toHaveBeenCalledWith('/admin/ai-control-center/publish', expect.objectContaining({
+      expected_version: 5,
+      tools: [{ tool_id: 'taller', generation_enabled: false, pause_reason: 'Mantenimiento' }],
+    }));
+  });
+
+  it('requests bounded control-center metrics with server filter names', async () => {
+    transport.get.mockResolvedValue({ data: { period_days: 7, rows: [] } });
+    await getAIControlCenterUsage({ days: 7, feature: 'grading', status: 'failed' });
+    expect(transport.get).toHaveBeenCalledWith('/admin/ai-control-center/usage', {
+      params: { days: 7, feature: 'grading', usage_status: 'failed' },
+    });
   });
 
   it('restores the previous published configuration', async () => {

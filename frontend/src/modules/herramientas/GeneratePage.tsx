@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { AnimatePresence, motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 import {
@@ -27,7 +28,7 @@ import { TeachingCycle } from '@/components/business/TeachingCycle';
 import { cn } from '@/lib/cn';
 import { TOOL_BY_TIPO, TOOL_EDUCATIONAL_ICON } from './meta';
 import { FORMS } from './forms';
-import { generateMaterial } from './api';
+import { generateMaterial, getToolCatalog } from './api';
 import { toApiError } from '@/lib/api';
 import type { MaterialTipo } from '@/types/api';
 import { routes } from '@/config/routes';
@@ -141,10 +142,22 @@ export function GeneratePage() {
     unknown
   > | null>(null);
   const submittingRef = useRef(false);
+  const catalogQuery = useQuery({
+    queryKey: ['herramientas', 'catalogo'],
+    queryFn: getToolCatalog,
+    staleTime: 60_000,
+    retry: false,
+  });
+  const availability = useMemo(
+    () => new Map((catalogQuery.data ?? []).map((item) => [item.tool_id, item])),
+    [catalogQuery.data],
+  );
 
   const visibleTools = useMemo(
-    () => filterTools(MATERIAL_CREATION_TOOLS, { goal, search }),
-    [goal, search],
+    () => filterTools(MATERIAL_CREATION_TOOLS, { goal, search }).filter(
+      (item) => availability.get(item.tipo)?.generation_enabled !== false,
+    ),
+    [availability, goal, search],
   );
 
   useEffect(() => {
@@ -298,6 +311,24 @@ export function GeneratePage() {
             ))}
           </div>
         )}
+      </div>
+    );
+  }
+
+  const selectedAvailability = availability.get(tool.tipo);
+  if (selectedAvailability && !selectedAvailability.generation_enabled) {
+    return (
+      <div className="space-y-6">
+        <PageHeader
+          title={tool.label}
+          eyebrow="Herramienta temporalmente pausada"
+          subtitle={selectedAvailability.unavailable_reason ?? 'No admite nuevas generaciones por el momento.'}
+          breadcrumbs={[{ label: 'Recursos', to: '/app/herramientas' }, { label: 'Crear material', to: '/app/herramientas/nuevo' }, { label: tool.label }]}
+        />
+        <Card className="p-6">
+          <p className="font-semibold">Tus materiales anteriores siguen disponibles.</p>
+          <p className="mt-1 text-sm text-muted">Puedes consultarlos, descargarlos y asignarlos con normalidad.</p>
+        </Card>
       </div>
     );
   }
