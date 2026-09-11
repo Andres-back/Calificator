@@ -20,7 +20,7 @@
 ## Fase final
 
 - [x] T009 Ejecutar pruebas focales, tipos, lint y gobernanza; documentar evidencia en `specs/036-ollama-cloud-vision-fallback/quickstart.md`
-- [ ] T010 Abrir PR enlazado al issue #74 y someter el hotfix a CI antes de fusionar
+- [x] T010 Abrir PR enlazado al issue #74 y someter el hotfix a CI antes de fusionar
 
 ## Dependencias
 
