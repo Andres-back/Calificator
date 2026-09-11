@@ -99,22 +99,9 @@
       ]
     },
     {
-      "category": "contract_mismatch",
-      "description": "4 llamadas frontend no tienen endpoint backend canónico coincidente en el análisis estático.",
-      "id": "F-D1DBF5E00BFE",
-      "issue_url": "",
-      "severity": "medium",
-      "surface_ids": [
-        "frontend_call:GET:/admin/users/{id}:frontend/src/modules/admin/usersApi.ts",
-        "frontend_call:POST:/admin/roles/{id}:frontend/src/modules/admin/authorizationApi.ts",
-        "frontend_call:POST:/impacto/estudios/{id}/{action}:frontend/src/modules/analytics/AnalyticsPage.tsx",
-        "frontend_call:POST:/jobs/{jobId}:frontend/src/modules/evaluaciones/components/DigitalizationJobMonitor.tsx"
-      ]
-    },
-    {
       "category": "missing_coverage",
       "description": "28 superficies de 021-configuracion-ia-docente no tienen evidencia de prueba observable.",
-      "id": "F-D49FD4122F05",
+      "id": "F-A43AE25A2534",
       "issue_url": "",
       "severity": "low",
       "surface_ids": [
@@ -123,7 +110,7 @@
         "backend:GET:/profesor/ai-providers/ollama/models",
         "backend:GET:/profesor/ollama-connectors",
         "backend:POST:/admin/ai-cache/clear",
-        "backend:POST:/admin/ai-providers/ollama/models/refresh",
+        "backend:POST:/admin/ai-providers/{provider}/models/refresh",
         "backend:POST:/admin/ai-providers/{provider}/test",
         "backend:POST:/admin/ai-settings/restore-defaults",
         "backend:POST:/connector/jobs/claim",
@@ -146,6 +133,19 @@
         "table:ollama_connectors",
         "table:ollama_pairing_codes",
         "table:profesor_ai_provider_models"
+      ]
+    },
+    {
+      "category": "contract_mismatch",
+      "description": "4 llamadas frontend no tienen endpoint backend canónico coincidente en el análisis estático.",
+      "id": "F-D1DBF5E00BFE",
+      "issue_url": "",
+      "severity": "medium",
+      "surface_ids": [
+        "frontend_call:GET:/admin/users/{id}:frontend/src/modules/admin/usersApi.ts",
+        "frontend_call:POST:/admin/roles/{id}:frontend/src/modules/admin/authorizationApi.ts",
+        "frontend_call:POST:/impacto/estudios/{id}/{action}:frontend/src/modules/analytics/AnalyticsPage.tsx",
+        "frontend_call:POST:/jobs/{jobId}:frontend/src/modules/evaluaciones/components/DigitalizationJobMonitor.tsx"
       ]
     },
     {
@@ -336,7 +336,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "1f17829db6ad4b576dc570d481fe81d74eb2e6ad64ac8751bb8ad746a28969f4",
+  "source_digest": "fea79a209cc83437821203d835d5a331c3a9ede79424814f0c0b430f384c83ad",
   "surfaces": [
     {
       "actors": [
@@ -926,7 +926,7 @@
       "kind": "endpoint",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "DELETE:/profesor/ai-credentials/{provider}",
-      "source_line": 1289,
+      "source_line": 1269,
       "source_path": "backend/app/modules/admin_ai_config/router.py",
       "states": [],
       "tests": [
@@ -1063,7 +1063,7 @@
       "kind": "endpoint",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "GET:/admin/ai-audit",
-      "source_line": 939,
+      "source_line": 919,
       "source_path": "backend/app/modules/admin_ai_config/router.py",
       "states": [],
       "tests": [
@@ -1100,7 +1100,7 @@
       "kind": "endpoint",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "GET:/admin/ai-config",
-      "source_line": 363,
+      "source_line": 331,
       "source_path": "backend/app/modules/admin_ai_config/router.py",
       "states": [],
       "tests": [
@@ -1143,7 +1143,7 @@
       "kind": "endpoint",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "GET:/admin/ai-config-hash",
-      "source_line": 907,
+      "source_line": 887,
       "source_path": "backend/app/modules/admin_ai_config/router.py",
       "states": [],
       "tests": [
@@ -1180,7 +1180,7 @@
       "kind": "endpoint",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "GET:/admin/ai-control-center",
-      "source_line": 513,
+      "source_line": 481,
       "source_path": "backend/app/modules/admin_ai_config/router.py",
       "states": [],
       "tests": [
@@ -1223,7 +1223,7 @@
       "kind": "endpoint",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "GET:/admin/ai-control-center/effective",
-      "source_line": 545,
+      "source_line": 513,
       "source_path": "backend/app/modules/admin_ai_config/router.py",
       "states": [],
       "tests": []
@@ -1247,7 +1247,7 @@
       "kind": "endpoint",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "GET:/admin/ai-control-center/usage",
-      "source_line": 522,
+      "source_line": 490,
       "source_path": "backend/app/modules/admin_ai_config/router.py",
       "states": [],
       "tests": [
@@ -1290,7 +1290,7 @@
       "kind": "endpoint",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "GET:/admin/ai-settings",
-      "source_line": 440,
+      "source_line": 408,
       "source_path": "backend/app/modules/admin_ai_config/router.py",
       "states": [],
       "tests": [
@@ -1339,7 +1339,7 @@
       "kind": "endpoint",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "GET:/admin/ai-usage",
-      "source_line": 695,
+      "source_line": 675,
       "source_path": "backend/app/modules/admin_ai_config/router.py",
       "states": [],
       "tests": [
@@ -5929,7 +5929,7 @@
       "kind": "endpoint",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "GET:/profesor/ai-config",
-      "source_line": 1087,
+      "source_line": 1067,
       "source_path": "backend/app/modules/admin_ai_config/router.py",
       "states": [],
       "tests": [
@@ -5979,7 +5979,7 @@
       "kind": "endpoint",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "GET:/profesor/ai-providers/ollama/models",
-      "source_line": 1331,
+      "source_line": 1311,
       "source_path": "backend/app/modules/admin_ai_config/router.py",
       "states": [],
       "tests": []
@@ -6566,7 +6566,7 @@
       "kind": "endpoint",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "PATCH:/admin/ai-config",
-      "source_line": 376,
+      "source_line": 344,
       "source_path": "backend/app/modules/admin_ai_config/router.py",
       "states": [],
       "tests": [
@@ -6609,7 +6609,7 @@
       "kind": "endpoint",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "PATCH:/admin/ai-providers/{provider_id}",
-      "source_line": 861,
+      "source_line": 841,
       "source_path": "backend/app/modules/admin_ai_config/router.py",
       "states": [],
       "tests": [
@@ -7804,7 +7804,7 @@
       "kind": "endpoint",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "PATCH:/profesor/ai-config",
-      "source_line": 968,
+      "source_line": 948,
       "source_path": "backend/app/modules/admin_ai_config/router.py",
       "states": [],
       "tests": [
@@ -7999,7 +7999,7 @@
       "kind": "endpoint",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "POST:/admin/ai-cache/clear",
-      "source_line": 705,
+      "source_line": 685,
       "source_path": "backend/app/modules/admin_ai_config/router.py",
       "states": [],
       "tests": []
@@ -8023,7 +8023,7 @@
       "kind": "endpoint",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "POST:/admin/ai-control-center/validate",
-      "source_line": 574,
+      "source_line": 542,
       "source_path": "backend/app/modules/admin_ai_config/router.py",
       "states": [],
       "tests": [
@@ -8046,15 +8046,15 @@
       "consumers": [],
       "coverage": "missing",
       "details": {
-        "function": "refresh_global_ollama_models",
+        "function": "refresh_global_provider_models",
         "registered": true,
         "router": "router"
       },
-      "id": "backend:POST:/admin/ai-providers/ollama/models/refresh",
+      "id": "backend:POST:/admin/ai-providers/{provider}/models/refresh",
       "kind": "endpoint",
       "owner_spec": "021-configuracion-ia-docente",
-      "signature": "POST:/admin/ai-providers/ollama/models/refresh",
-      "source_line": 668,
+      "signature": "POST:/admin/ai-providers/{provider}/models/refresh",
+      "source_line": 636,
       "source_path": "backend/app/modules/admin_ai_config/router.py",
       "states": [],
       "tests": []
@@ -8078,7 +8078,7 @@
       "kind": "endpoint",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "POST:/admin/ai-providers/{provider}/test",
-      "source_line": 634,
+      "source_line": 602,
       "source_path": "backend/app/modules/admin_ai_config/router.py",
       "states": [],
       "tests": []
@@ -8102,7 +8102,7 @@
       "kind": "endpoint",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "POST:/admin/ai-settings/restore-defaults",
-      "source_line": 878,
+      "source_line": 858,
       "source_path": "backend/app/modules/admin_ai_config/router.py",
       "states": [],
       "tests": []
@@ -8126,7 +8126,7 @@
       "kind": "endpoint",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "POST:/admin/ai-settings/restore-previous",
-      "source_line": 890,
+      "source_line": 870,
       "source_path": "backend/app/modules/admin_ai_config/router.py",
       "states": [],
       "tests": [
@@ -12400,7 +12400,7 @@
       "kind": "endpoint",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "POST:/profesor/ai-providers/ollama/models/refresh",
-      "source_line": 1311,
+      "source_line": 1291,
       "source_path": "backend/app/modules/admin_ai_config/router.py",
       "states": [],
       "tests": []
@@ -12425,7 +12425,7 @@
       "kind": "endpoint",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "POST:/profesor/ai-providers/{provider}/test",
-      "source_line": 1366,
+      "source_line": 1346,
       "source_path": "backend/app/modules/admin_ai_config/router.py",
       "states": [],
       "tests": [
@@ -12765,7 +12765,7 @@
       "kind": "endpoint",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "PUT:/admin/ai-control-center/publish",
-      "source_line": 590,
+      "source_line": 558,
       "source_path": "backend/app/modules/admin_ai_config/router.py",
       "states": [],
       "tests": [
@@ -12802,7 +12802,7 @@
       "kind": "endpoint",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "PUT:/admin/ai-features",
-      "source_line": 812,
+      "source_line": 792,
       "source_path": "backend/app/modules/admin_ai_config/router.py",
       "states": [],
       "tests": [
@@ -12839,7 +12839,7 @@
       "kind": "endpoint",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "PUT:/admin/ai-providers",
-      "source_line": 784,
+      "source_line": 764,
       "source_path": "backend/app/modules/admin_ai_config/router.py",
       "states": [],
       "tests": [
@@ -12870,7 +12870,7 @@
       "kind": "endpoint",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "PUT:/admin/ai-settings/publish",
-      "source_line": 718,
+      "source_line": 698,
       "source_path": "backend/app/modules/admin_ai_config/router.py",
       "states": [],
       "tests": [
@@ -13069,7 +13069,7 @@
       "kind": "endpoint",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "PUT:/profesor/ai-config",
-      "source_line": 1199,
+      "source_line": 1179,
       "source_path": "backend/app/modules/admin_ai_config/router.py",
       "states": [],
       "tests": [
@@ -13119,7 +13119,7 @@
       "kind": "endpoint",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "PUT:/profesor/ai-credentials/{provider}",
-      "source_line": 1264,
+      "source_line": 1244,
       "source_path": "backend/app/modules/admin_ai_config/router.py",
       "states": [],
       "tests": [
@@ -13275,6 +13275,12 @@
           "reference": "/",
           "status": "domain",
           "test_path": "backend/tests/unit/test_ai_configuration_resolver.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_ai_model_discovery.py"
         },
         {
           "level": "unit",
@@ -24745,87 +24751,87 @@
       "consumers": [],
       "coverage": "covered",
       "details": {
-        "backend_contract": "backend:POST:/admin/ai-providers/ollama/models/refresh",
+        "backend_contract": "backend:POST:/admin/ai-providers/{provider}/models/refresh",
         "backend_contract_candidates": [],
         "contract_status": "matched"
       },
-      "id": "frontend_call:POST:/admin/ai-providers/ollama/models/refresh:frontend/src/modules/admin/api.ts",
+      "id": "frontend_call:POST:/admin/ai-providers/{providerId}/models/refresh:frontend/src/modules/admin/api.ts",
       "kind": "frontend_call",
       "owner_spec": "021-configuracion-ia-docente",
-      "signature": "POST:/admin/ai-providers/ollama/models/refresh",
+      "signature": "POST:/admin/ai-providers/{providerId}/models/refresh",
       "source_line": 326,
       "source_path": "frontend/src/modules/admin/api.ts",
       "states": [],
       "tests": [
         {
           "level": "unit",
-          "reference": "POST:/admin/ai-providers/ollama/models/refresh",
+          "reference": "POST:/admin/ai-providers/{providerId}/models/refresh",
           "status": "domain",
           "test_path": "backend/tests/integration/test_admin_ai_control_center.py"
         },
         {
           "level": "unit",
-          "reference": "POST:/admin/ai-providers/ollama/models/refresh",
+          "reference": "POST:/admin/ai-providers/{providerId}/models/refresh",
           "status": "domain",
           "test_path": "backend/tests/integration/test_admin_ai_routing.py"
         },
         {
           "level": "unit",
-          "reference": "POST:/admin/ai-providers/ollama/models/refresh",
+          "reference": "POST:/admin/ai-providers/{providerId}/models/refresh",
           "status": "domain",
           "test_path": "backend/tests/integration/test_admin_mail_config.py"
         },
         {
           "level": "unit",
-          "reference": "POST:/admin/ai-providers/ollama/models/refresh",
+          "reference": "POST:/admin/ai-providers/{providerId}/models/refresh",
           "status": "domain",
           "test_path": "backend/tests/integration/test_admin_roles_api.py"
         },
         {
           "level": "unit",
-          "reference": "POST:/admin/ai-providers/ollama/models/refresh",
+          "reference": "POST:/admin/ai-providers/{providerId}/models/refresh",
           "status": "domain",
           "test_path": "backend/tests/integration/test_admin_users_rbac.py"
         },
         {
           "level": "unit",
-          "reference": "POST:/admin/ai-providers/ollama/models/refresh",
+          "reference": "POST:/admin/ai-providers/{providerId}/models/refresh",
           "status": "domain",
           "test_path": "backend/tests/unit/test_admin_ai_model_performance.py"
         },
         {
           "level": "unit",
-          "reference": "POST:/admin/ai-providers/ollama/models/refresh",
+          "reference": "POST:/admin/ai-providers/{providerId}/models/refresh",
           "status": "domain",
           "test_path": "backend/tests/unit/test_admin_ai_usage_service.py"
         },
         {
           "level": "e2e",
-          "reference": "POST:/admin/ai-providers/ollama/models/refresh",
+          "reference": "POST:/admin/ai-providers/{providerId}/models/refresh",
           "status": "domain",
           "test_path": "frontend/e2e/admin-ai-control-center.spec.ts"
         },
         {
           "level": "e2e",
-          "reference": "POST:/admin/ai-providers/ollama/models/refresh",
+          "reference": "POST:/admin/ai-providers/{providerId}/models/refresh",
           "status": "domain",
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
         },
         {
           "level": "unit",
-          "reference": "POST:/admin/ai-providers/ollama/models/refresh",
+          "reference": "POST:/admin/ai-providers/{providerId}/models/refresh",
           "status": "domain",
           "test_path": "frontend/src/modules/admin/AdminAIConfigPage.test.tsx"
         },
         {
           "level": "unit",
-          "reference": "POST:/admin/ai-providers/ollama/models/refresh",
+          "reference": "POST:/admin/ai-providers/{providerId}/models/refresh",
           "status": "domain",
           "test_path": "frontend/src/modules/admin/AdminMailPage.test.tsx"
         },
         {
           "level": "unit",
-          "reference": "POST:/admin/ai-providers/ollama/models/refresh",
+          "reference": "POST:/admin/ai-providers/{providerId}/models/refresh",
           "status": "domain",
           "test_path": "frontend/src/modules/admin/AdminUsersPage.test.tsx"
         }
@@ -28909,6 +28915,12 @@
           "level": "unit",
           "reference": "groq",
           "status": "direct",
+          "test_path": "backend/tests/unit/test_ai_model_discovery.py"
+        },
+        {
+          "level": "unit",
+          "reference": "groq",
+          "status": "direct",
           "test_path": "backend/tests/unit/test_evaluation_digitalization.py"
         },
         {
@@ -29087,6 +29099,12 @@
           "level": "unit",
           "reference": "open_code",
           "status": "direct",
+          "test_path": "backend/tests/unit/test_ai_model_discovery.py"
+        },
+        {
+          "level": "unit",
+          "reference": "open_code",
+          "status": "direct",
           "test_path": "backend/tests/unit/test_evaluation_digitalization.py"
         },
         {
@@ -29192,6 +29210,12 @@
           "reference": "openai",
           "status": "direct",
           "test_path": "backend/tests/integration/test_ai_configuration_secret_safety.py"
+        },
+        {
+          "level": "unit",
+          "reference": "openai",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_ai_model_discovery.py"
         },
         {
           "level": "unit",

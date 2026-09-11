@@ -1,13 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
-import { Database, Eye, EyeOff, KeyRound, LockKeyhole, RefreshCw, Save, ServerCog, Trash2 } from 'lucide-react';
+import { Database, Eye, EyeOff, KeyRound, LockKeyhole, Save, ServerCog, Trash2 } from 'lucide-react';
 import { Badge, Button, Card, ConfirmDialog, Field, Input } from '@/components/ui';
 import { queryClient } from '@/lib/queryClient';
 import { toApiError } from '@/lib/api';
 import {
   updateGlobalAIConfig,
-  refreshGlobalOllamaModels,
+  refreshGlobalProviderModels,
+  type AIModel,
   type GlobalAIConfig,
   type GlobalAIConfigUpdate,
 } from './api';
@@ -83,7 +84,13 @@ function sourceIcon(source: string | undefined) {
   return source === 'environment' ? ServerCog : Database;
 }
 
-export function AICredentialsPanel({ config }: { config: GlobalAIConfig }) {
+export function AICredentialsPanel({
+  config,
+  onModelsRefreshed,
+}: {
+  config: GlobalAIConfig;
+  onModelsRefreshed?: (providerId: string, models: AIModel[]) => void;
+}) {
   const [secrets, setSecrets] = useState(EMPTY_SECRETS);
   const [visible, setVisible] = useState<Record<CredentialId, boolean>>({ openai: false, groq: false, open_code: false, ollama: false, cloudflare: false });
   const [accountId, setAccountId] = useState(config.cloudflare_account_id ?? '');
@@ -99,11 +106,40 @@ export function AICredentialsPanel({ config }: { config: GlobalAIConfig }) {
 
   const saveMutation = useMutation({
     mutationFn: (payload: GlobalAIConfigUpdate) => updateGlobalAIConfig(payload),
-    onSuccess: () => {
+    onSuccess: async (_data, payload) => {
       setSecrets(EMPTY_SECRETS);
       setAccountTouched(false);
       void queryClient.invalidateQueries({ queryKey: ['admin-ai-settings'] });
-      toast.success('Credenciales guardadas y listas para usarse.');
+      const providers = new Set<string>();
+      if (payload.openai_key) {
+        providers.add('openai');
+        providers.add('openai_image');
+      }
+      if (payload.groq_key) providers.add('groq');
+      if (payload.open_code_key) providers.add('open_code');
+      if (payload.ollama_key) providers.add('ollama');
+      if (payload.cloudflare_token || payload.cloudflare_account_id) providers.add('cloudflare_image');
+
+      if (providers.size === 0) {
+        toast.success('Credenciales guardadas y listas para usarse.');
+        return;
+      }
+      const results = await Promise.allSettled(
+        [...providers].map(async (providerId) => ({
+          providerId,
+          models: await refreshGlobalProviderModels(providerId),
+        })),
+      );
+      const refreshed = results.filter((result) => result.status === 'fulfilled');
+      for (const result of refreshed) {
+        if (result.status === 'fulfilled') onModelsRefreshed?.(result.value.providerId, result.value.models);
+      }
+      void queryClient.invalidateQueries({ queryKey: ['admin-ai-settings'] });
+      if (refreshed.length === results.length) {
+        toast.success('Credenciales guardadas y catálogo de modelos actualizado.');
+      } else {
+        toast.success('Credenciales guardadas. El catálogo anterior se conservó donde la API no respondió.');
+      }
     },
     onError: (error) => toast.error(toApiError(error).detail),
   });
@@ -120,15 +156,6 @@ export function AICredentialsPanel({ config }: { config: GlobalAIConfig }) {
       setAccountTouched(false);
       void queryClient.invalidateQueries({ queryKey: ['admin-ai-settings'] });
       toast.success('Credencial retirada de la plataforma.');
-    },
-    onError: (error) => toast.error(toApiError(error).detail),
-  });
-
-  const refreshOllamaMutation = useMutation({
-    mutationFn: refreshGlobalOllamaModels,
-    onSuccess: (models) => {
-      void queryClient.invalidateQueries({ queryKey: ['admin-ai-settings'] });
-      toast.success(`${models.length} modelo${models.length === 1 ? '' : 's'} de Ollama actualizado${models.length === 1 ? '' : 's'}.`);
     },
     onError: (error) => toast.error(toApiError(error).detail),
   });
@@ -229,11 +256,6 @@ export function AICredentialsPanel({ config }: { config: GlobalAIConfig }) {
               {canClearStored && (
                 <Button size="sm" variant="ghost" className="mt-3 text-rose-600 dark:text-rose-300" onClick={() => setClearTarget(item.id)}>
                   <Trash2 className="h-4 w-4" /> Retirar credencial guardada
-                </Button>
-              )}
-              {item.id === 'ollama' && configured && (
-                <Button size="sm" variant="outline" className="mt-3" loading={refreshOllamaMutation.isPending} onClick={() => refreshOllamaMutation.mutate()}>
-                  <RefreshCw className="h-4 w-4" /> Actualizar modelos
                 </Button>
               )}
               {source === 'environment' && <p className="mt-3 text-xs text-muted">Esta credencial se administra en el entorno del servidor y no puede retirarse desde el navegador.</p>}

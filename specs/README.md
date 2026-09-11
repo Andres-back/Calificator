@@ -38,6 +38,7 @@ actualizar la especificación propietaria, su plan y sus tareas; no debe crear d
 | 031 | [Aceleración de pipelines de IA](031-acelerar-pipelines-ia/spec.md) | jobs, calificaciones, digitalización, presentaciones y routing IA | progreso, cola grupal, estados de nota y métricas por modelo | `ai_jobs`, `entregas`, `calificaciones`, `presentaciones`, telemetría | [#64](https://github.com/Andres-back/Calificator/issues/64) |
 | 032 | [Calificación confiable e impacto docente medible](032-calificacion-impacto-docente/spec.md) | calificaciones, jobs, analytics, rag e impacto_tesis | revisión explicable, tiempos observados y estudio autorizado | `calificaciones`, `ai_jobs`, `analytics_work_sessions`, `impacto_studies`, `impacto_observations` | [#65](https://github.com/Andres-back/Calificator/issues/65) |
 | 034 | [Administración efectiva de herramientas e IA](034-administracion-herramientas-ia/spec.md) | coordinación de admin_ai_config, jobs, routing IA y catálogo de herramientas | `/app/admin/configuracion-ia` y creación de recursos | `ai_feature_routing`, `ai_tool_settings`, `ai_usage_events`; sin trasladar propiedad de 006/012/021 | [#70](https://github.com/Andres-back/Calificator/issues/70) |
+| 035 | [Catálogo dinámico de modelos IA](035-modelos-dinamicos-api/spec.md) | descubrimiento y sincronización de modelos por proveedor | `/app/admin/configuracion-ia` | `ai_provider_models`; amplía 034 sin cambiar rutas publicadas | [#72](https://github.com/Andres-back/Calificator/issues/72) |
 
 ## Reglas de propiedad
 

@@ -35,6 +35,7 @@ ALL_SPECS = {
     "032-calificacion-impacto-docente",
     "033-centro-calificacion",
     "034-administracion-herramientas-ia",
+    "035-modelos-dinamicos-api",
 }
 OWNED_SPECS = {
     name

@@ -7,6 +7,18 @@ function compatibleModels(models: AIModel[], provider: string, capability: strin
   return models.filter((model) => model.provider_id === provider && model.active && model.capabilities.includes(capability));
 }
 
+function unavailableModel(models: AIModel[], provider: string, modelId: string | null | undefined) {
+  if (!modelId) return null;
+  return models.find((model) => model.provider_id === provider && model.model_id === modelId) ?? {
+    provider_id: provider,
+    model_id: modelId,
+    label: modelId,
+    capabilities: [],
+    recommended: false,
+    active: false,
+  };
+}
+
 function routeForStage(stage: AIFunctionControl['stages'][number], features: FeatureRouting[]): FeatureRouting | null {
   if (!stage.runtime_feature || !stage.configured) return null;
   return features.find((feature) => feature.feature === stage.runtime_feature) ?? {
@@ -76,11 +88,24 @@ export function FunctionsSection({
               const supportedProviders = stage.supported_providers ?? [];
               const providerOptions = providers.filter((provider) => (
                 provider.active
+                && provider.auth_configured
                 && compatibleModels(models, provider.id, stage.capability).length > 0
                 && (supportedProviders.length === 0 || supportedProviders.includes(provider.id))
               ));
               const modelOptions = route ? compatibleModels(models, route.primary_provider, stage.capability) : [];
               const fallbackModelOptions = route?.fallback_provider ? compatibleModels(models, route.fallback_provider, stage.capability) : [];
+              const currentProviderUnavailable = route && !providerOptions.some((provider) => provider.id === route.primary_provider)
+                ? providers.find((provider) => provider.id === route.primary_provider)
+                : null;
+              const currentModelUnavailable = route && !modelOptions.some((model) => model.model_id === route.primary_model)
+                ? unavailableModel(models, route.primary_provider, route.primary_model)
+                : null;
+              const fallbackProviderUnavailable = route?.fallback_provider && !providerOptions.some((provider) => provider.id === route.fallback_provider)
+                ? providers.find((provider) => provider.id === route.fallback_provider)
+                : null;
+              const fallbackModelUnavailable = route?.fallback_provider && !fallbackModelOptions.some((model) => model.model_id === route.fallback_model)
+                ? unavailableModel(models, route.fallback_provider, route.fallback_model)
+                : null;
               return (
                 <Card key={`${item.function_id}:${stage.stage_id}`} className="space-y-4 p-4">
                   <div className="flex flex-wrap items-start justify-between gap-3">
@@ -107,11 +132,13 @@ export function FunctionsSection({
                             fallback_model: clearsFallback ? null : route.fallback_model,
                           });
                         }}>
+                          {currentProviderUnavailable && <option value={currentProviderUnavailable.id} disabled>{currentProviderUnavailable.label} (no disponible)</option>}
                           {providerOptions.map((provider) => <option key={provider.id} value={provider.id}>{provider.label}</option>)}
                         </Select>
                       </Field>
                       <Field label="Modelo">
                         <Select value={route.primary_model ?? ''} onChange={(event) => onUpsert({ ...route, primary_model: event.currentTarget.value || null })}>
+                          {currentModelUnavailable && <option value={currentModelUnavailable.model_id} disabled>{currentModelUnavailable.label} (no disponible)</option>}
                           {modelOptions.map((model) => <option key={model.model_id} value={model.model_id}>{model.label}</option>)}
                         </Select>
                       </Field>
@@ -122,12 +149,14 @@ export function FunctionsSection({
                           onUpsert({ ...route, fallback_provider: fallbackProvider, fallback_model: first?.model_id ?? null });
                         }}>
                           <option value="">Sin respaldo</option>
+                          {fallbackProviderUnavailable && <option value={fallbackProviderUnavailable.id} disabled>{fallbackProviderUnavailable.label} (no disponible)</option>}
                           {providerOptions.filter((provider) => provider.id !== route.primary_provider).map((provider) => <option key={provider.id} value={provider.id}>{provider.label}</option>)}
                         </Select>
                       </Field>
                       <Field label="Modelo de respaldo">
                         <Select disabled={!route.fallback_provider} value={route.fallback_model ?? ''} onChange={(event) => onUpsert({ ...route, fallback_model: event.currentTarget.value || null })}>
                           {!route.fallback_provider && <option value="">No aplica</option>}
+                          {fallbackModelUnavailable && <option value={fallbackModelUnavailable.model_id} disabled>{fallbackModelUnavailable.label} (no disponible)</option>}
                           {fallbackModelOptions.map((model) => <option key={model.model_id} value={model.model_id}>{model.label}</option>)}
                         </Select>
                       </Field>
