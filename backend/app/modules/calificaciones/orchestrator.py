@@ -465,6 +465,11 @@ async def orchestrate_grading(
     recheck_snapshot: dict = dict(
         stage_snapshots.get("targeted_recheck") or grading_snapshot
     )
+    vision_provider = "open_code"
+    vision_api_key: str | None = None
+    vision_fallback_provider: str | None = None
+    vision_fallback_model: str | None = None
+    vision_fallback_api_key: str | None = None
     if user_id is not None or ai_snapshot:
         try:
             from app.services.ai_configuration_resolver import resolve_ai_configuration
@@ -500,11 +505,17 @@ async def orchestrate_grading(
             grading_selected = grading_snapshot.get("primary") or {}
             verification_selected = verification_snapshot.get("primary") or {}
             recheck_selected = recheck_snapshot.get("primary") or {}
-            if (
-                vision_selected.get("provider") == "open_code"
-                and vision_selected.get("model")
-            ):
+            selected_visual_provider = str(vision_selected.get("provider") or "open_code")
+            if selected_visual_provider in {"open_code", "ollama"}:
+                vision_provider = selected_visual_provider
+            if vision_selected.get("model"):
                 vision_model = str(vision_selected["model"])
+            vision_fallback = vision_snapshot.get("fallback") or {}
+            candidate_fallback_provider = str(vision_fallback.get("provider") or "")
+            if candidate_fallback_provider in {"open_code", "ollama"}:
+                vision_fallback_provider = candidate_fallback_provider
+                if vision_fallback.get("model"):
+                    vision_fallback_model = str(vision_fallback["model"])
             if (
                 grading_selected.get("provider") == "open_code"
                 and grading_selected.get("model")
@@ -556,10 +567,34 @@ async def orchestrate_grading(
 
     if user_id is not None or ai_snapshot:
         try:
-            institutional_key = (
-                await get_effective_ai_credentials(db)
-            ).open_code_key
+            effective_credentials = await get_effective_ai_credentials(db)
+            institutional_key = effective_credentials.open_code_key
+            vision_api_key = (
+                effective_credentials.ollama_key
+                if vision_provider == "ollama"
+                else institutional_key
+            )
+            if vision_fallback_provider:
+                vision_fallback_api_key = (
+                    effective_credentials.ollama_key
+                    if vision_fallback_provider == "ollama"
+                    else institutional_key
+                )
             teacher_secret: str | None = None
+
+            vision_selected = vision_snapshot.get("primary") or {}
+            if (
+                vision_selected.get("credential_source") == "teacher"
+                and user_id is not None
+                and vision_provider in {"open_code", "ollama"}
+            ):
+                selected_secret = await get_teacher_ai_credential(
+                    db,
+                    teacher_id=user_id,
+                    provider_id=vision_provider,
+                )
+                if selected_secret:
+                    vision_api_key = selected_secret
 
             async def configure_open_code_client(
                 target: OpenCodeClient,
@@ -648,8 +683,40 @@ async def orchestrate_grading(
                 vision_result = await vision_agent(
                     ctx,
                     model=vision_model,
-                    client=vision_client,
+                    client=vision_client if vision_provider == "open_code" else None,
+                    provider=vision_provider,
+                    api_key=vision_api_key,
                 )
+            if (
+                not _vision_result_is_usable(vision_result)
+                and vision_fallback_provider
+                and vision_fallback_model
+                and vision_fallback_provider != vision_provider
+            ):
+                logger.warning(
+                    "Visual provider failed; trying configured %s fallback",
+                    vision_fallback_provider,
+                )
+                configured_fallback_result = await vision_agent(
+                    ctx,
+                    model=vision_fallback_model,
+                    client=(
+                        vision_client
+                        if vision_fallback_provider == "open_code"
+                        else None
+                    ),
+                    provider=vision_fallback_provider,
+                    api_key=vision_fallback_api_key,
+                )
+                if _vision_result_is_usable(configured_fallback_result):
+                    extraction_meta = configured_fallback_result.raw_output.get(
+                        "vision_extraction"
+                    )
+                    if isinstance(extraction_meta, dict):
+                        extraction_meta["fallback_used"] = True
+                        extraction_meta["fallback_model"] = vision_fallback_model
+                    configured_fallback_result.raw_output["fallback_used"] = True
+                    vision_result = configured_fallback_result
             if (
                 vision_result.error
                 and settings.PHOTO_GRADING_CROSS_PROVIDER_FALLBACK_ENABLED
@@ -1021,6 +1088,8 @@ async def orchestrate_grading(
             if vision_result and isinstance(vision_result.raw_output, dict)
             else {}
         )
+        if vision_trace.get("fallback_used"):
+            fallbacks.append({"stage": "extraction", "reason": "configured_provider_fallback"})
         vision_prepare_ms = max(0, int(vision_trace.get("preparation_ms") or 0))
         vision_parsing_ms = max(0, int(vision_trace.get("parsing_ms") or 0))
         vision_total_ms = vision_result.tiempo_ms if vision_result else 0

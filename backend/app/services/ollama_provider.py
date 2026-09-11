@@ -14,6 +14,10 @@ OLLAMA_CLOUD_BASE_URL = "https://ollama.com/api"
 class OllamaProviderError(RuntimeError):
     """Error seguro del proveedor, sin incluir credenciales ni cuerpos sensibles."""
 
+    def __init__(self, message: str, *, temporary: bool = False) -> None:
+        super().__init__(message)
+        self.temporary = temporary
+
 
 @dataclass(frozen=True, slots=True)
 class OllamaModelInfo:
@@ -70,11 +74,11 @@ class OllamaCloudProvider:
                     raise OllamaProviderError("Ollama Cloud devolvió una respuesta no válida")
                 return payload
         except httpx.TimeoutException as exc:
-            raise OllamaProviderError("Ollama Cloud no respondió a tiempo") from exc
+            raise OllamaProviderError("Ollama Cloud no respondió a tiempo", temporary=True) from exc
         except httpx.HTTPStatusError as exc:
             code = exc.response.status_code
             message = "La credencial de Ollama Cloud no es válida" if code in {401, 403} else "Ollama Cloud rechazó la solicitud"
-            raise OllamaProviderError(message) from exc
+            raise OllamaProviderError(message, temporary=code in {429, 502, 503, 504}) from exc
         except (httpx.HTTPError, ValueError) as exc:
             raise OllamaProviderError("No fue posible conectar con Ollama Cloud") from exc
 

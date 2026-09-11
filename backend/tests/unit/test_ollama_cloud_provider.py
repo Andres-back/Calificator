@@ -59,6 +59,27 @@ def test_cloud_errors_do_not_echo_secret() -> None:
     assert "do-not-leak" not in str(error.value)
 
 
+def test_cloud_chat_sends_multimodal_message_without_unsupported_format() -> None:
+    requests: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        requests.append(request)
+        return httpx.Response(200, json={"message": {"content": '{"answers": []}'}})
+
+    provider = OllamaCloudProvider("synthetic-secret", transport=httpx.MockTransport(handler))
+    result = asyncio.run(provider.chat(
+        model="qwen3-vl:235b",
+        messages=[{"role": "user", "content": "Extrae", "images": ["base64-image"]}],
+        options={"temperature": 0},
+    ))
+
+    assert result["message"]["content"] == '{"answers": []}'
+    payload = __import__("json").loads(requests[0].content)
+    assert payload["model"] == "qwen3-vl:235b"
+    assert "format" not in payload
+    assert payload["messages"][0]["images"] == ["base64-image"]
+
+
 def test_windows_connector_requires_https_except_explicit_local_development() -> None:
     assert windows_connector._validate_server("https://xcalificator.example/") == "https://xcalificator.example"
     assert windows_connector._validate_server(

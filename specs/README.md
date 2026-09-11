@@ -39,6 +39,7 @@ actualizar la especificación propietaria, su plan y sus tareas; no debe crear d
 | 032 | [Calificación confiable e impacto docente medible](032-calificacion-impacto-docente/spec.md) | calificaciones, jobs, analytics, rag e impacto_tesis | revisión explicable, tiempos observados y estudio autorizado | `calificaciones`, `ai_jobs`, `analytics_work_sessions`, `impacto_studies`, `impacto_observations` | [#65](https://github.com/Andres-back/Calificator/issues/65) |
 | 034 | [Administración efectiva de herramientas e IA](034-administracion-herramientas-ia/spec.md) | coordinación de admin_ai_config, jobs, routing IA y catálogo de herramientas | `/app/admin/configuracion-ia` y creación de recursos | `ai_feature_routing`, `ai_tool_settings`, `ai_usage_events`; sin trasladar propiedad de 006/012/021 | [#70](https://github.com/Andres-back/Calificator/issues/70) |
 | 035 | [Catálogo dinámico de modelos IA](035-modelos-dinamicos-api/spec.md) | descubrimiento y sincronización de modelos por proveedor | `/app/admin/configuracion-ia` | `ai_provider_models`; amplía 034 sin cambiar rutas publicadas | [#72](https://github.com/Andres-back/Calificator/issues/72) |
+| 036 | [Respaldo visual con Ollama Cloud](036-ollama-cloud-vision-fallback/spec.md) | extracción visual, orquestación de calificaciones y cliente Ollama Cloud | selector de respaldo en `/app/admin/configuracion-ia` | rutas y catálogo IA existentes; sin migración | [#74](https://github.com/Andres-back/Calificator/issues/74) |
 
 ## Reglas de propiedad
 

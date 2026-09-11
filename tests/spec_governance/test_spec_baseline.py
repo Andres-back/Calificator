@@ -36,6 +36,7 @@ ALL_SPECS = {
     "033-centro-calificacion",
     "034-administracion-herramientas-ia",
     "035-modelos-dinamicos-api",
+    "036-ollama-cloud-vision-fallback",
 }
 OWNED_SPECS = {
     name

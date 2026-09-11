@@ -323,6 +323,40 @@ describe('AdminAIConfigPage', () => {
     expect(within(screen.getByLabelText('Modelo de respaldo')).getByRole('option', { name: 'Groq Fast' })).toBeInTheDocument();
   });
 
+  it('offers Ollama Cloud and only its vision models as visual fallback', async () => {
+    adminApi.getAISettings.mockResolvedValue({
+      ...settings,
+      providers: [
+        ...settings.providers,
+        { ...settings.providers[0], id: 'ollama', name: 'Ollama Cloud', label: 'Ollama Cloud', model: 'qwen3-vl:235b' },
+      ],
+      models: [
+        ...settings.models!,
+        { provider_id: 'ollama', model_id: 'qwen3-vl:235b', label: 'Qwen VL', capabilities: ['text', 'vision'], recommended: true, active: true },
+        { provider_id: 'ollama', model_id: 'llama3:8b', label: 'Llama texto', capabilities: ['text'], recommended: false, active: true },
+      ],
+    });
+    adminApi.getAIControlCenter.mockResolvedValue({
+      ...controlCenter,
+      functions: [{
+        function_id: 'calificacion', label: 'Calificación', stages: [{
+          ...controlCenter.functions[0].stages[0],
+          stage_id: 'extraction', label: 'Extracción visual', capability: 'vision',
+          runtime_feature: 'calificacion_foto', supported_providers: ['open_code', 'ollama'],
+        }],
+      }],
+    });
+
+    renderPage();
+
+    const fallbackProvider = await screen.findByLabelText('Proveedor de respaldo');
+    expect(within(fallbackProvider).getByRole('option', { name: 'Ollama Cloud' })).toBeInTheDocument();
+    await userEvent.setup().selectOptions(fallbackProvider, 'ollama');
+    const fallbackModel = screen.getByLabelText('Modelo de respaldo');
+    expect(within(fallbackModel).getByRole('option', { name: 'Qwen VL' })).toBeInTheDocument();
+    expect(within(fallbackModel).queryByRole('option', { name: 'Llama texto' })).not.toBeInTheDocument();
+  });
+
   it('keeps a removed selected model visible until the administrator replaces it', async () => {
     adminApi.getAISettings.mockResolvedValue({
       ...settings,

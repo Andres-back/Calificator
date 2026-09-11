@@ -407,3 +407,49 @@ def test_partial_pdf_failure_requires_teacher_review(monkeypatch: pytest.MonkeyP
     assert result.pages_processed == 2
     assert result.requires_review is True
     assert result.failure_reason == "vision_timeout"
+
+
+def test_ollama_cloud_uses_same_normalized_visual_contract(monkeypatch: pytest.MonkeyPatch) -> None:
+    calls: list[dict] = []
+    extractor = VisionExtractor(
+        provider="ollama",
+        primary_model="qwen3-vl:235b",
+        api_key="synthetic-key",
+    )
+
+    class FakeOllama:
+        def __init__(self, api_key: str, **_kwargs: object) -> None:
+            assert api_key == "synthetic-key"
+
+        async def chat(self, **kwargs: object) -> dict:
+            calls.append(kwargs)
+            return {
+                "message": {"content": json.dumps({
+                    "student_detected": True,
+                    "document_quality": 0.91,
+                    "page_text": "1. respuesta visible",
+                    "answers": [{
+                        "question_number": 1,
+                        "answer": "respuesta visible",
+                        "confidence": 0.94,
+                        "legible": True,
+                    }],
+                    "warnings": [],
+                })},
+                "prompt_eval_count": 11,
+                "eval_count": 7,
+            }
+
+    async def event(*_args: object, **_kwargs: object) -> None:
+        return None
+
+    monkeypatch.setattr(module, "OllamaCloudProvider", FakeOllama)
+    monkeypatch.setattr(extractor, "_event", event)
+    monkeypatch.setattr(module.settings, "VISION_MAX_RETRIES", 0)
+
+    result = asyncio.run(extractor.extract(_image(), "image/jpeg"))
+
+    assert result.provider == "ollama"
+    assert result.answers[0].answer == "respuesta visible"
+    assert calls[0]["model"] == "qwen3-vl:235b"
+    assert calls[0]["messages"][0]["images"]

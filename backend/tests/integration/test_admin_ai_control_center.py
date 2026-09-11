@@ -104,3 +104,31 @@ def test_validation_rejects_an_active_route_without_effective_credentials():
 
     assert result["valid"] is False
     assert any("credencial configurada" in error["message"] for error in result["errors"])
+
+
+def test_validation_accepts_ollama_cloud_as_visual_fallback():
+    providers = [
+        {"id": "open_code", "active": True, "model": "qwen3.7-plus", "auth_configured": True},
+        {"id": "ollama", "active": True, "model": "qwen3-vl:235b", "auth_configured": True},
+    ]
+    models = [
+        {"provider_id": "open_code", "model_id": "qwen3.7-plus", "active": True, "capabilities": ["text", "vision"]},
+        {"provider_id": "ollama", "model_id": "qwen3-vl:235b", "active": True, "capabilities": ["text", "vision"]},
+    ]
+
+    result = center.validate_control_center_payload(
+        providers,
+        models,
+        [{
+            "feature": "calificacion.extraccion",
+            "capability": "vision",
+            "primary_provider": "open_code",
+            "primary_model": "qwen3.7-plus",
+            "fallback_provider": "ollama",
+            "fallback_model": "qwen3-vl:235b",
+        }],
+        None,
+    )
+
+    assert result["valid"] is True
+    assert result["errors"] == []
