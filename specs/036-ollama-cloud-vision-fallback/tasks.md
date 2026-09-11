@@ -2,9 +2,9 @@
 
 ## Fase 1: Fundamentos
 
-- [x] T001 Registrar issue, especificación, plan, checklist e índice en `specs/036-ollama-cloud-vision-fallback/` y `specs/README.md` (FR-001–FR-008)
+- [x] T001 Registrar issue, especificación, plan, checklist e índice en `specs/036-ollama-cloud-vision-fallback/` y `specs/README.md` (FR-001, FR-002, FR-003, FR-004, FR-005, FR-006, FR-007, FR-008)
 - [x] T002 [P] [US1] Añadir regresión del selector Ollama visual en `frontend/src/modules/admin/AdminAIConfigPage.test.tsx` (FR-001, FR-002)
-- [x] T003 [P] [US2] Añadir regresiones de transporte y extracción Ollama en `backend/tests/unit/test_ollama_cloud_provider.py` y `backend/tests/unit/test_vision_extractor.py` (FR-003–FR-006, FR-008)
+- [x] T003 [P] [US2] Añadir regresiones de transporte y extracción Ollama en `backend/tests/unit/test_ollama_cloud_provider.py` y `backend/tests/unit/test_vision_extractor.py` (FR-003, FR-004, FR-005, FR-006, FR-008)
 
 ## Fase 2: Historia 1 — Configuración real
 
@@ -14,8 +14,8 @@
 ## Fase 3: Historia 2 — Recuperación de extracción
 
 - [x] T006 [US2] Ampliar el transporte multimodal JSON de Ollama en `backend/app/services/ollama_provider.py` (FR-004)
-- [x] T007 [US2] Incorporar Ollama al contrato de extracción multipágina en `backend/app/services/vision_extractor.py` y `backend/app/modules/calificaciones/agents.py` (FR-004–FR-006)
-- [x] T008 [US2] Ejecutar el respaldo configurado y registrar proveedor efectivo en `backend/app/modules/calificaciones/orchestrator.py` (FR-003, FR-006–FR-008)
+- [x] T007 [US2] Incorporar Ollama al contrato de extracción multipágina en `backend/app/services/vision_extractor.py` y `backend/app/modules/calificaciones/agents.py` (FR-004, FR-005, FR-006)
+- [x] T008 [US2] Ejecutar el respaldo configurado y registrar proveedor efectivo en `backend/app/modules/calificaciones/orchestrator.py` (FR-003, FR-006, FR-007, FR-008)
 
 ## Fase final
 
