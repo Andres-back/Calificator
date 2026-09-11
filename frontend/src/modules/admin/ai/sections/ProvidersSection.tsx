@@ -175,6 +175,7 @@ export function ProvidersSection({
         <Icon className="h-5 w-5 text-brand-500" />
         <h2 className="font-display text-lg font-bold">{title}</h2>
       </div>
+      <p className="mb-3 text-xs text-muted">“Probar conexión” usa contenido sintético, puede consumir una solicitud del proveedor y nunca envía datos estudiantiles.</p>
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {providers.map((provider) => (
           <ProviderEditor

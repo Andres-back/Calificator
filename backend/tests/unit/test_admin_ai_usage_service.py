@@ -1,84 +1,52 @@
 import asyncio
-from decimal import Decimal
 from types import SimpleNamespace
 
-from app.modules.admin_ai_config.usage_service import (
-    get_recent_provider_errors,
-    get_usage_summary,
-)
+from app.modules.admin_ai_config.usage_service import get_control_center_usage
 
 
-class FakeResult:
+class _Result:
     def __init__(self, rows):
         self.rows = rows
 
-    def fetchone(self):
-        return self.rows[0]
-
-    def __iter__(self):
-        return iter(self.rows)
+    def fetchall(self):
+        return self.rows
 
 
-class FakeDB:
-    def __init__(self):
-        self.queries: list[str] = []
+class _DB:
+    def __init__(self, rows):
+        self.rows = rows
+        self.statement = ""
+        self.params = {}
 
-    async def execute(self, statement, params=None):
-        sql = str(statement)
-        self.queries.append(sql)
-        if "status IN" in sql:
-            return FakeResult(
-                [
-                    SimpleNamespace(
-                        provider="open_code",
-                        error="timeout",
-                        occurred_at="2026-08-13 10:20:30",
-                    ),
-                    SimpleNamespace(
-                        provider="open_code",
-                        error="older",
-                        occurred_at="2026-08-12 10:20:30",
-                    ),
-                ]
-            )
-        if "GROUP BY provider" in sql:
-            return FakeResult(
-                [SimpleNamespace(provider="open_code", calls=3, cost=Decimal("0.25"))]
-            )
-        return FakeResult(
-            [
-                SimpleNamespace(
-                    total_calls=3,
-                    tokens_in=120,
-                    tokens_out=45,
-                    total_cost=Decimal("0.25"),
-                )
-            ]
-        )
+    async def execute(self, statement, params):
+        self.statement = str(statement)
+        self.params = params
+        return _Result(self.rows)
 
 
-def test_usage_summary_reads_canonical_event_ledger() -> None:
-    db = FakeDB()
+def test_usage_filters_are_parameterized_and_unmeasured_times_remain_null():
+    db = _DB([SimpleNamespace(
+        feature="grading", stage="grading_primary", provider="open_code",
+        model="qwen3.7-plus", sample_size=7, successes=6, failures=1,
+        p50_ms=18_000, p95_ms=42_000, last_observed_at=None,
+        fallback_calls=1,
+    )])
 
-    result = asyncio.run(get_usage_summary(db))
+    result = asyncio.run(get_control_center_usage(
+        db,
+        days=120,
+        feature="grading",
+        stage="grading_primary",
+        provider="open_code",
+        model="qwen3.7-plus",
+        status="success",
+    ))
 
-    assert result == {
-        "total_calls": 3,
-        "total_tokens_input": 120,
-        "total_tokens_output": 45,
-        "total_cost": 0.25,
-        "by_provider": [{"provider": "open_code", "calls": 3, "cost": 0.25}],
-    }
-    assert all("ai_usage_events" in query for query in db.queries)
-    assert all("ai_usage_logs" not in query for query in db.queries)
-
-
-def test_recent_errors_keeps_latest_error_per_provider() -> None:
-    db = FakeDB()
-
-    result = asyncio.run(get_recent_provider_errors(db))
-
-    assert result == {
-        "open_code": {"error": "timeout", "at": "2026-08-13 10:20:30"}
-    }
-    assert "ai_usage_events" in db.queries[0]
+    assert result["period_days"] == 90
+    assert result["sample_size"] == 7
+    assert result["rows"][0]["queue_ms"] is None
+    assert result["rows"][0]["human_review_ms"] is None
+    assert db.params["feature"] == "grading"
+    assert db.params["status"] == "success"
+    assert "feature = :feature" in db.statement
+    assert "status = :status" in db.statement

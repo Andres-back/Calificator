@@ -21,6 +21,10 @@ CAPABILITY_BY_FEATURE: dict[str, str] = {
     "generacion_imagenes": "image",
     "rag": "embedding",
     "embeddings": "embedding",
+    "calificacion.extraccion": "vision",
+    "calificacion.revision_adicional": "vision",
+    "digitalizacion.extraccion": "vision",
+    "presentaciones.imagenes": "image",
 }
 
 
@@ -247,6 +251,7 @@ async def resolve_ai_configuration(
         "capability": capability,
         "mode": mode,
         "rollout_enabled": rollout_enabled,
+        "teacher_override_allowed": rollout_enabled,
         "primary": selection,
         "fallback": fallback,
         "teacher_config_version": teacher_version,

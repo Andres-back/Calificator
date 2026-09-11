@@ -3,6 +3,23 @@ import type { Evaluacion, EvaluacionModalidad, Material, MaterialListItem } from
 
 const BASE = '/herramientas';
 
+export interface ToolCatalogItem {
+  tool_id: string;
+  label: string;
+  category: string;
+  description: string;
+  aliases: string[];
+  generation_enabled: boolean;
+  unavailable_reason: string | null;
+  uses_ai: boolean;
+  uses_image_ai: boolean;
+}
+
+export async function getToolCatalog(): Promise<ToolCatalogItem[]> {
+  const { data } = await api.get<ToolCatalogItem[]>(`${BASE}/catalogo`);
+  return Array.isArray(data) ? data : [];
+}
+
 export async function listMaterials(tipo?: string): Promise<MaterialListItem[]> {
   const { data } = await api.get<MaterialListItem[]>(BASE, { params: tipo ? { tipo } : undefined });
   return data;

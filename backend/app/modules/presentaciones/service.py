@@ -309,9 +309,18 @@ async def create_presentacion(
     try:
         from app.services.ai_configuration_resolver import resolve_ai_configuration
 
-        ai_config = await resolve_ai_configuration(
-            db, feature="presentaciones", teacher_id=profesor_id
+        content_route = await resolve_ai_configuration(
+            db, feature="presentaciones.contenido", teacher_id=profesor_id
         )
+        image_route = await resolve_ai_configuration(
+            db, feature="presentaciones.imagenes", teacher_id=profesor_id
+        )
+        ai_config = {
+            **content_route,
+            "schema_version": 3,
+            "pipeline": "presentaciones",
+            "stages": {"content": content_route, "images": image_route},
+        }
     except Exception as exc:
         logger.warning(
             "Presentation AI snapshot unavailable; using institutional route: %s",
@@ -444,11 +453,18 @@ async def _run_generation(db: AsyncSession, pres: Presentacion) -> None:
 
     stored_snapshot = (pres.slides_json or {}).get("_ai_config")
     ai_config = stored_snapshot if isinstance(stored_snapshot, dict) else None
+    stage_snapshots = (
+        ai_config.get("stages")
+        if isinstance(ai_config, dict) and isinstance(ai_config.get("stages"), dict)
+        else {}
+    )
+    content_ai_config = stage_snapshots.get("content") or ai_config
+    image_ai_config = stage_snapshots.get("images") or ai_config
     content_started = time.monotonic()
     slides_normalized = await _generate_slides(
         payload,
         pres.profesor_id,
-        ai_config=ai_config,
+        ai_config=content_ai_config,
         source_job_id=pres.id,
     )
     timings_ms["content"] = int(
@@ -489,7 +505,7 @@ async def _run_generation(db: AsyncSession, pres: Presentacion) -> None:
     await db.commit()
     images_started = time.monotonic()
     await _attach_slide_images(
-        db, pres, slides_normalized, payload, ai_config=ai_config
+        db, pres, slides_normalized, payload, ai_config=image_ai_config
     )
     timings_ms["images"] = int((time.monotonic() - images_started) * 1000)
     timings_ms["total"] = int(
@@ -566,6 +582,9 @@ class _PresentationLLM:
         self.primary = self.ai_config.get("primary") or {}
         self.call_index = 0
         self.router = LLMRouter(user_id=profesor_id, ai_config=ai_config)
+        set_tracking = getattr(self.router, "set_tracking", None)
+        if callable(set_tracking):
+            set_tracking(stage="content")
 
     async def generate_json(self, task_type: str, prompt: str) -> dict:
         if self.primary.get("provider") != "ollama_local":
@@ -1483,6 +1502,13 @@ async def _attach_slide_images(
     """
     if not getattr(payload, "incluir_imagenes", True):
         return
+    routed_provider: ImageProvider | None = None
+    if isinstance(ai_config, dict):
+        provider_id = str((ai_config.get("primary") or {}).get("provider") or "")
+        if provider_id == "openai_image":
+            routed_provider = ImageProvider.OPENAI
+        elif provider_id == "cloudflare_image":
+            routed_provider = ImageProvider.CLOUDFLARE
     densidad = getattr(payload, "densidad_imagenes", "alta") or "alta"
     estrategia = getattr(payload, "proveedor_imagenes", "mixto") or "mixto"
     legacy_full_idx = _full_image_index(slides)
@@ -1517,10 +1543,12 @@ async def _attach_slide_images(
             title=title,
             prompt=raw_prompt,
         )
+        if routed_provider is not None:
+            provider = routed_provider
         kind = _image_kind_for_slide(
             slide, index=index, legacy_full_idx=legacy_full_idx
         )
-        if kind == "full_image":
+        if kind == "full_image" and routed_provider is None:
             # full_image siempre por OpenAI: es quien renderiza texto legible.
             provider = ImageProvider.OPENAI
         bundle = build_presentation_image_prompt(

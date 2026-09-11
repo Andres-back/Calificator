@@ -17,6 +17,7 @@ SQL_MANAGED_TABLES = frozenset(
         "ai_global_limits",
         "ai_jobs",
         "ai_provider_settings",
+        "ai_tool_settings",
         "ai_usage_events",
         "chat_messages",
         "materiales_generados",

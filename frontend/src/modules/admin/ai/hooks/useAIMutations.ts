@@ -1,7 +1,7 @@
 import { useMutation } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
-import type { AIModel, AIProvider, FeatureRouting } from '../../api';
-import { clearCache, publishAIConfiguration, restorePreviousConfiguration, testProvider } from '../../api';
+import type { AIModel, AIProvider, AIToolControl, FeatureRouting } from '../../api';
+import { clearCache, publishAIControlCenter, restorePreviousConfiguration, testProvider } from '../../api';
 import { toApiError } from '@/lib/api';
 import { queryClient } from '@/lib/queryClient';
 
@@ -9,16 +9,20 @@ export function useAIMutations(
   draftProviders: AIProvider[],
   draftModels: AIModel[],
   draftFeatures: FeatureRouting[],
+  draftTools: AIToolControl[],
   hasConfigurationChanges: boolean,
   expectedVersion: number,
   setDraftProviders: (fn: (prev: AIProvider[]) => AIProvider[]) => void,
   setHasUnsavedChanges: (value: boolean) => void,
   setTestingProvider: (value: string | null) => void,
+  onConfigurationPublished?: () => void,
 ) {
   const invalidateConfiguration = () => Promise.all([
     queryClient.invalidateQueries({ queryKey: ['admin-ai-settings'] }),
     queryClient.invalidateQueries({ queryKey: ['admin-ai-config-hash'] }),
     queryClient.invalidateQueries({ queryKey: ['admin-ai-audit'] }),
+    queryClient.invalidateQueries({ queryKey: ['admin-ai-control-center'] }),
+    queryClient.invalidateQueries({ queryKey: ['herramientas', 'catalogo'] }),
   ]);
 
   const testMutation = useMutation({
@@ -48,10 +52,11 @@ export function useAIMutations(
   const saveMutation = useMutation({
     mutationFn: async () => {
       if (!hasConfigurationChanges) return;
-      await publishAIConfiguration(draftProviders, draftModels, draftFeatures, expectedVersion);
+      await publishAIControlCenter(draftProviders, draftModels, draftFeatures, draftTools, expectedVersion);
     },
     onSuccess: () => {
       setHasUnsavedChanges(false);
+      onConfigurationPublished?.();
       void invalidateConfiguration();
       toast.success('Configuración de IA publicada.');
     },
@@ -62,6 +67,7 @@ export function useAIMutations(
     mutationFn: restorePreviousConfiguration,
     onSuccess: () => {
       setHasUnsavedChanges(false);
+      onConfigurationPublished?.();
       void invalidateConfiguration();
       toast.success('Se restauró la última configuración publicada.');
     },

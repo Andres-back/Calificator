@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from typing import Any
+from datetime import datetime, timedelta, timezone
 
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -192,3 +193,69 @@ async def get_recent_provider_errors(
                 "at": str(row.occurred_at)[:19] if row.occurred_at else None,
             }
     return latest
+
+
+async def get_control_center_usage(
+    db: AsyncSession,
+    *,
+    days: int = 30,
+    feature: str | None = None,
+    stage: str | None = None,
+    provider: str | None = None,
+    model: str | None = None,
+    status: str | None = None,
+) -> dict[str, Any]:
+    """Return bounded, anonymous aggregates; unknown timings remain null."""
+    days = max(1, min(int(days), 90))
+    date_from = datetime.now(timezone.utc) - timedelta(days=days)
+    clauses = ["created_at >= :date_from"]
+    params: dict[str, Any] = {"date_from": date_from}
+    for field, value in (
+        ("feature", feature), ("stage", stage), ("provider", provider),
+        ("model", model), ("status", status),
+    ):
+        if value:
+            clauses.append(f"{field} = :{field}")
+            params[field] = value
+    where = " AND ".join(clauses)
+    result = await db.execute(text(f"""
+        SELECT feature, COALESCE(stage, 'other') AS stage, provider, model,
+               COUNT(*) AS sample_size,
+               COUNT(*) FILTER (WHERE status='success') AS successes,
+               COUNT(*) FILTER (WHERE status IN ('failed','timeout')) AS failures,
+               ROUND(PERCENTILE_CONT(0.50) WITHIN GROUP (ORDER BY latency_ms)
+                   FILTER (WHERE status='success' AND latency_ms IS NOT NULL))::integer AS p50_ms,
+               ROUND(PERCENTILE_CONT(0.95) WITHIN GROUP (ORDER BY latency_ms)
+                   FILTER (WHERE status='success' AND latency_ms IS NOT NULL))::integer AS p95_ms,
+               MAX(COALESCE(completed_at, created_at)) AS last_observed_at,
+               COUNT(*) FILTER (WHERE fallback_used=true) AS fallback_calls
+        FROM ai_usage_events WHERE {where}
+        GROUP BY feature, COALESCE(stage, 'other'), provider, model
+        ORDER BY sample_size DESC, feature, stage
+        LIMIT 250
+    """), params)
+    rows = [
+        {
+            "feature": row.feature,
+            "stage": row.stage,
+            "provider": row.provider,
+            "model": row.model,
+            "sample_size": int(row.sample_size or 0),
+            "successes": int(row.successes or 0),
+            "failures": int(row.failures or 0),
+            "p50_ms": int(row.p50_ms) if row.p50_ms is not None else None,
+            "p95_ms": int(row.p95_ms) if row.p95_ms is not None else None,
+            "last_observed_at": row.last_observed_at,
+            "fallback_calls": int(row.fallback_calls or 0),
+            "queue_ms": None,
+            "human_review_ms": None,
+        }
+        for row in result.fetchall()
+    ]
+    return {
+        "period_days": days,
+        "from": date_from,
+        "to": datetime.now(timezone.utc),
+        "sample_size": sum(item["sample_size"] for item in rows),
+        "rows": rows,
+    }

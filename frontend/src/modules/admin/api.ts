@@ -42,6 +42,105 @@ export interface FeatureRouting {
   efficiency_warning?: string | null;
 }
 
+export interface AIConfiguredRoute {
+  provider: string | null;
+  model: string | null;
+  fallback_provider: string | null;
+  fallback_model: string | null;
+  teacher_override_allowed: boolean;
+  config_version: number;
+  inherits_from?: string | null;
+  origin?: string | null;
+}
+
+export interface AIObservedRoute {
+  provider: string | null;
+  model: string | null;
+  status: string | null;
+  at: string | null;
+  origin?: string | null;
+  config_version?: number | null;
+  fallback_used?: boolean;
+}
+
+export interface AIStageControl {
+  function_id: string;
+  function_label: string;
+  stage_id: string;
+  label: string;
+  runtime_feature: string | null;
+  capability: string;
+  consumer: string;
+  condition: string;
+  editable: boolean;
+  inherits_from: string | null;
+  supported_providers?: string[];
+  configured: AIConfiguredRoute | null;
+  effective: AIConfiguredRoute | null;
+  observed: AIObservedRoute | null;
+}
+
+export interface AIFunctionControl {
+  function_id: string;
+  label: string;
+  stages: AIStageControl[];
+}
+
+export interface AIToolControl {
+  tool_id: string;
+  label: string;
+  category: string;
+  description: string;
+  aliases: string[];
+  uses_ai: boolean;
+  uses_image_ai: boolean;
+  generation_enabled: boolean;
+  unavailable_reason: string | null;
+  pause_reason?: string | null;
+  config_version: number;
+  updated_at?: string | null;
+  route_override: AIConfiguredRoute | null;
+  inherits_from: string | null;
+}
+
+export interface AIControlCenter {
+  version: number;
+  functions: AIFunctionControl[];
+  tools: AIToolControl[];
+  providers: AIProvider[];
+  models: AIModel[];
+  deployment: {
+    provider_max_concurrency: number | null;
+    slow_warning_seconds: number | null;
+    managed_by: string;
+    editable: false;
+  };
+}
+
+export interface AIUsageRow {
+  feature: string;
+  stage: string;
+  provider: string | null;
+  model: string | null;
+  sample_size: number;
+  successes: number;
+  failures: number;
+  p50_ms: number | null;
+  p95_ms: number | null;
+  last_observed_at: string | null;
+  fallback_calls: number;
+  queue_ms: number | null;
+  human_review_ms: number | null;
+}
+
+export interface AIControlCenterUsage {
+  period_days: number;
+  from: string;
+  to: string;
+  sample_size: number;
+  rows: AIUsageRow[];
+}
+
 export interface AIModel {
   provider_id: string;
   model_id: string;
@@ -150,6 +249,60 @@ export interface AIAuditResponse {
 
 export async function getAISettings(): Promise<AISettings> {
   const { data } = await api.get<AISettings>('/admin/ai-settings');
+  return data;
+}
+
+export async function getAIControlCenter(): Promise<AIControlCenter> {
+  const { data } = await api.get<AIControlCenter>('/admin/ai-control-center');
+  return data;
+}
+
+export async function getAIControlCenterUsage(filters: {
+  days?: number;
+  feature?: string;
+  stage?: string;
+  provider?: string;
+  model?: string;
+  status?: string;
+} = {}): Promise<AIControlCenterUsage> {
+  const { status, ...params } = filters;
+  const { data } = await api.get<AIControlCenterUsage>('/admin/ai-control-center/usage', {
+    params: { ...params, usage_status: status },
+  });
+  return data;
+}
+
+export async function validateAIControlCenter(
+  providers: AIProvider[],
+  models: AIModel[],
+  features: FeatureRouting[],
+  tools: AIToolControl[],
+  expectedVersion: number,
+) {
+  const { data } = await api.post('/admin/ai-control-center/validate', {
+    expected_version: expectedVersion,
+    providers,
+    models,
+    features,
+    tools: tools.map(({ tool_id, generation_enabled, pause_reason }) => ({ tool_id, generation_enabled, pause_reason })),
+  });
+  return data as { valid: boolean; errors: Array<{ field: string; message: string }>; warnings: Array<{ field: string; message: string }> };
+}
+
+export async function publishAIControlCenter(
+  providers: AIProvider[],
+  models: AIModel[],
+  features: FeatureRouting[],
+  tools: AIToolControl[],
+  expectedVersion: number,
+): Promise<ApiResponse & { version?: number }> {
+  const { data } = await api.put<ApiResponse & { version?: number }>('/admin/ai-control-center/publish', {
+    expected_version: expectedVersion,
+    providers,
+    models,
+    features,
+    tools: tools.map(({ tool_id, generation_enabled, pause_reason }) => ({ tool_id, generation_enabled, pause_reason })),
+  });
   return data;
 }
 

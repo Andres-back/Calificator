@@ -122,6 +122,13 @@ _EDUCATIONAL_TOOL_TASKS = {
     "sopa_letras_pistas",
     "taller",
     "unir_columnas",
+    "ficha",
+    "flashcards",
+    "lectura_comprensiva",
+    "mapa_conceptual",
+    "para_colorear",
+    "quiz_rapido",
+    "sopa_letras_words",
 }
 
 
@@ -135,8 +142,28 @@ def _feature_candidates(feature: str) -> tuple[str, ...]:
         "xali_chat": ("xali",),
         "xali_evaluacion_post_entrega": ("xali",),
     }
+    stage_parents: dict[str, tuple[str, ...]] = {
+        "calificacion.extraccion": ("calificacion_foto", "grading_photo"),
+        "calificacion.valoracion": ("calificacion_texto", "grading_text"),
+        "calificacion.verificacion": ("calificacion_texto", "grading_text"),
+        "calificacion.revision_adicional": ("calificacion_texto", "grading_text"),
+        "digitalizacion.extraccion": ("evaluacion_digitalizar",),
+        "digitalizacion.estructura": ("generacion_preguntas",),
+        "presentaciones.contenido": ("presentaciones", "presentations"),
+        "presentaciones.imagenes": ("generacion_imagenes",),
+    }
+    if feature.startswith("herramienta."):
+        from app.modules.herramientas.tool_registry import canonical_tool_id
+
+        canonical = canonical_tool_id(feature.removeprefix("herramienta."))
+        return (f"herramienta.{canonical}", canonical, "herramientas_educativas", "tools")
     if feature in _EDUCATIONAL_TOOL_TASKS:
-        return (feature, "herramientas_educativas", "tools")
+        from app.modules.herramientas.tool_registry import canonical_tool_id
+
+        canonical = canonical_tool_id(feature.replace("_pistas", "").replace("_words", ""))
+        return (f"herramienta.{canonical}", feature, "herramientas_educativas", "tools")
+    if feature in stage_parents:
+        return (feature, *stage_parents[feature])
     return (feature, *aliases.get(feature, ()))
 
 
@@ -234,7 +261,10 @@ class AIConfigService:
     async def get_all_providers(self) -> list[dict[str, Any]]:
         """Return the persisted provider configuration, falling back to defaults."""
         providers = await self._load_providers_from_db()
-        return providers or [dict(provider) for provider in DEFAULT_PROVIDERS]
+        values = providers or [dict(provider) for provider in DEFAULT_PROVIDERS]
+        # ``name`` is retained as a compatibility alias for the existing admin
+        # contract while ``id`` remains the persisted canonical identifier.
+        return [{"name": str(provider.get("id") or ""), **provider} for provider in values]
 
     async def get_all_models(self) -> list[dict[str, Any]]:
         """Return the model catalog, preserving safe defaults during rollout."""
@@ -327,8 +357,22 @@ class AIConfigService:
         providers = await self._load_providers_from_db() or DEFAULT_PROVIDERS
         features = await self._load_features_from_db() or DEFAULT_FEATURES
         models = await self.get_all_models()
-        raw = json.dumps({"providers": providers, "models": models, "features": features}, sort_keys=True, default=str)
+        tools = await self.get_all_tool_settings()
+        raw = json.dumps({"providers": providers, "models": models, "features": features, "tools": tools}, sort_keys=True, default=str)
         return hashlib.sha256(raw.encode()).hexdigest()[:16]
+
+    async def get_all_tool_settings(self) -> list[dict[str, Any]]:
+        if not self._db:
+            return []
+        try:
+            result = await self._db.execute(sql_text(
+                "SELECT tool_id, generation_enabled, pause_reason, config_version, updated_at "
+                "FROM ai_tool_settings ORDER BY tool_id"
+            ))
+            return [dict(row._mapping) for row in result.fetchall()]
+        except Exception:
+            await self._db.rollback()
+            return []
 
     # ── Persistencia ───────────────────────────────────────────────────
 
@@ -390,6 +434,7 @@ class AIConfigService:
         *,
         version: int,
         admin_id: UUID | None,
+        tools: list[dict[str, Any]] | None = None,
     ) -> None:
         """Replace a validated global configuration inside the caller transaction."""
         if not self._db:
@@ -455,6 +500,18 @@ class AIConfigService:
                  fallback_model, rollout_enabled, config_version, active, updated_by)
                 VALUES (:feature, :label, :capability, :primary_provider, :primary_model, :fallback_provider,
                  :fallback_model, :rollout_enabled, :config_version, :active, :admin)"""), item)
+        if tools is not None:
+            await self._db.execute(sql_text("DELETE FROM ai_tool_settings"))
+            for tool in tools:
+                await self._db.execute(sql_text("""INSERT INTO ai_tool_settings
+                    (tool_id, generation_enabled, pause_reason, config_version, updated_by)
+                    VALUES (:tool_id, :generation_enabled, :pause_reason, :config_version, :admin)"""), {
+                        "tool_id": tool["tool_id"],
+                        "generation_enabled": bool(tool.get("generation_enabled", True)),
+                        "pause_reason": tool.get("pause_reason") if not tool.get("generation_enabled", True) else None,
+                        "config_version": version,
+                        "admin": actor,
+                    })
 
     async def publish_configuration(
         self,
@@ -463,6 +520,7 @@ class AIConfigService:
         features: list[dict[str, Any]],
         *,
         admin_id: UUID | None = None,
+        tools: list[dict[str, Any]] | None = None,
     ) -> int:
         """Publish the complete configuration atomically and keep a secret-free rollback point."""
         if not self._db:
@@ -470,11 +528,13 @@ class AIConfigService:
         previous_providers = await self.get_all_providers()
         previous_models = await self.get_all_models()
         previous_features = await self.get_all_features()
+        previous_tools = await self.get_all_tool_settings()
         previous_version = max((int(item.get("config_version") or 1) for item in previous_features), default=1)
         snapshot = {
             "providers": previous_providers,
             "models": previous_models,
             "features": previous_features,
+            "tools": previous_tools,
         }
         await self._db.execute(
             sql_text("""INSERT INTO ai_configuration_versions
@@ -488,7 +548,8 @@ class AIConfigService:
         )
         next_version = previous_version + 1
         await self._replace_configuration(
-            providers, models, features, version=next_version, admin_id=admin_id
+            providers, models, features, version=next_version, admin_id=admin_id,
+            tools=tools,
         )
         await self._db.commit()
         await self._audit(
@@ -524,6 +585,7 @@ class AIConfigService:
             list(snapshot.get("features") or []),
             version=next_version,
             admin_id=admin_id,
+            tools=list(snapshot.get("tools") or []) if "tools" in snapshot else None,
         )
         await self._db.execute(
             sql_text("DELETE FROM ai_configuration_versions WHERE id=:id"),

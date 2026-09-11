@@ -139,6 +139,11 @@ async function installApiMocks(page: Page, targetRole: Role) {
     if (path === '/impacto/estudios/study-1/activar' && method === 'POST') return fulfillJson(route, { id: 'study-1', nombre: 'Piloto sintético', estado: 'active', synthetic_only: true, version: 2, participant_count: 0, created_at: '2026-09-09T00:00:00Z' });
     if (path === '/xali/history' || path === '/xali/evaluaciones-entregadas') return fulfillJson(route, []);
     if (path === '/admin/ai-settings') return fulfillJson(route, aiSettings);
+    if (path === '/admin/ai-control-center') return fulfillJson(route, {
+      version: 1, functions: [], tools: [], providers: aiSettings.providers, models: [],
+      deployment: { provider_max_concurrency: 3, slow_warning_seconds: 120, managed_by: 'deployment', editable: false },
+    });
+    if (path === '/admin/ai-control-center/usage') return fulfillJson(route, { period_days: 30, from: '2026-07-01', to: '2026-07-31', sample_size: 0, rows: [] });
     if (path === '/admin/ai-config-hash') return fulfillJson(route, { backend_hash: 'abc', worker_hash: 'abc', consistent: true, backend_source: 'database', worker_source: 'database', worker_error: null });
     if (path === '/admin/ai-audit') return fulfillJson(route, { total: 0, limit: 8, offset: 0, logs: [] });
     if (path === '/admin/ai-usage') return fulfillJson(route, aiSettings.usage);

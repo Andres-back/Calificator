@@ -46,3 +46,19 @@ Cerrar con suites completas, builds Docker, inventario y `git diff --check`. Bra
 - Ninguna clave aparece en API, logs, capturas o diff.
 - Cero cambios retroactivos en jobs, calificaciones o materiales.
 - Spec, plan, tasks, analyze, implement y converge completos; CI verde y PR aprobado antes de main.
+
+## Evidencia de validación ejecutada — 2026-09-10
+
+- Migración local PostgreSQL: `upgrade 202609090002 -> 202609100001`, `downgrade 202609100001 -> 202609090002` y nuevo `upgrade` completados; versión final `202609100001`.
+- Proyección real del centro sobre PostgreSQL local: 17 etapas agrupadas en 6 funciones y 15 herramientas; 20 ejecuciones estuvieron por debajo de 2 segundos. Muestra registrada: p95 0,20 s (máximo 0,22 s).
+- Backend completo: 734 pruebas aprobadas y 3 omitidas por condiciones declaradas; sin fallos.
+- Backend focal de configuración/ruteo/snapshots/secretos: 34 pruebas aprobadas.
+- Frontend completo: 326 pruebas aprobadas; TypeScript, lint estricto y build de producción aprobados.
+- E2E focal: centro administrativo validado en 360×800, 390×844, 768×1024, 1366×768 y 1920×1080, en modo claro y oscuro; creación de recursos, alias histórico y herramienta pausada aprobados (8 recorridos).
+- Inventario contractual: 536 superficies vigentes; `git diff --check` sin errores.
+
+Las pruebas no enviaron solicitudes a proveedores de IA ni usaron credenciales reales. Los avisos restantes son deprecaciones de dependencias y no afectan la aceptación de esta funcionalidad.
+
+## Resultado de convergencia
+
+La comparación final entre `spec.md`, `plan.md`, contratos y código encontró y cerró tres brechas antes del PR: credenciales ausentes ahora bloquean la publicación, el resumen muestra cambios antes/después y las métricas separan fallos, ejecución, cola y revisión humana. No quedaron tareas funcionales nuevas; solo resta la promoción por PR y la comprobación de lectura posterior al despliegue.

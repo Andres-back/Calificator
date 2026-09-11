@@ -50,6 +50,21 @@ export function useAISettingsDraft(settingsData: { providers: AIProvider[]; mode
     setHasUnsavedChanges(true);
   }
 
+  function upsertFeature(feature: FeatureRouting) {
+    setDraftFeatures((features) => {
+      const exists = features.some((item) => item.feature === feature.feature);
+      return exists
+        ? features.map((item) => item.feature === feature.feature ? { ...item, ...feature } : item)
+        : [...features, feature];
+    });
+    setHasUnsavedChanges(true);
+  }
+
+  function removeFeature(featureId: string) {
+    setDraftFeatures((features) => features.filter((feature) => feature.feature !== featureId));
+    setHasUnsavedChanges(true);
+  }
+
   return {
     draftProviders,
     draftModels,
@@ -61,6 +76,8 @@ export function useAISettingsDraft(settingsData: { providers: AIProvider[]; mode
     updateProvider,
     updateModel,
     updateFeature,
+    upsertFeature,
+    removeFeature,
     setDraftProviders,
     setHasUnsavedChanges,
   };

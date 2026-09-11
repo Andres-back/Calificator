@@ -57,8 +57,6 @@ def build_crossword(
     Devuelve un dict con la grilla densa, las pistas numeradas y metadatos, o
     None si no hay ninguna palabra utilizable.
     """
-    rng = random.Random(seed)
-
     norm: list[dict] = []
     seen: set[str] = set()
     for e in entries:

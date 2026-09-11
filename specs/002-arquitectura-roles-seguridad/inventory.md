@@ -2,7 +2,7 @@
 
 > Archivo generado por `python scripts/build_system_inventory.py --write`. No editar manualmente.
 
-**Superficies propietarias:** 27
+**Superficies propietarias:** 28
 
 | Tipo | Firma | Actores | Cobertura | Fuente |
 |---|---|---|---|---|
@@ -28,8 +28,9 @@
 | table | `ai_global_config` | system | missing | `backend/alembic/versions/202606290002_phases_3_to_8.py:213` |
 | table | `ai_global_limits` | system | missing | `backend/alembic/versions/202606290008_admin_ai_config_providers.py:53` |
 | table | `ai_jobs` | system | covered | `backend/alembic/versions/202606290002_phases_3_to_8.py:174` |
-| table | `ai_usage_events` | system | covered | `backend/alembic/versions/202607280002a_create_ai_usage_events.py:22` |
-| table | `ai_usage_logs` | system | covered | `backend/alembic/versions/202606290002_phases_3_to_8.py:193` |
+| table | `ai_tool_settings` | system | missing | `backend/alembic/versions/202609100001_admin_tool_ai_control.py:36` |
+| table | `ai_usage_events` | system | missing | `backend/alembic/versions/202607280002a_create_ai_usage_events.py:22` |
+| table | `ai_usage_logs` | system | missing | `backend/alembic/versions/202606290002_phases_3_to_8.py:193` |
 | table | `chat_messages` | system | missing | `backend/alembic/versions/202606290002_phases_3_to_8.py:158` |
 | table | `evaluation_blueprints` | system | missing | `backend/alembic/versions/202606290001_initial_phase_1_2.py:121` |
 | table | `materiales_generados` | system | covered | `backend/alembic/versions/202606290002_phases_3_to_8.py:121` |
@@ -40,5 +41,5 @@ Sin decisiones explícitas de permiso para este dominio.
 
 ## Hallazgos
 
-- **low · orphan_candidate**: 19 superficies no alcanzables o históricas se conservan como candidatas a retiro.
-- **low · missing_coverage**: 9 superficies de 002-arquitectura-roles-seguridad no tienen evidencia de prueba observable.
+- **low · missing_coverage**: 12 superficies de 002-arquitectura-roles-seguridad no tienen evidencia de prueba observable.
+- **low · orphan_candidate**: 20 superficies no alcanzables o históricas se conservan como candidatas a retiro.

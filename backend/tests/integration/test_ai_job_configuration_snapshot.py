@@ -2,8 +2,6 @@ import asyncio
 import json
 from uuid import uuid4
 
-import pytest
-
 from app.modules.jobs.service import (
     claim_stale_queued_jobs,
     create_job,
@@ -53,8 +51,7 @@ class RecoveryRecordingSession:
         return MappingResult(self.rows)
 
 
-@pytest.mark.asyncio
-async def test_job_persists_sanitized_immutable_routing_snapshot(monkeypatch):
+def test_job_persists_sanitized_immutable_routing_snapshot(monkeypatch):
     resolved_calls = []
 
     async def resolve(*_args, **kwargs):
@@ -66,7 +63,7 @@ async def test_job_persists_sanitized_immutable_routing_snapshot(monkeypatch):
                 "provider": "open_code",
                 "model": (
                     "deepseek-v4-flash-vision-exp"
-                    if feature == "calificacion_foto"
+                    if feature == "calificacion.extraccion"
                     else "grading-model"
                 ),
                 "credential_source": "teacher",
@@ -79,23 +76,21 @@ async def test_job_persists_sanitized_immutable_routing_snapshot(monkeypatch):
     monkeypatch.setattr("app.services.ai_configuration_resolver.resolve_ai_configuration", resolve)
     db = RecordingSession()
     teacher_id = uuid4()
-    await create_job(
-        db,
-        user_id=teacher_id,
-        tipo="calificacion_lote",
-        input_json={"evaluacion_id": str(uuid4())},
+    asyncio.run(
+        create_job(
+            db,
+            user_id=teacher_id,
+            tipo="calificacion_lote",
+            input_json={"evaluacion_id": str(uuid4())},
+        )
     )
 
     payload = json.loads(db.params["input_json"])
     assert resolved_calls == [
-        {
-            "feature": "calificacion_foto",
-            "teacher_id": teacher_id,
-        },
-        {
-            "feature": "calificacion_texto",
-            "teacher_id": teacher_id,
-        },
+        {"feature": "calificacion.extraccion", "teacher_id": teacher_id},
+        {"feature": "calificacion.valoracion", "teacher_id": teacher_id},
+        {"feature": "calificacion.verificacion", "teacher_id": teacher_id},
+        {"feature": "calificacion.revision_adicional", "teacher_id": teacher_id},
     ]
     assert payload["_ai_config"]["schema_version"] == 2
     assert (
@@ -103,6 +98,9 @@ async def test_job_persists_sanitized_immutable_routing_snapshot(monkeypatch):
         == "deepseek-v4-flash-vision-exp"
     )
     assert payload["_ai_config"]["grading"]["primary"]["model"] == "grading-model"
+    assert set(payload["_ai_config"]["stages"]) == {
+        "extraction", "grading_primary", "grading_secondary", "targeted_recheck",
+    }
     serialized = json.dumps(payload).lower()
     assert "api_key" not in serialized
     assert "secret" not in serialized
