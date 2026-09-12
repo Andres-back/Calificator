@@ -5,11 +5,10 @@ import hashlib
 import hmac
 import json
 from datetime import UTC, datetime, timedelta
-from decimal import Decimal
 from uuid import UUID, uuid4
 
 from fastapi import HTTPException, status
-from sqlalchemy import and_, case, func, select, text
+from sqlalchemy import func, select, text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -20,7 +19,6 @@ from app.modules.analytics.models import AnalyticsEvento, AnalyticsWorkSession
 from app.modules.calificaciones.incidencia_models import CalificacionIncidencia
 from app.modules.calificaciones.models import Calificacion
 from app.modules.evaluaciones.models import Evaluacion
-from app.modules.materias.models import Materia
 from app.modules.users.models import User
 from app.shared.enums import CalificacionEstado, UserRole
 
@@ -1073,7 +1071,6 @@ async def get_criterios(
 
     # Extraer criterios del JSONB
     criterios_map: dict[str, dict] = {}
-    total_estudiantes = len(db_rows)
     for row in db_rows:
         rj = row[0] if isinstance(row, tuple) else row.resultado_json
         if not rj:

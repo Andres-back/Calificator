@@ -22,8 +22,6 @@ from app.services.mail_service import (
     save_mail_config,
     send_mail,
 )
-from app.shared.enums import UserRole
-
 router = APIRouter(prefix="/admin/mail", tags=["admin_mail"])
 _admin_only = require_permission("admin_settings.manage")
 

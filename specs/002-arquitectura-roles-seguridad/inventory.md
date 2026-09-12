@@ -6,14 +6,14 @@
 
 | Tipo | Firma | Actores | Cobertura | Fuente |
 |---|---|---|---|---|
-| endpoint | `GET:/admin/mail/config` | ambiguous | covered | `backend/app/modules/admin_mail/router.py:51` |
-| endpoint | `GET:/admin/mail/recovery-status` | ambiguous | covered | `backend/app/modules/admin_mail/router.py:141` |
+| endpoint | `GET:/admin/mail/config` | ambiguous | covered | `backend/app/modules/admin_mail/router.py:49` |
+| endpoint | `GET:/admin/mail/recovery-status` | ambiguous | covered | `backend/app/modules/admin_mail/router.py:139` |
 | endpoint | `GET:/docs` | public | missing | `backend/app/main.py:44` |
 | endpoint | `GET:/health` | public | missing | `backend/app/main.py:40` |
 | endpoint | `GET:/openapi.json` | public | missing | `backend/app/main.py:56` |
 | endpoint | `GET:/redoc` | public | missing | `backend/app/main.py:50` |
-| endpoint | `POST:/admin/mail/test` | ambiguous | covered | `backend/app/modules/admin_mail/router.py:88` |
-| endpoint | `PUT:/admin/mail/config` | ambiguous | covered | `backend/app/modules/admin_mail/router.py:60` |
+| endpoint | `POST:/admin/mail/test` | ambiguous | covered | `backend/app/modules/admin_mail/router.py:86` |
+| endpoint | `PUT:/admin/mail/config` | ambiguous | covered | `backend/app/modules/admin_mail/router.py:58` |
 | frontend_route | `/` | public | covered | `frontend/src/config/routes.ts:8` |
 | frontend_route | `/app` | authenticated | covered | `frontend/src/config/routes.ts:15` |
 | frontend_route | `/app/403` | authenticated | covered | `frontend/src/config/routes.ts:16` |

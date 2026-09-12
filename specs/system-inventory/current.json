@@ -336,7 +336,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "f786dd7c40ba0ac01c10cf2b0420a841c13db592186bbbdc80714a17d6500ccb",
+  "source_digest": "e6098dd5969f84b44cd34578cbc0992dc6e68e46990c196902ad26f3cfc46552",
   "surfaces": [
     {
       "actors": [
@@ -1487,7 +1487,7 @@
       "kind": "endpoint",
       "owner_spec": "002-arquitectura-roles-seguridad",
       "signature": "GET:/admin/mail/config",
-      "source_line": 51,
+      "source_line": 49,
       "source_path": "backend/app/modules/admin_mail/router.py",
       "states": [],
       "tests": [
@@ -1521,7 +1521,7 @@
       "kind": "endpoint",
       "owner_spec": "002-arquitectura-roles-seguridad",
       "signature": "GET:/admin/mail/recovery-status",
-      "source_line": 141,
+      "source_line": 139,
       "source_path": "backend/app/modules/admin_mail/router.py",
       "states": [],
       "tests": [
@@ -8154,7 +8154,7 @@
       "kind": "endpoint",
       "owner_spec": "002-arquitectura-roles-seguridad",
       "signature": "POST:/admin/mail/test",
-      "source_line": 88,
+      "source_line": 86,
       "source_path": "backend/app/modules/admin_mail/router.py",
       "states": [],
       "tests": [
@@ -12898,7 +12898,7 @@
       "kind": "endpoint",
       "owner_spec": "002-arquitectura-roles-seguridad",
       "signature": "PUT:/admin/mail/config",
-      "source_line": 60,
+      "source_line": 58,
       "source_path": "backend/app/modules/admin_mail/router.py",
       "states": [],
       "tests": [

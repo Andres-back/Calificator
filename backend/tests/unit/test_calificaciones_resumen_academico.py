@@ -7,7 +7,6 @@ from fastapi.testclient import TestClient
 from app.core.permissions import get_current_user
 from app.db.session import get_db
 from app.main import create_app
-from app.modules.calificaciones import router as calificaciones_router
 from app.modules.calificaciones import service as calificaciones_service
 from app.modules.authorization.catalog import default_permissions_for_role
 from app.modules.users.models import User
