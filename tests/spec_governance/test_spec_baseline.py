@@ -39,6 +39,7 @@ ALL_SPECS = {
     "036-ollama-cloud-vision-fallback",
     "037-stabilize-backend-quality",
     "038-backend-hygiene",
+    "039-modularizar-evidencia",
 }
 OWNED_SPECS = {
     name

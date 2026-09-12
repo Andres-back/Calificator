@@ -336,7 +336,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "e6098dd5969f84b44cd34578cbc0992dc6e68e46990c196902ad26f3cfc46552",
+  "source_digest": "4c4b0352db10922df0e31b481860d4ca9e4479e35e0ac96773f2e2cf9e16156c",
   "surfaces": [
     {
       "actors": [
@@ -472,7 +472,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "DELETE:/calificaciones/modo-salon/{sesion_id}",
-      "source_line": 1292,
+      "source_line": 1127,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -2674,7 +2674,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "GET:/calificaciones/bandeja-docente",
-      "source_line": 1750,
+      "source_line": 1585,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -2744,7 +2744,7 @@
       "kind": "endpoint",
       "owner_spec": "007-entregas-estudiante",
       "signature": "GET:/calificaciones/entregas/{entrega_id}/evidencia",
-      "source_line": 1576,
+      "source_line": 1411,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -2802,7 +2802,7 @@
       "kind": "endpoint",
       "owner_spec": "007-entregas-estudiante",
       "signature": "GET:/calificaciones/entregas/{entrega_id}/evidencia/paginas/{numero}",
-      "source_line": 1621,
+      "source_line": 1456,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -2859,7 +2859,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "GET:/calificaciones/modo-salon/{sesion_id}",
-      "source_line": 1104,
+      "source_line": 939,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -2916,7 +2916,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "GET:/calificaciones/modo-salon/{sesion_id}/estudiantes",
-      "source_line": 1128,
+      "source_line": 963,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -2973,7 +2973,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "GET:/calificaciones/{calificacion_id}/desglose",
-      "source_line": 1871,
+      "source_line": 1706,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -3036,7 +3036,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "GET:/calificaciones/{calificacion_id}/desglose/historial",
-      "source_line": 1907,
+      "source_line": 1742,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -3099,7 +3099,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "GET:/calificaciones/{calificacion_id}/detalle",
-      "source_line": 1677,
+      "source_line": 1512,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -3155,7 +3155,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "GET:/calificaciones/{calificacion_id}/incidencias",
-      "source_line": 1824,
+      "source_line": 1659,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -3314,7 +3314,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "GET:/estudiantes/{estudiante_id}/boletin",
-      "source_line": 1030,
+      "source_line": 865,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -3372,7 +3372,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "GET:/estudiantes/{estudiante_id}/resumen-academico",
-      "source_line": 1009,
+      "source_line": 844,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -3609,7 +3609,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "GET:/evaluaciones/{evaluacion_id}/calificaciones",
-      "source_line": 992,
+      "source_line": 827,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -3666,7 +3666,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "GET:/evaluaciones/{evaluacion_id}/mi-desglose",
-      "source_line": 1932,
+      "source_line": 1767,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -3728,7 +3728,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "GET:/evaluaciones/{evaluacion_id}/mi-entrega",
-      "source_line": 1319,
+      "source_line": 1154,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -3785,7 +3785,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "GET:/evaluaciones/{evaluacion_id}/mi-solicitud-revision",
-      "source_line": 1763,
+      "source_line": 1598,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -3875,7 +3875,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "GET:/evaluaciones/{evaluacion_id}/revision",
-      "source_line": 968,
+      "source_line": 803,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -6791,7 +6791,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "PATCH:/calificaciones/modo-salon/{sesion_id}/estudiantes/{estudiante_id}",
-      "source_line": 1174,
+      "source_line": 1009,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -6847,7 +6847,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "PATCH:/calificaciones/{calificacion_id}/ajustar",
-      "source_line": 917,
+      "source_line": 752,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -6903,7 +6903,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "PATCH:/calificaciones/{calificacion_id}/confirmar",
-      "source_line": 900,
+      "source_line": 735,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -6959,7 +6959,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "PATCH:/calificaciones/{calificacion_id}/publicar",
-      "source_line": 1698,
+      "source_line": 1533,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -7015,7 +7015,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "PATCH:/calificaciones/{calificacion_id}/revision-manual",
-      "source_line": 934,
+      "source_line": 769,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -7249,7 +7249,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "PATCH:/evaluaciones/{evaluacion_id}/respuestas-liberadas",
-      "source_line": 1919,
+      "source_line": 1754,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -7552,7 +7552,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "PATCH:/incidencias/{incidencia_id}/resolver",
-      "source_line": 1840,
+      "source_line": 1675,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -9201,7 +9201,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "POST:/calificaciones/foto",
-      "source_line": 348,
+      "source_line": 183,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -9263,7 +9263,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "POST:/calificaciones/lote",
-      "source_line": 596,
+      "source_line": 431,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -9331,7 +9331,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "POST:/calificaciones/lote/ajustar",
-      "source_line": 1737,
+      "source_line": 1572,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -9387,7 +9387,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "POST:/calificaciones/lote/asincrono",
-      "source_line": 702,
+      "source_line": 537,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -9449,7 +9449,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "POST:/calificaciones/lote/confirmar",
-      "source_line": 1727,
+      "source_line": 1562,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -9505,7 +9505,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "POST:/calificaciones/lote/publicar",
-      "source_line": 1717,
+      "source_line": 1552,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -9567,7 +9567,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "POST:/calificaciones/modo-salon/iniciar",
-      "source_line": 1063,
+      "source_line": 898,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -9623,7 +9623,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "POST:/calificaciones/modo-salon/{sesion_id}/foto",
-      "source_line": 1217,
+      "source_line": 1052,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -9679,7 +9679,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "POST:/calificaciones/{calificacion_id}/incidencias",
-      "source_line": 1803,
+      "source_line": 1638,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -9735,7 +9735,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "POST:/calificaciones/{calificacion_id}/reintentar-foto",
-      "source_line": 488,
+      "source_line": 323,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -9791,7 +9791,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "POST:/calificaciones/{calificacion_id}/solicitar-reemplazo",
-      "source_line": 551,
+      "source_line": 386,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -10369,7 +10369,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "POST:/evaluaciones/{evaluacion_id}/calificaciones/manual",
-      "source_line": 951,
+      "source_line": 786,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -10501,7 +10501,7 @@
       "kind": "endpoint",
       "owner_spec": "007-entregas-estudiante",
       "signature": "POST:/evaluaciones/{evaluacion_id}/entregas",
-      "source_line": 1347,
+      "source_line": 1182,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -10557,7 +10557,7 @@
       "kind": "endpoint",
       "owner_spec": "007-entregas-estudiante",
       "signature": "POST:/evaluaciones/{evaluacion_id}/entregas/archivo",
-      "source_line": 1442,
+      "source_line": 1277,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -10690,7 +10690,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "POST:/evaluaciones/{evaluacion_id}/solicitud-revision",
-      "source_line": 1780,
+      "source_line": 1615,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -12936,7 +12936,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "PUT:/calificaciones/{calificacion_id}/desglose",
-      "source_line": 1886,
+      "source_line": 1721,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -13383,6 +13383,12 @@
           "reference": "/",
           "status": "direct",
           "test_path": "backend/tests/unit/test_evidence_replacement.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_evidence_service.py"
         },
         {
           "level": "unit",
@@ -31468,6 +31474,12 @@
           "level": "unit",
           "reference": "calificaciones",
           "status": "direct",
+          "test_path": "backend/tests/unit/test_evidence_service.py"
+        },
+        {
+          "level": "unit",
+          "reference": "calificaciones",
+          "status": "direct",
           "test_path": "backend/tests/unit/test_grading_component_consensus.py"
         },
         {
@@ -31827,6 +31839,12 @@
           "reference": "entregas",
           "status": "direct",
           "test_path": "backend/tests/unit/test_evidence_replacement.py"
+        },
+        {
+          "level": "unit",
+          "reference": "entregas",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_evidence_service.py"
         },
         {
           "level": "unit",
