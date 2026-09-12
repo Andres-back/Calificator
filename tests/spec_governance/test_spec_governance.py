@@ -54,6 +54,31 @@ def test_hotfix_waives_plan_label_but_requires_regression(tmp_path: Path) -> Non
     assert validate(tmp_path, changed, context("spec-approved", "hotfix")) == []
 
 
+def test_hotfix_does_not_reclassify_specs_with_only_generated_inventory_changes(
+    tmp_path: Path,
+) -> None:
+    changed = create_spec(tmp_path, regression=True)
+    legacy = tmp_path / "specs" / "122-legacy"
+    legacy.mkdir(parents=True)
+    (legacy / "spec.md").write_text(
+        "# Legacy\n\n**Issue**: #98\n\n- **FR-001**: Contrato vigente.\n",
+        encoding="utf-8",
+    )
+    (legacy / "plan.md").write_text("# Plan\n", encoding="utf-8")
+    (legacy / "tasks.md").write_text(
+        "- [X] T001 Cubrir FR-001\n",
+        encoding="utf-8",
+    )
+    (legacy / "inventory.md").write_text("# Inventario generado\n", encoding="utf-8")
+    (tmp_path / "specs" / "README.md").write_text(
+        "122-legacy\n123-demo\n",
+        encoding="utf-8",
+    )
+    changed.append("specs/122-legacy/inventory.md")
+
+    assert validate(tmp_path, changed, context("spec-approved", "hotfix")) == []
+
+
 def test_pr_without_linked_issue_is_rejected(tmp_path: Path) -> None:
     changed = create_spec(tmp_path)
     errors = validate(tmp_path, changed, context("spec-approved", "plan-approved", body="Sin issue"))

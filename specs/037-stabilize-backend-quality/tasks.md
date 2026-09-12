@@ -52,3 +52,7 @@
 - T003 precede a T004; T006 precede a T007.
 - T009 y T010 preceden a T011 y T012.
 - T013–T016 requieren que T004, T007 y T012 estén completas.
+
+## Fase 6: Convergencia posterior al CI
+
+- [x] T017 Corregir el falso positivo de gobernanza que reclasifica inventarios generados de especificaciones históricas como hotfixes sin regresión, añadir su prueba y repetir el CI (plan: barrera de CI, partial).
