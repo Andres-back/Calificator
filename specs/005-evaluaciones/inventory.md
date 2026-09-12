@@ -53,8 +53,8 @@
 | frontend_call | `POST:/evaluaciones/{id}/pausar-recepcion` | ambiguous | covered | `frontend/src/modules/evaluaciones/api.ts:97` |
 | frontend_call | `POST:/evaluaciones/{id}/publicar` | ambiguous | covered | `frontend/src/modules/evaluaciones/api.ts:85` |
 | frontend_call | `POST:/evaluaciones` | ambiguous | covered | `frontend/src/modules/evaluaciones/api.ts:59` |
-| table | `evaluacion_blueprints` | system | covered | `backend/app/modules/evaluaciones/models.py:127` |
-| table | `evaluaciones` | system | covered | `backend/app/modules/evaluaciones/models.py:14` |
+| table | `evaluacion_blueprints` | system | covered | `backend/app/modules/evaluaciones/models.py:132` |
+| table | `evaluaciones` | system | covered | `backend/app/modules/evaluaciones/models.py:19` |
 
 ## Decisiones explícitas de permiso
 

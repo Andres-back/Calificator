@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import TYPE_CHECKING
 from uuid import uuid4
 from uuid import UUID as PyUUID
 
@@ -8,6 +9,10 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
 from app.shared.enums import MatriculaEstado
+
+if TYPE_CHECKING:
+    from app.modules.materias.models import Materia
+    from app.modules.users.models import User
 
 
 class Matricula(Base):
@@ -38,8 +43,8 @@ class Matricula(Base):
     fecha_matricula: Mapped[datetime] = mapped_column(DateTime, nullable=False, server_default=func.now())
     created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, server_default=func.now())
 
-    materia: Mapped["Materia"] = relationship("Materia", back_populates="matriculas")  # type: ignore[name-defined]
-    estudiante: Mapped["User"] = relationship("User", back_populates="matriculas")  # type: ignore[name-defined]
+    materia: Mapped["Materia"] = relationship("Materia", back_populates="matriculas")
+    estudiante: Mapped["User"] = relationship("User", back_populates="matriculas")
 
 
 Index("idx_matriculas_materia", Matricula.materia_id)

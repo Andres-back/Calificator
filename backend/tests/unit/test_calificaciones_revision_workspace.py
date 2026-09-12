@@ -284,3 +284,47 @@ def test_evidence_page_denies_student_access_to_another_delivery(tmp_path: Path,
             )
         )
     assert getattr(denied.value, "status_code", None) == 403
+
+
+def test_full_evidence_returns_authorized_student_file_inline(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    evidence_path = tmp_path / "entregas" / "evidence.pdf"
+    evidence_path.parent.mkdir()
+    _pdf(evidence_path, 2)
+    student_id = uuid4()
+    delivery = Entrega(
+        id=uuid4(),
+        evaluacion_id=uuid4(),
+        estudiante_id=student_id,
+        materia_id=uuid4(),
+        tipo=EntregaTipo.PDF.value,
+        estado=EntregaEstado.RECIBIDA.value,
+        archivo_url="/uploads/entregas/evidence.pdf",
+    )
+    actor = SimpleNamespace(
+        id=student_id,
+        rol=UserRole.ESTUDIANTE.value,
+        _effective_permissions=default_permissions_for_role(UserRole.ESTUDIANTE.value),
+    )
+
+    class FakeDB:
+        async def scalar(self, _query):
+            return delivery
+
+    monkeypatch.setattr(router, "resolve_upload_path", lambda _url: evidence_path)
+
+    response = asyncio.run(
+        router.get_entrega_evidencia(
+            delivery.id,
+            current_user=actor,
+            db=FakeDB(),
+        )
+    )
+
+    assert Path(response.path) == evidence_path
+    assert response.media_type == "application/pdf"
+    assert response.headers["content-disposition"] == 'inline; filename="evidencia.pdf"'
+    assert response.headers["cache-control"] == "private, no-store"
+    assert response.headers["x-content-type-options"] == "nosniff"

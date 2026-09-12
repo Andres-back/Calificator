@@ -87,6 +87,11 @@ STRUCTURAL_FIELDS = {
     "modalidad",
 }
 
+STRUCTURE_LOCKED_MESSAGE = (
+    "La estructura de esta evaluación ya está bloqueada. "
+    "Edita su contenido desde la evaluación para conservar las entregas y notas existentes."
+)
+
 async def _select_evaluation(db: AsyncSession, evaluacion_id: UUID) -> Evaluacion | None:
     return await db.scalar(
         select(Evaluacion)

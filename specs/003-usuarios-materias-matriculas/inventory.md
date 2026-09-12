@@ -44,8 +44,8 @@
 | frontend_call | `POST:/materias` | ambiguous | covered | `frontend/src/modules/materias/api.ts:25` |
 | frontend_call | `POST:/matriculas/unirse` | ambiguous | covered | `frontend/src/modules/materias/api.ts:29` |
 | table | `mail_global_config` | system | covered | `backend/app/modules/auth/models.py:77` |
-| table | `materias` | system | covered | `backend/app/modules/materias/models.py:13` |
-| table | `matriculas` | system | covered | `backend/app/modules/matriculas/models.py:13` |
+| table | `materias` | system | covered | `backend/app/modules/materias/models.py:19` |
+| table | `matriculas` | system | covered | `backend/app/modules/matriculas/models.py:18` |
 | table | `password_reset_requests` | system | covered | `backend/app/modules/auth/models.py:25` |
 | table | `users` | system | covered | `backend/app/modules/users/models.py:13` |
 

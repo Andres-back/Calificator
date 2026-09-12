@@ -1,5 +1,6 @@
 from datetime import datetime
 from decimal import Decimal
+from typing import TYPE_CHECKING
 from uuid import uuid4
 from uuid import UUID as PyUUID
 
@@ -9,6 +10,10 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
 from app.shared.enums import BlueprintNivelContexto, EvaluacionEstado, EvaluacionModalidad, EvaluacionTipoOrigen, PoliticaIntento
+
+if TYPE_CHECKING:
+    from app.modules.materias.models import Materia
+    from app.modules.users.models import User
 
 
 class Evaluacion(Base):
@@ -100,8 +105,8 @@ class Evaluacion(Base):
         onupdate=func.now(),
     )
 
-    materia: Mapped["Materia"] = relationship("Materia", back_populates="evaluaciones")  # type: ignore[name-defined]
-    profesor: Mapped["User"] = relationship("User", back_populates="evaluaciones")  # type: ignore[name-defined]
+    materia: Mapped["Materia"] = relationship("Materia", back_populates="evaluaciones")
+    profesor: Mapped["User"] = relationship("User", back_populates="evaluaciones")
     blueprint: Mapped["EvaluacionBlueprint | None"] = relationship(
         "EvaluacionBlueprint",
         back_populates="evaluacion",
