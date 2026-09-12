@@ -336,7 +336,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "89ce91039c9eaa2d7c8d7c5b519114e57d80a0743ab7a9d41f1e5345c6f2d567",
+  "source_digest": "f786dd7c40ba0ac01c10cf2b0420a841c13db592186bbbdc80714a17d6500ccb",
   "surfaces": [
     {
       "actors": [
@@ -2802,7 +2802,7 @@
       "kind": "endpoint",
       "owner_spec": "007-entregas-estudiante",
       "signature": "GET:/calificaciones/entregas/{entrega_id}/evidencia/paginas/{numero}",
-      "source_line": 1612,
+      "source_line": 1621,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -31965,7 +31965,7 @@
       "kind": "table",
       "owner_spec": "005-evaluaciones",
       "signature": "evaluacion_blueprints",
-      "source_line": 127,
+      "source_line": 132,
       "source_path": "backend/app/modules/evaluaciones/models.py",
       "states": [
         "completo",
@@ -32019,7 +32019,7 @@
       "kind": "table",
       "owner_spec": "005-evaluaciones",
       "signature": "evaluaciones",
-      "source_line": 14,
+      "source_line": 19,
       "source_path": "backend/app/modules/evaluaciones/models.py",
       "states": [
         "borrador",
@@ -32648,7 +32648,7 @@
       "kind": "table",
       "owner_spec": "003-usuarios-materias-matriculas",
       "signature": "materias",
-      "source_line": 13,
+      "source_line": 19,
       "source_path": "backend/app/modules/materias/models.py",
       "states": [
         "activa",
@@ -32908,7 +32908,7 @@
       "kind": "table",
       "owner_spec": "003-usuarios-materias-matriculas",
       "signature": "matriculas",
-      "source_line": 13,
+      "source_line": 18,
       "source_path": "backend/app/modules/matriculas/models.py",
       "states": [
         "activo",

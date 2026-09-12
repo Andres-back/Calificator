@@ -7,7 +7,7 @@
 | Tipo | Firma | Actores | Cobertura | Fuente |
 |---|---|---|---|---|
 | endpoint | `GET:/calificaciones/entregas/{entrega_id}/evidencia` | admin, estudiante, profesor | covered | `backend/app/modules/calificaciones/router.py:1576` |
-| endpoint | `GET:/calificaciones/entregas/{entrega_id}/evidencia/paginas/{numero}` | admin, estudiante, profesor | covered | `backend/app/modules/calificaciones/router.py:1612` |
+| endpoint | `GET:/calificaciones/entregas/{entrega_id}/evidencia/paginas/{numero}` | admin, estudiante, profesor | covered | `backend/app/modules/calificaciones/router.py:1621` |
 | endpoint | `GET:/presentaciones/{presentacion_id}/archivo/{fmt}` | admin, estudiante, profesor | covered | `backend/app/modules/presentaciones/router.py:157` |
 | endpoint | `POST:/evaluaciones/{evaluacion_id}/entregas` | admin, estudiante | covered | `backend/app/modules/calificaciones/router.py:1347` |
 | endpoint | `POST:/evaluaciones/{evaluacion_id}/entregas/archivo` | admin, estudiante | covered | `backend/app/modules/calificaciones/router.py:1442` |

@@ -8,7 +8,7 @@ import pytest
 from fastapi import HTTPException
 
 from app.modules.evaluaciones import service
-from app.modules.evaluaciones.schemas import EvaluacionUpdate
+from app.modules.evaluaciones.schemas import EvaluacionEstructuraValidacion, EvaluacionUpdate
 from app.shared.enums import EvaluacionEstado, EvaluacionModalidad
 
 
@@ -198,6 +198,28 @@ def test_assigned_evaluation_keeps_structural_editing_enabled(monkeypatch) -> No
     assert evaluation.respuestas_esperadas[0]["respuesta"] == "B) 48"
     assert evaluation.estado == EvaluacionEstado.PUBLICADA.value
     assert db.commits == 1
+
+
+def test_structure_validation_rejects_assigned_evaluation_with_stable_conflict() -> None:
+    evaluation = _evaluation(
+        state=EvaluacionEstado.PUBLICADA.value,
+        reception_enabled=True,
+    )
+    db = FakeDB()
+
+    with pytest.raises(HTTPException) as exc:
+        asyncio.run(
+            service.validate_structure(
+                db,
+                evaluation,
+                EvaluacionEstructuraValidacion(),
+            )
+        )
+
+    assert exc.value.status_code == 409
+    assert exc.value.detail == service.STRUCTURE_LOCKED_MESSAGE
+    assert "edita" in exc.value.detail.lower()
+    assert db.commits == 0
 
 
 @pytest.mark.parametrize(

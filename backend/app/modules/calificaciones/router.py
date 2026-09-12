@@ -1607,6 +1607,15 @@ async def get_entrega_evidencia(
     media_type = (
         mimetypes.guess_type(evidence_path.name)[0] or "application/octet-stream"
     )
+    return FileResponse(
+        evidence_path,
+        media_type=media_type,
+        headers={
+            "Cache-Control": "private, no-store",
+            "Content-Disposition": f'inline; filename="evidencia{evidence_path.suffix}"',
+            "X-Content-Type-Options": "nosniff",
+        },
+    )
 
 
 @router.get("/calificaciones/entregas/{entrega_id}/evidencia/paginas/{numero}")
@@ -1660,15 +1669,6 @@ async def get_entrega_evidencia_page(
             "ETag": f'"{fingerprint}-p{numero}"',
             "X-Evidence-Page": str(numero),
             "X-Evidence-Pages": str(total_pages),
-            "X-Content-Type-Options": "nosniff",
-        },
-    )
-    return FileResponse(
-        evidence_path,
-        media_type=media_type,
-        headers={
-            "Cache-Control": "private, no-store",
-            "Content-Disposition": f'inline; filename="evidencia{evidence_path.suffix}"',
             "X-Content-Type-Options": "nosniff",
         },
     )

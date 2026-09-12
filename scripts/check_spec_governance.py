@@ -100,7 +100,8 @@ def validate(repo: Path, changed_files: list[str], context: PullRequestContext) 
             if missing_requirements:
                 missing = ", ".join(sorted(missing_requirements))
                 errors.append(f"{name}: tasks.md no cubre estos requisitos: {missing}.")
-            if hotfix and not re.search(r"regresi[oó]n", tasks, re.IGNORECASE):
+            tasks_changed = f"specs/{name}/tasks.md" in changed_files
+            if hotfix and tasks_changed and not re.search(r"regresi[oó]n", tasks, re.IGNORECASE):
                 errors.append(f"{name}: un hotfix debe incluir una prueba de regresión en tasks.md.")
 
         if name not in index:

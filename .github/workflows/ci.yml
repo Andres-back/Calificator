@@ -75,6 +75,9 @@ jobs:
       - name: Audit production dependencies
         run: python -m pip_audit -r requirements.txt
 
+      - name: Reject undefined backend names
+        run: python -m ruff check --select F821,F822,F823 app tests
+
       - name: Compile Python sources
         run: python -m compileall -q app tests
 
