@@ -10,7 +10,7 @@ import pytest
 from PIL import Image
 
 from app.modules.authorization.catalog import default_permissions_for_role
-from app.modules.calificaciones import router
+from app.modules.calificaciones import evidence_service, router
 from app.modules.calificaciones.models import Entrega
 from app.modules.calificaciones.service import (
     _build_revision_guide,
@@ -225,7 +225,7 @@ def _pdf(path: Path, pages: int) -> None:
 def test_evidence_page_renders_pdf20_and_reuses_fingerprint_cache(tmp_path: Path, monkeypatch) -> None:
     evidence = tmp_path / "evidence.pdf"
     _pdf(evidence, 20)
-    monkeypatch.setattr(router, "get_upload_dir", lambda: tmp_path)
+    monkeypatch.setattr(evidence_service, "get_upload_dir", lambda: tmp_path)
 
     first_path, total, fingerprint = router._render_cached_evidence_page(evidence, 20)
     first_mtime = first_path.stat().st_mtime_ns
