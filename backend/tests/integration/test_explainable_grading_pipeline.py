@@ -22,8 +22,6 @@ from app.modules.impacto_tesis.schemas import (
     ObservationBatch,
     ObservationWrite,
     RetentionApply,
-    StudyProtocol,
-    SurveyPayload,
     TimingPayload,
 )
 from app.modules.impacto_tesis.service import (

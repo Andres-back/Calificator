@@ -41,6 +41,7 @@ actualizar la especificación propietaria, su plan y sus tareas; no debe crear d
 | 035 | [Catálogo dinámico de modelos IA](035-modelos-dinamicos-api/spec.md) | descubrimiento y sincronización de modelos por proveedor | `/app/admin/configuracion-ia` | `ai_provider_models`; amplía 034 sin cambiar rutas publicadas | [#72](https://github.com/Andres-back/Calificator/issues/72) |
 | 036 | [Respaldo visual con Ollama Cloud](036-ollama-cloud-vision-fallback/spec.md) | extracción visual, orquestación de calificaciones y cliente Ollama Cloud | selector de respaldo en `/app/admin/configuracion-ia` | rutas y catálogo IA existentes; sin migración | [#74](https://github.com/Andres-back/Calificator/issues/74) |
 | 037 | [Estabilización de evidencia y calidad backend](037-stabilize-backend-quality/spec.md) | calificaciones, evaluaciones y control estático incremental | visor de evidencia y validación de estructura existentes | sin cambios de esquema; contratos y CI | [#76](https://github.com/Andres-back/Calificator/issues/76) |
+| 038 | [Higiene incremental del backend](038-backend-hygiene/spec.md) | residuos comprobables en aplicación y pruebas; control estático | sin cambios de frontend ni rutas | sin cambios de esquema; CI Ruff ampliado | [#78](https://github.com/Andres-back/Calificator/issues/78) |
 
 ## Reglas de propiedad
 

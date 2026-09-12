@@ -9,7 +9,7 @@ from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
-from app.shared.enums import BlueprintNivelContexto, EvaluacionEstado, EvaluacionModalidad, EvaluacionTipoOrigen, PoliticaIntento
+from app.shared.enums import BlueprintNivelContexto, EvaluacionEstado
 
 if TYPE_CHECKING:
     from app.modules.materias.models import Materia

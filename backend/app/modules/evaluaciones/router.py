@@ -160,7 +160,7 @@ async def digitalize_from_file(
             "nota_maxima": str(nota_maxima),
             "modalidad": modalidad.value,
         }, queue="digitalization")
-    except Exception as exc:
+    except Exception:
         # The durable job and its evidence are already committed. An ambiguous
         # broker acknowledgement must not discard either one; recovery republishes
         # the same idempotent job later.

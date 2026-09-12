@@ -38,6 +38,7 @@ ALL_SPECS = {
     "035-modelos-dinamicos-api",
     "036-ollama-cloud-vision-fallback",
     "037-stabilize-backend-quality",
+    "038-backend-hygiene",
 }
 OWNED_SPECS = {
     name

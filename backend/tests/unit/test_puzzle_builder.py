@@ -29,8 +29,6 @@ def test_crossword_letters_match_grid() -> None:
     cw = build_crossword(entries, max_size=17, seed=7)
     assert cw is not None
     grid = cw["grid"]
-    rows, cols = len(grid), len(grid[0])
-
     for item in cw["pistas_horizontal"]:
         r, c, w = item["fila"], item["columna"], item["respuesta"]
         assert all(grid[r][c + i] == w[i] for i in range(len(w)))
