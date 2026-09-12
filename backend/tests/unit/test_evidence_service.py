@@ -73,7 +73,11 @@ def test_pdf_page_rendering_reuses_fingerprint_cache(tmp_path: Path, monkeypatch
     assert second_path.stat().st_mtime_ns == first_mtime
 
 
-def test_image_page_and_corrupt_content_keep_safe_errors(tmp_path: Path) -> None:
+def test_image_page_and_corrupt_content_keep_safe_errors(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    monkeypatch.setattr(evidence_service, "get_upload_dir", lambda: tmp_path)
     image_path = tmp_path / "evidencia.jpg"
     Image.new("RGB", (40, 40), "white").save(image_path)
 
