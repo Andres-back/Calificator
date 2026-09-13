@@ -40,6 +40,7 @@ ALL_SPECS = {
     "037-stabilize-backend-quality",
     "038-backend-hygiene",
     "039-modularizar-evidencia",
+    "040-modularizar-cola-calificaciones",
 }
 OWNED_SPECS = {
     name
