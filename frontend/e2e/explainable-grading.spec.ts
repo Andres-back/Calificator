@@ -379,6 +379,8 @@ test('dos paquetes quedan en cola, un fallo conserva hojas para reintentar', asy
   await page.getByRole('button', { name: 'Confirmar y enviar' }).click();
   await expect(page.getByText(/Entrega de Estudiante Prueba guardada/)).toBeVisible();
   await page.getByLabel('Estudiante de esta entrega').selectOption('s2');
+  await expect(page).toHaveURL(/estudiante=s2/);
+  await expect(page.getByText(/Entrega de Estudiante Prueba guardada/)).toHaveCount(0);
   await page.locator('input[type=file][multiple]').setInputFiles({ ...file, name: 'segunda-entrega.png' });
   const submitButton = page.getByRole('button', { name: 'Enviar a calificar', exact: true });
   await expect(submitButton).toBeEnabled();

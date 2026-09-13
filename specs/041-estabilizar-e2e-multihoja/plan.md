@@ -2,7 +2,7 @@
 
 ## Resumen
 
-Hacer determinista el escenario de dos entregas consecutivas sin modificar el producto. La segunda entrega empleará un nombre de archivo diferente y el caso verificará el estado habilitado del botón antes de actuar, de modo que un fallo futuro señale la selección y no se manifieste como un timeout opaco del clic.
+Hacer determinista el escenario de dos entregas consecutivas sin modificar el producto. El caso esperará a que la navegación por estudiante termine y el panel aislado sea reemplazado antes de cargar un archivo diferente; luego verificará el estado habilitado del botón, de modo que un fallo futuro señale la precondición exacta y no se manifieste como un timeout opaco del clic.
 
 ## Alcance técnico
 
@@ -13,11 +13,12 @@ Hacer determinista el escenario de dos entregas consecutivas sin modificar el pr
 
 ## Implementación
 
-1. Sustituir el segundo uso del payload `hoja.png` por `segunda-entrega.png`.
-2. Localizar de manera explícita el selector múltiple que corresponde al paquete de evidencia.
-3. Esperar con `toBeEnabled()` el botón «Enviar a calificar» después de cargar el archivo.
-4. Ejecutar primero el caso específico varias veces y después las verificaciones frontend/gobernanza proporcionales.
-5. Abrir PR enlazado al issue #84 y fusionar únicamente con CI verde.
+1. Esperar que la URL contenga `estudiante=s2` y que el mensaje de éxito del panel anterior desaparezca para confirmar que finalizó su reemplazo.
+2. Sustituir el segundo uso del payload `hoja.png` por `segunda-entrega.png`.
+3. Localizar de manera explícita el selector múltiple que corresponde al paquete de evidencia.
+4. Esperar con `toBeEnabled()` el botón «Enviar a calificar» después de cargar el archivo.
+5. Ejecutar primero el caso específico varias veces y después las verificaciones frontend/gobernanza proporcionales.
+6. Abrir PR enlazado al issue #84 y fusionar únicamente con CI verde.
 
 ## Seguridad y compatibilidad
 
@@ -26,4 +27,3 @@ No se procesan datos reales, no se invocan modelos y no cambian secretos, permis
 ## Criterio de reversión
 
 El cambio puede revertirse eliminando las dos precondiciones adicionales del test; no deja migraciones, datos ni cambios productivos.
-

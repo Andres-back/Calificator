@@ -4,7 +4,7 @@
 
 ## Impacto y reproducción
 
-El escenario E2E que comprueba dos entregas consecutivas reutiliza el mismo payload de archivo para ambos estudiantes. En Chromium sobre Linux, la segunda selección puede no producir un cambio observable después de que React limpia y vuelve a renderizar el selector. El botón «Enviar a calificar» permanece deshabilitado hasta agotar los 30 segundos del caso, aunque el flujo productivo, las pruebas unitarias y los otros 61 E2E funcionan.
+El escenario E2E que comprueba dos entregas consecutivas cambiaba de estudiante y cargaba inmediatamente el segundo archivo. Ese cambio actualiza el contexto en la URL y desmonta deliberadamente el panel anterior para impedir que una evidencia quede asociada al alumno equivocado. En el runner Linux, Playwright alcanzaba a cargar el archivo en el selector saliente; el panel nuevo aparecía vacío y «Enviar a calificar» permanecía deshabilitado. El flujo productivo, las pruebas unitarias y los otros 61 E2E funcionan.
 
 La incidencia se reprodujo dos veces en el CI de `main` del commit `7ac3ed7`, mientras el mismo caso pasó de forma aislada localmente y la suite completa pasó en el PR #83.
 
@@ -18,18 +18,18 @@ Como responsable de mantenimiento, necesito que el escenario automatizado repres
 
 **Aceptación**:
 
-1. **Dado** que el primer estudiante ya tiene un paquete en cola, **cuando** se selecciona otro estudiante y un archivo inequívocamente nuevo, **entonces** el test espera que «Enviar a calificar» esté habilitado antes de pulsarlo.
+1. **Dado** que el primer estudiante ya tiene un paquete en cola, **cuando** se selecciona otro estudiante, **entonces** el test espera que la URL cambie y que el estado del panel anterior desaparezca antes de cargar un archivo inequívocamente nuevo.
 2. **Dado** un fallo controlado de la segunda subida, **cuando** se reintenta, **entonces** las hojas se conservan y el paquete termina en cola para el estudiante correcto.
 3. **Dado** este hotfix, **cuando** se revisa el código productivo, **entonces** no existen cambios en componentes, API, backend, rutas ni contratos de calificación.
 
 ## Causa
 
-El test volvía a asignar el mismo descriptor en memoria (`name`, contenido y metadatos) al mismo `input[type=file]` después de que el primer envío vaciara el estado. La automatización dependía de que Chromium generara nuevamente el evento de cambio. Esa precondición no era determinista en el runner Linux y el clic posterior ocultaba el origen al esperar durante todo el timeout sobre un botón deshabilitado.
+El test no esperaba la navegación iniciada por `changeContext` después de seleccionar al segundo alumno. Como `GradingUploadPanel` usa el estudiante dentro de su clave de aislamiento, React reemplaza correctamente el selector. Playwright podía ejecutar `setInputFiles` sobre el nodo anterior antes del reemplazo y esa evidencia se perdía al desmontarlo. El clic posterior ocultaba el origen al esperar durante todo el timeout sobre un botón deshabilitado.
 
 ## Requisitos funcionales
 
-- **FR-001**: El escenario DEBE usar un archivo distinto para la segunda entrega, igual que dos evidencias reales de estudiantes diferentes.
-- **FR-002**: El escenario DEBE comprobar explícitamente que el botón de envío está habilitado después de seleccionar la segunda evidencia.
+- **FR-001**: El escenario DEBE esperar que el contexto de URL corresponda al segundo estudiante antes de interactuar con su selector de evidencia.
+- **FR-002**: El escenario DEBE usar un archivo distinto y comprobar explícitamente que el botón de envío está habilitado después de seleccionar la segunda evidencia.
 - **FR-003**: El escenario DEBE conservar la validación del fallo controlado, el reintento, los propietarios y los dos trabajos persistidos localmente.
 - **FR-004**: El hotfix NO DEBE cambiar código productivo, contratos HTTP, estados de calificación, datos ni proveedores de IA.
 - **FR-005**: La prueba específica y la suite frontend aplicable DEBEN pasar antes de fusionar.
@@ -42,5 +42,5 @@ El test volvía a asignar el mismo descriptor en memoria (`name`, contenido y me
 
 ## Supuestos
 
-- La incidencia está en la precondición sintética del test, no en el selector usado por personas; las pruebas unitarias del selector ya comprueban añadir, ordenar, rotar, eliminar y volver a tomar fotos.
+- La incidencia está en la falta de sincronización del test con la navegación y el desmontaje protector del panel, no en el selector usado por personas; las pruebas unitarias ya comprueban añadir, ordenar, rotar, eliminar y volver a tomar fotos.
 - La aprobación explícita y continuada del usuario en esta conversación corresponde a la aprobación humana registrada con `spec-approved` en el issue #84.
