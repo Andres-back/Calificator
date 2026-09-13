@@ -1,6 +1,6 @@
 # Hotfix: Estabilización del E2E de carga multihoja
 
-**Rama**: `codex/041-estabilizar-e2e-multihoja` | **Creada**: 2026-09-13 | **Estado**: Hotfix aprobado | **Issue**: [#84](https://github.com/Andres-back/Calificator/issues/84)
+**Rama**: `codex/041-estabilizar-e2e-multihoja` | **Creada**: 2026-09-13 | **Estado**: Implementado; fusión condicionada a CI | **Issue**: [#84](https://github.com/Andres-back/Calificator/issues/84) | **PR**: [#85](https://github.com/Andres-back/Calificator/pull/85)
 
 ## Impacto y reproducción
 
@@ -44,4 +44,3 @@ El test volvía a asignar el mismo descriptor en memoria (`name`, contenido y me
 
 - La incidencia está en la precondición sintética del test, no en el selector usado por personas; las pruebas unitarias del selector ya comprueban añadir, ordenar, rotar, eliminar y volver a tomar fotos.
 - La aprobación explícita y continuada del usuario en esta conversación corresponde a la aprobación humana registrada con `spec-approved` en el issue #84.
-

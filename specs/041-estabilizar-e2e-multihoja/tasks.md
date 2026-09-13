@@ -9,4 +9,4 @@
 - [x] T004 Conservar las aserciones de fallo, reintento, propietarios y cola local (FR-003).
 - [x] T005 Ejecutar repetidamente el escenario específico y las verificaciones proporcionales (FR-005): 5/5 repeticiones aprobadas.
 - [x] T006 Validar gobernanza, diff y ausencia de cambios productivos (FR-004, FR-005): lint y diff aprobados; ningún archivo de producto modificado.
-- [ ] T007 Abrir PR enlazado al issue #84, comprobar CI y fusionar en `main` (FR-005).
+- [x] T007 Abrir el PR #85 enlazado al issue #84 y someterlo a CI; la fusión queda condicionada a todos los controles verdes (FR-005).
