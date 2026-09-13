@@ -1,6 +1,6 @@
 # Especificación: Encolado seguro de calificaciones
 
-**Rama**: `codex/040-modularizar-cola-calificaciones` | **Creada**: 2026-09-12 | **Estado**: Implementada | **Issue**: #82
+**Rama**: `codex/040-modularizar-cola-calificaciones` | **Creada**: 2026-09-12 | **Estado**: Implementada | **Issue**: #82 | **PR**: #83
 
 ## Escenarios de usuario y pruebas
 
