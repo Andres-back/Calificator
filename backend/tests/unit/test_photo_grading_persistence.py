@@ -5,7 +5,7 @@ from decimal import Decimal
 from types import SimpleNamespace
 from uuid import uuid4
 
-from app.modules.calificaciones import photo_service, router
+from app.modules.calificaciones import grading_queue_service, photo_service, router
 from app.modules.authorization.catalog import default_permissions_for_role
 from app.modules.calificaciones.models import Entrega
 from app.modules.calificaciones.schemas import GradingResult
@@ -123,11 +123,15 @@ def test_publish_failure_keeps_saved_grade_processing_for_recovery(monkeypatch) 
         assert db.events[0] == "commit"
         raise ConnectionError("acknowledgement lost")
 
-    monkeypatch.setattr(router.jobs_service, "create_job", create_job)
-    monkeypatch.setattr(router.jobs_service, "get_job_input", job_input)
-    monkeypatch.setattr(router.jobs_service, "aggregate_parent_job", aggregate)
-    monkeypatch.setattr(router.jobs_service, "mark_job_retrying", retry)
-    monkeypatch.setattr(router.grade_delivery, "apply_async", unavailable)
+    monkeypatch.setattr(grading_queue_service.jobs_service, "create_job", create_job)
+    monkeypatch.setattr(grading_queue_service.jobs_service, "get_job_input", job_input)
+    monkeypatch.setattr(
+        grading_queue_service.jobs_service, "aggregate_parent_job", aggregate
+    )
+    monkeypatch.setattr(
+        grading_queue_service.jobs_service, "mark_job_retrying", retry
+    )
+    monkeypatch.setattr(grading_queue_service.grade_delivery, "apply_async", unavailable)
     result = asyncio.run(router._enqueue_persisted_grading(
         db, evaluacion=evaluation, entrega=delivery, estudiante_id=student_id,
         profesor_id=evaluation.profesor_id,
