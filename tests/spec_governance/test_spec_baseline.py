@@ -41,6 +41,7 @@ ALL_SPECS = {
     "038-backend-hygiene",
     "039-modularizar-evidencia",
     "040-modularizar-cola-calificaciones",
+    "041-estabilizar-e2e-multihoja",
 }
 OWNED_SPECS = {
     name

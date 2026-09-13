@@ -44,6 +44,7 @@ actualizar la especificación propietaria, su plan y sus tareas; no debe crear d
 | 038 | [Higiene incremental del backend](038-backend-hygiene/spec.md) | residuos comprobables en aplicación y pruebas; control estático | sin cambios de frontend ni rutas | sin cambios de esquema; CI Ruff ampliado | [#78](https://github.com/Andres-back/Calificator/issues/78) |
 | 039 | [Modularización segura de evidencia](039-modularizar-evidencia/spec.md) | presentación, metadatos y limpieza de evidencia de calificación | rutas de evidencia existentes, sin cambios públicos | entregas y archivos existentes; sin migraciones | [#80](https://github.com/Andres-back/Calificator/issues/80) |
 | 040 | [Encolado seguro de calificaciones](040-modularizar-cola-calificaciones/spec.md) | coordinación individual entre calificaciones, jobs y worker | rutas diferidas existentes, sin cambios públicos | entregas, calificaciones y trabajos existentes; sin migraciones | [#82](https://github.com/Andres-back/Calificator/issues/82) |
+| 041 | [Estabilización E2E de carga multihoja](041-estabilizar-e2e-multihoja/spec.md) | prueba automatizada de dos entregas consecutivas | sin cambios en rutas o frontend productivo | sin cambios de datos; solo regresión E2E | [#84](https://github.com/Andres-back/Calificator/issues/84) |
 
 ## Reglas de propiedad
 
