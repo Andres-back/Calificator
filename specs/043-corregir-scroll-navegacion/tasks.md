@@ -10,3 +10,5 @@ Issue #86; aprobación humana de alcance y publicación: 2026-09-16. FR-001–FR
 - [x] T006 (FR-005) Verificar desde rama aislada tipos, lint, pruebas/build aplicables, revisión de diff sin secretos ni cambios ajenos y artefactos de gobernanza; registrar resultados antes de solicitar merge. El gate final de GitHub sigue siendo obligatorio antes del merge.
 
 El PR y despliegue son controles posteriores de publicación, no una declaración de cierre de 042.
+
+- [x] T007 (FR-006) Respetar el foco que el usuario ya estableció dentro del diálogo antes del autofocus diferido, con regresión determinista en P2Accessibility.test.tsx.

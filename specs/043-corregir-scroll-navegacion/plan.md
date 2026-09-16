@@ -18,6 +18,8 @@ Se preservan roles, notas, trabajos asíncronos y datos. No hay secretos ni evid
 
 ## Evidencia local previa
 
+Convergencia de CI: primer recorrido completo, 61 E2E verdes y uno fallido al escribir el enunciado DBA. Se protege el autofocus diferido de Modal para no desviar el foco de un campo que el usuario ya empezó a editar; se añade regresión determinista sin modificar validaciones DBA. Se repite el caso real antes de publicar y se mantiene obligatorio el CI completo.
+
 Validación del paquete aislado sobre main: 24 pruebas verdes en cuatro archivos (9 s), TypeScript y ESLint focal sin errores, construcción Vite verde (23,67 s). Se conserva el aviso previo de bundle superior a 500 kB; no es error de build. El inventario se regenera mediante su script oficial para actualizar huellas derivadas, sin modificar contratos. GitHub debe confirmar todos los controles requeridos antes del merge.
 
 Chromium 390×844: desmontar panel y diálogo abierto después deja estilos originales vacíos y cero diálogos; rueda desplaza 500 px. Chromium 1366×768: rueda sobre RevisionGuide real desplaza el principal 600 px; guía con overflow visible y scrollTop 0. Ensayos aislados sin crear ni cambiar entidades del producto. La importación de dependencias coincide con Vite para evitar duplicar módulos por HMR.

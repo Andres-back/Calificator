@@ -35,6 +35,7 @@ Como profesor quiero desplazar la revisión con la rueda sobre la guía de respu
 - **FR-003**: el menú móvil libera el contenido al cambiar de ruta o pasar a escritorio.
 - **FR-004**: la rueda sobre la guía de respuestas desplaza la revisión principal sin un scroll anidado en esa guía.
 - **FR-005**: el cambio no altera cálculo, procesamiento, persistencia ni publicación de notas y no incorpora trabajo pendiente de 042.
+- **FR-006**: el foco inicial diferido de un diálogo no interrumpe la edición si el usuario ya ha enfocado un campo dentro de él.
 
 ## Resultados medibles
 

@@ -46,6 +46,19 @@ function LockedPanelHarness() {
 }
 
 describe('patrones compartidos de P2', () => {
+  it('no roba el foco si el usuario empieza a editar antes del autofocus diferido', async () => {
+    const { unmount } = render(
+      <Modal open onClose={() => {}} title="Edición de prueba">
+        <input aria-label="Enunciado de prueba" />
+      </Modal>,
+    );
+    const input = screen.getByRole('textbox', { name: 'Enunciado de prueba' });
+    input.focus();
+    await new Promise((resolve) => window.setTimeout(resolve, 30));
+    expect(input).toHaveFocus();
+    unmount();
+  });
+
   it('restaura scroll al salir de un panel con un diálogo abierto posteriormente', async () => {
     const original = document.body.style.cssText;
     const user = userEvent.setup();
