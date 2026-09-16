@@ -12,6 +12,8 @@ Issue #86. Se traslada el diseño ya aprobado de 042 a un paquete independiente 
 
 ## Constitución
 
+Registro de CI: añadir 043 al conjunto explícito ALL_SPECS de `test_spec_baseline.py`; se mantienen las mismas aserciones de igualdad, artefactos completos y tareas cerradas, sin excepciones ni reducción de controles.
+
 Se preservan roles, notas, trabajos asíncronos y datos. No hay secretos ni evidencias reales en el parche. Se mantienen accesibilidad y main protegida. La propiedad funcional continúa en las bases de navegación y calificación; 043 es únicamente el registro del hotfix.
 
 ## Evidencia local previa
