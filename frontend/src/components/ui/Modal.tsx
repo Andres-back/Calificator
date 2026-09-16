@@ -2,6 +2,7 @@ import { useEffect, useId, useRef, type ReactNode, type RefObject } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { X } from 'lucide-react';
 import { cn } from '@/lib/cn';
+import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 
 const FOCUSABLE_SELECTOR = [
   'a[href]',
@@ -49,6 +50,7 @@ export function Modal({
   const titleId = useId();
   const descriptionId = useId();
   const reduceMotion = useReducedMotion();
+  useBodyScrollLock(open, 'all');
 
   useEffect(() => {
     onCloseRef.current = onClose;
@@ -58,8 +60,6 @@ export function Modal({
     if (!open) return;
 
     previouslyFocusedRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
 
     const frame = window.requestAnimationFrame(() => {
       const initialTarget = initialFocusRef?.current;
@@ -100,7 +100,6 @@ export function Modal({
     return () => {
       window.cancelAnimationFrame(frame);
       document.removeEventListener('keydown', handleKeyDown);
-      document.body.style.overflow = previousOverflow;
       previouslyFocusedRef.current?.focus();
       previouslyFocusedRef.current = null;
     };

@@ -336,7 +336,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "b6176865756c02968fb75a65ebef1df9244e40098b36abc2775ebc468de5c7d8",
+  "source_digest": "a15db3ce96bbb503530610dc1d048a34f1518aad503ad9e7d43c84c6ed4bee59",
   "surfaces": [
     {
       "actors": [
@@ -4906,6 +4906,12 @@
           "level": "unit",
           "reference": "GET:/materias",
           "status": "direct",
+          "test_path": "frontend/src/components/layout/AppShell.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias",
+          "status": "direct",
           "test_path": "frontend/src/components/ui/P2Accessibility.test.tsx"
         },
         {
@@ -5066,6 +5072,12 @@
           "reference": "GET:/materias/{materia_id}",
           "status": "direct",
           "test_path": "frontend/src/components/auth/RouteGuards.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias/{materia_id}",
+          "status": "direct",
+          "test_path": "frontend/src/components/layout/AppShell.test.tsx"
         },
         {
           "level": "unit",
@@ -7683,6 +7695,12 @@
           "reference": "PATCH:/materias/{materia_id}",
           "status": "direct",
           "test_path": "frontend/src/components/auth/RouteGuards.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/materias/{materia_id}",
+          "status": "direct",
+          "test_path": "frontend/src/components/layout/AppShell.test.tsx"
         },
         {
           "level": "unit",
@@ -12036,6 +12054,12 @@
           "level": "unit",
           "reference": "POST:/materias",
           "status": "direct",
+          "test_path": "frontend/src/components/layout/AppShell.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/materias",
+          "status": "direct",
           "test_path": "frontend/src/components/ui/P2Accessibility.test.tsx"
         },
         {
@@ -16159,6 +16183,12 @@
           "level": "unit",
           "reference": "/app/materias",
           "status": "direct",
+          "test_path": "frontend/src/components/layout/AppShell.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/materias",
+          "status": "direct",
           "test_path": "frontend/src/components/ui/P2Accessibility.test.tsx"
         },
         {
@@ -16321,6 +16351,12 @@
           "reference": "/app/materias/{id}",
           "status": "direct",
           "test_path": "frontend/src/components/auth/RouteGuards.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/materias/{id}",
+          "status": "direct",
+          "test_path": "frontend/src/components/layout/AppShell.test.tsx"
         },
         {
           "level": "unit",
@@ -22196,6 +22232,12 @@
           "level": "unit",
           "reference": "GET:/materias/{id}",
           "status": "direct",
+          "test_path": "frontend/src/components/layout/AppShell.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias/{id}",
+          "status": "direct",
           "test_path": "frontend/src/components/ui/P2Accessibility.test.tsx"
         },
         {
@@ -22521,6 +22563,12 @@
           "reference": "GET:/materias",
           "status": "direct",
           "test_path": "frontend/src/components/auth/RouteGuards.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias",
+          "status": "direct",
+          "test_path": "frontend/src/components/layout/AppShell.test.tsx"
         },
         {
           "level": "unit",
@@ -24452,6 +24500,12 @@
           "reference": "PATCH:/materias/{id}",
           "status": "direct",
           "test_path": "frontend/src/components/auth/RouteGuards.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/materias/{id}",
+          "status": "direct",
+          "test_path": "frontend/src/components/layout/AppShell.test.tsx"
         },
         {
           "level": "unit",
@@ -27635,6 +27689,12 @@
           "reference": "POST:/materias",
           "status": "direct",
           "test_path": "frontend/src/components/auth/RouteGuards.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/materias",
+          "status": "direct",
+          "test_path": "frontend/src/components/layout/AppShell.test.tsx"
         },
         {
           "level": "unit",
