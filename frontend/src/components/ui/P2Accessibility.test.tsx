@@ -10,6 +10,7 @@ import { Modal } from './Modal';
 import { QueryError } from './QueryState';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { SopaLetrasView } from '@/modules/herramientas/views/SopaLetrasView';
+import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 
 function ModalHarness() {
   const [open, setOpen] = useState(false);
@@ -31,7 +32,43 @@ function ModalHarness() {
   );
 }
 
+function LockedPanelHarness() {
+  useBodyScrollLock(true, 'all');
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <button onClick={() => setOpen(true)}>Abrir sobre panel</button>
+      <Modal open={open} onClose={() => setOpen(false)} title="Confirmación del panel">
+        Contenido de prueba
+      </Modal>
+    </>
+  );
+}
+
 describe('patrones compartidos de P2', () => {
+  it('no roba el foco si el usuario empieza a editar antes del autofocus diferido', async () => {
+    const { unmount } = render(
+      <Modal open onClose={() => {}} title="Edición de prueba">
+        <input aria-label="Enunciado de prueba" />
+      </Modal>,
+    );
+    const input = screen.getByRole('textbox', { name: 'Enunciado de prueba' });
+    input.focus();
+    await new Promise((resolve) => window.setTimeout(resolve, 30));
+    expect(input).toHaveFocus();
+    unmount();
+  });
+
+  it('restaura scroll al salir de un panel con un diálogo abierto posteriormente', async () => {
+    const original = document.body.style.cssText;
+    const user = userEvent.setup();
+    const { unmount } = render(<LockedPanelHarness />);
+    await user.click(screen.getByRole('button', { name: 'Abrir sobre panel' }));
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+    unmount();
+    expect(document.body.style.cssText).toBe(original);
+  });
+
   it('mantiene el nombre del botón durante carga y anuncia el estado', () => {
     render(<Button loading loadingLabel="Guardando…">Guardar cambios</Button>);
     const button = screen.getByRole('button', { name: 'Guardando…' });

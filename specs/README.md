@@ -69,6 +69,10 @@ actualizar la especificación propietaria, su plan y sus tareas; no debe crear d
 - Añade visibilidad de configuración guardada, resolución efectiva y ejecución observada por etapa; controla generaciones nuevas de herramientas sin afectar recursos existentes.
 - `unir_columnas` es el identificador canónico visible y `emparejar` continúa como alias compatible para enlaces y datos históricos.
 
+## Hotfix 043: navegación sin bloqueo
+
+- [043-corregir-scroll-navegacion](043-corregir-scroll-navegacion/spec.md), [issue #86](https://github.com/Andres-back/Calificator/issues/86): coordina bloqueo compartido, menú adaptable y scroll natural de respuestas sin alterar notas ni desplegar el módulo 042 incompleto. Aprobación humana para PR y despliegue: 2026-09-16.
+
 ## Inventario técnico global
 
 - [Inventario canónico JSON](system-inventory/current.json)

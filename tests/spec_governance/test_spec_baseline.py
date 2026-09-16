@@ -42,6 +42,7 @@ ALL_SPECS = {
     "039-modularizar-evidencia",
     "040-modularizar-cola-calificaciones",
     "041-estabilizar-e2e-multihoja",
+    "043-corregir-scroll-navegacion",
 }
 OWNED_SPECS = {
     name

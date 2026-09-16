@@ -2,6 +2,7 @@ import { useEffect, useId, useRef, type ReactNode, type RefObject } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { X } from 'lucide-react';
 import { cn } from '@/lib/cn';
+import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 
 const FOCUSABLE_SELECTOR = [
   'a[href]',
@@ -49,6 +50,7 @@ export function Modal({
   const titleId = useId();
   const descriptionId = useId();
   const reduceMotion = useReducedMotion();
+  useBodyScrollLock(open, 'all');
 
   useEffect(() => {
     onCloseRef.current = onClose;
@@ -58,10 +60,11 @@ export function Modal({
     if (!open) return;
 
     previouslyFocusedRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
 
     const frame = window.requestAnimationFrame(() => {
+      // No interrumpir al usuario si ya empezó a escribir antes del autofocus.
+      const dialog = dialogRef.current;
+      if (dialog?.contains(document.activeElement) && document.activeElement !== dialog) return;
       const initialTarget = initialFocusRef?.current;
       const focusTarget = initialTarget && !initialTarget.hasAttribute('disabled')
         ? initialTarget
@@ -100,7 +103,6 @@ export function Modal({
     return () => {
       window.cancelAnimationFrame(frame);
       document.removeEventListener('keydown', handleKeyDown);
-      document.body.style.overflow = previousOverflow;
       previouslyFocusedRef.current?.focus();
       previouslyFocusedRef.current = null;
     };

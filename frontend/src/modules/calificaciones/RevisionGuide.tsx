@@ -20,7 +20,7 @@ export function RevisionGuide({ items }: { items: GuiaRevisionItem[] }) {
           Esta evaluación no tiene una clave de respuestas registrada.
         </p>
       ) : (
-        <ol className="space-y-4 p-4 xl:max-h-[34rem] xl:overflow-y-auto" aria-label="Preguntas y respuestas correctas">
+        <ol className="space-y-4 p-4" aria-label="Preguntas y respuestas correctas">
           {items.map((item, index) => (
             <li key={`${item.numero}-${index}`} className="rounded-xl border border-border bg-surface-2 p-4">
               <div className="flex items-start gap-3">
