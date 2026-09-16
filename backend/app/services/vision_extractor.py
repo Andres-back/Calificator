@@ -22,6 +22,7 @@ from app.services.ai_provider_capacity import provider_capacity
 from app.services.ai_credentials_service import get_effective_ai_credentials
 from app.services.image_preprocessing import prepare_orientation_variants
 from app.services.ollama_provider import OllamaCloudProvider, OllamaProviderError
+from app.services.opencode_request import new_opencode_session_id, opencode_headers
 
 logger = get_logger(__name__)
 RETRYABLE_HTTP = {429, 502, 503, 504}
@@ -280,6 +281,9 @@ class VisionExtractor:
         self.base_url = settings.OPEN_CODE_BASE_URL.rstrip("/")
         self.primary_model = primary_model or settings.VISION_MODEL
         self.api_key = (api_key or "").strip()
+        self._session_id = new_opencode_session_id(
+            self.tracking.get("pipeline_run_id")
+        )
 
     async def _keys(self) -> list[str]:
         effective = await get_effective_ai_credentials()
@@ -400,7 +404,10 @@ Informa tachones, correcciones y preguntas ausentes. Devuelve SOLO JSON:
                                     async with provider_capacity():
                                         response = await client.post(
                                             f"{self.base_url}/chat/completions",
-                                            headers={"Authorization": f"Bearer {key}"},
+                                            headers=opencode_headers(
+                                                key,
+                                                session_id=self._session_id,
+                                            ),
                                             json=body,
                                         )
                                     if response.status_code != 401 or key_index == len(keys) - 1:

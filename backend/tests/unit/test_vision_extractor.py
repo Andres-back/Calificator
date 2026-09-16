@@ -265,7 +265,9 @@ class _Client:
         return None
 
     async def post(self, _url: str, **kwargs: object) -> _Response:
-        self.calls.append(kwargs["json"])
+        payload = dict(kwargs["json"])
+        payload["_headers"] = kwargs["headers"]
+        self.calls.append(payload)
         response = self.responses.pop(0)
         if isinstance(response, Exception):
             raise response
@@ -317,6 +319,8 @@ def test_429_is_retried_once_then_succeeds(monkeypatch: pytest.MonkeyPatch) -> N
     result = asyncio.run(extractor.extract(_image(), "image/jpeg"))
     assert result.answers[0].answer == "27"
     assert len(calls) == 2
+    assert calls[0]["_headers"]["x-opencode-session"] == calls[1]["_headers"]["x-opencode-session"]
+    assert calls[0]["_headers"]["User-Agent"] == "XCalificator/1.0"
 
 
 def test_timeout_is_retried_once_and_stays_temporary(monkeypatch: pytest.MonkeyPatch) -> None:

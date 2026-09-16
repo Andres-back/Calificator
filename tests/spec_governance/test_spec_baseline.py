@@ -43,6 +43,7 @@ ALL_SPECS = {
     "040-modularizar-cola-calificaciones",
     "041-estabilizar-e2e-multihoja",
     "043-corregir-scroll-navegacion",
+    "044-opencode-session",
 }
 OWNED_SPECS = {
     name

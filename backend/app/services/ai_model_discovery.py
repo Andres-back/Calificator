@@ -11,6 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import settings
 from app.services.ai_credentials_service import EffectiveAICredentials
 from app.services.ollama_provider import OllamaCloudProvider, OllamaProviderError
+from app.services.opencode_request import new_opencode_session_id, opencode_headers
 
 
 class AIModelDiscoveryError(RuntimeError):
@@ -153,9 +154,17 @@ async def discover_provider_models(
         url = f"{base_url}/models"
 
     try:
+        headers = (
+            opencode_headers(
+                credential,
+                session_id=new_opencode_session_id("model-discovery"),
+            )
+            if provider == "open_code"
+            else {"Authorization": f"Bearer {credential}"}
+        )
         async with httpx.AsyncClient(
             timeout=httpx.Timeout(15, connect=5), transport=transport,
-            headers={"Authorization": f"Bearer {credential}"},
+            headers=headers,
         ) as client:
             response = await client.get(url, params={"page": 1, "per_page": 1000} if provider == "cloudflare_image" else None)
             response.raise_for_status()

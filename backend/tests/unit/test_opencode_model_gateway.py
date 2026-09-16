@@ -75,6 +75,8 @@ def test_qwen_uses_messages_and_normalizes_response() -> None:
 
     assert call["url"].endswith("/messages")
     assert call["headers"]["x-api-key"] is not None
+    assert call["headers"]["x-opencode-session"].startswith("xca-")
+    assert call["headers"]["User-Agent"] == "XCalificator/1.0"
     assert "response_format" not in call["json"]
     assert result["choices"][0]["message"]["content"] == '{"nota_sugerida": 4.5}'
     assert result["usage"]["output_tokens"] == 5
@@ -90,6 +92,8 @@ def test_deepseek_keeps_openai_chat_completions() -> None:
 
     assert call["url"].endswith("/chat/completions")
     assert call["headers"]["Authorization"].startswith("Bearer ")
+    assert call["headers"]["x-opencode-session"].startswith("xca-")
+    assert call["headers"]["User-Agent"] == "XCalificator/1.0"
     assert call["json"]["response_format"] == {"type": "json_object"}
     assert result is payload
 
