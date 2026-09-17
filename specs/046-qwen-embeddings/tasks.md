@@ -33,8 +33,8 @@
 ## Fase 6: Verificación
 
 - [x] T014 Ejecutar pruebas focalizadas, Ruff, migración upgrade/downgrade, Compose e inventario. (FR-005, FR-007, FR-011, FR-012)
-- [ ] T015 Ejecutar Analyze/Converge, abrir PR enlazado a #92 y esperar CI verde. (FR-009, FR-012)
-- [ ] T016 Desplegar desde `main`, cargar Qwen en el VPS y medir una consulta caliente sin datos sensibles. (FR-001, FR-002, FR-012)
+- [x] T015 Ejecutar Analyze/Converge, abrir PR enlazado a #92 y esperar CI verde. (FR-009, FR-012)
+- [x] T016 Desplegar desde `main`, cargar Qwen en el VPS y medir una consulta caliente sin datos sensibles. (FR-001, FR-002, FR-012)
 
 ## Dependencias
 
