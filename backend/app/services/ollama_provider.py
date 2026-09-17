@@ -189,7 +189,10 @@ class OllamaEmbeddingProvider:
                         "model": model.strip(),
                         "input": inputs,
                         "truncate": True,
-                        "keep_alive": "10m",
+                        # El modelo institucional permanece residente para que la
+                        # primera calificacion despues de una pausa no pague los
+                        # ~11 s de carga en CPU observados en el VPS.
+                        "keep_alive": -1,
                     },
                 )
                 response.raise_for_status()

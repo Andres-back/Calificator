@@ -17,6 +17,7 @@ async def test_internal_ollama_embedding_provider_sends_batch() -> None:
             "criterio de aprendizaje",
             "respuesta del estudiante",
         ]
+        assert payload["keep_alive"] == -1
         return httpx.Response(200, json={"embeddings": [[0.1, 0.2], [0.3, 0.4]]})
 
     provider = OllamaEmbeddingProvider(

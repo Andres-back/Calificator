@@ -254,6 +254,26 @@ services:
       ollama:
         condition: service_healthy
     restart: "no"
+
+  ollama-model-warmup:
+    build: *backend-build
+    environment:
+      OLLAMA_ENDPOINT: http://ollama:11434
+      EMBEDDING_MODEL: ${EMBEDDING_MODEL:-qwen3-embedding:0.6b}
+    command:
+      - python
+      - -c
+      - >-
+        import json, os, urllib.request;
+        endpoint = os.environ['OLLAMA_ENDPOINT'].rstrip('/') + '/api/embed';
+        payload = json.dumps({'model': os.environ['EMBEDDING_MODEL'], 'input': 'XCalificator listo para recuperar criterios de aprendizaje.', 'keep_alive': -1}).encode();
+        request = urllib.request.Request(endpoint, data=payload, headers={'Content-Type': 'application/json'});
+        urllib.request.urlopen(request, timeout=120).read()
+    depends_on:
+      ollama-model-init:
+        condition: service_completed_successfully
+    restart: "no"
+
   nginx:
     build:
       context: .
