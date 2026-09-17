@@ -336,7 +336,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "9e7ed6a8a3fd9cc26b5aae5502e1b06ec71417349af3be58f42f82b68faa0a44",
+  "source_digest": "6cbbf821c24915e04a516bfcebab997e3ce9f0d935d5e661cfed0711584088b8",
   "surfaces": [
     {
       "actors": [
@@ -528,7 +528,7 @@
       "kind": "endpoint",
       "owner_spec": "004-dba-asistencia-curriculo",
       "signature": "DELETE:/dba-personalizados/{dba_id}",
-      "source_line": 119,
+      "source_line": 139,
       "source_path": "backend/app/modules/dba/router.py",
       "states": [],
       "tests": [
@@ -3212,7 +3212,7 @@
       "kind": "endpoint",
       "owner_spec": "004-dba-asistencia-curriculo",
       "signature": "GET:/dba",
-      "source_line": 28,
+      "source_line": 42,
       "source_path": "backend/app/modules/dba/router.py",
       "states": [],
       "tests": [
@@ -5262,7 +5262,7 @@
       "kind": "endpoint",
       "owner_spec": "004-dba-asistencia-curriculo",
       "signature": "GET:/materias/{materia_id}/dba",
-      "source_line": 136,
+      "source_line": 156,
       "source_path": "backend/app/modules/dba/router.py",
       "states": [],
       "tests": [
@@ -5295,7 +5295,7 @@
       "kind": "endpoint",
       "owner_spec": "004-dba-asistencia-curriculo",
       "signature": "GET:/materias/{materia_id}/dba-personalizados",
-      "source_line": 61,
+      "source_line": 79,
       "source_path": "backend/app/modules/dba/router.py",
       "states": [],
       "tests": []
@@ -7083,7 +7083,7 @@
       "kind": "endpoint",
       "owner_spec": "004-dba-asistencia-curriculo",
       "signature": "PATCH:/dba-personalizados/{dba_id}",
-      "source_line": 102,
+      "source_line": 122,
       "source_path": "backend/app/modules/dba/router.py",
       "states": [],
       "tests": [
@@ -9969,7 +9969,7 @@
       "kind": "endpoint",
       "owner_spec": "004-dba-asistencia-curriculo",
       "signature": "POST:/dba/importar",
-      "source_line": 39,
+      "source_line": 53,
       "source_path": "backend/app/modules/dba/router.py",
       "states": [],
       "tests": [
@@ -12144,7 +12144,7 @@
       "kind": "endpoint",
       "owner_spec": "004-dba-asistencia-curriculo",
       "signature": "POST:/materias/{materia_id}/dba-personalizados",
-      "source_line": 77,
+      "source_line": 95,
       "source_path": "backend/app/modules/dba/router.py",
       "states": [],
       "tests": []
@@ -12169,7 +12169,7 @@
       "kind": "endpoint",
       "owner_spec": "004-dba-asistencia-curriculo",
       "signature": "POST:/materias/{materia_id}/dba-personalizados/upload-document",
-      "source_line": 154,
+      "source_line": 176,
       "source_path": "backend/app/modules/dba/router.py",
       "states": [],
       "tests": []
@@ -13509,6 +13509,12 @@
           "reference": "/",
           "status": "direct",
           "test_path": "backend/tests/unit/test_puzzle_builder.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_qwen_embedding_provider.py"
         },
         {
           "level": "unit",
@@ -29067,6 +29073,12 @@
           "level": "unit",
           "reference": "ollama",
           "status": "direct",
+          "test_path": "backend/tests/integration/test_explainable_grading_pipeline.py"
+        },
+        {
+          "level": "unit",
+          "reference": "ollama",
+          "status": "direct",
           "test_path": "backend/tests/unit/test_ai_configuration_resolver.py"
         },
         {
@@ -29074,6 +29086,12 @@
           "reference": "ollama",
           "status": "direct",
           "test_path": "backend/tests/unit/test_evaluation_digitalization.py"
+        },
+        {
+          "level": "unit",
+          "reference": "ollama",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_evaluation_generation.py"
         },
         {
           "level": "unit",
@@ -29092,6 +29110,18 @@
           "reference": "ollama",
           "status": "direct",
           "test_path": "backend/tests/unit/test_presentaciones_router.py"
+        },
+        {
+          "level": "unit",
+          "reference": "ollama",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_qwen_embedding_provider.py"
+        },
+        {
+          "level": "unit",
+          "reference": "ollama",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_rag_embedding_space.py"
         },
         {
           "level": "unit",
@@ -33616,7 +33646,7 @@
       "kind": "table",
       "owner_spec": "009-xali-rag-refuerzos",
       "signature": "rag_chunks",
-      "source_line": 38,
+      "source_line": 60,
       "source_path": "backend/app/modules/rag/models.py",
       "states": [],
       "tests": [
@@ -33664,7 +33694,7 @@
       "kind": "table",
       "owner_spec": "009-xali-rag-refuerzos",
       "signature": "rag_sources",
-      "source_line": 15,
+      "source_line": 26,
       "source_path": "backend/app/modules/rag/models.py",
       "states": [],
       "tests": [
