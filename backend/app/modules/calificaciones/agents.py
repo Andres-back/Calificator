@@ -15,6 +15,7 @@ from app.modules.analytics.usage_logger import log_ai_usage
 from app.modules.calificaciones.breakdown_policy import build_component_scaffold, sanitize_component_payload
 from app.services.image_preprocessing import prepare_orientation_variants
 from app.services.llm_router import LLMRouter
+from app.services.opencode_request import new_opencode_session_id, opencode_headers
 from app.services.vision_service import interpret_image
 from app.services.vision_extractor import VisionExtractionError, VisionExtractor
 
@@ -315,6 +316,9 @@ class OpenCodeClient:
         self.base_url = str(settings.OPEN_CODE_BASE_URL).rstrip("/")
         self._client = httpx.AsyncClient(timeout=inference_http_timeout())
         self._tracking = tracking or {}
+        self._session_id = new_opencode_session_id(
+            self._tracking.get("pipeline_run_id")
+        )
 
     def _routing_telemetry(self) -> dict[str, Any]:
         snapshot = self._tracking.get("_ai_config") or {}
@@ -389,11 +393,11 @@ class OpenCodeClient:
             if system_prompt:
                 body["system"] = system_prompt
             endpoint = "messages"
-            headers = {
-                "x-api-key": self.api_key,
-                "anthropic-version": "2023-06-01",
-                "Content-Type": "application/json",
-            }
+            headers = opencode_headers(
+                self.api_key,
+                session_id=self._session_id,
+                messages_api=True,
+            )
         else:
             body = {
                 "model": model,
@@ -407,10 +411,10 @@ class OpenCodeClient:
             if json_mode:
                 body["response_format"] = {"type": "json_object"}
             endpoint = "chat/completions"
-            headers = {
-                "Authorization": f"Bearer {self.api_key}",
-                "Content-Type": "application/json",
-            }
+            headers = opencode_headers(
+                self.api_key,
+                session_id=self._session_id,
+            )
 
         request_timeout = inference_http_timeout()
         attempt_limit = max(1, max_attempts if max_attempts is not None else OPEN_CODE_MAX_ATTEMPTS)

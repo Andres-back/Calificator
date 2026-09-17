@@ -6,43 +6,43 @@
 
 | Tipo | Firma | Actores | Cobertura | Fuente |
 |---|---|---|---|---|
-| endpoint | `DELETE:/profesor/ai-credentials/{provider}` | admin, profesor | covered | `backend/app/modules/admin_ai_config/router.py:1269` |
+| endpoint | `DELETE:/profesor/ai-credentials/{provider}` | admin, profesor | covered | `backend/app/modules/admin_ai_config/router.py:1273` |
 | endpoint | `DELETE:/profesor/ollama-connectors/{connector_id}` | admin, profesor | missing | `backend/app/modules/ollama_connector/router.py:54` |
-| endpoint | `GET:/admin/ai-audit` | admin | covered | `backend/app/modules/admin_ai_config/router.py:919` |
-| endpoint | `GET:/admin/ai-config` | admin | covered | `backend/app/modules/admin_ai_config/router.py:331` |
-| endpoint | `GET:/admin/ai-config-hash` | admin | covered | `backend/app/modules/admin_ai_config/router.py:887` |
-| endpoint | `GET:/admin/ai-control-center` | admin | covered | `backend/app/modules/admin_ai_config/router.py:481` |
-| endpoint | `GET:/admin/ai-control-center/effective` | admin | missing | `backend/app/modules/admin_ai_config/router.py:513` |
-| endpoint | `GET:/admin/ai-control-center/usage` | admin | covered | `backend/app/modules/admin_ai_config/router.py:490` |
-| endpoint | `GET:/admin/ai-settings` | admin | covered | `backend/app/modules/admin_ai_config/router.py:408` |
-| endpoint | `GET:/admin/ai-usage` | admin | covered | `backend/app/modules/admin_ai_config/router.py:675` |
-| endpoint | `GET:/profesor/ai-config` | admin, profesor | covered | `backend/app/modules/admin_ai_config/router.py:1067` |
-| endpoint | `GET:/profesor/ai-providers/ollama/models` | admin, profesor | missing | `backend/app/modules/admin_ai_config/router.py:1311` |
+| endpoint | `GET:/admin/ai-audit` | admin | covered | `backend/app/modules/admin_ai_config/router.py:923` |
+| endpoint | `GET:/admin/ai-config` | admin | covered | `backend/app/modules/admin_ai_config/router.py:335` |
+| endpoint | `GET:/admin/ai-config-hash` | admin | covered | `backend/app/modules/admin_ai_config/router.py:891` |
+| endpoint | `GET:/admin/ai-control-center` | admin | covered | `backend/app/modules/admin_ai_config/router.py:485` |
+| endpoint | `GET:/admin/ai-control-center/effective` | admin | missing | `backend/app/modules/admin_ai_config/router.py:517` |
+| endpoint | `GET:/admin/ai-control-center/usage` | admin | covered | `backend/app/modules/admin_ai_config/router.py:494` |
+| endpoint | `GET:/admin/ai-settings` | admin | covered | `backend/app/modules/admin_ai_config/router.py:412` |
+| endpoint | `GET:/admin/ai-usage` | admin | covered | `backend/app/modules/admin_ai_config/router.py:679` |
+| endpoint | `GET:/profesor/ai-config` | admin, profesor | covered | `backend/app/modules/admin_ai_config/router.py:1071` |
+| endpoint | `GET:/profesor/ai-providers/ollama/models` | admin, profesor | missing | `backend/app/modules/admin_ai_config/router.py:1315` |
 | endpoint | `GET:/profesor/ollama-connectors` | admin, profesor | missing | `backend/app/modules/ollama_connector/router.py:46` |
-| endpoint | `PATCH:/admin/ai-config` | admin | covered | `backend/app/modules/admin_ai_config/router.py:344` |
-| endpoint | `PATCH:/admin/ai-providers/{provider_id}` | admin | covered | `backend/app/modules/admin_ai_config/router.py:841` |
-| endpoint | `PATCH:/profesor/ai-config` | admin, profesor | covered | `backend/app/modules/admin_ai_config/router.py:948` |
-| endpoint | `POST:/admin/ai-cache/clear` | admin | missing | `backend/app/modules/admin_ai_config/router.py:685` |
-| endpoint | `POST:/admin/ai-control-center/validate` | admin | covered | `backend/app/modules/admin_ai_config/router.py:542` |
-| endpoint | `POST:/admin/ai-providers/{provider}/models/refresh` | admin | missing | `backend/app/modules/admin_ai_config/router.py:636` |
-| endpoint | `POST:/admin/ai-providers/{provider}/test` | admin | missing | `backend/app/modules/admin_ai_config/router.py:602` |
-| endpoint | `POST:/admin/ai-settings/restore-defaults` | admin | missing | `backend/app/modules/admin_ai_config/router.py:858` |
-| endpoint | `POST:/admin/ai-settings/restore-previous` | admin | covered | `backend/app/modules/admin_ai_config/router.py:870` |
+| endpoint | `PATCH:/admin/ai-config` | admin | covered | `backend/app/modules/admin_ai_config/router.py:348` |
+| endpoint | `PATCH:/admin/ai-providers/{provider_id}` | admin | covered | `backend/app/modules/admin_ai_config/router.py:845` |
+| endpoint | `PATCH:/profesor/ai-config` | admin, profesor | covered | `backend/app/modules/admin_ai_config/router.py:952` |
+| endpoint | `POST:/admin/ai-cache/clear` | admin | missing | `backend/app/modules/admin_ai_config/router.py:689` |
+| endpoint | `POST:/admin/ai-control-center/validate` | admin | covered | `backend/app/modules/admin_ai_config/router.py:546` |
+| endpoint | `POST:/admin/ai-providers/{provider}/models/refresh` | admin | missing | `backend/app/modules/admin_ai_config/router.py:640` |
+| endpoint | `POST:/admin/ai-providers/{provider}/test` | admin | missing | `backend/app/modules/admin_ai_config/router.py:606` |
+| endpoint | `POST:/admin/ai-settings/restore-defaults` | admin | missing | `backend/app/modules/admin_ai_config/router.py:862` |
+| endpoint | `POST:/admin/ai-settings/restore-previous` | admin | covered | `backend/app/modules/admin_ai_config/router.py:874` |
 | endpoint | `POST:/connector/jobs/claim` | ambiguous | missing | `backend/app/modules/ollama_connector/router.py:80` |
 | endpoint | `POST:/connector/jobs/{job_id}/complete` | ambiguous | missing | `backend/app/modules/ollama_connector/router.py:110` |
 | endpoint | `POST:/connector/jobs/{job_id}/fail` | ambiguous | missing | `backend/app/modules/ollama_connector/router.py:121` |
 | endpoint | `POST:/connector/jobs/{job_id}/heartbeat` | ambiguous | missing | `backend/app/modules/ollama_connector/router.py:99` |
 | endpoint | `POST:/connector/pair` | ambiguous | missing | `backend/app/modules/ollama_connector/router.py:64` |
-| endpoint | `POST:/profesor/ai-providers/ollama/models/refresh` | admin, profesor | missing | `backend/app/modules/admin_ai_config/router.py:1291` |
-| endpoint | `POST:/profesor/ai-providers/{provider}/test` | admin, profesor | covered | `backend/app/modules/admin_ai_config/router.py:1346` |
+| endpoint | `POST:/profesor/ai-providers/ollama/models/refresh` | admin, profesor | missing | `backend/app/modules/admin_ai_config/router.py:1295` |
+| endpoint | `POST:/profesor/ai-providers/{provider}/test` | admin, profesor | covered | `backend/app/modules/admin_ai_config/router.py:1350` |
 | endpoint | `POST:/profesor/ollama-connectors/pairing` | admin, profesor | missing | `backend/app/modules/ollama_connector/router.py:37` |
-| endpoint | `PUT:/admin/ai-control-center/publish` | admin | covered | `backend/app/modules/admin_ai_config/router.py:558` |
-| endpoint | `PUT:/admin/ai-features` | admin | covered | `backend/app/modules/admin_ai_config/router.py:792` |
-| endpoint | `PUT:/admin/ai-providers` | admin | covered | `backend/app/modules/admin_ai_config/router.py:764` |
-| endpoint | `PUT:/admin/ai-settings/publish` | admin | covered | `backend/app/modules/admin_ai_config/router.py:698` |
+| endpoint | `PUT:/admin/ai-control-center/publish` | admin | covered | `backend/app/modules/admin_ai_config/router.py:562` |
+| endpoint | `PUT:/admin/ai-features` | admin | covered | `backend/app/modules/admin_ai_config/router.py:796` |
+| endpoint | `PUT:/admin/ai-providers` | admin | covered | `backend/app/modules/admin_ai_config/router.py:768` |
+| endpoint | `PUT:/admin/ai-settings/publish` | admin | covered | `backend/app/modules/admin_ai_config/router.py:702` |
 | endpoint | `PUT:/connector/models` | ambiguous | missing | `backend/app/modules/ollama_connector/router.py:70` |
-| endpoint | `PUT:/profesor/ai-config` | admin, profesor | covered | `backend/app/modules/admin_ai_config/router.py:1179` |
-| endpoint | `PUT:/profesor/ai-credentials/{provider}` | admin, profesor | covered | `backend/app/modules/admin_ai_config/router.py:1244` |
+| endpoint | `PUT:/profesor/ai-config` | admin, profesor | covered | `backend/app/modules/admin_ai_config/router.py:1183` |
+| endpoint | `PUT:/profesor/ai-credentials/{provider}` | admin, profesor | covered | `backend/app/modules/admin_ai_config/router.py:1248` |
 | frontend_route | `/app/admin/configuracion-ia` | admin | covered | `frontend/src/config/routes.ts:57` |
 | frontend_route | `/app/configuracion-ia` | authenticated | covered | `frontend/src/config/routes.ts:61` |
 | frontend_call | `DELETE:/profesor/ai-credentials/{provider}` | ambiguous | covered | `frontend/src/modules/profesor_ai/api.ts:84` |

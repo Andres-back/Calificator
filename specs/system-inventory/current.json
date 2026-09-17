@@ -336,7 +336,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "bc8079835452ead305e1db7d5fbf97db41710533dbd4992814cdebba0b78d46c",
+  "source_digest": "97f901b53ce9114cc1ab4666c09c446af9c9f80f9b31fdf5048d74fb002e5a72",
   "surfaces": [
     {
       "actors": [
@@ -926,7 +926,7 @@
       "kind": "endpoint",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "DELETE:/profesor/ai-credentials/{provider}",
-      "source_line": 1269,
+      "source_line": 1273,
       "source_path": "backend/app/modules/admin_ai_config/router.py",
       "states": [],
       "tests": [
@@ -1063,7 +1063,7 @@
       "kind": "endpoint",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "GET:/admin/ai-audit",
-      "source_line": 919,
+      "source_line": 923,
       "source_path": "backend/app/modules/admin_ai_config/router.py",
       "states": [],
       "tests": [
@@ -1100,7 +1100,7 @@
       "kind": "endpoint",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "GET:/admin/ai-config",
-      "source_line": 331,
+      "source_line": 335,
       "source_path": "backend/app/modules/admin_ai_config/router.py",
       "states": [],
       "tests": [
@@ -1143,7 +1143,7 @@
       "kind": "endpoint",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "GET:/admin/ai-config-hash",
-      "source_line": 887,
+      "source_line": 891,
       "source_path": "backend/app/modules/admin_ai_config/router.py",
       "states": [],
       "tests": [
@@ -1180,7 +1180,7 @@
       "kind": "endpoint",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "GET:/admin/ai-control-center",
-      "source_line": 481,
+      "source_line": 485,
       "source_path": "backend/app/modules/admin_ai_config/router.py",
       "states": [],
       "tests": [
@@ -1223,7 +1223,7 @@
       "kind": "endpoint",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "GET:/admin/ai-control-center/effective",
-      "source_line": 513,
+      "source_line": 517,
       "source_path": "backend/app/modules/admin_ai_config/router.py",
       "states": [],
       "tests": []
@@ -1247,7 +1247,7 @@
       "kind": "endpoint",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "GET:/admin/ai-control-center/usage",
-      "source_line": 490,
+      "source_line": 494,
       "source_path": "backend/app/modules/admin_ai_config/router.py",
       "states": [],
       "tests": [
@@ -1290,7 +1290,7 @@
       "kind": "endpoint",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "GET:/admin/ai-settings",
-      "source_line": 408,
+      "source_line": 412,
       "source_path": "backend/app/modules/admin_ai_config/router.py",
       "states": [],
       "tests": [
@@ -1339,7 +1339,7 @@
       "kind": "endpoint",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "GET:/admin/ai-usage",
-      "source_line": 675,
+      "source_line": 679,
       "source_path": "backend/app/modules/admin_ai_config/router.py",
       "states": [],
       "tests": [
@@ -5941,7 +5941,7 @@
       "kind": "endpoint",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "GET:/profesor/ai-config",
-      "source_line": 1067,
+      "source_line": 1071,
       "source_path": "backend/app/modules/admin_ai_config/router.py",
       "states": [],
       "tests": [
@@ -5991,7 +5991,7 @@
       "kind": "endpoint",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "GET:/profesor/ai-providers/ollama/models",
-      "source_line": 1311,
+      "source_line": 1315,
       "source_path": "backend/app/modules/admin_ai_config/router.py",
       "states": [],
       "tests": []
@@ -6578,7 +6578,7 @@
       "kind": "endpoint",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "PATCH:/admin/ai-config",
-      "source_line": 344,
+      "source_line": 348,
       "source_path": "backend/app/modules/admin_ai_config/router.py",
       "states": [],
       "tests": [
@@ -6621,7 +6621,7 @@
       "kind": "endpoint",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "PATCH:/admin/ai-providers/{provider_id}",
-      "source_line": 841,
+      "source_line": 845,
       "source_path": "backend/app/modules/admin_ai_config/router.py",
       "states": [],
       "tests": [
@@ -7822,7 +7822,7 @@
       "kind": "endpoint",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "PATCH:/profesor/ai-config",
-      "source_line": 948,
+      "source_line": 952,
       "source_path": "backend/app/modules/admin_ai_config/router.py",
       "states": [],
       "tests": [
@@ -8017,7 +8017,7 @@
       "kind": "endpoint",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "POST:/admin/ai-cache/clear",
-      "source_line": 685,
+      "source_line": 689,
       "source_path": "backend/app/modules/admin_ai_config/router.py",
       "states": [],
       "tests": []
@@ -8041,7 +8041,7 @@
       "kind": "endpoint",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "POST:/admin/ai-control-center/validate",
-      "source_line": 542,
+      "source_line": 546,
       "source_path": "backend/app/modules/admin_ai_config/router.py",
       "states": [],
       "tests": [
@@ -8072,7 +8072,7 @@
       "kind": "endpoint",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "POST:/admin/ai-providers/{provider}/models/refresh",
-      "source_line": 636,
+      "source_line": 640,
       "source_path": "backend/app/modules/admin_ai_config/router.py",
       "states": [],
       "tests": []
@@ -8096,7 +8096,7 @@
       "kind": "endpoint",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "POST:/admin/ai-providers/{provider}/test",
-      "source_line": 602,
+      "source_line": 606,
       "source_path": "backend/app/modules/admin_ai_config/router.py",
       "states": [],
       "tests": []
@@ -8120,7 +8120,7 @@
       "kind": "endpoint",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "POST:/admin/ai-settings/restore-defaults",
-      "source_line": 858,
+      "source_line": 862,
       "source_path": "backend/app/modules/admin_ai_config/router.py",
       "states": [],
       "tests": []
@@ -8144,7 +8144,7 @@
       "kind": "endpoint",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "POST:/admin/ai-settings/restore-previous",
-      "source_line": 870,
+      "source_line": 874,
       "source_path": "backend/app/modules/admin_ai_config/router.py",
       "states": [],
       "tests": [
@@ -12424,7 +12424,7 @@
       "kind": "endpoint",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "POST:/profesor/ai-providers/ollama/models/refresh",
-      "source_line": 1291,
+      "source_line": 1295,
       "source_path": "backend/app/modules/admin_ai_config/router.py",
       "states": [],
       "tests": []
@@ -12449,7 +12449,7 @@
       "kind": "endpoint",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "POST:/profesor/ai-providers/{provider}/test",
-      "source_line": 1346,
+      "source_line": 1350,
       "source_path": "backend/app/modules/admin_ai_config/router.py",
       "states": [],
       "tests": [
@@ -12789,7 +12789,7 @@
       "kind": "endpoint",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "PUT:/admin/ai-control-center/publish",
-      "source_line": 558,
+      "source_line": 562,
       "source_path": "backend/app/modules/admin_ai_config/router.py",
       "states": [],
       "tests": [
@@ -12826,7 +12826,7 @@
       "kind": "endpoint",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "PUT:/admin/ai-features",
-      "source_line": 792,
+      "source_line": 796,
       "source_path": "backend/app/modules/admin_ai_config/router.py",
       "states": [],
       "tests": [
@@ -12863,7 +12863,7 @@
       "kind": "endpoint",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "PUT:/admin/ai-providers",
-      "source_line": 764,
+      "source_line": 768,
       "source_path": "backend/app/modules/admin_ai_config/router.py",
       "states": [],
       "tests": [
@@ -12894,7 +12894,7 @@
       "kind": "endpoint",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "PUT:/admin/ai-settings/publish",
-      "source_line": 698,
+      "source_line": 702,
       "source_path": "backend/app/modules/admin_ai_config/router.py",
       "states": [],
       "tests": [
@@ -13093,7 +13093,7 @@
       "kind": "endpoint",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "PUT:/profesor/ai-config",
-      "source_line": 1179,
+      "source_line": 1183,
       "source_path": "backend/app/modules/admin_ai_config/router.py",
       "states": [],
       "tests": [
@@ -13143,7 +13143,7 @@
       "kind": "endpoint",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "PUT:/profesor/ai-credentials/{provider}",
-      "source_line": 1244,
+      "source_line": 1248,
       "source_path": "backend/app/modules/admin_ai_config/router.py",
       "states": [],
       "tests": [
@@ -13467,6 +13467,12 @@
           "reference": "/",
           "status": "direct",
           "test_path": "backend/tests/unit/test_opencode_model_gateway.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_opencode_request.py"
         },
         {
           "level": "unit",

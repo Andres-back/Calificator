@@ -73,6 +73,11 @@ actualizar la especificación propietaria, su plan y sus tareas; no debe crear d
 
 - [043-corregir-scroll-navegacion](043-corregir-scroll-navegacion/spec.md), [issue #86](https://github.com/Andres-back/Calificator/issues/86): coordina bloqueo compartido, menú adaptable y scroll natural de respuestas sin alterar notas ni desplegar el módulo 042 incompleto. Aprobación humana para PR y despliegue: 2026-09-16.
 
+
+## Hotfix 044: sesión estable para OpenCode Go
+
+- [044-opencode-session](044-opencode-session/spec.md), [issue #88](https://github.com/Andres-back/Calificator/issues/88): restaura las llamadas de calificación, visión, digitalización y administración que el gateway rechazaba por ausencia de una sesión estable; no cambia notas, datos ni API pública.
+
 ## Inventario técnico global
 
 - [Inventario canónico JSON](system-inventory/current.json)

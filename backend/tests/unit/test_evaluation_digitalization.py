@@ -539,6 +539,8 @@ def test_opencode_text_router_retries_rate_limit(monkeypatch) -> None:
     assert FakeHTTPClient.calls == 2
     assert FakeHTTPClient.last_url.endswith("/messages")
     assert FakeHTTPClient.last_headers["x-api-key"] == "test-key"
+    assert FakeHTTPClient.last_headers["x-opencode-session"].startswith("xca-")
+    assert FakeHTTPClient.last_headers["User-Agent"] == "XCalificator/1.0"
     assert "response_format" not in FakeHTTPClient.last_json
     assert FakeHTTPClient.last_json["max_tokens"] == 8192
     assert isinstance(FakeHTTPClient.last_timeout, httpx.Timeout)
