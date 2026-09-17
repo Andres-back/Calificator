@@ -336,7 +336,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "97f901b53ce9114cc1ab4666c09c446af9c9f80f9b31fdf5048d74fb002e5a72",
+  "source_digest": "9e7ed6a8a3fd9cc26b5aae5502e1b06ec71417349af3be58f42f82b68faa0a44",
   "surfaces": [
     {
       "actors": [
@@ -33673,6 +33673,12 @@
           "reference": "rag_sources",
           "status": "direct",
           "test_path": "backend/tests/integration/test_explainable_grading_pipeline.py"
+        },
+        {
+          "level": "unit",
+          "reference": "rag_sources",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_photo_grading_failures.py"
         }
       ]
     },

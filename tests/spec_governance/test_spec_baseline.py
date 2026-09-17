@@ -44,6 +44,7 @@ ALL_SPECS = {
     "041-estabilizar-e2e-multihoja",
     "043-corregir-scroll-navegacion",
     "044-opencode-session",
+    "045-rag-grading-fallback",
 }
 OWNED_SPECS = {
     name
