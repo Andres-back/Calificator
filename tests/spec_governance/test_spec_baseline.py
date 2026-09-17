@@ -45,6 +45,7 @@ ALL_SPECS = {
     "043-corregir-scroll-navegacion",
     "044-opencode-session",
     "045-rag-grading-fallback",
+    "046-qwen-embeddings",
 }
 OWNED_SPECS = {
     name

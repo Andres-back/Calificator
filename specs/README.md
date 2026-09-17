@@ -82,6 +82,10 @@ actualizar la especificación propietaria, su plan y sus tareas; no debe crear d
 
 - [045-rag-grading-fallback](045-rag-grading-fallback/spec.md), [issue #90](https://github.com/Andres-back/Calificator/issues/90): permite que una falla del contexto RAG complementario no aborte la calificación; continúa con evaluación y evidencia, registrando un estado técnico sanitizado.
 
+## Evolución 046: embeddings institucionales con Qwen
+
+- [046-qwen-embeddings](046-qwen-embeddings/spec.md), [issue #92](https://github.com/Andres-back/Calificator/issues/92): sirve Qwen3 Embedding 0.6B en la red privada, unifica persistencia y consulta en 1024 dimensiones y conserva la degradación segura de calificación.
+
 ## Inventario técnico global
 
 - [Inventario canónico JSON](system-inventory/current.json)

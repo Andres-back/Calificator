@@ -63,7 +63,9 @@ class Settings(BaseSettings):
     CLOUDFLARE_API_TOKEN: str = ""
     CLOUDFLARE_ACCOUNT_ID: str = ""
     CLOUDFLARE_IMAGE_MODEL: str = "@cf/bytedance/stable-diffusion-xl-lightning"
-    CLOUDFLARE_IMAGE_FALLBACK_MODEL: str = "@cf/stabilityai/stable-diffusion-xl-base-1.0"
+    CLOUDFLARE_IMAGE_FALLBACK_MODEL: str = (
+        "@cf/stabilityai/stable-diffusion-xl-base-1.0"
+    )
     CLOUDFLARE_TIMEOUT_SECONDS: int = 45
 
     OPEN_CODE_API_KEY: str = ""
@@ -148,10 +150,11 @@ class Settings(BaseSettings):
     OLLAMA_MODEL: str = "llama3.1:8b"
     OLLAMA_TIMEOUT_SECONDS: int = 120
 
-    EMBEDDING_PROVIDER: str = "openai"
-    EMBEDDING_MODEL: str = "text-embedding-3-small"
-    EMBEDDING_DIMENSIONS: int = 1536
-
+    EMBEDDING_PROVIDER: str = "ollama_internal"
+    EMBEDDING_MODEL: str = "qwen3-embedding:0.6b"
+    EMBEDDING_DIMENSIONS: int = 1024
+    EMBEDDING_SPACE_VERSION: str = "qwen3-embedding-v1"
+    EMBEDDING_TIMEOUT_SECONDS: int = 30
 
     MAX_PRESENTATION_PARALLEL_JOBS: int = 5
     MAX_LLM_CONCURRENT_CALLS: int = 10
@@ -185,8 +188,13 @@ class Settings(BaseSettings):
             return
 
         invalid: list[str] = []
-        if len(self.SECRET_KEY) < 32 or self.SECRET_KEY.lower() in {"change-me", "secret"}:
-            invalid.append("SECRET_KEY/JWT_SECRET must contain at least 32 non-default characters")
+        if len(self.SECRET_KEY) < 32 or self.SECRET_KEY.lower() in {
+            "change-me",
+            "secret",
+        }:
+            invalid.append(
+                "SECRET_KEY/JWT_SECRET must contain at least 32 non-default characters"
+            )
         if "change-me" in self.DATABASE_URL.lower():
             invalid.append("DATABASE_URL still contains the default password")
 
@@ -208,15 +216,21 @@ class Settings(BaseSettings):
 
     @property
     def cors_origins(self) -> list[str]:
-        return [origin.strip() for origin in self.CORS_ORIGINS.split(",") if origin.strip()]
+        return [
+            origin.strip() for origin in self.CORS_ORIGINS.split(",") if origin.strip()
+        ]
 
     @property
     def trusted_hosts(self) -> list[str]:
         return [host.strip() for host in self.TRUSTED_HOSTS.split(",") if host.strip()]
+
     @property
     def vision_fallback_models(self) -> list[str]:
-        return [model.strip() for model in self.VISION_FALLBACK_MODELS.split(",") if model.strip()]
-
+        return [
+            model.strip()
+            for model in self.VISION_FALLBACK_MODELS.split(",")
+            if model.strip()
+        ]
 
 
 @lru_cache

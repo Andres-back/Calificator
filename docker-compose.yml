@@ -228,6 +228,8 @@ services:
 
   ollama:
     image: ollama/ollama:latest@sha256:d00473cb58f0082c07cd6ed0d326a8a86f443ab69c51f8fc2b1a41687d45c661
+    cpus: "2.0"
+    mem_limit: 3g
     volumes:
       - ollama_data:/root/.ollama
     ports:
@@ -240,6 +242,18 @@ services:
       start_period: 30s
     restart: unless-stopped
 
+
+  ollama-model-init:
+    image: ollama/ollama:latest@sha256:d00473cb58f0082c07cd6ed0d326a8a86f443ab69c51f8fc2b1a41687d45c661
+    environment:
+      OLLAMA_HOST: http://ollama:11434
+    command: ["pull", "${EMBEDDING_MODEL:-qwen3-embedding:0.6b}"]
+    volumes:
+      - ollama_data:/root/.ollama
+    depends_on:
+      ollama:
+        condition: service_healthy
+    restart: "no"
   nginx:
     build:
       context: .

@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import asyncio
-from datetime import datetime
 from decimal import Decimal
 from types import SimpleNamespace
 from uuid import uuid4
@@ -19,7 +18,9 @@ from app.modules.rag import retrieval_service
 from app.shared.enums import EvaluacionEstado
 
 
-def make_request(*, dba_ids=None, cantidad=3, usar_rubrica=False, criterios_docente=None) -> EvaluacionGenerarRequest:
+def make_request(
+    *, dba_ids=None, cantidad=3, usar_rubrica=False, criterios_docente=None
+) -> EvaluacionGenerarRequest:
     return EvaluacionGenerarRequest(
         materia_id=uuid4(),
         nombre="Evaluacion de ecosistemas",
@@ -31,7 +32,9 @@ def make_request(*, dba_ids=None, cantidad=3, usar_rubrica=False, criterios_doce
         dba_ids=[uuid4()] if dba_ids is None else dba_ids,
         usar_rubrica=usar_rubrica,
         metas_profesor=["Explicar relaciones entre seres vivos"],
-        criterios_docente=criterios_docente if criterios_docente is not None else ["Usa evidencia del contexto"],
+        criterios_docente=criterios_docente
+        if criterios_docente is not None
+        else ["Usa evidencia del contexto"],
     )
 
 
@@ -67,7 +70,9 @@ def make_content(dba_ids, rag_id=None, *, rubric=False) -> EvaluacionContenidoIA
                         "Alto": "Explica con pocas omisiones",
                         "Basico": "Explica parcialmente",
                         "Bajo": "Aun no logra explicarlo",
-                    } if rubric else {},
+                    }
+                    if rubric
+                    else {},
                 }
             ],
             "preguntas": questions,
@@ -81,7 +86,9 @@ def test_generation_prompt_contains_dba_and_untrusted_rag_context() -> None:
     dba_id = uuid4()
     rag_id = uuid4()
     request = make_request(dba_ids=[dba_id])
-    request.material_referencia = "Guía del docente: compara productores y consumidores."
+    request.material_referencia = (
+        "Guía del docente: compara productores y consumidores."
+    )
 
     prompt = generation_service.build_generation_prompt(
         request,
@@ -118,7 +125,9 @@ def test_generation_prompt_contains_dba_and_untrusted_rag_context() -> None:
     ("with_dba", "with_rubric"),
     [(False, False), (True, False), (False, True), (True, True)],
 )
-def test_generation_request_accepts_all_teacher_alignment_combinations(with_dba: bool, with_rubric: bool) -> None:
+def test_generation_request_accepts_all_teacher_alignment_combinations(
+    with_dba: bool, with_rubric: bool
+) -> None:
     request = make_request(
         dba_ids=[uuid4()] if with_dba else [],
         usar_rubrica=with_rubric,
@@ -159,7 +168,9 @@ def test_prompt_and_validator_support_rubric_without_dba() -> None:
     assert len(criteria[0]["niveles"]) == 4
 
 
-@pytest.mark.parametrize("failure", ["unknown_dba", "missing_coverage", "invented_rag", "unused_rag"])
+@pytest.mark.parametrize(
+    "failure", ["unknown_dba", "missing_coverage", "invented_rag", "unused_rag"]
+)
 def test_alignment_validator_rejects_untraceable_output(failure: str) -> None:
     dba_ids = [uuid4(), uuid4()]
     rag_id = uuid4()
@@ -210,7 +221,9 @@ class FakeDB:
         self.rollbacks += 1
 
 
-def test_generate_draft_persists_private_answers_and_teacher_review_trace(monkeypatch) -> None:
+def test_generate_draft_persists_private_answers_and_teacher_review_trace(
+    monkeypatch,
+) -> None:
     dba_ids = [uuid4(), uuid4()]
     rag_id = uuid4()
     request = make_request(dba_ids=dba_ids)
@@ -324,29 +337,13 @@ def test_generation_route_is_declared_before_dynamic_evaluation_route() -> None:
     assert "post" in paths["/api/evaluaciones/generar-borrador"]
 
 
-def test_rag_fallback_runs_after_native_query_savepoint(monkeypatch) -> None:
+def test_rag_vector_failure_does_not_fabricate_context(monkeypatch) -> None:
     class Savepoint:
         async def __aenter__(self):
             return self
 
         async def __aexit__(self, exc_type, exc, traceback):
             return False
-
-    class Result:
-        def fetchall(self):
-            return [
-                    SimpleNamespace(
-                        id=uuid4(),
-                        source_id=uuid4(),
-                        source_title="Material local",
-                        source_metadata={"version": "v1"},
-                        source_created_at=datetime(2026, 9, 9),
-                        chunk_text="Contexto recuperado",
-                    tipo="material",
-                    similarity=0.5,
-                    metadata={"fuente": "local"},
-                )
-            ]
 
     class RagDB:
         def __init__(self):
@@ -359,17 +356,23 @@ def test_rag_fallback_runs_after_native_query_savepoint(monkeypatch) -> None:
 
         async def execute(self, _statement, _params):
             self.calls += 1
-            if self.calls == 1:
-                raise RuntimeError("pgvector unavailable")
-            return Result()
+            raise RuntimeError("pgvector unavailable")
 
-    async def fake_embed(_query):
-        return [0.1, 0.2]
+    async def fake_embed(*_, **__):
+        return SimpleNamespace(
+            vector=[0.1, 0.2],
+            space=SimpleNamespace(
+                provider="ollama_internal",
+                model="qwen3-embedding:0.6b",
+                dimensions=1024,
+                version="space-v1",
+            ),
+        )
 
-    monkeypatch.setattr(retrieval_service, "embed_single", fake_embed)
+    monkeypatch.setattr(retrieval_service, "embed_single_with_metadata", fake_embed)
     db = RagDB()
-    rows = asyncio.run(retrieval_service.search_chunks(db, "ecosistemas"))
+    with pytest.raises(retrieval_service.EmbeddingUnavailableError):
+        asyncio.run(retrieval_service.search_chunks(db, "ecosistemas"))
 
     assert db.savepoints == 1
-    assert db.calls == 2
-    assert rows[0]["chunk_text"] == "Contexto recuperado"
+    assert db.calls == 1

@@ -1,4 +1,5 @@
 """Cliente nativo para Ollama Cloud; no acepta direcciones arbitrarias del usuario."""
+
 from __future__ import annotations
 
 import asyncio
@@ -9,6 +10,7 @@ import httpx
 
 
 OLLAMA_CLOUD_BASE_URL = "https://ollama.com/api"
+OLLAMA_INTERNAL_BASE_URL = "http://ollama:11434"
 
 
 class OllamaProviderError(RuntimeError):
@@ -27,7 +29,9 @@ class OllamaModelInfo:
 
 
 def normalize_ollama_capabilities(payload: dict[str, Any]) -> tuple[str, ...]:
-    raw = {str(item).strip().lower() for item in payload.get("capabilities", []) if item}
+    raw = {
+        str(item).strip().lower() for item in payload.get("capabilities", []) if item
+    }
     capabilities: set[str] = set()
     if raw.intersection({"completion", "chat", "tools", "thinking"}):
         capabilities.add("text")
@@ -71,16 +75,28 @@ class OllamaCloudProvider:
                 response.raise_for_status()
                 payload = response.json()
                 if not isinstance(payload, dict):
-                    raise OllamaProviderError("Ollama Cloud devolvió una respuesta no válida")
+                    raise OllamaProviderError(
+                        "Ollama Cloud devolvió una respuesta no válida"
+                    )
                 return payload
         except httpx.TimeoutException as exc:
-            raise OllamaProviderError("Ollama Cloud no respondió a tiempo", temporary=True) from exc
+            raise OllamaProviderError(
+                "Ollama Cloud no respondió a tiempo", temporary=True
+            ) from exc
         except httpx.HTTPStatusError as exc:
             code = exc.response.status_code
-            message = "La credencial de Ollama Cloud no es válida" if code in {401, 403} else "Ollama Cloud rechazó la solicitud"
-            raise OllamaProviderError(message, temporary=code in {429, 502, 503, 504}) from exc
+            message = (
+                "La credencial de Ollama Cloud no es válida"
+                if code in {401, 403}
+                else "Ollama Cloud rechazó la solicitud"
+            )
+            raise OllamaProviderError(
+                message, temporary=code in {429, 502, 503, 504}
+            ) from exc
         except (httpx.HTTPError, ValueError) as exc:
-            raise OllamaProviderError("No fue posible conectar con Ollama Cloud") from exc
+            raise OllamaProviderError(
+                "No fue posible conectar con Ollama Cloud"
+            ) from exc
 
     async def list_models(self) -> list[str]:
         payload = await self._request("GET", "/tags")
@@ -113,7 +129,9 @@ class OllamaCloudProvider:
             async with semaphore:
                 return await self.show_model(model_id)
 
-        return list(await asyncio.gather(*(inspect(model_id) for model_id in model_ids)))
+        return list(
+            await asyncio.gather(*(inspect(model_id) for model_id in model_ids))
+        )
 
     async def chat(
         self,
@@ -125,5 +143,75 @@ class OllamaCloudProvider:
         return await self._request(
             "POST",
             "/chat",
-            json={"model": model, "messages": messages, "stream": False, "options": options or {}},
+            json={
+                "model": model,
+                "messages": messages,
+                "stream": False,
+                "options": options or {},
+            },
         )
+
+
+class OllamaEmbeddingProvider:
+    """Cliente del Ollama institucional; la dirección solo viene del despliegue."""
+
+    def __init__(
+        self,
+        *,
+        base_url: str = OLLAMA_INTERNAL_BASE_URL,
+        timeout_seconds: float = 30,
+        transport: httpx.AsyncBaseTransport | None = None,
+    ) -> None:
+        normalized_url = base_url.rstrip("/")
+        if not normalized_url.startswith(
+            ("http://ollama:", "http://127.0.0.1:", "http://localhost:")
+        ):
+            raise ValueError(
+                "La dirección del servicio institucional de embeddings no está autorizada"
+            )
+        self._base_url = normalized_url
+        self._timeout = timeout_seconds
+        self._transport = transport
+
+    async def embed(self, *, model: str, inputs: list[str]) -> list[list[float]]:
+        if not model.strip():
+            raise ValueError("El modelo de embeddings no está configurado")
+        if not inputs:
+            return []
+        try:
+            timeout = httpx.Timeout(self._timeout, connect=min(self._timeout, 10.0))
+            async with httpx.AsyncClient(
+                timeout=timeout, transport=self._transport
+            ) as client:
+                response = await client.post(
+                    self._base_url + "/api/embed",
+                    json={
+                        "model": model.strip(),
+                        "input": inputs,
+                        "truncate": True,
+                        "keep_alive": "10m",
+                    },
+                )
+                response.raise_for_status()
+                payload = response.json()
+        except httpx.TimeoutException as exc:
+            raise OllamaProviderError(
+                "El servicio institucional de embeddings no respondió a tiempo",
+                temporary=True,
+            ) from exc
+        except httpx.HTTPStatusError as exc:
+            raise OllamaProviderError(
+                "El servicio institucional de embeddings rechazó la solicitud",
+                temporary=exc.response.status_code in {429, 502, 503, 504},
+            ) from exc
+        except (httpx.HTTPError, ValueError) as exc:
+            raise OllamaProviderError(
+                "No fue posible conectar con el servicio institucional de embeddings",
+                temporary=True,
+            ) from exc
+        embeddings = payload.get("embeddings") if isinstance(payload, dict) else None
+        if not isinstance(embeddings, list):
+            raise OllamaProviderError(
+                "El servicio institucional devolvió una respuesta no válida"
+            )
+        return embeddings
