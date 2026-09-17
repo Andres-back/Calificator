@@ -78,6 +78,10 @@ actualizar la especificación propietaria, su plan y sus tareas; no debe crear d
 
 - [044-opencode-session](044-opencode-session/spec.md), [issue #88](https://github.com/Andres-back/Calificator/issues/88): restaura las llamadas de calificación, visión, digitalización y administración que el gateway rechazaba por ausencia de una sesión estable; no cambia notas, datos ni API pública.
 
+## Hotfix 045: RAG no bloqueante en calificación
+
+- [045-rag-grading-fallback](045-rag-grading-fallback/spec.md), [issue #90](https://github.com/Andres-back/Calificator/issues/90): permite que una falla del contexto RAG complementario no aborte la calificación; continúa con evaluación y evidencia, registrando un estado técnico sanitizado.
+
 ## Inventario técnico global
 
 - [Inventario canónico JSON](system-inventory/current.json)

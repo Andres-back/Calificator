@@ -828,14 +828,32 @@ async def orchestrate_grading(
             online_answers,
             physical_answers,
         )
-        question_context, rag_provenance = await build_question_context_for_grading(
-            db,
-            materia_id=materia_id,
-            profesor_id=user_id,
-            evaluacion_nombre=blueprint.get("nombre", ""),
-            questions=list(blueprint.get("preguntas") or []),
-            detected_answers=detected_for_context,
-        )
+        rag_context_status: dict[str, str | None] = {
+            "status": "available",
+            "error_type": None,
+        }
+        try:
+            question_context, rag_provenance = await build_question_context_for_grading(
+                db,
+                materia_id=materia_id,
+                profesor_id=user_id,
+                evaluacion_nombre=blueprint.get("nombre", ""),
+                questions=list(blueprint.get("preguntas") or []),
+                detected_answers=detected_for_context,
+            )
+        except Exception as exc:  # noqa: BLE001 - optional context must not block grading
+            logger.warning(
+                "grading.rag_context_unavailable",
+                extra={
+                    "pipeline_run_id": pipeline_run_id,
+                    "error_type": type(exc).__name__,
+                },
+            )
+            question_context, rag_provenance = {}, []
+            rag_context_status = {
+                "status": "unavailable",
+                "error_type": type(exc).__name__,
+            }
         rag_context = format_question_context_as_text(question_context)
 
         # ── Paso 3: Calificación dual (en paralelo) ──────────────────
@@ -1126,6 +1144,7 @@ async def orchestrate_grading(
                 "arbiter_reason": arbiter_reason,
             },
             "evidence_coverage": coverage_analysis,
+            "rag_context": rag_context_status,
             "rag_sources_by_question": rag_provenance,
             "vision": {
                 "proveedor": vision_result.proveedor if vision_result else None,

@@ -395,7 +395,7 @@ def test_vision_router_normalizes_text_answers(monkeypatch) -> None:
     ]
 
 
-def test_pipeline_exception_returns_sanitized_failure(monkeypatch) -> None:
+def test_rag_exception_is_sanitized_and_does_not_block_grading(monkeypatch) -> None:
     _configure_orchestrator(monkeypatch)
 
     async def exploding_context(*_args, **_kwargs):
@@ -407,6 +407,18 @@ def test_pipeline_exception_returns_sanitized_failure(monkeypatch) -> None:
         exploding_context,
     )
 
+    async def successful_grader(*_args, **_kwargs):
+        return AgentResult(
+            nota_sugerida=4.5,
+            confianza=0.92,
+            feedback_estudiante="Resultado disponible.",
+            proveedor="opencode",
+            modelo="grader",
+            requiere_revision_docente=False,
+        )
+
+    monkeypatch.setattr(orchestrator, "grader_agent", successful_grader)
+
     result = asyncio.run(
         orchestrator.orchestrate_grading(
             object(),
@@ -417,9 +429,13 @@ def test_pipeline_exception_returns_sanitized_failure(monkeypatch) -> None:
         )
     )
 
-    assert result.nota_sugerida is None
-    assert result.motivo_revision == "pipeline_error"
-    assert result.raw_model_output["error_type"] == "RuntimeError"
+    assert result.nota_sugerida == Decimal("4.5")
+    assert result.motivo_revision is None
+    assert result.raw_model_output["rag_context"] == {
+        "status": "unavailable",
+        "error_type": "RuntimeError",
+    }
+    assert result.raw_model_output["rag_sources_by_question"] == []
     assert "sensitive prompt content" not in str(result.raw_model_output)
 
 
