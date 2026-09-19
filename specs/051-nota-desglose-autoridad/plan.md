@@ -30,7 +30,7 @@ Convertir la fórmula del desglose completo en la fuente canónica de una sugere
 backend/app/modules/calificaciones/breakdown_service.py
 backend/alembic/versions/202609190001_authoritative_breakdown_score.py
 backend/tests/unit/test_breakdown_persistence.py
-backend/tests/integration/test_authoritative_breakdown_score_migration.py
+backend/tests/integration/test_grade_sum_migration.py
 frontend/src/modules/calificaciones/
 ├── gradePresentation.ts
 ├── gradePresentation.test.ts
