@@ -44,6 +44,8 @@ import { GradeBreakdown } from './components/GradeBreakdown';
 import { GradeComponentEditor } from './components/GradeComponentEditor';
 import { GradeGlobalAdjustmentEditor } from './components/GradeGlobalAdjustmentEditor';
 import { GradeBreakdownHistory } from './components/GradeBreakdownHistory';
+import { buildReviewTriage } from './review-triage/buildReviewTriage';
+import { ReviewTriagePanel } from './review-triage/ReviewTriagePanel';
 import { formatAIModelSource } from './aiPipelineLabels';
 import { effectiveGradeScore, gradePresentation, isGradeProcessing } from './gradePresentation';
 import { formatTimelineScore } from './timeline';
@@ -431,11 +433,17 @@ function PanelDetalle({
   const setEvidencePage = (page: number) => setDetailParams((previous) => { const next = new URLSearchParams(previous); next.set('hoja', String(page)); return next; }, { replace: true });
   const [mobileTab, setMobileTab] = useState<'evidencia' | 'revision'>('revision');
   const activeBreakdown = editingSnapshot ?? cal.desglose;
+  const reviewTriage = useMemo(() => activeBreakdown ? buildReviewTriage(activeBreakdown) : null, [activeBreakdown]);
   const selectedQuestion = activeBreakdown?.componentes.find((component) => component.id === detailParams.get('pregunta') || component.clave === detailParams.get('pregunta')) ?? activeBreakdown?.componentes[0];
   const selectQuestion = (componentId: string) => {
     const component = activeBreakdown?.componentes.find((item) => item.id === componentId || item.clave === componentId);
     if (!component) return;
     setDetailParams((previous) => { const next = new URLSearchParams(previous); next.set('pregunta', component.clave); if (component.evidencia_paginas[0]) next.set('hoja', String(component.evidencia_paginas[0])); return next; });
+  };
+  const openReviewComponent = (componentId: string) => {
+    selectQuestion(componentId);
+    setMobileTab('revision');
+    window.requestAnimationFrame(() => document.getElementById('grade-breakdown-title')?.scrollIntoView({ block: 'start' }));
   };
   const [evidenceLoadError, setEvidenceLoadError] = useState(false);
   const evidenceSectionRef = useRef<HTMLElement | null>(null);
@@ -726,12 +734,14 @@ function PanelDetalle({
         )}
 
         {/* Confianza */}
-        {activeBreakdown && (activeBreakdown.requiere_revision || activeBreakdown.bloqueos?.length || activeBreakdown.cobertura_estado !== 'completa') ? <Card className="space-y-2 border-amber-300 p-4 dark:border-amber-500/40">
-          <p className="font-bold">Puntos que necesitan revisión</p>
-          {activeBreakdown.cobertura_estado !== 'completa' && <p className="text-sm text-muted">La cobertura registrada es {activeBreakdown.cobertura_estado}. Comprueba que se incluyeron todas las preguntas y hojas.</p>}
-          <div className="flex flex-wrap gap-2">{activeBreakdown.componentes.filter((component) => component.requiere_revision || ['ilegible', 'no_evaluable'].includes(component.estado)).map((component) => <Button key={component.id} variant="outline" size="sm" onClick={() => { selectQuestion(component.id); setMobileTab('revision'); }}>{component.tipo === 'pregunta' ? 'Pregunta' : 'Criterio'} {component.numero ?? component.orden + 1}: revisar</Button>)}</div>
-          <p className="text-xs text-muted">Son señales registradas, no una conclusión automática de error. La confirmación mantiene las validaciones del servidor.</p>
-        </Card> : null}
+        {reviewTriage ? (
+          <ReviewTriagePanel
+            summary={reviewTriage}
+            selectedComponentId={selectedQuestion?.id}
+            onSelectComponent={(componentId) => openReviewComponent(componentId)}
+            analyticsContext={{ evaluacionId: cal.evaluacion_id, calificacionId: cal.id }}
+          />
+        ) : null}
         {canGrade && manualReview && presentation.score == null && evidenceUrl && <Button variant="outline" loading={retryMutation.isPending} disabled={retryMutation.isPending} onClick={() => retryMutation.mutate()}><RotateCcw className="h-4 w-4" /> Reintentar con la evidencia guardada</Button>}
         {(() => {
           if (cal.confianza == null || cal.confianza <= 0) return null;
