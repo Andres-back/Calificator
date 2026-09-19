@@ -98,6 +98,12 @@ actualizar la especificación propietaria, su plan y sus tareas; no debe crear d
 
 - [046-qwen-embeddings](046-qwen-embeddings/spec.md), [issue #92](https://github.com/Andres-back/Calificator/issues/92): sirve Qwen3 Embedding 0.6B en la red privada, unifica persistencia y consulta en 1024 dimensiones y conserva la degradación segura de calificación.
 
+## Evolución 047: retroalimentación formativa y calidad medible
+
+- [047-retroalimentacion-formativa](047-retroalimentacion-formativa/spec.md), [issue #94](https://github.com/Andres-back/Calificator/issues/94): especificación y plan aprobados el 2026-09-18; ajuste probado sin nuevas llamadas de IA ni cambios al cálculo o publicación.
+- Coordina 008/016 y 011/032 sin transferir propiedad de módulos, endpoints o tablas. Conecta preferencias existentes al evaluador principal y respaldo.
+- [Rúbrica humana 1–5](047-retroalimentacion-formativa/rubrica-calidad.md): 25 descriptores, instrumento borrador sujeto a revisión y calibración académica; no mide automáticamente calidad ni acredita impacto de la tesis.
+
 ## Evolución 048: retroalimentación motivacional con Xali
 
 - [048-retroalimentacion-animada](048-retroalimentacion-animada/spec.md), [issue #95](https://github.com/Andres-back/Calificator/issues/95): presenta máximo cuatro escenas derivadas del desglose publicado y mantiene la explicación completa inmediatamente disponible.
