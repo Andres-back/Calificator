@@ -46,6 +46,7 @@ actualizar la especificación propietaria, su plan y sus tareas; no debe crear d
 | 040 | [Encolado seguro de calificaciones](040-modularizar-cola-calificaciones/spec.md) | coordinación individual entre calificaciones, jobs y worker | rutas diferidas existentes, sin cambios públicos | entregas, calificaciones y trabajos existentes; sin migraciones | [#82](https://github.com/Andres-back/Calificator/issues/82) |
 | 041 | [Estabilización E2E de carga multihoja](041-estabilizar-e2e-multihoja/spec.md) | prueba automatizada de dos entregas consecutivas | sin cambios en rutas o frontend productivo | sin cambios de datos; solo regresión E2E | [#84](https://github.com/Andres-back/Calificator/issues/84) |
 | 048 | [Retroalimentación animada con Xali](048-retroalimentacion-animada/spec.md) | política y autorización de eventos estudiantiles en analytics | resolución estudiantil, historia Xali y desglose publicado | `analytics_eventos` existente; sin migraciones ni cambios de nota | [#95](https://github.com/Andres-back/Calificator/issues/95) |
+| 049 | [Auditoría npm estable en CI](049-reparar-npm-audit/spec.md) | cliente de auditoría y resiliencia del trabajo frontend | sin cambios de producto | workflow de CI; sin cambios de datos ni API | [#97](https://github.com/Andres-back/Calificator/issues/97) |
 
 ## Reglas de propiedad
 
@@ -91,7 +92,11 @@ actualizar la especificación propietaria, su plan y sus tareas; no debe crear d
 
 - [048-retroalimentacion-animada](048-retroalimentacion-animada/spec.md), [issue #95](https://github.com/Andres-back/Calificator/issues/95): presenta máximo cuatro escenas derivadas del desglose publicado y mantiene la explicación completa inmediatamente disponible.
 - Xali se compone como SVG modular con 120 combinaciones posibles, controles explícitos y alternativa sin movimiento; no genera imágenes por estudiante ni añade llamadas de IA.
-- La implementación está validada localmente. Comprensión, motivación y primer cuadro útil siguen siendo resultados del piloto, no afirmaciones de laboratorio. Sin push, PR ni despliegue.
+- La implementación fue fusionada en `main`. Comprensión, motivación y primer cuadro útil siguen siendo resultados del piloto, no afirmaciones de laboratorio.
+
+## Hotfix 049: auditoría npm estable en CI
+
+- [049-reparar-npm-audit](049-reparar-npm-audit/spec.md), [issue #97](https://github.com/Andres-back/Calificator/issues/97): fija un cliente npm compatible con el endpoint moderno de auditoría y reintenta únicamente fallos transitorios sin ocultar vulnerabilidades ni errores persistentes.
 
 ## Inventario técnico global
 
