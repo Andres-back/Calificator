@@ -54,3 +54,86 @@ def test_automatic_breakdown_is_idempotent_for_pipeline_run_id(monkeypatch):
     retry = asyncio.run(create_automatic_breakdown(retry_db, calificacion=cal, blueprint=blueprint, raw_output=raw, pipeline_run_id="run-1"))
     assert retry is first
     assert retry_db.added == []
+
+
+def test_complete_breakdown_overrides_inconsistent_global_model_score(monkeypatch):
+    monkeypatch.setattr(
+        "app.modules.calificaciones.breakdown_service.settings.EXPLAINABLE_GRADING_GENERATION_ENABLED",
+        True,
+    )
+    cal = _calification()
+    cal.nota_sugerida = 4.95
+    blueprint = {
+        "nota_maxima": 5,
+        "preguntas": [
+            {"numero": 1, "enunciado": "log3(81)", "puntaje": 0.33},
+            {"numero": 2, "enunciado": "Resto de la evaluación", "puntaje": 4.67},
+        ],
+        "respuestas_esperadas": [
+            {"numero": 1, "respuesta": "4"},
+            {"numero": 2, "respuesta": "Correcta"},
+        ],
+    }
+    wrong = {
+        "clave": "pregunta:1", "respuesta_estudiante": "3", "puntaje": 0,
+        "estado": "incorrecta", "explicacion": "3^4 es 81; la respuesta es 4.", "paginas": [1],
+    }
+    correct = {
+        "clave": "pregunta:2", "respuesta_estudiante": "Correcta", "puntaje": 4.67,
+        "estado": "correcta", "explicacion": "Respuesta correcta.", "paginas": [1],
+    }
+    raw = {
+        "grader_a": {"componentes": [wrong, correct]},
+        "grader_b": {"componentes": [wrong, correct]},
+        "objective_validation": [],
+    }
+
+    breakdown = asyncio.run(create_automatic_breakdown(
+        FakeDB([None, None]), calificacion=cal, blueprint=blueprint,
+        raw_output=raw, pipeline_run_id="run-score-mismatch",
+    ))
+
+    assert breakdown is not None
+    assert float(breakdown.nota_final) == 4.67
+    assert float(cal.nota_sugerida) == 4.67
+    trace = cal.resultado_json["desglose"]
+    assert trace["modo"] == "autoridad"
+    assert trace["nota_modelo_global"] == 4.95
+    assert trace["nota_calculada"] == 4.67
+    assert trace["diferencia"] == -0.28
+
+
+def test_incomplete_breakdown_does_not_publish_partial_sum(monkeypatch):
+    monkeypatch.setattr(
+        "app.modules.calificaciones.breakdown_service.settings.EXPLAINABLE_GRADING_GENERATION_ENABLED",
+        True,
+    )
+    cal = _calification()
+    cal.nota_sugerida = 4.95
+    blueprint = {
+        "nota_maxima": 5,
+        "preguntas": [
+            {"numero": 1, "enunciado": "Primera", "puntaje": 2.5},
+            {"numero": 2, "enunciado": "Segunda", "puntaje": 2.5},
+        ],
+    }
+    only_first = {
+        "clave": "pregunta:1", "respuesta_estudiante": "A", "puntaje": 2.5,
+        "estado": "correcta", "explicacion": "Correcta.", "paginas": [1],
+    }
+    raw = {
+        "grader_a": {"componentes": [only_first]},
+        "grader_b": {"componentes": [only_first]},
+        "objective_validation": [],
+    }
+
+    breakdown = asyncio.run(create_automatic_breakdown(
+        FakeDB([None, None]), calificacion=cal, blueprint=blueprint,
+        raw_output=raw, pipeline_run_id="run-incomplete",
+    ))
+
+    assert breakdown is not None
+    assert breakdown.requiere_revision is True
+    assert cal.nota_sugerida == 4.95
+    assert cal.estado == "requiere_revision"
+    assert cal.resultado_json["desglose"]["modo"] == "controlado"

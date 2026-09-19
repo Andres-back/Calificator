@@ -9,6 +9,11 @@ export function effectiveGradeScore(grade: Pick<Calificacion, 'nota_confirmada' 
   return Number.isFinite(parsed) ? parsed : null;
 }
 
+export function formatGradeScore(score: number): string {
+  const rounded = Math.round((score + Number.EPSILON) * 100) / 100;
+  return Number.isInteger(rounded * 10) ? rounded.toFixed(1) : rounded.toFixed(2);
+}
+
 export function isGradeProcessing(grade: Pick<Calificacion, 'estado' | 'resultado_json'>): boolean {
   if (['confirmada', 'ajustada', 'publicada', 'anulada'].includes(grade.estado)) return false;
   const pipelineStatus = String(grade.resultado_json?.pipeline_status ?? '').toLowerCase();
