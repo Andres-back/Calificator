@@ -18,6 +18,9 @@ export type AnalyticsSurface =
 type EvaluationReference = { evaluacion_id: string };
 type GradeReference = EvaluationReference & { calificacion_id: string };
 type BatchReference = EvaluationReference & { metadata_json: { batch_size: number } };
+type FeedbackStoryMode = 'animated' | 'static';
+type FeedbackStoryAction = 'pause' | 'resume' | 'skip' | 'replay' | 'next' | 'previous';
+type FeedbackStoryReference = GradeReference & { metadata_json: { mode: FeedbackStoryMode } };
 
 export type AnalyticsEventPayloads = {
   session_view_opened: { metadata_json: { surface: AnalyticsSurface } };
@@ -30,6 +33,14 @@ export type AnalyticsEventPayloads = {
   batch_adjusted: BatchReference;
   calificacion_published: GradeReference;
   batch_published: BatchReference;
+  feedback_story_started: FeedbackStoryReference;
+  feedback_story_controlled: GradeReference & {
+    metadata_json: { mode: FeedbackStoryMode; action: FeedbackStoryAction; step: number };
+  };
+  feedback_story_detail_opened: GradeReference & {
+    metadata_json: { mode: FeedbackStoryMode; step: number };
+  };
+  feedback_story_completed: FeedbackStoryReference;
 };
 
 export type AnalyticsEventType = keyof AnalyticsEventPayloads;

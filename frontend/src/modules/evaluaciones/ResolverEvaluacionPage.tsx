@@ -13,6 +13,7 @@ import { crearEntregaArchivo, crearEntregaOnline, evaluationPdfUrl, getActividad
 import { StudentActivityPlayer } from './StudentActivityPlayer';
 import { StudentAnswerSheet } from './StudentAnswerSheet';
 import { GradeBreakdown } from '@/modules/calificaciones/components/GradeBreakdown';
+import { XaliFeedbackStory } from '@/modules/calificaciones/student-feedback/XaliFeedbackStory';
 import type { SolicitudRevisionMotivo } from '@/types/api';
 
 function textFromQuestion(question: Record<string, unknown>, index: number): string {
@@ -543,7 +544,17 @@ export function ResolverEvaluacionPage() {
                   {myBreakdown.isLoading ? (
                     <Skeleton className="h-56" />
                   ) : myBreakdown.data ? (
-                    <GradeBreakdown breakdown={myBreakdown.data} student />
+                    <div className="space-y-6">
+                      <XaliFeedbackStory
+                        evaluationId={evaluacionId}
+                        breakdown={myBreakdown.data}
+                        onOpenDetail={(componentId) => {
+                          const target = componentId ? document.getElementById(`grade-component-${componentId}`) : document.getElementById('grade-breakdown-title');
+                          target?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        }}
+                      />
+                      <GradeBreakdown breakdown={myBreakdown.data} student />
+                    </div>
                   ) : (
                     <div className="rounded-xl border border-border p-4">
                       <p className="font-bold">Detalle histórico</p>
