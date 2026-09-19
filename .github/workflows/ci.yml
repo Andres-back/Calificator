@@ -16,6 +16,8 @@ permissions:
 
 env:
   NODE_VERSION: '22'
+  NPM_VERSION: '11.6.1'
+  AUDITED_FRONTEND_LOCK_SHA256: 'd698cd1d33b9266ed9f66c4ea90fde9aa6b49ba922517c2a70f22b35b6614d04'
   PYTHON_VERSION: '3.11'
 
 jobs:
@@ -108,11 +110,39 @@ jobs:
           cache: npm
           cache-dependency-path: frontend/package-lock.json
 
+      - name: Use supported npm audit client
+        run: npm install --global npm@${{ env.NPM_VERSION }}
+
       - name: Install dependencies
         run: npm ci
 
       - name: Audit production dependencies
-        run: npm audit --audit-level=moderate --omit=dev
+        shell: bash
+        run: |
+          last_output=""
+          for attempt in 1 2 3; do
+            set +e
+            last_output="$(npm audit --audit-level=moderate --omit=dev 2>&1)"
+            audit_status=$?
+            set -e
+            printf '%s\n' "$last_output"
+            if [ "$audit_status" -eq 0 ]; then
+              exit 0
+            fi
+            if ! grep -q "503 Service Unavailable" <<< "$last_output"; then
+              exit "$audit_status"
+            fi
+            if [ "$attempt" -lt 3 ]; then
+              sleep $((attempt * 10))
+            fi
+          done
+          actual_lock_sha="$(sha256sum package-lock.json | cut -d ' ' -f 1)"
+          if [ "$actual_lock_sha" = "$AUDITED_FRONTEND_LOCK_SHA256" ]; then
+            echo "::warning::npm.org sigue en mantenimiento (503); se conserva el lockfile previamente auditado."
+            exit 0
+          fi
+          echo "::error::No se permite omitir la auditoría: el lockfile cambió."
+          exit 1
 
       - name: Type-check
         run: npm run typecheck

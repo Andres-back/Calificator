@@ -47,6 +47,7 @@ ALL_SPECS = {
     "045-rag-grading-fallback",
     "046-qwen-embeddings",
     "048-retroalimentacion-animada",
+    "049-reparar-npm-audit",
 }
 OWNED_SPECS = {
     name
