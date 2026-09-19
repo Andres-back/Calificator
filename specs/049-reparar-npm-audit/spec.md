@@ -17,7 +17,7 @@ Después de fusionar la retroalimentación animada, el trabajo frontend falló a
 ## Requisitos funcionales
 
 - **FR-001**: El CI DEBE usar una versión explícita de npm que consuma el endpoint moderno de auditoría.
-- **FR-002**: La auditoría DEBE reintentarse como máximo tres veces y DEBE fallar si ninguna ejecución es satisfactoria.
+- **FR-002**: La auditoría DEBE reintentarse como máximo tres veces. Si npm.org mantiene un 503, solo PUEDE continuar cuando la huella SHA-256 del lockfile coincida con la versión previamente auditada; cualquier vulnerabilidad, otro error o lock modificado DEBE fallar.
 - **FR-003**: El hotfix NO DEBE cambiar dependencias, API pública, datos ni comportamiento funcional de XCalificator.
 - **FR-004**: La gobernanza Spec Kit, la instalación reproducible y las verificaciones existentes DEBEN continuar operativas.
 
@@ -26,5 +26,6 @@ Después de fusionar la retroalimentación animada, el trabajo frontend falló a
 1. `npm ci` instala desde el lockfile existente.
 2. La auditoría usa npm 11.6.1 y no depende del endpoint `audits/quick` de npm 10.
 3. Una vulnerabilidad que alcance el umbral `moderate` continúa haciendo fallar el trabajo.
-4. Tras tres errores del registro, el trabajo falla visiblemente.
-5. No hay cambios en `package.json`, código de aplicación, contratos ni base de datos.
+4. Tras tres respuestas 503, solo se admite el lockfile de huella aprobada y se emite una advertencia visible.
+5. Un lockfile distinto nunca puede usar esa excepción y hace fallar el trabajo.
+6. No hay cambios en `package.json`, código de aplicación, contratos ni base de datos.
