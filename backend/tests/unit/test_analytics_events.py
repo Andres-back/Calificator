@@ -71,6 +71,19 @@ def test_catalog_accepts_student_feedback_story_events_without_academic_content(
     assert event.metadata_json == {"mode": "animated", "action": "next", "step": 2}
 
 
+def test_catalog_accepts_teacher_review_triage_without_academic_content() -> None:
+    evaluation_id = uuid4()
+    grade_id = uuid4()
+    event = event_policy.validate_event_payload(
+        tipo="grading_triage_opened",
+        role=UserRole.PROFESOR.value,
+        evaluacion_id=evaluation_id,
+        calificacion_id=grade_id,
+        metadata_json={"safe_count": 7, "attention_count": 2, "blocked_count": 1, "global_blocked": False},
+    )
+    assert event.metadata_json == {"safe_count": 7, "attention_count": 2, "blocked_count": 1, "global_blocked": False}
+
+
 @pytest.mark.parametrize(
     ("tipo", "role", "evaluation", "grade", "metadata", "status"),
     [
@@ -90,6 +103,10 @@ def test_catalog_accepts_student_feedback_story_events_without_academic_content(
         ("feedback_story_controlled", "estudiante", uuid4(), uuid4(), {"mode": "animated", "action": "jump", "step": 2}, 422),
         ("feedback_story_controlled", "estudiante", uuid4(), uuid4(), {"mode": "static", "action": "next", "step": 5}, 422),
         ("feedback_story_detail_opened", "estudiante", uuid4(), uuid4(), {"mode": "static", "step": 1, "respuesta": "secreto"}, 422),
+        ("grading_triage_opened", "estudiante", uuid4(), uuid4(), {"safe_count": 1, "attention_count": 0, "blocked_count": 0, "global_blocked": False}, 403),
+        ("grading_triage_opened", "profesor", uuid4(), uuid4(), {"safe_count": -1, "attention_count": 0, "blocked_count": 0, "global_blocked": False}, 422),
+        ("grading_triage_opened", "profesor", uuid4(), uuid4(), {"safe_count": 1, "attention_count": 0, "blocked_count": 0, "global_blocked": False, "respuesta": "secreto"}, 422),
+        ("grading_triage_navigated", "profesor", uuid4(), uuid4(), {"target_level": "unknown", "position": 1, "total_exceptions": 2}, 422),
     ],
 )
 def test_catalog_rejects_unknown_role_reference_or_metadata(

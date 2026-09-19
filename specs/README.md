@@ -47,6 +47,7 @@ actualizar la especificación propietaria, su plan y sus tareas; no debe crear d
 | 041 | [Estabilización E2E de carga multihoja](041-estabilizar-e2e-multihoja/spec.md) | prueba automatizada de dos entregas consecutivas | sin cambios en rutas o frontend productivo | sin cambios de datos; solo regresión E2E | [#84](https://github.com/Andres-back/Calificator/issues/84) |
 | 048 | [Retroalimentación animada con Xali](048-retroalimentacion-animada/spec.md) | política y autorización de eventos estudiantiles en analytics | resolución estudiantil, historia Xali y desglose publicado | `analytics_eventos` existente; sin migraciones ni cambios de nota | [#95](https://github.com/Andres-back/Calificator/issues/95) |
 | 049 | [Auditoría npm estable en CI](049-reparar-npm-audit/spec.md) | cliente de auditoría y resiliencia del trabajo frontend | sin cambios de producto | workflow de CI; sin cambios de datos ni API | [#97](https://github.com/Andres-back/Calificator/issues/97) |
+| 050 | [Revisión docente por excepciones](050-revision-por-excepciones/spec.md) | priorización derivada sobre calificaciones explicables y analítica segura | workspace docente de calificaciones | `analytics_eventos` existente; sin migraciones ni cambios de nota | [#99](https://github.com/Andres-back/Calificator/issues/99) |
 
 ## Reglas de propiedad
 
@@ -97,6 +98,11 @@ actualizar la especificación propietaria, su plan y sus tareas; no debe crear d
 ## Hotfix 049: auditoría npm estable en CI
 
 - [049-reparar-npm-audit](049-reparar-npm-audit/spec.md), [issue #97](https://github.com/Andres-back/Calificator/issues/97): fija un cliente npm compatible con el endpoint moderno de auditoría y reintenta únicamente fallos transitorios sin ocultar vulnerabilidades ni errores persistentes.
+
+## Evolución 050: revisión docente por excepciones
+
+- [050-revision-por-excepciones](050-revision-por-excepciones/spec.md), [issue #99](https://github.com/Andres-back/Calificator/issues/99): prioriza respuestas bloqueadas o inciertas y conserva el desglose completo, la evidencia y la confirmación final docente.
+- La clasificación es determinista, no añade llamadas de IA, no modifica puntajes y registra únicamente conteos y navegación agregados para medir el flujo del piloto.
 
 ## Inventario técnico global
 

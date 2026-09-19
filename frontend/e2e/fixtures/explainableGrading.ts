@@ -22,7 +22,7 @@ function json(route: Route, body: unknown, status = 200) {
   return route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(body) });
 }
 
-export async function installMocks(page: Page, role: 'profesor' | 'estudiante') {
+export async function installMocks(page: Page, role: 'profesor' | 'estudiante', options: { breakdown?: Record<string, unknown> } = {}) {
   let authenticated = false;
   await page.route('**/api/**', async (route) => {
     const request = route.request();
@@ -46,7 +46,7 @@ export async function installMocks(page: Page, role: 'profesor' | 'estudiante') 
         resumen_revision: { version: 1, cobertura: 'completa', bloqueos: [], componentes_pendientes: 0, componentes_ilegibles: 0, pqrs_abiertas: null, tiene_alertas: false } }],
     });
     if (path === '/calificaciones/bandeja-docente') return json(route, { items: [], total: 0, solicitudes_revision: 0, pendientes_calificacion: 0 });
-    if (path === '/calificaciones/c1/detalle') return json(route, { ...grade, evaluacion_nombre: evaluation.nombre, materia_nombre: materia.nombre, estudiante_nombre: student.nombre, estudiante_email: student.email, nota_maxima: 5, entrega_tipo: 'online', entrega_archivo_url: null, entrega_evidencia_paginas: 0, entrega_evidencia_tipo: null, entrega_respuesta_texto: 'P1: 24', entrega_created_at: grade.created_at, timeline: [], guia_revision: [], desglose: breakdown, desglose_heredado: false, respuestas_liberadas: true });
+    if (path === '/calificaciones/c1/detalle') return json(route, { ...grade, evaluacion_nombre: evaluation.nombre, materia_nombre: materia.nombre, estudiante_nombre: student.nombre, estudiante_email: student.email, nota_maxima: 5, entrega_tipo: 'online', entrega_archivo_url: null, entrega_evidencia_paginas: 0, entrega_evidencia_tipo: null, entrega_respuesta_texto: 'P1: 24', entrega_created_at: grade.created_at, timeline: [], guia_revision: [], desglose: options.breakdown ?? breakdown, desglose_heredado: false, respuestas_liberadas: true });
     if (path === '/calificaciones/c1/incidencias') return json(route, []);
     if (path === '/calificaciones/c1/desglose/historial') return json(route, [{ id: 'd1', version: 1, origen: 'automatico', nota_final: 5, activo: true, actor_nombre: null, created_at: grade.created_at }]);
     if (path === '/evaluaciones/e1/mi-entrega') return json(route, { id: 't1', evaluacion_id: 'e1', estudiante_id: 's1', materia_id: 'm1', tipo: 'online', estado: 'revisada', respuesta_texto: 'P1: 24', archivo_url: null, evidencia_paginas: 0, evidencia_tipo: null, reemplazo_solicitado: false, motivo_reemplazo: null, created_at: grade.created_at });
@@ -58,8 +58,8 @@ export async function installMocks(page: Page, role: 'profesor' | 'estudiante') 
   });
 }
 
-export async function login(page: Page, role: 'profesor' | 'estudiante') {
-  await installMocks(page, role);
+export async function login(page: Page, role: 'profesor' | 'estudiante', options: { breakdown?: Record<string, unknown> } = {}) {
+  await installMocks(page, role, options);
   await page.goto('/login');
   await page.getByLabel(/Correo/i).fill(role === 'profesor' ? teacher.email : student.email);
   await page.locator('input[type="password"]').fill('Password123!');

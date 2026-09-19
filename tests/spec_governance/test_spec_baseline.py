@@ -48,6 +48,7 @@ ALL_SPECS = {
     "046-qwen-embeddings",
     "048-retroalimentacion-animada",
     "049-reparar-npm-audit",
+    "050-revision-por-excepciones",
 }
 OWNED_SPECS = {
     name

@@ -63,7 +63,7 @@
 | frontend_call | `GET:/analytics/evaluaciones` | admin, profesor | covered | `frontend/src/modules/analytics/AnalyticsPage.tsx:179` |
 | frontend_call | `GET:/analytics/overview` | admin, profesor | covered | `frontend/src/modules/analytics/AnalyticsPage.tsx:178` |
 | frontend_call | `GET:/analytics/preguntas` | admin, profesor | covered | `frontend/src/modules/analytics/AnalyticsPage.tsx:247` |
-| frontend_call | `GET:/analytics/sesiones-trabajo` | admin, profesor | covered | `frontend/src/lib/analytics.ts:140` |
+| frontend_call | `GET:/analytics/sesiones-trabajo` | admin, profesor | covered | `frontend/src/lib/analytics.ts:147` |
 | frontend_call | `GET:/analytics/sintesis` | admin, profesor | covered | `frontend/src/modules/analytics/AnalyticsPage.tsx:248` |
 | frontend_call | `GET:/impacto/estudios/disponibilidad` | ambiguous | covered | `frontend/src/modules/analytics/AnalyticsPage.tsx:1032` |
 | frontend_call | `GET:/impacto/estudios/{effectiveId}/indicadores` | ambiguous | covered | `frontend/src/modules/analytics/AnalyticsPage.tsx:874` |
@@ -71,9 +71,9 @@
 | frontend_call | `GET:/impacto/estudios/{id}/export` | ambiguous | covered | `frontend/src/modules/analytics/AnalyticsPage.tsx:920` |
 | frontend_call | `GET:/impacto/estudios` | ambiguous | covered | `frontend/src/modules/analytics/AnalyticsPage.tsx:864` |
 | frontend_call | `GET:/reportes/profesor/resumen` | admin, profesor | covered | `frontend/src/modules/reportes/api.ts:5` |
-| frontend_call | `POST:/analytics/evento` | admin, profesor | covered | `frontend/src/lib/analytics.ts:150` |
-| frontend_call | `POST:/analytics/sesiones-trabajo/{sessionId}/eventos` | admin, profesor | missing | `frontend/src/lib/analytics.ts:124` |
-| frontend_call | `POST:/analytics/sesiones-trabajo` | admin, profesor | covered | `frontend/src/lib/analytics.ts:106` |
+| frontend_call | `POST:/analytics/evento` | admin, profesor | covered | `frontend/src/lib/analytics.ts:157` |
+| frontend_call | `POST:/analytics/sesiones-trabajo/{sessionId}/eventos` | admin, profesor | missing | `frontend/src/lib/analytics.ts:131` |
+| frontend_call | `POST:/analytics/sesiones-trabajo` | admin, profesor | covered | `frontend/src/lib/analytics.ts:113` |
 | frontend_call | `POST:/impacto/estudios/{id}/{action}` | ambiguous | covered | `frontend/src/modules/analytics/AnalyticsPage.tsx:906` |
 | frontend_call | `POST:/impacto/estudios` | ambiguous | covered | `frontend/src/modules/analytics/AnalyticsPage.tsx:894` |
 | table | `analytics_eventos` | system | covered | `backend/app/modules/analytics/models.py:14` |

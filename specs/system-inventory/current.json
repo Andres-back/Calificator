@@ -336,7 +336,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "c2cdcdf81ef0cc9fa888f065c88d51c5614cd086bda331a479d3573ce7e02747",
+  "source_digest": "c33866f6a01e51071d5f2e2023dfb315c68739508b19b8c4eb594f477ac9bd50",
   "surfaces": [
     {
       "actors": [
@@ -13802,6 +13802,12 @@
           "level": "e2e",
           "reference": "/",
           "status": "direct",
+          "test_path": "frontend/e2e/mock/grading-review.mock.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/",
+          "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
         },
         {
@@ -14037,6 +14043,18 @@
           "reference": "/",
           "status": "direct",
           "test_path": "frontend/src/modules/calificaciones/gradingFailure.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/review-triage/ReviewTriagePanel.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/review-triage/buildReviewTriage.test.ts"
         },
         {
           "level": "unit",
@@ -14402,6 +14420,12 @@
           "reference": "/app",
           "status": "direct",
           "test_path": "frontend/e2e/explainable-grading.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app",
+          "status": "direct",
+          "test_path": "frontend/e2e/mock/grading-review.mock.spec.ts"
         },
         {
           "level": "e2e",
@@ -15463,6 +15487,12 @@
           "reference": "/app/calificaciones",
           "status": "direct",
           "test_path": "frontend/e2e/explainable-grading.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app/calificaciones",
+          "status": "direct",
+          "test_path": "frontend/e2e/mock/grading-review.mock.spec.ts"
         },
         {
           "level": "e2e",
@@ -20719,7 +20749,7 @@
       "kind": "frontend_call",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "GET:/analytics/sesiones-trabajo",
-      "source_line": 140,
+      "source_line": 147,
       "source_path": "frontend/src/lib/analytics.ts",
       "states": [],
       "tests": [
@@ -25918,7 +25948,7 @@
       "kind": "frontend_call",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "POST:/analytics/evento",
-      "source_line": 150,
+      "source_line": 157,
       "source_path": "frontend/src/lib/analytics.ts",
       "states": [],
       "tests": [
@@ -25979,7 +26009,7 @@
       "kind": "frontend_call",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "POST:/analytics/sesiones-trabajo/{sessionId}/eventos",
-      "source_line": 124,
+      "source_line": 131,
       "source_path": "frontend/src/lib/analytics.ts",
       "states": [],
       "tests": []
@@ -26003,7 +26033,7 @@
       "kind": "frontend_call",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "POST:/analytics/sesiones-trabajo",
-      "source_line": 106,
+      "source_line": 113,
       "source_path": "frontend/src/lib/analytics.ts",
       "states": [],
       "tests": [
@@ -32027,6 +32057,12 @@
           "reference": "calificaciones",
           "status": "direct",
           "test_path": "frontend/e2e/explainable-grading.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "calificaciones",
+          "status": "direct",
+          "test_path": "frontend/e2e/mock/grading-review.mock.spec.ts"
         },
         {
           "level": "e2e",

@@ -21,6 +21,7 @@ type BatchReference = EvaluationReference & { metadata_json: { batch_size: numbe
 type FeedbackStoryMode = 'animated' | 'static';
 type FeedbackStoryAction = 'pause' | 'resume' | 'skip' | 'replay' | 'next' | 'previous';
 type FeedbackStoryReference = GradeReference & { metadata_json: { mode: FeedbackStoryMode } };
+type ReviewTriageLevel = 'safe' | 'attention' | 'blocked';
 
 export type AnalyticsEventPayloads = {
   session_view_opened: { metadata_json: { surface: AnalyticsSurface } };
@@ -41,6 +42,12 @@ export type AnalyticsEventPayloads = {
     metadata_json: { mode: FeedbackStoryMode; step: number };
   };
   feedback_story_completed: FeedbackStoryReference;
+  grading_triage_opened: GradeReference & {
+    metadata_json: { safe_count: number; attention_count: number; blocked_count: number; global_blocked: boolean };
+  };
+  grading_triage_navigated: GradeReference & {
+    metadata_json: { target_level: ReviewTriageLevel; position: number; total_exceptions: number };
+  };
 };
 
 export type AnalyticsEventType = keyof AnalyticsEventPayloads;
