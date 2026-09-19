@@ -44,7 +44,7 @@ export function GradeBreakdown({ breakdown, student = false, onEdit, onEvidenceP
       </> : <GradeFormula formula={breakdown.formula} adjustmentDetail={breakdown.ajuste_global_detalle} />}
       <div className="space-y-3">
         {breakdown.componentes.filter((component) => student || !selectedComponentId || component.id === selectedComponentId).map((component) => (
-          <article key={component.id} className="rounded-xl border border-border bg-surface p-4">
+          <article id={`grade-component-${component.id}`} key={component.id} className="scroll-mt-24 rounded-xl border border-border bg-surface p-4">
             <div className={`flex flex-col gap-2 ${selectedComponentId && !student ? '' : 'sm:flex-row sm:items-start sm:justify-between'}`}>
               <div className="min-w-0">
                 <p className="text-xs font-bold uppercase tracking-wide text-brand-700 dark:text-brand-200">

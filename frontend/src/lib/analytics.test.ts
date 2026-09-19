@@ -63,6 +63,24 @@ describe('analytics event contract', () => {
     });
   });
 
+  it('sends feedback story interactions without academic content', () => {
+    trackEvent('feedback_story_controlled', {
+      evaluacion_id: 'evaluation-1',
+      calificacion_id: 'grade-1',
+      metadata_json: { mode: 'animated', action: 'next', step: 2 },
+    });
+
+    expect(post).toHaveBeenCalledWith('/analytics/evento', {
+      tipo: 'feedback_story_controlled',
+      evaluacion_id: 'evaluation-1',
+      calificacion_id: 'grade-1',
+      metadata_json: { mode: 'animated', action: 'next', step: 2 },
+    });
+    const payload = JSON.stringify(post.mock.calls[0][1]);
+    expect(payload).not.toContain('respuesta');
+    expect(payload).not.toContain('retroalimentacion');
+  });
+
   it('absorbs a rejected telemetry request without throwing into the academic flow', async () => {
     post.mockRejectedValueOnce(new Error('telemetry unavailable'));
 

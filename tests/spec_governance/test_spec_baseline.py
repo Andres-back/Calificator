@@ -46,6 +46,7 @@ ALL_SPECS = {
     "044-opencode-session",
     "045-rag-grading-fallback",
     "046-qwen-embeddings",
+    "048-retroalimentacion-animada",
 }
 OWNED_SPECS = {
     name

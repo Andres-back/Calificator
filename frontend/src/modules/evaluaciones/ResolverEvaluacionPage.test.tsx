@@ -12,6 +12,7 @@ const mocks = vi.hoisted(() => ({
   createFileDelivery: vi.fn(),
   getStudentActivity: vi.fn(),
   getMyReviewRequest: vi.fn(),
+  getMyBreakdown: vi.fn(),
   requestReview: vi.fn(),
   success: vi.fn(),
   error: vi.fn(),
@@ -25,10 +26,16 @@ vi.mock('./api', () => ({
   crearEntregaArchivo: mocks.createFileDelivery,
   getActividadEstudiante: mocks.getStudentActivity,
   getMiSolicitudRevision: mocks.getMyReviewRequest,
+  getMiDesglose: mocks.getMyBreakdown,
   solicitarRevisionEvaluacion: mocks.requestReview,
 }));
 vi.mock('react-hot-toast', () => ({
   default: { success: mocks.success, error: mocks.error },
+}));
+vi.mock('@/modules/calificaciones/student-feedback/XaliFeedbackStory', () => ({
+  XaliFeedbackStory: ({ breakdown }: { breakdown: { calificacion_id: string } }) => (
+    <section aria-label="Historia de tu retroalimentación">Historia Xali para {breakdown.calificacion_id}</section>
+  ),
 }));
 
 function renderPage() {
@@ -90,6 +97,7 @@ beforeEach(() => {
   mocks.getMyDelivery.mockResolvedValue(null);
   mocks.getStudentActivity.mockResolvedValue(null);
   mocks.getMyReviewRequest.mockResolvedValue(null);
+  mocks.getMyBreakdown.mockResolvedValue(null);
   mocks.requestReview.mockResolvedValue({
     id: 'review-1',
     calificacion_id: 'grade-1',
@@ -230,6 +238,41 @@ describe('ResolverEvaluacionPage', () => {
       });
     });
     expect(mocks.success).toHaveBeenCalledWith('Solicitud de revisión enviada al docente.');
+  });
+
+  it('shows a motivating Xali story before the complete published breakdown', async () => {
+    const currentEvaluation = await mocks.getEvaluation();
+    mocks.getEvaluation.mockResolvedValue({
+      ...currentEvaluation,
+      entrega_realizada: true,
+      mi_nota_confirmada: 4,
+      mi_calificacion_estado: 'publicada',
+    });
+    mocks.getMyDelivery.mockResolvedValue({
+      id: 'delivery-1',
+      evaluacion_id: 'evaluation-1',
+      estudiante_id: 'student-1',
+      materia_id: 'materia-1',
+      tipo: 'online',
+      estado: 'calificada',
+      respuesta_texto: 'P1: Paso a paso',
+      archivo_url: null,
+      evidencia_paginas: 1,
+      evidencia_tipo: 'texto',
+      reemplazo_solicitado: false,
+      created_at: '2026-09-19T00:00:00Z',
+    });
+    mocks.getMyBreakdown.mockResolvedValue({
+      id: 'breakdown-1', calificacion_id: 'grade-1', version: 1, origen: 'automatico', cobertura_estado: 'completa', requiere_revision: false, created_at: '2026-09-19T00:00:00Z',
+      formula: { puntos_obtenidos: 4, puntos_posibles: 5, nota_maxima: 5, nota_base: 4, ajuste_global: 0, nota_antes_redondeo: 4, regla_redondeo: 'half_up', decimales: 1, nota_final: 4 },
+      componentes: [{ id: 'p1', clave: 'pregunta:1', orden: 0, tipo: 'pregunta', numero: '1', titulo: 'Procedimiento', respuesta_estudiante: 'Paso a paso', respuesta_referencia: 'Paso a paso', puntos_obtenidos: 4, puntos_maximos: 5, estado: 'correcta', explicacion: 'Tu procedimiento está ordenado y sustentado.', origen: 'ia', requiere_revision: false, evidencia_paginas: [1] }],
+    });
+
+    renderPage();
+
+    await waitFor(() => expect(mocks.getMyBreakdown).toHaveBeenCalledWith('evaluation-1'));
+    expect(await screen.findByRole('region', { name: 'Historia de tu retroalimentación' })).toHaveTextContent('grade-1');
+    expect(screen.getByRole('heading', { name: 'Nota explicada respuesta por respuesta' })).toBeInTheDocument();
   });
 
   it('muestra y permite descargar el material antes de subir una entrega física', async () => {

@@ -122,6 +122,24 @@ async def _validate_event_references(
     calificacion_id: UUID | None,
     metadata_json: dict,
 ) -> None:
+    if (
+        current_user.rol == UserRole.ESTUDIANTE.value
+        and evaluacion_id is not None
+        and calificacion_id is not None
+    ):
+        grade = await _get_allowed_calificacion(db, calificacion_id, current_user)
+        if grade is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Referencia no encontrada",
+            )
+        if grade.evaluacion_id != evaluacion_id:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+                detail="Las referencias académicas no son coherentes",
+            )
+        return
+
     evaluation = None
     if evaluacion_id is not None:
         evaluation = await _get_allowed_evaluation(db, evaluacion_id, current_user)

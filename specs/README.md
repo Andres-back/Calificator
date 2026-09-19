@@ -45,6 +45,7 @@ actualizar la especificación propietaria, su plan y sus tareas; no debe crear d
 | 039 | [Modularización segura de evidencia](039-modularizar-evidencia/spec.md) | presentación, metadatos y limpieza de evidencia de calificación | rutas de evidencia existentes, sin cambios públicos | entregas y archivos existentes; sin migraciones | [#80](https://github.com/Andres-back/Calificator/issues/80) |
 | 040 | [Encolado seguro de calificaciones](040-modularizar-cola-calificaciones/spec.md) | coordinación individual entre calificaciones, jobs y worker | rutas diferidas existentes, sin cambios públicos | entregas, calificaciones y trabajos existentes; sin migraciones | [#82](https://github.com/Andres-back/Calificator/issues/82) |
 | 041 | [Estabilización E2E de carga multihoja](041-estabilizar-e2e-multihoja/spec.md) | prueba automatizada de dos entregas consecutivas | sin cambios en rutas o frontend productivo | sin cambios de datos; solo regresión E2E | [#84](https://github.com/Andres-back/Calificator/issues/84) |
+| 048 | [Retroalimentación animada con Xali](048-retroalimentacion-animada/spec.md) | política y autorización de eventos estudiantiles en analytics | resolución estudiantil, historia Xali y desglose publicado | `analytics_eventos` existente; sin migraciones ni cambios de nota | [#95](https://github.com/Andres-back/Calificator/issues/95) |
 
 ## Reglas de propiedad
 
@@ -85,6 +86,12 @@ actualizar la especificación propietaria, su plan y sus tareas; no debe crear d
 ## Evolución 046: embeddings institucionales con Qwen
 
 - [046-qwen-embeddings](046-qwen-embeddings/spec.md), [issue #92](https://github.com/Andres-back/Calificator/issues/92): sirve Qwen3 Embedding 0.6B en la red privada, unifica persistencia y consulta en 1024 dimensiones y conserva la degradación segura de calificación.
+
+## Evolución 048: retroalimentación motivacional con Xali
+
+- [048-retroalimentacion-animada](048-retroalimentacion-animada/spec.md), [issue #95](https://github.com/Andres-back/Calificator/issues/95): presenta máximo cuatro escenas derivadas del desglose publicado y mantiene la explicación completa inmediatamente disponible.
+- Xali se compone como SVG modular con 120 combinaciones posibles, controles explícitos y alternativa sin movimiento; no genera imágenes por estudiante ni añade llamadas de IA.
+- La implementación está validada localmente. Comprensión, motivación y primer cuadro útil siguen siendo resultados del piloto, no afirmaciones de laboratorio. Sin push, PR ni despliegue.
 
 ## Inventario técnico global
 
