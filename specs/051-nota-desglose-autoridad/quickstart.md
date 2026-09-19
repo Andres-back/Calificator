@@ -18,7 +18,8 @@
 - Ruff: aprobado.
 - Alembic: una sola cabeza, `202609190001`.
 - Build de producción frontend: aprobado.
-- Gobernanza Spec Kit: se ejecuta nuevamente después de completar estas tareas.
+- Inventario técnico: vigente con 536 superficies.
+- Gobernanza Spec Kit: `41 passed`.
 
 ## Observaciones
 
