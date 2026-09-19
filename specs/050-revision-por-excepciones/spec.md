@@ -6,6 +6,8 @@
 
 **Estado**: Aprobada
 
+**Issue**: [#99](https://github.com/Andres-back/Calificator/issues/99)
+
 **Entrada**: El docente no debe repetir una calificación completa para comprobar el trabajo de la IA; debe identificar y revisar primero las respuestas con señales de incertidumbre, conservando la decisión final.
 
 ## Escenarios de usuario y pruebas
