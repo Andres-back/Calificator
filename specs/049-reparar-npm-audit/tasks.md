@@ -4,4 +4,4 @@
 - [x] T002 [FR-002] Añadir hasta tres intentos con espera incremental y fallo final obligatorio.
 - [x] T003 [FR-003] Conservar intactos `package.json`, `package-lock.json`, código, contratos y datos.
 - [x] T004 [FR-004] Registrar la especificación, el issue y la línea base de gobernanza.
-- [x] T005 [FR-004] Validar instalación reproducible, auditoría moderna, gobernanza e inventario.
+- [x] T005 [FR-004] Ejecutar la prueba de regresión: instalación reproducible, auditoría moderna, gobernanza e inventario.
