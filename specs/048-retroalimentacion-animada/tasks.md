@@ -7,27 +7,27 @@
 
 ## Fase 2: Fundamentos
 
-- [x] T003 [P] Añadir pruebas del catálogo combinatorio y accesibilidad base en frontend/src/components/xali/XaliMascot.test.tsx.
-- [x] T004 Implementar catálogo tipado de al menos 120 combinaciones válidas en frontend/src/components/xali/xaliStates.ts.
-- [x] T005 Implementar mascota SVG modular, tamaños, temas y reducción de movimiento en frontend/src/components/xali/XaliMascot.tsx.
+- [x] T003 [P] Añadir pruebas del catálogo combinatorio y accesibilidad base en frontend/src/components/xali/XaliMascot.test.tsx (FR-007, FR-008).
+- [x] T004 Implementar catálogo tipado de al menos 120 combinaciones válidas en frontend/src/components/xali/xaliStates.ts (FR-007).
+- [x] T005 Implementar mascota SVG modular, tamaños, temas y reducción de movimiento en frontend/src/components/xali/XaliMascot.tsx (FR-004, FR-006, FR-008).
 
 ## Fase 3: Historia 1 — comprender el resultado
 
-- [x] T006 [P] [US1] Añadir regresiones de selección de máximo cuatro escenas en frontend/src/modules/calificaciones/student-feedback/buildFeedbackStory.test.ts.
-- [x] T007 [US1] Implementar proyección determinista del desglose publicado en frontend/src/modules/calificaciones/student-feedback/buildFeedbackStory.ts.
-- [x] T008 [P] [US1] Añadir pruebas de contenido, detalle y estados provisionales en frontend/src/modules/calificaciones/student-feedback/XaliFeedbackStory.test.tsx.
-- [x] T009 [US1] Implementar tarjeta de historia sin modificar GradeBreakdown en frontend/src/modules/calificaciones/student-feedback/XaliFeedbackStory.tsx.
-- [x] T010 [US1] Integrar la historia antes del desglose estudiantil publicado en frontend/src/modules/evaluaciones/ResolverEvaluacionPage.tsx y su prueba.
+- [x] T006 [P] [US1] Añadir regresiones de selección de máximo cuatro escenas en frontend/src/modules/calificaciones/student-feedback/buildFeedbackStory.test.ts (FR-002, FR-005).
+- [x] T007 [US1] Implementar proyección determinista del desglose publicado en frontend/src/modules/calificaciones/student-feedback/buildFeedbackStory.ts (FR-001, FR-002, FR-005, FR-010).
+- [x] T008 [P] [US1] Añadir pruebas de contenido, detalle y estados provisionales en frontend/src/modules/calificaciones/student-feedback/XaliFeedbackStory.test.tsx (FR-009, FR-011).
+- [x] T009 [US1] Implementar tarjeta de historia sin modificar GradeBreakdown en frontend/src/modules/calificaciones/student-feedback/XaliFeedbackStory.tsx (FR-001, FR-009, FR-011).
+- [x] T010 [US1] Integrar la historia antes del desglose estudiantil publicado en frontend/src/modules/evaluaciones/ResolverEvaluacionPage.tsx y su prueba (FR-001).
 
 ## Fase 4: Historia 2 — control y accesibilidad
 
-- [x] T011 [P] [US2] Probar avanzar, retroceder, pausar, omitir, repetir y modo estático en frontend/src/modules/calificaciones/student-feedback/XaliFeedbackStory.test.tsx.
-- [x] T012 [US2] Añadir controles, preferencia local y recuperación estática en frontend/src/modules/calificaciones/student-feedback/XaliFeedbackStory.tsx.
+- [x] T011 [P] [US2] Probar avanzar, retroceder, pausar, omitir, repetir y modo estático en frontend/src/modules/calificaciones/student-feedback/XaliFeedbackStory.test.tsx (FR-003, FR-004).
+- [x] T012 [US2] Añadir controles, preferencia local y recuperación estática en frontend/src/modules/calificaciones/student-feedback/XaliFeedbackStory.tsx (FR-003, FR-004, FR-009).
 - [x] T013 [US2] Añadir cobertura de movimiento reducido y tamaños críticos en frontend/e2e/accessibility/student-feedback-story.a11y.spec.ts.
 
 ## Fase 5: Historia 3 — identidad y medición sostenible
 
-- [x] T014 [P] [US3] Ampliar pruebas de contrato analítico seguro en backend/tests/unit/test_analytics_events.py y frontend/src/lib/analytics.test.ts.
+- [x] T014 [P] [US3] Ampliar pruebas de contrato analítico seguro en backend/tests/unit/test_analytics_events.py y frontend/src/lib/analytics.test.ts (FR-006, FR-012).
 - [x] T015 [US3] Añadir eventos estudiantiles enumerados y autorización de la calificación propia en backend/app/modules/analytics/event_policy.py, backend/app/modules/analytics/service.py y frontend/src/lib/analytics.ts.
 - [x] T016 [US3] Emitir telemetría no bloqueante desde frontend/src/modules/calificaciones/student-feedback/XaliFeedbackStory.tsx sin contenido académico.
 - [x] T017 [P] [US3] Añadir regresión visual claro/oscuro y móvil en frontend/e2e/visual/student-feedback-story.visual.spec.ts.
