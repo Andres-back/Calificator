@@ -222,14 +222,43 @@ async def create_automatic_breakdown(
     breakdown.componentes = [CalificacionComponente(**item) for item in components]
     db.add(breakdown)
     await db.flush()
+    model_score = Decimal(str(calificacion.nota_sugerida)) if calificacion.nota_sugerida is not None else None
+    human_decision = bool(
+        calificacion.revisado_por_docente
+        or calificacion.nota_confirmada is not None
+        or calificacion.estado in {
+            CalificacionEstado.CONFIRMADA.value,
+            CalificacionEstado.AJUSTADA.value,
+            CalificacionEstado.PUBLICADA.value,
+            CalificacionEstado.ANULADA.value,
+        }
+    )
+    authoritative = bool(
+        breakdown.cobertura_estado == "completa"
+        and not breakdown.requiere_revision
+        and not human_decision
+    )
+    trace = {
+        "id": str(breakdown.id),
+        "version": version,
+        "modo": "autoridad" if authoritative else "controlado",
+        "nota_calculada": float(breakdown.nota_final),
+    }
+    if model_score is not None:
+        difference = (breakdown.nota_final - model_score).quantize(Decimal("0.01"))
+        trace.update({
+            "nota_modelo_global": float(model_score),
+            "diferencia": float(difference),
+            "discrepancia": difference != 0,
+        })
     result = dict(calificacion.resultado_json or {})
-    result["desglose"] = {"id": str(breakdown.id), "version": version, "modo": "autoridad" if settings.EXPLAINABLE_GRADING_AUTHORITY_ENABLED else "controlado", "nota_calculada": float(breakdown.nota_final)}
+    result["desglose"] = trace
     result.setdefault("primera_sugerencia", breakdown.procedencia_json["primera_sugerencia"])
     calificacion.resultado_json = result
-    if settings.EXPLAINABLE_GRADING_AUTHORITY_ENABLED:
+    if authoritative:
         calificacion.nota_sugerida = breakdown.nota_final
-        if breakdown.requiere_revision:
-            calificacion.estado = CalificacionEstado.REQUIERE_REVISION.value
+    elif breakdown.requiere_revision and not human_decision:
+        calificacion.estado = CalificacionEstado.REQUIERE_REVISION.value
     return breakdown
 
 

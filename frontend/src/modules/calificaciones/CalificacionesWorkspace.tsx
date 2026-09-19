@@ -47,7 +47,7 @@ import { GradeBreakdownHistory } from './components/GradeBreakdownHistory';
 import { buildReviewTriage } from './review-triage/buildReviewTriage';
 import { ReviewTriagePanel } from './review-triage/ReviewTriagePanel';
 import { formatAIModelSource } from './aiPipelineLabels';
-import { effectiveGradeScore, gradePresentation, isGradeProcessing } from './gradePresentation';
+import { effectiveGradeScore, formatGradeScore, gradePresentation, isGradeProcessing } from './gradePresentation';
 import { formatTimelineScore } from './timeline';
 import type { BatchResult, Calificacion, CalificacionDetalle, GradeBreakdownData, GradeComponentChange, ReviewFilter } from '@/types/api';
 
@@ -689,7 +689,7 @@ function PanelDetalle({
               </div>
             ) : (
               <p className="font-display text-4xl font-extrabold text-fg">
-                {presentation.score.toFixed(1)}
+                {formatGradeScore(presentation.score)}
                 {notaMaxima != null && <span className="ml-2 text-lg font-semibold text-muted">/ {notaMaxima.toFixed(1)}</span>}
               </p>
             )}
@@ -1637,8 +1637,9 @@ function GradingCenter() {
   // Mutations
   const confirmarMut = useMutation({
     mutationFn: (c: WorkspaceGrade) => {
-      if (c.nota_sugerida == null) throw new Error('La calificación todavía está en proceso.');
-      return confirmarNota(c.id, Number(c.nota_sugerida));
+      const score = effectiveGradeScore(c);
+      if (score == null) throw new Error('La calificación todavía está en proceso.');
+      return confirmarNota(c.id, score);
     },
     onSuccess: (_data, grade) => { invalidate(); toast.success('Nota confirmada'); setConfirmingSingle(null); trackEvent('calificacion_confirmed', { evaluacion_id: evalId, calificacion_id: grade.id }); },
     onError: (e) => toast.error(toApiError(e).detail),
@@ -1912,7 +1913,7 @@ function GradingCenter() {
                           {summary.tiene_alertas && <p className="text-xs font-semibold text-amber-700 dark:text-amber-300">Revisar alertas{summary.pqrs_abiertas ? ` · ${summary.pqrs_abiertas} reclamo(s)` : ''}</p>}
                           {row.calificacion_id && summary.version == null && row.estado !== 'procesando' && <p className="text-xs text-muted">Sin desglose disponible</p>}
                         </div>
-                        <span className="shrink-0 text-lg font-bold">{row.estado === 'procesando' ? <LoaderCircle className="h-5 w-5 animate-spin" aria-label="Calificando" /> : row.nota == null ? '—' : Number(row.nota).toFixed(1)}</span>
+                        <span className="shrink-0 text-lg font-bold">{row.estado === 'procesando' ? <LoaderCircle className="h-5 w-5 animate-spin" aria-label="Calificando" /> : row.nota == null ? '—' : formatGradeScore(Number(row.nota))}</span>
                       </button>
                     </div>
                   );
@@ -2031,7 +2032,7 @@ function GradingCenter() {
         description={
           <span>
             Vas a confirmar la nota de <strong>{confirmingSingle ? studentLabel(confirmingSingle, studentMap) : ''}</strong>
-            {confirmingSingle?.nota_sugerida != null && <> con <strong>{Number(confirmingSingle.nota_sugerida).toFixed(1)}</strong></>}.
+            {confirmingSingle && effectiveGradeScore(confirmingSingle) != null && <> con <strong>{formatGradeScore(effectiveGradeScore(confirmingSingle)!)}</strong></>}.
           </span>
         }
       />

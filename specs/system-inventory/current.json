@@ -336,7 +336,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "c33866f6a01e51071d5f2e2023dfb315c68739508b19b8c4eb594f477ac9bd50",
+  "source_digest": "af4eee4e078aa6027885aea43f4e924be0ec3280a884884a5623fafd0beb1ccb",
   "surfaces": [
     {
       "actors": [
@@ -13437,6 +13437,12 @@
           "reference": "/",
           "status": "direct",
           "test_path": "backend/tests/integration/test_explainable_grading_pipeline.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_grade_sum_migration.py"
         },
         {
           "level": "unit",

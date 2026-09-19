@@ -49,6 +49,7 @@ ALL_SPECS = {
     "048-retroalimentacion-animada",
     "049-reparar-npm-audit",
     "050-revision-por-excepciones",
+    "051-nota-desglose-autoridad",
 }
 OWNED_SPECS = {
     name
