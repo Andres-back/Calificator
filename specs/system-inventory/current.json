@@ -336,7 +336,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "af4eee4e078aa6027885aea43f4e924be0ec3280a884884a5623fafd0beb1ccb",
+  "source_digest": "b6505edfc56cec78f9e0ab536c97cec0b537a59aec7c2ede3e2861ea63b8379a",
   "surfaces": [
     {
       "actors": [
@@ -13587,6 +13587,12 @@
           "reference": "/",
           "status": "direct",
           "test_path": "backend/tests/unit/test_evidence_service.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_glm_independent_review.py"
         },
         {
           "level": "unit",
