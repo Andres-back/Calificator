@@ -50,6 +50,7 @@ actualizar la especificación propietaria, su plan y sus tareas; no debe crear d
 | 050 | [Revisión docente por excepciones](050-revision-por-excepciones/spec.md) | priorización derivada sobre calificaciones explicables y analítica segura | workspace docente de calificaciones | `analytics_eventos` existente; sin migraciones ni cambios de nota | [#99](https://github.com/Andres-back/Calificator/issues/99) |
 | 051 | [Suma verificable como nota sugerida](051-nota-desglose-autoridad/spec.md) | reconciliación entre desglose explicable y nota sugerida | workspace docente y confirmación de calificaciones | `calificaciones` y `calificacion_desgloses`; backfill de sugerencias no confirmadas | [#101](https://github.com/Andres-back/Calificator/issues/101) |
 | 052 | [Revisión independiente con GLM 5.3 Flash](052-glm-independent-review/spec.md) | calificaciones, visión, catálogo y routing IA | configuración administrativa existente; sin rutas nuevas | `ai_provider_models`, `ai_feature_routing`; sin tablas nuevas | [#103](https://github.com/Andres-back/Calificator/issues/103) |
+| 053 | [Capacidades correctas por etapa de IA](053-fix-ai-stage-capabilities/spec.md) | hotfix de capacidades persistidas en routing IA | configuración administrativa existente; sin rutas nuevas | `ai_feature_routing`; migración de datos sin cambios de esquema | [#105](https://github.com/Andres-back/Calificator/issues/105) |
 
 ## Reglas de propiedad
 
