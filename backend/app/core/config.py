@@ -94,20 +94,20 @@ class Settings(BaseSettings):
     VISION_TOTAL_TIMEOUT_SECONDS: int = 240
     VISION_MAX_RETRIES: int = 1
     VISION_FALLBACK_ENABLED: bool = True
-    VISION_FALLBACK_MODELS: str = "qwen3.7-plus,mimo-v2.5"
+    VISION_FALLBACK_MODELS: str = "glm-5.3-flash,qwen3.7-plus,mimo-v2.5"
     VISION_MAX_CONCURRENCY: int = 3
     VISION_MAX_IMAGE_SIDE: int = 2200
     VISION_MAX_TOKENS: int = 3072
     DIGITALIZATION_SLOW_WARNING_SECONDS: int = 90
     PHOTO_GRADING_SLOW_WARNING_SECONDS: int = 90
     PHOTO_GRADING_VISION_MODEL: str = "deepseek-v4-flash-vision-exp"
-    PHOTO_GRADING_VISION_FALLBACK_MODEL: str = "qwen3.6-plus"
+    PHOTO_GRADING_VISION_FALLBACK_MODEL: str = "glm-5.3-flash"
     PHOTO_GRADING_VISION_LAST_RESORT_MODEL: str = "mimo-v2.5"
     PHOTO_GRADING_TEXT_MODEL: str = "deepseek-v4-flash-vision-exp"
-    PHOTO_GRADING_VERIFIER_MODEL: str = "deepseek-v4-flash-vision-exp"
+    PHOTO_GRADING_VERIFIER_MODEL: str = "glm-5.3-flash"
     # Qwen queda como contingencia independiente si DeepSeek no produce contrato.
     PHOTO_GRADING_TEXT_REVIEW_MODEL: str = "qwen3.7-plus"
-    PHOTO_GRADING_COMPARATOR_MODEL: str = "deepseek-v4-pro"
+    PHOTO_GRADING_COMPARATOR_MODEL: str = "glm-5.3-flash"
     PHOTO_GRADING_CROSS_PROVIDER_FALLBACK_ENABLED: bool = False
     # Nombres legacy conservados para compatibilidad; son umbrales observacionales.
     PHOTO_GRADING_VISION_TIMEOUT_SECONDS: int = 75

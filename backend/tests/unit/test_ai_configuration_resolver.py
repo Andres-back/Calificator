@@ -47,6 +47,12 @@ class FakeConfigService:
         ]
 
 
+def test_grading_review_routes_are_text_and_extraction_is_visual() -> None:
+    assert resolver.capability_for("calificacion.extraccion") == "vision"
+    assert resolver.capability_for("calificacion.verificacion") == "text"
+    assert resolver.capability_for("calificacion.revision_adicional") == "text"
+
+
 @pytest.fixture(autouse=True)
 def fake_service(monkeypatch):
     monkeypatch.setattr(resolver, "AIConfigService", FakeConfigService)
