@@ -993,7 +993,7 @@ def test_discrepancy_invokes_pro_arbiter_once(monkeypatch) -> None:
         )
     )
 
-    assert comparator_calls == [("deepseek-v4-pro", True)]
+    assert comparator_calls == [("glm-5.3-flash", True)]
     assert result.raw_model_output["strategy"]["arbiter_invoked"] is True
     assert result.raw_model_output["strategy"]["arbiter_reason"] == "score_discrepancy"
 
@@ -1050,7 +1050,7 @@ def test_low_confidence_invokes_pro_arbiter(monkeypatch) -> None:
         )
     )
 
-    assert comparator_calls == [("deepseek-v4-pro", True)]
+    assert comparator_calls == [("glm-5.3-flash", True)]
     assert result.raw_model_output["strategy"]["arbiter_invoked"] is True
     assert result.raw_model_output["strategy"]["arbiter_reason"] == "low_confidence"
 
