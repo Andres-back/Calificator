@@ -50,6 +50,7 @@ ALL_SPECS = {
     "049-reparar-npm-audit",
     "050-revision-por-excepciones",
     "051-nota-desglose-autoridad",
+    "052-glm-independent-review",
 }
 OWNED_SPECS = {
     name

@@ -357,13 +357,13 @@ def test_explicit_fallback_is_visible(monkeypatch: pytest.MonkeyPatch) -> None:
     extractor = _configured_extractor(monkeypatch, responses, calls)
     monkeypatch.setattr(module.settings, "VISION_MAX_RETRIES", 0)
     monkeypatch.setattr(module.settings, "VISION_FALLBACK_ENABLED", True)
-    monkeypatch.setattr(module.settings, "VISION_FALLBACK_MODELS", "qwen3.7-plus")
+    monkeypatch.setattr(module.settings, "VISION_FALLBACK_MODELS", "glm-5.3-flash,qwen3.7-plus")
     result = asyncio.run(extractor.extract(_image(), "image/jpeg"))
     assert result.fallback_used is True
-    assert result.fallback_model == "qwen3.7-plus"
+    assert result.fallback_model == "glm-5.3-flash"
     assert calls[0]["model"] == "deepseek-v4-flash-vision-exp"
     assert calls[0]["thinking"] == {"type": "disabled"}
-    assert calls[1]["model"] == "qwen3.7-plus"
+    assert calls[1]["model"] == "glm-5.3-flash"
     assert "thinking" not in calls[1]
 
 

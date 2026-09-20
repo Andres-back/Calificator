@@ -18,15 +18,21 @@ def test_normalize_model_payload_deduplicates_and_infers_capabilities() -> None:
                 {"id": "qwen-vl-plus", "context_window": 131072},
                 {"id": "qwen-vl-plus", "display_name": "Qwen VL Plus"},
                 {"id": "embed-small"},
+                {"id": "glm-5.3-flash"},
                 {"id": "retired", "active": False},
                 {"object": "model"},
             ]
         },
     )
 
-    assert [model.model_id for model in models] == ["embed-small", "qwen-vl-plus"]
+    assert [model.model_id for model in models] == [
+        "embed-small",
+        "glm-5.3-flash",
+        "qwen-vl-plus",
+    ]
     assert models[0].capabilities == ("embedding",)
     assert models[1].capabilities == ("text", "vision")
+    assert models[2].capabilities == ("text", "vision")
 
 
 @pytest.mark.asyncio

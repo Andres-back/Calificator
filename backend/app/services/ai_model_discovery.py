@@ -30,6 +30,7 @@ DISCOVERABLE_PROVIDERS = frozenset({
     "openai", "openai_image", "open_code", "groq", "ollama", "cloudflare_image",
 })
 SUPPORTED_CAPABILITIES = frozenset({"text", "vision", "image", "embedding"})
+KNOWN_MULTIMODAL_MODEL_PREFIXES = ("glm-5.3-flash",)
 
 
 def _credential_for(provider: str, credentials: EffectiveAICredentials) -> str:
@@ -68,6 +69,10 @@ def _capabilities(model_id: str, item: dict[str, Any]) -> tuple[str, ...]:
         result.add("image")
     if values.intersection({"embedding", "embeddings", "embed"}) or "embedding" in task:
         result.add("embedding")
+
+    # OpenCode may return only an id for some catalog entries.
+    if name.startswith(KNOWN_MULTIMODAL_MODEL_PREFIXES):
+        result.update({"text", "vision"})
 
     if not result:
         if "embed" in name:

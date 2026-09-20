@@ -230,6 +230,14 @@ DEFAULT_MODELS: list[dict[str, Any]] = [
         "recommended": False,
         "active": True,
     },
+    {
+        "provider_id": "open_code",
+        "model_id": "glm-5.3-flash",
+        "label": "GLM 5.3 Flash",
+        "capabilities": ["text", "vision"],
+        "recommended": True,
+        "active": True,
+    },
 ]
 
 DEFAULT_FEATURES: list[dict[str, Any]] = [
@@ -486,7 +494,7 @@ class AIConfigService:
                 )
         await self._db.execute(
             sql_text(
-                "UPDATE ai_feature_routing SET capability = CASE WHEN feature IN ('calificacion_foto','evaluacion_digitalizar','vision_ocr') THEN 'vision' WHEN feature = 'generacion_imagenes' THEN 'image' WHEN feature IN ('rag','embeddings') THEN 'embedding' ELSE 'text' END"
+                "UPDATE ai_feature_routing SET capability = CASE WHEN feature IN ('calificacion_foto','evaluacion_digitalizar','vision_ocr','calificacion.extraccion','digitalizacion.extraccion') THEN 'vision' WHEN feature IN ('generacion_imagenes','presentaciones.imagenes') THEN 'image' WHEN feature IN ('rag','embeddings') THEN 'embedding' ELSE 'text' END"
             )
         )
         await self._db.execute(
