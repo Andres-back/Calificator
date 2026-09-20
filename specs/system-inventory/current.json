@@ -1,8 +1,8 @@
 {
   "counts": {
     "by_coverage": {
-      "covered": 453,
-      "missing": 83
+      "covered": 454,
+      "missing": 82
     },
     "by_kind": {
       "endpoint": 256,
@@ -52,6 +52,42 @@
     },
     {
       "category": "missing_coverage",
+      "description": "27 superficies de 021-configuracion-ia-docente no tienen evidencia de prueba observable.",
+      "id": "F-29DBFEDCFF49",
+      "issue_url": "",
+      "severity": "low",
+      "surface_ids": [
+        "backend:DELETE:/profesor/ollama-connectors/{connector_id}",
+        "backend:GET:/admin/ai-control-center/effective",
+        "backend:GET:/profesor/ai-providers/ollama/models",
+        "backend:GET:/profesor/ollama-connectors",
+        "backend:POST:/admin/ai-cache/clear",
+        "backend:POST:/admin/ai-providers/{provider}/models/refresh",
+        "backend:POST:/admin/ai-providers/{provider}/test",
+        "backend:POST:/admin/ai-settings/restore-defaults",
+        "backend:POST:/connector/jobs/claim",
+        "backend:POST:/connector/jobs/{job_id}/complete",
+        "backend:POST:/connector/jobs/{job_id}/fail",
+        "backend:POST:/connector/jobs/{job_id}/heartbeat",
+        "backend:POST:/connector/pair",
+        "backend:POST:/profesor/ai-providers/ollama/models/refresh",
+        "backend:POST:/profesor/ollama-connectors/pairing",
+        "backend:PUT:/connector/models",
+        "frontend_call:DELETE:/profesor/ollama-connectors/{connectorId}:frontend/src/modules/profesor_ai/api.ts",
+        "frontend_call:GET:/profesor/ai-providers/ollama/models:frontend/src/modules/profesor_ai/api.ts",
+        "frontend_call:GET:/profesor/ollama-connectors:frontend/src/modules/profesor_ai/api.ts",
+        "frontend_call:POST:/profesor/ai-providers/ollama/models/refresh:frontend/src/modules/profesor_ai/api.ts",
+        "frontend_call:POST:/profesor/ollama-connectors/pairing:frontend/src/modules/profesor_ai/api.ts",
+        "table:ai_provider_settings",
+        "table:ollama_connector_jobs",
+        "table:ollama_connector_models",
+        "table:ollama_connectors",
+        "table:ollama_pairing_codes",
+        "table:profesor_ai_provider_models"
+      ]
+    },
+    {
+      "category": "missing_coverage",
       "description": "18 superficies de 011-reportes-analitica-impacto no tienen evidencia de prueba observable.",
       "id": "F-324D81DB301E",
       "issue_url": "",
@@ -96,43 +132,6 @@
         "table:ai_usage_logs",
         "table:chat_messages",
         "table:evaluation_blueprints"
-      ]
-    },
-    {
-      "category": "missing_coverage",
-      "description": "28 superficies de 021-configuracion-ia-docente no tienen evidencia de prueba observable.",
-      "id": "F-A43AE25A2534",
-      "issue_url": "",
-      "severity": "low",
-      "surface_ids": [
-        "backend:DELETE:/profesor/ollama-connectors/{connector_id}",
-        "backend:GET:/admin/ai-control-center/effective",
-        "backend:GET:/profesor/ai-providers/ollama/models",
-        "backend:GET:/profesor/ollama-connectors",
-        "backend:POST:/admin/ai-cache/clear",
-        "backend:POST:/admin/ai-providers/{provider}/models/refresh",
-        "backend:POST:/admin/ai-providers/{provider}/test",
-        "backend:POST:/admin/ai-settings/restore-defaults",
-        "backend:POST:/connector/jobs/claim",
-        "backend:POST:/connector/jobs/{job_id}/complete",
-        "backend:POST:/connector/jobs/{job_id}/fail",
-        "backend:POST:/connector/jobs/{job_id}/heartbeat",
-        "backend:POST:/connector/pair",
-        "backend:POST:/profesor/ai-providers/ollama/models/refresh",
-        "backend:POST:/profesor/ollama-connectors/pairing",
-        "backend:PUT:/connector/models",
-        "frontend_call:DELETE:/profesor/ollama-connectors/{connectorId}:frontend/src/modules/profesor_ai/api.ts",
-        "frontend_call:GET:/profesor/ai-providers/ollama/models:frontend/src/modules/profesor_ai/api.ts",
-        "frontend_call:GET:/profesor/ollama-connectors:frontend/src/modules/profesor_ai/api.ts",
-        "frontend_call:POST:/profesor/ai-providers/ollama/models/refresh:frontend/src/modules/profesor_ai/api.ts",
-        "frontend_call:POST:/profesor/ollama-connectors/pairing:frontend/src/modules/profesor_ai/api.ts",
-        "table:ai_feature_routing",
-        "table:ai_provider_settings",
-        "table:ollama_connector_jobs",
-        "table:ollama_connector_models",
-        "table:ollama_connectors",
-        "table:ollama_pairing_codes",
-        "table:profesor_ai_provider_models"
       ]
     },
     {
@@ -336,7 +335,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "6cb8f8ee664084e33e73aaa4ede583644e69918e68ff11f39297e5bcbd1ec724",
+  "source_digest": "d681cf39e232681670e3fa24f4b67410a7c976b9ede51439a734c035bfa06062",
   "surfaces": [
     {
       "actors": [
@@ -13479,6 +13478,12 @@
           "reference": "/",
           "status": "direct",
           "test_path": "backend/tests/unit/test_ai_model_discovery.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_ai_stage_capability_migration.py"
         },
         {
           "level": "unit",
@@ -30591,7 +30596,7 @@
       ],
       "authorization": [],
       "consumers": [],
-      "coverage": "missing",
+      "coverage": "covered",
       "details": {
         "active": false,
         "class": "migration_only",
@@ -30613,7 +30618,14 @@
       "source_line": 41,
       "source_path": "backend/alembic/versions/202606290008_admin_ai_config_providers.py",
       "states": [],
-      "tests": []
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "ai_feature_routing",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_ai_stage_capability_migration.py"
+        }
+      ]
     },
     {
       "actors": [
@@ -33789,6 +33801,12 @@
           "reference": "presentaciones",
           "status": "direct",
           "test_path": "backend/tests/unit/test_ai_configuration_resolver.py"
+        },
+        {
+          "level": "unit",
+          "reference": "presentaciones",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_ai_stage_capability_migration.py"
         },
         {
           "level": "unit",

@@ -51,6 +51,7 @@ ALL_SPECS = {
     "050-revision-por-excepciones",
     "051-nota-desglose-autoridad",
     "052-glm-independent-review",
+    "053-fix-ai-stage-capabilities",
 }
 OWNED_SPECS = {
     name

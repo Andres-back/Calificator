@@ -77,7 +77,7 @@
 | frontend_call | `PUT:/admin/mail/config` | admin | covered | `frontend/src/modules/admin/mailApi.ts:46` |
 | frontend_call | `PUT:/profesor/ai-config` | ambiguous | covered | `frontend/src/modules/profesor_ai/api.ts:75` |
 | frontend_call | `PUT:/profesor/ai-credentials/{provider}` | ambiguous | covered | `frontend/src/modules/profesor_ai/api.ts:80` |
-| table | `ai_feature_routing` | system | missing | `backend/alembic/versions/202606290008_admin_ai_config_providers.py:41` |
+| table | `ai_feature_routing` | system | covered | `backend/alembic/versions/202606290008_admin_ai_config_providers.py:41` |
 | table | `ai_provider_models` | system | covered | `backend/alembic/versions/202608250001_teacher_ai_configuration.py:35` |
 | table | `ai_provider_settings` | system | missing | `backend/alembic/versions/202606290008_admin_ai_config_providers.py:20` |
 | table | `ollama_connector_jobs` | system | missing | `backend/app/modules/ollama_connector/models.py:56` |
@@ -95,5 +95,5 @@ Sin decisiones explícitas de permiso para este dominio.
 
 ## Hallazgos
 
-- **low · missing_coverage**: 28 superficies de 021-configuracion-ia-docente no tienen evidencia de prueba observable.
+- **low · missing_coverage**: 27 superficies de 021-configuracion-ia-docente no tienen evidencia de prueba observable.
 - **low · orphan_candidate**: 20 superficies no alcanzables o históricas se conservan como candidatas a retiro.
