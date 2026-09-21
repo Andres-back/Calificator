@@ -27,10 +27,21 @@ OPEN_CODE_RETRYABLE_STATUS_CODES = frozenset({408, 425, 429, 500, 502, 503, 504}
 OPEN_CODE_RETRY_BASE_SECONDS = 0.5
 OPEN_CODE_RETRY_MAX_SECONDS = 10.0
 OPEN_CODE_ANTHROPIC_MODEL_PREFIXES = ("qwen", "minimax-m")
+OPEN_CODE_THINKING_DISABLED_MODELS = frozenset({
+    "deepseek-v4-flash-vision-exp",
+})
 
 
 class LLMOutputTruncatedError(RuntimeError):
     """El proveedor terminó por presupuesto antes de completar el contrato."""
+
+
+def opencode_thinking_control(model: str) -> dict[str, str] | None:
+    """Return only model-specific controls supported by the OpenCode gateway."""
+    model_id = str(model).rsplit("/", 1)[-1].lower()
+    if model_id in OPEN_CODE_THINKING_DISABLED_MODELS:
+        return {"type": "disabled"}
+    return None
 
 
 def _open_code_uses_messages_api(model: str) -> bool:
@@ -435,6 +446,9 @@ class LLMRouter:
                 or getattr(settings, "OPEN_CODE_MAX_TOKENS", 8192)
             ),
         }
+        thinking = opencode_thinking_control(str(model))
+        if thinking:
+            body["thinking"] = thinking
         use_messages_api = _open_code_uses_messages_api(model)
         if use_messages_api:
             endpoint = "messages"

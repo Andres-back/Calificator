@@ -517,7 +517,7 @@ def test_fast_verifier_uses_compact_output_budget() -> None:
 
     assert result.nota_sugerida == 4
     assert client.timeout == 15
-    assert client.max_tokens <= 1536
+    assert client.max_tokens <= 2048
     assert client.stage == "grading_secondary"
 
 

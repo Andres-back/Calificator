@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 
 import fitz
+import pytest
 
 from app.modules.calificaciones.agents import (
     OpenCodeClient,
@@ -12,6 +13,7 @@ from app.modules.calificaciones.agents import (
     _prepare_multimodal_images,
     _to_anthropic_content,
 )
+from app.services.llm_router import LLMOutputTruncatedError
 
 
 class FakeResponse:
@@ -107,6 +109,17 @@ def test_deepseek_vision_disables_hidden_reasoning() -> None:
     _result, call = _run_chat("deepseek-v4-flash-vision-exp", payload)
 
     assert call["json"]["thinking"] == {"type": "disabled"}
+
+
+def test_glm_flash_omits_unsupported_thinking_control() -> None:
+    payload = {
+        "choices": [{"finish_reason": "stop", "message": {"content": '{"nota_sugerida": 4}'}}],
+        "usage": {"prompt_tokens": 8, "completion_tokens": 3},
+    }
+
+    _result, call = _run_chat("glm-5.3-flash", payload)
+
+    assert "thinking" not in call["json"]
 
 
 def test_regular_deepseek_does_not_receive_experimental_thinking_flag() -> None:
@@ -211,6 +224,39 @@ def test_max_attempts_one_does_not_retry_same_model() -> None:
         return len(transport.calls)
 
     assert asyncio.run(scenario()) == 1
+
+
+def test_chat_rejects_output_truncated_by_provider() -> None:
+    async def scenario() -> list[dict]:
+        client = OpenCodeClient()
+        await client._client.aclose()
+        client._client = CapturingHTTPClient({
+            "choices": [{
+                "finish_reason": "length",
+                "message": {"content": '{"nota_sugerida": 4, "alertas": ["incompleta"'},
+            }],
+            "usage": {"prompt_tokens": 20, "completion_tokens": 1536},
+        })
+        events: list[dict] = []
+
+        async def capture(**kwargs) -> None:
+            events.append(kwargs)
+
+        client._log_call = capture
+        with pytest.raises(LLMOutputTruncatedError):
+            await client.chat(
+                model="glm-5.3-flash",
+                messages=[{"role": "user", "content": "JSON"}],
+                max_attempts=1,
+                stage="grading_secondary",
+            )
+        await client.close()
+        return events
+
+    events = asyncio.run(scenario())
+    assert len(events) == 1
+    assert events[0]["status"] == "failed"
+    assert events[0]["error_code"] == "output_budget_exhausted"
 
 
 def test_multimodal_call_logs_only_one_vision_attempt() -> None:

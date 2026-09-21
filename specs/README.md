@@ -52,6 +52,7 @@ actualizar la especificación propietaria, su plan y sus tareas; no debe crear d
 | 052 | [Revisión independiente con GLM 5.3 Flash](052-glm-independent-review/spec.md) | calificaciones, visión, catálogo y routing IA | configuración administrativa existente; sin rutas nuevas | `ai_provider_models`, `ai_feature_routing`; sin tablas nuevas | [#103](https://github.com/Andres-back/Calificator/issues/103) |
 | 053 | [Capacidades correctas por etapa de IA](053-fix-ai-stage-capabilities/spec.md) | hotfix de capacidades persistidas en routing IA | configuración administrativa existente; sin rutas nuevas | `ai_feature_routing`; migración de datos sin cambios de esquema | [#105](https://github.com/Andres-back/Calificator/issues/105) |
 | 054 | [Digitalización confiable y señales de revisión visibles](054-fix-digitalization-review-signals/spec.md) | digitalización y calificación explicable | workspace docente existente; sin rutas nuevas | resultado JSON y desglose existentes; sin migración | [#107](https://github.com/Andres-back/Calificator/issues/107) |
+| 055 | [Respuesta estructurada y rutas rápidas](055-fast-json-routing/spec.md) | clientes OpenCode, verificación y configuración operativa | rutas existentes de digitalización y calificación; sin rutas nuevas | configuración IA y resultados existentes; sin migración | [#109](https://github.com/Andres-back/Calificator/issues/109) |
 
 ## Reglas de propiedad
 
@@ -117,6 +118,11 @@ actualizar la especificación propietaria, su plan y sus tareas; no debe crear d
 
 - [054-fix-digitalization-review-signals](054-fix-digitalization-review-signals/spec.md), [issue #107](https://github.com/Andres-back/Calificator/issues/107): separa extracción visual y estructuración textual, conserva alertas de GLM y evita mostrar consenso pleno cuando el verificador solicita revisión.
 - Mantiene la suma por pregunta y la decisión final docente; no corrige claves ni publica notas automáticamente.
+
+## Hotfix 055: respuestas estructuradas y rutas rápidas
+
+- [055-fast-json-routing](055-fast-json-routing/spec.md), [issue #109](https://github.com/Andres-back/Calificator/issues/109): detecta salidas truncadas, compacta la verificación independiente y evita una tercera inferencia cuando falta una nota verificadora.
+- Conserva el desglose y la nota principal como sugerencia pendiente de revisión; no fabrica consenso ni publica automáticamente.
 
 ## Inventario técnico global
 

@@ -58,6 +58,22 @@ def test_chat_completions_receives_output_budget(monkeypatch) -> None:
     assert FakeHTTPClient.last_json["max_tokens"] == 2048
 
 
+def test_glm_flash_omits_unsupported_thinking_control(monkeypatch) -> None:
+    request = httpx.Request("POST", "https://example.test/chat/completions")
+    FakeHTTPClient.response = httpx.Response(
+        200,
+        request=request,
+        json={"choices": [{"finish_reason": "stop", "message": {"content": "{}"}}], "usage": {}},
+    )
+    monkeypatch.setattr(llm_router_module.httpx, "AsyncClient", FakeHTTPClient)
+    monkeypatch.setattr(llm_router_module, "log_ai_usage", no_usage_log)
+
+    result = asyncio.run(configured_router("glm-5.3-flash", 2048)._call_open_code("test", True))
+
+    assert result == "{}"
+    assert "thinking" not in FakeHTTPClient.last_json
+
+
 @pytest.mark.parametrize(
     ("model", "payload"),
     [
