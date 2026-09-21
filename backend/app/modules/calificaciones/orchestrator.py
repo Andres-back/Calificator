@@ -189,14 +189,7 @@ def _arbitration_reason(primary: AgentResult, verifier: AgentResult) -> str | No
     min_confidence = min(float(primary.confianza or 0), float(verifier.confianza or 0))
     if min_confidence < float(settings.PHOTO_GRADING_ARBITRATION_MIN_CONFIDENCE):
         return "low_confidence"
-    verifier_requested = bool(
-        verifier.requiere_revision_docente
-        or (verifier.raw_output or {}).get("requiere_arbitraje")
-    )
-    if verifier_requested:
-        return "verifier_requested"
-    if primary.requiere_revision_docente:
-        return "primary_requested"
+    # Una alerta o revisión solicitada pasa al docente, no a un tercer modelo.
     return None
 
 def _normalize_answer(value: Any) -> str:
@@ -925,7 +918,9 @@ async def orchestrate_grading(
             arbiter_reason = _arbitration_reason(grading_a, grading_b)
             if partition_recovery and arbiter_reason is None:
                 arbiter_reason = "partition_recovery"
-            arbiter_invoked = arbiter_reason is not None
+            arbiter_invoked = (
+                arbiter_reason is not None and grading_b.nota_sugerida is not None
+            )
         else:
             grading_a = await _run_grader_until_complete(
                 ctx_grading,
@@ -959,7 +954,9 @@ async def orchestrate_grading(
                 ),
             )
             arbiter_reason = _arbitration_reason(grading_a, grading_b)
-            arbiter_invoked = arbiter_reason is not None
+            arbiter_invoked = (
+                arbiter_reason is not None and grading_b.nota_sugerida is not None
+            )
 
         if grading_a.nota_sugerida is None and grading_b.nota_sugerida is None:
             router_grading: AgentResult | None = None
@@ -1014,6 +1011,7 @@ async def orchestrate_grading(
         final = await comparator_agent(
             grading_a,
             grading_b,
+            umbral=float(settings.PHOTO_GRADING_ARBITRATION_SCORE_DELTA),
             model=comparator_model,
             force_arbitration=bool(
                 arbiter_invoked
@@ -1098,6 +1096,7 @@ async def orchestrate_grading(
         # Si ambos fallaron o faltan bloques de evidencia, marcar revisión docente
         requiere_revision = (
             final.requiere_revision_docente
+            or grading_a.requiere_revision_docente
             or verifier_requires_review
             or grading_a.nota_sugerida is None
             or grading_b.nota_sugerida is None

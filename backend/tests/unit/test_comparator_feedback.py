@@ -43,6 +43,27 @@ def test_consensus_deduplicates_equal_feedback() -> None:
     assert consolidated.feedback_estudiante == feedback
 
 
+def test_consensus_preserves_teacher_review_and_both_alerts_without_arbiter() -> None:
+    class NoArbiter:
+        async def chat(self, **_kwargs):
+            raise AssertionError("El consenso no requiere una tercera valoración")
+
+    primary = result(feedback="Revisa el razonamiento.", confidence=0.9, score=4.17)
+    primary.requiere_revision_docente = True
+    primary.alertas = ["Comprobar la respuesta de referencia."]
+    primary.componentes = [{"clave": "pregunta:1", "puntaje": 1.17}]
+    verifier = result(feedback="", confidence=0.88, score=4.17)
+    verifier.alertas = ["La imagen necesita revisión docente."]
+
+    consolidated = asyncio.run(comparator_agent(primary, verifier, client=NoArbiter()))
+
+    assert consolidated.nota_sugerida == 4.17
+    assert consolidated.modelo == "consenso"
+    assert consolidated.requiere_revision_docente is True
+    assert consolidated.alertas == primary.alertas + verifier.alertas
+    assert consolidated.componentes == primary.componentes
+
+
 def test_failed_verifier_returns_primary_for_review_without_extra_call(monkeypatch) -> None:
     calls: list[dict] = []
 

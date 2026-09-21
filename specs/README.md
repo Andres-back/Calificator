@@ -53,6 +53,7 @@ actualizar la especificación propietaria, su plan y sus tareas; no debe crear d
 | 053 | [Capacidades correctas por etapa de IA](053-fix-ai-stage-capabilities/spec.md) | hotfix de capacidades persistidas en routing IA | configuración administrativa existente; sin rutas nuevas | `ai_feature_routing`; migración de datos sin cambios de esquema | [#105](https://github.com/Andres-back/Calificator/issues/105) |
 | 054 | [Digitalización confiable y señales de revisión visibles](054-fix-digitalization-review-signals/spec.md) | digitalización y calificación explicable | workspace docente existente; sin rutas nuevas | resultado JSON y desglose existentes; sin migración | [#107](https://github.com/Andres-back/Calificator/issues/107) |
 | 055 | [Respuesta estructurada y rutas rápidas](055-fast-json-routing/spec.md) | clientes OpenCode, verificación y configuración operativa | rutas existentes de digitalización y calificación; sin rutas nuevas | configuración IA y resultados existentes; sin migración | [#109](https://github.com/Andres-back/Calificator/issues/109) |
+| 056 | [Arbitraje solo cuando aporta valor](056-avoid-redundant-arbitration/spec.md) | orquestación y consolidación de calificaciones | revisión docente existente; sin rutas nuevas | resultado JSON existente; sin migración | [#111](https://github.com/Andres-back/Calificator/issues/111) |
 
 ## Reglas de propiedad
 
@@ -123,6 +124,11 @@ actualizar la especificación propietaria, su plan y sus tareas; no debe crear d
 
 - [055-fast-json-routing](055-fast-json-routing/spec.md), [issue #109](https://github.com/Andres-back/Calificator/issues/109): detecta salidas truncadas, compacta la verificación independiente y evita una tercera inferencia cuando falta una nota verificadora.
 - Conserva el desglose y la nota principal como sugerencia pendiente de revisión; no fabrica consenso ni publica automáticamente.
+
+## Hotfix 056: arbitraje solo cuando aporta valor
+
+- [056-avoid-redundant-arbitration](056-avoid-redundant-arbitration/spec.md), [issue #111](https://github.com/Andres-back/Calificator/issues/111): evita una tercera valoración ante notas cercanas y confiables, conserva alertas y revisión docente, y mantiene arbitraje por discrepancia o baja confianza.
+- La nota continúa basada en la suma por pregunta y nunca se publica automáticamente.
 
 ## Inventario técnico global
 

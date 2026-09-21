@@ -1407,7 +1407,11 @@ async def comparator_agent(
             criterios=grading_a.criterios or grading_b.criterios,
             componentes=grading_a.componentes or grading_b.componentes,
             alertas=grading_a.alertas + grading_b.alertas,
-            requiere_revision_docente=False, proveedor="comparator", modelo="consenso",
+            requiere_revision_docente=(
+                grading_a.requiere_revision_docente or grading_b.requiere_revision_docente
+            ),
+            proveedor="comparator",
+            modelo="consenso",
             raw_output={"discrepancia": False, "diferencia": diff, "nota_final": nota_final,
                         "grading_a": {"nota": grading_a.nota_sugerida, "modelo": grading_a.modelo},
                         "grading_b": {"nota": grading_b.nota_sugerida, "modelo": grading_b.modelo}},

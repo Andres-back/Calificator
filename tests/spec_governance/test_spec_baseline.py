@@ -54,6 +54,7 @@ ALL_SPECS = {
     "053-fix-ai-stage-capabilities",
     "054-fix-digitalization-review-signals",
     "055-fast-json-routing",
+    "056-avoid-redundant-arbitration",
 }
 OWNED_SPECS = {
     name
