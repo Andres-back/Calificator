@@ -139,6 +139,10 @@ actualizar la especificación propietaria, su plan y sus tareas; no debe crear d
 
 - [058-grade-sum-review](058-grade-sum-review/spec.md), [issue #115](https://github.com/Andres-back/Calificator/issues/115): cuando todas las preguntas tienen puntaje, la sugerencia muestra su suma aunque existan alertas; la revisión docente sigue obligatoria y un componente pendiente nunca se toma como cero.
 
+## Hotfix 059: discrepancias del verificador por pregunta
+
+- [059-verifier-component-contract](059-verifier-component-contract/spec.md), [issue #117](https://github.com/Andres-back/Calificator/issues/117): interpreta el formato compacto del verificador y evita presentar un cero como seguro si otra valoración o una alerta específica contradice el puntaje o la clave.
+
 ## Inventario técnico global
 
 - [Inventario canónico JSON](system-inventory/current.json)

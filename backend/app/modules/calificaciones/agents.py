@@ -1111,6 +1111,23 @@ VERIFIER_COMPONENT_FIELDS = frozenset({
 })
 
 
+def _normalize_verifier_components(items: list, blueprint: dict) -> list[dict]:
+    expected = {item["clave"] for item in build_component_scaffold(blueprint)}
+    normalized: list[dict] = []
+    for item in items:
+        if not isinstance(item, dict):
+            continue
+        raw_key = str(item.get("clave") or item.get("componente_id") or "")
+        key = raw_key if raw_key in expected else f"pregunta:{raw_key}"
+        if key not in expected:
+            continue
+        value = {**item, "clave": key}
+        if value.get("puntaje") is None and "puntos_obtenidos" in item:
+            value["puntaje"] = item["puntos_obtenidos"]
+        normalized.append(sanitize_component_payload(value))
+    return normalized
+
+
 async def verification_agent(
     ctx: AgentContext,
     primary: AgentResult,
@@ -1186,11 +1203,7 @@ async def verification_agent(
             nota_sugerida=float(raw_score),
             confianza=float(parsed.get("confianza", 0.5)),
             feedback_estudiante="",
-            componentes=[
-                sanitize_component_payload(item)
-                for item in components
-                if isinstance(item, dict)
-            ],
+            componentes=_normalize_verifier_components(components, ctx.blueprint),
             alertas=[str(item) for item in parsed.get("alertas", [])],
             requiere_revision_docente=bool(parsed.get("requiere_arbitraje", False)),
             proveedor="opencode",

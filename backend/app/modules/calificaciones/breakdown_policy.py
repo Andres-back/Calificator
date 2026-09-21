@@ -93,11 +93,13 @@ def component_consensus(
     objective_validation: list[dict] | None = None,
     *,
     graphic_uncertain_questions: list[int | str] | None = None,
+    verifier_disputed_questions: list[int | str] | None = None,
 ) -> tuple[list[dict], list[str]]:
     by_a = {str(item.get("clave")): item for item in components_a or []}
     by_b = {str(item.get("clave")): item for item in components_b or []}
     objective = {str(item.get("numero")): item for item in objective_validation or []}
     graphic_uncertain = {str(number) for number in graphic_uncertain_questions or []}
+    verifier_disputed = {str(number) for number in verifier_disputed_questions or []}
     result: list[dict] = []
     blockers: list[str] = []
     for base in scaffold:
@@ -127,7 +129,18 @@ def component_consensus(
             state = states[0] if len(set(states)) == 1 else ("revision_pendiente" if material else "parcial")
             explanation = str((a or b or {}).get("explicacion") or "Valoración automática sin explicación suficiente.")
             orientation = str((a or b or {}).get("orientacion_mejora") or "")
-            review, origin = material or state in PENDING_STATES, "consenso_ia"
+            pending_evaluator = any(item in PENDING_STATES for item in states)
+            review, origin = material or pending_evaluator or state in PENDING_STATES, "consenso_ia"
+            if material or pending_evaluator:
+                score = None
+                # Conserva la causa concreta si ambos coinciden (p. ej. ilegible).
+                state = states[0] if pending_evaluator and len(set(states)) == 1 else "revision_pendiente"
+                explanation = "La valoración de esta respuesta no tiene consenso verificable; el docente debe revisar la evidencia y la clave."
+                orientation = "Revisa esta respuesta junto con tu docente."
+        if str(base.get("numero")) in verifier_disputed and not (validated and validated.get("correcta") is True):
+            score, state, origin, review = None, "revision_pendiente", "control_verificador", True
+            explanation = "El verificador cuestionó el puntaje o la clave de esta pregunta; no se confirma un cero automático."
+            orientation = "El docente debe contrastar el enunciado, la clave y la evidencia original."
         if review:
             blockers.append(f"componente_pendiente:{key}")
         if str(base.get("numero")) in graphic_uncertain:
