@@ -52,6 +52,7 @@ ALL_SPECS = {
     "051-nota-desglose-autoridad",
     "052-glm-independent-review",
     "053-fix-ai-stage-capabilities",
+    "054-fix-digitalization-review-signals",
 }
 OWNED_SPECS = {
     name
