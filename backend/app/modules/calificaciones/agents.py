@@ -14,7 +14,11 @@ from app.core.logging import get_logger
 from app.modules.analytics.usage_logger import log_ai_usage
 from app.modules.calificaciones.breakdown_policy import build_component_scaffold, sanitize_component_payload
 from app.services.image_preprocessing import prepare_orientation_variants
-from app.services.llm_router import LLMRouter
+from app.services.llm_router import (
+    LLMOutputTruncatedError,
+    LLMRouter,
+    opencode_thinking_control,
+)
 from app.services.opencode_request import new_opencode_session_id, opencode_headers
 from app.services.vision_service import interpret_image
 from app.services.vision_extractor import VisionExtractionError, VisionExtractor
@@ -67,14 +71,6 @@ def _opencode_protocol(model: str) -> str:
     if model_id.startswith(OPEN_CODE_ANTHROPIC_MODEL_PREFIXES):
         return "messages"
     return "chat_completions"
-
-
-def _opencode_thinking(model: str) -> dict[str, str] | None:
-    """Keep the experimental vision model from spending the output budget on hidden reasoning."""
-    model_id = model.rsplit("/", 1)[-1].lower()
-    if model_id == "deepseek-v4-flash-vision-exp":
-        return {"type": "disabled"}
-    return None
 
 
 def _to_anthropic_content(content: Any) -> Any:
@@ -405,7 +401,7 @@ class OpenCodeClient:
                 "max_tokens": max_tokens,
                 "temperature": temperature,
             }
-            thinking = _opencode_thinking(model)
+            thinking = opencode_thinking_control(model)
             if thinking:
                 body["thinking"] = thinking
             if json_mode:
@@ -455,6 +451,24 @@ class OpenCodeClient:
                 if protocol == "messages":
                     data = _normalize_anthropic_response(data)
                 usage = data.get("usage", {}) or {}
+                finish_reason = str(
+                    ((data.get("choices") or [{}])[0].get("finish_reason")) or ""
+                ).lower()
+                if finish_reason in {"length", "max_tokens"}:
+                    await self._log_call(
+                        stage=_canonical_stage(stage),
+                        model=model,
+                        status="failed",
+                        started_at=attempt_started,
+                        attempt_number=attempt_number,
+                        input_tokens=usage.get("input_tokens") or usage.get("prompt_tokens"),
+                        output_tokens=usage.get("output_tokens") or usage.get("completion_tokens"),
+                        image_count=image_count,
+                        error_code="output_budget_exhausted",
+                    )
+                    raise LLMOutputTruncatedError(
+                        f"OpenCode terminó la respuesta por límite de salida ({finish_reason})"
+                    )
                 await self._log_call(
                     stage=_canonical_stage(stage),
                     model=model,
@@ -466,6 +480,8 @@ class OpenCodeClient:
                     image_count=image_count,
                 )
                 return data
+            except LLMOutputTruncatedError:
+                raise
             except Exception as exc:
                 if (
                     _is_retryable_transport_error(exc)
@@ -1068,27 +1084,30 @@ por componente, la suma y la nota propuesta sean compatibles con la evidencia ex
 
 Evaluación: {evaluacion_nombre}
 Nota máxima: {nota_maxima}
-Preguntas y referencias: {preguntas}
-Validación objetiva local: {objective_validation}
-Componentes esperados: {componentes_esperados}
+Referencias y puntos por componente: {componentes_esperados}
+Coincidencias objetivas ya comprobadas: {objective_validation}
 Respuesta extraída del estudiante:
 {student_response}
 
 Propuesta principal:
 {primary_result}
 
-Devuelve SOLO JSON válido y compacto:
+Devuelve SOLO JSON válido y compacto. Incluye exactamente un elemento por componente esperado,
+máximo 3 alertas de hasta 160 caracteres, sin copiar enunciados ni añadir explicaciones fuera del JSON:
 {{
   "nota_sugerida": <número entre 0 y la nota máxima>,
   "confianza": <0 a 1>,
   "componentes_verificados": [
     {{"componente_id": "...", "puntos_obtenidos": 0, "puntos_maximos": 0, "estado": "correcta|parcial|incorrecta|no_evaluable"}}
   ],
-  "discrepancias": ["..."],
   "requiere_arbitraje": true|false,
   "alertas": ["..."]
 }}
 """
+
+VERIFIER_COMPONENT_FIELDS = frozenset({
+    "clave", "respuesta_estudiante", "puntaje", "puntos_maximos", "estado", "confianza"
+})
 
 
 async def verification_agent(
@@ -1107,7 +1126,6 @@ async def verification_agent(
     prompt = VERIFIER_PROMPT_TEMPLATE.format(
         evaluacion_nombre=ctx.evaluacion_nombre,
         nota_maxima=ctx.nota_maxima,
-        preguntas=json.dumps(ctx.blueprint.get("preguntas", []), ensure_ascii=False),
         objective_validation=json.dumps(ctx.objective_validation, ensure_ascii=False),
         componentes_esperados=json.dumps(
             [
@@ -1121,7 +1139,15 @@ async def verification_agent(
             {
                 "nota_sugerida": primary.nota_sugerida,
                 "confianza": primary.confianza,
-                "componentes": primary.componentes,
+                "componentes": [
+                    {
+                        key: value
+                        for key, value in item.items()
+                        if key in VERIFIER_COMPONENT_FIELDS
+                    }
+                    for item in primary.componentes
+                    if isinstance(item, dict)
+                ],
             },
             ensure_ascii=False,
         ),
@@ -1340,19 +1366,27 @@ async def comparator_agent(
             error="all_graders_failed",
         )
 
-    if (score_a is None or score_b is None) and not force_arbitration:
+    if score_a is None or score_b is None:
         valid = grading_b if score_a is None else grading_a
+        missing_name = "evaluador principal" if score_a is None else "verificador independiente"
         return AgentResult(
             nota_sugerida=valid.nota_sugerida,
             confianza=valid.confianza,
             feedback_estudiante=valid.feedback_estudiante,
             criterios=valid.criterios,
             componentes=valid.componentes,
-            alertas=valid.alertas + ["Solo uno de los evaluadores produjo una nota."],
+            alertas=valid.alertas + [
+                f"El {missing_name} no produjo una nota válida; revisa la sugerencia antes de publicarla."
+            ],
             requiere_revision_docente=True,
             proveedor="comparator",
             modelo="resultado_parcial",
-            raw_output={"discrepancia": True, "resultado_parcial": True},
+            raw_output={
+                "discrepancia": True,
+                "resultado_parcial": True,
+                "evaluador_faltante": missing_name,
+                "error": grading_a.error if score_a is None else grading_b.error,
+            },
         )
 
     valid_scores = [float(score) for score in (score_a, score_b) if score is not None]

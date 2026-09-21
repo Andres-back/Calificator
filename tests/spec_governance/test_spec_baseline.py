@@ -53,6 +53,7 @@ ALL_SPECS = {
     "052-glm-independent-review",
     "053-fix-ai-stage-capabilities",
     "054-fix-digitalization-review-signals",
+    "055-fast-json-routing",
 }
 OWNED_SPECS = {
     name

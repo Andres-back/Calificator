@@ -43,23 +43,13 @@ def test_consensus_deduplicates_equal_feedback() -> None:
     assert consolidated.feedback_estudiante == feedback
 
 
-def test_forced_arbitration_calls_pro_once_when_verifier_failed(monkeypatch) -> None:
+def test_failed_verifier_returns_primary_for_review_without_extra_call(monkeypatch) -> None:
     calls: list[dict] = []
 
     class FakeArbiterClient:
         async def chat(self, **kwargs):
             calls.append(kwargs)
-            return {
-                "choices": [{
-                    "message": {
-                        "content": {
-                            "nota_final": 4.0,
-                            "discrepancia": True,
-                            "feedback_integrado": "Se requiere revisión docente.",
-                        }
-                    }
-                }]
-            }
+            raise AssertionError("No debe iniciar un arbitraje si falta la nota verificadora")
 
         async def close(self) -> None:
             return None
@@ -86,7 +76,8 @@ def test_forced_arbitration_calls_pro_once_when_verifier_failed(monkeypatch) -> 
     )
 
     assert consolidated.nota_sugerida == 4.0
-    assert len(calls) == 1
-    assert calls[0]["model"] == "deepseek-v4-pro"
-    assert calls[0]["max_tokens"] == 1024
-    assert calls[0]["stage"] == "targeted_recheck"
+    assert calls == []
+    assert consolidated.modelo == "resultado_parcial"
+    assert consolidated.requiere_revision_docente is True
+    assert consolidated.componentes == primary.componentes
+    assert any("verificador" in alert.lower() for alert in consolidated.alertas)
