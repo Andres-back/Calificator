@@ -133,7 +133,8 @@ def component_consensus(
             review, origin = material or pending_evaluator or state in PENDING_STATES, "consenso_ia"
             if material or pending_evaluator:
                 score = None
-                state = "revision_pendiente"
+                # Conserva la causa concreta si ambos coinciden (p. ej. ilegible).
+                state = states[0] if pending_evaluator and len(set(states)) == 1 else "revision_pendiente"
                 explanation = "La valoración de esta respuesta no tiene consenso verificable; el docente debe revisar la evidencia y la clave."
                 orientation = "Revisa esta respuesta junto con tu docente."
         if str(base.get("numero")) in verifier_disputed and not (validated and validated.get("correcta") is True):
