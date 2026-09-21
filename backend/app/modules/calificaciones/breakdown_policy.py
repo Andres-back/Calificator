@@ -86,10 +86,18 @@ def sanitize_component_payload(value: dict) -> dict:
     clean["paginas"] = [page for page in (value.get("paginas") or []) if isinstance(page, int) and page > 0][:20]
     return clean
 
-def component_consensus(scaffold: list[dict], components_a: list[dict], components_b: list[dict], objective_validation: list[dict] | None = None) -> tuple[list[dict], list[str]]:
+def component_consensus(
+    scaffold: list[dict],
+    components_a: list[dict],
+    components_b: list[dict],
+    objective_validation: list[dict] | None = None,
+    *,
+    graphic_uncertain_questions: list[int | str] | None = None,
+) -> tuple[list[dict], list[str]]:
     by_a = {str(item.get("clave")): item for item in components_a or []}
     by_b = {str(item.get("clave")): item for item in components_b or []}
     objective = {str(item.get("numero")): item for item in objective_validation or []}
+    graphic_uncertain = {str(number) for number in graphic_uncertain_questions or []}
     result: list[dict] = []
     blockers: list[str] = []
     for base in scaffold:
@@ -122,6 +130,16 @@ def component_consensus(scaffold: list[dict], components_a: list[dict], componen
             review, origin = material or state in PENDING_STATES, "consenso_ia"
         if review:
             blockers.append(f"componente_pendiente:{key}")
+        if str(base.get("numero")) in graphic_uncertain:
+            score, state, origin, review = None, "no_evaluable", "control_evidencia", True
+            explanation = (
+                "No se pudo confirmar la parte dibujada de esta respuesta. "
+                "El texto extraído no demuestra que el dibujo esté ausente."
+            )
+            orientation = "El docente debe revisar la fotografía original y valorar los trazos visibles."
+            pending_blocker = f"componente_pendiente:{key}"
+            if pending_blocker not in blockers:
+                blockers.append(pending_blocker)
         pages: list[int] = []
         for item in (by_a.get(key), by_b.get(key)):
             for page in (item or {}).get("paginas", []) or []:
