@@ -1106,6 +1106,26 @@ def test_low_confidence_invokes_pro_arbiter(monkeypatch) -> None:
     assert result.raw_model_output["strategy"]["arbiter_reason"] == "low_confidence"
 
 
+def test_exact_score_threshold_still_requests_arbitration(monkeypatch) -> None:
+    monkeypatch.setattr(orchestrator.settings, "PHOTO_GRADING_ARBITRATION_SCORE_DELTA", 0.5)
+    primary = AgentResult(
+        nota_sugerida=4.0,
+        confianza=0.9,
+        feedback_estudiante="",
+        proveedor="test",
+        modelo="primary",
+    )
+    verifier = AgentResult(
+        nota_sugerida=4.5,
+        confianza=0.9,
+        feedback_estudiante="",
+        proveedor="test",
+        modelo="verifier",
+    )
+
+    assert orchestrator._arbitration_reason(primary, verifier) == "score_discrepancy"
+
+
 def test_oversized_context_is_graded_by_question_and_consolidated_once(monkeypatch) -> None:
     _configure_orchestrator(monkeypatch)
     monkeypatch.setattr(orchestrator.settings, "PHOTO_GRADING_CONTEXT_BUDGET_CHARS", 1000)
