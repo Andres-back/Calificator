@@ -137,3 +137,43 @@ def test_incomplete_breakdown_does_not_publish_partial_sum(monkeypatch):
     assert cal.nota_sugerida == 4.95
     assert cal.estado == "requiere_revision"
     assert cal.resultado_json["desglose"]["modo"] == "controlado"
+
+
+def test_verifier_alert_keeps_formula_but_requires_teacher_review(monkeypatch):
+    monkeypatch.setattr(
+        "app.modules.calificaciones.breakdown_service.settings.EXPLAINABLE_GRADING_GENERATION_ENABLED",
+        True,
+    )
+    cal = _calification()
+    blueprint = {
+        "nota_maxima": 5,
+        "preguntas": [{"numero": 1, "enunciado": "Calcula", "puntaje": 5}],
+        "respuestas_esperadas": [{"numero": 1, "respuesta": "20"}],
+    }
+    valuation = {
+        "clave": "pregunta:1", "respuesta_estudiante": "4.47", "puntaje": 0,
+        "estado": "incorrecta", "explicacion": "No coincide con la clave.", "paginas": [1],
+    }
+    raw = {
+        "grader_a": {"componentes": [valuation]},
+        "grader_b": {
+            "componentes": [valuation],
+            "alertas": ["Revisar la respuesta de la pregunta 1: 20 representa l²."],
+            "requiere_revision_docente": True,
+        },
+        "objective_validation": [],
+    }
+
+    breakdown = asyncio.run(create_automatic_breakdown(
+        FakeDB([None, None]), calificacion=cal, blueprint=blueprint,
+        raw_output=raw, pipeline_run_id="run-verifier-alert",
+    ))
+
+    assert breakdown is not None
+    assert float(breakdown.nota_final) == 0.0
+    assert breakdown.requiere_revision is True
+    assert any(
+        str(item).startswith("verificador_ia:")
+        for item in breakdown.bloqueos_json
+    )
+    assert cal.estado == "requiere_revision"

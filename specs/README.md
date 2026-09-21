@@ -51,6 +51,7 @@ actualizar la especificación propietaria, su plan y sus tareas; no debe crear d
 | 051 | [Suma verificable como nota sugerida](051-nota-desglose-autoridad/spec.md) | reconciliación entre desglose explicable y nota sugerida | workspace docente y confirmación de calificaciones | `calificaciones` y `calificacion_desgloses`; backfill de sugerencias no confirmadas | [#101](https://github.com/Andres-back/Calificator/issues/101) |
 | 052 | [Revisión independiente con GLM 5.3 Flash](052-glm-independent-review/spec.md) | calificaciones, visión, catálogo y routing IA | configuración administrativa existente; sin rutas nuevas | `ai_provider_models`, `ai_feature_routing`; sin tablas nuevas | [#103](https://github.com/Andres-back/Calificator/issues/103) |
 | 053 | [Capacidades correctas por etapa de IA](053-fix-ai-stage-capabilities/spec.md) | hotfix de capacidades persistidas en routing IA | configuración administrativa existente; sin rutas nuevas | `ai_feature_routing`; migración de datos sin cambios de esquema | [#105](https://github.com/Andres-back/Calificator/issues/105) |
+| 054 | [Digitalización confiable y señales de revisión visibles](054-fix-digitalization-review-signals/spec.md) | digitalización y calificación explicable | workspace docente existente; sin rutas nuevas | resultado JSON y desglose existentes; sin migración | [#107](https://github.com/Andres-back/Calificator/issues/107) |
 
 ## Reglas de propiedad
 
@@ -111,6 +112,11 @@ actualizar la especificación propietaria, su plan y sus tareas; no debe crear d
 
 - [051-nota-desglose-autoridad](051-nota-desglose-autoridad/spec.md), [issue #101](https://github.com/Andres-back/Calificator/issues/101): hace autoritativa la suma por pregunta cuando el desglose está completo y conserva cualquier diferencia con la nota global del modelo para auditoría.
 - No altera notas confirmadas, ajustadas o publicadas; alinea únicamente sugerencias automáticas pendientes y muestra la precisión necesaria para distinguir su resultado.
+
+## Hotfix 054: digitalización y revisión independiente visibles
+
+- [054-fix-digitalization-review-signals](054-fix-digitalization-review-signals/spec.md), [issue #107](https://github.com/Andres-back/Calificator/issues/107): separa extracción visual y estructuración textual, conserva alertas de GLM y evita mostrar consenso pleno cuando el verificador solicita revisión.
+- Mantiene la suma por pregunta y la decisión final docente; no corrige claves ni publica notas automáticamente.
 
 ## Inventario técnico global
 

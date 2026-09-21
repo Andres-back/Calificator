@@ -173,6 +173,18 @@ async def create_automatic_breakdown(
         list(grader_b.get("componentes") or []),
         list(raw_output.get("objective_validation") or []),
     )
+    verifier_alerts = [
+        " ".join(str(alert).split())[:1000]
+        for alert in grader_b.get("alertas") or []
+        if str(alert).strip()
+    ][:10]
+    if grader_b.get("requiere_revision_docente") or verifier_alerts:
+        if verifier_alerts:
+            blockers.extend(
+                f"verificador_ia:{alert}" for alert in verifier_alerts
+            )
+        else:
+            blockers.append("verificador_ia:El verificador independiente solicitó revisión docente.")
     sources_by_question: dict[str, list[dict]] = {}
     for source in raw_output.get("rag_sources_by_question") or []:
         if isinstance(source, dict) and source.get("pregunta") is not None:

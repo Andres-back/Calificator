@@ -25,6 +25,8 @@ from app.services.vision_service import interpret_image
 
 logger = get_logger(__name__)
 
+DIGITALIZATION_STRUCTURE_TASK = "digitalizacion.estructura"
+
 DOCX_MIME = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
 
 MAX_DIGITALIZATION_SIZE_BYTES = 20 * 1024 * 1024
@@ -969,7 +971,7 @@ async def _repair_missing_answers(
     if not missing:
         return structure
     repaired = await llm.generate_json(
-        "evaluacion_digitalizar",
+        DIGITALIZATION_STRUCTURE_TASK,
         REPAIR_KEY_PROMPT.format(
             numeros=", ".join(str(number) for number in missing),
             preguntas=json.dumps(questions, ensure_ascii=False),
@@ -1013,6 +1015,7 @@ async def detectar_estructura_evaluacion(
     stages = ai_config.get("stages") if isinstance(ai_config, dict) and isinstance(ai_config.get("stages"), dict) else {}
     structure_snapshot = stages.get("structure") or ai_config
     llm = LLMRouter(user_id=user_id, ai_config=structure_snapshot) if structure_snapshot is not None else LLMRouter(user_id=user_id)
+    llm.set_output_budget(settings.DIGITALIZATION_STRUCTURE_MAX_TOKENS)
     set_tracking = getattr(llm, "set_tracking", None)
     if callable(set_tracking):
         set_tracking(stage="structure")
@@ -1021,9 +1024,9 @@ async def detectar_estructura_evaluacion(
         nota_maxima=str(nota_maxima),
     )
     try:
-        result = await llm.generate_json("evaluacion_digitalizar", prompt)
+        result = await llm.generate_json(DIGITALIZATION_STRUCTURE_TASK, prompt)
     except Exception as exc:
-        logger.warning("OpenCode no pudo digitalizar la evaluación: %s", type(exc).__name__)
+        logger.warning("El modelo configurado no pudo estructurar la evaluación: %s", type(exc).__name__)
         local_structure = _build_local_digitalization_structure(contenido_texto)
         if local_structure:
             fallback_warnings = [

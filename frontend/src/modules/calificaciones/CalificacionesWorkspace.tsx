@@ -44,7 +44,7 @@ import { GradeBreakdown } from './components/GradeBreakdown';
 import { GradeComponentEditor } from './components/GradeComponentEditor';
 import { GradeGlobalAdjustmentEditor } from './components/GradeGlobalAdjustmentEditor';
 import { GradeBreakdownHistory } from './components/GradeBreakdownHistory';
-import { buildReviewTriage } from './review-triage/buildReviewTriage';
+import { buildReviewTriage, hasVerifierReviewSignals } from './review-triage/buildReviewTriage';
 import { ReviewTriagePanel } from './review-triage/ReviewTriagePanel';
 import { formatAIModelSource } from './aiPipelineLabels';
 import { effectiveGradeScore, formatGradeScore, gradePresentation, isGradeProcessing } from './gradePresentation';
@@ -145,6 +145,7 @@ function AIPipelineSummary({
   answerKeyIncomplete,
   timings,
   strategy,
+  verifierRequiresReview,
 }: {
   confianza: number | null;
   graderA: Record<string, unknown> | undefined;
@@ -154,6 +155,7 @@ function AIPipelineSummary({
   answerKeyIncomplete: boolean;
   timings?: Record<string, number>;
   strategy?: Record<string, unknown>;
+  verifierRequiresReview: boolean;
 }) {
   const [expanded, setExpanded] = useState(false);
 
@@ -171,6 +173,8 @@ function AIPipelineSummary({
     summary = { label: 'Error en análisis automático. Se requiere revisión docente.', tone: 'rose', icon: '⚠️' };
   } else if (discrepancia) {
     summary = { label: 'El verificador detectó diferencias y se solicitó arbitraje. Revisa los criterios.', tone: 'amber', icon: '⚡' };
+  } else if (verifierRequiresReview) {
+    summary = { label: 'Los modelos completaron la calificación, pero el verificador dejó observaciones para revisión docente.', tone: 'amber', icon: '⚠' };
   } else if (confianzaAlta) {
     summary = { label: 'La calificación y su verificación coincidieron. Confianza alta.', tone: 'emerald', icon: '✓' };
   } else if (confianzaMedia) {
@@ -432,8 +436,18 @@ function PanelDetalle({
   const evidencePage = Math.max(1, Math.min(cal.entrega_evidencia_paginas || 1, Number(detailParams.get('hoja')) || 1));
   const setEvidencePage = (page: number) => setDetailParams((previous) => { const next = new URLSearchParams(previous); next.set('hoja', String(page)); return next; }, { replace: true });
   const [mobileTab, setMobileTab] = useState<'evidencia' | 'revision'>('revision');
+  const pipeline = cal.resultado_json as Record<string, unknown>;
+  const graderB = pipeline?.grader_b as Record<string, unknown> | undefined;
+  const strategy = pipeline?.strategy as Record<string, unknown> | undefined;
+  const verifierAlerts = useMemo(() => Array.isArray(graderB?.alertas)
+    ? graderB.alertas.map((item) => String(item)).filter(Boolean)
+    : [], [graderB]);
+  const verifierRequiresReview = hasVerifierReviewSignals(graderB, strategy);
   const activeBreakdown = editingSnapshot ?? cal.desglose;
-  const reviewTriage = useMemo(() => activeBreakdown ? buildReviewTriage(activeBreakdown) : null, [activeBreakdown]);
+  const reviewTriage = useMemo(
+    () => activeBreakdown ? buildReviewTriage(activeBreakdown, verifierAlerts) : null,
+    [activeBreakdown, verifierAlerts],
+  );
   const selectedQuestion = activeBreakdown?.componentes.find((component) => component.id === detailParams.get('pregunta') || component.clave === detailParams.get('pregunta')) ?? activeBreakdown?.componentes[0];
   const selectQuestion = (componentId: string) => {
     const component = activeBreakdown?.componentes.find((item) => item.id === componentId || item.clave === componentId);
@@ -585,19 +599,19 @@ function PanelDetalle({
     onClose();
   }
   const estudiante = studentMap.get(cal.estudiante_id);
-  const pipeline = cal.resultado_json as Record<string, unknown>;
   const vision = pipeline?.vision as Record<string, unknown> | undefined;
   const graderA = pipeline?.grader_a as Record<string, unknown> | undefined;
-  const graderB = pipeline?.grader_b as Record<string, unknown> | undefined;
   const comparator = pipeline?.comparator as Record<string, unknown> | undefined;
   const timings = pipeline?.timings_ms as Record<string, number> | undefined;
-  const strategy = pipeline?.strategy as Record<string, unknown> | undefined;
   const answerKey = pipeline?.answer_key as Record<string, unknown> | undefined;
   const answerKeyIncomplete = answerKey?.complete === false;
   const evidenciaConsolidada = pipeline?.evidencia_consolidada as Record<string, unknown> | undefined;
   const secciones = evidenciaConsolidada?.secciones as Record<string, Record<string, unknown>> | undefined;
   const criterios = (graderA?.criterios ?? []) as Array<Record<string, unknown>>;
-  const alertas = (graderA?.alertas ?? []) as string[];
+  const alertas = [...new Set([
+    ...((graderA?.alertas ?? []) as string[]),
+    ...verifierAlerts,
+  ])];
   const evidenceUrl = cal.entrega_archivo_url;
   const evidencePages = Math.max(1, cal.entrega_evidencia_paginas || 1);
   const isPdfEvidence = Boolean(evidenceUrl) && (
@@ -855,6 +869,7 @@ function PanelDetalle({
             answerKeyIncomplete={answerKeyIncomplete}
             timings={timings}
             strategy={strategy}
+            verifierRequiresReview={verifierRequiresReview}
           />
         )}
 
@@ -922,7 +937,7 @@ function PanelDetalle({
         </Field>}
 
         {/* Alertas */}
-        {!cal.desglose && alertas.length > 0 && (
+        {alertas.length > 0 && (
           <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200">
             {alertas.map((a, i) => <p key={i}>⚠️ {a}</p>)}
           </div>
