@@ -998,6 +998,57 @@ def test_discrepancy_invokes_pro_arbiter_once(monkeypatch) -> None:
     assert result.raw_model_output["strategy"]["arbiter_reason"] == "score_discrepancy"
 
 
+def test_matching_scores_with_review_do_not_invoke_third_model(monkeypatch) -> None:
+    _configure_orchestrator(monkeypatch)
+    calls: list[str] = []
+
+    async def primary_grader(*_args, model: str, **_kwargs):
+        return AgentResult(
+            nota_sugerida=4.17,
+            confianza=0.91,
+            feedback_estudiante="Comprueba la clave de referencia.",
+            alertas=["Clave de referencia dudosa."],
+            proveedor="opencode",
+            modelo=model,
+            requiere_revision_docente=True,
+        )
+
+    async def matching_verifier(_ctx, _primary, *, model: str, **_kwargs):
+        return AgentResult(
+            nota_sugerida=4.17,
+            confianza=0.88,
+            feedback_estudiante="",
+            alertas=["Validar la respuesta con el docente."],
+            proveedor="opencode",
+            modelo=model,
+            requiere_revision_docente=True,
+            raw_output={"requiere_arbitraje": True},
+        )
+
+    async def local_comparator(first, second, *, force_arbitration=False, **_kwargs):
+        calls.append("arbiter" if force_arbitration else "local")
+        return await agents.comparator_agent(first, second, force_arbitration=force_arbitration)
+
+    monkeypatch.setattr(orchestrator, "grader_agent", primary_grader)
+    monkeypatch.setattr(orchestrator, "verification_agent", matching_verifier)
+    monkeypatch.setattr(orchestrator, "comparator_agent", local_comparator)
+
+    result = asyncio.run(orchestrator.orchestrate_grading(
+        object(),
+        evaluacion_id=uuid4(),
+        materia_id=uuid4(),
+        blueprint={"nombre": "Prueba", "nota_maxima": 5},
+        student_response_text="1. Respuesta",
+    ))
+
+    assert calls == ["local"]
+    assert result.raw_model_output["strategy"]["arbiter_invoked"] is False
+    assert result.raw_model_output["strategy"]["arbiter_reason"] is None
+    assert result.requiere_revision_docente is True
+    assert "Clave de referencia dudosa." in result.alertas
+    assert "Validar la respuesta con el docente." in result.alertas
+
+
 def test_low_confidence_invokes_pro_arbiter(monkeypatch) -> None:
     _configure_orchestrator(monkeypatch)
     comparator_calls: list[tuple[str, bool]] = []
