@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from decimal import Decimal
+import re
 from uuid import UUID
 
 from fastapi import HTTPException, status
@@ -16,6 +17,22 @@ from app.modules.calificaciones.models import Calificacion
 from app.modules.evaluaciones.models import Evaluacion
 from app.modules.users.models import User
 from app.shared.enums import CalificacionEstado
+
+
+_QUESTION_IN_ALERT = re.compile(r"\b(?:pregunta\s*|p\s*\.?\s*)(\d+)\b", re.IGNORECASE)
+_SCORE_CONFLICT_IN_ALERT = re.compile(
+    r"incorrect[ao]|incompatib\w*|contradic\w*|error\s+en\s+(?:la\s+)?clave|puntaje\s+0",
+    re.IGNORECASE,
+)
+
+
+def _verifier_disputed_questions(alerts: list[str]) -> list[str]:
+    return list(dict.fromkeys(
+        match.group(1)
+        for alert in alerts
+        if _SCORE_CONFLICT_IN_ALERT.search(alert)
+        for match in _QUESTION_IN_ALERT.finditer(alert)
+    ))
 
 
 async def get_active_breakdown(db: AsyncSession, calificacion_id: UUID, *, lock: bool = False) -> CalificacionDesglose | None:
@@ -167,6 +184,11 @@ async def create_automatic_breakdown(
         return None
     grader_a = dict(raw_output.get("grader_a") or {})
     grader_b = dict(raw_output.get("grader_b") or {})
+    verifier_alerts = [
+        " ".join(str(alert).split())[:1000]
+        for alert in grader_b.get("alertas") or []
+        if str(alert).strip()
+    ][:10]
     components, blockers = component_consensus(
         scaffold,
         list(grader_a.get("componentes") or []),
@@ -175,12 +197,8 @@ async def create_automatic_breakdown(
         graphic_uncertain_questions=list(
             raw_output.get("graphic_uncertain_questions") or []
         ),
+        verifier_disputed_questions=_verifier_disputed_questions(verifier_alerts),
     )
-    verifier_alerts = [
-        " ".join(str(alert).split())[:1000]
-        for alert in grader_b.get("alertas") or []
-        if str(alert).strip()
-    ][:10]
     if grader_b.get("requiere_revision_docente") or verifier_alerts:
         if verifier_alerts:
             blockers.extend(

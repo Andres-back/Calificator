@@ -3,7 +3,7 @@ from types import SimpleNamespace
 from uuid import uuid4
 
 from app.db.base import import_models
-from app.modules.calificaciones.breakdown_service import create_automatic_breakdown
+from app.modules.calificaciones.breakdown_service import _verifier_disputed_questions, create_automatic_breakdown
 
 import_models()
 
@@ -259,3 +259,49 @@ def test_complete_sum_does_not_replace_previous_teacher_decision(monkeypatch):
     assert cal.nota_sugerida == 4.2
     assert cal.nota_confirmada == 4.2
     assert cal.estado == "confirmada"
+
+
+def test_only_material_question_alerts_block_component_scores():
+    alerts = [
+        "P3 marcada incorrecta pero h²=525 coincide con la referencia; puntaje 0 incompatible",
+        "P1: redondeo aceptable, correcta",
+        "Suma de la propuesta no coincide con la recalculada",
+    ]
+
+    assert _verifier_disputed_questions(alerts) == ["3"]
+
+
+def test_verifier_key_conflict_does_not_persist_a_definitive_zero(monkeypatch):
+    monkeypatch.setattr(
+        "app.modules.calificaciones.breakdown_service.settings.EXPLAINABLE_GRADING_GENERATION_ENABLED",
+        True,
+    )
+    cal = _calification()
+    blueprint = {
+        "nota_maxima": 5,
+        "preguntas": [{"numero": 3, "enunciado": "Calcula la altura h", "puntaje": 5}],
+        "respuestas_esperadas": [{"numero": 3, "respuesta": "525"}],
+    }
+    zero = {
+        "clave": "pregunta:3", "respuesta_estudiante": "h²=525; h=√525≈22,91 cm",
+        "puntaje": 0, "estado": "incorrecta", "explicacion": "La clave es 525.",
+        "paginas": [1],
+    }
+    raw = {
+        "grader_a": {"componentes": [zero]},
+        "grader_b": {"componentes": [zero], "alertas": [
+            "P3 marcada incorrecta pero h²=525 coincide con la referencia; puntaje 0 incompatible",
+        ]},
+    }
+
+    breakdown = asyncio.run(create_automatic_breakdown(
+        FakeDB([None, None]), calificacion=cal, blueprint=blueprint,
+        raw_output=raw, pipeline_run_id="run-key-conflict",
+    ))
+
+    assert breakdown is not None
+    assert breakdown.componentes[0].puntos_obtenidos is None
+    assert breakdown.componentes[0].estado == "revision_pendiente"
+    assert breakdown.requiere_revision is True
+    assert cal.estado == "requiere_revision"
+    assert cal.nota_confirmada is None

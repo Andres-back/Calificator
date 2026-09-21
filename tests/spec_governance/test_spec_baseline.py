@@ -57,6 +57,7 @@ ALL_SPECS = {
     "056-avoid-redundant-arbitration",
     "057-drawn-answer-evidence",
     "058-grade-sum-review",
+    "059-verifier-component-contract",
 }
 OWNED_SPECS = {
     name

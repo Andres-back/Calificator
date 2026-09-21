@@ -581,6 +581,35 @@ def test_fast_verifier_uses_compact_output_budget() -> None:
     assert client.stage == "grading_secondary"
 
 
+def test_fast_verifier_maps_its_compact_component_contract() -> None:
+    class CompactVerifierClient:
+        async def chat(self, **_kwargs):
+            return {"choices": [{"message": {"content": {
+                "nota_sugerida": 5,
+                "confianza": 0.9,
+                "componentes_verificados": [{
+                    "componente_id": "pregunta:3",
+                    "puntos_obtenidos": 5,
+                    "puntos_maximos": 5,
+                    "estado": "correcta",
+                }],
+            }}}]}
+
+    context = AgentContext(
+        evaluacion_nombre="Prueba",
+        nota_maxima=5,
+        blueprint={"nota_maxima": 5, "preguntas": [{"numero": 3, "enunciado": "Altura", "puntaje": 5}]},
+        student_response_text="h²=525; h=√525",
+    )
+    primary = AgentResult(nota_sugerida=0, confianza=0.8, feedback_estudiante="", componentes=[])
+
+    result = asyncio.run(agents.verification_agent(context, primary, client=CompactVerifierClient()))
+
+    assert result.componentes[0]["clave"] == "pregunta:3"
+    assert result.componentes[0]["puntaje"] == 5
+    assert result.componentes[0]["estado"] == "correcta"
+
+
 def test_graders_receive_the_complete_extracted_response() -> None:
     tail = "FINAL_RELEVANTE_DESPUES_DEL_LIMITE"
     response = ("a" * 5_100) + tail
