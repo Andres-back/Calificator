@@ -17,3 +17,25 @@ def test_objective_correct_answer_always_gets_full_points():
     components, _ = component_consensus(scaffold, [{"clave": "pregunta:1", "puntaje": 2, "estado": "parcial"}], [], [{"numero": "1", "correcta": True, "respuesta_detectada": "12"}])
     assert components[0]["puntos_obtenidos"] == Decimal("5")
     assert components[0]["origen"] == "objetivo"
+
+
+def test_unconfirmed_graphic_cannot_keep_a_model_assigned_zero():
+    scaffold = build_component_scaffold({
+        "nota_maxima": 5,
+        "preguntas": [{"numero": 4, "enunciado": "Dibuja una tangente", "puntaje": 5}],
+    })
+    valuation = [{
+        "clave": "pregunta:4",
+        "puntaje": 0,
+        "estado": "sin_respuesta",
+        "explicacion": "No se observa dibujo en el texto extraído.",
+    }]
+
+    components, blockers = component_consensus(
+        scaffold, valuation, valuation, graphic_uncertain_questions=[4],
+    )
+
+    assert components[0]["puntos_obtenidos"] is None
+    assert components[0]["estado"] == "no_evaluable"
+    assert components[0]["requiere_revision"] is True
+    assert "componente_pendiente:pregunta:4" in blockers

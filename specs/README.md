@@ -130,6 +130,11 @@ actualizar la especificación propietaria, su plan y sus tareas; no debe crear d
 - [056-avoid-redundant-arbitration](056-avoid-redundant-arbitration/spec.md), [issue #111](https://github.com/Andres-back/Calificator/issues/111): evita una tercera valoración ante notas cercanas y confiables, conserva alertas y revisión docente, y mantiene arbitraje por discrepancia o baja confianza.
 - La nota continúa basada en la suma por pregunta y nunca se publica automáticamente.
 
+## Hotfix 057: evidencia de respuestas dibujadas
+
+- [057-drawn-answer-evidence](057-drawn-answer-evidence/spec.md), [issue #113](https://github.com/Andres-back/Calificator/issues/113): conserva la descripción literal de trazos por pregunta y página; una descripción visual incierta exige revisión docente y no prueba que la respuesta esté en blanco.
+- Mantiene la suma por pregunta, las respuestas textuales y la publicación exclusivamente docente.
+
 ## Inventario técnico global
 
 - [Inventario canónico JSON](system-inventory/current.json)

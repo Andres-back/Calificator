@@ -125,6 +125,87 @@ def test_normalization_preserves_objective_and_open_answers_without_grading() ->
     assert [answer.answer for answer in result.answers] == ["B", "explicación propia"]
     assert not hasattr(result, "score")
 
+
+def test_drawn_answer_is_sent_with_text_question_and_page(monkeypatch: pytest.MonkeyPatch) -> None:
+    extractor = VisionExtractor()
+
+    async def one(item, _total, _blueprint, _purpose):
+        return VisionPageResult(
+            page=item[0],
+            status="extracted",
+            page_text="4. Todas las líneas que están dibujadas tienen que aparecer.",
+            answers=[ExtractedAnswer(
+                question_number=4,
+                answer="Todas las líneas que están dibujadas tienen que aparecer.",
+                visual_description="Una recta toca el círculo pequeño en A y otro círculo toca al primero en B.",
+                confidence=0.9,
+                page=1,
+            )],
+        )
+
+    monkeypatch.setattr(extractor, "_one", one)
+    result = asyncio.run(extractor.extract(
+        _image(), "image/jpeg",
+        blueprint={"preguntas": [{"numero": 4, "enunciado": "Dibuja una tangente en A y otro círculo tangente en B."}]},
+    ))
+    payload = result.legacy_payload()
+
+    assert result.requires_review is False
+    assert payload["respuestas_detectadas"][0]["pagina"] == 1
+    assert "Todas las líneas" in payload["respuestas_detectadas"][0]["respuesta"]
+    assert "Una recta toca" in payload["respuestas_detectadas"][0]["respuesta"]
+    assert "Pregunta 4 (página 1)" in payload["texto_extraido"]
+    assert payload["preguntas_graficas_inciertas"] == []
+
+
+def test_unconfirmed_drawing_is_not_equated_with_a_blank_answer(monkeypatch: pytest.MonkeyPatch) -> None:
+    extractor = VisionExtractor()
+
+    async def one(item, _total, _blueprint, _purpose):
+        return VisionPageResult(
+            page=item[0],
+            status="extracted",
+            page_text="4. Todas las líneas que están dibujadas tienen que aparecer.",
+            answers=[ExtractedAnswer(
+                question_number=4,
+                answer="Todas las líneas que están dibujadas tienen que aparecer.",
+                confidence=0.95,
+                page=1,
+                blank=True,
+            )],
+        )
+
+    monkeypatch.setattr(extractor, "_one", one)
+    result = asyncio.run(extractor.extract(
+        _image(), "image/jpeg",
+        blueprint={"preguntas": [{"numero": 4, "enunciado": "Dibuja una tangente en A."}]},
+    ))
+    payload = result.legacy_payload()
+
+    assert result.requires_review is True
+    assert result.answers[0].blank is False
+    assert result.answers[0].needs_review is True
+    assert result.pages[0].status == "requires_review"
+    assert payload["preguntas_graficas_inciertas"] == [4]
+    assert "NO confirma ausencia del dibujo" in payload["texto_extraido"]
+
+
+def test_graphic_only_response_is_legible_without_written_text() -> None:
+    page = _normalize({
+        "page_text": "",
+        "answers": [{
+            "question_number": 4,
+            "answer": None,
+            "visual_description": "Se observa una recta que toca el círculo en A.",
+            "confidence": 0.8,
+            "blank": False,
+        }],
+    }, page=2, size=100)
+
+    assert page.answers[0].legible is True
+    assert page.answers[0].visual_description == "Se observa una recta que toca el círculo en A."
+    assert page.answers[0].blank is False
+
 def test_json_parser_repairs_only_safe_wrappers_and_trailing_comma() -> None:
     parsed, repaired = _parse_json('```json\n{"answers": [],}\n```')
     assert parsed == {"answers": []}

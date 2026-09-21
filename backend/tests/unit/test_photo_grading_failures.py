@@ -147,6 +147,66 @@ def test_empty_extraction_never_grades_artificial_no_response(monkeypatch) -> No
     assert result.motivo_revision == "vision_failed"
 
 
+def test_uncertain_drawing_forces_review_and_reaches_grader_as_uncertain(monkeypatch) -> None:
+    _configure_orchestrator(monkeypatch)
+    seen_text: list[str] = []
+
+    async def uncertain_vision(*_args, **_kwargs):
+        return AgentResult(
+            nota_sugerida=None,
+            confianza=0.8,
+            feedback_estudiante="",
+            raw_output={
+                "usable": True,
+                "texto_extraido": (
+                    "Pregunta 4: evidencia gráfica NO confirmada; "
+                    "el texto extraído NO confirma ausencia del dibujo."
+                ),
+                "respuestas_detectadas": [{
+                    "pregunta": 4,
+                    "respuesta": "Texto manuscrito",
+                    "requiere_revision": True,
+                }],
+                "preguntas_graficas_inciertas": [4],
+                "vision_extraction": {"requires_review": True},
+            },
+            requiere_revision_docente=True,
+        )
+
+    async def grader(ctx, **_kwargs):
+        seen_text.append(ctx.student_response_text)
+        return AgentResult(
+            nota_sugerida=0,
+            confianza=0.95,
+            feedback_estudiante="Pendiente.",
+            componentes=[{
+                "clave": "pregunta:4",
+                "puntaje": 0,
+                "estado": "sin_respuesta",
+            }],
+            requiere_revision_docente=False,
+        )
+
+    monkeypatch.setattr(orchestrator, "vision_agent", uncertain_vision)
+    monkeypatch.setattr(orchestrator, "grader_agent", grader)
+
+    result = asyncio.run(orchestrator.orchestrate_grading(
+        object(),
+        evaluacion_id=uuid4(),
+        materia_id=uuid4(),
+        blueprint={
+            "nota_maxima": 5,
+            "preguntas": [{"numero": 4, "enunciado": "Dibuja una tangente", "puntaje": 5}],
+        },
+        image_bytes=b"image",
+    ))
+
+    assert any("NO confirma ausencia" in text for text in seen_text)
+    assert result.requiere_revision_docente is True
+    assert result.raw_model_output["graphic_uncertain_questions"] == [4]
+    assert any("evidencia dibujada" in alert for alert in result.alertas)
+
+
 def test_objective_validation_accepts_equivalent_answers() -> None:
     blueprint = {
         "nota_maxima": 5,

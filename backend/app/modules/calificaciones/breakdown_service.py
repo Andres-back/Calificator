@@ -172,6 +172,9 @@ async def create_automatic_breakdown(
         list(grader_a.get("componentes") or []),
         list(grader_b.get("componentes") or []),
         list(raw_output.get("objective_validation") or []),
+        graphic_uncertain_questions=list(
+            raw_output.get("graphic_uncertain_questions") or []
+        ),
     )
     verifier_alerts = [
         " ".join(str(alert).split())[:1000]

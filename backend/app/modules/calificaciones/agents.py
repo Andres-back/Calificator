@@ -826,6 +826,7 @@ REGLAS OBLIGATORIAS:
 - Si recibes varias páginas, califica el trabajo completo en conjunto y respeta su orden.
 - Une procedimientos que continúan en otra página y no dupliques preguntas visibles en fotografías solapadas.
 - Si recibes una imagen girada, oriéntala mentalmente antes de leer y distingue siempre el ejercicio impreso de la respuesta manuscrita.
+- Una descripción visual identificada como dibujo observado es evidencia de la respuesta. Si la evidencia gráfica está NO confirmada, no concluyas que falta el dibujo a partir de la transcripción: marca la pregunta como no_evaluable y solicita revisión de la fotografía.
 
 ## Contexto adicional (RAG)
 {rag_context}

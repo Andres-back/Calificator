@@ -1083,6 +1083,18 @@ async def orchestrate_grading(
         coverage_requires_review = bool(
             coverage_analysis and coverage_analysis.get("requiere_revision")
         )
+        graphic_uncertain_questions = (
+            list(vision_result.raw_output.get("preguntas_graficas_inciertas") or [])
+            if vision_result and isinstance(vision_result.raw_output, dict)
+            else []
+        )
+        if graphic_uncertain_questions:
+            final.alertas = list(dict.fromkeys([
+                *final.alertas,
+                "No se pudo confirmar la evidencia dibujada de las preguntas "
+                f"{', '.join(map(str, graphic_uncertain_questions))}; revisa la fotografía "
+                "antes de asignar puntaje.",
+            ]))
         if coverage_requires_review:
             missing = coverage_analysis.get("faltantes", [])
             final.alertas = [
@@ -1103,6 +1115,7 @@ async def orchestrate_grading(
             or objective_floor_applied
             or coverage_requires_review
             or vision_requires_review
+            or bool(graphic_uncertain_questions)
         )
 
         # Los fallos dobles ya se manejaron antes del comparador.
@@ -1157,6 +1170,7 @@ async def orchestrate_grading(
                 "arbiter_reason": arbiter_reason,
             },
             "evidence_coverage": coverage_analysis,
+            "graphic_uncertain_questions": graphic_uncertain_questions,
             "rag_context": rag_context_status,
             "rag_sources_by_question": rag_provenance,
             "vision": {
