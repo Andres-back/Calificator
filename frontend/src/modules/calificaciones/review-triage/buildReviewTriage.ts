@@ -22,6 +22,27 @@ export type ReviewTriageSummary = {
 
 export const REVIEW_CONFIDENCE_THRESHOLD = 0.7;
 
+export function hasVerifierReviewSignals(
+  grader: Record<string, unknown> | undefined,
+  strategy?: Record<string, unknown>,
+): boolean {
+  const alerts = Array.isArray(grader?.alertas)
+    ? grader.alertas.filter((item) => String(item).trim())
+    : [];
+  return Boolean(
+    grader?.requiere_revision_docente
+    || alerts.length
+    || strategy?.arbiter_reason === 'verifier_requested'
+  );
+}
+
+function questionNumbersInAlert(alert: string): Set<string> {
+  const numbers = new Set<string>();
+  const pattern = /preguntas?\s*(?:n[úu]mero\s*)?(\d+)/gi;
+  for (const match of alert.matchAll(pattern)) numbers.add(match[1]);
+  return numbers;
+}
+
 function numeric(value: unknown): number | null {
   const parsed = typeof value === 'number' ? value : Number(value);
   return Number.isFinite(parsed) ? parsed : null;
@@ -81,19 +102,32 @@ export function classifyReviewComponent(component: GradeComponentData): ReviewTr
 }
 
 function humanizeBlocker(blocker: string): string {
+  if (blocker.startsWith('verificador_ia:')) {
+    return `Verificador independiente: ${blocker.slice('verificador_ia:'.length)}`;
+  }
   return blocker.replace(/^componente_pendiente:/, 'Componente pendiente: ').replace(/_/g, ' ');
 }
 
-export function buildReviewTriage(breakdown: GradeBreakdownData): ReviewTriageSummary {
+export function buildReviewTriage(breakdown: GradeBreakdownData, verifierAlerts: string[] = []): ReviewTriageSummary {
+  const targetedNumbers = new Set(verifierAlerts.flatMap((alert) => [...questionNumbersInAlert(alert)]));
   const items = [...breakdown.componentes]
     .sort((a, b) => a.orden - b.orden)
-    .map(classifyReviewComponent);
+    .map(classifyReviewComponent)
+    .map((item) => {
+      if (item.level === 'blocked' || !item.component.numero || !targetedNumbers.has(String(item.component.numero))) return item;
+      const reasons = [...item.reasons];
+      if (!reasons.some((reason) => reason.code === 'verifier_alert')) {
+        reasons.push({ code: 'verifier_alert', label: 'El verificador independiente pide revisar esta pregunta' });
+      }
+      return { ...item, level: 'attention' as const, reasons };
+    });
   const safe = items.filter((item) => item.level === 'safe');
   const attention = items.filter((item) => item.level === 'attention');
   const blocked = items.filter((item) => item.level === 'blocked');
   const globalBlockers = [
     ...(breakdown.cobertura_estado !== 'completa' ? [`Cobertura ${breakdown.cobertura_estado}`] : []),
     ...(breakdown.bloqueos ?? []).filter((blocker) => !blocker.startsWith('componente_pendiente:')).map(humanizeBlocker),
+    ...verifierAlerts.filter((alert) => questionNumbersInAlert(alert).size === 0),
   ];
   return {
     items,

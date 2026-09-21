@@ -291,6 +291,9 @@ def test_detector_repairs_missing_answers_before_normalizing(monkeypatch) -> Non
                 return first
             return {"respuestas_esperadas": [{"numero": 5, "respuesta": "24 lápices"}]}
 
+        def set_output_budget(self, max_tokens):
+            assert max_tokens == 8192
+
     monkeypatch.setattr(digitalize_service, "LLMRouter", FakeRouter)
     result = asyncio.run(
         digitalize_service.detectar_estructura_evaluacion(
@@ -300,7 +303,7 @@ def test_detector_repairs_missing_answers_before_normalizing(monkeypatch) -> Non
         )
     )
 
-    assert calls == ["evaluacion_digitalizar", "evaluacion_digitalizar"]
+    assert calls == ["digitalizacion.estructura", "digitalizacion.estructura"]
     assert len(result["respuestas_esperadas"]) == 7
     assert result["respuestas_esperadas"][4]["respuesta"] == "24 lápices"
 
@@ -312,6 +315,9 @@ def test_detector_uses_local_math_fallback_when_opencode_is_limited(monkeypatch)
 
         async def generate_json(self, task_type, prompt):
             raise RuntimeError("rate limited")
+
+        def set_output_budget(self, max_tokens):
+            assert max_tokens == 8192
 
     monkeypatch.setattr(digitalize_service, "LLMRouter", FailingRouter)
     extracted_text = """Evaluación Grado 5.º
@@ -341,6 +347,44 @@ D) 1+50-20x3÷2
     assert answers[2].startswith("B)")
     assert answers[3] == "3.141"
     assert any("recuperación local" in warning for warning in result["advertencias"])
+
+
+def test_detector_honors_structure_stage_snapshot_and_output_budget(monkeypatch) -> None:
+    captured: dict[str, object] = {}
+
+    class FakeRouter:
+        def __init__(self, user_id=None, ai_config=None) -> None:
+            captured["user_id"] = user_id
+            captured["ai_config"] = ai_config
+
+        def set_output_budget(self, max_tokens):
+            captured["max_tokens"] = max_tokens
+
+        async def generate_json(self, task_type, prompt):
+            captured["task_type"] = task_type
+            return _structure()
+
+    structure_route = {
+        "primary": {"provider": "groq", "model": "llama-3.3-70b-versatile"},
+    }
+    monkeypatch.setattr(digitalize_service, "LLMRouter", FakeRouter)
+
+    result = asyncio.run(digitalize_service.detectar_estructura_evaluacion(
+        uuid4(),
+        "Evaluación completa con siete preguntas",
+        nota_maxima=Decimal("5"),
+        ai_config={
+            "stages": {
+                "extraction": {"primary": {"provider": "open_code", "model": "deepseek-v4-flash-vision-exp"}},
+                "structure": structure_route,
+            },
+        },
+    ))
+
+    assert captured["ai_config"] == structure_route
+    assert captured["task_type"] == "digitalizacion.estructura"
+    assert captured["max_tokens"] == 8192
+    assert len(result["preguntas"]) == 7
 
 
 def test_local_verification_corrects_objective_math_answers() -> None:

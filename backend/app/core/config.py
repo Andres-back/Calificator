@@ -80,6 +80,7 @@ class Settings(BaseSettings):
     OPEN_CODE_DIGITALIZATION_MODEL: str = "deepseek-v4-flash"
     OPEN_CODE_DIGITALIZATION_TIMEOUT_SECONDS: int = 60
     OPEN_CODE_DIGITALIZATION_MAX_TOKENS: int = 3072
+    DIGITALIZATION_STRUCTURE_MAX_TOKENS: int = 8192
     # Compatibilidad con despliegues anteriores; ya no cancela el job.
     DIGITALIZATION_TOTAL_TIMEOUT_SECONDS: int = 180
     OPEN_CODE_TIMEOUT_SECONDS: int = 45

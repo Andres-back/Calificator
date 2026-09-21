@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { GradeBreakdownData, GradeComponentData } from '@/types/api';
-import { buildReviewTriage, classifyReviewComponent } from './buildReviewTriage';
+import { buildReviewTriage, classifyReviewComponent, hasVerifierReviewSignals } from './buildReviewTriage';
 
 const component = (overrides: Partial<GradeComponentData> = {}): GradeComponentData => ({
   id: 'p1', clave: 'pregunta:1', orden: 0, tipo: 'pregunta', numero: '1', titulo: 'Pregunta 1',
@@ -76,5 +76,27 @@ describe('buildReviewTriage', () => {
     const result = buildReviewTriage({ ...breakdown([component()]), cobertura_estado: 'incompleta', bloqueos: ['hoja_faltante'] });
     expect(result.counts.safe).toBe(1);
     expect(result.globalBlockers).toEqual(expect.arrayContaining(['Cobertura incompleta', 'hoja faltante']));
+  });
+
+  it('envía a atención las preguntas nombradas por el verificador y conserva alertas generales', () => {
+    const result = buildReviewTriage(breakdown([
+      component({ id: 'p1', numero: '1', orden: 0 }),
+      component({ id: 'p2', numero: '2', orden: 1 }),
+      component({ id: 'p3', numero: '3', orden: 2 }),
+    ]), [
+      'Revisar la respuesta de la pregunta 3 y la pregunta 2.',
+      'La clave general requiere validación docente.',
+    ]);
+
+    expect(result.counts).toEqual({ safe: 1, attention: 2, blocked: 0 });
+    expect(result.attention.map((item) => item.component.numero)).toEqual(['2', '3']);
+    expect(result.globalBlockers).toContain('La clave general requiere validación docente.');
+  });
+
+  it('detecta revisión del verificador aunque la nota numérica coincida', () => {
+    expect(hasVerifierReviewSignals({ alertas: ['Revisar clave'] }, {})).toBe(true);
+    expect(hasVerifierReviewSignals({ requiere_revision_docente: true }, {})).toBe(true);
+    expect(hasVerifierReviewSignals({}, { arbiter_reason: 'verifier_requested' })).toBe(true);
+    expect(hasVerifierReviewSignals({}, { arbiter_reason: null })).toBe(false);
   });
 });

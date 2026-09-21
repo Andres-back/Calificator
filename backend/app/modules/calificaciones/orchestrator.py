@@ -1049,6 +1049,19 @@ async def orchestrate_grading(
                 "El árbitro no devolvió datos estructurados; se conservó el resultado seguro disponible.",
             ]
             final.requiere_revision_docente = True
+        verifier_alerts = [
+            str(alert).strip()
+            for alert in grading_b.alertas
+            if str(alert).strip()
+        ]
+        final.alertas = list(dict.fromkeys([
+            *grading_a.alertas,
+            *verifier_alerts,
+            *final.alertas,
+        ]))
+        verifier_requires_review = bool(
+            grading_b.requiere_revision_docente or verifier_alerts
+        )
         # ── Paso 5: Armado del resultado final ───────────────────────
         nota_maxima = Decimal(str(blueprint.get("nota_maxima", 5)))
         if final.nota_sugerida is None:
@@ -1085,6 +1098,7 @@ async def orchestrate_grading(
         # Si ambos fallaron o faltan bloques de evidencia, marcar revisión docente
         requiere_revision = (
             final.requiere_revision_docente
+            or verifier_requires_review
             or grading_a.nota_sugerida is None
             or grading_b.nota_sugerida is None
             or objective_floor_applied
@@ -1162,6 +1176,8 @@ async def orchestrate_grading(
                 "tiempo_ms": grading_a.tiempo_ms,
                 "criterios": grading_a.criterios,
                 "componentes": grading_a.componentes,
+                "alertas": grading_a.alertas,
+                "requiere_revision_docente": grading_a.requiere_revision_docente,
                 "error_type": "grader_error" if grading_a.error else None,
             },
             "grader_b": {
@@ -1172,6 +1188,8 @@ async def orchestrate_grading(
                 "tiempo_ms": grading_b.tiempo_ms,
                 "criterios": grading_b.criterios,
                 "componentes": grading_b.componentes,
+                "alertas": verifier_alerts,
+                "requiere_revision_docente": grading_b.requiere_revision_docente,
                 "error_type": "grader_error" if grading_b.error else None,
             },
             "comparator": {
