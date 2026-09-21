@@ -253,6 +253,13 @@ async def create_automatic_breakdown(
         and not breakdown.requiere_revision
         and not human_decision
     )
+    # Las alertas mantienen la revisión docente, pero no deben dejar una nota
+    # global distinta de la suma cuando todas las preguntas sí tienen puntaje.
+    complete_scored_sum = bool(
+        state == "completa"
+        and all(item["puntos_obtenidos"] is not None for item in components)
+        and not human_decision
+    )
     trace = {
         "id": str(breakdown.id),
         "version": version,
@@ -270,9 +277,9 @@ async def create_automatic_breakdown(
     result["desglose"] = trace
     result.setdefault("primera_sugerencia", breakdown.procedencia_json["primera_sugerencia"])
     calificacion.resultado_json = result
-    if authoritative:
+    if complete_scored_sum:
         calificacion.nota_sugerida = breakdown.nota_final
-    elif breakdown.requiere_revision and not human_decision:
+    if breakdown.requiere_revision and not human_decision:
         calificacion.estado = CalificacionEstado.REQUIERE_REVISION.value
     return breakdown
 

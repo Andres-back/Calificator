@@ -177,3 +177,85 @@ def test_verifier_alert_keeps_formula_but_requires_teacher_review(monkeypatch):
         for item in breakdown.bloqueos_json
     )
     assert cal.estado == "requiere_revision"
+    assert float(cal.nota_sugerida) == 0.0
+
+
+def test_complete_sum_replaces_global_score_even_with_review_alerts(monkeypatch):
+    monkeypatch.setattr(
+        "app.modules.calificaciones.breakdown_service.settings.EXPLAINABLE_GRADING_GENERATION_ENABLED",
+        True,
+    )
+    cal = _calification()
+    cal.nota_sugerida = 4.17
+    blueprint = {
+        "nota_maxima": 5,
+        "preguntas": [
+            {"numero": number, "enunciado": f"Pregunta {number}", "puntaje": score}
+            for number, score in [(1, 1.67), (2, 1.67), (3, 0.83), (4, 0.83)]
+        ],
+    }
+    components = [
+        {
+            "clave": f"pregunta:{number}", "respuesta_estudiante": "Respuesta visible",
+            "puntaje": score, "estado": "correcta", "explicacion": "Evidencia comprobada.",
+            "paginas": [1],
+        }
+        for number, score in [(1, 1.67), (2, 1.67), (3, 0.83), (4, 0.83)]
+    ]
+    raw = {
+        "grader_a": {"componentes": components},
+        "grader_b": {
+            "componentes": components,
+            "alertas": ["La nota global no coincide con los componentes."],
+            "requiere_revision_docente": True,
+        },
+        "evidence_coverage": {"requiere_revision": True},
+    }
+
+    breakdown = asyncio.run(create_automatic_breakdown(
+        FakeDB([None, None]), calificacion=cal, blueprint=blueprint,
+        raw_output=raw, pipeline_run_id="run-complete-alerted",
+    ))
+
+    assert breakdown is not None
+    assert float(breakdown.nota_final) == 5.0
+    assert float(cal.nota_sugerida) == 5.0
+    assert cal.estado == "requiere_revision"
+    assert cal.nota_confirmada is None
+    assert cal.resultado_json["desglose"]["modo"] == "controlado"
+    assert cal.resultado_json["desglose"]["nota_modelo_global"] == 4.17
+
+
+def test_complete_sum_does_not_replace_previous_teacher_decision(monkeypatch):
+    monkeypatch.setattr(
+        "app.modules.calificaciones.breakdown_service.settings.EXPLAINABLE_GRADING_GENERATION_ENABLED",
+        True,
+    )
+    cal = _calification()
+    cal.nota_sugerida = 4.2
+    cal.nota_confirmada = 4.2
+    cal.revisado_por_docente = True
+    cal.estado = "confirmada"
+    blueprint = {
+        "nota_maxima": 5,
+        "preguntas": [{"numero": 1, "enunciado": "Respuesta", "puntaje": 5}],
+    }
+    valuation = {
+        "clave": "pregunta:1", "respuesta_estudiante": "Respuesta", "puntaje": 5,
+        "estado": "correcta", "explicacion": "Correcta.", "paginas": [1],
+    }
+    raw = {
+        "grader_a": {"componentes": [valuation]},
+        "grader_b": {"componentes": [valuation], "alertas": ["Revisar"]},
+    }
+
+    breakdown = asyncio.run(create_automatic_breakdown(
+        FakeDB([None, None]), calificacion=cal, blueprint=blueprint,
+        raw_output=raw, pipeline_run_id="run-after-human-decision",
+    ))
+
+    assert breakdown is not None
+    assert float(breakdown.nota_final) == 5.0
+    assert cal.nota_sugerida == 4.2
+    assert cal.nota_confirmada == 4.2
+    assert cal.estado == "confirmada"

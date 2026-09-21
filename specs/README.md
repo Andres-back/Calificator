@@ -135,6 +135,10 @@ actualizar la especificación propietaria, su plan y sus tareas; no debe crear d
 - [057-drawn-answer-evidence](057-drawn-answer-evidence/spec.md), [issue #113](https://github.com/Andres-back/Calificator/issues/113): conserva la descripción literal de trazos por pregunta y página; una descripción visual incierta exige revisión docente y no prueba que la respuesta esté en blanco.
 - Mantiene la suma por pregunta, las respuestas textuales y la publicación exclusivamente docente.
 
+## Hotfix 058: coherencia de nota sugerida bajo revisión
+
+- [058-grade-sum-review](058-grade-sum-review/spec.md), [issue #115](https://github.com/Andres-back/Calificator/issues/115): cuando todas las preguntas tienen puntaje, la sugerencia muestra su suma aunque existan alertas; la revisión docente sigue obligatoria y un componente pendiente nunca se toma como cero.
+
 ## Inventario técnico global
 
 - [Inventario canónico JSON](system-inventory/current.json)

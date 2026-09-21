@@ -56,6 +56,7 @@ ALL_SPECS = {
     "055-fast-json-routing",
     "056-avoid-redundant-arbitration",
     "057-drawn-answer-evidence",
+    "058-grade-sum-review",
 }
 OWNED_SPECS = {
     name
