@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Activity, Bot, ChevronDown, Cpu, Search, ShieldCheck } from 'lucide-react';
 import { Badge, Card, Field, Input, Select } from '@/components/ui';
-import type { AIFunctionControl, AIModel, AIProvider, FeatureRouting } from '../../api';
+import type { AIFunctionControl, AIModel, AIProvider, AIStageControl, FeatureRouting } from '../../api';
 
 function compatibleModels(models: AIModel[], provider: string, capability: string) {
   return models.filter((model) => model.provider_id === provider && model.active && model.capabilities.includes(capability));
@@ -37,6 +37,29 @@ function routeForStage(stage: AIFunctionControl['stages'][number], features: Fea
 
 function routeText(provider?: string | null, model?: string | null) {
   return provider ? `${provider} · ${model || 'modelo del proveedor'}` : 'No aplica';
+}
+
+function GradingPipelineSummary({ stages }: { stages: AIStageControl[] }) {
+  const extraction = stages.find((stage) => stage.stage_id === 'extraction')?.effective;
+  const verification = stages.find((stage) => stage.stage_id === 'grading_secondary')?.effective;
+  const arbitration = stages.find((stage) => stage.stage_id === 'targeted_recheck')?.effective;
+  if (!extraction && !verification && !arbitration) return null;
+
+  return (
+    <div className="rounded-xl border border-brand-200 bg-brand-50/60 p-4 text-sm dark:border-brand-500/30 dark:bg-brand-500/10">
+      <p className="font-bold">Ruta institucional de calificación</p>
+      <div className="mt-2 grid gap-2 sm:grid-cols-3">
+        {extraction && <p><span className="block text-xs font-semibold text-muted">Lectura visual</span>{routeText(extraction.provider, extraction.model)}</p>}
+        {verification && <p><span className="block text-xs font-semibold text-muted">Segundo evaluador</span>{routeText(verification.provider, verification.model)}</p>}
+        {arbitration && <p><span className="block text-xs font-semibold text-muted">Árbitro ante discrepancias</span>{routeText(arbitration.provider, arbitration.model)}</p>}
+      </div>
+      {extraction?.fallback_provider && (
+        <p className="mt-3 border-t border-brand-200 pt-2 text-xs text-muted dark:border-brand-500/30">
+          Si falla la lectura visual, se intenta {routeText(extraction.fallback_provider, extraction.fallback_model)}. Esta contingencia no reemplaza al segundo evaluador ni al árbitro.
+        </p>
+      )}
+    </div>
+  );
 }
 
 export function FunctionsSection({
@@ -83,6 +106,7 @@ export function FunctionsSection({
             <ChevronDown className="h-5 w-5 shrink-0 text-muted transition-transform group-open:rotate-180" aria-hidden="true" />
           </summary>
           <div className="grid gap-3 border-t border-border p-3 sm:p-5">
+            {item.function_id === 'calificacion' && <GradingPipelineSummary stages={item.stages} />}
             {item.stages.map((stage) => {
               const route = routeForStage(stage, features);
               const supportedProviders = stage.supported_providers ?? [];
@@ -170,7 +194,7 @@ export function FunctionsSection({
                   )}
 
                   <div className="grid gap-2 md:grid-cols-3">
-                    <div className="rounded-lg bg-surface-2 p-3"><span className="flex items-center gap-1 text-xs font-bold uppercase tracking-wide text-muted"><Bot className="h-3.5 w-3.5" /> Guardado</span><p className="mt-1 break-words text-sm font-semibold">{routeText(stage.configured?.provider, stage.configured?.model)}</p><p className="mt-1 text-xs text-muted">Versión {stage.configured?.config_version ?? 'no registrada'}{stage.configured?.fallback_provider ? ` · Respaldo: ${routeText(stage.configured.fallback_provider, stage.configured.fallback_model)}` : ''}</p></div>
+                    <div className="rounded-lg bg-surface-2 p-3"><span className="flex items-center gap-1 text-xs font-bold uppercase tracking-wide text-muted"><Bot className="h-3.5 w-3.5" /> Guardado</span><p className="mt-1 break-words text-sm font-semibold">{routeText(stage.configured?.provider, stage.configured?.model)}</p><p className="mt-1 text-xs text-muted">Versión {stage.configured?.config_version ?? 'no registrada'}{stage.configured?.fallback_provider ? ` · Alternativa si falla esta etapa: ${routeText(stage.configured.fallback_provider, stage.configured.fallback_model)}` : ''}</p></div>
                     <div className="rounded-lg bg-surface-2 p-3"><span className="flex items-center gap-1 text-xs font-bold uppercase tracking-wide text-muted"><ShieldCheck className="h-3.5 w-3.5" /> Efectivo</span><p className="mt-1 break-words text-sm font-semibold">{routeText(stage.effective?.provider, stage.effective?.model)}</p><p className="mt-1 text-xs text-muted">Origen: {stage.effective?.origin || 'institucional'} · Versión {stage.effective?.config_version ?? 'no registrada'}</p></div>
                     <div className="rounded-lg bg-surface-2 p-3"><span className="flex items-center gap-1 text-xs font-bold uppercase tracking-wide text-muted"><Activity className="h-3.5 w-3.5" /> Último observado</span><p className="mt-1 break-words text-sm font-semibold">{stage.observed ? routeText(stage.observed.provider, stage.observed.model) : 'No registrado'}</p><p className="mt-1 text-xs text-muted">{stage.observed ? `Versión ${stage.observed.config_version ?? 'no registrada'}${stage.observed.fallback_used ? ' · Usó respaldo' : ''}` : 'Aún no hay una ejecución trazable.'}</p></div>
                   </div>
