@@ -6,7 +6,7 @@ Pipeline:
   3. Un verificador compacto comprueba puntajes y formula
   4. DeepSeek V4 Pro arbitra solo discrepancias, baja confianza o fallos
 
-La imagen se procesa una sola vez; los modelos textuales reciben únicamente evidencia normalizada.
+La imagen se extrae una vez y acompana al evaluador y verificador cuando admiten vision.
 """
 from __future__ import annotations
 
@@ -45,6 +45,7 @@ from app.modules.rag.context_builder import (
     build_question_context_for_grading,
     format_question_context_as_text,
 )
+from app.services.ai_model_discovery import model_supports_vision
 
 logger = get_logger(__name__)
 
@@ -135,7 +136,11 @@ async def _run_grader_cascade(
         last_result = await grader_agent(
             ctx,
             model=model,
-            multimodal=multimodal,
+            multimodal=bool(
+                multimodal
+                and ctx.image_bytes
+                and model_supports_vision(model)
+            ),
             client=client,
             timeout=timeout,
             max_attempts=max_attempts,
@@ -169,7 +174,7 @@ async def _run_grader_until_complete(
     return await _run_grader_cascade(
         ctx,
         models=_ordered_unique_models(*models),
-        multimodal=False,
+        multimodal=bool(ctx.image_bytes),
         client=client,
         timeout=None,
         max_attempts=max(1, int(settings.PHOTO_GRADING_MODEL_MAX_ATTEMPTS)),
@@ -286,6 +291,46 @@ def merge_detected_answers(
         if item:
             merged.append(item)
     return merged
+
+
+def format_structured_visual_answers(answers: list[dict]) -> str:
+    """Hace explicita la correspondencia pregunta-respuesta sin inferir contenido."""
+    lines: list[str] = []
+    for item in answers:
+        if not isinstance(item, dict):
+            continue
+        number = item.get("pregunta", item.get("numero"))
+        if number is None:
+            continue
+        page = item.get("pagina")
+        page_label = (
+            f" (pagina {page})"
+            if isinstance(page, int) and page > 0
+            else ""
+        )
+        if item.get("legible", True) is False or item.get("requiere_revision", False):
+            answer = "[ilegible o ambigua; requiere revision]"
+        elif item.get("sin_respuesta", False) or item.get("blank", False):
+            answer = "[sin respuesta]"
+        else:
+            answer = str(item.get("respuesta") or "").strip()
+            if not answer:
+                continue
+        lines.append(f"P{number}{page_label}: {answer}")
+    if not lines:
+        return ""
+    return "=== EVIDENCIA VISUAL ESTRUCTURADA ===\n" + "\n".join(lines)
+
+
+def _all_components_claim_absence(result: AgentResult) -> bool:
+    components = [item for item in result.componentes if isinstance(item, dict)]
+    if not components:
+        return False
+    absent_states = {"sin_respuesta", "no_evaluable", "ilegible"}
+    return all(
+        str(item.get("estado") or "") in absent_states
+        for item in components
+    )
 
 
 def build_objective_validation(
@@ -768,6 +813,9 @@ async def orchestrate_grading(
                     and answer.get("legible", True)
                     and not answer.get("requiere_revision", False)
                 ]
+                structured_visual_text = format_structured_visual_answers(
+                    physical_answers
+                )
                 coverage_analysis = _evidence_coverage(
                     blueprint,
                     vision_result.raw_output,
@@ -781,6 +829,12 @@ async def orchestrate_grading(
                     )
                 else:
                     texto_extraido = physical_text or online_text
+                if structured_visual_text:
+                    texto_extraido = (
+                        f"{texto_extraido.strip()}\n\n{structured_visual_text}"
+                        if texto_extraido.strip()
+                        else structured_visual_text
+                    )
                 objective_validation = build_objective_validation(
                     blueprint,
                     merge_detected_answers(
@@ -857,7 +911,7 @@ async def orchestrate_grading(
             rag_context=rag_context,
             student_response_text=texto_extraido.strip(),
             objective_validation=objective_validation,
-            image_bytes=None,
+            image_bytes=image_bytes,
             image_mime=image_mime_for_grading,
         )
         grading_contexts = partition_grading_context(
@@ -905,6 +959,7 @@ async def orchestrate_grading(
                         client=verification_client,
                         timeout=None,
                         max_attempts=max(1, int(settings.PHOTO_GRADING_MODEL_MAX_ATTEMPTS)),
+                        multimodal=bool(partition.image_bytes),
                     ))
             grading_a = merge_partition_results(
                 primary_parts,
@@ -952,6 +1007,7 @@ async def orchestrate_grading(
                     1,
                     int(settings.PHOTO_GRADING_MODEL_MAX_ATTEMPTS),
                 ),
+                multimodal=bool(ctx_grading.image_bytes),
             )
             arbiter_reason = _arbitration_reason(grading_a, grading_b)
             arbiter_invoked = (
@@ -1005,6 +1061,33 @@ async def orchestrate_grading(
                     alertas=["Los evaluadores de IA no pudieron completar la calificacion."],
                     raw_output=failure_details,
                 )
+
+        if (
+            physical_answers
+            and _all_components_claim_absence(grading_a)
+            and _all_components_claim_absence(grading_b)
+        ):
+            logger.warning(
+                "grading.visual_answers_discarded",
+                extra={
+                    "pipeline_run_id": pipeline_run_id,
+                    "detected_answer_count": len(physical_answers),
+                },
+            )
+            return _technical_failure_result(
+                blueprint,
+                "visual_answers_discarded",
+                "grading",
+                alertas=[
+                    "La vision encontro respuestas, pero los evaluadores no "
+                    "lograron asociarlas con seguridad. Requiere revision docente."
+                ],
+                raw_output={
+                    "orchestrator": "visual_answers_discarded",
+                    "pipeline_run_id": pipeline_run_id,
+                    "detected_answer_count": len(physical_answers),
+                },
+            )
 
         # El comparador solo hace una llamada externa cuando force_arbitration es
         # verdadero. En consenso cercano consolida localmente y termina de inmediato.

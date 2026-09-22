@@ -30,7 +30,17 @@ DISCOVERABLE_PROVIDERS = frozenset({
     "openai", "openai_image", "open_code", "groq", "ollama", "cloudflare_image",
 })
 SUPPORTED_CAPABILITIES = frozenset({"text", "vision", "image", "embedding"})
-KNOWN_MULTIMODAL_MODEL_PREFIXES = ("glm-5.3-flash",)
+KNOWN_MULTIMODAL_MODEL_PREFIXES = (
+    "glm-5.3-flash",
+    "qwen3.7-plus",
+    "qwen3.6-plus",
+    "mimo-v2.5",
+)
+
+
+def model_supports_vision(model_id: str) -> bool:
+    """Resuelve capacidad visual con la misma normalizacion del catalogo."""
+    return "vision" in _capabilities(str(model_id or ""), {})
 
 
 def _credential_for(provider: str, credentials: EffectiveAICredentials) -> str:

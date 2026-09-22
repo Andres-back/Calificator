@@ -22,6 +22,7 @@ from app.services.llm_router import (
 from app.services.opencode_request import new_opencode_session_id, opencode_headers
 from app.services.vision_service import interpret_image
 from app.services.vision_extractor import VisionExtractionError, VisionExtractor
+from app.services.ai_model_discovery import model_supports_vision
 
 logger = get_logger(__name__)
 
@@ -946,7 +947,7 @@ def partition_grading_context(
                 item for item in ctx.objective_validation
                 if str(item.get("numero")) == number
             ],
-            image_bytes=None,
+            image_bytes=ctx.image_bytes,
             image_mime=ctx.image_mime,
         ))
     return partitions
@@ -1135,8 +1136,9 @@ async def verification_agent(
     client: OpenCodeClient | None = None,
     timeout: int | None = None,
     max_attempts: int | None = None,
+    multimodal: bool = False,
 ) -> AgentResult:
-    """Valida el desglose principal con una salida compacta y sin reenviar la imagen."""
+    """Valida el desglose principal contrastando la evidencia disponible."""
     own_client = False
     if client is None:
         client = OpenCodeClient()
@@ -1172,16 +1174,27 @@ async def verification_agent(
     )
     started = time.monotonic()
     try:
-        raw = await client.chat(
-            model=model,
-            messages=[{"role": "user", "content": prompt}],
-            json_mode=True,
-            max_tokens=max(256, int(settings.PHOTO_GRADING_VERIFIER_MAX_TOKENS)),
-            temperature=0.1,
-            timeout=timeout,
-            max_attempts=max_attempts,
-            stage="grading_secondary",
-        )
+        request_options = {
+            "model": model,
+            "json_mode": True,
+            "max_tokens": max(256, int(settings.PHOTO_GRADING_VERIFIER_MAX_TOKENS)),
+            "temperature": 0.1,
+            "timeout": timeout,
+            "max_attempts": max_attempts,
+            "stage": "grading_secondary",
+        }
+        if multimodal and ctx.image_bytes and model_supports_vision(model):
+            raw = await client.chat_multimodal(
+                **request_options,
+                text=prompt,
+                image_bytes=ctx.image_bytes,
+                image_mime=ctx.image_mime,
+            )
+        else:
+            raw = await client.chat(
+                **request_options,
+                messages=[{"role": "user", "content": prompt}],
+            )
         elapsed_ms = int((time.monotonic() - started) * 1000)
         content = raw["choices"][0]["message"]["content"]
         parsed = _parse_json_content(content)
