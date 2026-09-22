@@ -143,6 +143,10 @@ actualizar la especificación propietaria, su plan y sus tareas; no debe crear d
 
 - [059-verifier-component-contract](059-verifier-component-contract/spec.md), [issue #117](https://github.com/Andres-back/Calificator/issues/117): interpreta el formato compacto del verificador y evita presentar un cero como seguro si otra valoración o una alerta específica contradice el puntaje o la clave.
 
+## Hotfix 060: claridad de proveedores en calificación
+
+- [060-admin-grading-route-clarity](060-admin-grading-route-clarity/spec.md), [issue #119](https://github.com/Andres-back/Calificator/issues/119): separa la contingencia de lectura visual en Ollama de la verificación y el arbitraje GLM en el panel administrador, sin cambiar rutas de IA ni notas.
+
 ## Inventario técnico global
 
 - [Inventario canónico JSON](system-inventory/current.json)

@@ -58,6 +58,7 @@ ALL_SPECS = {
     "057-drawn-answer-evidence",
     "058-grade-sum-review",
     "059-verifier-component-contract",
+    "060-admin-grading-route-clarity",
 }
 OWNED_SPECS = {
     name
