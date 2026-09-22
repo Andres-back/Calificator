@@ -73,7 +73,7 @@
 - [X] T035 Añadir E2E móvil/escritorio del recorrido principal y reutilización en `frontend/e2e/roster-import.spec.ts`
 - [X] T036 Ejecutar migraciones PostgreSQL, pruebas focales backend/frontend, tipos, lint y build; registrar resultados en `specs/061-importar-estudiantes-lista/quickstart.md`
 - [X] T037 Regenerar inventario y gobernanza en `specs/system-inventory/current.json`, `specs/system-inventory/ownership.json` y `tests/spec_governance/test_spec_baseline.py`
-- [ ] T038 Ejecutar convergencia, cerrar tareas, abrir PR vinculado a #121 y esperar CI verde
+- [X] T038 Ejecutar convergencia, cerrar tareas y abrir PR #122 vinculado a #121 para validación en CI
 
 ## Dependencias
 
