@@ -35,6 +35,7 @@ JOB_FEATURES = {
     "calificacion_entrega": "calificacion_foto",
     "rag_ingest": "rag",
     "evaluacion_digitalizacion": "evaluacion_digitalizar",
+    "importacion_estudiantes": "importacion_estudiantes.extraccion",
 }
 
 
@@ -323,6 +324,16 @@ def dispatch_persisted_job(job: dict[str, Any]) -> bool:
                 "nota_maxima": str(payload["nota_maxima"]),
                 "modalidad": str(payload["modalidad"]),
             },
+            queue="digitalization",
+        )
+        return True
+
+    if job_type == "importacion_estudiantes":
+        if not user_id or not payload.get("lote_id"):
+            return False
+        celery_app.send_task(
+            "tasks.extract_roster_import",
+            kwargs={"job_id": job_id, "lote_id": str(payload["lote_id"])},
             queue="digitalization",
         )
         return True

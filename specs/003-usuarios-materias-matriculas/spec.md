@@ -35,9 +35,12 @@ Como equipo, necesito actualizar estos artefactos cuando cambie el comportamient
 - **FR-006**: Los errores NO DEBEN exponer secretos ni datos ajenos.
 - **FR-007**: Contratos y rutas DEBEN estar trazados en contracts/interfaces.md.
 - **FR-008**: Todo cambio futuro DEBE actualizar especificación, plan, tareas y pruebas.
+- **FR-009**: Una lista fotografiada solo DEBE producir un borrador hasta que el docente confirme explícitamente sus filas.
+- **FR-010**: Las cuentas internas creadas por un docente DEBEN exigir cambio de clave inicial y DEBEN poder reutilizarse explícitamente en otras materias del mismo docente.
 
 ### Entidades clave
 - **User**: identidad, estado y relaciones definidos por el dominio.
+- **Lote de importación**: borrador autorizado y temporal que conserva decisiones, no contraseñas en claro.
 - **Materia**: identidad, estado y relaciones definidos por el dominio.
 - **Matricula**: identidad, estado y relaciones definidos por el dominio.
 - **MateriaEstado**: identidad, estado y relaciones definidos por el dominio.

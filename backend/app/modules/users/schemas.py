@@ -51,6 +51,8 @@ class UserRead(BaseModel):
     email: EmailStr
     rol: UserRole
     estado: UserEstado
+    email_es_interno: bool = False
+    debe_cambiar_password: bool = False
     created_at: datetime
     updated_at: datetime
 

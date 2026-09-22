@@ -494,7 +494,7 @@ class AIConfigService:
                 )
         await self._db.execute(
             sql_text(
-                "UPDATE ai_feature_routing SET capability = CASE WHEN feature IN ('calificacion_foto','evaluacion_digitalizar','vision_ocr','calificacion.extraccion','digitalizacion.extraccion') THEN 'vision' WHEN feature IN ('generacion_imagenes','presentaciones.imagenes') THEN 'image' WHEN feature IN ('rag','embeddings') THEN 'embedding' ELSE 'text' END"
+                "UPDATE ai_feature_routing SET capability = CASE WHEN feature IN ('calificacion_foto','evaluacion_digitalizar','vision_ocr','calificacion.extraccion','digitalizacion.extraccion','importacion_estudiantes.extraccion') THEN 'vision' WHEN feature IN ('generacion_imagenes','presentaciones.imagenes') THEN 'image' WHEN feature IN ('rag','embeddings') THEN 'embedding' ELSE 'text' END"
             )
         )
         await self._db.execute(
@@ -581,7 +581,7 @@ class AIConfigService:
             for item in features:
                 if item["feature"] == candidate:
                     return item
-        if feature == "evaluacion_digitalizar":
+        if feature in {"evaluacion_digitalizar", "importacion_estudiantes.extraccion"}:
             return {
                 "feature": feature,
                 "primary_provider": "open_code",

@@ -33,10 +33,13 @@ export function AuthBootstrap({ children }: { children: React.ReactNode }) {
 }
 
 export function RequireAuth() {
-  const { status } = useAuth();
+  const { status, user } = useAuth();
   const location = useLocation();
   if (status !== 'authenticated') {
     return <Navigate to="/login" replace state={{ from: location }} />;
+  }
+  if (user?.debe_cambiar_password && location.pathname !== routes.initialPassword) {
+    return <Navigate to={routes.initialPassword} replace />;
   }
   return <Outlet />;
 }

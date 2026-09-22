@@ -15,6 +15,8 @@ export interface User {
   custom_role_name?: string | null;
   role_version?: number | null;
   auth_version?: number;
+  email_es_interno?: boolean;
+  debe_cambiar_password?: boolean;
   permissions?: string[];
   solicitud_docente_estado?: TeacherRequestStatus | null;
   solicitud_docente_solicitada_at?: string | null;

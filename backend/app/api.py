@@ -14,6 +14,7 @@ from app.modules.herramientas.router import router as herramientas_router
 from app.modules.imagenes.router import biblioteca_router as imagenes_biblioteca_router
 from app.modules.imagenes.router import router as imagenes_router
 from app.modules.impacto_tesis.router import router as impacto_router
+from app.modules.importacion_estudiantes.router import router as importacion_estudiantes_router
 from app.modules.jobs.router import router as jobs_router
 from app.modules.materias.router import router as materias_router
 from app.modules.matriculas.router import router as matriculas_router
@@ -46,6 +47,7 @@ api_router.include_router(xali_router)
 api_router.include_router(xali_refuerzos_router)
 api_router.include_router(reportes_router)
 api_router.include_router(impacto_router)
+api_router.include_router(importacion_estudiantes_router)
 api_router.include_router(jobs_router)
 api_router.include_router(admin_ai_config_router)
 api_router.include_router(admin_mail_router)

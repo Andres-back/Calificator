@@ -10,6 +10,7 @@ export const routes = {
   register: '/registro',
   requestPasswordReset: '/recuperar-contrasena',
   resetPassword: '/restablecer-contrasena',
+  initialPassword: '/app/cambiar-clave-inicial',
 
   /* ── Genéricas protegidas ── */
   app: '/app',

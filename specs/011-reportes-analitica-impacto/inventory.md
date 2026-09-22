@@ -49,8 +49,8 @@
 | endpoint | `POST:/impacto/estudios/{study_id}/observaciones` | authenticated | missing | `backend/app/modules/impacto_tesis/router.py:258` |
 | endpoint | `POST:/impacto/estudios/{study_id}/retencion/aplicar` | authenticated | missing | `backend/app/modules/impacto_tesis/router.py:394` |
 | endpoint | `POST:/reportes/export/pdf` | admin, profesor | missing | `backend/app/modules/reportes/router.py:105` |
-| frontend_route | `/app/analytics` | admin, profesor | covered | `frontend/src/config/routes.ts:62` |
-| frontend_route | `/app/reportes` | admin, profesor | covered | `frontend/src/config/routes.ts:56` |
+| frontend_route | `/app/analytics` | admin, profesor | covered | `frontend/src/config/routes.ts:63` |
+| frontend_route | `/app/reportes` | admin, profesor | covered | `frontend/src/config/routes.ts:57` |
 | frontend_call | `GET:/analytics/ai-quality/concordancia` | admin, profesor | covered | `frontend/src/modules/analytics/AnalyticsPage.tsx:425` |
 | frontend_call | `GET:/analytics/ai-quality/confidence` | admin, profesor | covered | `frontend/src/modules/analytics/AnalyticsPage.tsx:549` |
 | frontend_call | `GET:/analytics/ai-quality/costs/provider-comparison` | admin, profesor | covered | `frontend/src/modules/analytics/AnalyticsPage.tsx:620` |

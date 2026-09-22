@@ -20,6 +20,8 @@ from app.workers.worker import celery_app
         ("tasks.recover_stale_grading_jobs", "grading"),
         ("tasks.digitalize_evaluation", "digitalization"),
         ("tasks.recover_stale_digitalization_jobs", "digitalization"),
+        ("tasks.extract_roster_import", "digitalization"),
+        ("tasks.recover_stale_roster_import_jobs", "digitalization"),
         ("tasks.generate_presentation", "presentations"),
         ("tasks.recover_stale_presentation_jobs", "presentations"),
         ("tasks.generate_image", "presentations"),
@@ -57,6 +59,12 @@ def test_worker_routes_expensive_tasks_to_reserved_queues(
                 "modalidad": "papel",
             },
             "tasks.digitalize_evaluation",
+            "digitalization",
+        ),
+        (
+            "importacion_estudiantes",
+            {"lote_id": "batch"},
+            "tasks.extract_roster_import",
             "digitalization",
         ),
         (
