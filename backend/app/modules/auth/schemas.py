@@ -42,6 +42,17 @@ class PasswordResetConsumeRequest(PasswordResetValidateRequest):
         return self
 
 
+class InitialPasswordChangeRequest(BaseModel):
+    password: str = Field(min_length=8, max_length=128)
+    password_confirmation: str = Field(min_length=8, max_length=128)
+
+    @model_validator(mode="after")
+    def passwords_match(self) -> "InitialPasswordChangeRequest":
+        if self.password != self.password_confirmation:
+            raise ValueError("Las contraseñas no coinciden.")
+        return self
+
+
 class PublicMessage(BaseModel):
     detail: str
 

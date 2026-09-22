@@ -1,41 +1,21 @@
 {
   "counts": {
     "by_coverage": {
-      "covered": 454,
-      "missing": 82
+      "covered": 465,
+      "missing": 94
     },
     "by_kind": {
-      "endpoint": 256,
-      "frontend_call": 173,
-      "frontend_route": 30,
+      "endpoint": 266,
+      "frontend_call": 180,
+      "frontend_route": 31,
       "integration": 7,
-      "job": 15,
-      "table": 55
+      "job": 18,
+      "table": 57
     },
-    "total": 536
+    "total": 559
   },
   "exceptions": [],
   "findings": [
-    {
-      "category": "missing_coverage",
-      "description": "11 superficies de 012-ia-jobs-produccion no tienen evidencia de prueba observable.",
-      "id": "F-082A2532CEB0",
-      "issue_url": "",
-      "severity": "low",
-      "surface_ids": [
-        "backend:GET:/jobs/{job_id}/estado",
-        "backend:GET:/jobs/{job_id}/items",
-        "backend:POST:/jobs/{job_id}/cancelar",
-        "backend:POST:/jobs/{job_id}/reintentar",
-        "job:tasks.assign_overdue_grades",
-        "job:tasks.cleanup_password_reset_requests",
-        "job:tasks.export_report",
-        "job:tasks.get_ai_config_version",
-        "job:tasks.ingest_rag",
-        "job:tasks.recover_expired_local_jobs",
-        "job:tasks.send_password_reset_email"
-      ]
-    },
     {
       "category": "missing_coverage",
       "description": "5 superficies de 004-dba-asistencia-curriculo no tienen evidencia de prueba observable.",
@@ -115,8 +95,8 @@
     },
     {
       "category": "missing_coverage",
-      "description": "12 superficies de 002-arquitectura-roles-seguridad no tienen evidencia de prueba observable.",
-      "id": "F-8147C9C879AB",
+      "description": "14 superficies de 002-arquitectura-roles-seguridad no tienen evidencia de prueba observable.",
+      "id": "F-3EA637857F4D",
       "issue_url": "",
       "severity": "low",
       "surface_ids": [
@@ -131,7 +111,30 @@
         "table:ai_usage_events",
         "table:ai_usage_logs",
         "table:chat_messages",
-        "table:evaluation_blueprints"
+        "table:evaluation_blueprints",
+        "table:importacion_estudiantes_filas",
+        "table:importacion_estudiantes_lotes"
+      ]
+    },
+    {
+      "category": "missing_coverage",
+      "description": "12 superficies de 012-ia-jobs-produccion no tienen evidencia de prueba observable.",
+      "id": "F-B4FA37D13617",
+      "issue_url": "",
+      "severity": "low",
+      "surface_ids": [
+        "backend:GET:/jobs/{job_id}/estado",
+        "backend:GET:/jobs/{job_id}/items",
+        "backend:POST:/jobs/{job_id}/cancelar",
+        "backend:POST:/jobs/{job_id}/reintentar",
+        "job:tasks.assign_overdue_grades",
+        "job:tasks.cleanup_expired_roster_imports",
+        "job:tasks.cleanup_password_reset_requests",
+        "job:tasks.export_report",
+        "job:tasks.get_ai_config_version",
+        "job:tasks.ingest_rag",
+        "job:tasks.recover_expired_local_jobs",
+        "job:tasks.send_password_reset_email"
       ]
     },
     {
@@ -145,6 +148,24 @@
         "frontend_call:POST:/admin/roles/{id}:frontend/src/modules/admin/authorizationApi.ts",
         "frontend_call:POST:/impacto/estudios/{id}/{action}:frontend/src/modules/analytics/AnalyticsPage.tsx",
         "frontend_call:POST:/jobs/{jobId}:frontend/src/modules/evaluaciones/components/DigitalizationJobMonitor.tsx"
+      ]
+    },
+    {
+      "category": "missing_coverage",
+      "description": "9 superficies de 003-usuarios-materias-matriculas no tienen evidencia de prueba observable.",
+      "id": "F-D902BDFD43B1",
+      "issue_url": "",
+      "severity": "low",
+      "surface_ids": [
+        "backend:DELETE:/materias/{materia_id}/importaciones-estudiantes/{lote_id}",
+        "backend:GET:/materias/{materia_id}/estudiantes-existentes",
+        "backend:GET:/materias/{materia_id}/importaciones-estudiantes",
+        "backend:GET:/materias/{materia_id}/importaciones-estudiantes/{lote_id}",
+        "backend:POST:/materias/{materia_id}/estudiantes-existentes/matricular",
+        "backend:POST:/materias/{materia_id}/estudiantes/{student_id}/clave-temporal",
+        "backend:POST:/materias/{materia_id}/importaciones-estudiantes",
+        "backend:POST:/materias/{materia_id}/importaciones-estudiantes/{lote_id}/confirmar",
+        "backend:PUT:/materias/{materia_id}/importaciones-estudiantes/{lote_id}"
       ]
     },
     {
@@ -335,7 +356,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "1b95abf7279198c4e0af52875bc1d6685509f6dabd62706b806a4c113f883a8f",
+  "source_digest": "c92103ad6dc8140776605e5b1ef2685776903cad2190a98daa306a66fed608e2",
   "surfaces": [
     {
       "actors": [
@@ -627,6 +648,12 @@
           "level": "e2e",
           "reference": "DELETE:/evaluaciones/{evaluacion_id}",
           "status": "direct",
+          "test_path": "frontend/e2e/roster-import.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "DELETE:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
           "test_path": "frontend/e2e/student-activity-delivery.spec.ts"
         },
         {
@@ -824,6 +851,29 @@
           "test_path": "frontend/src/modules/materias/MateriaRecursos.test.tsx"
         }
       ]
+    },
+    {
+      "actors": [
+        "authenticated"
+      ],
+      "authorization": [
+        "get_current_user"
+      ],
+      "consumers": [],
+      "coverage": "missing",
+      "details": {
+        "function": "cancel_import",
+        "registered": true,
+        "router": "router"
+      },
+      "id": "backend:DELETE:/materias/{materia_id}/importaciones-estudiantes/{lote_id}",
+      "kind": "endpoint",
+      "owner_spec": "003-usuarios-materias-matriculas",
+      "signature": "DELETE:/materias/{materia_id}/importaciones-estudiantes/{lote_id}",
+      "source_line": 89,
+      "source_path": "backend/app/modules/importacion_estudiantes/router.py",
+      "states": [],
+      "tests": []
     },
     {
       "actors": [
@@ -2557,7 +2607,7 @@
       "kind": "endpoint",
       "owner_spec": "003-usuarios-materias-matriculas",
       "signature": "GET:/auth/me",
-      "source_line": 166,
+      "source_line": 168,
       "source_path": "backend/app/modules/auth/router.py",
       "states": [],
       "tests": [
@@ -2656,6 +2706,12 @@
           "reference": "GET:/auth/me",
           "status": "direct",
           "test_path": "frontend/e2e/resources-creation.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/auth/me",
+          "status": "direct",
+          "test_path": "frontend/e2e/roster-import.spec.ts"
         },
         {
           "level": "e2e",
@@ -3515,6 +3571,12 @@
           "reference": "GET:/evaluaciones/{evaluacion_id}",
           "status": "direct",
           "test_path": "frontend/e2e/resources-creation.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/roster-import.spec.ts"
         },
         {
           "level": "e2e",
@@ -4929,6 +4991,12 @@
           "level": "e2e",
           "reference": "GET:/materias",
           "status": "direct",
+          "test_path": "frontend/e2e/roster-import.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/materias",
+          "status": "direct",
           "test_path": "frontend/e2e/student-activity-delivery.spec.ts"
         },
         {
@@ -5095,6 +5163,12 @@
           "reference": "GET:/materias/{materia_id}",
           "status": "direct",
           "test_path": "frontend/e2e/resources-creation.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/materias/{materia_id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/roster-import.spec.ts"
         },
         {
           "level": "e2e",
@@ -5382,6 +5456,29 @@
     },
     {
       "actors": [
+        "authenticated"
+      ],
+      "authorization": [
+        "get_current_user"
+      ],
+      "consumers": [],
+      "coverage": "missing",
+      "details": {
+        "function": "list_existing",
+        "registered": true,
+        "router": "router"
+      },
+      "id": "backend:GET:/materias/{materia_id}/estudiantes-existentes",
+      "kind": "endpoint",
+      "owner_spec": "003-usuarios-materias-matriculas",
+      "signature": "GET:/materias/{materia_id}/estudiantes-existentes",
+      "source_line": 121,
+      "source_path": "backend/app/modules/importacion_estudiantes/router.py",
+      "states": [],
+      "tests": []
+    },
+    {
+      "actors": [
         "admin",
         "estudiante",
         "profesor"
@@ -5418,6 +5515,52 @@
           "test_path": "frontend/src/modules/materias/MateriaEvaluaciones.test.tsx"
         }
       ]
+    },
+    {
+      "actors": [
+        "authenticated"
+      ],
+      "authorization": [
+        "get_current_user"
+      ],
+      "consumers": [],
+      "coverage": "missing",
+      "details": {
+        "function": "list_imports",
+        "registered": true,
+        "router": "router"
+      },
+      "id": "backend:GET:/materias/{materia_id}/importaciones-estudiantes",
+      "kind": "endpoint",
+      "owner_spec": "003-usuarios-materias-matriculas",
+      "signature": "GET:/materias/{materia_id}/importaciones-estudiantes",
+      "source_line": 65,
+      "source_path": "backend/app/modules/importacion_estudiantes/router.py",
+      "states": [],
+      "tests": []
+    },
+    {
+      "actors": [
+        "authenticated"
+      ],
+      "authorization": [
+        "get_current_user"
+      ],
+      "consumers": [],
+      "coverage": "missing",
+      "details": {
+        "function": "read_import",
+        "registered": true,
+        "router": "router"
+      },
+      "id": "backend:GET:/materias/{materia_id}/importaciones-estudiantes/{lote_id}",
+      "kind": "endpoint",
+      "owner_spec": "003-usuarios-materias-matriculas",
+      "signature": "GET:/materias/{materia_id}/importaciones-estudiantes/{lote_id}",
+      "source_line": 71,
+      "source_path": "backend/app/modules/importacion_estudiantes/router.py",
+      "states": [],
+      "tests": []
     },
     {
       "actors": [
@@ -6271,6 +6414,12 @@
           "level": "e2e",
           "reference": "GET:/users/me",
           "status": "direct",
+          "test_path": "frontend/e2e/roster-import.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/users/me",
+          "status": "direct",
           "test_path": "frontend/e2e/student-activity-delivery.spec.ts"
         },
         {
@@ -6386,6 +6535,12 @@
           "reference": "GET:/users/me/authorization",
           "status": "direct",
           "test_path": "frontend/e2e/resources-creation.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/users/me/authorization",
+          "status": "direct",
+          "test_path": "frontend/e2e/roster-import.spec.ts"
         },
         {
           "level": "e2e",
@@ -7266,6 +7421,12 @@
           "level": "e2e",
           "reference": "PATCH:/evaluaciones/{evaluacion_id}",
           "status": "direct",
+          "test_path": "frontend/e2e/roster-import.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
           "test_path": "frontend/e2e/student-activity-delivery.spec.ts"
         },
         {
@@ -7783,6 +7944,12 @@
           "level": "e2e",
           "reference": "PATCH:/materias/{materia_id}",
           "status": "direct",
+          "test_path": "frontend/e2e/roster-import.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/materias/{materia_id}",
+          "status": "direct",
           "test_path": "frontend/e2e/student-activity-delivery.spec.ts"
         },
         {
@@ -8028,6 +8195,12 @@
           "reference": "PATCH:/users/me",
           "status": "direct",
           "test_path": "frontend/e2e/resources-creation.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/users/me",
+          "status": "direct",
+          "test_path": "frontend/e2e/roster-import.spec.ts"
         },
         {
           "level": "e2e",
@@ -8614,6 +8787,90 @@
     },
     {
       "actors": [
+        "authenticated"
+      ],
+      "authorization": [
+        "get_current_user"
+      ],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
+        "function": "change_initial_password",
+        "registered": true,
+        "router": "router"
+      },
+      "id": "backend:POST:/auth/initial-password",
+      "kind": "endpoint",
+      "owner_spec": "003-usuarios-materias-matriculas",
+      "signature": "POST:/auth/initial-password",
+      "source_line": 173,
+      "source_path": "backend/app/modules/auth/router.py",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "POST:/auth/initial-password",
+          "status": "domain",
+          "test_path": "backend/tests/fixtures/authorization.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/auth/initial-password",
+          "status": "domain",
+          "test_path": "backend/tests/unit/authorization_helpers.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/auth/initial-password",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_auth_logout.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/auth/initial-password",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_auth_registration_security.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/auth/initial-password",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_authorization_contracts.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/auth/initial-password",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_breakdown_authorization.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/auth/initial-password",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_modular_authorization.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/auth/initial-password",
+          "status": "domain",
+          "test_path": "frontend/e2e/admin-authorization.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/auth/initial-password",
+          "status": "domain",
+          "test_path": "frontend/e2e/auth-navigation.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/auth/initial-password",
+          "status": "direct",
+          "test_path": "frontend/src/modules/auth/InitialPasswordPage.test.tsx"
+        }
+      ]
+    },
+    {
+      "actors": [
         "ambiguous"
       ],
       "authorization": [],
@@ -8628,7 +8885,7 @@
       "kind": "endpoint",
       "owner_spec": "003-usuarios-materias-matriculas",
       "signature": "POST:/auth/login",
-      "source_line": 31,
+      "source_line": 33,
       "source_path": "backend/app/modules/auth/router.py",
       "states": [],
       "tests": [
@@ -8738,6 +8995,12 @@
           "level": "e2e",
           "reference": "POST:/auth/login",
           "status": "direct",
+          "test_path": "frontend/e2e/roster-import.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/auth/login",
+          "status": "direct",
           "test_path": "frontend/e2e/student-activity-delivery.spec.ts"
         },
         {
@@ -8764,7 +9027,7 @@
       "kind": "endpoint",
       "owner_spec": "003-usuarios-materias-matriculas",
       "signature": "POST:/auth/logout",
-      "source_line": 159,
+      "source_line": 161,
       "source_path": "backend/app/modules/auth/router.py",
       "states": [],
       "tests": [
@@ -8852,7 +9115,7 @@
       "kind": "endpoint",
       "owner_spec": "003-usuarios-materias-matriculas",
       "signature": "POST:/auth/password-recovery/request",
-      "source_line": 60,
+      "source_line": 62,
       "source_path": "backend/app/modules/auth/router.py",
       "states": [],
       "tests": [
@@ -8940,7 +9203,7 @@
       "kind": "endpoint",
       "owner_spec": "003-usuarios-materias-matriculas",
       "signature": "POST:/auth/password-recovery/reset",
-      "source_line": 115,
+      "source_line": 117,
       "source_path": "backend/app/modules/auth/router.py",
       "states": [],
       "tests": [
@@ -9016,7 +9279,7 @@
       "kind": "endpoint",
       "owner_spec": "003-usuarios-materias-matriculas",
       "signature": "POST:/auth/password-recovery/validate",
-      "source_line": 94,
+      "source_line": 96,
       "source_path": "backend/app/modules/auth/router.py",
       "states": [],
       "tests": [
@@ -9098,7 +9361,7 @@
       "kind": "endpoint",
       "owner_spec": "003-usuarios-materias-matriculas",
       "signature": "POST:/auth/refresh",
-      "source_line": 145,
+      "source_line": 147,
       "source_path": "backend/app/modules/auth/router.py",
       "states": [],
       "tests": [
@@ -9202,6 +9465,12 @@
           "level": "e2e",
           "reference": "POST:/auth/refresh",
           "status": "direct",
+          "test_path": "frontend/e2e/roster-import.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/auth/refresh",
+          "status": "direct",
           "test_path": "frontend/e2e/student-activity-delivery.spec.ts"
         },
         {
@@ -9234,7 +9503,7 @@
       "kind": "endpoint",
       "owner_spec": "003-usuarios-materias-matriculas",
       "signature": "POST:/auth/register",
-      "source_line": 48,
+      "source_line": 50,
       "source_path": "backend/app/modules/auth/router.py",
       "states": [],
       "tests": [
@@ -10171,6 +10440,12 @@
           "reference": "POST:/evaluaciones",
           "status": "direct",
           "test_path": "frontend/e2e/resources-creation.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/evaluaciones",
+          "status": "direct",
+          "test_path": "frontend/e2e/roster-import.spec.ts"
         },
         {
           "level": "e2e",
@@ -12161,6 +12436,12 @@
           "level": "e2e",
           "reference": "POST:/materias",
           "status": "direct",
+          "test_path": "frontend/e2e/roster-import.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/materias",
+          "status": "direct",
           "test_path": "frontend/e2e/student-activity-delivery.spec.ts"
         },
         {
@@ -12290,6 +12571,98 @@
       "signature": "POST:/materias/{materia_id}/dba-personalizados/upload-document",
       "source_line": 176,
       "source_path": "backend/app/modules/dba/router.py",
+      "states": [],
+      "tests": []
+    },
+    {
+      "actors": [
+        "authenticated"
+      ],
+      "authorization": [
+        "get_current_user"
+      ],
+      "consumers": [],
+      "coverage": "missing",
+      "details": {
+        "function": "enroll_existing",
+        "registered": true,
+        "router": "router"
+      },
+      "id": "backend:POST:/materias/{materia_id}/estudiantes-existentes/matricular",
+      "kind": "endpoint",
+      "owner_spec": "003-usuarios-materias-matriculas",
+      "signature": "POST:/materias/{materia_id}/estudiantes-existentes/matricular",
+      "source_line": 127,
+      "source_path": "backend/app/modules/importacion_estudiantes/router.py",
+      "states": [],
+      "tests": []
+    },
+    {
+      "actors": [
+        "authenticated"
+      ],
+      "authorization": [
+        "get_current_user"
+      ],
+      "consumers": [],
+      "coverage": "missing",
+      "details": {
+        "function": "reset_student_password",
+        "registered": true,
+        "router": "router"
+      },
+      "id": "backend:POST:/materias/{materia_id}/estudiantes/{student_id}/clave-temporal",
+      "kind": "endpoint",
+      "owner_spec": "003-usuarios-materias-matriculas",
+      "signature": "POST:/materias/{materia_id}/estudiantes/{student_id}/clave-temporal",
+      "source_line": 134,
+      "source_path": "backend/app/modules/importacion_estudiantes/router.py",
+      "states": [],
+      "tests": []
+    },
+    {
+      "actors": [
+        "authenticated"
+      ],
+      "authorization": [
+        "get_current_user"
+      ],
+      "consumers": [],
+      "coverage": "missing",
+      "details": {
+        "function": "create_import",
+        "registered": true,
+        "router": "router"
+      },
+      "id": "backend:POST:/materias/{materia_id}/importaciones-estudiantes",
+      "kind": "endpoint",
+      "owner_spec": "003-usuarios-materias-matriculas",
+      "signature": "POST:/materias/{materia_id}/importaciones-estudiantes",
+      "source_line": 26,
+      "source_path": "backend/app/modules/importacion_estudiantes/router.py",
+      "states": [],
+      "tests": []
+    },
+    {
+      "actors": [
+        "authenticated"
+      ],
+      "authorization": [
+        "get_current_user"
+      ],
+      "consumers": [],
+      "coverage": "missing",
+      "details": {
+        "function": "confirm_import",
+        "registered": true,
+        "router": "router"
+      },
+      "id": "backend:POST:/materias/{materia_id}/importaciones-estudiantes/{lote_id}/confirmar",
+      "kind": "endpoint",
+      "owner_spec": "003-usuarios-materias-matriculas",
+      "signature": "POST:/materias/{materia_id}/importaciones-estudiantes/{lote_id}/confirmar",
+      "source_line": 107,
+      "source_path": "backend/app/modules/importacion_estudiantes/router.py",
       "states": [],
       "tests": []
     },
@@ -13242,6 +13615,29 @@
     },
     {
       "actors": [
+        "authenticated"
+      ],
+      "authorization": [
+        "get_current_user"
+      ],
+      "consumers": [],
+      "coverage": "missing",
+      "details": {
+        "function": "update_import",
+        "registered": true,
+        "router": "router"
+      },
+      "id": "backend:PUT:/materias/{materia_id}/importaciones-estudiantes/{lote_id}",
+      "kind": "endpoint",
+      "owner_spec": "003-usuarios-materias-matriculas",
+      "signature": "PUT:/materias/{materia_id}/importaciones-estudiantes/{lote_id}",
+      "source_line": 79,
+      "source_path": "backend/app/modules/importacion_estudiantes/router.py",
+      "states": [],
+      "tests": []
+    },
+    {
+      "actors": [
         "admin",
         "profesor"
       ],
@@ -13460,6 +13856,12 @@
           "reference": "/",
           "status": "direct",
           "test_path": "backend/tests/integration/test_resource_assignment_access.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_roster_import_flow.py"
         },
         {
           "level": "unit",
@@ -13843,6 +14245,12 @@
           "level": "e2e",
           "reference": "/",
           "status": "direct",
+          "test_path": "frontend/e2e/roster-import.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/",
+          "status": "direct",
           "test_path": "frontend/e2e/student-activity-delivery.spec.ts"
         },
         {
@@ -13976,6 +14384,12 @@
           "reference": "/",
           "status": "direct",
           "test_path": "frontend/src/modules/admin/api.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "frontend/src/modules/auth/InitialPasswordPage.test.tsx"
         },
         {
           "level": "unit",
@@ -14239,6 +14653,12 @@
           "level": "unit",
           "reference": "/",
           "status": "direct",
+          "test_path": "frontend/src/modules/materias/RosterReview.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
           "test_path": "frontend/src/modules/materias/attendanceModel.test.ts"
         },
         {
@@ -14320,7 +14740,7 @@
       "kind": "frontend_route",
       "owner_spec": "002-arquitectura-roles-seguridad",
       "signature": "/app",
-      "source_line": 15,
+      "source_line": 16,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -14460,6 +14880,12 @@
           "level": "e2e",
           "reference": "/app",
           "status": "direct",
+          "test_path": "frontend/e2e/roster-import.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app",
+          "status": "direct",
           "test_path": "frontend/e2e/student-activity-delivery.spec.ts"
         },
         {
@@ -14577,7 +15003,7 @@
       "kind": "frontend_route",
       "owner_spec": "002-arquitectura-roles-seguridad",
       "signature": "/app/403",
-      "source_line": 16,
+      "source_line": 17,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -14696,7 +15122,7 @@
       "kind": "frontend_route",
       "owner_spec": "002-arquitectura-roles-seguridad",
       "signature": "/app/404",
-      "source_line": 17,
+      "source_line": 18,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -14809,7 +15235,7 @@
       "kind": "frontend_route",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "/app/admin/configuracion-ia",
-      "source_line": 57,
+      "source_line": 58,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -14946,7 +15372,7 @@
       "kind": "frontend_route",
       "owner_spec": "002-arquitectura-roles-seguridad",
       "signature": "/app/admin/correo",
-      "source_line": 60,
+      "source_line": 61,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -15059,7 +15485,7 @@
       "kind": "frontend_route",
       "owner_spec": "029-roles-permisos-modulares",
       "signature": "/app/admin/roles",
-      "source_line": 59,
+      "source_line": 60,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -15178,7 +15604,7 @@
       "kind": "frontend_route",
       "owner_spec": "029-roles-permisos-modulares",
       "signature": "/app/admin/usuarios",
-      "source_line": 58,
+      "source_line": 59,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -15298,7 +15724,7 @@
       "kind": "frontend_route",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "/app/analytics",
-      "source_line": 62,
+      "source_line": 63,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -15417,7 +15843,7 @@
       "kind": "frontend_route",
       "owner_spec": "008-calificaciones",
       "signature": "/app/calificaciones",
-      "source_line": 41,
+      "source_line": 42,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -15578,7 +16004,7 @@
       "kind": "frontend_route",
       "owner_spec": "008-calificaciones",
       "signature": "/app/calificaciones/boletin",
-      "source_line": 40,
+      "source_line": 41,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -15696,6 +16122,119 @@
       "consumers": [],
       "coverage": "covered",
       "details": {
+        "registered": true,
+        "view": "@/modules/auth/InitialPasswordPage"
+      },
+      "id": "frontend:/app/cambiar-clave-inicial",
+      "kind": "frontend_route",
+      "owner_spec": "002-arquitectura-roles-seguridad",
+      "signature": "/app/cambiar-clave-inicial",
+      "source_line": 13,
+      "source_path": "frontend/src/config/routes.ts",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "/app/cambiar-clave-inicial",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_admin_mail_config.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/cambiar-clave-inicial",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_api.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/cambiar-clave-inicial",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_concurrency.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/cambiar-clave-inicial",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_migration.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/cambiar-clave-inicial",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_secret_safety.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/cambiar-clave-inicial",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_job_configuration_snapshot.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/cambiar-clave-inicial",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_ai_configuration_resolver.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/cambiar-clave-inicial",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_mail_configuration.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/cambiar-clave-inicial",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_nginx_security_config.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/cambiar-clave-inicial",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_production_config.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/cambiar-clave-inicial",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_worker_ai_config.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app/cambiar-clave-inicial",
+          "status": "domain",
+          "test_path": "frontend/e2e/accessibility/teacher-ai-configuration.a11y.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app/cambiar-clave-inicial",
+          "status": "domain",
+          "test_path": "frontend/e2e/teacher-ai-configuration.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/cambiar-clave-inicial",
+          "status": "domain",
+          "test_path": "frontend/src/modules/admin/AdminAIConfigPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/cambiar-clave-inicial",
+          "status": "domain",
+          "test_path": "frontend/src/modules/profesor_ai/TeacherAIConfigPage.test.tsx"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "authenticated"
+      ],
+      "authorization": [
+        "RequireAuth"
+      ],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
         "registered": false,
         "view": "unresolved"
       },
@@ -15703,7 +16242,7 @@
       "kind": "frontend_route",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "/app/configuracion-ia",
-      "source_line": 61,
+      "source_line": 62,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -15822,7 +16361,7 @@
       "kind": "frontend_route",
       "owner_spec": "005-evaluaciones",
       "signature": "/app/evaluaciones",
-      "source_line": 36,
+      "source_line": 37,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -15983,7 +16522,7 @@
       "kind": "frontend_route",
       "owner_spec": "007-entregas-estudiante",
       "signature": "/app/evaluaciones/{id}/resolver",
-      "source_line": 37,
+      "source_line": 38,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -16097,7 +16636,7 @@
       "kind": "frontend_route",
       "owner_spec": "006-recursos-actividades",
       "signature": "/app/herramientas",
-      "source_line": 47,
+      "source_line": 48,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -16229,7 +16768,7 @@
       "kind": "frontend_route",
       "owner_spec": "006-recursos-actividades",
       "signature": "/app/herramientas/{id}",
-      "source_line": 50,
+      "source_line": 51,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -16360,7 +16899,7 @@
       "kind": "frontend_route",
       "owner_spec": "003-usuarios-materias-matriculas",
       "signature": "/app/materias",
-      "source_line": 23,
+      "source_line": 24,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -16447,6 +16986,12 @@
           "reference": "/app/materias",
           "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app/materias",
+          "status": "direct",
+          "test_path": "frontend/e2e/roster-import.spec.ts"
         },
         {
           "level": "e2e",
@@ -16533,7 +17078,7 @@
       "kind": "frontend_route",
       "owner_spec": "003-usuarios-materias-matriculas",
       "signature": "/app/materias/{id}",
-      "source_line": 27,
+      "source_line": 28,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -16620,6 +17165,12 @@
           "reference": "/app/materias/{id}",
           "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app/materias/{id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/roster-import.spec.ts"
         },
         {
           "level": "e2e",
@@ -16707,7 +17258,7 @@
       "kind": "frontend_route",
       "owner_spec": "004-dba-asistencia-curriculo",
       "signature": "/app/materias/{id}/asistencia",
-      "source_line": 31,
+      "source_line": 32,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -16820,7 +17371,7 @@
       "kind": "frontend_route",
       "owner_spec": "008-calificaciones",
       "signature": "/app/materias/{id}/boletin",
-      "source_line": 32,
+      "source_line": 33,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -16934,7 +17485,7 @@
       "kind": "frontend_route",
       "owner_spec": "008-calificaciones",
       "signature": "/app/materias/{id}/calificar",
-      "source_line": 30,
+      "source_line": 31,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -17048,7 +17599,7 @@
       "kind": "frontend_route",
       "owner_spec": "004-dba-asistencia-curriculo",
       "signature": "/app/materias/{id}/dba",
-      "source_line": 33,
+      "source_line": 34,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -17161,7 +17712,7 @@
       "kind": "frontend_route",
       "owner_spec": "005-evaluaciones",
       "signature": "/app/materias/{id}/evaluaciones",
-      "source_line": 28,
+      "source_line": 29,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -17274,7 +17825,7 @@
       "kind": "frontend_route",
       "owner_spec": "006-recursos-actividades",
       "signature": "/app/materias/{id}/recursos",
-      "source_line": 29,
+      "source_line": 30,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -17388,7 +17939,7 @@
       "kind": "frontend_route",
       "owner_spec": "010-presentaciones-imagenes",
       "signature": "/app/presentaciones",
-      "source_line": 55,
+      "source_line": 56,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -17519,7 +18070,7 @@
       "kind": "frontend_route",
       "owner_spec": "006-recursos-actividades",
       "signature": "/app/recursos/{id}",
-      "source_line": 51,
+      "source_line": 52,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -17645,7 +18196,7 @@
       "kind": "frontend_route",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "/app/reportes",
-      "source_line": 56,
+      "source_line": 57,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -17770,7 +18321,7 @@
       "kind": "frontend_route",
       "owner_spec": "009-xali-rag-refuerzos",
       "signature": "/app/xali",
-      "source_line": 54,
+      "source_line": 55,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -18028,6 +18579,12 @@
           "reference": "/login",
           "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/login",
+          "status": "direct",
+          "test_path": "frontend/e2e/roster-import.spec.ts"
         },
         {
           "level": "e2e",
@@ -18564,6 +19121,12 @@
           "level": "e2e",
           "reference": "DELETE:/evaluaciones/{id}",
           "status": "direct",
+          "test_path": "frontend/e2e/roster-import.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "DELETE:/evaluaciones/{id}",
+          "status": "direct",
           "test_path": "frontend/e2e/student-activity-delivery.spec.ts"
         },
         {
@@ -18758,6 +19321,40 @@
           "reference": "DELETE:/herramientas/{id}",
           "status": "direct",
           "test_path": "frontend/src/modules/materias/MateriaRecursos.test.tsx"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "ambiguous"
+      ],
+      "authorization": [],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
+        "backend_contract": "backend:DELETE:/materias/{materia_id}/importaciones-estudiantes/{lote_id}",
+        "backend_contract_candidates": [],
+        "contract_status": "matched"
+      },
+      "id": "frontend_call:DELETE:/materias/{materiaId}/importaciones-estudiantes/{batchId}:frontend/src/modules/materias/rosterImportApi.ts",
+      "kind": "frontend_call",
+      "owner_spec": "003-usuarios-materias-matriculas",
+      "signature": "DELETE:/materias/{materiaId}/importaciones-estudiantes/{batchId}",
+      "source_line": 58,
+      "source_path": "frontend/src/modules/materias/rosterImportApi.ts",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "DELETE:/materias/{materiaId}/importaciones-estudiantes/{batchId}",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_materias_service.py"
+        },
+        {
+          "level": "unit",
+          "reference": "DELETE:/materias/{materiaId}/importaciones-estudiantes/{batchId}",
+          "status": "domain",
+          "test_path": "frontend/src/modules/materias/MateriasListPage.test.tsx"
         }
       ]
     },
@@ -20893,6 +21490,12 @@
           "level": "e2e",
           "reference": "GET:/auth/me",
           "status": "direct",
+          "test_path": "frontend/e2e/roster-import.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/auth/me",
+          "status": "direct",
           "test_path": "frontend/e2e/student-activity-delivery.spec.ts"
         },
         {
@@ -21719,6 +22322,12 @@
           "level": "e2e",
           "reference": "GET:/evaluaciones/{id}",
           "status": "direct",
+          "test_path": "frontend/e2e/roster-import.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/evaluaciones/{id}",
+          "status": "direct",
           "test_path": "frontend/e2e/student-activity-delivery.spec.ts"
         },
         {
@@ -22537,6 +23146,12 @@
           "level": "e2e",
           "reference": "GET:/materias/{id}",
           "status": "direct",
+          "test_path": "frontend/e2e/roster-import.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/materias/{id}",
+          "status": "direct",
           "test_path": "frontend/e2e/student-activity-delivery.spec.ts"
         },
         {
@@ -22769,6 +23384,40 @@
       "consumers": [],
       "coverage": "covered",
       "details": {
+        "backend_contract": "backend:GET:/materias/{materia_id}/estudiantes-existentes",
+        "backend_contract_candidates": [],
+        "contract_status": "matched"
+      },
+      "id": "frontend_call:GET:/materias/{materiaId}/estudiantes-existentes:frontend/src/modules/materias/rosterImportApi.ts",
+      "kind": "frontend_call",
+      "owner_spec": "003-usuarios-materias-matriculas",
+      "signature": "GET:/materias/{materiaId}/estudiantes-existentes",
+      "source_line": 69,
+      "source_path": "frontend/src/modules/materias/rosterImportApi.ts",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "GET:/materias/{materiaId}/estudiantes-existentes",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_materias_service.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias/{materiaId}/estudiantes-existentes",
+          "status": "domain",
+          "test_path": "frontend/src/modules/materias/MateriasListPage.test.tsx"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "ambiguous"
+      ],
+      "authorization": [],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
         "backend_contract": "backend:GET:/materias/{materia_id}/evaluaciones",
         "backend_contract_candidates": [],
         "contract_status": "matched"
@@ -22786,6 +23435,74 @@
           "reference": "GET:/materias/{materiaId}/evaluaciones",
           "status": "domain",
           "test_path": "frontend/src/modules/materias/MateriaEvaluaciones.test.tsx"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "ambiguous"
+      ],
+      "authorization": [],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
+        "backend_contract": "backend:GET:/materias/{materia_id}/importaciones-estudiantes/{lote_id}",
+        "backend_contract_candidates": [],
+        "contract_status": "matched"
+      },
+      "id": "frontend_call:GET:/materias/{materiaId}/importaciones-estudiantes/{batchId}:frontend/src/modules/materias/rosterImportApi.ts",
+      "kind": "frontend_call",
+      "owner_spec": "003-usuarios-materias-matriculas",
+      "signature": "GET:/materias/{materiaId}/importaciones-estudiantes/{batchId}",
+      "source_line": 50,
+      "source_path": "frontend/src/modules/materias/rosterImportApi.ts",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "GET:/materias/{materiaId}/importaciones-estudiantes/{batchId}",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_materias_service.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias/{materiaId}/importaciones-estudiantes/{batchId}",
+          "status": "domain",
+          "test_path": "frontend/src/modules/materias/MateriasListPage.test.tsx"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "ambiguous"
+      ],
+      "authorization": [],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
+        "backend_contract": "backend:GET:/materias/{materia_id}/importaciones-estudiantes",
+        "backend_contract_candidates": [],
+        "contract_status": "matched"
+      },
+      "id": "frontend_call:GET:/materias/{materiaId}/importaciones-estudiantes:frontend/src/modules/materias/rosterImportApi.ts",
+      "kind": "frontend_call",
+      "owner_spec": "003-usuarios-materias-matriculas",
+      "signature": "GET:/materias/{materiaId}/importaciones-estudiantes",
+      "source_line": 54,
+      "source_path": "frontend/src/modules/materias/rosterImportApi.ts",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "GET:/materias/{materiaId}/importaciones-estudiantes",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_materias_service.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias/{materiaId}/importaciones-estudiantes",
+          "status": "domain",
+          "test_path": "frontend/src/modules/materias/MateriasListPage.test.tsx"
         }
       ]
     },
@@ -22868,6 +23585,12 @@
           "reference": "GET:/materias",
           "status": "direct",
           "test_path": "frontend/e2e/resources-creation.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/materias",
+          "status": "direct",
+          "test_path": "frontend/e2e/roster-import.spec.ts"
         },
         {
           "level": "e2e",
@@ -23384,6 +24107,12 @@
           "reference": "GET:/users/me/authorization",
           "status": "direct",
           "test_path": "frontend/e2e/resources-creation.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/users/me/authorization",
+          "status": "direct",
+          "test_path": "frontend/e2e/roster-import.spec.ts"
         },
         {
           "level": "e2e",
@@ -24473,6 +25202,12 @@
           "level": "e2e",
           "reference": "PATCH:/evaluaciones/{id}",
           "status": "direct",
+          "test_path": "frontend/e2e/roster-import.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/evaluaciones/{id}",
+          "status": "direct",
           "test_path": "frontend/e2e/student-activity-delivery.spec.ts"
         },
         {
@@ -24853,6 +25588,12 @@
           "reference": "PATCH:/materias/{id}",
           "status": "direct",
           "test_path": "frontend/e2e/resources-creation.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/materias/{id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/roster-import.spec.ts"
         },
         {
           "level": "e2e",
@@ -26070,6 +26811,88 @@
       "consumers": [],
       "coverage": "covered",
       "details": {
+        "backend_contract": "backend:POST:/auth/initial-password",
+        "backend_contract_candidates": [],
+        "contract_status": "matched"
+      },
+      "id": "frontend_call:POST:/auth/initial-password:frontend/src/modules/auth/InitialPasswordPage.tsx",
+      "kind": "frontend_call",
+      "owner_spec": "003-usuarios-materias-matriculas",
+      "signature": "POST:/auth/initial-password",
+      "source_line": 19,
+      "source_path": "frontend/src/modules/auth/InitialPasswordPage.tsx",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "POST:/auth/initial-password",
+          "status": "domain",
+          "test_path": "backend/tests/fixtures/authorization.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/auth/initial-password",
+          "status": "domain",
+          "test_path": "backend/tests/unit/authorization_helpers.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/auth/initial-password",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_auth_logout.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/auth/initial-password",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_auth_registration_security.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/auth/initial-password",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_authorization_contracts.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/auth/initial-password",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_breakdown_authorization.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/auth/initial-password",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_modular_authorization.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/auth/initial-password",
+          "status": "domain",
+          "test_path": "frontend/e2e/admin-authorization.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/auth/initial-password",
+          "status": "domain",
+          "test_path": "frontend/e2e/auth-navigation.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/auth/initial-password",
+          "status": "direct",
+          "test_path": "frontend/src/modules/auth/InitialPasswordPage.test.tsx"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "ambiguous"
+      ],
+      "authorization": [],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
         "backend_contract": "backend:POST:/auth/login",
         "backend_contract_candidates": [],
         "contract_status": "matched"
@@ -26135,6 +26958,12 @@
           "reference": "POST:/auth/login",
           "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/auth/login",
+          "status": "direct",
+          "test_path": "frontend/e2e/roster-import.spec.ts"
         },
         {
           "level": "e2e",
@@ -27360,6 +28189,12 @@
           "level": "e2e",
           "reference": "POST:/evaluaciones",
           "status": "direct",
+          "test_path": "frontend/e2e/roster-import.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/evaluaciones",
+          "status": "direct",
           "test_path": "frontend/e2e/student-activity-delivery.spec.ts"
         },
         {
@@ -27983,6 +28818,40 @@
       "consumers": [],
       "coverage": "covered",
       "details": {
+        "backend_contract": "backend:POST:/materias/{materia_id}/importaciones-estudiantes/{lote_id}/confirmar",
+        "backend_contract_candidates": [],
+        "contract_status": "matched"
+      },
+      "id": "frontend_call:POST:/materias/{materiaId}/importaciones-estudiantes/{batchId}/confirmar:frontend/src/modules/materias/rosterImportApi.ts",
+      "kind": "frontend_call",
+      "owner_spec": "003-usuarios-materias-matriculas",
+      "signature": "POST:/materias/{materiaId}/importaciones-estudiantes/{batchId}/confirmar",
+      "source_line": 65,
+      "source_path": "frontend/src/modules/materias/rosterImportApi.ts",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "POST:/materias/{materiaId}/importaciones-estudiantes/{batchId}/confirmar",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_materias_service.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/materias/{materiaId}/importaciones-estudiantes/{batchId}/confirmar",
+          "status": "domain",
+          "test_path": "frontend/src/modules/materias/MateriasListPage.test.tsx"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "ambiguous"
+      ],
+      "authorization": [],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
         "backend_contract": "backend:POST:/materias",
         "backend_contract_candidates": [],
         "contract_status": "matched"
@@ -28054,6 +28923,12 @@
           "reference": "POST:/materias",
           "status": "direct",
           "test_path": "frontend/e2e/resources-creation.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/materias",
+          "status": "direct",
+          "test_path": "frontend/e2e/roster-import.spec.ts"
         },
         {
           "level": "e2e",
@@ -29206,6 +30081,40 @@
       "consumers": [],
       "coverage": "covered",
       "details": {
+        "backend_contract": "backend:PUT:/materias/{materia_id}/importaciones-estudiantes/{lote_id}",
+        "backend_contract_candidates": [],
+        "contract_status": "matched"
+      },
+      "id": "frontend_call:PUT:/materias/{materiaId}/importaciones-estudiantes/{batchId}:frontend/src/modules/materias/rosterImportApi.ts",
+      "kind": "frontend_call",
+      "owner_spec": "003-usuarios-materias-matriculas",
+      "signature": "PUT:/materias/{materiaId}/importaciones-estudiantes/{batchId}",
+      "source_line": 61,
+      "source_path": "frontend/src/modules/materias/rosterImportApi.ts",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "PUT:/materias/{materiaId}/importaciones-estudiantes/{batchId}",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_materias_service.py"
+        },
+        {
+          "level": "unit",
+          "reference": "PUT:/materias/{materiaId}/importaciones-estudiantes/{batchId}",
+          "status": "domain",
+          "test_path": "frontend/src/modules/materias/MateriasListPage.test.tsx"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "ambiguous"
+      ],
+      "authorization": [],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
         "backend_contract": "backend:PUT:/profesor/ai-config",
         "backend_contract_candidates": [],
         "contract_status": "matched"
@@ -29890,6 +30799,48 @@
       "details": {
         "bind": false,
         "effects": [
+          "database_write"
+        ],
+        "function": "cleanup_expired_roster_imports",
+        "idempotency_evidence": [
+          "not_observed"
+        ],
+        "retry_policy": [
+          "not_observed"
+        ],
+        "terminal_states": [
+          "cancelled",
+          "failed",
+          "success"
+        ],
+        "triggers": [
+          "beat:cleanup-expired-roster-imports",
+          "celery_queue"
+        ]
+      },
+      "id": "job:tasks.cleanup_expired_roster_imports",
+      "kind": "job",
+      "owner_spec": "012-ia-jobs-produccion",
+      "signature": "tasks.cleanup_expired_roster_imports",
+      "source_line": 150,
+      "source_path": "backend/app/workers/tasks_roster_import.py",
+      "states": [
+        "cancelled",
+        "failed",
+        "success"
+      ],
+      "tests": []
+    },
+    {
+      "actors": [
+        "system"
+      ],
+      "authorization": [],
+      "consumers": [],
+      "coverage": "missing",
+      "details": {
+        "bind": false,
+        "effects": [
           "not_observed"
         ],
         "function": "cleanup_password_reset_requests",
@@ -30010,6 +30961,54 @@
         "success"
       ],
       "tests": []
+    },
+    {
+      "actors": [
+        "system"
+      ],
+      "authorization": [],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
+        "bind": true,
+        "effects": [
+          "not_observed"
+        ],
+        "function": "extract_roster_import",
+        "idempotency_evidence": [
+          "not_observed"
+        ],
+        "retry_policy": [
+          "not_observed"
+        ],
+        "terminal_states": [
+          "cancelled",
+          "failed",
+          "success"
+        ],
+        "triggers": [
+          "celery_queue"
+        ]
+      },
+      "id": "job:tasks.extract_roster_import",
+      "kind": "job",
+      "owner_spec": "012-ia-jobs-produccion",
+      "signature": "tasks.extract_roster_import",
+      "source_line": 120,
+      "source_path": "backend/app/workers/tasks_roster_import.py",
+      "states": [
+        "cancelled",
+        "failed",
+        "success"
+      ],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "tasks.extract_roster_import",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_worker_queue_routing.py"
+        }
+      ]
     },
     {
       "actors": [
@@ -30475,6 +31474,55 @@
         {
           "level": "unit",
           "reference": "tasks.recover_stale_presentation_jobs",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_worker_queue_routing.py"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "system"
+      ],
+      "authorization": [],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
+        "bind": false,
+        "effects": [
+          "not_observed"
+        ],
+        "function": "recover_stale_roster_import_jobs",
+        "idempotency_evidence": [
+          "not_observed"
+        ],
+        "retry_policy": [
+          "not_observed"
+        ],
+        "terminal_states": [
+          "cancelled",
+          "failed",
+          "success"
+        ],
+        "triggers": [
+          "beat:recover-stale-roster-import-jobs",
+          "celery_queue"
+        ]
+      },
+      "id": "job:tasks.recover_stale_roster_import_jobs",
+      "kind": "job",
+      "owner_spec": "012-ia-jobs-produccion",
+      "signature": "tasks.recover_stale_roster_import_jobs",
+      "source_line": 143,
+      "source_path": "backend/app/workers/tasks_roster_import.py",
+      "states": [
+        "cancelled",
+        "failed",
+        "success"
+      ],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "tasks.recover_stale_roster_import_jobs",
           "status": "direct",
           "test_path": "backend/tests/unit/test_worker_queue_routing.py"
         }
@@ -32788,6 +33836,12 @@
           "level": "e2e",
           "reference": "evaluaciones",
           "status": "direct",
+          "test_path": "frontend/e2e/roster-import.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "evaluaciones",
+          "status": "direct",
           "test_path": "frontend/e2e/student-activity-delivery.spec.ts"
         },
         {
@@ -33033,6 +34087,95 @@
       ],
       "authorization": [],
       "consumers": [],
+      "coverage": "missing",
+      "details": {
+        "active": true,
+        "class": "ImportacionEstudiantesFila",
+        "constraints": [
+          "decision IN ('crear','omitir','asociar')"
+        ],
+        "enum_refs": [],
+        "historical_only": false,
+        "identity": [
+          "id"
+        ],
+        "indexes": [],
+        "migrations": [
+          "backend/alembic/versions/202609220001_roster_imports.py"
+        ],
+        "relationships": [
+          "importacion_estudiantes_lotes.id",
+          "users.id"
+        ],
+        "unique": [
+          "lote_id",
+          "orden"
+        ]
+      },
+      "id": "table:importacion_estudiantes_filas",
+      "kind": "table",
+      "owner_spec": "002-arquitectura-roles-seguridad",
+      "signature": "importacion_estudiantes_filas",
+      "source_line": 33,
+      "source_path": "backend/app/modules/importacion_estudiantes/models.py",
+      "states": [
+        "asociar",
+        "crear",
+        "omitir"
+      ],
+      "tests": []
+    },
+    {
+      "actors": [
+        "system"
+      ],
+      "authorization": [],
+      "consumers": [],
+      "coverage": "missing",
+      "details": {
+        "active": true,
+        "class": "ImportacionEstudiantesLote",
+        "constraints": [
+          "estado IN ('procesando','revision','confirmado','cancelado','error')"
+        ],
+        "enum_refs": [],
+        "historical_only": false,
+        "identity": [
+          "id"
+        ],
+        "indexes": [
+          "materia_id"
+        ],
+        "migrations": [
+          "backend/alembic/versions/202609220001_roster_imports.py"
+        ],
+        "relationships": [
+          "materias.id",
+          "users.id"
+        ],
+        "unique": []
+      },
+      "id": "table:importacion_estudiantes_lotes",
+      "kind": "table",
+      "owner_spec": "002-arquitectura-roles-seguridad",
+      "signature": "importacion_estudiantes_lotes",
+      "source_line": 11,
+      "source_path": "backend/app/modules/importacion_estudiantes/models.py",
+      "states": [
+        "cancelado",
+        "confirmado",
+        "error",
+        "procesando",
+        "revision"
+      ],
+      "tests": []
+    },
+    {
+      "actors": [
+        "system"
+      ],
+      "authorization": [],
+      "consumers": [],
       "coverage": "covered",
       "details": {
         "active": true,
@@ -33229,6 +34372,12 @@
           "level": "unit",
           "reference": "materias",
           "status": "direct",
+          "test_path": "backend/tests/integration/test_roster_import_flow.py"
+        },
+        {
+          "level": "unit",
+          "reference": "materias",
+          "status": "direct",
           "test_path": "backend/tests/unit/authorization_helpers.py"
         },
         {
@@ -33320,6 +34469,12 @@
           "reference": "materias",
           "status": "direct",
           "test_path": "frontend/e2e/resources-creation.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "materias",
+          "status": "direct",
+          "test_path": "frontend/e2e/roster-import.spec.ts"
         },
         {
           "level": "e2e",
@@ -33480,6 +34635,12 @@
           "reference": "matriculas",
           "status": "direct",
           "test_path": "backend/tests/integration/test_explainable_grading_pipeline.py"
+        },
+        {
+          "level": "unit",
+          "reference": "matriculas",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_roster_import_flow.py"
         }
       ]
     },
@@ -34390,6 +35551,12 @@
           "level": "unit",
           "reference": "users",
           "status": "direct",
+          "test_path": "backend/tests/integration/test_roster_import_flow.py"
+        },
+        {
+          "level": "unit",
+          "reference": "users",
+          "status": "direct",
           "test_path": "backend/tests/unit/authorization_helpers.py"
         },
         {
@@ -34475,6 +35642,12 @@
           "reference": "users",
           "status": "direct",
           "test_path": "frontend/e2e/resources-creation.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "users",
+          "status": "direct",
+          "test_path": "frontend/e2e/roster-import.spec.ts"
         },
         {
           "level": "e2e",

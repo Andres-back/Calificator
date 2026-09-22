@@ -11,3 +11,4 @@
 
 ## Fase 3: Integración
 - [X] T006 Incorporar el dominio a specs/README.md y la gobernanza (FR-008)
+- [X] T007 Documentar el alta desde una lista fotografiada, correo interno único y cambio inicial de clave en la especificación y contrato (FR-009, FR-010)

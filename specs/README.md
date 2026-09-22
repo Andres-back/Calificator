@@ -54,6 +54,7 @@ actualizar la especificación propietaria, su plan y sus tareas; no debe crear d
 | 054 | [Digitalización confiable y señales de revisión visibles](054-fix-digitalization-review-signals/spec.md) | digitalización y calificación explicable | workspace docente existente; sin rutas nuevas | resultado JSON y desglose existentes; sin migración | [#107](https://github.com/Andres-back/Calificator/issues/107) |
 | 055 | [Respuesta estructurada y rutas rápidas](055-fast-json-routing/spec.md) | clientes OpenCode, verificación y configuración operativa | rutas existentes de digitalización y calificación; sin rutas nuevas | configuración IA y resultados existentes; sin migración | [#109](https://github.com/Andres-back/Calificator/issues/109) |
 | 056 | [Arbitraje solo cuando aporta valor](056-avoid-redundant-arbitration/spec.md) | orquestación y consolidación de calificaciones | revisión docente existente; sin rutas nuevas | resultado JSON existente; sin migración | [#111](https://github.com/Andres-back/Calificator/issues/111) |
+| 061 | [Importar estudiantes desde una lista fotografiada](061-importar-estudiantes-lista/spec.md) | usuarios, materias, matrículas, visión y trabajos | estudiantes de materia, asistencia y cambio inicial de clave | `users`, `matriculas`, `importacion_estudiantes_lotes`, `importacion_estudiantes_filas`, `ai_jobs` | [#121](https://github.com/Andres-back/Calificator/issues/121) |
 
 ## Reglas de propiedad
 

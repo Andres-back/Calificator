@@ -48,6 +48,16 @@ async def get_current_user(
     from app.modules.authorization.service import effective_permissions
 
     user._effective_permissions = await effective_permissions(db, user)  # type: ignore[attr-defined]
+    if getattr(user, "debe_cambiar_password", False) and request.url.path not in {
+        "/api/auth/me",
+        "/api/auth/initial-password",
+        "/api/auth/logout",
+        "/api/users/me/authorization",
+    }:
+        raise HTTPException(
+            status_code=status.HTTP_428_PRECONDITION_REQUIRED,
+            detail="Debes cambiar la contraseña temporal antes de continuar",
+        )
     return user
 
 

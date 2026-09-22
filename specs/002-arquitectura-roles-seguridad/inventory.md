@@ -2,7 +2,7 @@
 
 > Archivo generado por `python scripts/build_system_inventory.py --write`. No editar manualmente.
 
-**Superficies propietarias:** 28
+**Superficies propietarias:** 31
 
 | Tipo | Firma | Actores | Cobertura | Fuente |
 |---|---|---|---|---|
@@ -15,10 +15,11 @@
 | endpoint | `POST:/admin/mail/test` | ambiguous | covered | `backend/app/modules/admin_mail/router.py:86` |
 | endpoint | `PUT:/admin/mail/config` | ambiguous | covered | `backend/app/modules/admin_mail/router.py:58` |
 | frontend_route | `/` | public | covered | `frontend/src/config/routes.ts:8` |
-| frontend_route | `/app` | authenticated | covered | `frontend/src/config/routes.ts:15` |
-| frontend_route | `/app/403` | authenticated | covered | `frontend/src/config/routes.ts:16` |
-| frontend_route | `/app/404` | authenticated | covered | `frontend/src/config/routes.ts:17` |
-| frontend_route | `/app/admin/correo` | admin | covered | `frontend/src/config/routes.ts:60` |
+| frontend_route | `/app` | authenticated | covered | `frontend/src/config/routes.ts:16` |
+| frontend_route | `/app/403` | authenticated | covered | `frontend/src/config/routes.ts:17` |
+| frontend_route | `/app/404` | authenticated | covered | `frontend/src/config/routes.ts:18` |
+| frontend_route | `/app/admin/correo` | admin | covered | `frontend/src/config/routes.ts:61` |
+| frontend_route | `/app/cambiar-clave-inicial` | authenticated | covered | `frontend/src/config/routes.ts:13` |
 | frontend_route | `/registro` | public | covered | `frontend/src/config/routes.ts:10` |
 | integration | `cloudflare` | system | covered | `backend/app/core/config.py:1` |
 | integration | `open_code` | system | covered | `backend/app/core/config.py:1` |
@@ -33,6 +34,8 @@
 | table | `ai_usage_logs` | system | missing | `backend/alembic/versions/202606290002_phases_3_to_8.py:193` |
 | table | `chat_messages` | system | missing | `backend/alembic/versions/202606290002_phases_3_to_8.py:158` |
 | table | `evaluation_blueprints` | system | missing | `backend/alembic/versions/202606290001_initial_phase_1_2.py:121` |
+| table | `importacion_estudiantes_filas` | system | missing | `backend/app/modules/importacion_estudiantes/models.py:33` |
+| table | `importacion_estudiantes_lotes` | system | missing | `backend/app/modules/importacion_estudiantes/models.py:11` |
 | table | `materiales_generados` | system | covered | `backend/alembic/versions/202606290002_phases_3_to_8.py:121` |
 
 ## Decisiones explícitas de permiso
@@ -41,5 +44,5 @@ Sin decisiones explícitas de permiso para este dominio.
 
 ## Hallazgos
 
-- **low · missing_coverage**: 12 superficies de 002-arquitectura-roles-seguridad no tienen evidencia de prueba observable.
+- **low · missing_coverage**: 14 superficies de 002-arquitectura-roles-seguridad no tienen evidencia de prueba observable.
 - **low · orphan_candidate**: 20 superficies no alcanzables o históricas se conservan como candidatas a retiro.

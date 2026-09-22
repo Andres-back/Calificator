@@ -14,6 +14,7 @@ const LoginPage = lazy(() => import('@/modules/auth/LoginPage').then((m) => ({ d
 const RegisterPage = lazy(() => import('@/modules/auth/RegisterPage').then((m) => ({ default: m.RegisterPage })));
 const RequestPasswordResetPage = lazy(() => import('@/modules/auth/RequestPasswordResetPage').then((m) => ({ default: m.RequestPasswordResetPage })));
 const ResetPasswordPage = lazy(() => import('@/modules/auth/ResetPasswordPage').then((m) => ({ default: m.ResetPasswordPage })));
+const InitialPasswordPage = lazy(() => import('@/modules/auth/InitialPasswordPage').then((m) => ({ default: m.InitialPasswordPage })));
 const DashboardPage = lazy(() => import('@/modules/dashboard/DashboardPage').then((m) => ({ default: m.DashboardPage })));
 const ListPage = lazy(() => import('@/modules/herramientas/ListPage').then((m) => ({ default: m.ListPage })));
 const GeneratePage = lazy(() => import('@/modules/herramientas/GeneratePage').then((m) => ({ default: m.GeneratePage })));
@@ -60,6 +61,7 @@ export const router = createBrowserRouter([
     element: <RequireAuth />,
     errorElement: <RouterErrorBoundary />,
     children: [
+      { path: routes.initialPassword, element: lazyPage(<InitialPasswordPage />) },
       {
         path: routes.app,
         element: <AppShell />,

@@ -59,6 +59,7 @@ ALL_SPECS = {
     "058-grade-sum-review",
     "059-verifier-component-contract",
     "060-admin-grading-route-clarity",
+    "061-importar-estudiantes-lista",
 }
 OWNED_SPECS = {
     name

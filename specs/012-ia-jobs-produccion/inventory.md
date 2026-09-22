@@ -2,7 +2,7 @@
 
 > Archivo generado por `python scripts/build_system_inventory.py --write`. No editar manualmente.
 
-**Superficies propietarias:** 29
+**Superficies propietarias:** 32
 
 | Tipo | Firma | Actores | Cobertura | Fuente |
 |---|---|---|---|---|
@@ -21,9 +21,11 @@
 | integration | `ollama` | system | covered | `backend/app/services/ai_capability_registry.py:1` |
 | integration | `openai` | system | covered | `backend/app/services/ai_capability_registry.py:1` |
 | job | `tasks.assign_overdue_grades` | system | missing | `backend/app/workers/tasks_deadlines.py:46` |
+| job | `tasks.cleanup_expired_roster_imports` | system | missing | `backend/app/workers/tasks_roster_import.py:150` |
 | job | `tasks.cleanup_password_reset_requests` | system | missing | `backend/app/workers/tasks_password_recovery.py:156` |
 | job | `tasks.digitalize_evaluation` | system | covered | `backend/app/workers/tasks_digitalization.py:390` |
 | job | `tasks.export_report` | system | missing | `backend/app/workers/tasks_reports.py:5` |
+| job | `tasks.extract_roster_import` | system | covered | `backend/app/workers/tasks_roster_import.py:120` |
 | job | `tasks.generate_image` | system | covered | `backend/app/workers/tasks_images.py:5` |
 | job | `tasks.generate_presentation` | system | covered | `backend/app/workers/tasks_presentations.py:33` |
 | job | `tasks.get_ai_config_version` | system | missing | `backend/app/workers/tasks_ai_config.py:30` |
@@ -34,6 +36,7 @@
 | job | `tasks.recover_stale_digitalization_jobs` | system | covered | `backend/app/workers/tasks_digitalization.py:453` |
 | job | `tasks.recover_stale_grading_jobs` | system | covered | `backend/app/workers/tasks_grading.py:1018` |
 | job | `tasks.recover_stale_presentation_jobs` | system | covered | `backend/app/workers/tasks_presentations.py:84` |
+| job | `tasks.recover_stale_roster_import_jobs` | system | covered | `backend/app/workers/tasks_roster_import.py:143` |
 | job | `tasks.send_password_reset_email` | system | missing | `backend/app/workers/tasks_password_recovery.py:116` |
 
 ## Decisiones explícitas de permiso
@@ -42,5 +45,5 @@ Sin decisiones explícitas de permiso para este dominio.
 
 ## Hallazgos
 
-- **low · missing_coverage**: 11 superficies de 012-ia-jobs-produccion no tienen evidencia de prueba observable.
+- **low · missing_coverage**: 12 superficies de 012-ia-jobs-produccion no tienen evidencia de prueba observable.
 - **medium · contract_mismatch**: 4 llamadas frontend no tienen endpoint backend canónico coincidente en el análisis estático.

@@ -17,8 +17,8 @@
 | endpoint | `POST:/materias/{materia_id}/dba-personalizados` | admin, profesor | missing | `backend/app/modules/dba/router.py:95` |
 | endpoint | `POST:/materias/{materia_id}/dba-personalizados/upload-document` | admin, profesor | missing | `backend/app/modules/dba/router.py:176` |
 | endpoint | `PUT:/materias/{materia_id}/asistencia` | admin, profesor | covered | `backend/app/modules/asistencia/router.py:42` |
-| frontend_route | `/app/materias/{id}/asistencia` | admin, profesor | covered | `frontend/src/config/routes.ts:31` |
-| frontend_route | `/app/materias/{id}/dba` | admin, profesor | covered | `frontend/src/config/routes.ts:33` |
+| frontend_route | `/app/materias/{id}/asistencia` | admin, profesor | covered | `frontend/src/config/routes.ts:32` |
+| frontend_route | `/app/materias/{id}/dba` | admin, profesor | covered | `frontend/src/config/routes.ts:34` |
 | frontend_call | `DELETE:/dba-personalizados/{id}` | ambiguous | covered | `frontend/src/modules/materias/dbaApi.ts:33` |
 | frontend_call | `GET:/dba` | ambiguous | covered | `frontend/src/modules/evaluaciones/api.ts:151` |
 | frontend_call | `GET:/materias/{materiaId}/asistencia/reporte` | ambiguous | covered | `frontend/src/modules/materias/asistenciaApi.ts:81` |

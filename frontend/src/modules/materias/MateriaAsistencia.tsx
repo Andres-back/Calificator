@@ -12,6 +12,8 @@ import {
   ShieldCheck,
   UserCheck,
   Users,
+  Camera,
+  UserPlus,
   X,
 } from 'lucide-react';
 import {
@@ -43,6 +45,8 @@ import {
   type AttendanceDraft,
 } from './attendanceModel';
 import { MateriaAsistenciaReporte } from './MateriaAsistenciaReporte';
+import { RosterImportDialog } from './RosterImportDialog';
+import { ExistingStudentsDialog } from './ExistingStudentsDialog';
 
 const STATUS_OPTIONS: {
   value: AsistenciaEstado;
@@ -140,6 +144,8 @@ export function MateriaAsistencia() {
   const [selectedDate, setSelectedDate] = useState(today);
   const [draft, setDraft] = useState<AttendanceDraft>({});
   const [baseline, setBaseline] = useState<AttendanceDraft>({});
+  const [importOpen, setImportOpen] = useState(false);
+  const [existingOpen, setExistingOpen] = useState(false);
 
   const attendanceQuery = useQuery({
     queryKey: ['asistencia', materia.id, selectedDate],
@@ -262,7 +268,9 @@ export function MateriaAsistencia() {
 
   return (
     <>
-      <div className='mb-6 flex justify-end'>
+      <div className='mb-6 flex flex-wrap justify-end gap-2'>
+        <Button type="button" variant="outline" onClick={() => setExistingOpen(true)}><UserPlus className="h-4 w-4" /> Agregar registrados</Button>
+        <Button type="button" onClick={() => setImportOpen(true)}><Camera className="h-4 w-4" /> Importar lista</Button>
         <a
           href='#reporte-asistencia'
           className='focus-ring inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-border bg-surface px-4 text-sm font-semibold text-fg transition-colors hover:bg-surface-2'
@@ -541,6 +549,8 @@ export function MateriaAsistencia() {
         onClose={() => blocker.reset?.()}
         onConfirm={() => blocker.proceed?.()}
       />
+      <RosterImportDialog open={importOpen} materiaId={materia.id} onClose={() => setImportOpen(false)} />
+      <ExistingStudentsDialog open={existingOpen} materiaId={materia.id} onClose={() => setExistingOpen(false)} />
     </div>
     </>
   );

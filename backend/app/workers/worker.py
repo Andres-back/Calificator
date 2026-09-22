@@ -20,6 +20,7 @@ celery_app = Celery(
         "app.workers.tasks_digitalization",
         "app.workers.tasks_deadlines",
         "app.workers.tasks_password_recovery",
+        "app.workers.tasks_roster_import",
     ],
 )
 
@@ -43,6 +44,9 @@ celery_app.conf.update(
         "tasks.recover_stale_grading_jobs": {"queue": "grading"},
         "tasks.digitalize_evaluation": {"queue": "digitalization"},
         "tasks.recover_stale_digitalization_jobs": {"queue": "digitalization"},
+        "tasks.extract_roster_import": {"queue": "digitalization"},
+        "tasks.recover_stale_roster_import_jobs": {"queue": "digitalization"},
+        "tasks.cleanup_expired_roster_imports": {"queue": "digitalization"},
         "tasks.generate_presentation": {"queue": "presentations"},
         "tasks.recover_stale_presentation_jobs": {"queue": "presentations"},
         "tasks.generate_image": {"queue": "presentations"},
@@ -67,6 +71,14 @@ celery_app.conf.update(
         "recover-stale-digitalization-jobs": {
             "task": "tasks.recover_stale_digitalization_jobs",
             "schedule": float(settings.AI_JOB_RECOVERY_INTERVAL_SECONDS),
+        },
+        "recover-stale-roster-import-jobs": {
+            "task": "tasks.recover_stale_roster_import_jobs",
+            "schedule": float(settings.AI_JOB_RECOVERY_INTERVAL_SECONDS),
+        },
+        "cleanup-expired-roster-imports": {
+            "task": "tasks.cleanup_expired_roster_imports",
+            "schedule": 3600.0,
         },
         "recover-expired-local-jobs": {
             "task": "tasks.recover_expired_local_jobs",
