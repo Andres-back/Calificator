@@ -1,6 +1,6 @@
 # Hotfix: distinguir respaldo visual, verificador y árbitro
 
-**Rama**: `codex/060-admin-grading-route-clarity` | **Fecha**: 2026-09-22 | **Issue**: [#119](https://github.com/Andres-back/Calificator/issues/119) | **Estado**: aprobado por el usuario para publicación
+**Rama**: `codex/060-admin-grading-route-clarity` | **Fecha**: 2026-09-22 | **Issue**: [#119](https://github.com/Andres-back/Calificator/issues/119) | **PR**: [#120](https://github.com/Andres-back/Calificator/pull/120) | **Estado**: aprobado por el usuario para publicación
 
 ## Impacto y reproducción
 
