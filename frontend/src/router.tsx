@@ -5,6 +5,7 @@ import { RequireAuth } from '@/components/auth/RequireAuth';
 import { RequirePermission } from '@/components/auth/RequirePermission';
 import { LoadingScreen } from '@/components/ui';
 import { RouterErrorBoundary } from '@/components/RouterErrorBoundary';
+import { RootMetadataLayout } from '@/components/seo/RootMetadataLayout';
 import { routes } from '@/config/routes';
 import { ForbiddenPage } from '@/pages/ForbiddenPage';
 import { NotFoundPage } from '@/pages/NotFoundPage';
@@ -46,7 +47,10 @@ const AnalyticsPage = lazy(() => import('@/modules/analytics/AnalyticsPage').the
 
 const lazyPage = (el: React.ReactNode) => <Suspense fallback={<LoadingScreen />}>{el}</Suspense>;
 
-export const router = createBrowserRouter([
+export const router = createBrowserRouter([{
+  element: <RootMetadataLayout />,
+  errorElement: <RouterErrorBoundary />,
+  children: [
   { path: routes.home, element: lazyPage(<LandingPage />), errorElement: <RouterErrorBoundary /> },
   { path: routes.login, element: lazyPage(<LoginPage />), errorElement: <RouterErrorBoundary /> },
   { path: routes.register, element: lazyPage(<RegisterPage />), errorElement: <RouterErrorBoundary /> },
@@ -120,8 +124,9 @@ export const router = createBrowserRouter([
     ],
   },
 
-  { path: '*', element: lazyPage(<NotFoundPage />) },
-], {
+    { path: '*', element: lazyPage(<NotFoundPage />) },
+  ],
+}], {
   future: {
     v7_relativeSplatPath: true,
     v7_fetcherPersist: true,

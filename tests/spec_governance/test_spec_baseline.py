@@ -31,6 +31,7 @@ ALL_SPECS = {
     "027-listas-botones-personalizados",
     "028-pulir-navegacion-presentaciones",
     "029-roles-permisos-modulares",
+    "030-identidad-seo",
     "031-acelerar-pipelines-ia",
     "032-calificacion-impacto-docente",
     "033-centro-calificacion",

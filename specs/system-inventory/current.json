@@ -356,7 +356,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "a90c70a4c8c04d74af50023ef59cc8a9294835024881448a0cb3478ec0c0f32c",
+  "source_digest": "4aa6ee10b2816d54bcd209c3fb88235b9d20bc3d6a46020632e8e6f39252bc9b",
   "surfaces": [
     {
       "actors": [
@@ -672,6 +672,12 @@
           "level": "unit",
           "reference": "DELETE:/evaluaciones/{evaluacion_id}",
           "status": "direct",
+          "test_path": "frontend/src/components/seo/RouteMetadata.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "DELETE:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
           "test_path": "frontend/src/lib/analytics.test.ts"
         },
         {
@@ -958,6 +964,12 @@
           "reference": "DELETE:/presentaciones/{presentacion_id}",
           "status": "direct",
           "test_path": "frontend/src/components/auth/RouteGuards.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "DELETE:/presentaciones/{presentacion_id}",
+          "status": "direct",
+          "test_path": "frontend/src/components/seo/RouteMetadata.test.tsx"
         },
         {
           "level": "unit",
@@ -3341,6 +3353,12 @@
           "level": "unit",
           "reference": "GET:/dba",
           "status": "direct",
+          "test_path": "frontend/src/components/seo/RouteMetadata.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/dba",
+          "status": "direct",
           "test_path": "frontend/src/modules/evaluaciones/components/GenerationWizard.test.tsx"
         },
         {
@@ -3601,6 +3619,12 @@
           "reference": "GET:/evaluaciones/{evaluacion_id}",
           "status": "direct",
           "test_path": "frontend/e2e/visual/student-feedback-story.visual.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
+          "test_path": "frontend/src/components/seo/RouteMetadata.test.tsx"
         },
         {
           "level": "unit",
@@ -5033,6 +5057,12 @@
           "level": "unit",
           "reference": "GET:/materias",
           "status": "direct",
+          "test_path": "frontend/src/components/seo/RouteMetadata.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias",
+          "status": "direct",
           "test_path": "frontend/src/components/ui/P2Accessibility.test.tsx"
         },
         {
@@ -5211,6 +5241,12 @@
           "reference": "GET:/materias/{materia_id}",
           "status": "direct",
           "test_path": "frontend/src/components/layout/AppShell.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias/{materia_id}",
+          "status": "direct",
+          "test_path": "frontend/src/components/seo/RouteMetadata.test.tsx"
         },
         {
           "level": "unit",
@@ -5729,6 +5765,12 @@
           "level": "unit",
           "reference": "GET:/presentaciones",
           "status": "direct",
+          "test_path": "frontend/src/components/seo/RouteMetadata.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/presentaciones",
+          "status": "direct",
           "test_path": "frontend/src/lib/analytics.test.ts"
         },
         {
@@ -5868,6 +5910,12 @@
           "reference": "GET:/presentaciones/{presentacion_id}",
           "status": "direct",
           "test_path": "frontend/src/components/auth/RouteGuards.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/presentaciones/{presentacion_id}",
+          "status": "direct",
+          "test_path": "frontend/src/components/seo/RouteMetadata.test.tsx"
         },
         {
           "level": "unit",
@@ -7469,6 +7517,12 @@
           "level": "unit",
           "reference": "PATCH:/evaluaciones/{evaluacion_id}",
           "status": "direct",
+          "test_path": "frontend/src/components/seo/RouteMetadata.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
           "test_path": "frontend/src/lib/analytics.test.ts"
         },
         {
@@ -7999,6 +8053,12 @@
           "reference": "PATCH:/materias/{materia_id}",
           "status": "direct",
           "test_path": "frontend/src/components/layout/AppShell.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/materias/{materia_id}",
+          "status": "direct",
+          "test_path": "frontend/src/components/seo/RouteMetadata.test.tsx"
         },
         {
           "level": "unit",
@@ -10505,6 +10565,12 @@
           "level": "unit",
           "reference": "POST:/evaluaciones",
           "status": "direct",
+          "test_path": "frontend/src/components/seo/RouteMetadata.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/evaluaciones",
+          "status": "direct",
           "test_path": "frontend/src/lib/analytics.test.ts"
         },
         {
@@ -12508,6 +12574,12 @@
           "level": "unit",
           "reference": "POST:/materias",
           "status": "direct",
+          "test_path": "frontend/src/components/seo/RouteMetadata.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/materias",
+          "status": "direct",
           "test_path": "frontend/src/components/ui/P2Accessibility.test.tsx"
         },
         {
@@ -12873,6 +12945,12 @@
           "reference": "POST:/presentaciones",
           "status": "direct",
           "test_path": "frontend/src/components/auth/RouteGuards.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/presentaciones",
+          "status": "direct",
+          "test_path": "frontend/src/components/seo/RouteMetadata.test.tsx"
         },
         {
           "level": "unit",
@@ -14347,6 +14425,12 @@
           "level": "unit",
           "reference": "/",
           "status": "direct",
+          "test_path": "frontend/src/components/seo/RouteMetadata.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
           "test_path": "frontend/src/components/ui/CollectionControls.test.tsx"
         },
         {
@@ -14378,6 +14462,12 @@
           "reference": "/",
           "status": "direct",
           "test_path": "frontend/src/components/xali/XaliMascot.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "frontend/src/config/seoAssets.test.ts"
         },
         {
           "level": "unit",
@@ -14982,7 +15072,19 @@
           "level": "unit",
           "reference": "/app",
           "status": "direct",
+          "test_path": "frontend/src/components/seo/RouteMetadata.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/app",
+          "status": "direct",
           "test_path": "frontend/src/components/ui/P2Accessibility.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/app",
+          "status": "direct",
+          "test_path": "frontend/src/config/seoAssets.test.ts"
         },
         {
           "level": "unit",
@@ -15755,6 +15857,12 @@
         {
           "level": "unit",
           "reference": "/app/admin/usuarios",
+          "status": "direct",
+          "test_path": "frontend/src/components/seo/RouteMetadata.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/admin/usuarios",
           "status": "domain",
           "test_path": "frontend/src/modules/admin/AdminAIConfigPage.test.tsx"
         },
@@ -16014,6 +16122,12 @@
           "reference": "/app/calificaciones",
           "status": "direct",
           "test_path": "frontend/e2e/visual/grading-review.visual.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/calificaciones",
+          "status": "direct",
+          "test_path": "frontend/src/components/seo/RouteMetadata.test.tsx"
         },
         {
           "level": "unit",
@@ -17075,6 +17189,12 @@
           "level": "unit",
           "reference": "/app/materias",
           "status": "direct",
+          "test_path": "frontend/src/components/seo/RouteMetadata.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/materias",
+          "status": "direct",
           "test_path": "frontend/src/components/ui/P2Accessibility.test.tsx"
         },
         {
@@ -17249,6 +17369,12 @@
           "reference": "/app/materias/{id}",
           "status": "direct",
           "test_path": "frontend/src/components/layout/AppShell.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/materias/{id}",
+          "status": "direct",
+          "test_path": "frontend/src/components/seo/RouteMetadata.test.tsx"
         },
         {
           "level": "unit",
@@ -18097,6 +18223,12 @@
           "level": "unit",
           "reference": "/app/presentaciones",
           "status": "direct",
+          "test_path": "frontend/src/components/seo/RouteMetadata.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/presentaciones",
+          "status": "direct",
           "test_path": "frontend/src/lib/analytics.test.ts"
         },
         {
@@ -18668,6 +18800,12 @@
           "level": "unit",
           "reference": "/login",
           "status": "direct",
+          "test_path": "frontend/src/components/seo/RouteMetadata.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/login",
+          "status": "direct",
           "test_path": "frontend/src/lib/api.test.ts"
         },
         {
@@ -18786,6 +18924,12 @@
           "reference": "/registro",
           "status": "domain",
           "test_path": "frontend/e2e/teacher-ai-configuration.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "/registro",
+          "status": "direct",
+          "test_path": "frontend/src/components/seo/RouteMetadata.test.tsx"
         },
         {
           "level": "unit",
@@ -19205,6 +19349,12 @@
           "level": "unit",
           "reference": "DELETE:/evaluaciones/{id}",
           "status": "direct",
+          "test_path": "frontend/src/components/seo/RouteMetadata.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "DELETE:/evaluaciones/{id}",
+          "status": "direct",
           "test_path": "frontend/src/lib/analytics.test.ts"
         },
         {
@@ -19500,6 +19650,12 @@
           "reference": "DELETE:/presentaciones/{id}",
           "status": "direct",
           "test_path": "frontend/src/components/auth/RouteGuards.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "DELETE:/presentaciones/{id}",
+          "status": "direct",
+          "test_path": "frontend/src/components/seo/RouteMetadata.test.tsx"
         },
         {
           "level": "unit",
@@ -21962,6 +22118,12 @@
           "level": "unit",
           "reference": "GET:/dba",
           "status": "direct",
+          "test_path": "frontend/src/components/seo/RouteMetadata.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/dba",
+          "status": "direct",
           "test_path": "frontend/src/modules/evaluaciones/components/GenerationWizard.test.tsx"
         },
         {
@@ -22407,6 +22569,12 @@
           "reference": "GET:/evaluaciones/{id}",
           "status": "direct",
           "test_path": "frontend/e2e/visual/student-feedback-story.visual.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/{id}",
+          "status": "direct",
+          "test_path": "frontend/src/components/seo/RouteMetadata.test.tsx"
         },
         {
           "level": "unit",
@@ -23248,6 +23416,12 @@
           "level": "unit",
           "reference": "GET:/materias/{id}",
           "status": "direct",
+          "test_path": "frontend/src/components/seo/RouteMetadata.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias/{id}",
+          "status": "direct",
           "test_path": "frontend/src/components/ui/P2Accessibility.test.tsx"
         },
         {
@@ -23698,6 +23872,12 @@
           "level": "unit",
           "reference": "GET:/materias",
           "status": "direct",
+          "test_path": "frontend/src/components/seo/RouteMetadata.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias",
+          "status": "direct",
           "test_path": "frontend/src/components/ui/P2Accessibility.test.tsx"
         },
         {
@@ -23948,6 +24128,12 @@
           "reference": "GET:/presentaciones",
           "status": "direct",
           "test_path": "frontend/src/components/auth/RouteGuards.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/presentaciones",
+          "status": "direct",
+          "test_path": "frontend/src/components/seo/RouteMetadata.test.tsx"
         },
         {
           "level": "unit",
@@ -25310,6 +25496,12 @@
           "level": "unit",
           "reference": "PATCH:/evaluaciones/{id}",
           "status": "direct",
+          "test_path": "frontend/src/components/seo/RouteMetadata.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/evaluaciones/{id}",
+          "status": "direct",
           "test_path": "frontend/src/lib/analytics.test.ts"
         },
         {
@@ -25708,6 +25900,12 @@
           "reference": "PATCH:/materias/{id}",
           "status": "direct",
           "test_path": "frontend/src/components/layout/AppShell.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/materias/{id}",
+          "status": "direct",
+          "test_path": "frontend/src/components/seo/RouteMetadata.test.tsx"
         },
         {
           "level": "unit",
@@ -28309,6 +28507,12 @@
           "level": "unit",
           "reference": "POST:/evaluaciones",
           "status": "direct",
+          "test_path": "frontend/src/components/seo/RouteMetadata.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/evaluaciones",
+          "status": "direct",
           "test_path": "frontend/src/lib/analytics.test.ts"
         },
         {
@@ -29060,6 +29264,12 @@
           "level": "unit",
           "reference": "POST:/materias",
           "status": "direct",
+          "test_path": "frontend/src/components/seo/RouteMetadata.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/materias",
+          "status": "direct",
           "test_path": "frontend/src/components/ui/P2Accessibility.test.tsx"
         },
         {
@@ -29295,6 +29505,12 @@
           "reference": "POST:/presentaciones",
           "status": "direct",
           "test_path": "frontend/src/components/auth/RouteGuards.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/presentaciones",
+          "status": "direct",
+          "test_path": "frontend/src/components/seo/RouteMetadata.test.tsx"
         },
         {
           "level": "unit",
@@ -33260,6 +33476,12 @@
           "level": "unit",
           "reference": "calificaciones",
           "status": "direct",
+          "test_path": "frontend/src/components/seo/RouteMetadata.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "calificaciones",
+          "status": "direct",
           "test_path": "frontend/src/components/ui/P2Accessibility.test.tsx"
         },
         {
@@ -33980,6 +34202,12 @@
           "level": "unit",
           "reference": "evaluaciones",
           "status": "direct",
+          "test_path": "frontend/src/components/seo/RouteMetadata.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "evaluaciones",
+          "status": "direct",
           "test_path": "frontend/src/lib/analytics.test.ts"
         },
         {
@@ -34630,6 +34858,12 @@
           "level": "unit",
           "reference": "materias",
           "status": "direct",
+          "test_path": "frontend/src/components/seo/RouteMetadata.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "materias",
+          "status": "direct",
           "test_path": "frontend/src/components/ui/P2Accessibility.test.tsx"
         },
         {
@@ -35172,6 +35406,12 @@
           "reference": "presentaciones",
           "status": "direct",
           "test_path": "frontend/src/components/auth/RouteGuards.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "presentaciones",
+          "status": "direct",
+          "test_path": "frontend/src/components/seo/RouteMetadata.test.tsx"
         },
         {
           "level": "unit",
