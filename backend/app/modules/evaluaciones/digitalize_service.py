@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import ast
-import json
 import re
 import math
 import unicodedata
@@ -18,7 +17,10 @@ from app.core.config import settings
 from app.core.logging import get_logger
 from app.modules.calificaciones.agents import AgentContext, OpenCodeClient, vision_agent
 from app.modules.dba.document_service import extraer_texto_docx, extraer_texto_pdf
-from app.services.image_preprocessing import prepare_orientation_variants
+from app.services.image_preprocessing import (
+    prepare_orientation_variants,
+    quality_warning_messages,
+)
 from app.services.llm_router import LLMRouter
 from app.services.storage_service import validate_mime
 from app.services.vision_service import interpret_image
@@ -59,7 +61,13 @@ Devuelve SOLO JSON válido con esta estructura exacta:
     }}
   ],
   "respuestas_esperadas": [
-    {{"numero": 1, "respuesta": "respuesta correcta o respuesta de referencia"}}
+    {{
+      "numero": 1,
+      "respuesta": "respuesta correcta o null",
+      "origen": "resolucion_independiente|solucion_impresa|pendiente",
+      "confianza": 0.0,
+      "explicacion": "por qué esta es la solución, sin usar la respuesta observada"
+    }}
   ],
   "criterios": [
     {{"nombre": "criterio", "descripcion": "cómo se evalúa"}}
@@ -72,10 +80,12 @@ Devuelve SOLO JSON válido con esta estructura exacta:
 REGLAS OBLIGATORIAS:
 - Incluye TODAS las preguntas y conserva su numeración. Si el OCR numeró una lista de ejercicios originalmente sin número, conserva esa numeración secuencial.
 - El contenido puede incluir etiquetas [RESPUESTA DEL ESTUDIANTE: ...]. No copies esas respuestas en la clave ni las mezcles con el enunciado: resuelve cada ejercicio de forma independiente.
-- Genera exactamente UNA respuesta esperada para CADA pregunta, incluso si el documento
-  no trae una clave impresa. Resuelve las operaciones y, para preguntas abiertas, redacta
-  una solucion especifica, breve y verificable. Nunca uses marcadores como "pendiente de
-  validacion", "respuesta argumentada" o "el docente debe definirla".
+- Construye la clave EXCLUSIVAMENTE desde el enunciado y material impreso. La presencia,
+  selección o escritura del estudiante nunca demuestra que una respuesta sea correcta.
+- Resuelve de forma independiente las preguntas objetivas. Para una pregunta abierta,
+  devuelve una respuesta solo si puede justificarse con el enunciado o una solución impresa.
+  Si falta contexto o rúbrica, usa respuesta=null, origen="pendiente", confianza=0 y explica
+  qué debe confirmar el docente. Es preferible una clave pendiente a una clave inventada.
 - En opcion multiple devuelve EXACTAMENTE una de las opciones existentes, incluyendo letra
   y texto (por ejemplo, "B) 36"). En verdadero/falso devuelve "Verdadero" o "Falso".
 - Razona la solucion; no copies todas las opciones ni inventes una respuesta fuera de ellas.
@@ -91,18 +101,6 @@ Contenido extraído:
 ---
 {contenido}
 ---
-"""
-
-REPAIR_KEY_PROMPT = """Completa la clave de respuestas de esta evaluación.
-Devuelve SOLO JSON con {{"respuestas_esperadas": [{{"numero": 1, "respuesta": "..."}}]}}.
-Debe existir una respuesta correcta o de referencia no vacía para cada número: {numeros}.
-Resuelve cada pregunta de nuevo e ignora cualquier texto etiquetado como RESPUESTA DEL ESTUDIANTE. Para opcion multiple devuelve exactamente una opcion existente con letra y texto; para abiertas redacta una respuesta especifica y verificable. No uses marcadores ni pidas al docente definir la respuesta.
-
-Preguntas:
-{preguntas}
-
-Contenido original:
-{contenido}
 """
 
 DIGITALIZATION_VISION_PROMPT = """Eres un extractor OCR de evaluaciones escolares.
@@ -121,7 +119,8 @@ Transcribe todo el contenido educativo visible:
 
 Devuelve SOLO JSON válido con este formato:
 {
-  "texto_extraido": "transcripción completa y ordenada",
+  "texto_preguntas": "solo título, instrucciones, preguntas y opciones impresas",
+  "texto_extraido": "transcripción completa con respuestas observadas etiquetadas",
   "preguntas_detectadas": [1, 2],
   "respuestas_detectadas": [{"pregunta": 1, "respuesta": "respuesta manuscrita visible"}],
   "calidad_imagen": {"borroso": "bajo|medio|alto", "iluminacion": "buena|mala", "recorte": "completo|parcial|cortado"},
@@ -132,7 +131,9 @@ Devuelve SOLO JSON válido con este formato:
 Marca usable=true si puedes reconstruir al menos una pregunta, incluso cuando el texto sea
 manuscrito, la hoja esté inclinada o existan imperfecciones menores. Usa false únicamente
 si no hay contenido educativo recuperable. No inventes texto que no esté visible.
-En texto_extraido etiqueta las respuestas realizadas como [RESPUESTA DEL ESTUDIANTE: ...].
+En texto_preguntas NUNCA incluyas respuestas, selecciones, operaciones ni correcciones
+realizadas por el estudiante. En texto_extraido etiqueta cada una como
+[RESPUESTA DEL ESTUDIANTE: ...]. No decidas si la respuesta observada es correcta.
 """
 
 def detect_digitalization_mime(content: bytes, filename: str) -> str:
@@ -273,6 +274,26 @@ async def _extract_image_text(
     ai_config: dict[str, Any] | None = None,
 ) -> tuple[str, list[str]]:
     variants = prepare_orientation_variants(content, mime)
+    quality = variants[0].quality if variants else None
+    if quality:
+        logger.info(
+            "digitalization.image_quality",
+            extra={
+                "quality_status": quality.status,
+                "quality_width": quality.width,
+                "quality_height": quality.height,
+                "quality_brightness": quality.brightness,
+                "quality_contrast": quality.contrast,
+                "quality_sharpness": quality.sharpness,
+                "quality_warnings": list(quality.warnings),
+            },
+        )
+    if quality and quality.status == "unusable":
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=" ".join(quality_warning_messages(quality)),
+        )
+    local_quality_warnings = quality_warning_messages(quality) if quality else []
     last_result = None
     client, vision_model = await _digitalization_vision_client(user_id, ai_config)
     try:
@@ -294,10 +315,11 @@ async def _extract_image_text(
             )
             last_result = result
             raw = result.raw_output or {}
-            text = str(raw.get("texto_extraido") or "").strip()
+            text = str(raw.get("texto_preguntas") or raw.get("texto_extraido") or "").strip()
+            text = _strip_student_answer_annotations(text)
             primary_usable = _declared_usable(raw.get("usable"), default=bool(text))
             if text and (primary_usable or _has_meaningful_evaluation_text(text)):
-                warnings = _clean_warnings(raw.get("alertas"))
+                warnings = [*local_quality_warnings, *_clean_warnings(raw.get("alertas"))]
                 if variant.rotation_degrees:
                     warnings.append(
                         "Se corrigió automáticamente la orientación de la foto "
@@ -349,7 +371,9 @@ async def _extract_image_text(
             ),
             purpose="evaluation_document",
         )
-        fallback_text = str(fallback.get("text_or_visual_content") or "").strip()
+        fallback_text = _strip_student_answer_annotations(
+            str(fallback.get("text_or_visual_content") or "").strip()
+        )
         quality = fallback.get("image_quality") or {}
         fallback_usable = _declared_usable(
             quality.get("is_usable") if isinstance(quality, dict) else None,
@@ -369,7 +393,7 @@ async def _extract_image_text(
                 "Se utilizó el proveedor alternativo de visión. Revisa la transcripción "
                 "antes de publicar."
             )
-            return fallback_text, warnings
+            return fallback_text, [*local_quality_warnings, *warnings]
 
     providers_unavailable = bool(last_result and last_result.error) and any(
         "ningún proveedor" in warning.lower() for warning in fallback_warnings
@@ -646,15 +670,23 @@ def _build_local_digitalization_structure(
     numbers = [int(question["numero"]) for question in questions]
     if len(numbers) != len(set(numbers)):
         return None
+    answers = []
+    for question in questions:
+        answer = _local_reference_answer(question)
+        item: dict[str, Any] = {
+            "numero": question["numero"],
+            "respuesta": answer,
+        }
+        if not _is_placeholder_answer(answer):
+            item.update({
+                "origen": "verificacion_determinista",
+                "confianza": 1.0,
+                "explicacion": "Resultado comprobado de forma determinista desde el enunciado.",
+            })
+        answers.append(item)
     return {
         "preguntas": questions,
-        "respuestas_esperadas": [
-            {
-                "numero": question["numero"],
-                "respuesta": _local_reference_answer(question),
-            }
-            for question in questions
-        ],
+        "respuestas_esperadas": answers,
         "criterios": [dict(item) for item in DEFAULT_CRITERIA],
         "errores_comunes": [],
         "reglas_feedback": {},
@@ -691,7 +723,13 @@ def _apply_locally_verified_answers(
         except (TypeError, ValueError):
             continue
     for number, answer in verified_answers.items():
-        answer_map[number] = {"numero": number, "respuesta": answer}
+        answer_map[number] = {
+            "numero": number,
+            "respuesta": answer,
+            "origen": "verificacion_determinista",
+            "confianza": 1.0,
+            "explicacion": "Resultado comprobado de forma determinista desde el enunciado.",
+        }
 
     verified = dict(structure)
     verified["respuestas_esperadas"] = list(answer_map.values())
@@ -875,7 +913,7 @@ def normalize_detected_structure(
 
     warnings = list(initial_warnings or [])
     questions_by_number = {int(question["numero"]): question for question in questions}
-    answer_map: dict[int, str] = {}
+    answer_map: dict[int, dict[str, Any]] = {}
     for answer in structure.get("respuestas_esperadas") or []:
         if not isinstance(answer, dict):
             continue
@@ -887,12 +925,42 @@ def normalize_detected_structure(
         if not question:
             continue
         value = _canonical_answer_for_question(question, answer.get("respuesta"))
-        if value is not None:
-            answer_map[number] = value
+        if value is None:
+            continue
+        origin = str(answer.get("origen") or "").strip().lower()
+        explanation = str(answer.get("explicacion") or "").strip()
+        try:
+            confidence = float(answer.get("confianza"))
+        except (TypeError, ValueError):
+            confidence = 0.0
+        is_objective = str(question.get("tipo") or "").lower() in {
+            "opcion_multiple", "verdadero_falso", "completar"
+        }
+        independently_supported = origin in {
+            "resolucion_independiente", "solucion_impresa", "verificacion_determinista"
+        }
+        if origin in {"respuesta_observada", "respuesta_estudiante", "pendiente"}:
+            continue
+        if not is_objective and not (
+            independently_supported and explanation and confidence >= 0.65
+        ):
+            continue
+        entry: dict[str, Any] = {"numero": number, "respuesta": value}
+        if origin:
+            entry["origen"] = origin
+        if explanation:
+            entry["explicacion"] = explanation
+        if answer.get("confianza") is not None:
+            entry["confianza"] = max(0.0, min(1.0, confidence))
+        answer_map[number] = entry
 
     corrected_answers: list[int] = []
     for number, question in questions_by_number.items():
-        if question.get("tipo") != "completar":
+        if question.get("tipo") == "abierta" and re.search(
+            r"\b(explica|justifica|demuestra|argumenta|por\s+qu[eé]|usando\s+un\s+ejemplo)\b",
+            str(question.get("enunciado") or ""),
+            flags=re.IGNORECASE,
+        ):
             continue
         verified = _local_reference_answer(question)
         if _is_placeholder_answer(verified):
@@ -900,9 +968,15 @@ def normalize_detected_structure(
         canonical = _canonical_answer_for_question(question, verified)
         if canonical is None:
             continue
-        if number in answer_map and _answer_key(answer_map[number]) != _answer_key(canonical):
+        if number in answer_map and _answer_key(answer_map[number]["respuesta"]) != _answer_key(canonical):
             corrected_answers.append(number)
-        answer_map[number] = canonical
+        answer_map[number] = {
+            "numero": number,
+            "respuesta": canonical,
+            "origen": "verificacion_determinista",
+            "confianza": 1.0,
+            "explicacion": "Resultado comprobado de forma determinista desde el enunciado.",
+        }
     if corrected_answers:
         warnings.append(
             "Se corrigió la clave mediante verificación determinista en las preguntas: "
@@ -910,13 +984,12 @@ def normalize_detected_structure(
             + ". Revisa el borrador antes de publicarlo."
         )
     missing = [number for number in numbers if number not in answer_map]
+    key_complete = not missing
     if missing:
-        raise HTTPException(
-            status_code=status.HTTP_502_BAD_GATEWAY,
-            detail=(
-                "La IA no construyó una clave completa. Faltan respuestas para las preguntas: "
-                + ", ".join(str(number) for number in missing)
-            ),
+        warnings.append(
+            "Confirma la respuesta correcta de las preguntas "
+            + ", ".join(str(number) for number in missing)
+            + "; no se usó la respuesta observada del estudiante como clave."
         )
 
     declared_total = _decimal(structure.get("puntaje_total_declarado"))
@@ -949,15 +1022,13 @@ def normalize_detected_structure(
         "orientar_sin_dar_respuesta": True,
         "requiere_validacion_docente": True,
         "digitalizada_desde_archivo": True,
-        "clave_completa": True,
+        "clave_completa": key_complete,
+        "claves_pendientes": missing,
         "advertencias": warnings,
     })
     return {
         "preguntas": questions,
-        "respuestas_esperadas": [
-            {"numero": number, "respuesta": answer_map[number]}
-            for number in numbers
-        ],
+        "respuestas_esperadas": [answer_map[number] for number in numbers if number in answer_map],
         "criterios": criteria,
         "errores_comunes": [
             str(item).strip()
@@ -967,74 +1038,10 @@ def normalize_detected_structure(
         "reglas_feedback": rules,
         "puntaje_total_declarado": str(declared_total) if declared_total else None,
         "nota_maxima": str(nota_maxima),
-        "clave_completa": True,
+        "clave_completa": key_complete,
+        "claves_pendientes": missing,
         "advertencias": warnings,
     }
-
-
-async def _repair_missing_answers(
-    llm: LLMRouter,
-    structure: dict[str, Any],
-    content: str,
-) -> dict[str, Any]:
-    questions = structure.get("preguntas") or []
-    numbers: list[int] = []
-    for index, question in enumerate(questions, start=1):
-        if not isinstance(question, dict):
-            continue
-        try:
-            numbers.append(int(question.get("numero", index)))
-        except (TypeError, ValueError):
-            continue
-
-    questions_by_number: dict[int, dict[str, Any]] = {}
-    for index, question in enumerate(questions, start=1):
-        if not isinstance(question, dict):
-            continue
-        try:
-            questions_by_number[int(question.get("numero", index))] = question
-        except (TypeError, ValueError):
-            continue
-    present: set[int] = set()
-    for answer in structure.get("respuestas_esperadas") or []:
-        if not isinstance(answer, dict):
-            continue
-        try:
-            number = int(answer.get("numero"))
-        except (TypeError, ValueError):
-            continue
-        question = questions_by_number.get(number)
-        if question and _canonical_answer_for_question(question, answer.get("respuesta")) is not None:
-            present.add(number)
-    missing = [number for number in numbers if number not in present]
-    if not missing:
-        return structure
-    repaired = await llm.generate_json(
-        DIGITALIZATION_STRUCTURE_TASK,
-        REPAIR_KEY_PROMPT.format(
-            numeros=", ".join(str(number) for number in missing),
-            preguntas=json.dumps(questions, ensure_ascii=False),
-            contenido=content[:8000],
-        ),
-    )
-    merged = dict(structure)
-    answer_map: dict[int, dict[str, Any]] = {}
-    for answer in structure.get("respuestas_esperadas") or []:
-        if not isinstance(answer, dict):
-            continue
-        try:
-            answer_map[int(answer.get("numero"))] = answer
-        except (TypeError, ValueError):
-            continue
-    for answer in repaired.get("respuestas_esperadas") or []:
-        if not isinstance(answer, dict):
-            continue
-        try:
-            answer_map[int(answer.get("numero"))] = answer
-        except (TypeError, ValueError):
-            continue
-    merged["respuestas_esperadas"] = list(answer_map.values())
-    return merged
 
 
 async def detectar_estructura_evaluacion(
@@ -1045,7 +1052,7 @@ async def detectar_estructura_evaluacion(
     initial_warnings: list[str] | None = None,
     ai_config: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
-    """Detecta preguntas y exige una clave completa antes de crear el borrador."""
+    """Detecta preguntas y propone una clave independiente para revisión docente."""
     if not contenido_texto.strip():
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
@@ -1109,7 +1116,6 @@ async def detectar_estructura_evaluacion(
             detail="El proveedor de IA no devolvió una estructura válida.",
         )
     result = _apply_locally_verified_answers(result, contenido_preguntas)
-    result = await _repair_missing_answers(llm, result, contenido_preguntas)
     normalized = normalize_detected_structure(
         result,
         nota_maxima=nota_maxima,

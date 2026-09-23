@@ -34,7 +34,13 @@ def _structure(*, missing_answer: int | None = None) -> dict:
         for number in range(1, 8)
     ]
     answers = [
-        {"numero": number, "respuesta": "B" if number in {1, 4, 7} else f"Respuesta {number}"}
+        {
+            "numero": number,
+            "respuesta": "B" if number in {1, 4, 7} else f"Respuesta {number}",
+            "origen": "resolucion_independiente",
+            "confianza": 0.9,
+            "explicacion": f"Solución independiente de la pregunta {number}.",
+        }
         for number in range(1, 8)
         if number != missing_answer
     ]
@@ -106,7 +112,7 @@ def test_normalization_canonicalizes_objective_answers_to_existing_options() -> 
     ]
 
 
-def test_normalization_rejects_generic_answer_markers() -> None:
+def test_normalization_leaves_generic_answer_markers_pending() -> None:
     structure = {
         "preguntas": [
             {
@@ -121,25 +127,33 @@ def test_normalization_rejects_generic_answer_markers() -> None:
         ],
     }
 
-    with pytest.raises(HTTPException) as exc:
-        digitalize_service.normalize_detected_structure(
-            structure,
-            nota_maxima=Decimal("5"),
-        )
+    result = digitalize_service.normalize_detected_structure(
+        structure,
+        nota_maxima=Decimal("5"),
+    )
 
-    assert exc.value.status_code == 502
-    assert "1" in str(exc.value.detail)
+    assert result["respuestas_esperadas"] == []
+    assert result["clave_completa"] is False
+    assert result["claves_pendientes"] == [1]
 
 
-def test_normalization_rejects_incomplete_key() -> None:
-    with pytest.raises(HTTPException) as exc:
-        digitalize_service.normalize_detected_structure(
-            _structure(missing_answer=5),
-            nota_maxima=Decimal("5"),
-        )
+def test_normalization_marks_incomplete_key_for_teacher_review() -> None:
+    result = digitalize_service.normalize_detected_structure(
+        _structure(missing_answer=5),
+        nota_maxima=Decimal("5"),
+    )
 
-    assert exc.value.status_code == 502
-    assert "5" in str(exc.value.detail)
+    assert result["clave_completa"] is False
+    assert result["claves_pendientes"] == [5]
+
+
+def _readable_test_image() -> bytes:
+    image = Image.new("RGB", (640, 840), "white")
+    for y in range(40, 800, 36):
+        image.paste("black", (35, y, 590, y + 3))
+    buffer = BytesIO()
+    image.save(buffer, format="PNG")
+    return buffer.getvalue()
 
 
 def test_detect_mime_accepts_pdf_and_real_docx_container() -> None:
@@ -196,7 +210,7 @@ def test_image_extraction_accepts_meaningful_text_when_flagged_unusable(monkeypa
 
     text, warnings = asyncio.run(
         digitalize_service._extract_image_text(
-            b"image",
+            _readable_test_image(),
             "image/png",
             "evaluacion.png",
         )
@@ -232,7 +246,7 @@ def test_image_extraction_uses_document_fallback_on_provider_error(monkeypatch) 
 
     text, warnings = asyncio.run(
         digitalize_service._extract_image_text(
-            b"image",
+            _readable_test_image(),
             "image/png",
             "evaluacion.png",
         )
@@ -267,7 +281,7 @@ def test_image_extraction_reports_provider_outage_without_blaming_photo(monkeypa
     with pytest.raises(HTTPException) as exc:
         asyncio.run(
             digitalize_service._extract_image_text(
-                b"image",
+                _readable_test_image(),
                 "image/png",
                 "evaluacion.png",
             )
@@ -277,7 +291,7 @@ def test_image_extraction_reports_provider_outage_without_blaming_photo(monkeypa
     assert "no fue rechazada por su calidad" in str(exc.value.detail)
 
 
-def test_detector_repairs_missing_answers_before_normalizing(monkeypatch) -> None:
+def test_detector_keeps_missing_answers_pending_for_teacher_review(monkeypatch) -> None:
     first = _structure(missing_answer=5)
     calls: list[str] = []
 
@@ -287,9 +301,7 @@ def test_detector_repairs_missing_answers_before_normalizing(monkeypatch) -> Non
 
         async def generate_json(self, task_type, prompt):
             calls.append(task_type)
-            if len(calls) == 1:
-                return first
-            return {"respuestas_esperadas": [{"numero": 5, "respuesta": "24 lápices"}]}
+            return first
 
         def set_output_budget(self, max_tokens):
             assert max_tokens == 8192
@@ -303,9 +315,9 @@ def test_detector_repairs_missing_answers_before_normalizing(monkeypatch) -> Non
         )
     )
 
-    assert calls == ["digitalizacion.estructura", "digitalizacion.estructura"]
-    assert len(result["respuestas_esperadas"]) == 7
-    assert result["respuestas_esperadas"][4]["respuesta"] == "24 lápices"
+    assert calls == ["digitalizacion.estructura"]
+    assert result["clave_completa"] is False
+    assert result["claves_pendientes"] == [5]
 
 
 def test_detector_uses_local_math_fallback_when_opencode_is_limited(monkeypatch) -> None:
@@ -438,13 +450,35 @@ def test_normalization_verifies_math_key_against_persisted_statement() -> None:
         nota_maxima=Decimal("5"),
     )
 
-    assert result["respuestas_esperadas"] == [
-        {"numero": 5, "respuesta": "18090"},
-    ]
+    assert result["respuestas_esperadas"][0]["respuesta"] == "18090"
+    assert result["respuestas_esperadas"][0]["origen"] == "verificacion_determinista"
     assert any(
         "verific" in warning.casefold() and "5" in warning
         for warning in result["advertencias"]
     )
+
+
+def test_normalization_solves_open_arithmetic_independently() -> None:
+    result = digitalize_service.normalize_detected_structure(
+        {
+            "preguntas": [{
+                "numero": 1,
+                "tipo": "abierta",
+                "enunciado": "Calcula 527 x 27.",
+                "puntaje": 1,
+            }],
+            "respuestas_esperadas": [{
+                "numero": 1,
+                "respuesta": "13000",
+                "origen": "respuesta_observada",
+            }],
+        },
+        nota_maxima=Decimal("5"),
+    )
+
+    assert result["clave_completa"] is True
+    assert result["respuestas_esperadas"][0]["respuesta"] == "14229"
+    assert result["respuestas_esperadas"][0]["origen"] == "verificacion_determinista"
 
 
 def test_student_answer_annotations_never_become_question_content() -> None:
@@ -481,6 +515,9 @@ def test_normalization_preserves_open_math_explanation() -> None:
             {
                 "numero": 1,
                 "respuesta": "Al reunir dos elementos con otros dos se obtienen cuatro.",
+                "origen": "resolucion_independiente",
+                "confianza": 0.9,
+                "explicacion": "La suma se deriva del enunciado.",
             },
         ],
     }
@@ -803,6 +840,8 @@ def test_image_preprocessing_builds_readable_orientation_variants() -> None:
 
 def test_image_extraction_retries_rotated_photo_before_rejecting(monkeypatch) -> None:
     source = Image.new("RGB", (320, 180), "white")
+    source.paste("black", (20, 30, 300, 34))
+    source.paste("black", (20, 70, 260, 74))
     buffer = BytesIO()
     source.save(buffer, format="PNG")
     seen_sizes: list[tuple[int, int]] = []

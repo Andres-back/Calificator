@@ -4,7 +4,7 @@ import { Check, Search, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Button, Card, ConfirmDialog, Field } from '@/components/ui';
 import { MultiPageEvidencePicker } from '@/components/evidence/MultiPageEvidencePicker';
-import { evidenceFiles, evidenceRotations, type EvidencePage } from '@/components/evidence/evidencePayload';
+import { evidenceFiles, evidenceRotations, hasUnusableEvidence, type EvidencePage } from '@/components/evidence/evidencePayload';
 import { calificarFoto } from '@/modules/calificaciones/api';
 import { addPendingGrading } from '@/modules/calificaciones/gradingJobs';
 import { queryClient } from '@/lib/queryClient';
@@ -159,7 +159,7 @@ export function GradingUploadPanel({ evaluationId, students, studentId, onStuden
     {savedName && <p role="status" className="rounded-lg bg-emerald-50 p-3 text-sm text-emerald-900 dark:bg-emerald-500/10 dark:text-emerald-200">Entrega de {savedName} guardada. La calificación continúa en segundo plano; no se ha publicado una nota.</p>}
     <MultiPageEvidencePicker pages={pages} onChange={(next) => { setPages(next); setError(''); }} disabled={!student || upload.isPending} onError={setError} />
     {error && <p role="alert" className="text-sm text-rose-600 dark:text-rose-300">{error} Conservamos las hojas para que puedas corregir o reintentar.</p>}
-    <Button disabled={!student || !pages.length || upload.isPending} loading={upload.isPending} onClick={() => setConfirming(true)}>Enviar a calificar</Button>
+    <Button disabled={!student || !pages.length || hasUnusableEvidence(pages) || upload.isPending} loading={upload.isPending} onClick={() => setConfirming(true)}>Enviar a calificar</Button>
     <ConfirmDialog open={confirming} onClose={() => !upload.isPending && setConfirming(false)} loading={upload.isPending}
       title={pages[0]?.file.type === 'application/pdf' ? 'Confirmar documento completo' : `Vas a entregar ${pages.length} ${pages.length === 1 ? 'hoja' : 'hojas'}`}
       description={`La evidencia se asociará a ${student?.nombre ?? 'este estudiante'}. Revisa el orden y que no falte ninguna hoja.`}

@@ -267,6 +267,8 @@ async def _digitalize_async(
                 "nombre": evaluation.nombre,
                 "preguntas_count": len(structure.get("preguntas", [])),
                 "respuestas_count": len(structure.get("respuestas_esperadas", [])),
+                "clave_completa": bool(structure.get("clave_completa")),
+                "claves_pendientes": list(structure.get("claves_pendientes", [])),
                 "advertencias": structure.get("advertencias", []),
                 "progreso": 100,
                 "stage": "completed",

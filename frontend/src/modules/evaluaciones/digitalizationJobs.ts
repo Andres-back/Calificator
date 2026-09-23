@@ -20,6 +20,8 @@ export interface PendingDigitalizationJob {
   progress: number;
   evaluationId?: string;
   questionsCount?: number;
+  keyComplete?: boolean;
+  pendingKeys?: number[];
   error?: string;
   timingsMs?: Record<string, number>;
   terminalReason?: string;
@@ -76,6 +78,10 @@ export function readPendingDigitalizations(): PendingDigitalizationJob[] {
           : undefined,
         questionsCount: typeof item.questionsCount === 'number'
           ? item.questionsCount
+          : undefined,
+        keyComplete: typeof item.keyComplete === 'boolean' ? item.keyComplete : undefined,
+        pendingKeys: Array.isArray(item.pendingKeys)
+          ? item.pendingKeys.filter((value): value is number => typeof value === 'number')
           : undefined,
         error: typeof item.error === 'string' ? item.error : undefined,
         timingsMs: item.timingsMs && typeof item.timingsMs === 'object'

@@ -5,7 +5,7 @@ import toast from 'react-hot-toast';
 import { ArrowLeft, BookOpenCheck, CheckCircle2, ClipboardCheck, Clock3, Download, FileUp, LoaderCircle, MessageSquareWarning, PauseCircle, Send, TriangleAlert } from 'lucide-react';
 import { Badge, Button, Card, ConfirmDialog, EmptyState, Field, Modal, RichContent, Select, Skeleton, statusTone, Textarea } from '@/components/ui';
 import { MultiPageEvidencePicker } from '@/components/evidence/MultiPageEvidencePicker';
-import { evidenceFiles, evidenceRotations, type EvidencePage } from '@/components/evidence/evidencePayload';
+import { evidenceFiles, evidenceRotations, hasUnusableEvidence, type EvidencePage } from '@/components/evidence/evidencePayload';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { toApiError } from '@/lib/api';
 import { useAuth } from '@/stores/auth';
@@ -496,7 +496,7 @@ export function ResolverEvaluacionPage() {
                     disabled={!canUploadPhysical || entregarArchivo.isPending}
                     onError={(message) => toast.error(message)}
                   />
-                  <Button className="w-full" onClick={submitEvidence} loading={entregarArchivo.isPending} disabled={!canUploadPhysical || evidencePages.length === 0 || entregarArchivo.isPending}>
+                  <Button className="w-full" onClick={submitEvidence} loading={entregarArchivo.isPending} disabled={!canUploadPhysical || evidencePages.length === 0 || hasUnusableEvidence(evidencePages) || entregarArchivo.isPending}>
                     <FileUp className="h-4 w-4" /> Revisar y entregar {evidencePages.length === 1 ? '1 hoja' : `${evidencePages.length} hojas`}
                   </Button>
                 </>

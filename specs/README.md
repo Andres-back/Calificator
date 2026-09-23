@@ -162,6 +162,11 @@ actualizar la especificación propietaria, su plan y sus tareas; no debe crear d
 - [063-mobile-grade-digitization](063-mobile-grade-digitization/spec.md), [issue #125](https://github.com/Andres-back/Calificator/issues/125): difiere la búsqueda remota para evitar bloqueos al escribir, permite localizar al estudiante al cargar evidencia y separa los manuscritos de la clave esperada.
 - Las operaciones aritméticas de tipo completar se verifican contra el enunciado final y dejan advertencia si se corrige la propuesta de IA; no se alteran evaluaciones históricas.
 
+## Evolución 064: calidad de imagen y claves seguras
+
+- [064-calidad-imagen-claves](064-calidad-imagen-claves/spec.md), [issue #129](https://github.com/Andres-back/Calificator/issues/129): detecta fotografías oscuras, borrosas o inutilizables sin exigir esquinas visibles y prepara una copia legible para visión.
+- Separa las respuestas observadas del estudiante de la clave correcta; resuelve operaciones verificables como `527 × 27` de forma independiente y deja preguntas sin sustento pendientes de confirmación docente.
+
 ## Inventario técnico global
 
 - [Inventario canónico JSON](system-inventory/current.json)
