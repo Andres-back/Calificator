@@ -30,6 +30,7 @@ import { routes } from '@/config/routes';
 import { useAuth } from '@/stores/auth';
 import { GradingUploadPanel } from '@/modules/materias/MateriaCalificar';
 import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
+import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import {
   ajustarNota, ajustarNotaBatch, confirmarNota, confirmarNotaBatch,
   crearIncidencia, getEvaluationReview, getCalificacionDetalle, listarIncidencias,
@@ -1534,6 +1535,7 @@ function GradingCenter() {
   const setSelectedId = (id: string | null) => changeContext({ calificacion: id, estudiante: null, pregunta: null, hoja: null });
   const [selectedBatch, setSelectedBatch] = useState<Set<string>>(new Set());
   const [searchTerm, setSearchTerm] = useState('');
+  const debouncedSearchTerm = useDebouncedValue(searchTerm.trim(), 300);
   const requestedFilter = searchParams.get('filtro') ?? 'todas';
   const gradeFilter: ReviewFilter = ['pendientes', 'alertas', 'procesando', 'publicadas'].includes(requestedFilter) ? requestedFilter as ReviewFilter : 'todas';
   const [confirmingSingle, setConfirmingSingle] = useState<WorkspaceGrade | null>(null);
@@ -1591,11 +1593,12 @@ function GradingCenter() {
   }, [evalId, materiaId]);
 
   const reviewQuery = useInfiniteQuery({
-    queryKey: ['evaluation-review', evalId, gradeFilter, searchTerm],
+    queryKey: ['evaluation-review', evalId, gradeFilter, debouncedSearchTerm],
     initialPageParam: undefined as string | undefined,
-    queryFn: ({ pageParam, signal }) => getEvaluationReview(evalId, { filtro: gradeFilter, q: searchTerm, cursor: pageParam }, signal),
+    queryFn: ({ pageParam, signal }) => getEvaluationReview(evalId, { filtro: gradeFilter, q: debouncedSearchTerm, cursor: pageParam }, signal),
     getNextPageParam: (lastPage) => lastPage.siguiente_cursor ?? undefined,
     enabled: !!directEvaluation.data,
+    placeholderData: (previousData) => previousData,
     refetchInterval: (query) => {
       return query.state.data?.pages[0]?.contadores.procesando ? 5_000 : false;
     },
@@ -1773,26 +1776,32 @@ function GradingCenter() {
         eyebrow="Centro de calificación"
         subtitle="Un examen, sus estudiantes y cada respuesta en el mismo lugar."
         action={
-          <div className="flex flex-wrap gap-2">
+          <div className="flex max-w-full flex-nowrap gap-2 overflow-x-auto pb-1 [scrollbar-width:thin]">
+            {mode === 'carga' ? (
+              <Button type="button" variant="outline" className="shrink-0" disabled={mobileDirty} onClick={returnToReview}>
+                <ArrowLeft className="h-4 w-4" /> Volver a revisión
+              </Button>
+            ) : <>
             {materiaId && (
               <Link
                 to={routes.materiaBoletin(materiaId)}
-                className="focus-ring inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-border bg-surface px-4 text-sm font-semibold text-fg transition-colors hover:bg-surface-2"
+                className="focus-ring inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-lg border border-border bg-surface px-4 text-sm font-semibold text-fg transition-colors hover:bg-surface-2"
               >
                 <BookOpenCheck className="h-4 w-4" /> Libro de notas
               </Link>
             )}
             {canGrade && evalId && estudiantes.length > 0 && (
-              <Button type="button" variant="outline" disabled={mobileDirty} onClick={() => setManualGradeOpen(true)}>
+              <Button type="button" variant="outline" className="shrink-0" disabled={mobileDirty} onClick={() => setManualGradeOpen(true)}>
                 <Pencil className="h-4 w-4" /> Establecer nota
               </Button>
             )}
-            {canGrade && <Button variant="outline" disabled={!evalId} onClick={() => mode === 'carga' ? returnToReview() : changeContext({ modo: 'carga' })}>
-              <Camera className="h-4 w-4" /> {mode === 'carga' ? 'Volver a revisión' : 'Añadir entregas'}
+            {canGrade && <Button variant="outline" className="shrink-0" disabled={!evalId} onClick={() => changeContext({ modo: 'carga' })}>
+              <Camera className="h-4 w-4" /> Añadir entregas
             </Button>}
-            {canPublish && <Button variant="outline" disabled={!evalId} onClick={() => changeContext({ modo: mode === 'publicacion' ? null : 'publicacion', calificacion: null, estudiante: null, pregunta: null, hoja: null })}>
+            {canPublish && <Button variant="outline" className="shrink-0" disabled={!evalId} onClick={() => changeContext({ modo: mode === 'publicacion' ? null : 'publicacion', calificacion: null, estudiante: null, pregunta: null, hoja: null })}>
               {mode === 'publicacion' ? 'Volver a revisión' : 'Resumen y publicación'}
             </Button>}
+            </>}
           </div>
         }
       />
@@ -1837,7 +1846,6 @@ function GradingCenter() {
         evaluationId={evalId} students={estudiantes} studentId={selectedStudentId ?? ''}
         onStudentChange={(id) => changeContext({ estudiante: id, calificacion: null, pregunta: null, hoja: null })}
         onDirtyChange={updateDirty}
-        onClose={returnToReview}
       />}
       {directEvaluation.error && <p role="alert" className="p-4 text-rose-600">No se pudo abrir esta evaluación. Comprueba el acceso o selecciona otra.</p>}
       <div className={cn('min-w-0 flex-1 flex-col gap-4 lg:flex-row', mode === 'carga' ? 'hidden' : 'flex')}>
@@ -1857,22 +1865,37 @@ function GradingCenter() {
                 <div className="relative flex-1">
                   <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
                   <input
-                    type="text"
+                    type="search"
                     aria-label="Buscar estudiante"
                     placeholder="Buscar estudiante…"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="focus-ring h-11 w-full rounded-lg border border-border bg-surface-2 pl-9 pr-3 text-sm"
+                    className="focus-ring h-11 w-full rounded-lg border border-border bg-surface-2 pl-9 pr-11 text-base sm:text-sm"
                   />
+                  {searchTerm && (
+                    <button
+                      type="button"
+                      aria-label="Limpiar búsqueda"
+                      onClick={() => setSearchTerm('')}
+                      className="focus-ring absolute right-0 top-0 grid h-11 w-11 place-items-center rounded-lg text-muted hover:text-fg"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  )}
                 </div>
-                <div className="flex flex-wrap rounded-lg bg-surface-2 p-0.5">
+                {(searchTerm.trim() !== debouncedSearchTerm || (reviewQuery.isFetching && !reviewQuery.isFetchingNextPage)) && (
+                  <p role="status" className="flex items-center gap-2 text-xs text-muted">
+                    <LoaderCircle className="h-3.5 w-3.5 animate-spin" /> Buscando sin bloquear la lista…
+                  </p>
+                )}
+                <div className="flex max-w-full flex-nowrap gap-0.5 overflow-x-auto rounded-lg bg-surface-2 p-0.5 [scrollbar-width:thin]">
                   {(['todas', 'pendientes', 'alertas', 'procesando', 'publicadas'] as const).map((f) => (
                     <button
                       key={f}
                       type="button"
                       onClick={() => changeContext({ filtro: f })}
                       aria-pressed={gradeFilter === f}
-                      className={`focus-ring min-h-11 rounded-md px-2.5 text-xs font-semibold capitalize transition ${gradeFilter === f ? 'bg-surface text-fg shadow-sm' : 'text-muted hover:text-fg'}`}
+                      className={`focus-ring min-h-11 shrink-0 whitespace-nowrap rounded-md px-3 text-xs font-semibold capitalize transition ${gradeFilter === f ? 'bg-surface text-fg shadow-sm' : 'text-muted hover:text-fg'}`}
                     >
                       {f} ({counters[f]})
                     </button>

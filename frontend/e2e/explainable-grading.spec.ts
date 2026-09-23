@@ -378,7 +378,9 @@ test('dos paquetes quedan en cola, un fallo conserva hojas para reintentar', asy
   await expect(page.getByRole('dialog', { name: 'Vas a entregar 2 hojas' })).toBeVisible();
   await page.getByRole('button', { name: 'Confirmar y enviar' }).click();
   await expect(page.getByText(/Entrega de Estudiante Prueba guardada/)).toBeVisible();
-  await page.getByLabel('Estudiante de esta entrega').selectOption('s2');
+  await page.getByRole('button', { name: 'Limpiar estudiante' }).click();
+  await page.getByRole('combobox', { name: 'Buscar estudiante para esta entrega' }).fill('Segundo');
+  await page.getByRole('option', { name: 'Segundo estudiante' }).click();
   await expect(page).toHaveURL(/estudiante=s2/);
   await expect(page.getByText(/Entrega de Estudiante Prueba guardada/)).toHaveCount(0);
   await page.locator('input[type=file][multiple]').setInputFiles({ ...file, name: 'segunda-entrega.png' });
@@ -415,7 +417,9 @@ test('añadir otra entrega permite volver al alumno y pregunta anteriores', asyn
   await page.goto('/app/calificaciones?evaluacion=e1&calificacion=c1&estudiante=s1&pregunta=pregunta%3A1&hoja=1');
   await expect(page.getByRole('button', { name: 'Pregunta 1', exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Añadir entregas', exact: true }).click();
-  await page.getByLabel('Estudiante de esta entrega').selectOption('s2');
+  await page.getByRole('button', { name: 'Limpiar estudiante' }).click();
+  await page.getByRole('combobox', { name: 'Buscar estudiante para esta entrega' }).fill('Segundo');
+  await page.getByRole('option', { name: 'Segundo estudiante' }).click();
   await expect(page).toHaveURL(/estudiante=s2/);
   await page.getByRole('button', { name: 'Volver a revisión', exact: true }).last().click();
   await expect(page).toHaveURL(/estudiante=s1/);

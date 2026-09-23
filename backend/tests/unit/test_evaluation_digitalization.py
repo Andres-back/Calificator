@@ -414,6 +414,86 @@ def test_local_verification_corrects_objective_math_answers() -> None:
     assert answers == {1: "42", 2: "10", 3: "3.141"}
 
 
+def test_normalization_verifies_math_key_against_persisted_statement() -> None:
+    structure = {
+        "preguntas": [
+            {
+                "numero": 5,
+                "tipo": "completar",
+                "enunciado": "Resuelve la multiplicación 270 x 67.",
+                "puntaje": 1,
+            },
+        ],
+        "respuestas_esperadas": [
+            {
+                "numero": 5,
+                "respuesta": "18.760",
+                "explicacion": "280 x 67 = 18.760",
+            },
+        ],
+    }
+
+    result = digitalize_service.normalize_detected_structure(
+        structure,
+        nota_maxima=Decimal("5"),
+    )
+
+    assert result["respuestas_esperadas"] == [
+        {"numero": 5, "respuesta": "18090"},
+    ]
+    assert any(
+        "verific" in warning.casefold() and "5" in warning
+        for warning in result["advertencias"]
+    )
+
+
+def test_student_answer_annotations_never_become_question_content() -> None:
+    content = """1. Resuelve 270 x 67.
+[RESPUESTA DEL ESTUDIANTE: 18.760, porque 280 x 67 = 18.760]
+2. Explica con tus palabras la propiedad conmutativa.
+[RESPUESTA DEL ESTUDIANTE: cambiar el orden]
+"""
+
+    structure = digitalize_service._build_local_digitalization_structure(content)
+
+    assert structure is not None
+    assert [item["enunciado"] for item in structure["preguntas"]] == [
+        "Resuelve 270 x 67.",
+        "Explica con tus palabras la propiedad conmutativa.",
+    ]
+    assert all(
+        "respuesta del estudiante" not in item["enunciado"].casefold()
+        for item in structure["preguntas"]
+    )
+
+
+def test_normalization_preserves_open_math_explanation() -> None:
+    structure = {
+        "preguntas": [
+            {
+                "numero": 1,
+                "tipo": "abierta",
+                "enunciado": "Explica por qué 2 + 2 = 4 usando un ejemplo.",
+                "puntaje": 1,
+            },
+        ],
+        "respuestas_esperadas": [
+            {
+                "numero": 1,
+                "respuesta": "Al reunir dos elementos con otros dos se obtienen cuatro.",
+            },
+        ],
+    }
+
+    result = digitalize_service.normalize_detected_structure(
+        structure,
+        nota_maxima=Decimal("5"),
+    )
+
+    assert result["respuestas_esperadas"][0]["respuesta"].startswith("Al reunir")
+    assert not result["advertencias"]
+
+
 def test_document_routing_never_falls_through_to_other_providers(monkeypatch) -> None:
     class FakeSession:
         async def __aenter__(self):

@@ -39,3 +39,59 @@ test('prioriza excepciones en móvil sin confirmar ni publicar automáticamente'
   expect(mutations).toEqual([]);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBeTruthy();
 });
+
+test('busca y selecciona estudiantes con fluidez en móvil', async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 800 });
+  await login(page, 'profesor');
+  const roster = Array.from({ length: 24 }, (_, index) => ({
+    id: `student-${index + 1}`,
+    nombre: index === 19 ? 'Ángela Zambrano' : `Estudiante ${index + 1}`,
+    email: `estudiante-${index + 1}@example.test`,
+    rol: 'estudiante',
+    estado: 'activo',
+  }));
+  const searchedTerms: string[] = [];
+  await page.route('**/api/materias/m1/estudiantes', (route) => route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify({ id: 'm1', nombre: 'Matemáticas', estudiantes: roster }),
+  }));
+  await page.route('**/api/evaluaciones/e1/revision**', (route) => {
+    const url = new URL(route.request().url());
+    const query = url.searchParams.get('q') ?? '';
+    if (query) searchedTerms.push(query);
+    const normalized = query.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+    const filtered = roster.filter((item) => item.nombre.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().includes(normalized));
+    return route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        evaluacion_id: 'e1', materia_id: 'm1', total_alumnos: roster.length, siguiente_cursor: null,
+        contadores: { todas: roster.length, pendientes: roster.length, alertas: 0, procesando: 0, publicadas: 0 },
+        alumnos: filtered.map((item) => ({
+          estudiante_id: item.id, nombre: item.nombre, calificacion_id: null, entrega_id: null, job_id: null,
+          estado: 'sin_entrega', nota: null,
+          resumen_revision: { version: null, cobertura: null, bloqueos: [], componentes_pendientes: 0, componentes_ilegibles: 0, pqrs_abiertas: null, tiene_alertas: false },
+        })),
+      }),
+    });
+  });
+
+  await page.goto('/app/calificaciones/workspace/e1');
+  const reviewSearch = page.getByRole('searchbox', { name: 'Buscar estudiante' });
+  await reviewSearch.pressSequentially('angela', { delay: 25 });
+  await expect.poll(() => searchedTerms).toEqual(['angela']);
+  await expect(page.getByText('Ángela Zambrano')).toBeVisible();
+
+  await page.getByRole('button', { name: 'Añadir entregas' }).click();
+  const picker = page.getByRole('combobox', { name: /Buscar estudiante para esta entrega/i });
+  await picker.fill('angela');
+  await page.getByRole('option', { name: 'Ángela Zambrano' }).click();
+  await expect(page.getByText('Seleccionado: Ángela Zambrano')).toBeVisible();
+  await expect(page.getByRole('button', { name: /Elegir fotos o PDF/i })).toBeEnabled();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBeTruthy();
+  await page.screenshot({ path: '../output/playwright/mobile-grading/student-search-360x800.png', fullPage: true });
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBeTruthy();
+  await page.screenshot({ path: '../output/playwright/mobile-grading/student-search-390x844.png', fullPage: true });
+});

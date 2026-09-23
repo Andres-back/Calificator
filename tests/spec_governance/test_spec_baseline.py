@@ -61,6 +61,7 @@ ALL_SPECS = {
     "060-admin-grading-route-clarity",
     "061-importar-estudiantes-lista",
     "062-multimodal-grader-verifier",
+    "063-mobile-grade-digitization",
 }
 OWNED_SPECS = {
     name
