@@ -2,14 +2,14 @@
 
 ## Fase 1 — Base compartida
 
-- [x] T001 Añadir diagnóstico conservador y metadatos compatibles en `backend/app/services/image_preprocessing.py`.
-- [x] T002 Añadir análisis ligero de imagen en navegador en `frontend/src/components/evidence/imageQuality.ts`.
+- [x] T001 Añadir diagnóstico conservador y metadatos compatibles en `backend/app/services/image_preprocessing.py` (FR-001, FR-004, FR-005, FR-006, FR-017).
+- [x] T002 Añadir análisis ligero de imagen en navegador en `frontend/src/components/evidence/imageQuality.ts` (FR-002, FR-003, FR-007).
 
 ## Fase 2 — Historia 1: clave independiente (P1)
 
-- [x] T003 [US1] Cambiar prompts y normalización para separar respuesta observada y clave propuesta en `backend/app/modules/evaluaciones/digitalize_service.py`.
-- [x] T004 [US1] Permitir claves pendientes en borradores y mantener el bloqueo de publicación en `backend/app/modules/evaluaciones/digitalize_service.py` y pruebas.
-- [x] T005 [US1] Corregir el proveedor visual alternativo para reconocer hojas ya resueltas en `backend/app/services/vision_service.py`.
+- [x] T003 [US1] Cambiar prompts y normalización para separar respuesta observada y clave propuesta en `backend/app/modules/evaluaciones/digitalize_service.py` (FR-008, FR-009, FR-010).
+- [x] T004 [US1] Permitir claves pendientes en borradores y mantener el bloqueo de publicación en `backend/app/modules/evaluaciones/digitalize_service.py` y pruebas (FR-011, FR-012).
+- [x] T005 [US1] Corregir el proveedor visual alternativo para reconocer hojas ya resueltas en `backend/app/services/vision_service.py` (FR-016).
 - [x] T006 [US1] Crear regresiones con respuestas manuscritas erróneas en `backend/tests/unit/test_evaluation_digitalization.py`.
 
 ## Fase 3 — Historia 2: fotos difíciles (P2)
@@ -21,8 +21,8 @@
 
 ## Fase 4 — Historia 3: revisión segura (P3)
 
-- [x] T011 [US3] Propagar claves pendientes y advertencias al resultado durable del job en `backend/app/workers/tasks_digitalization.py`.
-- [x] T012 [US3] Verificar que el editor represente claves pendientes como campos vacíos y no permita confirmar sin completarlas.
+- [x] T011 [US3] Propagar claves pendientes y advertencias al resultado durable del job en `backend/app/workers/tasks_digitalization.py` (FR-015).
+- [x] T012 [US3] Verificar que el editor represente claves pendientes como campos vacíos, muestre su explicación y no permita confirmar sin completarlas (FR-013, FR-014).
 
 ## Fase 5 — Cierre
 
