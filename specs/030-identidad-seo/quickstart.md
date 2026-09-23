@@ -98,3 +98,14 @@ Resultados esperados:
 - Navegar a una vista principal de cada rol.
 - Confirmar que autenticación, permisos y contenido no cambiaron.
 - Confirmar que no existe registro de service worker nuevo.
+
+## Evidencia de implementación — 2026-09-23
+
+- 19 pruebas dirigidas de metadatos, navegación SPA, privacidad y recursos públicos aprobadas.
+- Suite frontend completa: 77 archivos y 389 pruebas aprobadas.
+- TypeScript, ESLint sin advertencias y construcción Vite aprobados.
+- Imagen Docker frontend construida y configuración Nginx validada con `nginx -t`.
+- Los diez recursos públicos del contrato respondieron HTTP 200; el manifest se sirve como `application/manifest+json`.
+- Verificación HTTP real: `/` sin cabecera restrictiva; login, registro, recuperación, `/app` y `/app/materias` con `X-Robots-Tag: noindex, nofollow`.
+- Chromium real a 390×844: portada con título, canonical y Open Graph; navegación SPA a login cambia a `noindex`, elimina canonical/Open Graph y conserva una interfaz utilizable.
+- No se añadió service worker, dependencia de terceros, persistencia, llamada de IA ni cambio de API.
