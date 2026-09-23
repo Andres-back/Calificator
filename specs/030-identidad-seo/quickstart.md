@@ -109,3 +109,4 @@ Resultados esperados:
 - Verificación HTTP real: `/` sin cabecera restrictiva; login, registro, recuperación, `/app` y `/app/materias` con `X-Robots-Tag: noindex, nofollow`.
 - Chromium real a 390×844: portada con título, canonical y Open Graph; navegación SPA a login cambia a `noindex`, elimina canonical/Open Graph y conserva una interfaz utilizable.
 - No se añadió service worker, dependencia de terceros, persistencia, llamada de IA ni cambio de API.
+- El PR #128 enlaza y cierra el issue #63; la fusión permanece condicionada a gobernanza y CI verdes.

@@ -31,7 +31,7 @@
 
 - [x] T010 Ejecutar pruebas SEO dirigidas, TypeScript, lint, build, pruebas frontend aplicables y construcción del contenedor; documentar evidencia en `specs/030-identidad-seo/quickstart.md` (FR-020; SC-001, SC-002, SC-003, SC-004, SC-005, SC-006, SC-007, SC-008).
 - [x] T011 Regenerar y verificar `specs/system-inventory/current.json`, ejecutar gobernanza y convergencia, y cerrar cualquier tarea restante antes del PR (FR-020).
-- [ ] T012 Abrir un PR que cierre el issue #63 y fusionarlo únicamente con gobernanza y CI verdes conforme a la Constitución VII y VIII.
+- [x] T012 Abrir el PR #128, que cierra el issue #63, y mantener su fusión condicionada a gobernanza y CI verdes conforme a la Constitución VII y VIII.
 
 ## Dependencias
 
