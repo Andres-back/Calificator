@@ -33,12 +33,35 @@ class CapturingGraderClient:
         self.max_tokens = None
         self.stage = None
         self.prompt = ""
+        self.image_bytes = None
+        self.image_mime = None
 
     async def chat(self, **kwargs):
         self.timeout = kwargs.get("timeout")
         self.max_tokens = kwargs.get("max_tokens")
         self.stage = kwargs.get("stage")
         self.prompt = kwargs["messages"][0]["content"]
+        return {
+            "choices": [
+                {
+                    "message": {
+                        "content": {
+                            "nota_sugerida": 4,
+                            "confianza": 0.9,
+                            "feedback_estudiante": "Bien.",
+                        }
+                    }
+                }
+            ]
+        }
+
+    async def chat_multimodal(self, **kwargs):
+        self.timeout = kwargs.get("timeout")
+        self.max_tokens = kwargs.get("max_tokens")
+        self.stage = kwargs.get("stage")
+        self.prompt = kwargs["text"]
+        self.image_bytes = kwargs.get("image_bytes")
+        self.image_mime = kwargs.get("image_mime")
         return {
             "choices": [
                 {
@@ -581,6 +604,37 @@ def test_fast_verifier_uses_compact_output_budget() -> None:
     assert client.stage == "grading_secondary"
 
 
+def test_fast_verifier_receives_the_original_image() -> None:
+    client = CapturingGraderClient()
+    context = AgentContext(
+        evaluacion_nombre="Prueba visual",
+        nota_maxima=5,
+        blueprint={"preguntas": [{"numero": 1, "texto": "Argumenta"}]},
+        student_response_text="P1: explicación manuscrita",
+        image_bytes=b"evidencia",
+        image_mime="image/png",
+    )
+    primary = AgentResult(
+        nota_sugerida=4,
+        confianza=0.9,
+        feedback_estudiante="",
+        componentes=[],
+    )
+
+    result = asyncio.run(
+        agents.verification_agent(
+            context,
+            primary,
+            client=client,
+            multimodal=True,
+        )
+    )
+
+    assert result.nota_sugerida == 4
+    assert client.image_bytes == b"evidencia"
+    assert client.image_mime == "image/png"
+
+
 def test_fast_verifier_maps_its_compact_component_contract() -> None:
     class CompactVerifierClient:
         async def chat(self, **_kwargs):
@@ -711,6 +765,7 @@ def test_photo_pipeline_uses_deepseek_extraction_and_fast_flash_verifier(monkeyp
 
     vision_models: list[str] = []
     grader_calls: list[tuple[str, bool]] = []
+    verifier_calls: list[tuple[bytes | None, bool]] = []
 
     async def open_code_vision(*_args, model: str, **_kwargs):
         vision_models.append(model)
@@ -749,8 +804,21 @@ def test_photo_pipeline_uses_deepseek_extraction_and_fast_flash_verifier(monkeyp
     async def forbidden_external_router(*_args, **_kwargs):
         raise AssertionError("Groq/OpenAI no debe ejecutarse cuando OpenCode responde")
 
+    async def visual_verifier(context, primary, *, multimodal: bool, model: str, **_kwargs):
+        verifier_calls.append((context.image_bytes, multimodal))
+        return AgentResult(
+            nota_sugerida=primary.nota_sugerida,
+            confianza=primary.confianza,
+            feedback_estudiante="",
+            componentes=primary.componentes,
+            proveedor="opencode",
+            modelo=model,
+            requiere_revision_docente=False,
+        )
+
     monkeypatch.setattr(orchestrator, "vision_agent", open_code_vision)
     monkeypatch.setattr(orchestrator, "grader_agent", open_code_grader)
+    monkeypatch.setattr(orchestrator, "verification_agent", visual_verifier)
     monkeypatch.setattr(
         orchestrator,
         "vision_router_agent",
@@ -782,8 +850,9 @@ def test_photo_pipeline_uses_deepseek_extraction_and_fast_flash_verifier(monkeyp
 
     assert vision_models == ["deepseek-v4-flash-vision-exp"]
     assert grader_calls == [
-        ("deepseek-v4-flash-vision-exp", False),
+        ("deepseek-v4-flash-vision-exp", True),
     ]
+    assert verifier_calls == [(b"image", True)]
     assert result.raw_model_output["strategy"]["secondary_mode"] == "fast_verifier"
     assert result.raw_model_output["strategy"]["arbiter_invoked"] is False
     assert result.raw_model_output["provider_policy"] == "opencode_go_primary"
@@ -896,7 +965,7 @@ def test_photo_pipeline_delegates_one_normalized_image_to_extractor(monkeypatch)
         )
 
     async def successful_grader(context, model: str, **_kwargs):
-        assert context.image_bytes is None
+        assert context.image_bytes == buffer.getvalue()
         grader_texts.append(context.student_response_text)
         return AgentResult(
             nota_sugerida=5,
@@ -926,9 +995,9 @@ def test_photo_pipeline_delegates_one_normalized_image_to_extractor(monkeypatch)
     )
 
     assert vision_sizes == [(320, 180)]
-    assert grader_texts == [
-        "1. 32,37 + 41,32 = 73,69",
-    ]
+    assert "1. 32,37 + 41,32 = 73,69" in grader_texts[0]
+    assert "EVIDENCIA VISUAL ESTRUCTURADA" in grader_texts[0]
+    assert "P1: 73,69" in grader_texts[0]
     assert result.nota_sugerida == Decimal("5")
     assert result.raw_model_output["vision"]["rotation_applied"] == 0
 
@@ -975,6 +1044,65 @@ def test_online_pipeline_uses_deepseek_without_vision(monkeypatch) -> None:
     assert result.raw_model_output["strategy"]["arbiter_invoked"] is False
     assert result.raw_model_output["evidence_mode"] == "digital_text"
     assert result.raw_model_output["vision"] is None
+
+
+def test_visual_answers_cannot_be_converted_into_automatic_zero(monkeypatch) -> None:
+    _configure_orchestrator(monkeypatch)
+
+    async def visual_answers(*_args, model: str, **_kwargs):
+        return AgentResult(
+            nota_sugerida=None,
+            confianza=0.95,
+            feedback_estudiante="",
+            proveedor="opencode",
+            modelo=model,
+            raw_output={
+                "usable": True,
+                "texto_extraido": "Trabajo manuscrito",
+                "preguntas_detectadas": [1, 2],
+                "respuestas_detectadas": [
+                    {"pregunta": 1, "pagina": 1, "respuesta": "Respuesta uno", "legible": True},
+                    {"pregunta": 2, "pagina": 1, "respuesta": "Respuesta dos", "legible": True},
+                ],
+            },
+        )
+
+    async def absent_grader(*_args, model: str, **_kwargs):
+        return AgentResult(
+            nota_sugerida=0,
+            confianza=0.9,
+            feedback_estudiante="",
+            proveedor="opencode",
+            modelo=model,
+            componentes=[
+                {"clave": "pregunta:1", "puntaje": 0, "estado": "sin_respuesta"},
+                {"clave": "pregunta:2", "puntaje": 0, "estado": "sin_respuesta"},
+            ],
+            requiere_revision_docente=False,
+        )
+
+    monkeypatch.setattr(orchestrator, "vision_agent", visual_answers)
+    monkeypatch.setattr(orchestrator, "grader_agent", absent_grader)
+
+    result = asyncio.run(orchestrator.orchestrate_grading(
+        object(),
+        evaluacion_id=uuid4(),
+        materia_id=uuid4(),
+        blueprint={
+            "nombre": "Preguntas abiertas",
+            "nota_maxima": 5,
+            "modalidad": "fisica",
+            "preguntas": [
+                {"numero": 1, "tipo": "abierta", "modalidad_respuesta": "fisica"},
+                {"numero": 2, "tipo": "abierta", "modalidad_respuesta": "fisica"},
+            ],
+        },
+        image_bytes=b"image",
+    ))
+
+    assert result.nota_sugerida is None
+    assert result.requiere_revision_docente is True
+    assert result.motivo_revision == "visual_answers_discarded"
 
 
 def test_opencode_primary_vision_keeps_provider_boundary(monkeypatch) -> None:

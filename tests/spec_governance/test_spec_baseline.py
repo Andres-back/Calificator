@@ -60,6 +60,7 @@ ALL_SPECS = {
     "059-verifier-component-contract",
     "060-admin-grading-route-clarity",
     "061-importar-estudiantes-lista",
+    "062-multimodal-grader-verifier",
 }
 OWNED_SPECS = {
     name
