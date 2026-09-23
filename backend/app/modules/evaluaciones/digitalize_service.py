@@ -465,6 +465,22 @@ _NUMBERED_QUESTION_RE = re.compile(
     r"^\s*(\d{1,3})\s*(?:[.)-]\s*|\s+)(.+?)\s*$"
 )
 _OPTION_LINE_RE = re.compile(r"^\s*([A-Ha-h])\s*[).:-]\s*(.+?)\s*$")
+_STUDENT_ANSWER_TAG_RE = re.compile(
+    r"\[\s*RESPUESTA\s+DEL\s+ESTUDIANTE\s*:.*?\]",
+    flags=re.IGNORECASE | re.DOTALL,
+)
+_STUDENT_ANSWER_LINE_RE = re.compile(
+    r"(?im)^[ \t]*(?:\[\s*)?RESPUESTA\s+DEL\s+ESTUDIANTE\s*:.*$",
+)
+
+
+def _strip_student_answer_annotations(text: str) -> str:
+    """Separa la escritura del alumno del documento que define la evaluación."""
+    cleaned = _STUDENT_ANSWER_TAG_RE.sub(" ", str(text or ""))
+    cleaned = _STUDENT_ANSWER_LINE_RE.sub("", cleaned)
+    cleaned = re.sub(r"[ \t]+\n", "\n", cleaned)
+    cleaned = re.sub(r"\n{3,}", "\n\n", cleaned)
+    return cleaned.strip()
 
 
 def _evaluate_math_node(node: ast.AST) -> float:
@@ -572,6 +588,7 @@ def _build_local_digitalization_structure(
     content: str,
 ) -> dict[str, Any] | None:
     """Reconstruye localmente hojas numeradas cuando el proveedor está limitado."""
+    content = _strip_student_answer_annotations(content)
     questions: list[dict[str, Any]] = []
     current: dict[str, Any] | None = None
 
@@ -796,7 +813,9 @@ def _normalize_question(raw: Any, index: int) -> dict[str, Any]:
         number = int(raw.get("numero", index))
     except (TypeError, ValueError) as exc:
         raise ValueError(f"La pregunta {index} no tiene un número válido") from exc
-    statement = str(raw.get("enunciado") or raw.get("texto") or "").strip()
+    statement = _strip_student_answer_annotations(
+        str(raw.get("enunciado") or raw.get("texto") or "")
+    )
     if number <= 0 or not statement:
         raise ValueError(f"La pregunta {number} está incompleta")
     question_type = str(raw.get("tipo") or "abierta").strip().lower()
@@ -854,6 +873,7 @@ def normalize_detected_structure(
         )
     questions.sort(key=lambda item: item["numero"])
 
+    warnings = list(initial_warnings or [])
     questions_by_number = {int(question["numero"]): question for question in questions}
     answer_map: dict[int, str] = {}
     for answer in structure.get("respuestas_esperadas") or []:
@@ -869,6 +889,26 @@ def normalize_detected_structure(
         value = _canonical_answer_for_question(question, answer.get("respuesta"))
         if value is not None:
             answer_map[number] = value
+
+    corrected_answers: list[int] = []
+    for number, question in questions_by_number.items():
+        if question.get("tipo") != "completar":
+            continue
+        verified = _local_reference_answer(question)
+        if _is_placeholder_answer(verified):
+            continue
+        canonical = _canonical_answer_for_question(question, verified)
+        if canonical is None:
+            continue
+        if number in answer_map and _answer_key(answer_map[number]) != _answer_key(canonical):
+            corrected_answers.append(number)
+        answer_map[number] = canonical
+    if corrected_answers:
+        warnings.append(
+            "Se corrigió la clave mediante verificación determinista en las preguntas: "
+            + ", ".join(str(number) for number in corrected_answers)
+            + ". Revisa el borrador antes de publicarlo."
+        )
     missing = [number for number in numbers if number not in answer_map]
     if missing:
         raise HTTPException(
@@ -879,7 +919,6 @@ def normalize_detected_structure(
             ),
         )
 
-    warnings = list(initial_warnings or [])
     declared_total = _decimal(structure.get("puntaje_total_declarado"))
     visible_scores = [_decimal(question.get("_puntaje_original")) for question in questions]
     if declared_total is not None and all(score is not None for score in visible_scores):
@@ -1012,6 +1051,17 @@ async def detectar_estructura_evaluacion(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail="No se pudo extraer contenido del archivo.",
         )
+    contenido_preguntas = _strip_student_answer_annotations(contenido_texto)
+    if not contenido_preguntas:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="No se encontraron preguntas impresas separadas de las respuestas del estudiante.",
+        )
+    pipeline_warnings = list(initial_warnings or [])
+    if contenido_preguntas != contenido_texto.strip():
+        pipeline_warnings.append(
+            "Se excluyó la escritura del estudiante al construir preguntas y respuestas correctas."
+        )
     stages = ai_config.get("stages") if isinstance(ai_config, dict) and isinstance(ai_config.get("stages"), dict) else {}
     structure_snapshot = stages.get("structure") or ai_config
     llm = LLMRouter(user_id=user_id, ai_config=structure_snapshot) if structure_snapshot is not None else LLMRouter(user_id=user_id)
@@ -1020,17 +1070,17 @@ async def detectar_estructura_evaluacion(
     if callable(set_tracking):
         set_tracking(stage="structure")
     prompt = PROMPT_DETECTAR_ESTRUCTURA.format(
-        contenido=contenido_texto[:12000],
+        contenido=contenido_preguntas[:12000],
         nota_maxima=str(nota_maxima),
     )
     try:
         result = await llm.generate_json(DIGITALIZATION_STRUCTURE_TASK, prompt)
     except Exception as exc:
         logger.warning("El modelo configurado no pudo estructurar la evaluación: %s", type(exc).__name__)
-        local_structure = _build_local_digitalization_structure(contenido_texto)
+        local_structure = _build_local_digitalization_structure(contenido_preguntas)
         if local_structure:
             fallback_warnings = [
-                *(initial_warnings or []),
+                *pipeline_warnings,
                 (
                     "OpenCode no respondió; se utilizó recuperación local. "
                     "Revisa preguntas y respuestas antes de publicar."
@@ -1058,12 +1108,12 @@ async def detectar_estructura_evaluacion(
             status_code=status.HTTP_502_BAD_GATEWAY,
             detail="El proveedor de IA no devolvió una estructura válida.",
         )
-    result = _apply_locally_verified_answers(result, contenido_texto)
-    result = await _repair_missing_answers(llm, result, contenido_texto)
+    result = _apply_locally_verified_answers(result, contenido_preguntas)
+    result = await _repair_missing_answers(llm, result, contenido_preguntas)
     normalized = normalize_detected_structure(
         result,
         nota_maxima=nota_maxima,
-        initial_warnings=initial_warnings,
+        initial_warnings=pipeline_warnings,
     )
     logger.info(
         "Evaluación digitalizada: %d preguntas, clave completa=%s, advertencias=%d",
