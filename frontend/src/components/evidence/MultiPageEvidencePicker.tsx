@@ -1,12 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 import {
-  ArrowDown, ArrowUp, Camera, FilePlus2, FileText, Images,
+  AlertTriangle, ArrowDown, ArrowUp, Camera, CheckCircle2, FilePlus2, FileText, Images,
   RotateCw, Trash2, ZoomIn,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 import { Modal } from '@/components/ui';
 import type { EvidencePage, EvidenceRotation } from './evidencePayload';
+import { analyzeEvidenceImage } from './imageQuality';
 
 const MAX_FILES = 10;
 const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
@@ -68,10 +69,12 @@ function PreviewModal({ page, pageNumber, onClose }: { page: EvidencePage | null
 export function MultiPageEvidencePicker({ pages, onChange, disabled = false, onError }: Props) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
+  const pagesRef = useRef(pages);
   const [previewId, setPreviewId] = useState<string | null>(null);
+  useEffect(() => { pagesRef.current = pages; }, [pages]);
   const reportError = (message: string) => onError ? onError(message) : toast.error(message);
 
-  const addFiles = (fileList: FileList | File[]) => {
+  const addFiles = async (fileList: FileList | File[]) => {
     const incoming = Array.from(fileList);
     if (!incoming.length) return;
     if (incoming.some((file) => !ALLOWED_TYPES.has(file.type))) {
@@ -99,10 +102,25 @@ export function MultiPageEvidencePicker({ pages, onChange, disabled = false, onE
       existingKeys.add(key); return true;
     });
     if (!unique.length) { reportError('Esa hoja ya fue agregada.'); return; }
-    onChange([...pages, ...unique.map((file) => ({
+    const additions: EvidencePage[] = unique.map((file) => ({
       id: `${file.name}-${file.size}-${file.lastModified}-${crypto.randomUUID()}`,
-      file, rotation: 0 as EvidenceRotation,
-    }))]);
+      file,
+      rotation: 0 as EvidenceRotation,
+    }));
+    const nextPages = [...pagesRef.current, ...additions];
+    pagesRef.current = nextPages;
+    onChange(nextPages);
+    void Promise.all(additions.map(async (page) => ({
+      id: page.id,
+      quality: await analyzeEvidenceImage(page.file),
+    }))).then((assessments) => {
+      const byId = new Map(assessments.map((item) => [item.id, item.quality]));
+      const assessedPages = pagesRef.current.map((page) => (
+        byId.has(page.id) ? { ...page, quality: byId.get(page.id) } : page
+      ));
+      pagesRef.current = assessedPages;
+      onChange(assessedPages);
+    });
   };
 
   const updatePage = (id: string, changes: Partial<EvidencePage>) => onChange(
@@ -136,8 +154,8 @@ export function MultiPageEvidencePicker({ pages, onChange, disabled = false, onE
           <span><strong className="block text-sm text-fg">{pages.length ? 'Tomar otra foto' : 'Usar la cámara'}</strong><span className="mt-1 block text-xs leading-5 text-muted">Cada foto se añade como una hoja nueva</span></span>
         </button>
       </div>
-      <input ref={fileInputRef} type="file" multiple accept="image/jpeg,image/png,image/webp,application/pdf" className="hidden" onChange={(event) => { if (event.target.files) addFiles(event.target.files); event.target.value = ''; }} />
-      <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={(event) => { if (event.target.files) addFiles(event.target.files); event.target.value = ''; }} />
+      <input ref={fileInputRef} type="file" multiple accept="image/jpeg,image/png,image/webp,application/pdf" className="hidden" onChange={(event) => { if (event.target.files) void addFiles(event.target.files); event.target.value = ''; }} />
+      <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={(event) => { if (event.target.files) void addFiles(event.target.files); event.target.value = ''; }} />
 
       {pages.length > 0 && <>
         <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-surface-2 px-4 py-3">
@@ -149,6 +167,25 @@ export function MultiPageEvidencePicker({ pages, onChange, disabled = false, onE
             <div className="relative"><PageVisual page={page} className="h-40 w-full" /><span className="absolute left-2 top-2 rounded-full bg-slate-950/80 px-3 py-1 text-xs font-bold text-white">{isPdf ? 'PDF' : `Hoja ${index + 1}`}</span></div>
             <div className="space-y-3 p-3">
               <p className="truncate text-sm font-semibold text-fg" title={page.file.name}>{page.file.name}</p>
+              {page.quality?.status === 'good' && (
+                <p className="flex items-center gap-1.5 text-xs font-semibold text-emerald-700 dark:text-emerald-300">
+                  <CheckCircle2 className="h-4 w-4" /> Foto lista para leer
+                </p>
+              )}
+              {page.quality?.status === 'warning' && (
+                <div className="rounded-lg border border-amber-200 bg-amber-50 p-2 text-xs leading-5 text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-100">
+                  <p className="flex items-center gap-1.5 font-bold"><AlertTriangle className="h-4 w-4" /> Revisa esta foto</p>
+                  <p>{page.quality.warnings.join(' ')}</p>
+                  <button type="button" className="mt-1 font-bold underline" onClick={() => { remove(page.id); cameraInputRef.current?.click(); }}>Repetir foto</button>
+                  <span className="ml-2">o continúa si puedes leerla.</span>
+                </div>
+              )}
+              {page.quality?.status === 'unusable' && (
+                <div className="rounded-lg border border-rose-200 bg-rose-50 p-2 text-xs leading-5 text-rose-900 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-100">
+                  <p className="flex items-center gap-1.5 font-bold"><AlertTriangle className="h-4 w-4" /> Reemplaza esta foto</p>
+                  <p>{page.quality.warnings.join(' ')}</p>
+                </div>
+              )}
               <div className="flex flex-wrap gap-1.5">
                 {!isPdf && <>
                   <button type="button" disabled={disabled || index === 0} onClick={() => move(index, -1)} className="focus-ring grid min-h-11 min-w-11 place-items-center rounded-lg border border-border hover:bg-surface-2 disabled:opacity-35" aria-label={`Subir hoja ${index + 1}`}><ArrowUp className="h-4 w-4" /></button>

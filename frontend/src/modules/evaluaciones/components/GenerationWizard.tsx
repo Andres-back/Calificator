@@ -50,6 +50,14 @@ function QuestionCard({
   onDuplicate: () => void;
   onMove: (direction: -1 | 1) => void;
 }) {
+  const confirmAnswer = (respuestaEsperada: string): Partial<EditableQuestion> => ({
+    respuestaEsperada,
+    answerOrigin: respuestaEsperada ? 'confirmacion_docente' : 'pendiente',
+    answerConfidence: respuestaEsperada ? 1 : 0,
+    answerExplanation: respuestaEsperada
+      ? 'Respuesta confirmada o editada por el docente.'
+      : undefined,
+  });
   const error = validateQuestion(question, index);
 
   function changeOption(optionIndex: number, value: string) {
@@ -161,7 +169,7 @@ function QuestionCard({
               <Field label="Respuesta correcta" required>
                 <select
                   value={question.respuestaEsperada}
-                  onChange={(event) => onChange({ respuestaEsperada: event.target.value })}
+                  onChange={(event) => onChange(confirmAnswer(event.target.value))}
                   className="focus-ring min-h-12 w-full rounded-lg border border-border bg-surface px-4 text-base text-fg"
                 >
                   <option value="">Selecciona la respuesta</option>
@@ -175,9 +183,21 @@ function QuestionCard({
 
           {(question.tipo === 'abierta' || question.tipo === 'completar') && (
             <Field label="Respuesta esperada" required>
-              <Textarea value={question.respuestaEsperada} onChange={(event) => onChange({ respuestaEsperada: event.target.value })} className="min-h-20 text-base" />
+              <Textarea value={question.respuestaEsperada} onChange={(event) => onChange(confirmAnswer(event.target.value))} className="min-h-20 text-base" />
             </Field>
           )}
+
+          {!question.respuestaEsperada.trim() ? (
+            <div role="note" className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm leading-6 text-amber-950 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-100">
+              <p className="font-bold">Respuesta correcta por confirmar</p>
+              <p>No usamos como clave lo que escribió o marcó el estudiante. Completa esta respuesta antes de publicar.</p>
+            </div>
+          ) : question.answerExplanation ? (
+            <div role="note" className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm leading-6 text-emerald-950 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-100">
+              <p className="font-bold">Por qué se propone esta respuesta</p>
+              <p>{question.answerExplanation}</p>
+            </div>
+          ) : null}
 
           <div className="flex flex-wrap gap-2 border-t border-border pt-3">
             <Button type="button" variant="outline" onClick={onDuplicate}><Copy className="h-4 w-4" /> Duplicar</Button>

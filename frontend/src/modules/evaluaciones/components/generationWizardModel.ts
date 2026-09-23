@@ -38,6 +38,9 @@ export interface EditableQuestion {
   enunciado: string;
   opciones: string[];
   respuestaEsperada: string;
+  answerOrigin?: string;
+  answerExplanation?: string;
+  answerConfidence?: number;
   puntaje: number;
   modalidadRespuesta: QuestionResponseMode;
   dbaIds: string[];
@@ -378,6 +381,9 @@ export function evaluationToEditableQuestions(evaluation: Evaluacion): EditableQ
         tipo,
         options,
       ),
+      answerOrigin: rawAnswer.origen ? String(rawAnswer.origen) : undefined,
+      answerExplanation: rawAnswer.explicacion ? String(rawAnswer.explicacion) : undefined,
+      answerConfidence: typeof rawAnswer.confianza === 'number' ? rawAnswer.confianza : undefined,
       puntaje: Number(question.puntaje ?? 1),
       modalidadRespuesta: (
         ['online', 'fisica', 'archivo'].includes(String(question.modalidad_respuesta))
@@ -535,6 +541,9 @@ export function questionsToUpdatePayload(questions: EditableQuestion[]) {
     respuestas_esperadas: questions.map((question) => ({
       numero: question.numero,
       respuesta: question.respuestaEsperada.trim(),
+      origen: question.answerOrigin ?? (question.respuestaEsperada.trim() ? 'confirmacion_docente' : 'pendiente'),
+      explicacion: question.answerExplanation,
+      confianza: question.answerConfidence,
       dba_ids: question.dbaIds,
     })),
   };

@@ -64,6 +64,7 @@ ALL_SPECS = {
     "061-importar-estudiantes-lista",
     "062-multimodal-grader-verifier",
     "063-mobile-grade-digitization",
+    "064-calidad-imagen-claves",
 }
 OWNED_SPECS = {
     name

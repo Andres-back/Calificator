@@ -1,4 +1,5 @@
 import { expect, test, type Page, type Route } from '@playwright/test';
+import { readFileSync } from 'node:fs';
 
 const teacher = { id: 'p1', nombre: 'Profesora Prueba', email: 'profesora@example.test', rol: 'profesor', estado: 'activo', permissions: ['subjects.read', 'evaluations.read', 'grading.read', 'grading.grade', 'grading.publish'] };
 const student = { id: 's1', nombre: 'Estudiante Prueba', email: 'estudiante@example.test', rol: 'estudiante', estado: 'activo', permissions: ['subjects.read', 'evaluations.read', 'evaluations.submit', 'grading.read', 'gradebook.read'] };
@@ -372,7 +373,11 @@ test('dos paquetes quedan en cola, un fallo conserva hojas para reintentar', asy
     return json(route, { ...grade, id: `queued-${id}`, estudiante_id: id, estado: 'procesando', nota_sugerida: null, nota_confirmada: null, resultado_json: { job_id: `job-${id}`, pipeline_status: 'queued' } });
   });
   await page.goto('/app/calificaciones?evaluacion=e1&modo=carga&estudiante=s1');
-  const file = { name: 'hoja.png', mimeType: 'image/png', buffer: Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+j6N0AAAAASUVORK5CYII=', 'base64') };
+  const file = {
+    name: 'hoja.png',
+    mimeType: 'image/png',
+    buffer: readFileSync(new URL('../public/branding/feature-grade.png', import.meta.url)),
+  };
   await page.locator('input[type=file]').first().setInputFiles([file, { ...file, name: 'hoja2.png' }]);
   await page.getByRole('button', { name: 'Enviar a calificar', exact: true }).click();
   await expect(page.getByRole('dialog', { name: 'Vas a entregar 2 hojas' })).toBeVisible();
