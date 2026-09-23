@@ -46,6 +46,7 @@ ALL_SPECS = {
     "044-opencode-session",
     "045-rag-grading-fallback",
     "046-qwen-embeddings",
+    "047-retroalimentacion-formativa",
     "048-retroalimentacion-animada",
     "049-reparar-npm-audit",
     "050-revision-por-excepciones",

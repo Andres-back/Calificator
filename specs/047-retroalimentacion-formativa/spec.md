@@ -2,7 +2,7 @@
 
 **Feature Branch**: `codex/047-retroalimentacion-formativa`
 **Created**: 2026-09-18
-**Status**: Especificación y plan aprobados por el usuario el 2026-09-18. Issue [#94](https://github.com/Andres-back/Calificator/issues/94) creado con autorización el 2026-09-19. Sin PR ni despliegue.
+**Status**: Especificación y plan aprobados por el usuario el 2026-09-18. Issue [#94](https://github.com/Andres-back/Calificator/issues/94) y PR [#127](https://github.com/Andres-back/Calificator/pull/127) asociados; merge condicionado a CI verde.
 **Input**: Completar descriptores de la escala 1–5 y conectar reglas formativas sin ralentizar ni alterar la calificación estable.
 
 ## User Scenarios & Testing
@@ -63,4 +63,4 @@ El revisor humano evalúa feedback manual y asistido con cinco dimensiones y des
 - No se presume habilitación en producción del módulo de impacto.
 - Incluir reglas no garantiza obediencia del modelo; requiere revisar ejemplos.
 - No modifica la visualización existente de respuestas correctas; la preferencia de no revelar solución se refiere a la orientación textual.
-- Especificación y plan aprobados e issue #94 asociado; PR, CI y despliegue continúan pendientes.
+- Especificación y plan aprobados, issue #94 y PR #127 asociados; CI y despliegue continúan protegidos por el flujo de `main`.

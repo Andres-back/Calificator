@@ -1,7 +1,7 @@
 # Plan: retroalimentación formativa y calidad medible
 
 **Branch**: `codex/047-retroalimentacion-formativa` | **Date**: 2026-09-18 | **Spec**: [spec.md](spec.md)
-**Estado**: Plan aprobado por el usuario el 2026-09-18 («sigue»). Issue [#94](https://github.com/Andres-back/Calificator/issues/94) creado con autorización el 2026-09-19. Sin PR, push ni despliegue.
+**Estado**: Plan aprobado por el usuario el 2026-09-18 («sigue»). Issue [#94](https://github.com/Andres-back/Calificator/issues/94) y PR [#127](https://github.com/Andres-back/Calificator/pull/127) asociados; merge y despliegue condicionados a CI verde.
 
 ## Summary
 
