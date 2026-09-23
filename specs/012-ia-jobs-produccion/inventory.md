@@ -14,8 +14,8 @@
 | endpoint | `POST:/jobs/{job_id}/reintentar` | authenticated | missing | `backend/app/modules/jobs/router.py:233` |
 | frontend_call | `GET:/jobs/pendientes` | ambiguous | covered | `frontend/src/modules/calificaciones/gradingJobs.ts:90` |
 | frontend_call | `GET:/jobs/{jobId}` | ambiguous | covered | `frontend/src/modules/calificaciones/gradingJobs.ts:156` |
-| frontend_call | `GET:/jobs/{jobId}` | ambiguous | covered | `frontend/src/modules/evaluaciones/components/DigitalizationJobMonitor.tsx:114` |
-| frontend_call | `POST:/jobs/{jobId}` | ambiguous | covered | `frontend/src/modules/evaluaciones/components/DigitalizationJobMonitor.tsx:223` |
+| frontend_call | `GET:/jobs/{jobId}` | ambiguous | covered | `frontend/src/modules/evaluaciones/components/DigitalizationJobMonitor.tsx:116` |
+| frontend_call | `POST:/jobs/{jobId}` | ambiguous | covered | `frontend/src/modules/evaluaciones/components/DigitalizationJobMonitor.tsx:227` |
 | integration | `celery` | system | covered | `backend/app/workers/tasks_ai_config.py:1` |
 | integration | `groq` | system | covered | `backend/app/services/ai_capability_registry.py:1` |
 | integration | `ollama` | system | covered | `backend/app/services/ai_capability_registry.py:1` |
@@ -23,7 +23,7 @@
 | job | `tasks.assign_overdue_grades` | system | missing | `backend/app/workers/tasks_deadlines.py:46` |
 | job | `tasks.cleanup_expired_roster_imports` | system | missing | `backend/app/workers/tasks_roster_import.py:150` |
 | job | `tasks.cleanup_password_reset_requests` | system | missing | `backend/app/workers/tasks_password_recovery.py:156` |
-| job | `tasks.digitalize_evaluation` | system | covered | `backend/app/workers/tasks_digitalization.py:390` |
+| job | `tasks.digitalize_evaluation` | system | covered | `backend/app/workers/tasks_digitalization.py:392` |
 | job | `tasks.export_report` | system | missing | `backend/app/workers/tasks_reports.py:5` |
 | job | `tasks.extract_roster_import` | system | covered | `backend/app/workers/tasks_roster_import.py:120` |
 | job | `tasks.generate_image` | system | covered | `backend/app/workers/tasks_images.py:5` |
@@ -33,7 +33,7 @@
 | job | `tasks.grade_delivery` | system | covered | `backend/app/workers/tasks_grading.py:911` |
 | job | `tasks.ingest_rag` | system | missing | `backend/app/workers/tasks_rag.py:5` |
 | job | `tasks.recover_expired_local_jobs` | system | missing | `backend/app/workers/tasks_ai_config.py:55` |
-| job | `tasks.recover_stale_digitalization_jobs` | system | covered | `backend/app/workers/tasks_digitalization.py:453` |
+| job | `tasks.recover_stale_digitalization_jobs` | system | covered | `backend/app/workers/tasks_digitalization.py:455` |
 | job | `tasks.recover_stale_grading_jobs` | system | covered | `backend/app/workers/tasks_grading.py:1018` |
 | job | `tasks.recover_stale_presentation_jobs` | system | covered | `backend/app/workers/tasks_presentations.py:84` |
 | job | `tasks.recover_stale_roster_import_jobs` | system | covered | `backend/app/workers/tasks_roster_import.py:143` |
