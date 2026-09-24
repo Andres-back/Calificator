@@ -67,6 +67,7 @@ ALL_SPECS = {
     "063-mobile-grade-digitization",
     "065-retirar-foto-enviada",
     "067-privacidad-legal",
+    "068-rutas-legales-publicas",
 }
 OWNED_SPECS = {
     name

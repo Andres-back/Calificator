@@ -174,6 +174,11 @@ actualizar la especificación propietaria, su plan y sus tareas; no debe crear d
 - [065-retirar-foto-enviada](065-retirar-foto-enviada/spec.md), [issue #135](https://github.com/Andres-back/Calificator/issues/135): elimina del selector de carga al estudiante cuya evidencia ya fue aceptada o que tiene una calificación existente.
 - Los fallos conservan estudiante y hojas para reintento; no cambia entregas, notas, reemplazos ni contratos HTTP.
 
+## Hotfix 068: rutas legales realmente públicas
+
+- [068-rutas-legales-publicas](068-rutas-legales-publicas/spec.md), [issue #141](https://github.com/Andres-back/Calificator/issues/141): evita que el arranque de autenticación consulte la sesión y redirija al login al visitar privacidad, términos, cookies, aviso de privacidad o información del piloto.
+- Las rutas académicas y administrativas continúan protegidas sin cambios.
+
 ## Inventario técnico global
 
 - [Inventario canónico JSON](system-inventory/current.json)

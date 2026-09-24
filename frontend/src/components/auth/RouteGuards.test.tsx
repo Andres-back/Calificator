@@ -6,6 +6,7 @@ import { RequireRole } from './RequireRole';
 import { RequirePermission } from './RequirePermission';
 import { useAuth } from '@/stores/auth';
 import type { User, UserRole } from '@/types/api';
+import { routes } from '@/config/routes';
 
 function userFor(role: UserRole): User {
   return {
@@ -23,14 +24,21 @@ beforeEach(() => {
 });
 
 describe('auth bootstrap', () => {
-  it('does not request /auth/me on the public login route', () => {
+  it.each([
+    routes.login,
+    routes.privacy,
+    routes.terms,
+    routes.cookies,
+    routes.privacyNotice,
+    routes.pilotInformation,
+  ])('does not request /auth/me on the public route %s', (path) => {
     const fetchMe = vi.fn().mockResolvedValue(undefined);
-    window.history.replaceState({}, '', '/login?reason=session-expired');
+    window.history.replaceState({}, '', path);
     useAuth.setState({ user: null, status: 'idle', fetchMe });
 
-    render(<AuthBootstrap><p>Login available</p></AuthBootstrap>);
+    render(<AuthBootstrap><p>Public page available</p></AuthBootstrap>);
 
-    expect(screen.getByText('Login available')).toBeInTheDocument();
+    expect(screen.getByText('Public page available')).toBeInTheDocument();
     expect(fetchMe).not.toHaveBeenCalled();
   });
 });
