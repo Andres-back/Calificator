@@ -9,7 +9,7 @@ interface AuthState {
   status: 'idle' | 'loading' | 'authenticated' | 'unauthenticated';
   fetchMe: () => Promise<void>;
   login: (email: string, password: string) => Promise<User>;
-  register: (data: { nombre: string; email: string; password: string; solicitar_docente?: boolean }) => Promise<User>;
+  register: (data: { nombre: string; email: string; password: string; solicitar_docente?: boolean; acepta_terminos: true; acepta_privacidad: true }) => Promise<User>;
   logout: () => Promise<void>;
 }
 

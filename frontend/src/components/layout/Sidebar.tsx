@@ -4,6 +4,7 @@ import { cn } from '@/lib/cn';
 import { adminNav, estudianteNav, profesorNav } from '@/config/nav';
 import { useAuth } from '@/stores/auth';
 import { EducationalIcon } from '@/components/ui';
+import { routes } from '@/config/routes';
 
 function Logo() {
   return (
@@ -155,6 +156,11 @@ export function Sidebar({
             <p className="mt-1 text-xs leading-4 text-secondary">{roleMessage.detail}</p>
           </div>
         </NavLink>}
+        <nav aria-label="Información legal" className="flex flex-wrap justify-center gap-x-3 gap-y-1 px-2 text-[11px] text-muted">
+          <NavLink to={routes.privacy} onClick={onNavigate} className="focus-ring rounded hover:text-fg hover:underline">Privacidad</NavLink>
+          <NavLink to={routes.terms} onClick={onNavigate} className="focus-ring rounded hover:text-fg hover:underline">Términos</NavLink>
+          <NavLink to={routes.cookies} onClick={onNavigate} className="focus-ring rounded hover:text-fg hover:underline">Cookies</NavLink>
+        </nav>
       </div>
     </aside>
   );

@@ -4,6 +4,7 @@ import { CheckCircle2, Eye, EyeOff, KeyRound, ShieldCheck } from 'lucide-react';
 import { Button, Card, Field, Input, LoadingScreen, ThemeToggle } from '@/components/ui';
 import { routes } from '@/config/routes';
 import { toApiError } from '@/lib/api';
+import { LegalFooter } from '@/components/legal/LegalFooter';
 import { resetPassword, validatePasswordReset } from './passwordRecoveryApi';
 
 export function ResetPasswordPage() {
@@ -64,10 +65,10 @@ export function ResetPasswordPage() {
   };
 
   return (
-    <div className="relative grid min-h-dvh place-items-center overflow-hidden bg-surface px-4 py-10 text-fg">
+    <div className="relative flex min-h-dvh flex-col overflow-hidden bg-surface text-fg">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(79,70,229,.18),transparent_35%),radial-gradient(circle_at_bottom_right,rgba(14,165,233,.14),transparent_32%)]" />
       <div className="absolute right-5 top-5 z-10"><ThemeToggle /></div>
-      <Card className="relative w-full max-w-md p-6 shadow-xl sm:p-8">
+      <div className="relative grid flex-1 place-items-center px-4 py-10"><Card className="w-full max-w-md p-6 shadow-xl sm:p-8">
         {validating ? <LoadingScreen label="Comprobando enlace…" /> : (
           <>
             <div className="mx-auto mb-5 grid h-14 w-14 place-items-center rounded-2xl bg-brand-50 text-brand-700 dark:bg-brand-500/15 dark:text-brand-200">
@@ -118,7 +119,8 @@ export function ResetPasswordPage() {
             )}
           </>
         )}
-      </Card>
+      </Card></div>
+      <LegalFooter className="relative" compact />
     </div>
   );
 }

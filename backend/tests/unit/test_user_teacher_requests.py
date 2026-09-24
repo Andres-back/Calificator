@@ -22,6 +22,11 @@ class FakeDB:
     def __init__(self, admins=None):
         self.admins = admins or []
         self.commits = 0
+        self.executions = []
+
+    async def execute(self, statement, values=None):
+        self.executions.append((statement, values))
+        return None
 
     async def scalars(self, _statement):
         return self.admins
@@ -66,6 +71,8 @@ async def test_public_registration_never_assigns_teacher_before_approval(monkeyp
             email="ana@example.com",
             password="Password123!",
             solicitar_docente=True,
+            acepta_terminos=True,
+            acepta_privacidad=True,
         ),
     )
 

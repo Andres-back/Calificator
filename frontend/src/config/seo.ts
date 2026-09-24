@@ -52,6 +52,14 @@ const exactPrivateRoutes = new Map<string, string>([
   ['/app/404', 'Página no encontrada'],
 ]);
 
+const exactPublicLegalRoutes = new Map<string, string>([
+  ['/privacidad', 'Privacidad'],
+  ['/terminos', 'Términos de uso'],
+  ['/cookies', 'Cookies'],
+  ['/aviso-privacidad', 'Aviso de privacidad'],
+  ['/piloto', 'Información del piloto'],
+]);
+
 const privatePatterns: Array<{ pattern: RegExp; title: string }> = [
   { pattern: /^\/app\/materias\/[^/]+\/evaluaciones(?:\/|$)/, title: 'Evaluaciones' },
   { pattern: /^\/app\/materias\/[^/]+\/recursos(?:\/|$)/, title: 'Recursos' },
@@ -84,6 +92,16 @@ const privateFamilies: Array<{ prefix: string; title: string }> = [
 export function resolvePageMetadata(pathname: string): PageMetadata {
   const normalizedPath = pathname.split(/[?#]/, 1)[0] || '/';
   if (normalizedPath === '/') return PUBLIC_HOME;
+
+  const publicLegalTitle = exactPublicLegalRoutes.get(normalizedPath);
+  if (publicLegalTitle) {
+    return {
+      title: brandedTitle(publicLegalTitle),
+      description: 'Información legal y de transparencia de XCalificator.',
+      indexing: 'index, follow',
+      canonical: `${SITE_IDENTITY.canonicalOrigin}${normalizedPath}`,
+    };
+  }
 
   const exactTitle = exactPrivateRoutes.get(normalizedPath);
   if (exactTitle) return privateMetadata(exactTitle);
