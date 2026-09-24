@@ -19,6 +19,7 @@ actualizar la especificación propietaria, su plan y sus tareas; no debe crear d
 | 012 | [IA, jobs y producción](012-ia-jobs-produccion/spec.md) | admin_ai_config, jobs, services, worker | configuración IA y estados de job | jobs, auditoría, Redis y configuración cifrada | [#13](https://github.com/Andres-back/Calificator/issues/13) |
 | 062 | [Evidencia multimodal para evaluador y verificador](062-multimodal-grader-verifier/spec.md) | calificaciones, agentes y orquestador | workspace de revisión | sin tablas nuevas; contexto de evidencia | [#123](https://github.com/Andres-back/Calificator/issues/123) |
 | 063 | [Calificación móvil y digitalización segura](063-mobile-grade-digitization/spec.md) | digitalización de evaluaciones | búsqueda y carga móvil en workspace docente | sin tablas nuevas; no modifica históricos | [#125](https://github.com/Andres-back/Calificator/issues/125) |
+| 065 | [Retirar evidencia ya enviada](065-retirar-foto-enviada/spec.md) | calificaciones existentes y carga de evidencia | selector “Añadir entregas” | sin tablas nuevas; no modifica históricos | [#135](https://github.com/Andres-back/Calificator/issues/135) |
 | 014 | [Alineación de autorización y superficies](014-alinear-autorizacion-superficies/spec.md) | autorización por objeto, analítica y contratos | AppShell, actividad estudiante y telemetría | sin tablas nuevas; políticas e inventario canónico | [#17](https://github.com/Andres-back/Calificator/issues/17) |
 | 016 | [Calificación explicable y auditable](016-calificacion-explicable/spec.md) | calificaciones, visión, ajustes, publicación y PQRS | workspace docente, ver entrega y resultados | `calificaciones`, `entregas`, historial y desglose | [#20](https://github.com/Andres-back/Calificator/issues/20) |
 | 017 | [Decoración visual y orientación contextual](017-decoracion-frontend/spec.md) | sin cambios de backend; gobernanza de controles frontend | AppShell, cabeceras, inicios, recorridos y estados vacíos | preferencia local de recorridos, sin datos de negocio | [#22](https://github.com/Andres-back/Calificator/issues/22) |
@@ -166,6 +167,11 @@ actualizar la especificación propietaria, su plan y sus tareas; no debe crear d
 
 - [043-flujo-docente-movil](043-flujo-docente-movil/spec.md), [issue #131](https://github.com/Andres-back/Calificator/issues/131): compacta el contexto, mantiene búsqueda y filtros accesibles y permite confirmar, publicar o continuar desde una barra móvil asociada al estado real.
 - No cambia el cálculo, la persistencia, los permisos ni los contratos de calificación; añade cobertura funcional y visual en 360×800 y 390×844.
+
+## Evolución 065: retirar evidencia ya enviada
+
+- [065-retirar-foto-enviada](065-retirar-foto-enviada/spec.md), [issue #135](https://github.com/Andres-back/Calificator/issues/135): elimina del selector de carga al estudiante cuya evidencia ya fue aceptada o que tiene una calificación existente.
+- Los fallos conservan estudiante y hojas para reintento; no cambia entregas, notas, reemplazos ni contratos HTTP.
 
 ## Inventario técnico global
 

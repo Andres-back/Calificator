@@ -269,6 +269,36 @@ test('profesor recorre las siete vistas de una materia y escribe un DBA sin perd
   expect(errors, errors.join('\n')).toEqual([]);
 });
 
+test('asistencia móvil permite desplazar el resumen y alcanzar el reporte', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await installApiMocks(page, 'profesor');
+  await page.route('**/api/materias/m1/asistencia?**', (route) => fulfillJson(route, {
+    materia_id: 'm1', fecha: '2026-08-09',
+    registros: [{
+      estudiante_id: users.estudiante.id,
+      estudiante_nombre: users.estudiante.nombre,
+      estudiante_email: users.estudiante.email,
+      estado: null,
+      observacion: null,
+    }],
+    resumen: { total: 1, presentes: 0, tarde: 0, ausentes: 0, excusas: 0, pendientes: 1 },
+  }));
+
+  await page.goto('/login');
+  await page.getByLabel(/Correo/i).fill(users.profesor.email);
+  await page.locator('input[type="password"]').fill('password-for-test');
+  await page.getByRole('button', { name: /Iniciar sesión/i }).click();
+  await page.goto('/app/materias/m1/asistencia');
+
+  const summaryCard = page.getByLabel('Resumen y guardado de asistencia');
+  await expect(summaryCard).toBeVisible();
+  expect(await summaryCard.evaluate((element) => getComputedStyle(element).position)).toBe('relative');
+  await summaryCard.scrollIntoViewIfNeeded();
+  await page.mouse.wheel(0, 900);
+  await expect(page.getByRole('heading', { name: /Reporte de asistencia/i })).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
+});
+
 test('el estudio solo aparece al administrador autorizado y diferencia sus métricas', async ({ page }) => {
   await installApiMocks(page, 'admin');
   await page.goto('/login');

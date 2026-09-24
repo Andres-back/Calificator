@@ -33,7 +33,7 @@ import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import {
   ajustarNota, ajustarNotaBatch, confirmarNota, confirmarNotaBatch,
-  crearIncidencia, getEvaluationReview, getCalificacionDetalle, listarIncidencias,
+  crearIncidencia, getEvaluationReview, getCalificacionDetalle, listarIncidencias, listCalificaciones,
   establecerNotaManual, publicarNota, publicarNotaBatch,
   marcarRevisionManual, resolverIncidencia, setAnswersReleased, solicitarReemplazoEvidencia, updateGradeBreakdown,
   reintentarCalificacionFoto,
@@ -48,6 +48,7 @@ import { GradeBreakdownHistory } from './components/GradeBreakdownHistory';
 import { buildReviewTriage, hasVerifierReviewSignals } from './review-triage/buildReviewTriage';
 import { ReviewTriagePanel } from './review-triage/ReviewTriagePanel';
 import { formatAIModelSource } from './aiPipelineLabels';
+import { excludeSubmittedStudents } from './submissionCandidates';
 import { effectiveGradeScore, formatGradeScore, gradePresentation, isGradeProcessing } from './gradePresentation';
 import { formatTimelineScore } from './timeline';
 import type { BatchResult, Calificacion, CalificacionDetalle, GradeBreakdownData, GradeComponentChange, ReviewFilter } from '@/types/api';
@@ -1689,6 +1690,7 @@ function GradingCenter() {
   const [mobileMoreActionsOpen, setMobileMoreActionsOpen] = useState(false);
   const [reviewCompleted, setReviewCompleted] = useState(false);
   const [savedStudents, setSavedStudents] = useState<Record<string, string[]>>({});
+  const [acceptedUploads, setAcceptedUploads] = useState<Record<string, string[]>>({});
   const [discardVersion, setDiscardVersion] = useState(0);
   const [batchResult, setBatchResult] = useState<BatchResult | null>(null);
   const blocker = useBlocker(({ currentLocation, nextLocation }) => {
@@ -1765,6 +1767,21 @@ function GradingCenter() {
     () => new Map(estudiantes.map((s) => [s.id, s])),
     [estudiantes],
   );
+  const uploadGradesQuery = useQuery({
+    queryKey: ['calificaciones', evalId],
+    queryFn: () => listCalificaciones(evalId),
+    enabled: mode === 'carga' && !!evalId,
+    staleTime: 0,
+    refetchOnMount: 'always',
+    retry: false,
+  });
+  const uploadStudents = useMemo(() => excludeSubmittedStudents(
+    estudiantes,
+    [
+      ...(uploadGradesQuery.data?.map((grade) => grade.estudiante_id) ?? []),
+      ...(acceptedUploads[evalId] ?? []),
+    ],
+  ), [acceptedUploads, estudiantes, evalId, uploadGradesQuery.data]);
   const selectedStudentReference = useQuery({
     queryKey: ['review-student', evalId, selectedStudentId],
     queryFn: ({ signal }) => getEvaluationReview(evalId, { estudiante_id: selectedStudentId! }, signal),
@@ -2020,11 +2037,26 @@ function GradingCenter() {
         <p role="status" className="text-sm text-muted">{selectedStudentReference.isLoading ? 'Consultando entrega…' : selectedStudentReference.error ? 'No se pudo consultar la entrega. Actualiza la lista.' : selectedRow ? 'Aún no tiene una calificación. Puedes añadir su entrega o establecer una nota manual.' : 'Este estudiante no pertenece a la evaluación seleccionada.'}</p>
         {canGrade && selectedRow && <div className="flex flex-wrap gap-2"><Button onClick={() => changeContext({ modo: 'carga' })}>Añadir su entrega</Button><Button variant="outline" onClick={() => setManualGradeOpen(true)}>Establecer nota</Button></div>}
       </Card>}
-      {mode === 'carga' && canGrade && selectedEval && <GradingUploadPanel
+      {mode === 'carga' && canGrade && selectedEval && uploadGradesQuery.isFetching && (
+        <Card className="mx-4 mb-4 p-4" role="status">
+          <p className="text-sm text-muted">Consultando quiénes aún necesitan entregar evidencia…</p>
+        </Card>
+      )}
+      {mode === 'carga' && canGrade && selectedEval && uploadGradesQuery.isError && (
+        <Card className="mx-4 mb-4 space-y-3 p-4" role="alert">
+          <p className="text-sm text-rose-600 dark:text-rose-300">No pudimos comprobar las entregas existentes. No habilitamos otra carga para evitar duplicados.</p>
+          <Button variant="outline" onClick={() => void uploadGradesQuery.refetch()}>Reintentar consulta</Button>
+        </Card>
+      )}
+      {mode === 'carga' && canGrade && selectedEval && uploadGradesQuery.isSuccess && !uploadGradesQuery.isFetching && <GradingUploadPanel
         key={`${evalId}-${selectedStudentId ?? ''}-${discardVersion}`}
-        evaluationId={evalId} students={estudiantes} studentId={selectedStudentId ?? ''}
+        evaluationId={evalId} students={uploadStudents} studentId={selectedStudentId ?? ''}
         onStudentChange={(id) => changeContext({ estudiante: id, calificacion: null, pregunta: null, hoja: null })}
         onDirtyChange={updateDirty}
+        onUploadAccepted={(studentId) => setAcceptedUploads((previous) => ({
+          ...previous,
+          [evalId]: [...new Set([...(previous[evalId] ?? []), studentId])],
+        }))}
       />}
       {directEvaluation.error && <p role="alert" className="p-4 text-rose-600">No se pudo abrir esta evaluación. Comprueba el acceso o selecciona otra.</p>}
       <div className={cn('min-w-0 flex-1 flex-col gap-4 lg:flex-row', mode === 'carga' ? 'hidden' : 'flex')}>
