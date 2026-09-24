@@ -45,4 +45,4 @@ Trabajo paralelo posible: revisión académica de la ficha mientras se prueba el
 - [x] T014 [US3] Añadir una guarda determinista de coherencia entre componentes, nota y feedback en backend/app/modules/calificaciones/breakdown_policy.py y backend/app/modules/calificaciones/breakdown_service.py (FR-009, FR-010; SC-005).
 - [x] T015 [US3] Probar que la guarda mantiene revisión, conserva trazabilidad y no altera calificaciones históricas en backend/tests/unit/test_breakdown_persistence.py (FR-009, FR-010, FR-012; SC-005, SC-007, SC-008).
 - [x] T016 Ejecutar pruebas focalizadas, Ruff y git diff --check; documentar resultados en specs/047-retroalimentacion-formativa/quickstart.md.
-- [x] T017 Actualizar trazabilidad de specs/README.md, abrir el PR #138 enlazado al issue #137 y ejecutar el control de CI; el merge continúa bloqueado hasta que todos los trabajos estén verdes.
+- [x] T017 Actualizar trazabilidad de specs/README.md, abrir el PR #138 enlazado al issue #137, aplicar las aprobaciones `spec-approved` y `plan-approved`, y ejecutar el control de CI; el merge continúa bloqueado hasta que todos los trabajos estén verdes.
