@@ -356,7 +356,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "dc020974c5e2130221ae0f43b120e6fe2874c6358eaddf8a596a4bef916e05a8",
+  "source_digest": "c42c7ed4c7d9925f5eb5d162748398c702160aa75d160f0e4603449fd5a01fa9",
   "surfaces": [
     {
       "actors": [
@@ -15008,6 +15008,12 @@
           "reference": "/",
           "status": "direct",
           "test_path": "frontend/src/modules/herramientas/views/StoryContent.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "frontend/src/modules/materias/ExistingStudentsDialog.test.tsx"
         },
         {
           "level": "unit",
@@ -35369,6 +35375,12 @@
           "reference": "materias",
           "status": "direct",
           "test_path": "frontend/src/modules/herramientas/forms/base.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "materias",
+          "status": "direct",
+          "test_path": "frontend/src/modules/materias/ExistingStudentsDialog.test.tsx"
         },
         {
           "level": "unit",
