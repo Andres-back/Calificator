@@ -102,7 +102,7 @@ actualizar la especificación propietaria, su plan y sus tareas; no debe crear d
 
 ## Evolución 047: retroalimentación formativa y calidad medible
 
-- [047-retroalimentacion-formativa](047-retroalimentacion-formativa/spec.md), [issue #94](https://github.com/Andres-back/Calificator/issues/94): especificación y plan aprobados el 2026-09-18; ajuste probado sin nuevas llamadas de IA ni cambios al cálculo o publicación.
+- [047-retroalimentacion-formativa](047-retroalimentacion-formativa/spec.md), [issues #94](https://github.com/Andres-back/Calificator/issues/94) y [#137](https://github.com/Andres-back/Calificator/issues/137): reglas formativas y evolución posterior al primer piloto para bloquear retroalimentación contradictoria sin reescribir históricos ni añadir llamadas de IA.
 - Coordina 008/016 y 011/032 sin transferir propiedad de módulos, endpoints o tablas. Conecta preferencias existentes al evaluador principal y respaldo.
 - [Rúbrica humana 1–5](047-retroalimentacion-formativa/rubrica-calidad.md): 25 descriptores, instrumento borrador sujeto a revisión y calibración académica; no mide automáticamente calidad ni acredita impacto de la tesis.
 

@@ -36,3 +36,13 @@ Trabajo paralelo posible: revisión académica de la ficha mientras se prueba el
 ## Phase 7: Convergence
 
 - [x] T010 Verificar la asociación del issue #94, las aprobaciones `spec-approved` y `plan-approved`, y la ejecución de los controles de PR/CI en el PR #127 antes de fusionar, según Constitución VII–VIII. El merge continúa condicionado a CI verde.
+
+## Fase 8: Evolución posterior al primer piloto — issue #137
+
+- [x] T011 [US3] Registrar hallazgos anonimizados, límites y protección de históricos en specs/047-retroalimentacion-formativa/spec.md, plan.md, research.md y rubrica-calidad.md.
+- [x] T012 [US3] Añadir regresiones de transcripción literal y desacuerdo visual en backend/tests/unit/test_vision_extractor.py y backend/tests/unit/test_comparator_feedback.py.
+- [x] T013 [US3] Reforzar las instrucciones de extracción y verificación independiente en backend/app/services/vision_extractor.py y backend/app/modules/calificaciones/agents.py sin nuevas llamadas de IA.
+- [x] T014 [US3] Añadir una guarda determinista de coherencia entre componentes, nota y feedback en backend/app/modules/calificaciones/breakdown_policy.py y backend/app/modules/calificaciones/breakdown_service.py.
+- [x] T015 [US3] Probar que la guarda mantiene revisión, conserva trazabilidad y no altera calificaciones históricas en backend/tests/unit/test_breakdown_persistence.py.
+- [x] T016 Ejecutar pruebas focalizadas, Ruff y git diff --check; documentar resultados en specs/047-retroalimentacion-formativa/quickstart.md.
+- [ ] T017 Actualizar trazabilidad de specs/README.md, abrir PR enlazado al issue #137 y verificar CI antes de fusionar.
