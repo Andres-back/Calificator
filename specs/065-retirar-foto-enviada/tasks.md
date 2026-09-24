@@ -9,6 +9,6 @@
 ## Pruebas y entrega
 
 - [x] T004 [FR-002] [FR-003] Añadir regresión de carga exitosa en `MateriaCalificar.test.tsx`.
-- [x] T005 [FR-001] [FR-004] Cubrir filtrado persistente y error sin exclusión.
+- [x] T005 [FR-001] [FR-004] Cubrir filtrado persistente, exclusión tras recarga y error sin exclusión en unitarias y E2E.
 - [x] T006 [FR-006] [FR-007] Ejecutar pruebas focalizadas, TypeScript, build y lint de archivos afectados.
 - [x] T007 Actualizar trazabilidad y abrir PR enlazado al issue #135.
