@@ -66,6 +66,7 @@ ALL_SPECS = {
     "062-multimodal-grader-verifier",
     "063-mobile-grade-digitization",
     "065-retirar-foto-enviada",
+    "067-privacidad-legal",
 }
 OWNED_SPECS = {
     name
@@ -73,6 +74,7 @@ OWNED_SPECS = {
     if name.startswith(tuple(f"{number:03d}-" for number in range(2, 13)))
     or name.startswith("021-")
     or name.startswith("029-")
+    or name.startswith("067-")
 }
 
 

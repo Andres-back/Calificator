@@ -2,7 +2,7 @@
 
 ## Fase 1 — Documentación y contrato
 
-- [x] T001 Registrar auditoría, fuentes, límites y responsables en `specs/067-privacidad-legal/` (FR-001–FR-007).
+- [x] T001 Registrar auditoría, fuentes, límites y responsables en `specs/067-privacidad-legal/` (FR-001, FR-002, FR-003, FR-004, FR-005, FR-006, FR-007).
 - [x] T002 Actualizar `specs/README.md` y el inventario técnico (FR-001, FR-014).
 
 ## Fase 2 — Persistencia segura

@@ -5,6 +5,8 @@
 **Estado**: Especificación y plan aprobados por el usuario  
 **Issue**: [#139](https://github.com/Andres-back/Calificator/issues/139)
 
+**Inventario técnico**: [inventory.md](./inventory.md)
+
 ## Contexto
 
 El primer piloto en aula confirmó que XCalificator trata información académica, evidencias manuscritas y datos de docentes y estudiantes, incluidos menores de edad. La plataforma no tiene actualmente documentos legales públicos ni conserva una aceptación versionada durante el registro. Esta entrega crea una base transparente y auditable sin modificar usuarios, notas, entregas o evidencias existentes.
