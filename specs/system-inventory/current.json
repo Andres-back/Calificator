@@ -356,7 +356,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "4aa6ee10b2816d54bcd209c3fb88235b9d20bc3d6a46020632e8e6f39252bc9b",
+  "source_digest": "dc020974c5e2130221ae0f43b120e6fe2874c6358eaddf8a596a4bef916e05a8",
   "surfaces": [
     {
       "actors": [
@@ -525,6 +525,12 @@
           "reference": "DELETE:/calificaciones/modo-salon/{sesion_id}",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/CalificacionesTimeline.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "DELETE:/calificaciones/modo-salon/{sesion_id}",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/CalificacionesWorkspace.mobile.test.tsx"
         }
       ]
     },
@@ -2816,6 +2822,12 @@
           "reference": "GET:/calificaciones/bandeja-docente",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/CalificacionesTimeline.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/bandeja-docente",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/CalificacionesWorkspace.mobile.test.tsx"
         }
       ]
     },
@@ -2874,6 +2886,12 @@
           "reference": "GET:/calificaciones/entregas/{entrega_id}/evidencia",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/CalificacionesTimeline.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/entregas/{entrega_id}/evidencia",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/CalificacionesWorkspace.mobile.test.tsx"
         }
       ]
     },
@@ -2932,6 +2950,12 @@
           "reference": "GET:/calificaciones/entregas/{entrega_id}/evidencia/paginas/{numero}",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/CalificacionesTimeline.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/entregas/{entrega_id}/evidencia/paginas/{numero}",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/CalificacionesWorkspace.mobile.test.tsx"
         }
       ]
     },
@@ -2989,6 +3013,12 @@
           "reference": "GET:/calificaciones/modo-salon/{sesion_id}",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/CalificacionesTimeline.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/modo-salon/{sesion_id}",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/CalificacionesWorkspace.mobile.test.tsx"
         }
       ]
     },
@@ -3046,6 +3076,12 @@
           "reference": "GET:/calificaciones/modo-salon/{sesion_id}/estudiantes",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/CalificacionesTimeline.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/modo-salon/{sesion_id}/estudiantes",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/CalificacionesWorkspace.mobile.test.tsx"
         }
       ]
     },
@@ -3109,6 +3145,12 @@
           "reference": "GET:/calificaciones/{calificacion_id}/desglose",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/CalificacionesTimeline.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/{calificacion_id}/desglose",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/CalificacionesWorkspace.mobile.test.tsx"
         }
       ]
     },
@@ -3172,6 +3214,12 @@
           "reference": "GET:/calificaciones/{calificacion_id}/desglose/historial",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/CalificacionesTimeline.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/{calificacion_id}/desglose/historial",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/CalificacionesWorkspace.mobile.test.tsx"
         }
       ]
     },
@@ -3229,6 +3277,12 @@
           "reference": "GET:/calificaciones/{calificacion_id}/detalle",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/CalificacionesTimeline.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/{calificacion_id}/detalle",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/CalificacionesWorkspace.mobile.test.tsx"
         }
       ]
     },
@@ -3285,6 +3339,12 @@
           "reference": "GET:/calificaciones/{calificacion_id}/incidencias",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/CalificacionesTimeline.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/{calificacion_id}/incidencias",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/CalificacionesWorkspace.mobile.test.tsx"
         }
       ]
     },
@@ -3450,6 +3510,12 @@
           "reference": "GET:/estudiantes/{estudiante_id}/boletin",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/CalificacionesTimeline.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/estudiantes/{estudiante_id}/boletin",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/CalificacionesWorkspace.mobile.test.tsx"
         }
       ]
     },
@@ -3508,6 +3574,12 @@
           "reference": "GET:/estudiantes/{estudiante_id}/resumen-academico",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/CalificacionesTimeline.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/estudiantes/{estudiante_id}/resumen-academico",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/CalificacionesWorkspace.mobile.test.tsx"
         }
       ]
     },
@@ -3775,6 +3847,12 @@
           "reference": "GET:/evaluaciones/{evaluacion_id}/calificaciones",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/CalificacionesTimeline.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/{evaluacion_id}/calificaciones",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/CalificacionesWorkspace.mobile.test.tsx"
         }
       ]
     },
@@ -3838,6 +3916,12 @@
           "reference": "GET:/evaluaciones/{evaluacion_id}/mi-desglose",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/CalificacionesTimeline.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/{evaluacion_id}/mi-desglose",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/CalificacionesWorkspace.mobile.test.tsx"
         }
       ]
     },
@@ -3894,6 +3978,12 @@
           "reference": "GET:/evaluaciones/{evaluacion_id}/mi-entrega",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/CalificacionesTimeline.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/{evaluacion_id}/mi-entrega",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/CalificacionesWorkspace.mobile.test.tsx"
         }
       ]
     },
@@ -3951,6 +4041,12 @@
           "reference": "GET:/evaluaciones/{evaluacion_id}/mi-solicitud-revision",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/CalificacionesTimeline.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/{evaluacion_id}/mi-solicitud-revision",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/CalificacionesWorkspace.mobile.test.tsx"
         }
       ]
     },
@@ -4041,6 +4137,12 @@
           "reference": "GET:/evaluaciones/{evaluacion_id}/revision",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/CalificacionesTimeline.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/{evaluacion_id}/revision",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/CalificacionesWorkspace.mobile.test.tsx"
         }
       ]
     },
@@ -7146,6 +7248,12 @@
           "reference": "PATCH:/calificaciones/modo-salon/{sesion_id}/estudiantes/{estudiante_id}",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/CalificacionesTimeline.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/calificaciones/modo-salon/{sesion_id}/estudiantes/{estudiante_id}",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/CalificacionesWorkspace.mobile.test.tsx"
         }
       ]
     },
@@ -7202,6 +7310,12 @@
           "reference": "PATCH:/calificaciones/{calificacion_id}/ajustar",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/CalificacionesTimeline.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/calificaciones/{calificacion_id}/ajustar",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/CalificacionesWorkspace.mobile.test.tsx"
         }
       ]
     },
@@ -7258,6 +7372,12 @@
           "reference": "PATCH:/calificaciones/{calificacion_id}/confirmar",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/CalificacionesTimeline.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/calificaciones/{calificacion_id}/confirmar",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/CalificacionesWorkspace.mobile.test.tsx"
         }
       ]
     },
@@ -7314,6 +7434,12 @@
           "reference": "PATCH:/calificaciones/{calificacion_id}/publicar",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/CalificacionesTimeline.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/calificaciones/{calificacion_id}/publicar",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/CalificacionesWorkspace.mobile.test.tsx"
         }
       ]
     },
@@ -7370,6 +7496,12 @@
           "reference": "PATCH:/calificaciones/{calificacion_id}/revision-manual",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/CalificacionesTimeline.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/calificaciones/{calificacion_id}/revision-manual",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/CalificacionesWorkspace.mobile.test.tsx"
         }
       ]
     },
@@ -7640,6 +7772,12 @@
           "reference": "PATCH:/evaluaciones/{evaluacion_id}/respuestas-liberadas",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/CalificacionesTimeline.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/evaluaciones/{evaluacion_id}/respuestas-liberadas",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/CalificacionesWorkspace.mobile.test.tsx"
         }
       ]
     },
@@ -7937,6 +8075,12 @@
           "reference": "PATCH:/incidencias/{incidencia_id}/resolver",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/CalificacionesTimeline.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/incidencias/{incidencia_id}/resolver",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/CalificacionesWorkspace.mobile.test.tsx"
         }
       ]
     },
@@ -9730,6 +9874,12 @@
           "reference": "POST:/calificaciones/foto",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/CalificacionesTimeline.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/foto",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/CalificacionesWorkspace.mobile.test.tsx"
         }
       ]
     },
@@ -9796,6 +9946,12 @@
         {
           "level": "unit",
           "reference": "POST:/calificaciones/lote",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/CalificacionesWorkspace.mobile.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/lote",
           "status": "direct",
           "test_path": "frontend/src/modules/calificaciones/GradingJobMonitor.test.tsx"
         }
@@ -9854,6 +10010,12 @@
           "reference": "POST:/calificaciones/lote/ajustar",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/CalificacionesTimeline.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/lote/ajustar",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/CalificacionesWorkspace.mobile.test.tsx"
         }
       ]
     },
@@ -9910,6 +10072,12 @@
           "reference": "POST:/calificaciones/lote/asincrono",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/CalificacionesTimeline.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/lote/asincrono",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/CalificacionesWorkspace.mobile.test.tsx"
         },
         {
           "level": "unit",
@@ -9972,6 +10140,12 @@
           "reference": "POST:/calificaciones/lote/confirmar",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/CalificacionesTimeline.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/lote/confirmar",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/CalificacionesWorkspace.mobile.test.tsx"
         }
       ]
     },
@@ -10034,6 +10208,12 @@
           "reference": "POST:/calificaciones/lote/publicar",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/CalificacionesTimeline.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/lote/publicar",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/CalificacionesWorkspace.mobile.test.tsx"
         }
       ]
     },
@@ -10090,6 +10270,12 @@
           "reference": "POST:/calificaciones/modo-salon/iniciar",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/CalificacionesTimeline.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/modo-salon/iniciar",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/CalificacionesWorkspace.mobile.test.tsx"
         }
       ]
     },
@@ -10146,6 +10332,12 @@
           "reference": "POST:/calificaciones/modo-salon/{sesion_id}/foto",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/CalificacionesTimeline.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/modo-salon/{sesion_id}/foto",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/CalificacionesWorkspace.mobile.test.tsx"
         }
       ]
     },
@@ -10202,6 +10394,12 @@
           "reference": "POST:/calificaciones/{calificacion_id}/incidencias",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/CalificacionesTimeline.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/{calificacion_id}/incidencias",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/CalificacionesWorkspace.mobile.test.tsx"
         }
       ]
     },
@@ -10258,6 +10456,12 @@
           "reference": "POST:/calificaciones/{calificacion_id}/reintentar-foto",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/CalificacionesTimeline.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/{calificacion_id}/reintentar-foto",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/CalificacionesWorkspace.mobile.test.tsx"
         }
       ]
     },
@@ -10314,6 +10518,12 @@
           "reference": "POST:/calificaciones/{calificacion_id}/solicitar-reemplazo",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/CalificacionesTimeline.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/{calificacion_id}/solicitar-reemplazo",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/CalificacionesWorkspace.mobile.test.tsx"
         }
       ]
     },
@@ -10922,6 +11132,12 @@
           "reference": "POST:/evaluaciones/{evaluacion_id}/calificaciones/manual",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/CalificacionesTimeline.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/evaluaciones/{evaluacion_id}/calificaciones/manual",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/CalificacionesWorkspace.mobile.test.tsx"
         }
       ]
     },
@@ -11054,6 +11270,12 @@
           "reference": "POST:/evaluaciones/{evaluacion_id}/entregas",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/CalificacionesTimeline.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/evaluaciones/{evaluacion_id}/entregas",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/CalificacionesWorkspace.mobile.test.tsx"
         }
       ]
     },
@@ -11110,6 +11332,12 @@
           "reference": "POST:/evaluaciones/{evaluacion_id}/entregas/archivo",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/CalificacionesTimeline.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/evaluaciones/{evaluacion_id}/entregas/archivo",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/CalificacionesWorkspace.mobile.test.tsx"
         }
       ]
     },
@@ -11243,6 +11471,12 @@
           "reference": "POST:/evaluaciones/{evaluacion_id}/solicitud-revision",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/CalificacionesTimeline.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/evaluaciones/{evaluacion_id}/solicitud-revision",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/CalificacionesWorkspace.mobile.test.tsx"
         }
       ]
     },
@@ -13665,6 +13899,12 @@
           "reference": "PUT:/calificaciones/{calificacion_id}/desglose",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/CalificacionesTimeline.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "PUT:/calificaciones/{calificacion_id}/desglose",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/CalificacionesWorkspace.mobile.test.tsx"
         }
       ]
     },
@@ -14558,6 +14798,12 @@
           "reference": "/",
           "status": "direct",
           "test_path": "frontend/src/modules/calificaciones/CalificacionesTimeline.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/CalificacionesWorkspace.mobile.test.tsx"
         },
         {
           "level": "unit",
@@ -19198,6 +19444,12 @@
           "reference": "DELETE:/calificaciones/modo-salon/{sesionId}",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/CalificacionesTimeline.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "DELETE:/calificaciones/modo-salon/{sesionId}",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/CalificacionesWorkspace.mobile.test.tsx"
         }
       ]
     },
@@ -21795,6 +22047,12 @@
           "reference": "GET:/calificaciones/bandeja-docente",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/CalificacionesTimeline.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/bandeja-docente",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/CalificacionesWorkspace.mobile.test.tsx"
         }
       ]
     },
@@ -21847,6 +22105,12 @@
           "reference": "GET:/calificaciones/modo-salon/{sesionId}",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/CalificacionesTimeline.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/modo-salon/{sesionId}",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/CalificacionesWorkspace.mobile.test.tsx"
         }
       ]
     },
@@ -21899,6 +22163,12 @@
           "reference": "GET:/calificaciones/{calificacionId}/desglose/historial",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/CalificacionesTimeline.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/{calificacionId}/desglose/historial",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/CalificacionesWorkspace.mobile.test.tsx"
         }
       ]
     },
@@ -21951,6 +22221,12 @@
           "reference": "GET:/calificaciones/{calificacionId}/desglose",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/CalificacionesTimeline.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/{calificacionId}/desglose",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/CalificacionesWorkspace.mobile.test.tsx"
         }
       ]
     },
@@ -22003,6 +22279,12 @@
           "reference": "GET:/calificaciones/{calificacionId}/detalle",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/CalificacionesTimeline.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/{calificacionId}/detalle",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/CalificacionesWorkspace.mobile.test.tsx"
         }
       ]
     },
@@ -22055,6 +22337,12 @@
           "reference": "GET:/calificaciones/{calificacionId}/incidencias",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/CalificacionesTimeline.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/{calificacionId}/incidencias",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/CalificacionesWorkspace.mobile.test.tsx"
         }
       ]
     },
@@ -22195,6 +22483,12 @@
           "reference": "GET:/estudiantes/{estudianteId}/boletin",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/CalificacionesTimeline.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/estudiantes/{estudianteId}/boletin",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/CalificacionesWorkspace.mobile.test.tsx"
         }
       ]
     },
@@ -22247,6 +22541,12 @@
           "reference": "GET:/estudiantes/{estudianteId}/resumen-academico",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/CalificacionesTimeline.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/estudiantes/{estudianteId}/resumen-academico",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/CalificacionesWorkspace.mobile.test.tsx"
         }
       ]
     },
@@ -22327,6 +22627,12 @@
           "reference": "GET:/evaluaciones/{evaluacionId}/calificaciones",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/CalificacionesTimeline.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/{evaluacionId}/calificaciones",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/CalificacionesWorkspace.mobile.test.tsx"
         }
       ]
     },
@@ -22463,6 +22769,12 @@
           "reference": "GET:/evaluaciones/{evaluationId}/revision",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/CalificacionesTimeline.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/{evaluationId}/revision",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/CalificacionesWorkspace.mobile.test.tsx"
         }
       ]
     },
@@ -23147,6 +23459,12 @@
         {
           "level": "unit",
           "reference": "GET:/jobs/pendientes",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/CalificacionesWorkspace.mobile.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/jobs/pendientes",
           "status": "direct",
           "test_path": "frontend/src/modules/calificaciones/GradingJobMonitor.test.tsx"
         }
@@ -23207,6 +23525,12 @@
           "reference": "GET:/jobs/{jobId}",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/CalificacionesTimeline.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/jobs/{jobId}",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/CalificacionesWorkspace.mobile.test.tsx"
         },
         {
           "level": "unit",
@@ -25137,6 +25461,12 @@
           "reference": "PATCH:/calificaciones/{calificacionId}/publicar",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/CalificacionesTimeline.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/calificaciones/{calificacionId}/publicar",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/CalificacionesWorkspace.mobile.test.tsx"
         }
       ]
     },
@@ -25189,6 +25519,12 @@
           "reference": "PATCH:/calificaciones/{id}/ajustar",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/CalificacionesTimeline.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/calificaciones/{id}/ajustar",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/CalificacionesWorkspace.mobile.test.tsx"
         }
       ]
     },
@@ -25241,6 +25577,12 @@
           "reference": "PATCH:/calificaciones/{id}/confirmar",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/CalificacionesTimeline.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/calificaciones/{id}/confirmar",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/CalificacionesWorkspace.mobile.test.tsx"
         }
       ]
     },
@@ -25293,6 +25635,12 @@
           "reference": "PATCH:/calificaciones/{id}/revision-manual",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/CalificacionesTimeline.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/calificaciones/{id}/revision-manual",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/CalificacionesWorkspace.mobile.test.tsx"
         }
       ]
     },
@@ -25385,6 +25733,12 @@
           "reference": "PATCH:/evaluaciones/{evaluacionId}/respuestas-liberadas",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/CalificacionesTimeline.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/evaluaciones/{evaluacionId}/respuestas-liberadas",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/CalificacionesWorkspace.mobile.test.tsx"
         }
       ]
     },
@@ -25788,6 +26142,12 @@
           "reference": "PATCH:/incidencias/{incidenciaId}/resolver",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/CalificacionesTimeline.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/incidencias/{incidenciaId}/resolver",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/CalificacionesWorkspace.mobile.test.tsx"
         }
       ]
     },
@@ -27566,6 +27926,12 @@
           "reference": "POST:/calificaciones/foto",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/CalificacionesTimeline.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/foto",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/CalificacionesWorkspace.mobile.test.tsx"
         }
       ]
     },
@@ -27618,6 +27984,12 @@
           "reference": "POST:/calificaciones/lote/ajustar",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/CalificacionesTimeline.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/lote/ajustar",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/CalificacionesWorkspace.mobile.test.tsx"
         }
       ]
     },
@@ -27670,6 +28042,12 @@
           "reference": "POST:/calificaciones/lote/asincrono",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/CalificacionesTimeline.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/lote/asincrono",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/CalificacionesWorkspace.mobile.test.tsx"
         },
         {
           "level": "unit",
@@ -27728,6 +28106,12 @@
           "reference": "POST:/calificaciones/lote/confirmar",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/CalificacionesTimeline.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/lote/confirmar",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/CalificacionesWorkspace.mobile.test.tsx"
         }
       ]
     },
@@ -27786,6 +28170,12 @@
           "reference": "POST:/calificaciones/lote/publicar",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/CalificacionesTimeline.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/lote/publicar",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/CalificacionesWorkspace.mobile.test.tsx"
         }
       ]
     },
@@ -27838,6 +28228,12 @@
           "reference": "POST:/calificaciones/modo-salon/iniciar",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/CalificacionesTimeline.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/modo-salon/iniciar",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/CalificacionesWorkspace.mobile.test.tsx"
         }
       ]
     },
@@ -27890,6 +28286,12 @@
           "reference": "POST:/calificaciones/modo-salon/{sesionId}/foto",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/CalificacionesTimeline.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/modo-salon/{sesionId}/foto",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/CalificacionesWorkspace.mobile.test.tsx"
         }
       ]
     },
@@ -27942,6 +28344,12 @@
           "reference": "POST:/calificaciones/{calificacionId}/incidencias",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/CalificacionesTimeline.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/{calificacionId}/incidencias",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/CalificacionesWorkspace.mobile.test.tsx"
         }
       ]
     },
@@ -27994,6 +28402,12 @@
           "reference": "POST:/calificaciones/{calificacionId}/reintentar-foto",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/CalificacionesTimeline.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/{calificacionId}/reintentar-foto",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/CalificacionesWorkspace.mobile.test.tsx"
         }
       ]
     },
@@ -28046,6 +28460,12 @@
           "reference": "POST:/calificaciones/{calificacionId}/solicitar-reemplazo",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/CalificacionesTimeline.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/{calificacionId}/solicitar-reemplazo",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/CalificacionesWorkspace.mobile.test.tsx"
         }
       ]
     },
@@ -28200,6 +28620,12 @@
           "reference": "POST:/evaluaciones/{evaluacionId}/calificaciones/manual",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/CalificacionesTimeline.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/evaluaciones/{evaluacionId}/calificaciones/manual",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/CalificacionesWorkspace.mobile.test.tsx"
         }
       ]
     },
@@ -30357,6 +30783,12 @@
           "reference": "PUT:/calificaciones/{calificacionId}/desglose",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/CalificacionesTimeline.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "PUT:/calificaciones/{calificacionId}/desglose",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/CalificacionesWorkspace.mobile.test.tsx"
         }
       ]
     },
@@ -32872,6 +33304,12 @@
           "reference": "calificacion_ajustes",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/CalificacionesTimeline.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "calificacion_ajustes",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/CalificacionesWorkspace.mobile.test.tsx"
         }
       ]
     },
@@ -32963,6 +33401,12 @@
           "reference": "calificacion_componentes",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/CalificacionesTimeline.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "calificacion_componentes",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/CalificacionesWorkspace.mobile.test.tsx"
         }
       ]
     },
@@ -33052,6 +33496,12 @@
           "reference": "calificacion_desgloses",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/CalificacionesTimeline.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "calificacion_desgloses",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/CalificacionesWorkspace.mobile.test.tsx"
         }
       ]
     },
@@ -33145,6 +33595,12 @@
           "reference": "calificacion_incidencias",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/CalificacionesTimeline.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "calificacion_incidencias",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/CalificacionesWorkspace.mobile.test.tsx"
         }
       ]
     },
@@ -33506,6 +33962,12 @@
           "level": "unit",
           "reference": "calificaciones",
           "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/CalificacionesWorkspace.mobile.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "calificaciones",
+          "status": "direct",
           "test_path": "frontend/src/modules/calificaciones/GradingJobMonitor.test.tsx"
         },
         {
@@ -33823,6 +34285,12 @@
           "reference": "entregas",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/CalificacionesTimeline.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "entregas",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/CalificacionesWorkspace.mobile.test.tsx"
         },
         {
           "level": "unit",
@@ -35743,6 +36211,12 @@
           "reference": "salon_sesion_estudiantes",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/CalificacionesTimeline.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "salon_sesion_estudiantes",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/CalificacionesWorkspace.mobile.test.tsx"
         }
       ]
     },
@@ -35809,6 +36283,12 @@
           "reference": "salon_sesiones",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/CalificacionesTimeline.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "salon_sesiones",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/CalificacionesWorkspace.mobile.test.tsx"
         }
       ]
     },

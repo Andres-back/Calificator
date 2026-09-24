@@ -56,18 +56,18 @@ export function ReviewTriagePanel({ summary, selectedComponentId, onSelectCompon
         <p className="mt-1 text-sm text-muted">Estas señales priorizan tu revisión; no cambian ni publican la nota.</p>
       </div>
 
-      <div className="grid grid-cols-1 gap-2 min-[390px]:grid-cols-3" aria-label="Resumen de revisión">
-        <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 dark:border-emerald-500/30 dark:bg-emerald-500/10">
+      <div className="grid grid-cols-3 gap-2" aria-label="Resumen de revisión">
+        <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-2.5 dark:border-emerald-500/30 dark:bg-emerald-500/10 sm:p-3">
           <CheckCircle2 className="h-5 w-5 text-emerald-700 dark:text-emerald-300" aria-hidden="true" />
-          <p className="mt-2 font-bold text-emerald-900 dark:text-emerald-100">{summary.counts.safe} {summary.counts.safe === 1 ? 'segura' : 'seguras'}</p>
+          <p className="mt-2 text-sm font-bold text-emerald-900 dark:text-emerald-100 sm:text-base">{summary.counts.safe} {summary.counts.safe === 1 ? 'segura' : 'seguras'}</p>
         </div>
-        <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 dark:border-amber-500/30 dark:bg-amber-500/10">
+        <div className="rounded-xl border border-amber-200 bg-amber-50 p-2.5 dark:border-amber-500/30 dark:bg-amber-500/10 sm:p-3">
           <TriangleAlert className="h-5 w-5 text-amber-700 dark:text-amber-300" aria-hidden="true" />
-          <p className="mt-2 font-bold text-amber-900 dark:text-amber-100">{summary.counts.attention} con atención</p>
+          <p className="mt-2 text-sm font-bold text-amber-900 dark:text-amber-100 sm:text-base">{summary.counts.attention} por revisar</p>
         </div>
-        <div className="rounded-xl border border-rose-200 bg-rose-50 p-3 dark:border-rose-500/30 dark:bg-rose-500/10">
+        <div className="rounded-xl border border-rose-200 bg-rose-50 p-2.5 dark:border-rose-500/30 dark:bg-rose-500/10 sm:p-3">
           <ShieldAlert className="h-5 w-5 text-rose-700 dark:text-rose-300" aria-hidden="true" />
-          <p className="mt-2 font-bold text-rose-900 dark:text-rose-100">{summary.counts.blocked} {summary.counts.blocked === 1 ? 'bloqueada' : 'bloqueadas'}</p>
+          <p className="mt-2 text-sm font-bold text-rose-900 dark:text-rose-100 sm:text-base">{summary.counts.blocked} {summary.counts.blocked === 1 ? 'bloqueada' : 'bloqueadas'}</p>
         </div>
       </div>
 
@@ -84,7 +84,7 @@ export function ReviewTriagePanel({ summary, selectedComponentId, onSelectCompon
             {selectedIndex < 0 ? 'Revisar primera excepción' : selectedIndex < summary.exceptions.length - 1 ? 'Siguiente excepción' : 'Volver a la primera excepción'}
             <ArrowRight className="h-4 w-4" aria-hidden="true" />
           </Button>
-          <ol className="space-y-2" aria-label="Excepciones detectadas">
+          <ol className="max-h-56 space-y-2 overflow-y-auto pr-1 sm:max-h-none sm:overflow-visible" aria-label="Excepciones detectadas">
             {summary.exceptions.map((item, index) => (
               <li key={item.component.id}>
                 <button

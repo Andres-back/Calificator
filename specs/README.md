@@ -162,6 +162,11 @@ actualizar la especificación propietaria, su plan y sus tareas; no debe crear d
 - [063-mobile-grade-digitization](063-mobile-grade-digitization/spec.md), [issue #125](https://github.com/Andres-back/Calificator/issues/125): difiere la búsqueda remota para evitar bloqueos al escribir, permite localizar al estudiante al cargar evidencia y separa los manuscritos de la clave esperada.
 - Las operaciones aritméticas de tipo completar se verifican contra el enunciado final y dejan advertencia si se corrige la propuesta de IA; no se alteran evaluaciones históricas.
 
+## Evolución 043: flujo docente móvil de calificación
+
+- [043-flujo-docente-movil](043-flujo-docente-movil/spec.md), [issue #131](https://github.com/Andres-back/Calificator/issues/131): compacta el contexto, mantiene búsqueda y filtros accesibles y permite confirmar, publicar o continuar desde una barra móvil asociada al estado real.
+- No cambia el cálculo, la persistencia, los permisos ni los contratos de calificación; añade cobertura funcional y visual en 360×800 y 390×844.
+
 ## Inventario técnico global
 
 - [Inventario canónico JSON](system-inventory/current.json)
