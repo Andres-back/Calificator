@@ -39,10 +39,10 @@ Trabajo paralelo posible: revisión académica de la ficha mientras se prueba el
 
 ## Fase 8: Evolución posterior al primer piloto — issue #137
 
-- [x] T011 [US3] Registrar hallazgos anonimizados, límites y protección de históricos en specs/047-retroalimentacion-formativa/spec.md, plan.md, research.md y rubrica-calidad.md.
-- [x] T012 [US3] Añadir regresiones de transcripción literal y desacuerdo visual en backend/tests/unit/test_vision_extractor.py y backend/tests/unit/test_comparator_feedback.py.
-- [x] T013 [US3] Reforzar las instrucciones de extracción y verificación independiente en backend/app/services/vision_extractor.py y backend/app/modules/calificaciones/agents.py sin nuevas llamadas de IA.
-- [x] T014 [US3] Añadir una guarda determinista de coherencia entre componentes, nota y feedback en backend/app/modules/calificaciones/breakdown_policy.py y backend/app/modules/calificaciones/breakdown_service.py.
-- [x] T015 [US3] Probar que la guarda mantiene revisión, conserva trazabilidad y no altera calificaciones históricas en backend/tests/unit/test_breakdown_persistence.py.
+- [x] T011 [US3] Registrar hallazgos anonimizados, límites y protección de históricos en specs/047-retroalimentacion-formativa/spec.md, plan.md, research.md y rubrica-calidad.md (FR-012; SC-008).
+- [x] T012 [US3] Añadir regresiones de transcripción literal y desacuerdo visual en backend/tests/unit/test_vision_extractor.py y backend/tests/unit/test_comparator_feedback.py (FR-008, FR-009; SC-005, SC-006).
+- [x] T013 [US3] Reforzar las instrucciones de extracción y verificación independiente en backend/app/services/vision_extractor.py y backend/app/modules/calificaciones/agents.py sin nuevas llamadas de IA (FR-008, FR-011; SC-006, SC-007).
+- [x] T014 [US3] Añadir una guarda determinista de coherencia entre componentes, nota y feedback en backend/app/modules/calificaciones/breakdown_policy.py y backend/app/modules/calificaciones/breakdown_service.py (FR-009, FR-010; SC-005).
+- [x] T015 [US3] Probar que la guarda mantiene revisión, conserva trazabilidad y no altera calificaciones históricas en backend/tests/unit/test_breakdown_persistence.py (FR-009, FR-010, FR-012; SC-005, SC-007, SC-008).
 - [x] T016 Ejecutar pruebas focalizadas, Ruff y git diff --check; documentar resultados en specs/047-retroalimentacion-formativa/quickstart.md.
-- [ ] T017 Actualizar trazabilidad de specs/README.md, abrir PR enlazado al issue #137 y verificar CI antes de fusionar.
+- [x] T017 Actualizar trazabilidad de specs/README.md, abrir el PR #138 enlazado al issue #137 y ejecutar el control de CI; el merge continúa bloqueado hasta que todos los trabajos estén verdes.
