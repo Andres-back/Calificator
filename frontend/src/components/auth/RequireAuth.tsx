@@ -10,6 +10,11 @@ const PUBLIC_PATHS = new Set([
   routes.register,
   routes.requestPasswordReset,
   routes.resetPassword,
+  routes.privacy,
+  routes.terms,
+  routes.cookies,
+  routes.privacyNotice,
+  routes.pilotInformation,
 ]);
 
 /** Dispara la verificación de sesión una vez al montar la app. */
