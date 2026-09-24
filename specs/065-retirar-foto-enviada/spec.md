@@ -25,6 +25,7 @@ Como docente que fotografía evaluaciones, quiero que el estudiante desaparezca 
 - **FR-005**: La fuente persistente para reconstruir la lista DEBE ser el conjunto de calificaciones de la evaluación.
 - **FR-006**: El cambio NO DEBE eliminar ni modificar entregas, calificaciones, reemplazos o datos históricos.
 - **FR-007**: Los contratos HTTP, la cola asíncrona y la publicación docente DEBEN permanecer sin cambios.
+- **FR-008**: En 360×800 y 390×844, el resumen de asistencia NO DEBE quedar flotando sobre el contenido ni impedir alcanzar el reporte mediante desplazamiento vertical.
 
 ## Criterios medibles de éxito
 
@@ -32,10 +33,10 @@ Como docente que fotografía evaluaciones, quiero que el estudiante desaparezca 
 - **SC-002**: Tras recargar, ningún estudiante con calificación existente reaparece como pendiente de evidencia.
 - **SC-003**: Una respuesta de error conserva estudiante y hojas para reintento.
 - **SC-004**: Las pruebas focalizadas de carga y el chequeo de tipos permanecen verdes.
+- **SC-005**: En móvil, el panel “Resumen y guardado de asistencia” usa posición normal y el reporte permanece alcanzable sin desbordamiento horizontal.
 
 ## Supuestos y límites
 
 - Una calificación existente, cualquiera que sea su estado, indica que la evidencia ya fue recibida o que existe una decisión manual; no se ofrece otra carga desde la lista general.
 - Los reemplazos de evidencia continúan por su flujo dedicado.
 - No se añaden endpoints, tablas ni migraciones.
-

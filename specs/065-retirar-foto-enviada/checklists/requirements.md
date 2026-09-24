@@ -6,4 +6,4 @@
 - [x] Los reemplazos permanecen en su flujo dedicado.
 - [x] No se modifican datos históricos, contratos ni permisos.
 - [x] No quedan decisiones funcionales abiertas.
-
+- [x] El panel de asistencia no bloquea el desplazamiento móvil y el reporte sigue siendo alcanzable.

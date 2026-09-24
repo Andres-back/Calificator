@@ -6,4 +6,4 @@
 4. Volver a revisión y confirmar que aparece como “Calificando” o con su estado actual.
 5. Simular un error de carga y comprobar que el estudiante y las hojas permanecen para reintentar.
 6. Recargar el navegador y comprobar que estudiantes con calificación existente no reaparecen.
-
+7. En 390×844, abrir Asistencia, desplazar el resumen y comprobar que se alcanza el reporte sin que el panel cubra la vista.

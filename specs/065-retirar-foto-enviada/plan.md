@@ -28,6 +28,7 @@ Consultar las calificaciones existentes al abrir “Añadir entregas”, excluir
 3. Añadir a `GradingUploadPanel` una notificación `onUploadAccepted(studentId)` que se ejecuta solo tras éxito.
 4. En el workspace, registrar ese identificador, limpiar el estudiante de la URL e invalidar las consultas ya existentes.
 5. Restablecer la exclusión optimista al cambiar de evaluación; la consulta persistente seguirá siendo la autoridad.
+6. Mantener el resumen de asistencia dentro del flujo normal en móvil y tableta, reservando su posición fija al ancho de escritorio.
 
 La regla pura de exclusión reside en `submissionCandidates.ts` para mantener el componente compatible con Fast Refresh y permitir una prueba determinista sin montar el workspace completo.
 
@@ -36,3 +37,4 @@ La regla pura de exclusión reside en `submissionCandidates.ts` para mantener el
 - **Respuesta aceptada aún no visible en la consulta**: el conjunto optimista cubre la ventana de consistencia.
 - **Error de red**: no se llama el callback de aceptación y se conservan hojas/selección.
 - **Reemplazo legítimo**: continúa por el flujo específico de reemplazo, sin duplicar entregas desde la carga general.
+- **Panel de asistencia demasiado alto**: una regresión a 390×844 valida posición normal, acceso al reporte y ausencia de desbordamiento.
