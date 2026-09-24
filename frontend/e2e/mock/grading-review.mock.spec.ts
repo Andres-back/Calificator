@@ -30,7 +30,7 @@ test('prioriza excepciones en móvil sin confirmar ni publicar automáticamente'
   await page.getByText('Estudiante Prueba', { exact: true }).click();
 
   await expect(page.getByRole('heading', { name: 'Revisa primero las excepciones' })).toBeVisible();
-  await expect(page.getByText('1 con atención')).toBeVisible();
+  await expect(page.getByText('1 por revisar')).toBeVisible();
   await expect(page.getByText('1 bloqueada')).toBeVisible();
   await page.getByRole('button', { name: /Revisar primera excepción/ }).click();
   await expect(page).toHaveURL(/pregunta=pregunta%3A3/);
