@@ -425,7 +425,10 @@ test('añadir otra entrega permite volver al alumno y pregunta anteriores', asyn
   await expect(page.getByRole('button', { name: 'Pregunta 1', exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Añadir entregas', exact: true }).click();
   await page.getByRole('button', { name: 'Limpiar estudiante' }).click();
-  await page.getByRole('combobox', { name: 'Buscar estudiante para esta entrega' }).fill('Segundo');
+  const studentSearch = page.getByRole('combobox', { name: 'Buscar estudiante para esta entrega' });
+  await expect(page).not.toHaveURL(/estudiante=s1/);
+  await expect(studentSearch).toHaveValue('');
+  await studentSearch.fill('Segundo');
   await page.getByRole('option', { name: 'Segundo estudiante' }).click();
   await expect(page).toHaveURL(/estudiante=s2/);
   await page.getByRole('button', { name: 'Volver a revisión', exact: true }).last().click();
