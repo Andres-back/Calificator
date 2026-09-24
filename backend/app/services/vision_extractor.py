@@ -374,6 +374,11 @@ class VisionExtractor:
         return f"""Eres VisionExtractor. {action} Página {page} de {total}.
 Contexto: {json.dumps(context, ensure_ascii=False)}
 Transcribe solo lo visible. No completes, infieras ni corrijas. Conserva errores ortográficos.
+El contexto solo sirve para ubicar la pregunta: no copies los números del contexto como si fueran
+la respuesta. En operaciones aritméticas transcribe dígito por dígito los operandos escritos por
+el estudiante, los productos parciales y el resultado final. Si los operandos visibles difieren
+del enunciado, conserva exactamente lo visible y marca needs_review=true. Si un dígito no se
+distingue, usa answer=null, legible=false y needs_review=true; nunca lo completes calculando.
 {drawing_rule}
 Distingue vacío de ilegible. Ilegible: answer=null, legible=false, needs_review=true.
 Informa tachones, correcciones y preguntas ausentes. Devuelve SOLO JSON:

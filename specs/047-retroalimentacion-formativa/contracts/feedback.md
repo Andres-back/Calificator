@@ -11,3 +11,14 @@ Salida: mismos campos de nota, confianza, criterios, componentes, feedback, aler
 Calidad humana: cinco puntuaciones 1–5, versión y declaración de cegamiento. La ficha documental no introduce nuevos campos públicos ni formularios.
 
 No obliga a puntuar calidad al calificar, no usa confianza IA como calidad y no cambia la vista de respuestas correctas.
+
+## Evolución posterior al piloto
+
+El contrato público conserva los mismos campos. Para ejecuciones nuevas, si evidencia, componentes, suma o verificadores no coinciden:
+
+- `estado` permanece en `requiere_revision`;
+- `feedback` contiene un borrador provisional basado en el desglose y no una afirmación definitiva;
+- `resultado_json.feedback_quality_guard` conserva versión, estado, motivos y feedback original para auditoría;
+- `nota_confirmada` permanece vacía y no se publica automáticamente.
+
+La protección no recalcula ni actualiza registros históricos y no añade llamadas a proveedores. Una decisión docente existente prevalece y no puede ser sustituida por la guarda automática.

@@ -191,6 +191,33 @@ def _arbitration_reason(primary: AgentResult, verifier: AgentResult) -> str | No
     delta = abs(float(primary.nota_sugerida) - float(verifier.nota_sugerida))
     if delta >= float(settings.PHOTO_GRADING_ARBITRATION_SCORE_DELTA):
         return "score_discrepancy"
+    primary_components = {
+        str(item.get("clave")): item
+        for item in primary.componentes
+        if isinstance(item, dict) and item.get("clave")
+    }
+    verifier_components = {
+        str(item.get("clave")): item
+        for item in verifier.componentes
+        if isinstance(item, dict) and item.get("clave")
+    }
+    for key in primary_components.keys() & verifier_components.keys():
+        first = primary_components[key]
+        second = verifier_components[key]
+        states = {str(first.get("estado") or ""), str(second.get("estado") or "")}
+        if {"correcta", "incorrecta"}.issubset(states):
+            return "component_discrepancy"
+        try:
+            score_delta = abs(float(first.get("puntaje")) - float(second.get("puntaje")))
+        except (TypeError, ValueError):
+            continue
+        maximum = max(
+            float(first.get("puntos_maximos") or 0),
+            float(second.get("puntos_maximos") or 0),
+            1.0,
+        )
+        if score_delta > max(0.1, maximum * 0.1):
+            return "component_discrepancy"
     min_confidence = min(float(primary.confianza or 0), float(verifier.confianza or 0))
     if min_confidence < float(settings.PHOTO_GRADING_ARBITRATION_MIN_CONFIDENCE):
         return "low_confidence"

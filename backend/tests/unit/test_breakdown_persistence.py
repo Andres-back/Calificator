@@ -26,7 +26,8 @@ class FakeDB:
 def _calification():
     return SimpleNamespace(
         id=uuid4(), nota_sugerida=4.0, nota_confirmada=None,
-        resultado_json={}, revisado_por_docente=False, estado="sugerida",
+        feedback="Buen trabajo.", resultado_json={}, revisado_por_docente=False,
+        estado="sugerida",
     )
 
 
@@ -97,10 +98,15 @@ def test_complete_breakdown_overrides_inconsistent_global_model_score(monkeypatc
     assert float(breakdown.nota_final) == 4.67
     assert float(cal.nota_sugerida) == 4.67
     trace = cal.resultado_json["desglose"]
-    assert trace["modo"] == "autoridad"
+    assert trace["modo"] == "controlado"
     assert trace["nota_modelo_global"] == 4.95
     assert trace["nota_calculada"] == 4.67
     assert trace["diferencia"] == -0.28
+    assert cal.resultado_json["feedback_quality_guard"]["status"] == "blocked"
+    assert "Pregunta 1" in cal.feedback
+    assert "todas las respuestas" not in cal.feedback.casefold()
+    assert cal.estado == "requiere_revision"
+    assert breakdown.requiere_revision is True
 
 
 def test_incomplete_breakdown_does_not_publish_partial_sum(monkeypatch):
@@ -137,6 +143,8 @@ def test_incomplete_breakdown_does_not_publish_partial_sum(monkeypatch):
     assert cal.nota_sugerida == 4.95
     assert cal.estado == "requiere_revision"
     assert cal.resultado_json["desglose"]["modo"] == "controlado"
+    assert cal.resultado_json["feedback_quality_guard"]["status"] == "blocked"
+    assert "revisión docente" in cal.feedback
 
 
 def test_verifier_alert_keeps_formula_but_requires_teacher_review(monkeypatch):
@@ -236,6 +244,7 @@ def test_complete_sum_does_not_replace_previous_teacher_decision(monkeypatch):
     cal.nota_confirmada = 4.2
     cal.revisado_por_docente = True
     cal.estado = "confirmada"
+    cal.feedback = "Decisión y explicación final de la docente."
     blueprint = {
         "nota_maxima": 5,
         "preguntas": [{"numero": 1, "enunciado": "Respuesta", "puntaje": 5}],
@@ -259,6 +268,8 @@ def test_complete_sum_does_not_replace_previous_teacher_decision(monkeypatch):
     assert cal.nota_sugerida == 4.2
     assert cal.nota_confirmada == 4.2
     assert cal.estado == "confirmada"
+    assert cal.feedback == "Decisión y explicación final de la docente."
+    assert "feedback_quality_guard" not in cal.resultado_json
 
 
 def test_only_material_question_alerts_block_component_scores():
@@ -305,3 +316,51 @@ def test_verifier_key_conflict_does_not_persist_a_definitive_zero(monkeypatch):
     assert breakdown.requiere_revision is True
     assert cal.estado == "requiere_revision"
     assert cal.nota_confirmada is None
+    assert cal.resultado_json["feedback_quality_guard"]["status"] == "blocked"
+    assert "revisión docente" in cal.feedback
+
+
+def test_feedback_claiming_everything_correct_is_rewritten_from_components(monkeypatch):
+    monkeypatch.setattr(
+        "app.modules.calificaciones.breakdown_service.settings.EXPLAINABLE_GRADING_GENERATION_ENABLED",
+        True,
+    )
+    cal = _calification()
+    cal.nota_sugerida = 2.5
+    cal.feedback = "Excelente: todas las respuestas están correctas."
+    blueprint = {
+        "nota_maxima": 5,
+        "preguntas": [
+            {"numero": 1, "enunciado": "548 x 42", "puntaje": 2.5},
+            {"numero": 2, "enunciado": "623 x 34", "puntaje": 2.5},
+        ],
+    }
+    incorrect = {
+        "clave": "pregunta:1", "respuesta_estudiante": "22.468", "puntaje": 0,
+        "estado": "incorrecta", "explicacion": "El resultado visible no coincide.",
+        "orientacion_mejora": "Recalcula los dos productos parciales.", "paginas": [1],
+    }
+    correct = {
+        "clave": "pregunta:2", "respuesta_estudiante": "21.182", "puntaje": 2.5,
+        "estado": "correcta", "explicacion": "El procedimiento y el resultado coinciden.",
+        "paginas": [1],
+    }
+    raw = {
+        "grader_a": {"componentes": [incorrect, correct]},
+        "grader_b": {"componentes": [incorrect, correct]},
+    }
+
+    breakdown = asyncio.run(create_automatic_breakdown(
+        FakeDB([None, None]), calificacion=cal, blueprint=blueprint,
+        raw_output=raw, pipeline_run_id="pilot-feedback-contradiction",
+    ))
+
+    assert breakdown is not None
+    assert float(cal.nota_sugerida) == 2.5
+    assert "1 de 2" in cal.feedback
+    assert "Pregunta 1" in cal.feedback
+    assert "Recalcula los dos productos parciales" in cal.feedback
+    assert "todas las respuestas" not in cal.feedback.casefold()
+    guard = cal.resultado_json["feedback_quality_guard"]
+    assert guard["status"] == "rewritten"
+    assert guard["original_feedback"] == "Excelente: todas las respuestas están correctas."

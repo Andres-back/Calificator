@@ -6,6 +6,7 @@ import pytest
 
 from app.modules.calificaciones import agents
 from app.modules.calificaciones.agents import AgentResult, comparator_agent
+from app.modules.calificaciones.orchestrator import _arbitration_reason
 
 
 def feedback_context() -> agents.AgentContext:
@@ -96,6 +97,31 @@ def test_feedback_preferences_are_data_subordinate_to_grading_rules() -> None:
     assert "La evidencia y los criterios de evaluación prevalecen" in prompt
     assert "sin revelar la solución en la orientación" in prompt
     assert "no inventes errores ni respuestas" in prompt
+    assert "No afirmes que todo está correcto" in prompt
+    assert "acción breve y verificable" in prompt
+
+
+def test_verifier_must_read_visible_digits_before_primary_proposal() -> None:
+    prompt = agents.VERIFIER_PROMPT_TEMPLATE
+
+    assert "lee primero la evidencia" in prompt
+    assert "forma independiente" in prompt
+    assert "no copies operandos" in prompt
+    assert '"respuesta_observada"' in prompt
+    assert "no_evaluable" in prompt
+
+
+def test_component_disagreement_triggers_targeted_arbitration() -> None:
+    primary = result(feedback="Revisa la pregunta 2.", confidence=0.9, score=4.0)
+    verifier = result(feedback="", confidence=0.9, score=4.0)
+    primary.componentes = [
+        {"clave": "pregunta:2", "estado": "incorrecta", "puntaje": 0},
+    ]
+    verifier.componentes = [
+        {"clave": "pregunta:2", "estado": "correcta", "puntaje": 1},
+    ]
+
+    assert _arbitration_reason(primary, verifier) == "component_discrepancy"
 
 
 def test_main_and_fallback_share_prompt_and_preserve_result(monkeypatch) -> None:

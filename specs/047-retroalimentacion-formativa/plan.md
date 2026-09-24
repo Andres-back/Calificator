@@ -7,6 +7,10 @@
 
 Incluir las `reglas_feedback` existentes como preferencias de redacción en el prompt actual. Reutilizar `render_grader_prompt` también en `router_grader_agent`, que actualmente interpola la plantilla por separado. Conservar evidencia, criterios, pesos, esquema de salida, cálculo, verificadores, cola y publicación. Completar la rúbrica humana documental compatible con el contrato vigente 1–5; no añadir evaluador automático de calidad.
 
+### Evolución posterior al piloto — issue #137
+
+Fortalecer el mismo flujo sin añadir llamadas de IA ni migraciones: la visión debe copiar literalmente los números visibles; el verificador debe leer cada respuesta antes de considerar la propuesta principal; y una política local debe impedir que feedback, nota y componentes contradictorios se presenten como definitivos. La salida original se conserva en trazabilidad y los registros previos no se recalculan.
+
 ## Technical Context
 
 **Language/Version**: Python del CI existente; runtime sin cambios.
@@ -16,7 +20,7 @@ Incluir las `reglas_feedback` existentes como preferencias de redacción en el p
 **Target Platform**: Backend Linux/CI.
 **Project Type**: Aplicación web, ajuste interno de prompt y documentación.
 **Performance Goals**: Mismo número de llamadas a IA, sin nuevas esperas o evaluadores. Añadir texto puede aumentar tokens: no prometer latencia idéntica ni menos de 20 segundos sin medir.
-**Constraints**: No cambiar notas, criterios, modelos, timeouts, cola, publicación, endpoints, permisos o UI.
+**Constraints**: No reescribir notas o feedback históricos; no cambiar criterios, modelos, timeouts, cola, endpoints, permisos o UI. En ejecuciones nuevas, una incoherencia puede mantener el estado `requiere_revision`, reemplazar una devolución contradictoria por un borrador seguro y usar la suma verificable como nota sugerida sin confirmar ni publicar automáticamente.
 **Scale/Scope**: Dos consumidores del prompt, pruebas existentes y documentos del instrumento.
 
 ## Constitution Check
@@ -54,6 +58,10 @@ Código previsto:
 5. Si se solicita orientar sin respuesta, usar pistas/pasos en el texto de mejora; no modificar la clave interna ni su visualización existente.
 6. Respaldo utiliza `render_grader_prompt(ctx)` en lugar de duplicar `.format`, evitando placeholders faltantes y reglas divergentes.
 7. Mantener todo el procesamiento posterior y campos de salida.
+8. Reforzar la extracción para que el contexto ubique la pregunta pero nunca suministre la respuesta: en operaciones debe copiar operandos, parciales y resultado visibles e indicar diferencias o ilegibilidad.
+9. Hacer que el verificador contraste la imagen de forma independiente y devuelva una lectura visible por componente antes de comparar la propuesta principal.
+10. Aplicar una guarda local en la persistencia del desglose: si hay bloqueos, desacuerdo material o diferencia entre la suma y la nota global, conservar el feedback original en trazabilidad, sustituir el texto visible por un aviso seguro y mantener revisión docente.
+11. No actualizar calificaciones existentes. La política entra en vigor solo para nuevas ejecuciones; cualquier reintento histórico debe ser explícito.
 
 Incluir instrucciones no garantiza cumplimiento semántico: el docente sigue revisando la propuesta.
 
@@ -65,3 +73,5 @@ Incluir instrucciones no garantiza cumplimiento semántico: el docente sigue rev
 - Ruff y revisión del diff; ninguna prueba llama APIs externas o usa datos reales.
 - Sin batería frontend al no cambiar frontend; CI antes de merge.
 - Reversión mediante revert del PR, sin migración o limpieza de datos.
+- Regresión específica derivada del piloto: una imagen donde los operandos escritos difieren del enunciado y otra donde el mensaje afirma perfección pese a un componente pendiente.
+- La guarda es determinista y no añade solicitudes, tokens ni espera del proveedor.

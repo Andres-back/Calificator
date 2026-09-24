@@ -12,7 +12,13 @@ from sqlalchemy.orm import selectinload
 
 from app.core.config import settings
 from app.modules.calificaciones.breakdown_models import CalificacionAjuste, CalificacionComponente, CalificacionDesglose
-from app.modules.calificaciones.breakdown_policy import build_component_scaffold, calculate_formula, component_consensus, coverage_state
+from app.modules.calificaciones.breakdown_policy import (
+    build_component_scaffold,
+    calculate_formula,
+    component_consensus,
+    coverage_state,
+    feedback_quality_guard,
+)
 from app.modules.calificaciones.models import Calificacion
 from app.modules.evaluaciones.models import Evaluacion
 from app.modules.users.models import User
@@ -294,6 +300,28 @@ async def create_automatic_breakdown(
     result = dict(calificacion.resultado_json or {})
     result["desglose"] = trace
     result.setdefault("primera_sugerencia", breakdown.procedencia_json["primera_sugerencia"])
+    feedback_guard = feedback_quality_guard(
+        components=components,
+        original_feedback=calificacion.feedback,
+        blockers=blockers,
+        model_score=model_score,
+        calculated_score=breakdown.nota_final,
+    )
+    if not human_decision and feedback_guard["status"] != "passed":
+        result["feedback_quality_guard"] = feedback_guard
+        calificacion.feedback = feedback_guard["visible_feedback"]
+        if feedback_guard["status"] == "blocked":
+            guard_blockers = [
+                f"feedback_quality:{reason}"
+                for reason in feedback_guard["reasons"]
+            ]
+            breakdown.requiere_revision = True
+            breakdown.bloqueos_json = list(dict.fromkeys([
+                *breakdown.bloqueos_json,
+                *guard_blockers,
+            ]))
+            trace["modo"] = "controlado"
+            calificacion.estado = CalificacionEstado.REQUIERE_REVISION.value
     calificacion.resultado_json = result
     if complete_scored_sum:
         calificacion.nota_sugerida = breakdown.nota_final

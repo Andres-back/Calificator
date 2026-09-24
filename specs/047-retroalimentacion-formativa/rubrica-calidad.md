@@ -64,3 +64,7 @@ No mezclar unidades por trabajo y por pregunta como independientes equivalentes.
 - Dos revisores califican un subconjunto independientemente; documentar desacuerdos y aclarar anclajes.
 - Definir unidad, versión evaluada y análisis de acuerdo con el asesor.
 - Registrar aprobación y fijar versión definitiva, sin cambiar descriptores silenciosamente durante el estudio.
+
+## Regla incorporada tras el primer piloto
+
+Una retroalimentación no puede superar nivel 1 en **Corrección** si afirma que todas las respuestas son correctas mientras la evidencia, el desglose o un verificador marcan una respuesta incorrecta, distinta o pendiente. Tampoco puede compensarse ese error con buen tono, extensión o motivación. Debe registrarse como error pedagógico importante y excluirse de publicación hasta revisión docente.

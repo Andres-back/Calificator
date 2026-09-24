@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from decimal import Decimal, ROUND_HALF_UP
 from typing import Any
+import unicodedata
 
 PENDING_STATES = {"ilegible", "no_evaluable", "revision_pendiente"}
 VALID_STATES = {"correcta", "parcial", "incorrecta", "sin_respuesta", *PENDING_STATES}
@@ -183,3 +184,100 @@ def coverage_state(components: list[dict]) -> tuple[str, list[str]]:
         blockers.append("componentes_duplicados")
         return "inconsistente", blockers
     return ("incompleta", blockers) if blockers else ("completa", [])
+
+
+def _plain_text(value: object) -> str:
+    normalized = unicodedata.normalize("NFKD", str(value or ""))
+    without_accents = "".join(
+        character
+        for character in normalized
+        if not unicodedata.combining(character)
+    )
+    return " ".join(without_accents.casefold().split())
+
+
+def _claims_everything_correct(feedback: str) -> bool:
+    normalized = _plain_text(feedback)
+    return any(
+        phrase in normalized
+        for phrase in (
+            "todas las respuestas estan correctas",
+            "todos los ejercicios estan correctos",
+            "resolviste correctamente todos",
+            "todo esta correcto",
+            "trabajo perfecto",
+        )
+    )
+
+
+def build_formative_feedback(components: list[dict]) -> str:
+    """Construye un resumen prudente desde el desglose ya consensuado."""
+    total = len(components)
+    correct = sum(1 for item in components if item.get("estado") == "correcta")
+    parts = [f"Lograste {correct} de {total} respuestas con puntaje completo."]
+    needs_attention = [
+        item for item in components
+        if item.get("estado") != "correcta"
+    ]
+    for item in needs_attention[:3]:
+        number = item.get("numero") or item.get("orden", 0) + 1
+        explanation = " ".join(
+            str(item.get("explicacion_estudiante") or "").split()
+        ).strip()
+        orientation = " ".join(
+            str(
+                (item.get("evidencia_json") or {}).get("orientacion_mejora") or ""
+            ).split()
+        ).strip()
+        detail = explanation or "Esta respuesta necesita revisión."
+        if orientation:
+            detail = f"{detail} Siguiente paso: {orientation}"
+        parts.append(f"Pregunta {number}: {detail}")
+    if len(needs_attention) > 3:
+        parts.append(
+            f"Hay {len(needs_attention) - 3} respuestas adicionales por revisar con tu docente."
+        )
+    return " ".join(parts)[:2000]
+
+
+def feedback_quality_guard(
+    *,
+    components: list[dict],
+    original_feedback: str | None,
+    blockers: list[str],
+    model_score: Decimal | None,
+    calculated_score: Decimal,
+) -> dict[str, Any]:
+    """Evita que una redacción convincente oculte incoherencias verificables."""
+    reasons: list[str] = []
+    if blockers:
+        reasons.append("componentes_o_evidencia_pendientes")
+    score_mismatch = bool(
+        model_score is not None
+        and abs(calculated_score - model_score) > Decimal("0.01")
+    )
+    if score_mismatch:
+        reasons.append("nota_global_no_coincide_con_suma")
+    has_non_correct = any(item.get("estado") != "correcta" for item in components)
+    if has_non_correct and _claims_everything_correct(original_feedback or ""):
+        reasons.append("feedback_contradice_desglose")
+
+    summary = build_formative_feedback(components)
+    if blockers or score_mismatch:
+        visible = (
+            "Retroalimentación provisional: requiere revisión docente porque la evidencia, "
+            "las valoraciones o la suma no coinciden por completo. "
+            f"Borrador basado en el desglose: {summary}"
+        )[:2000]
+        status = "blocked"
+    elif reasons:
+        visible, status = summary, "rewritten"
+    else:
+        visible, status = original_feedback or summary, "passed"
+    return {
+        "version": "pilot-v1",
+        "status": status,
+        "reasons": reasons,
+        "original_feedback": original_feedback,
+        "visible_feedback": visible,
+    }
