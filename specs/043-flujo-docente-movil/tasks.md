@@ -10,27 +10,27 @@
 
 ## Fase 3: Historia 1 - Encontrar estudiantes
 
-- [x] T003 [US1] Mantener búsqueda y filtros accesibles durante el desplazamiento móvil en `frontend/src/modules/calificaciones/CalificacionesWorkspace.tsx`
+- [x] T003 [US1] [FR-001] [FR-002] Mantener búsqueda y filtros accesibles durante el desplazamiento móvil en `frontend/src/modules/calificaciones/CalificacionesWorkspace.tsx`
 - [x] T004 [US1] Verificar escritura diferida, lista estable y conservación de filtro en `frontend/src/modules/calificaciones/CalificacionesWorkspace.mobile.test.tsx`
 
 ## Fase 4: Historia 2 - Revisar con pocas decisiones
 
-- [x] T005 [US2] Hacer persistentes las pestañas Evidencia y Revisar respuestas y reducir controles secundarios visibles en `frontend/src/modules/calificaciones/CalificacionesWorkspace.tsx`
-- [x] T006 [P] [US2] Ajustar jerarquía táctil y semántica móvil del panel de excepciones en `frontend/src/modules/calificaciones/review-triage/ReviewTriagePanel.tsx`
+- [x] T005 [US2] [FR-004] [FR-005] Hacer persistentes las pestañas Evidencia y Revisar respuestas y reducir controles secundarios visibles en `frontend/src/modules/calificaciones/CalificacionesWorkspace.tsx`
+- [x] T006 [P] [US2] [FR-009] [FR-010] [FR-012] Ajustar jerarquía táctil y semántica móvil del panel de excepciones en `frontend/src/modules/calificaciones/review-triage/ReviewTriagePanel.tsx`
 
 ## Fase 5: Historia 3 - Terminar y continuar
 
-- [x] T007 [US3] Incorporar barra inferior móvil por estado con navegación segura al siguiente estudiante en `frontend/src/modules/calificaciones/CalificacionesWorkspace.tsx`
+- [x] T007 [US3] [FR-006] [FR-007] [FR-008] Incorporar barra inferior móvil por estado con navegación segura al siguiente estudiante en `frontend/src/modules/calificaciones/CalificacionesWorkspace.tsx`
 - [x] T008 [US3] Cubrir permisos, cambios sin guardar, confirmación, publicación y siguiente estudiante en `frontend/src/modules/calificaciones/CalificacionesWorkspace.mobile.test.tsx`
 
 ## Fase 6: Historia 4 - Contexto compacto
 
-- [x] T009 [US4] Reemplazar selectores móviles permanentes por un resumen expandible de materia y evaluación en `frontend/src/modules/calificaciones/CalificacionesWorkspace.tsx`
+- [x] T009 [US4] [FR-003] Reemplazar selectores móviles permanentes por un resumen expandible de materia y evaluación en `frontend/src/modules/calificaciones/CalificacionesWorkspace.tsx`
 - [x] T010 [US4] Verificar expansión, selección ausente y compatibilidad de escritorio en `frontend/src/modules/calificaciones/CalificacionesWorkspace.mobile.test.tsx`
 
 ## Fase final: Validación
 
-- [x] T011 Ejecutar pruebas focalizadas, typecheck y lint del frontend y registrar resultados en `specs/043-flujo-docente-movil/quickstart.md`
+- [x] T011 [FR-011] Ejecutar pruebas focalizadas, typecheck y lint del frontend y registrar resultados en `specs/043-flujo-docente-movil/quickstart.md`
 - [x] T012 Validar 360×800 y 390×844 en navegador real y documentar evidencia en `specs/043-flujo-docente-movil/quickstart.md`
 - [x] T013 Ejecutar convergencia de requisitos y cerrar tareas restantes en `specs/043-flujo-docente-movil/tasks.md`
 

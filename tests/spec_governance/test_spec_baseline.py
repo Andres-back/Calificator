@@ -44,6 +44,7 @@ ALL_SPECS = {
     "040-modularizar-cola-calificaciones",
     "041-estabilizar-e2e-multihoja",
     "043-corregir-scroll-navegacion",
+    "043-flujo-docente-movil",
     "044-opencode-session",
     "045-rag-grading-fallback",
     "046-qwen-embeddings",
