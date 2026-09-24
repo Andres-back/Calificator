@@ -119,12 +119,13 @@ function StudentPicker({ students, studentId, disabled, onStudentChange }: {
 }
 
 /** Carga contextual: las decisiones sobre la nota pertenecen al centro de revisión. */
-export function GradingUploadPanel({ evaluationId, students, studentId, onStudentChange, onDirtyChange }: {
+export function GradingUploadPanel({ evaluationId, students, studentId, onStudentChange, onDirtyChange, onUploadAccepted }: {
   evaluationId: string;
   students: { id: string; nombre: string }[];
   studentId: string;
   onStudentChange: (id: string) => void;
   onDirtyChange: (dirty: boolean) => void;
+  onUploadAccepted: (studentId: string) => void;
 }) {
   const [pages, setPages] = useState<EvidencePage[]>([]);
   const [confirming, setConfirming] = useState(false);
@@ -136,6 +137,8 @@ export function GradingUploadPanel({ evaluationId, students, studentId, onStuden
     ),
     onSuccess: (grade, request) => {
       setPages([]); setConfirming(false); setError(''); setSavedName(request.name);
+      onUploadAccepted(request.studentId);
+      onStudentChange('');
       const jobId = grade.resultado_json?.job_id;
       if (typeof jobId === 'string') addPendingGrading({
         jobId, evaluacionId: grade.evaluacion_id, materiaId: grade.materia_id,

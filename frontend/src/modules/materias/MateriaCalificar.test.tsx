@@ -1,8 +1,9 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
 
+import { excludeSubmittedStudents } from '@/modules/calificaciones/submissionCandidates';
 import { GradingUploadPanel } from './MateriaCalificar';
 
 const mocks = vi.hoisted(() => ({
@@ -15,15 +16,29 @@ vi.mock('@/lib/queryClient', () => ({
   queryClient: { invalidateQueries: mocks.invalidateQueries },
 }));
 vi.mock('@/components/evidence/MultiPageEvidencePicker', () => ({
-  MultiPageEvidencePicker: ({ disabled }: { disabled: boolean }) => (
-    <div data-testid="evidence-picker" data-disabled={String(disabled)} />
+  MultiPageEvidencePicker: ({ disabled, onChange }: { disabled: boolean; onChange: (pages: unknown[]) => void }) => (
+    <div data-testid="evidence-picker" data-disabled={String(disabled)}>
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={() => onChange([{ id: 'page-1', file: new File(['evidence'], 'evidence.jpg', { type: 'image/jpeg' }), rotation: 0 }])}
+      >Añadir hoja de prueba</button>
+    </div>
   ),
 }));
 vi.mock('react-hot-toast', () => ({
   default: { success: vi.fn(), error: vi.fn() },
 }));
 
-function renderPanel(onStudentChange = vi.fn()) {
+function renderPanel({
+  onStudentChange = vi.fn<(id: string) => void>(),
+  onUploadAccepted = vi.fn<(id: string) => void>(),
+  studentId = '',
+}: {
+  onStudentChange?: Mock<(id: string) => void>;
+  onUploadAccepted?: Mock<(id: string) => void>;
+  studentId?: string;
+} = {}) {
   const students = Array.from({ length: 24 }, (_, index) => ({
     id: `student-${index + 1}`,
     nombre: index === 19 ? 'Ángela Zambrano' : `Estudiante ${index + 1}`,
@@ -36,13 +51,14 @@ function renderPanel(onStudentChange = vi.fn()) {
       <GradingUploadPanel
         evaluationId="evaluation-1"
         students={students}
-        studentId=""
+        studentId={studentId}
         onStudentChange={onStudentChange}
         onDirtyChange={vi.fn()}
+        onUploadAccepted={onUploadAccepted}
       />
     </QueryClientProvider>,
   );
-  return { onStudentChange };
+  return { onStudentChange, onUploadAccepted };
 }
 
 beforeEach(() => vi.clearAllMocks());
@@ -73,5 +89,51 @@ describe('GradingUploadPanel student picker', () => {
     );
 
     expect(screen.getByText('No encontramos estudiantes con ese nombre.')).toBeInTheDocument();
+  });
+
+  it('removes an accepted upload from pending candidates and clears the selection', async () => {
+    const user = userEvent.setup();
+    mocks.calificar.mockResolvedValue({
+      evaluacion_id: 'evaluation-1', materia_id: 'subject-1', estudiante_id: 'student-1',
+      resultado_json: { job_id: 'job-1' },
+    });
+    const { onStudentChange, onUploadAccepted } = renderPanel({ studentId: 'student-1' });
+
+    await user.click(screen.getByRole('button', { name: 'Añadir hoja de prueba' }));
+    await user.click(screen.getByRole('button', { name: 'Enviar a calificar' }));
+    await user.click(screen.getByRole('button', { name: 'Confirmar y enviar' }));
+
+    expect(await screen.findByText(/Entrega de Estudiante 1 guardada/)).toBeInTheDocument();
+    expect(onUploadAccepted).toHaveBeenCalledWith('student-1');
+    expect(onStudentChange).toHaveBeenCalledWith('');
+  });
+
+  it('keeps the student selected when the upload fails', async () => {
+    const user = userEvent.setup();
+    mocks.calificar.mockRejectedValue(new Error('fallo de red'));
+    const { onStudentChange, onUploadAccepted } = renderPanel({ studentId: 'student-1' });
+
+    await user.click(screen.getByRole('button', { name: 'Añadir hoja de prueba' }));
+    await user.click(screen.getByRole('button', { name: 'Enviar a calificar' }));
+    await user.click(screen.getByRole('button', { name: 'Confirmar y enviar' }));
+
+    expect(await screen.findByRole('alert')).toBeInTheDocument();
+    expect(onUploadAccepted).not.toHaveBeenCalled();
+    expect(onStudentChange).not.toHaveBeenCalledWith('');
+    expect(screen.getByRole('button', { name: 'Enviar a calificar' })).toBeEnabled();
+  });
+});
+
+describe('excludeSubmittedStudents', () => {
+  it('returns only students without an existing or newly accepted submission', () => {
+    const students = [
+      { id: 'student-1', nombre: 'Uno' },
+      { id: 'student-2', nombre: 'Dos' },
+      { id: 'student-3', nombre: 'Tres' },
+    ];
+
+    expect(excludeSubmittedStudents(students, ['student-1', 'student-3'])).toEqual([
+      { id: 'student-2', nombre: 'Dos' },
+    ]);
   });
 });
