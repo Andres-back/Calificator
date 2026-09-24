@@ -38,10 +38,10 @@
 | endpoint | `POST:/herramientas/{material_id}/duplicar` | admin, profesor | covered | `backend/app/modules/herramientas/router.py:356` |
 | endpoint | `POST:/herramientas/{material_id}/retirar-apoyo` | admin, profesor | covered | `backend/app/modules/herramientas/router.py:335` |
 | endpoint | `POST:/xali/evaluaciones/{evaluacion_id}/recursos` | admin, estudiante, profesor | covered | `backend/app/modules/xali/router.py:71` |
-| frontend_route | `/app/herramientas` | admin, profesor | covered | `frontend/src/config/routes.ts:48` |
-| frontend_route | `/app/herramientas/{id}` | admin, profesor | covered | `frontend/src/config/routes.ts:51` |
-| frontend_route | `/app/materias/{id}/recursos` | authenticated | covered | `frontend/src/config/routes.ts:30` |
-| frontend_route | `/app/recursos/{id}` | estudiante | covered | `frontend/src/config/routes.ts:52` |
+| frontend_route | `/app/herramientas` | admin, profesor | covered | `frontend/src/config/routes.ts:53` |
+| frontend_route | `/app/herramientas/{id}` | admin, profesor | covered | `frontend/src/config/routes.ts:56` |
+| frontend_route | `/app/materias/{id}/recursos` | authenticated | covered | `frontend/src/config/routes.ts:35` |
+| frontend_route | `/app/recursos/{id}` | estudiante | covered | `frontend/src/config/routes.ts:57` |
 | frontend_call | `DELETE:/herramientas/{id}` | admin, profesor | covered | `frontend/src/modules/herramientas/api.ts:44` |
 | frontend_call | `GET:/herramientas/catalogo` | admin, profesor | covered | `frontend/src/modules/herramientas/api.ts:19` |
 | frontend_call | `GET:/herramientas/materias/{materiaId}/recursos` | admin, profesor | covered | `frontend/src/modules/herramientas/api.ts:29` |

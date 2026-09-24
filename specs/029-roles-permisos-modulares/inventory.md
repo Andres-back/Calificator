@@ -22,8 +22,8 @@
 | endpoint | `POST:/admin/roles` | admin | covered | `backend/app/modules/authorization/router.py:51` |
 | endpoint | `POST:/admin/roles/{role_id}/duplicate` | admin | covered | `backend/app/modules/authorization/router.py:66` |
 | endpoint | `POST:/admin/users` | admin | covered | `backend/app/modules/users/router.py:64` |
-| frontend_route | `/app/admin/roles` | admin | covered | `frontend/src/config/routes.ts:60` |
-| frontend_route | `/app/admin/usuarios` | admin | covered | `frontend/src/config/routes.ts:59` |
+| frontend_route | `/app/admin/roles` | admin | covered | `frontend/src/config/routes.ts:65` |
+| frontend_route | `/app/admin/usuarios` | admin | covered | `frontend/src/config/routes.ts:64` |
 | frontend_call | `DELETE:/admin/roles/{id}` | admin | covered | `frontend/src/modules/admin/authorizationApi.ts:92` |
 | frontend_call | `DELETE:/admin/users/{id}` | admin | covered | `frontend/src/modules/admin/usersApi.ts:54` |
 | frontend_call | `GET:/admin/authorization/audit` | admin | covered | `frontend/src/modules/admin/authorizationApi.ts:96` |

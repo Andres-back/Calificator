@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { ThemeToggle } from '@/components/ui';
 import { routes } from '@/config/routes';
+import { LegalFooter } from '@/components/legal/LegalFooter';
 
 const benefits = [
   {
@@ -164,11 +165,12 @@ export function LandingPage() {
         </section>
       </main>
 
-      <footer className="border-t border-border py-7">
+      <footer className="border-t border-border py-5">
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-3 px-4 text-center text-sm text-muted sm:flex-row sm:px-6 sm:text-left lg:px-8">
           <p>© 2026 XCalificator · Proyecto educativo de código abierto.</p>
           <a href="https://github.com/Andres-back/Calificator" target="_blank" rel="noreferrer" className="focus-ring inline-flex items-center gap-2 rounded-lg font-semibold hover:text-fg"><Github className="h-4 w-4" /> GitHub</a>
         </div>
+        <LegalFooter className="mt-4 border-t-0 py-0" compact />
       </footer>
     </div>
   );

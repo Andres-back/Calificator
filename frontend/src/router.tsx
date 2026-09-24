@@ -16,6 +16,11 @@ const RegisterPage = lazy(() => import('@/modules/auth/RegisterPage').then((m) =
 const RequestPasswordResetPage = lazy(() => import('@/modules/auth/RequestPasswordResetPage').then((m) => ({ default: m.RequestPasswordResetPage })));
 const ResetPasswordPage = lazy(() => import('@/modules/auth/ResetPasswordPage').then((m) => ({ default: m.ResetPasswordPage })));
 const InitialPasswordPage = lazy(() => import('@/modules/auth/InitialPasswordPage').then((m) => ({ default: m.InitialPasswordPage })));
+const PrivacyPage = lazy(() => import('@/modules/legal/LegalPages').then((m) => ({ default: m.PrivacyPage })));
+const TermsPage = lazy(() => import('@/modules/legal/LegalPages').then((m) => ({ default: m.TermsPage })));
+const CookiesPage = lazy(() => import('@/modules/legal/LegalPages').then((m) => ({ default: m.CookiesPage })));
+const PrivacyNoticePage = lazy(() => import('@/modules/legal/LegalPages').then((m) => ({ default: m.PrivacyNoticePage })));
+const PilotInformationPage = lazy(() => import('@/modules/legal/LegalPages').then((m) => ({ default: m.PilotInformationPage })));
 const DashboardPage = lazy(() => import('@/modules/dashboard/DashboardPage').then((m) => ({ default: m.DashboardPage })));
 const ListPage = lazy(() => import('@/modules/herramientas/ListPage').then((m) => ({ default: m.ListPage })));
 const GeneratePage = lazy(() => import('@/modules/herramientas/GeneratePage').then((m) => ({ default: m.GeneratePage })));
@@ -56,6 +61,11 @@ export const router = createBrowserRouter([{
   { path: routes.register, element: lazyPage(<RegisterPage />), errorElement: <RouterErrorBoundary /> },
   { path: routes.requestPasswordReset, element: lazyPage(<RequestPasswordResetPage />), errorElement: <RouterErrorBoundary /> },
   { path: routes.resetPassword, element: lazyPage(<ResetPasswordPage />), errorElement: <RouterErrorBoundary /> },
+  { path: routes.privacy, element: lazyPage(<PrivacyPage />), errorElement: <RouterErrorBoundary /> },
+  { path: routes.terms, element: lazyPage(<TermsPage />), errorElement: <RouterErrorBoundary /> },
+  { path: routes.cookies, element: lazyPage(<CookiesPage />), errorElement: <RouterErrorBoundary /> },
+  { path: routes.privacyNotice, element: lazyPage(<PrivacyNoticePage />), errorElement: <RouterErrorBoundary /> },
+  { path: routes.pilotInformation, element: lazyPage(<PilotInformationPage />), errorElement: <RouterErrorBoundary /> },
 
   /* ── Páginas de error fuera del AppShell ── */
   { path: routes.notFound, element: lazyPage(<NotFoundPage />) },

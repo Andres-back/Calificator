@@ -1,4 +1,6 @@
 from unittest.mock import AsyncMock
+from types import SimpleNamespace
+from uuid import uuid4
 
 import pytest
 from pydantic import ValidationError
@@ -15,6 +17,8 @@ def test_public_registration_rejects_role_field() -> None:
                 "nombre": "Docente no autorizado",
                 "email": "docente@example.com",
                 "password": "strong-password",
+                "acepta_terminos": True,
+                "acepta_privacidad": True,
                 "rol": "profesor",
             }
         )
@@ -27,16 +31,20 @@ async def test_public_registration_always_creates_student(monkeypatch) -> None:
     async def create_user(_db, payload, *, commit=True):
         captured["payload"] = payload
         captured["commit"] = commit
-        return object()
+        return SimpleNamespace(id=uuid4())
 
     monkeypatch.setattr(service.user_service, "create_user", create_user)
     payload = RegisterRequest(
         nombre="Nueva estudiante",
         email="estudiante@example.com",
         password="strong-password",
+        acepta_terminos=True,
+        acepta_privacidad=True,
     )
 
-    await service.register_public_user(AsyncMock(), payload)
+    db = AsyncMock()
+    await service.register_public_user(db, payload)
 
     assert captured["payload"].rol == UserRole.ESTUDIANTE
     assert captured["commit"] is False
+    db.execute.assert_awaited_once()

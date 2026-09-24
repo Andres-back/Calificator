@@ -75,6 +75,8 @@ def _run_business_flow(client: TestClient, suffix: str, teacher_email: str) -> N
             "nombre": "Estudiante Smoke",
             "email": f"est_{suffix}@example.com",
             "password": "Password123!",
+            "acepta_terminos": True,
+            "acepta_privacidad": True,
         },
     )
     assert response.status_code == 201, response.text

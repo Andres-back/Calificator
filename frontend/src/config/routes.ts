@@ -10,6 +10,11 @@ export const routes = {
   register: '/registro',
   requestPasswordReset: '/recuperar-contrasena',
   resetPassword: '/restablecer-contrasena',
+  privacy: '/privacidad',
+  terms: '/terminos',
+  cookies: '/cookies',
+  privacyNotice: '/aviso-privacidad',
+  pilotInformation: '/piloto',
   initialPassword: '/app/cambiar-clave-inicial',
 
   /* ── Genéricas protegidas ── */

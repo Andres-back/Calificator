@@ -2,6 +2,45 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer components {
+  .legal-document section + section {
+    @apply mt-8 border-t border-border pt-7;
+  }
+
+  .legal-document h2 {
+    @apply font-display text-xl font-extrabold text-fg sm:text-2xl;
+  }
+
+  .legal-document p {
+    @apply mt-3 leading-7 text-secondary;
+  }
+
+  .legal-document ul {
+    @apply mt-3 list-disc space-y-2 pl-6 leading-7 text-secondary;
+  }
+
+  .legal-document a {
+    @apply font-semibold text-brand-700 underline decoration-brand-300 underline-offset-2 dark:text-brand-200;
+  }
+
+  .legal-document table {
+    @apply mt-4 min-w-[42rem] border-separate border-spacing-0 overflow-hidden rounded-xl border border-border text-left text-sm;
+  }
+
+  .legal-document th,
+  .legal-document td {
+    @apply border-b border-border px-4 py-3 align-top;
+  }
+
+  .legal-document th {
+    @apply bg-surface-2 font-extrabold;
+  }
+
+  .legal-document tr:last-child td {
+    @apply border-b-0;
+  }
+}
+
 /* ───────────────────────── Tokens de tema ───────────────────────── */
 @layer base {
   :root {

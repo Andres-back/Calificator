@@ -8,6 +8,7 @@ import { toApiError } from '@/lib/api';
 import { useAuth } from '@/stores/auth';
 import type { UserRole } from '@/types/api';
 import { routes } from '@/config/routes';
+import { LegalFooter } from '@/components/legal/LegalFooter';
 
 const LAST_EMAIL_KEY = 'xcalificator:last-login-email';
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -97,7 +98,7 @@ export function LoginPage() {
         <ThemeToggle />
       </div>
 
-      <main className="relative grid min-h-dvh place-items-center px-4 py-10 sm:px-6">
+      <main className="relative grid min-h-dvh place-items-center px-4 pb-20 pt-10 sm:px-6">
         <div className="grid w-full max-w-5xl gap-8 lg:grid-cols-[1fr_420px] lg:items-center">
           <section className="hidden lg:block">
             <div className="mb-8 flex items-center gap-3">
@@ -294,6 +295,7 @@ export function LoginPage() {
           </motion.div>
         </div>
       </main>
+      <LegalFooter className="absolute inset-x-0 bottom-0 z-10" compact />
     </div>
   );
 }

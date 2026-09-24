@@ -1,18 +1,18 @@
 {
   "counts": {
     "by_coverage": {
-      "covered": 465,
+      "covered": 471,
       "missing": 94
     },
     "by_kind": {
       "endpoint": 266,
       "frontend_call": 180,
-      "frontend_route": 31,
+      "frontend_route": 36,
       "integration": 7,
       "job": 18,
-      "table": 57
+      "table": 58
     },
-    "total": 559
+    "total": 565
   },
   "exceptions": [],
   "findings": [
@@ -356,7 +356,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "074e19dc3755e84072e6813913bb2689cdb6e48fa0694e6dc680d086e110f56a",
+  "source_digest": "2d1807ced7e2f3a6b161c1136541ed98d596001d21926801939be19c14b20eb1",
   "surfaces": [
     {
       "actors": [
@@ -14371,6 +14371,12 @@
           "level": "unit",
           "reference": "/",
           "status": "direct",
+          "test_path": "backend/tests/unit/test_legal_registration.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
           "test_path": "backend/tests/unit/test_llm_router_output_budget.py"
         },
         {
@@ -15013,6 +15019,12 @@
           "level": "unit",
           "reference": "/",
           "status": "direct",
+          "test_path": "frontend/src/modules/legal/LegalPages.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
           "test_path": "frontend/src/modules/materias/MateriaCalificar.test.tsx"
         },
         {
@@ -15136,7 +15148,7 @@
       "kind": "frontend_route",
       "owner_spec": "002-arquitectura-roles-seguridad",
       "signature": "/app",
-      "source_line": 16,
+      "source_line": 21,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -15411,7 +15423,7 @@
       "kind": "frontend_route",
       "owner_spec": "002-arquitectura-roles-seguridad",
       "signature": "/app/403",
-      "source_line": 17,
+      "source_line": 22,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -15530,7 +15542,7 @@
       "kind": "frontend_route",
       "owner_spec": "002-arquitectura-roles-seguridad",
       "signature": "/app/404",
-      "source_line": 18,
+      "source_line": 23,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -15643,7 +15655,7 @@
       "kind": "frontend_route",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "/app/admin/configuracion-ia",
-      "source_line": 58,
+      "source_line": 63,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -15780,7 +15792,7 @@
       "kind": "frontend_route",
       "owner_spec": "002-arquitectura-roles-seguridad",
       "signature": "/app/admin/correo",
-      "source_line": 61,
+      "source_line": 66,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -15893,7 +15905,7 @@
       "kind": "frontend_route",
       "owner_spec": "029-roles-permisos-modulares",
       "signature": "/app/admin/roles",
-      "source_line": 60,
+      "source_line": 65,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -16012,7 +16024,7 @@
       "kind": "frontend_route",
       "owner_spec": "029-roles-permisos-modulares",
       "signature": "/app/admin/usuarios",
-      "source_line": 59,
+      "source_line": 64,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -16138,7 +16150,7 @@
       "kind": "frontend_route",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "/app/analytics",
-      "source_line": 63,
+      "source_line": 68,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -16257,7 +16269,7 @@
       "kind": "frontend_route",
       "owner_spec": "008-calificaciones",
       "signature": "/app/calificaciones",
-      "source_line": 42,
+      "source_line": 47,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -16424,7 +16436,7 @@
       "kind": "frontend_route",
       "owner_spec": "008-calificaciones",
       "signature": "/app/calificaciones/boletin",
-      "source_line": 41,
+      "source_line": 46,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -16549,7 +16561,7 @@
       "kind": "frontend_route",
       "owner_spec": "002-arquitectura-roles-seguridad",
       "signature": "/app/cambiar-clave-inicial",
-      "source_line": 13,
+      "source_line": 18,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -16662,7 +16674,7 @@
       "kind": "frontend_route",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "/app/configuracion-ia",
-      "source_line": 62,
+      "source_line": 67,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -16781,7 +16793,7 @@
       "kind": "frontend_route",
       "owner_spec": "005-evaluaciones",
       "signature": "/app/evaluaciones",
-      "source_line": 37,
+      "source_line": 42,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -16942,7 +16954,7 @@
       "kind": "frontend_route",
       "owner_spec": "007-entregas-estudiante",
       "signature": "/app/evaluaciones/{id}/resolver",
-      "source_line": 38,
+      "source_line": 43,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -17056,7 +17068,7 @@
       "kind": "frontend_route",
       "owner_spec": "006-recursos-actividades",
       "signature": "/app/herramientas",
-      "source_line": 48,
+      "source_line": 53,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -17188,7 +17200,7 @@
       "kind": "frontend_route",
       "owner_spec": "006-recursos-actividades",
       "signature": "/app/herramientas/{id}",
-      "source_line": 51,
+      "source_line": 56,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -17319,7 +17331,7 @@
       "kind": "frontend_route",
       "owner_spec": "003-usuarios-materias-matriculas",
       "signature": "/app/materias",
-      "source_line": 24,
+      "source_line": 29,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -17504,7 +17516,7 @@
       "kind": "frontend_route",
       "owner_spec": "003-usuarios-materias-matriculas",
       "signature": "/app/materias/{id}",
-      "source_line": 28,
+      "source_line": 33,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -17690,7 +17702,7 @@
       "kind": "frontend_route",
       "owner_spec": "004-dba-asistencia-curriculo",
       "signature": "/app/materias/{id}/asistencia",
-      "source_line": 32,
+      "source_line": 37,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -17803,7 +17815,7 @@
       "kind": "frontend_route",
       "owner_spec": "008-calificaciones",
       "signature": "/app/materias/{id}/boletin",
-      "source_line": 33,
+      "source_line": 38,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -17917,7 +17929,7 @@
       "kind": "frontend_route",
       "owner_spec": "008-calificaciones",
       "signature": "/app/materias/{id}/calificar",
-      "source_line": 31,
+      "source_line": 36,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -18031,7 +18043,7 @@
       "kind": "frontend_route",
       "owner_spec": "004-dba-asistencia-curriculo",
       "signature": "/app/materias/{id}/dba",
-      "source_line": 34,
+      "source_line": 39,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -18144,7 +18156,7 @@
       "kind": "frontend_route",
       "owner_spec": "005-evaluaciones",
       "signature": "/app/materias/{id}/evaluaciones",
-      "source_line": 29,
+      "source_line": 34,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -18257,7 +18269,7 @@
       "kind": "frontend_route",
       "owner_spec": "006-recursos-actividades",
       "signature": "/app/materias/{id}/recursos",
-      "source_line": 30,
+      "source_line": 35,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -18371,7 +18383,7 @@
       "kind": "frontend_route",
       "owner_spec": "010-presentaciones-imagenes",
       "signature": "/app/presentaciones",
-      "source_line": 56,
+      "source_line": 61,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -18508,7 +18520,7 @@
       "kind": "frontend_route",
       "owner_spec": "006-recursos-actividades",
       "signature": "/app/recursos/{id}",
-      "source_line": 52,
+      "source_line": 57,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -18634,7 +18646,7 @@
       "kind": "frontend_route",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "/app/reportes",
-      "source_line": 57,
+      "source_line": 62,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -18759,7 +18771,7 @@
       "kind": "frontend_route",
       "owner_spec": "009-xali-rag-refuerzos",
       "signature": "/app/xali",
-      "source_line": 55,
+      "source_line": 60,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -18868,6 +18880,228 @@
         {
           "level": "unit",
           "reference": "/app/xali",
+          "status": "domain",
+          "test_path": "frontend/src/modules/profesor_ai/TeacherAIConfigPage.test.tsx"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "public"
+      ],
+      "authorization": [],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
+        "registered": true,
+        "view": "@/modules/legal/LegalPages"
+      },
+      "id": "frontend:/aviso-privacidad",
+      "kind": "frontend_route",
+      "owner_spec": "067-privacidad-legal",
+      "signature": "/aviso-privacidad",
+      "source_line": 16,
+      "source_path": "frontend/src/config/routes.ts",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "/aviso-privacidad",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_admin_mail_config.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/aviso-privacidad",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_api.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/aviso-privacidad",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_concurrency.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/aviso-privacidad",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_migration.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/aviso-privacidad",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_secret_safety.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/aviso-privacidad",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_job_configuration_snapshot.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/aviso-privacidad",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_ai_configuration_resolver.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/aviso-privacidad",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_mail_configuration.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/aviso-privacidad",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_nginx_security_config.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/aviso-privacidad",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_production_config.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/aviso-privacidad",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_worker_ai_config.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "/aviso-privacidad",
+          "status": "domain",
+          "test_path": "frontend/e2e/accessibility/teacher-ai-configuration.a11y.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/aviso-privacidad",
+          "status": "domain",
+          "test_path": "frontend/e2e/teacher-ai-configuration.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "/aviso-privacidad",
+          "status": "domain",
+          "test_path": "frontend/src/modules/admin/AdminAIConfigPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/aviso-privacidad",
+          "status": "domain",
+          "test_path": "frontend/src/modules/profesor_ai/TeacherAIConfigPage.test.tsx"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "public"
+      ],
+      "authorization": [],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
+        "registered": true,
+        "view": "@/modules/legal/LegalPages"
+      },
+      "id": "frontend:/cookies",
+      "kind": "frontend_route",
+      "owner_spec": "067-privacidad-legal",
+      "signature": "/cookies",
+      "source_line": 15,
+      "source_path": "frontend/src/config/routes.ts",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "/cookies",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_admin_mail_config.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/cookies",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_api.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/cookies",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_concurrency.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/cookies",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_migration.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/cookies",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_secret_safety.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/cookies",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_job_configuration_snapshot.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/cookies",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_ai_configuration_resolver.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/cookies",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_mail_configuration.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/cookies",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_nginx_security_config.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/cookies",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_production_config.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/cookies",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_worker_ai_config.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "/cookies",
+          "status": "domain",
+          "test_path": "frontend/e2e/accessibility/teacher-ai-configuration.a11y.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/cookies",
+          "status": "domain",
+          "test_path": "frontend/e2e/teacher-ai-configuration.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "/cookies",
+          "status": "domain",
+          "test_path": "frontend/src/modules/admin/AdminAIConfigPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/cookies",
           "status": "domain",
           "test_path": "frontend/src/modules/profesor_ai/TeacherAIConfigPage.test.tsx"
         }
@@ -19083,6 +19317,234 @@
       "coverage": "covered",
       "details": {
         "registered": true,
+        "view": "@/modules/legal/LegalPages"
+      },
+      "id": "frontend:/piloto",
+      "kind": "frontend_route",
+      "owner_spec": "067-privacidad-legal",
+      "signature": "/piloto",
+      "source_line": 17,
+      "source_path": "frontend/src/config/routes.ts",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "/piloto",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_admin_mail_config.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/piloto",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_api.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/piloto",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_concurrency.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/piloto",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_migration.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/piloto",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_secret_safety.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/piloto",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_job_configuration_snapshot.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/piloto",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_ai_configuration_resolver.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/piloto",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_mail_configuration.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/piloto",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_nginx_security_config.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/piloto",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_production_config.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/piloto",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_worker_ai_config.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "/piloto",
+          "status": "domain",
+          "test_path": "frontend/e2e/accessibility/teacher-ai-configuration.a11y.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/piloto",
+          "status": "domain",
+          "test_path": "frontend/e2e/teacher-ai-configuration.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "/piloto",
+          "status": "domain",
+          "test_path": "frontend/src/modules/admin/AdminAIConfigPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/piloto",
+          "status": "domain",
+          "test_path": "frontend/src/modules/profesor_ai/TeacherAIConfigPage.test.tsx"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "public"
+      ],
+      "authorization": [],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
+        "registered": true,
+        "view": "@/modules/legal/LegalPages"
+      },
+      "id": "frontend:/privacidad",
+      "kind": "frontend_route",
+      "owner_spec": "067-privacidad-legal",
+      "signature": "/privacidad",
+      "source_line": 13,
+      "source_path": "frontend/src/config/routes.ts",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "/privacidad",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_admin_mail_config.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/privacidad",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_api.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/privacidad",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_concurrency.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/privacidad",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_migration.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/privacidad",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_secret_safety.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/privacidad",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_job_configuration_snapshot.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/privacidad",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_ai_configuration_resolver.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/privacidad",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_mail_configuration.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/privacidad",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_nginx_security_config.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/privacidad",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_production_config.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/privacidad",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_worker_ai_config.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "/privacidad",
+          "status": "domain",
+          "test_path": "frontend/e2e/accessibility/teacher-ai-configuration.a11y.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/privacidad",
+          "status": "domain",
+          "test_path": "frontend/e2e/teacher-ai-configuration.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "/privacidad",
+          "status": "domain",
+          "test_path": "frontend/src/modules/admin/AdminAIConfigPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/privacidad",
+          "status": "direct",
+          "test_path": "frontend/src/modules/legal/LegalPages.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/privacidad",
+          "status": "domain",
+          "test_path": "frontend/src/modules/profesor_ai/TeacherAIConfigPage.test.tsx"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "public"
+      ],
+      "authorization": [],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
+        "registered": true,
         "view": "@/modules/auth/RegisterPage"
       },
       "id": "frontend:/registro",
@@ -19192,6 +19654,117 @@
         {
           "level": "unit",
           "reference": "/registro",
+          "status": "domain",
+          "test_path": "frontend/src/modules/profesor_ai/TeacherAIConfigPage.test.tsx"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "public"
+      ],
+      "authorization": [],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
+        "registered": true,
+        "view": "@/modules/legal/LegalPages"
+      },
+      "id": "frontend:/terminos",
+      "kind": "frontend_route",
+      "owner_spec": "067-privacidad-legal",
+      "signature": "/terminos",
+      "source_line": 14,
+      "source_path": "frontend/src/config/routes.ts",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "/terminos",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_admin_mail_config.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/terminos",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_api.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/terminos",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_concurrency.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/terminos",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_migration.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/terminos",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_secret_safety.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/terminos",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_job_configuration_snapshot.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/terminos",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_ai_configuration_resolver.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/terminos",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_mail_configuration.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/terminos",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_nginx_security_config.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/terminos",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_production_config.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/terminos",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_worker_ai_config.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "/terminos",
+          "status": "domain",
+          "test_path": "frontend/e2e/accessibility/teacher-ai-configuration.a11y.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/terminos",
+          "status": "domain",
+          "test_path": "frontend/e2e/teacher-ai-configuration.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "/terminos",
+          "status": "domain",
+          "test_path": "frontend/src/modules/admin/AdminAIConfigPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/terminos",
           "status": "domain",
           "test_path": "frontend/src/modules/profesor_ai/TeacherAIConfigPage.test.tsx"
         }
@@ -35001,6 +35574,59 @@
       "coverage": "covered",
       "details": {
         "active": true,
+        "class": "LegalAcceptance",
+        "constraints": [],
+        "enum_refs": [],
+        "historical_only": false,
+        "identity": [
+          "id"
+        ],
+        "indexes": [
+          "user_id"
+        ],
+        "migrations": [
+          "backend/alembic/versions/202609240001_legal_acceptances.py"
+        ],
+        "relationships": [
+          "users.id"
+        ],
+        "unique": [
+          "document_type",
+          "document_version",
+          "user_id"
+        ]
+      },
+      "id": "table:legal_acceptances",
+      "kind": "table",
+      "owner_spec": "067-privacidad-legal",
+      "signature": "legal_acceptances",
+      "source_line": 12,
+      "source_path": "backend/app/modules/legal/models.py",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "legal_acceptances",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_legal_registration.py"
+        },
+        {
+          "level": "unit",
+          "reference": "legal_acceptances",
+          "status": "domain",
+          "test_path": "frontend/src/modules/legal/LegalPages.test.tsx"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "system"
+      ],
+      "authorization": [],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
+        "active": true,
         "class": "MailGlobalConfig",
         "constraints": [
           "id = 1"
@@ -36422,6 +37048,12 @@
           "reference": "users",
           "status": "direct",
           "test_path": "backend/tests/unit/test_calificaciones_resumen_academico.py"
+        },
+        {
+          "level": "unit",
+          "reference": "users",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_legal_registration.py"
         },
         {
           "level": "unit",
