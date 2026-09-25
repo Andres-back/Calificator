@@ -77,6 +77,15 @@ beforeEach(() => {
       email: 'estudiante@example.test',
       rol: 'estudiante',
       estado: 'activo',
+      permissions: [
+        'subjects.read',
+        'evaluations.read',
+        'evaluations.submit',
+        'resources.read',
+        'gradebook.read',
+        'grading.read',
+        'dba.read',
+      ],
     },
     status: 'authenticated',
   });
@@ -92,6 +101,34 @@ describe('MateriaDetailPage for students', () => {
     expect(materiaApi.getMateria).toHaveBeenCalledWith('materia-1');
     expect(materiaApi.getMateriaEstudiantes).not.toHaveBeenCalled();
     expect(screen.queryByText('Codigo de inscripcion')).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /Vista general/i })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /Evaluaciones/i })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /Recursos/i })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /Boletín/i })).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /Calificar/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /Asistencia/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /Criterios de aprendizaje|DBA/i })).not.toBeInTheDocument();
+  });
+
+  it('keeps an explicitly assigned custom-role module visible', async () => {
+    materiaApi.getMateria.mockResolvedValue(materia);
+    useAuth.setState({
+      user: {
+        id: 'estudiante-mixto',
+        nombre: 'Perfil mixto',
+        email: 'mixto@example.test',
+        rol: 'estudiante',
+        estado: 'activo',
+        custom_role_id: 'role-1',
+        permissions: ['subjects.read', 'grading.read'],
+      },
+      status: 'authenticated',
+    });
+
+    renderDetail();
+
+    expect(await screen.findByRole('link', { name: /Calificar/i })).toBeInTheDocument();
+    expect(materiaApi.getMateriaEstudiantes).not.toHaveBeenCalled();
   });
 
   it('keeps a real 403 visible and permits a retry instead of presenting a false 404', async () => {
