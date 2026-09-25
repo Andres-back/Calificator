@@ -220,6 +220,17 @@ def _normalize_answer(value: Any) -> str:
     return re.sub(r"[^a-z0-9]+", " ", without_accents.lower()).strip()
 
 
+def _open_answer_matches(expected: Any, detected: Any) -> bool:
+    """Accept only exact or leading full-key matches for open answers."""
+    expected_normalized = _normalize_answer(expected)
+    detected_normalized = _normalize_answer(detected)
+    if not expected_normalized or not detected_normalized:
+        return False
+    return detected_normalized == expected_normalized or detected_normalized.startswith(
+        f"{expected_normalized} "
+    )
+
+
 def _truth_value(value: Any) -> bool | None:
     normalized = _normalize_answer(value)
     if normalized.startswith(("verdadero", "true", "si", "es igual")):
@@ -371,13 +382,17 @@ def build_objective_validation(
     validation: list[dict] = []
     for number, question in questions.items():
         question_type = str(question.get("tipo") or "").lower()
-        if question_type not in {"opcion_multiple", "verdadero_falso", "completar", "numerica", "respuesta_corta", "emparejamiento"}:
+        if question_type not in {"abierta", "opcion_multiple", "verdadero_falso", "completar", "numerica", "respuesta_corta", "emparejamiento"}:
             continue
         if number not in expected or number not in detected:
             continue
         expected_answer = expected[number]
         detected_answer = detected[number]
-        if question_type == "verdadero_falso":
+        if question_type == "abierta":
+            correct = _open_answer_matches(expected_answer, detected_answer)
+            if not correct:
+                continue
+        elif question_type == "verdadero_falso":
             expected_truth = _truth_value(expected_answer)
             detected_truth = _truth_value(detected_answer)
             correct = (

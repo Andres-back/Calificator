@@ -280,9 +280,45 @@ def test_objective_validation_accepts_equivalent_answers() -> None:
 
     validation = orchestrator.build_objective_validation(blueprint, detected)
 
-    assert len(validation) == 5
+    assert len(validation) == 6
     assert all(item["correcta"] is True for item in validation)
-    assert orchestrator.objective_score_floor(blueprint, validation) == Decimal("3.57")
+    assert orchestrator.objective_score_floor(blueprint, validation) == Decimal("4.29")
+
+
+def test_open_answer_key_at_start_is_objective_but_internal_mention_is_not() -> None:
+    blueprint = {
+        "nota_maxima": 3,
+        "preguntas": [
+            {"numero": 1, "tipo": "abierta", "enunciado": "¿Quién es el personaje principal?", "puntaje": 1},
+            {"numero": 2, "tipo": "abierta", "enunciado": "¿Cómo se sentía?", "puntaje": 1},
+            {"numero": 3, "tipo": "abierta", "enunciado": "¿Qué quería hacer?", "puntaje": 1},
+        ],
+        "respuestas_esperadas": [
+            {"numero": 1, "respuesta": "Nico"},
+            {"numero": 2, "respuesta": "emocionado"},
+            {"numero": 3, "respuesta": "contarles a todos sobre su aventura"},
+        ],
+    }
+    detected = [
+        {"pregunta": 1, "respuesta": "Nico miró emocionado por la ventana del avión"},
+        {"pregunta": 2, "respuesta": "No estaba emocionado sino aburrido"},
+        {"pregunta": 3, "respuesta": "para contarles a todos sobre su aventura"},
+    ]
+
+    validation = orchestrator.build_objective_validation(blueprint, detected)
+
+    assert validation == [
+        {
+            "numero": 1,
+            "tipo": "abierta",
+            "respuesta_detectada": "Nico miró emocionado por la ventana del avión",
+            "respuesta_esperada": "Nico",
+            "correcta": True,
+            "fuente": "clave_oficial",
+        }
+    ]
+    assert orchestrator.objective_score_floor(blueprint, validation) == Decimal("1.00")
+
 
 def test_both_failed_graders_return_no_score(monkeypatch) -> None:
     async def failed_grader(*_args, **_kwargs):

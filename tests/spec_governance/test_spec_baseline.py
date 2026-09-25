@@ -70,6 +70,7 @@ ALL_SPECS = {
     "068-rutas-legales-publicas",
     "069-recuperar-respuestas-manuscritas",
     "070-calibrar-comprension-verificador",
+    "071-respuesta-abierta-literal",
 }
 OWNED_SPECS = {
     name
