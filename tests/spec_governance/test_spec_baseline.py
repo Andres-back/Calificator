@@ -73,6 +73,7 @@ ALL_SPECS = {
     "071-respuesta-abierta-literal",
     "072-clave-literal-pregunta-quien",
     "073-fragmento-literal-respuesta-abierta",
+    "074-aislar-flujo-estudiante",
 }
 OWNED_SPECS = {
     name

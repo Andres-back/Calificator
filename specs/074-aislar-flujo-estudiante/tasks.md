@@ -43,6 +43,19 @@
 
 ## Dependencias
 
+## Trazabilidad de requisitos
+
+- FR-001: T002, T004 y T005.
+- FR-002: T006 y T007.
+- FR-003: T003, T008 y T011.
+- FR-004: T009 y T010.
+- FR-005: T011.
+- FR-006: T012 y T013.
+- FR-007: T014 y T015.
+- FR-008: T007, T013 y T018.
+- FR-009: T002, T003, T006, T009, T012, T015, T016 y T018.
+- FR-010: T008, T011 y T017.
+
 - T002 y T003 pueden prepararse en paralelo; T004 y T005 satisfacen sus regresiones.
 - T006–T010 dependen de T004–T005 y forman el MVP del hotfix.
 - T011–T013 dependen del guard de T005.
