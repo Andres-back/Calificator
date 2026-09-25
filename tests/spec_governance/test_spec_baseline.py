@@ -72,6 +72,7 @@ ALL_SPECS = {
     "070-calibrar-comprension-verificador",
     "071-respuesta-abierta-literal",
     "072-clave-literal-pregunta-quien",
+    "073-fragmento-literal-respuesta-abierta",
 }
 OWNED_SPECS = {
     name

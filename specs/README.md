@@ -25,6 +25,7 @@ actualizar la especificación propietaria, su plan y sus tareas; no debe crear d
 | 070 | [Calibrar comprensión lectora y verificador](070-calibrar-comprension-verificador/spec.md) | prompts de calificación, verificador y transporte OpenCode | flujo existente de calificación; sin rutas nuevas | sin migración; no altera notas confirmadas o publicadas | [#145](https://github.com/Andres-back/Calificator/issues/145) |
 | 071 | [Reconocer claves literales en respuestas abiertas](071-respuesta-abierta-literal/spec.md) | validación objetiva y consenso de calificación | flujo existente de calificación; sin rutas nuevas | sin migración; no altera notas históricas por sí mismo | [#147](https://github.com/Andres-back/Calificator/issues/147) |
 | 072 | [Validar nombres literales en preguntas de quién](072-clave-literal-pregunta-quien/spec.md) | validación objetiva por nombre propio y consenso de calificación | flujo existente de calificación; sin rutas nuevas | sin migración; no altera notas históricas por sí mismo | [#149](https://github.com/Andres-back/Calificator/issues/149) |
+| 073 | [Reconocer fragmentos literales pertinentes](073-fragmento-literal-respuesta-abierta/spec.md) | validación objetiva de respuestas abiertas | flujo existente de calificación; sin rutas nuevas | sin migración; no altera notas históricas por sí mismo | [#151](https://github.com/Andres-back/Calificator/issues/151) |
 | 014 | [Alineación de autorización y superficies](014-alinear-autorizacion-superficies/spec.md) | autorización por objeto, analítica y contratos | AppShell, actividad estudiante y telemetría | sin tablas nuevas; políticas e inventario canónico | [#17](https://github.com/Andres-back/Calificator/issues/17) |
 | 016 | [Calificación explicable y auditable](016-calificacion-explicable/spec.md) | calificaciones, visión, ajustes, publicación y PQRS | workspace docente, ver entrega y resultados | `calificaciones`, `entregas`, historial y desglose | [#20](https://github.com/Andres-back/Calificator/issues/20) |
 | 017 | [Decoración visual y orientación contextual](017-decoracion-frontend/spec.md) | sin cambios de backend; gobernanza de controles frontend | AppShell, cabeceras, inicios, recorridos y estados vacíos | preferencia local de recorridos, sin datos de negocio | [#22](https://github.com/Andres-back/Calificator/issues/22) |
@@ -197,6 +198,11 @@ actualizar la especificación propietaria, su plan y sus tareas; no debe crear d
 
 - [072-clave-literal-pregunta-quien](072-clave-literal-pregunta-quien/spec.md), [issue #149](https://github.com/Andres-back/Calificator/issues/149): reconoce el nombre propio de una referencia explicativa cuando una respuesta a «¿quién?» comienza con ese nombre.
 - No extiende la regla a otros interrogativos, no usa similitud difusa y mantiene la revisión docente en casos ambiguos.
+
+## Hotfix 073: fragmentos literales pertinentes
+
+- [073-fragmento-literal-respuesta-abierta](073-fragmento-literal-respuesta-abierta/spec.md), [issue #151](https://github.com/Andres-back/Calificator/issues/151): reconoce una acción literal precedida por un conector natural cuando responde lo solicitado.
+- Excluye preguntas comparativas para impedir que un modificador incompleto reciba crédito automático.
 
 ## Inventario técnico global
 
