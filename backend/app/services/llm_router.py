@@ -30,6 +30,9 @@ OPEN_CODE_ANTHROPIC_MODEL_PREFIXES = ("qwen", "minimax-m")
 OPEN_CODE_THINKING_DISABLED_MODELS = frozenset({
     "deepseek-v4-flash-vision-exp",
 })
+OPEN_CODE_LOW_REASONING_MODELS = frozenset({
+    "glm-5.3-flash",
+})
 
 
 class LLMOutputTruncatedError(RuntimeError):
@@ -41,6 +44,14 @@ def opencode_thinking_control(model: str) -> dict[str, str] | None:
     model_id = str(model).rsplit("/", 1)[-1].lower()
     if model_id in OPEN_CODE_THINKING_DISABLED_MODELS:
         return {"type": "disabled"}
+    return None
+
+
+def opencode_reasoning_effort(model: str) -> str | None:
+    """Return the shortest supported reasoning level for compact workloads."""
+    model_id = str(model).rsplit("/", 1)[-1].lower()
+    if model_id in OPEN_CODE_LOW_REASONING_MODELS:
+        return "low"
     return None
 
 
