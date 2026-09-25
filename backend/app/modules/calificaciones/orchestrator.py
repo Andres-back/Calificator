@@ -220,14 +220,48 @@ def _normalize_answer(value: Any) -> str:
     return re.sub(r"[^a-z0-9]+", " ", without_accents.lower()).strip()
 
 
-def _open_answer_matches(expected: Any, detected: Any) -> bool:
-    """Accept only exact or leading full-key matches for open answers."""
+_PERSON_KEY_STOPWORDS = {
+    "el", "la", "los", "las", "un", "una", "unos", "unas", "su", "sus",
+    "es", "era", "fue", "son", "eran", "principal", "personaje", "respuesta",
+}
+
+
+def _literal_person_keys(expected: Any) -> list[str]:
+    """Extract explicit proper-name keys from a teacher's reference answer."""
+    tokens = re.findall(r"[A-Za-zÁÉÍÓÚÜÑáéíóúüñ]+", str(expected or ""))
+    keys: list[str] = []
+    current: list[str] = []
+    for token in tokens:
+        normalized = _normalize_answer(token)
+        is_name = token[:1].isupper() and normalized not in _PERSON_KEY_STOPWORDS
+        if is_name:
+            current.append(token)
+            continue
+        if current:
+            keys.append(" ".join(current))
+            current = []
+    if current:
+        keys.append(" ".join(current))
+    return keys
+
+
+def _open_answer_matches(question: Any, expected: Any, detected: Any) -> bool:
+    """Accept full keys and literal person names for explicit ``quien`` questions."""
     expected_normalized = _normalize_answer(expected)
     detected_normalized = _normalize_answer(detected)
     if not expected_normalized or not detected_normalized:
         return False
-    return detected_normalized == expected_normalized or detected_normalized.startswith(
+    if detected_normalized == expected_normalized or detected_normalized.startswith(
         f"{expected_normalized} "
+    ):
+        return True
+    question_normalized = _normalize_answer(question)
+    if not question_normalized.startswith("quien "):
+        return False
+    return any(
+        detected_normalized == _normalize_answer(key)
+        or detected_normalized.startswith(f"{_normalize_answer(key)} ")
+        for key in _literal_person_keys(expected)
     )
 
 
@@ -389,7 +423,11 @@ def build_objective_validation(
         expected_answer = expected[number]
         detected_answer = detected[number]
         if question_type == "abierta":
-            correct = _open_answer_matches(expected_answer, detected_answer)
+            correct = _open_answer_matches(
+                question.get("enunciado") or question.get("pregunta"),
+                expected_answer,
+                detected_answer,
+            )
             if not correct:
                 continue
         elif question_type == "verdadero_falso":
