@@ -286,10 +286,17 @@ async def reintentar_calificacion_foto(
             status_code=status.HTTP_409_CONFLICT,
             detail="La calificacion ya tiene una decision docente y no puede reprocesarse.",
         )
-    if entrega.estado != EntregaEstado.REQUIERE_REINTENTO.value:
+    reviewable_suggestion = bool(
+        calificacion.estado == CalificacionEstado.REQUIERE_REVISION.value
+        and calificacion.nota_confirmada is None
+    )
+    if (
+        entrega.estado != EntregaEstado.REQUIERE_REINTENTO.value
+        and not reviewable_suggestion
+    ):
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail="La entrega no requiere un reintento tecnico.",
+            detail="La entrega no está pendiente de revisión ni requiere un reintento técnico.",
         )
 
     try:

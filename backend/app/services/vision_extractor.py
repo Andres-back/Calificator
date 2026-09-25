@@ -373,6 +373,13 @@ class VisionExtractor:
         )
         return f"""Eres VisionExtractor. {action} Página {page} de {total}.
 Contexto: {json.dumps(context, ensure_ascii=False)}
+PRIORIDAD CRÍTICA: busca las respuestas del estudiante, no te detengas al reconocer
+el texto impreso. Inspecciona debajo y al lado de cada pregunta, especialmente líneas
+de respuesta con lápiz gris tenue, escritura infantil, palabras separadas, tachones y
+respuestas que invaden el margen. Amplía mentalmente la zona inferior de la hoja.
+Una respuesta incorrecta sigue siendo una respuesta: transcríbela literalmente.
+Solo usa blank=true cuando revisaste toda el área de respuesta y está realmente vacía.
+Si observas grafito pero no puedes leerlo, usa legible=false y needs_review=true, nunca blank=true.
 Transcribe solo lo visible. No completes, infieras ni corrijas. Conserva errores ortográficos.
 {drawing_rule}
 Distingue vacío de ilegible. Ilegible: answer=null, legible=false, needs_review=true.
@@ -500,6 +507,10 @@ Informa tachones, correcciones y preguntas ausentes. Devuelve SOLO JSON:
                         parsing_started = time.monotonic()
                         raw, repaired = _parse_json(content)
                         result = _normalize(raw, page, len(data))
+                        result.duration_ms = int((time.monotonic() - started) * 1000)
+                        result.model = model
+                        result.fallback_used = model_index > 0
+                        result.rotation_applied = rotation
                         result.parsing_ms = int((time.monotonic() - parsing_started) * 1000)
                         if not result.page_text and not result.answers:
                             last_error = "vision_no_content"
@@ -510,10 +521,35 @@ Informa tachones, correcciones y preguntas ausentes. Devuelve SOLO JSON:
                                 usage=usage, http_status=http_status,
                             )
                             break
-                        result.duration_ms = int((time.monotonic() - started) * 1000)
-                        result.model = model
-                        result.fallback_used = model_index > 0
-                        result.rotation_applied = rotation
+                        expects_student_answers = bool(
+                            purpose == "student_response"
+                            and isinstance(blueprint, dict)
+                            and blueprint.get("preguntas")
+                        )
+                        has_student_answer = any(
+                            bool((answer.answer or "").strip())
+                            or bool((answer.visual_description or "").strip())
+                            for answer in result.answers
+                        )
+                        if expects_student_answers and not has_student_answer:
+                            last_error = "vision_no_student_answers"
+                            await self._event(
+                                "vision.request_failed", request_id, model, attempt,
+                                started, page, len(data), "failed", last_error,
+                                usage=usage, http_status=http_status,
+                            )
+                            # Texto impreso sin respuestas no es éxito. Primero prueba
+                            # otro lector visual; si se agotan, devuelve incertidumbre
+                            # explícita para impedir que se convierta en un cero.
+                            if model_index + 1 < len(dict.fromkeys(models)):
+                                break
+                            result.status = "requires_review"
+                            result.warnings.append(
+                                "Se reconoció el material impreso, pero no fue posible "
+                                "recuperar respuestas del estudiante."
+                            )
+                            result.page_text = ""
+                            return result
                         if repaired:
                             result.warnings.append("JSON reparado localmente una sola vez.")
                         if rotation:
@@ -629,7 +665,11 @@ Informa tachones, correcciones y preguntas ausentes. Devuelve SOLO JSON:
             document_quality=round(sum(item.document_quality for item in success) / len(success), 4),
             pages_processed=len(results), answers=answers, pages=results, warnings=warnings,
             graphic_uncertain_questions=graphic_uncertain_questions,
-            requires_review=bool(failures or graphic_uncertain_questions) or any(answer.needs_review for answer in answers),
+            requires_review=(
+                bool(failures or graphic_uncertain_questions)
+                or any(item.status == "requires_review" for item in results)
+                or any(answer.needs_review for answer in answers)
+            ),
             provider="opencode" if self.provider == "open_code" else "ollama",
             primary_model=self.primary_model, fallback_used=fallback is not None,
             rotation_applied=next((item.rotation_applied for item in success if item.rotation_applied), 0),

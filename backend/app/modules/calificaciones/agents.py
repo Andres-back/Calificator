@@ -827,6 +827,9 @@ REGLAS OBLIGATORIAS:
 - Si recibes varias páginas, califica el trabajo completo en conjunto y respeta su orden.
 - Une procedimientos que continúan en otra página y no dupliques preguntas visibles en fotografías solapadas.
 - Si recibes una imagen girada, oriéntala mentalmente antes de leer y distingue siempre el ejercicio impreso de la respuesta manuscrita.
+- Si la transcripción dice que no hay respuesta, inspecciona la imagen de forma independiente antes de aceptarlo. Busca lápiz tenue debajo y al lado de cada pregunta.
+- Una respuesta incorrecta, incompleta o escrita en el renglón equivocado sigue siendo evidencia respondida; transcríbela y califícala, nunca la conviertas en ausencia.
+- Si ves grafito pero no puedes leerlo con seguridad, marca el componente como ilegible o no_evaluable y solicita revisión; no asignes cero por falta de lectura.
 - Una descripción visual identificada como dibujo observado es evidencia de la respuesta. Si la evidencia gráfica está NO confirmada, no concluyas que falta el dibujo a partir de la transcripción: marca la pregunta como no_evaluable y solicita revisión de la fotografía.
 
 ## Retroalimentación formativa
@@ -1102,8 +1105,12 @@ async def grader_agent(
 
 
 VERIFIER_PROMPT_TEMPLATE = """Eres el verificador rápido de XCalificator.
-No reconstruyas toda la retroalimentación. Comprueba de manera independiente que el puntaje
-por componente, la suma y la nota propuesta sean compatibles con la evidencia extraída.
+Haz primero una lectura visual independiente, antes de considerar la propuesta principal.
+La transcripción puede haber omitido lápiz tenue: inspecciona debajo y al lado de cada pregunta.
+Una respuesta incorrecta o ubicada en el renglón equivocado sigue siendo una respuesta.
+Si ves escritura que no puedes leer, marca no_evaluable y solicita arbitraje; nunca la conviertas
+en ausencia ni en cero. Solo después contrasta el puntaje por componente, la suma y la nota.
+No reconstruyas toda la retroalimentación.
 
 Evaluación: {evaluacion_nombre}
 Nota máxima: {nota_maxima}
