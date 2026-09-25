@@ -29,6 +29,7 @@ import { toApiError } from '@/lib/api';
 import { formatDate } from '@/lib/dates';
 import { PresentationPreviewModal } from './PresentationPreviewModal';
 import { useAuth } from '@/stores/auth';
+import { isStandardStudentProfile } from '@/lib/authorization';
 
 const STATE: Record<string, { tone: 'warning' | 'info' | 'success' | 'error'; label: string; icon: typeof Clock; accent: string }> = {
   queued: { tone: 'warning', label: 'En cola', icon: Clock, accent: 'border-l-amber-500' },
@@ -67,9 +68,11 @@ function formatElapsed(milliseconds?: number) {
 }
 
 export function PresentacionesPage() {
-  const permissions = new Set(useAuth((state) => state.user?.permissions ?? []));
-  const canCreate = permissions.has('presentations.create');
-  const canDelete = permissions.has('presentations.delete');
+  const user = useAuth((state) => state.user);
+  const isStudentView = isStandardStudentProfile(user);
+  const permissions = new Set(user?.permissions ?? []);
+  const canCreate = !isStudentView && permissions.has('presentations.create');
+  const canDelete = !isStudentView && permissions.has('presentations.delete');
   const [open, setOpen] = useState(false);
   const [previewPresentation, setPreviewPresentation] = useState<{ id: string; title: string } | null>(null);
   const { target: presentationToDelete, setTarget: setPresentationToDelete, mutation: remove } = useDeleteConfirm({
@@ -98,21 +101,27 @@ export function PresentacionesPage() {
     onError: (e) => toast.error(toApiError(e).detail),
   });
 
+  const presentations = isStudentView
+    ? (data ?? []).filter((presentation) => presentation.estado === 'success')
+    : (data ?? []);
+
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Presentaciones"
-        eyebrow="Contenido educativo"
-        subtitle="Genera, revisa y exporta material de clase sin perder el control editorial."
+        title={isStudentView ? 'Presentaciones de clase' : 'Presentaciones'}
+        eyebrow={isStudentView ? 'Tu aprendizaje' : 'Contenido educativo'}
+        subtitle={isStudentView
+          ? 'Consulta las presentaciones que tus docentes compartieron contigo.'
+          : 'Genera, revisa y exporta material de clase sin perder el control editorial.'}
         breadcrumbs={[{ label: 'Inicio', to: '/app' }, { label: 'Presentaciones' }]}
         primaryAction={canCreate ? <Button onClick={() => setOpen(true)}><Plus className="h-4 w-4" aria-hidden="true" /> Nueva presentación</Button> : undefined}
       />
 
-      {!isLoading && data && data.length > 0 && (
+      {!isStudentView && !isLoading && presentations.length > 0 && (
         <div className="grid gap-3 sm:grid-cols-3">
-          <StatCard brandIcon="presentation-processing" label="En proceso" value={data.filter((item) => item.estado === 'queued' || item.estado === 'running').length} tone="info" size="sm" />
-          <StatCard brandIcon="presentation-ready" label="Listas" value={data.filter((item) => item.estado === 'success').length} tone="success" size="sm" />
-          <StatCard brandIcon="presentation-error" label="Con error" value={data.filter((item) => item.estado === 'failed').length} tone="error" size="sm" />
+          <StatCard brandIcon="presentation-processing" label="En proceso" value={presentations.filter((item) => item.estado === 'queued' || item.estado === 'running').length} tone="info" size="sm" />
+          <StatCard brandIcon="presentation-ready" label="Listas" value={presentations.filter((item) => item.estado === 'success').length} tone="success" size="sm" />
+          <StatCard brandIcon="presentation-error" label="Con error" value={presentations.filter((item) => item.estado === 'failed').length} tone="error" size="sm" />
         </div>
       )}
 
@@ -120,16 +129,18 @@ export function PresentacionesPage() {
         <QueryError error={error} onRetry={() => void refetch()} />
       ) : isLoading ? (
         <div className="grid gap-3">{Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-24" />)}</div>
-      ) : !data || data.length === 0 ? (
+      ) : presentations.length === 0 ? (
         <EmptyState
           icon={Presentation}
-          title="Sin presentaciones"
-          description="Crea tu primera presentación: XCalificator genera el contenido, las imágenes y los archivos descargables."
+          title={isStudentView ? 'Sin presentaciones asignadas' : 'Sin presentaciones'}
+          description={isStudentView
+            ? 'Cuando un docente publique una presentación para tus materias, aparecerá aquí.'
+            : 'Crea tu primera presentación: XCalificator genera el contenido, las imágenes y los archivos descargables.'}
           action={canCreate ? <Button onClick={() => setOpen(true)}><Plus className="h-4 w-4" /> Nueva presentación</Button> : undefined}
         />
       ) : (
         <div className="grid gap-3">
-          {data.map((p, i) => {
+          {presentations.map((p, i) => {
             const st = STATE[p.estado] ?? STATE.queued;
             return (
               <motion.div key={p.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}>
@@ -196,7 +207,7 @@ export function PresentacionesPage() {
         </div>
       )}
 
-      <Modal open={open} onClose={() => setOpen(false)} title="Nueva presentación" className="max-w-2xl">
+      <Modal open={!isStudentView && open} onClose={() => setOpen(false)} title="Nueva presentación" className="max-w-2xl">
         <div className="max-h-[calc(100dvh-10rem)] overflow-y-auto pr-1 sm:max-h-[75vh]">
           <PresentacionForm loading={create.isPending} materias={materias.data ?? []} onSubmit={(payload) => create.mutate(payload)} />
         </div>

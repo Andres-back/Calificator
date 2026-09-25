@@ -3,6 +3,7 @@ import { createBrowserRouter } from 'react-router-dom';
 import { AppShell } from '@/components/layout/AppShell';
 import { RequireAuth } from '@/components/auth/RequireAuth';
 import { RequirePermission } from '@/components/auth/RequirePermission';
+import { RequireStaffSurface } from '@/components/auth/RequireStaffSurface';
 import { LoadingScreen } from '@/components/ui';
 import { RouterErrorBoundary } from '@/components/RouterErrorBoundary';
 import { RootMetadataLayout } from '@/components/seo/RootMetadataLayout';
@@ -100,10 +101,12 @@ export const router = createBrowserRouter([{
               { index: true, element: lazyPage(<MateriaVistaGeneral />) },
               { element: <RequirePermission anyOf={['evaluations.read']} />, children: [{ path: 'evaluaciones', element: lazyPage(<MateriaEvaluaciones />) }] },
               { element: <RequirePermission anyOf={['resources.read']} />, children: [{ path: 'recursos', element: lazyPage(<MateriaRecursos />) }] },
-              // Solo docente/admin
-              { element: <RequirePermission anyOf={['grading.read', 'grading.grade']} />, children: [{ path: 'calificar', element: lazyPage(<GradingLegacyRedirect />) }] },
-              { element: <RequirePermission anyOf={['attendance.read', 'attendance.manage']} />, children: [{ path: 'asistencia', element: lazyPage(<MateriaAsistencia />) }] },
-              { element: <RequirePermission anyOf={['dba.read', 'dba.manage']} />, children: [{ path: 'dba', element: lazyPage(<MateriaDbaPage />) }] },
+              // Superficies elevadas: perfil de personal o rol personalizado + permiso efectivo.
+              { element: <RequireStaffSurface />, children: [
+                { element: <RequirePermission anyOf={['grading.read', 'grading.grade']} />, children: [{ path: 'calificar', element: lazyPage(<GradingLegacyRedirect />) }] },
+                { element: <RequirePermission anyOf={['attendance.read', 'attendance.manage']} />, children: [{ path: 'asistencia', element: lazyPage(<MateriaAsistencia />) }] },
+                { element: <RequirePermission anyOf={['dba.read', 'dba.manage']} />, children: [{ path: 'dba', element: lazyPage(<MateriaDbaPage />) }] },
+              ] },
               // Estudiante ve su boletín propio, profesor ve boletín del grupo
               { element: <RequirePermission anyOf={['gradebook.read']} />, children: [{ path: 'boletin', element: lazyPage(<MateriaBoletin />) }] },
             ],
@@ -118,13 +121,15 @@ export const router = createBrowserRouter([{
           { element: <RequirePermission anyOf={['roles.read']} />, children: [{ path: 'admin/roles', element: lazyPage(<AdminRolesPage />) }] },
           { element: <RequirePermission anyOf={['admin_settings.manage']} />, children: [{ path: 'admin/correo', element: lazyPage(<AdminMailConfigPage />) }] },
 
-          /* ── Rutas solo docente/admin ── */
-          { element: <RequirePermission anyOf={['ai_settings.personal']} />, children: [{ path: 'configuracion-ia', element: lazyPage(<TeacherAIConfigPage />) }] },
-          { element: <RequirePermission anyOf={['resources.read']} />, children: [{ path: 'herramientas', element: lazyPage(<ListPage />) }, { path: 'herramientas/:id', element: lazyPage(<DetailPage />) }] },
-          { element: <RequirePermission anyOf={['resources.create']} />, children: [{ path: 'herramientas/nuevo', element: lazyPage(<GeneratePage />) }] },
-          { element: <RequirePermission anyOf={['grading.grade']} />, children: [{ path: 'calificaciones/foto', element: lazyPage(<GradingLegacyRedirect />) }] },
-          { element: <RequirePermission anyOf={['grading.read', 'grading.grade']} />, children: [{ path: 'calificaciones', element: lazyPage(<CalificacionesWorkspace />) }, { path: 'calificaciones/workspace', element: lazyPage(<GradingLegacyRedirect />) }, { path: 'calificaciones/workspace/:evaluacionId', element: lazyPage(<GradingLegacyRedirect />) }] },
-          { element: <RequirePermission anyOf={['reports.read']} />, children: [{ path: 'analytics', element: lazyPage(<AnalyticsPage />) }, { path: 'reportes', element: lazyPage(<ReportesPage />) }] },
+          /* ── Superficies elevadas: personal o rol personalizado ── */
+          { element: <RequireStaffSurface />, children: [
+            { element: <RequirePermission anyOf={['ai_settings.personal']} />, children: [{ path: 'configuracion-ia', element: lazyPage(<TeacherAIConfigPage />) }] },
+            { element: <RequirePermission anyOf={['resources.read']} />, children: [{ path: 'herramientas', element: lazyPage(<ListPage />) }, { path: 'herramientas/:id', element: lazyPage(<DetailPage />) }] },
+            { element: <RequirePermission anyOf={['resources.create']} />, children: [{ path: 'herramientas/nuevo', element: lazyPage(<GeneratePage />) }] },
+            { element: <RequirePermission anyOf={['grading.grade']} />, children: [{ path: 'calificaciones/foto', element: lazyPage(<GradingLegacyRedirect />) }] },
+            { element: <RequirePermission anyOf={['grading.read', 'grading.grade']} />, children: [{ path: 'calificaciones', element: lazyPage(<CalificacionesWorkspace />) }, { path: 'calificaciones/workspace', element: lazyPage(<GradingLegacyRedirect />) }, { path: 'calificaciones/workspace/:evaluacionId', element: lazyPage(<GradingLegacyRedirect />) }] },
+            { element: <RequirePermission anyOf={['reports.read']} />, children: [{ path: 'analytics', element: lazyPage(<AnalyticsPage />) }, { path: 'reportes', element: lazyPage(<ReportesPage />) }] },
+          ] },
           { element: <RequirePermission anyOf={['presentations.read']} />, children: [{ path: 'presentaciones', element: lazyPage(<PresentacionesPage />) }] },
 
           /* ── Catch-all dentro de /app: 404 ── */

@@ -206,5 +206,10 @@ actualizar la especificación propietaria, su plan y sus tareas; no debe crear d
 
 ## Inventario técnico global
 
+## Hotfix 074: aislamiento y organización del flujo estudiante
+
+- [074-aislar-flujo-estudiante](074-aislar-flujo-estudiante/spec.md), [issue #153](https://github.com/Andres-back/Calificator/issues/153): separa superficies docentes de las lecturas compartidas del estudiante, conserva roles personalizados y presenta el contenido publicado con lenguaje estudiantil.
+- No modifica permisos persistidos, contratos del backend, matrículas, entregas ni calificaciones.
+
 - [Inventario canónico JSON](system-inventory/current.json)
 - [Especificación del generador y gate de deriva](013-inventario-tecnico-exhaustivo/spec.md)

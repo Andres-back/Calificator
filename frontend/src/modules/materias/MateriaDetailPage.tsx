@@ -7,15 +7,16 @@ import { getMateria, getMateriaEstudiantes } from './api';
 import { toApiError } from '@/lib/api';
 import { useAuth } from '@/stores/auth';
 import { cn } from '@/lib/cn';
+import { isStandardStudentProfile } from '@/lib/authorization';
 
 const ALL_TABS = [
-  { label: 'Vista general', to: '', brandIcon: 'subjects', permissions: ['subjects.read'] },
-  { label: 'Evaluaciones', to: 'evaluaciones', brandIcon: 'prepare-evaluation', permissions: ['evaluations.read'] },
-  { label: 'Recursos', to: 'recursos', brandIcon: 'resources', permissions: ['resources.read'] },
-  { label: 'Calificar', to: 'calificar', brandIcon: 'grade-evidence', permissions: ['grading.read', 'grading.grade'] },
-  { label: 'Asistencia', to: 'asistencia', brandIcon: 'attendance', permissions: ['attendance.read', 'attendance.manage'] },
-  { label: 'Boletín', to: 'boletin', brandIcon: 'gradebook', permissions: ['gradebook.read'] },
-  { label: 'DBA', to: 'dba', brandIcon: 'curriculum-dba', permissions: ['dba.read', 'dba.manage'] },
+  { label: 'Vista general', to: '', brandIcon: 'subjects', permissions: ['subjects.read'], staffOnly: false },
+  { label: 'Evaluaciones', to: 'evaluaciones', brandIcon: 'prepare-evaluation', permissions: ['evaluations.read'], staffOnly: false },
+  { label: 'Recursos', to: 'recursos', brandIcon: 'resources', permissions: ['resources.read'], staffOnly: false },
+  { label: 'Calificar', to: 'calificar', brandIcon: 'grade-evidence', permissions: ['grading.read', 'grading.grade'], staffOnly: true },
+  { label: 'Asistencia', to: 'asistencia', brandIcon: 'attendance', permissions: ['attendance.read', 'attendance.manage'], staffOnly: true },
+  { label: 'Boletín', to: 'boletin', brandIcon: 'gradebook', permissions: ['gradebook.read'], staffOnly: false },
+  { label: 'Criterios de aprendizaje', to: 'dba', brandIcon: 'curriculum-dba', permissions: ['dba.read', 'dba.manage'], staffOnly: true },
 ] as const;
 
 export function MateriaDetailPage() {
@@ -41,7 +42,7 @@ export function MateriaDetailPage() {
       'attendance.manage',
       'dba.manage',
     ].some((permission) => permissions.has(permission));
-  const isStudent = !canManageMateria;
+  const isStudent = isStandardStudentProfile(user);
 
   // Students can read a subject, but never request its administrative roster.
   const studentMateriaQuery = useQuery({
@@ -136,7 +137,9 @@ export function MateriaDetailPage() {
 
       {/* Tab navigation */}
       <nav aria-label="Secciones de la materia" className="teacher-scroll-region -mx-1 flex max-w-full snap-x gap-1 overflow-x-auto rounded-2xl border border-border bg-surface/90 p-1.5 shadow-sm">
-        {ALL_TABS.filter((tab) => tab.permissions.some((permission) => permissions.has(permission))).map((tab) => {
+        {ALL_TABS.filter((tab) => !tab.staffOnly || !isStudent)
+          .filter((tab) => tab.permissions.some((permission) => permissions.has(permission)))
+          .map((tab) => {
           const active = isActiveTab(tab.to);
           return (
             <Link
