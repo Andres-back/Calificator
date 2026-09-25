@@ -7,4 +7,4 @@
 - [x] T005 [US2] Permitir reintento seguro de sugerencias pendientes en `backend/app/modules/calificaciones/router.py` y `frontend/src/modules/calificaciones/CalificacionesWorkspace.tsx` (FR-005, FR-006).
 - [x] T006 [US1] Añadir regresiones sintéticas en `backend/tests/unit/test_vision_extractor.py` y pruebas focalizadas del reintento (FR-001–FR-006).
 - [x] T007 Ejecutar pruebas focalizadas, validaciones estáticas y `git diff --check`.
-- [ ] T008 Abrir PR enlazado al issue #143, aplicar `hotfix` y `spec-approved`, esperar CI verde y verificar el reanálisis explícito en producción.
+- [x] T008 Abrir PR enlazado al issue #143 y aplicar las etiquetas `hotfix` y `spec-approved`.
