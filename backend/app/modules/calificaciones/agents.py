@@ -17,6 +17,7 @@ from app.services.image_preprocessing import prepare_orientation_variants
 from app.services.llm_router import (
     LLMOutputTruncatedError,
     LLMRouter,
+    opencode_reasoning_effort,
     opencode_thinking_control,
 )
 from app.services.opencode_request import new_opencode_session_id, opencode_headers
@@ -405,6 +406,9 @@ class OpenCodeClient:
             thinking = opencode_thinking_control(model)
             if thinking:
                 body["thinking"] = thinking
+            reasoning_effort = opencode_reasoning_effort(model)
+            if reasoning_effort:
+                body["reasoning_effort"] = reasoning_effort
             if json_mode:
                 body["response_format"] = {"type": "json_object"}
             endpoint = "chat/completions"
@@ -825,6 +829,10 @@ REGLAS OBLIGATORIAS:
 - Si no hay puntajes explícitos por pregunta, distribuye la nota máxima de forma uniforme entre las preguntas.
 - Evalúa las preguntas abiertas por separado y verifica toda operación aritmética antes de asignar la nota.
 - Si recibes varias páginas, califica el trabajo completo en conjunto y respeta su orden.
+- No exijas que la respuesta repita el sujeto o el contexto ya indicado en la pregunta; una frase breve puede demostrar completamente la comprensión.
+- Exige únicamente la información pedida por el enunciado; no descuentes por omitir detalles adicionales presentes en la referencia si la respuesta ya resuelve la pregunta.
+- Solo descuenta ortografía, puntuación, extensión o forma de oración cuando el instrumento asigne puntos explícitos a esa dimensión; de lo contrario, úsala únicamente en la retroalimentación.
+- Evalúa cada respuesta donde fue escrita: una respuesta ubicada bajo otra pregunta se califica en el lugar donde fue escrita y no se traslada silenciosamente.
 - Une procedimientos que continúan en otra página y no dupliques preguntas visibles en fotografías solapadas.
 - Si recibes una imagen girada, oriéntala mentalmente antes de leer y distingue siempre el ejercicio impreso de la respuesta manuscrita.
 - Si la transcripción dice que no hay respuesta, inspecciona la imagen de forma independiente antes de aceptarlo. Busca lápiz tenue debajo y al lado de cada pregunta.
@@ -1112,6 +1120,11 @@ Si ves escritura que no puedes leer, marca no_evaluable y solicita arbitraje; nu
 en ausencia ni en cero. Solo después contrasta el puntaje por componente, la suma y la nota.
 No reconstruyas toda la retroalimentación.
 
+No exijas que la respuesta repita el sujeto o el contexto ya indicado en la pregunta.
+Exige únicamente la información pedida por el enunciado; no descuentes por omitir detalles adicionales presentes en la referencia si la respuesta ya resuelve la pregunta.
+Solo descuenta ortografía, puntuación, extensión o forma de oración si esa dimensión tiene puntos explícitos.
+Valora como contenido correcto una respuesta breve, fragmentaria o con contexto adicional pertinente si expresa el hecho solicitado.
+Evalúa cada renglón de forma independiente: una respuesta ubicada bajo otra pregunta se califica en el lugar donde fue escrita.
 Evaluación: {evaluacion_nombre}
 Nota máxima: {nota_maxima}
 Referencias y puntos por componente: {componentes_esperados}

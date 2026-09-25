@@ -22,6 +22,7 @@ actualizar la especificación propietaria, su plan y sus tareas; no debe crear d
 | 065 | [Retirar evidencia ya enviada](065-retirar-foto-enviada/spec.md) | calificaciones existentes y carga de evidencia | selector “Añadir entregas” | sin tablas nuevas; no modifica históricos | [#135](https://github.com/Andres-back/Calificator/issues/135) |
 | 067 | [Base legal, privacidad y aceptación versionada](067-privacidad-legal/spec.md) | auth y registro de aceptaciones legales | `/privacidad`, `/terminos`, `/cookies`, `/aviso-privacidad`, `/piloto` y registro | `legal_acceptances`; sin backfill ni cambios a usuarios existentes | [#139](https://github.com/Andres-back/Calificator/issues/139) |
 | 069 | [Recuperar respuestas manuscritas antes de calificar](069-recuperar-respuestas-manuscritas/spec.md) | extracción visual, agentes, orquestador y reintento | workspace docente de calificaciones | sin migración; conserva entregas y calificaciones existentes | [#143](https://github.com/Andres-back/Calificator/issues/143) |
+| 070 | [Calibrar comprensión lectora y verificador](070-calibrar-comprension-verificador/spec.md) | prompts de calificación, verificador y transporte OpenCode | flujo existente de calificación; sin rutas nuevas | sin migración; no altera notas confirmadas o publicadas | [#145](https://github.com/Andres-back/Calificator/issues/145) |
 | 014 | [Alineación de autorización y superficies](014-alinear-autorizacion-superficies/spec.md) | autorización por objeto, analítica y contratos | AppShell, actividad estudiante y telemetría | sin tablas nuevas; políticas e inventario canónico | [#17](https://github.com/Andres-back/Calificator/issues/17) |
 | 016 | [Calificación explicable y auditable](016-calificacion-explicable/spec.md) | calificaciones, visión, ajustes, publicación y PQRS | workspace docente, ver entrega y resultados | `calificaciones`, `entregas`, historial y desglose | [#20](https://github.com/Andres-back/Calificator/issues/20) |
 | 017 | [Decoración visual y orientación contextual](017-decoracion-frontend/spec.md) | sin cambios de backend; gobernanza de controles frontend | AppShell, cabeceras, inicios, recorridos y estados vacíos | preferencia local de recorridos, sin datos de negocio | [#22](https://github.com/Andres-back/Calificator/issues/22) |
@@ -179,6 +180,11 @@ actualizar la especificación propietaria, su plan y sus tareas; no debe crear d
 
 - [068-rutas-legales-publicas](068-rutas-legales-publicas/spec.md), [issue #141](https://github.com/Andres-back/Calificator/issues/141): evita que el arranque de autenticación consulte la sesión y redirija al login al visitar privacidad, términos, cookies, aviso de privacidad o información del piloto.
 - Las rutas académicas y administrativas continúan protegidas sin cambios.
+
+## Hotfix 070: comprensión semántica y verificación acotada
+
+- [070-calibrar-comprension-verificador](070-calibrar-comprension-verificador/spec.md), [issue #145](https://github.com/Andres-back/Calificator/issues/145): valora el significado solicitado sin penalizar formas no exigidas y ejecuta la revisión GLM con razonamiento bajo.
+- Conserva el presupuesto compacto, la detección de truncamiento y la decisión final docente; no reescribe notas confirmadas ni publica automáticamente.
 
 ## Inventario técnico global
 

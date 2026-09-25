@@ -13,6 +13,8 @@ from app.services.vision_extractor import VisionExtractor
 from app.modules.calificaciones.agents import (
     AgentContext,
     AgentResult,
+    GRADER_PROMPT_TEMPLATE,
+    VERIFIER_PROMPT_TEMPLATE,
     grader_agent,
 )
 
@@ -20,6 +22,19 @@ from app.modules.calificaciones.agents import (
 class FakeClient:
     async def close(self) -> None:
         return None
+
+
+def test_comprehension_prompts_grade_meaning_without_unrequested_style_penalties() -> None:
+    required_rules = (
+        "No exijas que la respuesta repita el sujeto o el contexto ya indicado en la pregunta",
+        "Solo descuenta ortografía, puntuación, extensión o forma de oración",
+        "Exige únicamente la información pedida por el enunciado",
+        "una respuesta ubicada bajo otra pregunta se califica en el lugar donde fue escrita",
+    )
+
+    for rule in required_rules:
+        assert rule in GRADER_PROMPT_TEMPLATE
+        assert rule in VERIFIER_PROMPT_TEMPLATE
 
 
 class ExplodingGraderClient:
