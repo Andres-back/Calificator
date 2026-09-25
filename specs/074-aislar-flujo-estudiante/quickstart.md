@@ -47,6 +47,7 @@ Repetir el escenario estudiantil a 360×800 y 390×844. La página no debe tener
 - TypeScript: aprobado sin errores.
 - ESLint estricto: aprobado sin advertencias.
 - Compilación Vite de producción: aprobada.
+- Gobernanza Spec Kit: 41 pruebas aprobadas e inventario canónico vigente con 565 superficies.
 - 360×800: Vista general y Evaluaciones muestran únicamente Vista general, Evaluaciones, Recursos y Boletín; ancho del documento 360/360.
 - 390×844: Presentaciones usa lenguaje estudiantil y estado vacío asignado; ancho del documento 390/390.
 - Las rutas directas `calificar` y `/app/herramientas` terminan en `/app/403` para el estudiante estándar.
