@@ -71,6 +71,7 @@ ALL_SPECS = {
     "069-recuperar-respuestas-manuscritas",
     "070-calibrar-comprension-verificador",
     "071-respuesta-abierta-literal",
+    "072-clave-literal-pregunta-quien",
 }
 OWNED_SPECS = {
     name

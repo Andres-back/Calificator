@@ -294,7 +294,7 @@ def test_open_answer_key_at_start_is_objective_but_internal_mention_is_not() -> 
             {"numero": 3, "tipo": "abierta", "enunciado": "¿Qué quería hacer?", "puntaje": 1},
         ],
         "respuestas_esperadas": [
-            {"numero": 1, "respuesta": "Nico"},
+            {"numero": 1, "respuesta": "El personaje principal es Nico, un niño que viaja por primera vez en avión."},
             {"numero": 2, "respuesta": "emocionado"},
             {"numero": 3, "respuesta": "contarles a todos sobre su aventura"},
         ],
@@ -312,12 +312,20 @@ def test_open_answer_key_at_start_is_objective_but_internal_mention_is_not() -> 
             "numero": 1,
             "tipo": "abierta",
             "respuesta_detectada": "Nico miró emocionado por la ventana del avión",
-            "respuesta_esperada": "Nico",
+            "respuesta_esperada": "El personaje principal es Nico, un niño que viaja por primera vez en avión.",
             "correcta": True,
             "fuente": "clave_oficial",
         }
     ]
     assert orchestrator.objective_score_floor(blueprint, validation) == Decimal("1.00")
+
+
+def test_literal_person_key_does_not_override_other_open_question_types() -> None:
+    assert orchestrator._open_answer_matches(
+        "¿Cómo se sentía Nico?",
+        "Nico se sentía emocionado al mirar por la ventana.",
+        "Nico estaba aburrido",
+    ) is False
 
 
 def test_both_failed_graders_return_no_score(monkeypatch) -> None:
