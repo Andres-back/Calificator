@@ -120,6 +120,21 @@ def _vision_result_is_usable(result: AgentResult | None) -> bool:
     )
 
 
+def _vision_result_has_student_answers(result: AgentResult | None) -> bool:
+    """No confunde el material impreso con evidencia respondida."""
+    if result is None or result.error or not isinstance(result.raw_output, dict):
+        return False
+    answers = result.raw_output.get("respuestas_detectadas") or []
+    return any(
+        isinstance(answer, dict)
+        and (
+            bool(str(answer.get("respuesta") or "").strip())
+            or bool(str(answer.get("descripcion_visual") or "").strip())
+        )
+        for answer in answers
+    )
+
+
 async def _run_grader_cascade(
     ctx: AgentContext,
     *,
@@ -726,7 +741,10 @@ async def orchestrate_grading(
                     api_key=vision_api_key,
                 )
             if (
-                not _vision_result_is_usable(vision_result)
+                (
+                    not _vision_result_is_usable(vision_result)
+                    or not _vision_result_has_student_answers(vision_result)
+                )
                 and vision_fallback_provider
                 and vision_fallback_model
                 and vision_fallback_provider != vision_provider
@@ -756,7 +774,10 @@ async def orchestrate_grading(
                     configured_fallback_result.raw_output["fallback_used"] = True
                     vision_result = configured_fallback_result
             if (
-                vision_result.error
+                (
+                    vision_result.error
+                    or not _vision_result_has_student_answers(vision_result)
+                )
                 and settings.PHOTO_GRADING_CROSS_PROVIDER_FALLBACK_ENABLED
             ):
                 logger.warning(
@@ -810,8 +831,12 @@ async def orchestrate_grading(
                 physical_answers = [
                     answer for answer in raw_answers
                     if isinstance(answer, dict)
-                    and answer.get("legible", True)
-                    and not answer.get("requiere_revision", False)
+                    and (
+                        bool(str(answer.get("respuesta") or "").strip())
+                        or bool(
+                            str(answer.get("descripcion_visual") or "").strip()
+                        )
+                    )
                 ]
                 structured_visual_text = format_structured_visual_answers(
                     physical_answers
@@ -858,6 +883,26 @@ async def orchestrate_grading(
                         raw_output={
                             "orchestrator": "vision_failed",
                             "vision_result": vision_result.raw_output,
+                        },
+                    )
+                expected_physical = (
+                    list(coverage_analysis.get("esperadas") or [])
+                    if isinstance(coverage_analysis, dict)
+                    else []
+                )
+                if expected_physical and not physical_answers:
+                    return _technical_failure_result(
+                        blueprint,
+                        "student_answers_not_detected",
+                        "extraction",
+                        alertas=[
+                            "Se reconoció la hoja, pero no fue posible leer las "
+                            "respuestas del estudiante. Reanaliza la evidencia o toma otra foto."
+                        ],
+                        raw_output={
+                            "orchestrator": "student_answers_not_detected",
+                            "vision_result": vision_result.raw_output,
+                            "expected_questions": expected_physical,
                         },
                     )
 
@@ -1063,7 +1108,13 @@ async def orchestrate_grading(
                 )
 
         if (
-            physical_answers
+            any(
+                answer.get("legible", True)
+                and not answer.get("requiere_revision", False)
+                and not answer.get("needs_review", False)
+                for answer in physical_answers
+                if isinstance(answer, dict)
+            )
             and _all_components_claim_absence(grading_a)
             and _all_components_claim_absence(grading_b)
         ):

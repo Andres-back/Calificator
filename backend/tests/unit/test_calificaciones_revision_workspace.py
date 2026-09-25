@@ -18,7 +18,71 @@ from app.modules.calificaciones.service import (
     _revision_row,
     _revision_page,
 )
-from app.shared.enums import EntregaEstado, EntregaTipo, PoliticaIntento, UserRole
+from app.shared.enums import (
+    CalificacionEstado,
+    EntregaEstado,
+    EntregaTipo,
+    PoliticaIntento,
+    UserRole,
+)
+
+
+def test_reintentar_allows_unconfirmed_manual_review_with_saved_evidence(
+    monkeypatch,
+    tmp_path,
+):
+    evidence = tmp_path / "evidencia.jpg"
+    evidence.write_bytes(b"image")
+    evaluation_id = uuid4()
+    student_id = uuid4()
+    delivery = SimpleNamespace(
+        archivo_url="/uploads/evidencia.jpg",
+        estado=EntregaEstado.CALIFICADA.value,
+        tipo=EntregaTipo.FOTO.value,
+    )
+    grade = SimpleNamespace(
+        evaluacion_id=evaluation_id,
+        estudiante_id=student_id,
+        entrega=delivery,
+        revisado_por_docente=False,
+        estado=CalificacionEstado.REQUIERE_REVISION.value,
+        nota_confirmada=None,
+    )
+    evaluation = SimpleNamespace(id=evaluation_id)
+    actor = SimpleNamespace(id=uuid4())
+    queued = object()
+
+    async def get_grade(*_args, **_kwargs):
+        return grade
+
+    async def can_manage(*_args, **_kwargs):
+        return evaluation
+
+    async def enqueue(*_args, **_kwargs):
+        return queued
+
+    monkeypatch.setattr(router, "require_permission_now", lambda *_args: None)
+    monkeypatch.setattr(router.service, "get_calificacion_or_404", get_grade)
+    monkeypatch.setattr(
+        router.evaluaciones_service,
+        "ensure_can_manage_evaluation",
+        can_manage,
+    )
+    monkeypatch.setattr(
+        router.service,
+        "ensure_evaluation_active",
+        lambda *_args: None,
+    )
+    monkeypatch.setattr(router, "resolve_upload_path", lambda *_args: evidence)
+    monkeypatch.setattr(router, "_enqueue_persisted_grading", enqueue)
+
+    result = asyncio.run(router.reintentar_calificacion_foto(
+        uuid4(),
+        current_user=actor,
+        db=object(),
+    ))
+
+    assert result is queued
 
 
 def test_revision_30_enrolled_all_eight_claims_and_complete_counters():

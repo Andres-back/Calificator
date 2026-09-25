@@ -68,6 +68,7 @@ ALL_SPECS = {
     "065-retirar-foto-enviada",
     "067-privacidad-legal",
     "068-rutas-legales-publicas",
+    "069-recuperar-respuestas-manuscritas",
 }
 OWNED_SPECS = {
     name

@@ -879,7 +879,7 @@ function PanelDetalle({
             analyticsContext={{ evaluacionId: cal.evaluacion_id, calificacionId: cal.id }}
           />
         ) : null}
-        {canGrade && manualReview && presentation.score == null && evidenceUrl && <Button variant="outline" loading={retryMutation.isPending} disabled={retryMutation.isPending} onClick={() => retryMutation.mutate()}><RotateCcw className="h-4 w-4" /> Reintentar con la evidencia guardada</Button>}
+        {canGrade && manualReview && evidenceUrl && <Button variant="outline" loading={retryMutation.isPending} disabled={retryMutation.isPending} onClick={() => retryMutation.mutate()}><RotateCcw className="h-4 w-4" /> Volver a analizar la evidencia</Button>}
         {(() => {
           if (cal.confianza == null || cal.confianza <= 0) return null;
           return <p className="text-xs text-muted">Confianza: {(cal.confianza * 100).toFixed(0)}%</p>;
