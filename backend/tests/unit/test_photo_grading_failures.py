@@ -315,9 +315,17 @@ def test_open_answer_key_at_start_is_objective_but_internal_mention_is_not() -> 
             "respuesta_esperada": "El personaje principal es Nico, un niño que viaja por primera vez en avión.",
             "correcta": True,
             "fuente": "clave_oficial",
-        }
+        },
+        {
+            "numero": 3,
+            "tipo": "abierta",
+            "respuesta_detectada": "para contarles a todos sobre su aventura",
+            "respuesta_esperada": "contarles a todos sobre su aventura",
+            "correcta": True,
+            "fuente": "clave_oficial",
+        },
     ]
-    assert orchestrator.objective_score_floor(blueprint, validation) == Decimal("1.00")
+    assert orchestrator.objective_score_floor(blueprint, validation) == Decimal("2.00")
 
 
 def test_literal_person_key_does_not_override_other_open_question_types() -> None:
@@ -325,6 +333,14 @@ def test_literal_person_key_does_not_override_other_open_question_types() -> Non
         "¿Cómo se sentía Nico?",
         "Nico se sentía emocionado al mirar por la ventana.",
         "Nico estaba aburrido",
+    ) is False
+
+
+def test_comparison_modifier_is_not_accepted_as_the_requested_comparison() -> None:
+    assert orchestrator._open_answer_matches(
+        "¿A qué se parecían las nubes?",
+        "Las nubes se parecían a algodones de azúcar flotando en el cielo azul.",
+        "flotando en el cielo azul",
     ) is False
 
 

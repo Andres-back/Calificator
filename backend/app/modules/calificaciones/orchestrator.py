@@ -256,6 +256,20 @@ def _open_answer_matches(question: Any, expected: Any, detected: Any) -> bool:
     ):
         return True
     question_normalized = _normalize_answer(question)
+    # En comparaciones, un modificador literal no responde el núcleo pedido.
+    # Ej.: «flotando en el cielo» no responde «¿a qué se parecían?».
+    if question_normalized.startswith(("a que se parecia ", "a que se parecian ")):
+        return False
+    literal_fragment = detected_normalized
+    for prefix in ("para ", "porque ", "que "):
+        if literal_fragment.startswith(prefix):
+            literal_fragment = literal_fragment[len(prefix):].strip()
+            break
+    if (
+        len(literal_fragment.split()) >= 4
+        and re.search(rf"(?:^| ){re.escape(literal_fragment)}(?: |$)", expected_normalized)
+    ):
+        return True
     if not question_normalized.startswith("quien "):
         return False
     return any(
