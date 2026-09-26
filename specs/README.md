@@ -204,6 +204,11 @@ actualizar la especificación propietaria, su plan y sus tareas; no debe crear d
 - [073-fragmento-literal-respuesta-abierta](073-fragmento-literal-respuesta-abierta/spec.md), [issue #151](https://github.com/Andres-back/Calificator/issues/151): reconoce una acción literal precedida por un conector natural cuando responde lo solicitado.
 - Excluye preguntas comparativas para impedir que un modificador incompleto reciba crédito automático.
 
+## Evolución 074: fluidez y organización del frontend
+
+- [074-optimizar-frontend](074-optimizar-frontend/spec.md), [issue #155](https://github.com/Andres-back/Calificator/issues/155): reduce consultas e imágenes innecesarias, protege la búsqueda diferida y simplifica la navegación móvil sin cambiar APIs, permisos, registros ni calificaciones.
+- Conserva seguimiento para procesos activos, añade selector móvil de secciones, compacta tableros por rol y mantiene CSP estricta con cobertura unitaria, responsive, accesible y visual.
+
 ## Inventario técnico global
 
 ## Hotfix 074: aislamiento y organización del flujo estudiante

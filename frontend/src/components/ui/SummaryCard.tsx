@@ -24,6 +24,7 @@ export function MetricCard({
   context,
   tone = 'neutral',
   status,
+  compact = false,
 }: {
   icon: LucideIcon;
   label: string;
@@ -31,18 +32,19 @@ export function MetricCard({
   context: string;
   tone?: SemanticTone;
   status?: string;
+  compact?: boolean;
 }) {
   return (
-    <Card className="p-5">
+    <Card className={cn(compact ? 'p-3 sm:p-5' : 'p-5')}>
       <div className="flex items-start justify-between gap-3">
-        <span className={cn('grid h-10 w-10 shrink-0 place-items-center rounded-lg', iconTones[tone])}>
-          <Icon className="h-5 w-5" aria-hidden="true" />
+        <span className={cn('grid shrink-0 place-items-center rounded-lg', compact ? 'h-9 w-9 sm:h-10 sm:w-10' : 'h-10 w-10', iconTones[tone])}>
+          <Icon className={compact ? 'h-4 w-4 sm:h-5 sm:w-5' : 'h-5 w-5'} aria-hidden="true" />
         </span>
-        {status && <Badge tone={tone === 'neutral' ? 'neutral' : tone}>{status}</Badge>}
+        {status && <Badge tone={tone === 'neutral' ? 'neutral' : tone} className={compact ? 'hidden sm:inline-flex' : undefined}>{status}</Badge>}
       </div>
-      <p className="mt-5 font-display text-2xl font-extrabold tabular-nums text-fg">{value}</p>
+      <p className={cn('font-display font-extrabold tabular-nums text-fg', compact ? 'mt-3 break-words text-lg sm:mt-5 sm:text-2xl' : 'mt-5 text-2xl')}>{value}</p>
       <h3 className="mt-1 text-sm font-semibold text-fg">{label}</h3>
-      <p className="mt-1 text-xs leading-5 text-secondary">{context}</p>
+      <p className={cn('mt-1 text-xs text-secondary', compact ? 'leading-4 sm:leading-5' : 'leading-5')}>{context}</p>
     </Card>
   );
 }

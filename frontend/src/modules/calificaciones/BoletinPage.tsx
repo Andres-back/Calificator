@@ -125,7 +125,6 @@ export function BoletinPage() {
     queryFn: () => getBoletin(boletinStudentId, materiaId),
     enabled: canFetchBoletin,
     retry: false,
-    refetchInterval: isStudent ? 10_000 : false,
     refetchOnWindowFocus: true,
   });
 

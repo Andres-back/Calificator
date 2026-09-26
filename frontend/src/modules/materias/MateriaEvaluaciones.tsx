@@ -111,7 +111,6 @@ export function MateriaEvaluaciones() {
     queryKey: ['evaluaciones', materia.id],
     queryFn: () => listEvaluaciones(materia.id),
     enabled: Boolean(materia.id),
-    refetchInterval: isLearnerView ? 10_000 : false,
     refetchOnWindowFocus: true,
   });
 

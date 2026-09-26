@@ -241,9 +241,8 @@ test('profesor recorre las siete vistas de una materia y escribe un DBA sin perd
   page.on('pageerror', (error) => errors.push(error.message));
   page.on('console', (message) => { if (message.type() === 'error') errors.push(message.text()); });
 
-  const navigation = page.getByRole('navigation', { name: 'Secciones de la materia' });
   for (const tab of ['Vista general', 'Evaluaciones', 'Recursos', 'Calificar', 'Asistencia', 'Boletín', 'Criterios de aprendizaje']) {
-    await navigation.getByRole('link', { name: tab, exact: true }).click();
+    await page.getByRole('combobox', { name: 'Sección de la materia' }).selectOption({ label: tab });
     await expect(page.locator('main#main-content')).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
     if (tab === 'Calificar') {

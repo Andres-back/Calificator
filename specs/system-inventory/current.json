@@ -356,7 +356,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "a04423a39ecd96b9a7047eb72d004602af3f612460206a8a362cc0ae606c1047",
+  "source_digest": "1dbe2ecd2d55cfc9a463ea530d6f983afb767f0d284faa4712630d37187fea92",
   "surfaces": [
     {
       "actors": [
@@ -15019,6 +15019,12 @@
           "level": "unit",
           "reference": "/",
           "status": "direct",
+          "test_path": "frontend/src/modules/auth/LoginPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
           "test_path": "frontend/src/modules/auth/PasswordRecovery.test.tsx"
         },
         {
@@ -19551,6 +19557,12 @@
           "reference": "/login",
           "status": "direct",
           "test_path": "frontend/src/modules/auth/LandingPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/login",
+          "status": "direct",
+          "test_path": "frontend/src/modules/auth/LoginPage.test.tsx"
         },
         {
           "level": "unit",
@@ -35254,6 +35266,12 @@
           "reference": "entregas",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/CalificacionesWorkspace.mobile.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "entregas",
+          "status": "direct",
+          "test_path": "frontend/src/modules/dashboard/DashboardPage.test.tsx"
         },
         {
           "level": "unit",

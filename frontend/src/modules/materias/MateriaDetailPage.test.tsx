@@ -61,6 +61,7 @@ function renderDetail() {
         <Routes>
           <Route path="/app/materias/:id" element={<MateriaDetailPage />}>
             <Route index element={<div>Acceso confirmado</div>} />
+            <Route path="evaluaciones" element={<div>Evaluaciones confirmadas</div>} />
           </Route>
         </Routes>
       </MemoryRouter>
@@ -147,5 +148,21 @@ describe('MateriaDetailPage for students', () => {
     expect(await screen.findByText('Acceso confirmado')).toBeInTheDocument();
     expect(materiaApi.getMateria).toHaveBeenCalledTimes(2);
     expect(materiaApi.getMateriaEstudiantes).not.toHaveBeenCalled();
+  });
+
+  it('offers an explicit mobile section selector with only authorized destinations', async () => {
+    materiaApi.getMateria.mockResolvedValue(materia);
+    const user = userEvent.setup();
+
+    renderDetail();
+
+    const sectionSelect = await screen.findByRole('combobox', { name: 'Sección de la materia' });
+    expect(sectionSelect).toHaveValue('/app/materias/materia-1');
+    expect(screen.queryByRole('option', { name: 'Calificar' })).not.toBeInTheDocument();
+
+    await user.selectOptions(sectionSelect, '/app/materias/materia-1/evaluaciones');
+
+    expect(await screen.findByText('Evaluaciones confirmadas')).toBeInTheDocument();
+    expect(screen.getByRole('combobox', { name: 'Sección de la materia' })).toHaveValue('/app/materias/materia-1/evaluaciones');
   });
 });
