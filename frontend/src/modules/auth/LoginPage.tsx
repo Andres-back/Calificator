@@ -89,7 +89,7 @@ export function LoginPage() {
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(99,102,241,0.16),transparent_34%),radial-gradient(circle_at_bottom_right,rgba(20,184,166,0.13),transparent_30%)]" />
       <div className="absolute inset-0 z-0">
         <img
-          src="/branding/pattern-hero.png"
+          src="/branding/pattern-hero.webp"
           alt=""
           className="h-full w-full object-cover opacity-[0.06] dark:opacity-[0.04]"
         />
@@ -102,7 +102,7 @@ export function LoginPage() {
         <div className="grid w-full max-w-5xl gap-8 lg:grid-cols-[1fr_420px] lg:items-center">
           <section className="hidden lg:block">
             <div className="mb-8 flex items-center gap-3">
-              <img src="/branding/logo-full.png" alt="XCalificator" className="h-14 w-14 rounded-xl object-contain" />
+              <img src="/branding/logo-full.webp" alt="XCalificator" className="h-14 w-14 rounded-xl object-contain" />
               <div>
                 <p className="font-display text-2xl font-extrabold">XCalificator</p>
                 <p className="text-sm text-muted">Evaluación asistida por IA</p>
@@ -127,10 +127,10 @@ export function LoginPage() {
               </p>
 
               <div className="mt-6">
-                <img
-                  src="/branding/hero-login.png"
-                  alt="XCalificator - IA para educación"
-                  className="w-full max-w-md rounded-2xl shadow-lg"
+                <div
+                  role="img"
+                  aria-label="XCalificator - IA para educación"
+                  className="aspect-[4/3] w-full max-w-md rounded-2xl bg-[url('/branding/hero-login.webp')] bg-cover bg-center shadow-lg"
                 />
               </div>
 
@@ -158,7 +158,7 @@ export function LoginPage() {
           >
             <Card className="mx-auto w-full max-w-md p-6 shadow-lg sm:p-8">
               <div className="mb-7 text-center">
-                <img src="/branding/logo-full.png" alt="XCalificator" className="mx-auto mb-4 h-16 w-16 rounded-xl object-contain lg:hidden" />
+                <img src="/branding/logo-full.webp" alt="XCalificator" className="mx-auto mb-4 h-16 w-16 rounded-xl object-contain lg:hidden" />
                 <p className="font-display text-2xl font-extrabold">XCalificator</p>
                 <p className="mt-2 text-sm font-semibold text-brand-600 dark:text-brand-300">La IA sugiere. El docente decide.</p>
                 <p className="mt-3 text-sm leading-6 text-muted">
@@ -236,10 +236,7 @@ export function LoginPage() {
               </p>
               <p className="mt-2 text-center text-xs"><Link to={routes.home} className="text-muted hover:text-fg hover:underline">Volver al inicio</Link></p>
 
-              <div className="mt-5 flex items-center justify-between gap-3 text-xs text-muted">
-                <span>Tu contraseña nunca se guarda en este dispositivo.</span>
-                <Link to={routes.requestPasswordReset} className="rounded-full bg-surface-2 px-2.5 py-1 font-semibold hover:text-brand-600">Recuperar acceso</Link>
-              </div>
+              <p className="mt-5 text-center text-xs text-muted">Tu contraseña nunca se guarda en este dispositivo.</p>
 
               {/* Accesos de prueba visibles solo durante desarrollo local. */}
               {import.meta.env.DEV && (

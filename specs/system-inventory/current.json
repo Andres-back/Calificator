@@ -356,7 +356,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "ab67aa1bceb3bb1bbb23f19af158a9a10f837dcaac6c32e732c722a9972825cb",
+  "source_digest": "7fef8b41758362ce44d30cb3b2c1bc97a35eb9b9d8f35810103c4a4c4b9249a7",
   "surfaces": [
     {
       "actors": [
@@ -715,6 +715,12 @@
           "reference": "DELETE:/evaluaciones/{evaluacion_id}",
           "status": "direct",
           "test_path": "frontend/src/modules/herramientas/api.lifecycle.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "DELETE:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/materias/MateriaDetailPage.test.tsx"
         },
         {
           "level": "unit",
@@ -3733,6 +3739,12 @@
           "reference": "GET:/evaluaciones/{evaluacion_id}",
           "status": "direct",
           "test_path": "frontend/src/modules/herramientas/api.lifecycle.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/materias/MateriaDetailPage.test.tsx"
         },
         {
           "level": "unit",
@@ -7691,6 +7703,12 @@
           "level": "unit",
           "reference": "PATCH:/evaluaciones/{evaluacion_id}",
           "status": "direct",
+          "test_path": "frontend/src/modules/materias/MateriaDetailPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
           "test_path": "frontend/src/modules/materias/MateriaEvaluaciones.test.tsx"
         },
         {
@@ -10812,6 +10830,12 @@
           "reference": "POST:/evaluaciones",
           "status": "direct",
           "test_path": "frontend/src/modules/herramientas/api.lifecycle.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/evaluaciones",
+          "status": "direct",
+          "test_path": "frontend/src/modules/materias/MateriaDetailPage.test.tsx"
         },
         {
           "level": "unit",
@@ -14786,6 +14810,12 @@
           "reference": "/",
           "status": "direct",
           "test_path": "frontend/src/modules/auth/LandingPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "frontend/src/modules/auth/LoginPage.test.tsx"
         },
         {
           "level": "unit",
@@ -19303,6 +19333,12 @@
         {
           "level": "unit",
           "reference": "/login",
+          "status": "direct",
+          "test_path": "frontend/src/modules/auth/LoginPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/login",
           "status": "domain",
           "test_path": "frontend/src/modules/profesor_ai/TeacherAIConfigPage.test.tsx"
         }
@@ -20211,6 +20247,12 @@
           "reference": "DELETE:/evaluaciones/{id}",
           "status": "direct",
           "test_path": "frontend/src/modules/herramientas/api.lifecycle.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "DELETE:/evaluaciones/{id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/materias/MateriaDetailPage.test.tsx"
         },
         {
           "level": "unit",
@@ -23501,6 +23543,12 @@
           "level": "unit",
           "reference": "GET:/evaluaciones/{id}",
           "status": "direct",
+          "test_path": "frontend/src/modules/materias/MateriaDetailPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/{id}",
+          "status": "direct",
           "test_path": "frontend/src/modules/materias/MateriaEvaluaciones.test.tsx"
         },
         {
@@ -26460,6 +26508,12 @@
           "reference": "PATCH:/evaluaciones/{id}",
           "status": "direct",
           "test_path": "frontend/src/modules/herramientas/api.lifecycle.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/evaluaciones/{id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/materias/MateriaDetailPage.test.tsx"
         },
         {
           "level": "unit",
@@ -29543,6 +29597,12 @@
           "reference": "POST:/evaluaciones",
           "status": "direct",
           "test_path": "frontend/src/modules/herramientas/api.lifecycle.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/evaluaciones",
+          "status": "direct",
+          "test_path": "frontend/src/modules/materias/MateriaDetailPage.test.tsx"
         },
         {
           "level": "unit",
@@ -34869,6 +34929,12 @@
           "level": "unit",
           "reference": "entregas",
           "status": "direct",
+          "test_path": "frontend/src/modules/dashboard/DashboardPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "entregas",
+          "status": "direct",
           "test_path": "frontend/src/modules/evaluaciones/ResolverEvaluacionPage.test.tsx"
         },
         {
@@ -35280,6 +35346,12 @@
           "reference": "evaluaciones",
           "status": "direct",
           "test_path": "frontend/src/modules/herramientas/api.lifecycle.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "evaluaciones",
+          "status": "direct",
+          "test_path": "frontend/src/modules/materias/MateriaDetailPage.test.tsx"
         },
         {
           "level": "unit",

@@ -51,7 +51,7 @@ export function RegisterPage() {
       <div className="absolute right-4 top-4 z-10"><ThemeToggle /></div>
       <div className="relative grid flex-1 place-items-center px-4 py-10"><Card className="w-full max-w-lg p-6 shadow-xl sm:p-8">
         <div className="mb-6 flex items-center gap-3">
-          <img src="/branding/logo-full.png" alt="XCalificator" className="h-14 w-14 rounded-xl object-contain" />
+          <img src="/branding/logo-full.webp" alt="XCalificator" className="h-14 w-14 rounded-xl object-contain" />
           <div>
             <h1 className="font-display text-2xl font-extrabold">Crear cuenta</h1>
             <p className="text-sm text-muted">Empieza como estudiante de forma segura.</p>

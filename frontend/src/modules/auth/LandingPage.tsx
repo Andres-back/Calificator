@@ -45,19 +45,19 @@ export function LandingPage() {
       <header className="relative z-20 border-b border-border/80 bg-surface/90 backdrop-blur-xl">
         <div className="mx-auto flex min-h-18 max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
           <Link to={routes.home} className="focus-ring flex items-center gap-3 rounded-xl" aria-label="XCalificator, inicio">
-            <img src="/branding/logo-full.png" alt="" className="h-11 w-11 rounded-xl object-contain" />
-            <div>
+            <img src="/branding/logo-full.webp" alt="" className="h-11 w-11 rounded-xl object-contain" />
+            <div className="hidden sm:block">
               <p className="font-display text-lg font-extrabold leading-none">XCalificator</p>
               <p className="mt-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-muted">Plataforma educativa abierta</p>
             </div>
           </Link>
           <div className="flex items-center gap-2">
             <ThemeToggle />
-            <Link to={routes.login} className="focus-ring hidden min-h-11 items-center rounded-xl border border-border px-4 text-sm font-bold transition hover:bg-surface-2 sm:inline-flex">
+            <Link to={routes.login} className="focus-ring inline-flex min-h-11 items-center rounded-xl border border-border px-3 text-xs font-bold transition hover:bg-surface-2 sm:px-4 sm:text-sm">
               Ingresar
             </Link>
-            <Link to={routes.register} className="focus-ring inline-flex min-h-11 items-center gap-2 rounded-xl bg-brand-600 px-4 text-sm font-bold text-white shadow-sm transition hover:bg-brand-700">
-              Crear cuenta <ArrowRight className="h-4 w-4" />
+            <Link to={routes.register} className="focus-ring inline-flex min-h-11 items-center gap-1 rounded-xl bg-brand-600 px-3 text-xs font-bold text-white shadow-sm transition hover:bg-brand-700 sm:gap-2 sm:px-4 sm:text-sm">
+              Crear cuenta <ArrowRight className="hidden h-4 w-4 sm:block" />
             </Link>
           </div>
         </div>
@@ -66,7 +66,7 @@ export function LandingPage() {
       <main>
         <section className="relative isolate">
           <div className="absolute inset-0 -z-20 bg-[radial-gradient(circle_at_15%_15%,rgba(79,70,229,.20),transparent_34%),radial-gradient(circle_at_88%_15%,rgba(14,165,233,.18),transparent_30%),linear-gradient(to_bottom,transparent,rgba(99,102,241,.04))]" />
-          <img src="/branding/pattern-hero.png" alt="" className="pointer-events-none absolute inset-0 -z-10 h-full w-full object-cover opacity-[0.055] dark:opacity-[0.035]" />
+          <img src="/branding/pattern-hero.webp" alt="" className="pointer-events-none absolute inset-0 -z-10 h-full w-full object-cover opacity-[0.055] dark:opacity-[0.035]" />
           <div className="mx-auto grid max-w-7xl items-center gap-12 px-4 py-16 sm:px-6 sm:py-20 lg:grid-cols-[1.05fr_.95fr] lg:px-8 lg:py-24">
             <div>
               <span className="inline-flex items-center gap-2 rounded-full border border-emerald-300 bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-800 dark:border-emerald-500/35 dark:bg-emerald-500/10 dark:text-emerald-200">
@@ -96,7 +96,7 @@ export function LandingPage() {
             <div className="relative mx-auto w-full max-w-xl">
               <div className="absolute -inset-5 -z-10 rounded-[2.5rem] bg-gradient-to-br from-brand-500/18 to-sky-400/15 blur-2xl" />
               <div className="overflow-hidden rounded-[2rem] border border-brand-200/80 bg-surface/90 p-3 shadow-2xl dark:border-brand-400/20">
-                <img src="/branding/hero-login.png" alt="Docente utilizando XCalificator para acompañar el aprendizaje" className="aspect-[4/3] w-full rounded-[1.5rem] object-cover" />
+                <img src="/branding/hero-login.webp" alt="Docente utilizando XCalificator para acompañar el aprendizaje" className="aspect-[4/3] w-full rounded-[1.5rem] object-cover" />
                 <div className="grid gap-3 p-3 sm:grid-cols-2">
                   <div className="rounded-2xl border border-border bg-surface-2 p-4">
                     <div className="flex items-center gap-2 font-bold"><UsersRound className="h-5 w-5 text-brand-600" /> Para docentes</div>

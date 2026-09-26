@@ -72,7 +72,6 @@ export function ResolverEvaluacionPage() {
     queryFn: () => getEvaluacion(evaluacionId),
     enabled: Boolean(evaluacionId),
     retry: false,
-    refetchInterval: 10_000,
     refetchOnWindowFocus: true,
   });
 

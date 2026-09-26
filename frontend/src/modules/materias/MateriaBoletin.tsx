@@ -611,7 +611,6 @@ function StudentGradebook({ materiaId }: { materiaId: string }) {
     queryKey: ['boletin', studentId, materiaId],
     queryFn: () => getBoletin(studentId, materiaId),
     enabled: Boolean(studentId) && Boolean(materiaId),
-    refetchInterval: 10_000,
     refetchOnWindowFocus: true,
   });
 

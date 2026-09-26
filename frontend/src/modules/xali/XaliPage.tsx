@@ -86,7 +86,6 @@ export function XaliPage() {
     queryKey: ['xali-evaluaciones-entregadas', user?.id ?? 'anon'],
     queryFn: listEvaluacionesEntregadas,
     enabled: isStudent && !!user?.id,
-    refetchInterval: isStudent ? 10_000 : false,
     refetchOnWindowFocus: true,
   });
   const [evaluacionContextualId, setEvaluacionContextualId] = useState('');
@@ -248,7 +247,7 @@ export function XaliPage() {
       >
         {isStudent && (
           <div className="absolute inset-0 opacity-10" aria-hidden="true">
-            <img src="/branding/hero-ai-brain.png" alt="" className="h-full w-full object-cover mix-blend-screen" />
+            <img src="/branding/hero-ai-brain.webp" alt="" className="h-full w-full object-cover mix-blend-screen" />
           </div>
         )}
         <div className="flex items-center gap-3">
@@ -370,7 +369,7 @@ export function XaliPage() {
             <div className="mx-auto flex min-h-[280px] max-w-2xl flex-col items-center justify-center py-8 text-center">
               <div className="relative">
                 <img
-                  src="/branding/xali-hello.png"
+                  src="/branding/xali-hello.webp"
                   alt="Xali te saluda"
                   className="h-32 w-32 object-contain"
                 />

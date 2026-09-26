@@ -17,7 +17,7 @@ export function LegalFooter({ className, compact = false }: { className?: string
         {!compact && <p>© 2026 XCalificator · Proyecto educativo de código abierto.</p>}
         <nav aria-label="Información legal" className="flex flex-wrap justify-center gap-x-4 gap-y-2">
           {legalLinks.map(([to, label]) => (
-            <Link key={to} to={to} className="focus-ring rounded-md font-semibold hover:text-fg hover:underline">
+            <Link key={to} to={to} className="focus-ring inline-flex min-h-10 items-center rounded-md px-1 font-semibold hover:text-fg hover:underline">
               {label}
             </Link>
           ))}
