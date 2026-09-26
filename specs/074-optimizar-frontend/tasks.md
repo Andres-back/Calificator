@@ -63,7 +63,7 @@
 - [x] T021 Ejecutar Playwright mock, accesibilidad y visual en los tamaños de `specs/074-optimizar-frontend/quickstart.md` (FR-013, SC-005)
 - [x] T022 Revisar CSP sin ampliar orígenes y documentar ruido externo en `specs/074-optimizar-frontend/quickstart.md` (FR-014)
 - [x] T023 Ejecutar Converge contra `specs/074-optimizar-frontend/spec.md`, `plan.md` y `tasks.md`; completar cualquier tarea añadida (FR-001–FR-014)
-- [ ] T024 Abrir PR enlazado a issue #155 y exigir gobernanza/CI verde antes de fusionar (SC-007, Constitución VII–VIII)
+- [x] T024 Abrir PR enlazado a issue #155 y exigir gobernanza/CI verde antes de fusionar (SC-007, Constitución VII–VIII)
 
 ---
 
