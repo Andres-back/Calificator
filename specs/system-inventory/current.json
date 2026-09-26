@@ -356,7 +356,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "7fef8b41758362ce44d30cb3b2c1bc97a35eb9b9d8f35810103c4a4c4b9249a7",
+  "source_digest": "1dbe2ecd2d55cfc9a463ea530d6f983afb767f0d284faa4712630d37187fea92",
   "surfaces": [
     {
       "actors": [
@@ -421,6 +421,12 @@
           "reference": "DELETE:/admin/roles/{role_id}",
           "status": "direct",
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "DELETE:/admin/roles/{role_id}",
+          "status": "domain",
+          "test_path": "frontend/src/lib/authorization.test.ts"
         }
       ]
     },
@@ -993,6 +999,12 @@
           "level": "unit",
           "reference": "DELETE:/presentaciones/{presentacion_id}",
           "status": "direct",
+          "test_path": "frontend/src/modules/presentaciones/PresentacionesPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "DELETE:/presentaciones/{presentacion_id}",
+          "status": "direct",
           "test_path": "frontend/src/modules/presentaciones/PresentationFileLink.test.tsx"
         }
       ]
@@ -1511,6 +1523,12 @@
           "reference": "GET:/admin/authorization/audit",
           "status": "direct",
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/admin/authorization/audit",
+          "status": "domain",
+          "test_path": "frontend/src/lib/authorization.test.ts"
         }
       ]
     },
@@ -1571,6 +1589,12 @@
           "reference": "GET:/admin/authorization/modules",
           "status": "direct",
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/admin/authorization/modules",
+          "status": "domain",
+          "test_path": "frontend/src/lib/authorization.test.ts"
         }
       ]
     },
@@ -1699,6 +1723,12 @@
           "reference": "GET:/admin/roles",
           "status": "direct",
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/admin/roles",
+          "status": "domain",
+          "test_path": "frontend/src/lib/authorization.test.ts"
         }
       ]
     },
@@ -1765,6 +1795,12 @@
           "reference": "GET:/admin/roles/{role_id}",
           "status": "direct",
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/admin/roles/{role_id}",
+          "status": "domain",
+          "test_path": "frontend/src/lib/authorization.test.ts"
         }
       ]
     },
@@ -1873,6 +1909,12 @@
           "reference": "GET:/admin/users/{user_id}/authorization/explain/{permission_key:path}",
           "status": "domain",
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/admin/users/{user_id}/authorization/explain/{permission_key:path}",
+          "status": "domain",
+          "test_path": "frontend/src/lib/authorization.test.ts"
         }
       ]
     },
@@ -2760,6 +2802,12 @@
           "reference": "GET:/auth/me",
           "status": "direct",
           "test_path": "frontend/src/components/auth/RouteGuards.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/auth/me",
+          "status": "domain",
+          "test_path": "frontend/src/lib/authorization.test.ts"
         }
       ]
     },
@@ -5237,6 +5285,12 @@
           "level": "unit",
           "reference": "GET:/materias",
           "status": "direct",
+          "test_path": "frontend/src/modules/presentaciones/PresentacionesPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias",
+          "status": "direct",
           "test_path": "frontend/src/modules/xali/XaliPage.test.tsx"
         }
       ]
@@ -5421,6 +5475,12 @@
           "reference": "GET:/materias/{materia_id}",
           "status": "direct",
           "test_path": "frontend/src/modules/materias/teacherFlowModel.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias/{materia_id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/presentaciones/PresentacionesPage.test.tsx"
         },
         {
           "level": "unit",
@@ -5891,6 +5951,12 @@
           "level": "unit",
           "reference": "GET:/presentaciones",
           "status": "direct",
+          "test_path": "frontend/src/modules/presentaciones/PresentacionesPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/presentaciones",
+          "status": "direct",
           "test_path": "frontend/src/modules/presentaciones/PresentationFileLink.test.tsx"
         }
       ]
@@ -5943,6 +6009,12 @@
           "reference": "GET:/presentaciones/assets/{asset_id}",
           "status": "direct",
           "test_path": "backend/tests/unit/test_presentaciones_router.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/presentaciones/assets/{asset_id}",
+          "status": "domain",
+          "test_path": "frontend/src/modules/presentaciones/PresentacionesPage.test.tsx"
         }
       ]
     },
@@ -6041,6 +6113,12 @@
           "level": "unit",
           "reference": "GET:/presentaciones/{presentacion_id}",
           "status": "direct",
+          "test_path": "frontend/src/modules/presentaciones/PresentacionesPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/presentaciones/{presentacion_id}",
+          "status": "direct",
           "test_path": "frontend/src/modules/presentaciones/PresentationFileLink.test.tsx"
         }
       ]
@@ -6099,6 +6177,12 @@
           "reference": "GET:/presentaciones/{presentacion_id}/archivo/{fmt}",
           "status": "domain",
           "test_path": "backend/tests/unit/test_presentaciones_router.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/presentaciones/{presentacion_id}/archivo/{fmt}",
+          "status": "domain",
+          "test_path": "frontend/src/modules/presentaciones/PresentacionesPage.test.tsx"
         }
       ]
     },
@@ -6162,6 +6246,12 @@
           "reference": "GET:/presentaciones/{presentacion_id}/estado",
           "status": "domain",
           "test_path": "backend/tests/unit/test_presentaciones_router.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/presentaciones/{presentacion_id}/estado",
+          "status": "domain",
+          "test_path": "frontend/src/modules/presentaciones/PresentacionesPage.test.tsx"
         }
       ]
     },
@@ -6225,6 +6315,12 @@
           "reference": "GET:/presentaciones/{presentacion_id}/preview",
           "status": "domain",
           "test_path": "backend/tests/unit/test_presentaciones_router.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/presentaciones/{presentacion_id}/preview",
+          "status": "domain",
+          "test_path": "frontend/src/modules/presentaciones/PresentacionesPage.test.tsx"
         }
       ]
     },
@@ -6282,6 +6378,12 @@
           "reference": "GET:/presentaciones/{presentacion_id}/preview/{slide_number}.png",
           "status": "domain",
           "test_path": "backend/tests/unit/test_presentaciones_router.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/presentaciones/{presentacion_id}/preview/{slide_number}.png",
+          "status": "domain",
+          "test_path": "frontend/src/modules/presentaciones/PresentacionesPage.test.tsx"
         }
       ]
     },
@@ -6739,6 +6841,12 @@
           "reference": "GET:/users/me/authorization",
           "status": "direct",
           "test_path": "frontend/e2e/teacher-ai-configuration.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/users/me/authorization",
+          "status": "domain",
+          "test_path": "frontend/src/lib/authorization.test.ts"
         }
       ]
     },
@@ -7120,6 +7228,12 @@
           "reference": "PATCH:/admin/roles/{role_id}",
           "status": "direct",
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/admin/roles/{role_id}",
+          "status": "domain",
+          "test_path": "frontend/src/lib/authorization.test.ts"
         }
       ]
     },
@@ -8286,6 +8400,12 @@
           "level": "unit",
           "reference": "PATCH:/materias/{materia_id}",
           "status": "direct",
+          "test_path": "frontend/src/modules/presentaciones/PresentacionesPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/materias/{materia_id}",
+          "status": "direct",
           "test_path": "frontend/src/modules/xali/XaliPage.test.tsx"
         }
       ]
@@ -8785,6 +8905,12 @@
           "reference": "POST:/admin/roles",
           "status": "direct",
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/admin/roles",
+          "status": "domain",
+          "test_path": "frontend/src/lib/authorization.test.ts"
         }
       ]
     },
@@ -8845,6 +8971,12 @@
           "reference": "POST:/admin/roles/{role_id}/duplicate",
           "status": "domain",
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/admin/roles/{role_id}/duplicate",
+          "status": "domain",
+          "test_path": "frontend/src/lib/authorization.test.ts"
         }
       ]
     },
@@ -9122,6 +9254,12 @@
         {
           "level": "unit",
           "reference": "POST:/auth/initial-password",
+          "status": "domain",
+          "test_path": "frontend/src/lib/authorization.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/auth/initial-password",
           "status": "direct",
           "test_path": "frontend/src/modules/auth/InitialPasswordPage.test.tsx"
         }
@@ -9266,6 +9404,12 @@
           "reference": "POST:/auth/login",
           "status": "direct",
           "test_path": "frontend/e2e/teacher-ai-configuration.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/auth/login",
+          "status": "domain",
+          "test_path": "frontend/src/lib/authorization.test.ts"
         }
       ]
     },
@@ -9354,6 +9498,12 @@
           "reference": "POST:/auth/logout",
           "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/auth/logout",
+          "status": "domain",
+          "test_path": "frontend/src/lib/authorization.test.ts"
         }
       ]
     },
@@ -9442,6 +9592,12 @@
           "reference": "POST:/auth/password-recovery/request",
           "status": "direct",
           "test_path": "frontend/e2e/password-recovery.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/auth/password-recovery/request",
+          "status": "domain",
+          "test_path": "frontend/src/lib/authorization.test.ts"
         }
       ]
     },
@@ -9518,6 +9674,12 @@
           "reference": "POST:/auth/password-recovery/reset",
           "status": "domain",
           "test_path": "frontend/e2e/auth-navigation.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/auth/password-recovery/reset",
+          "status": "domain",
+          "test_path": "frontend/src/lib/authorization.test.ts"
         }
       ]
     },
@@ -9600,6 +9762,12 @@
           "reference": "POST:/auth/password-recovery/validate",
           "status": "direct",
           "test_path": "frontend/e2e/password-recovery.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/auth/password-recovery/validate",
+          "status": "domain",
+          "test_path": "frontend/src/lib/authorization.test.ts"
         }
       ]
     },
@@ -9742,6 +9910,12 @@
           "reference": "POST:/auth/refresh",
           "status": "direct",
           "test_path": "frontend/src/lib/api.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/auth/refresh",
+          "status": "domain",
+          "test_path": "frontend/src/lib/authorization.test.ts"
         }
       ]
     },
@@ -9830,6 +10004,12 @@
           "reference": "POST:/auth/register",
           "status": "domain",
           "test_path": "frontend/e2e/auth-navigation.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/auth/register",
+          "status": "domain",
+          "test_path": "frontend/src/lib/authorization.test.ts"
         }
       ]
     },
@@ -12898,6 +13078,12 @@
           "level": "unit",
           "reference": "POST:/materias",
           "status": "direct",
+          "test_path": "frontend/src/modules/presentaciones/PresentacionesPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/materias",
+          "status": "direct",
           "test_path": "frontend/src/modules/xali/XaliPage.test.tsx"
         }
       ]
@@ -13220,6 +13406,12 @@
           "level": "unit",
           "reference": "POST:/presentaciones",
           "status": "direct",
+          "test_path": "frontend/src/modules/presentaciones/PresentacionesPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/presentaciones",
+          "status": "direct",
           "test_path": "frontend/src/modules/presentaciones/PresentationFileLink.test.tsx"
         }
       ]
@@ -13277,6 +13469,12 @@
           "reference": "POST:/presentaciones/{presentacion_id}/exportar",
           "status": "domain",
           "test_path": "backend/tests/unit/test_presentaciones_router.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/presentaciones/{presentacion_id}/exportar",
+          "status": "domain",
+          "test_path": "frontend/src/modules/presentaciones/PresentacionesPage.test.tsx"
         }
       ]
     },
@@ -14779,6 +14977,12 @@
           "level": "unit",
           "reference": "/",
           "status": "direct",
+          "test_path": "frontend/src/lib/authorization.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
           "test_path": "frontend/src/modules/admin/AdminAIConfigPage.test.tsx"
         },
         {
@@ -15133,6 +15337,12 @@
           "level": "unit",
           "reference": "/",
           "status": "direct",
+          "test_path": "frontend/src/modules/presentaciones/PresentacionesPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
           "test_path": "frontend/src/modules/presentaciones/PresentationFileLink.test.tsx"
         },
         {
@@ -15409,6 +15619,12 @@
           "reference": "/app",
           "status": "direct",
           "test_path": "frontend/src/modules/materias/MateriaDetailPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/app",
+          "status": "direct",
+          "test_path": "frontend/src/modules/materias/MateriaEvaluaciones.test.tsx"
         },
         {
           "level": "unit",
@@ -16415,6 +16631,12 @@
           "level": "unit",
           "reference": "/app/calificaciones",
           "status": "direct",
+          "test_path": "frontend/src/components/auth/RouteGuards.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/calificaciones",
+          "status": "direct",
           "test_path": "frontend/src/components/seo/RouteMetadata.test.tsx"
         },
         {
@@ -16958,6 +17180,12 @@
           "reference": "/app/evaluaciones",
           "status": "direct",
           "test_path": "frontend/src/modules/evaluaciones/ResolverEvaluacionPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/evaluaciones",
+          "status": "direct",
+          "test_path": "frontend/src/modules/materias/MateriaEvaluaciones.test.tsx"
         },
         {
           "level": "unit",
@@ -20529,6 +20757,12 @@
           "reference": "DELETE:/presentaciones/{id}",
           "status": "direct",
           "test_path": "frontend/src/lib/analytics.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "DELETE:/presentaciones/{id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/presentaciones/PresentacionesPage.test.tsx"
         },
         {
           "level": "unit",
@@ -24427,6 +24661,12 @@
           "level": "unit",
           "reference": "GET:/materias/{id}",
           "status": "direct",
+          "test_path": "frontend/src/modules/presentaciones/PresentacionesPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias/{id}",
+          "status": "direct",
           "test_path": "frontend/src/modules/xali/XaliPage.test.tsx"
         }
       ]
@@ -24883,6 +25123,12 @@
           "level": "unit",
           "reference": "GET:/materias",
           "status": "direct",
+          "test_path": "frontend/src/modules/presentaciones/PresentacionesPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias",
+          "status": "direct",
           "test_path": "frontend/src/modules/xali/XaliPage.test.tsx"
         }
       ]
@@ -24939,6 +25185,12 @@
           "reference": "GET:/presentaciones/{id}/estado",
           "status": "domain",
           "test_path": "backend/tests/unit/test_presentaciones_router.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/presentaciones/{id}/estado",
+          "status": "domain",
+          "test_path": "frontend/src/modules/presentaciones/PresentacionesPage.test.tsx"
         }
       ]
     },
@@ -24994,6 +25246,12 @@
           "reference": "GET:/presentaciones/{id}/preview",
           "status": "domain",
           "test_path": "backend/tests/unit/test_presentaciones_router.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/presentaciones/{id}/preview",
+          "status": "domain",
+          "test_path": "frontend/src/modules/presentaciones/PresentacionesPage.test.tsx"
         }
       ]
     },
@@ -25085,6 +25343,12 @@
           "reference": "GET:/presentaciones",
           "status": "direct",
           "test_path": "frontend/src/lib/analytics.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/presentaciones",
+          "status": "direct",
+          "test_path": "frontend/src/modules/presentaciones/PresentacionesPage.test.tsx"
         },
         {
           "level": "unit",
@@ -26958,6 +27222,12 @@
           "level": "unit",
           "reference": "PATCH:/materias/{id}",
           "status": "direct",
+          "test_path": "frontend/src/modules/presentaciones/PresentacionesPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/materias/{id}",
+          "status": "direct",
           "test_path": "frontend/src/modules/xali/XaliPage.test.tsx"
         }
       ]
@@ -28161,6 +28431,12 @@
         {
           "level": "unit",
           "reference": "POST:/auth/initial-password",
+          "status": "domain",
+          "test_path": "frontend/src/lib/authorization.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/auth/initial-password",
           "status": "direct",
           "test_path": "frontend/src/modules/auth/InitialPasswordPage.test.tsx"
         }
@@ -28385,6 +28661,12 @@
           "reference": "POST:/auth/password-recovery/request",
           "status": "direct",
           "test_path": "frontend/e2e/password-recovery.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/auth/password-recovery/request",
+          "status": "domain",
+          "test_path": "frontend/src/lib/authorization.test.ts"
         }
       ]
     },
@@ -28461,6 +28743,12 @@
           "reference": "POST:/auth/password-recovery/reset",
           "status": "domain",
           "test_path": "frontend/e2e/auth-navigation.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/auth/password-recovery/reset",
+          "status": "domain",
+          "test_path": "frontend/src/lib/authorization.test.ts"
         }
       ]
     },
@@ -30389,6 +30677,12 @@
           "level": "unit",
           "reference": "POST:/materias",
           "status": "direct",
+          "test_path": "frontend/src/modules/presentaciones/PresentacionesPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/materias",
+          "status": "direct",
           "test_path": "frontend/src/modules/xali/XaliPage.test.tsx"
         }
       ]
@@ -30485,6 +30779,12 @@
           "reference": "POST:/presentaciones/{id}/exportar",
           "status": "domain",
           "test_path": "backend/tests/unit/test_presentaciones_router.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/presentaciones/{id}/exportar",
+          "status": "domain",
+          "test_path": "frontend/src/modules/presentaciones/PresentacionesPage.test.tsx"
         }
       ]
     },
@@ -30576,6 +30876,12 @@
           "reference": "POST:/presentaciones",
           "status": "direct",
           "test_path": "frontend/src/lib/analytics.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/presentaciones",
+          "status": "direct",
+          "test_path": "frontend/src/modules/presentaciones/PresentacionesPage.test.tsx"
         },
         {
           "level": "unit",
@@ -33570,6 +33876,12 @@
           "reference": "audit_events",
           "status": "domain",
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "audit_events",
+          "status": "domain",
+          "test_path": "frontend/src/lib/authorization.test.ts"
         }
       ]
     },
@@ -33641,6 +33953,12 @@
           "reference": "authorization_permissions",
           "status": "domain",
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "authorization_permissions",
+          "status": "domain",
+          "test_path": "frontend/src/lib/authorization.test.ts"
         }
       ]
     },
@@ -33715,6 +34033,12 @@
           "reference": "authorization_role_permissions",
           "status": "domain",
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "authorization_role_permissions",
+          "status": "domain",
+          "test_path": "frontend/src/lib/authorization.test.ts"
         }
       ]
     },
@@ -33788,6 +34112,12 @@
           "reference": "authorization_roles",
           "status": "domain",
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "authorization_roles",
+          "status": "domain",
+          "test_path": "frontend/src/lib/authorization.test.ts"
         }
       ]
     },
@@ -33863,6 +34193,12 @@
           "reference": "authorization_user_roles",
           "status": "domain",
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "authorization_user_roles",
+          "status": "domain",
+          "test_path": "frontend/src/lib/authorization.test.ts"
         }
       ]
     },
@@ -34560,6 +34896,12 @@
           "reference": "calificaciones",
           "status": "direct",
           "test_path": "frontend/e2e/visual/grading-review.visual.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "calificaciones",
+          "status": "direct",
+          "test_path": "frontend/src/components/auth/RouteGuards.test.tsx"
         },
         {
           "level": "unit",
@@ -35778,6 +36120,12 @@
           "reference": "mail_global_config",
           "status": "domain",
           "test_path": "frontend/e2e/auth-navigation.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "mail_global_config",
+          "status": "domain",
+          "test_path": "frontend/src/lib/authorization.test.ts"
         }
       ]
     },
@@ -36097,6 +36445,12 @@
           "reference": "materias",
           "status": "direct",
           "test_path": "frontend/src/modules/presentaciones/PresentacionForm.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "materias",
+          "status": "direct",
+          "test_path": "frontend/src/modules/presentaciones/PresentacionesPage.test.tsx"
         },
         {
           "level": "unit",
@@ -36427,6 +36781,12 @@
           "reference": "password_reset_requests",
           "status": "domain",
           "test_path": "frontend/e2e/auth-navigation.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "password_reset_requests",
+          "status": "domain",
+          "test_path": "frontend/src/lib/authorization.test.ts"
         }
       ]
     },
@@ -36590,6 +36950,12 @@
           "reference": "presentaciones",
           "status": "direct",
           "test_path": "frontend/src/lib/analytics.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "presentaciones",
+          "status": "direct",
+          "test_path": "frontend/src/modules/presentaciones/PresentacionesPage.test.tsx"
         },
         {
           "level": "unit",

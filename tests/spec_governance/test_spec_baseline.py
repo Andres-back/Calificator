@@ -74,6 +74,7 @@ ALL_SPECS = {
     "072-clave-literal-pregunta-quien",
     "073-fragmento-literal-respuesta-abierta",
     "074-optimizar-frontend",
+    "074-aislar-flujo-estudiante",
 }
 OWNED_SPECS = {
     name

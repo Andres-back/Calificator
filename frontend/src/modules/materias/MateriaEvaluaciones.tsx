@@ -73,15 +73,15 @@ const emptyForm = (): EvaluationForm => ({
 });
 
 export function MateriaEvaluaciones() {
-  const { materia } = useMateriaContext();
+  const { materia, isStudent } = useMateriaContext();
   const user = useAuth((state) => state.user);
   const permissions = new Set(user?.permissions ?? []);
-  const canCreateEvaluation = permissions.has('evaluations.create');
-  const canUpdateEvaluation = permissions.has('evaluations.update');
-  const canPublishEvaluation = permissions.has('evaluations.publish');
-  const canDeleteEvaluation = permissions.has('evaluations.delete');
-  const canGradeEvaluation = permissions.has('grading.grade');
-  const canReviewGrades = permissions.has('grading.read');
+  const canCreateEvaluation = !isStudent && permissions.has('evaluations.create');
+  const canUpdateEvaluation = !isStudent && permissions.has('evaluations.update');
+  const canPublishEvaluation = !isStudent && permissions.has('evaluations.publish');
+  const canDeleteEvaluation = !isStudent && permissions.has('evaluations.delete');
+  const canGradeEvaluation = !isStudent && permissions.has('grading.grade');
+  const canReviewGrades = !isStudent && permissions.has('grading.read');
   const canSubmitEvaluation = permissions.has('evaluations.submit');
   const canManageEvaluations = canCreateEvaluation
     || canUpdateEvaluation
@@ -89,7 +89,7 @@ export function MateriaEvaluaciones() {
     || canDeleteEvaluation
     || canGradeEvaluation
     || canReviewGrades;
-  const isLearnerView = canSubmitEvaluation && !canManageEvaluations;
+  const isLearnerView = isStudent && canSubmitEvaluation;
   const [manualOpen, setManualOpen] = useState(false);
   const [wizardOpen, setWizardOpen] = useState(false);
   const [digitalizeOpen, setDigitalizeOpen] = useState(false);
