@@ -17,7 +17,7 @@
 - [ ] T010 Registrar los modelos sin reemplazar entidades DBA y exponer el router canónico en `backend/app/db/base.py` y `backend/app/api.py`
 - [ ] T011 Implementar políticas de ámbito por materia/propietario, permisos de lectura/gestión y serialización privada en `backend/app/modules/criterios_aprendizaje/authorization.py`
 - [ ] T012 Implementar snapshots canónicos, hashing, clonación de versión y adaptador legado `criterios`/`dba_ids` en `backend/app/modules/criterios_aprendizaje/compatibility.py`
-- [ ] T013 Añadir eventos auditables de creación, aprobación, sustitución, aplicación y archivado sin contenido sensible en `backend/app/modules/criterios_aprendizaje/audit.py`
+- [X] T013 Añadir eventos auditables de creación, aprobación, sustitución, aplicación y archivado sin contenido sensible en `backend/app/modules/criterios_aprendizaje/audit.py`
 - [ ] T014 Ejecutar las pruebas fundacionales y corregir únicamente regresiones de esta fase en `backend/tests/integration/test_learning_criteria_migration.py` y `backend/tests/unit/test_learning_criteria_*.py`
 
 ## Fase 3: Historia 1 — Construir criterios desde lo enseñado (P1)
@@ -109,7 +109,7 @@
 
 - [ ] T065 Ejecutar backfill dos veces y documentar paridad de UUID, snapshots, notas, desglose y PQRS en `specs/042-criterios-aprendizaje/quickstart.md`
 - [ ] T066 [P] Añadir pruebas directas a las cinco superficies DBA sin cobertura y sus adaptadores de compatibilidad en `backend/tests/unit/test_dba_compatibility.py`
-- [ ] T067 [P] Validar que logs, errores, analytics y jobs no contienen texto de fuentes, imágenes, claves o URLs privadas en `backend/tests/unit/test_learning_criteria_privacy.py`
+- [X] T067 [P] Validar que logs, errores, analytics y jobs no contienen texto de fuentes, imágenes, claves o URLs privadas en `backend/tests/unit/test_learning_criteria_privacy.py`
 - [ ] T068 Ejecutar pytest/Ruff, TypeScript/ESLint/Vitest/build y Playwright focal, corregir regresiones atribuibles a 042 y registrar resultados en `specs/042-criterios-aprendizaje/quickstart.md`
 - [ ] T069 Actualizar inventario, ejecutar dos comprobaciones deterministas y mapear todas las superficies nuevas a 042 en `specs/system-inventory/inventory.json` y `specs/system-inventory/summary.md`
 - [ ] T070 Ejecutar `$speckit-converge`, incorporar cualquier tarea faltante y completar `specs/042-criterios-aprendizaje/tasks.md`

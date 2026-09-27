@@ -18,6 +18,16 @@ from app.workers.worker import celery_app
 
 logger = get_logger(__name__)
 
+SAFE_FAILURE_CODES = frozenset({
+    "criteria_context_insufficient",
+    "criteria_version_missing",
+})
+
+
+def safe_failure_code(exc: Exception) -> str:
+    candidate = str(exc).strip()
+    return candidate if candidate in SAFE_FAILURE_CODES else "criteria_generation_failed"
+
 
 async def _heartbeat(job_id: UUID, claim_token: str) -> None:
     while True:
@@ -89,7 +99,7 @@ async def _run(*, job_id: UUID, version_id: UUID, user_id: UUID, claim_token: st
                 await db.commit()
                 if released:
                     return result
-            code = str(exc) if str(exc).startswith("criteria_") else "criteria_generation_failed"
+            code = safe_failure_code(exc)
             await generation_service.mark_generation_failed(db, version_id=version_id, code=code)
             failure = {
                 "status": JobEstado.FAILED.value,
