@@ -33,6 +33,66 @@ def user(role: UserRole | str):
     return SimpleNamespace(id=uuid4(), rol=role_value)
 
 
+def criteria_measurement():
+    return {"materia_id": str(uuid4()), "session_id": str(uuid4()), "preparacion_ms": 10000,
+            "revision_ms": 12000, "espera_solicitud_ms": 8000, "condicion": "asistida", "resultado": "aprobada"}
+
+
+def test_criteria_measurement_accepts_only_private_content_free_durations():
+    metadata = criteria_measurement()
+    result = event_policy.validate_event_payload(tipo="learning_criteria_work_measured", role="profesor",
+                                                evaluacion_id=None, calificacion_id=None, metadata_json=metadata)
+    assert result.metadata_json == metadata
+
+
+@pytest.mark.parametrize("key,value", [("preparacion_ms", -1), ("revision_ms", True),
+                                     ("espera_solicitud_ms", float("nan")), ("session_id", "invalid"),
+                                     ("condicion", "unknown"), ("resultado", "unknown"), ("respuesta", "private")])
+def test_criteria_measurement_rejects_invalid_durations_or_content(key, value):
+    metadata = {**criteria_measurement(), key: value}
+    with pytest.raises(event_policy.AnalyticsValidationError):
+        event_policy.validate_event_payload(tipo="learning_criteria_work_measured", role="profesor",
+                                            evaluacion_id=None, calificacion_id=None, metadata_json=metadata)
+
+
+def test_criteria_measurement_rejects_student_and_foreign_subject(monkeypatch):
+    metadata = criteria_measurement()
+    with pytest.raises(event_policy.AnalyticsValidationError) as error:
+        event_policy.validate_event_payload(tipo="learning_criteria_work_measured", role="estudiante",
+                                            evaluacion_id=None, calificacion_id=None, metadata_json=metadata)
+    assert error.value.status_code == 403
+
+    async def forbidden(*args):
+        raise HTTPException(status_code=403, detail="No pertenece al docente")
+    monkeypatch.setattr(service, "ensure_can_manage_materia_criteria", forbidden)
+    session = FakeSession()
+    with pytest.raises(HTTPException) as error:
+        asyncio.run(service.registrar_evento(session, tipo="learning_criteria_work_measured",
+                    current_user=user(UserRole.PROFESOR), metadata_json=metadata))
+    assert error.value.status_code == 403
+    assert not session.committed
+
+
+def test_criteria_timing_summary_never_adds_job_wait_to_active_time():
+    from unittest.mock import AsyncMock, MagicMock
+    human = MagicMock()
+    human.mappings.return_value.one.return_value = {
+        "sesiones": 1, "preparacion_ms": 10000, "revision_ms": 12000, "espera_solicitud_ms": 8000,
+    }
+    jobs = MagicMock()
+    jobs.mappings.return_value.one.return_value = {"jobs_completados": 1, "espera_job_ms": 65000}
+    db = SimpleNamespace(execute=AsyncMock(side_effect=[human, jobs]))
+    actor_id, subject_id = uuid4(), uuid4()
+    result = asyncio.run(service.get_learning_criteria_timing(db, actor_id, datetime(2026, 9, 1), datetime(2026, 9, 30), subject_id))
+    assert result["preparacion_ms"] == 10000
+    assert result["revision_ms"] == 12000
+    assert result["espera_job_ms"] == 65000
+    assert not result["es_ahorro_estimado"]
+    for call in db.execute.call_args_list:
+        assert call.args[1]["actor"] == str(actor_id)
+        assert call.args[1]["materia"] == str(subject_id)
+
+
 def test_catalog_accepts_session_and_teacher_events() -> None:
     session = event_policy.validate_event_payload(
         tipo="session_view_opened",

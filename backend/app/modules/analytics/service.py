@@ -31,6 +31,7 @@ from app.modules.criterios_aprendizaje.models import (
     LearningCriterionSet,
     LearningCriterionVersion,
 )
+from app.modules.criterios_aprendizaje.authorization import ensure_can_manage_materia_criteria
 from app.modules.evaluaciones.models import Evaluacion
 from app.modules.users.models import User
 from app.shared.enums import CalificacionEstado, UserRole
@@ -135,6 +136,8 @@ async def _validate_event_references(
     calificacion_id: UUID | None,
     metadata_json: dict,
 ) -> None:
+    if "session_id" in metadata_json:
+        await ensure_can_manage_materia_criteria(db, UUID(metadata_json["materia_id"]), current_user)
     if (
         current_user.rol == UserRole.ESTUDIANTE.value
         and evaluacion_id is not None
@@ -221,6 +224,33 @@ async def registrar_evento(
     await db.commit()
     await db.refresh(evento)
     return evento
+
+
+async def get_learning_criteria_timing(
+    db: AsyncSession, profesor_id: UUID, desde: datetime, hasta: datetime, materia_id: UUID | None = None,
+) -> dict:
+    """Human intervals and server job latency are independent, never an estimated saving."""
+    params = {"actor": str(profesor_id), "desde": desde, "hasta": hasta, "materia": str(materia_id) if materia_id else None}
+    human = (await db.execute(text(
+        "SELECT COUNT(DISTINCT metadata_json->>'session_id') AS sesiones, "
+        "COALESCE(SUM((metadata_json->>'preparacion_ms')::bigint),0) AS preparacion_ms, "
+        "COALESCE(SUM((metadata_json->>'revision_ms')::bigint),0) AS revision_ms, "
+        "COALESCE(SUM((metadata_json->>'espera_solicitud_ms')::bigint),0) AS espera_solicitud_ms "
+        "FROM analytics_eventos WHERE tipo='learning_criteria_work_measured' "
+        "AND actor_id=CAST(:actor AS uuid) AND created_at BETWEEN :desde AND :hasta "
+        "AND (CAST(:materia AS text) IS NULL OR metadata_json->>'materia_id'=CAST(:materia AS text))"
+    ), params)).mappings().one()
+    jobs = (await db.execute(text(
+        "SELECT COUNT(*) AS jobs_completados, "
+        "COALESCE(SUM(EXTRACT(EPOCH FROM (j.finished_at-j.created_at))*1000),0) AS espera_job_ms "
+        "FROM ai_jobs j JOIN learning_criterion_versions v ON v.id::text=j.input_json->>'version_id' "
+        "JOIN learning_criterion_sets s ON s.id=v.set_id "
+        "WHERE j.tipo='criterios_aprendizaje' AND j.user_id=CAST(:actor AS uuid) "
+        "AND j.created_at BETWEEN :desde AND :hasta AND j.finished_at IS NOT NULL "
+        "AND (CAST(:materia AS uuid) IS NULL OR s.materia_id=CAST(:materia AS uuid))"
+    ), params)).mappings().one()
+    return {**{key: int(value) for key, value in human.items()}, **{key: int(value) for key, value in jobs.items()},
+            "metodo": "intervalos_opt_in_con_pausa_45s_y_jobs_servidor", "es_ahorro_estimado": False}
 
 
 async def _validate_work_session_references(
@@ -875,6 +905,8 @@ async def get_overview(
                 "es_evidencia_observada": False,
             },
             "tiempos_observados": observed_work,
+            "tiempos_criterios": await get_learning_criteria_timing(db, profesor_id, desde, hasta, materia_id)
+            if settings.CRITERIA_UI else None,
         },
     }
 

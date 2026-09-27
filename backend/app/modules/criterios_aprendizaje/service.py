@@ -146,6 +146,7 @@ async def _version_payload(db: AsyncSession, version: LearningCriterionVersion) 
         "estado": version.estado,
         "intencion_docente": version.teacher_intent_json or {},
         "cobertura": version.coverage_json or {},
+        "asistida_ia": (version.generation_meta_json or {}).get("status") == "completed",
         "criterios": [
             {
                 "id": item.id,

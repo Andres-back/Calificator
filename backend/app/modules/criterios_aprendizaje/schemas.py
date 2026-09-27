@@ -132,6 +132,7 @@ class LearningCriteriaVersionRead(BaseModel):
     estado: str
     intencion_docente: dict[str, Any]
     cobertura: dict[str, Any]
+    asistida_ia: bool = False
     criterios: list[LearningCriterionRead]
     fuentes: list[LearningSourceRead]
     approved_at: datetime | None = None

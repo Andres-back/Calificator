@@ -161,3 +161,14 @@ La prueba ejecuta el DDL Alembic real en un esquema temporal creado dentro de un
 - Prueba PostgreSQL y comprobaciones de estructura: **3 verdes**. Matriz fundacional de criterios: **58 pruebas verdes**. Ruff de migración y prueba: verde.
 
 Para repetir, definir `SPEC042_TEST_DATABASE_URL` con un URL `postgresql+psycopg` local y ejecutar `python -m pytest tests/integration/test_learning_criteria_migration.py -q`. La prueba ejecuta solo tablas de su esquema temporal y termina con rollback.
+
+## Resultado focal: medición de preparación/revisión (2026-09-27)
+
+- Botón opcional «Medir mi tiempo», sin iniciar medición ni asumir consentimiento al abrir el asistente.
+- Intervalos monotónicos de preparación, revisión y espera de solicitudes, sin texto, fuentes ni respuestas. Se pausa al ocultar la pestaña y después de 45 segundos sin interacción. Se envían deltas cada 30 segundos y al terminar, sin sumar dos veces al desmontar.
+- La analítica conserva separadamente la espera completa del job (cola + procesamiento, fechas del servidor). Nunca suma esa espera al trabajo activo ni la presenta como ahorro demostrado.
+- Las mediciones exigen rol docente/admin, permiso de criterios y propiedad de la materia; valores inválidos, estudiantes y contenido sensible se rechazan.
+- TypeScript y ESLint focal verdes. Vitest: **20 pruebas verdes** de temporizador, asistente y contratos analíticos. Pytest de analítica: **46 verdes**; con versiones: **50 verdes** antes de añadir el resumen temporal.
+- Ruff del dominio, política y pruebas: verde. `analytics/service.py` conserva deuda anterior E701/E712 fuera del bloque modificado; el análisis focal sin esas dos reglas está verde. No se declaró limpio el lint general por esa excepción.
+
+Las solicitudes analíticas son no bloqueantes. Un cierre abrupto puede perder el último intervalo (máximo 30 segundos); estas mediciones son intervalos observados conservadores, no un cronómetro certificado ni una demostración de impacto por sí solas.

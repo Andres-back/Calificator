@@ -18,6 +18,7 @@ import {
 } from './api';
 import { LearningCriteriaEditor, emptyCriterion } from './LearningCriteriaEditor';
 import { LearningSourcePicker, type PendingLearningSources } from './LearningSourcePicker';
+import { useLearningCriteriaWorkSession } from './useLearningCriteriaWorkSession';
 
 const PRIORITIES = ['procedimiento', 'comprensión', 'argumentación', 'ortografía', 'creatividad'];
 const EMPTY_LEARNING_SOURCES: PendingLearningSources = {
@@ -70,10 +71,13 @@ export function LearningCriteriaWizard({
     initialVersion?.criterios.length ? initialVersion.criterios : [emptyCriterion(1)],
   );
   const [busy, setBusy] = useState(false);
+  const [assisted, setAssisted] = useState(Boolean(initialVersion?.asistida_ia));
   const [acknowledgeWarnings, setAcknowledgeWarnings] = useState(false);
 
   const version = criteriaSet?.version_trabajo ?? criteriaSet?.version_aprobada ?? null;
   const readOnly = version?.estado === 'aprobada' || version?.estado === 'sustituida';
+  const work = useLearningCriteriaWorkSession({ materiaId, open, phase: step < 3 ? 'preparacion' : 'revision', busy, assisted });
+  const close = () => { work.finish(); onClose(); };
   const totalWeight = useMemo(
     () => criteria.reduce((total, item) => total + Number(item.peso_porcentaje || 0), 0),
     [criteria],
@@ -120,6 +124,7 @@ export function LearningCriteriaWizard({
       return;
     }
     setBusy(true);
+    setAssisted(withAI);
     try {
       const created = await ensureDraft();
       const draft = created.version_trabajo;
@@ -128,6 +133,7 @@ export function LearningCriteriaWizard({
         await proposeLearningCriteria(draft.id);
         toast.success('Estamos proponiendo los criterios. Puedes continuar navegando; te avisaremos cuando estén listos.');
         onChanged();
+        work.finish('propuesta');
         onClose();
         return;
       }
@@ -182,6 +188,7 @@ export function LearningCriteriaWizard({
       await approveLearningCriteria(draft.id, draft.revision, acknowledgeWarnings);
       toast.success('Criterios aprobados y listos para reutilizar');
       onChanged();
+      work.finish('aprobada');
       onClose();
     } catch (error) {
       toast.error(toApiError(error).detail);
@@ -197,14 +204,19 @@ export function LearningCriteriaWizard({
   return (
     <Modal
       open={open}
-      onClose={busy ? () => undefined : onClose}
+      onClose={busy ? () => undefined : close}
       title="Preparar criterios de aprendizaje"
       description="Parte de lo que enseñaste, decide qué observar y conserva siempre la revisión final."
       className="max-w-6xl p-0"
       closeOnBackdrop={!busy}
       closeOnEscape={!busy}
     >
+      <div onPointerDownCapture={work.activity} onKeyDownCapture={work.activity} onWheelCapture={work.activity} onTouchMoveCapture={work.activity} onScrollCapture={work.activity}>
       <div className="border-y border-border px-4 py-3 sm:px-6">
+        {!readOnly && <div className="mb-3 flex flex-wrap items-center justify-between gap-2 text-xs text-muted">
+          <span>{work.measuring ? 'Medición activa: las pausas y solicitudes no cuentan como trabajo.' : 'Opcional: medir tu preparación y revisión, sin guardar contenido.'}</span>
+          <Button size="sm" variant="ghost" onClick={() => work.measuring ? work.finish() : work.start()}>{work.measuring ? 'Detener medición' : 'Medir mi tiempo'}</Button>
+        </div>}
         <ol className="grid grid-cols-4 gap-2" aria-label="Progreso">
           {['Referencia', 'Intención', 'Criterios', 'Aprobar'].map((label, index) => {
             const number = index + 1;
@@ -330,7 +342,7 @@ export function LearningCriteriaWizard({
             </section>
             {warnings.length > 0 && <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm dark:border-amber-500/30 dark:bg-amber-500/10"><p className="font-semibold">Advertencias de cobertura</p><ul className="mt-2 list-disc space-y-1 pl-5">{warnings.map((warning) => <li key={warning}>{warning}</li>)}</ul><label className="mt-4 flex min-h-11 items-center gap-3"><input type="checkbox" checked={acknowledgeWarnings} onChange={(event) => setAcknowledgeWarnings(event.currentTarget.checked)} /><span>Las revisé y deseo continuar.</span></label></div>}
             {readOnly ? (
-              <Button size="lg" fullWidth onClick={onClose}>Cerrar versión aprobada</Button>
+              <Button size="lg" fullWidth onClick={close}>Cerrar versión aprobada</Button>
             ) : (
               <Button size="lg" fullWidth onClick={() => void approve()} loading={busy} disabled={!criteriaComplete || (warnings.length > 0 && !acknowledgeWarnings)}><Check className="h-5 w-5" /> Aprobar criterios</Button>
             )}
@@ -340,13 +352,14 @@ export function LearningCriteriaWizard({
 
       {step !== 2 && !(step === 1 && startMode === 'choose') && (
         <div className="sticky bottom-0 flex flex-wrap items-center justify-between gap-3 border-t border-border bg-surface/95 px-4 py-3 backdrop-blur sm:px-6">
-          <Button variant="outline" onClick={() => step === 1 ? onClose() : setStep((current) => Math.max(1, current - 1))} disabled={busy}><ArrowLeft className="h-4 w-4" /> {step === 1 ? 'Cancelar' : 'Atrás'}</Button>
+          <Button variant="outline" onClick={() => step === 1 ? close() : setStep((current) => Math.max(1, current - 1))} disabled={busy}><ArrowLeft className="h-4 w-4" /> {step === 1 ? 'Cancelar' : 'Atrás'}</Button>
           <div className="flex gap-2">
             {step === 3 && !readOnly && <Button variant="secondary" onClick={() => void saveDraft()} loading={busy}><Save className="h-4 w-4" /> Guardar borrador</Button>}
             {step < 4 && <Button onClick={() => setStep((current) => current + 1)} disabled={step === 3 && !criteriaComplete}><span>{step === 1 ? 'Continuar' : 'Revisar'}</span><ArrowRight className="h-4 w-4" /></Button>}
           </div>
         </div>
       )}
+      </div>
     </Modal>
   );
 }

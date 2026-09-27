@@ -273,6 +273,7 @@ export interface LearningCriteriaVersion {
   estado: LearningCriteriaVersionStatus;
   intencion_docente: Record<string, unknown>;
   cobertura?: Record<string, unknown>;
+  asistida_ia?: boolean;
   criterios: LearningCriterion[];
   fuentes: LearningSource[];
   approved_at?: string | null;
