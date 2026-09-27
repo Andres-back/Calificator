@@ -85,6 +85,13 @@ export interface Material<T = Record<string, unknown>> {
   asignacion_tipo?: 'apoyo' | 'actividad' | null;
   publicado_estudiantes?: boolean;
   fecha_publicacion?: string | null;
+  criterios_aprendizaje_aplicados?: {
+    set_id: string;
+    version_id: string;
+    version_number: number;
+    titulo: string;
+    snapshot_hash: string;
+  } | null;
   updated_at?: string | null;
   contenido_json: T;
   archivo_url: string | null;

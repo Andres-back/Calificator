@@ -63,7 +63,7 @@ describe('enfoque pedagógico de recursos', () => {
     await user.click(screen.getByRole('button', { name: 'Completar datos' }));
     const generate = screen.getByRole('button', { name: 'Generar' });
     expect(generate).toBeEnabled();
-    expect(screen.getByText('Generación libre')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Generación libre/i })).toHaveAttribute('aria-pressed', 'true');
 
     await user.click(generate);
 
@@ -81,7 +81,7 @@ describe('enfoque pedagógico de recursos', () => {
     const onGenerate = renderHarness();
 
     await user.click(screen.getByRole('button', { name: 'Completar datos' }));
-    await user.click(screen.getByRole('checkbox', { name: /Usar criterios de rúbrica/i }));
+    await user.click(screen.getByRole('button', { name: /Escribir criterios rápidos/i }));
     await user.type(screen.getByPlaceholderText(/Claridad/i), 'Explica con claridad{Enter}');
     await user.click(screen.getByRole('button', { name: 'Generar' }));
 
@@ -99,7 +99,7 @@ describe('enfoque pedagógico de recursos', () => {
 
     await user.click(screen.getByRole('button', { name: 'Completar datos' }));
     await user.click(screen.getByRole('button', { name: 'Elegir materia' }));
-    await user.click(screen.getByRole('checkbox', { name: /Alinear con DBA/i }));
+    await user.click(screen.getByRole('button', { name: /Estándares oficiales/i }));
 
     expect(screen.getByRole('button', { name: 'Generar' })).toBeDisabled();
     await waitFor(() => expect(screen.getByText('DBA-1')).toBeInTheDocument());

@@ -9,22 +9,18 @@ from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.logging import get_logger
-
 from app.modules.dba.service import (
     get_dba_personalizado_records_for_evaluation,
     get_dba_records,
 )
-from app.modules.evaluaciones.blueprint_service import normalize_dba_records
 from app.modules.evaluaciones import service as evaluaciones_service
-from app.modules.evaluaciones.schemas import EvaluacionCreate, EvaluacionEstructuraValidacion
-from app.modules.herramientas.evaluation_adapter import build_evaluation_structure
-from app.modules.herramientas.puzzle_builder import (
-    build_crossword,
-    build_matching,
-    build_word_search,
-    normalize_word,
+from app.modules.evaluaciones.blueprint_service import normalize_dba_records
+from app.modules.evaluaciones.schemas import (
+    EvaluacionCreate,
+    EvaluacionEstructuraValidacion,
 )
 from app.modules.herramientas.content_quality import normalize_material_content
+from app.modules.herramientas.evaluation_adapter import build_evaluation_structure
 from app.modules.herramientas.generators import (
     crucigrama,
     cuento,
@@ -42,8 +38,12 @@ from app.modules.herramientas.generators import (
     sopa_letras,
     taller,
 )
-from app.modules.materias import service as materias_service
-from app.modules.rag.context_builder import build_context_for_evaluation_creation
+from app.modules.herramientas.puzzle_builder import (
+    build_crossword,
+    build_matching,
+    build_word_search,
+    normalize_word,
+)
 from app.modules.herramientas.schemas import (
     CrucigramaRequest,
     CuentoRequest,
@@ -63,8 +63,10 @@ from app.modules.herramientas.schemas import (
     TallerRequest,
     UnirColumnasRequest,
 )
-from app.modules.users.models import User
 from app.modules.imagenes import service as imagenes_service
+from app.modules.materias import service as materias_service
+from app.modules.rag.context_builder import build_context_for_evaluation_creation
+from app.modules.users.models import User
 from app.services.image_router import generate_image
 from app.services.llm_router import LLMRouter
 from app.shared.enums import (
@@ -203,7 +205,9 @@ async def _attach_learning_criteria_context(
 
     if not settings.CRITERIA_WRITE:
         raise HTTPException(status_code=503, detail="La aplicación de criterios aún no está habilitada")
-    from app.modules.criterios_aprendizaje.application_service import get_approved_snapshot_for_context
+    from app.modules.criterios_aprendizaje.application_service import (
+        get_approved_snapshot_for_context,
+    )
 
     snapshot = await get_approved_snapshot_for_context(
         db,
@@ -382,10 +386,12 @@ async def _save_material(
     from sqlalchemy import text
     expectation = input_json.pop("_alineacion_esperada", {})
     contenido_json = _validate_material_alignment(contenido_json, expectation)
+    learning_version_id = input_json.get("criterios_aprendizaje_version_id")
     uses_dba = bool(expectation.get("dba_ids"))
     uses_rubric = bool(input_json.get("usar_rubrica"))
     approach = (
-        "dba_rubrica" if uses_dba and uses_rubric
+        "criterios_aprobados" if learning_version_id
+        else "dba_rubrica" if uses_dba and uses_rubric
         else "dba" if uses_dba
         else "rubrica" if uses_rubric
         else "libre"
@@ -417,9 +423,10 @@ async def _save_material(
         },
     )
     material_id = inserted.scalar_one()
-    learning_version_id = input_json.get("criterios_aprendizaje_version_id")
     if learning_version_id and materia_id:
-        from app.modules.criterios_aprendizaje.application_service import apply_version_to_resource
+        from app.modules.criterios_aprendizaje.application_service import (
+            apply_version_to_resource,
+        )
 
         await apply_version_to_resource(
             db,
@@ -622,6 +629,7 @@ async def update_material(
 ) -> dict:
     """Actualiza campos de un material: titulo, materia_id, contenido_json."""
     import json as _json
+
     from sqlalchemy import text
 
     profesor_id = current_user.id
@@ -712,9 +720,16 @@ async def get_material(db: AsyncSession, material_id: UUID, profesor_id: UUID) -
             "e.modalidad AS evaluacion_modalidad, "
             "e.recepcion_habilitada AS evaluacion_recepcion_habilitada, "
             "mg.asignacion_tipo, "
-            "mg.publicado_estudiantes, mg.fecha_publicacion, mg.updated_at "
+            "mg.publicado_estudiantes, mg.fecha_publicacion, mg.updated_at, "
+            "lca.version_id AS criterios_version_id, lca.snapshot_hash AS criterios_snapshot_hash, "
+            "lcv.version_number AS criterios_version_number, "
+            "lcs.id AS criterios_set_id, lcs.titulo AS criterios_titulo "
             "FROM materiales_generados mg LEFT JOIN materias m ON m.id = mg.materia_id "
             "LEFT JOIN evaluaciones e ON e.material_origen_id = mg.id "
+            "LEFT JOIN learning_criterion_applications lca ON lca.target_type = 'recurso' "
+            "AND lca.target_id = mg.id AND lca.is_current = true "
+            "LEFT JOIN learning_criterion_versions lcv ON lcv.id = lca.version_id "
+            "LEFT JOIN learning_criterion_sets lcs ON lcs.id = lcv.set_id "
             "WHERE mg.id = :id AND mg.profesor_id = :p"
         ),
         {"id": str(material_id), "p": str(profesor_id)},
@@ -738,8 +753,22 @@ async def get_material(db: AsyncSession, material_id: UUID, profesor_id: UUID) -
         "asignacion_tipo": r.asignacion_tipo,
         "publicado_estudiantes": r.publicado_estudiantes,
         "fecha_publicacion": r.fecha_publicacion,
+        "criterios_aprendizaje_aplicados": _learning_criteria_summary(r),
         "updated_at": r.updated_at,
         "created_at": r.created_at,
+    }
+
+
+def _learning_criteria_summary(row: object) -> dict | None:
+    version_id = getattr(row, "criterios_version_id", None)
+    if version_id is None:
+        return None
+    return {
+        "set_id": getattr(row, "criterios_set_id", None),
+        "version_id": version_id,
+        "version_number": getattr(row, "criterios_version_number", None),
+        "titulo": getattr(row, "criterios_titulo", None),
+        "snapshot_hash": getattr(row, "criterios_snapshot_hash", None),
     }
 
 
@@ -759,6 +788,7 @@ def _material_row(row: object) -> dict:
         "asignacion_tipo": row.asignacion_tipo,
         "publicado_estudiantes": row.publicado_estudiantes,
         "fecha_publicacion": row.fecha_publicacion,
+        "criterios_aprendizaje_aplicados": _learning_criteria_summary(row),
         "updated_at": row.updated_at,
         "created_at": row.created_at,
     }
@@ -842,10 +872,17 @@ async def get_material_for_user(
             "mg.contenido_json, mg.archivo_url, mg.created_at, mg.updated_at, "
             "mg.asignacion_tipo, mg.publicado_estudiantes, mg.fecha_publicacion, "
             "e.id AS evaluacion_id, e.estado AS evaluacion_estado, "
-            "e.modalidad AS evaluacion_modalidad, e.recepcion_habilitada AS evaluacion_recepcion_habilitada "
+            "e.modalidad AS evaluacion_modalidad, e.recepcion_habilitada AS evaluacion_recepcion_habilitada, "
+            "lca.version_id AS criterios_version_id, lca.snapshot_hash AS criterios_snapshot_hash, "
+            "lcv.version_number AS criterios_version_number, "
+            "lcs.id AS criterios_set_id, lcs.titulo AS criterios_titulo "
             "FROM materiales_generados mg "
             "JOIN materias m ON m.id = mg.materia_id "
             "LEFT JOIN evaluaciones e ON e.material_origen_id = mg.id "
+            "LEFT JOIN learning_criterion_applications lca ON lca.target_type = 'recurso' "
+            "AND lca.target_id = mg.id AND lca.is_current = true "
+            "LEFT JOIN learning_criterion_versions lcv ON lcv.id = lca.version_id "
+            "LEFT JOIN learning_criterion_sets lcs ON lcs.id = lcv.set_id "
             "WHERE mg.id = :material_id AND ("
             "(mg.asignacion_tipo = 'apoyo' AND mg.publicado_estudiantes = true) OR "
             "(mg.asignacion_tipo = 'actividad' AND mg.publicado_estudiantes = true AND e.estado IN "
@@ -1342,6 +1379,7 @@ async def gen_plan_refuerzo(db: AsyncSession, req: PlanRefuerzoRequest, current_
 async def duplicar_material(db: AsyncSession, material_id: UUID, profesor_id: UUID) -> dict:
     """Clona un material existente con un nuevo UUID."""
     import json as _json
+
     from sqlalchemy import text as _sql_text
 
     material = await get_material(db, material_id, profesor_id)

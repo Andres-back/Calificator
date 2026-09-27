@@ -154,6 +154,7 @@ class MaterialRead(BaseModel):
     asignacion_tipo: Literal["apoyo", "actividad"] | None = None
     publicado_estudiantes: bool = False
     fecha_publicacion: datetime | None = None
+    criterios_aprendizaje_aplicados: dict[str, Any] | None = None
     updated_at: datetime | None = None
     created_at: datetime
 

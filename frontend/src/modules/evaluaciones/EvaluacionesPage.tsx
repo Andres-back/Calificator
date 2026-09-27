@@ -342,7 +342,7 @@ function EvaluationFormModal({
           <p className="mt-1">La IA calificará automáticamente según los criterios que definas. Si no agregas criterios, la calificación será más general.</p>
         </div>
 
-        <Field label="DBA" hint="Opcional. Puedes generar con DBA, con rúbrica, con ambos o sin ninguno.">
+        <Field label="Estándares oficiales" hint="Opcional. Usa referencias curriculares oficiales o personalizadas de esta materia.">
           <DBASelector
             items={dbaItems}
             selectedOfficial={form.dba_ids}
@@ -362,7 +362,7 @@ function EvaluationFormModal({
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-semibold text-fg">Borrador alineado con IA</p>
                 <p className="mt-1 text-xs text-muted">
-                  Usa el enfoque que elijas: DBA, criterios de rúbrica, ambos o generación libre. Se guarda como borrador para que lo revises.
+                  Usa el enfoque que elijas: criterios de aprendizaje, estándares oficiales, criterios rápidos o generación libre. Se guarda como borrador para que lo revises.
                 </p>
                 <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-end">
                   <div className="sm:w-48">
@@ -688,6 +688,12 @@ export function EvaluacionesPage() {
                         {ev.criterios_aprendizaje_aplicados && (
                           <Badge tone="success">
                             {ev.criterios_aprendizaje_aplicados.titulo} · v{ev.criterios_aprendizaje_aplicados.version_number}
+                          </Badge>
+                        )}
+                        {!ev.criterios_aprendizaje_aplicados
+                          && ((ev.dba_ids?.length ?? 0) + (ev.dba_personalizado_ids?.length ?? 0) > 0) && (
+                          <Badge tone="brand">
+                            Estándar oficial · {(ev.dba_ids?.length ?? 0) + (ev.dba_personalizado_ids?.length ?? 0)} referencia(s)
                           </Badge>
                         )}
                         {isStudent && ev.material_origen_id && <Badge tone="violet">Material incluido</Badge>}

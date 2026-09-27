@@ -121,3 +121,15 @@ La rama incorporó 63 commits posteriores de `main`. Se resolvieron 13 conflicto
 - Playwright Chromium 390×844 sobre la ruta canónica: **1 prueba verde** y sin desbordamiento horizontal.
 
 No se activó autoridad nueva sobre notas ni se realizó despliegue productivo.
+
+## Resultado focal: aplicación a recursos (2026-09-27)
+
+- El creador de recursos ofrece un único enfoque excluyente: libre, criterios aprobados, estándares oficiales o criterios rápidos; conserva el contrato legado únicamente como adaptador interno.
+- El selector omite borradores y permite continuar sin una versión guardada. Al aplicar una aprobada envía su identificador y la equivalencia heredada sin crear una segunda rúbrica.
+- El detalle devuelve y muestra el título y número de la versión aplicada. Los materiales históricos traducen DBA como **«Estándar oficial»** y continúan abriendo sin metadatos nuevos.
+- La herramienta «Rúbrica» permanece fuera del selector de materiales nuevos; los recursos históricos de ese tipo conservan compatibilidad de lectura.
+- Pytest focal: **15 pruebas verdes** de asignación de recursos y snapshot aprobado.
+- Vitest focal: **14 pruebas verdes en 4 archivos** de generación libre, selección aprobada, estándares y catálogo sin redundancia.
+- TypeScript y ESLint focal: código de salida 0. Ruff focal: sin hallazgos después del ordenamiento mecánico de imports.
+
+No se cambió la fórmula de calificación, la autoridad nueva permanece desactivada y no se modificaron recursos o notas existentes.

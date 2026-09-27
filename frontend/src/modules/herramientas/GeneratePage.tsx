@@ -365,13 +365,16 @@ export function GeneratePage() {
       ? pendingPayload.dba_personalizado_ids.length
       : 0);
   const usesRubric = pendingPayload?.usar_rubrica === true;
-  const pedagogicalApproach = selectedLearningCount > 0 && usesRubric
-    ? 'DBA + rúbrica'
-    : selectedLearningCount > 0
-      ? 'Alineación con DBA'
-      : usesRubric
-        ? 'Criterios de rúbrica'
-        : 'Generación libre con IA';
+  const usesApprovedCriteria = Boolean(pendingPayload?.criterios_aprendizaje_version_id);
+  const pedagogicalApproach = usesApprovedCriteria
+    ? 'Criterios de aprendizaje aprobados'
+    : selectedLearningCount > 0 && usesRubric
+      ? 'Estándares oficiales + criterios rápidos'
+      : selectedLearningCount > 0
+        ? 'Estándares oficiales'
+        : usesRubric
+          ? 'Criterios rápidos'
+          : 'Generación libre con IA';
 
   return (
     <div className="space-y-6">

@@ -64,14 +64,14 @@
 
 - [X] T037 [P] [US3] Escribir pruebas de aplicación a evaluación/blueprint, compatibilidad sin campo nuevo y prohibición entre materias en `backend/tests/unit/test_learning_criteria_evaluation_application.py`
 - [X] T038 [P] [US3] Escribir pruebas de aplicación a material de apoyo/recurso evaluativo y visibilidad explícita de fuentes en `backend/tests/unit/test_learning_criteria_resource_application.py`
-- [ ] T039 [P] [US3] Escribir pruebas frontend de selector aprobado, generación libre, histórico DBA y recurso tipo rúbrica sin opción redundante en `frontend/src/modules/evaluaciones/components/LearningCriteriaSelector.test.tsx` y `frontend/src/modules/herramientas/forms/LearningCriteriaSelector.test.tsx`
+- [X] T039 [P] [US3] Escribir pruebas frontend de selector aprobado, generación libre, histórico DBA y recurso tipo rúbrica sin opción redundante en `frontend/src/modules/evaluaciones/components/LearningCriteriaSelector.test.tsx` y `frontend/src/modules/herramientas/forms/LearningCriteriaSelector.test.tsx`
 - [X] T040 [US3] Implementar aplicación y snapshot inmutables con dual-write compatible en `backend/app/modules/criterios_aprendizaje/application_service.py`
 - [X] T041 [US3] Añadir el campo opcional de versión y congelar la aplicación en evaluación/blueprint sin reescribir históricos en `backend/app/modules/evaluaciones/schemas.py` y `backend/app/modules/evaluaciones/service.py`
 - [X] T042 [US3] Integrar aplicaciones en recursos de apoyo/evaluativos y conversión a evaluación en `backend/app/modules/herramientas/schemas.py`, `backend/app/modules/herramientas/service.py` y `backend/app/modules/herramientas/evaluation_adapter.py`
 - [X] T043 [US3] Crear selector reutilizable de versiones aprobadas y compatibilidad visual con DBA históricos en `frontend/src/modules/evaluaciones/components/LearningCriteriaSelector.tsx`
 - [X] T044 [US3] Integrar el selector y reordenar fuente→intención→criterios→preguntas→confirmación en `frontend/src/modules/evaluaciones/components/GenerationWizard.tsx` y `frontend/src/modules/evaluaciones/EvaluacionesPage.tsx`
-- [ ] T045 [US3] Sustituir la selección paralela DBA/rúbrica en recursos, conservar adaptador legado y eliminar redundancia del recurso rúbrica en `frontend/src/modules/herramientas/forms/base.tsx` y `frontend/src/modules/herramientas/forms/tools.tsx`
-- [ ] T046 [US3] Mostrar título/versión aplicada y traducir DBA histórico como “Estándar oficial” en `frontend/src/modules/herramientas/DetailPage.tsx` y `frontend/src/modules/evaluaciones/EvaluacionesPage.tsx`
+- [X] T045 [US3] Sustituir la selección paralela DBA/rúbrica en recursos, conservar adaptador legado y eliminar redundancia del recurso rúbrica en `frontend/src/modules/herramientas/forms/base.tsx` y `frontend/src/modules/herramientas/forms/tools.tsx`
+- [X] T046 [US3] Mostrar título/versión aplicada y traducir DBA histórico como “Estándar oficial” en `frontend/src/modules/herramientas/DetailPage.tsx` y `frontend/src/modules/evaluaciones/EvaluacionesPage.tsx`
 - [ ] T047 [US3] Validar Historia 3 y comparar snapshots/fórmula legacy versus nueva con autoridad nueva desactivada en `backend/tests/unit/test_learning_criteria_evaluation_application.py`
 
 ## Fase 6: Historia 4 — Comprender cada puntaje (P1)

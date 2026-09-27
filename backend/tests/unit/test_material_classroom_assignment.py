@@ -8,8 +8,8 @@ from uuid import uuid4
 import pytest
 from fastapi import HTTPException
 
-from app.modules.herramientas import service
 from app.modules.evaluaciones import service as evaluaciones_service
+from app.modules.herramientas import service
 
 
 class FakeDB:
@@ -59,6 +59,52 @@ def test_get_material_selects_delivery_visibility_alias() -> None:
     assert "e.recepcion_habilitada AS evaluacion_recepcion_habilitada" in statement
     assert material is not None
     assert material["evaluacion_recepcion_habilitada"] is None
+
+
+def test_get_material_returns_applied_learning_criteria_summary() -> None:
+    material_id = uuid4()
+    teacher_id = uuid4()
+    version_id = uuid4()
+    set_id = uuid4()
+    row = SimpleNamespace(
+        id=material_id,
+        tipo="guia",
+        titulo="Guía",
+        materia_id=uuid4(),
+        materia_nombre="Lenguaje",
+        input_json={},
+        contenido_json={},
+        archivo_url=None,
+        evaluacion_id=None,
+        evaluacion_estado=None,
+        evaluacion_modalidad=None,
+        evaluacion_recepcion_habilitada=None,
+        asignacion_tipo=None,
+        publicado_estudiantes=False,
+        fecha_publicacion=None,
+        updated_at=None,
+        created_at=datetime.now(),
+        criterios_version_id=version_id,
+        criterios_snapshot_hash="abc123",
+        criterios_version_number=3,
+        criterios_set_id=set_id,
+        criterios_titulo="Comprensión lectora",
+    )
+    db = FakeDB([row])
+
+    material = asyncio.run(service.get_material(db, material_id, teacher_id))
+
+    assert material is not None
+    assert material["criterios_aprendizaje_aplicados"] == {
+        "set_id": set_id,
+        "version_id": version_id,
+        "version_number": 3,
+        "titulo": "Comprensión lectora",
+        "snapshot_hash": "abc123",
+    }
+    statement = str(db.executions[0][0])
+    assert "lca.target_type = 'recurso'" in statement
+    assert "lca.is_current = true" in statement
 
 
 def test_assign_support_publishes_resource_without_creating_an_evaluation(monkeypatch) -> None:

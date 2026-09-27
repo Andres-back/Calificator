@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { BookCheck, ListChecks, Sparkles } from 'lucide-react';
+import { BookCheck, Library, ListChecks, Sparkles } from 'lucide-react';
 import { Input, Field, Textarea, Button, Select, Badge, Skeleton } from '@/components/ui';
 import { useMaterias } from '@/modules/materias/MateriaSelect';
 import { listDbaCombinado } from '@/modules/materias/dbaApi';
@@ -27,6 +27,7 @@ export interface BaseState {
   dba_ids: string[];
   dba_personalizado_ids: string[];
   criterios_aprendizaje_version_id: string;
+  enfoque_pedagogico: 'libre' | 'criterios_aprobados' | 'estandares' | 'rubrica_rapida';
 }
 
 const EMPTY: BaseState = {
@@ -42,6 +43,7 @@ const EMPTY: BaseState = {
   dba_ids: [],
   dba_personalizado_ids: [],
   criterios_aprendizaje_version_id: '',
+  enfoque_pedagogico: 'libre',
 };
 
 export function useBaseForm(initial?: Partial<BaseState>) {
@@ -49,7 +51,11 @@ export function useBaseForm(initial?: Partial<BaseState>) {
   const set = <K extends keyof BaseState>(k: K, v: BaseState[K]) => setBase((p) => ({ ...p, [k]: v }));
   const selectedDbaCount = base.dba_ids.length + base.dba_personalizado_ids.length;
   const requiredFieldsValid = base.titulo.trim().length > 0 && base.tema.trim().length > 0;
-  const alignmentValid = !base.usar_dba || selectedDbaCount > 0;
+  const alignmentValid = base.enfoque_pedagogico === 'estandares'
+    ? selectedDbaCount > 0
+    : base.enfoque_pedagogico === 'criterios_aprobados'
+      ? Boolean(base.criterios_aprendizaje_version_id)
+      : true;
   const valid = requiredFieldsValid && alignmentValid;
   const payload = () => ({
     titulo: base.titulo.trim(),
@@ -84,7 +90,10 @@ export function BaseFields({ base, set, tituloPlaceholder }: { base: BaseState; 
             set('dba_ids', []);
             set('dba_personalizado_ids', []);
             set('criterios_aprendizaje_version_id', '');
-            if (!materiaId) set('usar_dba', false);
+            set('usar_dba', false);
+            set('usar_rubrica', false);
+            set('criterios_rubrica', []);
+            set('enfoque_pedagogico', 'libre');
             if (selected?.grado) set('grado', selected.grado);
             if (selected?.area) set('area', selected.area);
           }}
@@ -133,13 +142,39 @@ export function PedagogicalApproachSelector({
   }
 
   const selectedCount = base.dba_ids.length + base.dba_personalizado_ids.length;
-  const approachLabel = base.usar_dba && base.usar_rubrica
-    ? 'Estándares oficiales + rúbrica'
-    : base.usar_dba
-      ? 'Estándares oficiales'
-      : base.usar_rubrica
-        ? 'Rúbrica'
-        : 'Generación libre';
+  const approachLabel = {
+    libre: 'Generación libre',
+    criterios_aprobados: 'Criterios aprobados',
+    estandares: 'Estándares oficiales',
+    rubrica_rapida: 'Criterios rápidos',
+  }[base.enfoque_pedagogico];
+
+  const selectApproach = (approach: BaseState['enfoque_pedagogico']) => {
+    set('enfoque_pedagogico', approach);
+    set('usar_dba', approach === 'estandares');
+    set('usar_rubrica', approach === 'rubrica_rapida');
+    if (approach !== 'estandares') {
+      set('dba_ids', []);
+      set('dba_personalizado_ids', []);
+    }
+    if (approach !== 'criterios_aprobados') set('criterios_aprendizaje_version_id', '');
+    if (approach !== 'rubrica_rapida' && approach !== 'criterios_aprobados') {
+      set('criterios_rubrica', []);
+    }
+  };
+
+  const approaches: Array<{
+    id: BaseState['enfoque_pedagogico'];
+    title: string;
+    description: string;
+    icon: typeof Sparkles;
+    requiresSubject?: boolean;
+  }> = [
+    { id: 'libre', title: 'Generación libre', description: 'La IA propone el enfoque según el tema.', icon: Sparkles },
+    { id: 'criterios_aprobados', title: 'Criterios aprobados', description: 'Reutiliza una versión que ya revisaste.', icon: BookCheck, requiresSubject: true },
+    { id: 'estandares', title: 'Estándares oficiales', description: 'Usa referencias curriculares de la materia.', icon: Library, requiresSubject: true },
+    { id: 'rubrica_rapida', title: 'Escribir criterios rápidos', description: 'Escribe indicaciones breves solo para este recurso.', icon: ListChecks },
+  ];
 
   return (
     <FormSection
@@ -148,73 +183,54 @@ export function PedagogicalApproachSelector({
     >
       <div className="mb-3 flex items-center justify-between gap-3 rounded-xl border border-border bg-surface px-3 py-2">
         <span className="text-sm text-muted">Enfoque actual</span>
-        <Badge tone={base.usar_dba || base.usar_rubrica ? 'brand' : 'neutral'}>{approachLabel}</Badge>
+        <Badge tone={base.enfoque_pedagogico === 'libre' ? 'neutral' : 'brand'}>{approachLabel}</Badge>
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2">
-        <label className={cn(
-          'flex cursor-pointer gap-3 rounded-xl border-2 bg-surface p-4 transition-colors',
-          base.usar_dba ? 'border-brand-500 bg-brand-50/60 dark:bg-brand-500/10' : 'border-border hover:border-brand-300',
-          !base.materia_id && 'cursor-not-allowed opacity-60',
-        )}>
-          <input
-            type="checkbox"
-            checked={base.usar_dba}
-            disabled={!base.materia_id}
-            onChange={(event) => {
-              set('usar_dba', event.target.checked);
-              if (!event.target.checked) {
-                set('dba_ids', []);
-                set('dba_personalizado_ids', []);
-              }
-            }}
-            className="mt-0.5 h-5 w-5 shrink-0 accent-brand-600"
-          />
-          <span>
-            <span className="flex items-center gap-2 font-semibold"><BookCheck className="h-5 w-5 text-brand-600" /> Alinear con estándares oficiales</span>
-            <span className="mt-1 block text-xs leading-5 text-muted">Referencia opcional: no limita la creación ni reemplaza tus criterios.</span>
-          </span>
-        </label>
-
-        <label className={cn(
-          'flex cursor-pointer gap-3 rounded-xl border-2 bg-surface p-4 transition-colors',
-          base.usar_rubrica ? 'border-violet-500 bg-violet-50/60 dark:bg-violet-500/10' : 'border-border hover:border-violet-300',
-        )}>
-          <input
-            type="checkbox"
-            checked={base.usar_rubrica}
-            onChange={(event) => {
-              set('usar_rubrica', event.target.checked);
-              if (!event.target.checked) set('criterios_rubrica', []);
-            }}
-            className="mt-0.5 h-5 w-5 shrink-0 accent-violet-600"
-          />
-          <span>
-            <span className="flex items-center gap-2 font-semibold"><ListChecks className="h-5 w-5 text-violet-600" /> Usar criterios de rúbrica</span>
-            <span className="mt-1 block text-xs leading-5 text-muted">Orienta la actividad con criterios observables de calidad.</span>
-          </span>
-        </label>
+        {approaches.map((approach) => {
+          const Icon = approach.icon;
+          const disabled = Boolean(approach.requiresSubject && !base.materia_id);
+          const selected = base.enfoque_pedagogico === approach.id;
+          return (
+            <button
+              key={approach.id}
+              type="button"
+              aria-pressed={selected}
+              disabled={disabled}
+              onClick={() => selectApproach(approach.id)}
+              className={cn(
+                'focus-ring flex min-h-24 w-full gap-3 rounded-xl border-2 bg-surface p-4 text-left transition-colors',
+                selected ? 'border-brand-500 bg-brand-50/60 dark:bg-brand-500/10' : 'border-border hover:border-brand-300',
+                disabled && 'cursor-not-allowed opacity-60',
+              )}
+            >
+              <Icon className="mt-0.5 h-5 w-5 shrink-0 text-brand-600" />
+              <span>
+                <span className="block font-semibold">{approach.title}</span>
+                <span className="mt-1 block text-xs leading-5 text-muted">{approach.description}</span>
+              </span>
+            </button>
+          );
+        })}
       </div>
 
-      <div className="mt-4">
+      {base.enfoque_pedagogico === 'criterios_aprobados' && <div className="mt-4">
         <LearningCriteriaSelector
           materiaId={base.materia_id}
           value={base.criterios_aprendizaje_version_id}
           onChange={(versionId, criteria) => {
             set('criterios_aprendizaje_version_id', versionId);
-            if (versionId) {
-              set('usar_rubrica', true);
-              set('criterios_rubrica', criteria.map((item) => item.nombre));
-            }
+            set('usar_rubrica', Boolean(versionId));
+            set('criterios_rubrica', versionId ? criteria.map((item) => item.nombre) : []);
           }}
         />
-      </div>
+      </div>}
 
       {!base.materia_id && (
         <p className="mt-3 text-xs text-muted">Selecciona una materia para usar criterios guardados o estándares oficiales. La generación libre no los requiere.</p>
       )}
 
-      {base.usar_dba && (
+      {base.enfoque_pedagogico === 'estandares' && (
         <div className="mt-4 rounded-xl border border-brand-200 bg-brand-50/40 p-4 dark:border-brand-500/30 dark:bg-brand-500/10">
           <p className="mb-3 text-sm font-bold">Estándares oficiales y referencias históricas</p>
           {isLoading ? (
@@ -256,7 +272,7 @@ export function PedagogicalApproachSelector({
         </div>
       )}
 
-      {base.usar_rubrica && (
+      {base.enfoque_pedagogico === 'rubrica_rapida' && (
         <div className="mt-4 rounded-xl border border-violet-200 bg-violet-50/40 p-4 dark:border-violet-500/30 dark:bg-violet-500/10">
           <p className="text-sm font-bold">Criterios de rúbrica</p>
           <p className="mb-3 mt-1 text-xs text-muted">Opcional. Escribe un criterio y pulsa Enter. Si lo dejas vacío, la IA propondrá criterios apropiados.</p>
@@ -296,7 +312,7 @@ export function GenerateButton({
   disabled,
   onClick,
   label = 'Revisar antes de generar',
-  disabledHint = 'Completa los campos obligatorios. Si activaste DBA, selecciona al menos uno.',
+  disabledHint = 'Completa los campos obligatorios y termina de elegir el enfoque pedagógico.',
 }: {
   loading: boolean;
   disabled?: boolean;
