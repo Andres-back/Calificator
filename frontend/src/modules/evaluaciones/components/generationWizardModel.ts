@@ -80,6 +80,33 @@ export interface WizardState {
   questions: EditableQuestion[];
 }
 
+export interface LearningCriteriaCoverage {
+  rows: Array<{ key: string; nombre: string; questionNumbers: number[] }>;
+  unmappedQuestionNumbers: number[];
+  coveredCount: number;
+  totalCount: number;
+}
+
+export function summarizeLearningCriteriaCoverage(
+  options: Array<{ key: string; nombre: string }>,
+  questions: EditableQuestion[],
+): LearningCriteriaCoverage {
+  const rows = options.map((criterion) => ({
+    ...criterion,
+    questionNumbers: questions
+      .filter((question) => question.learningCriterionKeys.includes(criterion.key))
+      .map((question) => question.numero),
+  }));
+  return {
+    rows,
+    unmappedQuestionNumbers: questions
+      .filter((question) => question.learningCriterionKeys.length === 0)
+      .map((question) => question.numero),
+    coveredCount: rows.filter((row) => row.questionNumbers.length > 0).length,
+    totalCount: rows.length,
+  };
+}
+
 interface StoredWizardDraft {
   version: number;
   userId: string;

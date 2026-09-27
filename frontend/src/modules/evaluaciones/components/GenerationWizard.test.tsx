@@ -418,6 +418,9 @@ describe('GenerationWizard', () => {
     expect(await screen.findByText(/Sin relación explícita: la calificación requerirá revisión/)).toBeInTheDocument();
     await user.click(screen.getByRole('checkbox', { name: 'Comprensión conceptual' }));
     await user.click(screen.getByRole('button', { name: 'Siguiente' }));
+    expect(screen.getByRole('region', { name: 'Cobertura de criterios y preguntas' })).toBeVisible();
+    expect(screen.getByText('1 de 2 cubiertos')).toBeVisible();
+    expect(screen.getByText('Sin pregunta relacionada')).toBeVisible();
     await user.click(screen.getByRole('button', { name: 'Crear evaluación' }));
     await waitFor(() => expect(mocks.update).toHaveBeenCalledWith('evaluacion-1', expect.objectContaining({
       criterios_aprendizaje_version_id: 'version-1',

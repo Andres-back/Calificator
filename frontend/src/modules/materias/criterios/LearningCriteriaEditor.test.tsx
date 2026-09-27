@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import { LearningCriteriaEditor } from './LearningCriteriaEditor';
@@ -63,5 +63,49 @@ describe('LearningCriteriaEditor', () => {
     const next = onChange.mock.lastCall?.[0] as LearningCriterion[];
     expect(next).toHaveLength(2);
     expect(next.map((item) => item.peso_porcentaje)).toEqual([50, 50]);
+  });
+
+  it('permite ordenar, duplicar, eliminar y editar evidencia y niveles', async () => {
+    const onChange = vi.fn();
+    const user = userEvent.setup();
+    const second: LearningCriterion = {
+      ...criterion,
+      stable_key: 'argumentacion',
+      orden: 2,
+      nombre: 'Argumentación',
+      peso_porcentaje: 50,
+      niveles: [{ nombre: 'Logrado', descripcion: 'Justifica la respuesta.' }],
+    };
+    const first = { ...criterion, peso_porcentaje: 50 };
+    const view = render(<LearningCriteriaEditor value={[first, second]} onChange={onChange} />);
+
+    await user.click(screen.getAllByRole('button', { name: 'Mover criterio arriba' })[1]);
+    const moved = onChange.mock.lastCall?.[0] as LearningCriterion[];
+    expect(moved.map((item) => item.stable_key)).toEqual(['argumentacion', 'procedimiento']);
+    expect(moved.map((item) => item.orden)).toEqual([1, 2]);
+
+    view.rerender(<LearningCriteriaEditor value={moved} onChange={onChange} />);
+    await user.click(screen.getAllByRole('button', { name: 'Duplicar criterio' })[0]);
+    const duplicated = onChange.mock.lastCall?.[0] as LearningCriterion[];
+    expect(duplicated).toHaveLength(3);
+    expect(duplicated[1].nombre).toBe('Argumentación (copia)');
+    expect(duplicated.reduce((total, item) => total + item.peso_porcentaje, 0)).toBe(100);
+
+    view.rerender(<LearningCriteriaEditor value={duplicated} onChange={onChange} />);
+    await user.click(screen.getAllByRole('button', { name: 'Eliminar criterio' })[1]);
+    const removed = onChange.mock.lastCall?.[0] as LearningCriterion[];
+    expect(removed).toHaveLength(2);
+    expect(removed.reduce((total, item) => total + item.peso_porcentaje, 0)).toBe(100);
+
+    view.rerender(<LearningCriteriaEditor value={removed} onChange={onChange} />);
+    const evidence = screen.getAllByPlaceholderText('Ej. Operaciones ordenadas, resultado y una justificación breve.')[0];
+    fireEvent.change(evidence, { target: { value: 'Explicación con evidencia del texto.' } });
+    expect((onChange.mock.lastCall?.[0] as LearningCriterion[])[0].evidencia_esperada).toBe('Explicación con evidencia del texto.');
+
+    view.rerender(<LearningCriteriaEditor value={removed} onChange={onChange} />);
+    await user.click(screen.getAllByText('Configuración avanzada')[0]);
+    const levelDescription = screen.getByLabelText('Descripción del nivel 1');
+    fireEvent.change(levelDescription, { target: { value: 'Sustenta su respuesta con claridad.' } });
+    expect((onChange.mock.lastCall?.[0] as LearningCriterion[])[0].niveles[0].descripcion).toBe('Sustenta su respuesta con claridad.');
   });
 });

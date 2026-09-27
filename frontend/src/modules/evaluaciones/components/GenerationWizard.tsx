@@ -22,7 +22,7 @@ import {
   createBlankQuestion, createBlankRubricCriterion, createEmptyWizardState, discardWizardDraft, duplicateQuestion,
   evaluationToEditableQuestions, evaluationToWizardState, loadWizardDraft, MAX_QUESTIONS, MIN_QUESTIONS,
   moveQuestion, moveRubricCriterion, normalizeRubricCriteria, persistWizardDraft, prepareRubricCriteriaForSave, QUESTION_TYPES, questionsToUpdatePayload,
-  rebalanceRubricWeights, renumberQuestions, rubricWeightTotal, selectedQuestionTypes, totalQuestionCount, validateQuestion,
+  rebalanceRubricWeights, renumberQuestions, rubricWeightTotal, selectedQuestionTypes, summarizeLearningCriteriaCoverage, totalQuestionCount, validateQuestion,
   validateReferenceFile, validateRubricCriteria, validateStep, type EditableQuestion, type EditableRubricCriterion, type QuestionType, type WizardState,
 } from './generationWizardModel';
 
@@ -585,6 +585,7 @@ export function GenerationWizard({
   const validation = validateStep(state);
   const total = totalQuestionCount(state.counts);
   const questionErrors = state.questions.filter((question, index) => validateQuestion(question, index)).length;
+  const learningCriteriaCoverage = summarizeLearningCriteriaCoverage(state.learningCriteriaOptions, state.questions);
   const editingQuestions = state.step === 5 && Boolean(state.generatedEvaluationId);
 
   return (
@@ -863,6 +864,7 @@ export function GenerationWizard({
                       <div className="grid gap-3 sm:grid-cols-2">
                         {[
                           ['Nombre', state.nombre], ['Materia', materiaNombre],
+                          ['Intención', state.descripcion.trim() || 'Evaluar los aprendizajes definidos en las preguntas y criterios seleccionados.'],
                           ['Enfoque', [
                             state.useDba ? `${state.dbaIds.length + state.dbaPersonalizadoIds.length} DBA` : '',
                             state.useRubric ? 'Rúbrica' : '',
@@ -873,6 +875,38 @@ export function GenerationWizard({
                           ['Estado inicial', 'Borrador'],
                         ].map(([label, value]) => <div key={label} className="rounded-xl border border-border bg-surface p-4"><p className="text-sm font-semibold text-muted">{label}</p><p className="mt-1 text-base font-bold">{value}</p></div>)}
                       </div>
+                      {state.learningCriteriaVersionId && learningCriteriaCoverage.totalCount > 0 && (
+                        <section aria-label="Cobertura de criterios y preguntas" className="rounded-2xl border border-emerald-200 bg-emerald-50/60 p-4 dark:border-emerald-500/30 dark:bg-emerald-500/10">
+                          <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                            <div>
+                              <h4 className="font-bold">Cobertura de criterios y preguntas</h4>
+                              <p className="mt-1 text-sm text-muted">Confirma que cada aprendizaje tenga una pregunta que produzca evidencia observable.</p>
+                            </div>
+                            <Badge tone={learningCriteriaCoverage.coveredCount === learningCriteriaCoverage.totalCount ? 'success' : 'warning'}>
+                              {learningCriteriaCoverage.coveredCount} de {learningCriteriaCoverage.totalCount} cubiertos
+                            </Badge>
+                          </div>
+                          <ul className="mt-4 grid gap-2 sm:grid-cols-2">
+                            {learningCriteriaCoverage.rows.map((row) => (
+                              <li key={row.key} className="rounded-xl border border-emerald-200 bg-surface p-3 text-sm dark:border-emerald-500/20">
+                                <span className="font-semibold">{row.nombre}</span>
+                                <span className={`mt-1 block ${row.questionNumbers.length ? 'text-muted' : 'font-semibold text-amber-700 dark:text-amber-200'}`}>
+                                  {row.questionNumbers.length
+                                    ? `Preguntas ${row.questionNumbers.join(', ')}`
+                                    : 'Sin pregunta relacionada'}
+                                </span>
+                              </li>
+                            ))}
+                          </ul>
+                          {(learningCriteriaCoverage.coveredCount < learningCriteriaCoverage.totalCount || learningCriteriaCoverage.unmappedQuestionNumbers.length > 0) && (
+                            <div role="alert" className="mt-3 rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-950 dark:bg-amber-500/10 dark:text-amber-100">
+                              {learningCriteriaCoverage.coveredCount < learningCriteriaCoverage.totalCount && <p><strong>Revisa la cobertura:</strong> hay criterios sin una pregunta relacionada.</p>}
+                              {learningCriteriaCoverage.unmappedQuestionNumbers.length > 0 && <p className="mt-1">Preguntas sin criterio: {learningCriteriaCoverage.unmappedQuestionNumbers.join(', ')}.</p>}
+                              <p className="mt-1">Puedes volver al paso anterior y corregir las relaciones antes de guardar.</p>
+                            </div>
+                          )}
+                        </section>
+                      )}
                       <div className="rounded-xl border border-emerald-300 bg-emerald-50 p-4 text-base text-emerald-900 dark:bg-emerald-500/10 dark:text-emerald-100"><p className="font-bold">La IA sugiere. Tú decides.</p><p className="mt-1">{initialEvaluation && initialEvaluation.estado !== 'borrador' ? 'La evaluación conservará su estado y disponibilidad actuales.' : 'La evaluación no se publicará automáticamente.'}</p></div>
                     </section>
                   )}
