@@ -323,6 +323,52 @@ describe('AdminAIConfigPage', () => {
     expect(within(screen.getByLabelText('Modelo de respaldo')).getByRole('option', { name: 'Groq Fast' })).toBeInTheDocument();
   });
 
+  it('separates the visual fallback from the GLM verifier and arbiter', async () => {
+    const baseStage = controlCenter.functions[0].stages[0];
+    const baseRoute = baseStage.effective;
+    adminApi.getAIControlCenter.mockResolvedValue({
+      ...controlCenter,
+      functions: [{
+        function_id: 'calificacion',
+        label: 'Calificación',
+        stages: [
+          {
+            ...baseStage,
+            stage_id: 'extraction',
+            label: 'Extracción visual',
+            effective: {
+              ...baseRoute,
+              model: 'deepseek-v4-flash-vision-exp',
+              fallback_provider: 'ollama',
+              fallback_model: 'gemma4:31b',
+            },
+          },
+          {
+            ...baseStage,
+            stage_id: 'grading_secondary',
+            label: 'Verificación',
+            effective: { ...baseRoute, model: 'glm-5.3-flash' },
+          },
+          {
+            ...baseStage,
+            stage_id: 'targeted_recheck',
+            label: 'Revisión adicional',
+            effective: { ...baseRoute, model: 'glm-5.3-flash' },
+          },
+        ],
+      }],
+    });
+
+    renderPage();
+
+    const summary = (await screen.findByText('Ruta institucional de calificación')).parentElement;
+    expect(summary).not.toBeNull();
+    expect(within(summary!).getByText('Segundo evaluador')).toBeInTheDocument();
+    expect(within(summary!).getByText('Árbitro ante discrepancias')).toBeInTheDocument();
+    expect(within(summary!).getAllByText('open_code · glm-5.3-flash')).toHaveLength(2);
+    expect(within(summary!).getByText(/Si falla la lectura visual, se intenta ollama · gemma4:31b/)).toBeInTheDocument();
+  });
+
   it('offers Ollama Cloud and only its vision models as visual fallback', async () => {
     adminApi.getAISettings.mockResolvedValue({
       ...settings,

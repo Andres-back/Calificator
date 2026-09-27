@@ -7,6 +7,7 @@ import { listDbaCombinado } from '@/modules/materias/dbaApi';
 import type { DBAUnifiedItem } from '@/types/api';
 import { cn } from '@/lib/cn';
 import { TagInput } from './widgets';
+import { LearningCriteriaSelector } from '@/modules/evaluaciones/components/LearningCriteriaSelector';
 
 export interface ToolFormProps {
   loading: boolean;
@@ -25,6 +26,7 @@ export interface BaseState {
   criterios_rubrica: string[];
   dba_ids: string[];
   dba_personalizado_ids: string[];
+  criterios_aprendizaje_version_id: string;
 }
 
 const EMPTY: BaseState = {
@@ -39,6 +41,7 @@ const EMPTY: BaseState = {
   criterios_rubrica: [],
   dba_ids: [],
   dba_personalizado_ids: [],
+  criterios_aprendizaje_version_id: '',
 };
 
 export function useBaseForm(initial?: Partial<BaseState>) {
@@ -60,6 +63,9 @@ export function useBaseForm(initial?: Partial<BaseState>) {
     criterios_rubrica: base.usar_rubrica ? base.criterios_rubrica : [],
     dba_ids: base.dba_ids,
     dba_personalizado_ids: base.dba_personalizado_ids,
+    ...(base.criterios_aprendizaje_version_id
+      ? { criterios_aprendizaje_version_id: base.criterios_aprendizaje_version_id }
+      : {}),
   });
   return { base, set, valid, requiredFieldsValid, alignmentValid, selectedDbaCount, payload };
 }
@@ -77,6 +83,7 @@ export function BaseFields({ base, set, tituloPlaceholder }: { base: BaseState; 
             set('materia_id', materiaId);
             set('dba_ids', []);
             set('dba_personalizado_ids', []);
+            set('criterios_aprendizaje_version_id', '');
             if (!materiaId) set('usar_dba', false);
             if (selected?.grado) set('grado', selected.grado);
             if (selected?.area) set('area', selected.area);
@@ -127,9 +134,9 @@ export function PedagogicalApproachSelector({
 
   const selectedCount = base.dba_ids.length + base.dba_personalizado_ids.length;
   const approachLabel = base.usar_dba && base.usar_rubrica
-    ? 'DBA + rúbrica'
+    ? 'Estándares oficiales + rúbrica'
     : base.usar_dba
-      ? 'DBA'
+      ? 'Estándares oficiales'
       : base.usar_rubrica
         ? 'Rúbrica'
         : 'Generación libre';
@@ -137,7 +144,7 @@ export function PedagogicalApproachSelector({
   return (
     <FormSection
       title="Enfoque pedagógico"
-      hint="Opcional. Puedes generar libremente, alinear con DBA, usar criterios de rúbrica o combinar ambos."
+      hint="Opcional. Puedes usar criterios aprobados, estándares oficiales, una rúbrica rápida o generar libremente."
     >
       <div className="mb-3 flex items-center justify-between gap-3 rounded-xl border border-border bg-surface px-3 py-2">
         <span className="text-sm text-muted">Enfoque actual</span>
@@ -164,8 +171,8 @@ export function PedagogicalApproachSelector({
             className="mt-0.5 h-5 w-5 shrink-0 accent-brand-600"
           />
           <span>
-            <span className="flex items-center gap-2 font-semibold"><BookCheck className="h-5 w-5 text-brand-600" /> Alinear con DBA</span>
-            <span className="mt-1 block text-xs leading-5 text-muted">Usa aprendizajes oficiales o personalizados de la materia.</span>
+            <span className="flex items-center gap-2 font-semibold"><BookCheck className="h-5 w-5 text-brand-600" /> Alinear con estándares oficiales</span>
+            <span className="mt-1 block text-xs leading-5 text-muted">Referencia opcional: no limita la creación ni reemplaza tus criterios.</span>
           </span>
         </label>
 
@@ -189,19 +196,33 @@ export function PedagogicalApproachSelector({
         </label>
       </div>
 
+      <div className="mt-4">
+        <LearningCriteriaSelector
+          materiaId={base.materia_id}
+          value={base.criterios_aprendizaje_version_id}
+          onChange={(versionId, criteria) => {
+            set('criterios_aprendizaje_version_id', versionId);
+            if (versionId) {
+              set('usar_rubrica', true);
+              set('criterios_rubrica', criteria.map((item) => item.nombre));
+            }
+          }}
+        />
+      </div>
+
       {!base.materia_id && (
-        <p className="mt-3 text-xs text-muted">Selecciona una materia solo si deseas usar DBA. La generación libre y la rúbrica no la requieren.</p>
+        <p className="mt-3 text-xs text-muted">Selecciona una materia para usar criterios guardados o estándares oficiales. La generación libre no los requiere.</p>
       )}
 
       {base.usar_dba && (
         <div className="mt-4 rounded-xl border border-brand-200 bg-brand-50/40 p-4 dark:border-brand-500/30 dark:bg-brand-500/10">
-          <p className="mb-3 text-sm font-bold">Aprendizajes esperados</p>
+          <p className="mb-3 text-sm font-bold">Estándares oficiales y referencias históricas</p>
           {isLoading ? (
             <Skeleton className="h-24" />
           ) : isError ? (
-            <p className="text-sm text-danger">No se pudieron cargar los DBA. Puedes desactivar esta opción y generar libremente.</p>
+            <p className="text-sm text-danger">No se pudieron cargar los estándares. Puedes desactivar esta opción y generar libremente.</p>
           ) : !items?.length ? (
-            <p className="text-sm text-muted">Esta materia no tiene DBA disponibles. Desactiva esta opción o crea un DBA personalizado.</p>
+            <p className="text-sm text-muted">Esta materia no tiene estándares disponibles. Puedes continuar sin ellos.</p>
           ) : (
             <div className="space-y-3">
               <p className="text-sm font-semibold text-brand-700 dark:text-brand-200" aria-live="polite">
@@ -219,7 +240,7 @@ export function PedagogicalApproachSelector({
                       <input type="checkbox" checked={selected} onChange={() => toggle(item)} className="mt-0.5 h-5 w-5 shrink-0 accent-brand-600" />
                       <span className="min-w-0">
                         <span className="flex flex-wrap items-center gap-2 text-sm font-semibold">
-                          {item.codigo || 'DBA personalizado'}
+                          {item.codigo || 'Referencia docente'}
                           <Badge tone={item.fuente === 'personalizado' ? 'violet' : 'brand'}>
                             {item.fuente === 'personalizado' ? 'Personalizado' : 'Oficial MEN'}
                           </Badge>

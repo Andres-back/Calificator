@@ -35,6 +35,7 @@ JOB_FEATURES = {
     "calificacion_entrega": "calificacion_foto",
     "rag_ingest": "rag",
     "evaluacion_digitalizacion": "evaluacion_digitalizar",
+    "criterios_aprendizaje": "criterios.propuesta",
 }
 
 
@@ -60,6 +61,20 @@ async def _resolve_job_ai_config(
             "schema_version": 3,
             "pipeline": "digitalizacion",
             "stages": {"extraction": extraction, "structure": structure},
+        }
+
+    if tipo == "criterios_aprendizaje":
+        extraction = await resolve_ai_configuration(
+            db, feature="criterios.extraccion", teacher_id=user_id
+        )
+        proposal = await resolve_ai_configuration(
+            db, feature="criterios.propuesta", teacher_id=user_id
+        )
+        return {
+            **proposal,
+            "schema_version": 1,
+            "pipeline": "criterios_aprendizaje",
+            "stages": {"extraction": extraction, "proposal": proposal},
         }
 
     if tipo not in {"calificacion_lote", "calificacion_entrega"}:
@@ -324,6 +339,21 @@ def dispatch_persisted_job(job: dict[str, Any]) -> bool:
                 "modalidad": str(payload["modalidad"]),
             },
             queue="digitalization",
+        )
+        return True
+
+    if job_type == "criterios_aprendizaje":
+        if not user_id or not payload.get("version_id"):
+            return False
+        celery_app.send_task(
+            "tasks.propose_learning_criteria",
+            kwargs={
+                "job_id": job_id,
+                "user_id": user_id,
+                "version_id": str(payload["version_id"]),
+                "regenerar": bool(payload.get("regenerar")),
+            },
+            queue="criteria",
         )
         return True
 

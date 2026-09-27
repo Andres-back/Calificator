@@ -445,6 +445,12 @@ async def orchestrate_grading(
     Returns:
         GradingResult con nota final consolidada.
     """
+    if settings.CRITERIA_GRADING_CONTEXT:
+        from app.modules.criterios_aprendizaje.application_service import get_current_application
+
+        criteria_application = await get_current_application(db, target_type="evaluacion", target_id=evaluacion_id)
+        if criteria_application is not None:
+            blueprint = {**blueprint, "criterios_aprendizaje": criteria_application.snapshot_json}
     pipeline_run_id = str(uuid.uuid4())
     pipeline_started = time.monotonic()
     ai_snapshot: dict = dict(ai_config) if ai_config else {}

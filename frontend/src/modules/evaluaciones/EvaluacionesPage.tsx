@@ -686,6 +686,11 @@ export function EvaluacionesPage() {
                         <Badge tone="neutral" className="capitalize">{ev.modalidad ?? 'online'}</Badge>
                         <Badge tone="neutral">Nota máx: {Number(ev.nota_maxima)}</Badge>
                         <Badge tone="neutral">{ev.preguntas?.length ?? 0} preguntas</Badge>
+                        {ev.criterios_aprendizaje_aplicados && (
+                          <Badge tone="success">
+                            {ev.criterios_aprendizaje_aplicados.titulo} · v{ev.criterios_aprendizaje_aplicados.version_number}
+                          </Badge>
+                        )}
                         {isStudent && ev.material_origen_id && <Badge tone="violet">Material incluido</Badge>}
                         {isStudent && (ev.intentos_realizados ?? 0) > 0 && (
                           <Badge tone="neutral">Intento {ev.intentos_realizados}</Badge>

@@ -16,6 +16,7 @@ export interface EvaluacionCreate {
   criterios?: Record<string, unknown>[];
   preguntas?: Record<string, unknown>[];
   respuestas_esperadas?: Record<string, unknown>[];
+  criterios_aprendizaje_version_id?: string | null;
 }
 
 export interface EvaluacionGenerarRequest {
@@ -38,6 +39,7 @@ export interface EvaluacionGenerarRequest {
   intentos_permitidos?: number;
   tiempo_limite_minutos?: number;
   fecha_limite_entrega?: string | null;
+  criterios_aprendizaje_version_id?: string | null;
 }
 
 export type EvaluacionUpdate = Partial<Omit<EvaluacionCreate, 'materia_id' | 'tipo_origen'>>;

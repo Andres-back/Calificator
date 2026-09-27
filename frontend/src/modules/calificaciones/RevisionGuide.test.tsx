@@ -22,6 +22,8 @@ describe('RevisionGuide', () => {
     expect(screen.getByText('¿Cuánto es 4 × 9?')).toBeInTheDocument();
     expect(screen.getAllByText('B) 36')).toHaveLength(2);
     expect(screen.getByText('Respuesta correcta')).toBeInTheDocument();
+    const list = screen.getByRole('list', { name: 'Preguntas y respuestas correctas' });
+    expect(list.className).not.toMatch(/max-h|overflow-y/);
   });
 
   it('explica cuando no existe una clave registrada', () => {

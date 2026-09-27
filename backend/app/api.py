@@ -7,6 +7,7 @@ from app.modules.asistencia.router import router as asistencia_router
 from app.modules.auth.router import router as auth_router
 from app.modules.authorization.router import router as authorization_router
 from app.modules.calificaciones.router import router as calificaciones_router
+from app.modules.criterios_aprendizaje.router import router as criterios_aprendizaje_router
 from app.modules.dba.router import custom_router as dba_custom_router
 from app.modules.dba.router import router as dba_router
 from app.modules.evaluaciones.router import router as evaluaciones_router
@@ -38,6 +39,7 @@ api_router.include_router(dba_custom_router)
 api_router.include_router(evaluaciones_router)
 api_router.include_router(rag_router)
 api_router.include_router(calificaciones_router)
+api_router.include_router(criterios_aprendizaje_router)
 api_router.include_router(herramientas_router)
 api_router.include_router(presentaciones_router)
 api_router.include_router(imagenes_router)

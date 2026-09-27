@@ -185,8 +185,43 @@ async def _resolve_materia_id(db: AsyncSession, req: object, current_user: User)
         return None
     materia = await materias_service.ensure_can_manage_materia(db, materia_id, current_user)
     await _attach_dba_rag_context(db, req, materia)
+    await _attach_learning_criteria_context(db, req, materia, current_user)
     _attach_rubric_context(req)
     return materia.id
+
+
+async def _attach_learning_criteria_context(
+    db: AsyncSession,
+    req: object,
+    materia: object,
+    current_user: User,
+) -> None:
+    version_id = getattr(req, "criterios_aprendizaje_version_id", None)
+    if version_id is None:
+        return
+    from app.core.config import settings
+
+    if not settings.CRITERIA_WRITE:
+        raise HTTPException(status_code=503, detail="La aplicación de criterios aún no está habilitada")
+    from app.modules.criterios_aprendizaje.application_service import get_approved_snapshot_for_context
+
+    snapshot = await get_approved_snapshot_for_context(
+        db,
+        version_id=version_id,
+        materia_id=materia.id,
+        actor_id=current_user.id,
+    )
+    criteria = snapshot.get("criterios") or []
+    setattr(req, "usar_rubrica", True)
+    setattr(
+        req,
+        "criterios_rubrica",
+        [
+            f"{item.get('nombre')}: {item.get('descripcion')} Evidencia: {item.get('evidencia_esperada')}"
+            for item in criteria
+            if isinstance(item, dict)
+        ],
+    )
 
 
 def _attach_rubric_context(req: object) -> None:
@@ -382,6 +417,17 @@ async def _save_material(
         },
     )
     material_id = inserted.scalar_one()
+    learning_version_id = input_json.get("criterios_aprendizaje_version_id")
+    if learning_version_id and materia_id:
+        from app.modules.criterios_aprendizaje.application_service import apply_version_to_resource
+
+        await apply_version_to_resource(
+            db,
+            resource_id=material_id,
+            materia_id=materia_id,
+            version_id=UUID(str(learning_version_id)),
+            actor_id=profesor_id,
+        )
     row = await db.execute(
         text(
             "SELECT mg.id, mg.tipo, mg.titulo, mg.materia_id, m.nombre AS materia_nombre, "
@@ -1446,6 +1492,11 @@ async def convertir_a_evaluacion(
         criterios=structure["criterios"],
         preguntas=structure["preguntas"],
         respuestas_esperadas=structure["respuestas_esperadas"],
+        criterios_aprendizaje_version_id=(
+            UUID(str(source_input["learning_criteria_version_id"]))
+            if source_input.get("learning_criteria_version_id")
+            else getattr(request, "criterios_aprendizaje_version_id", None)
+        ),
     )
 
     # La materia del recurso y la evaluacion se actualizan en la misma

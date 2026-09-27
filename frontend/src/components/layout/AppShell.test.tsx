@@ -1,14 +1,20 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { act, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { MemoryRouter, Route, Routes, useNavigate } from 'react-router-dom';
 import { AppShell } from './AppShell';
 import { useAuth } from '@/stores/auth';
 import { api } from '@/lib/api';
 
+function ExternalNavigation() {
+  const navigate = useNavigate();
+  return <button onClick={() => navigate('/app/materias')}>Navegación externa de prueba</button>;
+}
+
 function renderShell(initialPath = '/app') {
   return render(
     <MemoryRouter initialEntries={[initialPath]}>
+      <ExternalNavigation />
       <Routes>
         <Route path="/app" element={<AppShell />}>
           <Route index element={<div>Inicio docente</div>} />
@@ -22,6 +28,7 @@ function renderShell(initialPath = '/app') {
 
 beforeEach(() => {
   vi.spyOn(api, 'post').mockResolvedValue({ data: { status: 'ok' } });
+  vi.spyOn(api, 'get').mockResolvedValue({ data: [] });
   useAuth.setState({
     user: {
       id: 'profesor-mobile',
@@ -48,6 +55,34 @@ afterEach(() => {
 });
 
 describe('AppShell mobile navigation', () => {
+  it('libera el contenido al pasar a escritorio con el menú abierto', async () => {
+    let matches = false;
+    let resize: (() => void) | undefined;
+    vi.spyOn(window, 'matchMedia').mockReturnValue({
+      get matches() { return matches; },
+      addEventListener: vi.fn((_event, listener) => { resize = listener as () => void; }),
+      removeEventListener: vi.fn(),
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+    } as unknown as MediaQueryList);
+    renderShell();
+    await userEvent.click(screen.getByRole('button', { name: 'Abrir menú principal' }));
+    expect(document.querySelector('[inert]')).not.toBeNull();
+    act(() => { matches = true; resize?.(); });
+    await waitFor(() => expect(document.querySelector('[inert]')).toBeNull());
+    expect(screen.queryByRole('dialog', { name: 'Navegación principal' })).not.toBeInTheDocument();
+    expect(document.body.style.overflow).toBe('');
+  });
+
+  it('libera el menú tras una navegación no iniciada desde la barra lateral', async () => {
+    renderShell();
+    await userEvent.click(screen.getByRole('button', { name: 'Abrir menú principal' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Navegación externa de prueba' }));
+    await waitFor(() => expect(document.querySelector('[inert]')).toBeNull());
+    expect(screen.getByText('Materias docente')).toBeInTheDocument();
+    expect(document.body.style.overflow).toBe('');
+  });
+
   it('removes the drawer and touch-blocking backdrop immediately after navigation', async () => {
     const user = userEvent.setup();
     renderShell();

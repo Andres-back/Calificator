@@ -25,6 +25,14 @@ AUDIT_EVENTS = {
     "password_reset_created",
     "password_reset_limited",
     "password_reset_consumed",
+    "learning_criteria_created",
+    "learning_criteria_updated",
+    "learning_criteria_approved",
+    "learning_criteria_version_created",
+    "learning_criteria_archived",
+    "learning_criteria_applied",
+    "learning_criteria_source_added",
+    "learning_criteria_source_removed",
 }
 
 

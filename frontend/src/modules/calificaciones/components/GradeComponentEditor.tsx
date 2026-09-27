@@ -2,6 +2,12 @@ import { useEffect, useState } from 'react';
 import { Button, Field, Input, Select, Textarea } from '@/components/ui';
 import type { GradeComponentData, GradeComponentChange, GradeFormulaData } from '@/types/api';
 
+function stateForPoints(points: number, maximum: number, current: string) {
+  if (points <= 0) return current === 'sin_respuesta' ? 'sin_respuesta' : 'incorrecta';
+  if (points >= maximum) return 'correcta';
+  return 'parcial';
+}
+
 export function GradeComponentEditor({ component, formula, saving, saveError, onCancel, onSave, onSaveAndNext, onSaveAndNextQuestion, onReload, onDirtyChange }: {
   component: GradeComponentData;
   formula: GradeFormulaData;
@@ -64,7 +70,21 @@ export function GradeComponentEditor({ component, formula, saving, saveError, on
       <p className="font-bold">Editar {component.tipo === 'pregunta' ? `pregunta ${component.numero ?? component.orden + 1}` : component.titulo}</p>
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label={`Puntos (máximo ${Number(component.puntos_maximos).toFixed(2)})`} required>
-          <Input type="number" min={0} max={Number(component.puntos_maximos)} step="0.01" value={points} onChange={(event) => setPoints(event.target.value)} />
+          <Input
+            type="number"
+            min={0}
+            max={Number(component.puntos_maximos)}
+            step="0.01"
+            value={points}
+            onChange={(event) => {
+              const next = event.target.value;
+              setPoints(next);
+              const nextPoints = Number(next);
+              if (next.trim() !== '' && Number.isFinite(nextPoints)) {
+                setState(stateForPoints(nextPoints, Number(component.puntos_maximos), state));
+              }
+            }}
+          />
         </Field>
         <Field label="Estado" required>
           <Select value={state} onChange={(event) => setState(event.target.value)}>
@@ -76,6 +96,7 @@ export function GradeComponentEditor({ component, formula, saving, saveError, on
           </Select>
         </Field>
       </div>
+      <p className="text-xs leading-5 text-muted">Al cambiar los puntos, el estado se ajusta automáticamente. Puedes modificarlo si necesitas marcar «Sin respuesta».</p>
       <div className="rounded-lg border border-brand-200 bg-surface px-3 py-2 text-sm dark:border-brand-500/30">
         <span className="font-semibold">Vista previa:</span> {previewPoints.toFixed(2)} / {possible.toFixed(2)} puntos → <strong>{previewGrade.toFixed(formula.decimales)}</strong> / {maxGrade.toFixed(formula.decimales)}.
         <span className="ml-1 text-muted">La nota oficial se recalcula y versiona al guardar.</span>

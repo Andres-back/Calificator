@@ -78,6 +78,24 @@ export function GradeBreakdown({ breakdown, student = false, onEdit, onEvidenceP
               {component.requiere_revision ? <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" /> : <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />}
               <p><strong>Por qué:</strong> {component.explicacion || 'No hay una explicación verificable; debe revisarla el docente.'}</p>
             </div>
+            {component.criterios_aplicados && component.criterios_aplicados.length > 0 && (
+              <div className="mt-2 rounded-lg border border-emerald-200 bg-emerald-50/70 p-3 text-sm dark:border-emerald-500/30 dark:bg-emerald-500/10">
+                <p className="font-bold text-emerald-900 dark:text-emerald-100">Criterio aplicado</p>
+                <div className="mt-2 space-y-2">
+                  {component.criterios_aplicados.map((criterion) => (
+                    <div key={`${criterion.version_id ?? 'legacy'}-${criterion.stable_key}`}>
+                      <div className="flex flex-wrap items-start justify-between gap-2">
+                        <span className="font-semibold">{criterion.nombre}</span>
+                        <span className="font-bold">
+                          {criterion.puntos_obtenidos == null ? '—' : Number(criterion.puntos_obtenidos).toFixed(2)} / {Number(criterion.puntos_maximos ?? 0).toFixed(2)}
+                        </span>
+                      </div>
+                      {criterion.descripcion ? <p className="mt-1 leading-5 text-muted">{criterion.descripcion}</p> : null}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
             {component.orientacion_mejora && (
               <div className="mt-2 rounded-lg border border-sky-200 bg-sky-50 p-3 text-sm leading-6 text-sky-950 dark:border-sky-500/30 dark:bg-sky-500/10 dark:text-sky-100">
                 <strong>Para mejorar:</strong> {component.orientacion_mejora}

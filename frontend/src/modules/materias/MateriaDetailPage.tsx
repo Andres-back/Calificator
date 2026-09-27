@@ -7,6 +7,8 @@ import { getMateria, getMateriaEstudiantes } from './api';
 import { toApiError } from '@/lib/api';
 import { useAuth } from '@/stores/auth';
 import { cn } from '@/lib/cn';
+import { queryKeys } from '@/config/queryKeys';
+import { getLearningCriteriaCapabilities } from './criterios/api';
 
 const ALL_TABS = [
   { label: 'Vista general', to: '', brandIcon: 'subjects', permissions: ['subjects.read'] },
@@ -15,7 +17,7 @@ const ALL_TABS = [
   { label: 'Calificar', to: 'calificar', brandIcon: 'grade-evidence', permissions: ['grading.read', 'grading.grade'] },
   { label: 'Asistencia', to: 'asistencia', brandIcon: 'attendance', permissions: ['attendance.read', 'attendance.manage'] },
   { label: 'Boletín', to: 'boletin', brandIcon: 'gradebook', permissions: ['gradebook.read'] },
-  { label: 'DBA', to: 'dba', brandIcon: 'curriculum-dba', permissions: ['dba.read', 'dba.manage'] },
+  { label: 'Criterios de aprendizaje', to: 'criterios', brandIcon: 'curriculum-dba', permissions: ['dba.manage'] },
 ] as const;
 
 export function MateriaDetailPage() {
@@ -42,6 +44,12 @@ export function MateriaDetailPage() {
       'dba.manage',
     ].some((permission) => permissions.has(permission));
   const isStudent = !canManageMateria;
+  const criteriaCapabilities = useQuery({
+    queryKey: queryKeys.materias.learningCriteriaCapabilities,
+    queryFn: getLearningCriteriaCapabilities,
+    enabled: permissions.has('dba.manage'),
+    retry: false,
+  });
 
   // Students can read a subject, but never request its administrative roster.
   const studentMateriaQuery = useQuery({
@@ -137,11 +145,13 @@ export function MateriaDetailPage() {
       {/* Tab navigation */}
       <nav aria-label="Secciones de la materia" className="teacher-scroll-region -mx-1 flex max-w-full snap-x gap-1 overflow-x-auto rounded-2xl border border-border bg-surface/90 p-1.5 shadow-sm">
         {ALL_TABS.filter((tab) => tab.permissions.some((permission) => permissions.has(permission))).map((tab) => {
-          const active = isActiveTab(tab.to);
+          const isCriteria = tab.to === 'criterios';
+          const tabPath = isCriteria && !criteriaCapabilities.data?.ui ? 'dba' : tab.to;
+          const active = isCriteria ? isActiveTab('criterios') || isActiveTab('dba') : isActiveTab(tabPath);
           return (
             <Link
-              key={tab.to}
-              to={tab.to ? `/app/materias/${id}/${tab.to}` : `/app/materias/${id}`}
+              key={tabPath}
+              to={tabPath ? `/app/materias/${id}/${tabPath}` : `/app/materias/${id}`}
               className={cn(
                 'focus-ring flex min-h-11 shrink-0 snap-start items-center gap-2 rounded-xl px-3.5 py-2.5 text-sm font-semibold transition-colors',
                 active
@@ -153,7 +163,7 @@ export function MateriaDetailPage() {
                 name={tab.brandIcon === 'subjects' ? getSubjectEducationalIcon(materia.area) : tab.brandIcon}
                 className="h-7 w-7"
               />
-              {tab.label}
+              {isCriteria && !criteriaCapabilities.data?.ui ? 'DBA' : tab.label}
             </Link>
           );
         })}

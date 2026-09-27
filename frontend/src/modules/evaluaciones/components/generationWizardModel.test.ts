@@ -35,6 +35,7 @@ function validQuestion(overrides: Partial<EditableQuestion> = {}): EditableQuest
     puntaje: 1,
     modalidadRespuesta: 'online',
     dbaIds: ['dba-1'],
+    learningCriterionKeys: [],
     expanded: true,
     ...overrides,
   };
@@ -227,5 +228,14 @@ describe('generation wizard model', () => {
       dba_ids: ['dba-1'],
       niveles: { Alto: 'Justifica cada paso con claridad.' },
     });
+  });
+
+  it('keeps performance descriptors from an approved criteria snapshot editable', () => {
+    const [criterion] = normalizeRubricCriteria([{
+      nombre: 'Procedimiento',
+      peso_porcentaje: 100,
+      niveles: [{ nombre: 'Logrado', descripcion: 'Justifica los pasos' }],
+    }]);
+    expect(criterion.niveles).toEqual({ Logrado: 'Justifica los pasos' });
   });
 });

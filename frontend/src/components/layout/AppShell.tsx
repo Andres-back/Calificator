@@ -7,6 +7,7 @@ import { cn } from '@/lib/cn';
 import { DigitalizationJobMonitor } from '@/modules/evaluaciones/components/DigitalizationJobMonitor';
 import { GradingJobMonitor } from '@/modules/calificaciones/GradingJobMonitor';
 import { surfaceForPath, trackEvent } from '@/lib/analytics';
+import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 
 export function AppShell() {
   const location = useLocation();
@@ -17,6 +18,22 @@ export function AppShell() {
   const menuButtonRef = useRef<HTMLButtonElement>(null);
   const appContentRef = useRef<HTMLDivElement>(null);
   const lastTrackedPathRef = useRef<string | null>(null);
+  useBodyScrollLock(mobileOpen, 'all');
+
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [location.pathname, location.search, location.hash]);
+
+  useEffect(() => {
+    if (!mobileOpen) return;
+    const desktop = window.matchMedia('(min-width: 1024px)');
+    const closeOnDesktop = () => {
+      if (desktop.matches) setMobileOpen(false);
+    };
+    closeOnDesktop();
+    desktop.addEventListener('change', closeOnDesktop);
+    return () => desktop.removeEventListener('change', closeOnDesktop);
+  }, [mobileOpen]);
 
   useEffect(() => {
     if (!role) return;
@@ -30,9 +47,7 @@ export function AppShell() {
 
   useEffect(() => {
     if (!mobileOpen) return;
-    const previousOverflow = document.body.style.overflow;
     const appContent = appContentRef.current;
-    document.body.style.overflow = 'hidden';
     appContent?.setAttribute('inert', '');
     const handleEscape = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
@@ -43,7 +58,6 @@ export function AppShell() {
     window.addEventListener('keydown', handleEscape);
     const menuButton = menuButtonRef.current;
     return () => {
-      document.body.style.overflow = previousOverflow;
       appContent?.removeAttribute('inert');
       window.removeEventListener('keydown', handleEscape);
       menuButton?.focus();

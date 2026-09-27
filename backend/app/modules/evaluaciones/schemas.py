@@ -31,6 +31,7 @@ class EvaluacionCreate(BaseModel):
     criterios: list[dict[str, Any]] = Field(default_factory=list)
     preguntas: list[dict[str, Any]] = Field(default_factory=list)
     respuestas_esperadas: list[dict[str, Any]] = Field(default_factory=list)
+    criterios_aprendizaje_version_id: UUID | None = None
 
 
 class EvaluacionUpdate(BaseModel):
@@ -49,6 +50,7 @@ class EvaluacionUpdate(BaseModel):
     preguntas: list[dict[str, Any]] | None = None
     respuestas_esperadas: list[dict[str, Any]] | None = None
     estado: EvaluacionEstado | None = None
+    criterios_aprendizaje_version_id: UUID | None = None
 
 
 class EvaluacionBlueprintRead(BaseModel):
@@ -96,6 +98,7 @@ class EvaluacionRead(BaseModel):
     created_at: datetime
     updated_at: datetime
     blueprint: EvaluacionBlueprintRead | None = None
+    criterios_aprendizaje_aplicados: dict[str, Any] | None = None
     # Contexto privado del estudiante. Solo se completa en los listados que
     # consulta el propio alumno; permite que la interfaz no ofrezca entregar
     # nuevamente una actividad que ya fue recibida.
@@ -182,6 +185,7 @@ class EvaluacionGenerarRequest(BaseModel):
     intentos_permitidos: int | None = Field(default=None, gt=0)
     tiempo_limite_minutos: int | None = Field(default=None, gt=0)
     fecha_limite_entrega: datetime | None = None
+    criterios_aprendizaje_version_id: UUID | None = None
 
     @model_validator(mode="after")
     def validate_optional_alignment(self) -> "EvaluacionGenerarRequest":
@@ -210,6 +214,7 @@ class PreguntaGeneradaIA(BaseModel):
     dba_ids: list[UUID] = Field(default_factory=list)
     justificacion_alineacion: str = Field(min_length=5)
     fuente_contexto_ids: list[UUID] = Field(default_factory=list)
+    learning_criterion_keys: list[str] = Field(default_factory=list)
 
 
 class EvaluacionContenidoIA(BaseModel):

@@ -25,6 +25,7 @@ CAPABILITY_BY_FEATURE: dict[str, str] = {
     "calificacion.revision_adicional": "vision",
     "digitalizacion.extraccion": "vision",
     "presentaciones.imagenes": "image",
+    "criterios.extraccion": "vision",
 }
 
 

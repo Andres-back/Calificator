@@ -6,6 +6,7 @@ from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from app.core.config import settings
 from app.core.permissions import is_student_enrolled
 from app.modules.dba.service import get_dba_personalizado_records_for_evaluation, get_dba_records
 from app.modules.evaluaciones.blueprint_service import (
@@ -107,7 +108,50 @@ async def get_evaluation_or_404(db: AsyncSession, evaluacion_id: UUID) -> Evalua
     evaluacion = await _select_evaluation(db, evaluacion_id)
     if not evaluacion:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Evaluation not found")
+    await _attach_learning_criteria_summaries(db, [evaluacion])
     return evaluacion
+
+
+async def _attach_learning_criteria_summaries(
+    db: AsyncSession, evaluations: list[Evaluacion]
+) -> None:
+    if not evaluations or not settings.CRITERIA_UI:
+        return
+    from app.modules.criterios_aprendizaje.models import (
+        LearningCriterionApplication,
+        LearningCriterionSet,
+        LearningCriterionVersion,
+    )
+
+    rows = await db.execute(
+        select(
+            LearningCriterionApplication.target_id,
+            LearningCriterionApplication.version_id,
+            LearningCriterionApplication.snapshot_hash,
+            LearningCriterionVersion.version_number,
+            LearningCriterionSet.id.label("set_id"),
+            LearningCriterionSet.titulo,
+        )
+        .join(LearningCriterionVersion, LearningCriterionVersion.id == LearningCriterionApplication.version_id)
+        .join(LearningCriterionSet, LearningCriterionSet.id == LearningCriterionVersion.set_id)
+        .where(
+            LearningCriterionApplication.target_type == "evaluacion",
+            LearningCriterionApplication.target_id.in_([item.id for item in evaluations]),
+            LearningCriterionApplication.is_current.is_(True),
+        )
+    )
+    by_target = {
+        row.target_id: {
+            "set_id": str(row.set_id),
+            "version_id": str(row.version_id),
+            "version_number": row.version_number,
+            "titulo": row.titulo,
+            "snapshot_hash": row.snapshot_hash,
+        }
+        for row in rows
+    }
+    for evaluation in evaluations:
+        evaluation.criterios_aprendizaje_aplicados = by_target.get(evaluation.id)
 
 
 async def _linked_material_is_visible(db: AsyncSession, evaluacion: Evaluacion) -> bool:
@@ -210,6 +254,7 @@ def _student_safe_evaluation(evaluacion: Evaluacion, progress: dict | None = Non
         "created_at": evaluacion.created_at,
         "updated_at": evaluacion.updated_at,
         "blueprint": None,
+        "criterios_aprendizaje_aplicados": getattr(evaluacion, "criterios_aprendizaje_aplicados", None),
     }
     payload.update(progress or {})
     return payload
@@ -518,6 +563,17 @@ async def create_evaluation(
     )
     db.add(evaluacion)
     await db.flush()
+    if payload.criterios_aprendizaje_version_id is not None:
+        if not settings.CRITERIA_WRITE:
+            raise HTTPException(status_code=503, detail="La aplicación de criterios aún no está habilitada")
+        from app.modules.criterios_aprendizaje.application_service import apply_to_evaluation
+
+        await apply_to_evaluation(
+            db,
+            evaluation=evaluacion,
+            version_id=payload.criterios_aprendizaje_version_id,
+            actor_id=current_user.id,
+        )
     await _build_or_update_blueprint(db, evaluacion, payload.dba_ids, payload.dba_personalizado_ids)
     await db.commit()
     return await get_evaluation_or_404(db, evaluacion.id)
@@ -548,6 +604,7 @@ async def list_evaluations_for_materia(
         )
     result = await db.scalars(stmt)
     evaluaciones = list(result)
+    await _attach_learning_criteria_summaries(db, evaluaciones)
     if not manages_context:
         visible_evaluations = [
             evaluacion
@@ -566,14 +623,22 @@ async def update_evaluation(
     db: AsyncSession,
     evaluacion: Evaluacion,
     payload: EvaluacionUpdate,
+    current_user: User | None = None,
 ) -> Evaluacion:
     data = payload.model_dump(exclude_unset=True)
+    learning_criteria_version_id = data.pop("criterios_aprendizaje_version_id", None)
+    if learning_criteria_version_id is not None and not settings.CRITERIA_WRITE:
+        raise HTTPException(status_code=503, detail="La aplicación de criterios aún no está habilitada")
     if "estado" in data:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="El estado de una evaluacion solo puede cambiar mediante endpoints dedicados.",
         )
     structural_update = bool(STRUCTURAL_FIELDS.intersection(data))
+    if structural_update and learning_criteria_version_id is None and settings.CRITERIA_WRITE:
+        from app.modules.criterios_aprendizaje.application_service import supersede_current_application
+
+        await supersede_current_application(db, target_type="evaluacion", target_id=evaluacion.id)
 
     rebuild_blueprint = False
     dba_ids = [UUID(value) for value in evaluacion.dba_ids]
@@ -610,6 +675,19 @@ async def update_evaluation(
         evaluacion.preguntas = normalize_question_modalities(
             evaluacion.preguntas,
             evaluacion.modalidad,
+        )
+        rebuild_blueprint = True
+
+    if learning_criteria_version_id is not None:
+        if current_user is None:
+            raise HTTPException(status_code=403, detail="No se pudo verificar quién aplica los criterios")
+        from app.modules.criterios_aprendizaje.application_service import apply_to_evaluation
+
+        await apply_to_evaluation(
+            db,
+            evaluation=evaluacion,
+            version_id=learning_criteria_version_id,
+            actor_id=current_user.id,
         )
         rebuild_blueprint = True
 

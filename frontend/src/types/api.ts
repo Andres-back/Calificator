@@ -179,6 +179,13 @@ export interface Evaluacion {
   criterios: Record<string, unknown>[];
   preguntas: Record<string, unknown>[];
   respuestas_esperadas: Record<string, unknown>[];
+  criterios_aprendizaje_aplicados?: {
+    set_id: string;
+    version_id: string;
+    version_number: number;
+    titulo: string;
+    snapshot_hash: string;
+  } | null;
   blueprint?: {
     reglas_feedback?: {
       trazabilidad?: {
@@ -207,6 +214,98 @@ export interface DBARead {
   descripcion: string;
   fuente?: string | null;
   activo?: boolean;
+}
+
+/* ── Criterios de aprendizaje (contrato canónico; DBA queda como estándar opcional) ── */
+export type LearningCriteriaSetStatus = 'activo' | 'archivado';
+export type LearningCriteriaVersionStatus = 'borrador' | 'procesando' | 'requiere_revision' | 'aprobada' | 'sustituida';
+export type LearningSourceType = 'foto' | 'pdf' | 'documento' | 'texto' | 'material_existente' | 'estandar_oficial';
+export type LearningSourceStatus = 'pendiente' | 'procesando' | 'lista' | 'error' | 'eliminada';
+
+export interface LearningCriterionLevel {
+  nombre: string;
+  descripcion: string;
+  desde?: number | null;
+  hasta?: number | null;
+}
+
+export interface LearningCriterion {
+  id?: string;
+  stable_key: string;
+  orden: number;
+  nombre: string;
+  descripcion: string;
+  evidencia_esperada: string;
+  peso_porcentaje: number;
+  puntaje_maximo?: number | null;
+  niveles: LearningCriterionLevel[];
+  source_refs?: Array<{ source_id: string; pagina?: number | null; fragmento?: string | null }>;
+  official_standard_refs?: Array<{ id: string; tipo?: string; codigo?: string | null }>;
+}
+
+export interface LearningSource {
+  id: string;
+  tipo: LearningSourceType;
+  orden: number;
+  display_name: string;
+  mime_type?: string | null;
+  size_bytes?: number | null;
+  page_count?: number | null;
+  extraction_status: LearningSourceStatus;
+  visible_to_student: boolean;
+  error?: string | null;
+}
+
+export interface LearningCriteriaVersion {
+  id: string;
+  set_id: string;
+  version_number: number;
+  revision: number;
+  estado: LearningCriteriaVersionStatus;
+  intencion_docente: Record<string, unknown>;
+  cobertura?: Record<string, unknown>;
+  criterios: LearningCriterion[];
+  fuentes: LearningSource[];
+  approved_at?: string | null;
+  created_at: string;
+  updated_at?: string | null;
+}
+
+export interface LearningCriteriaList {
+  items: LearningCriteriaSet[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
+export interface LearningCriteriaSet {
+  id: string;
+  materia_id: string;
+  profesor_id: string;
+  titulo: string;
+  descripcion?: string | null;
+  estado: LearningCriteriaSetStatus;
+  current_version_id?: string | null;
+  version_trabajo?: LearningCriteriaVersion | null;
+  version_aprobada?: LearningCriteriaVersion | null;
+  usos?: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface LearningCriterionTrace {
+  application_id?: string | null;
+  set_id?: string | null;
+  version_id?: string | null;
+  version_number?: number | null;
+  stable_key: string;
+  nombre: string;
+  descripcion?: string | null;
+  max_points?: number | string | null;
+  awarded_points?: number | string | null;
+  source_refs?: Array<{ source_id?: string; pagina?: number | null; titulo?: string | null }>;
+  puntos_maximos?: number | string | null;
+  puntos_obtenidos?: number | string | null;
 }
 
 /* ── Presentaciones ── */
@@ -294,6 +393,7 @@ export interface GradeComponentData {
   evidencia_paginas: number[];
   fuentes?: Array<{ source_id?: string; chunk_id?: string; titulo?: string; version?: string; fragmento?: string }>;
   valoraciones?: Record<string, unknown>[];
+  criterios_aplicados?: LearningCriterionTrace[];
 }
 
 export interface GradeBreakdownData {
