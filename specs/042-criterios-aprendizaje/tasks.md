@@ -10,8 +10,8 @@
 ## Fase 2: Fundamentos
 
 - [ ] T005 Escribir pruebas PostgreSQL de migración y backfill idempotente que preserven DBA, evaluación publicada/cerrada, blueprint, nota, desglose y PQRS en `backend/tests/integration/test_learning_criteria_migration.py`
-- [ ] T006 [P] Escribir pruebas de modelos para estados, versión aprobada inmutable, pesos Decimal y relaciones restrictivas en `backend/tests/unit/test_learning_criteria_models.py`
-- [ ] T007 [P] Escribir matriz de autorización 401/403/404/dueño/admin y aislamiento de fuentes privadas en `backend/tests/unit/test_learning_criteria_authorization.py`
+- [X] T006 [P] Escribir pruebas de modelos para estados, versión aprobada inmutable, pesos Decimal y relaciones restrictivas en `backend/tests/unit/test_learning_criteria_models.py`
+- [X] T007 [P] Escribir matriz de autorización 401/403/404/dueño/admin y aislamiento de fuentes privadas en `backend/tests/unit/test_learning_criteria_authorization.py`
 - [X] T008 Crear modelos de conjuntos, versiones, criterios, niveles/fuentes, aplicaciones y relación con componentes en `backend/app/modules/criterios_aprendizaje/models.py`
 - [X] T009 Crear migración aditiva, restricciones, índices y backfill idempotente con hash canónico en `backend/alembic/versions/202609130001_learning_criteria.py`
 - [X] T010 Registrar los modelos sin reemplazar entidades DBA y exponer el router canónico en `backend/app/db/base.py` y `backend/app/api.py`
@@ -27,7 +27,7 @@
 **Prueba independiente**: un profesor crea criterios manuales sin fuente y otro borrador con dos fotos ordenadas; un profesor ajeno y un estudiante no pueden leer sus referencias.
 
 - [ ] T015 [P] [US1] Escribir pruebas de contratos CRUD manual, fuentes y errores atómicos según FR-001–FR-005 y FR-018–FR-020 en `backend/tests/unit/test_learning_criteria_api.py`
-- [ ] T016 [P] [US1] Escribir pruebas de carga multihoja, PDF/DOCX/texto, orden, rotación, deduplicación, límites y limpieza transaccional en `backend/tests/unit/test_learning_source_service.py`
+- [X] T016 [P] [US1] Escribir pruebas de carga multihoja, PDF/DOCX/texto, orden, rotación, deduplicación, límites y limpieza transaccional en `backend/tests/unit/test_learning_source_service.py`
 - [ ] T017 [P] [US1] Escribir pruebas de propuesta idempotente, contexto insuficiente, fallo recuperable y proveedor intercambiable en `backend/tests/unit/test_learning_criteria_generation.py`
 - [X] T018 [US1] Implementar esquemas de entrada/salida, errores estructurados e intención docente en `backend/app/modules/criterios_aprendizaje/schemas.py`
 - [X] T019 [US1] Implementar CRUD de conjunto y borrador manual con paginación y archivado lógico en `backend/app/modules/criterios_aprendizaje/service.py`
@@ -96,7 +96,7 @@
 
 **Prueba independiente**: profesor completa el flujo en 360 px y escritorio; estudiante no ve administración ni fuentes; `/dba` conserva contexto y redirige.
 
-- [ ] T057 [P] [US5] Escribir pruebas de rutas, pestaña, alias `/dba`, permisos y vocabulario consistente en `frontend/src/modules/materias/LearningCriteriaNavigation.test.tsx`
+- [X] T057 [P] [US5] Escribir pruebas de rutas, pestaña, alias `/dba`, permisos y vocabulario consistente en `frontend/src/modules/materias/LearningCriteriaNavigation.test.tsx`
 - [ ] T058 [P] [US5] Escribir E2E para creación manual/asistida, claro/oscuro, 360/390/768/escritorio y privacidad estudiantil en `frontend/e2e/learning-criteria.spec.ts`
 - [X] T059 [US5] Añadir ruta canónica `/criterios`, alias `/dba` y helper preservando query/hash en `frontend/src/router.tsx` y `frontend/src/config/routes.ts`
 - [X] T060 [US5] Renombrar la pestaña a “Criterios de aprendizaje”, restringir administración al profesor y conservar lectura publicada para estudiante en `frontend/src/modules/materias/MateriaDetailPage.tsx`

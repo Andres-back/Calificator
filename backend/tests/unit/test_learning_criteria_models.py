@@ -4,10 +4,16 @@ from decimal import Decimal
 from types import SimpleNamespace
 from uuid import uuid4
 
-from app.modules.criterios_aprendizaje.compatibility import canonical_hash, criterion_snapshot
+from app.modules.criterios_aprendizaje.compatibility import (
+    canonical_hash,
+    criterion_snapshot,
+)
 from app.modules.criterios_aprendizaje.models import (
+    GradingComponentCriterion,
     LearningCriterion,
+    LearningCriterionApplication,
     LearningCriterionSet,
+    LearningCriterionSource,
     LearningCriterionVersion,
 )
 
@@ -47,3 +53,28 @@ def test_snapshot_is_ordered_stable_and_preserves_decimal_values() -> None:
     assert snapshot["peso_porcentaje"] == 40.0
     assert snapshot["source_refs"] == [{"pagina": 2}]
     assert canonical_hash(snapshot) == canonical_hash(dict(reversed(list(snapshot.items()))))
+
+
+def test_domain_state_constraints_and_relationships_are_restrictive() -> None:
+    version_constraints = {
+        constraint.name: str(constraint.sqltext)
+        for constraint in LearningCriterionVersion.__table__.constraints
+        if constraint.name and getattr(constraint, "sqltext", None) is not None
+    }
+    source_constraints = {
+        constraint.name: str(constraint.sqltext)
+        for constraint in LearningCriterionSource.__table__.constraints
+        if constraint.name and getattr(constraint, "sqltext", None) is not None
+    }
+    assert "aprobada" in version_constraints["ck_learning_criterion_version_estado"]
+    assert "requiere_revision" in version_constraints["ck_learning_criterion_version_estado"]
+    assert "eliminada" in source_constraints["ck_learning_criterion_source_status"]
+
+    for model in (
+        LearningCriterion,
+        LearningCriterionSource,
+        LearningCriterionApplication,
+        GradingComponentCriterion,
+    ):
+        assert model.__table__.foreign_keys
+        assert all(foreign_key.ondelete == "RESTRICT" for foreign_key in model.__table__.foreign_keys)

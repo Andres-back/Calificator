@@ -11,3 +11,15 @@ def test_canonical_learning_criteria_routes_are_registered() -> None:
     assert "/criterios-aprendizaje/versiones/{version_id}/fuentes/archivo" in paths
     assert "/criterios-aprendizaje/fuentes/{source_id}" in paths
     assert "/criterios-aprendizaje/versiones/{version_id}/proponer" in paths
+
+
+def test_learning_criteria_requires_an_authenticated_session() -> None:
+    from fastapi.testclient import TestClient
+
+    from app.main import create_app
+
+    response = TestClient(create_app(), base_url="http://localhost").get(
+        "/api/criterios-aprendizaje/capacidades"
+    )
+
+    assert response.status_code == 401
