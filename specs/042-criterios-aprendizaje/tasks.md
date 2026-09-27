@@ -108,7 +108,7 @@
 ## Fase final: Convergencia, seguridad y despliegue progresivo
 
 - [ ] T065 Ejecutar backfill dos veces y documentar paridad de UUID, snapshots, notas, desglose y PQRS en `specs/042-criterios-aprendizaje/quickstart.md`
-- [ ] T066 [P] Añadir pruebas directas a las cinco superficies DBA sin cobertura y sus adaptadores de compatibilidad en `backend/tests/unit/test_dba_compatibility.py`
+- [X] T066 [P] Añadir pruebas directas a las cinco superficies DBA sin cobertura y sus adaptadores de compatibilidad en `backend/tests/unit/test_dba_compatibility.py`
 - [X] T067 [P] Validar que logs, errores, analytics y jobs no contienen texto de fuentes, imágenes, claves o URLs privadas en `backend/tests/unit/test_learning_criteria_privacy.py`
 - [ ] T068 Ejecutar pytest/Ruff, TypeScript/ESLint/Vitest/build y Playwright focal, corregir regresiones atribuibles a 042 y registrar resultados en `specs/042-criterios-aprendizaje/quickstart.md`
 - [ ] T069 Actualizar inventario, ejecutar dos comprobaciones deterministas y mapear todas las superficies nuevas a 042 en `specs/system-inventory/inventory.json` y `specs/system-inventory/summary.md`
@@ -156,7 +156,7 @@ El MVP seguro comprende Fases 1–4: dominio aditivo, creación manual/asistida 
 ## Fase 8: Convergencia (2026-09-27)
 
 - [ ] T082 [P] Sustituir la comprobación textual por una prueba PostgreSQL que ejecute dos veces migración/backfill y demuestre preservación de DBA, evaluaciones, blueprints, notas, desglose y PQRS; documentar paridad de UUID y snapshots para FR-012, FR-017 y FR-023 en `backend/tests/integration/test_learning_criteria_migration.py` y `specs/042-criterios-aprendizaje/quickstart.md`
-- [ ] T083 [P] Completar pruebas de dominio, autorización, privacidad, fuentes y versiones inmutables para FR-002, FR-003, FR-004, FR-005, FR-006, FR-007, FR-008, FR-009, FR-018, FR-019 y FR-020 en `backend/tests/unit/test_learning_criteria_versions.py`, `backend/tests/unit/test_learning_criteria_privacy.py`, `backend/tests/unit/test_learning_source_service.py` y `backend/tests/unit/test_dba_compatibility.py`
+- [X] T083 [P] Completar pruebas de dominio, autorización, privacidad, fuentes y versiones inmutables para FR-002, FR-003, FR-004, FR-005, FR-006, FR-007, FR-008, FR-009, FR-018, FR-019 y FR-020 en `backend/tests/unit/test_learning_criteria_versions.py`, `backend/tests/unit/test_learning_criteria_privacy.py`, `backend/tests/unit/test_learning_source_service.py` y `backend/tests/unit/test_dba_compatibility.py`
 - [X] T084 Completar búsqueda/filtros, estados y acciones reales del listado; conservar la entrada de tres opciones, tarjetas simplificadas, pesos automáticos y recorrido repetible para FR-001, FR-021, FR-022, FR-025, FR-026, FR-027 y FR-031 en `frontend/src/modules/materias/criterios/LearningCriteriaPage.tsx`, `frontend/src/modules/materias/criterios/LearningCriteriaEditor.tsx` y sus pruebas
 - [X] T085 Completar la aplicación de versiones aprobadas a evaluaciones y recursos, incluyendo material no evaluativo y snapshot exacto, para FR-010 y FR-011 en `backend/app/modules/criterios_aprendizaje/application_service.py` y sus pruebas de evaluación/recurso
 - [X] T086 Implementar propuesta editable pregunta→criterio y vista previa previa a guardar con intención, cobertura, puntaje y advertencias para FR-028 y FR-029 en `frontend/src/modules/evaluaciones/components/LearningCriteriaSelector.tsx`, `frontend/src/modules/evaluaciones/components/GenerationWizard.tsx` y contratos backend asociados

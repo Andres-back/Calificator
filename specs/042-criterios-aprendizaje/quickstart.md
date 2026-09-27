@@ -141,3 +141,11 @@ No se cambió la fórmula de calificación, la autoridad nueva permanece desacti
 - `CRITERIA_GRADING_AUTHORITY` continúa en `false`; los criterios explican la valoración, pero la nota sigue saliendo exclusivamente de la fórmula vigente sobre puntos obtenidos y posibles.
 - Pytest focal: **12 pruebas verdes** de aplicación a evaluación/recurso, snapshot exacto, asignación explicativa y paridad matemática.
 - Ruff focal: sin hallazgos.
+
+## Resultado focal: compatibilidad DBA y matriz de dominio (2026-09-27)
+
+- Las cinco superficies que el inventario marcaba sin cobertura ya tienen pruebas directas: listado, creación y carga documental de referencias personalizadas, `dba_catalog` y `dba_personalizados`.
+- Se comprueba que ambas tablas históricas permanecen separadas y que el adaptador nuevo conserva identificador oficial, clave estable y versión sin crear filas falsas del catálogo.
+- La carga documental rechaza tipos no permitidos antes de persistir contenido; listado y creación respetan el ámbito de la materia y su propietario.
+- Pytest de la matriz completa: **33 pruebas verdes** de modelos, versiones, autorización, privacidad, fuentes y compatibilidad DBA. Solo se observaron advertencias de dependencias/deprecaciones, no fallos funcionales.
+- Ruff del archivo nuevo: sin hallazgos.
