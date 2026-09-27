@@ -83,4 +83,27 @@ describe('GradeBreakdown', () => {
     expect(screen.getByText('Ajuste docente: +0.25')).toBeInTheDocument();
     expect(screen.getByText('Se reconoció el procedimiento adicional.')).toBeInTheDocument();
   });
+
+  it('resume el avance por criterio usando los mismos puntos del desglose', () => {
+    const withCriteria: GradeBreakdownData = {
+      ...breakdown,
+      componentes: [
+        {
+          ...breakdown.componentes[0],
+          criterios_aplicados: [
+            { stable_key: 'comprension', nombre: 'Comprensión', puntos_obtenidos: 0.8, puntos_maximos: 1 },
+            { stable_key: 'argumentacion', nombre: 'Argumentación', puntos_obtenidos: 0.4, puntos_maximos: 1 },
+          ],
+        },
+      ],
+    };
+
+    render(<GradeBreakdown breakdown={withCriteria} student />);
+
+    expect(screen.getByRole('heading', { name: 'Avance por criterio de aprendizaje' })).toBeVisible();
+    expect(screen.getByText('Logrado')).toBeVisible();
+    expect(screen.getByText('Necesita apoyo')).toBeVisible();
+    expect(screen.getAllByText('0.80 / 1.00')).toHaveLength(2);
+    expect(screen.getByText(/no calcula una segunda nota/i)).toBeVisible();
+  });
 });

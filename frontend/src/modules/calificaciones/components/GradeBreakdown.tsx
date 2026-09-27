@@ -3,6 +3,7 @@ import { AlertTriangle, CheckCircle2, EyeOff, FileSearch } from 'lucide-react';
 import { Badge } from '@/components/ui';
 import type { GradeBreakdownData } from '@/types/api';
 import { GradeFormula } from './GradeFormula';
+import { summarizeCriterionLearning } from './gradeCriterionSummary';
 
 const stateLabel: Record<string, string> = {
   correcta: 'Correcta', parcial: 'Parcial', incorrecta: 'Incorrecta',
@@ -20,6 +21,7 @@ export function GradeBreakdown({ breakdown, student = false, onEdit, onEvidenceP
   selectedComponentId?: string;
   onSelectComponent?: (componentId: string) => void;
 }) {
+  const criterionSummary = summarizeCriterionLearning(breakdown);
   return (
     <section aria-labelledby="grade-breakdown-title" className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -31,6 +33,37 @@ export function GradeBreakdown({ breakdown, student = false, onEdit, onEvidenceP
           {breakdown.requiere_revision ? 'Requiere revisión' : 'Desglose completo'}
         </Badge>
       </div>
+      {criterionSummary.length > 0 && (
+        <section aria-labelledby="criterion-learning-summary" className="rounded-2xl border border-indigo-200 bg-indigo-50/60 p-4 dark:border-indigo-500/30 dark:bg-indigo-500/10">
+          <div>
+            <h3 id="criterion-learning-summary" className="font-extrabold text-fg">Avance por criterio de aprendizaje</h3>
+            <p className="mt-1 text-sm text-muted">Este resumen agrupa los mismos puntos del desglose; no calcula una segunda nota.</p>
+          </div>
+          <ul className="mt-3 grid gap-2 sm:grid-cols-2">
+            {criterionSummary.map((criterion) => {
+              const copy = criterion.estado === 'logrado'
+                ? { label: 'Logrado', className: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-100' }
+                : criterion.estado === 'en_proceso'
+                  ? { label: 'En proceso', className: 'bg-amber-100 text-amber-800 dark:bg-amber-500/20 dark:text-amber-100' }
+                  : { label: 'Necesita apoyo', className: 'bg-rose-100 text-rose-800 dark:bg-rose-500/20 dark:text-rose-100' };
+              return (
+                <li key={criterion.key} className="rounded-xl border border-indigo-100 bg-surface p-3 dark:border-indigo-500/20">
+                  <div className="flex flex-wrap items-start justify-between gap-2">
+                    <span className="font-semibold">{criterion.nombre}</span>
+                    <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${copy.className}`}>{copy.label}</span>
+                  </div>
+                  <div className="mt-2 flex items-center gap-3">
+                    <div className="h-2 flex-1 overflow-hidden rounded-full bg-surface-2" aria-hidden="true">
+                      <div className="h-full rounded-full bg-brand-600" style={{ width: `${criterion.porcentaje}%` }} />
+                    </div>
+                    <strong className="whitespace-nowrap text-sm">{criterion.puntosObtenidos.toFixed(2)} / {criterion.puntosMaximos.toFixed(2)}</strong>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      )}
       {onSelectComponent && !student ? <>
         <nav aria-label="Preguntas y criterios" className="flex flex-wrap gap-2">
           {breakdown.componentes.map((component) => <button
