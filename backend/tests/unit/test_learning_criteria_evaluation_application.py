@@ -3,16 +3,19 @@ from __future__ import annotations
 import asyncio
 from decimal import Decimal
 from types import SimpleNamespace
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, MagicMock
 from uuid import uuid4
 
+import pytest
+from fastapi import HTTPException
+
+from app.core.config import settings
+from app.modules.calificaciones.breakdown_policy import calculate_formula
 from app.modules.criterios_aprendizaje import application_service
-from app.modules.evaluaciones.generation_service import build_generation_prompt
-from app.modules.evaluaciones.schemas import EvaluacionGenerarRequest
 from app.modules.criterios_aprendizaje.schemas import LearningCriterionInput
 from app.modules.criterios_aprendizaje.service import _replace_criteria
-from fastapi import HTTPException
-import pytest
+from app.modules.evaluaciones.generation_service import build_generation_prompt
+from app.modules.evaluaciones.schemas import EvaluacionGenerarRequest
 
 
 def _snapshot(version_id, set_id):
@@ -98,6 +101,49 @@ def test_later_snapshot_changes_do_not_mutate_applied_payload(monkeypatch) -> No
     # El dual-write y la aplicación se construyeron antes de la mutación externa.
     assert evaluation.criterios[0]["nombre"] == "Argumentación"
     assert stored[0]["version_id"] == str(version_id)
+
+
+def test_persisted_application_freezes_the_exact_snapshot(monkeypatch) -> None:
+    db = SimpleNamespace(
+        scalar=AsyncMock(return_value=None),
+        add=MagicMock(),
+        flush=AsyncMock(),
+    )
+    monkeypatch.setattr(application_service, "audit_criteria_event", AsyncMock())
+    snapshot = _snapshot(uuid4(), uuid4())
+    original_name = snapshot["criterios"][0]["nombre"]
+
+    row = asyncio.run(
+        application_service._persist_application(
+            db,
+            version=SimpleNamespace(id=uuid4()),
+            criterion_set=SimpleNamespace(id=uuid4()),
+            snapshot=snapshot,
+            target_type="evaluacion",
+            target_id=uuid4(),
+            actor_id=uuid4(),
+        )
+    )
+    snapshot["criterios"][0]["nombre"] = "Edición posterior"
+
+    assert row.snapshot_json["criterios"][0]["nombre"] == original_name
+    assert row.snapshot_hash == application_service.canonical_hash(row.snapshot_json)
+
+
+def test_learning_criteria_do_not_replace_the_existing_grade_formula() -> None:
+    assert settings.CRITERIA_GRADING_AUTHORITY is False
+    components = [
+        {"puntos_maximos": Decimal("2"), "puntos_obtenidos": Decimal("1.5")},
+        {"puntos_maximos": Decimal("3"), "puntos_obtenidos": Decimal("2.0")},
+    ]
+
+    before = calculate_formula(components, Decimal("5"))
+    # El snapshot explica los componentes, pero no participa en la suma.
+    _ = _snapshot(uuid4(), uuid4())
+    after = calculate_formula(components, Decimal("5"))
+
+    assert after == before
+    assert after["nota_final"] == Decimal("3.50")
 
 
 def test_generation_prompt_receives_approved_learning_evidence() -> None:

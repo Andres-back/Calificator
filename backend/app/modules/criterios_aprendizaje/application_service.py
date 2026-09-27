@@ -6,6 +6,7 @@ el equivalente en los campos heredados. No modifica notas ni desgloses.
 from __future__ import annotations
 
 import json
+from copy import deepcopy
 from uuid import UUID
 
 from fastapi import HTTPException, status
@@ -13,7 +14,11 @@ from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modules.criterios_aprendizaje.audit import audit_criteria_event
-from app.modules.criterios_aprendizaje.compatibility import canonical_hash, to_legacy_criteria, version_snapshot
+from app.modules.criterios_aprendizaje.compatibility import (
+    canonical_hash,
+    to_legacy_criteria,
+    version_snapshot,
+)
 from app.modules.criterios_aprendizaje.models import (
     LearningCriterion,
     LearningCriterionApplication,
@@ -92,7 +97,8 @@ async def _persist_application(
     target_id: UUID,
     actor_id: UUID,
 ) -> LearningCriterionApplication:
-    snapshot_hash = canonical_hash(snapshot)
+    frozen_snapshot = deepcopy(snapshot)
+    snapshot_hash = canonical_hash(frozen_snapshot)
     current = await db.scalar(
         select(LearningCriterionApplication).where(
             LearningCriterionApplication.target_type == target_type,
@@ -112,7 +118,7 @@ async def _persist_application(
         version_id=version.id,
         target_type=target_type,
         target_id=target_id,
-        snapshot_json=snapshot,
+        snapshot_json=frozen_snapshot,
         snapshot_hash=snapshot_hash,
         applied_by=actor_id,
     )

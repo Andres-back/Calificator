@@ -133,3 +133,11 @@ No se activó autoridad nueva sobre notas ni se realizó despliegue productivo.
 - TypeScript y ESLint focal: código de salida 0. Ruff focal: sin hallazgos después del ordenamiento mecánico de imports.
 
 No se cambió la fórmula de calificación, la autoridad nueva permanece desactivada y no se modificaron recursos o notas existentes.
+
+## Resultado focal: snapshot y paridad de fórmula (2026-09-27)
+
+- La aplicación persiste una copia profunda del snapshot aprobado: una edición posterior del objeto de trabajo no puede modificar la versión ya asociada.
+- Evaluaciones y materiales de apoyo usan el mismo servicio de aplicación inmutable y mantienen el adaptador heredado requerido por los consumidores actuales.
+- `CRITERIA_GRADING_AUTHORITY` continúa en `false`; los criterios explican la valoración, pero la nota sigue saliendo exclusivamente de la fórmula vigente sobre puntos obtenidos y posibles.
+- Pytest focal: **12 pruebas verdes** de aplicación a evaluación/recurso, snapshot exacto, asignación explicativa y paridad matemática.
+- Ruff focal: sin hallazgos.
