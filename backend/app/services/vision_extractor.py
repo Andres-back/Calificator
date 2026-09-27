@@ -22,6 +22,7 @@ from app.services.ai_provider_capacity import provider_capacity
 from app.services.ai_credentials_service import get_effective_ai_credentials
 from app.services.image_preprocessing import prepare_orientation_variants
 from app.services.ollama_provider import OllamaCloudProvider, OllamaProviderError
+from app.services.opencode_request import new_opencode_session_id, opencode_headers
 
 logger = get_logger(__name__)
 RETRYABLE_HTTP = {429, 502, 503, 504}
@@ -43,6 +44,16 @@ _SOLUTION_CONTEXT_KEYS = {
     "solucion",
     "solution",
 }
+_GRAPHIC_REQUEST = re.compile(
+    r"\b(?:dibuj\w*|traz\w*|grafic\w*|esboz\w*|"
+    r"represent\w*\s+(?:graficamente|en\s+(?:el\s+)?(?:plano|sistema)))\b",
+    re.IGNORECASE,
+)
+_NO_VISIBLE_DRAWING = re.compile(
+    r"^(?:no\s+(?:se\s+)?(?:observa|ve|distingue)|sin\s+(?:dibujo|trazos)|"
+    r"ningun\s+(?:dibujo|trazo))\b",
+    re.IGNORECASE,
+)
 
 
 class ExtractedAnswer(BaseModel):
@@ -50,6 +61,7 @@ class ExtractedAnswer(BaseModel):
     question_id: str | None = None
     question_number: int | str
     answer: str | None = None
+    visual_description: str | None = None
     confidence: float = Field(0, ge=0, le=1)
     page: int = Field(ge=1)
     source_pages: list[int] = Field(default_factory=list)
@@ -60,10 +72,15 @@ class ExtractedAnswer(BaseModel):
 
     @model_validator(mode="after")
     def preserve_uncertainty(self) -> "ExtractedAnswer":
+        if self.visual_description:
+            description = self.visual_description.strip()
+            self.visual_description = (
+                None if _NO_VISIBLE_DRAWING.match(_context_key(description)) else description or None
+            )
         if not self.legible:
-            self.answer, self.blank, self.needs_review = None, False, True
+            self.answer, self.visual_description, self.blank, self.needs_review = None, None, False, True
         elif self.blank:
-            self.answer = None
+            self.answer, self.visual_description = None, None
         if not self.source_pages:
             self.source_pages = [self.page]
         return self
@@ -92,6 +109,7 @@ class VisionExtraction(BaseModel):
     answers: list[ExtractedAnswer] = Field(default_factory=list)
     pages: list[VisionPageResult] = Field(default_factory=list)
     warnings: list[str] = Field(default_factory=list)
+    graphic_uncertain_questions: list[int | str] = Field(default_factory=list)
     requires_review: bool = False
     provider: str = "opencode"
     primary_model: str
@@ -104,22 +122,42 @@ class VisionExtraction(BaseModel):
     parsing_ms: int = 0
 
     def legacy_payload(self) -> dict[str, Any]:
-        text = "\n\n".join(
+        page_text = "\n\n".join(
             f"=== PÁGINA {p.page} ===\n{p.page_text}" for p in self.pages if p.page_text
         )
+        visual_lines = [
+            (
+                f"Pregunta {answer.question_number} ("
+                f"{'página' if len(answer.source_pages) == 1 else 'páginas'} "
+                f"{', '.join(map(str, answer.source_pages))}): {answer.visual_description}"
+            )
+            for answer in self.answers if answer.visual_description
+        ]
+        visual_lines.extend(
+            f"Pregunta {number}: evidencia gráfica NO confirmada; el texto extraído NO confirma ausencia del dibujo. Revisión docente necesaria."
+            for number in self.graphic_uncertain_questions
+        )
+        text = "\n\n".join(part for part in (
+            page_text,
+            "=== EVIDENCIA GRÁFICA DEL ESTUDIANTE ===\n" + "\n".join(visual_lines)
+            if visual_lines else "",
+        ) if part)
         return {
             "texto_extraido": text,
             "paginas_detectadas": [p.page for p in self.pages if p.status.startswith("extract") or p.status == "requires_review"],
             "preguntas_detectadas": [a.question_number for a in self.answers],
             "respuestas_detectadas": [{
                 "pregunta": a.question_number, "pagina": a.page,
-                "paginas_origen": a.source_pages, "respuesta": a.answer,
+                "paginas_origen": a.source_pages,
+                "respuesta": _answer_with_visual_description(a),
+                "descripcion_visual": a.visual_description,
                 "legible": a.legible, "sin_respuesta": a.blank,
                 "confianza": a.confidence, "requiere_revision": a.needs_review,
             } for a in self.answers],
             "calidad_imagen": {"confianza": self.document_quality, "paginas": len(self.pages)},
             "usable": bool(text or self.answers),
             "alertas": self.warnings,
+            "preguntas_graficas_inciertas": self.graphic_uncertain_questions,
             "rotation_applied": self.rotation_applied,
             "vision_extraction": self.model_dump(mode="json"),
         }
@@ -193,11 +231,13 @@ def _normalize(raw: dict[str, Any], page: int, size: int) -> VisionPageResult:
         if number is None:
             continue
         answer = item.get("answer", item.get("respuesta"))
+        visual_description = item.get("visual_description", item.get("descripcion_visual"))
         answers.append(ExtractedAnswer(
             question_id=item.get("question_id"), question_number=number,
             answer=None if answer is None else str(answer),
+            visual_description=visual_description,
             confidence=float(item.get("confidence", item.get("confianza", 0)) or 0),
-            page=page, legible=bool(item.get("legible", answer is not None)),
+            page=page, legible=bool(item.get("legible", answer is not None or visual_description is not None)),
             blank=bool(item.get("blank", item.get("sin_respuesta", False))),
             needs_review=bool(item.get("needs_review", item.get("requiere_revision", False))),
             correction_detected=bool(item.get("correction_detected", False)),
@@ -234,7 +274,32 @@ def _merge(pages: list[VisionPageResult]) -> list[ExtractedAnswer]:
                 current.answer = answer.answer if current.answer in answer.answer else f"{current.answer}\n{answer.answer}"
             elif answer.answer:
                 current.answer = answer.answer
+            if answer.visual_description and answer.visual_description not in (current.visual_description or ""):
+                current.visual_description = (
+                    f"{current.visual_description}\n{answer.visual_description}"
+                    if current.visual_description else answer.visual_description
+                )
     return list(merged.values())
+
+
+def _answer_with_visual_description(answer: ExtractedAnswer) -> str | None:
+    parts = [answer.answer.strip() if answer.answer else ""]
+    if answer.visual_description:
+        parts.append(f"[Dibujo observado: {answer.visual_description}]")
+    return "\n".join(part for part in parts if part) or None
+
+
+def _graphic_question_numbers(blueprint: dict[str, Any]) -> list[int | str]:
+    numbers: list[int | str] = []
+    for index, question in enumerate(blueprint.get("preguntas") or [], 1):
+        if not isinstance(question, dict):
+            continue
+        statement = str(
+            question.get("enunciado") or question.get("texto") or question.get("pregunta") or ""
+        )
+        if _GRAPHIC_REQUEST.search(_context_key(statement)):
+            numbers.append(question.get("numero") or index)
+    return numbers
 
 
 def _context_key(value: object) -> str:
@@ -280,6 +345,9 @@ class VisionExtractor:
         self.base_url = settings.OPEN_CODE_BASE_URL.rstrip("/")
         self.primary_model = primary_model or settings.VISION_MODEL
         self.api_key = (api_key or "").strip()
+        self._session_id = new_opencode_session_id(
+            self.tracking.get("pipeline_run_id")
+        )
 
     async def _keys(self) -> list[str]:
         effective = await get_effective_ai_credentials()
@@ -301,12 +369,30 @@ class VisionExtractor:
             )
         else:
             action = "Transcribe preguntas, opciones, instrucciones y respuestas visibles."
+        drawing_rule = (
+            "Para cada respuesta observa TAMBIÉN dibujos, diagramas, gráficas, trazos, puntos, "
+            "círculos y etiquetas añadidos por el estudiante. En visual_description describe "
+            "brevemente solo su geometría y relaciones visibles, vinculadas al número de pregunta; "
+            "no evalúes si son correctas. Distingue trazos del estudiante de figuras impresas. "
+            "Si no puedes distinguirlos, visual_description=null y needs_review=true. "
+            "No declares blank=true por faltar texto si hay trazos; solo si el área textual y gráfica "
+            "están realmente vacías. Conserva por separado en answer todo el texto manuscrito."
+            if purpose == "student_response" else ""
+        )
         return f"""Eres VisionExtractor. {action} Página {page} de {total}.
 Contexto: {json.dumps(context, ensure_ascii=False)}
+PRIORIDAD CRÍTICA: busca las respuestas del estudiante, no te detengas al reconocer
+el texto impreso. Inspecciona debajo y al lado de cada pregunta, especialmente líneas
+de respuesta con lápiz gris tenue, escritura infantil, palabras separadas, tachones y
+respuestas que invaden el margen. Amplía mentalmente la zona inferior de la hoja.
+Una respuesta incorrecta sigue siendo una respuesta: transcríbela literalmente.
+Solo usa blank=true cuando revisaste toda el área de respuesta y está realmente vacía.
+Si observas grafito pero no puedes leerlo, usa legible=false y needs_review=true, nunca blank=true.
 Transcribe solo lo visible. No completes, infieras ni corrijas. Conserva errores ortográficos.
+{drawing_rule}
 Distingue vacío de ilegible. Ilegible: answer=null, legible=false, needs_review=true.
 Informa tachones, correcciones y preguntas ausentes. Devuelve SOLO JSON:
-{{"student_detected":true,"document_quality":0.0,"page_text":"","answers":[{{"question_id":null,"question_number":1,"answer":null,"confidence":0.0,"legible":false,"blank":false,"needs_review":true,"correction_detected":false}}],"warnings":[]}}"""
+{{"student_detected":true,"document_quality":0.0,"page_text":"","answers":[{{"question_id":null,"question_number":1,"answer":null,"visual_description":null,"confidence":0.0,"legible":false,"blank":false,"needs_review":true,"correction_detected":false}}],"warnings":[]}}"""
 
     async def _event(self, event: str, request_id: str, model: str, attempt: int, started: float, page: int, size: int, status: str, error: str | None = None, usage: dict | None = None, http_status: int | None = None) -> None:
         duration = int((time.monotonic() - started) * 1000)
@@ -408,7 +494,10 @@ Informa tachones, correcciones y preguntas ausentes. Devuelve SOLO JSON:
                                     async with provider_capacity():
                                         response = await client.post(
                                             f"{self.base_url}/chat/completions",
-                                            headers={"Authorization": f"Bearer {key}"},
+                                            headers=opencode_headers(
+                                                key,
+                                                session_id=self._session_id,
+                                            ),
                                             json=body,
                                         )
                                     if response.status_code != 401 or key_index == len(keys) - 1:
@@ -426,6 +515,10 @@ Informa tachones, correcciones y preguntas ausentes. Devuelve SOLO JSON:
                         parsing_started = time.monotonic()
                         raw, repaired = _parse_json(content)
                         result = _normalize(raw, page, len(data))
+                        result.duration_ms = int((time.monotonic() - started) * 1000)
+                        result.model = model
+                        result.fallback_used = model_index > 0
+                        result.rotation_applied = rotation
                         result.parsing_ms = int((time.monotonic() - parsing_started) * 1000)
                         if not result.page_text and not result.answers:
                             last_error = "vision_no_content"
@@ -436,10 +529,35 @@ Informa tachones, correcciones y preguntas ausentes. Devuelve SOLO JSON:
                                 usage=usage, http_status=http_status,
                             )
                             break
-                        result.duration_ms = int((time.monotonic() - started) * 1000)
-                        result.model = model
-                        result.fallback_used = model_index > 0
-                        result.rotation_applied = rotation
+                        expects_student_answers = bool(
+                            purpose == "student_response"
+                            and isinstance(blueprint, dict)
+                            and blueprint.get("preguntas")
+                        )
+                        has_student_answer = any(
+                            bool((answer.answer or "").strip())
+                            or bool((answer.visual_description or "").strip())
+                            for answer in result.answers
+                        )
+                        if expects_student_answers and not has_student_answer:
+                            last_error = "vision_no_student_answers"
+                            await self._event(
+                                "vision.request_failed", request_id, model, attempt,
+                                started, page, len(data), "failed", last_error,
+                                usage=usage, http_status=http_status,
+                            )
+                            # Texto impreso sin respuestas no es éxito. Primero prueba
+                            # otro lector visual; si se agotan, devuelve incertidumbre
+                            # explícita para impedir que se convierta en un cero.
+                            if model_index + 1 < len(dict.fromkeys(models)):
+                                break
+                            result.status = "requires_review"
+                            result.warnings.append(
+                                "Se reconoció el material impreso, pero no fue posible "
+                                "recuperar respuestas del estudiante."
+                            )
+                            result.page_text = ""
+                            return result
                         if repaired:
                             result.warnings.append("JSON reparado localmente una sola vez.")
                         if rotation:
@@ -519,14 +637,47 @@ Informa tachones, correcciones y preguntas ausentes. Devuelve SOLO JSON:
             raise VisionExtractionError("vision_failed_temporary" if temporary else "vision_failed_permanent", temporary)
         answers, failures = _merge(success), [item for item in results if item not in success]
         warnings = [warning for item in results for warning in item.warnings]
+        graphic_uncertain_questions: list[int | str] = []
+        if purpose == "student_response":
+            for number in _graphic_question_numbers(blueprint or {}):
+                matching = [
+                    answer for answer in answers
+                    if str(answer.question_number) == str(number)
+                ]
+                if any(answer.visual_description for answer in matching):
+                    continue
+                graphic_uncertain_questions.append(number)
+                for answer in matching:
+                    answer.blank = False
+                    answer.needs_review = True
+                for page_result in results:
+                    affected = False
+                    for page_answer in page_result.answers:
+                        if str(page_answer.question_number) == str(number):
+                            page_answer.blank = False
+                            page_answer.needs_review = True
+                            affected = True
+                    if affected:
+                        page_result.status = "requires_review"
+                warnings.append(
+                    f"No se pudo confirmar la evidencia gráfica de la pregunta {number}; revisión docente necesaria."
+                )
         if failures:
             warnings.append("Faltan páginas; revisión docente obligatoria.")
         fallback = next((item for item in results if item.fallback_used), None)
         return VisionExtraction(
-            student_detected=any(answer.answer is not None for answer in answers),
+            student_detected=any(
+                answer.answer is not None or answer.visual_description is not None
+                for answer in answers
+            ),
             document_quality=round(sum(item.document_quality for item in success) / len(success), 4),
             pages_processed=len(results), answers=answers, pages=results, warnings=warnings,
-            requires_review=bool(failures) or any(answer.needs_review for answer in answers),
+            graphic_uncertain_questions=graphic_uncertain_questions,
+            requires_review=(
+                bool(failures or graphic_uncertain_questions)
+                or any(item.status == "requires_review" for item in results)
+                or any(answer.needs_review for answer in answers)
+            ),
             provider="opencode" if self.provider == "open_code" else "ollama",
             primary_model=self.primary_model, fallback_used=fallback is not None,
             rotation_applied=next((item.rotation_applied for item in success if item.rotation_applied), 0),

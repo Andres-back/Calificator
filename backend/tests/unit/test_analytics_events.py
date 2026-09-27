@@ -54,6 +54,36 @@ def test_catalog_accepts_session_and_teacher_events() -> None:
     assert workspace.evaluacion_id is not None
 
 
+def test_catalog_accepts_student_feedback_story_events_without_academic_content() -> None:
+    evaluation_id = uuid4()
+    grade_id = uuid4()
+
+    event = event_policy.validate_event_payload(
+        tipo="feedback_story_controlled",
+        role=UserRole.ESTUDIANTE.value,
+        evaluacion_id=evaluation_id,
+        calificacion_id=grade_id,
+        metadata_json={"mode": "animated", "action": "next", "step": 2},
+    )
+
+    assert event.evaluacion_id == evaluation_id
+    assert event.calificacion_id == grade_id
+    assert event.metadata_json == {"mode": "animated", "action": "next", "step": 2}
+
+
+def test_catalog_accepts_teacher_review_triage_without_academic_content() -> None:
+    evaluation_id = uuid4()
+    grade_id = uuid4()
+    event = event_policy.validate_event_payload(
+        tipo="grading_triage_opened",
+        role=UserRole.PROFESOR.value,
+        evaluacion_id=evaluation_id,
+        calificacion_id=grade_id,
+        metadata_json={"safe_count": 7, "attention_count": 2, "blocked_count": 1, "global_blocked": False},
+    )
+    assert event.metadata_json == {"safe_count": 7, "attention_count": 2, "blocked_count": 1, "global_blocked": False}
+
+
 @pytest.mark.parametrize(
     ("tipo", "role", "evaluation", "grade", "metadata", "status"),
     [
@@ -69,6 +99,14 @@ def test_catalog_accepts_session_and_teacher_events() -> None:
         ("session_view_opened", "estudiante", None, None, {"actor_id": str(uuid4())}, 422),
         ("session_view_opened", "estudiante", None, None, {"rol": "admin"}, 422),
         ("session_view_opened", "estudiante", uuid4(), None, {"surface": "inicio"}, 422),
+        ("feedback_story_started", "estudiante", uuid4(), uuid4(), {"mode": "cinematic"}, 422),
+        ("feedback_story_controlled", "estudiante", uuid4(), uuid4(), {"mode": "animated", "action": "jump", "step": 2}, 422),
+        ("feedback_story_controlled", "estudiante", uuid4(), uuid4(), {"mode": "static", "action": "next", "step": 5}, 422),
+        ("feedback_story_detail_opened", "estudiante", uuid4(), uuid4(), {"mode": "static", "step": 1, "respuesta": "secreto"}, 422),
+        ("grading_triage_opened", "estudiante", uuid4(), uuid4(), {"safe_count": 1, "attention_count": 0, "blocked_count": 0, "global_blocked": False}, 403),
+        ("grading_triage_opened", "profesor", uuid4(), uuid4(), {"safe_count": -1, "attention_count": 0, "blocked_count": 0, "global_blocked": False}, 422),
+        ("grading_triage_opened", "profesor", uuid4(), uuid4(), {"safe_count": 1, "attention_count": 0, "blocked_count": 0, "global_blocked": False, "respuesta": "secreto"}, 422),
+        ("grading_triage_navigated", "profesor", uuid4(), uuid4(), {"target_level": "unknown", "position": 1, "total_exceptions": 2}, 422),
     ],
 )
 def test_catalog_rejects_unknown_role_reference_or_metadata(
@@ -135,6 +173,40 @@ def test_registrar_evento_derives_actor_and_persists_sanitized_payload(monkeypat
     assert evento.actor_id == actor.id
     assert evento.evaluacion_id == evaluation_id
     assert evento.metadata_json == {"materia_id": str(materia_id)}
+
+
+def test_student_feedback_event_authorizes_own_grade_without_teacher_evaluation_lookup(monkeypatch) -> None:
+    session = FakeSession()
+    actor = user(UserRole.ESTUDIANTE)
+    evaluation_id = uuid4()
+    grade_id = uuid4()
+
+    async def own_grade(*_args, **_kwargs):
+        return SimpleNamespace(id=grade_id, evaluacion_id=evaluation_id, estudiante_id=actor.id)
+
+    async def evaluation_lookup_must_not_run(*_args, **_kwargs):
+        raise AssertionError("El estudiante se autoriza mediante su calificación, no como dueño de la evaluación")
+
+    monkeypatch.setattr(service, "_get_allowed_calificacion", own_grade)
+    monkeypatch.setattr(service, "_get_allowed_evaluation", evaluation_lookup_must_not_run)
+    monkeypatch.setattr(service, "AnalyticsEvento", lambda **values: SimpleNamespace(**values))
+
+    evento = asyncio.run(
+        service.registrar_evento(
+            session,
+            tipo="feedback_story_started",
+            current_user=actor,
+            evaluacion_id=evaluation_id,
+            calificacion_id=grade_id,
+            metadata_json={"mode": "static"},
+        )
+    )
+
+    assert evento.actor_id == actor.id
+    assert evento.evaluacion_id == evaluation_id
+    assert evento.calificacion_id == grade_id
+    assert evento.metadata_json == {"mode": "static"}
+    assert session.committed is True
 
 
 def test_foreign_and_missing_reference_share_404_and_never_persist(monkeypatch) -> None:

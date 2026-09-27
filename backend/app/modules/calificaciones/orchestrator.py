@@ -6,7 +6,7 @@ Pipeline:
   3. Un verificador compacto comprueba puntajes y formula
   4. DeepSeek V4 Pro arbitra solo discrepancias, baja confianza o fallos
 
-La imagen se procesa una sola vez; los modelos textuales reciben únicamente evidencia normalizada.
+La imagen se extrae una vez y acompana al evaluador y verificador cuando admiten vision.
 """
 from __future__ import annotations
 
@@ -45,6 +45,7 @@ from app.modules.rag.context_builder import (
     build_question_context_for_grading,
     format_question_context_as_text,
 )
+from app.services.ai_model_discovery import model_supports_vision
 
 logger = get_logger(__name__)
 
@@ -119,6 +120,21 @@ def _vision_result_is_usable(result: AgentResult | None) -> bool:
     )
 
 
+def _vision_result_has_student_answers(result: AgentResult | None) -> bool:
+    """No confunde el material impreso con evidencia respondida."""
+    if result is None or result.error or not isinstance(result.raw_output, dict):
+        return False
+    answers = result.raw_output.get("respuestas_detectadas") or []
+    return any(
+        isinstance(answer, dict)
+        and (
+            bool(str(answer.get("respuesta") or "").strip())
+            or bool(str(answer.get("descripcion_visual") or "").strip())
+        )
+        for answer in answers
+    )
+
+
 async def _run_grader_cascade(
     ctx: AgentContext,
     *,
@@ -135,7 +151,11 @@ async def _run_grader_cascade(
         last_result = await grader_agent(
             ctx,
             model=model,
-            multimodal=multimodal,
+            multimodal=bool(
+                multimodal
+                and ctx.image_bytes
+                and model_supports_vision(model)
+            ),
             client=client,
             timeout=timeout,
             max_attempts=max_attempts,
@@ -169,7 +189,7 @@ async def _run_grader_until_complete(
     return await _run_grader_cascade(
         ctx,
         models=_ordered_unique_models(*models),
-        multimodal=False,
+        multimodal=bool(ctx.image_bytes),
         client=client,
         timeout=None,
         max_attempts=max(1, int(settings.PHOTO_GRADING_MODEL_MAX_ATTEMPTS)),
@@ -189,14 +209,7 @@ def _arbitration_reason(primary: AgentResult, verifier: AgentResult) -> str | No
     min_confidence = min(float(primary.confianza or 0), float(verifier.confianza or 0))
     if min_confidence < float(settings.PHOTO_GRADING_ARBITRATION_MIN_CONFIDENCE):
         return "low_confidence"
-    verifier_requested = bool(
-        verifier.requiere_revision_docente
-        or (verifier.raw_output or {}).get("requiere_arbitraje")
-    )
-    if verifier_requested:
-        return "verifier_requested"
-    if primary.requiere_revision_docente:
-        return "primary_requested"
+    # Una alerta o revisión solicitada pasa al docente, no a un tercer modelo.
     return None
 
 def _normalize_answer(value: Any) -> str:
@@ -205,6 +218,65 @@ def _normalize_answer(value: Any) -> str:
         char for char in normalized if not unicodedata.combining(char)
     )
     return re.sub(r"[^a-z0-9]+", " ", without_accents.lower()).strip()
+
+
+_PERSON_KEY_STOPWORDS = {
+    "el", "la", "los", "las", "un", "una", "unos", "unas", "su", "sus",
+    "es", "era", "fue", "son", "eran", "principal", "personaje", "respuesta",
+}
+
+
+def _literal_person_keys(expected: Any) -> list[str]:
+    """Extract explicit proper-name keys from a teacher's reference answer."""
+    tokens = re.findall(r"[A-Za-zÁÉÍÓÚÜÑáéíóúüñ]+", str(expected or ""))
+    keys: list[str] = []
+    current: list[str] = []
+    for token in tokens:
+        normalized = _normalize_answer(token)
+        is_name = token[:1].isupper() and normalized not in _PERSON_KEY_STOPWORDS
+        if is_name:
+            current.append(token)
+            continue
+        if current:
+            keys.append(" ".join(current))
+            current = []
+    if current:
+        keys.append(" ".join(current))
+    return keys
+
+
+def _open_answer_matches(question: Any, expected: Any, detected: Any) -> bool:
+    """Accept full keys and literal person names for explicit ``quien`` questions."""
+    expected_normalized = _normalize_answer(expected)
+    detected_normalized = _normalize_answer(detected)
+    if not expected_normalized or not detected_normalized:
+        return False
+    if detected_normalized == expected_normalized or detected_normalized.startswith(
+        f"{expected_normalized} "
+    ):
+        return True
+    question_normalized = _normalize_answer(question)
+    # En comparaciones, un modificador literal no responde el núcleo pedido.
+    # Ej.: «flotando en el cielo» no responde «¿a qué se parecían?».
+    if question_normalized.startswith(("a que se parecia ", "a que se parecian ")):
+        return False
+    literal_fragment = detected_normalized
+    for prefix in ("para ", "porque ", "que "):
+        if literal_fragment.startswith(prefix):
+            literal_fragment = literal_fragment[len(prefix):].strip()
+            break
+    if (
+        len(literal_fragment.split()) >= 4
+        and re.search(rf"(?:^| ){re.escape(literal_fragment)}(?: |$)", expected_normalized)
+    ):
+        return True
+    if not question_normalized.startswith("quien "):
+        return False
+    return any(
+        detected_normalized == _normalize_answer(key)
+        or detected_normalized.startswith(f"{_normalize_answer(key)} ")
+        for key in _literal_person_keys(expected)
+    )
 
 
 def _truth_value(value: Any) -> bool | None:
@@ -295,6 +367,46 @@ def merge_detected_answers(
     return merged
 
 
+def format_structured_visual_answers(answers: list[dict]) -> str:
+    """Hace explicita la correspondencia pregunta-respuesta sin inferir contenido."""
+    lines: list[str] = []
+    for item in answers:
+        if not isinstance(item, dict):
+            continue
+        number = item.get("pregunta", item.get("numero"))
+        if number is None:
+            continue
+        page = item.get("pagina")
+        page_label = (
+            f" (pagina {page})"
+            if isinstance(page, int) and page > 0
+            else ""
+        )
+        if item.get("legible", True) is False or item.get("requiere_revision", False):
+            answer = "[ilegible o ambigua; requiere revision]"
+        elif item.get("sin_respuesta", False) or item.get("blank", False):
+            answer = "[sin respuesta]"
+        else:
+            answer = str(item.get("respuesta") or "").strip()
+            if not answer:
+                continue
+        lines.append(f"P{number}{page_label}: {answer}")
+    if not lines:
+        return ""
+    return "=== EVIDENCIA VISUAL ESTRUCTURADA ===\n" + "\n".join(lines)
+
+
+def _all_components_claim_absence(result: AgentResult) -> bool:
+    components = [item for item in result.componentes if isinstance(item, dict)]
+    if not components:
+        return False
+    absent_states = {"sin_respuesta", "no_evaluable", "ilegible"}
+    return all(
+        str(item.get("estado") or "") in absent_states
+        for item in components
+    )
+
+
 def build_objective_validation(
     blueprint: dict,
     detected_answers: list[dict] | None,
@@ -318,13 +430,21 @@ def build_objective_validation(
     validation: list[dict] = []
     for number, question in questions.items():
         question_type = str(question.get("tipo") or "").lower()
-        if question_type not in {"opcion_multiple", "verdadero_falso", "completar", "numerica", "respuesta_corta", "emparejamiento"}:
+        if question_type not in {"abierta", "opcion_multiple", "verdadero_falso", "completar", "numerica", "respuesta_corta", "emparejamiento"}:
             continue
         if number not in expected or number not in detected:
             continue
         expected_answer = expected[number]
         detected_answer = detected[number]
-        if question_type == "verdadero_falso":
+        if question_type == "abierta":
+            correct = _open_answer_matches(
+                question.get("enunciado") or question.get("pregunta"),
+                expected_answer,
+                detected_answer,
+            )
+            if not correct:
+                continue
+        elif question_type == "verdadero_falso":
             expected_truth = _truth_value(expected_answer)
             detected_truth = _truth_value(detected_answer)
             correct = (
@@ -694,7 +814,10 @@ async def orchestrate_grading(
                     api_key=vision_api_key,
                 )
             if (
-                not _vision_result_is_usable(vision_result)
+                (
+                    not _vision_result_is_usable(vision_result)
+                    or not _vision_result_has_student_answers(vision_result)
+                )
                 and vision_fallback_provider
                 and vision_fallback_model
                 and vision_fallback_provider != vision_provider
@@ -724,7 +847,10 @@ async def orchestrate_grading(
                     configured_fallback_result.raw_output["fallback_used"] = True
                     vision_result = configured_fallback_result
             if (
-                vision_result.error
+                (
+                    vision_result.error
+                    or not _vision_result_has_student_answers(vision_result)
+                )
                 and settings.PHOTO_GRADING_CROSS_PROVIDER_FALLBACK_ENABLED
             ):
                 logger.warning(
@@ -778,9 +904,16 @@ async def orchestrate_grading(
                 physical_answers = [
                     answer for answer in raw_answers
                     if isinstance(answer, dict)
-                    and answer.get("legible", True)
-                    and not answer.get("requiere_revision", False)
+                    and (
+                        bool(str(answer.get("respuesta") or "").strip())
+                        or bool(
+                            str(answer.get("descripcion_visual") or "").strip()
+                        )
+                    )
                 ]
+                structured_visual_text = format_structured_visual_answers(
+                    physical_answers
+                )
                 coverage_analysis = _evidence_coverage(
                     blueprint,
                     vision_result.raw_output,
@@ -794,6 +927,12 @@ async def orchestrate_grading(
                     )
                 else:
                     texto_extraido = physical_text or online_text
+                if structured_visual_text:
+                    texto_extraido = (
+                        f"{texto_extraido.strip()}\n\n{structured_visual_text}"
+                        if texto_extraido.strip()
+                        else structured_visual_text
+                    )
                 objective_validation = build_objective_validation(
                     blueprint,
                     merge_detected_answers(
@@ -819,6 +958,26 @@ async def orchestrate_grading(
                             "vision_result": vision_result.raw_output,
                         },
                     )
+                expected_physical = (
+                    list(coverage_analysis.get("esperadas") or [])
+                    if isinstance(coverage_analysis, dict)
+                    else []
+                )
+                if expected_physical and not physical_answers:
+                    return _technical_failure_result(
+                        blueprint,
+                        "student_answers_not_detected",
+                        "extraction",
+                        alertas=[
+                            "Se reconoció la hoja, pero no fue posible leer las "
+                            "respuestas del estudiante. Reanaliza la evidencia o toma otra foto."
+                        ],
+                        raw_output={
+                            "orchestrator": "student_answers_not_detected",
+                            "vision_result": vision_result.raw_output,
+                            "expected_questions": expected_physical,
+                        },
+                    )
 
         if image_bytes and not texto_extraido.strip():
             return _technical_failure_result(
@@ -834,14 +993,32 @@ async def orchestrate_grading(
             online_answers,
             physical_answers,
         )
-        question_context, rag_provenance = await build_question_context_for_grading(
-            db,
-            materia_id=materia_id,
-            profesor_id=user_id,
-            evaluacion_nombre=blueprint.get("nombre", ""),
-            questions=list(blueprint.get("preguntas") or []),
-            detected_answers=detected_for_context,
-        )
+        rag_context_status: dict[str, str | None] = {
+            "status": "available",
+            "error_type": None,
+        }
+        try:
+            question_context, rag_provenance = await build_question_context_for_grading(
+                db,
+                materia_id=materia_id,
+                profesor_id=user_id,
+                evaluacion_nombre=blueprint.get("nombre", ""),
+                questions=list(blueprint.get("preguntas") or []),
+                detected_answers=detected_for_context,
+            )
+        except Exception as exc:  # noqa: BLE001 - optional context must not block grading
+            logger.warning(
+                "grading.rag_context_unavailable",
+                extra={
+                    "pipeline_run_id": pipeline_run_id,
+                    "error_type": type(exc).__name__,
+                },
+            )
+            question_context, rag_provenance = {}, []
+            rag_context_status = {
+                "status": "unavailable",
+                "error_type": type(exc).__name__,
+            }
         rag_context = format_question_context_as_text(question_context)
 
         # ── Paso 3: Calificación dual (en paralelo) ──────────────────
@@ -852,7 +1029,7 @@ async def orchestrate_grading(
             rag_context=rag_context,
             student_response_text=texto_extraido.strip(),
             objective_validation=objective_validation,
-            image_bytes=None,
+            image_bytes=image_bytes,
             image_mime=image_mime_for_grading,
         )
         grading_contexts = partition_grading_context(
@@ -900,6 +1077,7 @@ async def orchestrate_grading(
                         client=verification_client,
                         timeout=None,
                         max_attempts=max(1, int(settings.PHOTO_GRADING_MODEL_MAX_ATTEMPTS)),
+                        multimodal=bool(partition.image_bytes),
                     ))
             grading_a = merge_partition_results(
                 primary_parts,
@@ -913,7 +1091,9 @@ async def orchestrate_grading(
             arbiter_reason = _arbitration_reason(grading_a, grading_b)
             if partition_recovery and arbiter_reason is None:
                 arbiter_reason = "partition_recovery"
-            arbiter_invoked = arbiter_reason is not None
+            arbiter_invoked = (
+                arbiter_reason is not None and grading_b.nota_sugerida is not None
+            )
         else:
             grading_a = await _run_grader_until_complete(
                 ctx_grading,
@@ -945,9 +1125,12 @@ async def orchestrate_grading(
                     1,
                     int(settings.PHOTO_GRADING_MODEL_MAX_ATTEMPTS),
                 ),
+                multimodal=bool(ctx_grading.image_bytes),
             )
             arbiter_reason = _arbitration_reason(grading_a, grading_b)
-            arbiter_invoked = arbiter_reason is not None
+            arbiter_invoked = (
+                arbiter_reason is not None and grading_b.nota_sugerida is not None
+            )
 
         if grading_a.nota_sugerida is None and grading_b.nota_sugerida is None:
             router_grading: AgentResult | None = None
@@ -997,11 +1180,45 @@ async def orchestrate_grading(
                     raw_output=failure_details,
                 )
 
+        if (
+            any(
+                answer.get("legible", True)
+                and not answer.get("requiere_revision", False)
+                and not answer.get("needs_review", False)
+                for answer in physical_answers
+                if isinstance(answer, dict)
+            )
+            and _all_components_claim_absence(grading_a)
+            and _all_components_claim_absence(grading_b)
+        ):
+            logger.warning(
+                "grading.visual_answers_discarded",
+                extra={
+                    "pipeline_run_id": pipeline_run_id,
+                    "detected_answer_count": len(physical_answers),
+                },
+            )
+            return _technical_failure_result(
+                blueprint,
+                "visual_answers_discarded",
+                "grading",
+                alertas=[
+                    "La vision encontro respuestas, pero los evaluadores no "
+                    "lograron asociarlas con seguridad. Requiere revision docente."
+                ],
+                raw_output={
+                    "orchestrator": "visual_answers_discarded",
+                    "pipeline_run_id": pipeline_run_id,
+                    "detected_answer_count": len(physical_answers),
+                },
+            )
+
         # El comparador solo hace una llamada externa cuando force_arbitration es
         # verdadero. En consenso cercano consolida localmente y termina de inmediato.
         final = await comparator_agent(
             grading_a,
             grading_b,
+            umbral=float(settings.PHOTO_GRADING_ARBITRATION_SCORE_DELTA),
             model=comparator_model,
             force_arbitration=bool(
                 arbiter_invoked
@@ -1037,6 +1254,19 @@ async def orchestrate_grading(
                 "El árbitro no devolvió datos estructurados; se conservó el resultado seguro disponible.",
             ]
             final.requiere_revision_docente = True
+        verifier_alerts = [
+            str(alert).strip()
+            for alert in grading_b.alertas
+            if str(alert).strip()
+        ]
+        final.alertas = list(dict.fromkeys([
+            *grading_a.alertas,
+            *verifier_alerts,
+            *final.alertas,
+        ]))
+        verifier_requires_review = bool(
+            grading_b.requiere_revision_docente or verifier_alerts
+        )
         # ── Paso 5: Armado del resultado final ───────────────────────
         nota_maxima = Decimal(str(blueprint.get("nota_maxima", 5)))
         if final.nota_sugerida is None:
@@ -1060,6 +1290,18 @@ async def orchestrate_grading(
         coverage_requires_review = bool(
             coverage_analysis and coverage_analysis.get("requiere_revision")
         )
+        graphic_uncertain_questions = (
+            list(vision_result.raw_output.get("preguntas_graficas_inciertas") or [])
+            if vision_result and isinstance(vision_result.raw_output, dict)
+            else []
+        )
+        if graphic_uncertain_questions:
+            final.alertas = list(dict.fromkeys([
+                *final.alertas,
+                "No se pudo confirmar la evidencia dibujada de las preguntas "
+                f"{', '.join(map(str, graphic_uncertain_questions))}; revisa la fotografía "
+                "antes de asignar puntaje.",
+            ]))
         if coverage_requires_review:
             missing = coverage_analysis.get("faltantes", [])
             final.alertas = [
@@ -1073,11 +1315,14 @@ async def orchestrate_grading(
         # Si ambos fallaron o faltan bloques de evidencia, marcar revisión docente
         requiere_revision = (
             final.requiere_revision_docente
+            or grading_a.requiere_revision_docente
+            or verifier_requires_review
             or grading_a.nota_sugerida is None
             or grading_b.nota_sugerida is None
             or objective_floor_applied
             or coverage_requires_review
             or vision_requires_review
+            or bool(graphic_uncertain_questions)
         )
 
         # Los fallos dobles ya se manejaron antes del comparador.
@@ -1132,6 +1377,8 @@ async def orchestrate_grading(
                 "arbiter_reason": arbiter_reason,
             },
             "evidence_coverage": coverage_analysis,
+            "graphic_uncertain_questions": graphic_uncertain_questions,
+            "rag_context": rag_context_status,
             "rag_sources_by_question": rag_provenance,
             "vision": {
                 "proveedor": vision_result.proveedor if vision_result else None,
@@ -1149,6 +1396,8 @@ async def orchestrate_grading(
                 "tiempo_ms": grading_a.tiempo_ms,
                 "criterios": grading_a.criterios,
                 "componentes": grading_a.componentes,
+                "alertas": grading_a.alertas,
+                "requiere_revision_docente": grading_a.requiere_revision_docente,
                 "error_type": "grader_error" if grading_a.error else None,
             },
             "grader_b": {
@@ -1159,6 +1408,8 @@ async def orchestrate_grading(
                 "tiempo_ms": grading_b.tiempo_ms,
                 "criterios": grading_b.criterios,
                 "componentes": grading_b.componentes,
+                "alertas": verifier_alerts,
+                "requiere_revision_docente": grading_b.requiere_revision_docente,
                 "error_type": "grader_error" if grading_b.error else None,
             },
             "comparator": {

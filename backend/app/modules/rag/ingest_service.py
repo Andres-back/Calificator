@@ -1,4 +1,5 @@
 """Servicio de ingesta RAG: chunking + embeddings + guardado."""
+
 from __future__ import annotations
 
 from uuid import UUID
@@ -9,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.logging import get_logger
 from app.modules.rag.models import RagChunk, RagSource
 from app.modules.rag.schemas import RagSourceCreate
-from app.services.embedding_service import chunk_text, embed_texts
+from app.services.embedding_service import chunk_text, embed_texts_with_metadata
 
 logger = get_logger(__name__)
 
@@ -51,11 +52,11 @@ async def ingest_source(db: AsyncSession, source_id: UUID) -> int:
         return 0
 
     logger.info("Ingesting source %s: %d chunks", source_id, len(chunks))
-    embeddings = await embed_texts(
+    batch = await embed_texts_with_metadata(
         chunks, db=db, teacher_id=source.profesor_id
     )
 
-    for text_chunk, embedding in zip(chunks, embeddings, strict=False):
+    for text_chunk, embedding in zip(chunks, batch.vectors, strict=True):
         rag_chunk = RagChunk(
             source_id=source.id,
             profesor_id=source.profesor_id,
@@ -63,6 +64,11 @@ async def ingest_source(db: AsyncSession, source_id: UUID) -> int:
             tipo=source.tipo,
             chunk_text=text_chunk,
             embedding=embedding,
+            embedding_vec=embedding,
+            embedding_provider=batch.space.provider,
+            embedding_model=batch.space.model,
+            embedding_dimensions=batch.space.dimensions,
+            embedding_space_version=batch.space.version,
         )
         db.add(rag_chunk)
 

@@ -1,4 +1,5 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
+import { useState } from 'react';
 import toast from 'react-hot-toast';
 import {
   ArrowRight,
@@ -8,6 +9,9 @@ import {
   Copy,
   Mail,
   RefreshCw,
+  Camera,
+  UserPlus,
+  KeyRound,
   Users,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -18,6 +22,7 @@ import {
   EducationalIcon,
   EmptyState,
   Skeleton,
+  Modal,
 } from '@/components/ui';
 import type { EducationalIconName } from '@/components/ui';
 import { listEvaluaciones } from '@/modules/evaluaciones/api';
@@ -28,6 +33,9 @@ import { queryClient } from '@/lib/queryClient';
 import { toApiError } from '@/lib/api';
 import { getTeacherJourneyState } from './teacherFlowModel';
 import type { MateriaConEstudiantes } from '@/types/api';
+import { RosterImportDialog } from './RosterImportDialog';
+import { ExistingStudentsDialog } from './ExistingStudentsDialog';
+import { resetTemporaryPassword } from './rosterImportApi';
 
 export function MateriaVistaGeneral() {
   const { materia, canManageMateria } = useMateriaContext();
@@ -40,6 +48,9 @@ export function MateriaVistaGeneral() {
 }
 
 function TeacherOverview({ materia }: { materia: MateriaConEstudiantes }) {
+  const [importOpen, setImportOpen] = useState(false);
+  const [existingOpen, setExistingOpen] = useState(false);
+  const [temporaryAccess, setTemporaryAccess] = useState<{ email: string; password_temporal: string } | null>(null);
   const evaluationsQuery = useQuery({
     queryKey: ['evaluaciones', materia.id],
     queryFn: () => listEvaluaciones(materia.id),
@@ -54,6 +65,7 @@ function TeacherOverview({ materia }: { materia: MateriaConEstudiantes }) {
     },
     onError: (error) => toast.error(toApiError(error).detail),
   });
+  const resetAccess = useMutation({ mutationFn: (studentId: string) => resetTemporaryPassword(materia.id, studentId), onSuccess: (value) => { setTemporaryAccess(value); toast.success('Nueva clave temporal creada'); }, onError: (error) => toast.error(toApiError(error).detail) });
 
   const copy = async () => {
     try {
@@ -120,7 +132,7 @@ function TeacherOverview({ materia }: { materia: MateriaConEstudiantes }) {
         </Card>
 
         <Card className="p-5">
-          <div className="mb-4 flex items-center justify-between">
+          <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p className="inline-flex items-center gap-2 font-display font-bold">
                 <Users className="h-5 w-5 text-brand-500" /> Estudiantes
@@ -129,7 +141,11 @@ function TeacherOverview({ materia }: { materia: MateriaConEstudiantes }) {
                 Listado de estudiantes matriculados en esta clase.
               </p>
             </div>
-            <Badge tone="neutral">{materia.estudiantes.length}</Badge>
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge tone="neutral">{materia.estudiantes.length}</Badge>
+              <Button size="sm" variant="outline" onClick={() => setExistingOpen(true)}><UserPlus className="h-4 w-4" /> Ya registrados</Button>
+              <Button size="sm" onClick={() => setImportOpen(true)}><Camera className="h-4 w-4" /> Importar foto</Button>
+            </div>
           </div>
           {materia.estudiantes.length === 0 ? (
             <EmptyState
@@ -140,7 +156,7 @@ function TeacherOverview({ materia }: { materia: MateriaConEstudiantes }) {
           ) : (
             <ul className="divide-y divide-border">
               {materia.estudiantes.map((estudiante) => (
-                <li key={estudiante.id} className="flex items-center gap-3 py-3">
+                <li key={estudiante.id} className="flex flex-wrap items-center gap-3 py-3">
                   <span className="grid h-9 w-9 place-items-center rounded-lg bg-brand-600 text-xs font-bold text-white">
                     {estudiante.nombre
                       .split(' ')
@@ -158,12 +174,18 @@ function TeacherOverview({ materia }: { materia: MateriaConEstudiantes }) {
                     </p>
                   </div>
                   <Badge tone="neutral">Matriculado</Badge>
+                  {estudiante.email_es_interno && <Button size="sm" variant="outline" loading={resetAccess.isPending} onClick={() => resetAccess.mutate(estudiante.id)}><KeyRound className="h-4 w-4" /> Nueva clave</Button>}
                 </li>
               ))}
             </ul>
           )}
         </Card>
       </div>
+      <RosterImportDialog open={importOpen} materiaId={materia.id} onClose={() => setImportOpen(false)} />
+      <ExistingStudentsDialog open={existingOpen} materiaId={materia.id} onClose={() => setExistingOpen(false)} />
+      <Modal open={Boolean(temporaryAccess)} onClose={() => setTemporaryAccess(null)} title="Nueva clave temporal" description="Entrégala directamente al estudiante. Solo se muestra en este momento.">
+        {temporaryAccess && <div className="space-y-3"><p className="break-all rounded-lg bg-surface-2 p-3 text-sm"><strong>Usuario:</strong> {temporaryAccess.email}</p><p className="break-all rounded-lg bg-surface-2 p-3 text-sm"><strong>Clave:</strong> {temporaryAccess.password_temporal}</p><Button className="w-full" onClick={() => void navigator.clipboard.writeText(`Usuario: ${temporaryAccess.email}\nClave temporal: ${temporaryAccess.password_temporal}`)}><Copy className="h-4 w-4" /> Copiar acceso</Button></div>}
+      </Modal>
     </div>
   );
 }

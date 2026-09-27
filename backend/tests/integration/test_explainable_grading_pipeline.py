@@ -316,10 +316,20 @@ def test_rag_query_excludes_foreign_or_removed_sources_at_database_boundary(monk
             executed.append((str(statement), params))
             return Result()
 
-    async def fake_embedding(_query):
-        return [0.1, 0.2]
+    async def fake_embedding(_query, **_kwargs):
+        return SimpleNamespace(
+            vector=[0.1, 0.2],
+            space=SimpleNamespace(
+                provider="ollama_internal",
+                model="qwen3-embedding:0.6b",
+                dimensions=2,
+                version="test-space-v1",
+            ),
+        )
 
-    monkeypatch.setattr(retrieval_service, "embed_single", fake_embedding)
+    monkeypatch.setattr(
+        retrieval_service, "embed_single_with_metadata", fake_embedding
+    )
     materia_id, profesor_id = uuid4(), uuid4()
     result = asyncio.run(retrieval_service.search_chunks(
         FakeDb(), "consulta", materia_id=materia_id, profesor_id=profesor_id,
@@ -333,6 +343,10 @@ def test_rag_query_excludes_foreign_or_removed_sources_at_database_boundary(monk
     assert "s.profesor_id = CAST(:profesor_id AS uuid)" in normalized
     assert params["materia_id"] == str(materia_id)
     assert params["profesor_id"] == str(profesor_id)
+    assert params["embedding_provider"] == "ollama_internal"
+    assert params["embedding_model"] == "qwen3-embedding:0.6b"
+    assert params["embedding_dimensions"] == 2
+    assert params["embedding_space_version"] == "test-space-v1"
     assert result == []
 
 

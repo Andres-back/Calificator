@@ -30,6 +30,7 @@ from app.services.ai_model_discovery import (
     persist_discovered_models,
 )
 from app.services.ollama_provider import OllamaCloudProvider, OllamaProviderError
+from app.services.opencode_request import new_opencode_session_id, opencode_headers
 from app.modules.admin_ai_config.usage_service import (
     enrich_feature_performance,
     get_model_performance,
@@ -203,7 +204,10 @@ async def _test_provider_connection(
             if not credentials.open_code_key:
                 raise ValueError("OpenCode no tiene una credencial configurada")
             base_url = str(provider_config.get("base_url") or settings.OPEN_CODE_BASE_URL).rstrip("/")
-            headers = {"Authorization": f"Bearer {credentials.open_code_key}"}
+            headers = opencode_headers(
+                credentials.open_code_key,
+                session_id=new_opencode_session_id("admin-provider-check"),
+            )
             async with httpx.AsyncClient(timeout=10) as c:
                 r = await c.get(f"{base_url}/models", headers=headers)
             elapsed = (datetime.now(timezone.utc) - start).total_seconds() * 1000

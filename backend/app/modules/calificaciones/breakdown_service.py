@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from decimal import Decimal
+import re
 from uuid import UUID
 
 from fastapi import HTTPException, status
@@ -50,6 +51,22 @@ async def _attach_learning_criteria(
         ]
         component["evidencia_json"] = evidence
     return application, allocations
+
+
+_QUESTION_IN_ALERT = re.compile(r"\b(?:pregunta\s*|p\s*\.?\s*)(\d+)\b", re.IGNORECASE)
+_SCORE_CONFLICT_IN_ALERT = re.compile(
+    r"incorrect[ao]|incompatib\w*|contradic\w*|error\s+en\s+(?:la\s+)?clave|puntaje\s+0",
+    re.IGNORECASE,
+)
+
+
+def _verifier_disputed_questions(alerts: list[str]) -> list[str]:
+    return list(dict.fromkeys(
+        match.group(1)
+        for alert in alerts
+        if _SCORE_CONFLICT_IN_ALERT.search(alert)
+        for match in _QUESTION_IN_ALERT.finditer(alert)
+    ))
 
 
 async def get_active_breakdown(db: AsyncSession, calificacion_id: UUID, *, lock: bool = False) -> CalificacionDesglose | None:
@@ -202,12 +219,28 @@ async def create_automatic_breakdown(
         return None
     grader_a = dict(raw_output.get("grader_a") or {})
     grader_b = dict(raw_output.get("grader_b") or {})
+    verifier_alerts = [
+        " ".join(str(alert).split())[:1000]
+        for alert in grader_b.get("alertas") or []
+        if str(alert).strip()
+    ][:10]
     components, blockers = component_consensus(
         scaffold,
         list(grader_a.get("componentes") or []),
         list(grader_b.get("componentes") or []),
         list(raw_output.get("objective_validation") or []),
+        graphic_uncertain_questions=list(
+            raw_output.get("graphic_uncertain_questions") or []
+        ),
+        verifier_disputed_questions=_verifier_disputed_questions(verifier_alerts),
     )
+    if grader_b.get("requiere_revision_docente") or verifier_alerts:
+        if verifier_alerts:
+            blockers.extend(
+                f"verificador_ia:{alert}" for alert in verifier_alerts
+            )
+        else:
+            blockers.append("verificador_ia:El verificador independiente solicitó revisión docente.")
     sources_by_question: dict[str, list[dict]] = {}
     for source in raw_output.get("rag_sources_by_question") or []:
         if isinstance(source, dict) and source.get("pregunta") is not None:
@@ -281,14 +314,50 @@ async def create_automatic_breakdown(
                     max_points=item["max_points"],
                     awarded_points=item["awarded_points"],
                 ))
+    model_score = Decimal(str(calificacion.nota_sugerida)) if calificacion.nota_sugerida is not None else None
+    human_decision = bool(
+        calificacion.revisado_por_docente
+        or calificacion.nota_confirmada is not None
+        or calificacion.estado in {
+            CalificacionEstado.CONFIRMADA.value,
+            CalificacionEstado.AJUSTADA.value,
+            CalificacionEstado.PUBLICADA.value,
+            CalificacionEstado.ANULADA.value,
+        }
+    )
+    authoritative = bool(
+        breakdown.cobertura_estado == "completa"
+        and not breakdown.requiere_revision
+        and not human_decision
+    )
+    # Las alertas mantienen la revisión docente, pero no deben dejar una nota
+    # global distinta de la suma cuando todas las preguntas sí tienen puntaje.
+    complete_scored_sum = bool(
+        state == "completa"
+        and all(item["puntos_obtenidos"] is not None for item in components)
+        and not human_decision
+    )
+    trace = {
+        "id": str(breakdown.id),
+        "version": version,
+        "modo": "autoridad" if authoritative else "controlado",
+        "nota_calculada": float(breakdown.nota_final),
+    }
+    if model_score is not None:
+        difference = (breakdown.nota_final - model_score).quantize(Decimal("0.01"))
+        trace.update({
+            "nota_modelo_global": float(model_score),
+            "diferencia": float(difference),
+            "discrepancia": difference != 0,
+        })
     result = dict(calificacion.resultado_json or {})
-    result["desglose"] = {"id": str(breakdown.id), "version": version, "modo": "autoridad" if settings.EXPLAINABLE_GRADING_AUTHORITY_ENABLED else "controlado", "nota_calculada": float(breakdown.nota_final)}
+    result["desglose"] = trace
     result.setdefault("primera_sugerencia", breakdown.procedencia_json["primera_sugerencia"])
     calificacion.resultado_json = result
-    if settings.EXPLAINABLE_GRADING_AUTHORITY_ENABLED:
+    if complete_scored_sum:
         calificacion.nota_sugerida = breakdown.nota_final
-        if breakdown.requiere_revision:
-            calificacion.estado = CalificacionEstado.REQUIERE_REVISION.value
+    if breakdown.requiere_revision and not human_decision:
+        calificacion.estado = CalificacionEstado.REQUIERE_REVISION.value
     return breakdown
 
 

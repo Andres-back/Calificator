@@ -17,6 +17,7 @@ from app.modules.analytics.usage_logger import log_ai_usage
 from app.services.ai_credentials_service import get_effective_ai_credentials
 from app.services.ai_provider_capacity import provider_capacity
 from app.services.ollama_provider import OllamaCloudProvider
+from app.services.opencode_request import new_opencode_session_id, opencode_headers
 from app.shared.enums import LLMProvider
 
 logger = get_logger(__name__)
@@ -26,10 +27,32 @@ OPEN_CODE_RETRYABLE_STATUS_CODES = frozenset({408, 425, 429, 500, 502, 503, 504}
 OPEN_CODE_RETRY_BASE_SECONDS = 0.5
 OPEN_CODE_RETRY_MAX_SECONDS = 10.0
 OPEN_CODE_ANTHROPIC_MODEL_PREFIXES = ("qwen", "minimax-m")
+OPEN_CODE_THINKING_DISABLED_MODELS = frozenset({
+    "deepseek-v4-flash-vision-exp",
+})
+OPEN_CODE_LOW_REASONING_MODELS = frozenset({
+    "glm-5.3-flash",
+})
 
 
 class LLMOutputTruncatedError(RuntimeError):
     """El proveedor terminó por presupuesto antes de completar el contrato."""
+
+
+def opencode_thinking_control(model: str) -> dict[str, str] | None:
+    """Return only model-specific controls supported by the OpenCode gateway."""
+    model_id = str(model).rsplit("/", 1)[-1].lower()
+    if model_id in OPEN_CODE_THINKING_DISABLED_MODELS:
+        return {"type": "disabled"}
+    return None
+
+
+def opencode_reasoning_effort(model: str) -> str | None:
+    """Return the shortest supported reasoning level for compact workloads."""
+    model_id = str(model).rsplit("/", 1)[-1].lower()
+    if model_id in OPEN_CODE_LOW_REASONING_MODELS:
+        return "low"
+    return None
 
 
 def _open_code_uses_messages_api(model: str) -> bool:
@@ -96,6 +119,7 @@ class LLMRouter:
         self._provider_configs: dict[str, dict[str, Any]] = {}
         self._output_budget: int | None = None
         self._active_task_type = "content_generation"
+        self._open_code_session_id = new_opencode_session_id()
 
     async def generate_json(
         self,
@@ -433,6 +457,9 @@ class LLMRouter:
                 or getattr(settings, "OPEN_CODE_MAX_TOKENS", 8192)
             ),
         }
+        thinking = opencode_thinking_control(str(model))
+        if thinking:
+            body["thinking"] = thinking
         use_messages_api = _open_code_uses_messages_api(model)
         if use_messages_api:
             endpoint = "messages"
@@ -457,17 +484,10 @@ class LLMRouter:
                 for credential_index, api_key in enumerate(api_keys):
                     if credential_index > 0:
                         self._usage_fallback_used = True
-                    headers = (
-                        {
-                            "x-api-key": api_key,
-                            "anthropic-version": "2023-06-01",
-                            "Content-Type": "application/json",
-                        }
-                        if use_messages_api
-                        else {
-                            "Authorization": f"Bearer {api_key}",
-                            "Content-Type": "application/json",
-                        }
+                    headers = opencode_headers(
+                        api_key,
+                        session_id=self._open_code_session_id,
+                        messages_api=use_messages_api,
                     )
                     for attempt in range(1, OPEN_CODE_MAX_ATTEMPTS + 1):
                         resp = await client.post(

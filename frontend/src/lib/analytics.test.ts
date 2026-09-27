@@ -63,6 +63,40 @@ describe('analytics event contract', () => {
     });
   });
 
+  it('sends feedback story interactions without academic content', () => {
+    trackEvent('feedback_story_controlled', {
+      evaluacion_id: 'evaluation-1',
+      calificacion_id: 'grade-1',
+      metadata_json: { mode: 'animated', action: 'next', step: 2 },
+    });
+
+    expect(post).toHaveBeenCalledWith('/analytics/evento', {
+      tipo: 'feedback_story_controlled',
+      evaluacion_id: 'evaluation-1',
+      calificacion_id: 'grade-1',
+      metadata_json: { mode: 'animated', action: 'next', step: 2 },
+    });
+    const payload = JSON.stringify(post.mock.calls[0][1]);
+    expect(payload).not.toContain('respuesta');
+    expect(payload).not.toContain('retroalimentacion');
+  });
+
+  it('sends review triage counts without answers or evidence', () => {
+    trackEvent('grading_triage_opened', {
+      evaluacion_id: 'evaluation-1',
+      calificacion_id: 'grade-1',
+      metadata_json: { safe_count: 7, attention_count: 2, blocked_count: 1, global_blocked: false },
+    });
+
+    expect(post).toHaveBeenCalledWith('/analytics/evento', {
+      tipo: 'grading_triage_opened',
+      evaluacion_id: 'evaluation-1',
+      calificacion_id: 'grade-1',
+      metadata_json: { safe_count: 7, attention_count: 2, blocked_count: 1, global_blocked: false },
+    });
+    expect(JSON.stringify(post.mock.calls[0][1])).not.toMatch(/respuesta|evidencia|retroalimentacion/);
+  });
+
   it('absorbs a rejected telemetry request without throwing into the academic flow', async () => {
     post.mockRejectedValueOnce(new Error('telemetry unavailable'));
 

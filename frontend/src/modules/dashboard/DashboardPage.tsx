@@ -23,14 +23,6 @@ import type { MaterialListItem } from '@/types/api';
 
 const teacherActions = [
   {
-    to: routes.materiasPara('calificar'),
-    title: 'Calificar por fotografía',
-    description: 'Selecciona una materia y evaluación, luego sube o toma la foto de la evidencia.',
-    badge: 'Visión IA',
-    accent: 'border-t-cyan-500',
-    brandIcon: 'grade-evidence' as const,
-  },
-  {
     to: routes.materiasPara('asistencia'),
     title: 'Tomar asistencia',
     description: 'Elige la materia, marca a cada estudiante y guarda la lista del día.',
@@ -45,14 +37,6 @@ const teacherActions = [
     badge: 'Decisión docente',
     accent: 'border-t-amber-500',
     brandIcon: 'pending-reviews' as const,
-  },
-  {
-    to: routes.materiasPara('evaluar'),
-    title: 'Preparar una evaluación',
-    description: 'Organiza criterios, preguntas y nota máxima para evaluar en línea, papel o ambas.',
-    badge: 'Evaluaciones',
-    accent: 'border-t-emerald-500',
-    brandIcon: 'prepare-evaluation' as const,
   },
 ];
 
@@ -115,7 +99,7 @@ function DashboardDocente() {
               <p className="text-sm text-indigo-100">Recursos</p>
             </div>
             <div className="col-span-2 flex items-center gap-3 rounded-2xl border border-white/20 bg-slate-950/10 px-3 py-2.5 backdrop-blur">
-              <img src="/branding/xali-hello.png" alt="" className="h-12 w-12 shrink-0 object-contain" />
+              <img src="/branding/xali-hello.webp" alt="" loading="lazy" className="h-12 w-12 shrink-0 object-contain" />
               <div>
                 <p className="text-xs font-extrabold text-white">Tu clase, bien organizada</p>
                 <p className="mt-0.5 text-[11px] leading-4 text-indigo-100">{'Planifica, eval\u00faa y acompa\u00f1a desde el mismo lugar.'}</p>
@@ -129,10 +113,10 @@ function DashboardDocente() {
 
       <section aria-labelledby="teacher-actions-title">
         <div className="mb-4 flex items-end justify-between gap-4">
-          <div><p className="text-xs font-bold uppercase tracking-[0.14em] text-brand-600">Acciones frecuentes</p><h2 id="teacher-actions-title" className="mt-1 font-display text-2xl font-bold">¿Qué quieres hacer?</h2></div>
+          <div><p className="text-xs font-bold uppercase tracking-[0.14em] text-brand-600">Otras tareas frecuentes</p><h2 id="teacher-actions-title" className="mt-1 font-display text-2xl font-bold">Organiza y revisa tu clase</h2></div>
           <Badge tone="brand" className="hidden sm:inline-flex">Tú tienes el control</Badge>
         </div>
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="grid gap-3 sm:grid-cols-2">
           {teacherActions.map((action) => (
             <div key={action.title}>
               <Link to={action.to} className="group block h-full">

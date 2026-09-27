@@ -6,7 +6,11 @@ import httpx
 import pytest
 
 from app.services import llm_router as llm_router_module
-from app.services.llm_router import LLMOutputTruncatedError, LLMRouter
+from app.services.llm_router import (
+    LLMOutputTruncatedError,
+    LLMRouter,
+    opencode_reasoning_effort,
+)
 
 
 class FakeHTTPClient:
@@ -56,6 +60,23 @@ def test_chat_completions_receives_output_budget(monkeypatch) -> None:
 
     assert result == "{}"
     assert FakeHTTPClient.last_json["max_tokens"] == 2048
+
+
+def test_glm_flash_uses_low_reasoning_without_unsupported_thinking_control(monkeypatch) -> None:
+    request = httpx.Request("POST", "https://example.test/chat/completions")
+    FakeHTTPClient.response = httpx.Response(
+        200,
+        request=request,
+        json={"choices": [{"finish_reason": "stop", "message": {"content": "{}"}}], "usage": {}},
+    )
+    monkeypatch.setattr(llm_router_module.httpx, "AsyncClient", FakeHTTPClient)
+    monkeypatch.setattr(llm_router_module, "log_ai_usage", no_usage_log)
+
+    result = asyncio.run(configured_router("glm-5.3-flash", 2048)._call_open_code("test", True))
+
+    assert result == "{}"
+    assert "thinking" not in FakeHTTPClient.last_json
+    assert opencode_reasoning_effort("glm-5.3-flash") == "low"
 
 
 @pytest.mark.parametrize(

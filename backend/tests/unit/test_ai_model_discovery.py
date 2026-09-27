@@ -5,9 +5,17 @@ from app.services.ai_credentials_service import EffectiveAICredentials
 from app.services.ai_model_discovery import (
     AIModelDiscoveryError,
     discover_provider_models,
+    model_supports_vision,
     normalize_model_payload,
     persist_discovered_models,
 )
+
+
+def test_known_grading_models_expose_their_visual_capability() -> None:
+    assert model_supports_vision("deepseek-v4-flash-vision-exp") is True
+    assert model_supports_vision("glm-5.3-flash") is True
+    assert model_supports_vision("qwen3.7-plus") is True
+    assert model_supports_vision("text-only-model") is False
 
 
 def test_normalize_model_payload_deduplicates_and_infers_capabilities() -> None:
@@ -18,15 +26,21 @@ def test_normalize_model_payload_deduplicates_and_infers_capabilities() -> None:
                 {"id": "qwen-vl-plus", "context_window": 131072},
                 {"id": "qwen-vl-plus", "display_name": "Qwen VL Plus"},
                 {"id": "embed-small"},
+                {"id": "glm-5.3-flash"},
                 {"id": "retired", "active": False},
                 {"object": "model"},
             ]
         },
     )
 
-    assert [model.model_id for model in models] == ["embed-small", "qwen-vl-plus"]
+    assert [model.model_id for model in models] == [
+        "embed-small",
+        "glm-5.3-flash",
+        "qwen-vl-plus",
+    ]
     assert models[0].capabilities == ("embedding",)
     assert models[1].capabilities == ("text", "vision")
+    assert models[2].capabilities == ("text", "vision")
 
 
 @pytest.mark.asyncio

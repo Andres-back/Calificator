@@ -70,13 +70,13 @@ async def create_password_reset_request(
     client_fingerprint: str | None,
 ) -> PasswordResetRequest | None:
     user = await user_service.get_user_by_email(db, email)
-    if not user or user.estado != UserEstado.ACTIVO.value:
+    if not user or user.estado != UserEstado.ACTIVO.value or getattr(user, "email_es_interno", False):
         return None
 
     # Serialize issuances per account. A second concurrent request observes the
     # first committed row and is throttled instead of leaving two valid links.
     user = await db.scalar(select(User).where(User.id == user.id).with_for_update())
-    if not user or user.estado != UserEstado.ACTIVO.value:
+    if not user or user.estado != UserEstado.ACTIVO.value or getattr(user, "email_es_interno", False):
         return None
 
     now = utcnow()

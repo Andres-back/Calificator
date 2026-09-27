@@ -19,6 +19,9 @@ SURFACES = {
     "calificaciones",
     "presentaciones",
 }
+FEEDBACK_STORY_MODES = {"animated", "static"}
+FEEDBACK_STORY_ACTIONS = {"pause", "resume", "skip", "replay", "next", "previous"}
+GRADING_TRIAGE_LEVELS = {"safe", "attention", "blocked"}
 FORBIDDEN_METADATA_KEYS = {
     "actor",
     "actor_id",
@@ -67,6 +70,7 @@ class AnalyticsValidationError(ValueError):
 
 ALL_ROLES = frozenset(role.value for role in UserRole)
 TEACHER_ROLES = frozenset({UserRole.PROFESOR.value, UserRole.ADMIN.value})
+STUDENT_ROLES = frozenset({UserRole.ESTUDIANTE.value})
 
 EVENT_POLICIES: dict[str, EventPolicy] = {
     "session_view_opened": EventPolicy(
@@ -105,6 +109,42 @@ EVENT_POLICIES: dict[str, EventPolicy] = {
         references=frozenset({"evaluacion_id"}),
         metadata_keys=frozenset({"batch_size"}),
         required_metadata=frozenset({"batch_size"}),
+    ),
+    "feedback_story_started": EventPolicy(
+        roles=STUDENT_ROLES,
+        references=frozenset({"evaluacion_id", "calificacion_id"}),
+        metadata_keys=frozenset({"mode"}),
+        required_metadata=frozenset({"mode"}),
+    ),
+    "feedback_story_controlled": EventPolicy(
+        roles=STUDENT_ROLES,
+        references=frozenset({"evaluacion_id", "calificacion_id"}),
+        metadata_keys=frozenset({"mode", "action", "step"}),
+        required_metadata=frozenset({"mode", "action", "step"}),
+    ),
+    "feedback_story_detail_opened": EventPolicy(
+        roles=STUDENT_ROLES,
+        references=frozenset({"evaluacion_id", "calificacion_id"}),
+        metadata_keys=frozenset({"mode", "step"}),
+        required_metadata=frozenset({"mode", "step"}),
+    ),
+    "feedback_story_completed": EventPolicy(
+        roles=STUDENT_ROLES,
+        references=frozenset({"evaluacion_id", "calificacion_id"}),
+        metadata_keys=frozenset({"mode"}),
+        required_metadata=frozenset({"mode"}),
+    ),
+    "grading_triage_opened": EventPolicy(
+        roles=TEACHER_ROLES,
+        references=frozenset({"evaluacion_id", "calificacion_id"}),
+        metadata_keys=frozenset({"safe_count", "attention_count", "blocked_count", "global_blocked"}),
+        required_metadata=frozenset({"safe_count", "attention_count", "blocked_count", "global_blocked"}),
+    ),
+    "grading_triage_navigated": EventPolicy(
+        roles=TEACHER_ROLES,
+        references=frozenset({"evaluacion_id", "calificacion_id"}),
+        metadata_keys=frozenset({"target_level", "position", "total_exceptions"}),
+        required_metadata=frozenset({"target_level", "position", "total_exceptions"}),
     ),
 }
 
@@ -166,6 +206,25 @@ def _validate_metadata(
         batch_size = normalized["batch_size"]
         if isinstance(batch_size, bool) or not isinstance(batch_size, int) or not 1 <= batch_size <= 500:
             raise AnalyticsValidationError(422, "batch_size debe ser un entero entre 1 y 500")
+    if "mode" in normalized and normalized["mode"] not in FEEDBACK_STORY_MODES:
+        raise AnalyticsValidationError(422, "mode no pertenece al catálogo permitido")
+    if "action" in normalized and normalized["action"] not in FEEDBACK_STORY_ACTIONS:
+        raise AnalyticsValidationError(422, "action no pertenece al catálogo permitido")
+    if "step" in normalized:
+        step = normalized["step"]
+        if isinstance(step, bool) or not isinstance(step, int) or not 1 <= step <= 4:
+            raise AnalyticsValidationError(422, "step debe ser un entero entre 1 y 4")
+    for key in ("safe_count", "attention_count", "blocked_count", "position", "total_exceptions"):
+        if key in normalized:
+            count = normalized[key]
+            if isinstance(count, bool) or not isinstance(count, int) or not 0 <= count <= 500:
+                raise AnalyticsValidationError(422, f"{key} debe ser un entero entre 0 y 500")
+    if "position" in normalized and normalized["position"] < 1:
+        raise AnalyticsValidationError(422, "position debe ser mayor o igual a 1")
+    if "global_blocked" in normalized and not isinstance(normalized["global_blocked"], bool):
+        raise AnalyticsValidationError(422, "global_blocked debe ser booleano")
+    if "target_level" in normalized and normalized["target_level"] not in GRADING_TRIAGE_LEVELS:
+        raise AnalyticsValidationError(422, "target_level no pertenece al catálogo permitido")
     if "materia_id" in normalized:
         try:
             normalized["materia_id"] = str(UUID(str(normalized["materia_id"])))

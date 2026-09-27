@@ -63,7 +63,9 @@ class Settings(BaseSettings):
     CLOUDFLARE_API_TOKEN: str = ""
     CLOUDFLARE_ACCOUNT_ID: str = ""
     CLOUDFLARE_IMAGE_MODEL: str = "@cf/bytedance/stable-diffusion-xl-lightning"
-    CLOUDFLARE_IMAGE_FALLBACK_MODEL: str = "@cf/stabilityai/stable-diffusion-xl-base-1.0"
+    CLOUDFLARE_IMAGE_FALLBACK_MODEL: str = (
+        "@cf/stabilityai/stable-diffusion-xl-base-1.0"
+    )
     CLOUDFLARE_TIMEOUT_SECONDS: int = 45
 
     OPEN_CODE_API_KEY: str = ""
@@ -78,6 +80,7 @@ class Settings(BaseSettings):
     OPEN_CODE_DIGITALIZATION_MODEL: str = "deepseek-v4-flash"
     OPEN_CODE_DIGITALIZATION_TIMEOUT_SECONDS: int = 60
     OPEN_CODE_DIGITALIZATION_MAX_TOKENS: int = 3072
+    DIGITALIZATION_STRUCTURE_MAX_TOKENS: int = 8192
     # Compatibilidad con despliegues anteriores; ya no cancela el job.
     DIGITALIZATION_TOTAL_TIMEOUT_SECONDS: int = 180
     OPEN_CODE_TIMEOUT_SECONDS: int = 45
@@ -92,20 +95,20 @@ class Settings(BaseSettings):
     VISION_TOTAL_TIMEOUT_SECONDS: int = 240
     VISION_MAX_RETRIES: int = 1
     VISION_FALLBACK_ENABLED: bool = True
-    VISION_FALLBACK_MODELS: str = "qwen3.7-plus,mimo-v2.5"
+    VISION_FALLBACK_MODELS: str = "glm-5.3-flash,qwen3.7-plus,mimo-v2.5"
     VISION_MAX_CONCURRENCY: int = 3
     VISION_MAX_IMAGE_SIDE: int = 2200
     VISION_MAX_TOKENS: int = 3072
     DIGITALIZATION_SLOW_WARNING_SECONDS: int = 90
     PHOTO_GRADING_SLOW_WARNING_SECONDS: int = 90
     PHOTO_GRADING_VISION_MODEL: str = "deepseek-v4-flash-vision-exp"
-    PHOTO_GRADING_VISION_FALLBACK_MODEL: str = "qwen3.6-plus"
+    PHOTO_GRADING_VISION_FALLBACK_MODEL: str = "glm-5.3-flash"
     PHOTO_GRADING_VISION_LAST_RESORT_MODEL: str = "mimo-v2.5"
     PHOTO_GRADING_TEXT_MODEL: str = "deepseek-v4-flash-vision-exp"
-    PHOTO_GRADING_VERIFIER_MODEL: str = "deepseek-v4-flash-vision-exp"
+    PHOTO_GRADING_VERIFIER_MODEL: str = "glm-5.3-flash"
     # Qwen queda como contingencia independiente si DeepSeek no produce contrato.
     PHOTO_GRADING_TEXT_REVIEW_MODEL: str = "qwen3.7-plus"
-    PHOTO_GRADING_COMPARATOR_MODEL: str = "deepseek-v4-pro"
+    PHOTO_GRADING_COMPARATOR_MODEL: str = "glm-5.3-flash"
     PHOTO_GRADING_CROSS_PROVIDER_FALLBACK_ENABLED: bool = False
     # Nombres legacy conservados para compatibilidad; son umbrales observacionales.
     PHOTO_GRADING_VISION_TIMEOUT_SECONDS: int = 75
@@ -113,7 +116,7 @@ class Settings(BaseSettings):
     PHOTO_GRADING_VERIFIER_TIMEOUT_SECONDS: int = 20
     PHOTO_GRADING_ARBITER_TIMEOUT_SECONDS: int = 30
     PHOTO_GRADING_PRIMARY_MAX_TOKENS: int = 3072
-    PHOTO_GRADING_VERIFIER_MAX_TOKENS: int = 1536
+    PHOTO_GRADING_VERIFIER_MAX_TOKENS: int = 2048
     # Presupuesto de entrada aproximado. No trunca: activa partición por pregunta.
     PHOTO_GRADING_CONTEXT_BUDGET_CHARS: int = 320000
     PHOTO_GRADING_ARBITRATION_MIN_CONFIDENCE: float = 0.75
@@ -155,10 +158,11 @@ class Settings(BaseSettings):
     OLLAMA_MODEL: str = "llama3.1:8b"
     OLLAMA_TIMEOUT_SECONDS: int = 120
 
-    EMBEDDING_PROVIDER: str = "openai"
-    EMBEDDING_MODEL: str = "text-embedding-3-small"
-    EMBEDDING_DIMENSIONS: int = 1536
-
+    EMBEDDING_PROVIDER: str = "ollama_internal"
+    EMBEDDING_MODEL: str = "qwen3-embedding:0.6b"
+    EMBEDDING_DIMENSIONS: int = 1024
+    EMBEDDING_SPACE_VERSION: str = "qwen3-embedding-v1"
+    EMBEDDING_TIMEOUT_SECONDS: int = 30
 
     MAX_PRESENTATION_PARALLEL_JOBS: int = 5
     MAX_LLM_CONCURRENT_CALLS: int = 10
@@ -192,8 +196,13 @@ class Settings(BaseSettings):
             return
 
         invalid: list[str] = []
-        if len(self.SECRET_KEY) < 32 or self.SECRET_KEY.lower() in {"change-me", "secret"}:
-            invalid.append("SECRET_KEY/JWT_SECRET must contain at least 32 non-default characters")
+        if len(self.SECRET_KEY) < 32 or self.SECRET_KEY.lower() in {
+            "change-me",
+            "secret",
+        }:
+            invalid.append(
+                "SECRET_KEY/JWT_SECRET must contain at least 32 non-default characters"
+            )
         if "change-me" in self.DATABASE_URL.lower():
             invalid.append("DATABASE_URL still contains the default password")
 
@@ -215,15 +224,21 @@ class Settings(BaseSettings):
 
     @property
     def cors_origins(self) -> list[str]:
-        return [origin.strip() for origin in self.CORS_ORIGINS.split(",") if origin.strip()]
+        return [
+            origin.strip() for origin in self.CORS_ORIGINS.split(",") if origin.strip()
+        ]
 
     @property
     def trusted_hosts(self) -> list[str]:
         return [host.strip() for host in self.TRUSTED_HOSTS.split(",") if host.strip()]
+
     @property
     def vision_fallback_models(self) -> list[str]:
-        return [model.strip() for model in self.VISION_FALLBACK_MODELS.split(",") if model.strip()]
-
+        return [
+            model.strip()
+            for model in self.VISION_FALLBACK_MODELS.split(",")
+            if model.strip()
+        ]
 
 
 @lru_cache

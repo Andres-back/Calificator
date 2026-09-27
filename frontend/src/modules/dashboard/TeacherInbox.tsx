@@ -141,6 +141,24 @@ export function TeacherInbox() {
     : pending.length;
   const total = openClaims + pendingReviews;
 
+  if (total === 0) {
+    return (
+      <section aria-labelledby="teacher-inbox-title">
+        <Card className="flex items-center gap-4 p-4 sm:p-5">
+          <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-emerald-50 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-300">
+            <CheckCircle2 className="h-6 w-6" aria-hidden="true" />
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="text-xs font-bold uppercase tracking-[0.14em] text-emerald-700 dark:text-emerald-300">Atención docente</p>
+            <h2 id="teacher-inbox-title" className="mt-1 font-display text-lg font-bold">Tu bandeja está al día</h2>
+            <p className="mt-1 text-sm text-muted">No tienes reclamos ni entregas pendientes por revisar.</p>
+          </div>
+          <Badge tone="success" className="hidden sm:inline-flex">Todo al día</Badge>
+        </Card>
+      </section>
+    );
+  }
+
   return (
     <section aria-labelledby="teacher-inbox-title">
       <div className="mb-4 flex flex-wrap items-end justify-between gap-3">

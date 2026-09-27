@@ -108,3 +108,16 @@ Alcance autorizado por el usuario: T075–T081. Esta mejora reorganiza la entrad
 - `git diff --check`: sin errores de whitespace; solo avisos de normalización CRLF preexistentes en dos archivos backend ajenos a este alcance.
 
 No se probaron producción, Brave ni un iPhone físico en este bloque, y no se declara completa la especificación 042 fuera de las tareas T075–T081.
+
+## Integración con `main` actual (2026-09-27)
+
+La rama incorporó 63 commits posteriores de `main`. Se resolvieron 13 conflictos conservando como autoridad la fórmula, estados, visión, importación de estudiantes, proveedores y navegación por rol de `main`; criterios permanece aditivo y `CRITERIA_GRADING_AUTHORITY` continúa desactivado.
+
+- Pytest focal posterior a la integración: **95 pruebas verdes** de desglose, persistencia, autorización, configuración IA, visión, importación visual y criterios.
+- Vitest focal posterior a la integración: **34 pruebas verdes en 8 archivos** sobre navegación por rol, móvil, accesibilidad, criterios y ajuste parcial de nota.
+- Ruff de los ocho conflictos backend: verde.
+- ESLint y TypeScript de navegación/rutas: verdes.
+- Build completo de producción: verde.
+- Playwright Chromium 390×844 sobre la ruta canónica: **1 prueba verde** y sin desbordamiento horizontal.
+
+No se activó autoridad nueva sobre notas ni se realizó despliegue productivo.

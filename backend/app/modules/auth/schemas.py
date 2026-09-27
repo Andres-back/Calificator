@@ -1,3 +1,5 @@
+from typing import Literal
+
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, model_validator
 
 from app.modules.users.schemas import UserSelfRead
@@ -15,6 +17,8 @@ class RegisterRequest(BaseModel):
     email: EmailStr
     password: str = Field(min_length=8, max_length=128)
     solicitar_docente: bool = False
+    acepta_terminos: Literal[True]
+    acepta_privacidad: Literal[True]
 
     model_config = ConfigDict(extra="forbid")
 
@@ -37,6 +41,17 @@ class PasswordResetConsumeRequest(PasswordResetValidateRequest):
 
     @model_validator(mode="after")
     def passwords_match(self) -> "PasswordResetConsumeRequest":
+        if self.password != self.password_confirmation:
+            raise ValueError("Las contraseñas no coinciden.")
+        return self
+
+
+class InitialPasswordChangeRequest(BaseModel):
+    password: str = Field(min_length=8, max_length=128)
+    password_confirmation: str = Field(min_length=8, max_length=128)
+
+    @model_validator(mode="after")
+    def passwords_match(self) -> "InitialPasswordChangeRequest":
         if self.password != self.password_confirmation:
             raise ValueError("Las contraseñas no coinciden.")
         return self

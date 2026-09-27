@@ -62,6 +62,9 @@ export function Modal({
     previouslyFocusedRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
 
     const frame = window.requestAnimationFrame(() => {
+      // No interrumpir al usuario si ya empezó a escribir antes del autofocus.
+      const dialog = dialogRef.current;
+      if (dialog?.contains(document.activeElement) && document.activeElement !== dialog) return;
       const initialTarget = initialFocusRef?.current;
       const focusTarget = initialTarget && !initialTarget.hasAttribute('disabled')
         ? initialTarget

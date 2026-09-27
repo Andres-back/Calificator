@@ -228,6 +228,8 @@ services:
 
   ollama:
     image: ollama/ollama:latest@sha256:d00473cb58f0082c07cd6ed0d326a8a86f443ab69c51f8fc2b1a41687d45c661
+    cpus: "2.0"
+    mem_limit: 3g
     volumes:
       - ollama_data:/root/.ollama
     ports:
@@ -239,6 +241,38 @@ services:
       retries: 5
       start_period: 30s
     restart: unless-stopped
+
+
+  ollama-model-init:
+    image: ollama/ollama:latest@sha256:d00473cb58f0082c07cd6ed0d326a8a86f443ab69c51f8fc2b1a41687d45c661
+    environment:
+      OLLAMA_HOST: http://ollama:11434
+    command: ["pull", "${EMBEDDING_MODEL:-qwen3-embedding:0.6b}"]
+    volumes:
+      - ollama_data:/root/.ollama
+    depends_on:
+      ollama:
+        condition: service_healthy
+    restart: "no"
+
+  ollama-model-warmup:
+    build: *backend-build
+    environment:
+      OLLAMA_ENDPOINT: http://ollama:11434
+      EMBEDDING_MODEL: ${EMBEDDING_MODEL:-qwen3-embedding:0.6b}
+    command:
+      - python
+      - -c
+      - >-
+        import json, os, urllib.request;
+        endpoint = os.environ['OLLAMA_ENDPOINT'].rstrip('/') + '/api/embed';
+        payload = json.dumps({'model': os.environ['EMBEDDING_MODEL'], 'input': 'XCalificator listo para recuperar criterios de aprendizaje.', 'keep_alive': -1}).encode();
+        request = urllib.request.Request(endpoint, data=payload, headers={'Content-Type': 'application/json'});
+        urllib.request.urlopen(request, timeout=120).read()
+    depends_on:
+      ollama-model-init:
+        condition: service_completed_successfully
+    restart: "no"
 
   nginx:
     build:

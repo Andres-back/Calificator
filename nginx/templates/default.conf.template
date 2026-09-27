@@ -3,6 +3,16 @@ map $http_x_forwarded_proto $forwarded_proto {
     "" $scheme;
 }
 
+# Keep the original requested route across the SPA fallback to index.html.
+# Empty header values are not emitted by Nginx, so the landing page remains
+# indexable while authentication and application routes are explicitly private.
+map $request_uri $xcalificator_robots_tag {
+    default "noindex, nofollow";
+    ~^/(?:\?|$) "";
+    ~^/app(?:/|\?|$) "noindex, nofollow";
+    ~^/(?:login|registro|recuperar-contrasena|restablecer-contrasena)(?:/|\?|$) "noindex, nofollow";
+}
+
 resolver 127.0.0.11 valid=10s ipv6=off;
 
 upstream xcalificator_backend_upstream {
@@ -64,6 +74,11 @@ server {
         return 404;
     }
 
+    location = /site.webmanifest {
+        default_type application/manifest+json;
+        try_files $uri =404;
+    }
+
     location ~* \.(?:css|js|mjs|woff2?|ttf|png|jpe?g|webp|svg|ico)$ {
         try_files $uri =404;
         expires 1y;
@@ -78,6 +93,7 @@ server {
     location / {
         try_files $uri $uri/ /index.html;
         add_header Cache-Control "no-cache";
+        add_header X-Robots-Tag $xcalificator_robots_tag always;
         add_header X-Content-Type-Options "nosniff" always;
         add_header X-Frame-Options "SAMEORIGIN" always;
         add_header Referrer-Policy "strict-origin-when-cross-origin" always;

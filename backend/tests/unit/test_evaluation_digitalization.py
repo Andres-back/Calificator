@@ -291,6 +291,9 @@ def test_detector_repairs_missing_answers_before_normalizing(monkeypatch) -> Non
                 return first
             return {"respuestas_esperadas": [{"numero": 5, "respuesta": "24 lápices"}]}
 
+        def set_output_budget(self, max_tokens):
+            assert max_tokens == 8192
+
     monkeypatch.setattr(digitalize_service, "LLMRouter", FakeRouter)
     result = asyncio.run(
         digitalize_service.detectar_estructura_evaluacion(
@@ -300,7 +303,7 @@ def test_detector_repairs_missing_answers_before_normalizing(monkeypatch) -> Non
         )
     )
 
-    assert calls == ["evaluacion_digitalizar", "evaluacion_digitalizar"]
+    assert calls == ["digitalizacion.estructura", "digitalizacion.estructura"]
     assert len(result["respuestas_esperadas"]) == 7
     assert result["respuestas_esperadas"][4]["respuesta"] == "24 lápices"
 
@@ -312,6 +315,9 @@ def test_detector_uses_local_math_fallback_when_opencode_is_limited(monkeypatch)
 
         async def generate_json(self, task_type, prompt):
             raise RuntimeError("rate limited")
+
+        def set_output_budget(self, max_tokens):
+            assert max_tokens == 8192
 
     monkeypatch.setattr(digitalize_service, "LLMRouter", FailingRouter)
     extracted_text = """Evaluación Grado 5.º
@@ -343,6 +349,44 @@ D) 1+50-20x3÷2
     assert any("recuperación local" in warning for warning in result["advertencias"])
 
 
+def test_detector_honors_structure_stage_snapshot_and_output_budget(monkeypatch) -> None:
+    captured: dict[str, object] = {}
+
+    class FakeRouter:
+        def __init__(self, user_id=None, ai_config=None) -> None:
+            captured["user_id"] = user_id
+            captured["ai_config"] = ai_config
+
+        def set_output_budget(self, max_tokens):
+            captured["max_tokens"] = max_tokens
+
+        async def generate_json(self, task_type, prompt):
+            captured["task_type"] = task_type
+            return _structure()
+
+    structure_route = {
+        "primary": {"provider": "groq", "model": "llama-3.3-70b-versatile"},
+    }
+    monkeypatch.setattr(digitalize_service, "LLMRouter", FakeRouter)
+
+    result = asyncio.run(digitalize_service.detectar_estructura_evaluacion(
+        uuid4(),
+        "Evaluación completa con siete preguntas",
+        nota_maxima=Decimal("5"),
+        ai_config={
+            "stages": {
+                "extraction": {"primary": {"provider": "open_code", "model": "deepseek-v4-flash-vision-exp"}},
+                "structure": structure_route,
+            },
+        },
+    ))
+
+    assert captured["ai_config"] == structure_route
+    assert captured["task_type"] == "digitalizacion.estructura"
+    assert captured["max_tokens"] == 8192
+    assert len(result["preguntas"]) == 7
+
+
 def test_local_verification_corrects_objective_math_answers() -> None:
     structure = {
         "preguntas": [
@@ -368,6 +412,86 @@ def test_local_verification_corrects_objective_math_answers() -> None:
     }
 
     assert answers == {1: "42", 2: "10", 3: "3.141"}
+
+
+def test_normalization_verifies_math_key_against_persisted_statement() -> None:
+    structure = {
+        "preguntas": [
+            {
+                "numero": 5,
+                "tipo": "completar",
+                "enunciado": "Resuelve la multiplicación 270 x 67.",
+                "puntaje": 1,
+            },
+        ],
+        "respuestas_esperadas": [
+            {
+                "numero": 5,
+                "respuesta": "18.760",
+                "explicacion": "280 x 67 = 18.760",
+            },
+        ],
+    }
+
+    result = digitalize_service.normalize_detected_structure(
+        structure,
+        nota_maxima=Decimal("5"),
+    )
+
+    assert result["respuestas_esperadas"] == [
+        {"numero": 5, "respuesta": "18090"},
+    ]
+    assert any(
+        "verific" in warning.casefold() and "5" in warning
+        for warning in result["advertencias"]
+    )
+
+
+def test_student_answer_annotations_never_become_question_content() -> None:
+    content = """1. Resuelve 270 x 67.
+[RESPUESTA DEL ESTUDIANTE: 18.760, porque 280 x 67 = 18.760]
+2. Explica con tus palabras la propiedad conmutativa.
+[RESPUESTA DEL ESTUDIANTE: cambiar el orden]
+"""
+
+    structure = digitalize_service._build_local_digitalization_structure(content)
+
+    assert structure is not None
+    assert [item["enunciado"] for item in structure["preguntas"]] == [
+        "Resuelve 270 x 67.",
+        "Explica con tus palabras la propiedad conmutativa.",
+    ]
+    assert all(
+        "respuesta del estudiante" not in item["enunciado"].casefold()
+        for item in structure["preguntas"]
+    )
+
+
+def test_normalization_preserves_open_math_explanation() -> None:
+    structure = {
+        "preguntas": [
+            {
+                "numero": 1,
+                "tipo": "abierta",
+                "enunciado": "Explica por qué 2 + 2 = 4 usando un ejemplo.",
+                "puntaje": 1,
+            },
+        ],
+        "respuestas_esperadas": [
+            {
+                "numero": 1,
+                "respuesta": "Al reunir dos elementos con otros dos se obtienen cuatro.",
+            },
+        ],
+    }
+
+    result = digitalize_service.normalize_detected_structure(
+        structure,
+        nota_maxima=Decimal("5"),
+    )
+
+    assert result["respuestas_esperadas"][0]["respuesta"].startswith("Al reunir")
+    assert not result["advertencias"]
 
 
 def test_document_routing_never_falls_through_to_other_providers(monkeypatch) -> None:
@@ -539,6 +663,8 @@ def test_opencode_text_router_retries_rate_limit(monkeypatch) -> None:
     assert FakeHTTPClient.calls == 2
     assert FakeHTTPClient.last_url.endswith("/messages")
     assert FakeHTTPClient.last_headers["x-api-key"] == "test-key"
+    assert FakeHTTPClient.last_headers["x-opencode-session"].startswith("xca-")
+    assert FakeHTTPClient.last_headers["User-Agent"] == "XCalificator/1.0"
     assert "response_format" not in FakeHTTPClient.last_json
     assert FakeHTTPClient.last_json["max_tokens"] == 8192
     assert isinstance(FakeHTTPClient.last_timeout, httpx.Timeout)

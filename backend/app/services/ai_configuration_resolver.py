@@ -22,10 +22,10 @@ CAPABILITY_BY_FEATURE: dict[str, str] = {
     "rag": "embedding",
     "embeddings": "embedding",
     "calificacion.extraccion": "vision",
-    "calificacion.revision_adicional": "vision",
     "digitalizacion.extraccion": "vision",
     "presentaciones.imagenes": "image",
     "criterios.extraccion": "vision",
+    "importacion_estudiantes.extraccion": "vision",
 }
 
 

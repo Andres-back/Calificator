@@ -125,6 +125,87 @@ def test_normalization_preserves_objective_and_open_answers_without_grading() ->
     assert [answer.answer for answer in result.answers] == ["B", "explicación propia"]
     assert not hasattr(result, "score")
 
+
+def test_drawn_answer_is_sent_with_text_question_and_page(monkeypatch: pytest.MonkeyPatch) -> None:
+    extractor = VisionExtractor()
+
+    async def one(item, _total, _blueprint, _purpose):
+        return VisionPageResult(
+            page=item[0],
+            status="extracted",
+            page_text="4. Todas las líneas que están dibujadas tienen que aparecer.",
+            answers=[ExtractedAnswer(
+                question_number=4,
+                answer="Todas las líneas que están dibujadas tienen que aparecer.",
+                visual_description="Una recta toca el círculo pequeño en A y otro círculo toca al primero en B.",
+                confidence=0.9,
+                page=1,
+            )],
+        )
+
+    monkeypatch.setattr(extractor, "_one", one)
+    result = asyncio.run(extractor.extract(
+        _image(), "image/jpeg",
+        blueprint={"preguntas": [{"numero": 4, "enunciado": "Dibuja una tangente en A y otro círculo tangente en B."}]},
+    ))
+    payload = result.legacy_payload()
+
+    assert result.requires_review is False
+    assert payload["respuestas_detectadas"][0]["pagina"] == 1
+    assert "Todas las líneas" in payload["respuestas_detectadas"][0]["respuesta"]
+    assert "Una recta toca" in payload["respuestas_detectadas"][0]["respuesta"]
+    assert "Pregunta 4 (página 1)" in payload["texto_extraido"]
+    assert payload["preguntas_graficas_inciertas"] == []
+
+
+def test_unconfirmed_drawing_is_not_equated_with_a_blank_answer(monkeypatch: pytest.MonkeyPatch) -> None:
+    extractor = VisionExtractor()
+
+    async def one(item, _total, _blueprint, _purpose):
+        return VisionPageResult(
+            page=item[0],
+            status="extracted",
+            page_text="4. Todas las líneas que están dibujadas tienen que aparecer.",
+            answers=[ExtractedAnswer(
+                question_number=4,
+                answer="Todas las líneas que están dibujadas tienen que aparecer.",
+                confidence=0.95,
+                page=1,
+                blank=True,
+            )],
+        )
+
+    monkeypatch.setattr(extractor, "_one", one)
+    result = asyncio.run(extractor.extract(
+        _image(), "image/jpeg",
+        blueprint={"preguntas": [{"numero": 4, "enunciado": "Dibuja una tangente en A."}]},
+    ))
+    payload = result.legacy_payload()
+
+    assert result.requires_review is True
+    assert result.answers[0].blank is False
+    assert result.answers[0].needs_review is True
+    assert result.pages[0].status == "requires_review"
+    assert payload["preguntas_graficas_inciertas"] == [4]
+    assert "NO confirma ausencia del dibujo" in payload["texto_extraido"]
+
+
+def test_graphic_only_response_is_legible_without_written_text() -> None:
+    page = _normalize({
+        "page_text": "",
+        "answers": [{
+            "question_number": 4,
+            "answer": None,
+            "visual_description": "Se observa una recta que toca el círculo en A.",
+            "confidence": 0.8,
+            "blank": False,
+        }],
+    }, page=2, size=100)
+
+    assert page.answers[0].legible is True
+    assert page.answers[0].visual_description == "Se observa una recta que toca el círculo en A."
+    assert page.answers[0].blank is False
+
 def test_json_parser_repairs_only_safe_wrappers_and_trailing_comma() -> None:
     parsed, repaired = _parse_json('```json\n{"answers": [],}\n```')
     assert parsed == {"answers": []}
@@ -265,7 +346,9 @@ class _Client:
         return None
 
     async def post(self, _url: str, **kwargs: object) -> _Response:
-        self.calls.append(kwargs["json"])
+        payload = dict(kwargs["json"])
+        payload["_headers"] = kwargs["headers"]
+        self.calls.append(payload)
         response = self.responses.pop(0)
         if isinstance(response, Exception):
             raise response
@@ -293,6 +376,19 @@ def _success(answer: str = "27") -> _Response:
     })
 
 
+def _printed_only() -> _Response:
+    return _Response(200, {
+        "choices": [{"message": {"content": json.dumps({
+            "student_detected": False,
+            "document_quality": 0.82,
+            "page_text": "Lectura impresa y cinco preguntas visibles",
+            "answers": [],
+            "warnings": [],
+        })}}],
+        "usage": {"prompt_tokens": 10, "completion_tokens": 8},
+    })
+
+
 def _configured_extractor(monkeypatch: pytest.MonkeyPatch, responses: list[_Response | Exception], calls: list[dict]) -> VisionExtractor:
     extractor = VisionExtractor(primary_model="deepseek-v4-flash-vision-exp")
 
@@ -317,6 +413,8 @@ def test_429_is_retried_once_then_succeeds(monkeypatch: pytest.MonkeyPatch) -> N
     result = asyncio.run(extractor.extract(_image(), "image/jpeg"))
     assert result.answers[0].answer == "27"
     assert len(calls) == 2
+    assert calls[0]["_headers"]["x-opencode-session"] == calls[1]["_headers"]["x-opencode-session"]
+    assert calls[0]["_headers"]["User-Agent"] == "XCalificator/1.0"
 
 
 def test_timeout_is_retried_once_and_stays_temporary(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -353,14 +451,59 @@ def test_explicit_fallback_is_visible(monkeypatch: pytest.MonkeyPatch) -> None:
     extractor = _configured_extractor(monkeypatch, responses, calls)
     monkeypatch.setattr(module.settings, "VISION_MAX_RETRIES", 0)
     monkeypatch.setattr(module.settings, "VISION_FALLBACK_ENABLED", True)
-    monkeypatch.setattr(module.settings, "VISION_FALLBACK_MODELS", "qwen3.7-plus")
+    monkeypatch.setattr(module.settings, "VISION_FALLBACK_MODELS", "glm-5.3-flash,qwen3.7-plus")
     result = asyncio.run(extractor.extract(_image(), "image/jpeg"))
     assert result.fallback_used is True
-    assert result.fallback_model == "qwen3.7-plus"
+    assert result.fallback_model == "glm-5.3-flash"
     assert calls[0]["model"] == "deepseek-v4-flash-vision-exp"
     assert calls[0]["thinking"] == {"type": "disabled"}
-    assert calls[1]["model"] == "qwen3.7-plus"
+    assert calls[1]["model"] == "glm-5.3-flash"
     assert "thinking" not in calls[1]
+
+
+def test_printed_text_without_answers_activates_visual_fallback(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    responses = [_printed_only(), _success("respuesta a lápiz")]
+    calls: list[dict] = []
+    extractor = _configured_extractor(monkeypatch, responses, calls)
+    monkeypatch.setattr(module.settings, "VISION_MAX_RETRIES", 0)
+    monkeypatch.setattr(module.settings, "VISION_FALLBACK_ENABLED", True)
+    monkeypatch.setattr(module.settings, "VISION_FALLBACK_MODELS", "glm-5.3-flash")
+
+    result = asyncio.run(extractor.extract(
+        _image(),
+        "image/jpeg",
+        blueprint={"preguntas": [{"numero": 1, "enunciado": "Responde"}]},
+    ))
+
+    assert result.answers[0].answer == "respuesta a lápiz"
+    assert result.fallback_used is True
+    assert [call["model"] for call in calls] == [
+        "deepseek-v4-flash-vision-exp",
+        "glm-5.3-flash",
+    ]
+
+
+def test_printed_text_without_answers_never_becomes_successful_blank(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    responses = [_printed_only()]
+    calls: list[dict] = []
+    extractor = _configured_extractor(monkeypatch, responses, calls)
+    monkeypatch.setattr(module.settings, "VISION_MAX_RETRIES", 0)
+    monkeypatch.setattr(module.settings, "VISION_FALLBACK_ENABLED", False)
+
+    result = asyncio.run(extractor.extract(
+        _image(),
+        "image/jpeg",
+        blueprint={"preguntas": [{"numero": 1, "enunciado": "Responde"}]},
+    ))
+
+    assert result.answers == []
+    assert result.requires_review is True
+    assert result.pages[0].status == "requires_review"
+    assert any("no fue posible" in warning for warning in result.warnings)
 
 
 def test_sideways_photo_retries_orientation_without_creating_pages(monkeypatch: pytest.MonkeyPatch) -> None:

@@ -60,5 +60,6 @@ describe('DashboardEstudiante', () => {
     expect(calificacionesApi.getResumenAcademico).toHaveBeenCalledWith('estudiante-1');
     expect(calificacionesApi.getResumenAcademico).toHaveBeenCalledTimes(1);
     expect(materiasApi.listMaterias).not.toHaveBeenCalled();
+    expect(screen.getAllByRole('link', { name: /Pedir ayuda a Xali/i })).toHaveLength(1);
   });
 });

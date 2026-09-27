@@ -8,6 +8,7 @@ from app.db.session import get_db
 from app.modules.auth import password_recovery_service, service
 from app.modules.auth.schemas import (
     AuthResponse,
+    InitialPasswordChangeRequest,
     LoginRequest,
     PasswordResetConsumeRequest,
     PasswordResetRequestCreate,
@@ -18,6 +19,7 @@ from app.modules.auth.schemas import (
 )
 from app.modules.users.models import User
 from app.shared.constants import COOKIE_REFRESH_NAME
+from app.core.security import get_password_hash
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 logger = get_logger(__name__)
@@ -165,4 +167,22 @@ async def logout(response: Response) -> Response:
 
 @router.get("/me", response_model=AuthResponse)
 async def me(current_user: User = Depends(get_current_user)) -> AuthResponse:
+    return AuthResponse.from_user(current_user)
+
+
+@router.post("/initial-password", response_model=AuthResponse)
+async def change_initial_password(
+    payload: InitialPasswordChangeRequest,
+    response: Response,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> AuthResponse:
+    if not current_user.debe_cambiar_password:
+        raise HTTPException(status_code=409, detail="La cuenta no tiene un cambio inicial pendiente")
+    current_user.password_hash = get_password_hash(payload.password)
+    current_user.debe_cambiar_password = False
+    current_user.auth_version = int(current_user.auth_version or 1) + 1
+    await db.commit()
+    await db.refresh(current_user)
+    service.set_auth_cookies(response, current_user)
     return AuthResponse.from_user(current_user)

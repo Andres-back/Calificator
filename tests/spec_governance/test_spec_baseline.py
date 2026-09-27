@@ -31,6 +31,7 @@ ALL_SPECS = {
     "027-listas-botones-personalizados",
     "028-pulir-navegacion-presentaciones",
     "029-roles-permisos-modulares",
+    "030-identidad-seo",
     "031-acelerar-pipelines-ia",
     "032-calificacion-impacto-docente",
     "033-centro-calificacion",
@@ -42,6 +43,38 @@ ALL_SPECS = {
     "039-modularizar-evidencia",
     "040-modularizar-cola-calificaciones",
     "041-estabilizar-e2e-multihoja",
+    "043-corregir-scroll-navegacion",
+    "043-flujo-docente-movil",
+    "044-opencode-session",
+    "045-rag-grading-fallback",
+    "046-qwen-embeddings",
+    "047-retroalimentacion-formativa",
+    "048-retroalimentacion-animada",
+    "049-reparar-npm-audit",
+    "050-revision-por-excepciones",
+    "051-nota-desglose-autoridad",
+    "052-glm-independent-review",
+    "053-fix-ai-stage-capabilities",
+    "054-fix-digitalization-review-signals",
+    "055-fast-json-routing",
+    "056-avoid-redundant-arbitration",
+    "057-drawn-answer-evidence",
+    "058-grade-sum-review",
+    "059-verifier-component-contract",
+    "060-admin-grading-route-clarity",
+    "061-importar-estudiantes-lista",
+    "062-multimodal-grader-verifier",
+    "063-mobile-grade-digitization",
+    "065-retirar-foto-enviada",
+    "067-privacidad-legal",
+    "068-rutas-legales-publicas",
+    "069-recuperar-respuestas-manuscritas",
+    "070-calibrar-comprension-verificador",
+    "071-respuesta-abierta-literal",
+    "072-clave-literal-pregunta-quien",
+    "073-fragmento-literal-respuesta-abierta",
+    "074-optimizar-frontend",
+    "074-aislar-flujo-estudiante",
 }
 OWNED_SPECS = {
     name
@@ -49,6 +82,7 @@ OWNED_SPECS = {
     if name.startswith(tuple(f"{number:03d}-" for number in range(2, 13)))
     or name.startswith("021-")
     or name.startswith("029-")
+    or name.startswith("067-")
 }
 
 

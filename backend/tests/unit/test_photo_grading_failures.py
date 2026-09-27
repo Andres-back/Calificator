@@ -13,6 +13,8 @@ from app.services.vision_extractor import VisionExtractor
 from app.modules.calificaciones.agents import (
     AgentContext,
     AgentResult,
+    GRADER_PROMPT_TEMPLATE,
+    VERIFIER_PROMPT_TEMPLATE,
     grader_agent,
 )
 
@@ -20,6 +22,19 @@ from app.modules.calificaciones.agents import (
 class FakeClient:
     async def close(self) -> None:
         return None
+
+
+def test_comprehension_prompts_grade_meaning_without_unrequested_style_penalties() -> None:
+    required_rules = (
+        "No exijas que la respuesta repita el sujeto o el contexto ya indicado en la pregunta",
+        "Solo descuenta ortografía, puntuación, extensión o forma de oración",
+        "Exige únicamente la información pedida por el enunciado",
+        "una respuesta ubicada bajo otra pregunta se califica en el lugar donde fue escrita",
+    )
+
+    for rule in required_rules:
+        assert rule in GRADER_PROMPT_TEMPLATE
+        assert rule in VERIFIER_PROMPT_TEMPLATE
 
 
 class ExplodingGraderClient:
@@ -33,12 +48,35 @@ class CapturingGraderClient:
         self.max_tokens = None
         self.stage = None
         self.prompt = ""
+        self.image_bytes = None
+        self.image_mime = None
 
     async def chat(self, **kwargs):
         self.timeout = kwargs.get("timeout")
         self.max_tokens = kwargs.get("max_tokens")
         self.stage = kwargs.get("stage")
         self.prompt = kwargs["messages"][0]["content"]
+        return {
+            "choices": [
+                {
+                    "message": {
+                        "content": {
+                            "nota_sugerida": 4,
+                            "confianza": 0.9,
+                            "feedback_estudiante": "Bien.",
+                        }
+                    }
+                }
+            ]
+        }
+
+    async def chat_multimodal(self, **kwargs):
+        self.timeout = kwargs.get("timeout")
+        self.max_tokens = kwargs.get("max_tokens")
+        self.stage = kwargs.get("stage")
+        self.prompt = kwargs["text"]
+        self.image_bytes = kwargs.get("image_bytes")
+        self.image_mime = kwargs.get("image_mime")
         return {
             "choices": [
                 {
@@ -147,6 +185,66 @@ def test_empty_extraction_never_grades_artificial_no_response(monkeypatch) -> No
     assert result.motivo_revision == "vision_failed"
 
 
+def test_uncertain_drawing_forces_review_and_reaches_grader_as_uncertain(monkeypatch) -> None:
+    _configure_orchestrator(monkeypatch)
+    seen_text: list[str] = []
+
+    async def uncertain_vision(*_args, **_kwargs):
+        return AgentResult(
+            nota_sugerida=None,
+            confianza=0.8,
+            feedback_estudiante="",
+            raw_output={
+                "usable": True,
+                "texto_extraido": (
+                    "Pregunta 4: evidencia gráfica NO confirmada; "
+                    "el texto extraído NO confirma ausencia del dibujo."
+                ),
+                "respuestas_detectadas": [{
+                    "pregunta": 4,
+                    "respuesta": "Texto manuscrito",
+                    "requiere_revision": True,
+                }],
+                "preguntas_graficas_inciertas": [4],
+                "vision_extraction": {"requires_review": True},
+            },
+            requiere_revision_docente=True,
+        )
+
+    async def grader(ctx, **_kwargs):
+        seen_text.append(ctx.student_response_text)
+        return AgentResult(
+            nota_sugerida=0,
+            confianza=0.95,
+            feedback_estudiante="Pendiente.",
+            componentes=[{
+                "clave": "pregunta:4",
+                "puntaje": 0,
+                "estado": "sin_respuesta",
+            }],
+            requiere_revision_docente=False,
+        )
+
+    monkeypatch.setattr(orchestrator, "vision_agent", uncertain_vision)
+    monkeypatch.setattr(orchestrator, "grader_agent", grader)
+
+    result = asyncio.run(orchestrator.orchestrate_grading(
+        object(),
+        evaluacion_id=uuid4(),
+        materia_id=uuid4(),
+        blueprint={
+            "nota_maxima": 5,
+            "preguntas": [{"numero": 4, "enunciado": "Dibuja una tangente", "puntaje": 5}],
+        },
+        image_bytes=b"image",
+    ))
+
+    assert any("NO confirma ausencia" in text for text in seen_text)
+    assert result.requiere_revision_docente is True
+    assert result.raw_model_output["graphic_uncertain_questions"] == [4]
+    assert any("evidencia dibujada" in alert for alert in result.alertas)
+
+
 def test_objective_validation_accepts_equivalent_answers() -> None:
     blueprint = {
         "nota_maxima": 5,
@@ -182,9 +280,69 @@ def test_objective_validation_accepts_equivalent_answers() -> None:
 
     validation = orchestrator.build_objective_validation(blueprint, detected)
 
-    assert len(validation) == 5
+    assert len(validation) == 6
     assert all(item["correcta"] is True for item in validation)
-    assert orchestrator.objective_score_floor(blueprint, validation) == Decimal("3.57")
+    assert orchestrator.objective_score_floor(blueprint, validation) == Decimal("4.29")
+
+
+def test_open_answer_key_at_start_is_objective_but_internal_mention_is_not() -> None:
+    blueprint = {
+        "nota_maxima": 3,
+        "preguntas": [
+            {"numero": 1, "tipo": "abierta", "enunciado": "¿Quién es el personaje principal?", "puntaje": 1},
+            {"numero": 2, "tipo": "abierta", "enunciado": "¿Cómo se sentía?", "puntaje": 1},
+            {"numero": 3, "tipo": "abierta", "enunciado": "¿Qué quería hacer?", "puntaje": 1},
+        ],
+        "respuestas_esperadas": [
+            {"numero": 1, "respuesta": "El personaje principal es Nico, un niño que viaja por primera vez en avión."},
+            {"numero": 2, "respuesta": "emocionado"},
+            {"numero": 3, "respuesta": "contarles a todos sobre su aventura"},
+        ],
+    }
+    detected = [
+        {"pregunta": 1, "respuesta": "Nico miró emocionado por la ventana del avión"},
+        {"pregunta": 2, "respuesta": "No estaba emocionado sino aburrido"},
+        {"pregunta": 3, "respuesta": "para contarles a todos sobre su aventura"},
+    ]
+
+    validation = orchestrator.build_objective_validation(blueprint, detected)
+
+    assert validation == [
+        {
+            "numero": 1,
+            "tipo": "abierta",
+            "respuesta_detectada": "Nico miró emocionado por la ventana del avión",
+            "respuesta_esperada": "El personaje principal es Nico, un niño que viaja por primera vez en avión.",
+            "correcta": True,
+            "fuente": "clave_oficial",
+        },
+        {
+            "numero": 3,
+            "tipo": "abierta",
+            "respuesta_detectada": "para contarles a todos sobre su aventura",
+            "respuesta_esperada": "contarles a todos sobre su aventura",
+            "correcta": True,
+            "fuente": "clave_oficial",
+        },
+    ]
+    assert orchestrator.objective_score_floor(blueprint, validation) == Decimal("2.00")
+
+
+def test_literal_person_key_does_not_override_other_open_question_types() -> None:
+    assert orchestrator._open_answer_matches(
+        "¿Cómo se sentía Nico?",
+        "Nico se sentía emocionado al mirar por la ventana.",
+        "Nico estaba aburrido",
+    ) is False
+
+
+def test_comparison_modifier_is_not_accepted_as_the_requested_comparison() -> None:
+    assert orchestrator._open_answer_matches(
+        "¿A qué se parecían las nubes?",
+        "Las nubes se parecían a algodones de azúcar flotando en el cielo azul.",
+        "flotando en el cielo azul",
+    ) is False
+
 
 def test_both_failed_graders_return_no_score(monkeypatch) -> None:
     async def failed_grader(*_args, **_kwargs):
@@ -395,7 +553,7 @@ def test_vision_router_normalizes_text_answers(monkeypatch) -> None:
     ]
 
 
-def test_pipeline_exception_returns_sanitized_failure(monkeypatch) -> None:
+def test_rag_exception_is_sanitized_and_does_not_block_grading(monkeypatch) -> None:
     _configure_orchestrator(monkeypatch)
 
     async def exploding_context(*_args, **_kwargs):
@@ -407,6 +565,18 @@ def test_pipeline_exception_returns_sanitized_failure(monkeypatch) -> None:
         exploding_context,
     )
 
+    async def successful_grader(*_args, **_kwargs):
+        return AgentResult(
+            nota_sugerida=4.5,
+            confianza=0.92,
+            feedback_estudiante="Resultado disponible.",
+            proveedor="opencode",
+            modelo="grader",
+            requiere_revision_docente=False,
+        )
+
+    monkeypatch.setattr(orchestrator, "grader_agent", successful_grader)
+
     result = asyncio.run(
         orchestrator.orchestrate_grading(
             object(),
@@ -417,9 +587,13 @@ def test_pipeline_exception_returns_sanitized_failure(monkeypatch) -> None:
         )
     )
 
-    assert result.nota_sugerida is None
-    assert result.motivo_revision == "pipeline_error"
-    assert result.raw_model_output["error_type"] == "RuntimeError"
+    assert result.nota_sugerida == Decimal("4.5")
+    assert result.motivo_revision is None
+    assert result.raw_model_output["rag_context"] == {
+        "status": "unavailable",
+        "error_type": "RuntimeError",
+    }
+    assert result.raw_model_output["rag_sources_by_question"] == []
     assert "sensitive prompt content" not in str(result.raw_model_output)
 
 
@@ -501,8 +675,68 @@ def test_fast_verifier_uses_compact_output_budget() -> None:
 
     assert result.nota_sugerida == 4
     assert client.timeout == 15
-    assert client.max_tokens <= 1536
+    assert client.max_tokens <= 2048
     assert client.stage == "grading_secondary"
+
+
+def test_fast_verifier_receives_the_original_image() -> None:
+    client = CapturingGraderClient()
+    context = AgentContext(
+        evaluacion_nombre="Prueba visual",
+        nota_maxima=5,
+        blueprint={"preguntas": [{"numero": 1, "texto": "Argumenta"}]},
+        student_response_text="P1: explicación manuscrita",
+        image_bytes=b"evidencia",
+        image_mime="image/png",
+    )
+    primary = AgentResult(
+        nota_sugerida=4,
+        confianza=0.9,
+        feedback_estudiante="",
+        componentes=[],
+    )
+
+    result = asyncio.run(
+        agents.verification_agent(
+            context,
+            primary,
+            client=client,
+            multimodal=True,
+        )
+    )
+
+    assert result.nota_sugerida == 4
+    assert client.image_bytes == b"evidencia"
+    assert client.image_mime == "image/png"
+
+
+def test_fast_verifier_maps_its_compact_component_contract() -> None:
+    class CompactVerifierClient:
+        async def chat(self, **_kwargs):
+            return {"choices": [{"message": {"content": {
+                "nota_sugerida": 5,
+                "confianza": 0.9,
+                "componentes_verificados": [{
+                    "componente_id": "pregunta:3",
+                    "puntos_obtenidos": 5,
+                    "puntos_maximos": 5,
+                    "estado": "correcta",
+                }],
+            }}}]}
+
+    context = AgentContext(
+        evaluacion_nombre="Prueba",
+        nota_maxima=5,
+        blueprint={"nota_maxima": 5, "preguntas": [{"numero": 3, "enunciado": "Altura", "puntaje": 5}]},
+        student_response_text="h²=525; h=√525",
+    )
+    primary = AgentResult(nota_sugerida=0, confianza=0.8, feedback_estudiante="", componentes=[])
+
+    result = asyncio.run(agents.verification_agent(context, primary, client=CompactVerifierClient()))
+
+    assert result.componentes[0]["clave"] == "pregunta:3"
+    assert result.componentes[0]["puntaje"] == 5
+    assert result.componentes[0]["estado"] == "correcta"
 
 
 def test_graders_receive_the_complete_extracted_response() -> None:
@@ -606,6 +840,7 @@ def test_photo_pipeline_uses_deepseek_extraction_and_fast_flash_verifier(monkeyp
 
     vision_models: list[str] = []
     grader_calls: list[tuple[str, bool]] = []
+    verifier_calls: list[tuple[bytes | None, bool]] = []
 
     async def open_code_vision(*_args, model: str, **_kwargs):
         vision_models.append(model)
@@ -644,8 +879,21 @@ def test_photo_pipeline_uses_deepseek_extraction_and_fast_flash_verifier(monkeyp
     async def forbidden_external_router(*_args, **_kwargs):
         raise AssertionError("Groq/OpenAI no debe ejecutarse cuando OpenCode responde")
 
+    async def visual_verifier(context, primary, *, multimodal: bool, model: str, **_kwargs):
+        verifier_calls.append((context.image_bytes, multimodal))
+        return AgentResult(
+            nota_sugerida=primary.nota_sugerida,
+            confianza=primary.confianza,
+            feedback_estudiante="",
+            componentes=primary.componentes,
+            proveedor="opencode",
+            modelo=model,
+            requiere_revision_docente=False,
+        )
+
     monkeypatch.setattr(orchestrator, "vision_agent", open_code_vision)
     monkeypatch.setattr(orchestrator, "grader_agent", open_code_grader)
+    monkeypatch.setattr(orchestrator, "verification_agent", visual_verifier)
     monkeypatch.setattr(
         orchestrator,
         "vision_router_agent",
@@ -677,8 +925,9 @@ def test_photo_pipeline_uses_deepseek_extraction_and_fast_flash_verifier(monkeyp
 
     assert vision_models == ["deepseek-v4-flash-vision-exp"]
     assert grader_calls == [
-        ("deepseek-v4-flash-vision-exp", False),
+        ("deepseek-v4-flash-vision-exp", True),
     ]
+    assert verifier_calls == [(b"image", True)]
     assert result.raw_model_output["strategy"]["secondary_mode"] == "fast_verifier"
     assert result.raw_model_output["strategy"]["arbiter_invoked"] is False
     assert result.raw_model_output["provider_policy"] == "opencode_go_primary"
@@ -791,7 +1040,7 @@ def test_photo_pipeline_delegates_one_normalized_image_to_extractor(monkeypatch)
         )
 
     async def successful_grader(context, model: str, **_kwargs):
-        assert context.image_bytes is None
+        assert context.image_bytes == buffer.getvalue()
         grader_texts.append(context.student_response_text)
         return AgentResult(
             nota_sugerida=5,
@@ -821,9 +1070,9 @@ def test_photo_pipeline_delegates_one_normalized_image_to_extractor(monkeypatch)
     )
 
     assert vision_sizes == [(320, 180)]
-    assert grader_texts == [
-        "1. 32,37 + 41,32 = 73,69",
-    ]
+    assert "1. 32,37 + 41,32 = 73,69" in grader_texts[0]
+    assert "EVIDENCIA VISUAL ESTRUCTURADA" in grader_texts[0]
+    assert "P1: 73,69" in grader_texts[0]
     assert result.nota_sugerida == Decimal("5")
     assert result.raw_model_output["vision"]["rotation_applied"] == 0
 
@@ -870,6 +1119,65 @@ def test_online_pipeline_uses_deepseek_without_vision(monkeypatch) -> None:
     assert result.raw_model_output["strategy"]["arbiter_invoked"] is False
     assert result.raw_model_output["evidence_mode"] == "digital_text"
     assert result.raw_model_output["vision"] is None
+
+
+def test_visual_answers_cannot_be_converted_into_automatic_zero(monkeypatch) -> None:
+    _configure_orchestrator(monkeypatch)
+
+    async def visual_answers(*_args, model: str, **_kwargs):
+        return AgentResult(
+            nota_sugerida=None,
+            confianza=0.95,
+            feedback_estudiante="",
+            proveedor="opencode",
+            modelo=model,
+            raw_output={
+                "usable": True,
+                "texto_extraido": "Trabajo manuscrito",
+                "preguntas_detectadas": [1, 2],
+                "respuestas_detectadas": [
+                    {"pregunta": 1, "pagina": 1, "respuesta": "Respuesta uno", "legible": True},
+                    {"pregunta": 2, "pagina": 1, "respuesta": "Respuesta dos", "legible": True},
+                ],
+            },
+        )
+
+    async def absent_grader(*_args, model: str, **_kwargs):
+        return AgentResult(
+            nota_sugerida=0,
+            confianza=0.9,
+            feedback_estudiante="",
+            proveedor="opencode",
+            modelo=model,
+            componentes=[
+                {"clave": "pregunta:1", "puntaje": 0, "estado": "sin_respuesta"},
+                {"clave": "pregunta:2", "puntaje": 0, "estado": "sin_respuesta"},
+            ],
+            requiere_revision_docente=False,
+        )
+
+    monkeypatch.setattr(orchestrator, "vision_agent", visual_answers)
+    monkeypatch.setattr(orchestrator, "grader_agent", absent_grader)
+
+    result = asyncio.run(orchestrator.orchestrate_grading(
+        object(),
+        evaluacion_id=uuid4(),
+        materia_id=uuid4(),
+        blueprint={
+            "nombre": "Preguntas abiertas",
+            "nota_maxima": 5,
+            "modalidad": "fisica",
+            "preguntas": [
+                {"numero": 1, "tipo": "abierta", "modalidad_respuesta": "fisica"},
+                {"numero": 2, "tipo": "abierta", "modalidad_respuesta": "fisica"},
+            ],
+        },
+        image_bytes=b"image",
+    ))
+
+    assert result.nota_sugerida is None
+    assert result.requiere_revision_docente is True
+    assert result.motivo_revision == "visual_answers_discarded"
 
 
 def test_opencode_primary_vision_keeps_provider_boundary(monkeypatch) -> None:
@@ -977,9 +1285,60 @@ def test_discrepancy_invokes_pro_arbiter_once(monkeypatch) -> None:
         )
     )
 
-    assert comparator_calls == [("deepseek-v4-pro", True)]
+    assert comparator_calls == [("glm-5.3-flash", True)]
     assert result.raw_model_output["strategy"]["arbiter_invoked"] is True
     assert result.raw_model_output["strategy"]["arbiter_reason"] == "score_discrepancy"
+
+
+def test_matching_scores_with_review_do_not_invoke_third_model(monkeypatch) -> None:
+    _configure_orchestrator(monkeypatch)
+    calls: list[str] = []
+
+    async def primary_grader(*_args, model: str, **_kwargs):
+        return AgentResult(
+            nota_sugerida=4.17,
+            confianza=0.91,
+            feedback_estudiante="Comprueba la clave de referencia.",
+            alertas=["Clave de referencia dudosa."],
+            proveedor="opencode",
+            modelo=model,
+            requiere_revision_docente=True,
+        )
+
+    async def matching_verifier(_ctx, _primary, *, model: str, **_kwargs):
+        return AgentResult(
+            nota_sugerida=4.17,
+            confianza=0.88,
+            feedback_estudiante="",
+            alertas=["Validar la respuesta con el docente."],
+            proveedor="opencode",
+            modelo=model,
+            requiere_revision_docente=True,
+            raw_output={"requiere_arbitraje": True},
+        )
+
+    async def local_comparator(first, second, *, force_arbitration=False, **_kwargs):
+        calls.append("arbiter" if force_arbitration else "local")
+        return await agents.comparator_agent(first, second, force_arbitration=force_arbitration)
+
+    monkeypatch.setattr(orchestrator, "grader_agent", primary_grader)
+    monkeypatch.setattr(orchestrator, "verification_agent", matching_verifier)
+    monkeypatch.setattr(orchestrator, "comparator_agent", local_comparator)
+
+    result = asyncio.run(orchestrator.orchestrate_grading(
+        object(),
+        evaluacion_id=uuid4(),
+        materia_id=uuid4(),
+        blueprint={"nombre": "Prueba", "nota_maxima": 5},
+        student_response_text="1. Respuesta",
+    ))
+
+    assert calls == ["local"]
+    assert result.raw_model_output["strategy"]["arbiter_invoked"] is False
+    assert result.raw_model_output["strategy"]["arbiter_reason"] is None
+    assert result.requiere_revision_docente is True
+    assert "Clave de referencia dudosa." in result.alertas
+    assert "Validar la respuesta con el docente." in result.alertas
 
 
 def test_low_confidence_invokes_pro_arbiter(monkeypatch) -> None:
@@ -1034,9 +1393,29 @@ def test_low_confidence_invokes_pro_arbiter(monkeypatch) -> None:
         )
     )
 
-    assert comparator_calls == [("deepseek-v4-pro", True)]
+    assert comparator_calls == [("glm-5.3-flash", True)]
     assert result.raw_model_output["strategy"]["arbiter_invoked"] is True
     assert result.raw_model_output["strategy"]["arbiter_reason"] == "low_confidence"
+
+
+def test_exact_score_threshold_still_requests_arbitration(monkeypatch) -> None:
+    monkeypatch.setattr(orchestrator.settings, "PHOTO_GRADING_ARBITRATION_SCORE_DELTA", 0.5)
+    primary = AgentResult(
+        nota_sugerida=4.0,
+        confianza=0.9,
+        feedback_estudiante="",
+        proveedor="test",
+        modelo="primary",
+    )
+    verifier = AgentResult(
+        nota_sugerida=4.5,
+        confianza=0.9,
+        feedback_estudiante="",
+        proveedor="test",
+        modelo="verifier",
+    )
+
+    assert orchestrator._arbitration_reason(primary, verifier) == "score_discrepancy"
 
 
 def test_oversized_context_is_graded_by_question_and_consolidated_once(monkeypatch) -> None:

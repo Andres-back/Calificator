@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Calificacion } from '@/types/api';
-import { effectiveGradeScore, gradePresentation } from './gradePresentation';
+import { effectiveGradeScore, formatGradeScore, gradePresentation } from './gradePresentation';
 
 function grade(overrides: Partial<Calificacion> = {}): Calificacion {
   return {
@@ -37,5 +37,12 @@ describe('gradePresentation', () => {
     expect(gradePresentation(grade({
       estado: 'sugerida', nota_sugerida: 0, resultado_json: { pipeline_status: 'success' },
     }))).toEqual({ label: 'Sugerida', score: 0, processing: false });
+  });
+
+  it('conserva los decimales significativos de la suma verificable', () => {
+    expect(formatGradeScore(4.67)).toBe('4.67');
+    expect(formatGradeScore(4.95)).toBe('4.95');
+    expect(formatGradeScore(5)).toBe('5.0');
+    expect(formatGradeScore(4.5)).toBe('4.5');
   });
 });

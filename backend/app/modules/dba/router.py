@@ -1,9 +1,22 @@
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Response, UploadFile, File, status
+from fastapi import (
+    APIRouter,
+    Depends,
+    HTTPException,
+    Query,
+    Response,
+    UploadFile,
+    File,
+    status,
+)
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.permissions import get_current_user, require_permission, require_permission_now
+from app.core.permissions import (
+    get_current_user,
+    require_permission,
+    require_permission_now,
+)
 from app.db.session import get_db
 from app.modules.dba import service
 from app.modules.dba.models import DBAPersonalizado
@@ -14,7 +27,8 @@ from app.modules.dba.schemas import (
     DBAPersonalizadoUpdate,
     DBARead,
     DBAUnifiedItem,
-    DBAUploadResponse, DBASuggestionItem,
+    DBAUploadResponse,
+    DBASuggestionItem,
 )
 from app.modules.dba import document_service
 from app.modules.materias import service as materias_service
@@ -36,7 +50,9 @@ async def list_dba(
     return await service.search_dba(db, area=area, grado=grado)
 
 
-@router.post("/importar", response_model=list[DBARead], status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/importar", response_model=list[DBARead], status_code=status.HTTP_201_CREATED
+)
 async def import_dba(
     payload: DBAImportRequest,
     _: User = Depends(require_permission("dba.manage")),
@@ -55,7 +71,9 @@ def _ensure_can_manage_dba(row: DBAPersonalizado, user: User) -> None:
     """Solo el profesor dueño del DBA o un admin pueden editar/desactivar."""
     if user.rol == UserRole.ADMIN.value or row.profesor_id == user.id:
         return
-    raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not enough permissions")
+    raise HTTPException(
+        status_code=status.HTTP_403_FORBIDDEN, detail="Not enough permissions"
+    )
 
 
 @custom_router.get(
@@ -88,7 +106,9 @@ async def create_dba_personalizado(
 ) -> object:
     # Solo el profesor dueño de la materia (o admin) puede crear DBA en ella.
     require_permission_now(current_user, "dba.manage")
-    materia = await materias_service.ensure_can_manage_materia(db, materia_id, current_user)
+    materia = await materias_service.ensure_can_manage_materia(
+        db, materia_id, current_user
+    )
     return await service.create_dba_personalizado(
         db,
         profesor_id=materia.profesor_id,
@@ -144,7 +164,9 @@ async def list_materia_dba_combined(
     db: AsyncSession = Depends(get_db),
 ) -> list[dict]:
     require_permission_now(current_user, "dba.read")
-    materia = await materias_service.ensure_can_read_materia(db, materia_id, current_user)
+    materia = await materias_service.ensure_can_read_materia(
+        db, materia_id, current_user
+    )
     return await service.list_combined_dba(db, materia)
 
 
@@ -165,7 +187,9 @@ async def upload_document_for_dba(
 ) -> object:
     """Sube un PDF o DOCX, extrae texto, genera sugerencias de DBA vía RAG+LLM."""
     require_permission_now(current_user, "dba.manage")
-    materia = await materias_service.ensure_can_manage_materia(db, materia_id, current_user)
+    materia = await materias_service.ensure_can_manage_materia(
+        db, materia_id, current_user
+    )
 
     contenido = await read_upload_limited(file, 20 * 1024 * 1024)
     mime = file.content_type or ""
@@ -198,7 +222,7 @@ async def upload_document_for_dba(
 
     # Guardar como fuente RAG para futuras consultas
     from app.modules.rag.models import RagSource, RagChunk
-    from app.services.embedding_service import embed_texts
+    from app.services.embedding_service import embed_texts_with_metadata
 
     fuente = RagSource(
         profesor_id=current_user.id,
@@ -213,19 +237,26 @@ async def upload_document_for_dba(
 
     chunks_texto = document_service._chunk_text(texto)
     if chunks_texto:
-        embeddings = await embed_texts(
+        batch = await embed_texts_with_metadata(
             chunks_texto, db=db, teacher_id=current_user.id
         )
-        for i, (chunk, emb) in enumerate(zip(chunks_texto, embeddings, strict=False)):
-            db.add(RagChunk(
-                source_id=fuente.id,
-                profesor_id=current_user.id,
-                materia_id=materia_id,
-                tipo="dba",
-                chunk_text=chunk,
-                embedding=emb if any(v != 0.0 for v in emb) else None,
-                metadata_json={"indice": i, "total_chunks": len(chunks_texto)},
-            ))
+        for i, (chunk, emb) in enumerate(zip(chunks_texto, batch.vectors, strict=True)):
+            db.add(
+                RagChunk(
+                    source_id=fuente.id,
+                    profesor_id=current_user.id,
+                    materia_id=materia_id,
+                    tipo="dba",
+                    chunk_text=chunk,
+                    embedding=emb,
+                    embedding_vec=emb,
+                    embedding_provider=batch.space.provider,
+                    embedding_model=batch.space.model,
+                    embedding_dimensions=batch.space.dimensions,
+                    embedding_space_version=batch.space.version,
+                    metadata_json={"indice": i, "total_chunks": len(chunks_texto)},
+                )
+            )
     await db.commit()
     await db.refresh(fuente)
 
