@@ -87,7 +87,7 @@
 - [X] T052 [US4] Persistir relación criterio-componente, procedencia y ajuste manual auditado en `backend/app/modules/calificaciones/breakdown_service.py`
 - [X] T053 [US4] Exponer criterio, versión y procedencia de forma segura a profesor/estudiante en `backend/app/modules/calificaciones/schemas.py` y `backend/app/modules/calificaciones/router.py`
 - [X] T054 [US4] Mostrar “Criterio aplicado”, puntos, explicación y fuente pertinente sin duplicar información en `frontend/src/modules/calificaciones/components/GradeBreakdown.tsx` y `frontend/src/modules/calificaciones/CalificacionesWorkspace.tsx`
-- [ ] T055 [US4] Migrar analítica de agrupación por nombre a conjunto/versión/clave con fallback histórico en `backend/app/modules/analytics/service.py`
+- [X] T055 [US4] Migrar analítica de agrupación por nombre a conjunto/versión/clave con fallback histórico en `backend/app/modules/analytics/service.py`
 - [ ] T056 [US4] Validar Historia 4 con nota, publicación, ajuste, historial y PQRS sin cambio de resultados anteriores en `backend/tests/unit/test_learning_criteria_breakdown.py`
 
 ## Fase 7: Historia 5 — Lenguaje claro y experiencia responsiva (P2)

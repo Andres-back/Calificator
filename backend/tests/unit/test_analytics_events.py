@@ -445,3 +445,111 @@ def test_ai_usage_scope_is_private_for_teacher_and_institutional_for_admin() -> 
     admin_clauses, admin_params = router._ai_usage_owner_scope(user(UserRole.ADMIN))
     assert admin_clauses == []
     assert admin_params == {}
+
+
+def test_criterion_analytics_groups_canonical_components_by_set_version_and_stable_key() -> None:
+    grade_id = uuid4()
+    criterion_set_id = uuid4()
+    version_id = uuid4()
+    rows = service._criterion_result_rows(
+        [
+            {
+                "calificacion_id": grade_id,
+                "set_id": criterion_set_id,
+                "version_id": version_id,
+                "version_number": 2,
+                "criterion_stable_key": "argumentacion",
+                "criterion_snapshot_json": {"nombre": "Argumentación con evidencia"},
+                "awarded_points": 0.7,
+                "max_points": 1,
+            },
+            {
+                "calificacion_id": grade_id,
+                "set_id": criterion_set_id,
+                "version_id": version_id,
+                "version_number": 2,
+                "criterion_stable_key": "argumentacion",
+                "criterion_snapshot_json": {"nombre": "Argumentación con evidencia"},
+                "awarded_points": 1.5,
+                "max_points": 2,
+            },
+        ],
+        [],
+    )
+
+    assert rows == [
+        {
+            "nombre": "Argumentación con evidencia",
+            "porcentaje_logro": 73.3,
+            "estudiantes_evaluados": 1,
+            "estudiantes_con_dificultad": 0,
+            "nivel_atencion": "en_desarrollo",
+            "conjunto_id": str(criterion_set_id),
+            "version_id": str(version_id),
+            "version": 2,
+            "clave_estable": "argumentacion",
+            "origen": "versionado",
+        }
+    ]
+
+
+def test_criterion_analytics_uses_legacy_only_when_grade_has_no_canonical_links() -> None:
+    canonical_grade_id = uuid4()
+    legacy_grade_id = uuid4()
+    rows = service._criterion_result_rows(
+        [
+            {
+                "calificacion_id": canonical_grade_id,
+                "set_id": uuid4(),
+                "version_id": uuid4(),
+                "version_number": 1,
+                "criterion_stable_key": "ortografia",
+                "criterion_snapshot_json": {"nombre": "Ortografía"},
+                "awarded_points": 1,
+                "max_points": 1,
+            }
+        ],
+        [
+            {
+                "calificacion_id": canonical_grade_id,
+                "resultado_json": {"grader_a": {"criterios": [{"nombre": "Ortografía", "puntaje": 0, "maximo": 1}]}},
+            },
+            {
+                "calificacion_id": legacy_grade_id,
+                "resultado_json": {"grader_a": {"criterios": [{"nombre": "Comprensión", "puntaje": 0.5, "maximo": 1}]}},
+            },
+        ],
+    )
+
+    by_name = {row["nombre"]: row for row in rows}
+    assert by_name["Ortografía"]["porcentaje_logro"] == 100.0
+    assert by_name["Ortografía"]["origen"] == "versionado"
+    assert by_name["Comprensión"]["porcentaje_logro"] == 50.0
+    assert by_name["Comprensión"]["origen"] == "historico"
+    assert by_name["Comprensión"]["version_id"] is None
+
+
+def test_criterion_analytics_does_not_replace_unscored_canonical_links_with_legacy_ai_output() -> None:
+    grade_id = uuid4()
+    rows = service._criterion_result_rows(
+        [
+            {
+                "calificacion_id": grade_id,
+                "set_id": uuid4(),
+                "version_id": uuid4(),
+                "version_number": 1,
+                "criterion_stable_key": "lectura",
+                "criterion_snapshot_json": {"nombre": "Lectura"},
+                "awarded_points": None,
+                "max_points": 1,
+            }
+        ],
+        [
+            {
+                "calificacion_id": grade_id,
+                "resultado_json": {"grader_a": {"criterios": [{"nombre": "Lectura", "puntaje": 1, "maximo": 1}]}},
+            }
+        ],
+    )
+
+    assert rows == []
