@@ -59,4 +59,48 @@ describe('LearningCriteriaPage', () => {
     expect(screen.getByRole('button', { name: /Usar foto, PDF o material/ })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Escribir lo que enseñé/ })).toBeInTheDocument();
   });
+
+  it('permite buscar y filtrar criterios sin perder las acciones reales', async () => {
+    const user = userEvent.setup();
+    criteriaApi.listLearningCriteria.mockResolvedValue({
+      items: [
+        {
+          id: 'set-1', materia_id: 'materia-1', profesor_id: 'profesor-1', titulo: 'Comprensión literal',
+          descripcion: 'Reconoce información explícita', estado: 'activo', created_at: '2026-09-27', updated_at: '2026-09-27',
+          version_trabajo: null,
+          version_aprobada: {
+            id: 'version-1', set_id: 'set-1', version_number: 1, revision: 1, estado: 'aprobada',
+            intencion_docente: {}, fuentes: [], created_at: '2026-09-27',
+            criterios: [{ stable_key: 'literal', orden: 1, nombre: 'Identifica datos', descripcion: 'Ubica datos explícitos', evidencia_esperada: 'Respuesta textual', peso_porcentaje: 100, niveles: [] }],
+          },
+        },
+        {
+          id: 'set-2', materia_id: 'materia-1', profesor_id: 'profesor-1', titulo: 'Argumentación',
+          descripcion: 'Borrador para debate', estado: 'activo', created_at: '2026-09-27', updated_at: '2026-09-27',
+          version_aprobada: null,
+          version_trabajo: {
+            id: 'version-2', set_id: 'set-2', version_number: 1, revision: 1, estado: 'borrador',
+            intencion_docente: {}, fuentes: [], criterios: [], created_at: '2026-09-27',
+          },
+        },
+      ],
+      total: 2,
+      limit: 25,
+      offset: 0,
+    });
+    renderPage();
+
+    expect(await screen.findByText('Comprensión literal')).toBeVisible();
+    expect(screen.getByText('Argumentación')).toBeVisible();
+
+    await user.type(screen.getByRole('searchbox', { name: 'Buscar criterios' }), 'datos');
+    expect(screen.getByText('Comprensión literal')).toBeVisible();
+    expect(screen.queryByText('Argumentación')).not.toBeInTheDocument();
+
+    await user.clear(screen.getByRole('searchbox', { name: 'Buscar criterios' }));
+    await user.selectOptions(screen.getByRole('combobox', { name: 'Filtrar por estado' }), 'borrador');
+    expect(screen.queryByText('Comprensión literal')).not.toBeInTheDocument();
+    expect(screen.getByText('Argumentación')).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Revisar y editar' })).toBeEnabled();
+  });
 });

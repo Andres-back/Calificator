@@ -16,7 +16,6 @@ vi.mock('./api', () => ({
 }));
 
 vi.mock('./LearningSourcePicker', () => ({
-  EMPTY_LEARNING_SOURCES: { pages: [], document: null, textTitle: '', textContent: '', references: [] },
   LearningSourcePicker: () => <div>Selector de material de prueba</div>,
 }));
 

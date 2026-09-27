@@ -43,6 +43,7 @@ ALL_SPECS = {
     "039-modularizar-evidencia",
     "040-modularizar-cola-calificaciones",
     "041-estabilizar-e2e-multihoja",
+    "042-criterios-aprendizaje",
     "043-corregir-scroll-navegacion",
     "043-flujo-docente-movil",
     "044-opencode-session",

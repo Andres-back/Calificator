@@ -53,7 +53,7 @@
 - [ ] T032 [US2] Implementar endpoints de editar, aprobar y crear versión con conflictos 409 y bloqueos 422 en `backend/app/modules/criterios_aprendizaje/router.py`
 - [ ] T033 [US2] Reutilizar y ampliar el editor de rúbrica con evidencia esperada, duplicación, procedencia y cobertura en `frontend/src/modules/materias/criterios/LearningCriteriaEditor.tsx`
 - [ ] T034 [US2] Implementar resumen, barra de pesos, advertencias y aprobación explícita “La IA propone; tú decides” en `frontend/src/modules/materias/criterios/LearningCriteriaWizard.tsx`
-- [ ] T035 [US2] Implementar lista con búsqueda/filtros, estados, versiones, fuentes, usos y acciones reales en `frontend/src/modules/materias/criterios/LearningCriteriaPage.tsx`
+- [X] T035 [US2] Implementar lista con búsqueda/filtros, estados, versiones, fuentes, usos y acciones reales en `frontend/src/modules/materias/criterios/LearningCriteriaPage.tsx`
 - [ ] T036 [US2] Validar Historia 2 con pruebas focales y demostrar que v1 no cambia al crear/editar v2 en `backend/tests/unit/test_learning_criteria_versions.py`
 
 ## Fase 5: Historia 3 — Aplicar criterios a evaluaciones y recursos (P1)
@@ -152,3 +152,14 @@
 ## Estrategia de entrega
 
 El MVP seguro comprende Fases 1–4: dominio aditivo, creación manual/asistida y aprobación versionada, todavía sin autoridad sobre calificaciones. Después se habilita aplicación a evaluación/recurso en modo comparación, transparencia en el desglose y finalmente navegación/medición. Ninguna fase elimina datos o rutas DBA; su retiro requerirá otro issue con evidencia de cero consumidores.
+
+## Fase 8: Convergencia (2026-09-27)
+
+- [ ] T082 [P] Sustituir la comprobación textual por una prueba PostgreSQL que ejecute dos veces migración/backfill y demuestre preservación de DBA, evaluaciones, blueprints, notas, desglose y PQRS; documentar paridad de UUID y snapshots para FR-012, FR-017 y FR-023 en `backend/tests/integration/test_learning_criteria_migration.py` y `specs/042-criterios-aprendizaje/quickstart.md`
+- [ ] T083 [P] Completar pruebas de dominio, autorización, privacidad, fuentes y versiones inmutables para FR-002, FR-003, FR-004, FR-005, FR-006, FR-007, FR-008, FR-009, FR-018, FR-019 y FR-020 en `backend/tests/unit/test_learning_criteria_versions.py`, `backend/tests/unit/test_learning_criteria_privacy.py`, `backend/tests/unit/test_learning_source_service.py` y `backend/tests/unit/test_dba_compatibility.py`
+- [X] T084 Completar búsqueda/filtros, estados y acciones reales del listado; conservar la entrada de tres opciones, tarjetas simplificadas, pesos automáticos y recorrido repetible para FR-001, FR-021, FR-022, FR-025, FR-026, FR-027 y FR-031 en `frontend/src/modules/materias/criterios/LearningCriteriaPage.tsx`, `frontend/src/modules/materias/criterios/LearningCriteriaEditor.tsx` y sus pruebas
+- [ ] T085 Completar la aplicación de versiones aprobadas a evaluaciones y recursos, incluyendo material no evaluativo y snapshot exacto, para FR-010 y FR-011 en `backend/app/modules/criterios_aprendizaje/application_service.py` y sus pruebas de evaluación/recurso
+- [ ] T086 Implementar propuesta editable pregunta→criterio y vista previa previa a guardar con intención, cobertura, puntaje y advertencias para FR-028 y FR-029 en `frontend/src/modules/evaluaciones/components/LearningCriteriaSelector.tsx`, `frontend/src/modules/evaluaciones/components/GenerationWizard.tsx` y contratos backend asociados
+- [ ] T087 Completar transparencia y resumen pedagógico sin segunda fórmula para FR-013, FR-014, FR-015, FR-016, FR-030 y FR-032; validar nota, ajuste, historial y PQRS en `backend/tests/unit/test_learning_criteria_breakdown.py`, `frontend/src/modules/calificaciones/components/GradeBreakdown.test.tsx` y `frontend/src/modules/calificaciones/components/GradeComponentEditor.test.tsx`
+- [ ] T088 Instrumentar el tiempo activo de preparación/revisión separado de la espera IA para FR-024, sin registrar contenido docente o estudiantil, en `frontend/src/modules/materias/criterios/useLearningCriteriaWorkSession.ts`, `frontend/src/lib/analytics.ts`, `backend/app/modules/analytics/service.py` y pruebas asociadas
+- [ ] T089 Ejecutar la matriz E2E manual/asistida, claro/oscuro, 360/390/768/escritorio, privacidad estudiantil, alias `/dba` y canary con `CRITERIA_GRADING_AUTHORITY=false`; registrar resultados y cerrar solo tareas respaldadas por evidencia en `frontend/e2e/learning-criteria.spec.ts`, `specs/042-criterios-aprendizaje/quickstart.md` y `specs/042-criterios-aprendizaje/tasks.md`

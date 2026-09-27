@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { Archive, BookCheck, ChevronDown, CircleHelp, Clock3, FileText, Plus, RefreshCw, Sparkles } from 'lucide-react';
+import { Archive, BookCheck, ChevronDown, CircleHelp, Clock3, FileText, Plus, RefreshCw, Search, Sparkles } from 'lucide-react';
 import { useParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 
-import { Badge, Button, Card, EmptyState, GuidedTour, QueryError, Skeleton, useFirstVisitTour, type TourStep } from '@/components/ui';
+import { Badge, Button, Card, EmptyState, GuidedTour, Input, QueryError, Skeleton, useFirstVisitTour, type TourStep } from '@/components/ui';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { queryKeys } from '@/config/queryKeys';
 import { queryClient } from '@/lib/queryClient';
@@ -47,6 +47,8 @@ function LearningCriteriaContent({ canWrite, canGenerate }: { canWrite: boolean;
   const { open: tourOpen, openTour, closeTour } = useFirstVisitTour({ tourId: 'criterios-aprendizaje', role: user?.rol ?? 'profesor', version: 1 });
   const [wizardOpen, setWizardOpen] = useState(false);
   const [selected, setSelected] = useState<LearningCriteriaSet | null>(null);
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('todos');
   const materiaQuery = useQuery({ queryKey: queryKeys.materias.detail(id), queryFn: () => getMateria(id), enabled: Boolean(id) });
   const criteriaQuery = useQuery({
     queryKey: queryKeys.materias.learningCriteria(id),
@@ -80,6 +82,19 @@ function LearningCriteriaContent({ canWrite, canGenerate }: { canWrite: boolean;
   };
   const refresh = () => void queryClient.invalidateQueries({ queryKey: queryKeys.materias.learningCriteria(id) });
   const activeItems = (criteriaQuery.data?.items ?? []).filter((item) => item.estado !== 'archivado');
+  const normalizedSearch = search.trim().toLocaleLowerCase('es');
+  const visibleItems = activeItems.filter((item) => {
+    const current = item.version_trabajo ?? item.version_aprobada;
+    const matchesStatus = statusFilter === 'todos' || current?.estado === statusFilter;
+    if (!matchesStatus) return false;
+    if (!normalizedSearch) return true;
+    const searchable = [
+      item.titulo,
+      item.descripcion,
+      ...((current?.criterios ?? []).flatMap((criterion) => [criterion.nombre, criterion.descripcion, criterion.evidencia_esperada])),
+    ].filter(Boolean).join(' ').toLocaleLowerCase('es');
+    return searchable.includes(normalizedSearch);
+  });
   const hasApproved = activeItems.some((item) => item.version_aprobada?.estado === 'aprobada');
   const browseExisting = () => {
     setWizardOpen(false);
@@ -109,6 +124,41 @@ function LearningCriteriaContent({ canWrite, canGenerate }: { canWrite: boolean;
       </Card>
 
       <div id="learning-criteria-list" data-tour="criteria-list" className="scroll-mt-24">
+      {activeItems.length > 0 && (
+        <Card className="mb-4 p-4">
+          <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_14rem] sm:items-end">
+            <label className="block">
+              <span className="mb-1.5 block text-sm font-semibold">Buscar criterios</span>
+              <span className="relative block">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" aria-hidden="true" />
+                <Input
+                  type="search"
+                  value={search}
+                  onChange={(event) => setSearch(event.currentTarget.value)}
+                  placeholder="Nombre, evidencia o aprendizaje"
+                  aria-label="Buscar criterios"
+                  className="pl-10"
+                />
+              </span>
+            </label>
+            <label className="block">
+              <span className="mb-1.5 block text-sm font-semibold">Estado</span>
+              <select
+                value={statusFilter}
+                onChange={(event) => setStatusFilter(event.currentTarget.value)}
+                aria-label="Filtrar por estado"
+                className="focus-ring min-h-11 w-full rounded-xl border border-border bg-surface px-3 text-sm"
+              >
+                <option value="todos">Todos</option>
+                <option value="borrador">Borradores</option>
+                <option value="procesando">Procesando</option>
+                <option value="requiere_revision">Requieren revisión</option>
+                <option value="aprobada">Aprobados</option>
+              </select>
+            </label>
+          </div>
+        </Card>
+      )}
       {criteriaQuery.isLoading ? (
         <div className="grid gap-4 lg:grid-cols-2">{Array.from({ length: 4 }).map((_item, index) => <Skeleton key={index} className="h-52" />)}</div>
       ) : criteriaQuery.isError ? (
@@ -120,9 +170,16 @@ function LearningCriteriaContent({ canWrite, canGenerate }: { canWrite: boolean;
           description="Crea el primero manualmente o desde el material que trabajaste en clase. No necesitas un DBA para empezar."
           action={canWrite ? <Button onClick={() => openWizard()}><Plus className="h-4 w-4" /> Crear mis primeros criterios</Button> : undefined}
         />
+      ) : visibleItems.length === 0 ? (
+        <EmptyState
+          icon={Search}
+          title="No encontramos criterios con esos filtros"
+          description="Prueba otro nombre o cambia el estado para volver a ver tus criterios."
+          action={<Button variant="outline" onClick={() => { setSearch(''); setStatusFilter('todos'); }}>Limpiar filtros</Button>}
+        />
       ) : (
         <div className="grid gap-4 lg:grid-cols-2">
-          {activeItems.map((item) => {
+          {visibleItems.map((item) => {
             const working = item.version_trabajo;
             const current = working ?? item.version_aprobada;
             const status = STATUS[current?.estado ?? 'borrador'];

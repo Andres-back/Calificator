@@ -17,9 +17,16 @@ import {
   type TeacherIntentPayload,
 } from './api';
 import { LearningCriteriaEditor, emptyCriterion } from './LearningCriteriaEditor';
-import { EMPTY_LEARNING_SOURCES, LearningSourcePicker, type PendingLearningSources } from './LearningSourcePicker';
+import { LearningSourcePicker, type PendingLearningSources } from './LearningSourcePicker';
 
 const PRIORITIES = ['procedimiento', 'comprensión', 'argumentación', 'ortografía', 'creatividad'];
+const EMPTY_LEARNING_SOURCES: PendingLearningSources = {
+  pages: [],
+  document: null,
+  textTitle: '',
+  textContent: '',
+  references: [],
+};
 
 export function LearningCriteriaWizard({
   open,

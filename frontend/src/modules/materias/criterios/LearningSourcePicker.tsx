@@ -23,14 +23,6 @@ export interface PendingLearningSources {
   references: PendingLearningReference[];
 }
 
-export const EMPTY_LEARNING_SOURCES: PendingLearningSources = {
-  pages: [],
-  document: null,
-  textTitle: '',
-  textContent: '',
-  references: [],
-};
-
 export function LearningSourcePicker({
   value,
   onChange,
