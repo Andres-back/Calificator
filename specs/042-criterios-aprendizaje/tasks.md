@@ -26,15 +26,15 @@
 
 **Prueba independiente**: un profesor crea criterios manuales sin fuente y otro borrador con dos fotos ordenadas; un profesor ajeno y un estudiante no pueden leer sus referencias.
 
-- [ ] T015 [P] [US1] Escribir pruebas de contratos CRUD manual, fuentes y errores atómicos según FR-001–FR-005 y FR-018–FR-020 en `backend/tests/unit/test_learning_criteria_api.py`
+- [X] T015 [P] [US1] Escribir pruebas de contratos CRUD manual, fuentes y errores atómicos según FR-001–FR-005 y FR-018–FR-020 en `backend/tests/unit/test_learning_criteria_api.py`
 - [X] T016 [P] [US1] Escribir pruebas de carga multihoja, PDF/DOCX/texto, orden, rotación, deduplicación, límites y limpieza transaccional en `backend/tests/unit/test_learning_source_service.py`
-- [ ] T017 [P] [US1] Escribir pruebas de propuesta idempotente, contexto insuficiente, fallo recuperable y proveedor intercambiable en `backend/tests/unit/test_learning_criteria_generation.py`
+- [X] T017 [P] [US1] Escribir pruebas de propuesta idempotente, contexto insuficiente, fallo recuperable y proveedor intercambiable en `backend/tests/unit/test_learning_criteria_generation.py`
 - [X] T018 [US1] Implementar esquemas de entrada/salida, errores estructurados e intención docente en `backend/app/modules/criterios_aprendizaje/schemas.py`
 - [X] T019 [US1] Implementar CRUD de conjunto y borrador manual con paginación y archivado lógico en `backend/app/modules/criterios_aprendizaje/service.py`
 - [X] T020 [US1] Generalizar preparación multihoja sin semántica estudiantil y persistir archivos docentes privados en `backend/app/services/document_bundle_service.py` y `backend/app/modules/criterios_aprendizaje/source_service.py`
 - [X] T021 [US1] Implementar fuentes de texto, material existente y estándar oficial sin copiar contenido innecesario en `backend/app/modules/criterios_aprendizaje/source_service.py`
 - [X] T022 [US1] Implementar extracción y propuesta estructurada con procedencia por fuente/página y alertas de cobertura en `backend/app/modules/criterios_aprendizaje/generation_service.py`
-- [ ] T023 [US1] Crear tarea Celery recuperable e idempotente que conserve borrador y archivos ante fallo en `backend/app/workers/tasks_learning_criteria.py` y registrarla en `backend/app/workers/worker.py`
+- [X] T023 [US1] Crear tarea Celery recuperable e idempotente que conserve borrador y archivos ante fallo en `backend/app/workers/tasks_learning_criteria.py` y registrarla en `backend/app/workers/worker.py`
 - [X] T024 [US1] Implementar endpoints de conjuntos, fuentes y propuesta asíncrona descritos en `backend/app/modules/criterios_aprendizaje/router.py`
 - [X] T025 [US1] Añadir cliente React Query para conjuntos, fuentes, propuesta y jobs en `frontend/src/modules/materias/criterios/api.ts` y `frontend/src/config/queryKeys.ts`
 - [X] T026 [US1] Extraer el núcleo reutilizable de cámara/orden/rotación del selector multihoja y crear `LearningSourcePicker` sin compartir evidencia estudiantil en `frontend/src/components/evidence/MultiPageEvidencePicker.tsx` y `frontend/src/modules/materias/criterios/LearningSourcePicker.tsx`

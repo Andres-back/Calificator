@@ -7,7 +7,9 @@ from uuid import uuid4
 
 from app.modules.criterios_aprendizaje import audit as criteria_audit
 from app.modules.criterios_aprendizaje import generation_service
+from app.workers import tasks_learning_criteria
 from app.workers.tasks_learning_criteria import safe_failure_code
+from app.workers.worker import celery_app
 
 
 def test_audit_keeps_identifiers_and_drops_content_urls_and_keys(monkeypatch) -> None:
@@ -93,3 +95,60 @@ def test_generation_job_persists_only_ids_hashes_and_control_fields(monkeypatch)
     assert "texto docente privado" not in serialized
     assert "sk-secret" not in serialized
     assert "private_file" not in serialized
+
+
+def test_learning_criteria_worker_is_registered_on_a_dedicated_recoverable_queue() -> None:
+    assert "app.workers.tasks_learning_criteria" in celery_app.conf.include
+    assert celery_app.conf.task_routes["tasks.propose_learning_criteria"] == {"queue": "criteria"}
+    assert celery_app.conf.task_routes["tasks.recover_stale_learning_criteria_jobs"] == {"queue": "criteria"}
+
+
+def test_duplicate_worker_claim_never_runs_generation_again(monkeypatch) -> None:
+    db = MagicMock()
+    db.commit = AsyncMock()
+
+    class SessionContext:
+        async def __aenter__(self):
+            return db
+
+        async def __aexit__(self, *_args):
+            return False
+
+    monkeypatch.setattr(tasks_learning_criteria, "AsyncSessionLocal", SessionContext)
+    claim = AsyncMock(return_value=False)
+    state = AsyncMock(return_value="success")
+    generate = AsyncMock()
+    monkeypatch.setattr(tasks_learning_criteria.jobs_service, "claim_job_running", claim)
+    monkeypatch.setattr(tasks_learning_criteria.jobs_service, "get_job_state", state)
+    monkeypatch.setattr(tasks_learning_criteria.generation_service, "run_proposal", generate)
+
+    result = asyncio.run(
+        tasks_learning_criteria._run(
+            job_id=uuid4(),
+            version_id=uuid4(),
+            user_id=uuid4(),
+            claim_token="duplicate-claim",
+        )
+    )
+
+    assert result == {"status": "success"}
+    generate.assert_not_awaited()
+
+
+def test_recovery_republishes_only_claimed_jobs_and_reports_exhausted(monkeypatch) -> None:
+    rows = [
+        {"id": uuid4(), "tipo": "criterios_aprendizaje"},
+        {"id": uuid4(), "tipo": "criterios_aprendizaje"},
+    ]
+    monkeypatch.setattr(
+        tasks_learning_criteria,
+        "_claim_recoverable",
+        AsyncMock(return_value=(rows, 1)),
+    )
+    dispatch = MagicMock(side_effect=[True, False])
+    monkeypatch.setattr(tasks_learning_criteria.jobs_service, "dispatch_persisted_job", dispatch)
+
+    result = tasks_learning_criteria.recover_stale_learning_criteria_jobs.run()
+
+    assert result == {"selected": 2, "recovered": 1, "exhausted": 1}
+    assert dispatch.call_count == 2
