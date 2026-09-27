@@ -149,3 +149,15 @@ No se cambió la fórmula de calificación, la autoridad nueva permanece desacti
 - La carga documental rechaza tipos no permitidos antes de persistir contenido; listado y creación respetan el ámbito de la materia y su propietario.
 - Pytest de la matriz completa: **33 pruebas verdes** de modelos, versiones, autorización, privacidad, fuentes y compatibilidad DBA. Solo se observaron advertencias de dependencias/deprecaciones, no fallos funcionales.
 - Ruff del archivo nuevo: sin hallazgos.
+
+## Resultado PostgreSQL: migración y doble backfill (2026-09-27)
+
+La prueba ejecuta el DDL Alembic real en un esquema temporal creado dentro de una transacción; el rollback elimina todo el escenario al finalizar. Se usó PostgreSQL local de Docker y el driver `psycopg==3.2.3` declarado en el proyecto.
+
+- Escenario sintético: referencia oficial, criterio personalizado, evaluación publicada, evaluación cerrada con blueprint, nota publicada `3.5`, desglose con componente `0.7/1` y reclamo abierto.
+- Primera importación: tres conjuntos/versiones y dos aplicaciones históricas; ningún componente de calificación nuevo.
+- Segunda importación: comparación JSON completa idéntica, incluidos UUID, hashes, fechas y snapshots de las seis tablas nuevas.
+- Las ocho tablas históricas conservaron exactamente todos sus campos y UUID antes/después. El snapshot de la evaluación cerrada mantuvo sus criterios y los identificadores oficiales/personalizados originales.
+- Prueba PostgreSQL y comprobaciones de estructura: **3 verdes**. Matriz fundacional de criterios: **58 pruebas verdes**. Ruff de migración y prueba: verde.
+
+Para repetir, definir `SPEC042_TEST_DATABASE_URL` con un URL `postgresql+psycopg` local y ejecutar `python -m pytest tests/integration/test_learning_criteria_migration.py -q`. La prueba ejecuta solo tablas de su esquema temporal y termina con rollback.

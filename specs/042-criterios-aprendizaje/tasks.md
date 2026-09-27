@@ -9,7 +9,7 @@
 
 ## Fase 2: Fundamentos
 
-- [ ] T005 Escribir pruebas PostgreSQL de migración y backfill idempotente que preserven DBA, evaluación publicada/cerrada, blueprint, nota, desglose y PQRS en `backend/tests/integration/test_learning_criteria_migration.py`
+- [X] T005 Escribir pruebas PostgreSQL de migración y backfill idempotente que preserven DBA, evaluación publicada/cerrada, blueprint, nota, desglose y PQRS en `backend/tests/integration/test_learning_criteria_migration.py`
 - [X] T006 [P] Escribir pruebas de modelos para estados, versión aprobada inmutable, pesos Decimal y relaciones restrictivas en `backend/tests/unit/test_learning_criteria_models.py`
 - [X] T007 [P] Escribir matriz de autorización 401/403/404/dueño/admin y aislamiento de fuentes privadas en `backend/tests/unit/test_learning_criteria_authorization.py`
 - [X] T008 Crear modelos de conjuntos, versiones, criterios, niveles/fuentes, aplicaciones y relación con componentes en `backend/app/modules/criterios_aprendizaje/models.py`
@@ -18,7 +18,7 @@
 - [X] T011 Implementar políticas de ámbito por materia/propietario, permisos de lectura/gestión y serialización privada en `backend/app/modules/criterios_aprendizaje/authorization.py`
 - [X] T012 Implementar snapshots canónicos, hashing, clonación de versión y adaptador legado `criterios`/`dba_ids` en `backend/app/modules/criterios_aprendizaje/compatibility.py`
 - [X] T013 Añadir eventos auditables de creación, aprobación, sustitución, aplicación y archivado sin contenido sensible en `backend/app/modules/criterios_aprendizaje/audit.py`
-- [ ] T014 Ejecutar las pruebas fundacionales y corregir únicamente regresiones de esta fase en `backend/tests/integration/test_learning_criteria_migration.py` y `backend/tests/unit/test_learning_criteria_*.py`
+- [X] T014 Ejecutar las pruebas fundacionales y corregir únicamente regresiones de esta fase en `backend/tests/integration/test_learning_criteria_migration.py` y `backend/tests/unit/test_learning_criteria_*.py`
 
 ## Fase 3: Historia 1 — Construir criterios desde lo enseñado (P1)
 
@@ -107,7 +107,7 @@
 
 ## Fase final: Convergencia, seguridad y despliegue progresivo
 
-- [ ] T065 Ejecutar backfill dos veces y documentar paridad de UUID, snapshots, notas, desglose y PQRS en `specs/042-criterios-aprendizaje/quickstart.md`
+- [X] T065 Ejecutar backfill dos veces y documentar paridad de UUID, snapshots, notas, desglose y PQRS en `specs/042-criterios-aprendizaje/quickstart.md`
 - [X] T066 [P] Añadir pruebas directas a las cinco superficies DBA sin cobertura y sus adaptadores de compatibilidad en `backend/tests/unit/test_dba_compatibility.py`
 - [X] T067 [P] Validar que logs, errores, analytics y jobs no contienen texto de fuentes, imágenes, claves o URLs privadas en `backend/tests/unit/test_learning_criteria_privacy.py`
 - [ ] T068 Ejecutar pytest/Ruff, TypeScript/ESLint/Vitest/build y Playwright focal, corregir regresiones atribuibles a 042 y registrar resultados en `specs/042-criterios-aprendizaje/quickstart.md`
@@ -155,7 +155,7 @@ El MVP seguro comprende Fases 1–4: dominio aditivo, creación manual/asistida 
 
 ## Fase 8: Convergencia (2026-09-27)
 
-- [ ] T082 [P] Sustituir la comprobación textual por una prueba PostgreSQL que ejecute dos veces migración/backfill y demuestre preservación de DBA, evaluaciones, blueprints, notas, desglose y PQRS; documentar paridad de UUID y snapshots para FR-012, FR-017 y FR-023 en `backend/tests/integration/test_learning_criteria_migration.py` y `specs/042-criterios-aprendizaje/quickstart.md`
+- [X] T082 [P] Sustituir la comprobación textual por una prueba PostgreSQL que ejecute dos veces migración/backfill y demuestre preservación de DBA, evaluaciones, blueprints, notas, desglose y PQRS; documentar paridad de UUID y snapshots para FR-012, FR-017 y FR-023 en `backend/tests/integration/test_learning_criteria_migration.py` y `specs/042-criterios-aprendizaje/quickstart.md`
 - [X] T083 [P] Completar pruebas de dominio, autorización, privacidad, fuentes y versiones inmutables para FR-002, FR-003, FR-004, FR-005, FR-006, FR-007, FR-008, FR-009, FR-018, FR-019 y FR-020 en `backend/tests/unit/test_learning_criteria_versions.py`, `backend/tests/unit/test_learning_criteria_privacy.py`, `backend/tests/unit/test_learning_source_service.py` y `backend/tests/unit/test_dba_compatibility.py`
 - [X] T084 Completar búsqueda/filtros, estados y acciones reales del listado; conservar la entrada de tres opciones, tarjetas simplificadas, pesos automáticos y recorrido repetible para FR-001, FR-021, FR-022, FR-025, FR-026, FR-027 y FR-031 en `frontend/src/modules/materias/criterios/LearningCriteriaPage.tsx`, `frontend/src/modules/materias/criterios/LearningCriteriaEditor.tsx` y sus pruebas
 - [X] T085 Completar la aplicación de versiones aprobadas a evaluaciones y recursos, incluyendo material no evaluativo y snapshot exacto, para FR-010 y FR-011 en `backend/app/modules/criterios_aprendizaje/application_service.py` y sus pruebas de evaluación/recurso

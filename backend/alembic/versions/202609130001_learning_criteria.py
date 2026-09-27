@@ -5,10 +5,10 @@ Revises: 202609100001
 """
 from typing import Sequence, Union
 
-from alembic import op
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
+from alembic import op
 
 revision: str = "202609130001"
 down_revision: Union[str, None] = "202609100001"
@@ -151,6 +151,12 @@ def upgrade() -> None:
         sa.CheckConstraint("awarded_points >= 0 AND awarded_points <= max_points", name="ck_grading_component_criterion_awarded"),
     )
     op.create_index("idx_grading_component_criteria_component", "grading_component_criteria", ["component_id"])
+
+    backfill()
+
+
+def backfill() -> None:
+    """Importa históricos de forma reejecutable, sin actualizar filas originales."""
 
     # Importación compatible de criterios personalizados. Los UUID heredados se
     # conservan como vínculo, no se alteran las filas DBA originales.
