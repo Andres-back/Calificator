@@ -47,14 +47,14 @@
 
 **Prueba independiente**: v1 aprobada queda de solo lectura; editar crea v2; pesos inválidos y cobertura bloqueante impiden aprobación.
 
-- [ ] T029 [P] [US2] Escribir pruebas backend de validación, aprobación, bloqueo, clonación y concurrencia optimista en `backend/tests/unit/test_learning_criteria_versions.py`
+- [X] T029 [P] [US2] Escribir pruebas backend de validación, aprobación, bloqueo, clonación y concurrencia optimista en `backend/tests/unit/test_learning_criteria_versions.py`
 - [X] T030 [P] [US2] Escribir pruebas de editor para agregar, duplicar, ordenar, eliminar, editar niveles/evidencia y validar 100 % en `frontend/src/modules/materias/criterios/LearningCriteriaEditor.test.tsx`
 - [ ] T031 [US2] Implementar actualización transaccional, `etag`/versión esperada, aprobación y clonación inmutable en `backend/app/modules/criterios_aprendizaje/service.py`
 - [ ] T032 [US2] Implementar endpoints de editar, aprobar y crear versión con conflictos 409 y bloqueos 422 en `backend/app/modules/criterios_aprendizaje/router.py`
 - [X] T033 [US2] Reutilizar y ampliar el editor de rúbrica con evidencia esperada, duplicación, procedencia y cobertura en `frontend/src/modules/materias/criterios/LearningCriteriaEditor.tsx`
 - [X] T034 [US2] Implementar resumen, barra de pesos, advertencias y aprobación explícita “La IA propone; tú decides” en `frontend/src/modules/materias/criterios/LearningCriteriaWizard.tsx`
 - [X] T035 [US2] Implementar lista con búsqueda/filtros, estados, versiones, fuentes, usos y acciones reales en `frontend/src/modules/materias/criterios/LearningCriteriaPage.tsx`
-- [ ] T036 [US2] Validar Historia 2 con pruebas focales y demostrar que v1 no cambia al crear/editar v2 en `backend/tests/unit/test_learning_criteria_versions.py`
+- [X] T036 [US2] Validar Historia 2 con pruebas focales y demostrar que v1 no cambia al crear/editar v2 en `backend/tests/unit/test_learning_criteria_versions.py`
 
 ## Fase 5: Historia 3 — Aplicar criterios a evaluaciones y recursos (P1)
 
