@@ -3,6 +3,7 @@ import { createBrowserRouter } from 'react-router-dom';
 import { AppShell } from '@/components/layout/AppShell';
 import { RequireAuth } from '@/components/auth/RequireAuth';
 import { RequirePermission } from '@/components/auth/RequirePermission';
+import { RequireStaffSurface } from '@/components/auth/RequireStaffSurface';
 import { LoadingScreen } from '@/components/ui';
 import { RouterErrorBoundary } from '@/components/RouterErrorBoundary';
 import { RootMetadataLayout } from '@/components/seo/RootMetadataLayout';
@@ -16,6 +17,11 @@ const RegisterPage = lazy(() => import('@/modules/auth/RegisterPage').then((m) =
 const RequestPasswordResetPage = lazy(() => import('@/modules/auth/RequestPasswordResetPage').then((m) => ({ default: m.RequestPasswordResetPage })));
 const ResetPasswordPage = lazy(() => import('@/modules/auth/ResetPasswordPage').then((m) => ({ default: m.ResetPasswordPage })));
 const InitialPasswordPage = lazy(() => import('@/modules/auth/InitialPasswordPage').then((m) => ({ default: m.InitialPasswordPage })));
+const PrivacyPage = lazy(() => import('@/modules/legal/LegalPages').then((m) => ({ default: m.PrivacyPage })));
+const TermsPage = lazy(() => import('@/modules/legal/LegalPages').then((m) => ({ default: m.TermsPage })));
+const CookiesPage = lazy(() => import('@/modules/legal/LegalPages').then((m) => ({ default: m.CookiesPage })));
+const PrivacyNoticePage = lazy(() => import('@/modules/legal/LegalPages').then((m) => ({ default: m.PrivacyNoticePage })));
+const PilotInformationPage = lazy(() => import('@/modules/legal/LegalPages').then((m) => ({ default: m.PilotInformationPage })));
 const DashboardPage = lazy(() => import('@/modules/dashboard/DashboardPage').then((m) => ({ default: m.DashboardPage })));
 const ListPage = lazy(() => import('@/modules/herramientas/ListPage').then((m) => ({ default: m.ListPage })));
 const GeneratePage = lazy(() => import('@/modules/herramientas/GeneratePage').then((m) => ({ default: m.GeneratePage })));
@@ -56,6 +62,11 @@ export const router = createBrowserRouter([{
   { path: routes.register, element: lazyPage(<RegisterPage />), errorElement: <RouterErrorBoundary /> },
   { path: routes.requestPasswordReset, element: lazyPage(<RequestPasswordResetPage />), errorElement: <RouterErrorBoundary /> },
   { path: routes.resetPassword, element: lazyPage(<ResetPasswordPage />), errorElement: <RouterErrorBoundary /> },
+  { path: routes.privacy, element: lazyPage(<PrivacyPage />), errorElement: <RouterErrorBoundary /> },
+  { path: routes.terms, element: lazyPage(<TermsPage />), errorElement: <RouterErrorBoundary /> },
+  { path: routes.cookies, element: lazyPage(<CookiesPage />), errorElement: <RouterErrorBoundary /> },
+  { path: routes.privacyNotice, element: lazyPage(<PrivacyNoticePage />), errorElement: <RouterErrorBoundary /> },
+  { path: routes.pilotInformation, element: lazyPage(<PilotInformationPage />), errorElement: <RouterErrorBoundary /> },
 
   /* ── Páginas de error fuera del AppShell ── */
   { path: routes.notFound, element: lazyPage(<NotFoundPage />) },
@@ -90,10 +101,12 @@ export const router = createBrowserRouter([{
               { index: true, element: lazyPage(<MateriaVistaGeneral />) },
               { element: <RequirePermission anyOf={['evaluations.read']} />, children: [{ path: 'evaluaciones', element: lazyPage(<MateriaEvaluaciones />) }] },
               { element: <RequirePermission anyOf={['resources.read']} />, children: [{ path: 'recursos', element: lazyPage(<MateriaRecursos />) }] },
-              // Solo docente/admin
-              { element: <RequirePermission anyOf={['grading.read', 'grading.grade']} />, children: [{ path: 'calificar', element: lazyPage(<GradingLegacyRedirect />) }] },
-              { element: <RequirePermission anyOf={['attendance.read', 'attendance.manage']} />, children: [{ path: 'asistencia', element: lazyPage(<MateriaAsistencia />) }] },
-              { element: <RequirePermission anyOf={['dba.read', 'dba.manage']} />, children: [{ path: 'dba', element: lazyPage(<MateriaDbaPage />) }] },
+              // Superficies elevadas: perfil de personal o rol personalizado + permiso efectivo.
+              { element: <RequireStaffSurface />, children: [
+                { element: <RequirePermission anyOf={['grading.read', 'grading.grade']} />, children: [{ path: 'calificar', element: lazyPage(<GradingLegacyRedirect />) }] },
+                { element: <RequirePermission anyOf={['attendance.read', 'attendance.manage']} />, children: [{ path: 'asistencia', element: lazyPage(<MateriaAsistencia />) }] },
+                { element: <RequirePermission anyOf={['dba.read', 'dba.manage']} />, children: [{ path: 'dba', element: lazyPage(<MateriaDbaPage />) }] },
+              ] },
               // Estudiante ve su boletín propio, profesor ve boletín del grupo
               { element: <RequirePermission anyOf={['gradebook.read']} />, children: [{ path: 'boletin', element: lazyPage(<MateriaBoletin />) }] },
             ],
@@ -108,13 +121,15 @@ export const router = createBrowserRouter([{
           { element: <RequirePermission anyOf={['roles.read']} />, children: [{ path: 'admin/roles', element: lazyPage(<AdminRolesPage />) }] },
           { element: <RequirePermission anyOf={['admin_settings.manage']} />, children: [{ path: 'admin/correo', element: lazyPage(<AdminMailConfigPage />) }] },
 
-          /* ── Rutas solo docente/admin ── */
-          { element: <RequirePermission anyOf={['ai_settings.personal']} />, children: [{ path: 'configuracion-ia', element: lazyPage(<TeacherAIConfigPage />) }] },
-          { element: <RequirePermission anyOf={['resources.read']} />, children: [{ path: 'herramientas', element: lazyPage(<ListPage />) }, { path: 'herramientas/:id', element: lazyPage(<DetailPage />) }] },
-          { element: <RequirePermission anyOf={['resources.create']} />, children: [{ path: 'herramientas/nuevo', element: lazyPage(<GeneratePage />) }] },
-          { element: <RequirePermission anyOf={['grading.grade']} />, children: [{ path: 'calificaciones/foto', element: lazyPage(<GradingLegacyRedirect />) }] },
-          { element: <RequirePermission anyOf={['grading.read', 'grading.grade']} />, children: [{ path: 'calificaciones', element: lazyPage(<CalificacionesWorkspace />) }, { path: 'calificaciones/workspace', element: lazyPage(<GradingLegacyRedirect />) }, { path: 'calificaciones/workspace/:evaluacionId', element: lazyPage(<GradingLegacyRedirect />) }] },
-          { element: <RequirePermission anyOf={['reports.read']} />, children: [{ path: 'analytics', element: lazyPage(<AnalyticsPage />) }, { path: 'reportes', element: lazyPage(<ReportesPage />) }] },
+          /* ── Superficies elevadas: personal o rol personalizado ── */
+          { element: <RequireStaffSurface />, children: [
+            { element: <RequirePermission anyOf={['ai_settings.personal']} />, children: [{ path: 'configuracion-ia', element: lazyPage(<TeacherAIConfigPage />) }] },
+            { element: <RequirePermission anyOf={['resources.read']} />, children: [{ path: 'herramientas', element: lazyPage(<ListPage />) }, { path: 'herramientas/:id', element: lazyPage(<DetailPage />) }] },
+            { element: <RequirePermission anyOf={['resources.create']} />, children: [{ path: 'herramientas/nuevo', element: lazyPage(<GeneratePage />) }] },
+            { element: <RequirePermission anyOf={['grading.grade']} />, children: [{ path: 'calificaciones/foto', element: lazyPage(<GradingLegacyRedirect />) }] },
+            { element: <RequirePermission anyOf={['grading.read', 'grading.grade']} />, children: [{ path: 'calificaciones', element: lazyPage(<CalificacionesWorkspace />) }, { path: 'calificaciones/workspace', element: lazyPage(<GradingLegacyRedirect />) }, { path: 'calificaciones/workspace/:evaluacionId', element: lazyPage(<GradingLegacyRedirect />) }] },
+            { element: <RequirePermission anyOf={['reports.read']} />, children: [{ path: 'analytics', element: lazyPage(<AnalyticsPage />) }, { path: 'reportes', element: lazyPage(<ReportesPage />) }] },
+          ] },
           { element: <RequirePermission anyOf={['presentations.read']} />, children: [{ path: 'presentaciones', element: lazyPage(<PresentacionesPage />) }] },
 
           /* ── Catch-all dentro de /app: 404 ── */

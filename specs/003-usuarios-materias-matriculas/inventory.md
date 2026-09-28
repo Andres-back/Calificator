@@ -36,8 +36,8 @@
 | endpoint | `POST:/materias/{materia_id}/regenerar-codigo` | admin, profesor | covered | `backend/app/modules/materias/router.py:55` |
 | endpoint | `POST:/matriculas/unirse` | admin, estudiante | covered | `backend/app/modules/matriculas/router.py:15` |
 | endpoint | `PUT:/materias/{materia_id}/importaciones-estudiantes/{lote_id}` | authenticated | missing | `backend/app/modules/importacion_estudiantes/router.py:79` |
-| frontend_route | `/app/materias` | authenticated | covered | `frontend/src/config/routes.ts:24` |
-| frontend_route | `/app/materias/{id}` | authenticated | covered | `frontend/src/config/routes.ts:28` |
+| frontend_route | `/app/materias` | authenticated | covered | `frontend/src/config/routes.ts:29` |
+| frontend_route | `/app/materias/{id}` | authenticated | covered | `frontend/src/config/routes.ts:33` |
 | frontend_route | `/login` | public | covered | `frontend/src/config/routes.ts:9` |
 | frontend_call | `DELETE:/materias/{materiaId}/importaciones-estudiantes/{batchId}` | ambiguous | covered | `frontend/src/modules/materias/rosterImportApi.ts:58` |
 | frontend_call | `GET:/auth/me` | ambiguous | covered | `frontend/src/stores/auth.ts:24` |

@@ -125,9 +125,11 @@ def prepare_orientation_variants(
                 normalized = ImageEnhance.Brightness(normalized).enhance(
                     min(1.65, 118 / quality.brightness)
                 )
-            normalized = ImageOps.autocontrast(normalized, cutoff=0.5)
-            if quality.contrast and quality.contrast < 24:
-                normalized = ImageEnhance.Contrast(normalized).enhance(1.18)
+            # Ajustar canales por separado puede convertir tinta azul o roja en negro.
+            normalized = ImageOps.autocontrast(normalized, cutoff=0.5, preserve_tone=True)
+            # El grafito tenue suele sobrevivir al autocontraste, pero puede perderse
+            # al comprimir. Un refuerzo moderado conserva color y oscurece esos trazos.
+            normalized = ImageEnhance.Contrast(normalized).enhance(1.18)
             normalized = ImageEnhance.Sharpness(normalized).enhance(1.12)
     except (UnidentifiedImageError, OSError, ValueError):
         return [PreparedImage(content, mime, 0, quality)]

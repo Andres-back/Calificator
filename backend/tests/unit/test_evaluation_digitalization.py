@@ -891,6 +891,30 @@ def test_image_extraction_retries_rotated_photo_before_rejecting(monkeypatch) ->
     assert "32,37 + 41,32" in text
     assert any("orientación" in warning for warning in warnings)
 
+@pytest.mark.parametrize("has_questions_field", [True, False])
+def test_scanned_pdf_excludes_student_answers_from_key_input(monkeypatch, has_questions_field) -> None:
+    async def fake_vision(*_args, **_kwargs):
+        raw = {
+            "texto_extraido": "1. Calcula 527 × 27. [RESPUESTA DEL ESTUDIANTE: 100]",
+            "alertas": [],
+        }
+        if has_questions_field:
+            raw["texto_preguntas"] = "1. Calcula 527 × 27."
+        return AgentResult(
+            nota_sugerida=None, confianza=0.9, feedback_estudiante="", raw_output=raw,
+        )
+
+    monkeypatch.setattr(digitalize_service, "OpenCodeClient", _FakeVisionClient)
+    monkeypatch.setattr(digitalize_service, "vision_agent", fake_vision)
+
+    text, _warnings = asyncio.run(
+        digitalize_service._extract_scanned_pdf(b"synthetic-pdf", "prueba.pdf")
+    )
+
+    assert text == "1. Calcula 527 × 27."
+    assert "100" not in text
+
+
 def test_digitalization_waits_for_delayed_provider_result(monkeypatch) -> None:
     expected = {"status": "success", "progreso": 100, "evaluation_id": "eval-1"}
 

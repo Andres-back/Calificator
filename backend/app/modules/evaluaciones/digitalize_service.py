@@ -438,7 +438,9 @@ async def _extract_scanned_pdf(
     finally:
         await client.close()
     raw = result.raw_output or {}
-    text = str(raw.get("texto_extraido") or "").strip()
+    text = _strip_student_answer_annotations(
+        str(raw.get("texto_preguntas") or raw.get("texto_extraido") or "").strip()
+    )
     if result.error:
         temporary = bool(raw.get("vision_failure_temporary"))
         raise HTTPException(

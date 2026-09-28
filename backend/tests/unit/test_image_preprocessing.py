@@ -49,3 +49,22 @@ def test_blank_tiny_and_corrupted_images_are_unusable() -> None:
     assert assess_image_quality(output.getvalue(), "image/png").status == "unusable"
     assert assess_image_quality(_document(size=(80, 80)), "image/jpeg").status == "unusable"
     assert assess_image_quality(b"not-an-image", "image/png").status == "unusable"
+
+
+def test_prepared_copy_keeps_faint_pencil_and_color() -> None:
+    original = Image.new("RGB", (800, 1000), "white")
+    draw = ImageDraw.Draw(original)
+    draw.line((100, 300, 700, 300), fill=(215, 215, 215), width=6)
+    draw.rectangle((100, 400, 200, 500), fill=(20, 100, 220))
+    buffer = BytesIO()
+    original.save(buffer, format="PNG")
+
+    prepared = prepare_orientation_variants(buffer.getvalue(), "image/png")[0]
+    with Image.open(BytesIO(prepared.data)) as result:
+        background = result.getpixel((400, 250))
+        pencil = result.getpixel((400, 300))
+        blue = result.getpixel((150, 450))
+
+    assert sum(pencil) < sum(background) - 30
+    assert blue[2] > blue[0] + 40
+    assert blue[2] > blue[1] + 40

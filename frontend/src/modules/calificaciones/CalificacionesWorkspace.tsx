@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useBlocker, useParams, useSearchParams, useLocation, Link, Navigate } from 'react-router-dom';
 import { useInfiniteQuery, useMutation, useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
@@ -31,9 +31,10 @@ import { useAuth } from '@/stores/auth';
 import { GradingUploadPanel } from '@/modules/materias/MateriaCalificar';
 import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
+import { isStandardStudentProfile } from '@/lib/authorization';
 import {
   ajustarNota, ajustarNotaBatch, confirmarNota, confirmarNotaBatch,
-  crearIncidencia, getEvaluationReview, getCalificacionDetalle, listarIncidencias,
+  crearIncidencia, getEvaluationReview, getCalificacionDetalle, listarIncidencias, listCalificaciones,
   establecerNotaManual, publicarNota, publicarNotaBatch,
   marcarRevisionManual, resolverIncidencia, setAnswersReleased, solicitarReemplazoEvidencia, updateGradeBreakdown,
   reintentarCalificacionFoto,
@@ -48,6 +49,7 @@ import { GradeBreakdownHistory } from './components/GradeBreakdownHistory';
 import { buildReviewTriage, hasVerifierReviewSignals } from './review-triage/buildReviewTriage';
 import { ReviewTriagePanel } from './review-triage/ReviewTriagePanel';
 import { formatAIModelSource } from './aiPipelineLabels';
+import { excludeSubmittedStudents } from './submissionCandidates';
 import { effectiveGradeScore, formatGradeScore, gradePresentation, isGradeProcessing } from './gradePresentation';
 import { formatTimelineScore } from './timeline';
 import type { BatchResult, Calificacion, CalificacionDetalle, GradeBreakdownData, GradeComponentChange, ReviewFilter } from '@/types/api';
@@ -86,6 +88,127 @@ function studentLabel(
 ) {
   const s = studentMap.get(c.estudiante_id);
   return s?.nombre ?? `ID ${c.estudiante_id.slice(0, 8)}`;
+}
+
+export function MobileReviewContext({
+  materiaName,
+  evaluationName,
+  forceOpen,
+  children,
+}: {
+  materiaName?: string;
+  evaluationName?: string;
+  forceOpen: boolean;
+  children: ReactNode;
+}) {
+  const [open, setOpen] = useState(forceOpen);
+  const userToggled = useRef(false);
+
+  useEffect(() => {
+    if (!userToggled.current) setOpen(forceOpen);
+  }, [forceOpen]);
+
+  return (
+    <Card className="mx-4 mb-4 overflow-hidden p-0 lg:hidden">
+      <button
+        type="button"
+        aria-expanded={open}
+        aria-controls="mobile-grading-context"
+        onClick={() => { userToggled.current = true; setOpen((value) => !value); }}
+        className="focus-ring flex min-h-14 w-full items-center justify-between gap-3 px-4 py-3 text-left"
+      >
+        <span className="min-w-0">
+          <span className="block text-xs font-bold uppercase tracking-wide text-brand-700 dark:text-brand-300">Estás revisando</span>
+          <span className="mt-0.5 block truncate text-sm font-bold text-fg">{materiaName || 'Selecciona una materia'}</span>
+          <span className="block truncate text-xs text-muted">{evaluationName || 'Selecciona una evaluación'}</span>
+        </span>
+        <span className="flex shrink-0 items-center gap-1 text-sm font-semibold text-brand-700 dark:text-brand-200">
+          {open ? 'Ocultar' : 'Cambiar'}
+          <ChevronDown className={cn('h-4 w-4 transition-transform', open && 'rotate-180')} aria-hidden="true" />
+          <span className="sr-only"> materia o evaluación</span>
+        </span>
+      </button>
+      {open && <div id="mobile-grading-context" className="grid gap-4 border-t border-border p-4">{children}</div>}
+    </Card>
+  );
+}
+
+export function MobileReviewActionBar({
+  processing,
+  done,
+  published,
+  score,
+  canGrade,
+  canPublish,
+  dirty,
+  componentDirty,
+  advancedEditOpen,
+  confirmPending,
+  publishPending,
+  savePending = false,
+  onConfirm,
+  onPublish,
+  onAdjust,
+  onSaveChanges,
+  onNext,
+}: {
+  processing: boolean;
+  done: boolean;
+  published: boolean;
+  score: number | null;
+  canGrade: boolean;
+  canPublish: boolean;
+  dirty: boolean;
+  componentDirty: boolean;
+  advancedEditOpen: boolean;
+  confirmPending: boolean;
+  publishPending: boolean;
+  savePending?: boolean;
+  onConfirm: () => void;
+  onPublish: () => void;
+  onAdjust: () => void;
+  onSaveChanges: () => void;
+  onNext: () => void;
+}) {
+  const navigationBlocked = dirty || componentDirty || advancedEditOpen || confirmPending || publishPending || savePending;
+  const blockMessage = componentDirty
+    ? 'Guarda o cancela la respuesta abierta antes de continuar.'
+    : advancedEditOpen
+      ? 'Termina o cancela el ajuste global antes de continuar.'
+      : dirty
+        ? 'Tienes cambios de nota o retroalimentación sin guardar.'
+        : null;
+
+  return (
+    <div className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-surface/95 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 shadow-[0_-12px_32px_rgba(15,23,42,0.16)] backdrop-blur lg:hidden" aria-label="Acciones de la calificación">
+      {blockMessage && <p role="status" className="mb-2 text-center text-xs font-semibold text-amber-700 dark:text-amber-300">{blockMessage}</p>}
+      {processing && <p role="status" className="mb-2 text-center text-xs text-muted">La IA sigue analizando esta entrega. Puedes revisar otro estudiante.</p>}
+      <div className="mx-auto grid max-w-xl grid-cols-2 gap-2">
+        {canGrade && dirty && !componentDirty && !advancedEditOpen ? (
+          <Button fullWidth className="h-auto min-h-12 py-2" onClick={onSaveChanges} loading={savePending}>Guardar cambios</Button>
+        ) : canGrade && !done && !processing && score != null ? (
+          <Button fullWidth className="h-auto min-h-12 py-2" onClick={onConfirm} loading={confirmPending} disabled={navigationBlocked}>
+            <CheckCircle2 className="h-4 w-4" /> Confirmar nota
+          </Button>
+        ) : canGrade && !done && !processing && score == null ? (
+          <Button fullWidth className="h-auto min-h-12 py-2" variant="outline" onClick={onAdjust} disabled={navigationBlocked}>
+            <Pencil className="h-4 w-4" /> Establecer nota
+          </Button>
+        ) : canPublish && done && !published ? (
+          <Button fullWidth className="h-auto min-h-12 py-2" onClick={onPublish} loading={publishPending} disabled={navigationBlocked}>
+            <CheckCircle2 className="h-4 w-4" /> Publicar al estudiante
+          </Button>
+        ) : (
+          <div className="flex min-h-11 items-center justify-center rounded-lg bg-surface-2 px-3 text-center text-xs font-semibold text-muted">
+            {published ? 'Nota publicada' : processing ? 'Calificando' : 'Revisión guardada'}
+          </div>
+        )}
+        <Button fullWidth className="h-auto min-h-12 py-2" variant="outline" onClick={onNext} disabled={navigationBlocked}>
+          Siguiente estudiante <ChevronRight className="h-4 w-4" />
+        </Button>
+      </div>
+    </div>
+  );
 }
 
 /* ─── Sub-componente: Timeline ─── */
@@ -387,7 +510,6 @@ function PanelDetalle({
   cal,
   notaMaxima,
   studentMap,
-  onClose,
   onConfirm,
   onAjustar,
   onPublish,
@@ -395,6 +517,7 @@ function PanelDetalle({
   onDirtyChange,
   onSaved,
   captureNextGrade,
+  onNextGrade,
   canGrade,
   canReviewClaims,
   canPublish,
@@ -405,7 +528,6 @@ function PanelDetalle({
   cal: CalificacionDetalle;
   notaMaxima: number | undefined;
   studentMap: Map<string, { nombre: string; email?: string }>;
-  onClose: () => void;
   onConfirm: (id: string, nota: number) => void;
   onAjustar: (id: string, nota: number, feedback?: string) => void;
   onPublish: (id: string) => void;
@@ -413,6 +535,7 @@ function PanelDetalle({
   onDirtyChange?: (dirty: boolean) => void;
   onSaved: () => void;
   captureNextGrade?: () => () => void;
+  onNextGrade: () => void;
   canGrade: boolean;
   canReviewClaims: boolean;
   canPublish: boolean;
@@ -462,6 +585,7 @@ function PanelDetalle({
   };
   const [evidenceLoadError, setEvidenceLoadError] = useState(false);
   const evidenceSectionRef = useRef<HTMLElement | null>(null);
+  const adjustmentSectionRef = useRef<HTMLDivElement | null>(null);
   const retryMutation = useMutation({
     mutationFn: () => reintentarCalificacionFoto(cal.id),
     onSuccess: (grade) => {
@@ -596,9 +720,6 @@ function PanelDetalle({
     setEditingSnapshot(action && action !== 'close' ? cal.desglose ?? null : null);
     if (action === 'close') void queryClient.invalidateQueries({ queryKey: ['calificacion-detalle', cal.id] });
   }
-  function handleClose() {
-    onClose();
-  }
   const estudiante = studentMap.get(cal.estudiante_id);
   const vision = pipeline?.vision as Record<string, unknown> | undefined;
   const graderA = pipeline?.grader_a as Record<string, unknown> | undefined;
@@ -638,6 +759,11 @@ function PanelDetalle({
     if (notaMaxima != null && n > notaMaxima) { setAdjError(`Máximo ${notaMaxima}`); return; }
     setAdjError('');
     onAjustar(cal.id, n, adjFeedback || undefined);
+  }
+
+  function openAdjustment() {
+    setShowAjustar(true);
+    window.requestAnimationFrame(() => adjustmentSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }));
   }
 
   const questionReview = activeBreakdown ? (
@@ -687,12 +813,9 @@ function PanelDetalle({
           </div>
           <p className="text-xs text-muted">{cal.evaluacion_nombre} · {cal.materia_nombre}</p>
         </div>
-        <button type="button" onClick={handleClose} aria-label="Cerrar detalle de calificación" title="Cerrar detalle" className="focus-ring ml-2 grid min-h-11 min-w-11 place-items-center rounded-lg text-muted hover:text-fg lg:hidden">
-          <X className="h-5 w-5" />
-        </button>
       </div>
 
-      <div className="min-w-0 flex-1 space-y-5 p-3 pb-[max(1.25rem,env(safe-area-inset-bottom))] sm:p-5">
+      <div className="min-w-0 flex-1 space-y-5 p-3 pb-32 sm:p-5 sm:pb-32 lg:pb-5">
         {/* Nota principal */}
         <div className="flex items-center justify-between">
           <div>
@@ -757,7 +880,7 @@ function PanelDetalle({
             analyticsContext={{ evaluacionId: cal.evaluacion_id, calificacionId: cal.id }}
           />
         ) : null}
-        {canGrade && manualReview && presentation.score == null && evidenceUrl && <Button variant="outline" loading={retryMutation.isPending} disabled={retryMutation.isPending} onClick={() => retryMutation.mutate()}><RotateCcw className="h-4 w-4" /> Reintentar con la evidencia guardada</Button>}
+        {canGrade && manualReview && evidenceUrl && <Button variant="outline" loading={retryMutation.isPending} disabled={retryMutation.isPending} onClick={() => retryMutation.mutate()}><RotateCcw className="h-4 w-4" /> Volver a analizar la evidencia</Button>}
         {(() => {
           if (cal.confianza == null || cal.confianza <= 0) return null;
           return <p className="text-xs text-muted">Confianza: {(cal.confianza * 100).toFixed(0)}%</p>;
@@ -778,9 +901,9 @@ function PanelDetalle({
             <p className="mt-2 text-xs text-sky-800 dark:text-sky-200">Revisa el texto y la imagen por separado antes de confirmar la nota única.</p>
           </div>
         )}
-        <div className="flex gap-2 xl:hidden" aria-label="Vista de la revisión">
-          <Button variant={mobileTab === 'evidencia' ? 'primary' : 'outline'} onClick={() => setMobileTab('evidencia')} aria-pressed={mobileTab === 'evidencia'}>Evidencia</Button>
-          <Button variant={mobileTab === 'revision' ? 'primary' : 'outline'} onClick={() => setMobileTab('revision')} aria-pressed={mobileTab === 'revision'}>Revisar respuestas</Button>
+        <div className="sticky top-0 z-20 -mx-3 flex gap-2 border-y border-border bg-surface/95 px-3 py-2 shadow-sm backdrop-blur xl:hidden" aria-label="Vista de la revisión">
+          <Button fullWidth variant={mobileTab === 'evidencia' ? 'primary' : 'outline'} onClick={() => setMobileTab('evidencia')} aria-pressed={mobileTab === 'evidencia'}>Evidencia</Button>
+          <Button fullWidth variant={mobileTab === 'revision' ? 'primary' : 'outline'} onClick={() => setMobileTab('revision')} aria-pressed={mobileTab === 'revision'}>Revisar respuestas</Button>
         </div>
         <div className="grid min-w-0 gap-4 xl:grid-cols-2 xl:items-start">
           <div className={cn('min-w-0 space-y-4 xl:sticky xl:top-4', mobileTab !== 'evidencia' && 'hidden xl:block')}>
@@ -946,7 +1069,7 @@ function PanelDetalle({
 
         {/* Acciones */}
         {canGrade && !done && !presentation.processing && (
-          <div className="flex flex-wrap gap-2">
+          <div className="hidden flex-wrap gap-2 lg:flex">
             {presentation.score != null && <Button
               onClick={() => onConfirm(cal.id, Number(adjNota))}
               loading={confirmPending}
@@ -954,7 +1077,7 @@ function PanelDetalle({
             >
               <CheckCircle2 className="h-4 w-4" /> Confirmar nota
             </Button>}
-            <Button variant="outline" onClick={() => setShowAjustar(!showAjustar)}>
+            <Button variant="outline" onClick={() => showAjustar ? setShowAjustar(false) : openAdjustment()}>
               <Pencil className="h-4 w-4" /> {presentation.score == null ? 'Establecer nota' : 'Ajustar'}
             </Button>
             {!manualReview && (
@@ -965,7 +1088,7 @@ function PanelDetalle({
           </div>
         )}
         {canPublish && done && !published && (
-          <div className="flex flex-wrap gap-2">
+          <div className="hidden flex-wrap gap-2 lg:flex">
             <Button onClick={() => onPublish(cal.id)} loading={publishPending} disabled={publishPending || isDirty || editingComponentDirty || showGlobalAdjustment}>
               <CheckCircle2 className="h-4 w-4" /> Publicar al estudiante
             </Button>
@@ -982,6 +1105,7 @@ function PanelDetalle({
         )}
 
         {canGrade && showAjustar && !presentation.processing && (
+          <div ref={adjustmentSectionRef} className="scroll-mt-24">
           <Card className="space-y-3 p-4">
             <Field label="Nota" hint={notaMaxima != null ? `0 - ${notaMaxima}` : undefined}>
               <Input
@@ -998,6 +1122,7 @@ function PanelDetalle({
               Guardar ajuste
             </Button>
           </Card>
+          </div>
         )}
 
         {/* Timeline */}
@@ -1010,6 +1135,25 @@ function PanelDetalle({
           else { setDetailParams((previous) => { const next = new URLSearchParams(previous); next.set('pregunta', id); return next; }); toast('La pregunta pertenece a una versión anterior y no tiene equivalencia vigente.'); }
         }} />}
       </div>
+      <MobileReviewActionBar
+        processing={presentation.processing}
+        done={done}
+        published={published}
+        score={presentation.score}
+        canGrade={canGrade}
+        canPublish={canPublish}
+        dirty={isDirty}
+        componentDirty={editingComponentDirty}
+        advancedEditOpen={showGlobalAdjustment}
+        confirmPending={confirmPending}
+        publishPending={publishPending}
+        savePending={adjustPending}
+        onConfirm={() => onConfirm(cal.id, Number(adjNota))}
+        onPublish={() => onPublish(cal.id)}
+        onAdjust={openAdjustment}
+        onSaveChanges={submitAjuste}
+        onNext={onNextGrade}
+      />
     </div>
     <ConfirmDialog
       open={pendingEditorAction !== null}
@@ -1501,7 +1645,7 @@ function TeacherWorkTimer({ evaluacionId }: { evaluacionId: string }) {
 /* ─── Componente principal ─── */
 export function CalificacionesWorkspace() {
   const user = useAuth((state) => state.user);
-  if (user?.rol === 'estudiante') return <Navigate to={routes.forbidden} replace />;
+  if (isStandardStudentProfile(user)) return <Navigate to={routes.forbidden} replace />;
   return <GradingCenter />;
 }
 
@@ -1544,8 +1688,10 @@ function GradingCenter() {
   const dirtyRef = useRef(false);
   const updateDirty = useCallback((dirty: boolean) => { dirtyRef.current = dirty; setMobileDirty(dirty); }, []);
   const [manualGradeOpen, setManualGradeOpen] = useState(false);
+  const [mobileMoreActionsOpen, setMobileMoreActionsOpen] = useState(false);
   const [reviewCompleted, setReviewCompleted] = useState(false);
   const [savedStudents, setSavedStudents] = useState<Record<string, string[]>>({});
+  const [acceptedUploads, setAcceptedUploads] = useState<Record<string, string[]>>({});
   const [discardVersion, setDiscardVersion] = useState(0);
   const [batchResult, setBatchResult] = useState<BatchResult | null>(null);
   const blocker = useBlocker(({ currentLocation, nextLocation }) => {
@@ -1613,6 +1759,7 @@ function GradingCenter() {
     resultado_json: {},
   }] : []), [reviewRows]);
   const selectedEval = directEvaluation.data;
+  const selectedMateria = materias?.find((materia) => materia.id === materiaId);
   const notaMaxima = selectedEval?.nota_maxima != null ? Number(selectedEval.nota_maxima) : undefined;
 
   // Student map
@@ -1621,6 +1768,21 @@ function GradingCenter() {
     () => new Map(estudiantes.map((s) => [s.id, s])),
     [estudiantes],
   );
+  const uploadGradesQuery = useQuery({
+    queryKey: ['calificaciones', evalId],
+    queryFn: () => listCalificaciones(evalId),
+    enabled: mode === 'carga' && !!evalId,
+    staleTime: 0,
+    refetchOnMount: 'always',
+    retry: false,
+  });
+  const uploadStudents = useMemo(() => excludeSubmittedStudents(
+    estudiantes,
+    [
+      ...(uploadGradesQuery.data?.map((grade) => grade.estudiante_id) ?? []),
+      ...(acceptedUploads[evalId] ?? []),
+    ],
+  ), [acceptedUploads, estudiantes, evalId, uploadGradesQuery.data]);
   const selectedStudentReference = useQuery({
     queryKey: ['review-student', evalId, selectedStudentId],
     queryFn: ({ signal }) => getEvaluationReview(evalId, { estudiante_id: selectedStudentId! }, signal),
@@ -1768,6 +1930,16 @@ function GradingCenter() {
     [cals, selectedBatch],
   );
 
+  function changeMateria(nextMateriaId: string) {
+    changeContext({ materia: nextMateriaId, evaluacion: null, calificacion: null, estudiante: null, pregunta: null, hoja: null });
+    setSelectedBatch(new Set());
+  }
+
+  function changeEvaluation(nextEvaluationId: string) {
+    changeContext({ evaluacion: nextEvaluationId, calificacion: null, estudiante: null, pregunta: null, hoja: null });
+    setSelectedBatch(new Set());
+  }
+
   return (
     <div className="flex min-h-full min-w-0 flex-col">
       {/* Header */}
@@ -1776,33 +1948,45 @@ function GradingCenter() {
         eyebrow="Centro de calificación"
         subtitle="Un examen, sus estudiantes y cada respuesta en el mismo lugar."
         action={
-          <div className="flex max-w-full flex-nowrap gap-2 overflow-x-auto pb-1 [scrollbar-width:thin]">
+          <>
+          <div className="w-full lg:hidden">
+            {mode === 'carga' ? (
+              <Button type="button" variant="outline" fullWidth disabled={mobileDirty} onClick={returnToReview}>
+                <ArrowLeft className="h-4 w-4" /> Volver a revisión
+              </Button>
+            ) : (
+              <div className="space-y-2">
+                <div className="grid grid-cols-2 gap-2">
+                  {canGrade && <Button fullWidth disabled={!evalId} onClick={() => changeContext({ modo: 'carga' })}>
+                    <Camera className="h-4 w-4" /> Añadir entregas
+                  </Button>}
+                  <Button fullWidth variant="outline" aria-expanded={mobileMoreActionsOpen} onClick={() => setMobileMoreActionsOpen((open) => !open)}>
+                    Más acciones <ChevronDown className={cn('h-4 w-4 transition-transform', mobileMoreActionsOpen && 'rotate-180')} />
+                  </Button>
+                </div>
+                {mobileMoreActionsOpen && (
+                  <div className="grid gap-2 rounded-xl border border-border bg-surface p-2">
+                    {materiaId && <Link to={routes.materiaBoletin(materiaId)} className="focus-ring inline-flex min-h-11 items-center justify-center gap-2 rounded-lg px-4 text-sm font-semibold text-fg hover:bg-surface-2"><BookOpenCheck className="h-4 w-4" /> Libro de notas</Link>}
+                    {canGrade && evalId && estudiantes.length > 0 && <Button type="button" variant="ghost" fullWidth disabled={mobileDirty} onClick={() => { setManualGradeOpen(true); setMobileMoreActionsOpen(false); }}><Pencil className="h-4 w-4" /> Establecer nota sin documento</Button>}
+                    {canPublish && <Button variant="ghost" fullWidth disabled={!evalId} onClick={() => { changeContext({ modo: mode === 'publicacion' ? null : 'publicacion', calificacion: null, estudiante: null, pregunta: null, hoja: null }); setMobileMoreActionsOpen(false); }}>{mode === 'publicacion' ? 'Volver a revisión' : 'Resumen y publicación'}</Button>}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+          <div className="hidden max-w-full flex-nowrap gap-2 overflow-x-auto pb-1 [scrollbar-width:thin] lg:flex">
             {mode === 'carga' ? (
               <Button type="button" variant="outline" className="shrink-0" disabled={mobileDirty} onClick={returnToReview}>
                 <ArrowLeft className="h-4 w-4" /> Volver a revisión
               </Button>
             ) : <>
-            {materiaId && (
-              <Link
-                to={routes.materiaBoletin(materiaId)}
-                className="focus-ring inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-lg border border-border bg-surface px-4 text-sm font-semibold text-fg transition-colors hover:bg-surface-2"
-              >
-                <BookOpenCheck className="h-4 w-4" /> Libro de notas
-              </Link>
-            )}
-            {canGrade && evalId && estudiantes.length > 0 && (
-              <Button type="button" variant="outline" className="shrink-0" disabled={mobileDirty} onClick={() => setManualGradeOpen(true)}>
-                <Pencil className="h-4 w-4" /> Establecer nota
-              </Button>
-            )}
-            {canGrade && <Button variant="outline" className="shrink-0" disabled={!evalId} onClick={() => changeContext({ modo: 'carga' })}>
-              <Camera className="h-4 w-4" /> Añadir entregas
-            </Button>}
-            {canPublish && <Button variant="outline" className="shrink-0" disabled={!evalId} onClick={() => changeContext({ modo: mode === 'publicacion' ? null : 'publicacion', calificacion: null, estudiante: null, pregunta: null, hoja: null })}>
-              {mode === 'publicacion' ? 'Volver a revisión' : 'Resumen y publicación'}
-            </Button>}
+              {materiaId && <Link to={routes.materiaBoletin(materiaId)} className="focus-ring inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-lg border border-border bg-surface px-4 text-sm font-semibold text-fg transition-colors hover:bg-surface-2"><BookOpenCheck className="h-4 w-4" /> Libro de notas</Link>}
+              {canGrade && evalId && estudiantes.length > 0 && <Button type="button" variant="outline" className="shrink-0" disabled={mobileDirty} onClick={() => setManualGradeOpen(true)}><Pencil className="h-4 w-4" /> Establecer nota</Button>}
+              {canGrade && <Button variant="outline" className="shrink-0" disabled={!evalId} onClick={() => changeContext({ modo: 'carga' })}><Camera className="h-4 w-4" /> Añadir entregas</Button>}
+              {canPublish && <Button variant="outline" className="shrink-0" disabled={!evalId} onClick={() => changeContext({ modo: mode === 'publicacion' ? null : 'publicacion', calificacion: null, estudiante: null, pregunta: null, hoja: null })}>{mode === 'publicacion' ? 'Volver a revisión' : 'Resumen y publicación'}</Button>}
             </>}
           </div>
+          </>
         }
       />
 
@@ -1811,14 +1995,27 @@ function GradingCenter() {
       )}
 
       {/* Selectores */}
-      <Card className="mx-4 mb-4 grid gap-4 p-4 sm:grid-cols-2">
+      <MobileReviewContext materiaName={selectedMateria?.nombre} evaluationName={selectedEval?.nombre} forceOpen={!materiaId || !evalId}>
         <Field label="Materia">
-          <Select value={materiaId} onChange={(e) => { changeContext({ materia: e.target.value, evaluacion: null, calificacion: null, estudiante: null, pregunta: null, hoja: null }); setSelectedBatch(new Set()); }}>
+          <Select value={materiaId} onChange={(event) => changeMateria(event.target.value)}>
+            {materias?.map((materia) => <option key={materia.id} value={materia.id}>{materia.nombre}</option>)}
+          </Select>
+        </Field>
+        <Field label="Evaluación">
+          <Select value={evalId} onChange={(event) => changeEvaluation(event.target.value)}>
+            {(!evals || evals.length === 0) && <option value="">Sin evaluaciones</option>}
+            {evals?.map((evaluation) => <option key={evaluation.id} value={evaluation.id}>{evaluation.tipo_actividad ? `${evaluation.tipo_actividad} · ` : ''}{evaluation.nombre}</option>)}
+          </Select>
+        </Field>
+      </MobileReviewContext>
+      <Card className="mx-4 mb-4 hidden gap-4 p-4 sm:grid-cols-2 lg:grid">
+        <Field label="Materia">
+          <Select value={materiaId} onChange={(event) => changeMateria(event.target.value)}>
             {materias?.map((m) => <option key={m.id} value={m.id}>{m.nombre}</option>)}
           </Select>
         </Field>
         <Field label="Evaluación">
-          <Select value={evalId} onChange={(e) => { changeContext({ evaluacion: e.target.value, calificacion: null, estudiante: null, pregunta: null, hoja: null }); setSelectedBatch(new Set()); }}>
+          <Select value={evalId} onChange={(event) => changeEvaluation(event.target.value)}>
             {(!evals || evals.length === 0) && <option value="">Sin evaluaciones</option>}
             {evals?.map((ev) => (
               <option key={ev.id} value={ev.id}>
@@ -1841,11 +2038,26 @@ function GradingCenter() {
         <p role="status" className="text-sm text-muted">{selectedStudentReference.isLoading ? 'Consultando entrega…' : selectedStudentReference.error ? 'No se pudo consultar la entrega. Actualiza la lista.' : selectedRow ? 'Aún no tiene una calificación. Puedes añadir su entrega o establecer una nota manual.' : 'Este estudiante no pertenece a la evaluación seleccionada.'}</p>
         {canGrade && selectedRow && <div className="flex flex-wrap gap-2"><Button onClick={() => changeContext({ modo: 'carga' })}>Añadir su entrega</Button><Button variant="outline" onClick={() => setManualGradeOpen(true)}>Establecer nota</Button></div>}
       </Card>}
-      {mode === 'carga' && canGrade && selectedEval && <GradingUploadPanel
+      {mode === 'carga' && canGrade && selectedEval && uploadGradesQuery.isFetching && (
+        <Card className="mx-4 mb-4 p-4" role="status">
+          <p className="text-sm text-muted">Consultando quiénes aún necesitan entregar evidencia…</p>
+        </Card>
+      )}
+      {mode === 'carga' && canGrade && selectedEval && uploadGradesQuery.isError && (
+        <Card className="mx-4 mb-4 space-y-3 p-4" role="alert">
+          <p className="text-sm text-rose-600 dark:text-rose-300">No pudimos comprobar las entregas existentes. No habilitamos otra carga para evitar duplicados.</p>
+          <Button variant="outline" onClick={() => void uploadGradesQuery.refetch()}>Reintentar consulta</Button>
+        </Card>
+      )}
+      {mode === 'carga' && canGrade && selectedEval && uploadGradesQuery.isSuccess && !uploadGradesQuery.isFetching && <GradingUploadPanel
         key={`${evalId}-${selectedStudentId ?? ''}-${discardVersion}`}
-        evaluationId={evalId} students={estudiantes} studentId={selectedStudentId ?? ''}
+        evaluationId={evalId} students={uploadStudents} studentId={selectedStudentId ?? ''}
         onStudentChange={(id) => changeContext({ estudiante: id, calificacion: null, pregunta: null, hoja: null })}
         onDirtyChange={updateDirty}
+        onUploadAccepted={(studentId) => setAcceptedUploads((previous) => ({
+          ...previous,
+          [evalId]: [...new Set([...(previous[evalId] ?? []), studentId])],
+        }))}
       />}
       {directEvaluation.error && <p role="alert" className="p-4 text-rose-600">No se pudo abrir esta evaluación. Comprueba el acceso o selecciona otra.</p>}
       <div className={cn('min-w-0 flex-1 flex-col gap-4 lg:flex-row', mode === 'carga' ? 'hidden' : 'flex')}>
@@ -1853,7 +2065,7 @@ function GradingCenter() {
         <div className={`min-w-0 flex-col border-border ${selectedId ? 'hidden lg:flex lg:w-64 lg:shrink-0 lg:border-r' : 'flex flex-1'} ${!evalId ? 'flex-1' : ''}`}>
           {/* Summary + filters */}
           {evalId && counters && (
-            <div className="space-y-3 border-b border-border px-4 pb-4 pt-2">
+            <div className="sticky top-0 z-10 space-y-3 border-b border-border bg-surface/95 px-4 pb-4 pt-2 backdrop-blur lg:static lg:bg-transparent">
               <div className="flex items-center justify-between">
                 <div className="flex gap-4">
                   <div><p className="text-lg font-extrabold text-amber-600">{counters.pendientes}</p><p className="text-xs text-muted">Por revisar</p></div>
@@ -1990,7 +2202,6 @@ function GradingCenter() {
                     cal={detalleQuery.data}
                     notaMaxima={notaMaxima}
                     studentMap={studentMap}
-                    onClose={() => { setSelectedId(null); }}
                     onConfirm={(id, _nota) => {
                       const cal = detalleQuery.data?.id === id ? detalleQuery.data : cals?.find((c) => c.id === id);
                       if (cal) { setConfirmingSingle(cal); }
@@ -2005,6 +2216,7 @@ function GradingCenter() {
                       if (studentId) setSavedStudents((previous) => ({ ...previous, [evalId]: [...new Set([...(previous[evalId] ?? []), studentId])] }));
                     }}
                     captureNextGrade={captureNextGrade}
+                    onNextGrade={captureNextGrade()}
                     canGrade={canGrade}
                     canReviewClaims={canReviewClaims}
                     canPublish={canPublish}

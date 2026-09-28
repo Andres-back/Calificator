@@ -44,6 +44,7 @@ ALL_SPECS = {
     "040-modularizar-cola-calificaciones",
     "041-estabilizar-e2e-multihoja",
     "043-corregir-scroll-navegacion",
+    "043-flujo-docente-movil",
     "044-opencode-session",
     "045-rag-grading-fallback",
     "046-qwen-embeddings",
@@ -65,6 +66,16 @@ ALL_SPECS = {
     "062-multimodal-grader-verifier",
     "063-mobile-grade-digitization",
     "064-calidad-imagen-claves",
+    "065-retirar-foto-enviada",
+    "067-privacidad-legal",
+    "068-rutas-legales-publicas",
+    "069-recuperar-respuestas-manuscritas",
+    "070-calibrar-comprension-verificador",
+    "071-respuesta-abierta-literal",
+    "072-clave-literal-pregunta-quien",
+    "073-fragmento-literal-respuesta-abierta",
+    "074-optimizar-frontend",
+    "074-aislar-flujo-estudiante",
 }
 OWNED_SPECS = {
     name
@@ -72,6 +83,7 @@ OWNED_SPECS = {
     if name.startswith(tuple(f"{number:03d}-" for number in range(2, 13)))
     or name.startswith("021-")
     or name.startswith("029-")
+    or name.startswith("067-")
 }
 
 

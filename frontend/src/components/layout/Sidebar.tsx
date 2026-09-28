@@ -4,11 +4,12 @@ import { cn } from '@/lib/cn';
 import { adminNav, estudianteNav, profesorNav } from '@/config/nav';
 import { useAuth } from '@/stores/auth';
 import { EducationalIcon } from '@/components/ui';
+import { routes } from '@/config/routes';
 
 function Logo() {
   return (
     <div className="flex items-center gap-2.5 px-2">
-      <img src="/branding/logo-full.png" alt="XCalificator" className="h-10 w-10 rounded-lg object-contain" />
+      <img src="/branding/logo-full.webp" alt="XCalificator" className="h-10 w-10 rounded-lg object-contain" />
       <div className="leading-tight">
         <p className="font-display font-extrabold text-fg">XCalificator</p>
         <p className="text-xs font-medium uppercase tracking-wide text-muted">Plataforma IA</p>
@@ -56,7 +57,7 @@ export function Sidebar({
       )}
     >
       <div className="absolute inset-0 z-0" aria-hidden="true">
-        <img src="/branding/pattern-subtle.png" alt="" className="h-full w-full object-cover opacity-[0.04] dark:opacity-[0.03]" />
+        <img src="/branding/pattern-subtle.webp" alt="" className="h-full w-full object-cover opacity-[0.04] dark:opacity-[0.03]" />
       </div>
       <div className="relative z-10 flex h-full flex-col gap-5">
         <div className="flex items-center justify-between gap-3">
@@ -155,6 +156,11 @@ export function Sidebar({
             <p className="mt-1 text-xs leading-4 text-secondary">{roleMessage.detail}</p>
           </div>
         </NavLink>}
+        <nav aria-label="Información legal" className="flex flex-wrap justify-center gap-x-3 gap-y-1 px-2 text-[11px] text-muted">
+          <NavLink to={routes.privacy} onClick={onNavigate} className="focus-ring inline-flex min-h-10 items-center rounded px-1 hover:text-fg hover:underline">Privacidad</NavLink>
+          <NavLink to={routes.terms} onClick={onNavigate} className="focus-ring inline-flex min-h-10 items-center rounded px-1 hover:text-fg hover:underline">Términos</NavLink>
+          <NavLink to={routes.cookies} onClick={onNavigate} className="focus-ring inline-flex min-h-10 items-center rounded px-1 hover:text-fg hover:underline">Cookies</NavLink>
+        </nav>
       </div>
     </aside>
   );

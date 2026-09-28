@@ -69,33 +69,40 @@ function PreviewModal({ page, pageNumber, onClose }: { page: EvidencePage | null
 export function MultiPageEvidencePicker({ pages, onChange, disabled = false, onError }: Props) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
+  const replacementIdRef = useRef<string | null>(null);
   const pagesRef = useRef(pages);
   const [previewId, setPreviewId] = useState<string | null>(null);
   useEffect(() => { pagesRef.current = pages; }, [pages]);
   const reportError = (message: string) => onError ? onError(message) : toast.error(message);
 
-  const addFiles = async (fileList: FileList | File[]) => {
+  const addFiles = async (fileList: FileList | File[], replacementId: string | null = null) => {
     const incoming = Array.from(fileList);
     if (!incoming.length) return;
+    const currentPages = pagesRef.current;
+    const replacementIndex = replacementId ? currentPages.findIndex((page) => page.id === replacementId) : -1;
+    if (replacementId && replacementIndex < 0) return;
+    const retainedPages = replacementIndex < 0
+      ? currentPages
+      : currentPages.filter((page) => page.id !== replacementId);
     if (incoming.some((file) => !ALLOWED_TYPES.has(file.type))) {
       reportError('Selecciona fotografías JPG, PNG o WebP, o un único PDF.'); return;
     }
     const incomingPdf = incoming.some((file) => file.type === 'application/pdf');
-    const existingPdf = pages.some((page) => page.file.type === 'application/pdf');
-    if ((incomingPdf && (incoming.length > 1 || pages.length > 0)) || existingPdf) {
+    const existingPdf = retainedPages.some((page) => page.file.type === 'application/pdf');
+    if ((incomingPdf && (incoming.length > 1 || retainedPages.length > 0)) || existingPdf) {
       reportError('Entrega varias fotografías o un único PDF, pero no los mezcles.'); return;
     }
-    if (!incomingPdf && pages.length + incoming.length > MAX_FILES) {
+    if (!incomingPdf && retainedPages.length + incoming.length > MAX_FILES) {
       reportError(`Puedes seleccionar máximo ${MAX_FILES} fotografías.`); return;
     }
     if (incoming.some((file) => file.type !== 'application/pdf' && file.size > MAX_IMAGE_BYTES)) {
       reportError('Cada fotografía debe pesar máximo 10 MB.'); return;
     }
-    const totalBytes = [...pages.map((page) => page.file), ...incoming].reduce((total, file) => total + file.size, 0);
+    const totalBytes = [...retainedPages.map((page) => page.file), ...incoming].reduce((total, file) => total + file.size, 0);
     if (totalBytes > MAX_TOTAL_BYTES) {
       reportError('El paquete completo debe pesar máximo 40 MB.'); return;
     }
-    const existingKeys = new Set(pages.map((page) => `${page.file.name}:${page.file.size}:${page.file.lastModified}`));
+    const existingKeys = new Set(retainedPages.map((page) => `${page.file.name}:${page.file.size}:${page.file.lastModified}`));
     const unique = incoming.filter((file) => {
       const key = `${file.name}:${file.size}:${file.lastModified}`;
       if (existingKeys.has(key)) return false;
@@ -107,7 +114,9 @@ export function MultiPageEvidencePicker({ pages, onChange, disabled = false, onE
       file,
       rotation: 0 as EvidenceRotation,
     }));
-    const nextPages = [...pagesRef.current, ...additions];
+    const nextPages = replacementIndex < 0
+      ? [...currentPages, ...additions]
+      : [...currentPages.slice(0, replacementIndex), ...additions, ...currentPages.slice(replacementIndex + 1)];
     pagesRef.current = nextPages;
     onChange(nextPages);
     void Promise.all(additions.map(async (page) => ({
@@ -145,17 +154,17 @@ export function MultiPageEvidencePicker({ pages, onChange, disabled = false, onE
   return (
     <div className="space-y-4">
       <div className="grid gap-3 sm:grid-cols-2">
-        <button type="button" disabled={disabled || isPdf || pages.length >= MAX_FILES} onClick={() => fileInputRef.current?.click()} className="focus-ring flex min-h-24 items-center gap-3 rounded-xl border-2 border-dashed border-brand-300 bg-brand-50/60 p-4 text-left transition hover:border-brand-500 hover:bg-brand-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-brand-500/40 dark:bg-brand-500/10">
+        <button type="button" disabled={disabled || isPdf || pages.length >= MAX_FILES} onClick={() => { replacementIdRef.current = null; fileInputRef.current?.click(); }} className="focus-ring flex min-h-24 items-center gap-3 rounded-xl border-2 border-dashed border-brand-300 bg-brand-50/60 p-4 text-left transition hover:border-brand-500 hover:bg-brand-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-brand-500/40 dark:bg-brand-500/10">
           <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-white text-brand-600 shadow-sm dark:bg-white/10 dark:text-brand-200"><FilePlus2 className="h-6 w-6" /></span>
           <span><strong className="block text-sm text-fg">{pages.length ? 'Agregar más fotos' : 'Elegir fotos o PDF'}</strong><span className="mt-1 block text-xs leading-5 text-muted">Hasta 10 fotos ordenadas o un PDF</span></span>
         </button>
-        <button type="button" disabled={disabled || isPdf || pages.length >= MAX_FILES} onClick={() => cameraInputRef.current?.click()} className="focus-ring flex min-h-24 items-center gap-3 rounded-xl border border-border bg-surface p-4 text-left transition hover:border-sky-400 hover:bg-sky-50/50 disabled:cursor-not-allowed disabled:opacity-50 dark:hover:bg-sky-500/10">
+        <button type="button" disabled={disabled || isPdf || pages.length >= MAX_FILES} onClick={() => { replacementIdRef.current = null; cameraInputRef.current?.click(); }} className="focus-ring flex min-h-24 items-center gap-3 rounded-xl border border-border bg-surface p-4 text-left transition hover:border-sky-400 hover:bg-sky-50/50 disabled:cursor-not-allowed disabled:opacity-50 dark:hover:bg-sky-500/10">
           <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-sky-100 text-sky-700 dark:bg-sky-500/20 dark:text-sky-200"><Camera className="h-6 w-6" /></span>
           <span><strong className="block text-sm text-fg">{pages.length ? 'Tomar otra foto' : 'Usar la cámara'}</strong><span className="mt-1 block text-xs leading-5 text-muted">Cada foto se añade como una hoja nueva</span></span>
         </button>
       </div>
       <input ref={fileInputRef} type="file" multiple accept="image/jpeg,image/png,image/webp,application/pdf" className="hidden" onChange={(event) => { if (event.target.files) void addFiles(event.target.files); event.target.value = ''; }} />
-      <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={(event) => { if (event.target.files) void addFiles(event.target.files); event.target.value = ''; }} />
+      <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={(event) => { const replacementId = replacementIdRef.current; replacementIdRef.current = null; if (event.target.files) void addFiles(event.target.files, replacementId); event.target.value = ''; }} />
 
       {pages.length > 0 && <>
         <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-surface-2 px-4 py-3">
@@ -176,7 +185,7 @@ export function MultiPageEvidencePicker({ pages, onChange, disabled = false, onE
                 <div className="rounded-lg border border-amber-200 bg-amber-50 p-2 text-xs leading-5 text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-100">
                   <p className="flex items-center gap-1.5 font-bold"><AlertTriangle className="h-4 w-4" /> Revisa esta foto</p>
                   <p>{page.quality.warnings.join(' ')}</p>
-                  <button type="button" className="mt-1 font-bold underline" onClick={() => { remove(page.id); cameraInputRef.current?.click(); }}>Repetir foto</button>
+                  <button type="button" disabled={disabled} className="mt-1 font-bold underline disabled:opacity-50" onClick={() => { replacementIdRef.current = page.id; cameraInputRef.current?.click(); }}>Repetir foto</button>
                   <span className="ml-2">o continúa si puedes leerla.</span>
                 </div>
               )}
@@ -184,6 +193,7 @@ export function MultiPageEvidencePicker({ pages, onChange, disabled = false, onE
                 <div className="rounded-lg border border-rose-200 bg-rose-50 p-2 text-xs leading-5 text-rose-900 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-100">
                   <p className="flex items-center gap-1.5 font-bold"><AlertTriangle className="h-4 w-4" /> Reemplaza esta foto</p>
                   <p>{page.quality.warnings.join(' ')}</p>
+                  <button type="button" disabled={disabled} className="mt-1 font-bold underline disabled:opacity-50" onClick={() => { replacementIdRef.current = page.id; cameraInputRef.current?.click(); }}>Reemplazar foto</button>
                 </div>
               )}
               <div className="flex flex-wrap gap-1.5">

@@ -111,7 +111,7 @@ def test_deepseek_vision_disables_hidden_reasoning() -> None:
     assert call["json"]["thinking"] == {"type": "disabled"}
 
 
-def test_glm_flash_omits_unsupported_thinking_control() -> None:
+def test_glm_flash_uses_low_reasoning_without_unsupported_thinking_control() -> None:
     payload = {
         "choices": [{"finish_reason": "stop", "message": {"content": '{"nota_sugerida": 4}'}}],
         "usage": {"prompt_tokens": 8, "completion_tokens": 3},
@@ -120,6 +120,7 @@ def test_glm_flash_omits_unsupported_thinking_control() -> None:
     _result, call = _run_chat("glm-5.3-flash", payload)
 
     assert "thinking" not in call["json"]
+    assert call["json"]["reasoning_effort"] == "low"
 
 
 def test_regular_deepseek_does_not_receive_experimental_thinking_flag() -> None:

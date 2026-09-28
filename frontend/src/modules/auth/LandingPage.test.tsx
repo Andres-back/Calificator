@@ -10,6 +10,8 @@ describe('LandingPage', () => {
 
     expect(screen.getByText(/Código abierto · buscamos docentes/i)).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /Crear cuenta/i })).toHaveAttribute('href', '/registro');
-    expect(screen.getAllByRole('link', { name: /Ingresar|Ya tengo una cuenta/i }).some((link) => link.getAttribute('href') === '/login')).toBe(true);
+    const loginLink = screen.getByRole('banner').querySelector('a[href="/login"]');
+    expect(loginLink).toHaveTextContent('Ingresar');
+    expect(loginLink).not.toHaveClass('hidden');
   });
 });
