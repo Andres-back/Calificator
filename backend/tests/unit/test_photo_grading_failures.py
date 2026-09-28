@@ -13,6 +13,8 @@ from app.services.vision_extractor import VisionExtractor
 from app.modules.calificaciones.agents import (
     AgentContext,
     AgentResult,
+    GRADER_PROMPT_TEMPLATE,
+    VERIFIER_PROMPT_TEMPLATE,
     grader_agent,
 )
 
@@ -20,6 +22,19 @@ from app.modules.calificaciones.agents import (
 class FakeClient:
     async def close(self) -> None:
         return None
+
+
+def test_comprehension_prompts_grade_meaning_without_unrequested_style_penalties() -> None:
+    required_rules = (
+        "No exijas que la respuesta repita el sujeto o el contexto ya indicado en la pregunta",
+        "Solo descuenta ortografía, puntuación, extensión o forma de oración",
+        "Exige únicamente la información pedida por el enunciado",
+        "una respuesta ubicada bajo otra pregunta se califica en el lugar donde fue escrita",
+    )
+
+    for rule in required_rules:
+        assert rule in GRADER_PROMPT_TEMPLATE
+        assert rule in VERIFIER_PROMPT_TEMPLATE
 
 
 class ExplodingGraderClient:
@@ -265,9 +280,69 @@ def test_objective_validation_accepts_equivalent_answers() -> None:
 
     validation = orchestrator.build_objective_validation(blueprint, detected)
 
-    assert len(validation) == 5
+    assert len(validation) == 6
     assert all(item["correcta"] is True for item in validation)
-    assert orchestrator.objective_score_floor(blueprint, validation) == Decimal("3.57")
+    assert orchestrator.objective_score_floor(blueprint, validation) == Decimal("4.29")
+
+
+def test_open_answer_key_at_start_is_objective_but_internal_mention_is_not() -> None:
+    blueprint = {
+        "nota_maxima": 3,
+        "preguntas": [
+            {"numero": 1, "tipo": "abierta", "enunciado": "¿Quién es el personaje principal?", "puntaje": 1},
+            {"numero": 2, "tipo": "abierta", "enunciado": "¿Cómo se sentía?", "puntaje": 1},
+            {"numero": 3, "tipo": "abierta", "enunciado": "¿Qué quería hacer?", "puntaje": 1},
+        ],
+        "respuestas_esperadas": [
+            {"numero": 1, "respuesta": "El personaje principal es Nico, un niño que viaja por primera vez en avión."},
+            {"numero": 2, "respuesta": "emocionado"},
+            {"numero": 3, "respuesta": "contarles a todos sobre su aventura"},
+        ],
+    }
+    detected = [
+        {"pregunta": 1, "respuesta": "Nico miró emocionado por la ventana del avión"},
+        {"pregunta": 2, "respuesta": "No estaba emocionado sino aburrido"},
+        {"pregunta": 3, "respuesta": "para contarles a todos sobre su aventura"},
+    ]
+
+    validation = orchestrator.build_objective_validation(blueprint, detected)
+
+    assert validation == [
+        {
+            "numero": 1,
+            "tipo": "abierta",
+            "respuesta_detectada": "Nico miró emocionado por la ventana del avión",
+            "respuesta_esperada": "El personaje principal es Nico, un niño que viaja por primera vez en avión.",
+            "correcta": True,
+            "fuente": "clave_oficial",
+        },
+        {
+            "numero": 3,
+            "tipo": "abierta",
+            "respuesta_detectada": "para contarles a todos sobre su aventura",
+            "respuesta_esperada": "contarles a todos sobre su aventura",
+            "correcta": True,
+            "fuente": "clave_oficial",
+        },
+    ]
+    assert orchestrator.objective_score_floor(blueprint, validation) == Decimal("2.00")
+
+
+def test_literal_person_key_does_not_override_other_open_question_types() -> None:
+    assert orchestrator._open_answer_matches(
+        "¿Cómo se sentía Nico?",
+        "Nico se sentía emocionado al mirar por la ventana.",
+        "Nico estaba aburrido",
+    ) is False
+
+
+def test_comparison_modifier_is_not_accepted_as_the_requested_comparison() -> None:
+    assert orchestrator._open_answer_matches(
+        "¿A qué se parecían las nubes?",
+        "Las nubes se parecían a algodones de azúcar flotando en el cielo azul.",
+        "flotando en el cielo azul",
+    ) is False
+
 
 def test_both_failed_graders_return_no_score(monkeypatch) -> None:
     async def failed_grader(*_args, **_kwargs):

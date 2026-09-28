@@ -41,3 +41,9 @@ git diff --check
 ```
 
 Resultado: `157 passed` en regresión unitaria focalizada; `27 passed, 1 skipped` en integración explicable. El caso omitido requiere PostgreSQL aislado y no se declara ejecutado. Ruff y `git diff --check` aprobaron. No se llamaron proveedores externos ni se modificaron datos de producción.
+
+## Reconciliación con `main` — 2026-09-28
+
+- Se preservaron las instrucciones recientes de buscar lápiz tenue, distinguir escritura ilegible de ausencia y valorar cada renglón independientemente. Se añadieron las reglas del piloto de transcripción literal sin copiar dígitos de la clave.
+- Una felicitación incompatible con el desglose ahora conserva `requiere_revision`, incluso cuando la suma y la nota global coinciden. Se mantiene el original para auditoría y un borrador provisional verificable para el docente. La regresión falló antes de la corrección y pasó después.
+- Validación focal sobre la rama reconciliada: 62 pruebas unitarias y Ruff. Sin llamadas externas, migraciones, reprocesamiento ni modificaciones de datos productivos. El CI completo del nuevo commit sigue siendo requisito antes del merge.

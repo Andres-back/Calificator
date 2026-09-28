@@ -104,8 +104,9 @@ def test_feedback_preferences_are_data_subordinate_to_grading_rules() -> None:
 def test_verifier_must_read_visible_digits_before_primary_proposal() -> None:
     prompt = agents.VERIFIER_PROMPT_TEMPLATE
 
-    assert "lee primero la evidencia" in prompt
-    assert "forma independiente" in prompt
+    assert "lectura visual independiente, antes de considerar la propuesta principal" in prompt
+    assert "inspecciona debajo y al lado de cada pregunta" in prompt
+    assert "nunca la conviertas\nen ausencia ni en cero" in prompt
     assert "no copies operandos" in prompt
     assert '"respuesta_observada"' in prompt
     assert "no_evaluable" in prompt

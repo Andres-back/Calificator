@@ -4,8 +4,10 @@ import { MemoryRouter, Outlet, Route, Routes, useOutletContext } from 'react-rou
 import { AuthBootstrap, RequireAuth } from './RequireAuth';
 import { RequireRole } from './RequireRole';
 import { RequirePermission } from './RequirePermission';
+import { RequireStaffSurface } from './RequireStaffSurface';
 import { useAuth } from '@/stores/auth';
 import type { User, UserRole } from '@/types/api';
+import { routes } from '@/config/routes';
 
 function userFor(role: UserRole): User {
   return {
@@ -23,14 +25,21 @@ beforeEach(() => {
 });
 
 describe('auth bootstrap', () => {
-  it('does not request /auth/me on the public login route', () => {
+  it.each([
+    routes.login,
+    routes.privacy,
+    routes.terms,
+    routes.cookies,
+    routes.privacyNotice,
+    routes.pilotInformation,
+  ])('does not request /auth/me on the public route %s', (path) => {
     const fetchMe = vi.fn().mockResolvedValue(undefined);
-    window.history.replaceState({}, '', '/login?reason=session-expired');
+    window.history.replaceState({}, '', path);
     useAuth.setState({ user: null, status: 'idle', fetchMe });
 
-    render(<AuthBootstrap><p>Login available</p></AuthBootstrap>);
+    render(<AuthBootstrap><p>Public page available</p></AuthBootstrap>);
 
-    expect(screen.getByText('Login available')).toBeInTheDocument();
+    expect(screen.getByText('Public page available')).toBeInTheDocument();
     expect(fetchMe).not.toHaveBeenCalled();
   });
 });
@@ -123,8 +132,10 @@ describe('route guards', () => {
     render(
       <MemoryRouter initialEntries={['/app/presentaciones']}>
         <Routes>
-          <Route element={<RequirePermission anyOf={['presentations.read']} />}>
-            <Route path="/app/presentaciones" element={<p>Presentaciones permitidas</p>} />
+          <Route element={<RequireStaffSurface />}>
+            <Route element={<RequirePermission anyOf={['presentations.read']} />}>
+              <Route path="/app/presentaciones" element={<p>Presentaciones permitidas</p>} />
+            </Route>
           </Route>
           <Route path="/app/403" element={<p>Acceso denegado</p>} />
         </Routes>
@@ -133,6 +144,58 @@ describe('route guards', () => {
 
     expect(screen.getByText('Presentaciones permitidas')).toBeInTheDocument();
     expect(screen.queryByText('Acceso denegado')).not.toBeInTheDocument();
+  });
+
+  it('rejects a standard student from a staff surface even with a shared read permission', () => {
+    useAuth.setState({
+      user: {
+        ...userFor('estudiante'),
+        permissions: ['grading.read'],
+      },
+      status: 'authenticated',
+    });
+
+    render(
+      <MemoryRouter initialEntries={['/app/calificaciones']}>
+        <Routes>
+          <Route element={<RequireStaffSurface />}>
+            <Route element={<RequirePermission anyOf={['grading.read']} />}>
+              <Route path="/app/calificaciones" element={<p>Centro de calificación</p>} />
+            </Route>
+          </Route>
+          <Route path="/app/403" element={<p>Acceso denegado</p>} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText('Acceso denegado')).toBeInTheDocument();
+    expect(screen.queryByText('Centro de calificación')).not.toBeInTheDocument();
+  });
+
+  it('preserves parent context through the staff-surface guard', () => {
+    useAuth.setState({ user: userFor('profesor'), status: 'authenticated' });
+
+    function Parent() {
+      return <Outlet context={{ materia: 'Lenguaje' }} />;
+    }
+    function Child() {
+      const context = useOutletContext<{ materia: string }>();
+      return <p>{context.materia}</p>;
+    }
+
+    render(
+      <MemoryRouter initialEntries={['/app/materias/1/calificar']}>
+        <Routes>
+          <Route element={<Parent />}>
+            <Route element={<RequireStaffSurface />}>
+              <Route path="/app/materias/1/calificar" element={<Child />} />
+            </Route>
+          </Route>
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText('Lenguaje')).toBeInTheDocument();
   });
 
   it('redirects when the effective permission is absent', () => {

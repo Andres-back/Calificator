@@ -263,15 +263,13 @@ def feedback_quality_guard(
         reasons.append("feedback_contradice_desglose")
 
     summary = build_formative_feedback(components)
-    if blockers or score_mismatch:
+    if reasons:
         visible = (
             "Retroalimentación provisional: requiere revisión docente porque la evidencia, "
-            "las valoraciones o la suma no coinciden por completo. "
+            "las valoraciones, la suma o el mensaje no coinciden por completo. "
             f"Borrador basado en el desglose: {summary}"
         )[:2000]
         status = "blocked"
-    elif reasons:
-        visible, status = summary, "rewritten"
     else:
         visible, status = original_feedback or summary, "passed"
     return {

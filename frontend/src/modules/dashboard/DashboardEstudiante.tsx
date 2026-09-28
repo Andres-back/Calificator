@@ -22,7 +22,6 @@ import { cn } from '@/lib/cn';
 const QUICK_LINKS = [
   { to: '/app/materias?unirse=1', label: 'Unirme a materia', desc: 'Con el código del docente', icon: UserPlus, tone: 'bg-violet-50 text-violet-600 dark:bg-violet-500/15 dark:text-violet-300' },
   { to: '/app/calificaciones/boletin', label: 'Mi boletín', desc: 'Tus notas confirmadas', icon: FileText, tone: 'bg-amber-50 text-amber-600 dark:bg-amber-500/15 dark:text-amber-300' },
-  { to: '/app/xali', label: 'Asistente Xali', desc: 'Xali te ayuda a entender, practicar y mejorar', icon: Sparkles, tone: 'bg-brand-50 text-brand-600 dark:bg-brand-500/15 dark:text-brand-300', xali: true },
 ];
 
 function fmt(n: number | null) {
@@ -79,7 +78,7 @@ export function DashboardEstudiante() {
         </div>
         
         <img
-          src="/branding/xali-hello.png"
+          src="/branding/xali-hello.webp"
           alt=""
           className="pointer-events-none absolute -bottom-4 -right-4 z-10 h-32 w-32 object-contain opacity-55 sm:h-40 sm:w-40 lg:hidden"
         />
@@ -104,7 +103,7 @@ export function DashboardEstudiante() {
           </div>
           <div className="relative hidden min-h-52 items-center justify-center rounded-3xl border border-white/20 bg-white/10 p-5 backdrop-blur-sm lg:flex">
             <img
-              src="/branding/xali-hello.png"
+              src="/branding/xali-hello.webp"
               alt="Xali, tu asistente de aprendizaje"
               className="h-44 w-44 rounded-[2rem] object-contain mix-blend-multiply drop-shadow-2xl"
             />
@@ -171,7 +170,8 @@ export function DashboardEstudiante() {
             {/* Mejor materia */}
             <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="relative overflow-hidden rounded-xl border border-emerald-200 bg-emerald-50/50 p-5 dark:border-emerald-500/30 dark:bg-emerald-500/10">
               <img
-                src="/branding/xali-celebrating.png"
+                src="/branding/xali-celebrating.webp"
+                loading="lazy"
                 alt=""
                 className="absolute -right-3 -top-3 h-20 w-20 object-contain opacity-90"
               />
@@ -191,7 +191,8 @@ export function DashboardEstudiante() {
             {/* Materia por fortalecer */}
             <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} className="relative overflow-hidden rounded-xl border border-amber-200 bg-amber-50/50 p-5 dark:border-amber-500/30 dark:bg-amber-500/10">
               <img
-                src="/branding/xali-studying.png"
+                src="/branding/xali-studying.webp"
+                loading="lazy"
                 alt=""
                 className="absolute -right-3 -top-3 h-20 w-20 object-contain opacity-90"
               />

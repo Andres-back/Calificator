@@ -362,5 +362,8 @@ def test_feedback_claiming_everything_correct_is_rewritten_from_components(monke
     assert "Recalcula los dos productos parciales" in cal.feedback
     assert "todas las respuestas" not in cal.feedback.casefold()
     guard = cal.resultado_json["feedback_quality_guard"]
-    assert guard["status"] == "rewritten"
+    assert guard["status"] == "blocked"
+    assert breakdown.requiere_revision is True
+    assert cal.estado == "requiere_revision"
+    assert cal.nota_confirmada is None
     assert guard["original_feedback"] == "Excelente: todas las respuestas están correctas."

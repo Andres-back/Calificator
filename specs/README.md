@@ -20,6 +20,12 @@ actualizar la especificación propietaria, su plan y sus tareas; no debe crear d
 | 062 | [Evidencia multimodal para evaluador y verificador](062-multimodal-grader-verifier/spec.md) | calificaciones, agentes y orquestador | workspace de revisión | sin tablas nuevas; contexto de evidencia | [#123](https://github.com/Andres-back/Calificator/issues/123) |
 | 063 | [Calificación móvil y digitalización segura](063-mobile-grade-digitization/spec.md) | digitalización de evaluaciones | búsqueda y carga móvil en workspace docente | sin tablas nuevas; no modifica históricos | [#125](https://github.com/Andres-back/Calificator/issues/125) |
 | 065 | [Retirar evidencia ya enviada](065-retirar-foto-enviada/spec.md) | calificaciones existentes y carga de evidencia | selector “Añadir entregas” | sin tablas nuevas; no modifica históricos | [#135](https://github.com/Andres-back/Calificator/issues/135) |
+| 067 | [Base legal, privacidad y aceptación versionada](067-privacidad-legal/spec.md) | auth y registro de aceptaciones legales | `/privacidad`, `/terminos`, `/cookies`, `/aviso-privacidad`, `/piloto` y registro | `legal_acceptances`; sin backfill ni cambios a usuarios existentes | [#139](https://github.com/Andres-back/Calificator/issues/139) |
+| 069 | [Recuperar respuestas manuscritas antes de calificar](069-recuperar-respuestas-manuscritas/spec.md) | extracción visual, agentes, orquestador y reintento | workspace docente de calificaciones | sin migración; conserva entregas y calificaciones existentes | [#143](https://github.com/Andres-back/Calificator/issues/143) |
+| 070 | [Calibrar comprensión lectora y verificador](070-calibrar-comprension-verificador/spec.md) | prompts de calificación, verificador y transporte OpenCode | flujo existente de calificación; sin rutas nuevas | sin migración; no altera notas confirmadas o publicadas | [#145](https://github.com/Andres-back/Calificator/issues/145) |
+| 071 | [Reconocer claves literales en respuestas abiertas](071-respuesta-abierta-literal/spec.md) | validación objetiva y consenso de calificación | flujo existente de calificación; sin rutas nuevas | sin migración; no altera notas históricas por sí mismo | [#147](https://github.com/Andres-back/Calificator/issues/147) |
+| 072 | [Validar nombres literales en preguntas de quién](072-clave-literal-pregunta-quien/spec.md) | validación objetiva por nombre propio y consenso de calificación | flujo existente de calificación; sin rutas nuevas | sin migración; no altera notas históricas por sí mismo | [#149](https://github.com/Andres-back/Calificator/issues/149) |
+| 073 | [Reconocer fragmentos literales pertinentes](073-fragmento-literal-respuesta-abierta/spec.md) | validación objetiva de respuestas abiertas | flujo existente de calificación; sin rutas nuevas | sin migración; no altera notas históricas por sí mismo | [#151](https://github.com/Andres-back/Calificator/issues/151) |
 | 014 | [Alineación de autorización y superficies](014-alinear-autorizacion-superficies/spec.md) | autorización por objeto, analítica y contratos | AppShell, actividad estudiante y telemetría | sin tablas nuevas; políticas e inventario canónico | [#17](https://github.com/Andres-back/Calificator/issues/17) |
 | 016 | [Calificación explicable y auditable](016-calificacion-explicable/spec.md) | calificaciones, visión, ajustes, publicación y PQRS | workspace docente, ver entrega y resultados | `calificaciones`, `entregas`, historial y desglose | [#20](https://github.com/Andres-back/Calificator/issues/20) |
 | 017 | [Decoración visual y orientación contextual](017-decoracion-frontend/spec.md) | sin cambios de backend; gobernanza de controles frontend | AppShell, cabeceras, inicios, recorridos y estados vacíos | preferencia local de recorridos, sin datos de negocio | [#22](https://github.com/Andres-back/Calificator/issues/22) |
@@ -173,7 +179,42 @@ actualizar la especificación propietaria, su plan y sus tareas; no debe crear d
 - [065-retirar-foto-enviada](065-retirar-foto-enviada/spec.md), [issue #135](https://github.com/Andres-back/Calificator/issues/135): elimina del selector de carga al estudiante cuya evidencia ya fue aceptada o que tiene una calificación existente.
 - Los fallos conservan estudiante y hojas para reintento; no cambia entregas, notas, reemplazos ni contratos HTTP.
 
+## Hotfix 068: rutas legales realmente públicas
+
+- [068-rutas-legales-publicas](068-rutas-legales-publicas/spec.md), [issue #141](https://github.com/Andres-back/Calificator/issues/141): evita que el arranque de autenticación consulte la sesión y redirija al login al visitar privacidad, términos, cookies, aviso de privacidad o información del piloto.
+- Las rutas académicas y administrativas continúan protegidas sin cambios.
+
+## Hotfix 070: comprensión semántica y verificación acotada
+
+- [070-calibrar-comprension-verificador](070-calibrar-comprension-verificador/spec.md), [issue #145](https://github.com/Andres-back/Calificator/issues/145): valora el significado solicitado sin penalizar formas no exigidas y ejecuta la revisión GLM con razonamiento bajo.
+- Conserva el presupuesto compacto, la detección de truncamiento y la decisión final docente; no reescribe notas confirmadas ni publica automáticamente.
+
+## Hotfix 071: claves literales en respuestas abiertas
+
+- [071-respuesta-abierta-literal](071-respuesta-abierta-literal/spec.md), [issue #147](https://github.com/Andres-back/Calificator/issues/147): garantiza puntaje objetivo cuando una respuesta abierta es igual a la clave o comienza con ella completa.
+- No usa similitud difusa, no acepta menciones internas y conserva la revisión docente para cualquier caso no inequívoco.
+
+## Hotfix 072: nombres literales en preguntas de quién
+
+- [072-clave-literal-pregunta-quien](072-clave-literal-pregunta-quien/spec.md), [issue #149](https://github.com/Andres-back/Calificator/issues/149): reconoce el nombre propio de una referencia explicativa cuando una respuesta a «¿quién?» comienza con ese nombre.
+- No extiende la regla a otros interrogativos, no usa similitud difusa y mantiene la revisión docente en casos ambiguos.
+
+## Hotfix 073: fragmentos literales pertinentes
+
+- [073-fragmento-literal-respuesta-abierta](073-fragmento-literal-respuesta-abierta/spec.md), [issue #151](https://github.com/Andres-back/Calificator/issues/151): reconoce una acción literal precedida por un conector natural cuando responde lo solicitado.
+- Excluye preguntas comparativas para impedir que un modificador incompleto reciba crédito automático.
+
+## Evolución 074: fluidez y organización del frontend
+
+- [074-optimizar-frontend](074-optimizar-frontend/spec.md), [issue #155](https://github.com/Andres-back/Calificator/issues/155): reduce consultas e imágenes innecesarias, protege la búsqueda diferida y simplifica la navegación móvil sin cambiar APIs, permisos, registros ni calificaciones.
+- Conserva seguimiento para procesos activos, añade selector móvil de secciones, compacta tableros por rol y mantiene CSP estricta con cobertura unitaria, responsive, accesible y visual.
+
 ## Inventario técnico global
+
+## Hotfix 074: aislamiento y organización del flujo estudiante
+
+- [074-aislar-flujo-estudiante](074-aislar-flujo-estudiante/spec.md), [issue #153](https://github.com/Andres-back/Calificator/issues/153): separa superficies docentes de las lecturas compartidas del estudiante, conserva roles personalizados y presenta el contenido publicado con lenguaje estudiantil.
+- No modifica permisos persistidos, contratos del backend, matrículas, entregas ni calificaciones.
 
 - [Inventario canónico JSON](system-inventory/current.json)
 - [Especificación del generador y gate de deriva](013-inventario-tecnico-exhaustivo/spec.md)

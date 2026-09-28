@@ -421,7 +421,6 @@ export function EvaluacionesPage() {
     queryKey: queryKeys.evaluaciones.list(materiaId),
     queryFn: () => listEvaluaciones(materiaId),
     enabled: !!materiaId,
-    refetchInterval: isStudent ? 10_000 : false,
     refetchOnWindowFocus: true,
   });
 
@@ -601,7 +600,7 @@ export function EvaluacionesPage() {
       <div className="relative overflow-hidden rounded-xl">
         <div className="absolute inset-0 z-0">
           <img
-            src="/branding/feature-evaluate.png"
+            src="/branding/feature-evaluate.webp"
             alt=""
             className="h-full w-full object-cover opacity-10 dark:opacity-5"
           />
@@ -651,7 +650,7 @@ export function EvaluacionesPage() {
           ) : !evals || evals.length === 0 ? (
             <EmptyState
               icon={ClipboardCheck}
-              image="/branding/empty-no-evals.png"
+              image="/branding/empty-no-evals.webp"
               title="Sin evaluaciones"
               description={isStudent ? 'No hay evaluaciones disponibles para esta materia.' : 'Crea la primera evaluación de esta materia.'}
               action={canCreate && <div className="flex flex-wrap justify-center gap-2"><Button onClick={() => setWizardOpen(true)}><Sparkles className="h-4 w-4" /> Generar con IA</Button><Button variant="outline" onClick={openCreateModal}><Plus className="h-4 w-4" /> Crear manualmente</Button></div>}

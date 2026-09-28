@@ -9,6 +9,22 @@ const profesor = {
   permissions: ['subjects.read'],
 };
 
+test('public mobile entry keeps both actions visible and skips the desktop hero', async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 800 });
+  const requested = new Set<string>();
+  page.on('request', (request) => requested.add(new URL(request.url()).pathname));
+
+  await page.goto('/');
+  await expect(page.getByRole('banner').getByRole('link', { name: 'Ingresar' })).toBeVisible();
+  await expect(page.getByRole('banner').getByRole('link', { name: /Crear cuenta/ })).toBeVisible();
+
+  requested.clear();
+  await page.goto('/login');
+  await expect(page.getByRole('link', { name: '¿Olvidaste tu contraseña?' })).toBeVisible();
+  await expect(page.getByRole('link', { name: /contraseña|acceso/i })).toHaveCount(1);
+  expect(requested.has('/branding/hero-login.webp')).toBe(false);
+});
+
 test('login mocks a professor session and protects the admin navigation', async ({ page }) => {
   let authenticated = false;
 

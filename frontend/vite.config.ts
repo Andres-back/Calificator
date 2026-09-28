@@ -14,6 +14,12 @@ export default defineConfig(({ mode }) => {
       alias: { '@': path.resolve(__dirname, './src') },
     },
     build: {
+      modulePreload: {
+        resolveDependencies: (_url, deps, { hostType }) => {
+          if (hostType !== 'html') return deps;
+          return deps.filter((dependency) => !/(^|\/)(charts|markdown|document-export)-/.test(dependency));
+        },
+      },
       rolldownOptions: {
         output: {
           codeSplitting: {

@@ -162,7 +162,7 @@ describe('AppShell ambientación', () => {
     expect(within(header as HTMLElement).queryByRole('link', { name: 'Crear recurso' })).not.toBeInTheDocument();
     expect(within(desktopNav as HTMLElement).getByRole('link', { name: /Trabaja con Xali/ })).toHaveAttribute('href', '/app/xali');
     expect(desktopNav?.querySelector('img[src="/branding/semantic-icons/xali.webp"]')).toBeInTheDocument();
-    expect(desktopNav?.querySelector('img[src="/branding/xali-hello.png"]')).not.toBeInTheDocument();
+    expect(desktopNav?.querySelector('img[src="/branding/xali-hello.webp"]')).not.toBeInTheDocument();
   });
 
   it('mantiene la ilustración fuera de la interacción y el contenido por encima', () => {

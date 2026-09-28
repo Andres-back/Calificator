@@ -31,6 +31,7 @@ import { useAuth } from '@/stores/auth';
 import { GradingUploadPanel } from '@/modules/materias/MateriaCalificar';
 import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
+import { isStandardStudentProfile } from '@/lib/authorization';
 import {
   ajustarNota, ajustarNotaBatch, confirmarNota, confirmarNotaBatch,
   crearIncidencia, getEvaluationReview, getCalificacionDetalle, listarIncidencias, listCalificaciones,
@@ -879,7 +880,7 @@ function PanelDetalle({
             analyticsContext={{ evaluacionId: cal.evaluacion_id, calificacionId: cal.id }}
           />
         ) : null}
-        {canGrade && manualReview && presentation.score == null && evidenceUrl && <Button variant="outline" loading={retryMutation.isPending} disabled={retryMutation.isPending} onClick={() => retryMutation.mutate()}><RotateCcw className="h-4 w-4" /> Reintentar con la evidencia guardada</Button>}
+        {canGrade && manualReview && evidenceUrl && <Button variant="outline" loading={retryMutation.isPending} disabled={retryMutation.isPending} onClick={() => retryMutation.mutate()}><RotateCcw className="h-4 w-4" /> Volver a analizar la evidencia</Button>}
         {(() => {
           if (cal.confianza == null || cal.confianza <= 0) return null;
           return <p className="text-xs text-muted">Confianza: {(cal.confianza * 100).toFixed(0)}%</p>;
@@ -1644,7 +1645,7 @@ function TeacherWorkTimer({ evaluacionId }: { evaluacionId: string }) {
 /* ─── Componente principal ─── */
 export function CalificacionesWorkspace() {
   const user = useAuth((state) => state.user);
-  if (user?.rol === 'estudiante') return <Navigate to={routes.forbidden} replace />;
+  if (isStandardStudentProfile(user)) return <Navigate to={routes.forbidden} replace />;
   return <GradingCenter />;
 }
 
