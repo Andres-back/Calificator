@@ -21,9 +21,10 @@ VISION_SYSTEM_PROMPT = (
 
 EVALUATION_DOCUMENT_SYSTEM_PROMPT = (
     "Eres un extractor OCR de evaluaciones escolares impresas o manuscritas. "
-    "La imagen contiene preguntas para digitalizar, no respuestas de un estudiante. "
-    "Transcribe fielmente títulos, instrucciones, preguntas, opciones y expresiones "
-    "matemáticas. Responde siempre en JSON válido con los campos indicados."
+    "La hoja puede estar vacía o ya resuelta por un estudiante. Separa fielmente títulos, "
+    "instrucciones, preguntas y opciones impresas de cualquier respuesta, selección, "
+    "procedimiento o corrección observada. Una respuesta observada nunca es una clave. "
+    "Responde siempre en JSON válido con los campos indicados."
 )
 
 VISION_JSON_SCHEMA = """{
@@ -67,8 +68,9 @@ async def interpret_image(
     if purpose == "evaluation_document":
         system_prompt = EVALUATION_DOCUMENT_SYSTEM_PROMPT
         prompt = (
-            "Analiza esta imagen de una hoja de evaluación. No busques respuestas del "
-            "estudiante: recupera el contenido que el docente desea digitalizar.\n"
+            "Analiza esta imagen de una hoja de evaluación. Recupera el contenido que el "
+            "docente desea digitalizar y registra aparte las respuestas del estudiante. "
+            "No las mezcles con los enunciados ni las declares correctas.\n"
             "Conserva numeración, opciones y operadores matemáticos (+, -, ×, ÷, =). "
             "Marca image_quality.is_usable=true si al menos una pregunta puede "
             "reconstruirse, aunque la hoja sea manuscrita, esté inclinada o tenga "

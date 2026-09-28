@@ -1,8 +1,9 @@
 import { useRef, useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
-import { Camera, FileImage, FileText, Upload } from 'lucide-react';
+import { AlertTriangle, Camera, CheckCircle2, FileImage, FileText, LoaderCircle, Upload } from 'lucide-react';
 import { Button, Field, Input, Modal, Select, Textarea } from '@/components/ui';
+import { analyzeEvidenceImage, type ImageQualityResult } from '@/components/evidence/imageQuality';
 import { api, toApiError } from '@/lib/api';
 import { addPendingDigitalization } from '@/modules/evaluaciones/digitalizationJobs';
 import { DocumentProcessingAnimation } from './DocumentProcessingAnimation';
@@ -43,11 +44,15 @@ function DigitalizarEvaluacionModal({
   const [notaMaxima, setNotaMaxima] = useState('5');
   const [modalidad, setModalidad] = useState<'fisica' | 'online' | 'mixta'>('fisica');
   const [queued, setQueued] = useState<DigitalizationQueued | null>(null);
+  const [quality, setQuality] = useState<ImageQualityResult | null>(null);
+  const [checkingQuality, setCheckingQuality] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const reset = () => {
     setFile(null);
     setQueued(null);
+    setQuality(null);
+    setCheckingQuality(false);
     setNombre('');
     setDescripcion('');
     setNotaMaxima('5');
@@ -55,7 +60,7 @@ function DigitalizarEvaluacionModal({
     if (fileRef.current) fileRef.current.value = '';
   };
 
-  const handleSelect = (selected: File) => {
+  const handleSelect = async (selected: File) => {
     const extensionAllowed = /.(pdf|docx|jpg|jpeg|png|webp)$/i.test(selected.name);
     if (!VALID_TYPES.includes(selected.type) && !extensionAllowed) {
       toast.error('Solo se aceptan PDF, Word o imágenes (JPEG, PNG o WebP).');
@@ -67,6 +72,7 @@ function DigitalizarEvaluacionModal({
     }
     setFile(selected);
     setQueued(null);
+    setQuality(null);
     if (!nombre && selected.name) {
       setNombre(
         selected.name
@@ -75,6 +81,11 @@ function DigitalizarEvaluacionModal({
           .replace(/s+/g, ' ')
           .trim(),
       );
+    }
+    if (selected.type.startsWith('image/')) {
+      setCheckingQuality(true);
+      setQuality(await analyzeEvidenceImage(selected));
+      setCheckingQuality(false);
     }
   };
 
@@ -126,7 +137,7 @@ function DigitalizarEvaluacionModal({
           <div className="rounded-2xl border border-brand-200 bg-gradient-to-br from-brand-50 to-cyan-50/70 p-4 text-sm leading-6 text-brand-950 dark:border-brand-500/30 dark:from-brand-500/10 dark:to-cyan-500/5 dark:text-brand-100">
             <p className="font-semibold">Convierte una hoja en un borrador editable.</p>
             <p className="mt-1">
-              Xali reconstruye preguntas, puntajes y respuestas. Tú revisas todo antes de publicar.
+              Xali reconstruye preguntas y resuelve la clave desde el enunciado. Si la hoja ya está respondida, no toma la respuesta del estudiante como correcta. Tú revisas todo antes de publicar.
             </p>
             <div className="mt-3 grid grid-cols-3 gap-2 text-center text-xs font-medium">
               <span className="rounded-lg bg-white/75 px-2 py-2 dark:bg-white/10">1. Completa</span>
@@ -208,7 +219,7 @@ function DigitalizarEvaluacionModal({
                 className="hidden"
                 onChange={(event) => {
                   const selected = event.target.files?.[0];
-                  if (selected) handleSelect(selected);
+                  if (selected) void handleSelect(selected);
                 }}
               />
             </div>
@@ -227,11 +238,33 @@ function DigitalizarEvaluacionModal({
                   <p className="text-xs text-muted">{(file.size / 1024).toFixed(0)} KB</p>
                 </div>
               </div>
+              {checkingQuality && (
+                <p className="flex items-center gap-2 text-xs font-semibold text-muted">
+                  <LoaderCircle className="h-4 w-4 animate-spin" /> Revisando nitidez e iluminación…
+                </p>
+              )}
+              {quality?.status === 'good' && (
+                <p className="flex items-center gap-2 text-xs font-semibold text-emerald-700 dark:text-emerald-300">
+                  <CheckCircle2 className="h-4 w-4" /> Foto lista para leer
+                </p>
+              )}
+              {quality?.status === 'warning' && (
+                <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs leading-5 text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-100">
+                  <p className="flex items-center gap-2 font-bold"><AlertTriangle className="h-4 w-4" /> Esta foto puede ser difícil de leer</p>
+                  <p>{quality.warnings.join(' ')} Puedes elegir otra o continuar; XCalificator ajustará una copia automáticamente.</p>
+                </div>
+              )}
+              {quality?.status === 'unusable' && (
+                <div className="rounded-lg border border-rose-200 bg-rose-50 p-3 text-xs leading-5 text-rose-900 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-100">
+                  <p className="flex items-center gap-2 font-bold"><AlertTriangle className="h-4 w-4" /> Selecciona otra foto</p>
+                  <p>{quality.warnings.join(' ')}</p>
+                </div>
+              )}
               <div className="flex shrink-0 justify-end gap-2">
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => setFile(null)}
+                  onClick={() => { setFile(null); setQuality(null); }}
                   disabled={digitalizar.isPending}
                 >
                   Quitar
@@ -242,6 +275,8 @@ function DigitalizarEvaluacionModal({
                   loading={digitalizar.isPending}
                   disabled={
                     digitalizar.isPending
+                    || checkingQuality
+                    || quality?.status === 'unusable'
                     || nombre.trim().length < 2
                     || !validMaxScore
                   }

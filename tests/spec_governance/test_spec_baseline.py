@@ -66,6 +66,7 @@ ALL_SPECS = {
     "062-multimodal-grader-verifier",
     "063-mobile-grade-digitization",
     "064-matricular-todos",
+    "064-calidad-imagen-claves",
     "065-retirar-foto-enviada",
     "067-privacidad-legal",
     "068-rutas-legales-publicas",

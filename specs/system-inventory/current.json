@@ -356,7 +356,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "8d5ae54cc80c25499ff48c02db32a795ca1e5b46f747ea96c2b6676c3bc8579c",
+  "source_digest": "003f7c920ad6c9370bd97eb6898dad02c3ec2337c22011e86b68831e68ee578d",
   "surfaces": [
     {
       "actors": [
@@ -14593,6 +14593,12 @@
           "level": "unit",
           "reference": "/",
           "status": "direct",
+          "test_path": "backend/tests/unit/test_image_preprocessing.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
           "test_path": "backend/tests/unit/test_legal_registration.py"
         },
         {
@@ -24423,7 +24429,7 @@
       "kind": "frontend_call",
       "owner_spec": "012-ia-jobs-produccion",
       "signature": "GET:/jobs/{jobId}",
-      "source_line": 114,
+      "source_line": 116,
       "source_path": "frontend/src/modules/evaluaciones/components/DigitalizationJobMonitor.tsx",
       "states": [],
       "tests": [
@@ -29406,7 +29412,7 @@
       "kind": "frontend_call",
       "owner_spec": "005-evaluaciones",
       "signature": "POST:/evaluaciones/externa/digitalizar-con-archivo",
-      "source_line": 91,
+      "source_line": 102,
       "source_path": "frontend/src/modules/evaluaciones/components/DigitalizarEvaluacionModal.tsx",
       "states": [],
       "tests": [
@@ -30337,7 +30343,7 @@
       "kind": "frontend_call",
       "owner_spec": "012-ia-jobs-produccion",
       "signature": "POST:/jobs/{jobId}",
-      "source_line": 223,
+      "source_line": 227,
       "source_path": "frontend/src/modules/evaluaciones/components/DigitalizationJobMonitor.tsx",
       "states": [],
       "tests": [
@@ -32606,7 +32612,7 @@
       "kind": "job",
       "owner_spec": "012-ia-jobs-produccion",
       "signature": "tasks.digitalize_evaluation",
-      "source_line": 390,
+      "source_line": 392,
       "source_path": "backend/app/workers/tasks_digitalization.py",
       "states": [
         "cancelled",
@@ -33066,7 +33072,7 @@
       "kind": "job",
       "owner_spec": "012-ia-jobs-produccion",
       "signature": "tasks.recover_stale_digitalization_jobs",
-      "source_line": 453,
+      "source_line": 455,
       "source_path": "backend/app/workers/tasks_digitalization.py",
       "states": [
         "cancelled",
