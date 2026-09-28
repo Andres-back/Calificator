@@ -31,6 +31,8 @@ interface JobRead {
     materia_id?: string;
     nombre?: string;
     preguntas_count?: number;
+    clave_completa?: boolean;
+    claves_pendientes?: number[];
   };
   timings_ms?: Record<string, number>;
   terminal_reason?: string | null;
@@ -149,6 +151,8 @@ export function DigitalizationJobMonitor() {
               progress: 100,
               evaluationId: state.data.resultado_json.evaluacion_id,
               questionsCount: state.data.resultado_json.preguntas_count,
+              keyComplete: state.data.resultado_json.clave_completa,
+              pendingKeys: state.data.resultado_json.claves_pendientes,
               error: undefined,
               timingsMs: state.data.timings_ms,
               terminalReason: state.data.terminal_reason ?? undefined,
@@ -297,8 +301,10 @@ export function DigitalizationJobMonitor() {
             </div>
           ) : success ? (
             <p className="mt-1 text-xs leading-5 text-muted">
-              {visibleJob.questionsCount
-                ? 'Se detectaron ' + visibleJob.questionsCount + ' preguntas. Revísalas antes de publicar.'
+              {visibleJob.pendingKeys?.length
+                ? `Se detectaron ${visibleJob.questionsCount ?? 'las'} preguntas. Confirma la respuesta correcta de: ${visibleJob.pendingKeys.join(', ')} antes de publicar.`
+                : visibleJob.questionsCount
+                  ? 'Se detectaron ' + visibleJob.questionsCount + ' preguntas. Revísalas antes de publicar.'
                 : 'El borrador quedó guardado. Revísalo antes de publicar.'}
             </p>
           ) : (

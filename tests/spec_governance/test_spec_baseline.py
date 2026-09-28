@@ -65,6 +65,7 @@ ALL_SPECS = {
     "061-importar-estudiantes-lista",
     "062-multimodal-grader-verifier",
     "063-mobile-grade-digitization",
+    "064-calidad-imagen-claves",
     "065-retirar-foto-enviada",
     "067-privacidad-legal",
     "068-rutas-legales-publicas",

@@ -6,8 +6,8 @@ import { describe, expect, it, vi } from 'vitest';
 import { MultiPageEvidencePicker } from './MultiPageEvidencePicker';
 import type { EvidencePage } from './evidencePayload';
 
-function Harness({ onError = vi.fn() }: { onError?: (message: string) => void }) {
-  const [pages, setPages] = useState<EvidencePage[]>([]);
+function Harness({ onError = vi.fn(), initialPages = [] }: { onError?: (message: string) => void; initialPages?: EvidencePage[] }) {
+  const [pages, setPages] = useState<EvidencePage[]>(initialPages);
   return <MultiPageEvidencePicker pages={pages} onChange={setPages} onError={onError} />;
 }
 
@@ -54,6 +54,23 @@ describe('MultiPageEvidencePicker', () => {
     expect(screen.getByText('2 hojas seleccionadas')).toBeInTheDocument();
     expect(screen.getByText('captura-1.jpg')).toBeInTheDocument();
     expect(screen.getByText('captura-2.jpg')).toBeInTheDocument();
+  });
+
+  it('keeps the original until a replacement photo is actually selected', async () => {
+    const user = userEvent.setup();
+    const original = new File(['original'], 'original.jpg', { type: 'image/jpeg' });
+    render(<Harness initialPages={[{
+      id: 'first', file: original, rotation: 0,
+      quality: { status: 'warning', warnings: ['Puede estar borrosa.'], width: 800, height: 1000 },
+    }]} />);
+
+    await user.click(screen.getByRole('button', { name: 'Repetir foto' }));
+    expect(screen.getByText('original.jpg')).toBeInTheDocument();
+    await user.upload(cameraInput(), new File(['new'], 'nueva.jpg', { type: 'image/jpeg' }));
+
+    expect(screen.getByText('1 hoja seleccionada')).toBeInTheDocument();
+    expect(screen.getByText('nueva.jpg')).toBeInTheDocument();
+    expect(screen.queryByText('original.jpg')).not.toBeInTheDocument();
   });
 
   it('rejects a PDF mixed with photos and more than ten photos', async () => {
