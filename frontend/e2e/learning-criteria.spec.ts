@@ -211,17 +211,23 @@ for (const viewport of [{ width: 360, height: 800 }, { width: 390, height: 844 }
   }
 }
 
-test('alias preserva query/hash y estudiante no solicita fuentes ni administración', async ({ page }) => {
+test('alias preserva query/hash y estudiante no solicita fuentes ni administración', async ({ page, browser, baseURL }) => {
   await installMocks(page);
   await login(page);
   await page.goto('/app/materias/m1/dba?origen=historico#seccion');
   await expect(page).toHaveURL(/\/criterios\?origen=historico#seccion$/);
-  await page.unroute('**/api/**');
-  const student = await installMocks(page, 'estudiante');
-  await login(page);
-  await page.goto('/app/materias/m1/criterios');
-  await expect(page).toHaveURL(/\/app\/403$/);
-  expect(student.calls.some((path) => path.includes('criterios-aprendizaje') || path.includes('/estudiantes'))).toBeFalsy();
+  // Separate sessions: pending teacher requests must not be recorded as student traffic.
+  const studentContext = await browser.newContext({ baseURL });
+  try {
+    const studentPage = await studentContext.newPage();
+    const student = await installMocks(studentPage, 'estudiante');
+    await login(studentPage);
+    await studentPage.goto('/app/materias/m1/criterios');
+    await expect(studentPage).toHaveURL(/\/app\/403$/);
+    expect(student.calls.some((path) => path.includes('criterios-aprendizaje') || path.includes('/estudiantes'))).toBeFalsy();
+  } finally {
+    await studentContext.close();
+  }
 });
 
 test('docente inicia criterios de aprendizaje con tres opciones claras en celular', async ({ page }) => {

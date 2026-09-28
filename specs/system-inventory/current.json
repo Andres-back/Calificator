@@ -363,7 +363,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "45cae3a01be62edf13c5817bc153855942919d029e71fecc6857580f92eb5110",
+  "source_digest": "d1a98badb7c72ac59a15fcccd8e546f88ff56db048f8dd25e17979472b1a838f",
   "surfaces": [
     {
       "actors": [
@@ -15433,6 +15433,12 @@
           "reference": "/",
           "status": "direct",
           "test_path": "backend/tests/unit/test_learning_criteria_authorization.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_learning_criteria_generation.py"
         },
         {
           "level": "unit",
@@ -33494,6 +33500,12 @@
       "source_path": "backend/app/workers/tasks_ai_config.py",
       "states": [],
       "tests": [
+        {
+          "level": "unit",
+          "reference": "celery",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_learning_criteria_generation.py"
+        },
         {
           "level": "unit",
           "reference": "celery",

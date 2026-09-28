@@ -158,7 +158,7 @@ test('todos los recursos permiten llegar a revisión con generación libre', asy
 test('un recurso puede usar rúbrica sin seleccionar DBA', async ({ page }) => {
   await page.goto('/app/herramientas/nuevo?tipo=guia');
   await fillBaseFields(page, 'guia');
-  await page.getByRole('checkbox', { name: /Usar criterios de rúbrica/i }).check();
+  await page.getByRole('button', { name: /Escribir criterios rápidos/i }).click();
   await page.getByPlaceholder(/Claridad/i).fill('Explica con claridad');
   await page.getByPlaceholder(/Claridad/i).press('Enter');
 
@@ -167,21 +167,29 @@ test('un recurso puede usar rúbrica sin seleccionar DBA', async ({ page }) => {
   await expect(
     page
       .getByLabel('¿Generar guía de aprendizaje?')
-      .getByText('Criterios de rúbrica', { exact: true }),
+      .getByText('Criterios rápidos', { exact: true }),
   ).toBeVisible();
+  const generation = page.waitForRequest((request) => request.method() === 'POST' && new URL(request.url()).pathname === '/api/herramientas/guia');
+  await page.getByRole('button', { name: 'Sí, generar material' }).click();
+  expect((await generation).postDataJSON()).toMatchObject({
+    usar_rubrica: true,
+    criterios_rubrica: ['Explica con claridad'],
+    dba_ids: [],
+    dba_personalizado_ids: [],
+  });
 });
 
 test('DBA solo se exige cuando el profesor activa esa opción', async ({ page }) => {
   await page.goto('/app/herramientas/nuevo?tipo=guia');
   await fillBaseFields(page, 'guia');
   await page.getByRole('combobox').selectOption(materia.id);
-  await page.getByRole('checkbox', { name: /Alinear con DBA/i }).check();
+  await page.getByRole('button', { name: /^Estándares oficiales/i }).click();
 
   await expect(page.getByRole('button', { name: 'Revisar antes de generar' })).toBeDisabled();
   await page.getByRole('checkbox', { name: /DBA-1/i }).check();
   await page.getByRole('button', { name: 'Revisar antes de generar' }).click();
 
-  await expect(page.getByText('Alineación con DBA')).toBeVisible();
+  await expect(page.getByLabel('¿Generar guía de aprendizaje?').getByText('Estándares oficiales', { exact: true })).toBeVisible();
 });
 
 

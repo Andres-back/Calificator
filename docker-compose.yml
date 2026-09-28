@@ -76,7 +76,7 @@ services:
 
   worker:
     build: *backend-build
-    command: celery -A app.workers.worker.celery_app worker --loglevel=info -Q default,celery --concurrency=${CELERY_DEFAULT_CONCURRENCY:-1} -n default@%h
+    command: celery -A app.workers.worker.celery_app worker --loglevel=info -Q default,celery,criteria --concurrency=${CELERY_DEFAULT_CONCURRENCY:-1} -n default@%h
     env_file:
       - .env
     volumes:

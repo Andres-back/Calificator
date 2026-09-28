@@ -216,3 +216,16 @@ def test_only_temporary_provider_failures_are_recoverable() -> None:
     ) is False
     assert generation_service.transient_generation_error(RuntimeError("503 transport unavailable")) is True
     assert generation_service.transient_generation_error(ValueError("invalid rubric")) is False
+
+
+def test_deployed_default_worker_consumes_the_criteria_queue() -> None:
+    from pathlib import Path
+    import re
+
+    compose = Path(__file__).resolve().parents[3] / "docker-compose.yml"
+    if not compose.exists():
+        pytest.skip("The backend-only container does not include the repository compose file")
+    worker = compose.read_text(encoding="utf-8").split("\n  worker:\n", 1)[1].split("\n  worker-grading:", 1)[0]
+    queues = re.search(r" -Q ([^\s]+)", worker)
+    assert queues is not None
+    assert {"default", "celery", "criteria"}.issubset(set(queues.group(1).split(",")))
