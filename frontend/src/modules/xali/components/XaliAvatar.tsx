@@ -21,12 +21,12 @@ const sizeMap: Record<XaliAvatarSize, string> = {
 };
 
 const mascotByMood: Record<XaliAvatarMood, string> = {
-  default: '/branding/xali-hello.png',
-  happy: '/branding/xali-celebrating.png',
-  success: '/branding/xali-celebrating.png',
-  thinking: '/branding/xali-studying.png',
-  student: '/branding/xali-studying.png',
-  teacher: '/branding/xali-hello.png',
+  default: '/branding/xali-hello.webp',
+  happy: '/branding/xali-celebrating.webp',
+  success: '/branding/xali-celebrating.webp',
+  thinking: '/branding/xali-studying.webp',
+  student: '/branding/xali-studying.webp',
+  teacher: '/branding/xali-hello.webp',
 };
 
 /** Usa siempre la mascota oficial del branding de XCalificator. */

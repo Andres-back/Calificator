@@ -1,26 +1,28 @@
-import { Link, Outlet, useLocation, useParams } from 'react-router-dom';
+import { Link, Outlet, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Users } from 'lucide-react';
-import { Badge, EducationalIcon, getSubjectEducationalIcon, LoadingScreen, QueryError } from '@/components/ui';
+import { Badge, EducationalIcon, getSubjectEducationalIcon, LoadingScreen, QueryError, Select } from '@/components/ui';
 import { getMateria, getMateriaEstudiantes } from './api';
 import { toApiError } from '@/lib/api';
 import { useAuth } from '@/stores/auth';
 import { cn } from '@/lib/cn';
+import { isStandardStudentProfile } from '@/lib/authorization';
 
 const ALL_TABS = [
-  { label: 'Vista general', to: '', brandIcon: 'subjects', permissions: ['subjects.read'] },
-  { label: 'Evaluaciones', to: 'evaluaciones', brandIcon: 'prepare-evaluation', permissions: ['evaluations.read'] },
-  { label: 'Recursos', to: 'recursos', brandIcon: 'resources', permissions: ['resources.read'] },
-  { label: 'Calificar', to: 'calificar', brandIcon: 'grade-evidence', permissions: ['grading.read', 'grading.grade'] },
-  { label: 'Asistencia', to: 'asistencia', brandIcon: 'attendance', permissions: ['attendance.read', 'attendance.manage'] },
-  { label: 'Boletín', to: 'boletin', brandIcon: 'gradebook', permissions: ['gradebook.read'] },
-  { label: 'DBA', to: 'dba', brandIcon: 'curriculum-dba', permissions: ['dba.read', 'dba.manage'] },
+  { label: 'Vista general', to: '', brandIcon: 'subjects', permissions: ['subjects.read'], staffOnly: false },
+  { label: 'Evaluaciones', to: 'evaluaciones', brandIcon: 'prepare-evaluation', permissions: ['evaluations.read'], staffOnly: false },
+  { label: 'Recursos', to: 'recursos', brandIcon: 'resources', permissions: ['resources.read'], staffOnly: false },
+  { label: 'Calificar', to: 'calificar', brandIcon: 'grade-evidence', permissions: ['grading.read', 'grading.grade'], staffOnly: true },
+  { label: 'Asistencia', to: 'asistencia', brandIcon: 'attendance', permissions: ['attendance.read', 'attendance.manage'], staffOnly: true },
+  { label: 'Boletín', to: 'boletin', brandIcon: 'gradebook', permissions: ['gradebook.read'], staffOnly: false },
+  { label: 'Criterios de aprendizaje', to: 'dba', brandIcon: 'curriculum-dba', permissions: ['dba.read', 'dba.manage'], staffOnly: true },
 ] as const;
 
 export function MateriaDetailPage() {
   const { id = '' } = useParams();
   const location = useLocation();
+  const navigate = useNavigate();
   const user = useAuth((state) => state.user);
   const permissions = new Set(user?.permissions ?? []);
   const canManageMateria = user?.rol === 'admin'
@@ -41,7 +43,7 @@ export function MateriaDetailPage() {
       'attendance.manage',
       'dba.manage',
     ].some((permission) => permissions.has(permission));
-  const isStudent = !canManageMateria;
+  const isStudent = isStandardStudentProfile(user);
 
   // Students can read a subject, but never request its administrative roster.
   const studentMateriaQuery = useQuery({
@@ -96,6 +98,11 @@ export function MateriaDetailPage() {
     if (tabPath === '') return currentTab === '/' || currentTab === '';
     return currentTab.startsWith(`/${tabPath}`);
   };
+  const visibleTabs = ALL_TABS
+    .filter((tab) => !tab.staffOnly || !isStudent)
+    .filter((tab) => tab.permissions.some((permission) => permissions.has(permission)));
+  const tabHref = (tabPath: string) => tabPath ? `/app/materias/${id}/${tabPath}` : `/app/materias/${id}`;
+  const selectedTabHref = tabHref(visibleTabs.find((tab) => isActiveTab(tab.to))?.to ?? '');
 
   return (
     <div className="space-y-6">
@@ -135,13 +142,24 @@ export function MateriaDetailPage() {
       </motion.section>
 
       {/* Tab navigation */}
-      <nav aria-label="Secciones de la materia" className="teacher-scroll-region -mx-1 flex max-w-full snap-x gap-1 overflow-x-auto rounded-2xl border border-border bg-surface/90 p-1.5 shadow-sm">
-        {ALL_TABS.filter((tab) => tab.permissions.some((permission) => permissions.has(permission))).map((tab) => {
+      <div className="md:hidden">
+        <label htmlFor="materia-section" className="mb-1.5 block text-sm font-semibold text-fg">Sección de la materia</label>
+        <Select
+          id="materia-section"
+          aria-label="Sección de la materia"
+          value={selectedTabHref}
+          onChange={(event) => navigate(event.target.value)}
+        >
+          {visibleTabs.map((tab) => <option key={tab.to} value={tabHref(tab.to)}>{tab.label}</option>)}
+        </Select>
+      </div>
+      <nav aria-label="Secciones de la materia" className="teacher-scroll-region -mx-1 hidden max-w-full snap-x gap-1 overflow-x-auto rounded-2xl border border-border bg-surface/90 p-1.5 shadow-sm md:flex">
+        {visibleTabs.map((tab) => {
           const active = isActiveTab(tab.to);
           return (
             <Link
               key={tab.to}
-              to={tab.to ? `/app/materias/${id}/${tab.to}` : `/app/materias/${id}`}
+              to={tabHref(tab.to)}
               className={cn(
                 'focus-ring flex min-h-11 shrink-0 snap-start items-center gap-2 rounded-xl px-3.5 py-2.5 text-sm font-semibold transition-colors',
                 active

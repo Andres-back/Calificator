@@ -1,18 +1,18 @@
 {
   "counts": {
     "by_coverage": {
-      "covered": 465,
+      "covered": 471,
       "missing": 94
     },
     "by_kind": {
       "endpoint": 266,
       "frontend_call": 180,
-      "frontend_route": 31,
+      "frontend_route": 36,
       "integration": 7,
       "job": 18,
-      "table": 57
+      "table": 58
     },
-    "total": 559
+    "total": 565
   },
   "exceptions": [],
   "findings": [
@@ -356,7 +356,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "c42c7ed4c7d9925f5eb5d162748398c702160aa75d160f0e4603449fd5a01fa9",
+  "source_digest": "0f04be8f93f90bcb7b70b584c2470a6fb5a10bf0bd0e42b589a079bb86a5caa1",
   "surfaces": [
     {
       "actors": [
@@ -421,6 +421,12 @@
           "reference": "DELETE:/admin/roles/{role_id}",
           "status": "direct",
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "DELETE:/admin/roles/{role_id}",
+          "status": "domain",
+          "test_path": "frontend/src/lib/authorization.test.ts"
         }
       ]
     },
@@ -492,7 +498,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "DELETE:/calificaciones/modo-salon/{sesion_id}",
-      "source_line": 1061,
+      "source_line": 1068,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -715,6 +721,12 @@
           "reference": "DELETE:/evaluaciones/{evaluacion_id}",
           "status": "direct",
           "test_path": "frontend/src/modules/herramientas/api.lifecycle.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "DELETE:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/materias/MateriaDetailPage.test.tsx"
         },
         {
           "level": "unit",
@@ -982,6 +994,12 @@
           "reference": "DELETE:/presentaciones/{presentacion_id}",
           "status": "direct",
           "test_path": "frontend/src/lib/analytics.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "DELETE:/presentaciones/{presentacion_id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/presentaciones/PresentacionesPage.test.tsx"
         },
         {
           "level": "unit",
@@ -1505,6 +1523,12 @@
           "reference": "GET:/admin/authorization/audit",
           "status": "direct",
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/admin/authorization/audit",
+          "status": "domain",
+          "test_path": "frontend/src/lib/authorization.test.ts"
         }
       ]
     },
@@ -1565,6 +1589,12 @@
           "reference": "GET:/admin/authorization/modules",
           "status": "direct",
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/admin/authorization/modules",
+          "status": "domain",
+          "test_path": "frontend/src/lib/authorization.test.ts"
         }
       ]
     },
@@ -1693,6 +1723,12 @@
           "reference": "GET:/admin/roles",
           "status": "direct",
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/admin/roles",
+          "status": "domain",
+          "test_path": "frontend/src/lib/authorization.test.ts"
         }
       ]
     },
@@ -1759,6 +1795,12 @@
           "reference": "GET:/admin/roles/{role_id}",
           "status": "direct",
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/admin/roles/{role_id}",
+          "status": "domain",
+          "test_path": "frontend/src/lib/authorization.test.ts"
         }
       ]
     },
@@ -1867,6 +1909,12 @@
           "reference": "GET:/admin/users/{user_id}/authorization/explain/{permission_key:path}",
           "status": "domain",
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/admin/users/{user_id}/authorization/explain/{permission_key:path}",
+          "status": "domain",
+          "test_path": "frontend/src/lib/authorization.test.ts"
         }
       ]
     },
@@ -2754,6 +2802,12 @@
           "reference": "GET:/auth/me",
           "status": "direct",
           "test_path": "frontend/src/components/auth/RouteGuards.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/auth/me",
+          "status": "domain",
+          "test_path": "frontend/src/lib/authorization.test.ts"
         }
       ]
     },
@@ -2777,7 +2831,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "GET:/calificaciones/bandeja-docente",
-      "source_line": 1519,
+      "source_line": 1526,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -2853,7 +2907,7 @@
       "kind": "endpoint",
       "owner_spec": "007-entregas-estudiante",
       "signature": "GET:/calificaciones/entregas/{entrega_id}/evidencia",
-      "source_line": 1345,
+      "source_line": 1352,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -2917,7 +2971,7 @@
       "kind": "endpoint",
       "owner_spec": "007-entregas-estudiante",
       "signature": "GET:/calificaciones/entregas/{entrega_id}/evidencia/paginas/{numero}",
-      "source_line": 1390,
+      "source_line": 1397,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -2980,7 +3034,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "GET:/calificaciones/modo-salon/{sesion_id}",
-      "source_line": 873,
+      "source_line": 880,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -3043,7 +3097,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "GET:/calificaciones/modo-salon/{sesion_id}/estudiantes",
-      "source_line": 897,
+      "source_line": 904,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -3106,7 +3160,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "GET:/calificaciones/{calificacion_id}/desglose",
-      "source_line": 1640,
+      "source_line": 1647,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -3175,7 +3229,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "GET:/calificaciones/{calificacion_id}/desglose/historial",
-      "source_line": 1676,
+      "source_line": 1683,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -3244,7 +3298,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "GET:/calificaciones/{calificacion_id}/detalle",
-      "source_line": 1446,
+      "source_line": 1453,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -3306,7 +3360,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "GET:/calificaciones/{calificacion_id}/incidencias",
-      "source_line": 1593,
+      "source_line": 1600,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -3477,7 +3531,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "GET:/estudiantes/{estudiante_id}/boletin",
-      "source_line": 799,
+      "source_line": 806,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -3541,7 +3595,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "GET:/estudiantes/{estudiante_id}/resumen-academico",
-      "source_line": 778,
+      "source_line": 785,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -3738,6 +3792,12 @@
           "level": "unit",
           "reference": "GET:/evaluaciones/{evaluacion_id}",
           "status": "direct",
+          "test_path": "frontend/src/modules/materias/MateriaDetailPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
           "test_path": "frontend/src/modules/materias/MateriaEvaluaciones.test.tsx"
         },
         {
@@ -3814,7 +3874,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "GET:/evaluaciones/{evaluacion_id}/calificaciones",
-      "source_line": 761,
+      "source_line": 768,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -3877,7 +3937,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "GET:/evaluaciones/{evaluacion_id}/mi-desglose",
-      "source_line": 1701,
+      "source_line": 1708,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -3945,7 +4005,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "GET:/evaluaciones/{evaluacion_id}/mi-entrega",
-      "source_line": 1088,
+      "source_line": 1095,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -4008,7 +4068,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "GET:/evaluaciones/{evaluacion_id}/mi-solicitud-revision",
-      "source_line": 1532,
+      "source_line": 1539,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -4104,7 +4164,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "GET:/evaluaciones/{evaluacion_id}/revision",
-      "source_line": 737,
+      "source_line": 744,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -5225,6 +5285,12 @@
           "level": "unit",
           "reference": "GET:/materias",
           "status": "direct",
+          "test_path": "frontend/src/modules/presentaciones/PresentacionesPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias",
+          "status": "direct",
           "test_path": "frontend/src/modules/xali/XaliPage.test.tsx"
         }
       ]
@@ -5409,6 +5475,12 @@
           "reference": "GET:/materias/{materia_id}",
           "status": "direct",
           "test_path": "frontend/src/modules/materias/teacherFlowModel.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias/{materia_id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/presentaciones/PresentacionesPage.test.tsx"
         },
         {
           "level": "unit",
@@ -5879,6 +5951,12 @@
           "level": "unit",
           "reference": "GET:/presentaciones",
           "status": "direct",
+          "test_path": "frontend/src/modules/presentaciones/PresentacionesPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/presentaciones",
+          "status": "direct",
           "test_path": "frontend/src/modules/presentaciones/PresentationFileLink.test.tsx"
         }
       ]
@@ -5931,6 +6009,12 @@
           "reference": "GET:/presentaciones/assets/{asset_id}",
           "status": "direct",
           "test_path": "backend/tests/unit/test_presentaciones_router.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/presentaciones/assets/{asset_id}",
+          "status": "domain",
+          "test_path": "frontend/src/modules/presentaciones/PresentacionesPage.test.tsx"
         }
       ]
     },
@@ -6029,6 +6113,12 @@
           "level": "unit",
           "reference": "GET:/presentaciones/{presentacion_id}",
           "status": "direct",
+          "test_path": "frontend/src/modules/presentaciones/PresentacionesPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/presentaciones/{presentacion_id}",
+          "status": "direct",
           "test_path": "frontend/src/modules/presentaciones/PresentationFileLink.test.tsx"
         }
       ]
@@ -6087,6 +6177,12 @@
           "reference": "GET:/presentaciones/{presentacion_id}/archivo/{fmt}",
           "status": "domain",
           "test_path": "backend/tests/unit/test_presentaciones_router.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/presentaciones/{presentacion_id}/archivo/{fmt}",
+          "status": "domain",
+          "test_path": "frontend/src/modules/presentaciones/PresentacionesPage.test.tsx"
         }
       ]
     },
@@ -6150,6 +6246,12 @@
           "reference": "GET:/presentaciones/{presentacion_id}/estado",
           "status": "domain",
           "test_path": "backend/tests/unit/test_presentaciones_router.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/presentaciones/{presentacion_id}/estado",
+          "status": "domain",
+          "test_path": "frontend/src/modules/presentaciones/PresentacionesPage.test.tsx"
         }
       ]
     },
@@ -6213,6 +6315,12 @@
           "reference": "GET:/presentaciones/{presentacion_id}/preview",
           "status": "domain",
           "test_path": "backend/tests/unit/test_presentaciones_router.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/presentaciones/{presentacion_id}/preview",
+          "status": "domain",
+          "test_path": "frontend/src/modules/presentaciones/PresentacionesPage.test.tsx"
         }
       ]
     },
@@ -6270,6 +6378,12 @@
           "reference": "GET:/presentaciones/{presentacion_id}/preview/{slide_number}.png",
           "status": "domain",
           "test_path": "backend/tests/unit/test_presentaciones_router.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/presentaciones/{presentacion_id}/preview/{slide_number}.png",
+          "status": "domain",
+          "test_path": "frontend/src/modules/presentaciones/PresentacionesPage.test.tsx"
         }
       ]
     },
@@ -6727,6 +6841,12 @@
           "reference": "GET:/users/me/authorization",
           "status": "direct",
           "test_path": "frontend/e2e/teacher-ai-configuration.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/users/me/authorization",
+          "status": "domain",
+          "test_path": "frontend/src/lib/authorization.test.ts"
         }
       ]
     },
@@ -7108,6 +7228,12 @@
           "reference": "PATCH:/admin/roles/{role_id}",
           "status": "direct",
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/admin/roles/{role_id}",
+          "status": "domain",
+          "test_path": "frontend/src/lib/authorization.test.ts"
         }
       ]
     },
@@ -7215,7 +7341,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "PATCH:/calificaciones/modo-salon/{sesion_id}/estudiantes/{estudiante_id}",
-      "source_line": 943,
+      "source_line": 950,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -7277,7 +7403,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "PATCH:/calificaciones/{calificacion_id}/ajustar",
-      "source_line": 686,
+      "source_line": 693,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -7339,7 +7465,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "PATCH:/calificaciones/{calificacion_id}/confirmar",
-      "source_line": 669,
+      "source_line": 676,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -7401,7 +7527,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "PATCH:/calificaciones/{calificacion_id}/publicar",
-      "source_line": 1467,
+      "source_line": 1474,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -7463,7 +7589,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "PATCH:/calificaciones/{calificacion_id}/revision-manual",
-      "source_line": 703,
+      "source_line": 710,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -7691,6 +7817,12 @@
           "level": "unit",
           "reference": "PATCH:/evaluaciones/{evaluacion_id}",
           "status": "direct",
+          "test_path": "frontend/src/modules/materias/MateriaDetailPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
           "test_path": "frontend/src/modules/materias/MateriaEvaluaciones.test.tsx"
         },
         {
@@ -7733,7 +7865,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "PATCH:/evaluaciones/{evaluacion_id}/respuestas-liberadas",
-      "source_line": 1688,
+      "source_line": 1695,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -8042,7 +8174,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "PATCH:/incidencias/{incidencia_id}/resolver",
-      "source_line": 1609,
+      "source_line": 1616,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -8263,6 +8395,12 @@
           "reference": "PATCH:/materias/{materia_id}",
           "status": "direct",
           "test_path": "frontend/src/modules/materias/teacherFlowModel.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/materias/{materia_id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/presentaciones/PresentacionesPage.test.tsx"
         },
         {
           "level": "unit",
@@ -8767,6 +8905,12 @@
           "reference": "POST:/admin/roles",
           "status": "direct",
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/admin/roles",
+          "status": "domain",
+          "test_path": "frontend/src/lib/authorization.test.ts"
         }
       ]
     },
@@ -8827,6 +8971,12 @@
           "reference": "POST:/admin/roles/{role_id}/duplicate",
           "status": "domain",
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/admin/roles/{role_id}/duplicate",
+          "status": "domain",
+          "test_path": "frontend/src/lib/authorization.test.ts"
         }
       ]
     },
@@ -9104,6 +9254,12 @@
         {
           "level": "unit",
           "reference": "POST:/auth/initial-password",
+          "status": "domain",
+          "test_path": "frontend/src/lib/authorization.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/auth/initial-password",
           "status": "direct",
           "test_path": "frontend/src/modules/auth/InitialPasswordPage.test.tsx"
         }
@@ -9248,6 +9404,12 @@
           "reference": "POST:/auth/login",
           "status": "direct",
           "test_path": "frontend/e2e/teacher-ai-configuration.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/auth/login",
+          "status": "domain",
+          "test_path": "frontend/src/lib/authorization.test.ts"
         }
       ]
     },
@@ -9336,6 +9498,12 @@
           "reference": "POST:/auth/logout",
           "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/auth/logout",
+          "status": "domain",
+          "test_path": "frontend/src/lib/authorization.test.ts"
         }
       ]
     },
@@ -9424,6 +9592,12 @@
           "reference": "POST:/auth/password-recovery/request",
           "status": "direct",
           "test_path": "frontend/e2e/password-recovery.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/auth/password-recovery/request",
+          "status": "domain",
+          "test_path": "frontend/src/lib/authorization.test.ts"
         }
       ]
     },
@@ -9500,6 +9674,12 @@
           "reference": "POST:/auth/password-recovery/reset",
           "status": "domain",
           "test_path": "frontend/e2e/auth-navigation.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/auth/password-recovery/reset",
+          "status": "domain",
+          "test_path": "frontend/src/lib/authorization.test.ts"
         }
       ]
     },
@@ -9582,6 +9762,12 @@
           "reference": "POST:/auth/password-recovery/validate",
           "status": "direct",
           "test_path": "frontend/e2e/password-recovery.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/auth/password-recovery/validate",
+          "status": "domain",
+          "test_path": "frontend/src/lib/authorization.test.ts"
         }
       ]
     },
@@ -9724,6 +9910,12 @@
           "reference": "POST:/auth/refresh",
           "status": "direct",
           "test_path": "frontend/src/lib/api.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/auth/refresh",
+          "status": "domain",
+          "test_path": "frontend/src/lib/authorization.test.ts"
         }
       ]
     },
@@ -9812,6 +10004,12 @@
           "reference": "POST:/auth/register",
           "status": "domain",
           "test_path": "frontend/e2e/auth-navigation.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/auth/register",
+          "status": "domain",
+          "test_path": "frontend/src/lib/authorization.test.ts"
         }
       ]
     },
@@ -9903,7 +10101,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "POST:/calificaciones/lote",
-      "source_line": 365,
+      "source_line": 372,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -9977,7 +10175,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "POST:/calificaciones/lote/ajustar",
-      "source_line": 1506,
+      "source_line": 1513,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -10039,7 +10237,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "POST:/calificaciones/lote/asincrono",
-      "source_line": 471,
+      "source_line": 478,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -10107,7 +10305,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "POST:/calificaciones/lote/confirmar",
-      "source_line": 1496,
+      "source_line": 1503,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -10169,7 +10367,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "POST:/calificaciones/lote/publicar",
-      "source_line": 1486,
+      "source_line": 1493,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -10237,7 +10435,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "POST:/calificaciones/modo-salon/iniciar",
-      "source_line": 832,
+      "source_line": 839,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -10299,7 +10497,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "POST:/calificaciones/modo-salon/{sesion_id}/foto",
-      "source_line": 986,
+      "source_line": 993,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -10361,7 +10559,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "POST:/calificaciones/{calificacion_id}/incidencias",
-      "source_line": 1572,
+      "source_line": 1579,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -10485,7 +10683,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "POST:/calificaciones/{calificacion_id}/solicitar-reemplazo",
-      "source_line": 320,
+      "source_line": 327,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -10817,6 +11015,12 @@
           "level": "unit",
           "reference": "POST:/evaluaciones",
           "status": "direct",
+          "test_path": "frontend/src/modules/materias/MateriaDetailPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/evaluaciones",
+          "status": "direct",
           "test_path": "frontend/src/modules/materias/MateriaEvaluaciones.test.tsx"
         },
         {
@@ -11099,7 +11303,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "POST:/evaluaciones/{evaluacion_id}/calificaciones/manual",
-      "source_line": 720,
+      "source_line": 727,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -11237,7 +11441,7 @@
       "kind": "endpoint",
       "owner_spec": "007-entregas-estudiante",
       "signature": "POST:/evaluaciones/{evaluacion_id}/entregas",
-      "source_line": 1116,
+      "source_line": 1123,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -11299,7 +11503,7 @@
       "kind": "endpoint",
       "owner_spec": "007-entregas-estudiante",
       "signature": "POST:/evaluaciones/{evaluacion_id}/entregas/archivo",
-      "source_line": 1211,
+      "source_line": 1218,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -11438,7 +11642,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "POST:/evaluaciones/{evaluacion_id}/solicitud-revision",
-      "source_line": 1549,
+      "source_line": 1556,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -12874,6 +13078,12 @@
           "level": "unit",
           "reference": "POST:/materias",
           "status": "direct",
+          "test_path": "frontend/src/modules/presentaciones/PresentacionesPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/materias",
+          "status": "direct",
           "test_path": "frontend/src/modules/xali/XaliPage.test.tsx"
         }
       ]
@@ -13196,6 +13406,12 @@
           "level": "unit",
           "reference": "POST:/presentaciones",
           "status": "direct",
+          "test_path": "frontend/src/modules/presentaciones/PresentacionesPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/presentaciones",
+          "status": "direct",
           "test_path": "frontend/src/modules/presentaciones/PresentationFileLink.test.tsx"
         }
       ]
@@ -13253,6 +13469,12 @@
           "reference": "POST:/presentaciones/{presentacion_id}/exportar",
           "status": "domain",
           "test_path": "backend/tests/unit/test_presentaciones_router.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/presentaciones/{presentacion_id}/exportar",
+          "status": "domain",
+          "test_path": "frontend/src/modules/presentaciones/PresentacionesPage.test.tsx"
         }
       ]
     },
@@ -13860,7 +14082,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "PUT:/calificaciones/{calificacion_id}/desglose",
-      "source_line": 1655,
+      "source_line": 1662,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -14371,6 +14593,12 @@
           "level": "unit",
           "reference": "/",
           "status": "direct",
+          "test_path": "backend/tests/unit/test_legal_registration.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
           "test_path": "backend/tests/unit/test_llm_router_output_budget.py"
         },
         {
@@ -14749,6 +14977,12 @@
           "level": "unit",
           "reference": "/",
           "status": "direct",
+          "test_path": "frontend/src/lib/authorization.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
           "test_path": "frontend/src/modules/admin/AdminAIConfigPage.test.tsx"
         },
         {
@@ -14780,6 +15014,12 @@
           "reference": "/",
           "status": "direct",
           "test_path": "frontend/src/modules/auth/LandingPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "frontend/src/modules/auth/LoginPage.test.tsx"
         },
         {
           "level": "unit",
@@ -15013,6 +15253,12 @@
           "level": "unit",
           "reference": "/",
           "status": "direct",
+          "test_path": "frontend/src/modules/legal/LegalPages.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
           "test_path": "frontend/src/modules/materias/ExistingStudentsDialog.test.tsx"
         },
         {
@@ -15097,6 +15343,12 @@
           "level": "unit",
           "reference": "/",
           "status": "direct",
+          "test_path": "frontend/src/modules/presentaciones/PresentacionesPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
           "test_path": "frontend/src/modules/presentaciones/PresentationFileLink.test.tsx"
         },
         {
@@ -15142,7 +15394,7 @@
       "kind": "frontend_route",
       "owner_spec": "002-arquitectura-roles-seguridad",
       "signature": "/app",
-      "source_line": 16,
+      "source_line": 21,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -15378,6 +15630,12 @@
           "level": "unit",
           "reference": "/app",
           "status": "direct",
+          "test_path": "frontend/src/modules/materias/MateriaEvaluaciones.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/app",
+          "status": "direct",
           "test_path": "frontend/src/modules/materias/MateriaVistaGeneral.test.tsx"
         },
         {
@@ -15417,7 +15675,7 @@
       "kind": "frontend_route",
       "owner_spec": "002-arquitectura-roles-seguridad",
       "signature": "/app/403",
-      "source_line": 17,
+      "source_line": 22,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -15536,7 +15794,7 @@
       "kind": "frontend_route",
       "owner_spec": "002-arquitectura-roles-seguridad",
       "signature": "/app/404",
-      "source_line": 18,
+      "source_line": 23,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -15649,7 +15907,7 @@
       "kind": "frontend_route",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "/app/admin/configuracion-ia",
-      "source_line": 58,
+      "source_line": 63,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -15786,7 +16044,7 @@
       "kind": "frontend_route",
       "owner_spec": "002-arquitectura-roles-seguridad",
       "signature": "/app/admin/correo",
-      "source_line": 61,
+      "source_line": 66,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -15899,7 +16157,7 @@
       "kind": "frontend_route",
       "owner_spec": "029-roles-permisos-modulares",
       "signature": "/app/admin/roles",
-      "source_line": 60,
+      "source_line": 65,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -16018,7 +16276,7 @@
       "kind": "frontend_route",
       "owner_spec": "029-roles-permisos-modulares",
       "signature": "/app/admin/usuarios",
-      "source_line": 59,
+      "source_line": 64,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -16144,7 +16402,7 @@
       "kind": "frontend_route",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "/app/analytics",
-      "source_line": 63,
+      "source_line": 68,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -16263,7 +16521,7 @@
       "kind": "frontend_route",
       "owner_spec": "008-calificaciones",
       "signature": "/app/calificaciones",
-      "source_line": 42,
+      "source_line": 47,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -16379,6 +16637,12 @@
           "level": "unit",
           "reference": "/app/calificaciones",
           "status": "direct",
+          "test_path": "frontend/src/components/auth/RouteGuards.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/calificaciones",
+          "status": "direct",
           "test_path": "frontend/src/components/seo/RouteMetadata.test.tsx"
         },
         {
@@ -16430,7 +16694,7 @@
       "kind": "frontend_route",
       "owner_spec": "008-calificaciones",
       "signature": "/app/calificaciones/boletin",
-      "source_line": 41,
+      "source_line": 46,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -16555,7 +16819,7 @@
       "kind": "frontend_route",
       "owner_spec": "002-arquitectura-roles-seguridad",
       "signature": "/app/cambiar-clave-inicial",
-      "source_line": 13,
+      "source_line": 18,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -16668,7 +16932,7 @@
       "kind": "frontend_route",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "/app/configuracion-ia",
-      "source_line": 62,
+      "source_line": 67,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -16787,7 +17051,7 @@
       "kind": "frontend_route",
       "owner_spec": "005-evaluaciones",
       "signature": "/app/evaluaciones",
-      "source_line": 37,
+      "source_line": 42,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -16926,6 +17190,12 @@
         {
           "level": "unit",
           "reference": "/app/evaluaciones",
+          "status": "direct",
+          "test_path": "frontend/src/modules/materias/MateriaEvaluaciones.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/evaluaciones",
           "status": "domain",
           "test_path": "frontend/src/modules/profesor_ai/TeacherAIConfigPage.test.tsx"
         }
@@ -16948,7 +17218,7 @@
       "kind": "frontend_route",
       "owner_spec": "007-entregas-estudiante",
       "signature": "/app/evaluaciones/{id}/resolver",
-      "source_line": 38,
+      "source_line": 43,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -17062,7 +17332,7 @@
       "kind": "frontend_route",
       "owner_spec": "006-recursos-actividades",
       "signature": "/app/herramientas",
-      "source_line": 48,
+      "source_line": 53,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -17194,7 +17464,7 @@
       "kind": "frontend_route",
       "owner_spec": "006-recursos-actividades",
       "signature": "/app/herramientas/{id}",
-      "source_line": 51,
+      "source_line": 56,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -17325,7 +17595,7 @@
       "kind": "frontend_route",
       "owner_spec": "003-usuarios-materias-matriculas",
       "signature": "/app/materias",
-      "source_line": 24,
+      "source_line": 29,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -17510,7 +17780,7 @@
       "kind": "frontend_route",
       "owner_spec": "003-usuarios-materias-matriculas",
       "signature": "/app/materias/{id}",
-      "source_line": 28,
+      "source_line": 33,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -17696,7 +17966,7 @@
       "kind": "frontend_route",
       "owner_spec": "004-dba-asistencia-curriculo",
       "signature": "/app/materias/{id}/asistencia",
-      "source_line": 32,
+      "source_line": 37,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -17809,7 +18079,7 @@
       "kind": "frontend_route",
       "owner_spec": "008-calificaciones",
       "signature": "/app/materias/{id}/boletin",
-      "source_line": 33,
+      "source_line": 38,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -17923,7 +18193,7 @@
       "kind": "frontend_route",
       "owner_spec": "008-calificaciones",
       "signature": "/app/materias/{id}/calificar",
-      "source_line": 31,
+      "source_line": 36,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -18037,7 +18307,7 @@
       "kind": "frontend_route",
       "owner_spec": "004-dba-asistencia-curriculo",
       "signature": "/app/materias/{id}/dba",
-      "source_line": 34,
+      "source_line": 39,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -18150,7 +18420,7 @@
       "kind": "frontend_route",
       "owner_spec": "005-evaluaciones",
       "signature": "/app/materias/{id}/evaluaciones",
-      "source_line": 29,
+      "source_line": 34,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -18263,7 +18533,7 @@
       "kind": "frontend_route",
       "owner_spec": "006-recursos-actividades",
       "signature": "/app/materias/{id}/recursos",
-      "source_line": 30,
+      "source_line": 35,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -18377,7 +18647,7 @@
       "kind": "frontend_route",
       "owner_spec": "010-presentaciones-imagenes",
       "signature": "/app/presentaciones",
-      "source_line": 56,
+      "source_line": 61,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -18514,7 +18784,7 @@
       "kind": "frontend_route",
       "owner_spec": "006-recursos-actividades",
       "signature": "/app/recursos/{id}",
-      "source_line": 52,
+      "source_line": 57,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -18640,7 +18910,7 @@
       "kind": "frontend_route",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "/app/reportes",
-      "source_line": 57,
+      "source_line": 62,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -18765,7 +19035,7 @@
       "kind": "frontend_route",
       "owner_spec": "009-xali-rag-refuerzos",
       "signature": "/app/xali",
-      "source_line": 55,
+      "source_line": 60,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -18874,6 +19144,228 @@
         {
           "level": "unit",
           "reference": "/app/xali",
+          "status": "domain",
+          "test_path": "frontend/src/modules/profesor_ai/TeacherAIConfigPage.test.tsx"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "public"
+      ],
+      "authorization": [],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
+        "registered": true,
+        "view": "@/modules/legal/LegalPages"
+      },
+      "id": "frontend:/aviso-privacidad",
+      "kind": "frontend_route",
+      "owner_spec": "067-privacidad-legal",
+      "signature": "/aviso-privacidad",
+      "source_line": 16,
+      "source_path": "frontend/src/config/routes.ts",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "/aviso-privacidad",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_admin_mail_config.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/aviso-privacidad",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_api.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/aviso-privacidad",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_concurrency.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/aviso-privacidad",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_migration.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/aviso-privacidad",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_secret_safety.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/aviso-privacidad",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_job_configuration_snapshot.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/aviso-privacidad",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_ai_configuration_resolver.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/aviso-privacidad",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_mail_configuration.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/aviso-privacidad",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_nginx_security_config.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/aviso-privacidad",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_production_config.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/aviso-privacidad",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_worker_ai_config.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "/aviso-privacidad",
+          "status": "domain",
+          "test_path": "frontend/e2e/accessibility/teacher-ai-configuration.a11y.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/aviso-privacidad",
+          "status": "domain",
+          "test_path": "frontend/e2e/teacher-ai-configuration.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "/aviso-privacidad",
+          "status": "domain",
+          "test_path": "frontend/src/modules/admin/AdminAIConfigPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/aviso-privacidad",
+          "status": "domain",
+          "test_path": "frontend/src/modules/profesor_ai/TeacherAIConfigPage.test.tsx"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "public"
+      ],
+      "authorization": [],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
+        "registered": true,
+        "view": "@/modules/legal/LegalPages"
+      },
+      "id": "frontend:/cookies",
+      "kind": "frontend_route",
+      "owner_spec": "067-privacidad-legal",
+      "signature": "/cookies",
+      "source_line": 15,
+      "source_path": "frontend/src/config/routes.ts",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "/cookies",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_admin_mail_config.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/cookies",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_api.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/cookies",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_concurrency.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/cookies",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_migration.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/cookies",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_secret_safety.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/cookies",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_job_configuration_snapshot.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/cookies",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_ai_configuration_resolver.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/cookies",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_mail_configuration.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/cookies",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_nginx_security_config.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/cookies",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_production_config.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/cookies",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_worker_ai_config.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "/cookies",
+          "status": "domain",
+          "test_path": "frontend/e2e/accessibility/teacher-ai-configuration.a11y.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/cookies",
+          "status": "domain",
+          "test_path": "frontend/e2e/teacher-ai-configuration.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "/cookies",
+          "status": "domain",
+          "test_path": "frontend/src/modules/admin/AdminAIConfigPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/cookies",
           "status": "domain",
           "test_path": "frontend/src/modules/profesor_ai/TeacherAIConfigPage.test.tsx"
         }
@@ -19075,6 +19567,240 @@
         {
           "level": "unit",
           "reference": "/login",
+          "status": "direct",
+          "test_path": "frontend/src/modules/auth/LoginPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/login",
+          "status": "domain",
+          "test_path": "frontend/src/modules/profesor_ai/TeacherAIConfigPage.test.tsx"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "public"
+      ],
+      "authorization": [],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
+        "registered": true,
+        "view": "@/modules/legal/LegalPages"
+      },
+      "id": "frontend:/piloto",
+      "kind": "frontend_route",
+      "owner_spec": "067-privacidad-legal",
+      "signature": "/piloto",
+      "source_line": 17,
+      "source_path": "frontend/src/config/routes.ts",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "/piloto",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_admin_mail_config.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/piloto",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_api.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/piloto",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_concurrency.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/piloto",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_migration.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/piloto",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_secret_safety.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/piloto",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_job_configuration_snapshot.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/piloto",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_ai_configuration_resolver.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/piloto",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_mail_configuration.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/piloto",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_nginx_security_config.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/piloto",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_production_config.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/piloto",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_worker_ai_config.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "/piloto",
+          "status": "domain",
+          "test_path": "frontend/e2e/accessibility/teacher-ai-configuration.a11y.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/piloto",
+          "status": "domain",
+          "test_path": "frontend/e2e/teacher-ai-configuration.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "/piloto",
+          "status": "domain",
+          "test_path": "frontend/src/modules/admin/AdminAIConfigPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/piloto",
+          "status": "domain",
+          "test_path": "frontend/src/modules/profesor_ai/TeacherAIConfigPage.test.tsx"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "public"
+      ],
+      "authorization": [],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
+        "registered": true,
+        "view": "@/modules/legal/LegalPages"
+      },
+      "id": "frontend:/privacidad",
+      "kind": "frontend_route",
+      "owner_spec": "067-privacidad-legal",
+      "signature": "/privacidad",
+      "source_line": 13,
+      "source_path": "frontend/src/config/routes.ts",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "/privacidad",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_admin_mail_config.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/privacidad",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_api.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/privacidad",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_concurrency.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/privacidad",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_migration.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/privacidad",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_secret_safety.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/privacidad",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_job_configuration_snapshot.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/privacidad",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_ai_configuration_resolver.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/privacidad",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_mail_configuration.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/privacidad",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_nginx_security_config.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/privacidad",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_production_config.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/privacidad",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_worker_ai_config.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "/privacidad",
+          "status": "domain",
+          "test_path": "frontend/e2e/accessibility/teacher-ai-configuration.a11y.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/privacidad",
+          "status": "domain",
+          "test_path": "frontend/e2e/teacher-ai-configuration.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "/privacidad",
+          "status": "domain",
+          "test_path": "frontend/src/modules/admin/AdminAIConfigPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/privacidad",
+          "status": "direct",
+          "test_path": "frontend/src/modules/legal/LegalPages.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/privacidad",
           "status": "domain",
           "test_path": "frontend/src/modules/profesor_ai/TeacherAIConfigPage.test.tsx"
         }
@@ -19198,6 +19924,117 @@
         {
           "level": "unit",
           "reference": "/registro",
+          "status": "domain",
+          "test_path": "frontend/src/modules/profesor_ai/TeacherAIConfigPage.test.tsx"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "public"
+      ],
+      "authorization": [],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
+        "registered": true,
+        "view": "@/modules/legal/LegalPages"
+      },
+      "id": "frontend:/terminos",
+      "kind": "frontend_route",
+      "owner_spec": "067-privacidad-legal",
+      "signature": "/terminos",
+      "source_line": 14,
+      "source_path": "frontend/src/config/routes.ts",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "/terminos",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_admin_mail_config.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/terminos",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_api.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/terminos",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_concurrency.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/terminos",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_migration.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/terminos",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_secret_safety.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/terminos",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_job_configuration_snapshot.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/terminos",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_ai_configuration_resolver.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/terminos",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_mail_configuration.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/terminos",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_nginx_security_config.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/terminos",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_production_config.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/terminos",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_worker_ai_config.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "/terminos",
+          "status": "domain",
+          "test_path": "frontend/e2e/accessibility/teacher-ai-configuration.a11y.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/terminos",
+          "status": "domain",
+          "test_path": "frontend/e2e/teacher-ai-configuration.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "/terminos",
+          "status": "domain",
+          "test_path": "frontend/src/modules/admin/AdminAIConfigPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/terminos",
           "status": "domain",
           "test_path": "frontend/src/modules/profesor_ai/TeacherAIConfigPage.test.tsx"
         }
@@ -19649,6 +20486,12 @@
           "level": "unit",
           "reference": "DELETE:/evaluaciones/{id}",
           "status": "direct",
+          "test_path": "frontend/src/modules/materias/MateriaDetailPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "DELETE:/evaluaciones/{id}",
+          "status": "direct",
           "test_path": "frontend/src/modules/materias/MateriaEvaluaciones.test.tsx"
         },
         {
@@ -19920,6 +20763,12 @@
           "reference": "DELETE:/presentaciones/{id}",
           "status": "direct",
           "test_path": "frontend/src/lib/analytics.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "DELETE:/presentaciones/{id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/presentaciones/PresentacionesPage.test.tsx"
         },
         {
           "level": "unit",
@@ -22934,6 +23783,12 @@
           "level": "unit",
           "reference": "GET:/evaluaciones/{id}",
           "status": "direct",
+          "test_path": "frontend/src/modules/materias/MateriaDetailPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/{id}",
+          "status": "direct",
           "test_path": "frontend/src/modules/materias/MateriaEvaluaciones.test.tsx"
         },
         {
@@ -23812,6 +24667,12 @@
           "level": "unit",
           "reference": "GET:/materias/{id}",
           "status": "direct",
+          "test_path": "frontend/src/modules/presentaciones/PresentacionesPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias/{id}",
+          "status": "direct",
           "test_path": "frontend/src/modules/xali/XaliPage.test.tsx"
         }
       ]
@@ -24268,6 +25129,12 @@
           "level": "unit",
           "reference": "GET:/materias",
           "status": "direct",
+          "test_path": "frontend/src/modules/presentaciones/PresentacionesPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias",
+          "status": "direct",
           "test_path": "frontend/src/modules/xali/XaliPage.test.tsx"
         }
       ]
@@ -24324,6 +25191,12 @@
           "reference": "GET:/presentaciones/{id}/estado",
           "status": "domain",
           "test_path": "backend/tests/unit/test_presentaciones_router.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/presentaciones/{id}/estado",
+          "status": "domain",
+          "test_path": "frontend/src/modules/presentaciones/PresentacionesPage.test.tsx"
         }
       ]
     },
@@ -24379,6 +25252,12 @@
           "reference": "GET:/presentaciones/{id}/preview",
           "status": "domain",
           "test_path": "backend/tests/unit/test_presentaciones_router.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/presentaciones/{id}/preview",
+          "status": "domain",
+          "test_path": "frontend/src/modules/presentaciones/PresentacionesPage.test.tsx"
         }
       ]
     },
@@ -24470,6 +25349,12 @@
           "reference": "GET:/presentaciones",
           "status": "direct",
           "test_path": "frontend/src/lib/analytics.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/presentaciones",
+          "status": "direct",
+          "test_path": "frontend/src/modules/presentaciones/PresentacionesPage.test.tsx"
         },
         {
           "level": "unit",
@@ -25898,6 +26783,12 @@
           "level": "unit",
           "reference": "PATCH:/evaluaciones/{id}",
           "status": "direct",
+          "test_path": "frontend/src/modules/materias/MateriaDetailPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/evaluaciones/{id}",
+          "status": "direct",
           "test_path": "frontend/src/modules/materias/MateriaEvaluaciones.test.tsx"
         },
         {
@@ -26332,6 +27223,12 @@
           "reference": "PATCH:/materias/{id}",
           "status": "direct",
           "test_path": "frontend/src/modules/materias/teacherFlowModel.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/materias/{id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/presentaciones/PresentacionesPage.test.tsx"
         },
         {
           "level": "unit",
@@ -27540,6 +28437,12 @@
         {
           "level": "unit",
           "reference": "POST:/auth/initial-password",
+          "status": "domain",
+          "test_path": "frontend/src/lib/authorization.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/auth/initial-password",
           "status": "direct",
           "test_path": "frontend/src/modules/auth/InitialPasswordPage.test.tsx"
         }
@@ -27764,6 +28667,12 @@
           "reference": "POST:/auth/password-recovery/request",
           "status": "direct",
           "test_path": "frontend/e2e/password-recovery.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/auth/password-recovery/request",
+          "status": "domain",
+          "test_path": "frontend/src/lib/authorization.test.ts"
         }
       ]
     },
@@ -27840,6 +28749,12 @@
           "reference": "POST:/auth/password-recovery/reset",
           "status": "domain",
           "test_path": "frontend/e2e/auth-navigation.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/auth/password-recovery/reset",
+          "status": "domain",
+          "test_path": "frontend/src/lib/authorization.test.ts"
         }
       ]
     },
@@ -28981,6 +29896,12 @@
           "level": "unit",
           "reference": "POST:/evaluaciones",
           "status": "direct",
+          "test_path": "frontend/src/modules/materias/MateriaDetailPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/evaluaciones",
+          "status": "direct",
           "test_path": "frontend/src/modules/materias/MateriaEvaluaciones.test.tsx"
         },
         {
@@ -29762,6 +30683,12 @@
           "level": "unit",
           "reference": "POST:/materias",
           "status": "direct",
+          "test_path": "frontend/src/modules/presentaciones/PresentacionesPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/materias",
+          "status": "direct",
           "test_path": "frontend/src/modules/xali/XaliPage.test.tsx"
         }
       ]
@@ -29858,6 +30785,12 @@
           "reference": "POST:/presentaciones/{id}/exportar",
           "status": "domain",
           "test_path": "backend/tests/unit/test_presentaciones_router.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/presentaciones/{id}/exportar",
+          "status": "domain",
+          "test_path": "frontend/src/modules/presentaciones/PresentacionesPage.test.tsx"
         }
       ]
     },
@@ -29949,6 +30882,12 @@
           "reference": "POST:/presentaciones",
           "status": "direct",
           "test_path": "frontend/src/lib/analytics.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/presentaciones",
+          "status": "direct",
+          "test_path": "frontend/src/modules/presentaciones/PresentacionesPage.test.tsx"
         },
         {
           "level": "unit",
@@ -32943,6 +33882,12 @@
           "reference": "audit_events",
           "status": "domain",
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "audit_events",
+          "status": "domain",
+          "test_path": "frontend/src/lib/authorization.test.ts"
         }
       ]
     },
@@ -33014,6 +33959,12 @@
           "reference": "authorization_permissions",
           "status": "domain",
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "authorization_permissions",
+          "status": "domain",
+          "test_path": "frontend/src/lib/authorization.test.ts"
         }
       ]
     },
@@ -33088,6 +34039,12 @@
           "reference": "authorization_role_permissions",
           "status": "domain",
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "authorization_role_permissions",
+          "status": "domain",
+          "test_path": "frontend/src/lib/authorization.test.ts"
         }
       ]
     },
@@ -33161,6 +34118,12 @@
           "reference": "authorization_roles",
           "status": "domain",
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "authorization_roles",
+          "status": "domain",
+          "test_path": "frontend/src/lib/authorization.test.ts"
         }
       ]
     },
@@ -33236,6 +34199,12 @@
           "reference": "authorization_user_roles",
           "status": "domain",
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "authorization_user_roles",
+          "status": "domain",
+          "test_path": "frontend/src/lib/authorization.test.ts"
         }
       ]
     },
@@ -33938,6 +34907,12 @@
           "level": "unit",
           "reference": "calificaciones",
           "status": "direct",
+          "test_path": "frontend/src/components/auth/RouteGuards.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "calificaciones",
+          "status": "direct",
           "test_path": "frontend/src/components/seo/RouteMetadata.test.tsx"
         },
         {
@@ -34297,6 +35272,12 @@
           "reference": "entregas",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/CalificacionesWorkspace.mobile.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "entregas",
+          "status": "direct",
+          "test_path": "frontend/src/modules/dashboard/DashboardPage.test.tsx"
         },
         {
           "level": "unit",
@@ -34718,6 +35699,12 @@
           "level": "unit",
           "reference": "evaluaciones",
           "status": "direct",
+          "test_path": "frontend/src/modules/materias/MateriaDetailPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "evaluaciones",
+          "status": "direct",
           "test_path": "frontend/src/modules/materias/MateriaEvaluaciones.test.tsx"
         },
         {
@@ -35007,6 +35994,59 @@
       "coverage": "covered",
       "details": {
         "active": true,
+        "class": "LegalAcceptance",
+        "constraints": [],
+        "enum_refs": [],
+        "historical_only": false,
+        "identity": [
+          "id"
+        ],
+        "indexes": [
+          "user_id"
+        ],
+        "migrations": [
+          "backend/alembic/versions/202609240001_legal_acceptances.py"
+        ],
+        "relationships": [
+          "users.id"
+        ],
+        "unique": [
+          "document_type",
+          "document_version",
+          "user_id"
+        ]
+      },
+      "id": "table:legal_acceptances",
+      "kind": "table",
+      "owner_spec": "067-privacidad-legal",
+      "signature": "legal_acceptances",
+      "source_line": 12,
+      "source_path": "backend/app/modules/legal/models.py",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "legal_acceptances",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_legal_registration.py"
+        },
+        {
+          "level": "unit",
+          "reference": "legal_acceptances",
+          "status": "domain",
+          "test_path": "frontend/src/modules/legal/LegalPages.test.tsx"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "system"
+      ],
+      "authorization": [],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
+        "active": true,
         "class": "MailGlobalConfig",
         "constraints": [
           "id = 1"
@@ -35086,6 +36126,12 @@
           "reference": "mail_global_config",
           "status": "domain",
           "test_path": "frontend/e2e/auth-navigation.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "mail_global_config",
+          "status": "domain",
+          "test_path": "frontend/src/lib/authorization.test.ts"
         }
       ]
     },
@@ -35416,6 +36462,12 @@
           "level": "unit",
           "reference": "materias",
           "status": "direct",
+          "test_path": "frontend/src/modules/presentaciones/PresentacionesPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "materias",
+          "status": "direct",
           "test_path": "frontend/src/modules/xali/XaliPage.test.tsx"
         }
       ]
@@ -35741,6 +36793,12 @@
           "reference": "password_reset_requests",
           "status": "domain",
           "test_path": "frontend/e2e/auth-navigation.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "password_reset_requests",
+          "status": "domain",
+          "test_path": "frontend/src/lib/authorization.test.ts"
         }
       ]
     },
@@ -35904,6 +36962,12 @@
           "reference": "presentaciones",
           "status": "direct",
           "test_path": "frontend/src/lib/analytics.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "presentaciones",
+          "status": "direct",
+          "test_path": "frontend/src/modules/presentaciones/PresentacionesPage.test.tsx"
         },
         {
           "level": "unit",
@@ -36434,6 +37498,12 @@
           "reference": "users",
           "status": "direct",
           "test_path": "backend/tests/unit/test_calificaciones_resumen_academico.py"
+        },
+        {
+          "level": "unit",
+          "reference": "users",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_legal_registration.py"
         },
         {
           "level": "unit",

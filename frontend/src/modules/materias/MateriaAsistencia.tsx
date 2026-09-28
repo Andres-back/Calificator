@@ -473,7 +473,10 @@ export function MateriaAsistencia() {
             })}
           </div>
 
-          <Card className="sticky bottom-4 z-10 border-brand-300 bg-surface/95 p-4 shadow-xl backdrop-blur dark:border-brand-500/40 sm:p-5">
+          <Card
+            aria-label="Resumen y guardado de asistencia"
+            className="relative border-brand-300 bg-surface p-4 shadow-lg dark:border-brand-500/40 sm:p-5 lg:sticky lg:bottom-4 lg:z-10 lg:bg-surface/95 lg:shadow-xl lg:backdrop-blur"
+          >
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-5" aria-live="polite">
               <SummaryItem
                 label="Presentes"

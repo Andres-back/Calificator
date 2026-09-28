@@ -36,6 +36,9 @@ def prepare_orientation_variants(
             if max(normalized.size) > max_side:
                 normalized.thumbnail((max_side, max_side), Image.Resampling.LANCZOS)
             normalized = ImageOps.autocontrast(normalized, cutoff=0.5)
+            # El grafito tenue suele sobrevivir al autocontraste, pero puede perderse
+            # al comprimir. Un refuerzo moderado conserva color y oscurece esos trazos.
+            normalized = ImageEnhance.Contrast(normalized).enhance(1.18)
             normalized = ImageEnhance.Sharpness(normalized).enhance(1.12)
     except (UnidentifiedImageError, OSError, ValueError):
         return [PreparedImage(content, mime, 0)]

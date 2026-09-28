@@ -14,6 +14,7 @@ const mocks = vi.hoisted(() => ({
   close: vi.fn(),
   activate: vi.fn(),
   pause: vi.fn(),
+  remove: vi.fn(),
   context: {
     materia: null as MateriaConEstudiantes | null,
     canManageMateria: true,
@@ -28,6 +29,7 @@ vi.mock('@/modules/evaluaciones/api', () => ({
   cerrarEvaluacion: mocks.close,
   activarRecepcionEvaluacion: mocks.activate,
   pausarRecepcionEvaluacion: mocks.pause,
+  deleteEvaluacion: mocks.remove,
 }));
 vi.mock('@/modules/evaluaciones/components/GenerationWizard', () => ({
   GenerationWizard: ({
@@ -134,6 +136,35 @@ beforeEach(() => {
 });
 
 describe('MateriaEvaluaciones teacher creation flow', () => {
+  it('shows only learner actions with the real shared read permissions', async () => {
+    mocks.context.canManageMateria = false;
+    mocks.context.isStudent = true;
+    mocks.list.mockResolvedValue([{
+      ...evaluation,
+      estado: 'publicada',
+      recepcion_habilitada: true,
+    }]);
+    useAuth.setState({
+      user: {
+        id: 'estudiante-1',
+        nombre: 'Estudiante',
+        email: 'estudiante@example.test',
+        rol: 'estudiante',
+        estado: 'activo',
+        permissions: ['evaluations.read', 'evaluations.submit', 'grading.read'],
+      },
+      status: 'authenticated',
+    });
+
+    renderPage();
+
+    expect(await screen.findByText('Evaluación de ciencias')).toBeInTheDocument();
+    expect(screen.queryByText('Preparar una evaluación')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Editar|Publicar|Cerrar entregas/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /Calificar y revisar/i })).not.toBeInTheDocument();
+    expect(screen.getByRole('link').getAttribute('href')).toBe('/app/evaluaciones/evaluation-1/resolver');
+  });
+
   it('offers the guided assistant as the recommended path and fixes the subject', async () => {
     const user = userEvent.setup();
     renderPage();

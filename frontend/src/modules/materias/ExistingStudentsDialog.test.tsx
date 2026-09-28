@@ -54,6 +54,7 @@ describe('ExistingStudentsDialog bulk selection', () => {
 
     await user.click(within(dialog).getByRole('button', { name: /Desmarcar todos los estudiantes visibles/i }));
     checkboxes.forEach((checkbox) => expect(checkbox).not.toBeChecked());
+    expect(mocks.enrollExistingStudents).not.toHaveBeenCalled();
   });
 
   it('changes only visible results and preserves hidden selections', async () => {
@@ -70,5 +71,13 @@ describe('ExistingStudentsDialog bulk selection', () => {
     expect(within(dialog).getByLabelText(/Beatriz Ruiz/i)).toBeChecked();
     expect(within(dialog).getByLabelText(/Carlos Díaz/i)).not.toBeChecked();
     expect(within(dialog).getByText('2 seleccionados')).toBeInTheDocument();
+
+    await user.type(within(dialog).getByPlaceholderText(/Buscar por nombre o usuario/i), 'Beatriz');
+    await user.click(within(dialog).getByRole('button', { name: /Desmarcar todos los estudiantes visibles/i }));
+    await user.clear(within(dialog).getByPlaceholderText(/Buscar por nombre o usuario/i));
+    expect(within(dialog).getByLabelText(/Ana Pérez/i)).toBeChecked();
+    expect(within(dialog).getByLabelText(/Beatriz Ruiz/i)).not.toBeChecked();
+    expect(within(dialog).getByText('1 seleccionado')).toBeInTheDocument();
+    expect(mocks.enrollExistingStudents).not.toHaveBeenCalled();
   });
 });

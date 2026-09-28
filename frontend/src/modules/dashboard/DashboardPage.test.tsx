@@ -88,13 +88,16 @@ describe('DashboardPage docente', () => {
     );
   });
 
-  it('prioritizes a clear greeting and the four frequent actions', async () => {
+  it('prioritizes the primary actions without duplicating them', async () => {
     renderDashboard();
 
     expect(screen.getByRole('heading', { name: 'Buen día, Profesor' })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /Calificar evidencia/i })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /Crear evaluación/i })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: '¿Qué quieres hacer?' })).toBeInTheDocument();
+    expect(screen.getAllByRole('link', { name: /Calificar evidencia/i })).toHaveLength(1);
+    expect(screen.getAllByRole('link', { name: /Crear evaluación/i })).toHaveLength(1);
+    expect(screen.getByRole('heading', { name: 'Organiza y revisa tu clase' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Tu bandeja está al día' })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Reclamos y solicitudes' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Entregas por revisar' })).not.toBeInTheDocument();
     expect(screen.getByText('Aún no tienes materiales')).toBeInTheDocument();
     expect(await screen.findByText('1')).toBeInTheDocument();
   });

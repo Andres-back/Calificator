@@ -254,7 +254,7 @@ export function MateriasListPage() {
             </p>
           </div>
           <img
-            src="/branding/xali-studying.png"
+            src="/branding/xali-studying.webp"
             alt=""
             className="absolute -bottom-3 right-2 h-24 w-24 object-contain sm:right-6 sm:h-28 sm:w-28"
           />
@@ -292,7 +292,7 @@ export function MateriasListPage() {
         empty={
           <EmptyState
             icon={BookOpen}
-            image="/branding/empty-no-subjects.png"
+            image="/branding/empty-no-subjects.webp"
             title={
               isStudent
                 ? 'Aún no estás inscrito en materias'

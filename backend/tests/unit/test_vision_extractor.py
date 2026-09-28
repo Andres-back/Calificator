@@ -376,6 +376,19 @@ def _success(answer: str = "27") -> _Response:
     })
 
 
+def _printed_only() -> _Response:
+    return _Response(200, {
+        "choices": [{"message": {"content": json.dumps({
+            "student_detected": False,
+            "document_quality": 0.82,
+            "page_text": "Lectura impresa y cinco preguntas visibles",
+            "answers": [],
+            "warnings": [],
+        })}}],
+        "usage": {"prompt_tokens": 10, "completion_tokens": 8},
+    })
+
+
 def _configured_extractor(monkeypatch: pytest.MonkeyPatch, responses: list[_Response | Exception], calls: list[dict]) -> VisionExtractor:
     extractor = VisionExtractor(primary_model="deepseek-v4-flash-vision-exp")
 
@@ -446,6 +459,51 @@ def test_explicit_fallback_is_visible(monkeypatch: pytest.MonkeyPatch) -> None:
     assert calls[0]["thinking"] == {"type": "disabled"}
     assert calls[1]["model"] == "glm-5.3-flash"
     assert "thinking" not in calls[1]
+
+
+def test_printed_text_without_answers_activates_visual_fallback(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    responses = [_printed_only(), _success("respuesta a lápiz")]
+    calls: list[dict] = []
+    extractor = _configured_extractor(monkeypatch, responses, calls)
+    monkeypatch.setattr(module.settings, "VISION_MAX_RETRIES", 0)
+    monkeypatch.setattr(module.settings, "VISION_FALLBACK_ENABLED", True)
+    monkeypatch.setattr(module.settings, "VISION_FALLBACK_MODELS", "glm-5.3-flash")
+
+    result = asyncio.run(extractor.extract(
+        _image(),
+        "image/jpeg",
+        blueprint={"preguntas": [{"numero": 1, "enunciado": "Responde"}]},
+    ))
+
+    assert result.answers[0].answer == "respuesta a lápiz"
+    assert result.fallback_used is True
+    assert [call["model"] for call in calls] == [
+        "deepseek-v4-flash-vision-exp",
+        "glm-5.3-flash",
+    ]
+
+
+def test_printed_text_without_answers_never_becomes_successful_blank(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    responses = [_printed_only()]
+    calls: list[dict] = []
+    extractor = _configured_extractor(monkeypatch, responses, calls)
+    monkeypatch.setattr(module.settings, "VISION_MAX_RETRIES", 0)
+    monkeypatch.setattr(module.settings, "VISION_FALLBACK_ENABLED", False)
+
+    result = asyncio.run(extractor.extract(
+        _image(),
+        "image/jpeg",
+        blueprint={"preguntas": [{"numero": 1, "enunciado": "Responde"}]},
+    ))
+
+    assert result.answers == []
+    assert result.requires_review is True
+    assert result.pages[0].status == "requires_review"
+    assert any("no fue posible" in warning for warning in result.warnings)
 
 
 def test_sideways_photo_retries_orientation_without_creating_pages(monkeypatch: pytest.MonkeyPatch) -> None:

@@ -8,11 +8,11 @@ Extender el diálogo existente de estudiantes reutilizables con una acción de s
 
 ## Contexto técnico
 
-**Lenguaje**: TypeScript  
-**Dependencias**: React, TanStack Query y componentes UI existentes  
-**Almacenamiento**: No aplica  
-**Pruebas**: Vitest y Testing Library  
-**Plataforma**: Web responsiva desde 360 px  
+**Lenguaje**: TypeScript
+**Dependencias**: React, TanStack Query y componentes UI existentes
+**Almacenamiento**: No aplica
+**Pruebas**: Vitest y Testing Library
+**Plataforma**: Web responsiva desde 360 px
 **Restricciones**: Sin cambios de API, permisos ni persistencia
 
 ## Verificación constitucional

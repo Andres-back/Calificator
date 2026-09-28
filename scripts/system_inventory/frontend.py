@@ -6,7 +6,11 @@ from .model import Surface, normalize_path
 from .sources import SourceReader
 
 ROUTE_PATTERN = re.compile(r"\bpath\s*:\s*(['\"`])([^'\"`]+)\1")
-CONFIG_ROUTE_PATTERN = re.compile(r"\b\w+\s*:\s*(?:\([^)]*\)\s*=>\s*)?(['\"`])(/(?:app|login|registro)[^'\"`]*|/)\1", re.S)
+CONFIG_ROUTE_PATTERN = re.compile(
+    r"\b\w+\s*:\s*(?:\([^)]*\)\s*=>\s*)?(['\"`])"
+    r"(/(?:app|login|registro|privacidad|terminos|cookies|aviso-privacidad|piloto)[^'\"`]*|/)\1",
+    re.S,
+)
 CALL_PATTERN = re.compile(r"\bapi\.(get|post|put|patch|delete)(?:<[^;()]*?>)?\s*\(\s*(['\"`])(.+?)\2", re.S)
 CONCAT_CALL_PATTERN = re.compile(r"\bapi\.(get|post|put|patch|delete)(?:<[^;()]*?>)?\s*\(\s*([\'\"])(.+?)\2\s*\+\s*([A-Za-z_][\w.]*)")
 CONST_PATTERN = re.compile(r"\bconst\s+(\w+)\s*=\s*(['\"`])([^'\"`]+)\2")
@@ -27,7 +31,16 @@ def _roles_from_context(context: str, path: str) -> tuple[list[str], list[str]]:
         roles = sorted(set(re.findall(r"['\"](profesor|estudiante|admin)['\"]", match.group(1))))
         if roles:
             return roles, ["RequireRole"]
-    if path in {"/", "/login", "/registro"}:
+    if path in {
+        "/",
+        "/login",
+        "/registro",
+        "/privacidad",
+        "/terminos",
+        "/cookies",
+        "/aviso-privacidad",
+        "/piloto",
+    }:
         return ["public"], []
     if "/admin/" in path:
         return ["admin"], ["RequireRole"]

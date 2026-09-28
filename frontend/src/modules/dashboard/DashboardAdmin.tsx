@@ -73,16 +73,16 @@ export function DashboardAdmin() {
         />
       )}
 
-      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5" aria-label="Estado de la plataforma">
+      <section className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-5" aria-label="Estado de la plataforma">
         {settingsQuery.isLoading ? (
-          Array.from({ length: 5 }).map((_, index) => <Skeleton key={index} className="h-36" />)
+          Array.from({ length: 5 }).map((_, index) => <Skeleton key={index} className="h-32 sm:h-36" />)
         ) : (
           <>
-            <MetricCard icon={Bot} label="Proveedores activos" value={activeProviders.length} context={`${configuredProviders} con credenciales configuradas`} tone="brand" status="Actual" />
-            <MetricCard icon={AlertTriangle} label="Alertas de proveedor" value={providerAlerts.length} context={providerAlerts.length ? 'Requieren revisión técnica' : 'Sin errores reportados'} tone={providerAlerts.length ? 'warning' : 'success'} status={providerAlerts.length ? 'Atención' : 'Correcto'} />
-            <MetricCard icon={GitCompareArrows} label="Backend y worker" value={consistencyQuery.isLoading ? '—' : consistencyQuery.data?.consistent ? 'Consistentes' : 'Revisar'} context={consistencyQuery.data?.consistent ? 'Ambos usan la misma configuración' : 'Comprueba el estado del worker'} tone={consistencyQuery.data?.consistent ? 'success' : 'warning'} status="Configuración" />
-            <MetricCard icon={Activity} label="Llamadas de IA" value={usage?.total_calls ?? 0} context="Uso registrado por la plataforma" tone="info" status="Acumulado" />
-            <MetricCard icon={Sparkles} label="Costo estimado" value={formatCost(usage?.total_cost ?? 0)} context="Costo acumulado informado por los proveedores" tone="neutral" status="Referencia" />
+            <MetricCard compact icon={Bot} label="Proveedores activos" value={activeProviders.length} context={`${configuredProviders} con credenciales configuradas`} tone="brand" status="Actual" />
+            <MetricCard compact icon={AlertTriangle} label="Alertas de proveedor" value={providerAlerts.length} context={providerAlerts.length ? 'Requieren revisión técnica' : 'Sin errores reportados'} tone={providerAlerts.length ? 'warning' : 'success'} status={providerAlerts.length ? 'Atención' : 'Correcto'} />
+            <MetricCard compact icon={GitCompareArrows} label="Backend y worker" value={consistencyQuery.isLoading ? '—' : consistencyQuery.data?.consistent ? 'Consistentes' : 'Revisar'} context={consistencyQuery.data?.consistent ? 'Ambos usan la misma configuración' : 'Comprueba el estado del worker'} tone={consistencyQuery.data?.consistent ? 'success' : 'warning'} status="Configuración" />
+            <MetricCard compact icon={Activity} label="Llamadas de IA" value={usage?.total_calls ?? 0} context="Uso registrado por la plataforma" tone="info" status="Acumulado" />
+            <MetricCard compact icon={Sparkles} label="Costo estimado" value={formatCost(usage?.total_cost ?? 0)} context="Costo acumulado informado por los proveedores" tone="neutral" status="Referencia" />
           </>
         )}
       </section>

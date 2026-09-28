@@ -12,6 +12,7 @@ from app.core.security import (
     verify_password,
 )
 from app.modules.auth.schemas import RegisterRequest
+from app.modules.legal.policy import add_public_registration_acceptances
 from app.modules.users import service as user_service
 from app.modules.users.models import User
 from app.modules.users.schemas import UserCreate
@@ -48,6 +49,7 @@ async def register_public_user(db: AsyncSession, payload: RegisterRequest) -> Us
         user.solicitud_docente_solicitada_at = datetime.now(timezone.utc).replace(
             tzinfo=None
         )
+    await add_public_registration_acceptances(db, user)
     await db.commit()
     await db.refresh(user)
     return user

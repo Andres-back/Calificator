@@ -363,12 +363,18 @@ test('dos paquetes quedan en cola, un fallo conserva hojas para reintentar', asy
   await page.route('**/api/materias/m1/estudiantes', (route) => json(route, { ...materia, estudiantes: [student, { ...student, id: 's2', nombre: 'Segundo estudiante' }] }));
   let uploads = 0;
   const owners: string[] = [];
+  const accepted = new Set<string>();
+  await page.route('**/api/evaluaciones/e1/calificaciones', (route) => json(route, [...accepted].map((id) => ({
+    ...grade, id: `queued-${id}`, estudiante_id: id, estado: 'procesando',
+    nota_sugerida: null, nota_confirmada: null,
+  }))));
   await page.route('**/api/calificaciones/foto', (route) => {
     uploads++;
     const raw = route.request().postDataBuffer()?.toString() ?? '';
     const id = raw.includes('\r\n\r\ns2\r\n') ? 's2' : 's1';
     owners.push(id);
     if (uploads === 2) return json(route, { detail: 'Fallo controlado de subida' }, 503);
+    accepted.add(id);
     return json(route, { ...grade, id: `queued-${id}`, estudiante_id: id, estado: 'procesando', nota_sugerida: null, nota_confirmada: null, resultado_json: { job_id: `job-${id}`, pipeline_status: 'queued' } });
   });
   await page.goto('/app/calificaciones?evaluacion=e1&modo=carga&estudiante=s1');
@@ -377,12 +383,13 @@ test('dos paquetes quedan en cola, un fallo conserva hojas para reintentar', asy
   await page.getByRole('button', { name: 'Enviar a calificar', exact: true }).click();
   await expect(page.getByRole('dialog', { name: 'Vas a entregar 2 hojas' })).toBeVisible();
   await page.getByRole('button', { name: 'Confirmar y enviar' }).click();
-  await expect(page.getByText(/Entrega de Estudiante Prueba guardada/)).toBeVisible();
-  await page.getByRole('button', { name: 'Limpiar estudiante' }).click();
-  await page.getByRole('combobox', { name: 'Buscar estudiante para esta entrega' }).fill('Segundo');
+  const studentSearch = page.getByRole('combobox', { name: 'Buscar estudiante para esta entrega' });
+  await expect(studentSearch).toHaveValue('');
+  await studentSearch.fill('Estudiante Prueba');
+  await expect(page.getByRole('option', { name: 'Estudiante Prueba' })).toHaveCount(0);
+  await studentSearch.fill('Segundo');
   await page.getByRole('option', { name: 'Segundo estudiante' }).click();
   await expect(page).toHaveURL(/estudiante=s2/);
-  await expect(page.getByText(/Entrega de Estudiante Prueba guardada/)).toHaveCount(0);
   await page.locator('input[type=file][multiple]').setInputFiles({ ...file, name: 'segunda-entrega.png' });
   const submitButton = page.getByRole('button', { name: 'Enviar a calificar', exact: true });
   await expect(submitButton).toBeEnabled();
@@ -391,7 +398,7 @@ test('dos paquetes quedan en cola, un fallo conserva hojas para reintentar', asy
   await expect(page.getByRole('alert').filter({ hasText: 'Fallo controlado de subida' })).toBeVisible();
   await page.getByRole('button', { name: 'Enviar a calificar', exact: true }).click();
   await page.getByRole('button', { name: 'Confirmar y enviar' }).click();
-  await expect(page.getByText(/Entrega de Segundo estudiante guardada/)).toBeVisible();
+  await expect(studentSearch).toHaveValue('');
   expect(owners).toEqual(['s1', 's2', 's2']);
   await page.reload();
   expect(await page.evaluate(() => JSON.parse(localStorage.getItem('xcalificator.pending-gradings.v1') ?? '[]').length)).toBe(2);
@@ -418,7 +425,10 @@ test('añadir otra entrega permite volver al alumno y pregunta anteriores', asyn
   await expect(page.getByRole('button', { name: 'Pregunta 1', exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Añadir entregas', exact: true }).click();
   await page.getByRole('button', { name: 'Limpiar estudiante' }).click();
-  await page.getByRole('combobox', { name: 'Buscar estudiante para esta entrega' }).fill('Segundo');
+  const studentSearch = page.getByRole('combobox', { name: 'Buscar estudiante para esta entrega' });
+  await expect(page).not.toHaveURL(/estudiante=s1/);
+  await expect(studentSearch).toHaveValue('');
+  await studentSearch.fill('Segundo');
   await page.getByRole('option', { name: 'Segundo estudiante' }).click();
   await expect(page).toHaveURL(/estudiante=s2/);
   await page.getByRole('button', { name: 'Volver a revisión', exact: true }).last().click();

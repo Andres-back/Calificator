@@ -19,3 +19,9 @@ npm run typecheck
 - TypeScript: aprobado.
 - Lint: aprobado sin advertencias.
 - No se modificaron contratos ni código del backend.
+
+## Reconciliación con `main` — 2026-09-28
+
+- Se conservó la captura inmediata de `event.target.checked` de `main`, evitando leer el evento dentro de una actualización diferida.
+- Las dos regresiones también comprueban que desmarcar resultados filtrados conserva selecciones ocultas y que “Todos” no envía solicitudes de matrícula.
+- Prueba focalizada, TypeScript, ESLint y las 8 pruebas de inventario aprobadas sobre la rama reconciliada. El CI completo sigue siendo obligatorio antes del merge.
