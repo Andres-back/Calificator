@@ -395,6 +395,9 @@ test('dos paquetes quedan en cola, un fallo conserva hojas para reintentar', asy
   await studentSearch.fill('Segundo');
   await page.getByRole('option', { name: 'Segundo estudiante' }).click();
   await expect(page).toHaveURL(/estudiante=s2/);
+  // La URL cambia antes de que React remonte el formulario para el nuevo alumno.
+  await expect(page.getByRole('status').filter({ hasText: 'Seleccionado: Segundo estudiante' })).toBeVisible();
+  await expect(page.getByRole('button', { name: /Elegir fotos o PDF/ })).toBeEnabled();
   await page.locator('input[type=file][multiple]').setInputFiles({ ...file, name: 'segunda-entrega.png' });
   const submitButton = page.getByRole('button', { name: 'Enviar a calificar', exact: true });
   await expect(submitButton).toBeEnabled();
