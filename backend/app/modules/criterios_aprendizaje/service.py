@@ -6,7 +6,7 @@ import unicodedata
 import hashlib
 from datetime import datetime, timezone
 from decimal import Decimal
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from fastapi import HTTPException, status
 from sqlalchemy import delete, func, select
@@ -186,6 +186,9 @@ async def _version_payload(db: AsyncSession, version: LearningCriterionVersion) 
 
 
 async def serialize_set(db: AsyncSession, row: LearningCriterionSet) -> dict:
+    # Approving changes the set's server-managed updated_at. Read it explicitly
+    # inside the async context instead of triggering an implicit lazy load.
+    await db.refresh(row)
     versions = list(await db.scalars(select(LearningCriterionVersion).where(LearningCriterionVersion.set_id == row.id).order_by(LearningCriterionVersion.version_number.desc())))
     working = next((item for item in versions if item.estado in {"borrador", "procesando", "requiere_revision"}), None)
     approved = next((item for item in versions if item.id == row.current_version_id), None)
@@ -328,23 +331,32 @@ async def clone_version(
     )
     db.add(cloned)
     await db.flush()
-    source_criteria = list(await db.scalars(select(LearningCriterion).where(LearningCriterion.version_id == source.id).order_by(LearningCriterion.orden)))
-    for item in source_criteria:
-        db.add(LearningCriterion(
-            version_id=cloned.id, stable_key=item.stable_key, orden=item.orden,
-            nombre=item.nombre, descripcion=item.descripcion, evidencia_esperada=item.evidencia_esperada,
-            peso_porcentaje=item.peso_porcentaje, puntaje_maximo=item.puntaje_maximo,
-            niveles_json=list(item.niveles_json or []), source_refs_json=list(item.source_refs_json or []),
-            official_standard_refs_json=list(item.official_standard_refs_json or []),
-        ))
     source_rows = list(await db.scalars(select(LearningCriterionSource).where(LearningCriterionSource.version_id == source.id, LearningCriterionSource.deleted_at.is_(None)).order_by(LearningCriterionSource.orden)))
+    source_id_map: dict[str, str] = {}
     for item in source_rows:
+        new_id = uuid4()
+        source_id_map[str(item.id)] = str(new_id)
         db.add(LearningCriterionSource(
-            version_id=cloned.id, tipo=item.tipo, orden=item.orden, display_name=item.display_name,
+            id=new_id, version_id=cloned.id, tipo=item.tipo, orden=item.orden, display_name=item.display_name,
             private_file_key=item.private_file_key, mime_type=item.mime_type, size_bytes=item.size_bytes,
             page_count=item.page_count, rag_source_id=item.rag_source_id, reference_json=dict(item.reference_json or {}),
             extraction_status=item.extraction_status, content_hash=item.content_hash,
             visible_to_student=item.visible_to_student,
+        ))
+    source_criteria = list(await db.scalars(select(LearningCriterion).where(LearningCriterion.version_id == source.id).order_by(LearningCriterion.orden)))
+    for item in source_criteria:
+        references = []
+        for reference in item.source_refs_json or []:
+            old_source_id = str(reference.get("source_id") or "")
+            if old_source_id not in source_id_map:
+                raise HTTPException(status_code=409, detail="La versión de origen contiene referencias a fuentes inexistentes")
+            references.append({**reference, "source_id": source_id_map[old_source_id]})
+        db.add(LearningCriterion(
+            version_id=cloned.id, stable_key=item.stable_key, orden=item.orden,
+            nombre=item.nombre, descripcion=item.descripcion, evidencia_esperada=item.evidencia_esperada,
+            peso_porcentaje=item.peso_porcentaje, puntaje_maximo=item.puntaje_maximo,
+            niveles_json=list(item.niveles_json or []), source_refs_json=references,
+            official_standard_refs_json=list(item.official_standard_refs_json or []),
         ))
     await db.commit()
     await audit_criteria_event(db, event="version_created", actor_id=actor.id, set_id=set_id, version_id=cloned.id, extra={"version": next_number})

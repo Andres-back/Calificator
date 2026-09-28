@@ -359,8 +359,8 @@ test('estudiante no accede al centro docente ni consulta su proyección', async 
 
 test('dos paquetes quedan en cola, un fallo conserva hojas para reintentar', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await login(page, 'profesor');
-  await page.route('**/api/materias/m1/estudiantes', (route) => json(route, { ...materia, estudiantes: [student, { ...student, id: 's2', nombre: 'Segundo estudiante' }] }));
+  // El inicio puede precargar y cachear el listado antes de entrar a la carga.
+  await login(page, 'profesor', undefined, [student, { ...student, id: 's2', nombre: 'Segundo estudiante' }]);
   let uploads = 0;
   const owners: string[] = [];
   const accepted = new Set<string>();
