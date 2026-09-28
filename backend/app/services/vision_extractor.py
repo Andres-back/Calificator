@@ -381,6 +381,11 @@ Una respuesta incorrecta sigue siendo una respuesta: transcríbela literalmente.
 Solo usa blank=true cuando revisaste toda el área de respuesta y está realmente vacía.
 Si observas grafito pero no puedes leerlo, usa legible=false y needs_review=true, nunca blank=true.
 Transcribe solo lo visible. No completes, infieras ni corrijas. Conserva errores ortográficos.
+El contexto solo sirve para ubicar la pregunta: no copies los números del contexto como si fueran
+la respuesta. En operaciones aritméticas transcribe dígito por dígito los operandos escritos por
+el estudiante, los productos parciales y el resultado final. Si los operandos visibles difieren
+del enunciado, conserva exactamente lo visible y marca needs_review=true. Si un dígito no se
+distingue, usa answer=null, legible=false y needs_review=true; nunca lo completes calculando.
 {drawing_rule}
 Distingue vacío de ilegible. Ilegible: answer=null, legible=false, needs_review=true.
 Informa tachones, correcciones y preguntas ausentes. Devuelve SOLO JSON:
