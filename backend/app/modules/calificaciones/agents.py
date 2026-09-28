@@ -842,6 +842,10 @@ REGLAS OBLIGATORIAS:
 
 ## Retroalimentación formativa
 - Usa lenguaje respetuoso, claro y adecuado al nivel disponible; vincula la explicación con la evidencia y ofrece una acción concreta cuando haga falta mejorar.
+- Empieza por un acierto realmente observado. Después identifica la pregunta o el paso exacto que debe mejorar y termina con una acción breve y verificable.
+- No afirmes que todo está correcto si algún componente es parcial, incorrecto, ilegible, no evaluable o está pendiente de revisión.
+- Evita tecnicismos pedagógicos innecesarios para el estudiante. Prefiere palabras y oraciones breves acordes con el grado disponible en el mapa.
+- Si el grado no está disponible, usa español sencillo dirigido al estudiante y explica cualquier término indispensable con un ejemplo breve.
 - Reconoce la incertidumbre ante evidencia ilegible; no inventes errores ni respuestas ni atribuyas rasgos personales al estudiante.
 - La evidencia y los criterios de evaluación prevalecen sobre las preferencias de redacción: no autorizan cambiar puntajes, pesos, nota máxima ni publicación.
 - Si orientar_sin_dar_respuesta es true, ofrece pistas o pasos sin revelar la solución en la orientación; conserva la justificación del puntaje y la clave interna de evaluación.
@@ -1118,6 +1122,9 @@ La transcripción puede haber omitido lápiz tenue: inspecciona debajo y al lado
 Una respuesta incorrecta o ubicada en el renglón equivocado sigue siendo una respuesta.
 Si ves escritura que no puedes leer, marca no_evaluable y solicita arbitraje; nunca la conviertas
 en ausencia ni en cero. Solo después contrasta el puntaje por componente, la suma y la nota.
+Lee dígito por dígito. El enunciado solo identifica la tarea: no copies operandos, productos
+parciales ni resultados del enunciado o de la clave como si fueran visibles. Si un dígito es
+ambiguo, marca no_evaluable y solicita arbitraje; no lo completes resolviendo la operación.
 No reconstruyas toda la retroalimentación.
 
 No exijas que la respuesta repita el sujeto o el contexto ya indicado en la pregunta.
@@ -1141,7 +1148,7 @@ máximo 3 alertas de hasta 160 caracteres, sin copiar enunciados ni añadir expl
   "nota_sugerida": <número entre 0 y la nota máxima>,
   "confianza": <0 a 1>,
   "componentes_verificados": [
-    {{"componente_id": "...", "puntos_obtenidos": 0, "puntos_maximos": 0, "estado": "correcta|parcial|incorrecta|no_evaluable"}}
+    {{"componente_id": "...", "respuesta_observada": "transcripción literal visible", "puntos_obtenidos": 0, "puntos_maximos": 0, "estado": "correcta|parcial|incorrecta|no_evaluable"}}
   ],
   "requiere_arbitraje": true|false,
   "alertas": ["..."]
@@ -1166,6 +1173,8 @@ def _normalize_verifier_components(items: list, blueprint: dict) -> list[dict]:
         value = {**item, "clave": key}
         if value.get("puntaje") is None and "puntos_obtenidos" in item:
             value["puntaje"] = item["puntos_obtenidos"]
+        if value.get("respuesta_estudiante") is None and item.get("respuesta_observada") is not None:
+            value["respuesta_estudiante"] = item["respuesta_observada"]
         normalized.append(sanitize_component_payload(value))
     return normalized
 

@@ -266,6 +266,27 @@ def test_student_extraction_prompt_excludes_nested_solutions_and_rubrics() -> No
     assert "Causalidad" not in prompt
 
 
+def test_student_extraction_prompt_requires_literal_arithmetic_transcription() -> None:
+    prompt = VisionExtractor()._prompt(
+        {
+            "nombre": "Multiplicación",
+            "preguntas": [{
+                "numero": 5,
+                "enunciado": "Resuelve 270 x 67",
+            }],
+        },
+        page=1,
+        total=1,
+        purpose="student_response",
+    )
+
+    assert "no copies los números del contexto" in prompt
+    assert "operandos" in prompt
+    assert "productos parciales" in prompt
+    assert "visibles difieren" in prompt
+    assert "del enunciado" in prompt
+
+
 def test_grading_prompt_preserves_content_after_character_five_thousand() -> None:
     marker = "RESPUESTA_FINAL_NO_TRUNCADA"
     response = "P1: " + ("argumento " * 700) + marker
