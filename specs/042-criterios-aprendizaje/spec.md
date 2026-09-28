@@ -6,6 +6,8 @@
 **Issue**: [#19](https://github.com/Andres-back/Calificator/issues/19)
 **Descripción de entrada**: Reemplazar la experiencia limitada de DBA por criterios de aprendizaje que puedan construirse desde libros, fotografías, documentos, texto o material trabajado, según lo que el profesor quiera evaluar y cómo quiera calificarlo.
 
+**Inventario técnico responsable**: [Superficies de criterios de aprendizaje](./inventory.md).
+
 ## Escenarios de usuario y pruebas
 
 ### Historia 1 - Construir criterios desde lo enseñado (Prioridad: P1)

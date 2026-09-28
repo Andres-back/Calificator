@@ -83,6 +83,7 @@ OWNED_SPECS = {
     if name.startswith(tuple(f"{number:03d}-" for number in range(2, 13)))
     or name.startswith("021-")
     or name.startswith("029-")
+    or name.startswith("042-")
     or name.startswith("067-")
 }
 
