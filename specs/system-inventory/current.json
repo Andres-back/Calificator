@@ -356,7 +356,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "70692d2adb5ed3012141fa5540869d2748a4168746e62c8a5c1b66c805047481",
+  "source_digest": "003f7c920ad6c9370bd97eb6898dad02c3ec2337c22011e86b68831e68ee578d",
   "surfaces": [
     {
       "actors": [
@@ -15260,6 +15260,12 @@
           "reference": "/",
           "status": "direct",
           "test_path": "frontend/src/modules/legal/LegalPages.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "frontend/src/modules/materias/ExistingStudentsDialog.test.tsx"
         },
         {
           "level": "unit",
@@ -36421,6 +36427,12 @@
           "reference": "materias",
           "status": "direct",
           "test_path": "frontend/src/modules/herramientas/forms/base.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "materias",
+          "status": "direct",
+          "test_path": "frontend/src/modules/materias/ExistingStudentsDialog.test.tsx"
         },
         {
           "level": "unit",

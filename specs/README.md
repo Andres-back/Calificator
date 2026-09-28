@@ -179,6 +179,11 @@ actualizar la especificación propietaria, su plan y sus tareas; no debe crear d
 - [043-flujo-docente-movil](043-flujo-docente-movil/spec.md), [issue #131](https://github.com/Andres-back/Calificator/issues/131): compacta el contexto, mantiene búsqueda y filtros accesibles y permite confirmar, publicar o continuar desde una barra móvil asociada al estado real.
 - No cambia el cálculo, la persistencia, los permisos ni los contratos de calificación; añade cobertura funcional y visual en 360×800 y 390×844.
 
+## Evolución 064: selección masiva al matricular estudiantes
+
+- [064-matricular-todos](064-matricular-todos/spec.md), [issue #133](https://github.com/Andres-back/Calificator/issues/133): añade el control “Todos” para seleccionar o desmarcar los estudiantes visibles al reutilizar cuentas de otras materias.
+- Respeta búsquedas y selecciones individuales; no cambia contratos ni persistencia del backend.
+
 ## Evolución 065: retirar evidencia ya enviada
 
 - [065-retirar-foto-enviada](065-retirar-foto-enviada/spec.md), [issue #135](https://github.com/Andres-back/Calificator/issues/135): elimina del selector de carga al estudiante cuya evidencia ya fue aceptada o que tiene una calificación existente.
