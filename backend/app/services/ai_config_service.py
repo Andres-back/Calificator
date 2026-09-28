@@ -314,6 +314,22 @@ DEFAULT_FEATURES: list[dict[str, Any]] = [
         "active": True,
     },
     {
+        "feature": "criterios.extraccion",
+        "label": "Criterios · lectura de material",
+        "primary_provider": "open_code",
+        "primary_model": settings.VISION_MODEL,
+        "fallback_provider": None,
+        "active": True,
+    },
+    {
+        "feature": "criterios.propuesta",
+        "label": "Criterios · propuesta pedagógica",
+        "primary_provider": "open_code",
+        "primary_model": settings.OPEN_CODE_MODEL,
+        "fallback_provider": "groq",
+        "active": True,
+    },
+    {
         "feature": "rag",
         "label": "RAG (embeddings)",
         "primary_provider": "ollama_internal",
@@ -376,6 +392,8 @@ def _feature_candidates(feature: str) -> tuple[str, ...]:
         "digitalizacion.estructura": ("generacion_preguntas",),
         "presentaciones.contenido": ("presentaciones", "presentations"),
         "presentaciones.imagenes": ("generacion_imagenes",),
+        "criterios.extraccion": ("vision_ocr",),
+        "criterios.propuesta": ("generacion_preguntas",),
     }
     if feature.startswith("herramienta."):
         from app.modules.herramientas.tool_registry import canonical_tool_id

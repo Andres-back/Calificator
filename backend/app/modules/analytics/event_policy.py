@@ -73,6 +73,13 @@ TEACHER_ROLES = frozenset({UserRole.PROFESOR.value, UserRole.ADMIN.value})
 STUDENT_ROLES = frozenset({UserRole.ESTUDIANTE.value})
 
 EVENT_POLICIES: dict[str, EventPolicy] = {
+    "learning_criteria_work_measured": EventPolicy(
+        roles=TEACHER_ROLES,
+        metadata_keys=frozenset({"materia_id", "session_id", "preparacion_ms", "revision_ms",
+                                 "espera_solicitud_ms", "condicion", "resultado"}),
+        required_metadata=frozenset({"materia_id", "session_id", "preparacion_ms", "revision_ms",
+                                     "espera_solicitud_ms", "condicion", "resultado"}),
+    ),
     "session_view_opened": EventPolicy(
         roles=ALL_ROLES,
         metadata_keys=frozenset({"surface"}),
@@ -230,6 +237,20 @@ def _validate_metadata(
             normalized["materia_id"] = str(UUID(str(normalized["materia_id"])))
         except (TypeError, ValueError, AttributeError) as exc:
             raise AnalyticsValidationError(422, "materia_id debe ser un UUID válido") from exc
+
+    if "session_id" in normalized:
+        try:
+            normalized["session_id"] = str(UUID(str(normalized["session_id"])))
+        except (TypeError, ValueError, AttributeError) as exc:
+            raise AnalyticsValidationError(422, "session_id debe ser un UUID válido") from exc
+        for key in ("preparacion_ms", "revision_ms", "espera_solicitud_ms"):
+            duration = normalized[key]
+            if isinstance(duration, bool) or not isinstance(duration, int) or not 0 <= duration <= 86_400_000:
+                raise AnalyticsValidationError(422, f"{key} debe ser un entero entre 0 y 86400000")
+        if normalized["condicion"] not in {"manual", "asistida"}:
+            raise AnalyticsValidationError(422, "Condición de medición no válida")
+        if normalized["resultado"] not in {"intervalo", "cerrada", "aprobada", "propuesta"}:
+            raise AnalyticsValidationError(422, "Resultado de medición no válido")
 
     encoded = json.dumps(normalized, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
     if len(encoded) > MAX_METADATA_BYTES:

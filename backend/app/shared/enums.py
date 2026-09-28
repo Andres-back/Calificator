@@ -120,6 +120,7 @@ class JobTipo(StrEnum):
     RAG_INGEST = "rag_ingest"
     REPORTE_EXPORT = "reporte_export"
     EVALUACION_DIGITALIZACION = "evaluacion_digitalizacion"
+    CRITERIOS_APRENDIZAJE = "criterios_aprendizaje"
     IMPORTACION_ESTUDIANTES = "importacion_estudiantes"
 
 

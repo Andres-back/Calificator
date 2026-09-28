@@ -7,7 +7,9 @@ import { getMateria, getMateriaEstudiantes } from './api';
 import { toApiError } from '@/lib/api';
 import { useAuth } from '@/stores/auth';
 import { cn } from '@/lib/cn';
+import { queryKeys } from '@/config/queryKeys';
 import { isStandardStudentProfile } from '@/lib/authorization';
+import { getLearningCriteriaCapabilities } from './criterios/api';
 
 const ALL_TABS = [
   { label: 'Vista general', to: '', brandIcon: 'subjects', permissions: ['subjects.read'], staffOnly: false },
@@ -16,7 +18,7 @@ const ALL_TABS = [
   { label: 'Calificar', to: 'calificar', brandIcon: 'grade-evidence', permissions: ['grading.read', 'grading.grade'], staffOnly: true },
   { label: 'Asistencia', to: 'asistencia', brandIcon: 'attendance', permissions: ['attendance.read', 'attendance.manage'], staffOnly: true },
   { label: 'Boletín', to: 'boletin', brandIcon: 'gradebook', permissions: ['gradebook.read'], staffOnly: false },
-  { label: 'Criterios de aprendizaje', to: 'dba', brandIcon: 'curriculum-dba', permissions: ['dba.read', 'dba.manage'], staffOnly: true },
+  { label: 'Criterios de aprendizaje', to: 'criterios', brandIcon: 'curriculum-dba', permissions: ['dba.read', 'dba.manage'], staffOnly: true },
 ] as const;
 
 export function MateriaDetailPage() {
@@ -44,6 +46,12 @@ export function MateriaDetailPage() {
       'dba.manage',
     ].some((permission) => permissions.has(permission));
   const isStudent = isStandardStudentProfile(user);
+  const criteriaCapabilities = useQuery({
+    queryKey: queryKeys.materias.learningCriteriaCapabilities,
+    queryFn: getLearningCriteriaCapabilities,
+    enabled: !isStudent && (permissions.has('dba.read') || permissions.has('dba.manage')),
+    retry: false,
+  });
 
   // Students can read a subject, but never request its administrative roster.
   const studentMateriaQuery = useQuery({
@@ -98,11 +106,19 @@ export function MateriaDetailPage() {
     if (tabPath === '') return currentTab === '/' || currentTab === '';
     return currentTab.startsWith(`/${tabPath}`);
   };
+  const criteriaEnabled = Boolean(criteriaCapabilities.data?.ui);
+  const resolvedTabPath = (tabPath: string) => tabPath === 'criterios' && !criteriaEnabled ? 'dba' : tabPath;
+  const isResolvedTabActive = (tabPath: string) => tabPath === 'criterios'
+    ? isActiveTab('criterios') || isActiveTab('dba')
+    : isActiveTab(resolvedTabPath(tabPath));
   const visibleTabs = ALL_TABS
     .filter((tab) => !tab.staffOnly || !isStudent)
     .filter((tab) => tab.permissions.some((permission) => permissions.has(permission)));
-  const tabHref = (tabPath: string) => tabPath ? `/app/materias/${id}/${tabPath}` : `/app/materias/${id}`;
-  const selectedTabHref = tabHref(visibleTabs.find((tab) => isActiveTab(tab.to))?.to ?? '');
+  const tabHref = (tabPath: string) => {
+    const resolved = resolvedTabPath(tabPath);
+    return resolved ? `/app/materias/${id}/${resolved}` : `/app/materias/${id}`;
+  };
+  const selectedTabHref = tabHref(visibleTabs.find((tab) => isResolvedTabActive(tab.to))?.to ?? '');
 
   return (
     <div className="space-y-6">
@@ -155,7 +171,7 @@ export function MateriaDetailPage() {
       </div>
       <nav aria-label="Secciones de la materia" className="teacher-scroll-region -mx-1 hidden max-w-full snap-x gap-1 overflow-x-auto rounded-2xl border border-border bg-surface/90 p-1.5 shadow-sm md:flex">
         {visibleTabs.map((tab) => {
-          const active = isActiveTab(tab.to);
+          const active = isResolvedTabActive(tab.to);
           return (
             <Link
               key={tab.to}
@@ -171,7 +187,7 @@ export function MateriaDetailPage() {
                 name={tab.brandIcon === 'subjects' ? getSubjectEducationalIcon(materia.area) : tab.brandIcon}
                 className="h-7 w-7"
               />
-              {tab.label}
+              {tab.to === 'criterios' && !criteriaEnabled ? 'DBA' : tab.label}
             </Link>
           );
         })}

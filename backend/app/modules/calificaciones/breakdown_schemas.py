@@ -41,6 +41,7 @@ class ComponenteRead(BaseModel):
     evidencia_paginas: list[int] = Field(default_factory=list)
     fuentes: list[dict] = Field(default_factory=list)
     valoraciones: list[dict] = Field(default_factory=list)
+    criterios_aplicados: list[dict] = Field(default_factory=list)
 
 
 class DesgloseDocenteRead(BaseModel):

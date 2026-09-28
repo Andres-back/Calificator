@@ -16,12 +16,13 @@ import { sendMessage } from '@/modules/xali/api';
 import type { DBAUnifiedItem, Evaluacion, EvaluacionModalidad, Materia } from '@/types/api';
 import { extraerReferenciaEvaluacion, generarBorradorEvaluacion, updateEvaluacion, type EvaluacionGenerarRequest } from '../api';
 import { DBASelector } from './DBASelector';
+import { LearningCriteriaSelector } from './LearningCriteriaSelector';
 import { PasosGuia } from './PasosGuia';
 import {
   createBlankQuestion, createBlankRubricCriterion, createEmptyWizardState, discardWizardDraft, duplicateQuestion,
   evaluationToEditableQuestions, evaluationToWizardState, loadWizardDraft, MAX_QUESTIONS, MIN_QUESTIONS,
   moveQuestion, moveRubricCriterion, normalizeRubricCriteria, persistWizardDraft, prepareRubricCriteriaForSave, QUESTION_TYPES, questionsToUpdatePayload,
-  rebalanceRubricWeights, renumberQuestions, rubricWeightTotal, selectedQuestionTypes, totalQuestionCount, validateQuestion,
+  rebalanceRubricWeights, renumberQuestions, rubricWeightTotal, selectedQuestionTypes, summarizeLearningCriteriaCoverage, totalQuestionCount, validateQuestion,
   validateReferenceFile, validateRubricCriteria, validateStep, type EditableQuestion, type EditableRubricCriterion, type QuestionType, type WizardState,
 } from './generationWizardModel';
 
@@ -39,12 +40,13 @@ const MODALITY_OPTIONS = [
 ] as const;
 
 function QuestionCard({
-  question, index, total, evaluationModality, onChange, onDelete, onDuplicate, onMove,
+  question, index, total, evaluationModality, learningCriteriaOptions, onChange, onDelete, onDuplicate, onMove,
 }: {
   question: EditableQuestion;
   index: number;
   total: number;
   evaluationModality: EvaluacionModalidad;
+  learningCriteriaOptions: Array<{ key: string; nombre: string }>;
   onChange: (patch: Partial<EditableQuestion>) => void;
   onDelete: () => void;
   onDuplicate: () => void;
@@ -109,6 +111,27 @@ function QuestionCard({
           <Field label="Enunciado" required>
             <Textarea value={question.enunciado} onChange={(event) => onChange({ enunciado: event.target.value })} className="min-h-24 text-base" />
           </Field>
+
+          {learningCriteriaOptions.length > 0 && (
+            <fieldset className="rounded-xl border border-border p-3">
+              <legend className="px-1 text-sm font-semibold">Criterios que valora esta pregunta</legend>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {learningCriteriaOptions.map((criterion) => (
+                  <label key={criterion.key} className="flex min-h-11 items-center gap-2 rounded-lg bg-surface-2 px-3 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={question.learningCriterionKeys.includes(criterion.key)}
+                      onChange={(event) => onChange({ learningCriterionKeys: event.target.checked
+                        ? [...question.learningCriterionKeys, criterion.key]
+                        : question.learningCriterionKeys.filter((key) => key !== criterion.key) })}
+                    />
+                    {criterion.nombre}
+                  </label>
+                ))}
+              </div>
+              {question.learningCriterionKeys.length === 0 && learningCriteriaOptions.length > 1 && <p className="mt-2 text-xs text-amber-700 dark:text-amber-200">Sin relación explícita: la calificación requerirá revisión si no puede establecerse con seguridad.</p>}
+            </fieldset>
+          )}
 
           {evaluationModality === 'mixta' && (
             <Field label="Dónde responde el estudiante" required>
@@ -513,6 +536,7 @@ export function GenerationWizard({
       criterios_docente: state.useRubric ? state.rubricCriteria : [],
       instrucciones_adicionales: instructions || undefined,
       material_referencia: state.referenceText.trim() || undefined,
+      criterios_aprendizaje_version_id: state.learningCriteriaVersionId || undefined,
     });
   }
 
@@ -531,6 +555,7 @@ export function GenerationWizard({
         fecha_limite_entrega: state.fechaLimiteEntrega ? new Date(state.fechaLimiteEntrega).toISOString() : null,
         dba_ids: state.useDba ? state.dbaIds : [],
         dba_personalizado_ids: state.useDba ? state.dbaPersonalizadoIds : [],
+        criterios_aprendizaje_version_id: state.learningCriteriaVersionId || undefined,
         criterios: state.useRubric ? prepareRubricCriteriaForSave(state.generatedCriteria, state.notaMaxima) : state.generatedCriteria,
         ...questionsToUpdatePayload(state.questions),
       },
@@ -560,6 +585,7 @@ export function GenerationWizard({
   const validation = validateStep(state);
   const total = totalQuestionCount(state.counts);
   const questionErrors = state.questions.filter((question, index) => validateQuestion(question, index)).length;
+  const learningCriteriaCoverage = summarizeLearningCriteriaCoverage(state.learningCriteriaOptions, state.questions);
   const editingQuestions = state.step === 5 && Boolean(state.generatedEvaluationId);
 
   return (
@@ -610,7 +636,7 @@ export function GenerationWizard({
                             {availableMaterias[0]?.nombre}
                           </div>
                         ) : (
-                          <div className="[&_select]:min-h-12 [&_select]:max-w-none [&_select]:text-base"><MateriaSelect value={state.materiaId} materias={availableMaterias} onChange={(materiaId) => patch({ materiaId, dbaIds: [], dbaPersonalizadoIds: [], generatedEvaluationId: null, questions: [] })} /></div>
+                          <div className="[&_select]:min-h-12 [&_select]:max-w-none [&_select]:text-base"><MateriaSelect value={state.materiaId} materias={availableMaterias} onChange={(materiaId) => patch({ materiaId, dbaIds: [], dbaPersonalizadoIds: [], learningCriteriaVersionId: '', learningCriteriaOptions: [], generatedEvaluationId: null, questions: [] })} /></div>
                         )}
                       </Field>
                       <Field label="Nombre de la evaluación" required hint="Ejemplo: Evaluación de fracciones — período 2"><Input autoFocus value={state.nombre} onChange={(event) => patch({ nombre: event.target.value })} className="min-h-12 text-base" placeholder="Escribe un nombre claro" /></Field>
@@ -640,7 +666,7 @@ export function GenerationWizard({
                     <section aria-labelledby="wizard-step-title" className="space-y-5">
                       <div>
                         <h3 id="wizard-step-title" className="text-xl font-bold">Elige cómo orientar la evaluación</h3>
-                        <p className="mt-1 text-base text-muted">Puedes usar DBA, rúbrica, ambos o continuar sin ninguno. Tú decides.</p>
+                        <p className="mt-1 text-base text-muted">Puedes aplicar criterios aprobados, usar estándares oficiales, una rúbrica rápida o continuar libremente.</p>
                       </div>
 
                       <div className="grid gap-3 sm:grid-cols-2">
@@ -654,18 +680,34 @@ export function GenerationWizard({
                             })}
                             className="mt-1 h-5 w-5 shrink-0 accent-brand-600"
                           />
-                          <span><span className="block text-base font-bold">Alinear con DBA</span><span className="mt-1 block text-sm leading-5 text-muted">Relaciona las preguntas con aprendizajes oficiales o personalizados.</span></span>
+                          <span><span className="block text-base font-bold">Alinear con estándares oficiales</span><span className="mt-1 block text-sm leading-5 text-muted">Referencia opcional para relacionar las preguntas con el currículo.</span></span>
                         </label>
                         <label className={cn('focus-within:ring-2 focus-within:ring-focus flex cursor-pointer gap-3 rounded-2xl border-2 p-4', state.useRubric ? 'border-violet-500 bg-violet-50 dark:bg-violet-500/10' : 'border-border bg-surface')}>
                           <input
                             type="checkbox"
                             checked={state.useRubric}
-                            onChange={(event) => patch({ useRubric: event.target.checked })}
+                            onChange={(event) => patch({
+                              useRubric: event.target.checked,
+                              ...(!event.target.checked ? { learningCriteriaVersionId: '', learningCriteriaOptions: [] } : {}),
+                            })}
                             className="mt-1 h-5 w-5 shrink-0 accent-violet-600"
                           />
                           <span><span className="block text-base font-bold">Evaluar con rúbrica</span><span className="mt-1 block text-sm leading-5 text-muted">Crea criterios, pesos y niveles de desempeño para calificar.</span></span>
                         </label>
                       </div>
+
+                      <LearningCriteriaSelector
+                        materiaId={state.materiaId}
+                        value={state.learningCriteriaVersionId}
+                        onChange={(versionId, criteria) => patch({
+                          learningCriteriaVersionId: versionId,
+                          learningCriteriaOptions: criteria,
+                          questions: versionId === state.learningCriteriaVersionId
+                            ? state.questions
+                            : state.questions.map((question) => ({ ...question, learningCriterionKeys: [] })),
+                          ...(versionId ? { useRubric: true, rubricCriteria: criteria.map((item) => item.nombre) } : {}),
+                        })}
+                      />
 
                       {!state.useDba && !state.useRubric && (
                         <div className="rounded-xl border border-emerald-300 bg-emerald-50 p-4 text-sm leading-6 text-emerald-900 dark:bg-emerald-500/10 dark:text-emerald-100">
@@ -676,7 +718,7 @@ export function GenerationWizard({
 
                       {state.useDba && (
                         <div className="space-y-3 rounded-2xl border border-sky-200 bg-surface p-4 dark:border-sky-500/30">
-                          <div><h4 className="font-bold">DBA para esta evaluación</h4><p className="text-sm text-muted">Seleccionados: {state.dbaIds.length + state.dbaPersonalizadoIds.length}</p></div>
+                          <div><h4 className="font-bold">Estándares oficiales y referencias históricas</h4><p className="text-sm text-muted">Seleccionados: {state.dbaIds.length + state.dbaPersonalizadoIds.length}</p></div>
                           <DBASelector items={dba.data} selectedOfficial={state.dbaIds} selectedCustom={state.dbaPersonalizadoIds} loading={dba.isLoading} error={dba.isError} onToggle={toggleDba} spacious />
                         </div>
                       )}
@@ -791,7 +833,10 @@ export function GenerationWizard({
                           </div>
                         )}
                         {state.useRubric && (
-                          <RubricEditor criteria={state.generatedCriteria} onChange={(generatedCriteria) => patch({ generatedCriteria })} />
+                          <>
+                            {state.learningCriteriaVersionId && <p className="rounded-xl bg-amber-50 p-3 text-sm text-amber-900 dark:bg-amber-500/10 dark:text-amber-100">Si modificas esta rúbrica, dejará de aplicarse la versión aprobada. Tus cambios se guardarán como rúbrica de esta evaluación.</p>}
+                            <RubricEditor criteria={state.generatedCriteria} onChange={(generatedCriteria) => patch({ generatedCriteria, learningCriteriaVersionId: '', learningCriteriaOptions: [] })} />
+                          </>
                         )}
                         <div role="list" aria-label="Preguntas editables" className="space-y-4">
                           {state.questions.map((question, index) => (
@@ -801,6 +846,7 @@ export function GenerationWizard({
                               index={index}
                               total={state.questions.length}
                               evaluationModality={state.modalidad}
+                              learningCriteriaOptions={state.learningCriteriaVersionId ? state.learningCriteriaOptions : []}
                               onChange={(questionPatch) => patch({ questions: state.questions.map((current, currentIndex) => currentIndex === index ? { ...current, ...questionPatch } : current) })}
                               onDelete={() => patch({ questions: renumberQuestions(state.questions.filter((_, currentIndex) => currentIndex !== index)) })}
                               onDuplicate={() => patch({ questions: duplicateQuestion(state.questions, index) })}
@@ -818,6 +864,7 @@ export function GenerationWizard({
                       <div className="grid gap-3 sm:grid-cols-2">
                         {[
                           ['Nombre', state.nombre], ['Materia', materiaNombre],
+                          ['Intención', state.descripcion.trim() || 'Evaluar los aprendizajes definidos en las preguntas y criterios seleccionados.'],
                           ['Enfoque', [
                             state.useDba ? `${state.dbaIds.length + state.dbaPersonalizadoIds.length} DBA` : '',
                             state.useRubric ? 'Rúbrica' : '',
@@ -828,6 +875,38 @@ export function GenerationWizard({
                           ['Estado inicial', 'Borrador'],
                         ].map(([label, value]) => <div key={label} className="rounded-xl border border-border bg-surface p-4"><p className="text-sm font-semibold text-muted">{label}</p><p className="mt-1 text-base font-bold">{value}</p></div>)}
                       </div>
+                      {state.learningCriteriaVersionId && learningCriteriaCoverage.totalCount > 0 && (
+                        <section aria-label="Cobertura de criterios y preguntas" className="rounded-2xl border border-emerald-200 bg-emerald-50/60 p-4 dark:border-emerald-500/30 dark:bg-emerald-500/10">
+                          <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                            <div>
+                              <h4 className="font-bold">Cobertura de criterios y preguntas</h4>
+                              <p className="mt-1 text-sm text-muted">Confirma que cada aprendizaje tenga una pregunta que produzca evidencia observable.</p>
+                            </div>
+                            <Badge tone={learningCriteriaCoverage.coveredCount === learningCriteriaCoverage.totalCount ? 'success' : 'warning'}>
+                              {learningCriteriaCoverage.coveredCount} de {learningCriteriaCoverage.totalCount} cubiertos
+                            </Badge>
+                          </div>
+                          <ul className="mt-4 grid gap-2 sm:grid-cols-2">
+                            {learningCriteriaCoverage.rows.map((row) => (
+                              <li key={row.key} className="rounded-xl border border-emerald-200 bg-surface p-3 text-sm dark:border-emerald-500/20">
+                                <span className="font-semibold">{row.nombre}</span>
+                                <span className={`mt-1 block ${row.questionNumbers.length ? 'text-muted' : 'font-semibold text-amber-700 dark:text-amber-200'}`}>
+                                  {row.questionNumbers.length
+                                    ? `Preguntas ${row.questionNumbers.join(', ')}`
+                                    : 'Sin pregunta relacionada'}
+                                </span>
+                              </li>
+                            ))}
+                          </ul>
+                          {(learningCriteriaCoverage.coveredCount < learningCriteriaCoverage.totalCount || learningCriteriaCoverage.unmappedQuestionNumbers.length > 0) && (
+                            <div role="alert" className="mt-3 rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-950 dark:bg-amber-500/10 dark:text-amber-100">
+                              {learningCriteriaCoverage.coveredCount < learningCriteriaCoverage.totalCount && <p><strong>Revisa la cobertura:</strong> hay criterios sin una pregunta relacionada.</p>}
+                              {learningCriteriaCoverage.unmappedQuestionNumbers.length > 0 && <p className="mt-1">Preguntas sin criterio: {learningCriteriaCoverage.unmappedQuestionNumbers.join(', ')}.</p>}
+                              <p className="mt-1">Puedes volver al paso anterior y corregir las relaciones antes de guardar.</p>
+                            </div>
+                          )}
+                        </section>
+                      )}
                       <div className="rounded-xl border border-emerald-300 bg-emerald-50 p-4 text-base text-emerald-900 dark:bg-emerald-500/10 dark:text-emerald-100"><p className="font-bold">La IA sugiere. Tú decides.</p><p className="mt-1">{initialEvaluation && initialEvaluation.estado !== 'borrador' ? 'La evaluación conservará su estado y disponibilidad actuales.' : 'La evaluación no se publicará automáticamente.'}</p></div>
                     </section>
                   )}

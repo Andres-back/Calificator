@@ -31,6 +31,7 @@ class HerramientaBaseRequest(BaseModel):
     criterios_rubrica: list[str] = Field(default_factory=list)
     dba_ids: list[UUID] = Field(default_factory=list)
     dba_personalizado_ids: list[UUID] = Field(default_factory=list)
+    criterios_aprendizaje_version_id: UUID | None = None
     _contexto_dba_rag: str = PrivateAttr(default="")
     _contexto_rubrica: str = PrivateAttr(default="")
     _alineacion_esperada: dict = PrivateAttr(default_factory=dict)
@@ -153,6 +154,7 @@ class MaterialRead(BaseModel):
     asignacion_tipo: Literal["apoyo", "actividad"] | None = None
     publicado_estudiantes: bool = False
     fecha_publicacion: datetime | None = None
+    criterios_aprendizaje_aplicados: dict[str, Any] | None = None
     updated_at: datetime | None = None
     created_at: datetime
 
@@ -201,3 +203,4 @@ class ConvertirEvaluacionRequest(BaseModel):
     politica_intento: PoliticaIntento | None = PoliticaIntento.UN_INTENTO
     intentos_permitidos: int | None = Field(default=None, gt=0)
     tiempo_limite_minutos: int | None = Field(default=None, gt=0)
+    criterios_aprendizaje_version_id: UUID | None = None

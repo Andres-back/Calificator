@@ -35,7 +35,8 @@ const MateriaRecursos = lazy(() => import('@/modules/materias/MateriaRecursos').
 const GradingLegacyRedirect = lazy(() => import('@/modules/calificaciones/CalificacionesWorkspace').then((m) => ({ default: m.GradingLegacyRedirect })));
 const MateriaAsistencia = lazy(() => import('@/modules/materias/MateriaAsistencia').then((m) => ({ default: m.MateriaAsistencia })));
 const MateriaBoletin = lazy(() => import('@/modules/materias/MateriaBoletin').then((m) => ({ default: m.MateriaBoletin })));
-const MateriaDbaPage = lazy(() => import('@/modules/materias/MateriaDbaPage').then((m) => ({ default: m.MateriaDbaPage })));
+const LearningCriteriaPage = lazy(() => import('@/modules/materias/criterios/LearningCriteriaPage').then((m) => ({ default: m.LearningCriteriaPage })));
+const LearningCriteriaLegacyRedirect = lazy(() => import('@/modules/materias/criterios/LearningCriteriaLegacyRedirect').then((m) => ({ default: m.LearningCriteriaLegacyRedirect })));
 const UnirseMateriaPage = lazy(() => import('@/modules/materias/UnirseMateriaPage').then((m) => ({ default: m.UnirseMateriaPage })));
 const EvaluacionesPage = lazy(() => import('@/modules/evaluaciones/EvaluacionesPage').then((m) => ({ default: m.EvaluacionesPage })));
 const ResolverEvaluacionPage = lazy(() => import('@/modules/evaluaciones/ResolverEvaluacionPage').then((m) => ({ default: m.ResolverEvaluacionPage })));
@@ -105,7 +106,10 @@ export const router = createBrowserRouter([{
               { element: <RequireStaffSurface />, children: [
                 { element: <RequirePermission anyOf={['grading.read', 'grading.grade']} />, children: [{ path: 'calificar', element: lazyPage(<GradingLegacyRedirect />) }] },
                 { element: <RequirePermission anyOf={['attendance.read', 'attendance.manage']} />, children: [{ path: 'asistencia', element: lazyPage(<MateriaAsistencia />) }] },
-                { element: <RequirePermission anyOf={['dba.read', 'dba.manage']} />, children: [{ path: 'dba', element: lazyPage(<MateriaDbaPage />) }] },
+                { element: <RequirePermission anyOf={['dba.read', 'dba.manage']} />, children: [
+                  { path: 'criterios', element: lazyPage(<LearningCriteriaPage />) },
+                  { path: 'dba', element: lazyPage(<LearningCriteriaLegacyRedirect />) },
+                ] },
               ] },
               // Estudiante ve su boletín propio, profesor ve boletín del grupo
               { element: <RequirePermission anyOf={['gradebook.read']} />, children: [{ path: 'boletin', element: lazyPage(<MateriaBoletin />) }] },

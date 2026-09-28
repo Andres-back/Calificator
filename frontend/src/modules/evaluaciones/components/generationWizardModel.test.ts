@@ -13,6 +13,7 @@ import {
   persistWizardDraft,
   prepareRubricCriteriaForSave,
   rebalanceRubricWeights,
+  summarizeLearningCriteriaCoverage,
   totalQuestionCount,
   validateQuestion,
   validateReferenceFile,
@@ -35,6 +36,7 @@ function validQuestion(overrides: Partial<EditableQuestion> = {}): EditableQuest
     puntaje: 1,
     modalidadRespuesta: 'online',
     dbaIds: ['dba-1'],
+    learningCriterionKeys: [],
     expanded: true,
     ...overrides,
   };
@@ -227,5 +229,35 @@ describe('generation wizard model', () => {
       dba_ids: ['dba-1'],
       niveles: { Alto: 'Justifica cada paso con claridad.' },
     });
+  });
+
+  it('keeps performance descriptors from an approved criteria snapshot editable', () => {
+    const [criterion] = normalizeRubricCriteria([{
+      nombre: 'Procedimiento',
+      peso_porcentaje: 100,
+      niveles: [{ nombre: 'Logrado', descripcion: 'Justifica los pasos' }],
+    }]);
+    expect(criterion.niveles).toEqual({ Logrado: 'Justifica los pasos' });
+  });
+
+  it('resume la cobertura pregunta a criterio y conserva las alertas antes de guardar', () => {
+    const coverage = summarizeLearningCriteriaCoverage(
+      [
+        { key: 'comprension', nombre: 'Comprensión' },
+        { key: 'argumentacion', nombre: 'Argumentación' },
+      ],
+      [
+        validQuestion({ numero: 1, learningCriterionKeys: ['comprension'] }),
+        validQuestion({ clientId: 'question-2', numero: 2, learningCriterionKeys: [] }),
+      ],
+    );
+
+    expect(coverage.rows).toEqual([
+      { key: 'comprension', nombre: 'Comprensión', questionNumbers: [1] },
+      { key: 'argumentacion', nombre: 'Argumentación', questionNumbers: [] },
+    ]);
+    expect(coverage.unmappedQuestionNumbers).toEqual([2]);
+    expect(coverage.coveredCount).toBe(1);
+    expect(coverage.totalCount).toBe(2);
   });
 });

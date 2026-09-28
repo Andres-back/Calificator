@@ -37,6 +37,7 @@ export const routes = {
   materiaAsistencia: (id: string) => `/app/materias/${id}/asistencia` as const,
   materiaBoletin: (id: string) => `/app/materias/${id}/boletin` as const,
   materiaDba: (id: string) => `/app/materias/${id}/dba` as const,
+  materiaCriterios: (id: string) => `/app/materias/${id}/criterios` as const,
 
   /* ── Evaluaciones ── */
   evaluaciones: '/app/evaluaciones',

@@ -20,6 +20,7 @@ celery_app = Celery(
         "app.workers.tasks_digitalization",
         "app.workers.tasks_deadlines",
         "app.workers.tasks_password_recovery",
+        "app.workers.tasks_learning_criteria",
         "app.workers.tasks_roster_import",
     ],
 )
@@ -50,6 +51,8 @@ celery_app.conf.update(
         "tasks.generate_presentation": {"queue": "presentations"},
         "tasks.recover_stale_presentation_jobs": {"queue": "presentations"},
         "tasks.generate_image": {"queue": "presentations"},
+        "tasks.propose_learning_criteria": {"queue": "criteria"},
+        "tasks.recover_stale_learning_criteria_jobs": {"queue": "criteria"},
     },
     beat_schedule={
         "assign-overdue-grades-every-minute": {
@@ -83,6 +86,10 @@ celery_app.conf.update(
         "recover-expired-local-jobs": {
             "task": "tasks.recover_expired_local_jobs",
             "schedule": 60.0,
+        },
+        "recover-stale-learning-criteria-jobs": {
+            "task": "tasks.recover_stale_learning_criteria_jobs",
+            "schedule": float(settings.AI_JOB_RECOVERY_INTERVAL_SECONDS),
         },
     },
 )

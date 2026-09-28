@@ -138,6 +138,13 @@ class Settings(BaseSettings):
     GRADING_RETRY_CHECKPOINTS_ENABLED: bool = False
     TEACHER_WORK_TIMING_ENABLED: bool = False
     IMPACT_STUDY_ENABLED: bool = False
+    # Despliegue progresivo de criterios de aprendizaje (spec 042).
+    # Se mantienen apagados hasta validar migración, privacidad y paridad histórica.
+    CRITERIA_WRITE: bool = False
+    CRITERIA_GENERATION: bool = False
+    CRITERIA_UI: bool = False
+    CRITERIA_GRADING_CONTEXT: bool = False
+    CRITERIA_GRADING_AUTHORITY: bool = False
 
     GROQ_API_KEY: str = ""
     # llama-3.1-70b-versatile fue dado de baja por Groq; usar el sucesor vigente.

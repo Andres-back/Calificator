@@ -33,6 +33,66 @@ def user(role: UserRole | str):
     return SimpleNamespace(id=uuid4(), rol=role_value)
 
 
+def criteria_measurement():
+    return {"materia_id": str(uuid4()), "session_id": str(uuid4()), "preparacion_ms": 10000,
+            "revision_ms": 12000, "espera_solicitud_ms": 8000, "condicion": "asistida", "resultado": "aprobada"}
+
+
+def test_criteria_measurement_accepts_only_private_content_free_durations():
+    metadata = criteria_measurement()
+    result = event_policy.validate_event_payload(tipo="learning_criteria_work_measured", role="profesor",
+                                                evaluacion_id=None, calificacion_id=None, metadata_json=metadata)
+    assert result.metadata_json == metadata
+
+
+@pytest.mark.parametrize("key,value", [("preparacion_ms", -1), ("revision_ms", True),
+                                     ("espera_solicitud_ms", float("nan")), ("session_id", "invalid"),
+                                     ("condicion", "unknown"), ("resultado", "unknown"), ("respuesta", "private")])
+def test_criteria_measurement_rejects_invalid_durations_or_content(key, value):
+    metadata = {**criteria_measurement(), key: value}
+    with pytest.raises(event_policy.AnalyticsValidationError):
+        event_policy.validate_event_payload(tipo="learning_criteria_work_measured", role="profesor",
+                                            evaluacion_id=None, calificacion_id=None, metadata_json=metadata)
+
+
+def test_criteria_measurement_rejects_student_and_foreign_subject(monkeypatch):
+    metadata = criteria_measurement()
+    with pytest.raises(event_policy.AnalyticsValidationError) as error:
+        event_policy.validate_event_payload(tipo="learning_criteria_work_measured", role="estudiante",
+                                            evaluacion_id=None, calificacion_id=None, metadata_json=metadata)
+    assert error.value.status_code == 403
+
+    async def forbidden(*args):
+        raise HTTPException(status_code=403, detail="No pertenece al docente")
+    monkeypatch.setattr(service, "ensure_can_manage_materia_criteria", forbidden)
+    session = FakeSession()
+    with pytest.raises(HTTPException) as error:
+        asyncio.run(service.registrar_evento(session, tipo="learning_criteria_work_measured",
+                    current_user=user(UserRole.PROFESOR), metadata_json=metadata))
+    assert error.value.status_code == 403
+    assert not session.committed
+
+
+def test_criteria_timing_summary_never_adds_job_wait_to_active_time():
+    from unittest.mock import AsyncMock, MagicMock
+    human = MagicMock()
+    human.mappings.return_value.one.return_value = {
+        "sesiones": 1, "preparacion_ms": 10000, "revision_ms": 12000, "espera_solicitud_ms": 8000,
+    }
+    jobs = MagicMock()
+    jobs.mappings.return_value.one.return_value = {"jobs_completados": 1, "espera_job_ms": 65000}
+    db = SimpleNamespace(execute=AsyncMock(side_effect=[human, jobs]))
+    actor_id, subject_id = uuid4(), uuid4()
+    result = asyncio.run(service.get_learning_criteria_timing(db, actor_id, datetime(2026, 9, 1), datetime(2026, 9, 30), subject_id))
+    assert result["preparacion_ms"] == 10000
+    assert result["revision_ms"] == 12000
+    assert result["espera_job_ms"] == 65000
+    assert not result["es_ahorro_estimado"]
+    for call in db.execute.call_args_list:
+        assert call.args[1]["actor"] == str(actor_id)
+        assert call.args[1]["materia"] == str(subject_id)
+
+
 def test_catalog_accepts_session_and_teacher_events() -> None:
     session = event_policy.validate_event_payload(
         tipo="session_view_opened",
@@ -445,3 +505,111 @@ def test_ai_usage_scope_is_private_for_teacher_and_institutional_for_admin() -> 
     admin_clauses, admin_params = router._ai_usage_owner_scope(user(UserRole.ADMIN))
     assert admin_clauses == []
     assert admin_params == {}
+
+
+def test_criterion_analytics_groups_canonical_components_by_set_version_and_stable_key() -> None:
+    grade_id = uuid4()
+    criterion_set_id = uuid4()
+    version_id = uuid4()
+    rows = service._criterion_result_rows(
+        [
+            {
+                "calificacion_id": grade_id,
+                "set_id": criterion_set_id,
+                "version_id": version_id,
+                "version_number": 2,
+                "criterion_stable_key": "argumentacion",
+                "criterion_snapshot_json": {"nombre": "Argumentación con evidencia"},
+                "awarded_points": 0.7,
+                "max_points": 1,
+            },
+            {
+                "calificacion_id": grade_id,
+                "set_id": criterion_set_id,
+                "version_id": version_id,
+                "version_number": 2,
+                "criterion_stable_key": "argumentacion",
+                "criterion_snapshot_json": {"nombre": "Argumentación con evidencia"},
+                "awarded_points": 1.5,
+                "max_points": 2,
+            },
+        ],
+        [],
+    )
+
+    assert rows == [
+        {
+            "nombre": "Argumentación con evidencia",
+            "porcentaje_logro": 73.3,
+            "estudiantes_evaluados": 1,
+            "estudiantes_con_dificultad": 0,
+            "nivel_atencion": "en_desarrollo",
+            "conjunto_id": str(criterion_set_id),
+            "version_id": str(version_id),
+            "version": 2,
+            "clave_estable": "argumentacion",
+            "origen": "versionado",
+        }
+    ]
+
+
+def test_criterion_analytics_uses_legacy_only_when_grade_has_no_canonical_links() -> None:
+    canonical_grade_id = uuid4()
+    legacy_grade_id = uuid4()
+    rows = service._criterion_result_rows(
+        [
+            {
+                "calificacion_id": canonical_grade_id,
+                "set_id": uuid4(),
+                "version_id": uuid4(),
+                "version_number": 1,
+                "criterion_stable_key": "ortografia",
+                "criterion_snapshot_json": {"nombre": "Ortografía"},
+                "awarded_points": 1,
+                "max_points": 1,
+            }
+        ],
+        [
+            {
+                "calificacion_id": canonical_grade_id,
+                "resultado_json": {"grader_a": {"criterios": [{"nombre": "Ortografía", "puntaje": 0, "maximo": 1}]}},
+            },
+            {
+                "calificacion_id": legacy_grade_id,
+                "resultado_json": {"grader_a": {"criterios": [{"nombre": "Comprensión", "puntaje": 0.5, "maximo": 1}]}},
+            },
+        ],
+    )
+
+    by_name = {row["nombre"]: row for row in rows}
+    assert by_name["Ortografía"]["porcentaje_logro"] == 100.0
+    assert by_name["Ortografía"]["origen"] == "versionado"
+    assert by_name["Comprensión"]["porcentaje_logro"] == 50.0
+    assert by_name["Comprensión"]["origen"] == "historico"
+    assert by_name["Comprensión"]["version_id"] is None
+
+
+def test_criterion_analytics_does_not_replace_unscored_canonical_links_with_legacy_ai_output() -> None:
+    grade_id = uuid4()
+    rows = service._criterion_result_rows(
+        [
+            {
+                "calificacion_id": grade_id,
+                "set_id": uuid4(),
+                "version_id": uuid4(),
+                "version_number": 1,
+                "criterion_stable_key": "lectura",
+                "criterion_snapshot_json": {"nombre": "Lectura"},
+                "awarded_points": None,
+                "max_points": 1,
+            }
+        ],
+        [
+            {
+                "calificacion_id": grade_id,
+                "resultado_json": {"grader_a": {"criterios": [{"nombre": "Lectura", "puntaje": 1, "maximo": 1}]}},
+            }
+        ],
+    )
+
+    assert rows == []

@@ -15,10 +15,29 @@ describe('GradeComponentEditor', () => {
     fireEvent.change(screen.getByLabelText(/Motivo interno del cambio/), { target: { value: 'Revisión de procedimiento' } });
     fireEvent.change(screen.getByLabelText(/Explicación para el estudiante/), { target: { value: 'El procedimiento merece puntaje parcial.' } });
     fireEvent.change(screen.getByLabelText(/Puntos/), { target: { value: '0.5' } });
+    expect(screen.getByRole('combobox', { name: /Estado/ })).toHaveValue('parcial');
     expect(save).toBeEnabled();
     expect(screen.getByText(/2.50/)).toBeInTheDocument();
     fireEvent.click(save);
-    expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ componente_id: 'p1', puntos_obtenidos: 0.5 }));
+    expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ componente_id: 'p1', puntos_obtenidos: 0.5, estado: 'parcial' }));
+  });
+
+  it('convierte 1/1 en 0.7/1 como puntaje parcial y recalcula la vista previa', () => {
+    const onSave = vi.fn();
+    render(<GradeComponentEditor component={{
+      id: 'p1', clave: 'pregunta:1', orden: 0, tipo: 'pregunta', numero: '1', titulo: 'Pregunta',
+      respuesta_estudiante: 'Respuesta', respuesta_referencia: 'Referencia', puntos_obtenidos: 1, puntos_maximos: 1,
+      estado: 'correcta', explicacion: 'Respuesta completa.', origen: 'ia', requiere_revision: false, evidencia_paginas: [],
+    }} formula={{ puntos_obtenidos: 1, puntos_posibles: 1, nota_maxima: 5, nota_base: 5, ajuste_global: 0, nota_antes_redondeo: 5, regla_redondeo: 'half_up', decimales: 2, nota_final: 5 }} onCancel={() => undefined} onSave={onSave} />);
+
+    fireEvent.change(screen.getByLabelText(/Puntos/), { target: { value: '0.7' } });
+    fireEvent.change(screen.getByLabelText(/Motivo interno/), { target: { value: 'La respuesta está parcialmente completa.' } });
+    fireEvent.change(screen.getByLabelText(/Explicación para/), { target: { value: 'Lograste parte del procedimiento; revisa el paso final.' } });
+
+    expect(screen.getByRole('combobox', { name: /Estado/ })).toHaveValue('parcial');
+    expect(screen.getByText(/3.50/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar y recalcular' }));
+    expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ puntos_obtenidos: 0.7, estado: 'parcial' }));
   });
 
   it('conserva el borrador cuando el guardado falla y permite recargar de forma explícita', () => {

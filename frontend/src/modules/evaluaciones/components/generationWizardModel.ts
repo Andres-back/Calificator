@@ -1,6 +1,6 @@
 import type { Evaluacion, EvaluacionModalidad } from '@/types/api';
 
-export const WIZARD_VERSION = 7;
+export const WIZARD_VERSION = 9;
 export const WIZARD_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 export const MIN_QUESTIONS = 3;
 export const MAX_QUESTIONS = 30;
@@ -41,6 +41,7 @@ export interface EditableQuestion {
   puntaje: number;
   modalidadRespuesta: QuestionResponseMode;
   dbaIds: string[];
+  learningCriterionKeys: string[];
   justificacionAlineacion?: string;
   fuenteContextoIds?: string[];
   expanded: boolean;
@@ -65,6 +66,8 @@ export interface WizardState {
   fechaLimiteEntrega: string;
   dbaIds: string[];
   dbaPersonalizadoIds: string[];
+  learningCriteriaVersionId: string;
+  learningCriteriaOptions: Array<{ key: string; nombre: string }>;
   useDba: boolean;
   useRubric: boolean;
   rubricCriteria: string[];
@@ -75,6 +78,33 @@ export interface WizardState {
   generatedEvaluationId: string | null;
   generatedCriteria: EditableRubricCriterion[];
   questions: EditableQuestion[];
+}
+
+export interface LearningCriteriaCoverage {
+  rows: Array<{ key: string; nombre: string; questionNumbers: number[] }>;
+  unmappedQuestionNumbers: number[];
+  coveredCount: number;
+  totalCount: number;
+}
+
+export function summarizeLearningCriteriaCoverage(
+  options: Array<{ key: string; nombre: string }>,
+  questions: EditableQuestion[],
+): LearningCriteriaCoverage {
+  const rows = options.map((criterion) => ({
+    ...criterion,
+    questionNumbers: questions
+      .filter((question) => question.learningCriterionKeys.includes(criterion.key))
+      .map((question) => question.numero),
+  }));
+  return {
+    rows,
+    unmappedQuestionNumbers: questions
+      .filter((question) => question.learningCriterionKeys.length === 0)
+      .map((question) => question.numero),
+    coveredCount: rows.filter((row) => row.questionNumbers.length > 0).length,
+    totalCount: rows.length,
+  };
 }
 
 interface StoredWizardDraft {
@@ -95,6 +125,8 @@ export function createEmptyWizardState(materiaId = ''): WizardState {
     fechaLimiteEntrega: '',
     dbaIds: [],
     dbaPersonalizadoIds: [],
+    learningCriteriaVersionId: '',
+    learningCriteriaOptions: [],
     useDba: false,
     useRubric: false,
     rubricCriteria: [],
@@ -183,6 +215,12 @@ export function normalizeRubricCriteria(
             .map(([name, description]) => [name.trim(), String(description ?? '').trim()])
             .filter(([name]) => Boolean(name)),
         )
+      : Array.isArray(rawLevels)
+        ? Object.fromEntries(rawLevels
+            .filter((level): level is { nombre: string; descripcion: string } =>
+              Boolean(level && typeof level === 'object' && typeof level.nombre === 'string'))
+            .map((level) => [level.nombre.trim(), String(level.descripcion ?? '').trim()])
+            .filter(([name]) => Boolean(name)))
       : {};
     const rawWeight = Number(criterion.peso_porcentaje ?? 0);
     return {
@@ -389,6 +427,7 @@ export function evaluationToEditableQuestions(evaluation: Evaluacion): EditableQ
               : 'online'
       ) as QuestionResponseMode,
       dbaIds: Array.isArray(question.dba_ids) ? question.dba_ids.map(String) : [],
+      learningCriterionKeys: Array.isArray(question.learning_criterion_keys) ? question.learning_criterion_keys.map(String) : [],
       justificacionAlineacion: question.justificacion_alineacion
         ? String(question.justificacion_alineacion)
         : undefined,
@@ -446,6 +485,7 @@ export function createBlankQuestion(
     puntaje: 1,
     modalidadRespuesta: evaluationModality === 'fisica' ? 'fisica' : 'online',
     dbaIds: [],
+    learningCriterionKeys: [],
     fuenteContextoIds: [],
     expanded: true,
   };
@@ -482,6 +522,10 @@ export function evaluationToWizardState(evaluation: Evaluacion): WizardState {
     fechaLimiteEntrega: toDatetimeLocalValue(evaluation.fecha_limite_entrega),
     dbaIds: evaluation.dba_ids ?? [],
     dbaPersonalizadoIds: evaluation.dba_personalizado_ids ?? [],
+    learningCriteriaVersionId: evaluation.criterios_aprendizaje_aplicados?.version_id ?? '',
+    learningCriteriaOptions: criteria
+      .filter((criterion) => typeof criterion.learning_criterion_key === 'string')
+      .map((criterion) => ({ key: String(criterion.learning_criterion_key), nombre: String(criterion.nombre ?? 'Criterio') })),
     useDba: Boolean((evaluation.dba_ids?.length ?? 0) + (evaluation.dba_personalizado_ids?.length ?? 0)),
     useRubric: hasRubric,
     rubricCriteria: criteria.map((criterion) => String(criterion.nombre ?? '')).filter(Boolean),
@@ -501,6 +545,7 @@ export function duplicateQuestion(questions: EditableQuestion[], index: number) 
     enunciado: `${original.enunciado} (copia)`,
     opciones: [...original.opciones],
     dbaIds: [...original.dbaIds],
+    learningCriterionKeys: [...original.learningCriterionKeys],
     fuenteContextoIds: [...(original.fuenteContextoIds ?? [])],
     expanded: true,
   };
@@ -529,6 +574,7 @@ export function questionsToUpdatePayload(questions: EditableQuestion[]) {
       puntaje: String(question.puntaje),
       modalidad_respuesta: question.modalidadRespuesta,
       dba_ids: question.dbaIds,
+      learning_criterion_keys: question.learningCriterionKeys,
       justificacion_alineacion: question.justificacionAlineacion,
       fuente_contexto_ids: question.fuenteContextoIds ?? [],
     })),

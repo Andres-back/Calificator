@@ -70,13 +70,18 @@ export function DetailPage() {
   ) ? content._xcalificator as Record<string, unknown> : null;
   const alignedDba = Array.isArray(aiTrace?.dba_seleccionados) ? aiTrace.dba_seleccionados.length : 0;
   const pedagogicalApproach = aiTrace?.enfoque_pedagogico;
-  const approachLabel = pedagogicalApproach === 'dba_rubrica'
-    ? `Alineado con ${alignedDba} DBA${alignedDba === 1 ? '' : 's'} y criterios de rúbrica`
-    : pedagogicalApproach === 'dba'
-      ? `Alineado con ${alignedDba} DBA${alignedDba === 1 ? '' : 's'}`
-      : pedagogicalApproach === 'rubrica'
-        ? 'Orientado por criterios de rúbrica'
-        : 'Generado libremente a partir del tema y el grado';
+  const appliedCriteria = material?.criterios_aprendizaje_aplicados;
+  const approachLabel = appliedCriteria
+    ? `Criterios aprobados: ${appliedCriteria.titulo} · versión ${appliedCriteria.version_number}`
+    : pedagogicalApproach === 'criterios_aprobados'
+      ? 'Alineado con criterios de aprendizaje aprobados'
+      : pedagogicalApproach === 'dba_rubrica'
+        ? `Alineado con ${alignedDba} estándar${alignedDba === 1 ? '' : 'es'} oficial${alignedDba === 1 ? '' : 'es'} y criterios rápidos`
+        : pedagogicalApproach === 'dba'
+          ? `Alineado con ${alignedDba} estándar${alignedDba === 1 ? '' : 'es'} oficial${alignedDba === 1 ? '' : 'es'}`
+          : pedagogicalApproach === 'rubrica'
+            ? 'Orientado por criterios rápidos escritos para este recurso'
+            : 'Generado libremente a partir del tema y el grado';
 
   const linkedEvaluation = linkedEvaluationsQuery.data?.[0] ?? null;
   const linkedEvaluationId = linkedEvaluation?.id ?? material?.evaluacion_id ?? null;

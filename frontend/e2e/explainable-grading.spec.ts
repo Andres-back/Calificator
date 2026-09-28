@@ -22,7 +22,7 @@ function json(route: Route, body: unknown, status = 200) {
   return route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(body) });
 }
 
-async function installMocks(page: Page, role: 'profesor' | 'estudiante', permissions?: string[]) {
+async function installMocks(page: Page, role: 'profesor' | 'estudiante', permissions?: string[], students = [student]) {
   const activeUser = { ...(role === 'profesor' ? teacher : student), ...(permissions ? { permissions } : {}) };
   let authenticated = false;
   await page.route('**/api/**', async (route) => {
@@ -36,7 +36,7 @@ async function installMocks(page: Page, role: 'profesor' | 'estudiante', permiss
     }
     if (path === '/materias') return json(route, [materia]);
     if (path === '/materias/m1/evaluaciones') return json(route, [evaluation]);
-    if (path === '/materias/m1/estudiantes') return json(route, { ...materia, estudiantes: [student] });
+    if (path === '/materias/m1/estudiantes') return json(route, { ...materia, estudiantes: students });
     if (path === '/evaluaciones/e1') return json(route, evaluation);
     if (path === '/evaluaciones/e1/calificaciones') return json(route, [grade]);
     if (path === '/evaluaciones/e1/revision') return json(route, {
@@ -58,8 +58,8 @@ async function installMocks(page: Page, role: 'profesor' | 'estudiante', permiss
   });
 }
 
-async function login(page: Page, role: 'profesor' | 'estudiante', permissions?: string[]) {
-  await installMocks(page, role, permissions);
+async function login(page: Page, role: 'profesor' | 'estudiante', permissions?: string[], students = [student]) {
+  await installMocks(page, role, permissions, students);
   await page.goto('/login');
   await page.getByLabel(/Correo/i).fill(role === 'profesor' ? teacher.email : student.email);
   await page.locator('input[type="password"]').fill('Password123!');
@@ -359,8 +359,8 @@ test('estudiante no accede al centro docente ni consulta su proyección', async 
 
 test('dos paquetes quedan en cola, un fallo conserva hojas para reintentar', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await login(page, 'profesor');
-  await page.route('**/api/materias/m1/estudiantes', (route) => json(route, { ...materia, estudiantes: [student, { ...student, id: 's2', nombre: 'Segundo estudiante' }] }));
+  // El inicio puede precargar y cachear el listado antes de entrar a la carga.
+  await login(page, 'profesor', undefined, [student, { ...student, id: 's2', nombre: 'Segundo estudiante' }]);
   let uploads = 0;
   const owners: string[] = [];
   const accepted = new Set<string>();
@@ -419,8 +419,8 @@ test('lectura docente y enlaces antiguos conservan contexto sin habilitar escrit
 });
 
 test('añadir otra entrega permite volver al alumno y pregunta anteriores', async ({ page }) => {
-  await login(page, 'profesor');
-  await page.route('**/api/materias/m1/estudiantes', (route) => json(route, { ...materia, estudiantes: [student, { ...student, id: 's2', nombre: 'Segundo estudiante' }] }));
+  // Install the complete roster before login: the dashboard may already cache it.
+  await login(page, 'profesor', undefined, [student, { ...student, id: 's2', nombre: 'Segundo estudiante' }]);
   await page.goto('/app/calificaciones?evaluacion=e1&calificacion=c1&estudiante=s1&pregunta=pregunta%3A1&hoja=1');
   await expect(page.getByRole('button', { name: 'Pregunta 1', exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Añadir entregas', exact: true }).click();

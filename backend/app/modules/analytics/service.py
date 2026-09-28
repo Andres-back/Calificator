@@ -14,10 +14,24 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
 from app.core.logging import get_logger
-from app.modules.analytics.event_policy import AnalyticsValidationError, validate_event_payload
+from app.modules.analytics.event_policy import (
+    AnalyticsValidationError,
+    validate_event_payload,
+)
 from app.modules.analytics.models import AnalyticsEvento, AnalyticsWorkSession
+from app.modules.calificaciones.breakdown_models import (
+    CalificacionComponente,
+    CalificacionDesglose,
+)
 from app.modules.calificaciones.incidencia_models import CalificacionIncidencia
 from app.modules.calificaciones.models import Calificacion
+from app.modules.criterios_aprendizaje.models import (
+    GradingComponentCriterion,
+    LearningCriterionApplication,
+    LearningCriterionSet,
+    LearningCriterionVersion,
+)
+from app.modules.criterios_aprendizaje.authorization import ensure_can_manage_materia_criteria
 from app.modules.evaluaciones.models import Evaluacion
 from app.modules.users.models import User
 from app.shared.enums import CalificacionEstado, UserRole
@@ -122,6 +136,8 @@ async def _validate_event_references(
     calificacion_id: UUID | None,
     metadata_json: dict,
 ) -> None:
+    if "session_id" in metadata_json:
+        await ensure_can_manage_materia_criteria(db, UUID(metadata_json["materia_id"]), current_user)
     if (
         current_user.rol == UserRole.ESTUDIANTE.value
         and evaluacion_id is not None
@@ -208,6 +224,33 @@ async def registrar_evento(
     await db.commit()
     await db.refresh(evento)
     return evento
+
+
+async def get_learning_criteria_timing(
+    db: AsyncSession, profesor_id: UUID, desde: datetime, hasta: datetime, materia_id: UUID | None = None,
+) -> dict:
+    """Human intervals and server job latency are independent, never an estimated saving."""
+    params = {"actor": str(profesor_id), "desde": desde, "hasta": hasta, "materia": str(materia_id) if materia_id else None}
+    human = (await db.execute(text(
+        "SELECT COUNT(DISTINCT metadata_json->>'session_id') AS sesiones, "
+        "COALESCE(SUM((metadata_json->>'preparacion_ms')::bigint),0) AS preparacion_ms, "
+        "COALESCE(SUM((metadata_json->>'revision_ms')::bigint),0) AS revision_ms, "
+        "COALESCE(SUM((metadata_json->>'espera_solicitud_ms')::bigint),0) AS espera_solicitud_ms "
+        "FROM analytics_eventos WHERE tipo='learning_criteria_work_measured' "
+        "AND actor_id=CAST(:actor AS uuid) AND created_at BETWEEN :desde AND :hasta "
+        "AND (CAST(:materia AS text) IS NULL OR metadata_json->>'materia_id'=CAST(:materia AS text))"
+    ), params)).mappings().one()
+    jobs = (await db.execute(text(
+        "SELECT COUNT(*) AS jobs_completados, "
+        "COALESCE(SUM(EXTRACT(EPOCH FROM (j.finished_at-j.created_at))*1000),0) AS espera_job_ms "
+        "FROM ai_jobs j JOIN learning_criterion_versions v ON v.id::text=j.input_json->>'version_id' "
+        "JOIN learning_criterion_sets s ON s.id=v.set_id "
+        "WHERE j.tipo='criterios_aprendizaje' AND j.user_id=CAST(:actor AS uuid) "
+        "AND j.created_at BETWEEN :desde AND :hasta AND j.finished_at IS NOT NULL "
+        "AND (CAST(:materia AS uuid) IS NULL OR s.materia_id=CAST(:materia AS uuid))"
+    ), params)).mappings().one()
+    return {**{key: int(value) for key, value in human.items()}, **{key: int(value) for key, value in jobs.items()},
+            "metodo": "intervalos_opt_in_con_pausa_45s_y_jobs_servidor", "es_ahorro_estimado": False}
 
 
 async def _validate_work_session_references(
@@ -862,6 +905,8 @@ async def get_overview(
                 "es_evidencia_observada": False,
             },
             "tiempos_observados": observed_work,
+            "tiempos_criterios": await get_learning_criteria_timing(db, profesor_id, desde, hasta, materia_id)
+            if settings.CRITERIA_UI else None,
         },
     }
 
@@ -1062,6 +1107,142 @@ async def get_evaluacion_detail(
 # ── 2B: Rendimiento pedagógico ──────────────────────────────────────────────────
 
 
+def _criterion_result_rows(
+    canonical_rows: list[dict],
+    legacy_rows: list[dict],
+) -> list[dict]:
+    """Combina analítica canónica y legado sin duplicar una calificación.
+
+    Los vínculos canónicos se consolidan primero por calificación y criterio,
+    porque un mismo criterio puede repartirse entre varias preguntas. Solo las
+    calificaciones sin vínculos canónicos usan el JSON histórico de grader_a.
+    """
+    canonical_grade_ids: set[str] = set()
+    per_grade: dict[tuple[str, str, str, str], dict] = {}
+
+    for row in canonical_rows:
+        grade_id = str(row.get("calificacion_id") or "")
+        set_id = str(row.get("set_id") or "")
+        version_id = str(row.get("version_id") or "")
+        stable_key = str(row.get("criterion_stable_key") or "").strip()
+        if grade_id and set_id and version_id and stable_key:
+            canonical_grade_ids.add(grade_id)
+        awarded = row.get("awarded_points")
+        maximum = row.get("max_points")
+        try:
+            maximum_value = float(maximum)
+            awarded_value = float(awarded) if awarded is not None else None
+        except (TypeError, ValueError):
+            continue
+        if not grade_id or not set_id or not version_id or not stable_key or maximum_value <= 0 or awarded_value is None:
+            continue
+        snapshot = row.get("criterion_snapshot_json") or {}
+        name = str(snapshot.get("nombre") or stable_key).strip() or stable_key
+        group_key = (set_id, version_id, stable_key)
+        grade_key = (grade_id, *group_key)
+        bucket = per_grade.setdefault(
+            grade_key,
+            {
+                "group_key": group_key,
+                "nombre": name,
+                "set_id": set_id,
+                "version_id": version_id,
+                "version_number": row.get("version_number"),
+                "stable_key": stable_key,
+                "awarded": 0.0,
+                "maximum": 0.0,
+            },
+        )
+        bucket["awarded"] += awarded_value
+        bucket["maximum"] += maximum_value
+
+    aggregates: dict[tuple[str, str, str], dict] = {}
+    for item in per_grade.values():
+        if item["maximum"] <= 0:
+            continue
+        pct = max(0.0, min(100.0, (item["awarded"] / item["maximum"]) * 100))
+        group_key = item["group_key"]
+        aggregate = aggregates.setdefault(
+            group_key,
+            {
+                "nombre": item["nombre"],
+                "set_id": item["set_id"],
+                "version_id": item["version_id"],
+                "version_number": item["version_number"],
+                "stable_key": item["stable_key"],
+                "source": "versionado",
+                "sum_pct": 0.0,
+                "count": 0,
+                "difficulty_count": 0,
+            },
+        )
+        aggregate["sum_pct"] += pct
+        aggregate["count"] += 1
+        if pct < 60:
+            aggregate["difficulty_count"] += 1
+
+    for row in legacy_rows:
+        grade_id = str(row.get("calificacion_id") or "")
+        if not grade_id or grade_id in canonical_grade_ids:
+            continue
+        result_json = row.get("resultado_json") or {}
+        grader_a = result_json.get("grader_a") if isinstance(result_json, dict) else None
+        criteria = grader_a.get("criterios", []) if isinstance(grader_a, dict) else []
+        for criterion in criteria:
+            if not isinstance(criterion, dict):
+                continue
+            name = str(criterion.get("nombre") or "").strip()
+            if not name:
+                continue
+            try:
+                awarded = float(criterion.get("puntaje", 0))
+                maximum = float(criterion.get("maximo", 1))
+            except (TypeError, ValueError):
+                continue
+            if maximum <= 0:
+                continue
+            pct = max(0.0, min(100.0, (awarded / maximum) * 100))
+            legacy_key = ("legacy", "legacy", name.casefold())
+            aggregate = aggregates.setdefault(
+                legacy_key,
+                {
+                    "nombre": name,
+                    "set_id": None,
+                    "version_id": None,
+                    "version_number": None,
+                    "stable_key": None,
+                    "source": "historico",
+                    "sum_pct": 0.0,
+                    "count": 0,
+                    "difficulty_count": 0,
+                },
+            )
+            aggregate["sum_pct"] += pct
+            aggregate["count"] += 1
+            if pct < 60:
+                aggregate["difficulty_count"] += 1
+
+    result: list[dict] = []
+    for data in aggregates.values():
+        average = data["sum_pct"] / data["count"] if data["count"] else 0
+        attention = "dominado" if average >= 80 else ("en_desarrollo" if average >= 60 else "requiere_refuerzo")
+        result.append(
+            {
+                "nombre": data["nombre"],
+                "porcentaje_logro": round(average, 1),
+                "estudiantes_evaluados": data["count"],
+                "estudiantes_con_dificultad": data["difficulty_count"],
+                "nivel_atencion": attention,
+                "conjunto_id": data["set_id"],
+                "version_id": data["version_id"],
+                "version": data["version_number"],
+                "clave_estable": data["stable_key"],
+                "origen": data["source"],
+            }
+        )
+    return sorted(result, key=lambda row: (row["porcentaje_logro"], row["nombre"].casefold()))
+
+
 async def get_criterios(
     db: AsyncSession,
     profesor_id: UUID,
@@ -1072,67 +1253,61 @@ async def get_criterios(
 ) -> list[dict]:
     """Rendimiento agregado por criterio de evaluación."""
     desde, hasta = _default_date_range()
-    if fecha_desde: desde = fecha_desde
-    if fecha_hasta: hasta = fecha_hasta
+    if fecha_desde:
+        desde = fecha_desde
+    if fecha_hasta:
+        hasta = fecha_hasta
 
-    cal_filter = [Calificacion.revisado_por_docente == True, Calificacion.created_at >= desde, Calificacion.created_at <= hasta]
+    cal_filter = [
+        Calificacion.revisado_por_docente.is_(True),
+        Calificacion.created_at >= desde,
+        Calificacion.created_at <= hasta,
+        Evaluacion.profesor_id == profesor_id,
+    ]
     if evaluacion_id:
         cal_filter.append(Calificacion.evaluacion_id == evaluacion_id)
-    else:
-        cal_filter.append(Evaluacion.profesor_id == profesor_id)
-        if materia_id:
-            cal_filter.append(Evaluacion.materia_id == materia_id)
+    elif materia_id:
+        cal_filter.append(Evaluacion.materia_id == materia_id)
 
-    query = select(Calificacion.resultado_json, Evaluacion.nota_maxima).join(Evaluacion, Calificacion.evaluacion_id == Evaluacion.id).where(*cal_filter)
-    rows = await db.execute(query)
-    db_rows = rows.all()
+    canonical_query = (
+        select(
+            Calificacion.id.label("calificacion_id"),
+            LearningCriterionSet.id.label("set_id"),
+            LearningCriterionVersion.id.label("version_id"),
+            LearningCriterionVersion.version_number,
+            GradingComponentCriterion.criterion_stable_key,
+            GradingComponentCriterion.criterion_snapshot_json,
+            GradingComponentCriterion.awarded_points,
+            GradingComponentCriterion.max_points,
+        )
+        .join(Evaluacion, Calificacion.evaluacion_id == Evaluacion.id)
+        .join(
+            CalificacionDesglose,
+            (CalificacionDesglose.calificacion_id == Calificacion.id)
+            & CalificacionDesglose.activo.is_(True),
+        )
+        .join(CalificacionComponente, CalificacionComponente.desglose_id == CalificacionDesglose.id)
+        .join(GradingComponentCriterion, GradingComponentCriterion.component_id == CalificacionComponente.id)
+        .join(LearningCriterionApplication, LearningCriterionApplication.id == GradingComponentCriterion.application_id)
+        .join(LearningCriterionVersion, LearningCriterionVersion.id == LearningCriterionApplication.version_id)
+        .join(LearningCriterionSet, LearningCriterionSet.id == LearningCriterionVersion.set_id)
+        .where(*cal_filter)
+    )
+    canonical_rows = (await db.execute(canonical_query)).mappings().all()
 
-    # Extraer criterios del JSONB
-    criterios_map: dict[str, dict] = {}
-    for row in db_rows:
-        rj = row[0] if isinstance(row, tuple) else row.resultado_json
-        if not rj:
-            continue
-        grader_a = rj.get("grader_a", {}) if isinstance(rj, dict) else {}
-        criterios = grader_a.get("criterios", []) if isinstance(grader_a, dict) else []
-        for crit in criterios:
-            nombre = str(crit.get("nombre", ""))
-
-            # Normalizar puntajes a escala 0-5
-            puntaje = float(crit.get("puntaje", 0))
-            maximo = float(crit.get("maximo", 1))
-            if maximo > 0:
-                pct = (puntaje / maximo) * 100
-            else:
-                pct = 0
-
-            if nombre not in criterios_map:
-                criterios_map[nombre] = {
-                    "nombre": nombre,
-                    "suma_pct": 0.0,
-                    "conteo": 0,
-                    "est_dificultad": 0,
-                    "puntaje_maximo_total": 0.0,
-                }
-            criterios_map[nombre]["suma_pct"] += pct
-            criterios_map[nombre]["conteo"] += 1
-            criterios_map[nombre]["puntaje_maximo_total"] += maximo
-            if pct < 60:
-                criterios_map[nombre]["est_dificultad"] += 1
-
-    result = []
-    for nombre, data in sorted(criterios_map.items()):
-        pct_promedio = data["suma_pct"] / data["conteo"] if data["conteo"] > 0 else 0
-        nivel = "dominado" if pct_promedio >= 80 else ("en_desarrollo" if pct_promedio >= 60 else "requiere_refuerzo")
-        result.append({
-            "nombre": nombre,
-            "porcentaje_logro": round(pct_promedio, 1),
-            "estudiantes_evaluados": data["conteo"],
-            "estudiantes_con_dificultad": data["est_dificultad"],
-            "nivel_atencion": nivel,
-        })
-
-    return sorted(result, key=lambda r: r["porcentaje_logro"])
+    legacy_query = (
+        select(
+            Calificacion.id.label("calificacion_id"),
+            Calificacion.resultado_json,
+        )
+        .join(Evaluacion, Calificacion.evaluacion_id == Evaluacion.id)
+        .where(*cal_filter)
+    )
+    legacy_rows = (await db.execute(legacy_query)).mappings().all()
+    return _criterion_result_rows(
+        [dict(row) for row in canonical_rows],
+        [dict(row) for row in legacy_rows],
+    )
 
 
 async def get_preguntas(

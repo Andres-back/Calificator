@@ -24,6 +24,15 @@ type FeedbackStoryReference = GradeReference & { metadata_json: { mode: Feedback
 type ReviewTriageLevel = 'safe' | 'attention' | 'blocked';
 
 export type AnalyticsEventPayloads = {
+  learning_criteria_work_measured: { metadata_json: {
+    materia_id: string;
+    session_id: string;
+    preparacion_ms: number;
+    revision_ms: number;
+    espera_solicitud_ms: number;
+    condicion: 'manual' | 'asistida';
+    resultado: 'intervalo' | 'cerrada' | 'aprobada' | 'propuesta';
+  } };
   session_view_opened: { metadata_json: { surface: AnalyticsSurface } };
   workspace_opened: EvaluationReference & { metadata_json: { materia_id: string } };
   calificacion_opened: EvaluationReference & { calificacion_id: string };

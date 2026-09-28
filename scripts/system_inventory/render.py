@@ -12,6 +12,7 @@ DOMAIN_SPECS = (
     "007-entregas-estudiante", "008-calificaciones", "009-xali-rag-refuerzos",
     "010-presentaciones-imagenes", "011-reportes-analitica-impacto", "012-ia-jobs-produccion",
     "021-configuracion-ia-docente", "029-roles-permisos-modulares", "067-privacidad-legal",
+    "042-criterios-aprendizaje",
 )
 
 

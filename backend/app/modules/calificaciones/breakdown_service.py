@@ -19,6 +19,40 @@ from app.modules.users.models import User
 from app.shared.enums import CalificacionEstado
 
 
+async def _attach_learning_criteria(
+    db: AsyncSession,
+    *,
+    calificacion: Calificacion,
+    blueprint: dict,
+    components: list[dict],
+) -> tuple[object | None, list[list[dict]]]:
+    if not settings.CRITERIA_GRADING_CONTEXT:
+        return None, [[] for _item in components]
+    from app.modules.criterios_aprendizaje.application_service import get_current_application
+    from app.modules.criterios_aprendizaje.grading_mapping import build_criterion_allocations
+
+    application = await get_current_application(db, target_type="evaluacion", target_id=calificacion.evaluacion_id)
+    if application is None:
+        return None, [[] for _item in components]
+    allocations = build_criterion_allocations(components, blueprint=blueprint, snapshot=application.snapshot_json)
+    for component, component_allocations in zip(components, allocations, strict=True):
+        evidence = dict(component.get("evidencia_json") or {})
+        evidence["criterios_aplicados"] = [
+            {
+                "stable_key": item["criterion_stable_key"],
+                "nombre": item["criterion"].get("nombre"),
+                "descripcion": item["criterion"].get("descripcion"),
+                "puntos_maximos": float(item["max_points"]),
+                "puntos_obtenidos": float(item["awarded_points"]) if item["awarded_points"] is not None else None,
+                "version_id": str(application.version_id),
+                "application_id": str(application.id),
+            }
+            for item in component_allocations
+        ]
+        component["evidencia_json"] = evidence
+    return application, allocations
+
+
 _QUESTION_IN_ALERT = re.compile(r"\b(?:pregunta\s*|p\s*\.?\s*)(\d+)\b", re.IGNORECASE)
 _SCORE_CONFLICT_IN_ALERT = re.compile(
     r"incorrect[ao]|incompatib\w*|contradic\w*|error\s+en\s+(?:la\s+)?clave|puntaje\s+0",
@@ -67,6 +101,7 @@ def _component_dict(component: CalificacionComponente, *, student: bool = False,
         # Las fuentes de apoyo pueden contener fragmentos privados del docente.
         # El estudiante recibe la explicación, nunca esa procedencia interna.
         "fuentes": [] if student else list((component.evidencia_json or {}).get("fuentes") or []),
+        "criterios_aplicados": list((component.evidencia_json or {}).get("criterios_aplicados") or []),
     }
     if student:
         data["referencia_oculta"] = bool(component.respuesta_referencia and not reveal_key)
@@ -215,9 +250,20 @@ async def create_automatic_breakdown(
             str(component.get("numero")),
             [],
         )
+    criteria_application, criterion_allocations = await _attach_learning_criteria(
+        db, calificacion=calificacion, blueprint=blueprint, components=components
+    )
     coverage = dict(raw_output.get("evidence_coverage") or {})
     if coverage.get("requiere_revision"):
         blockers.append("cobertura_evidencia_incompleta")
+    if criteria_application is not None and any(
+        item.get("stable_key") for item in criteria_application.snapshot_json.get("criterios") or []
+    ):
+        blockers.extend(
+            f"criterio_no_asignado:{component['clave']}"
+            for component, allocation in zip(components, criterion_allocations, strict=True)
+            if component.get("tipo") in {"pregunta", "rubrica"} and not allocation
+        )
     state, component_blockers = coverage_state(components)
     blockers = list(dict.fromkeys([*blockers, *component_blockers]))
     if active:
@@ -255,6 +301,19 @@ async def create_automatic_breakdown(
     breakdown.componentes = [CalificacionComponente(**item) for item in components]
     db.add(breakdown)
     await db.flush()
+    if criteria_application is not None:
+        from app.modules.criterios_aprendizaje.models import GradingComponentCriterion
+
+        for component, allocations in zip(breakdown.componentes, criterion_allocations, strict=True):
+            for item in allocations:
+                db.add(GradingComponentCriterion(
+                    component_id=component.id,
+                    application_id=criteria_application.id,
+                    criterion_stable_key=item["criterion_stable_key"],
+                    criterion_snapshot_json=item["criterion"],
+                    max_points=item["max_points"],
+                    awarded_points=item["awarded_points"],
+                ))
     model_score = Decimal(str(calificacion.nota_sugerida)) if calificacion.nota_sugerida is not None else None
     human_decision = bool(
         calificacion.revisado_por_docente
@@ -349,6 +408,56 @@ async def update_breakdown(db: AsyncSession, *, calificacion: Calificacion, expe
     new.componentes = [CalificacionComponente(**item) for item in new_components]
     db.add(new)
     await db.flush()
+    if settings.CRITERIA_GRADING_CONTEXT:
+        from app.modules.criterios_aprendizaje.models import GradingComponentCriterion
+
+        prior_rows = list(await db.scalars(
+            select(GradingComponentCriterion).where(
+                GradingComponentCriterion.component_id.in_([item.id for item in active.componentes])
+            )
+        ))
+        by_component: dict[UUID, list[GradingComponentCriterion]] = {}
+        for row in prior_rows:
+            by_component.setdefault(row.component_id, []).append(row)
+        for old_component, new_component in zip(active.componentes, new.componentes, strict=True):
+            mappings = by_component.get(old_component.id, [])
+            if not mappings:
+                continue
+            accumulated = Decimal("0")
+            updated_trace = []
+            previous_trace = {
+                str(item.get("stable_key")): item
+                for item in (old_component.evidencia_json or {}).get("criterios_aplicados") or []
+                if isinstance(item, dict)
+            }
+            for index, mapping in enumerate(mappings):
+                if new_component.puntos_obtenidos is None:
+                    share = None
+                elif index == len(mappings) - 1:
+                    share = new_component.puntos_obtenidos - accumulated
+                else:
+                    share = (new_component.puntos_obtenidos * mapping.max_points / new_component.puntos_maximos).quantize(Decimal("0.0001"))
+                    accumulated += share
+                db.add(GradingComponentCriterion(
+                    component_id=new_component.id,
+                    application_id=mapping.application_id,
+                    criterion_stable_key=mapping.criterion_stable_key,
+                    criterion_snapshot_json=dict(mapping.criterion_snapshot_json or {}),
+                    max_points=mapping.max_points,
+                    awarded_points=share,
+                ))
+                updated_trace.append({
+                    "stable_key": mapping.criterion_stable_key,
+                    "nombre": mapping.criterion_snapshot_json.get("nombre"),
+                    "descripcion": mapping.criterion_snapshot_json.get("descripcion"),
+                    "puntos_maximos": float(mapping.max_points),
+                    "puntos_obtenidos": float(share) if share is not None else None,
+                    "version_id": previous_trace.get(mapping.criterion_stable_key, {}).get("version_id"),
+                    "application_id": str(mapping.application_id),
+                })
+            evidence = dict(new_component.evidencia_json or {})
+            evidence["criterios_aplicados"] = updated_trace
+            new_component.evidencia_json = evidence
     for key, before, after, reason, explanation in audit_rows:
         db.add(CalificacionAjuste(calificacion_id=calificacion.id, desglose_anterior_id=active.id, desglose_nuevo_id=new.id, componente_clave=key, tipo="componente", valor_anterior_json=before, valor_nuevo_json=after, motivo_interno=reason, explicacion_estudiante=explanation, actor_id=actor_id))
     if global_adjustment:

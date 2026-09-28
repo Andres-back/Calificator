@@ -12,6 +12,8 @@ const mocks = vi.hoisted(() => ({
   update: vi.fn(),
   listDba: vi.fn(),
   sendMessage: vi.fn(),
+  capabilities: vi.fn(),
+  listCriteria: vi.fn(),
 }));
 
 vi.mock('../api', () => ({
@@ -24,6 +26,10 @@ vi.mock('@/modules/materias/dbaApi', () => ({
 }));
 vi.mock('@/modules/xali/api', () => ({
   sendMessage: mocks.sendMessage,
+}));
+vi.mock('@/modules/materias/criterios/api', () => ({
+  getLearningCriteriaCapabilities: mocks.capabilities,
+  listLearningCriteria: mocks.listCriteria,
 }));
 vi.mock('react-hot-toast', () => ({
   default: { success: vi.fn(), error: vi.fn() },
@@ -147,6 +153,8 @@ beforeEach(() => {
   });
   mocks.update.mockResolvedValue(evaluation);
   mocks.sendMessage.mockResolvedValue({ respuesta: 'Aclara el enunciado.' });
+  mocks.capabilities.mockResolvedValue({ ui: false, write: false, generation: false });
+  mocks.listCriteria.mockResolvedValue({ items: [] });
 });
 
 describe('GenerationWizard', () => {
@@ -165,7 +173,7 @@ describe('GenerationWizard', () => {
     expect(await screen.findByText('Elige cómo orientar la evaluación')).toBeInTheDocument();
     expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '2');
 
-    await user.click(screen.getByRole('checkbox', { name: /Alinear con DBA/i }));
+    await user.click(screen.getByRole('checkbox', { name: /Alinear con estándares oficiales/i }));
     await user.click(await screen.findByRole('button', { name: /DBA-1/i }));
     await user.click(screen.getByRole('button', { name: 'Siguiente' }));
     expect(screen.getByText('Configura las preguntas')).toBeInTheDocument();
@@ -350,4 +358,73 @@ describe('GenerationWizard', () => {
       niveles: { Excelente: 'Justifica cada paso con precisión.' },
     });
   }, 10_000);
+
+  it('preserves an approved version until the teacher edits its rubric', async () => {
+    const user = userEvent.setup();
+    const linked = {
+      ...rubricEvaluation,
+      criterios_aprendizaje_aplicados: {
+        version_id: 'approved-version-1',
+        set_id: 'criteria-set-1',
+        titulo: 'Criterios de matemáticas',
+        version_number: 1,
+      },
+    } as Evaluacion;
+    renderWizard(vi.fn(), linked);
+    expect(screen.getByText(/Si modificas esta rúbrica, dejará de aplicarse la versión aprobada/)).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Siguiente' }));
+    await user.click(screen.getByRole('button', { name: 'Guardar cambios' }));
+    await waitFor(() => expect(mocks.update).toHaveBeenCalledWith('evaluacion-1', expect.objectContaining({
+      criterios_aprendizaje_version_id: 'approved-version-1',
+    })));
+
+    mocks.update.mockClear();
+    await user.click(screen.getByRole('button', { name: 'Atrás' }));
+    const name = screen.getByLabelText('Nombre del criterio 1');
+    await user.clear(name);
+    await user.type(name, 'Mi criterio revisado');
+    expect(screen.queryByText(/Si modificas esta rúbrica, dejará de aplicarse la versión aprobada/)).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Siguiente' }));
+    await user.click(screen.getByRole('button', { name: 'Guardar cambios' }));
+    await waitFor(() => expect(mocks.update).toHaveBeenCalledWith('evaluacion-1', expect.objectContaining({
+      criterios_aprendizaje_version_id: undefined,
+      criterios: expect.arrayContaining([expect.objectContaining({ nombre: 'Mi criterio revisado' })]),
+    })));
+  });
+
+  it('lets a teacher explicitly link each generated answer to the approved criteria', async () => {
+    mocks.capabilities.mockResolvedValue({ ui: true, write: true, generation: true });
+    mocks.listCriteria.mockResolvedValue({ items: [{
+      id: 'set-1', titulo: 'Criterios de matemáticas',
+      version_aprobada: {
+        id: 'version-1', estado: 'aprobada', version_number: 1,
+        criterios: [
+          { stable_key: 'comprension', nombre: 'Comprensión conceptual' },
+          { stable_key: 'aplicacion', nombre: 'Aplicación' },
+        ],
+      },
+    }] });
+    mocks.generate.mockResolvedValueOnce(rubricEvaluation);
+    const user = userEvent.setup();
+    renderWizard();
+    await user.type(screen.getByLabelText(/Nombre de la evaluación/i), 'Evaluación vinculada');
+    await user.click(screen.getByRole('button', { name: 'Siguiente' }));
+    await user.selectOptions(await screen.findByLabelText('Versión que se aplicará'), 'version-1');
+    await user.click(screen.getByRole('button', { name: 'Siguiente' }));
+    await user.click(screen.getByRole('button', { name: 'Siguiente' }));
+    await user.click(screen.getByRole('button', { name: 'Siguiente' }));
+    await user.click(screen.getByRole('button', { name: 'Generar borrador' }));
+    await waitFor(() => expect(mocks.generate).toHaveBeenCalledWith(expect.objectContaining({ criterios_aprendizaje_version_id: 'version-1' })));
+    expect(await screen.findByText(/Sin relación explícita: la calificación requerirá revisión/)).toBeInTheDocument();
+    await user.click(screen.getByRole('checkbox', { name: 'Comprensión conceptual' }));
+    await user.click(screen.getByRole('button', { name: 'Siguiente' }));
+    expect(screen.getByRole('region', { name: 'Cobertura de criterios y preguntas' })).toBeVisible();
+    expect(screen.getByText('1 de 2 cubiertos')).toBeVisible();
+    expect(screen.getByText('Sin pregunta relacionada')).toBeVisible();
+    await user.click(screen.getByRole('button', { name: 'Crear evaluación' }));
+    await waitFor(() => expect(mocks.update).toHaveBeenCalledWith('evaluacion-1', expect.objectContaining({
+      criterios_aprendizaje_version_id: 'version-1',
+      preguntas: expect.arrayContaining([expect.objectContaining({ learning_criterion_keys: ['comprension'] })]),
+    })));
+  }, 15_000);
 });

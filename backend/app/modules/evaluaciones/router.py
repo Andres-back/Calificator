@@ -343,7 +343,7 @@ async def update_evaluation(
 ) -> object:
     require_permission_now(current_user, "evaluations.update")
     evaluacion = await service.ensure_can_manage_evaluation(db, evaluacion_id, current_user)
-    return await service.update_evaluation(db, evaluacion, payload)
+    return await service.update_evaluation(db, evaluacion, payload, current_user)
 
 
 @router.post("/evaluaciones/{evaluacion_id}/crear-blueprint", response_model=EvaluacionBlueprintRead)

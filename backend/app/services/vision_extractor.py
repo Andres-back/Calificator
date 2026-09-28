@@ -360,7 +360,15 @@ class VisionExtractor:
 
     def _prompt(self, blueprint: dict[str, Any], page: int, total: int, purpose: str) -> str:
         context = build_extraction_context(blueprint)
-        action = "Extrae respuestas sin calificarlas." if purpose == "student_response" else "Transcribe preguntas, opciones, instrucciones y respuestas visibles."
+        if purpose == "student_response":
+            action = "Extrae respuestas sin calificarlas."
+        elif purpose == "learning_reference":
+            action = (
+                "Transcribe fielmente el contenido educativo visible: títulos, conceptos, "
+                "explicaciones, ejemplos, ejercicios, tablas y notas. No lo evalúes ni lo completes."
+            )
+        else:
+            action = "Transcribe preguntas, opciones, instrucciones y respuestas visibles."
         drawing_rule = (
             "Para cada respuesta observa TAMBIÉN dibujos, diagramas, gráficas, trazos, puntos, "
             "círculos y etiquetas añadidos por el estudiante. En visual_description describe "
@@ -605,7 +613,7 @@ Informa tachones, correcciones y preguntas ausentes. Devuelve SOLO JSON:
             fallback_used=len(models) > 1,
             warnings=["Página no extraída automáticamente."],
         )
-    async def extract(self, content: bytes, mime: str, *, blueprint: dict | None = None, purpose: Literal["student_response", "evaluation_document"] = "student_response") -> VisionExtraction:
+    async def extract(self, content: bytes, mime: str, *, blueprint: dict | None = None, purpose: Literal["student_response", "evaluation_document", "learning_reference"] = "student_response") -> VisionExtraction:
         started = time.monotonic()
         preparation_started = time.monotonic()
         prepared = _pages(content, mime)
