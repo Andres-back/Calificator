@@ -4,6 +4,7 @@
     {"spec":"042-criterios-aprendizaje","priority":95,"kinds":["frontend_route","frontend_call","endpoint"],"signature_patterns":["*/criterios-aprendizaje*","/app/materias/*/criterios*"]},
     {"spec":"042-criterios-aprendizaje","priority":95,"kinds":["table"],"signature_patterns":["learning_criterion_sets","learning_criterion_versions","learning_criteria","learning_criterion_sources","learning_criterion_applications","grading_component_criteria"]},
     {"spec":"042-criterios-aprendizaje","priority":90,"source_patterns":["backend/app/modules/criterios_aprendizaje/**","frontend/src/modules/materias/criterios/**"]},
+    {"spec":"042-criterios-aprendizaje","priority":90,"source_patterns":["backend/app/workers/tasks_learning_criteria.py"]},
     {"spec":"067-privacidad-legal","priority":95,"kinds":["frontend_route"],"signature_patterns":["/privacidad","/terminos","/cookies","/aviso-privacidad","/piloto"]},
     {"spec":"067-privacidad-legal","priority":95,"kinds":["table"],"signature_patterns":["legal_acceptances"]},
     {"spec":"067-privacidad-legal","priority":90,"source_patterns":["backend/app/modules/legal/**","frontend/src/modules/legal/**","frontend/src/components/legal/**"]},

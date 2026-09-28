@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 from types import SimpleNamespace
+from time import perf_counter
 from unittest.mock import AsyncMock
 from uuid import uuid4
 
@@ -172,3 +173,59 @@ def test_write_flag_rejects_changes_before_service_execution(monkeypatch) -> Non
 
     assert response.status_code == 503
     create.assert_not_awaited()
+
+
+def test_async_proposal_acceptance_does_not_wait_for_generation(monkeypatch) -> None:
+    actor = SimpleNamespace(id=uuid4(), rol="profesor", permissions=["dba.manage"])
+    version_id, job_id = uuid4(), uuid4()
+
+    async def db_override():
+        yield SimpleNamespace()
+
+    monkeypatch.setattr(settings, "CRITERIA_WRITE", True)
+    monkeypatch.setattr(settings, "CRITERIA_GENERATION", True)
+    queue = AsyncMock(return_value=(job_id, "queued"))
+    generation = AsyncMock()
+    monkeypatch.setattr(criteria_router.generation_service, "queue_proposal", queue)
+    monkeypatch.setattr(criteria_router.generation_service, "run_proposal", generation)
+    app = create_app()
+    app.dependency_overrides[get_current_user] = lambda: actor
+    app.dependency_overrides[get_db] = db_override
+    client = TestClient(app, base_url="http://localhost")
+    started = perf_counter()
+    response = client.post(f"/api/criterios-aprendizaje/versiones/{version_id}/proponer", json={})
+    elapsed = perf_counter() - started
+    assert response.status_code == 202
+    assert response.json() == {"job_id": str(job_id), "version_id": str(version_id), "estado": "queued"}
+    assert elapsed < 2
+    generation.assert_not_awaited()
+    queue.assert_awaited_once()
+    print(f"criteria_acceptance_contract_ms={elapsed * 1000:.2f}")
+
+
+def test_apply_endpoint_checks_management_before_preserving_snapshot(monkeypatch) -> None:
+    actor = SimpleNamespace(id=uuid4(), rol="profesor", permissions=["dba.manage"])
+    version_id, target_id = uuid4(), uuid4()
+    row = SimpleNamespace(id=uuid4(), version_id=version_id, target_type="evaluacion", target_id=target_id,
+                          snapshot_hash="a" * 64, snapshot_json={"version_id": str(version_id), "criterios": []},
+                          applied_at=datetime.now(UTC))
+
+    async def db_override():
+        yield SimpleNamespace()
+
+    monkeypatch.setattr(settings, "CRITERIA_WRITE", True)
+    management = AsyncMock(return_value=(None, None))
+    apply = AsyncMock(return_value=row)
+    monkeypatch.setattr(criteria_router.authorization, "get_version_for_management", management)
+    monkeypatch.setattr(criteria_router.application_service, "apply_version", apply)
+    app = create_app()
+    app.dependency_overrides[get_current_user] = lambda: actor
+    app.dependency_overrides[get_db] = db_override
+    response = TestClient(app, base_url="http://localhost").post(
+        f"/api/criterios-aprendizaje/versiones/{version_id}/aplicar",
+        json={"target_type": "evaluacion", "target_id": str(target_id)},
+    )
+    assert response.status_code == 200
+    assert response.json()["snapshot"] == row.snapshot_json
+    management.assert_awaited_once()
+    assert apply.await_args.kwargs["actor_id"] == actor.id

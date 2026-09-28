@@ -6,6 +6,7 @@ from uuid import uuid4
 
 import pytest
 from sqlalchemy import create_engine, text
+from alembic.script import ScriptDirectory
 
 from alembic.migration import MigrationContext
 from alembic.operations import Operations
@@ -139,3 +140,9 @@ def test_postgresql_backfill_twice_preserves_legacy_records_and_snapshots() -> N
                 transaction.rollback()
     finally:
         engine.dispose()
+
+
+def test_criteria_and_production_migrations_have_one_merged_head():
+    directory = ScriptDirectory(str(Path(__file__).resolve().parents[2] / "alembic"))
+    assert len(directory.get_heads()) == 1
+    assert set(directory.get_revision("202609270001").down_revision) == {"202609130001", "202609240001"}

@@ -43,8 +43,8 @@
 | endpoint | `PUT:/connector/models` | ambiguous | missing | `backend/app/modules/ollama_connector/router.py:70` |
 | endpoint | `PUT:/profesor/ai-config` | admin, profesor | covered | `backend/app/modules/admin_ai_config/router.py:1183` |
 | endpoint | `PUT:/profesor/ai-credentials/{provider}` | admin, profesor | covered | `backend/app/modules/admin_ai_config/router.py:1248` |
-| frontend_route | `/app/admin/configuracion-ia` | admin | covered | `frontend/src/config/routes.ts:63` |
-| frontend_route | `/app/configuracion-ia` | authenticated | covered | `frontend/src/config/routes.ts:67` |
+| frontend_route | `/app/admin/configuracion-ia` | admin | covered | `frontend/src/config/routes.ts:64` |
+| frontend_route | `/app/configuracion-ia` | authenticated | covered | `frontend/src/config/routes.ts:68` |
 | frontend_call | `DELETE:/profesor/ai-credentials/{provider}` | ambiguous | covered | `frontend/src/modules/profesor_ai/api.ts:84` |
 | frontend_call | `DELETE:/profesor/ollama-connectors/{connectorId}` | ambiguous | missing | `frontend/src/modules/profesor_ai/api.ts:116` |
 | frontend_call | `GET:/admin/ai-audit` | admin | covered | `frontend/src/modules/admin/api.ts:421` |
@@ -79,7 +79,7 @@
 | frontend_call | `PUT:/profesor/ai-credentials/{provider}` | ambiguous | covered | `frontend/src/modules/profesor_ai/api.ts:80` |
 | table | `ai_feature_routing` | system | covered | `backend/alembic/versions/202606290008_admin_ai_config_providers.py:41` |
 | table | `ai_provider_models` | system | covered | `backend/alembic/versions/202608250001_teacher_ai_configuration.py:35` |
-| table | `ai_provider_settings` | system | missing | `backend/alembic/versions/202606290008_admin_ai_config_providers.py:20` |
+| table | `ai_provider_settings` | system | covered | `backend/alembic/versions/202606290008_admin_ai_config_providers.py:20` |
 | table | `ollama_connector_jobs` | system | missing | `backend/app/modules/ollama_connector/models.py:56` |
 | table | `ollama_connector_models` | system | missing | `backend/app/modules/ollama_connector/models.py:44` |
 | table | `ollama_connectors` | system | missing | `backend/app/modules/ollama_connector/models.py:12` |
@@ -87,7 +87,7 @@
 | table | `profesor_ai_configs` | system | covered | `backend/alembic/versions/202606290002_phases_3_to_8.py:227` |
 | table | `profesor_ai_credentials` | system | covered | `backend/alembic/versions/202608250001_teacher_ai_configuration.py:72` |
 | table | `profesor_ai_feature_preferences` | system | covered | `backend/alembic/versions/202608250001_teacher_ai_configuration.py:94` |
-| table | `profesor_ai_provider_models` | system | missing | `backend/alembic/versions/202608300002_ollama_connectors.py:28` |
+| table | `profesor_ai_provider_models` | system | covered | `backend/alembic/versions/202608300002_ollama_connectors.py:28` |
 
 ## Decisiones explícitas de permiso
 
@@ -95,5 +95,5 @@ Sin decisiones explícitas de permiso para este dominio.
 
 ## Hallazgos
 
-- **low · missing_coverage**: 27 superficies de 021-configuracion-ia-docente no tienen evidencia de prueba observable.
 - **low · orphan_candidate**: 20 superficies no alcanzables o históricas se conservan como candidatas a retiro.
+- **low · missing_coverage**: 25 superficies de 021-configuracion-ia-docente no tienen evidencia de prueba observable.

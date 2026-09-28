@@ -3,7 +3,7 @@
 ## Preparación
 
 1. Aplicar migraciones en una base de datos de prueba con registros DBA, evaluaciones, blueprints y calificaciones existentes.
-2. Activar la bandera de criterios para una materia de prueba y dejar otra desactivada como control.
+2. Usar una instancia canary aislada con materias sintéticas. Las banderas actuales son globales por instancia, no segmentables por materia; la instancia de control debe permanecer desactivada.
 3. Usar archivos sintéticos sin datos de estudiantes.
 
 ## Escenario manual sin IA
@@ -172,3 +172,36 @@ Para repetir, definir `SPEC042_TEST_DATABASE_URL` con un URL `postgresql+psycopg
 - Ruff del dominio, política y pruebas: verde. `analytics/service.py` conserva deuda anterior E701/E712 fuera del bloque modificado; el análisis focal sin esas dos reglas está verde. No se declaró limpio el lint general por esa excepción.
 
 Las solicitudes analíticas son no bloqueantes. Un cierre abrupto puede perder el último intervalo (máximo 30 segundos); estas mediciones son intervalos observados conservadores, no un cronómetro certificado ni una demostración de impacto por sí solas.
+
+## Resultados de navegador y regresión de notas (2026-09-27)
+
+- Chromium real con APIs simuladas: recorrido manual completo, aprobación, consulta de versión inmutable, propuesta asíncrona desde texto privado, edición docente y aprobación en **360×800, 390×844, 768×1024, 1366×768 y 1920×1080**, claro y oscuro.
+- Once casos pasaron en la matriz inicial; el caso 1920 oscuro se interrumpió antes de cargar `/login` con `ERR_NO_BUFFER_SPACE` del navegador local y pasó al repetirlo aislado. En total, **12 casos verificados**, incluyendo alias `/dba` con query/hash y bloqueo estudiantil sin solicitar fuentes ni lista administrativa.
+- No hay desbordamiento horizontal; el diálogo queda dentro del viewport y los botones de revisión, aprobación y cierre se alcanzan mediante el scroll real. Captura de revisión final inspeccionada visualmente en escritorio oscuro.
+- No hubo errores JavaScript del producto durante los recorridos aprobados. Esto no sustituye Brave, iPhone físico ni una prueba integrada con proveedor/worker real.
+- Contrato HTTP asíncrono: **202 en 5.36 ms** en TestClient con el servicio de cola simulado; se comprueba explícitamente que la generación no se ejecuta dentro de la petición. No es una medición de latencia productiva ni del modelo.
+- Pytest focal de historias 1 y fuentes: **24 verdes**. Regresión de notas/publicación/ajustes/historial/visibilidad/PQRS: **24 verdes**. Cambiar `1/1` a `0.7/1` mantiene una única fórmula (`3.50/5`), versión anterior y relaciones con criterios; conserva el estado publicado y los snapshots aprobados.
+- Se añadió comprobación de gestión al endpoint de aplicación antes del servicio de snapshot, para no omitir el permiso efectivo del docente.
+
+## Secuencia canary y reversión segura
+
+PR de implementación: [#157](https://github.com/Andres-back/Calificator/pull/157), enlazado al [issue #19](https://github.com/Andres-back/Calificator/issues/19), con aprobación de especificación y plan. No realizar push directo a `main`.
+
+1. Exigir CI verde antes de fusionar; conservar respaldo verificado de PostgreSQL y evidencia de notas/desgloses históricos de la instancia canary.
+2. Aplicar `alembic upgrade head`. La revisión `202609270001` une las dos ramas históricas sin DDL ni cambios de datos; no se reescribieron revisiones existentes. CI ejecuta la prueba real PostgreSQL mediante `SPEC042_TEST_DATABASE_URL`.
+3. Arrancar API/worker con todas las banderas 042 desactivadas. Validar login, materias, carga/calificación, ajuste parcial, publicación, historial y PQRS históricos.
+4. Solo en la instancia canary: activar `CRITERIA_UI` y `CRITERIA_WRITE`; probar criterios manuales y consulta histórica. Después activar `CRITERIA_GENERATION` y confirmar worker de cola `criteria`, recuperación e idempotencia con material sintético.
+5. Activar `CRITERIA_GRADING_CONTEXT` únicamente tras comparar mismos puntos y fórmula con el control. Mantener **`CRITERIA_GRADING_AUTHORITY=false` en todas las fases**; no hay autorización para sustituir la fórmula estable.
+6. Ante regresión, apagar UI/generación/contexto; no degradar ni borrar tablas o versiones. Entregas y notas existentes continúan con sus contratos heredados. Los snapshots ya aplicados se conservan.
+7. Registrar latencia real de aceptación/cola/proveedor, errores y comprensión docente antes de extender a producción. El canary documentado aquí es una secuencia preparada, **no un despliegue ya ejecutado**.
+
+## Regresión general de cierre técnico (2026-09-27)
+
+- Suite backend unitaria completa: **844 pruebas verdes** (103.96 s).
+- Suite frontend completa: **442 pruebas verdes en 89 archivos** (84.20 s).
+- ESLint general del frontend, TypeScript y build de producción: verdes. El build informa un chunk mayor a 500 kB como advertencia, sin fallo.
+- Ruff con las reglas obligatorias de CI (`F401,F821,F822,F823,F841`) sobre todo `app` y `tests`: verde. Ruff completo sobre las nuevas pruebas, migración de unión y router: verde.
+- PostgreSQL focal más validación de una sola cabecera Alembic: **4 pruebas verdes**.
+- Inventario regenerado: **600 superficies**; dos comprobaciones consecutivas de vigencia verdes. 042 tiene su inventario generado propio, incluidos jobs de su worker.
+
+Siguen pendientes T064 (comprensión docente y registro UX completo) y T089 (canary integrado API/worker/proveedor y aceptación final). Los E2E descritos arriba usan APIs simuladas: no se presentan como prueba integrada productiva. La lista de integridad es propiedad del revisor y permanece sin marcar. No fusionar mientras el CI o estas compuertas estén pendientes.

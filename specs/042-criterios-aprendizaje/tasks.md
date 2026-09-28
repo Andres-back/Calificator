@@ -39,7 +39,7 @@
 - [X] T025 [US1] Añadir cliente React Query para conjuntos, fuentes, propuesta y jobs en `frontend/src/modules/materias/criterios/api.ts` y `frontend/src/config/queryKeys.ts`
 - [X] T026 [US1] Extraer el núcleo reutilizable de cámara/orden/rotación del selector multihoja y crear `LearningSourcePicker` sin compartir evidencia estudiantil en `frontend/src/components/evidence/MultiPageEvidencePicker.tsx` y `frontend/src/modules/materias/criterios/LearningSourcePicker.tsx`
 - [X] T027 [US1] Crear los pasos “Material de referencia” e “Intención docente” con alternativa manual/sin material en `frontend/src/modules/materias/criterios/LearningCriteriaWizard.tsx`
-- [ ] T028 [US1] Validar Historia 1 con pruebas backend/frontend focales y documentar tiempos de aceptación del job en `specs/042-criterios-aprendizaje/quickstart.md`
+- [X] T028 [US1] Validar Historia 1 con pruebas backend/frontend focales y documentar tiempos de aceptación del job en `specs/042-criterios-aprendizaje/quickstart.md`
 
 ## Fase 4: Historia 2 — Revisar criterios y rúbrica antes de usarlos (P1)
 
@@ -88,7 +88,7 @@
 - [X] T053 [US4] Exponer criterio, versión y procedencia de forma segura a profesor/estudiante en `backend/app/modules/calificaciones/schemas.py` y `backend/app/modules/calificaciones/router.py`
 - [X] T054 [US4] Mostrar “Criterio aplicado”, puntos, explicación y fuente pertinente sin duplicar información en `frontend/src/modules/calificaciones/components/GradeBreakdown.tsx` y `frontend/src/modules/calificaciones/CalificacionesWorkspace.tsx`
 - [X] T055 [US4] Migrar analítica de agrupación por nombre a conjunto/versión/clave con fallback histórico en `backend/app/modules/analytics/service.py`
-- [ ] T056 [US4] Validar Historia 4 con nota, publicación, ajuste, historial y PQRS sin cambio de resultados anteriores en `backend/tests/unit/test_learning_criteria_breakdown.py`
+- [X] T056 [US4] Validar Historia 4 con nota, publicación, ajuste, historial y PQRS sin cambio de resultados anteriores en `backend/tests/unit/test_learning_criteria_breakdown.py` y `backend/tests/unit/test_breakdown_teacher_adjustment.py`
 
 ## Fase 7: Historia 5 — Lenguaje claro y experiencia responsiva (P2)
 
@@ -97,7 +97,7 @@
 **Prueba independiente**: profesor completa el flujo en 360 px y escritorio; estudiante no ve administración ni fuentes; `/dba` conserva contexto y redirige.
 
 - [X] T057 [P] [US5] Escribir pruebas de rutas, pestaña, alias `/dba`, permisos y vocabulario consistente en `frontend/src/modules/materias/LearningCriteriaNavigation.test.tsx`
-- [ ] T058 [P] [US5] Escribir E2E para creación manual/asistida, claro/oscuro, 360/390/768/escritorio y privacidad estudiantil en `frontend/e2e/learning-criteria.spec.ts`
+- [X] T058 [P] [US5] Escribir E2E para creación manual/asistida, claro/oscuro, 360/390/768/escritorio y privacidad estudiantil en `frontend/e2e/learning-criteria.spec.ts`
 - [X] T059 [US5] Añadir ruta canónica `/criterios`, alias `/dba` y helper preservando query/hash en `frontend/src/router.tsx` y `frontend/src/config/routes.ts`
 - [X] T060 [US5] Renombrar la pestaña a “Criterios de aprendizaje”, restringir administración al profesor y conservar lectura publicada para estudiante en `frontend/src/modules/materias/MateriaDetailPage.tsx`
 - [X] T061 [US5] Reemplazar la vista DBA por la página canónica y mostrar “Estándares oficiales” como sección opcional en `frontend/src/modules/materias/criterios/LearningCriteriaPage.tsx` y `frontend/src/modules/materias/MateriaDbaPage.tsx`
@@ -110,10 +110,10 @@
 - [X] T065 Ejecutar backfill dos veces y documentar paridad de UUID, snapshots, notas, desglose y PQRS en `specs/042-criterios-aprendizaje/quickstart.md`
 - [X] T066 [P] Añadir pruebas directas a las cinco superficies DBA sin cobertura y sus adaptadores de compatibilidad en `backend/tests/unit/test_dba_compatibility.py`
 - [X] T067 [P] Validar que logs, errores, analytics y jobs no contienen texto de fuentes, imágenes, claves o URLs privadas en `backend/tests/unit/test_learning_criteria_privacy.py`
-- [ ] T068 Ejecutar pytest/Ruff, TypeScript/ESLint/Vitest/build y Playwright focal, corregir regresiones atribuibles a 042 y registrar resultados en `specs/042-criterios-aprendizaje/quickstart.md`
-- [ ] T069 Actualizar inventario, ejecutar dos comprobaciones deterministas y mapear todas las superficies nuevas a 042 en `specs/system-inventory/inventory.json` y `specs/system-inventory/summary.md`
+- [X] T068 Ejecutar pytest/Ruff, TypeScript/ESLint/Vitest/build y Playwright focal, corregir regresiones atribuibles a 042 y registrar resultados en `specs/042-criterios-aprendizaje/quickstart.md`
+- [X] T069 Actualizar inventario, ejecutar dos comprobaciones deterministas y mapear todas las superficies nuevas a 042 en `specs/system-inventory/current.json` y `specs/042-criterios-aprendizaje/inventory.md`
 - [X] T070 Ejecutar `$speckit-converge`, incorporar cualquier tarea faltante y completar `specs/042-criterios-aprendizaje/tasks.md`
-- [ ] T071 Abrir PR enlazado a #19 y documentar en `specs/042-criterios-aprendizaje/quickstart.md` la secuencia canary que mantiene autoridad de calificación desactivada hasta paridad demostrada
+- [X] T071 Abrir PR enlazado a #19 y documentar en `specs/042-criterios-aprendizaje/quickstart.md` la secuencia canary que mantiene autoridad de calificación desactivada hasta paridad demostrada
 
 ## Dependencias
 

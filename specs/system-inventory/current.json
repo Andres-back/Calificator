@@ -1,71 +1,21 @@
 {
   "counts": {
     "by_coverage": {
-      "covered": 471,
-      "missing": 94
+      "covered": 508,
+      "missing": 92
     },
     "by_kind": {
-      "endpoint": 266,
-      "frontend_call": 180,
-      "frontend_route": 36,
+      "endpoint": 281,
+      "frontend_call": 191,
+      "frontend_route": 37,
       "integration": 7,
-      "job": 18,
-      "table": 58
+      "job": 20,
+      "table": 64
     },
-    "total": 565
+    "total": 600
   },
   "exceptions": [],
   "findings": [
-    {
-      "category": "missing_coverage",
-      "description": "5 superficies de 004-dba-asistencia-curriculo no tienen evidencia de prueba observable.",
-      "id": "F-1306EF66A8D3",
-      "issue_url": "",
-      "severity": "low",
-      "surface_ids": [
-        "backend:GET:/materias/{materia_id}/dba-personalizados",
-        "backend:POST:/materias/{materia_id}/dba-personalizados",
-        "backend:POST:/materias/{materia_id}/dba-personalizados/upload-document",
-        "table:dba_catalog",
-        "table:dba_personalizados"
-      ]
-    },
-    {
-      "category": "missing_coverage",
-      "description": "27 superficies de 021-configuracion-ia-docente no tienen evidencia de prueba observable.",
-      "id": "F-29DBFEDCFF49",
-      "issue_url": "",
-      "severity": "low",
-      "surface_ids": [
-        "backend:DELETE:/profesor/ollama-connectors/{connector_id}",
-        "backend:GET:/admin/ai-control-center/effective",
-        "backend:GET:/profesor/ai-providers/ollama/models",
-        "backend:GET:/profesor/ollama-connectors",
-        "backend:POST:/admin/ai-cache/clear",
-        "backend:POST:/admin/ai-providers/{provider}/models/refresh",
-        "backend:POST:/admin/ai-providers/{provider}/test",
-        "backend:POST:/admin/ai-settings/restore-defaults",
-        "backend:POST:/connector/jobs/claim",
-        "backend:POST:/connector/jobs/{job_id}/complete",
-        "backend:POST:/connector/jobs/{job_id}/fail",
-        "backend:POST:/connector/jobs/{job_id}/heartbeat",
-        "backend:POST:/connector/pair",
-        "backend:POST:/profesor/ai-providers/ollama/models/refresh",
-        "backend:POST:/profesor/ollama-connectors/pairing",
-        "backend:PUT:/connector/models",
-        "frontend_call:DELETE:/profesor/ollama-connectors/{connectorId}:frontend/src/modules/profesor_ai/api.ts",
-        "frontend_call:GET:/profesor/ai-providers/ollama/models:frontend/src/modules/profesor_ai/api.ts",
-        "frontend_call:GET:/profesor/ollama-connectors:frontend/src/modules/profesor_ai/api.ts",
-        "frontend_call:POST:/profesor/ai-providers/ollama/models/refresh:frontend/src/modules/profesor_ai/api.ts",
-        "frontend_call:POST:/profesor/ollama-connectors/pairing:frontend/src/modules/profesor_ai/api.ts",
-        "table:ai_provider_settings",
-        "table:ollama_connector_jobs",
-        "table:ollama_connector_models",
-        "table:ollama_connectors",
-        "table:ollama_pairing_codes",
-        "table:profesor_ai_provider_models"
-      ]
-    },
     {
       "category": "missing_coverage",
       "description": "18 superficies de 011-reportes-analitica-impacto no tienen evidencia de prueba observable.",
@@ -95,8 +45,8 @@
     },
     {
       "category": "missing_coverage",
-      "description": "14 superficies de 002-arquitectura-roles-seguridad no tienen evidencia de prueba observable.",
-      "id": "F-3EA637857F4D",
+      "description": "6 superficies de 002-arquitectura-roles-seguridad no tienen evidencia de prueba observable.",
+      "id": "F-4A0BAF1BE14D",
       "issue_url": "",
       "severity": "low",
       "surface_ids": [
@@ -104,16 +54,27 @@
         "backend:GET:/health",
         "backend:GET:/openapi.json",
         "backend:GET:/redoc",
-        "table:ai_config_audit_logs",
-        "table:ai_global_config",
-        "table:ai_global_limits",
-        "table:ai_tool_settings",
-        "table:ai_usage_events",
-        "table:ai_usage_logs",
-        "table:chat_messages",
-        "table:evaluation_blueprints",
         "table:importacion_estudiantes_filas",
         "table:importacion_estudiantes_lotes"
+      ]
+    },
+    {
+      "category": "missing_coverage",
+      "description": "10 superficies de 042-criterios-aprendizaje no tienen evidencia de prueba observable.",
+      "id": "F-7FA4230D4AFC",
+      "issue_url": "",
+      "severity": "low",
+      "surface_ids": [
+        "backend:POST:/criterios-aprendizaje/versiones/{version_id}/fuentes/referencia",
+        "backend:POST:/criterios-aprendizaje/{set_id}/versiones",
+        "frontend_call:GET:/materias/{materiaId}/criterios-aprendizaje:frontend/src/modules/materias/criterios/api.ts",
+        "frontend_call:POST:/criterios-aprendizaje/versiones/{versionId}/aprobar:frontend/src/modules/materias/criterios/api.ts",
+        "frontend_call:POST:/criterios-aprendizaje/versiones/{versionId}/fuentes/archivo:frontend/src/modules/materias/criterios/api.ts",
+        "frontend_call:POST:/criterios-aprendizaje/versiones/{versionId}/fuentes/referencia:frontend/src/modules/materias/criterios/api.ts",
+        "frontend_call:POST:/criterios-aprendizaje/versiones/{versionId}/fuentes/texto:frontend/src/modules/materias/criterios/api.ts",
+        "frontend_call:POST:/criterios-aprendizaje/{setId}/archivar:frontend/src/modules/materias/criterios/api.ts",
+        "frontend_call:POST:/criterios-aprendizaje/{setId}/versiones:frontend/src/modules/materias/criterios/api.ts",
+        "frontend_call:POST:/materias/{materiaId}/criterios-aprendizaje:frontend/src/modules/materias/criterios/api.ts"
       ]
     },
     {
@@ -195,6 +156,52 @@
         "table:profesor_ai_credentials",
         "table:profesor_ai_feature_preferences",
         "table:profesor_ai_provider_models"
+      ]
+    },
+    {
+      "category": "missing_coverage",
+      "description": "3 superficies de 004-dba-asistencia-curriculo no tienen evidencia de prueba observable.",
+      "id": "F-E2499E78D99B",
+      "issue_url": "",
+      "severity": "low",
+      "surface_ids": [
+        "backend:GET:/materias/{materia_id}/dba-personalizados",
+        "backend:POST:/materias/{materia_id}/dba-personalizados",
+        "backend:POST:/materias/{materia_id}/dba-personalizados/upload-document"
+      ]
+    },
+    {
+      "category": "missing_coverage",
+      "description": "25 superficies de 021-configuracion-ia-docente no tienen evidencia de prueba observable.",
+      "id": "F-E6FF4BDE47DB",
+      "issue_url": "",
+      "severity": "low",
+      "surface_ids": [
+        "backend:DELETE:/profesor/ollama-connectors/{connector_id}",
+        "backend:GET:/admin/ai-control-center/effective",
+        "backend:GET:/profesor/ai-providers/ollama/models",
+        "backend:GET:/profesor/ollama-connectors",
+        "backend:POST:/admin/ai-cache/clear",
+        "backend:POST:/admin/ai-providers/{provider}/models/refresh",
+        "backend:POST:/admin/ai-providers/{provider}/test",
+        "backend:POST:/admin/ai-settings/restore-defaults",
+        "backend:POST:/connector/jobs/claim",
+        "backend:POST:/connector/jobs/{job_id}/complete",
+        "backend:POST:/connector/jobs/{job_id}/fail",
+        "backend:POST:/connector/jobs/{job_id}/heartbeat",
+        "backend:POST:/connector/pair",
+        "backend:POST:/profesor/ai-providers/ollama/models/refresh",
+        "backend:POST:/profesor/ollama-connectors/pairing",
+        "backend:PUT:/connector/models",
+        "frontend_call:DELETE:/profesor/ollama-connectors/{connectorId}:frontend/src/modules/profesor_ai/api.ts",
+        "frontend_call:GET:/profesor/ai-providers/ollama/models:frontend/src/modules/profesor_ai/api.ts",
+        "frontend_call:GET:/profesor/ollama-connectors:frontend/src/modules/profesor_ai/api.ts",
+        "frontend_call:POST:/profesor/ai-providers/ollama/models/refresh:frontend/src/modules/profesor_ai/api.ts",
+        "frontend_call:POST:/profesor/ollama-connectors/pairing:frontend/src/modules/profesor_ai/api.ts",
+        "table:ollama_connector_jobs",
+        "table:ollama_connector_models",
+        "table:ollama_connectors",
+        "table:ollama_pairing_codes"
       ]
     },
     {
@@ -356,7 +363,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "1dbe2ecd2d55cfc9a463ea530d6f983afb767f0d284faa4712630d37187fea92",
+  "source_digest": "8d983c2ed133863d7a47fb89a244087cfc447db402c32397a1d23810e2ba9e6e",
   "surfaces": [
     {
       "actors": [
@@ -409,6 +416,12 @@
           "reference": "DELETE:/admin/roles/{role_id}",
           "status": "domain",
           "test_path": "backend/tests/unit/test_breakdown_authorization.py"
+        },
+        {
+          "level": "unit",
+          "reference": "DELETE:/admin/roles/{role_id}",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_learning_criteria_authorization.py"
         },
         {
           "level": "unit",
@@ -542,6 +555,36 @@
     },
     {
       "actors": [
+        "authenticated"
+      ],
+      "authorization": [
+        "get_current_user"
+      ],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
+        "function": "delete_learning_source",
+        "registered": true,
+        "router": "router"
+      },
+      "id": "backend:DELETE:/criterios-aprendizaje/fuentes/{source_id}",
+      "kind": "endpoint",
+      "owner_spec": "042-criterios-aprendizaje",
+      "signature": "DELETE:/criterios-aprendizaje/fuentes/{source_id}",
+      "source_line": 270,
+      "source_path": "backend/app/modules/criterios_aprendizaje/router.py",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "DELETE:/criterios-aprendizaje/fuentes/{source_id}",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_learning_criteria_api.py"
+        }
+      ]
+    },
+    {
+      "actors": [
         "admin",
         "profesor"
       ],
@@ -564,6 +607,12 @@
       "source_path": "backend/app/modules/dba/router.py",
       "states": [],
       "tests": [
+        {
+          "level": "e2e",
+          "reference": "DELETE:/dba-personalizados/{dba_id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/learning-criteria.spec.ts"
+        },
         {
           "level": "e2e",
           "reference": "DELETE:/dba-personalizados/{dba_id}",
@@ -819,6 +868,12 @@
           "reference": "DELETE:/herramientas/{material_id}",
           "status": "direct",
           "test_path": "backend/tests/unit/test_material_conversion_contract.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "DELETE:/herramientas/{material_id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/learning-criteria.spec.ts"
         },
         {
           "level": "e2e",
@@ -1516,6 +1571,12 @@
           "level": "unit",
           "reference": "GET:/admin/authorization/audit",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_learning_criteria_authorization.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/admin/authorization/audit",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_modular_authorization.py"
         },
         {
@@ -1577,6 +1638,12 @@
           "reference": "GET:/admin/authorization/modules",
           "status": "domain",
           "test_path": "backend/tests/unit/test_breakdown_authorization.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/admin/authorization/modules",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_learning_criteria_authorization.py"
         },
         {
           "level": "unit",
@@ -1716,6 +1783,12 @@
           "level": "unit",
           "reference": "GET:/admin/roles",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_learning_criteria_authorization.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/admin/roles",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_modular_authorization.py"
         },
         {
@@ -1783,6 +1856,12 @@
           "reference": "GET:/admin/roles/{role_id}",
           "status": "domain",
           "test_path": "backend/tests/unit/test_breakdown_authorization.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/admin/roles/{role_id}",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_learning_criteria_authorization.py"
         },
         {
           "level": "unit",
@@ -1897,6 +1976,12 @@
           "reference": "GET:/admin/users/{user_id}/authorization/explain/{permission_key:path}",
           "status": "domain",
           "test_path": "backend/tests/unit/test_breakdown_authorization.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/admin/users/{user_id}/authorization/explain/{permission_key:path}",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_learning_criteria_authorization.py"
         },
         {
           "level": "unit",
@@ -2729,6 +2814,12 @@
           "level": "unit",
           "reference": "GET:/auth/me",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_learning_criteria_authorization.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/auth/me",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_modular_authorization.py"
         },
         {
@@ -2766,6 +2857,12 @@
           "reference": "GET:/auth/me",
           "status": "direct",
           "test_path": "frontend/e2e/explainable-grading.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/auth/me",
+          "status": "direct",
+          "test_path": "frontend/e2e/learning-criteria.spec.ts"
         },
         {
           "level": "e2e",
@@ -2864,6 +2961,12 @@
           "reference": "GET:/calificaciones/bandeja-docente",
           "status": "direct",
           "test_path": "frontend/e2e/explainable-grading.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/calificaciones/bandeja-docente",
+          "status": "direct",
+          "test_path": "frontend/e2e/learning-criteria.spec.ts"
         },
         {
           "level": "e2e",
@@ -3404,6 +3507,108 @@
     },
     {
       "actors": [
+        "authenticated"
+      ],
+      "authorization": [
+        "get_current_user"
+      ],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
+        "function": "learning_criteria_capabilities",
+        "registered": true,
+        "router": "router"
+      },
+      "id": "backend:GET:/criterios-aprendizaje/capacidades",
+      "kind": "endpoint",
+      "owner_spec": "042-criterios-aprendizaje",
+      "signature": "GET:/criterios-aprendizaje/capacidades",
+      "source_line": 58,
+      "source_path": "backend/app/modules/criterios_aprendizaje/router.py",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "GET:/criterios-aprendizaje/capacidades",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_learning_criteria_api.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/criterios-aprendizaje/capacidades",
+          "status": "direct",
+          "test_path": "frontend/e2e/learning-criteria.spec.ts"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "authenticated"
+      ],
+      "authorization": [
+        "get_current_user"
+      ],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
+        "function": "get_learning_source_content",
+        "registered": true,
+        "router": "router"
+      },
+      "id": "backend:GET:/criterios-aprendizaje/fuentes/{source_id}",
+      "kind": "endpoint",
+      "owner_spec": "042-criterios-aprendizaje",
+      "signature": "GET:/criterios-aprendizaje/fuentes/{source_id}",
+      "source_line": 250,
+      "source_path": "backend/app/modules/criterios_aprendizaje/router.py",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "GET:/criterios-aprendizaje/fuentes/{source_id}",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_learning_criteria_api.py"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "authenticated"
+      ],
+      "authorization": [
+        "get_current_user"
+      ],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
+        "function": "get_learning_criteria",
+        "registered": true,
+        "router": "router"
+      },
+      "id": "backend:GET:/criterios-aprendizaje/{set_id}",
+      "kind": "endpoint",
+      "owner_spec": "042-criterios-aprendizaje",
+      "signature": "GET:/criterios-aprendizaje/{set_id}",
+      "source_line": 109,
+      "source_path": "backend/app/modules/criterios_aprendizaje/router.py",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "GET:/criterios-aprendizaje/{set_id}",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_learning_criteria_api.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/criterios-aprendizaje/{set_id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/learning-criteria.spec.ts"
+        }
+      ]
+    },
+    {
+      "actors": [
         "admin",
         "estudiante",
         "profesor"
@@ -3455,6 +3660,12 @@
           "level": "e2e",
           "reference": "GET:/dba",
           "status": "direct",
+          "test_path": "frontend/e2e/learning-criteria.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/dba",
+          "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
         },
         {
@@ -3485,7 +3696,19 @@
           "level": "unit",
           "reference": "GET:/dba",
           "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/forms/LearningCriteriaSelector.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/dba",
+          "status": "direct",
           "test_path": "frontend/src/modules/herramientas/forms/base.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/dba",
+          "status": "direct",
+          "test_path": "frontend/src/modules/materias/LearningCriteriaNavigation.test.tsx"
         }
       ]
     },
@@ -4298,6 +4521,12 @@
           "level": "e2e",
           "reference": "GET:/herramientas",
           "status": "direct",
+          "test_path": "frontend/e2e/learning-criteria.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/herramientas",
+          "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
         },
         {
@@ -4536,6 +4765,12 @@
           "reference": "GET:/herramientas/{material_id}",
           "status": "direct",
           "test_path": "backend/tests/unit/test_material_conversion_contract.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/herramientas/{material_id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/learning-criteria.spec.ts"
         },
         {
           "level": "e2e",
@@ -5152,6 +5387,12 @@
         {
           "level": "unit",
           "reference": "GET:/materias",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_learning_criteria_api.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias",
           "status": "domain",
           "test_path": "backend/tests/unit/test_materias_service.py"
         },
@@ -5172,6 +5413,12 @@
           "reference": "GET:/materias",
           "status": "direct",
           "test_path": "frontend/e2e/explainable-grading.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/materias",
+          "status": "direct",
+          "test_path": "frontend/e2e/learning-criteria.spec.ts"
         },
         {
           "level": "e2e",
@@ -5255,7 +5502,25 @@
           "level": "unit",
           "reference": "GET:/materias",
           "status": "direct",
+          "test_path": "frontend/src/modules/evaluaciones/components/LearningCriteriaSelector.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias",
+          "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/forms/LearningCriteriaSelector.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias",
+          "status": "direct",
           "test_path": "frontend/src/modules/herramientas/forms/base.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias",
+          "status": "direct",
+          "test_path": "frontend/src/modules/materias/LearningCriteriaNavigation.test.tsx"
         },
         {
           "level": "unit",
@@ -5274,6 +5539,12 @@
           "reference": "GET:/materias",
           "status": "direct",
           "test_path": "frontend/src/modules/materias/MateriasListPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias",
+          "status": "direct",
+          "test_path": "frontend/src/modules/materias/criterios/LearningCriteriaPage.test.tsx"
         },
         {
           "level": "unit",
@@ -5347,6 +5618,12 @@
         {
           "level": "unit",
           "reference": "GET:/materias/{materia_id}",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_learning_criteria_api.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias/{materia_id}",
           "status": "domain",
           "test_path": "backend/tests/unit/test_materias_service.py"
         },
@@ -5367,6 +5644,12 @@
           "reference": "GET:/materias/{materia_id}",
           "status": "direct",
           "test_path": "frontend/e2e/explainable-grading.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/materias/{materia_id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/learning-criteria.spec.ts"
         },
         {
           "level": "e2e",
@@ -5450,7 +5733,25 @@
           "level": "unit",
           "reference": "GET:/materias/{materia_id}",
           "status": "direct",
+          "test_path": "frontend/src/modules/evaluaciones/components/LearningCriteriaSelector.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias/{materia_id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/forms/LearningCriteriaSelector.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias/{materia_id}",
+          "status": "direct",
           "test_path": "frontend/src/modules/herramientas/forms/base.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias/{materia_id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/materias/LearningCriteriaNavigation.test.tsx"
         },
         {
           "level": "unit",
@@ -5469,6 +5770,12 @@
           "reference": "GET:/materias/{materia_id}",
           "status": "direct",
           "test_path": "frontend/src/modules/materias/MateriasListPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias/{materia_id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/materias/criterios/LearningCriteriaPage.test.tsx"
         },
         {
           "level": "unit",
@@ -5575,6 +5882,36 @@
           "reference": "GET:/materias/{materia_id}/asistencia/reporte",
           "status": "domain",
           "test_path": "backend/tests/unit/test_asistencia_service.py"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "authenticated"
+      ],
+      "authorization": [
+        "get_current_user"
+      ],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
+        "function": "list_learning_criteria",
+        "registered": true,
+        "router": "router"
+      },
+      "id": "backend:GET:/materias/{materia_id}/criterios-aprendizaje",
+      "kind": "endpoint",
+      "owner_spec": "042-criterios-aprendizaje",
+      "signature": "GET:/materias/{materia_id}/criterios-aprendizaje",
+      "source_line": 69,
+      "source_path": "backend/app/modules/criterios_aprendizaje/router.py",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "GET:/materias/{materia_id}/criterios-aprendizaje",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_learning_criteria_api.py"
         }
       ]
     },
@@ -6690,6 +7027,12 @@
           "level": "e2e",
           "reference": "GET:/users/me",
           "status": "direct",
+          "test_path": "frontend/e2e/learning-criteria.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/users/me",
+          "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
         },
         {
@@ -6774,6 +7117,12 @@
           "level": "unit",
           "reference": "GET:/users/me/authorization",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_learning_criteria_authorization.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/users/me/authorization",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_modular_authorization.py"
         },
         {
@@ -6811,6 +7160,12 @@
           "reference": "GET:/users/me/authorization",
           "status": "direct",
           "test_path": "frontend/e2e/explainable-grading.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/users/me/authorization",
+          "status": "direct",
+          "test_path": "frontend/e2e/learning-criteria.spec.ts"
         },
         {
           "level": "e2e",
@@ -7216,6 +7571,12 @@
           "reference": "PATCH:/admin/roles/{role_id}",
           "status": "domain",
           "test_path": "backend/tests/unit/test_breakdown_authorization.py"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/admin/roles/{role_id}",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_learning_criteria_authorization.py"
         },
         {
           "level": "unit",
@@ -7633,6 +7994,42 @@
     },
     {
       "actors": [
+        "authenticated"
+      ],
+      "authorization": [
+        "get_current_user"
+      ],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
+        "function": "update_learning_criteria_version",
+        "registered": true,
+        "router": "router"
+      },
+      "id": "backend:PATCH:/criterios-aprendizaje/versiones/{version_id}",
+      "kind": "endpoint",
+      "owner_spec": "042-criterios-aprendizaje",
+      "signature": "PATCH:/criterios-aprendizaje/versiones/{version_id}",
+      "source_line": 121,
+      "source_path": "backend/app/modules/criterios_aprendizaje/router.py",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "PATCH:/criterios-aprendizaje/versiones/{version_id}",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_learning_criteria_api.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/criterios-aprendizaje/versiones/{version_id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/learning-criteria.spec.ts"
+        }
+      ]
+    },
+    {
+      "actors": [
         "admin",
         "profesor"
       ],
@@ -7655,6 +8052,12 @@
       "source_path": "backend/app/modules/dba/router.py",
       "states": [],
       "tests": [
+        {
+          "level": "e2e",
+          "reference": "PATCH:/dba-personalizados/{dba_id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/learning-criteria.spec.ts"
+        },
         {
           "level": "e2e",
           "reference": "PATCH:/dba-personalizados/{dba_id}",
@@ -8021,6 +8424,12 @@
           "level": "e2e",
           "reference": "PATCH:/herramientas/{material_id}",
           "status": "direct",
+          "test_path": "frontend/e2e/learning-criteria.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/herramientas/{material_id}",
+          "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
         },
         {
@@ -8267,6 +8676,12 @@
         {
           "level": "unit",
           "reference": "PATCH:/materias/{materia_id}",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_learning_criteria_api.py"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/materias/{materia_id}",
           "status": "domain",
           "test_path": "backend/tests/unit/test_materias_service.py"
         },
@@ -8287,6 +8702,12 @@
           "reference": "PATCH:/materias/{materia_id}",
           "status": "direct",
           "test_path": "frontend/e2e/explainable-grading.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/materias/{materia_id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/learning-criteria.spec.ts"
         },
         {
           "level": "e2e",
@@ -8370,7 +8791,25 @@
           "level": "unit",
           "reference": "PATCH:/materias/{materia_id}",
           "status": "direct",
+          "test_path": "frontend/src/modules/evaluaciones/components/LearningCriteriaSelector.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/materias/{materia_id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/forms/LearningCriteriaSelector.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/materias/{materia_id}",
+          "status": "direct",
           "test_path": "frontend/src/modules/herramientas/forms/base.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/materias/{materia_id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/materias/LearningCriteriaNavigation.test.tsx"
         },
         {
           "level": "unit",
@@ -8389,6 +8828,12 @@
           "reference": "PATCH:/materias/{materia_id}",
           "status": "direct",
           "test_path": "frontend/src/modules/materias/MateriasListPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/materias/{materia_id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/materias/criterios/LearningCriteriaPage.test.tsx"
         },
         {
           "level": "unit",
@@ -8561,6 +9006,12 @@
           "reference": "PATCH:/users/me",
           "status": "direct",
           "test_path": "frontend/e2e/explainable-grading.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/users/me",
+          "status": "direct",
+          "test_path": "frontend/e2e/learning-criteria.spec.ts"
         },
         {
           "level": "e2e",
@@ -8898,6 +9349,12 @@
           "level": "unit",
           "reference": "POST:/admin/roles",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_learning_criteria_authorization.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/admin/roles",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_modular_authorization.py"
         },
         {
@@ -8959,6 +9416,12 @@
           "reference": "POST:/admin/roles/{role_id}/duplicate",
           "status": "domain",
           "test_path": "backend/tests/unit/test_breakdown_authorization.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/admin/roles/{role_id}/duplicate",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_learning_criteria_authorization.py"
         },
         {
           "level": "unit",
@@ -9082,6 +9545,12 @@
           "reference": "POST:/analytics/evento",
           "status": "direct",
           "test_path": "frontend/e2e/explainable-grading.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/analytics/evento",
+          "status": "direct",
+          "test_path": "frontend/e2e/learning-criteria.spec.ts"
         },
         {
           "level": "unit",
@@ -9237,6 +9706,12 @@
           "level": "unit",
           "reference": "POST:/auth/initial-password",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_learning_criteria_authorization.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/auth/initial-password",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_modular_authorization.py"
         },
         {
@@ -9343,6 +9818,12 @@
           "level": "unit",
           "reference": "POST:/auth/login",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_learning_criteria_authorization.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/auth/login",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_modular_authorization.py"
         },
         {
@@ -9380,6 +9861,12 @@
           "reference": "POST:/auth/login",
           "status": "direct",
           "test_path": "frontend/e2e/explainable-grading.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/auth/login",
+          "status": "direct",
+          "test_path": "frontend/e2e/learning-criteria.spec.ts"
         },
         {
           "level": "e2e",
@@ -9479,6 +9966,12 @@
           "level": "unit",
           "reference": "POST:/auth/logout",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_learning_criteria_authorization.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/auth/logout",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_modular_authorization.py"
         },
         {
@@ -9573,6 +10066,12 @@
           "level": "unit",
           "reference": "POST:/auth/password-recovery/request",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_learning_criteria_authorization.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/auth/password-recovery/request",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_modular_authorization.py"
         },
         {
@@ -9661,6 +10160,12 @@
           "level": "unit",
           "reference": "POST:/auth/password-recovery/reset",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_learning_criteria_authorization.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/auth/password-recovery/reset",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_modular_authorization.py"
         },
         {
@@ -9738,6 +10243,12 @@
           "reference": "POST:/auth/password-recovery/validate",
           "status": "domain",
           "test_path": "backend/tests/unit/test_breakdown_authorization.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/auth/password-recovery/validate",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_learning_criteria_authorization.py"
         },
         {
           "level": "unit",
@@ -9837,6 +10348,12 @@
           "level": "unit",
           "reference": "POST:/auth/refresh",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_learning_criteria_authorization.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/auth/refresh",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_modular_authorization.py"
         },
         {
@@ -9874,6 +10391,12 @@
           "reference": "POST:/auth/refresh",
           "status": "direct",
           "test_path": "frontend/e2e/explainable-grading.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/auth/refresh",
+          "status": "direct",
+          "test_path": "frontend/e2e/learning-criteria.spec.ts"
         },
         {
           "level": "e2e",
@@ -9986,6 +10509,12 @@
           "reference": "POST:/auth/register",
           "status": "domain",
           "test_path": "backend/tests/unit/test_breakdown_authorization.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/auth/register",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_learning_criteria_authorization.py"
         },
         {
           "level": "unit",
@@ -10827,6 +11356,232 @@
       "signature": "POST:/connector/pair",
       "source_line": 64,
       "source_path": "backend/app/modules/ollama_connector/router.py",
+      "states": [],
+      "tests": []
+    },
+    {
+      "actors": [
+        "authenticated"
+      ],
+      "authorization": [
+        "get_current_user"
+      ],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
+        "function": "apply_learning_criteria_version",
+        "registered": true,
+        "router": "router"
+      },
+      "id": "backend:POST:/criterios-aprendizaje/versiones/{version_id}/aplicar",
+      "kind": "endpoint",
+      "owner_spec": "042-criterios-aprendizaje",
+      "signature": "POST:/criterios-aprendizaje/versiones/{version_id}/aplicar",
+      "source_line": 310,
+      "source_path": "backend/app/modules/criterios_aprendizaje/router.py",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "POST:/criterios-aprendizaje/versiones/{version_id}/aplicar",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_learning_criteria_api.py"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "authenticated"
+      ],
+      "authorization": [
+        "get_current_user"
+      ],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
+        "function": "approve_learning_criteria_version",
+        "registered": true,
+        "router": "router"
+      },
+      "id": "backend:POST:/criterios-aprendizaje/versiones/{version_id}/aprobar",
+      "kind": "endpoint",
+      "owner_spec": "042-criterios-aprendizaje",
+      "signature": "POST:/criterios-aprendizaje/versiones/{version_id}/aprobar",
+      "source_line": 136,
+      "source_path": "backend/app/modules/criterios_aprendizaje/router.py",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "POST:/criterios-aprendizaje/versiones/{version_id}/aprobar",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_learning_criteria_api.py"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "authenticated"
+      ],
+      "authorization": [
+        "get_current_user"
+      ],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
+        "function": "add_learning_file_source",
+        "registered": true,
+        "router": "router"
+      },
+      "id": "backend:POST:/criterios-aprendizaje/versiones/{version_id}/fuentes/archivo",
+      "kind": "endpoint",
+      "owner_spec": "042-criterios-aprendizaje",
+      "signature": "POST:/criterios-aprendizaje/versiones/{version_id}/fuentes/archivo",
+      "source_line": 192,
+      "source_path": "backend/app/modules/criterios_aprendizaje/router.py",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "POST:/criterios-aprendizaje/versiones/{version_id}/fuentes/archivo",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_learning_criteria_api.py"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "authenticated"
+      ],
+      "authorization": [
+        "get_current_user"
+      ],
+      "consumers": [],
+      "coverage": "missing",
+      "details": {
+        "function": "add_learning_reference_source",
+        "registered": true,
+        "router": "router"
+      },
+      "id": "backend:POST:/criterios-aprendizaje/versiones/{version_id}/fuentes/referencia",
+      "kind": "endpoint",
+      "owner_spec": "042-criterios-aprendizaje",
+      "signature": "POST:/criterios-aprendizaje/versiones/{version_id}/fuentes/referencia",
+      "source_line": 233,
+      "source_path": "backend/app/modules/criterios_aprendizaje/router.py",
+      "states": [],
+      "tests": []
+    },
+    {
+      "actors": [
+        "authenticated"
+      ],
+      "authorization": [
+        "get_current_user"
+      ],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
+        "function": "add_learning_text_source",
+        "registered": true,
+        "router": "router"
+      },
+      "id": "backend:POST:/criterios-aprendizaje/versiones/{version_id}/fuentes/texto",
+      "kind": "endpoint",
+      "owner_spec": "042-criterios-aprendizaje",
+      "signature": "POST:/criterios-aprendizaje/versiones/{version_id}/fuentes/texto",
+      "source_line": 216,
+      "source_path": "backend/app/modules/criterios_aprendizaje/router.py",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "POST:/criterios-aprendizaje/versiones/{version_id}/fuentes/texto",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_learning_criteria_api.py"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "authenticated"
+      ],
+      "authorization": [
+        "get_current_user"
+      ],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
+        "function": "propose_learning_criteria",
+        "registered": true,
+        "router": "router"
+      },
+      "id": "backend:POST:/criterios-aprendizaje/versiones/{version_id}/proponer",
+      "kind": "endpoint",
+      "owner_spec": "042-criterios-aprendizaje",
+      "signature": "POST:/criterios-aprendizaje/versiones/{version_id}/proponer",
+      "source_line": 284,
+      "source_path": "backend/app/modules/criterios_aprendizaje/router.py",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "POST:/criterios-aprendizaje/versiones/{version_id}/proponer",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_learning_criteria_api.py"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "authenticated"
+      ],
+      "authorization": [
+        "get_current_user"
+      ],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
+        "function": "archive_learning_criteria",
+        "registered": true,
+        "router": "router"
+      },
+      "id": "backend:POST:/criterios-aprendizaje/{set_id}/archivar",
+      "kind": "endpoint",
+      "owner_spec": "042-criterios-aprendizaje",
+      "signature": "POST:/criterios-aprendizaje/{set_id}/archivar",
+      "source_line": 178,
+      "source_path": "backend/app/modules/criterios_aprendizaje/router.py",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "POST:/criterios-aprendizaje/{set_id}/archivar",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_learning_criteria_api.py"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "authenticated"
+      ],
+      "authorization": [
+        "get_current_user"
+      ],
+      "consumers": [],
+      "coverage": "missing",
+      "details": {
+        "function": "clone_learning_criteria_version",
+        "registered": true,
+        "router": "router"
+      },
+      "id": "backend:POST:/criterios-aprendizaje/{set_id}/versiones",
+      "kind": "endpoint",
+      "owner_spec": "042-criterios-aprendizaje",
+      "signature": "POST:/criterios-aprendizaje/{set_id}/versiones",
+      "source_line": 157,
+      "source_path": "backend/app/modules/criterios_aprendizaje/router.py",
       "states": [],
       "tests": []
     },
@@ -12945,6 +13700,12 @@
         {
           "level": "unit",
           "reference": "POST:/materias",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_learning_criteria_api.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/materias",
           "status": "domain",
           "test_path": "backend/tests/unit/test_materias_service.py"
         },
@@ -12965,6 +13726,12 @@
           "reference": "POST:/materias",
           "status": "direct",
           "test_path": "frontend/e2e/explainable-grading.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/materias",
+          "status": "direct",
+          "test_path": "frontend/e2e/learning-criteria.spec.ts"
         },
         {
           "level": "e2e",
@@ -13048,7 +13815,25 @@
           "level": "unit",
           "reference": "POST:/materias",
           "status": "direct",
+          "test_path": "frontend/src/modules/evaluaciones/components/LearningCriteriaSelector.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/materias",
+          "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/forms/LearningCriteriaSelector.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/materias",
+          "status": "direct",
           "test_path": "frontend/src/modules/herramientas/forms/base.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/materias",
+          "status": "direct",
+          "test_path": "frontend/src/modules/materias/LearningCriteriaNavigation.test.tsx"
         },
         {
           "level": "unit",
@@ -13072,6 +13857,12 @@
           "level": "unit",
           "reference": "POST:/materias",
           "status": "direct",
+          "test_path": "frontend/src/modules/materias/criterios/LearningCriteriaPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/materias",
+          "status": "direct",
           "test_path": "frontend/src/modules/materias/teacherFlowModel.test.ts"
         },
         {
@@ -13085,6 +13876,36 @@
           "reference": "POST:/materias",
           "status": "direct",
           "test_path": "frontend/src/modules/xali/XaliPage.test.tsx"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "authenticated"
+      ],
+      "authorization": [
+        "get_current_user"
+      ],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
+        "function": "create_learning_criteria",
+        "registered": true,
+        "router": "router"
+      },
+      "id": "backend:POST:/materias/{materia_id}/criterios-aprendizaje",
+      "kind": "endpoint",
+      "owner_spec": "042-criterios-aprendizaje",
+      "signature": "POST:/materias/{materia_id}/criterios-aprendizaje",
+      "source_line": 86,
+      "source_path": "backend/app/modules/criterios_aprendizaje/router.py",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "POST:/materias/{materia_id}/criterios-aprendizaje",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_learning_criteria_api.py"
         }
       ]
     },
@@ -14431,6 +15252,12 @@
           "level": "unit",
           "reference": "/",
           "status": "direct",
+          "test_path": "backend/tests/integration/test_learning_criteria_migration.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
           "test_path": "backend/tests/integration/test_password_recovery_api.py"
         },
         {
@@ -14545,6 +15372,12 @@
           "level": "unit",
           "reference": "/",
           "status": "direct",
+          "test_path": "backend/tests/unit/test_dba_compatibility.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
           "test_path": "backend/tests/unit/test_digitalization_queue.py"
         },
         {
@@ -14588,6 +15421,30 @@
           "reference": "/",
           "status": "direct",
           "test_path": "backend/tests/unit/test_glm_independent_review.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_learning_criteria_api.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_learning_criteria_authorization.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_learning_criteria_privacy.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_learning_source_service.py"
         },
         {
           "level": "unit",
@@ -14804,6 +15661,12 @@
           "reference": "/",
           "status": "direct",
           "test_path": "frontend/e2e/explainable-grading.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "frontend/e2e/learning-criteria.spec.ts"
         },
         {
           "level": "e2e",
@@ -15187,6 +16050,12 @@
           "level": "unit",
           "reference": "/",
           "status": "direct",
+          "test_path": "frontend/src/modules/evaluaciones/components/LearningCriteriaSelector.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
           "test_path": "frontend/src/modules/evaluaciones/components/generationWizardModel.test.ts"
         },
         {
@@ -15223,6 +16092,12 @@
           "level": "unit",
           "reference": "/",
           "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/forms/LearningCriteriaSelector.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
           "test_path": "frontend/src/modules/herramientas/forms/base.test.tsx"
         },
         {
@@ -15254,6 +16129,12 @@
           "reference": "/",
           "status": "direct",
           "test_path": "frontend/src/modules/legal/LegalPages.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "frontend/src/modules/materias/LearningCriteriaNavigation.test.tsx"
         },
         {
           "level": "unit",
@@ -15308,6 +16189,30 @@
           "reference": "/",
           "status": "direct",
           "test_path": "frontend/src/modules/materias/attendanceReportModel.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "frontend/src/modules/materias/criterios/LearningCriteriaEditor.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "frontend/src/modules/materias/criterios/LearningCriteriaPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "frontend/src/modules/materias/criterios/LearningCriteriaWizard.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "frontend/src/modules/materias/criterios/useLearningCriteriaWorkSession.test.ts"
         },
         {
           "level": "unit",
@@ -15510,6 +16415,12 @@
           "level": "e2e",
           "reference": "/app",
           "status": "direct",
+          "test_path": "frontend/e2e/learning-criteria.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app",
+          "status": "direct",
           "test_path": "frontend/e2e/mock/grading-review.mock.spec.ts"
         },
         {
@@ -15618,6 +16529,12 @@
           "level": "unit",
           "reference": "/app",
           "status": "direct",
+          "test_path": "frontend/src/modules/materias/LearningCriteriaNavigation.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/app",
+          "status": "direct",
           "test_path": "frontend/src/modules/materias/MateriaDetailPage.test.tsx"
         },
         {
@@ -15637,6 +16554,12 @@
           "reference": "/app",
           "status": "direct",
           "test_path": "frontend/src/modules/materias/MateriasListPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/app",
+          "status": "direct",
+          "test_path": "frontend/src/modules/materias/criterios/LearningCriteriaPage.test.tsx"
         },
         {
           "level": "unit",
@@ -15901,7 +16824,7 @@
       "kind": "frontend_route",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "/app/admin/configuracion-ia",
-      "source_line": 63,
+      "source_line": 64,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -16038,7 +16961,7 @@
       "kind": "frontend_route",
       "owner_spec": "002-arquitectura-roles-seguridad",
       "signature": "/app/admin/correo",
-      "source_line": 66,
+      "source_line": 67,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -16151,7 +17074,7 @@
       "kind": "frontend_route",
       "owner_spec": "029-roles-permisos-modulares",
       "signature": "/app/admin/roles",
-      "source_line": 65,
+      "source_line": 66,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -16270,7 +17193,7 @@
       "kind": "frontend_route",
       "owner_spec": "029-roles-permisos-modulares",
       "signature": "/app/admin/usuarios",
-      "source_line": 64,
+      "source_line": 65,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -16396,7 +17319,7 @@
       "kind": "frontend_route",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "/app/analytics",
-      "source_line": 68,
+      "source_line": 69,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -16515,7 +17438,7 @@
       "kind": "frontend_route",
       "owner_spec": "008-calificaciones",
       "signature": "/app/calificaciones",
-      "source_line": 47,
+      "source_line": 48,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -16688,7 +17611,7 @@
       "kind": "frontend_route",
       "owner_spec": "008-calificaciones",
       "signature": "/app/calificaciones/boletin",
-      "source_line": 46,
+      "source_line": 47,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -16926,7 +17849,7 @@
       "kind": "frontend_route",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "/app/configuracion-ia",
-      "source_line": 67,
+      "source_line": 68,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -17045,7 +17968,7 @@
       "kind": "frontend_route",
       "owner_spec": "005-evaluaciones",
       "signature": "/app/evaluaciones",
-      "source_line": 42,
+      "source_line": 43,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -17212,7 +18135,7 @@
       "kind": "frontend_route",
       "owner_spec": "007-entregas-estudiante",
       "signature": "/app/evaluaciones/{id}/resolver",
-      "source_line": 43,
+      "source_line": 44,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -17326,7 +18249,7 @@
       "kind": "frontend_route",
       "owner_spec": "006-recursos-actividades",
       "signature": "/app/herramientas",
-      "source_line": 53,
+      "source_line": 54,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -17458,7 +18381,7 @@
       "kind": "frontend_route",
       "owner_spec": "006-recursos-actividades",
       "signature": "/app/herramientas/{id}",
-      "source_line": 56,
+      "source_line": 57,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -17675,6 +18598,12 @@
           "level": "e2e",
           "reference": "/app/materias",
           "status": "direct",
+          "test_path": "frontend/e2e/learning-criteria.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app/materias",
+          "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
         },
         {
@@ -17729,6 +18658,12 @@
           "level": "unit",
           "reference": "/app/materias",
           "status": "direct",
+          "test_path": "frontend/src/modules/materias/LearningCriteriaNavigation.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/materias",
+          "status": "direct",
           "test_path": "frontend/src/modules/materias/MateriaDetailPage.test.tsx"
         },
         {
@@ -17742,6 +18677,12 @@
           "reference": "/app/materias",
           "status": "direct",
           "test_path": "frontend/src/modules/materias/MateriasListPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/materias",
+          "status": "direct",
+          "test_path": "frontend/src/modules/materias/criterios/LearningCriteriaPage.test.tsx"
         },
         {
           "level": "unit",
@@ -17860,6 +18801,12 @@
           "level": "e2e",
           "reference": "/app/materias/{id}",
           "status": "direct",
+          "test_path": "frontend/e2e/learning-criteria.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app/materias/{id}",
+          "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
         },
         {
@@ -17914,6 +18861,12 @@
           "level": "unit",
           "reference": "/app/materias/{id}",
           "status": "direct",
+          "test_path": "frontend/src/modules/materias/LearningCriteriaNavigation.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/materias/{id}",
+          "status": "direct",
           "test_path": "frontend/src/modules/materias/MateriaDetailPage.test.tsx"
         },
         {
@@ -17927,6 +18880,12 @@
           "reference": "/app/materias/{id}",
           "status": "direct",
           "test_path": "frontend/src/modules/materias/MateriasListPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/materias/{id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/materias/criterios/LearningCriteriaPage.test.tsx"
         },
         {
           "level": "unit",
@@ -18285,6 +19244,119 @@
     },
     {
       "actors": [
+        "authenticated"
+      ],
+      "authorization": [
+        "RequireAuth"
+      ],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
+        "registered": true,
+        "view": "@/modules/materias/criterios/LearningCriteriaPage"
+      },
+      "id": "frontend:/app/materias/{}/criterios",
+      "kind": "frontend_route",
+      "owner_spec": "042-criterios-aprendizaje",
+      "signature": "/app/materias/{id}/criterios",
+      "source_line": 40,
+      "source_path": "frontend/src/config/routes.ts",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "/app/materias/{id}/criterios",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_admin_mail_config.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/materias/{id}/criterios",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_api.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/materias/{id}/criterios",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_concurrency.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/materias/{id}/criterios",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_migration.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/materias/{id}/criterios",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_secret_safety.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/materias/{id}/criterios",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_job_configuration_snapshot.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/materias/{id}/criterios",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_ai_configuration_resolver.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/materias/{id}/criterios",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_mail_configuration.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/materias/{id}/criterios",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_nginx_security_config.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/materias/{id}/criterios",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_production_config.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/materias/{id}/criterios",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_worker_ai_config.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app/materias/{id}/criterios",
+          "status": "domain",
+          "test_path": "frontend/e2e/accessibility/teacher-ai-configuration.a11y.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app/materias/{id}/criterios",
+          "status": "domain",
+          "test_path": "frontend/e2e/teacher-ai-configuration.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/materias/{id}/criterios",
+          "status": "domain",
+          "test_path": "frontend/src/modules/admin/AdminAIConfigPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/materias/{id}/criterios",
+          "status": "domain",
+          "test_path": "frontend/src/modules/profesor_ai/TeacherAIConfigPage.test.tsx"
+        }
+      ]
+    },
+    {
+      "actors": [
         "admin",
         "profesor"
       ],
@@ -18295,7 +19367,7 @@
       "coverage": "covered",
       "details": {
         "registered": true,
-        "view": "@/modules/materias/MateriaDbaPage"
+        "view": "@/modules/materias/criterios/LearningCriteriaLegacyRedirect"
       },
       "id": "frontend:/app/materias/{}/dba",
       "kind": "frontend_route",
@@ -18641,7 +19713,7 @@
       "kind": "frontend_route",
       "owner_spec": "010-presentaciones-imagenes",
       "signature": "/app/presentaciones",
-      "source_line": 61,
+      "source_line": 62,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -18778,7 +19850,7 @@
       "kind": "frontend_route",
       "owner_spec": "006-recursos-actividades",
       "signature": "/app/recursos/{id}",
-      "source_line": 57,
+      "source_line": 58,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -18904,7 +19976,7 @@
       "kind": "frontend_route",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "/app/reportes",
-      "source_line": 62,
+      "source_line": 63,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -19029,7 +20101,7 @@
       "kind": "frontend_route",
       "owner_spec": "009-xali-rag-refuerzos",
       "signature": "/app/xali",
-      "source_line": 60,
+      "source_line": 61,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -19503,6 +20575,12 @@
           "reference": "/login",
           "status": "direct",
           "test_path": "frontend/e2e/explainable-grading.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/login",
+          "status": "direct",
+          "test_path": "frontend/e2e/learning-criteria.spec.ts"
         },
         {
           "level": "e2e",
@@ -20320,6 +21398,12 @@
           "level": "e2e",
           "reference": "DELETE:/dba-personalizados/{id}",
           "status": "direct",
+          "test_path": "frontend/e2e/learning-criteria.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "DELETE:/dba-personalizados/{id}",
+          "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
         },
         {
@@ -20346,7 +21430,7 @@
       "kind": "frontend_call",
       "owner_spec": "005-evaluaciones",
       "signature": "DELETE:/evaluaciones/{id}",
-      "source_line": 101,
+      "source_line": 103,
       "source_path": "frontend/src/modules/evaluaciones/api.ts",
       "states": [],
       "tests": [
@@ -20572,6 +21656,12 @@
           "reference": "DELETE:/herramientas/{id}",
           "status": "direct",
           "test_path": "backend/tests/unit/test_material_conversion_contract.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "DELETE:/herramientas/{id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/learning-criteria.spec.ts"
         },
         {
           "level": "e2e",
@@ -22686,7 +23776,7 @@
       "kind": "frontend_call",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "GET:/analytics/sesiones-trabajo",
-      "source_line": 147,
+      "source_line": 156,
       "source_path": "frontend/src/lib/analytics.ts",
       "states": [],
       "tests": [
@@ -22801,6 +23891,12 @@
           "level": "e2e",
           "reference": "GET:/auth/me",
           "status": "direct",
+          "test_path": "frontend/e2e/learning-criteria.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/auth/me",
+          "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
         },
         {
@@ -22884,6 +23980,12 @@
           "reference": "GET:/calificaciones/bandeja-docente",
           "status": "direct",
           "test_path": "frontend/e2e/explainable-grading.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/calificaciones/bandeja-docente",
+          "status": "direct",
+          "test_path": "frontend/e2e/learning-criteria.spec.ts"
         },
         {
           "level": "e2e",
@@ -23203,6 +24305,74 @@
       "consumers": [],
       "coverage": "covered",
       "details": {
+        "backend_contract": "backend:GET:/criterios-aprendizaje/capacidades",
+        "backend_contract_candidates": [],
+        "contract_status": "matched"
+      },
+      "id": "frontend_call:GET:/criterios-aprendizaje/capacidades:frontend/src/modules/materias/criterios/api.ts",
+      "kind": "frontend_call",
+      "owner_spec": "042-criterios-aprendizaje",
+      "signature": "GET:/criterios-aprendizaje/capacidades",
+      "source_line": 32,
+      "source_path": "frontend/src/modules/materias/criterios/api.ts",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "GET:/criterios-aprendizaje/capacidades",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_learning_criteria_api.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/criterios-aprendizaje/capacidades",
+          "status": "direct",
+          "test_path": "frontend/e2e/learning-criteria.spec.ts"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "ambiguous"
+      ],
+      "authorization": [],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
+        "backend_contract": "backend:GET:/criterios-aprendizaje/{set_id}",
+        "backend_contract_candidates": [],
+        "contract_status": "matched"
+      },
+      "id": "frontend_call:GET:/criterios-aprendizaje/{setId}:frontend/src/modules/materias/criterios/api.ts",
+      "kind": "frontend_call",
+      "owner_spec": "042-criterios-aprendizaje",
+      "signature": "GET:/criterios-aprendizaje/{setId}",
+      "source_line": 42,
+      "source_path": "frontend/src/modules/materias/criterios/api.ts",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "GET:/criterios-aprendizaje/{setId}",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_learning_criteria_api.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/criterios-aprendizaje/{setId}",
+          "status": "direct",
+          "test_path": "frontend/e2e/learning-criteria.spec.ts"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "ambiguous"
+      ],
+      "authorization": [],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
         "backend_contract": "backend:GET:/dba",
         "backend_contract_candidates": [],
         "contract_status": "matched"
@@ -23211,7 +24381,7 @@
       "kind": "frontend_call",
       "owner_spec": "004-dba-asistencia-curriculo",
       "signature": "GET:/dba",
-      "source_line": 151,
+      "source_line": 153,
       "source_path": "frontend/src/modules/evaluaciones/api.ts",
       "states": [],
       "tests": [
@@ -23238,6 +24408,12 @@
           "reference": "GET:/dba",
           "status": "direct",
           "test_path": "frontend/e2e/evaluation-ai-wizard.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/dba",
+          "status": "direct",
+          "test_path": "frontend/e2e/learning-criteria.spec.ts"
         },
         {
           "level": "e2e",
@@ -23273,7 +24449,19 @@
           "level": "unit",
           "reference": "GET:/dba",
           "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/forms/LearningCriteriaSelector.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/dba",
+          "status": "direct",
           "test_path": "frontend/src/modules/herramientas/forms/base.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/dba",
+          "status": "direct",
+          "test_path": "frontend/src/modules/materias/LearningCriteriaNavigation.test.tsx"
         },
         {
           "level": "unit",
@@ -23415,7 +24603,7 @@
       "kind": "frontend_call",
       "owner_spec": "005-evaluaciones",
       "signature": "GET:/evaluaciones/{evaluacionId}/actividad",
-      "source_line": 118,
+      "source_line": 120,
       "source_path": "frontend/src/modules/evaluaciones/api.ts",
       "states": [],
       "tests": [
@@ -23501,7 +24689,7 @@
       "kind": "frontend_call",
       "owner_spec": "005-evaluaciones",
       "signature": "GET:/evaluaciones/{evaluacionId}/mi-desglose",
-      "source_line": 163,
+      "source_line": 165,
       "source_path": "frontend/src/modules/evaluaciones/api.ts",
       "states": [],
       "tests": [
@@ -23529,7 +24717,7 @@
       "kind": "frontend_call",
       "owner_spec": "005-evaluaciones",
       "signature": "GET:/evaluaciones/{evaluacionId}/mi-entrega",
-      "source_line": 109,
+      "source_line": 111,
       "source_path": "frontend/src/modules/evaluaciones/api.ts",
       "states": [],
       "tests": [
@@ -23557,7 +24745,7 @@
       "kind": "frontend_call",
       "owner_spec": "005-evaluaciones",
       "signature": "GET:/evaluaciones/{evaluacionId}/mi-solicitud-revision",
-      "source_line": 126,
+      "source_line": 128,
       "source_path": "frontend/src/modules/evaluaciones/api.ts",
       "states": [],
       "tests": [
@@ -23643,7 +24831,7 @@
       "kind": "frontend_call",
       "owner_spec": "005-evaluaciones",
       "signature": "GET:/evaluaciones/{id}",
-      "source_line": 55,
+      "source_line": 57,
       "source_path": "frontend/src/modules/evaluaciones/api.ts",
       "states": [],
       "tests": [
@@ -24010,6 +25198,12 @@
           "reference": "GET:/herramientas/{id}",
           "status": "direct",
           "test_path": "backend/tests/unit/test_material_conversion_contract.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/herramientas/{id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/learning-criteria.spec.ts"
         },
         {
           "level": "e2e",
@@ -24528,6 +25722,12 @@
         {
           "level": "unit",
           "reference": "GET:/materias/{id}",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_learning_criteria_api.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias/{id}",
           "status": "domain",
           "test_path": "backend/tests/unit/test_materias_service.py"
         },
@@ -24548,6 +25748,12 @@
           "reference": "GET:/materias/{id}",
           "status": "direct",
           "test_path": "frontend/e2e/explainable-grading.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/materias/{id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/learning-criteria.spec.ts"
         },
         {
           "level": "e2e",
@@ -24631,7 +25837,25 @@
           "level": "unit",
           "reference": "GET:/materias/{id}",
           "status": "direct",
+          "test_path": "frontend/src/modules/evaluaciones/components/LearningCriteriaSelector.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias/{id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/forms/LearningCriteriaSelector.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias/{id}",
+          "status": "direct",
           "test_path": "frontend/src/modules/herramientas/forms/base.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias/{id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/materias/LearningCriteriaNavigation.test.tsx"
         },
         {
           "level": "unit",
@@ -24650,6 +25874,12 @@
           "reference": "GET:/materias/{id}",
           "status": "direct",
           "test_path": "frontend/src/modules/materias/MateriasListPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias/{id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/materias/criterios/LearningCriteriaPage.test.tsx"
         },
         {
           "level": "unit",
@@ -24741,6 +25971,27 @@
           "test_path": "frontend/src/modules/materias/MateriasListPage.test.tsx"
         }
       ]
+    },
+    {
+      "actors": [
+        "ambiguous"
+      ],
+      "authorization": [],
+      "consumers": [],
+      "coverage": "missing",
+      "details": {
+        "backend_contract": "backend:GET:/materias/{materia_id}/criterios-aprendizaje",
+        "backend_contract_candidates": [],
+        "contract_status": "matched"
+      },
+      "id": "frontend_call:GET:/materias/{materiaId}/criterios-aprendizaje:frontend/src/modules/materias/criterios/api.ts",
+      "kind": "frontend_call",
+      "owner_spec": "042-criterios-aprendizaje",
+      "signature": "GET:/materias/{materiaId}/criterios-aprendizaje",
+      "source_line": 37,
+      "source_path": "frontend/src/modules/materias/criterios/api.ts",
+      "states": [],
+      "tests": []
     },
     {
       "actors": [
@@ -24863,7 +26114,7 @@
       "kind": "frontend_call",
       "owner_spec": "003-usuarios-materias-matriculas",
       "signature": "GET:/materias/{materiaId}/evaluaciones",
-      "source_line": 51,
+      "source_line": 53,
       "source_path": "frontend/src/modules/evaluaciones/api.ts",
       "states": [],
       "tests": [
@@ -24990,6 +26241,12 @@
         {
           "level": "unit",
           "reference": "GET:/materias",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_learning_criteria_api.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias",
           "status": "domain",
           "test_path": "backend/tests/unit/test_materias_service.py"
         },
@@ -25010,6 +26267,12 @@
           "reference": "GET:/materias",
           "status": "direct",
           "test_path": "frontend/e2e/explainable-grading.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/materias",
+          "status": "direct",
+          "test_path": "frontend/e2e/learning-criteria.spec.ts"
         },
         {
           "level": "e2e",
@@ -25093,7 +26356,25 @@
           "level": "unit",
           "reference": "GET:/materias",
           "status": "direct",
+          "test_path": "frontend/src/modules/evaluaciones/components/LearningCriteriaSelector.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias",
+          "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/forms/LearningCriteriaSelector.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias",
+          "status": "direct",
           "test_path": "frontend/src/modules/herramientas/forms/base.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias",
+          "status": "direct",
+          "test_path": "frontend/src/modules/materias/LearningCriteriaNavigation.test.tsx"
         },
         {
           "level": "unit",
@@ -25112,6 +26393,12 @@
           "reference": "GET:/materias",
           "status": "direct",
           "test_path": "frontend/src/modules/materias/MateriasListPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias",
+          "status": "direct",
+          "test_path": "frontend/src/modules/materias/criterios/LearningCriteriaPage.test.tsx"
         },
         {
           "level": "unit",
@@ -25574,6 +26861,12 @@
           "reference": "GET:/users/me/authorization",
           "status": "direct",
           "test_path": "frontend/e2e/explainable-grading.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/users/me/authorization",
+          "status": "direct",
+          "test_path": "frontend/e2e/learning-criteria.spec.ts"
         },
         {
           "level": "e2e",
@@ -26537,6 +27830,40 @@
       "consumers": [],
       "coverage": "covered",
       "details": {
+        "backend_contract": "backend:PATCH:/criterios-aprendizaje/versiones/{version_id}",
+        "backend_contract_candidates": [],
+        "contract_status": "matched"
+      },
+      "id": "frontend_call:PATCH:/criterios-aprendizaje/versiones/{versionId}:frontend/src/modules/materias/criterios/api.ts",
+      "kind": "frontend_call",
+      "owner_spec": "042-criterios-aprendizaje",
+      "signature": "PATCH:/criterios-aprendizaje/versiones/{versionId}",
+      "source_line": 68,
+      "source_path": "frontend/src/modules/materias/criterios/api.ts",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "PATCH:/criterios-aprendizaje/versiones/{versionId}",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_learning_criteria_api.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/criterios-aprendizaje/versiones/{versionId}",
+          "status": "direct",
+          "test_path": "frontend/e2e/learning-criteria.spec.ts"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "ambiguous"
+      ],
+      "authorization": [],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
         "backend_contract": "backend:PATCH:/dba-personalizados/{dba_id}",
         "backend_contract_candidates": [],
         "contract_status": "matched"
@@ -26554,6 +27881,12 @@
           "reference": "PATCH:/dba-personalizados/{id}",
           "status": "domain",
           "test_path": "backend/tests/unit/test_materias_service.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/dba-personalizados/{id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/learning-criteria.spec.ts"
         },
         {
           "level": "e2e",
@@ -26643,7 +27976,7 @@
       "kind": "frontend_call",
       "owner_spec": "005-evaluaciones",
       "signature": "PATCH:/evaluaciones/{id}",
-      "source_line": 81,
+      "source_line": 83,
       "source_path": "frontend/src/modules/evaluaciones/api.ts",
       "states": [],
       "tests": [
@@ -26917,6 +28250,12 @@
           "level": "e2e",
           "reference": "PATCH:/herramientas/{id}",
           "status": "direct",
+          "test_path": "frontend/e2e/learning-criteria.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/herramientas/{id}",
+          "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
         },
         {
@@ -27089,6 +28428,12 @@
         {
           "level": "unit",
           "reference": "PATCH:/materias/{id}",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_learning_criteria_api.py"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/materias/{id}",
           "status": "domain",
           "test_path": "backend/tests/unit/test_materias_service.py"
         },
@@ -27109,6 +28454,12 @@
           "reference": "PATCH:/materias/{id}",
           "status": "direct",
           "test_path": "frontend/e2e/explainable-grading.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/materias/{id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/learning-criteria.spec.ts"
         },
         {
           "level": "e2e",
@@ -27192,7 +28543,25 @@
           "level": "unit",
           "reference": "PATCH:/materias/{id}",
           "status": "direct",
+          "test_path": "frontend/src/modules/evaluaciones/components/LearningCriteriaSelector.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/materias/{id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/forms/LearningCriteriaSelector.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/materias/{id}",
+          "status": "direct",
           "test_path": "frontend/src/modules/herramientas/forms/base.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/materias/{id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/materias/LearningCriteriaNavigation.test.tsx"
         },
         {
           "level": "unit",
@@ -27211,6 +28580,12 @@
           "reference": "PATCH:/materias/{id}",
           "status": "direct",
           "test_path": "frontend/src/modules/materias/MateriasListPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/materias/{id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/materias/criterios/LearningCriteriaPage.test.tsx"
         },
         {
           "level": "unit",
@@ -28257,7 +29632,7 @@
       "kind": "frontend_call",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "POST:/analytics/evento",
-      "source_line": 157,
+      "source_line": 166,
       "source_path": "frontend/src/lib/analytics.ts",
       "states": [],
       "tests": [
@@ -28284,6 +29659,12 @@
           "reference": "POST:/analytics/evento",
           "status": "direct",
           "test_path": "frontend/e2e/explainable-grading.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/analytics/evento",
+          "status": "direct",
+          "test_path": "frontend/e2e/learning-criteria.spec.ts"
         },
         {
           "level": "unit",
@@ -28318,7 +29699,7 @@
       "kind": "frontend_call",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "POST:/analytics/sesiones-trabajo/{sessionId}/eventos",
-      "source_line": 131,
+      "source_line": 140,
       "source_path": "frontend/src/lib/analytics.ts",
       "states": [],
       "tests": []
@@ -28342,7 +29723,7 @@
       "kind": "frontend_call",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "POST:/analytics/sesiones-trabajo",
-      "source_line": 113,
+      "source_line": 122,
       "source_path": "frontend/src/lib/analytics.ts",
       "states": [],
       "tests": [
@@ -28409,6 +29790,12 @@
           "reference": "POST:/auth/initial-password",
           "status": "domain",
           "test_path": "backend/tests/unit/test_breakdown_authorization.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/auth/initial-password",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_learning_criteria_authorization.py"
         },
         {
           "level": "unit",
@@ -28509,6 +29896,12 @@
           "reference": "POST:/auth/login",
           "status": "direct",
           "test_path": "frontend/e2e/explainable-grading.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/auth/login",
+          "status": "direct",
+          "test_path": "frontend/e2e/learning-criteria.spec.ts"
         },
         {
           "level": "e2e",
@@ -28642,6 +30035,12 @@
           "level": "unit",
           "reference": "POST:/auth/password-recovery/request",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_learning_criteria_authorization.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/auth/password-recovery/request",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_modular_authorization.py"
         },
         {
@@ -28725,6 +30124,12 @@
           "reference": "POST:/auth/password-recovery/reset",
           "status": "domain",
           "test_path": "backend/tests/unit/test_breakdown_authorization.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/auth/password-recovery/reset",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_learning_criteria_authorization.py"
         },
         {
           "level": "unit",
@@ -29390,6 +30795,132 @@
       ],
       "authorization": [],
       "consumers": [],
+      "coverage": "missing",
+      "details": {
+        "backend_contract": "backend:POST:/criterios-aprendizaje/versiones/{version_id}/aprobar",
+        "backend_contract_candidates": [],
+        "contract_status": "matched"
+      },
+      "id": "frontend_call:POST:/criterios-aprendizaje/versiones/{versionId}/aprobar:frontend/src/modules/materias/criterios/api.ts",
+      "kind": "frontend_call",
+      "owner_spec": "042-criterios-aprendizaje",
+      "signature": "POST:/criterios-aprendizaje/versiones/{versionId}/aprobar",
+      "source_line": 126,
+      "source_path": "frontend/src/modules/materias/criterios/api.ts",
+      "states": [],
+      "tests": []
+    },
+    {
+      "actors": [
+        "ambiguous"
+      ],
+      "authorization": [],
+      "consumers": [],
+      "coverage": "missing",
+      "details": {
+        "backend_contract": "backend:POST:/criterios-aprendizaje/versiones/{version_id}/fuentes/archivo",
+        "backend_contract_candidates": [],
+        "contract_status": "matched"
+      },
+      "id": "frontend_call:POST:/criterios-aprendizaje/versiones/{versionId}/fuentes/archivo:frontend/src/modules/materias/criterios/api.ts",
+      "kind": "frontend_call",
+      "owner_spec": "042-criterios-aprendizaje",
+      "signature": "POST:/criterios-aprendizaje/versiones/{versionId}/fuentes/archivo",
+      "source_line": 84,
+      "source_path": "frontend/src/modules/materias/criterios/api.ts",
+      "states": [],
+      "tests": []
+    },
+    {
+      "actors": [
+        "ambiguous"
+      ],
+      "authorization": [],
+      "consumers": [],
+      "coverage": "missing",
+      "details": {
+        "backend_contract": "backend:POST:/criterios-aprendizaje/versiones/{version_id}/fuentes/referencia",
+        "backend_contract_candidates": [],
+        "contract_status": "matched"
+      },
+      "id": "frontend_call:POST:/criterios-aprendizaje/versiones/{versionId}/fuentes/referencia:frontend/src/modules/materias/criterios/api.ts",
+      "kind": "frontend_call",
+      "owner_spec": "042-criterios-aprendizaje",
+      "signature": "POST:/criterios-aprendizaje/versiones/{versionId}/fuentes/referencia",
+      "source_line": 106,
+      "source_path": "frontend/src/modules/materias/criterios/api.ts",
+      "states": [],
+      "tests": []
+    },
+    {
+      "actors": [
+        "ambiguous"
+      ],
+      "authorization": [],
+      "consumers": [],
+      "coverage": "missing",
+      "details": {
+        "backend_contract": "backend:POST:/criterios-aprendizaje/versiones/{version_id}/fuentes/texto",
+        "backend_contract_candidates": [],
+        "contract_status": "matched"
+      },
+      "id": "frontend_call:POST:/criterios-aprendizaje/versiones/{versionId}/fuentes/texto:frontend/src/modules/materias/criterios/api.ts",
+      "kind": "frontend_call",
+      "owner_spec": "042-criterios-aprendizaje",
+      "signature": "POST:/criterios-aprendizaje/versiones/{versionId}/fuentes/texto",
+      "source_line": 95,
+      "source_path": "frontend/src/modules/materias/criterios/api.ts",
+      "states": [],
+      "tests": []
+    },
+    {
+      "actors": [
+        "ambiguous"
+      ],
+      "authorization": [],
+      "consumers": [],
+      "coverage": "missing",
+      "details": {
+        "backend_contract": "backend:POST:/criterios-aprendizaje/{set_id}/archivar",
+        "backend_contract_candidates": [],
+        "contract_status": "matched"
+      },
+      "id": "frontend_call:POST:/criterios-aprendizaje/{setId}/archivar:frontend/src/modules/materias/criterios/api.ts",
+      "kind": "frontend_call",
+      "owner_spec": "042-criterios-aprendizaje",
+      "signature": "POST:/criterios-aprendizaje/{setId}/archivar",
+      "source_line": 142,
+      "source_path": "frontend/src/modules/materias/criterios/api.ts",
+      "states": [],
+      "tests": []
+    },
+    {
+      "actors": [
+        "ambiguous"
+      ],
+      "authorization": [],
+      "consumers": [],
+      "coverage": "missing",
+      "details": {
+        "backend_contract": "backend:POST:/criterios-aprendizaje/{set_id}/versiones",
+        "backend_contract_candidates": [],
+        "contract_status": "matched"
+      },
+      "id": "frontend_call:POST:/criterios-aprendizaje/{setId}/versiones:frontend/src/modules/materias/criterios/api.ts",
+      "kind": "frontend_call",
+      "owner_spec": "042-criterios-aprendizaje",
+      "signature": "POST:/criterios-aprendizaje/{setId}/versiones",
+      "source_line": 134,
+      "source_path": "frontend/src/modules/materias/criterios/api.ts",
+      "states": [],
+      "tests": []
+    },
+    {
+      "actors": [
+        "ambiguous"
+      ],
+      "authorization": [],
+      "consumers": [],
       "coverage": "covered",
       "details": {
         "backend_contract": "backend:POST:/evaluaciones/externa/digitalizar-con-archivo",
@@ -29434,7 +30965,7 @@
       "kind": "frontend_call",
       "owner_spec": "005-evaluaciones",
       "signature": "POST:/evaluaciones/generar-borrador",
-      "source_line": 63,
+      "source_line": 65,
       "source_path": "frontend/src/modules/evaluaciones/api.ts",
       "states": [],
       "tests": [
@@ -29474,7 +31005,7 @@
       "kind": "frontend_call",
       "owner_spec": "005-evaluaciones",
       "signature": "POST:/evaluaciones/referencia/extraer",
-      "source_line": 77,
+      "source_line": 79,
       "source_path": "frontend/src/modules/evaluaciones/api.ts",
       "states": [],
       "tests": [
@@ -29560,7 +31091,7 @@
       "kind": "frontend_call",
       "owner_spec": "007-entregas-estudiante",
       "signature": "POST:/evaluaciones/{evaluacionId}/entregas/archivo",
-      "source_line": 147,
+      "source_line": 149,
       "source_path": "frontend/src/modules/evaluaciones/api.ts",
       "states": [],
       "tests": [
@@ -29588,7 +31119,7 @@
       "kind": "frontend_call",
       "owner_spec": "007-entregas-estudiante",
       "signature": "POST:/evaluaciones/{evaluacionId}/entregas",
-      "source_line": 104,
+      "source_line": 106,
       "source_path": "frontend/src/modules/evaluaciones/api.ts",
       "states": [],
       "tests": [
@@ -29616,7 +31147,7 @@
       "kind": "frontend_call",
       "owner_spec": "005-evaluaciones",
       "signature": "POST:/evaluaciones/{evaluacionId}/solicitud-revision",
-      "source_line": 133,
+      "source_line": 135,
       "source_path": "frontend/src/modules/evaluaciones/api.ts",
       "states": [],
       "tests": [
@@ -29644,7 +31175,7 @@
       "kind": "frontend_call",
       "owner_spec": "005-evaluaciones",
       "signature": "POST:/evaluaciones/{id}/activar-recepcion",
-      "source_line": 93,
+      "source_line": 95,
       "source_path": "frontend/src/modules/evaluaciones/api.ts",
       "states": [],
       "tests": [
@@ -29672,7 +31203,7 @@
       "kind": "frontend_call",
       "owner_spec": "005-evaluaciones",
       "signature": "POST:/evaluaciones/{id}/cerrar",
-      "source_line": 89,
+      "source_line": 91,
       "source_path": "frontend/src/modules/evaluaciones/api.ts",
       "states": [],
       "tests": [
@@ -29700,7 +31231,7 @@
       "kind": "frontend_call",
       "owner_spec": "005-evaluaciones",
       "signature": "POST:/evaluaciones/{id}/pausar-recepcion",
-      "source_line": 97,
+      "source_line": 99,
       "source_path": "frontend/src/modules/evaluaciones/api.ts",
       "states": [],
       "tests": [
@@ -29728,7 +31259,7 @@
       "kind": "frontend_call",
       "owner_spec": "005-evaluaciones",
       "signature": "POST:/evaluaciones/{id}/publicar",
-      "source_line": 85,
+      "source_line": 87,
       "source_path": "frontend/src/modules/evaluaciones/api.ts",
       "states": [],
       "tests": [
@@ -29756,7 +31287,7 @@
       "kind": "frontend_call",
       "owner_spec": "005-evaluaciones",
       "signature": "POST:/evaluaciones",
-      "source_line": 59,
+      "source_line": 61,
       "source_path": "frontend/src/modules/evaluaciones/api.ts",
       "states": [],
       "tests": [
@@ -30000,6 +31531,12 @@
           "reference": "POST:/herramientas/{endpoint}",
           "status": "direct",
           "test_path": "backend/tests/unit/test_material_conversion_contract.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/herramientas/{endpoint}",
+          "status": "direct",
+          "test_path": "frontend/e2e/learning-criteria.spec.ts"
         },
         {
           "level": "e2e",
@@ -30401,6 +31938,27 @@
       ],
       "authorization": [],
       "consumers": [],
+      "coverage": "missing",
+      "details": {
+        "backend_contract": "backend:POST:/materias/{materia_id}/criterios-aprendizaje",
+        "backend_contract_candidates": [],
+        "contract_status": "matched"
+      },
+      "id": "frontend_call:POST:/materias/{materiaId}/criterios-aprendizaje:frontend/src/modules/materias/criterios/api.ts",
+      "kind": "frontend_call",
+      "owner_spec": "042-criterios-aprendizaje",
+      "signature": "POST:/materias/{materiaId}/criterios-aprendizaje",
+      "source_line": 50,
+      "source_path": "frontend/src/modules/materias/criterios/api.ts",
+      "states": [],
+      "tests": []
+    },
+    {
+      "actors": [
+        "ambiguous"
+      ],
+      "authorization": [],
+      "consumers": [],
       "coverage": "covered",
       "details": {
         "backend_contract": "backend:POST:/materias/{materia_id}/dba-personalizados/upload-document",
@@ -30544,6 +32102,12 @@
         {
           "level": "unit",
           "reference": "POST:/materias",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_learning_criteria_api.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/materias",
           "status": "domain",
           "test_path": "backend/tests/unit/test_materias_service.py"
         },
@@ -30564,6 +32128,12 @@
           "reference": "POST:/materias",
           "status": "direct",
           "test_path": "frontend/e2e/explainable-grading.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/materias",
+          "status": "direct",
+          "test_path": "frontend/e2e/learning-criteria.spec.ts"
         },
         {
           "level": "e2e",
@@ -30647,7 +32217,25 @@
           "level": "unit",
           "reference": "POST:/materias",
           "status": "direct",
+          "test_path": "frontend/src/modules/evaluaciones/components/LearningCriteriaSelector.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/materias",
+          "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/forms/LearningCriteriaSelector.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/materias",
+          "status": "direct",
           "test_path": "frontend/src/modules/herramientas/forms/base.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/materias",
+          "status": "direct",
+          "test_path": "frontend/src/modules/materias/LearningCriteriaNavigation.test.tsx"
         },
         {
           "level": "unit",
@@ -30666,6 +32254,12 @@
           "reference": "POST:/materias",
           "status": "direct",
           "test_path": "frontend/src/modules/materias/MateriasListPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/materias",
+          "status": "direct",
+          "test_path": "frontend/src/modules/materias/criterios/LearningCriteriaPage.test.tsx"
         },
         {
           "level": "unit",
@@ -31904,6 +33498,12 @@
           "level": "unit",
           "reference": "celery",
           "status": "direct",
+          "test_path": "backend/tests/unit/test_learning_criteria_privacy.py"
+        },
+        {
+          "level": "unit",
+          "reference": "celery",
+          "status": "direct",
           "test_path": "backend/tests/unit/test_ollama_cloud_provider.py"
         },
         {
@@ -32097,6 +33697,12 @@
           "reference": "ollama",
           "status": "direct",
           "test_path": "backend/tests/unit/test_evaluation_generation.py"
+        },
+        {
+          "level": "unit",
+          "reference": "ollama",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_learning_criteria_generation.py"
         },
         {
           "level": "unit",
@@ -32991,6 +34597,54 @@
       ],
       "authorization": [],
       "consumers": [],
+      "coverage": "covered",
+      "details": {
+        "bind": true,
+        "effects": [
+          "not_observed"
+        ],
+        "function": "propose_learning_criteria",
+        "idempotency_evidence": [
+          "not_observed"
+        ],
+        "retry_policy": [
+          "not_observed"
+        ],
+        "terminal_states": [
+          "cancelled",
+          "failed",
+          "success"
+        ],
+        "triggers": [
+          "celery_queue"
+        ]
+      },
+      "id": "job:tasks.propose_learning_criteria",
+      "kind": "job",
+      "owner_spec": "042-criterios-aprendizaje",
+      "signature": "tasks.propose_learning_criteria",
+      "source_line": 134,
+      "source_path": "backend/app/workers/tasks_learning_criteria.py",
+      "states": [
+        "cancelled",
+        "failed",
+        "success"
+      ],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "tasks.propose_learning_criteria",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_learning_criteria_privacy.py"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "system"
+      ],
+      "authorization": [],
+      "consumers": [],
       "coverage": "missing",
       "details": {
         "bind": false,
@@ -33122,6 +34776,55 @@
           "reference": "tasks.recover_stale_grading_jobs",
           "status": "direct",
           "test_path": "backend/tests/unit/test_worker_queue_routing.py"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "system"
+      ],
+      "authorization": [],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
+        "bind": false,
+        "effects": [
+          "not_observed"
+        ],
+        "function": "recover_stale_learning_criteria_jobs",
+        "idempotency_evidence": [
+          "not_observed"
+        ],
+        "retry_policy": [
+          "not_observed"
+        ],
+        "terminal_states": [
+          "cancelled",
+          "failed",
+          "success"
+        ],
+        "triggers": [
+          "beat:recover-stale-learning-criteria-jobs",
+          "celery_queue"
+        ]
+      },
+      "id": "job:tasks.recover_stale_learning_criteria_jobs",
+      "kind": "job",
+      "owner_spec": "042-criterios-aprendizaje",
+      "signature": "tasks.recover_stale_learning_criteria_jobs",
+      "source_line": 175,
+      "source_path": "backend/app/workers/tasks_learning_criteria.py",
+      "states": [
+        "cancelled",
+        "failed",
+        "success"
+      ],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "tasks.recover_stale_learning_criteria_jobs",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_learning_criteria_privacy.py"
         }
       ]
     },
@@ -33272,7 +34975,7 @@
       ],
       "authorization": [],
       "consumers": [],
-      "coverage": "missing",
+      "coverage": "covered",
       "details": {
         "active": false,
         "class": "migration_only",
@@ -33294,7 +34997,14 @@
       "source_line": 72,
       "source_path": "backend/alembic/versions/202606290008_admin_ai_config_providers.py",
       "states": [],
-      "tests": []
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "ai_config_audit_logs",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_learning_criteria_versions.py"
+        }
+      ]
     },
     {
       "actors": [
@@ -33330,6 +35040,12 @@
           "reference": "ai_configuration_versions",
           "status": "direct",
           "test_path": "backend/tests/integration/test_ai_configuration_migration.py"
+        },
+        {
+          "level": "unit",
+          "reference": "ai_configuration_versions",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_learning_criteria_versions.py"
         }
       ]
     },
@@ -33367,6 +35083,12 @@
           "reference": "ai_feature_routing",
           "status": "direct",
           "test_path": "backend/tests/unit/test_ai_stage_capability_migration.py"
+        },
+        {
+          "level": "unit",
+          "reference": "ai_feature_routing",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_learning_criteria_versions.py"
         }
       ]
     },
@@ -33376,7 +35098,7 @@
       ],
       "authorization": [],
       "consumers": [],
-      "coverage": "missing",
+      "coverage": "covered",
       "details": {
         "active": false,
         "class": "migration_only",
@@ -33398,7 +35120,14 @@
       "source_line": 213,
       "source_path": "backend/alembic/versions/202606290002_phases_3_to_8.py",
       "states": [],
-      "tests": []
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "ai_global_config",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_learning_criteria_versions.py"
+        }
+      ]
     },
     {
       "actors": [
@@ -33406,7 +35135,7 @@
       ],
       "authorization": [],
       "consumers": [],
-      "coverage": "missing",
+      "coverage": "covered",
       "details": {
         "active": false,
         "class": "migration_only",
@@ -33428,7 +35157,14 @@
       "source_line": 53,
       "source_path": "backend/alembic/versions/202606290008_admin_ai_config_providers.py",
       "states": [],
-      "tests": []
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "ai_global_limits",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_learning_criteria_versions.py"
+        }
+      ]
     },
     {
       "actors": [
@@ -33470,6 +35206,12 @@
           "reference": "ai_jobs",
           "status": "direct",
           "test_path": "backend/tests/integration/test_explainable_grading_pipeline.py"
+        },
+        {
+          "level": "unit",
+          "reference": "ai_jobs",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_learning_criteria_versions.py"
         }
       ]
     },
@@ -33507,6 +35249,12 @@
           "reference": "ai_provider_models",
           "status": "direct",
           "test_path": "backend/tests/integration/test_ai_configuration_migration.py"
+        },
+        {
+          "level": "unit",
+          "reference": "ai_provider_models",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_learning_criteria_versions.py"
         }
       ]
     },
@@ -33516,7 +35264,7 @@
       ],
       "authorization": [],
       "consumers": [],
-      "coverage": "missing",
+      "coverage": "covered",
       "details": {
         "active": false,
         "class": "migration_only",
@@ -33538,7 +35286,14 @@
       "source_line": 20,
       "source_path": "backend/alembic/versions/202606290008_admin_ai_config_providers.py",
       "states": [],
-      "tests": []
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "ai_provider_settings",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_learning_criteria_versions.py"
+        }
+      ]
     },
     {
       "actors": [
@@ -33546,7 +35301,7 @@
       ],
       "authorization": [],
       "consumers": [],
-      "coverage": "missing",
+      "coverage": "covered",
       "details": {
         "active": false,
         "class": "migration_only",
@@ -33568,7 +35323,14 @@
       "source_line": 36,
       "source_path": "backend/alembic/versions/202609100001_admin_tool_ai_control.py",
       "states": [],
-      "tests": []
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "ai_tool_settings",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_learning_criteria_versions.py"
+        }
+      ]
     },
     {
       "actors": [
@@ -33576,7 +35338,7 @@
       ],
       "authorization": [],
       "consumers": [],
-      "coverage": "missing",
+      "coverage": "covered",
       "details": {
         "active": false,
         "class": "migration_only",
@@ -33598,7 +35360,14 @@
       "source_line": 22,
       "source_path": "backend/alembic/versions/202607280002a_create_ai_usage_events.py",
       "states": [],
-      "tests": []
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "ai_usage_events",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_learning_criteria_versions.py"
+        }
+      ]
     },
     {
       "actors": [
@@ -33606,7 +35375,7 @@
       ],
       "authorization": [],
       "consumers": [],
-      "coverage": "missing",
+      "coverage": "covered",
       "details": {
         "active": false,
         "class": "migration_only",
@@ -33628,7 +35397,14 @@
       "source_line": 193,
       "source_path": "backend/alembic/versions/202606290002_phases_3_to_8.py",
       "states": [],
-      "tests": []
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "ai_usage_logs",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_learning_criteria_versions.py"
+        }
+      ]
     },
     {
       "actors": [
@@ -33869,6 +35645,12 @@
           "level": "unit",
           "reference": "audit_events",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_learning_criteria_authorization.py"
+        },
+        {
+          "level": "unit",
+          "reference": "audit_events",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_modular_authorization.py"
         },
         {
@@ -33941,6 +35723,12 @@
           "reference": "authorization_permissions",
           "status": "domain",
           "test_path": "backend/tests/unit/test_breakdown_authorization.py"
+        },
+        {
+          "level": "unit",
+          "reference": "authorization_permissions",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_learning_criteria_authorization.py"
         },
         {
           "level": "unit",
@@ -34026,6 +35814,12 @@
           "level": "unit",
           "reference": "authorization_role_permissions",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_learning_criteria_authorization.py"
+        },
+        {
+          "level": "unit",
+          "reference": "authorization_role_permissions",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_modular_authorization.py"
         },
         {
@@ -34100,6 +35894,12 @@
           "reference": "authorization_roles",
           "status": "domain",
           "test_path": "backend/tests/unit/test_breakdown_authorization.py"
+        },
+        {
+          "level": "unit",
+          "reference": "authorization_roles",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_learning_criteria_authorization.py"
         },
         {
           "level": "unit",
@@ -34181,6 +35981,12 @@
           "reference": "authorization_user_roles",
           "status": "domain",
           "test_path": "backend/tests/unit/test_breakdown_authorization.py"
+        },
+        {
+          "level": "unit",
+          "reference": "authorization_user_roles",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_learning_criteria_authorization.py"
         },
         {
           "level": "unit",
@@ -34344,6 +36150,12 @@
         {
           "level": "unit",
           "reference": "calificacion_componentes",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_learning_criteria_migration.py"
+        },
+        {
+          "level": "unit",
+          "reference": "calificacion_componentes",
           "status": "domain",
           "test_path": "backend/tests/unit/test_calificaciones_boletin_permissions.py"
         },
@@ -34439,6 +36251,12 @@
         {
           "level": "unit",
           "reference": "calificacion_desgloses",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_learning_criteria_migration.py"
+        },
+        {
+          "level": "unit",
+          "reference": "calificacion_desgloses",
           "status": "domain",
           "test_path": "backend/tests/unit/test_calificaciones_boletin_permissions.py"
         },
@@ -34528,6 +36346,12 @@
           "reference": "calificacion_incidencias",
           "status": "direct",
           "test_path": "backend/tests/integration/test_explainable_grading_pipeline.py"
+        },
+        {
+          "level": "unit",
+          "reference": "calificacion_incidencias",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_learning_criteria_migration.py"
         },
         {
           "level": "unit",
@@ -34638,6 +36462,12 @@
           "reference": "calificaciones",
           "status": "direct",
           "test_path": "backend/tests/integration/test_explainable_grading_pipeline.py"
+        },
+        {
+          "level": "unit",
+          "reference": "calificaciones",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_learning_criteria_migration.py"
         },
         {
           "level": "unit",
@@ -34793,6 +36623,18 @@
           "level": "unit",
           "reference": "calificaciones",
           "status": "direct",
+          "test_path": "backend/tests/unit/test_learning_criteria_breakdown.py"
+        },
+        {
+          "level": "unit",
+          "reference": "calificaciones",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_learning_criteria_evaluation_application.py"
+        },
+        {
+          "level": "unit",
+          "reference": "calificaciones",
+          "status": "direct",
           "test_path": "backend/tests/unit/test_manual_and_overdue_grades.py"
         },
         {
@@ -34878,6 +36720,12 @@
           "reference": "calificaciones",
           "status": "direct",
           "test_path": "frontend/e2e/explainable-grading.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "calificaciones",
+          "status": "direct",
+          "test_path": "frontend/e2e/learning-criteria.spec.ts"
         },
         {
           "level": "e2e",
@@ -34989,7 +36837,7 @@
       ],
       "authorization": [],
       "consumers": [],
-      "coverage": "missing",
+      "coverage": "covered",
       "details": {
         "active": false,
         "class": "migration_only",
@@ -35011,7 +36859,14 @@
       "source_line": 158,
       "source_path": "backend/alembic/versions/202606290002_phases_3_to_8.py",
       "states": [],
-      "tests": []
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "chat_messages",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_learning_criteria_versions.py"
+        }
+      ]
     },
     {
       "actors": [
@@ -35019,7 +36874,7 @@
       ],
       "authorization": [],
       "consumers": [],
-      "coverage": "missing",
+      "coverage": "covered",
       "details": {
         "active": true,
         "class": "DBACatalog",
@@ -35043,7 +36898,20 @@
       "source_line": 12,
       "source_path": "backend/app/modules/dba/models.py",
       "states": [],
-      "tests": []
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "dba_catalog",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_learning_criteria_migration.py"
+        },
+        {
+          "level": "unit",
+          "reference": "dba_catalog",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_dba_compatibility.py"
+        }
+      ]
     },
     {
       "actors": [
@@ -35051,7 +36919,7 @@
       ],
       "authorization": [],
       "consumers": [],
-      "coverage": "missing",
+      "coverage": "covered",
       "details": {
         "active": true,
         "class": "DBAPersonalizado",
@@ -35078,7 +36946,20 @@
       "source_line": 35,
       "source_path": "backend/app/modules/dba/models.py",
       "states": [],
-      "tests": []
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "dba_personalizados",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_learning_criteria_migration.py"
+        },
+        {
+          "level": "unit",
+          "reference": "dba_personalizados",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_dba_compatibility.py"
+        }
+      ]
     },
     {
       "actors": [
@@ -35349,6 +37230,12 @@
         {
           "level": "unit",
           "reference": "evaluacion_blueprints",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_learning_criteria_migration.py"
+        },
+        {
+          "level": "unit",
+          "reference": "evaluacion_blueprints",
           "status": "domain",
           "test_path": "frontend/src/modules/materias/MateriaEvaluaciones.test.tsx"
         }
@@ -35441,6 +37328,12 @@
           "level": "unit",
           "reference": "evaluaciones",
           "status": "direct",
+          "test_path": "backend/tests/integration/test_learning_criteria_migration.py"
+        },
+        {
+          "level": "unit",
+          "reference": "evaluaciones",
+          "status": "direct",
           "test_path": "backend/tests/integration/test_resource_assignment_access.py"
         },
         {
@@ -35526,6 +37419,12 @@
           "reference": "evaluaciones",
           "status": "direct",
           "test_path": "backend/tests/unit/test_evidence_replacement.py"
+        },
+        {
+          "level": "unit",
+          "reference": "evaluaciones",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_learning_criteria_evaluation_application.py"
         },
         {
           "level": "unit",
@@ -35733,7 +37632,7 @@
       ],
       "authorization": [],
       "consumers": [],
-      "coverage": "missing",
+      "coverage": "covered",
       "details": {
         "active": false,
         "class": "migration_only",
@@ -35755,7 +37654,63 @@
       "source_line": 121,
       "source_path": "backend/alembic/versions/202606290001_initial_phase_1_2.py",
       "states": [],
-      "tests": []
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "evaluation_blueprints",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_learning_criteria_versions.py"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "system"
+      ],
+      "authorization": [],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
+        "active": true,
+        "class": "GradingComponentCriterion",
+        "constraints": [
+          "awarded_points >= 0 AND awarded_points <= max_points",
+          "max_points >= 0"
+        ],
+        "enum_refs": [],
+        "historical_only": false,
+        "identity": [
+          "id"
+        ],
+        "indexes": [],
+        "migrations": [
+          "backend/alembic/versions/202609130001_learning_criteria.py"
+        ],
+        "relationships": [
+          "calificacion_componentes.id",
+          "learning_criterion_applications.id"
+        ],
+        "unique": [
+          "application_id",
+          "component_id",
+          "criterion_stable_key"
+        ]
+      },
+      "id": "table:grading_component_criteria",
+      "kind": "table",
+      "owner_spec": "042-criterios-aprendizaje",
+      "signature": "grading_component_criteria",
+      "source_line": 174,
+      "source_path": "backend/app/modules/criterios_aprendizaje/models.py",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "grading_component_criteria",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_learning_criteria_migration.py"
+        }
+      ]
     },
     {
       "actors": [
@@ -35988,6 +37943,329 @@
       "coverage": "covered",
       "details": {
         "active": true,
+        "class": "LearningCriterion",
+        "constraints": [
+          "orden >= 1",
+          "peso_porcentaje >= 0 AND peso_porcentaje <= 100",
+          "puntaje_maximo IS NULL OR puntaje_maximo >= 0"
+        ],
+        "enum_refs": [],
+        "historical_only": false,
+        "identity": [
+          "id"
+        ],
+        "indexes": [],
+        "migrations": [
+          "backend/alembic/versions/202609130001_learning_criteria.py"
+        ],
+        "relationships": [
+          "learning_criterion_versions.id"
+        ],
+        "unique": [
+          "orden",
+          "stable_key",
+          "version_id"
+        ]
+      },
+      "id": "table:learning_criteria",
+      "kind": "table",
+      "owner_spec": "042-criterios-aprendizaje",
+      "signature": "learning_criteria",
+      "source_line": 81,
+      "source_path": "backend/app/modules/criterios_aprendizaje/models.py",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "learning_criteria",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_learning_criteria_migration.py"
+        },
+        {
+          "level": "unit",
+          "reference": "learning_criteria",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_analytics_events.py"
+        },
+        {
+          "level": "unit",
+          "reference": "learning_criteria",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_dba_compatibility.py"
+        },
+        {
+          "level": "unit",
+          "reference": "learning_criteria",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_learning_criteria_api.py"
+        },
+        {
+          "level": "unit",
+          "reference": "learning_criteria",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_learning_criteria_authorization.py"
+        },
+        {
+          "level": "unit",
+          "reference": "learning_criteria",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_learning_criteria_evaluation_application.py"
+        },
+        {
+          "level": "unit",
+          "reference": "learning_criteria",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_learning_criteria_privacy.py"
+        },
+        {
+          "level": "unit",
+          "reference": "learning_criteria",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_material_classroom_assignment.py"
+        },
+        {
+          "level": "unit",
+          "reference": "learning_criteria",
+          "status": "direct",
+          "test_path": "frontend/src/modules/materias/criterios/useLearningCriteriaWorkSession.test.ts"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "system"
+      ],
+      "authorization": [],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
+        "active": true,
+        "class": "LearningCriterionApplication",
+        "constraints": [
+          "target_type IN ('evaluacion','recurso')"
+        ],
+        "enum_refs": [],
+        "historical_only": false,
+        "identity": [
+          "id"
+        ],
+        "indexes": [],
+        "migrations": [
+          "backend/alembic/versions/202609130001_learning_criteria.py"
+        ],
+        "relationships": [
+          "learning_criterion_versions.id",
+          "users.id"
+        ],
+        "unique": []
+      },
+      "id": "table:learning_criterion_applications",
+      "kind": "table",
+      "owner_spec": "042-criterios-aprendizaje",
+      "signature": "learning_criterion_applications",
+      "source_line": 153,
+      "source_path": "backend/app/modules/criterios_aprendizaje/models.py",
+      "states": [
+        "evaluacion",
+        "recurso"
+      ],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "learning_criterion_applications",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_learning_criteria_migration.py"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "system"
+      ],
+      "authorization": [],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
+        "active": true,
+        "class": "LearningCriterionSet",
+        "constraints": [
+          "estado IN ('activo','archivado')"
+        ],
+        "enum_refs": [],
+        "historical_only": false,
+        "identity": [
+          "id"
+        ],
+        "indexes": [],
+        "migrations": [
+          "backend/alembic/versions/202609130001_learning_criteria.py"
+        ],
+        "relationships": [
+          "dba_personalizados.id",
+          "evaluaciones.id",
+          "learning_criterion_versions.id",
+          "materias.id",
+          "users.id"
+        ],
+        "unique": []
+      },
+      "id": "table:learning_criterion_sets",
+      "kind": "table",
+      "owner_spec": "042-criterios-aprendizaje",
+      "signature": "learning_criterion_sets",
+      "source_line": 19,
+      "source_path": "backend/app/modules/criterios_aprendizaje/models.py",
+      "states": [
+        "activo",
+        "archivado"
+      ],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "learning_criterion_sets",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_learning_criteria_migration.py"
+        },
+        {
+          "level": "unit",
+          "reference": "learning_criterion_sets",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_learning_criteria_models.py"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "system"
+      ],
+      "authorization": [],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
+        "active": true,
+        "class": "LearningCriterionSource",
+        "constraints": [
+          "extraction_status IN ('pendiente','procesando','lista','error','eliminada')",
+          "orden >= 1",
+          "page_count IS NULL OR page_count >= 1",
+          "size_bytes IS NULL OR size_bytes >= 0",
+          "tipo IN ('foto','pdf','documento','texto','material_existente','estandar_oficial')"
+        ],
+        "enum_refs": [],
+        "historical_only": false,
+        "identity": [
+          "id"
+        ],
+        "indexes": [],
+        "migrations": [
+          "backend/alembic/versions/202609130001_learning_criteria.py"
+        ],
+        "relationships": [
+          "learning_criterion_versions.id",
+          "rag_sources.id"
+        ],
+        "unique": [
+          "orden",
+          "version_id"
+        ]
+      },
+      "id": "table:learning_criterion_sources",
+      "kind": "table",
+      "owner_spec": "042-criterios-aprendizaje",
+      "signature": "learning_criterion_sources",
+      "source_line": 110,
+      "source_path": "backend/app/modules/criterios_aprendizaje/models.py",
+      "states": [
+        "documento",
+        "eliminada",
+        "error",
+        "estandar_oficial",
+        "foto",
+        "lista",
+        "material_existente",
+        "pdf",
+        "pendiente",
+        "procesando",
+        "texto"
+      ],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "learning_criterion_sources",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_learning_criteria_migration.py"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "system"
+      ],
+      "authorization": [],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
+        "active": true,
+        "class": "LearningCriterionVersion",
+        "constraints": [
+          "estado IN ('borrador','procesando','requiere_revision','aprobada','sustituida')",
+          "version_number >= 1"
+        ],
+        "enum_refs": [],
+        "historical_only": false,
+        "identity": [
+          "id"
+        ],
+        "indexes": [],
+        "migrations": [
+          "backend/alembic/versions/202609130001_learning_criteria.py"
+        ],
+        "relationships": [
+          "learning_criterion_sets.id",
+          "users.id"
+        ],
+        "unique": [
+          "set_id",
+          "version_number"
+        ]
+      },
+      "id": "table:learning_criterion_versions",
+      "kind": "table",
+      "owner_spec": "042-criterios-aprendizaje",
+      "signature": "learning_criterion_versions",
+      "source_line": 53,
+      "source_path": "backend/app/modules/criterios_aprendizaje/models.py",
+      "states": [
+        "aprobada",
+        "borrador",
+        "procesando",
+        "requiere_revision",
+        "sustituida"
+      ],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "learning_criterion_versions",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_learning_criteria_migration.py"
+        },
+        {
+          "level": "unit",
+          "reference": "learning_criterion_versions",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_learning_criteria_models.py"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "system"
+      ],
+      "authorization": [],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
+        "active": true,
         "class": "LegalAcceptance",
         "constraints": [],
         "enum_refs": [],
@@ -36107,6 +38385,12 @@
           "level": "unit",
           "reference": "mail_global_config",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_learning_criteria_authorization.py"
+        },
+        {
+          "level": "unit",
+          "reference": "mail_global_config",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_modular_authorization.py"
         },
         {
@@ -36158,6 +38442,12 @@
       "source_path": "backend/alembic/versions/202606290002_phases_3_to_8.py",
       "states": [],
       "tests": [
+        {
+          "level": "unit",
+          "reference": "materiales_generados",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_learning_criteria_versions.py"
+        },
         {
           "level": "unit",
           "reference": "materiales_generados",
@@ -36234,6 +38524,12 @@
           "level": "unit",
           "reference": "materias",
           "status": "direct",
+          "test_path": "backend/tests/integration/test_learning_criteria_migration.py"
+        },
+        {
+          "level": "unit",
+          "reference": "materias",
+          "status": "direct",
           "test_path": "backend/tests/integration/test_resource_assignment_access.py"
         },
         {
@@ -36276,7 +38572,19 @@
           "level": "unit",
           "reference": "materias",
           "status": "direct",
+          "test_path": "backend/tests/unit/test_dba_compatibility.py"
+        },
+        {
+          "level": "unit",
+          "reference": "materias",
+          "status": "direct",
           "test_path": "backend/tests/unit/test_digitalization_queue.py"
+        },
+        {
+          "level": "unit",
+          "reference": "materias",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_learning_criteria_api.py"
         },
         {
           "level": "unit",
@@ -36325,6 +38633,12 @@
           "reference": "materias",
           "status": "direct",
           "test_path": "frontend/e2e/explainable-grading.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "materias",
+          "status": "direct",
+          "test_path": "frontend/e2e/learning-criteria.spec.ts"
         },
         {
           "level": "e2e",
@@ -36414,7 +38728,25 @@
           "level": "unit",
           "reference": "materias",
           "status": "direct",
+          "test_path": "frontend/src/modules/evaluaciones/components/LearningCriteriaSelector.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "materias",
+          "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/forms/LearningCriteriaSelector.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "materias",
+          "status": "direct",
           "test_path": "frontend/src/modules/herramientas/forms/base.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "materias",
+          "status": "direct",
+          "test_path": "frontend/src/modules/materias/LearningCriteriaNavigation.test.tsx"
         },
         {
           "level": "unit",
@@ -36433,6 +38765,12 @@
           "reference": "materias",
           "status": "direct",
           "test_path": "frontend/src/modules/materias/MateriasListPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "materias",
+          "status": "direct",
+          "test_path": "frontend/src/modules/materias/criterios/LearningCriteriaPage.test.tsx"
         },
         {
           "level": "unit",
@@ -36768,6 +39106,12 @@
           "level": "unit",
           "reference": "password_reset_requests",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_learning_criteria_authorization.py"
+        },
+        {
+          "level": "unit",
+          "reference": "password_reset_requests",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_modular_authorization.py"
         },
         {
@@ -37005,6 +39349,12 @@
           "reference": "profesor_ai_configs",
           "status": "direct",
           "test_path": "backend/tests/integration/test_ai_configuration_migration.py"
+        },
+        {
+          "level": "unit",
+          "reference": "profesor_ai_configs",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_learning_criteria_versions.py"
         }
       ]
     },
@@ -37042,6 +39392,12 @@
           "reference": "profesor_ai_credentials",
           "status": "direct",
           "test_path": "backend/tests/integration/test_ai_configuration_migration.py"
+        },
+        {
+          "level": "unit",
+          "reference": "profesor_ai_credentials",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_learning_criteria_versions.py"
         }
       ]
     },
@@ -37079,6 +39435,12 @@
           "reference": "profesor_ai_feature_preferences",
           "status": "direct",
           "test_path": "backend/tests/integration/test_ai_configuration_migration.py"
+        },
+        {
+          "level": "unit",
+          "reference": "profesor_ai_feature_preferences",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_learning_criteria_versions.py"
         }
       ]
     },
@@ -37088,7 +39450,7 @@
       ],
       "authorization": [],
       "consumers": [],
-      "coverage": "missing",
+      "coverage": "covered",
       "details": {
         "active": false,
         "class": "migration_only",
@@ -37110,7 +39472,14 @@
       "source_line": 28,
       "source_path": "backend/alembic/versions/202608300002_ollama_connectors.py",
       "states": [],
-      "tests": []
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "profesor_ai_provider_models",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_learning_criteria_versions.py"
+        }
+      ]
     },
     {
       "actors": [
@@ -37152,6 +39521,12 @@
           "reference": "rag_chunks",
           "status": "direct",
           "test_path": "backend/tests/unit/test_evaluation_generation.py"
+        },
+        {
+          "level": "unit",
+          "reference": "rag_chunks",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_learning_criteria_evaluation_application.py"
         },
         {
           "level": "unit",
@@ -37200,6 +39575,12 @@
           "reference": "rag_sources",
           "status": "direct",
           "test_path": "backend/tests/integration/test_explainable_grading_pipeline.py"
+        },
+        {
+          "level": "unit",
+          "reference": "rag_sources",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_learning_criteria_migration.py"
         },
         {
           "level": "unit",
@@ -37461,6 +39842,12 @@
           "level": "unit",
           "reference": "users",
           "status": "direct",
+          "test_path": "backend/tests/integration/test_learning_criteria_migration.py"
+        },
+        {
+          "level": "unit",
+          "reference": "users",
+          "status": "direct",
           "test_path": "backend/tests/integration/test_permission_matrix.py"
         },
         {
@@ -37552,6 +39939,12 @@
           "reference": "users",
           "status": "direct",
           "test_path": "frontend/e2e/explainable-grading.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "users",
+          "status": "direct",
+          "test_path": "frontend/e2e/learning-criteria.spec.ts"
         },
         {
           "level": "e2e",

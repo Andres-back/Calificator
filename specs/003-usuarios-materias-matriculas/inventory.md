@@ -44,7 +44,7 @@
 | frontend_call | `GET:/materias/{id}/estudiantes` | ambiguous | covered | `frontend/src/modules/materias/api.ts:21` |
 | frontend_call | `GET:/materias/{id}` | ambiguous | covered | `frontend/src/modules/materias/api.ts:17` |
 | frontend_call | `GET:/materias/{materiaId}/estudiantes-existentes` | ambiguous | covered | `frontend/src/modules/materias/rosterImportApi.ts:69` |
-| frontend_call | `GET:/materias/{materiaId}/evaluaciones` | ambiguous | covered | `frontend/src/modules/evaluaciones/api.ts:51` |
+| frontend_call | `GET:/materias/{materiaId}/evaluaciones` | ambiguous | covered | `frontend/src/modules/evaluaciones/api.ts:53` |
 | frontend_call | `GET:/materias/{materiaId}/importaciones-estudiantes/{batchId}` | ambiguous | covered | `frontend/src/modules/materias/rosterImportApi.ts:50` |
 | frontend_call | `GET:/materias/{materiaId}/importaciones-estudiantes` | ambiguous | covered | `frontend/src/modules/materias/rosterImportApi.ts:54` |
 | frontend_call | `GET:/materias` | ambiguous | covered | `frontend/src/modules/materias/api.ts:13` |

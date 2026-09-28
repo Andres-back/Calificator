@@ -318,6 +318,7 @@ async def apply_learning_criteria_version(
     db: AsyncSession = Depends(get_db),
 ) -> dict:
     _require_write_enabled()
+    await authorization.get_version_for_management(db, version_id, current_user)
     row = await application_service.apply_version(
         db,
         version_id=version_id,
