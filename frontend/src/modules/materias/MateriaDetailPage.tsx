@@ -100,6 +100,7 @@ export function MateriaDetailPage() {
   };
   const visibleTabs = ALL_TABS
     .filter((tab) => !tab.staffOnly || !isStudent)
+    .filter((tab) => tab.to !== 'calificar' || !permissions.has('evaluations.read'))
     .filter((tab) => tab.permissions.some((permission) => permissions.has(permission)));
   const tabHref = (tabPath: string) => tabPath ? `/app/materias/${id}/${tabPath}` : `/app/materias/${id}`;
   const selectedTabHref = tabHref(visibleTabs.find((tab) => isActiveTab(tab.to))?.to ?? '');

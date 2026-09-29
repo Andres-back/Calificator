@@ -16,7 +16,8 @@ for (const theme of ['light', 'dark'] as const) {
     await page.evaluate((activeTheme) => {
       document.documentElement.classList.toggle('dark', activeTheme === 'dark');
     }, theme);
-    await expect(page.getByRole('heading', { name: 'Nota explicada respuesta por respuesta' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Resumen de la valoración' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Ver notas por respuesta', exact: true })).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBeTruthy();
     await expect(page).toHaveScreenshot(`grading-review-${theme}-${viewport.width}.png`, {
       fullPage: true,

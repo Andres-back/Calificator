@@ -221,6 +221,11 @@ actualizar la especificación propietaria, su plan y sus tareas; no debe crear d
 
 ## Inventario técnico global
 
+## Evolución 075: revisión docente compacta y progresiva
+
+- [075-revision-docente-compacta](075-revision-docente-compacta/spec.md), [issue #158](https://github.com/Andres-back/Calificator/issues/158): especificación aprobada para mostrar nota y criterios primero, abrir detalles por respuesta bajo demanda y entrar a calificar desde cada evaluación.
+- [Plan de diseño](075-revision-docente-compacta/plan.md) y [lista de calidad UX](075-revision-docente-compacta/checklists/ux.md) aprobados; implementación y pruebas locales registradas en [validación](075-revision-docente-compacta/quickstart.md). Evoluciona la presentación de 033 sin cambiar notas, fórmulas ni permisos. [PR #159](https://github.com/Andres-back/Calificator/pull/159) en validación CI; fusión/despliegue autorizados, condicionados a controles verdes.
+
 ## Hotfix 074: aislamiento y organización del flujo estudiante
 
 - [074-aislar-flujo-estudiante](074-aislar-flujo-estudiante/spec.md), [issue #153](https://github.com/Andres-back/Calificator/issues/153): separa superficies docentes de las lecturas compartidas del estudiante, conserva roles personalizados y presenta el contenido publicado con lenguaje estudiantil.

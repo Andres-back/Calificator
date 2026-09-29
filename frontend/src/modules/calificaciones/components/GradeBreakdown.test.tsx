@@ -19,6 +19,15 @@ const breakdown: GradeBreakdownData = {
 };
 
 describe('GradeBreakdown', () => {
+  it('usa comparación conjunta solo al pedir la variante docente y conserva el cero', () => {
+    const zero = { ...breakdown, componentes: [{ ...breakdown.componentes[0], respuesta_estudiante: '0', respuesta_referencia: '0' }] };
+    const view = render(<GradeBreakdown breakdown={zero} compactTeacher />);
+    expect(screen.getByTestId('grade-answer-comparison')).toHaveClass('divide-y');
+    expect(screen.getAllByText('0')).toHaveLength(2);
+    view.rerender(<GradeBreakdown breakdown={zero} compactTeacher student />);
+    expect(screen.queryByTestId('grade-answer-comparison')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Ajustar/ })).not.toBeInTheDocument();
+  });
   it('explica fórmula, respuesta, puntaje, motivo y evidencia', () => {
     render(<GradeBreakdown breakdown={breakdown} />);
     expect(screen.getByRole('heading', { name: 'Nota explicada respuesta por respuesta' })).toBeInTheDocument();

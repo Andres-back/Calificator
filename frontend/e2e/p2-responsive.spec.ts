@@ -227,7 +227,7 @@ for (const role of ['profesor', 'estudiante', 'admin'] as const) {
     });
   }
 }
-test('profesor recorre las siete vistas de una materia y escribe un DBA sin perder la página', async ({ page, browserName }) => {
+test('profesor recorre la materia, califica desde su evaluación y escribe un DBA sin perder la página', async ({ page, browserName }) => {
   test.setTimeout(90_000);
   await page.setViewportSize({ width: 390, height: 844 });
   await installApiMocks(page, 'profesor');
@@ -241,13 +241,19 @@ test('profesor recorre las siete vistas de una materia y escribe un DBA sin perd
   page.on('pageerror', (error) => errors.push(error.message));
   page.on('console', (message) => { if (message.type() === 'error') errors.push(message.text()); });
 
-  for (const tab of ['Vista general', 'Evaluaciones', 'Recursos', 'Calificar', 'Asistencia', 'Boletín', 'Criterios de aprendizaje']) {
+  await expect(page.getByRole('combobox', { name: 'Sección de la materia' }).locator('option', { hasText: /^Calificar$/ })).toHaveCount(0);
+  for (const tab of ['Vista general', 'Evaluaciones', 'Recursos', 'Asistencia', 'Boletín', 'Criterios de aprendizaje']) {
     await page.getByRole('combobox', { name: 'Sección de la materia' }).selectOption({ label: tab });
     await expect(page.locator('main#main-content')).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
-    if (tab === 'Calificar') {
-      await expect(page).toHaveURL(/\/app\/calificaciones\?.*materia=m1/);
-      await page.goto('/app/materias/m1');
+    if (tab === 'Evaluaciones') {
+      await page.getByRole('button', { name: 'Calificar', exact: true }).click();
+      await expect(page).toHaveURL(/\/app\/calificaciones\?/);
+      const context = new URL(page.url()).searchParams;
+      expect(context.get('materia')).toBe('m1');
+      expect(context.get('evaluacion')).toBe('e1');
+      await page.getByRole('link', { name: 'Volver a evaluaciones', exact: true }).click();
+      await expect(page).toHaveURL(/\/app\/materias\/m1\/evaluaciones$/);
     }
   }
 

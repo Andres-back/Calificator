@@ -356,7 +356,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "003f7c920ad6c9370bd97eb6898dad02c3ec2337c22011e86b68831e68ee578d",
+  "source_digest": "d60182e388e8ef7f1ec1ccf95525fa59f35ee444d4385e6a578e3cb54db1039e",
   "surfaces": [
     {
       "actors": [
@@ -16668,6 +16668,12 @@
           "reference": "/app/calificaciones",
           "status": "direct",
           "test_path": "frontend/src/modules/dashboard/DashboardPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/calificaciones",
+          "status": "direct",
+          "test_path": "frontend/src/modules/materias/MateriaEvaluaciones.test.tsx"
         },
         {
           "level": "unit",
@@ -34986,6 +34992,12 @@
           "reference": "calificaciones",
           "status": "direct",
           "test_path": "frontend/src/modules/materias/MateriaCalificar.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "calificaciones",
+          "status": "direct",
+          "test_path": "frontend/src/modules/materias/MateriaEvaluaciones.test.tsx"
         },
         {
           "level": "unit",

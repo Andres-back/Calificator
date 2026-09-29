@@ -5,6 +5,7 @@ import { trackEvent } from '@/lib/analytics';
 import type { ReviewTriageItem, ReviewTriageLevel, ReviewTriageSummary } from './buildReviewTriage';
 
 type Props = {
+  compact?: boolean;
   summary: ReviewTriageSummary;
   selectedComponentId?: string;
   onSelectComponent: (componentId: string, level: ReviewTriageLevel, position: number) => void;
@@ -16,7 +17,7 @@ function componentLabel(item: ReviewTriageItem): string {
   return `${prefix} ${item.component.numero ?? item.component.orden + 1}`;
 }
 
-export function ReviewTriagePanel({ summary, selectedComponentId, onSelectComponent, analyticsContext }: Props) {
+export function ReviewTriagePanel({ summary, selectedComponentId, onSelectComponent, analyticsContext, compact = false }: Props) {
   const selectedIndex = summary.exceptions.findIndex((item) => item.component.id === selectedComponentId);
   const nextIndex = selectedIndex < 0 || selectedIndex + 1 >= summary.exceptions.length ? 0 : selectedIndex + 1;
   const next = summary.exceptions[nextIndex];
@@ -49,17 +50,17 @@ export function ReviewTriagePanel({ summary, selectedComponentId, onSelectCompon
   };
 
   return (
-    <Card className="space-y-4 border-brand-200 p-4 dark:border-brand-500/30" aria-labelledby="review-triage-title">
+    <Card className={`${compact ? 'space-y-2 p-3' : 'space-y-4 p-4'} border-brand-200 dark:border-brand-500/30`} aria-labelledby="review-triage-title">
       <div>
-        <p className="text-xs font-bold uppercase tracking-wide text-brand-700 dark:text-brand-300">Revisión asistida</p>
-        <h3 id="review-triage-title" className="mt-1 font-display text-lg font-bold">Revisa primero las excepciones</h3>
-        <p className="mt-1 text-sm text-muted">Estas señales priorizan tu revisión; no cambian ni publican la nota.</p>
+        {!compact && <p className="text-xs font-bold uppercase tracking-wide text-brand-700 dark:text-brand-300">Revisión asistida</p>}
+        <h3 id="review-triage-title" className="mt-1 font-display text-lg font-bold">{compact && summary.exceptions.length === 0 ? 'Señales de revisión' : 'Revisa primero las excepciones'}</h3>
+        {!compact && <p className="mt-1 text-sm text-muted">Estas señales priorizan tu revisión; no cambian ni publican la nota.</p>}
       </div>
 
-      <div className="grid grid-cols-3 gap-2" aria-label="Resumen de revisión">
+      <div className={compact ? 'flex flex-wrap gap-2 [&>div]:px-2 [&>div]:py-1 [&_svg]:hidden [&_p]:mt-0' : 'grid grid-cols-3 gap-2'} aria-label="Resumen de revisión">
         <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-2.5 dark:border-emerald-500/30 dark:bg-emerald-500/10 sm:p-3">
           <CheckCircle2 className="h-5 w-5 text-emerald-700 dark:text-emerald-300" aria-hidden="true" />
-          <p className="mt-2 text-sm font-bold text-emerald-900 dark:text-emerald-100 sm:text-base">{summary.counts.safe} {summary.counts.safe === 1 ? 'segura' : 'seguras'}</p>
+          <p className="mt-2 text-sm font-bold text-emerald-900 dark:text-emerald-100 sm:text-base">{summary.counts.safe} {compact ? 'sin alertas' : summary.counts.safe === 1 ? 'segura' : 'seguras'}</p>
         </div>
         <div className="rounded-xl border border-amber-200 bg-amber-50 p-2.5 dark:border-amber-500/30 dark:bg-amber-500/10 sm:p-3">
           <TriangleAlert className="h-5 w-5 text-amber-700 dark:text-amber-300" aria-hidden="true" />
@@ -84,7 +85,7 @@ export function ReviewTriagePanel({ summary, selectedComponentId, onSelectCompon
             {selectedIndex < 0 ? 'Revisar primera excepción' : selectedIndex < summary.exceptions.length - 1 ? 'Siguiente excepción' : 'Volver a la primera excepción'}
             <ArrowRight className="h-4 w-4" aria-hidden="true" />
           </Button>
-          <ol className="max-h-56 space-y-2 overflow-y-auto pr-1 sm:max-h-none sm:overflow-visible" aria-label="Excepciones detectadas">
+          <ol className="space-y-2" aria-label="Excepciones detectadas">
             {summary.exceptions.map((item, index) => (
               <li key={item.component.id}>
                 <button
@@ -106,15 +107,15 @@ export function ReviewTriagePanel({ summary, selectedComponentId, onSelectCompon
           </ol>
         </>
       ) : (
-        <div className="rounded-xl bg-emerald-50 p-3 text-sm text-emerald-900 dark:bg-emerald-500/10 dark:text-emerald-100">
+        compact ? <p className="text-sm text-muted">Sin señales de incertidumbre. Comprueba una muestra antes de confirmar.</p> : <div className="rounded-xl bg-emerald-50 p-3 text-sm text-emerald-900 dark:bg-emerald-500/10 dark:text-emerald-100">
           <p className="font-bold">No detectamos señales de incertidumbre en las respuestas.</p>
           <p className="mt-1">La priorización no reemplaza tu criterio: revisa una muestra y confirma la nota cuando estés conforme.</p>
         </div>
       )}
 
-      {summary.safe.length > 0 && (
+      {summary.safe.length > 0 && (!compact || summary.exceptions.length > 0) && (
         <details className="rounded-xl border border-border bg-surface-2 p-3">
-          <summary className="focus-ring cursor-pointer rounded-lg font-semibold">Ver respuestas seguras ({summary.safe.length})</summary>
+          <summary className="focus-ring flex min-h-11 cursor-pointer items-center rounded-lg font-semibold">{compact ? 'Ver respuestas sin alertas' : 'Ver respuestas seguras'} ({summary.safe.length})</summary>
           <div className="mt-2 grid gap-2 sm:grid-cols-2">
             {summary.safe.map((item, index) => (
               <button key={item.component.id} type="button" onClick={() => select(item, index + 1)} className="focus-ring min-h-11 rounded-lg border border-border bg-surface px-3 py-2 text-left text-sm font-semibold hover:border-brand-300">
