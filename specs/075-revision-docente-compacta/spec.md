@@ -1,6 +1,6 @@
 # Especificación: Revisión docente compacta y progresiva
 
-**Rama**: `codex/075-revision-docente-compacta` | **Creada**: 2026-09-28 | **Estado**: Especificación, plan y checklist aprobados; implementación y validación local completadas; PR/CI y autorización de merge pendientes | **Issue**: [#158](https://github.com/Andres-back/Calificator/issues/158)
+**Rama**: `codex/075-revision-docente-compacta` | **Creada**: 2026-09-28 | **Estado**: Especificación, plan y checklist aprobados; implementación local completada; PR #159 en validación CI; merge autorizado condicionado a CI verde | **Issue**: [#158](https://github.com/Andres-back/Calificator/issues/158)
 
 Esta evolución organiza la experiencia de 033-centro-calificacion. 008 sigue siendo responsable del ciclo de calificación y 016 del desglose y su fórmula. No crea otra fuente de notas ni cambia el razonamiento de los modelos.
 
@@ -119,7 +119,7 @@ Como docente quiero acceder a evidencia multihoja, fórmula, historial, verifica
 - Se conservan la revisión humana y las alertas necesarias aunque el resultado ocupe menos espacio. No se promete que todas las notas puedan confirmarse sin examinar la evidencia.
 - Si no hay valoración por criterio, se muestra esa ausencia y se ofrecen los puntajes disponibles por pregunta; no se fabrican criterios para llenar el resumen.
 - El menú habitual pierde la pestaña redundante, no la capacidad ni la compatibilidad de enlaces; se contempla la excepción de roles personalizados sin lectura de evaluaciones.
-- El usuario aprobó esta organización mediante «ADELANTE», el plan mediante «aprove» y, tras revisar la lista de calidad como solicitó, autorizó continuar mediante «aprove» el 2026-09-28. No hay autorización de fusión o despliegue de este cambio todavía.
+- El usuario aprobó esta organización mediante «ADELANTE», el plan mediante «aprove» y, tras revisar la lista de calidad como solicitó, autorizó continuar mediante «aprove» el 2026-09-28. Posteriormente autorizó fusión/despliegue mediante «hazlo», sujetos a CI completo verde.
 
 ## Aclaraciones
 

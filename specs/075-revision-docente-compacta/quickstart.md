@@ -1,6 +1,6 @@
 # Guía de validación y resultados
 
-**Estado**: especificación, plan y checklist revisados y aprobados; implementación validada localmente con fixtures sintéticos. PR/CI y autorización de merge pendientes; producción no modificada.
+**Estado**: especificación, plan y checklist revisados y aprobados; implementación validada localmente con fixtures sintéticos. [PR #159](https://github.com/Andres-back/Calificator/pull/159) abierto; fusión/despliegue autorizados por «hazlo», sujetos a CI completo verde. Producción aún no modificada.
 
 ## Preparación
 
@@ -59,3 +59,7 @@ Las suites existentes `e2e/visual/grading-review.visual.spec.ts` y `e2e/accessib
 La emulación de navegador y la inspección de capturas **no acreditan** teclado nativo, desplazamiento táctil o ergonomía en un teléfono físico; queda pendiente comprobarlo con un docente. El CI completo del PR (frontend/E2E, backend, contenedores y gobernanza) es obligatorio antes de merge, incluso con estas pruebas focales verdes. La preparación de entrega no equivale a CI aprobado ni autoriza desplegar.
 
 Abrir PR de `codex/075-revision-docente-compacta` hacia `main`, con `Closes #158`, etiquetas `spec-approved` y `plan-approved`. Tras CI verde, solicitar autorización de fusión; nunca push directo a `main`. La comprobación productiva posterior será de lectura, sin cambiar calificaciones reales.
+
+### Ajuste detectado por CI
+
+La primera ejecución completa pasó 72/73 E2E; el único fallo fue una prueba antigua que intentaba seleccionar la pestaña «Calificar», retirada según FR-011. Se actualiza el recorrido existente de `p2-responsive.spec.ts`: comprueba que no existe esa opción, entra desde la tarjeta de Evaluaciones, valida materia/evaluación y regresa al listado contextual. Las rutas antiguas siguen comprobadas por la matriz responsive. La prueba corregida pasó localmente (1/1, 17.8 s total). No se modifica código funcional para resolver este fallo de prueba. El fallo inicial de gobernanza fue del evento de apertura previo a recibir las etiquetas; los eventos posteriores con ambas etiquetas pasaron. Nueva ejecución completa obligatoria antes de merge.

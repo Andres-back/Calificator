@@ -2,7 +2,7 @@
 
 **Rama**: `codex/075-revision-docente-compacta` | **Fecha**: 2026-09-28 | **Spec**: [spec.md](./spec.md) | **Issue**: [#158](https://github.com/Andres-back/Calificator/issues/158)
 
-**Estado**: Plan y checklist aprobados mediante «aprove» el 2026-09-28, después de revisar la lista a petición del usuario. Implementación y validación local completadas; PR/CI y autorización de merge pendientes.
+**Estado**: Plan y checklist aprobados mediante «aprove» el 2026-09-28, después de revisar la lista a petición del usuario. Implementación local completada; PR #159 en validación CI. Fusión/despliegue autorizados mediante «hazlo», condicionados a CI completo verde.
 
 ## Resumen
 
