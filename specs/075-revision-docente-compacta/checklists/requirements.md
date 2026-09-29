@@ -30,4 +30,4 @@
 ## Notas
 
 - Revisada contra el código vigente de main: GradeBreakdown, CalificacionesWorkspace, MateriaEvaluaciones y MateriaDetailPage.
-- Pendiente aprobación humana de especificación. El plan, las tareas, la implementación y la validación de usuario no están completados.
+- Especificación aprobada por el usuario con «ADELANTE» el 2026-09-28. El plan requiere aprobación propia; las tareas, implementación y validación de usuario no están completadas.
