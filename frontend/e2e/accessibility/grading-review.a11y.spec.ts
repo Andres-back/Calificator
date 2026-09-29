@@ -13,6 +13,8 @@ for (const viewport of [
   await page.goto('/app/calificaciones/workspace/e1');
   await page.getByText('Estudiante Prueba', { exact: true }).click();
 
+  await expect(page.getByRole('heading', { name: 'Resumen de la valoración' })).toBeVisible();
+  await page.getByRole('button', { name: 'Ver notas por respuesta', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Nota explicada respuesta por respuesta' })).toBeVisible();
   const controls = page.locator('button:visible, a:visible, input:visible, textarea:visible, select:visible');
   const count = await controls.count();

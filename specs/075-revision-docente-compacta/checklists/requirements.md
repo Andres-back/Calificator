@@ -30,4 +30,4 @@
 ## Notas
 
 - Revisada contra el código vigente de main: GradeBreakdown, CalificacionesWorkspace, MateriaEvaluaciones y MateriaDetailPage.
-- Especificación aprobada por el usuario con «ADELANTE» el 2026-09-28. El plan requiere aprobación propia; las tareas, implementación y validación de usuario no están completadas.
+- Especificación aprobada por el usuario con «ADELANTE» el 2026-09-28; plan y checklist UX aprobados posteriormente mediante «aprove». Las pruebas locales constan en quickstart.md; no sustituyen CI ni validación en teléfono físico por docentes.

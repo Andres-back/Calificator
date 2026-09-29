@@ -2,7 +2,7 @@
 
 **Rama**: `codex/075-revision-docente-compacta` | **Fecha**: 2026-09-28 | **Spec**: [spec.md](./spec.md) | **Issue**: [#158](https://github.com/Andres-back/Calificator/issues/158)
 
-**Estado**: Diseño preparado, pendiente de aprobación humana; implementación no iniciada.
+**Estado**: Plan y checklist aprobados mediante «aprove» el 2026-09-28, después de revisar la lista a petición del usuario. Implementación y validación local completadas; PR/CI y autorización de merge pendientes.
 
 ## Resumen
 
@@ -26,7 +26,7 @@ En la materia, el acceso habitual pasa por cada evaluación no borrador. Se ocul
 - Asincronía e idempotencia: cumple en diseño. Se conservan cola, estados de procesamiento y reintentos; abrir una sección es exclusivamente una interacción de presentación.
 - Datos y secretos: cumple en diseño. Sin cambios persistidos ni uso de evidencia real; capturas y mocks sintéticos.
 - Accesibilidad: cumple en diseño. Botones con `aria-expanded`/`aria-controls`, foco al panel abierto, controles de 44 px y flujo normal de documento. No se añaden modales ni paneles sticky altos.
-- Gobernanza y pruebas: especificación aprobada con `spec-approved`. Plan pendiente; Checklist, Tasks, Analyze e Implement siguen después de su aprobación. PR y CI requeridos, sin push directo a main ni despliegue en esta fase.
+- Gobernanza y pruebas: especificación y plan aprobados con `spec-approved` y `plan-approved`. Checklist revisada y aprobada antes de Tasks, Analyze e Implement, conforme a la petición del usuario. PR y CI requeridos, sin push directo a main ni despliegue en esta fase.
 
 La comprobación posterior al diseño mantiene estos mismos gates. Ninguna excepción constitucional ni ampliación de permisos.
 

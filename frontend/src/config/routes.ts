@@ -45,7 +45,7 @@ export const routes = {
   /* ── Calificaciones ── */
   calificacionesBoletin: '/app/calificaciones/boletin',
   calificacionesWorkspace: '/app/calificaciones',
-  calificacionesEvaluacion: (id: string) => `/app/calificaciones?evaluacion=${encodeURIComponent(id)}` as const,
+  calificacionesEvaluacion: (id: string, materiaId?: string) => `/app/calificaciones?evaluacion=${encodeURIComponent(id)}${materiaId ? `&materia=${encodeURIComponent(materiaId)}` : ''}` as const,
   calificacionesRevision: (evaluacionId: string, calificacionId: string) =>
     `/app/calificaciones?evaluacion=${encodeURIComponent(evaluacionId)}&calificacion=${encodeURIComponent(calificacionId)}` as const,
 

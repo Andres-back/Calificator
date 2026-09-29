@@ -184,6 +184,8 @@ Como responsable académico, necesito que calificaciones online, por visión, mi
 
 ## Evolución 033: mesa por pregunta
 
+La [evolución 075](../075-revision-docente-compacta/spec.md) añade una comparación docente compacta opt-in y una proyección de criterios realmente guardados. El componente estudiantil conserva su disposición y restricciones. Puntajes ausentes no se convierten a cero ni se inventan pesos o relaciones entre preguntas y criterios; los ajustes siguen el editor versionado existente.
+
 El docente selecciona una pregunta/criterio y contrasta evidencia, respuesta, referencia, puntos, motivo y orientación en el mismo panel. La vista estudiante conserva el desglose completo autorizado. El editor captura la versión inicial: polling no reemplaza el borrador y 409 exige recargar o conservarlo. «Guardar y siguiente pregunta» y «Guardar y siguiente alumno» esperan persistencia, sin confirmar ni publicar implícitamente.
 
 Las PQRS conservan componente_id/desglose_version originales; el listado devuelve además la clave estable comprobada en su desglose de origen para abrir el equivalente actual. Si no existe equivalencia, muestra referencia obsoleta sin inventar asociación. La resolución y los ajustes invalidan el resumen del centro después de guardarse.

@@ -93,6 +93,13 @@ beforeEach(() => {
 });
 
 describe('MateriaDetailPage for students', () => {
+  it('retira Calificar cuando Evaluaciones es accesible al docente', async () => {
+    materiaApi.getMateriaEstudiantes.mockResolvedValue({ ...materia, estudiantes: [] });
+    useAuth.setState({ user: { id: 'p1', nombre: 'Docente', email: 'p@example.test', rol: 'profesor', estado: 'activo', permissions: ['subjects.read', 'evaluations.read', 'grading.grade'] } });
+    renderDetail();
+    expect(await screen.findByRole('link', { name: /Evaluaciones/i })).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /Calificar/i })).not.toBeInTheDocument();
+  });
   it('uses the student subject endpoint and never requests the administrative roster', async () => {
     materiaApi.getMateria.mockResolvedValue(materia);
 

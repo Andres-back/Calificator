@@ -123,6 +123,10 @@ Como docente quiero incorporar evidencias de varios alumnos, consultar la cola y
 - Retirar código desconectado no supone retirar APIs de salón o lote que puedan tener otros consumidores.
 - El usuario aprobó el diseño resultante con «adelante» el 2026-09-09. La implementación sigue rama, PR y CI; este registro no equivale a despliegue realizado.
 
+## Evolución 075: resumen y revisión progresiva
+
+La [especificación 075](../075-revision-docente-compacta/spec.md) reorganiza esta presentación: resumen móvil inicial, botón de notas por respuesta, evidencia y opciones bajo demanda, comparación breve y conservación de borradores. Enlaces a pregunta y PQRS abren el detalle adecuado. Calificar se ofrece desde cada evaluación no borrador; la pestaña de materia solo permanece para roles autorizados sin lectura de evaluaciones. Las rutas anteriores siguen operativas.
+
 ## Aclaraciones
 
 ### Sesión 2026-09-09

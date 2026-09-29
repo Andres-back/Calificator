@@ -77,6 +77,8 @@ La especificación [016-calificacion-explicable](../016-calificacion-explicable/
 
 ## Evolución 033: centro unificado
 
+La [evolución 075](../075-revision-docente-compacta/spec.md) organiza el mismo centro con resumen móvil y detalle progresivo, entrada desde la evaluación y retorno contextual. No cambia endpoints, estados, permisos ni registros de calificación; mantiene bloqueo de borradores y cero publicaciones por abrir secciones.
+
 [033 Centro de calificación](../033-centro-calificacion/spec.md) reúne carga, revisión y publicación en `/app/calificaciones`. La proyección docente `GET /evaluaciones/{id}/revision` incluye toda la matrícula, nota nullable, versión/cobertura y contadores exhaustivos. Realiza seis consultas agrupadas (cinco sin permiso de PQRS), sin archivos, respuestas ni inferencias al consultar. La política de intento vigente se conserva.
 
 La lista distingue cero real, sin entrega, procesamiento, error y nota publicada. Los filtros son independientes de la paginación; la búsqueda limita filas, no cambia los contadores del examen. Un cursor que deja de pertenecer al filtro responde 409 para reiniciar la lista explícitamente.

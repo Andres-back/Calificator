@@ -136,6 +136,13 @@ beforeEach(() => {
 });
 
 describe('MateriaEvaluaciones teacher creation flow', () => {
+  it('abre Calificar con evaluación y materia y no lo ofrece en borradores', async () => {
+    mocks.list.mockResolvedValue([{ ...evaluation, estado: 'publicada' }, { ...evaluation, id: 'draft-1', nombre: 'Borrador' }]);
+    renderPage();
+    const action = await screen.findByRole('link', { name: 'Calificar' });
+    expect(action).toHaveAttribute('href', '/app/calificaciones?evaluacion=evaluation-1&materia=materia-1');
+    expect(screen.getAllByRole('link', { name: 'Calificar' })).toHaveLength(1);
+  });
   it('shows only learner actions with the real shared read permissions', async () => {
     mocks.context.canManageMateria = false;
     mocks.context.isStudent = true;

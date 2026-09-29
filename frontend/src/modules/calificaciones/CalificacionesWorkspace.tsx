@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent, type ReactNode } from 'react';
 import { useBlocker, useParams, useSearchParams, useLocation, Link, Navigate } from 'react-router-dom';
 import { useInfiniteQuery, useMutation, useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
@@ -393,6 +393,7 @@ function AIPipelineSummary({
 /* ─── Sub-componente: Incidencias ─── */
 
 function IncidenciasSection({ calificacionId, onOpenComponent }: { calificacionId: string; onOpenComponent?: (componentId: string) => void }) {
+  const [expanded, setExpanded] = useState<boolean | null>(null);
   const [showCreate, setShowCreate] = useState(false);
   const [newTipo, setNewTipo] = useState('confianza_baja');
   const [newDesc, setNewDesc] = useState('');
@@ -420,18 +421,21 @@ function IncidenciasSection({ calificacionId, onOpenComponent }: { calificacionI
     },
     onError: (e) => toast.error(toApiError(e).detail),
   });
+  const openCount = incidencias?.filter((item) => item.estado === 'abierta').length ?? 0;
+  const showContent = (expanded ?? (openCount > 0 || isError)) || showCreate || resolveId !== null;
 
   return (
     <div className="rounded-xl border border-border">
       <div className="flex items-center justify-between border-b border-border px-4 py-2">
-        <p className="flex items-center gap-2 text-xs font-semibold text-muted">
-          <ShieldAlert className="h-4 w-4" /> Incidencias y solicitudes {incidencias && incidencias.length > 0 && `(${incidencias.length})`}
-        </p>
+        <button type="button" className="focus-ring flex min-h-11 items-center gap-2 rounded-lg text-left text-sm font-semibold text-muted" aria-expanded={showContent} aria-controls={`grade-incidencias-${calificacionId}`} onClick={() => { if (showCreate || resolveId) { toast('Termina o cancela la incidencia antes de cerrar la sección.'); return; } setExpanded(!showContent); }}>
+          <ShieldAlert className="h-4 w-4 shrink-0" /> Incidencias y solicitudes {incidencias && incidencias.length > 0 && `(${incidencias.length})`}{openCount > 0 && ` · ${openCount} reclamo(s) o alerta(s) abierta(s)`}{isLoading && ' · consultando'}{isError && ' · consulta no disponible'}
+        </button>
         <button type="button" onClick={() => setShowCreate(!showCreate)} className="focus-ring min-h-11 rounded-lg px-3 text-xs font-semibold text-brand-600 hover:text-brand-700">
           + Nueva
         </button>
       </div>
 
+      <div id={`grade-incidencias-${calificacionId}`} hidden={!showContent}>
       {showCreate && (
         <div className="space-y-3 border-b border-border px-4 py-3">
           <Field label="Tipo">
@@ -501,6 +505,7 @@ function IncidenciasSection({ calificacionId, onOpenComponent }: { calificacionI
           ))}
         </div>
       )}
+      </div>
     </div>
   );
 }
@@ -545,7 +550,7 @@ function PanelDetalle({
 }) {
   const [adjNota, setAdjNota] = useState<number | ''>(effectiveGradeScore(cal) ?? '');
   const [adjFeedback, setAdjFeedback] = useState(cal.feedback ?? '');
-  const [showAjustar, setShowAjustar] = useState(cal.estado === 'requiere_revision');
+  const [showAjustar, setShowAjustar] = useState(false);
   const [adjError, setAdjError] = useState('');
   const [replacementOpen, setReplacementOpen] = useState(false);
   const [replacementReason, setReplacementReason] = useState('');
@@ -559,7 +564,34 @@ function PanelDetalle({
   const [detailParams, setDetailParams] = useSearchParams();
   const evidencePage = Math.max(1, Math.min(cal.entrega_evidencia_paginas || 1, Number(detailParams.get('hoja')) || 1));
   const setEvidencePage = (page: number) => setDetailParams((previous) => { const next = new URLSearchParams(previous); next.set('hoja', String(page)); return next; }, { replace: true });
-  const [mobileTab, setMobileTab] = useState<'evidencia' | 'revision'>('revision');
+  const [mobileTab, setMobileTab] = useState<'resumen' | 'evidencia' | 'revision'>(() => detailParams.has('pregunta') ? 'revision' : 'resumen');
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
+  const [advancedOpen, setAdvancedOpen] = useState(false);
+  const [wideReview, setWideReview] = useState(() => window.matchMedia('(min-width: 1280px)').matches);
+  useEffect(() => {
+    const media = window.matchMedia('(min-width: 1280px)');
+    const changed = () => setWideReview(media.matches);
+    media.addEventListener('change', changed);
+    return () => media.removeEventListener('change', changed);
+  }, []);
+  const detailPermissions = useAuth((state) => state.user?.permissions ?? []);
+  const reviewSectionRef = useRef<HTMLDivElement | null>(null);
+  const detailViewRef = useRef<HTMLDivElement | null>(null);
+  const incomingQuestion = useRef(detailParams.get('pregunta'));
+  useEffect(() => {
+    if (!incomingQuestion.current) return;
+    const frame = window.requestAnimationFrame(() => {
+      const question = reviewSectionRef.current?.querySelector<HTMLElement>('article');
+      (question ?? reviewSectionRef.current)?.focus({ preventScroll: true });
+      detailViewRef.current?.scrollIntoView({ block: 'start' });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, []);
+  useEffect(() => {
+    const question = detailParams.get('pregunta');
+    if (question && question !== incomingQuestion.current) setMobileTab('revision');
+    incomingQuestion.current = question;
+  }, [detailParams]);
   const pipeline = cal.resultado_json as Record<string, unknown>;
   const graderB = pipeline?.grader_b as Record<string, unknown> | undefined;
   const strategy = pipeline?.strategy as Record<string, unknown> | undefined;
@@ -581,7 +613,10 @@ function PanelDetalle({
   const openReviewComponent = (componentId: string) => {
     selectQuestion(componentId);
     setMobileTab('revision');
-    window.requestAnimationFrame(() => document.getElementById('grade-breakdown-title')?.scrollIntoView({ block: 'start' }));
+    window.requestAnimationFrame(() => {
+      reviewSectionRef.current?.focus({ preventScroll: true });
+      detailViewRef.current?.scrollIntoView({ block: 'start' });
+    });
   };
   const [evidenceLoadError, setEvidenceLoadError] = useState(false);
   const evidenceSectionRef = useRef<HTMLElement | null>(null);
@@ -681,7 +716,6 @@ function PanelDetalle({
   useEffect(() => {
     setAdjNota(originalNota);
     setAdjFeedback(originalFeedback);
-    setShowAjustar(cal.estado === 'requiere_revision');
     setAdjError('');
     setBreakdownSaveError('');
     setEvidenceLoadError(false);
@@ -729,7 +763,12 @@ function PanelDetalle({
   const answerKeyIncomplete = answerKey?.complete === false;
   const evidenciaConsolidada = pipeline?.evidencia_consolidada as Record<string, unknown> | undefined;
   const secciones = evidenciaConsolidada?.secciones as Record<string, Record<string, unknown>> | undefined;
-  const criterios = (graderA?.criterios ?? []) as Array<Record<string, unknown>>;
+  const criterios = Array.isArray(graderA?.criterios) ? graderA.criterios.filter((item): item is Record<string, unknown> => Boolean(item) && typeof item === 'object') : [];
+  const rubricComponents = activeBreakdown?.componentes.filter((component) => component.tipo === 'rubrica') ?? [];
+  const criterionRows = rubricComponents.length
+    ? rubricComponents.map((component) => ({ nombre: component.titulo, puntaje: component.puntos_obtenidos, maximo: component.puntos_maximos }))
+    : !activeBreakdown ? criterios.filter((item) => typeof item.nombre === 'string' && item.nombre.trim()) : [];
+  const formatCriterionNumber = (value: unknown) => value == null || String(value).trim() === '' || !Number.isFinite(Number(value)) ? '—' : Number(value).toFixed(2);
   const alertas = [...new Set([
     ...((graderA?.alertas ?? []) as string[]),
     ...verifierAlerts,
@@ -749,7 +788,20 @@ function PanelDetalle({
     setEvidencePage(normalized);
     setEvidenceLoadError(false);
     setMobileTab('evidencia');
-    evidenceSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    window.requestAnimationFrame(() => evidenceSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+  }
+
+  function changeDetailView(view: 'resumen' | 'revision' | 'evidencia') {
+    if (view === 'resumen' && (editingComponentId || showGlobalAdjustment || isDirty)) {
+      toast('Guarda o cancela los cambios antes de volver al resumen.');
+      return;
+    }
+    setMobileTab(view);
+    if (view !== 'resumen') window.requestAnimationFrame(() => {
+      const target = view === 'revision' ? reviewSectionRef.current : evidenceSectionRef.current;
+      target?.focus({ preventScroll: true });
+      detailViewRef.current?.scrollIntoView({ block: 'start' });
+    });
   }
 
   function submitAjuste() {
@@ -766,9 +818,19 @@ function PanelDetalle({
     window.requestAnimationFrame(() => adjustmentSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }));
   }
 
+  function toggleFeedbackSection(event: MouseEvent<HTMLElement>) {
+    event.preventDefault();
+    if (isDirty || showAjustar) {
+      toast('Guarda o cancela el ajuste antes de cerrar la retroalimentación.');
+      return;
+    }
+    setFeedbackOpen((open) => !open);
+  }
+
   const questionReview = activeBreakdown ? (
     <GradeBreakdown
       breakdown={activeBreakdown}
+      compactTeacher
       selectedComponentId={selectedQuestion?.id}
       onSelectComponent={selectQuestion}
       onEdit={canGrade ? requestComponentEdit : undefined}
@@ -808,14 +870,15 @@ function PanelDetalle({
       <div className="flex items-center justify-between border-b border-border px-5 py-4">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <p className="truncate font-display text-lg font-bold">{cal.estudiante_nombre || estudiante?.nombre || 'Estudiante'}</p>
+            <p className="break-words font-display text-lg font-bold">{cal.estudiante_nombre || estudiante?.nombre || 'Estudiante'}</p>
             {isDirty && <span className="shrink-0 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-700 dark:bg-amber-500/20 dark:text-amber-300">Sin guardar</span>}
           </div>
           <p className="text-xs text-muted">{cal.evaluacion_nombre} · {cal.materia_nombre}</p>
+          {cal.materia_id && detailPermissions.includes('evaluations.read') && <Link to={routes.materiaEvaluaciones(cal.materia_id)} className="focus-ring mt-1 inline-flex min-h-11 items-center gap-1 text-sm font-semibold text-brand-700 dark:text-brand-200"><ArrowLeft className="h-4 w-4" /> Volver a evaluaciones</Link>}
         </div>
       </div>
 
-      <div className="min-w-0 flex-1 space-y-5 p-3 pb-32 sm:p-5 sm:pb-32 lg:pb-5">
+      <div className="min-w-0 flex-1 space-y-3 p-3 pb-32 [overflow-wrap:anywhere] sm:space-y-5 sm:p-5 sm:pb-32 lg:pb-5">
         {/* Nota principal */}
         <div className="flex items-center justify-between">
           <div>
@@ -836,6 +899,22 @@ function PanelDetalle({
             {published ? 'Publicada' : done ? 'Confirmada' : presentation.processing ? 'Calificando' : manualReview ? 'Revisión manual' : 'Por revisar'}
           </Badge>
         </div>
+
+        <section aria-labelledby="grade-summary-title" className="rounded-xl border border-border bg-surface-2 p-3">
+          <h2 id="grade-summary-title" className="text-base font-bold">Resumen de la valoración</h2>
+          {criterionRows.length ? <>
+            <p className="mt-1 text-xs text-muted">{rubricComponents.length ? 'Criterios de rúbrica registrados' : 'Valoración inicial guardada; no recalculada por ajustes globales.'}</p>
+            <dl className="mt-2 divide-y divide-border text-sm">
+              {criterionRows.map((criterion, index) => <div key={index} className="flex items-start justify-between gap-3 py-2">
+                <dt className="min-w-0 [overflow-wrap:anywhere]">{String(criterion.nombre)}</dt>
+                <dd className="shrink-0 font-semibold">{formatCriterionNumber(criterion.puntaje)} / {formatCriterionNumber(criterion.maximo)}</dd>
+              </div>)}
+            </dl>
+          </> : <>
+            <p className="mt-1 text-sm text-muted">No hay valoración por criterio registrada.</p>
+            {activeBreakdown && <p className="mt-1 text-sm">Puntos por respuestas: <strong>{formatCriterionNumber(activeBreakdown.formula.puntos_obtenidos)} / {formatCriterionNumber(activeBreakdown.formula.puntos_posibles)}</strong>. Consulta el detalle para ver cada puntaje.</p>}
+          </>}
+        </section>
 
         {presentation.processing && (
           <Card className="flex items-start gap-3 border-brand-200 bg-brand-50 p-4 dark:border-brand-500/30 dark:bg-brand-500/10">
@@ -874,6 +953,7 @@ function PanelDetalle({
         {/* Confianza */}
         {reviewTriage ? (
           <ReviewTriagePanel
+            compact
             summary={reviewTriage}
             selectedComponentId={selectedQuestion?.id}
             onSelectComponent={(componentId) => openReviewComponent(componentId)}
@@ -881,10 +961,7 @@ function PanelDetalle({
           />
         ) : null}
         {canGrade && manualReview && evidenceUrl && <Button variant="outline" loading={retryMutation.isPending} disabled={retryMutation.isPending} onClick={() => retryMutation.mutate()}><RotateCcw className="h-4 w-4" /> Volver a analizar la evidencia</Button>}
-        {(() => {
-          if (cal.confianza == null || cal.confianza <= 0) return null;
-          return <p className="text-xs text-muted">Confianza: {(cal.confianza * 100).toFixed(0)}%</p>;
-        })()}
+        {alertas.length > 0 && <div role="status" className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200">{alertas.map((alerta, index) => <p key={index}>⚠️ {alerta}</p>)}</div>}
 
         {/* Evidencia */}
         {evidenciaConsolidada?.modalidad === 'mixta' && (
@@ -901,14 +978,15 @@ function PanelDetalle({
             <p className="mt-2 text-xs text-sky-800 dark:text-sky-200">Revisa el texto y la imagen por separado antes de confirmar la nota única.</p>
           </div>
         )}
-        <div className="sticky top-0 z-20 -mx-3 flex gap-2 border-y border-border bg-surface/95 px-3 py-2 shadow-sm backdrop-blur xl:hidden" aria-label="Vista de la revisión">
-          <Button fullWidth variant={mobileTab === 'evidencia' ? 'primary' : 'outline'} onClick={() => setMobileTab('evidencia')} aria-pressed={mobileTab === 'evidencia'}>Evidencia</Button>
-          <Button fullWidth variant={mobileTab === 'revision' ? 'primary' : 'outline'} onClick={() => setMobileTab('revision')} aria-pressed={mobileTab === 'revision'}>Revisar respuestas</Button>
+        <div ref={detailViewRef} className="scroll-mt-4 flex flex-wrap gap-2" aria-label="Vista de la revisión">
+          <Button className="xl:hidden" variant={mobileTab === 'resumen' ? 'primary' : 'outline'} onClick={() => changeDetailView('resumen')} aria-pressed={mobileTab === 'resumen'}>Resumen</Button>
+          <Button variant={mobileTab === 'revision' ? 'primary' : 'outline'} onClick={() => changeDetailView('revision')} aria-expanded={wideReview || mobileTab === 'revision' || editingComponentId !== null} aria-controls="grade-review-panel">Ver notas por respuesta</Button>
+          <Button variant={mobileTab === 'evidencia' ? 'primary' : 'outline'} onClick={() => changeDetailView('evidencia')} aria-expanded={wideReview || mobileTab === 'evidencia'} aria-controls="grade-evidence-panel">Ver evidencia</Button>
         </div>
         <div className="grid min-w-0 gap-4 xl:grid-cols-2 xl:items-start">
-          <div className={cn('min-w-0 space-y-4 xl:sticky xl:top-4', mobileTab !== 'evidencia' && 'hidden xl:block')}>
+          <div id="grade-evidence-panel" className={cn('min-w-0 space-y-4 xl:sticky xl:top-4', mobileTab !== 'evidencia' && 'hidden xl:block')}>
             {evidenceUrl ? (
-              <section ref={evidenceSectionRef} aria-labelledby="evidence-title" className="scroll-mt-4 rounded-xl border border-border bg-surface-2 xl:sticky xl:top-4">
+              <section ref={evidenceSectionRef} tabIndex={-1} aria-labelledby="evidence-title" className="scroll-mt-4 rounded-xl border border-border bg-surface-2 xl:sticky xl:top-4">
                 <div className="flex items-center justify-between border-b border-border px-4 py-3 text-sm font-semibold text-muted">
                   <h2 id="evidence-title" className="flex items-center gap-2 text-base font-bold text-fg">
                     {isPdfEvidence ? <FileText className="h-5 w-5" /> : <FileImage className="h-5 w-5" />}
@@ -962,7 +1040,7 @@ function PanelDetalle({
                 </div>
               </section>
             ) : (
-              <section className="rounded-xl border border-border bg-surface-2 p-5">
+              <section ref={evidenceSectionRef} tabIndex={-1} className="rounded-xl border border-border bg-surface-2 p-5">
                 <h2 className="text-base font-bold text-fg">Evidencia del estudiante</h2>
                 <p className="mt-2 text-base text-muted">Esta entrega no tiene una foto o PDF asociado.</p>
               </section>
@@ -976,7 +1054,7 @@ function PanelDetalle({
             )}
           </div>
 
-          <div className={cn('min-w-0', mobileTab !== 'revision' && 'hidden xl:block')}>
+          <div id="grade-review-panel" ref={reviewSectionRef} tabIndex={-1} className={cn('min-w-0 scroll-mt-4', mobileTab !== 'revision' && !editingComponentId && 'hidden xl:block')}>
             {detailParams.has('pregunta') && !activeBreakdown?.componentes.some((component) => [component.id, component.clave].includes(detailParams.get('pregunta')!)) && <p role="status" className="mb-3 text-sm text-amber-700 dark:text-amber-300">La referencia corresponde a otra versión. Se muestra la primera pregunta vigente; consulta el historial para comparar.</p>}
             {questionReview}
           </div>
@@ -997,25 +1075,9 @@ function PanelDetalle({
           />
         )}
 
-        {/* Criterios */}
-        {!cal.desglose && criterios.length > 0 && (
-          <div className="rounded-xl border border-border">
-            <p className="flex items-center gap-2 border-b border-border px-4 py-2 text-xs font-semibold text-muted">
-              <ShieldAlert className="h-4 w-4" /> Criterios de evaluación
-            </p>
-            <div className="space-y-2 px-4 py-3">
-              {criterios.map((c, i) => (
-                <div key={i} className="flex items-center justify-between text-sm">
-                  <span className="text-muted">{String(c.nombre ?? '')}</span>
-                  <span className="font-semibold text-fg">
-                    {Number(c.puntaje ?? 0).toFixed(1)} / {Number(c.maximo ?? 0).toFixed(1)}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
+        <details open={advancedOpen || showGlobalAdjustment} className="rounded-xl border border-border p-3">
+          <summary className="focus-ring flex min-h-11 cursor-pointer items-center font-semibold" onClick={(event) => { event.preventDefault(); if (showGlobalAdjustment) { toast('Guarda o cancela el ajuste global antes de cerrar esta sección.'); return; } setAdvancedOpen((open) => !open); }}>Historial y opciones de la nota</summary>
+          {cal.confianza != null && cal.confianza > 0 && <p className="my-2 text-xs text-muted">Confianza informada: {(cal.confianza * 100).toFixed(0)} %. No sustituye la comprobación docente.</p>}
         {cal.desglose ? (
           <div className="space-y-4">
             <div className="flex flex-col gap-3 rounded-xl border border-border bg-surface-2 p-4 sm:flex-row sm:items-center sm:justify-between">
@@ -1049,8 +1111,12 @@ function PanelDetalle({
             <p className="mt-1 text-sm leading-6 text-muted">La nota y los criterios históricos se conservan. No se inventaron puntajes por pregunta para esta entrega.</p>
           </Card>
         ) : null}
+        <Timeline events={cal.timeline} />
+        </details>
         {/* Feedback */}
-        {!presentation.processing && <Field label="Retroalimentación">
+        {!presentation.processing && <details open={feedbackOpen || isDirty || showAjustar} className="rounded-xl border border-border p-3">
+          <summary className="focus-ring flex min-h-11 cursor-pointer items-center font-semibold" onClick={toggleFeedbackSection}>Retroalimentación del estudiante</summary>
+          <Field label="Retroalimentación">
           <Textarea
             readOnly={!canGrade}
             value={adjFeedback}
@@ -1058,14 +1124,7 @@ function PanelDetalle({
             placeholder="Escribe o edita el feedback para el estudiante…"
             rows={4}
           />
-        </Field>}
-
-        {/* Alertas */}
-        {alertas.length > 0 && (
-          <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200">
-            {alertas.map((a, i) => <p key={i}>⚠️ {a}</p>)}
-          </div>
-        )}
+        </Field></details>}
 
         {/* Acciones */}
         {canGrade && !done && !presentation.processing && (
@@ -1125,13 +1184,10 @@ function PanelDetalle({
           </div>
         )}
 
-        {/* Timeline */}
-        <Timeline events={cal.timeline} />
-
         {/* Incidencias */}
         {canReviewClaims && <IncidenciasSection calificacionId={cal.id} onOpenComponent={(id) => {
           const component = activeBreakdown?.componentes.find((item) => item.id === id || item.clave === id);
-          if (component) { selectQuestion(component.id); setMobileTab('revision'); document.getElementById('grade-breakdown-title')?.scrollIntoView({ block: 'start' }); }
+          if (component) openReviewComponent(component.id);
           else { setDetailParams((previous) => { const next = new URLSearchParams(previous); next.set('pregunta', id); return next; }); toast('La pregunta pertenece a una versión anterior y no tiene equivalencia vigente.'); }
         }} />}
       </div>
@@ -1942,6 +1998,7 @@ function GradingCenter() {
 
   return (
     <div className="flex min-h-full min-w-0 flex-col">
+      {!selectedId && materiaId && permissions.includes('evaluations.read') && <Link to={routes.materiaEvaluaciones(materiaId)} className="focus-ring mb-2 inline-flex min-h-11 items-center gap-2 self-start rounded-lg px-2 text-sm font-semibold text-brand-700 dark:text-brand-200"><ArrowLeft className="h-4 w-4" /> Volver a evaluaciones</Link>}
       {/* Header */}
       <PageHeader
         title="Calificaciones"

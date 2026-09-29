@@ -280,7 +280,7 @@ export function MateriaEvaluaciones() {
             const receptionEnabled = evaluation.recepcion_habilitada ?? isDeliveryState;
             const canOpenOnline = (isDeliveryState || isClosed)
               && (Boolean(evaluation.entrega_realizada) || modality === 'online' || modality === 'mixta' || receptionEnabled);
-            const reviewRoute = routes.calificacionesEvaluacion(evaluation.id);
+            const reviewRoute = routes.calificacionesEvaluacion(evaluation.id, materia.id);
 
             return (
               <Card key={evaluation.id} className="p-5">
@@ -392,7 +392,7 @@ export function MateriaEvaluaciones() {
                       {(canReviewGrades || canGradeEvaluation) && !isDraft && (
                         <Link to={reviewRoute}>
                           <Button size="sm" variant={modality === 'online' ? 'secondary' : 'outline'}>
-                            <Eye className="h-4 w-4" /> Calificar y revisar
+                            <Eye className="h-4 w-4" /> {canGradeEvaluation ? 'Calificar' : 'Revisar notas'}
                           </Button>
                         </Link>
                       )}

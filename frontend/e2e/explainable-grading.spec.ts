@@ -68,12 +68,146 @@ async function login(page: Page, role: 'profesor' | 'estudiante', permissions?: 
   await expect(page).toHaveURL(/\/app/);
 }
 
+test('comparación de respuestas breves a 360px conserva legibilidad', async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 800 });
+  await login(page, 'profesor');
+  await page.goto('/app/calificaciones/workspace/e1');
+  await page.getByText('Estudiante Prueba', { exact: true }).click();
+  const open = page.getByRole('button', { name: 'Ver notas por respuesta', exact: true });
+  await expect(open).toBeVisible();
+  await open.click();
+  const comparison = page.getByTestId('grade-answer-comparison');
+  await expect(comparison).toBeVisible();
+  const box = await comparison.boundingBox();
+  console.log(`COMPARACION_BREVE_360_ALTURA=${box?.height}`);
+  expect(box!.height).toBeLessThanOrEqual(148 * 0.7);
+});
+
+test('resumen móvil preserva contexto y despliega detalles sin mutaciones', async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 800 });
+  await login(page, 'profesor');
+  const mutations: string[] = [];
+  page.on('request', (request) => { if (request.method() !== 'GET' && /calificaciones|jobs/.test(request.url())) mutations.push(request.url()); });
+  await page.goto('/app/calificaciones?materia=m1&evaluacion=e1&calificacion=c1');
+  await expect(page.getByRole('heading', { name: 'Resumen de la valoración' })).toBeVisible();
+  await expect(page.getByText('No hay valoración por criterio registrada.')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Nota explicada respuesta por respuesta' })).toBeHidden();
+  await expect(page.getByRole('link', { name: 'Volver a evaluaciones' })).toHaveAttribute('href', '/app/materias/m1/evaluaciones');
+  await page.screenshot({ path: 'output/playwright/resumen-360-claro.png', fullPage: true });
+  await page.evaluate(() => document.documentElement.classList.add('dark'));
+  await page.screenshot({ path: 'output/playwright/resumen-360-oscuro.png', fullPage: true });
+  await page.getByRole('button', { name: 'Ver notas por respuesta', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Nota explicada respuesta por respuesta' })).toBeVisible();
+  await page.getByRole('button', { name: 'Ajustar puntaje y explicación' }).click();
+  await page.getByLabel(/Puntos/).fill('0.7');
+  await page.getByRole('button', { name: 'Resumen', exact: true }).click();
+  await expect(page.getByLabel(/Puntos/)).toHaveValue('0.7');
+  expect(mutations).toEqual([]);
+});
+
+test('rúbrica y criterios históricos conservan ausencia de puntaje sin inventar cero', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await login(page, 'profesor');
+  let historical = false;
+  await page.route('**/api/calificaciones/c1/detalle', (route) => json(route, {
+    ...grade, estudiante_nombre: student.nombre, evaluacion_nombre: evaluation.nombre, materia_id: 'm1', entrega_evidencia_paginas: 0, timeline: [],
+    resultado_json: { grader_a: { criterios: [{ nombre: 'Comprensión histórica', puntaje: null, maximo: 1 }] } },
+    desglose: historical ? null : { ...breakdown, componentes: [{ ...breakdown.componentes[0], tipo: 'rubrica', titulo: 'Comprensión registrada', puntos_obtenidos: null }] },
+    desglose_heredado: historical,
+  }));
+  await page.goto('/app/calificaciones?evaluacion=e1&calificacion=c1');
+  const summary = page.getByRole('region', { name: 'Resumen de la valoración' });
+  await expect(summary).toContainText('Comprensión registrada');
+  await expect(summary).toContainText('— / 1.00');
+  historical = true;
+  await page.reload();
+  await expect(summary).toContainText('Comprensión histórica');
+  await expect(summary).toContainText('— / 1.00');
+  await expect(summary).toContainText('Valoración inicial guardada');
+});
+
+test('detalle en procesamiento no convierte ausencia de nota en cero y mantiene alerta', async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 800 });
+  await login(page, 'profesor');
+  await page.route('**/api/calificaciones/c1/detalle', (route) => json(route, {
+    ...grade, estado: 'procesando', nota_sugerida: null, nota_confirmada: null, estudiante_nombre: student.nombre, materia_id: 'm1', entrega_evidencia_paginas: 0, timeline: [],
+    resultado_json: { grader_a: { alertas: ['Comprobar evidencia pendiente'] } }, desglose: null,
+  }));
+  await page.goto('/app/calificaciones?evaluacion=e1&calificacion=c1');
+  await expect(page.getByText('Calificando en segundo plano', { exact: true })).toBeVisible();
+  await expect(page.getByText('Comprobar evidencia pendiente', { exact: false })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Confirmar nota', exact: true })).toHaveCount(0);
+  await expect(page.getByRole('region', { name: 'Resumen de la valoración' })).not.toContainText('0.00');
+});
+
+test('ajustar 1 a 0.7 guarda versión, conserva historial y no publica', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await login(page, 'profesor');
+  let saved = false;
+  const writes: string[] = [];
+  page.on('request', (request) => { if (request.method() !== 'GET' && /calificaciones/.test(request.url())) writes.push(new URL(request.url()).pathname); });
+  await page.route('**/api/calificaciones/c1/detalle', (route) => json(route, {
+    ...grade, estado: saved ? 'ajustada' : 'sugerida', nota_sugerida: saved ? 3.5 : 5, nota_confirmada: saved ? 3.5 : null,
+    estudiante_nombre: student.nombre, materia_id: 'm1', entrega_evidencia_paginas: 0, timeline: [], feedback: 'Retroalimentación inicial',
+    desglose: saved ? { ...breakdown, version: 2, formula: { ...breakdown.formula, puntos_obtenidos: 0.7, nota_final: 3.5 }, componentes: [{ ...breakdown.componentes[0], puntos_obtenidos: 0.7, estado: 'parcial', explicacion: 'Procedimiento parcialmente completo.' }] } : breakdown,
+  }));
+  await page.route('**/api/calificaciones/c1/desglose', (route) => {
+    expect(route.request().postDataJSON()).toMatchObject({ version_esperada: 1, cambios_componentes: [{ componente_id: 'q1', puntos_obtenidos: 0.7 }] });
+    saved = true;
+    return json(route, { ...breakdown, version: 2 });
+  });
+  await page.route('**/api/calificaciones/c1/desglose/historial', (route) => json(route, [
+    { id: 'd2', version: 2, origen: 'docente', nota_final: 3.5, activo: true, created_at: grade.created_at },
+    { id: 'd1', version: 1, origen: 'automatico', nota_final: 5, activo: false, created_at: grade.created_at },
+  ]));
+  await page.goto('/app/calificaciones?evaluacion=e1&calificacion=c1');
+  await page.getByRole('button', { name: 'Ver notas por respuesta', exact: true }).click();
+  await page.getByRole('button', { name: 'Ajustar puntaje y explicación' }).click();
+  await page.getByLabel(/Puntos/).fill('0.7');
+  await page.getByLabel('Motivo interno del cambio').fill('Procedimiento parcialmente completo.');
+  await page.getByLabel('Explicación para el estudiante').fill('Falta desarrollar el último paso de la operación.');
+  await page.getByRole('button', { name: 'Guardar y recalcular', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Ajustar puntaje y explicación' })).toBeVisible();
+  await expect(page.locator('#grade-component-q1').getByText('0.70 / 1.00', { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Resumen', exact: true }).click();
+  await expect(page.getByRole('region', { name: 'Resumen de la valoración' })).toContainText('0.70 / 1.00');
+  await page.getByText('Historial y opciones de la nota', { exact: true }).click();
+  await page.getByRole('button', { name: 'Historial del cálculo' }).click();
+  await expect(page.getByText('Versión 2 · vigente', { exact: true })).toBeVisible();
+  await expect(page.getByText('Versión 1', { exact: true })).toBeVisible();
+  expect(writes).toEqual(['/api/calificaciones/c1/desglose']);
+});
+
+test('texto extenso y controles táctiles permanecen completos en claro y oscuro', async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 800 });
+  await login(page, 'profesor');
+  const text = 'Procedimiento explicado con detalle. '.repeat(15) + 'PalabraSinEspacios'.repeat(20);
+  await page.route('**/api/calificaciones/c1/detalle', (route) => json(route, {
+    ...grade, estudiante_nombre: student.nombre, materia_id: 'm1', entrega_evidencia_paginas: 0, timeline: [],
+    desglose: { ...breakdown, componentes: [{ ...breakdown.componentes[0], respuesta_estudiante: text, respuesta_referencia: text, explicacion: text }] },
+  }));
+  await page.goto('/app/calificaciones?evaluacion=e1&calificacion=c1&pregunta=pregunta%3A1');
+  const comparison = page.getByTestId('grade-answer-comparison');
+  await expect(comparison.getByText(text, { exact: true })).toHaveCount(2);
+  for (const dark of [false, true]) {
+    await page.evaluate((value) => document.documentElement.classList.toggle('dark', value), dark);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBeTruthy();
+    expect(await page.locator('#grade-review-panel').evaluate((element) => element.scrollWidth <= element.clientWidth)).toBeTruthy();
+    for (const name of ['Resumen', 'Ver notas por respuesta', 'Ver evidencia', 'Ajustar puntaje y explicación']) {
+      const control = page.getByRole('button', { name, exact: true });
+      const box = await control.boundingBox();
+      expect(box!.height).toBeGreaterThanOrEqual(44);
+    }
+  }
+});
+
 for (const viewport of [{ width: 360, height: 800 }, { width: 390, height: 844 }, { width: 768, height: 1024 }, { width: 1366, height: 768 }, { width: 1920, height: 1080 }]) {
   test(`docente comprende fórmula y pregunta en ${viewport.width}px`, async ({ page }) => {
     await page.setViewportSize(viewport);
     await login(page, 'profesor');
     await page.goto('/app/calificaciones/workspace/e1');
     await page.getByText('Estudiante Prueba', { exact: true }).click();
+    await page.getByRole('button', { name: 'Ver notas por respuesta', exact: true }).click();
     await expect(page.getByRole('heading', { name: 'Nota explicada respuesta por respuesta' })).toBeVisible();
     await expect(page.getByText('Coincide con la clave oficial.', { exact: false })).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBeTruthy();
@@ -190,6 +324,7 @@ test('docente llega a la respuesta 20, edita y recupera el scroll móvil', async
   await page.goto('/app/calificaciones/workspace/e1');
   await page.getByText('Estudiante Prueba', { exact: true }).click();
 
+  await page.getByRole('button', { name: 'Ver notas por respuesta', exact: true }).click();
   await page.getByRole('button', { name: 'Pregunta 20', exact: true }).click();
   const lastCard = page.locator('article').filter({ has: page.getByText('Pregunta 20', { exact: true }) }).last();
   await lastCard.scrollIntoViewIfNeeded();
@@ -224,6 +359,7 @@ test('un conflicto 409 no sobrescribe la revisión vigente', async ({ page }) =>
   await page.getByRole('button', { name: /Iniciar sesi.n/i }).click();
   await page.goto('/app/calificaciones/workspace/e1');
   await page.getByText('Estudiante Prueba', { exact: true }).click();
+  await page.getByRole('button', { name: 'Ver notas por respuesta', exact: true }).click();
   await page.getByRole('button', { name: 'Ajustar puntaje y explicación' }).click();
   await page.getByLabel(/Puntos/).fill('0.75');
   await page.getByLabel('Motivo interno del cambio').fill('Revisión concurrente');
@@ -278,6 +414,7 @@ test('ajuste global conserva borrador tras conflicto y refresca la lista al guar
     return attempt === 1 ? json(route, { detail: 'La calificación cambió en otra revisión.' }, 409) : json(route, { ...breakdown, version: 2 });
   });
   await page.goto('/app/calificaciones?evaluacion=e1&calificacion=c1');
+  await page.getByText('Historial y opciones de la nota', { exact: true }).click();
   await page.getByRole('button', { name: 'Registrar ajuste global' }).click();
   await page.getByLabel('Ajuste a la nota').fill('-1');
   await page.getByLabel('Motivo interno').fill('Ajuste excepcional documentado');
@@ -302,13 +439,14 @@ test('conserva borrador al cambiar pregunta, query y atrás; hoja y vista sobrev
   await page.route('**/api/entregas/t1/archivo/paginas/*', (route) => route.fulfill({ contentType: 'image/svg+xml', body: '<svg xmlns="http://www.w3.org/2000/svg" width="600" height="800"><rect width="600" height="800" fill="white"/><text x="40" y="80" fill="black">Evidencia sintética · 6 × 4 = 24</text></svg>' }));
   await page.goto('/app/calificaciones/workspace/e1?calificacion=c1');
   await expect(page).toHaveURL(/\/app\/calificaciones\?evaluacion=e1|\/app\/calificaciones\?calificacion=c1/);
+  await page.getByRole('button', { name: 'Ver notas por respuesta', exact: true }).click();
   await page.getByRole('button', { name: 'Pregunta 2', exact: true }).click();
   await expect(page).toHaveURL(/pregunta=pregunta%3A2/);
   await page.getByRole('button', { name: 'Ajustar puntaje y explicación' }).click();
   await page.getByLabel('Motivo interno del cambio').fill('No perder este borrador');
-  await page.getByRole('button', { name: 'Evidencia', exact: true }).click();
+  await page.getByRole('button', { name: 'Ver evidencia', exact: true }).click();
   await expect(page.getByAltText('Hoja 2 de la evidencia del estudiante')).toBeVisible();
-  await page.getByRole('button', { name: 'Revisar respuestas' }).click();
+  await page.getByRole('button', { name: 'Ver notas por respuesta', exact: true }).click();
   await expect(page.getByLabel('Motivo interno del cambio')).toHaveValue('No perder este borrador');
   await page.getByRole('button', { name: 'Pregunta 1', exact: true }).click();
   await expect(page.getByRole('dialog', { name: 'Cambios sin guardar' })).toBeVisible();
@@ -418,6 +556,7 @@ test('lectura docente y enlaces antiguos conservan contexto sin habilitar escrit
   await expect(page).toHaveURL(/\/app\/calificaciones\?/);
   await expect(page.getByRole('heading', { name: 'Nota explicada respuesta por respuesta' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Pregunta 1', exact: true })).toHaveAttribute('aria-current', 'step');
+  await expect(page.locator('#grade-component-q1')).toBeFocused();
   for (const name of ['Añadir entregas', 'Establecer nota', 'Ajustar puntaje y explicación', 'Publicar al estudiante', 'Resumen y publicación']) {
     await expect(page.getByRole('button', { name, exact: true })).toHaveCount(0);
   }
