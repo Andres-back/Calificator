@@ -32,6 +32,7 @@ DISCOVERABLE_PROVIDERS = frozenset({
 SUPPORTED_CAPABILITIES = frozenset({"text", "vision", "image", "embedding"})
 KNOWN_MULTIMODAL_MODEL_PREFIXES = (
     "glm-5.3-flash",
+    "qwen3.8-flash",
     "qwen3.7-plus",
     "qwen3.6-plus",
     "mimo-v2.5",

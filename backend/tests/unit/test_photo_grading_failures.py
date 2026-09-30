@@ -6,6 +6,7 @@ from io import BytesIO
 from uuid import uuid4
 
 from PIL import Image
+import pytest
 
 from app.modules.calificaciones import agents, grading_service, orchestrator
 from app.modules.calificaciones.schemas import GradingResult
@@ -679,7 +680,8 @@ def test_fast_verifier_uses_compact_output_budget() -> None:
     assert client.stage == "grading_secondary"
 
 
-def test_fast_verifier_receives_the_original_image() -> None:
+@pytest.mark.parametrize("model", ["deepseek-v4-flash-vision-exp", "qwen3.8-flash"])
+def test_fast_verifier_receives_the_original_image(model: str) -> None:
     client = CapturingGraderClient()
     context = AgentContext(
         evaluacion_nombre="Prueba visual",
@@ -700,6 +702,7 @@ def test_fast_verifier_receives_the_original_image() -> None:
         agents.verification_agent(
             context,
             primary,
+            model=model,
             client=client,
             multimodal=True,
         )
@@ -708,6 +711,8 @@ def test_fast_verifier_receives_the_original_image() -> None:
     assert result.nota_sugerida == 4
     assert client.image_bytes == b"evidencia"
     assert client.image_mime == "image/png"
+    assert result.modelo == model
+    assert client.stage == "grading_secondary"
 
 
 def test_fast_verifier_maps_its_compact_component_contract() -> None:
