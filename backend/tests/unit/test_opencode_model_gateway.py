@@ -47,7 +47,7 @@ async def _no_usage_log(**_kwargs) -> None:
     return None
 
 
-def _run_chat(model: str, payload: dict):
+def _run_chat(model: str, payload: dict, *, stage: str = "text", messages: list[dict] | None = None):
     async def scenario():
         client = OpenCodeClient()
         await client._client.aclose()
@@ -56,7 +56,8 @@ def _run_chat(model: str, payload: dict):
         client._log_call = _no_usage_log
         result = await client.chat(
             model=model,
-            messages=[{"role": "user", "content": "Responde solo JSON"}],
+            messages=messages or [{"role": "user", "content": "Responde solo JSON"}],
+            stage=stage,
         )
         await client.close()
         return result, transport.calls[0]
@@ -98,6 +99,55 @@ def test_deepseek_keeps_openai_chat_completions() -> None:
     assert call["headers"]["User-Agent"] == "XCalificator/1.0"
     assert call["json"]["response_format"] == {"type": "json_object"}
     assert result is payload
+
+
+@pytest.mark.parametrize("stage", ["grading_secondary", "targeted_recheck"])
+def test_qwen_flash_review_disables_thinking_and_keeps_visual_evidence(stage: str) -> None:
+    payload = {
+        "content": [{"type": "text", "text": '{"nota_sugerida": 4.5}'}],
+        "stop_reason": "end_turn",
+        "usage": {"input_tokens": 10, "output_tokens": 5},
+    }
+    result, call = _run_chat(
+        "qwen3.8-flash",
+        payload,
+        stage=stage,
+        messages=[{"role": "user", "content": [
+            {"type": "text", "text": "Revisa la evidencia"},
+            {"type": "image_url", "image_url": {"url": "data:image/png;base64,YWJj"}},
+        ]}],
+    )
+
+    assert call["url"].endswith("/messages")
+    assert call["json"]["thinking"] == {"type": "disabled"}
+    assert call["json"]["max_tokens"] == 2048
+    assert call["json"]["messages"][0]["content"][1]["source"] == {
+        "type": "base64", "media_type": "image/png", "data": "YWJj",
+    }
+    assert result["choices"][0]["message"]["content"] == '{"nota_sugerida": 4.5}'
+    assert call["timeout"].read is None
+
+
+@pytest.mark.parametrize("stage", ["text", "extraction", "grading_primary"])
+def test_qwen_flash_other_stages_keep_provider_thinking_default(stage: str) -> None:
+    _, call = _run_chat("qwen3.8-flash", {"content": []}, stage=stage)
+
+    assert "thinking" not in call["json"]
+
+
+def test_other_qwen_review_models_keep_provider_thinking_default() -> None:
+    _, call = _run_chat("qwen3.7-plus", {"content": []}, stage="grading_secondary")
+
+    assert "thinking" not in call["json"]
+
+
+def test_qwen_flash_review_rejects_truncated_messages_output() -> None:
+    with pytest.raises(LLMOutputTruncatedError):
+        _run_chat(
+            "qwen3.8-flash",
+            {"content": [{"type": "text", "text": '{"nota_sugerida":'}], "stop_reason": "max_tokens"},
+            stage="grading_secondary",
+        )
 
 
 def test_deepseek_vision_disables_hidden_reasoning() -> None:

@@ -403,9 +403,6 @@ class OpenCodeClient:
                 "max_tokens": max_tokens,
                 "temperature": temperature,
             }
-            thinking = opencode_thinking_control(model)
-            if thinking:
-                body["thinking"] = thinking
             reasoning_effort = opencode_reasoning_effort(model)
             if reasoning_effort:
                 body["reasoning_effort"] = reasoning_effort
@@ -416,6 +413,11 @@ class OpenCodeClient:
                 self.api_key,
                 session_id=self._session_id,
             )
+
+        # Qwen uses Messages; apply supported stage controls to either protocol.
+        thinking = opencode_thinking_control(model, stage=stage)
+        if thinking:
+            body["thinking"] = thinking
 
         request_timeout = inference_http_timeout()
         attempt_limit = max(1, max_attempts if max_attempts is not None else OPEN_CODE_MAX_ATTEMPTS)

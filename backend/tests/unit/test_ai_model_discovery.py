@@ -15,7 +15,15 @@ def test_known_grading_models_expose_their_visual_capability() -> None:
     assert model_supports_vision("deepseek-v4-flash-vision-exp") is True
     assert model_supports_vision("glm-5.3-flash") is True
     assert model_supports_vision("qwen3.7-plus") is True
+    assert model_supports_vision("qwen3.8-flash") is True
     assert model_supports_vision("text-only-model") is False
+
+
+def test_qwen_flash_catalog_without_modalities_still_exposes_vision() -> None:
+    models = normalize_model_payload("open_code", {"data": [{"id": "qwen3.8-flash"}]})
+
+    assert len(models) == 1
+    assert models[0].capabilities == ("text", "vision")
 
 
 def test_normalize_model_payload_deduplicates_and_infers_capabilities() -> None:

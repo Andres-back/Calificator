@@ -78,6 +78,7 @@ ALL_SPECS = {
     "074-optimizar-frontend",
     "074-aislar-flujo-estudiante",
     "075-revision-docente-compacta",
+    "077-qwen-fast-verification",
 }
 OWNED_SPECS = {
     name

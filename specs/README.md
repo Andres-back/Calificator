@@ -221,6 +221,11 @@ actualizar la especificación propietaria, su plan y sus tareas; no debe crear d
 
 ## Inventario técnico global
 
+## Evolución 077: verificación rápida con Qwen
+
+- [077-qwen-fast-verification](077-qwen-fast-verification/spec.md), [issue #161](https://github.com/Andres-back/Calificator/issues/161): mantiene DeepSeek en extracción/principal y habilita Qwen 3.8 Flash con visión y sin pensamiento extendido en verificación y arbitraje.
+- No altera APIs, tablas, criterios ni notas anteriores; evolución de 008/052 con configuración administrativa auditable, benchmark por etapas y rollback.
+
 ## Evolución 075: revisión docente compacta y progresiva
 
 - [075-revision-docente-compacta](075-revision-docente-compacta/spec.md), [issue #158](https://github.com/Andres-back/Calificator/issues/158): especificación aprobada para mostrar nota y criterios primero, abrir detalles por respuesta bajo demanda y entrar a calificar desde cada evaluación.
