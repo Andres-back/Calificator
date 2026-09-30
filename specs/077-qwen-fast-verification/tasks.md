@@ -18,4 +18,7 @@
 
 ## Dependencias y gates operativos
 
+- [x] T008 Registrar 077 en tests/spec_governance y fijar Axios 1.20.0 con lockfile, audit y pruebas frontend para desbloquear CI sin excepciones (FR-008).
+- [x] T009 Fijar PyJWT 2.15.0 en backend/requirements.txt; ejecutar regresiones de tokens y registro, y declarar auditoría backend/login como gates de CI y producción (FR-008).
+
 T001 → T002 → T003/T004 → T005 → T006/T007. No paralelizar cambios sobre el mismo adaptador. Las tareas implementan y verifican el parche; publicación administrativa y benchmark E2E de producción son gates **posteriores al merge** documentados en quickstart.md y se reportan en issue #161, no se presumen cumplidos antes de fusionar. Un fallo de CI bloquea merge; un fallo productivo activa recuperación.

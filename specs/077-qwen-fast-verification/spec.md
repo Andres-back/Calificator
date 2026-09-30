@@ -33,6 +33,7 @@ La configuración guardada, efectiva y observada identifica el modelo real por e
 - **FR-005**: No alterar notas, criterios, evidencias ni otras evaluaciones guardadas. La prueba autorizada reutiliza una entrega demo, termina en revisión y no confirma ni publica su nota.
 - **FR-006**: Registrar latencias de cola, extracción, valoración, verificación, arbitraje y total; informar el modelo realmente observado, incidencias y número de muestras. Objetivo operativo de una foto: menos de 40 s en la muestra de validación, comparado con el baseline de 93.8 s. No constituye garantía universal de 20 s ni prueba de carga.
 - **FR-007**: Entregar mediante PR con regresiones y CI verde. Si la prueba productiva falla o empeora la integridad, restaurar la configuración anterior y conservar evidencia para revisión.
+- **FR-008**: Resolver bloqueos de CI directamente relacionados con la entrega: registrar la nueva especificación en su baseline y fijar Axios 1.20.0 y PyJWT 2.15.0 a versiones corregidas compatibles, sin omitir auditorías ni cambiar flujos frontend/autenticación. Comprobar regresiones de tokens y login.
 
 ## Casos límite
 

@@ -35,3 +35,9 @@ La publicación guarda la configuración anterior y genera versión/auditoría. 
 ## Estructura
 
 Cambios en backend/app/services/{llm_router,ai_model_discovery}.py, backend/app/modules/calificaciones/agents.py y pruebas unitarias existentes. Artefactos en specs/077-qwen-fast-verification; ningún proveedor o módulo nuevo.
+
+## Bloqueos de CI detectados
+
+La validación inicial identificó baseline estático de specs pendiente de registrar 077 y Axios vulnerable (versiones hasta 1.19.0). Como paso necesario de entrega, registrar 077 y fijar Axios 1.20.0 con lockfile mecánico, auditoría de producción y CI frontend completo. No se omite ningún control ni se cambia código de interfaz. [Release oficial](https://github.com/axios/axios/releases/tag/v1.20.0).
+
+La auditoría backend identificó además PyJWT 2.13.0 vulnerable: actualizar a 2.15.0 según versiones corregidas indicadas por pip-audit y comprobar tokens/login sin modificar su implementación. [Release oficial](https://github.com/jpadilla/pyjwt/releases/tag/2.15.0).

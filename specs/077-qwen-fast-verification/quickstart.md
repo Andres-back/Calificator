@@ -19,5 +19,6 @@ La comprobación productiva se documentará en el issue tras el despliegue; esta
 - Red: cuatro fallos nuevos reprodujeron ausencia de control thinking y capacidad visual Qwen.
 - Green: 64 pruebas del gateway, discovery y photo grading y 4 del presupuesto del router pasaron con el parche; lint F401/F821/F822/F823/F841 y compileall también.
 - Inventario regenerado: únicamente cambia el digest del código fuente; siguen 565 superficies y los mismos contratos.
-- Analyze: 7/7 requisitos cubiertos por tareas; sin contradicciones críticas ni excepciones constitucionales.
+- Analyze: 8/8 requisitos cubiertos por tareas; sin contradicciones críticas ni excepciones constitucionales.
 - Converge: no falta implementación del adaptador ni regresiones; publicación/configuración y medición productiva continúan como gates posteriores al merge, no como éxito supuesto.
+- Bloqueos de CI: baseline actualizado; Axios 1.20.0 (audit de producción sin vulnerabilidades, tipos/lint/424 pruebas/build verdes) y PyJWT 2.15.0 (6 regresiones de tokens/registro/logout verdes en runtime aislado). CI completo y login productivo siguen siendo gates obligatorios.
