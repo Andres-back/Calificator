@@ -274,19 +274,22 @@ test('profesor recorre la materia, califica desde su evaluación y escribe un DB
   expect(errors, errors.join('\n')).toEqual([]);
 });
 
-test('asistencia móvil permite desplazar el resumen y alcanzar el reporte', async ({ page }) => {
-  await page.setViewportSize({ width: 390, height: 844 });
+for (const viewport of viewports.filter((item) => item.width !== 1024)) {
+for (const theme of ['light', 'dark']) {
+test(`asistencia sin superposición ${viewport.name} ${theme}`, async ({ page }) => {
+  await page.setViewportSize({ width: viewport.width, height: viewport.height });
+  await page.addInitScript((mode) => localStorage.setItem('xc-theme', JSON.stringify({ state: { mode }, version: 0 })), theme);
   await installApiMocks(page, 'profesor');
   await page.route('**/api/materias/m1/asistencia?**', (route) => fulfillJson(route, {
     materia_id: 'm1', fecha: '2026-08-09',
-    registros: [{
-      estudiante_id: users.estudiante.id,
-      estudiante_nombre: users.estudiante.nombre,
-      estudiante_email: users.estudiante.email,
+    registros: Array.from({ length: 30 }, (_, index) => ({
+      estudiante_id: `student-${index}`,
+      estudiante_nombre: `Estudiante ${index + 1}`,
+      estudiante_email: `student${index}@example.test`,
       estado: null,
       observacion: null,
-    }],
-    resumen: { total: 1, presentes: 0, tarde: 0, ausentes: 0, excusas: 0, pendientes: 1 },
+    })),
+    resumen: { total: 30, presentes: 0, tarde: 0, ausentes: 0, excusas: 0, pendientes: 30 },
   }));
 
   await page.goto('/login');
@@ -298,11 +301,39 @@ test('asistencia móvil permite desplazar el resumen y alcanzar el reporte', asy
   const summaryCard = page.getByLabel('Resumen y guardado de asistencia');
   await expect(summaryCard).toBeVisible();
   expect(await summaryCard.evaluate((element) => getComputedStyle(element).position)).toBe('relative');
+  const detail = summaryCard.locator('details');
+  await expect(detail).not.toHaveAttribute('open');
+  if (viewport.width === 390) expect((await summaryCard.boundingBox())!.height).toBeLessThanOrEqual(160);
+  if (viewport.width === 390 && theme === 'dark') {
+    console.log(`ASISTENCIA_079_RESUMEN_390_ALTURA=${(await summaryCard.boundingBox())!.height}`);
+    await summaryCard.screenshot({ path: '../output/playwright/teacher-flow/attendance-079-390-dark.png' });
+  }
   await summaryCard.scrollIntoViewIfNeeded();
+  const before = (await summaryCard.boundingBox())!.y;
+  await summaryCard.hover();
   await page.mouse.wheel(0, 900);
+  await expect.poll(async () => (await summaryCard.boundingBox())!.y).toBeLessThan(before - 20);
   await expect(page.getByRole('heading', { name: /Reporte de asistencia/i })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
+  await detail.locator('summary').focus();
+  await detail.locator('summary').press('Enter');
+  await expect(detail).toHaveAttribute('open');
+  await expect(summaryCard.getByText('Presentes', { exact: true })).toBeVisible();
+  await detail.locator('summary').press('Enter');
+  // Zoom del contenido real (CSS zoom), no deviceScaleFactor: exige reflujo y acceso.
+  await page.evaluate(() => { document.documentElement.style.zoom = '2'; });
+  await summaryCard.scrollIntoViewIfNeeded();
+  expect(await summaryCard.evaluate((element) => getComputedStyle(element).position)).toBe('relative');
+  await expect(summaryCard.getByRole('button', { name: 'Completa la lista' })).toBeInViewport();
+  const zoomLayout = await page.evaluate(() => ({
+    scroll: document.documentElement.scrollWidth, client: document.documentElement.clientWidth, inner: window.innerWidth,
+    offenders: Array.from(document.querySelectorAll('main *')).filter((element) => !element.closest('details:not([open])') && element.getBoundingClientRect().right > window.innerWidth + 1 && element.getBoundingClientRect().width > 0).sort((a, b) => b.getBoundingClientRect().right - a.getBoundingClientRect().right).slice(0, 12).map((element) => ({ tag: element.tagName, text: element.textContent?.slice(0, 70), className: element.className, right: element.getBoundingClientRect().right })),
+  }));
+  if (viewport.width === 360 && theme === 'light') await page.screenshot({ path: '../output/playwright/teacher-flow/attendance-079-zoom.png', fullPage: false });
+  expect(zoomLayout.scroll <= zoomLayout.client + 1, JSON.stringify(zoomLayout)).toBe(true);
 });
+}
+}
 
 test('el estudio solo aparece al administrador autorizado y diferencia sus métricas', async ({ page }) => {
   await installApiMocks(page, 'admin');

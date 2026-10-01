@@ -71,13 +71,20 @@ export function MultiPageEvidencePicker({ pages, onChange, disabled = false, onE
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const replacementIdRef = useRef<string | null>(null);
   const pagesRef = useRef(pages);
+  const mounted = useRef(true);
+  const disabledRef = useRef(disabled);
+  disabledRef.current = disabled;
   const [previewId, setPreviewId] = useState<string | null>(null);
   useEffect(() => { pagesRef.current = pages; }, [pages]);
+  useEffect(() => {
+    mounted.current = true;
+    return () => { mounted.current = false; };
+  }, []);
   const reportError = (message: string) => onError ? onError(message) : toast.error(message);
 
   const addFiles = async (fileList: FileList | File[], replacementId: string | null = null) => {
     const incoming = Array.from(fileList);
-    if (!incoming.length) return;
+    if (!incoming.length || disabledRef.current || !mounted.current) return;
     const currentPages = pagesRef.current;
     const replacementIndex = replacementId ? currentPages.findIndex((page) => page.id === replacementId) : -1;
     if (replacementId && replacementIndex < 0) return;
@@ -123,7 +130,10 @@ export function MultiPageEvidencePicker({ pages, onChange, disabled = false, onE
       id: page.id,
       quality: await analyzeEvidenceImage(page.file),
     }))).then((assessments) => {
+      if (!mounted.current || disabledRef.current) return;
       const byId = new Map(assessments.map((item) => [item.id, item.quality]));
+      // Solo aplicar resultados a las mismas hojas que aún siguen en este paquete.
+      if (!pagesRef.current.some((page) => byId.has(page.id))) return;
       const assessedPages = pagesRef.current.map((page) => (
         byId.has(page.id) ? { ...page, quality: byId.get(page.id) } : page
       ));
@@ -132,18 +142,26 @@ export function MultiPageEvidencePicker({ pages, onChange, disabled = false, onE
     });
   };
 
-  const updatePage = (id: string, changes: Partial<EvidencePage>) => onChange(
-    pages.map((page) => page.id === id ? { ...page, ...changes } : page),
-  );
+  const updatePage = (id: string, changes: Partial<EvidencePage>) => {
+    if (disabledRef.current) return;
+    const next = pagesRef.current.map((page) => page.id === id ? { ...page, ...changes } : page);
+    pagesRef.current = next;
+    onChange(next);
+  };
   const move = (index: number, direction: -1 | 1) => {
+    if (disabledRef.current) return;
     const target = index + direction;
     if (target < 0 || target >= pages.length) return;
     const next = [...pages];
     [next[index], next[target]] = [next[target], next[index]];
+    pagesRef.current = next;
     onChange(next);
   };
   const remove = (id: string) => {
-    onChange(pages.filter((page) => page.id !== id));
+    if (disabledRef.current) return;
+    const next = pagesRef.current.filter((page) => page.id !== id);
+    pagesRef.current = next;
+    onChange(next);
     if (previewId === id) setPreviewId(null);
   };
 
@@ -163,8 +181,8 @@ export function MultiPageEvidencePicker({ pages, onChange, disabled = false, onE
           <span><strong className="block text-sm text-fg">{pages.length ? 'Tomar otra foto' : 'Usar la cámara'}</strong><span className="mt-1 block text-xs leading-5 text-muted">Cada foto se añade como una hoja nueva</span></span>
         </button>
       </div>
-      <input ref={fileInputRef} type="file" multiple accept="image/jpeg,image/png,image/webp,application/pdf" className="hidden" onChange={(event) => { if (event.target.files) void addFiles(event.target.files); event.target.value = ''; }} />
-      <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={(event) => { const replacementId = replacementIdRef.current; replacementIdRef.current = null; if (event.target.files) void addFiles(event.target.files, replacementId); event.target.value = ''; }} />
+      <input ref={fileInputRef} type="file" disabled={disabled} multiple accept="image/jpeg,image/png,image/webp,application/pdf" className="hidden" onChange={(event) => { if (event.target.files) void addFiles(event.target.files); event.target.value = ''; }} />
+      <input ref={cameraInputRef} type="file" disabled={disabled} accept="image/*" capture="environment" className="hidden" onChange={(event) => { const replacementId = replacementIdRef.current; replacementIdRef.current = null; if (event.target.files) void addFiles(event.target.files, replacementId); event.target.value = ''; }} />
 
       {pages.length > 0 && <>
         <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-surface-2 px-4 py-3">

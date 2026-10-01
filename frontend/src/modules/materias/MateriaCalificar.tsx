@@ -1,8 +1,8 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { Check, Search, X } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { Button, Card, ConfirmDialog, Field } from '@/components/ui';
+import { Button, Card, Field } from '@/components/ui';
 import { MultiPageEvidencePicker } from '@/components/evidence/MultiPageEvidencePicker';
 import { evidenceFiles, evidenceRotations, hasUnusableEvidence, type EvidencePage } from '@/components/evidence/evidencePayload';
 import { calificarFoto } from '@/modules/calificaciones/api';
@@ -26,7 +26,7 @@ function StudentPicker({ students, studentId, disabled, onStudentChange }: {
 }) {
   const selected = students.find((item) => item.id === studentId);
   const [query, setQuery] = useState(selected?.nombre ?? '');
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(!selected);
   useEffect(() => {
     setQuery(selected?.nombre ?? '');
   }, [selected?.nombre]);
@@ -38,6 +38,7 @@ function StudentPicker({ students, studentId, disabled, onStudentChange }: {
   }, [query, students]);
 
   const clear = () => {
+    if (selected) { onStudentChange(''); return; }
     setQuery('');
     onStudentChange('');
     setOpen(true);
@@ -46,7 +47,7 @@ function StudentPicker({ students, studentId, disabled, onStudentChange }: {
   return (
     <Field label="Estudiante de esta entrega">
       <div className="relative">
-        <Search className="pointer-events-none absolute left-3 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-muted" />
+        <Search className="pointer-events-none absolute left-3 top-6 z-10 h-4 w-4 -translate-y-1/2 text-muted" />
         <input
           type="search"
           role="combobox"
@@ -82,7 +83,7 @@ function StudentPicker({ students, studentId, disabled, onStudentChange }: {
             id="grading-student-options"
             role="listbox"
             aria-label="Estudiantes encontrados"
-            className="absolute z-30 mt-2 max-h-[min(20rem,55dvh)] w-full overflow-y-auto rounded-xl border border-border bg-surface p-1 shadow-xl"
+            className="mt-2 max-h-[min(20rem,55dvh)] w-full overflow-y-auto rounded-xl border border-border bg-surface p-1"
           >
             {matches.length ? matches.map((item) => (
               <button
@@ -101,7 +102,7 @@ function StudentPicker({ students, studentId, disabled, onStudentChange }: {
                 {item.id === studentId && <Check className="h-4 w-4 shrink-0 text-emerald-600" />}
               </button>
             )) : (
-              <p className="px-3 py-4 text-sm text-muted">No encontramos estudiantes con ese nombre.</p>
+              <p className="px-3 py-4 text-sm text-muted">{students.length ? 'No encontramos estudiantes con ese nombre.' : 'No quedan estudiantes pendientes de entrega. Consulta sus notas y entregas para revisar o reemplazar evidencia.'}</p>
             )}
             {!query && students.length > matches.length && (
               <p className="border-t border-border px-3 py-2 text-xs text-muted">Escribe parte del nombre para ver el resto de la lista.</p>
@@ -119,53 +120,76 @@ function StudentPicker({ students, studentId, disabled, onStudentChange }: {
 }
 
 /** Carga contextual: las decisiones sobre la nota pertenecen al centro de revisión. */
-export function GradingUploadPanel({ evaluationId, students, studentId, onStudentChange, onDirtyChange, onUploadAccepted }: {
+export function GradingUploadPanel({ evaluationId, evaluationName, materiaName, eligibilityVerified, students, studentId, onStudentChange, onDirtyChange, onUploadAccepted }: {
   evaluationId: string;
+  evaluationName: string;
+  materiaName: string;
+  eligibilityVerified: boolean;
   students: { id: string; nombre: string }[];
   studentId: string;
   onStudentChange: (id: string) => void;
   onDirtyChange: (dirty: boolean) => void;
-  onUploadAccepted: (studentId: string) => void;
+  onUploadAccepted: (studentId: string, name: string) => void;
 }) {
   const [pages, setPages] = useState<EvidencePage[]>([]);
-  const [confirming, setConfirming] = useState(false);
   const [error, setError] = useState('');
-  const [savedName, setSavedName] = useState('');
+  const sending = useRef(false);
+  const mounted = useRef(true);
+  useEffect(() => {
+    mounted.current = true;
+    return () => { mounted.current = false; };
+  }, []);
   const upload = useMutation({
-    mutationFn: (request: { studentId: string; name: string; pages: EvidencePage[] }) => calificarFoto(
-      evaluationId, request.studentId, evidenceFiles(request.pages), evidenceRotations(request.pages),
+    mutationFn: (request: { evaluationId: string; studentId: string; name: string; pages: EvidencePage[] }) => calificarFoto(
+      request.evaluationId, request.studentId, evidenceFiles(request.pages), evidenceRotations(request.pages),
     ),
     onSuccess: (grade, request) => {
-      setPages([]); setConfirming(false); setError(''); setSavedName(request.name);
-      onUploadAccepted(request.studentId);
-      onStudentChange('');
+      if (mounted.current) {
+        setPages([]); setError('');
+        // El blocker consulta la ref antes del siguiente render al cambiar la URL.
+        onDirtyChange(false);
+        onUploadAccepted(request.studentId, request.name);
+        onStudentChange('');
+      }
       const jobId = grade.resultado_json?.job_id;
       if (typeof jobId === 'string') addPendingGrading({
         jobId, evaluacionId: grade.evaluacion_id, materiaId: grade.materia_id,
         estudianteId: grade.estudiante_id, estudianteNombre: request.name,
       });
-      void queryClient.invalidateQueries({ queryKey: ['evaluation-review', evaluationId] });
-      void queryClient.invalidateQueries({ queryKey: ['calificaciones', evaluationId] });
+      void queryClient.invalidateQueries({ queryKey: ['evaluation-review', request.evaluationId] });
+      void queryClient.invalidateQueries({ queryKey: ['calificaciones', request.evaluationId] });
       toast.success('Entrega guardada y en cola. Puedes añadir la de otro estudiante.');
     },
-    onError: (failure) => { setConfirming(false); setError(toApiError(failure).detail); },
+    onError: (failure) => { if (mounted.current) setError(toApiError(failure).detail); },
+    onSettled: () => { sending.current = false; },
   });
   useEffect(() => {
     onDirtyChange(pages.length > 0 || upload.isPending);
     return () => onDirtyChange(false);
   }, [onDirtyChange, pages.length, upload.isPending]);
   const student = students.find((item) => item.id === studentId);
+  const qualityPending = pages.some((page) => page.file.type.startsWith('image/') && page.quality === undefined);
+  const canSend = eligibilityVerified && Boolean(student) && pages.length > 0 && !qualityPending && !hasUnusableEvidence(pages) && !upload.isPending;
+  const submit = () => {
+    if (sending.current || !canSend || !student) return;
+    sending.current = true;
+    setError('');
+    upload.mutate({ evaluationId, studentId: student.id, name: student.nombre, pages: pages.map((page) => ({ ...page })) });
+  };
   return <Card className="mx-4 mb-4 space-y-4 p-4" aria-label="Añadir entrega a la evaluación">
     <h2 className="text-lg font-bold">Añadir entregas</h2>
+    <p className="break-words font-semibold">{evaluationName} · {materiaName}</p>
     <p className="text-sm text-muted">Un paquete por estudiante: hasta 10 fotos ordenadas o un PDF de hasta 20 páginas.</p>
-    <StudentPicker students={students} studentId={studentId} disabled={upload.isPending} onStudentChange={onStudentChange} />
-    {savedName && <p role="status" className="rounded-lg bg-emerald-50 p-3 text-sm text-emerald-900 dark:bg-emerald-500/10 dark:text-emerald-200">Entrega de {savedName} guardada. La calificación continúa en segundo plano; no se ha publicado una nota.</p>}
+    <StudentPicker students={students} studentId={studentId} disabled={upload.isPending || !eligibilityVerified} onStudentChange={onStudentChange} />
+    {studentId && !student && <p role="status" className="text-sm text-muted">Este estudiante no está disponible para otra entrega. Revisa su nota o elige uno pendiente.</p>}
     <MultiPageEvidencePicker pages={pages} onChange={(next) => { setPages(next); setError(''); }} disabled={!student || upload.isPending} onError={setError} />
     {error && <p role="alert" className="text-sm text-rose-600 dark:text-rose-300">{error} Conservamos las hojas para que puedas corregir o reintentar.</p>}
-    <Button disabled={!student || !pages.length || hasUnusableEvidence(pages) || upload.isPending} loading={upload.isPending} onClick={() => setConfirming(true)}>Enviar a calificar</Button>
-    <ConfirmDialog open={confirming} onClose={() => !upload.isPending && setConfirming(false)} loading={upload.isPending}
-      title={pages[0]?.file.type === 'application/pdf' ? 'Confirmar documento completo' : `Vas a entregar ${pages.length} ${pages.length === 1 ? 'hoja' : 'hojas'}`}
-      description={`La evidencia se asociará a ${student?.nombre ?? 'este estudiante'}. Revisa el orden y que no falte ninguna hoja.`}
-      confirmLabel="Confirmar y enviar" onConfirm={() => student && upload.mutate({ studentId: student.id, name: student.nombre, pages: [...pages] })} />
+    {qualityPending && <p role="status" className="text-sm text-muted">Comprobando la calidad de las fotos…</p>}
+    {pages.length > 0 && <div className="rounded-xl border border-border bg-surface-2 p-3 text-sm">
+      <p className="break-words font-semibold">Para: {student?.nombre ?? 'Selecciona un estudiante pendiente'}</p>
+      <p className="mt-1 break-words">Evaluación: {evaluationName}</p>
+      <p className="mt-1 break-words text-muted">{pages[0].file.type === 'application/pdf' ? `1 PDF · ${pages[0].file.name}` : `${pages.length} ${pages.length === 1 ? 'foto' : 'fotos'} en el orden mostrado`}. Revisa que la evidencia esté completa antes de enviar.</p>
+    </div>}
+    <Button className="min-h-11 w-full sm:w-auto" disabled={!canSend} loading={upload.isPending} onClick={submit}>Enviar a calificar</Button>
   </Card>;
 }

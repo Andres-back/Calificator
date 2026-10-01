@@ -4,6 +4,7 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import {
   ClipboardCheck,
+  Camera,
   Clock,
   Eye,
   Pencil,
@@ -394,6 +395,12 @@ export function MateriaEvaluaciones() {
                           <Button size="sm" variant={modality === 'online' ? 'secondary' : 'outline'}>
                             <Eye className="h-4 w-4" /> Notas y entregas
                           </Button>
+                        </Link>
+                      )}
+
+                      {canGradeEvaluation && !isDraft && (modality === 'fisica' || modality === 'mixta') && (
+                        <Link to={`${reviewRoute}&modo=carga`} className="focus-ring inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700">
+                          <Camera className="h-4 w-4" aria-hidden="true" /> Calificar por foto
                         </Link>
                       )}
 

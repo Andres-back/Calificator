@@ -507,6 +507,7 @@ test('dos paquetes quedan en cola, un fallo conserva hojas para reintentar', asy
   await page.route('**/api/materias/m1/estudiantes', (route) => json(route, { ...materia, estudiantes: [student, { ...student, id: 's2', nombre: 'Segundo estudiante' }] }));
   let uploads = 0;
   const owners: string[] = [];
+  const packages: Buffer[] = [];
   const accepted = new Set<string>();
   await page.route('**/api/evaluaciones/e1/calificaciones', (route) => json(route, [...accepted].map((id) => ({
     ...grade, id: `queued-${id}`, estudiante_id: id, estado: 'procesando',
@@ -514,7 +515,9 @@ test('dos paquetes quedan en cola, un fallo conserva hojas para reintentar', asy
   }))));
   await page.route('**/api/calificaciones/foto', (route) => {
     uploads++;
-    const raw = route.request().postDataBuffer()?.toString() ?? '';
+    const packet = route.request().postDataBuffer()!;
+    packages.push(packet);
+    const raw = packet.toString();
     const id = raw.includes('\r\n\r\ns2\r\n') ? 's2' : 's1';
     owners.push(id);
     if (uploads === 2) return json(route, { detail: 'Fallo controlado de subida' }, 503);
@@ -528,9 +531,11 @@ test('dos paquetes quedan en cola, un fallo conserva hojas para reintentar', asy
     buffer: readFileSync(new URL('../public/branding/feature-grade.png', import.meta.url)),
   };
   await page.locator('input[type=file]').first().setInputFiles([file, { ...file, name: 'hoja2.png' }]);
+  await page.getByRole('button', { name: 'Rotar hoja 2' }).click();
+  await expect(page.getByText('2 fotos en el orden mostrado', { exact: false })).toBeVisible();
   await page.getByRole('button', { name: 'Enviar a calificar', exact: true }).click();
-  await expect(page.getByRole('dialog', { name: 'Vas a entregar 2 hojas' })).toBeVisible();
-  await page.getByRole('button', { name: 'Confirmar y enviar' }).click();
+  await expect(page.getByRole('dialog', { name: 'Cambios sin guardar' })).toHaveCount(0);
+  await expect(page.getByRole('status').filter({ hasText: 'Entrega de Estudiante Prueba guardada' })).toBeVisible();
   const studentSearch = page.getByRole('combobox', { name: 'Buscar estudiante para esta entrega' });
   await expect(studentSearch).toHaveValue('');
   await studentSearch.fill('Estudiante Prueba');
@@ -545,12 +550,17 @@ test('dos paquetes quedan en cola, un fallo conserva hojas para reintentar', asy
   const submitButton = page.getByRole('button', { name: 'Enviar a calificar', exact: true });
   await expect(submitButton).toBeEnabled();
   await submitButton.click();
-  await page.getByRole('button', { name: 'Confirmar y enviar' }).click();
   await expect(page.getByRole('alert').filter({ hasText: 'Fallo controlado de subida' })).toBeVisible();
   await page.getByRole('button', { name: 'Enviar a calificar', exact: true }).click();
-  await page.getByRole('button', { name: 'Confirmar y enviar' }).click();
   await expect(studentSearch).toHaveValue('');
   expect(owners).toEqual(['s1', 's2', 's2']);
+  expect(packages.every((packet) => packet.includes(file.buffer))).toBe(true);
+  expect(packages[0].toString()).toContain('name="rotaciones"\r\n\r\n[0,90]');
+  expect(packages[0].toString().indexOf('filename="hoja.png"')).toBeLessThan(packages[0].toString().indexOf('filename="hoja2.png"'));
+  for (const packet of packages.slice(1)) {
+    expect(packet.toString()).toContain('filename="segunda-entrega.png"');
+    expect(packet.toString()).toContain('name="rotaciones"\r\n\r\n[0]');
+  }
   await page.reload();
   expect(await page.evaluate(() => JSON.parse(localStorage.getItem('xcalificator.pending-gradings.v1') ?? '[]').length)).toBe(2);
 });

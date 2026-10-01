@@ -136,6 +136,28 @@ beforeEach(() => {
 });
 
 describe('MateriaEvaluaciones teacher creation flow', () => {
+  it('offers direct capture for paper/mixed only, preserving review and context', async () => {
+    mocks.list.mockResolvedValue([
+      { ...evaluation, estado: 'publicada', modalidad: 'fisica' },
+      { ...evaluation, id: 'mixed', estado: 'cerrada', modalidad: 'mixta' },
+      { ...evaluation, id: 'online', estado: 'publicada', modalidad: 'online' },
+      { ...evaluation, id: 'draft', modalidad: 'fisica' },
+    ]);
+    renderPage();
+    const capture = await screen.findAllByRole('link', { name: 'Calificar por foto' });
+    expect(capture).toHaveLength(2);
+    expect(capture[0]).toHaveAttribute('href', '/app/calificaciones?evaluacion=evaluation-1&materia=materia-1&modo=carga');
+    expect(capture[1]).toHaveAttribute('href', '/app/calificaciones?evaluacion=mixed&materia=materia-1&modo=carga');
+    expect(screen.getAllByRole('link', { name: 'Notas y entregas' })).toHaveLength(3);
+  });
+
+  it('does not grant capture to a read-only teacher', async () => {
+    mocks.list.mockResolvedValue([{ ...evaluation, estado: 'publicada', modalidad: 'fisica' }]);
+    useAuth.setState({ user: { ...useAuth.getState().user!, permissions: ['evaluations.read', 'grading.read'] } });
+    renderPage();
+    expect(await screen.findByText('Evaluación de ciencias')).toBeVisible();
+    expect(screen.queryByRole('link', { name: 'Calificar por foto' })).not.toBeInTheDocument();
+  });
   it('abre Calificar con evaluación y materia y no lo ofrece en borradores', async () => {
     mocks.list.mockResolvedValue([{ ...evaluation, estado: 'publicada' }, { ...evaluation, id: 'draft-1', nombre: 'Borrador' }]);
     renderPage();

@@ -109,7 +109,7 @@ function GuideStep({
       <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-brand-700 text-sm font-extrabold text-white">
         {number}
       </span>
-      <div>
+      <div className="min-w-0 break-words">
         <p className="font-semibold">{title}</p>
         <p className="mt-0.5 text-sm leading-5 text-muted">{description}</p>
       </div>
@@ -283,41 +283,37 @@ export function MateriaAsistencia() {
         </a>
       </div>
     <div className="space-y-6">
-      <Card className="overflow-hidden border-brand-200 bg-brand-50/60 p-5 dark:border-brand-500/25 dark:bg-brand-500/10 sm:p-6">
-        <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-          <div className="max-w-2xl">
-            <div className="flex items-center gap-3">
-              <span className="grid h-12 w-12 place-items-center rounded-xl bg-brand-700 text-white">
-                <UserCheck className="h-6 w-6" aria-hidden="true" />
-              </span>
-              <div>
-                <p className="text-xs font-bold uppercase tracking-[0.12em] text-brand-700 dark:text-brand-200">
-                  Registro guiado
-                </p>
-                <h2 className="font-display text-2xl font-extrabold">Tomar asistencia</h2>
-              </div>
+      <Card className="border-brand-200 bg-brand-50/60 p-4 dark:border-brand-500/25 dark:bg-brand-500/10">
+        <div className="flex items-center gap-3">
+          <UserCheck className="h-6 w-6 shrink-0 text-brand-700 dark:text-brand-200" aria-hidden="true" />
+          <h2 className="font-display text-xl font-extrabold">Tomar asistencia</h2>
+        </div>
+        <details className="mt-1">
+          <summary className="focus-ring min-h-11 cursor-pointer content-center rounded-lg text-sm font-semibold text-brand-700 dark:text-brand-200">Cómo tomar asistencia</summary>
+          <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+            <div className="max-w-2xl">
+              <p className="mt-4 text-sm leading-6 text-muted">
+                Marca a todo el grupo y revisa el resumen. Nada se guarda hasta que pulses
+                <strong className="text-fg"> Guardar asistencia</strong>.
+              </p>
             </div>
-            <p className="mt-4 text-sm leading-6 text-muted">
-              Marca a todo el grupo y revisa el resumen. Nada se guarda hasta que pulses
-              <strong className="text-fg"> Guardar asistencia</strong>.
-            </p>
+            <div className="flex items-center gap-2 rounded-lg border border-emerald-300 bg-white/80 px-4 py-3 text-sm text-emerald-800 dark:border-emerald-500/30 dark:bg-surface/80 dark:text-emerald-200">
+              <ShieldCheck className="h-5 w-5 shrink-0" aria-hidden="true" />
+              Puedes corregir cualquier marca antes de guardar.
+            </div>
           </div>
-          <div className="flex items-center gap-2 rounded-lg border border-emerald-300 bg-white/80 px-4 py-3 text-sm text-emerald-800 dark:border-emerald-500/30 dark:bg-surface/80 dark:text-emerald-200">
-            <ShieldCheck className="h-5 w-5 shrink-0" aria-hidden="true" />
-            Puedes corregir cualquier marca antes de guardar.
+          <div className="mt-6 grid gap-5 border-t border-brand-200 pt-5 dark:border-brand-500/20 md:grid-cols-3">
+            <GuideStep number={1} title="Elige el día" description="Hoy aparece seleccionado automáticamente." />
+            <GuideStep number={2} title="Marca cada estudiante" description="Usa uno de los cuatro estados grandes." />
+            <GuideStep number={3} title="Revisa y guarda" description="No podrás guardar si queda alguien pendiente." />
           </div>
-        </div>
-        <div className="mt-6 grid gap-5 border-t border-brand-200 pt-5 dark:border-brand-500/20 md:grid-cols-3">
-          <GuideStep number={1} title="Elige el día" description="Hoy aparece seleccionado automáticamente." />
-          <GuideStep number={2} title="Marca cada estudiante" description="Usa uno de los cuatro estados grandes." />
-          <GuideStep number={3} title="Revisa y guarda" description="No podrás guardar si queda alguien pendiente." />
-        </div>
+        </details>
       </Card>
 
       <Card className="p-5 sm:p-6">
-        <div className="grid gap-5 md:grid-cols-[minmax(240px,360px)_1fr] md:items-end">
+        <div className="grid grid-cols-1 gap-5 md:grid-cols-2 md:items-end">
           <Field
-            label="1. Fecha de la asistencia"
+            label="Fecha de la asistencia"
             hint="Puedes consultar o corregir un día anterior. No se permiten fechas futuras."
           >
             <Input
@@ -325,7 +321,7 @@ export function MateriaAsistencia() {
               value={selectedDate}
               max={today}
               onChange={(event) => changeDate(event.target.value)}
-              className="h-12 text-base"
+              className="h-12 min-w-0 text-base"
             />
           </Field>
           <div className="rounded-lg border border-border bg-surface-2 px-4 py-3">
@@ -359,7 +355,6 @@ export function MateriaAsistencia() {
           <section aria-labelledby="attendance-progress-title" className="space-y-4">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
               <div>
-                <p className="text-xs font-bold uppercase tracking-[0.12em] text-muted">Paso 2 de 3</p>
                 <h3 id="attendance-progress-title" className="mt-1 font-display text-xl font-bold">
                   Marca a cada estudiante
                 </h3>
@@ -489,50 +484,15 @@ export function MateriaAsistencia() {
 
           <Card
             aria-label="Resumen y guardado de asistencia"
-            className="relative border-brand-300 bg-surface p-4 shadow-lg dark:border-brand-500/40 sm:p-5 lg:sticky lg:bottom-4 lg:z-10 lg:bg-surface/95 lg:shadow-xl lg:backdrop-blur"
+            className="relative border-brand-300 bg-surface p-3 dark:border-brand-500/40"
           >
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-5" aria-live="polite">
-              <SummaryItem
-                label="Presentes"
-                value={summary.presentes}
-                className="border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-500/25 dark:bg-emerald-500/10 dark:text-emerald-200"
-              />
-              <SummaryItem
-                label="Tarde"
-                value={summary.tarde}
-                className="border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-500/25 dark:bg-amber-500/10 dark:text-amber-100"
-              />
-              <SummaryItem
-                label="Ausentes"
-                value={summary.ausentes}
-                className="border-rose-200 bg-rose-50 text-rose-800 dark:border-rose-500/25 dark:bg-rose-500/10 dark:text-rose-200"
-              />
-              <SummaryItem
-                label="Excusas"
-                value={summary.excusas}
-                className="border-sky-200 bg-sky-50 text-sky-800 dark:border-sky-500/25 dark:bg-sky-500/10 dark:text-sky-200"
-              />
-              <SummaryItem
-                label="Pendientes"
-                value={summary.pendientes}
-                className="col-span-2 border-slate-300 bg-slate-100 text-slate-800 dark:border-slate-500/30 dark:bg-slate-500/10 dark:text-slate-200 sm:col-span-1"
-              />
-            </div>
-            <div className="mt-4 flex flex-col gap-3 border-t border-border pt-4 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <p className="font-bold">Paso 3. Revisa y guarda</p>
-                <p className="mt-0.5 text-sm text-muted">
-                  {summary.pendientes > 0
-                    ? 'Completa los estudiantes pendientes para habilitar el guardado.'
-                    : hasUnsavedChanges
-                      ? 'La lista está completa y tiene cambios sin guardar.'
-                      : 'La asistencia de este día ya está guardada.'}
-                </p>
-              </div>
+            <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
+              <p aria-live="polite" className="text-sm font-semibold tabular-nums">
+                {summary.total - summary.pendientes}/{summary.total} marcados · {summary.pendientes} pendientes
+              </p>
               <Button
                 type="button"
-                size="lg"
-                className="w-full sm:w-auto"
+                className="min-h-11 w-full sm:w-auto"
                 disabled={summary.pendientes > 0 || !hasUnsavedChanges}
                 loading={saveMutation.isPending}
                 loadingLabel="Guardando asistencia…"
@@ -546,6 +506,43 @@ export function MateriaAsistencia() {
                     : 'Asistencia guardada'}
               </Button>
             </div>
+            <details className="mt-1">
+              <summary className="focus-ring min-h-11 cursor-pointer content-center rounded-lg text-sm font-semibold text-brand-700 dark:text-brand-200">Ver desglose y estado</summary>
+              <p className="mb-3 text-sm text-muted">
+                {summary.pendientes > 0
+                  ? 'Completa los estudiantes pendientes para habilitar el guardado.'
+                  : hasUnsavedChanges
+                    ? 'La lista está completa y tiene cambios sin guardar.'
+                    : 'La asistencia de este día ya está guardada.'}
+              </p>
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
+                <SummaryItem
+                  label="Presentes"
+                  value={summary.presentes}
+                  className="border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-500/25 dark:bg-emerald-500/10 dark:text-emerald-200"
+                />
+                <SummaryItem
+                  label="Tarde"
+                  value={summary.tarde}
+                  className="border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-500/25 dark:bg-amber-500/10 dark:text-amber-100"
+                />
+                <SummaryItem
+                  label="Ausentes"
+                  value={summary.ausentes}
+                  className="border-rose-200 bg-rose-50 text-rose-800 dark:border-rose-500/25 dark:bg-rose-500/10 dark:text-rose-200"
+                />
+                <SummaryItem
+                  label="Excusas"
+                  value={summary.excusas}
+                  className="border-sky-200 bg-sky-50 text-sky-800 dark:border-sky-500/25 dark:bg-sky-500/10 dark:text-sky-200"
+                />
+                <SummaryItem
+                  label="Pendientes"
+                  value={summary.pendientes}
+                  className="col-span-2 border-slate-300 bg-slate-100 text-slate-800 dark:border-slate-500/30 dark:bg-slate-500/10 dark:text-slate-200 sm:col-span-1"
+                />
+              </div>
+            </details>
           </Card>
         </>
       ) : null}

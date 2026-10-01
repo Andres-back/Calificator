@@ -156,6 +156,10 @@ Como docente quiero crear una evaluación dentro de mi materia sin volver a sele
 
 ## Aclaraciones
 
+### Evolución aprobada 079 (2026-10-01)
+
+La presentación de asistencia y captura continúa en [079-captura-docente-directa](../079-captura-docente-directa/spec.md): resumen sin superposición a cualquier ancho, desglose/ayuda plegados, entrada contextual y un envío explícito único. Se mantienen búsqueda/globales de asistencia, consulta progresiva, notas existentes y todas las decisiones docentes de esta especificación.
+
 ### Sesión 2026-09-30
 
 - Revisión de alcance, roles, datos, interacción, estados, compatibilidad, recuperación, accesibilidad y aceptación: sin ambigüedades críticas. Cero preguntas formales.
