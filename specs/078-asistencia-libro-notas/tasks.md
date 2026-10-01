@@ -61,9 +61,14 @@ Alcance y plan ampliados aprobados mediante «SIGUE» el 2026-09-30; revisión d
 - [x] T024 Ejecutar tipos, lint, pruebas frontend, build y UI; registrar resultados en specs/078-asistencia-libro-notas/quickstart.md sin afirmaciones productivas no comprobadas. FR-010/FR-011.
 - [x] T025 Registrar evolución en specs/README.md, tests/spec_governance/test_spec_baseline.py y regenerar specs/system-inventory según scripts/build_system_inventory.py; ejecutar gobernanza.
 - [x] T026 Ejecutar convergencia y cerrar tasks.md solo con evidencia; preparar PR enlazado a #163 y CI obligatorio. Sin fusión/despliegue sin autorización.
+- [x] T027 Actualizar frontend/e2e/explainable-grading.spec.ts y frontend/e2e/p2-responsive.spec.ts al recorrido progresivo aprobado; conservar regresión de ajustes, historial, ausencia de datos, procesamiento, scroll y permisos; ejecutar los 73 escenarios E2E existentes sin omitirlos. FR-009/FR-010/FR-014/FR-015/FR-016.
 
 ## Dependencias y estrategia
 
 T001–003 antes de código. En cada historia: pruebas antes de implementación, después regresión focal. US1, US2, US4 y US5 son independientes; US3 conserva el recorrido contextual de US4. Priorizar US4/US5 (P1) antes de ejecutar US3 (P2), conservando los IDs originales T011/012. T023–026 requieren las cinco historias. MVP: asistencia; entrega completa incluye lista compacta, resultado ordenado, creador contextual y menú. 26 tareas: preparación 3, US1 3, US2 4, US3 2, US4 5, US5 5, final 4.
 
 Trabajo paralelo posible sin agentes: lectura de fixtures y pruebas de modelos en archivos distintos. No se propone delegación ni ejecución simultánea sobre archivos compartidos.
+
+## Seguimiento de CI y autorización de fusión
+
+El CI remoto del PR #164 detectó 17 regresiones de selectores/estado inicial del flujo anterior (56 escenarios aprobados). T027 corrige las pruebas existentes, no cambia el alcance funcional ni elimina aserciones de integridad. El usuario autoriza fusión y producción mediante «fusion y produccion deja el codigo limpio y sostenible encargate de buena pacticas»; continúan siendo obligatorios CI verde y verificación posterior de solo lectura.
