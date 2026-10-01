@@ -79,6 +79,7 @@ ALL_SPECS = {
     "074-aislar-flujo-estudiante",
     "075-revision-docente-compacta",
     "077-qwen-fast-verification",
+    "078-asistencia-libro-notas",
 }
 OWNED_SPECS = {
     name

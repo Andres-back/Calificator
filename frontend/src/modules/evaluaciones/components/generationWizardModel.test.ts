@@ -86,13 +86,13 @@ describe('generation wizard model', () => {
     };
 
     persistWizardDraft(localStorage, 'profesor-1', state, 1_000);
-    const raw = localStorage.getItem(wizardStorageKey('profesor-1')) ?? '';
+    const raw = localStorage.getItem(wizardStorageKey('profesor-1', state.materiaId)) ?? '';
 
     expect(raw).toContain(`"version":${WIZARD_VERSION}`);
     expect(raw).toContain('"userId":"profesor-1"');
     expect(raw).toContain('"needsReselection":true');
     expect(raw).not.toContain('data:');
-    expect(loadWizardDraft(localStorage, 'profesor-1', 1_001)).toMatchObject({
+    expect(loadWizardDraft(localStorage, 'profesor-1', 1_001, state.materiaId)).toMatchObject({
       nombre: 'Borrador',
       step: 4,
       referenceFile: { name: 'guia.pdf', needsReselection: true },
@@ -104,8 +104,8 @@ describe('generation wizard model', () => {
     state.nombre = 'Expirado';
     persistWizardDraft(localStorage, 'profesor-1', state, 100);
 
-    expect(loadWizardDraft(localStorage, 'profesor-1', 100 + WIZARD_TTL_MS + 1)).toBeNull();
-    expect(localStorage.getItem(wizardStorageKey('profesor-1'))).toBeNull();
+    expect(loadWizardDraft(localStorage, 'profesor-1', 100 + WIZARD_TTL_MS + 1, state.materiaId)).toBeNull();
+    expect(localStorage.getItem(wizardStorageKey('profesor-1', state.materiaId))).toBeNull();
 
     localStorage.setItem(wizardStorageKey('profesor-1'), JSON.stringify({
       version: 999,
@@ -116,8 +116,36 @@ describe('generation wizard model', () => {
     expect(loadWizardDraft(localStorage, 'profesor-1')).toBeNull();
 
     persistWizardDraft(localStorage, 'profesor-1', state);
-    discardWizardDraft(localStorage, 'profesor-1');
-    expect(localStorage.getItem(wizardStorageKey('profesor-1'))).toBeNull();
+    discardWizardDraft(localStorage, 'profesor-1', state.materiaId);
+    expect(localStorage.getItem(wizardStorageKey('profesor-1', state.materiaId))).toBeNull();
+  });
+
+  it('keeps drafts isolated across A → B → A and discards only the current subject', () => {
+    const first = { ...createEmptyWizardState('A'), nombre: 'Primera', questions: [validQuestion()] };
+    const second = { ...createEmptyWizardState('B'), nombre: 'Segunda' };
+    persistWizardDraft(localStorage, 'teacher-isolated', first, 1_000);
+    expect(loadWizardDraft(localStorage, 'teacher-isolated', 1_001, 'B')).toBeNull();
+    persistWizardDraft(localStorage, 'teacher-isolated', second, 1_001);
+    expect(loadWizardDraft(localStorage, 'teacher-isolated', 1_002, 'A')).toEqual(first);
+    expect(loadWizardDraft(localStorage, 'teacher-isolated', 1_002, 'B')).toEqual(second);
+    discardWizardDraft(localStorage, 'teacher-isolated', 'B');
+    expect(loadWizardDraft(localStorage, 'teacher-isolated', 1_002, 'B')).toBeNull();
+    expect(loadWizardDraft(localStorage, 'teacher-isolated', 1_002, 'A')).toEqual(first);
+  });
+
+  it('offers legacy drafts only in their subject and migrates them after successful saving', () => {
+    const first = { ...createEmptyWizardState('legacy-A'), nombre: 'Anterior' };
+    const legacyKey = wizardStorageKey('teacher-legacy');
+    const legacyRaw = JSON.stringify({ version: WIZARD_VERSION, userId: 'teacher-legacy', savedAt: 1_000, state: first });
+    localStorage.setItem(legacyKey, legacyRaw);
+    expect(loadWizardDraft(localStorage, 'teacher-legacy', 1_001, 'legacy-B')).toBeNull();
+    persistWizardDraft(localStorage, 'teacher-legacy', createEmptyWizardState('legacy-B'), 1_001);
+    discardWizardDraft(localStorage, 'teacher-legacy', 'legacy-B');
+    expect(localStorage.getItem(legacyKey)).toBe(legacyRaw);
+    expect(loadWizardDraft(localStorage, 'teacher-legacy', 1_002, 'legacy-A')).toEqual(first);
+    persistWizardDraft(localStorage, 'teacher-legacy', first, 1_002);
+    expect(localStorage.getItem(legacyKey)).toBeNull();
+    expect(loadWizardDraft(localStorage, 'teacher-legacy', 1_003, 'legacy-A')).toEqual(first);
   });
 
   it('validates files before accepting metadata', () => {

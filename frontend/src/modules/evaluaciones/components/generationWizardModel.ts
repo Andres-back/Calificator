@@ -116,8 +116,9 @@ export function createEmptyWizardState(materiaId = ''): WizardState {
   };
 }
 
-export function wizardStorageKey(userId: string) {
-  return `xcal:evaluacion-ia:v${WIZARD_VERSION}:${userId}`;
+export function wizardStorageKey(userId: string, materiaId?: string) {
+  const legacyKey = `xcal:evaluacion-ia:v${WIZARD_VERSION}:${userId}`;
+  return materiaId ? `${legacyKey}:materia:${encodeURIComponent(materiaId)}` : legacyKey;
 }
 
 export function totalQuestionCount(counts: QuestionCounts) {
@@ -562,11 +563,11 @@ export function persistWizardDraft(storage: Storage, userId: string, state: Wiza
     savedAt: now,
     state: safeState,
   };
-  storage.setItem(wizardStorageKey(userId), JSON.stringify(draft));
+  storage.setItem(wizardStorageKey(userId, state.materiaId), JSON.stringify(draft));
+  if (state.materiaId) removeMatchingLegacyDraft(storage, userId, state.materiaId);
 }
 
-export function loadWizardDraft(storage: Storage, userId: string, now = Date.now()): WizardState | null {
-  const key = wizardStorageKey(userId);
+function readWizardDraft(storage: Storage, userId: string, key: string, now: number): WizardState | null {
   const raw = storage.getItem(key);
   if (!raw) return null;
   try {
@@ -575,6 +576,7 @@ export function loadWizardDraft(storage: Storage, userId: string, now = Date.now
       draft.version !== WIZARD_VERSION
       || draft.userId !== userId
       || !draft.state
+      || !Number.isFinite(draft.savedAt)
       || now - draft.savedAt > WIZARD_TTL_MS
     ) {
       storage.removeItem(key);
@@ -592,6 +594,26 @@ export function loadWizardDraft(storage: Storage, userId: string, now = Date.now
   }
 }
 
-export function discardWizardDraft(storage: Storage, userId: string) {
-  storage.removeItem(wizardStorageKey(userId));
+export function loadWizardDraft(storage: Storage, userId: string, now = Date.now(), materiaId?: string): WizardState | null {
+  if (materiaId) {
+    const scoped = readWizardDraft(storage, userId, wizardStorageKey(userId, materiaId), now);
+    if (scoped?.materiaId === materiaId) return scoped;
+  }
+  const legacy = readWizardDraft(storage, userId, wizardStorageKey(userId), now);
+  return legacy && (!materiaId || legacy.materiaId === materiaId) ? legacy : null;
+}
+
+function removeMatchingLegacyDraft(storage: Storage, userId: string, materiaId: string) {
+  const key = wizardStorageKey(userId);
+  try {
+    const legacy = JSON.parse(storage.getItem(key) ?? 'null') as StoredWizardDraft | null;
+    if (legacy?.userId === userId && legacy.state?.materiaId === materiaId) storage.removeItem(key);
+  } catch {
+    // No eliminamos un borrador ajeno durante el guardado o descarte actual.
+  }
+}
+
+export function discardWizardDraft(storage: Storage, userId: string, materiaId?: string) {
+  storage.removeItem(wizardStorageKey(userId, materiaId));
+  if (materiaId) removeMatchingLegacyDraft(storage, userId, materiaId);
 }

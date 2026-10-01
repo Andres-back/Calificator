@@ -109,7 +109,7 @@ export function MobileReviewContext({
   }, [forceOpen]);
 
   return (
-    <Card className="mx-4 mb-4 overflow-hidden p-0 lg:hidden">
+    <Card className="mx-4 mb-4 overflow-hidden p-0">
       <button
         type="button"
         aria-expanded={open}
@@ -207,6 +207,40 @@ export function MobileReviewActionBar({
           Siguiente estudiante <ChevronRight className="h-4 w-4" />
         </Button>
       </div>
+    </div>
+  );
+}
+
+export function GradeNoteExplanation({ cal, score }: { cal: CalificacionDetalle; score: number | null }) {
+  const breakdown = cal.desglose;
+  const decision = [...(cal.timeline ?? [])].reverse().find((event) => event.tipo === 'ajustada' && event.detalle)?.detalle;
+  if (!breakdown) {
+    return (
+      <div className="space-y-1 text-sm text-muted">
+        <p>Sin explicación registrada por respuesta. La nota histórica se conserva; no se inventaron puntajes.</p>
+        {decision && <p>{decision}</p>}
+      </div>
+    );
+  }
+  const formula = breakdown.formula;
+  const adjustment = Number(formula.ajuste_global);
+  const overridesFormula = score != null && Math.abs(score - Number(formula.nota_final)) > 0.005;
+  return (
+    <div className="space-y-2 text-sm">
+      <p>Puntos registrados: <strong>{Number(formula.puntos_obtenidos).toFixed(2)} / {Number(formula.puntos_posibles).toFixed(2)}</strong>.</p>
+      <p className="text-muted">Nota proporcional registrada: {Number(formula.nota_base).toFixed(2)} / {Number(formula.nota_maxima).toFixed(1)}. Los puntajes y sus motivos se consultan en «Respuestas y puntajes».</p>
+      {adjustment !== 0 && (
+        <div className="space-y-1 rounded-lg bg-surface-2 p-2">
+          <p>Ajuste docente registrado: <strong>{adjustment > 0 ? '+' : ''}{adjustment.toFixed(2)}</strong>, separado de los puntos por respuesta.</p>
+          <p>{breakdown.ajuste_global_detalle?.motivo_interno || breakdown.ajuste_global_detalle?.explicacion_estudiante || 'Sin motivo de ajuste registrado.'}</p>
+        </div>
+      )}
+      {overridesFormula && (
+        <div role="status" className="space-y-1 text-amber-800 dark:text-amber-200">
+          <p>La nota vigente difiere del cálculo registrado ({Number(formula.nota_final).toFixed(2)}). Consulta la decisión docente en el historial; no representa la suma original por respuestas.</p>
+          {decision && <p>{decision}</p>}
+        </div>
+      )}
     </div>
   );
 }
@@ -523,6 +557,7 @@ function PanelDetalle({
   onSaved,
   captureNextGrade,
   onNextGrade,
+  onBackToList,
   canGrade,
   canReviewClaims,
   canPublish,
@@ -541,6 +576,7 @@ function PanelDetalle({
   onSaved: () => void;
   captureNextGrade?: () => () => void;
   onNextGrade: () => void;
+  onBackToList: () => void;
   canGrade: boolean;
   canReviewClaims: boolean;
   canPublish: boolean;
@@ -564,16 +600,9 @@ function PanelDetalle({
   const [detailParams, setDetailParams] = useSearchParams();
   const evidencePage = Math.max(1, Math.min(cal.entrega_evidencia_paginas || 1, Number(detailParams.get('hoja')) || 1));
   const setEvidencePage = (page: number) => setDetailParams((previous) => { const next = new URLSearchParams(previous); next.set('hoja', String(page)); return next; }, { replace: true });
-  const [mobileTab, setMobileTab] = useState<'resumen' | 'evidencia' | 'revision'>(() => detailParams.has('pregunta') ? 'revision' : 'resumen');
+  const [mobileTab, setMobileTab] = useState<'resumen' | 'evidencia' | 'revision'>(() => detailParams.has('pregunta') ? 'revision' : detailParams.has('hoja') ? 'evidencia' : 'resumen');
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [advancedOpen, setAdvancedOpen] = useState(false);
-  const [wideReview, setWideReview] = useState(() => window.matchMedia('(min-width: 1280px)').matches);
-  useEffect(() => {
-    const media = window.matchMedia('(min-width: 1280px)');
-    const changed = () => setWideReview(media.matches);
-    media.addEventListener('change', changed);
-    return () => media.removeEventListener('change', changed);
-  }, []);
   const detailPermissions = useAuth((state) => state.user?.permissions ?? []);
   const reviewSectionRef = useRef<HTMLDivElement | null>(null);
   const detailViewRef = useRef<HTMLDivElement | null>(null);
@@ -792,13 +821,14 @@ function PanelDetalle({
   }
 
   function changeDetailView(view: 'resumen' | 'revision' | 'evidencia') {
-    if (view === 'resumen' && (editingComponentId || showGlobalAdjustment || isDirty)) {
+    const nextView = mobileTab === view ? 'resumen' : view;
+    if (nextView === 'resumen' && (editingComponentId || showGlobalAdjustment || isDirty)) {
       toast('Guarda o cancela los cambios antes de volver al resumen.');
       return;
     }
-    setMobileTab(view);
-    if (view !== 'resumen') window.requestAnimationFrame(() => {
-      const target = view === 'revision' ? reviewSectionRef.current : evidenceSectionRef.current;
+    setMobileTab(nextView);
+    if (nextView !== 'resumen') window.requestAnimationFrame(() => {
+      const target = nextView === 'revision' ? reviewSectionRef.current : evidenceSectionRef.current;
       target?.focus({ preventScroll: true });
       detailViewRef.current?.scrollIntoView({ block: 'start' });
     });
@@ -862,6 +892,9 @@ function PanelDetalle({
       )}
     />
   ) : <RevisionGuide items={cal.guia_revision ?? []} />;
+  const bookRoute = cal.materia_id ? routes.materiaBoletin(cal.materia_id) : '';
+  const requestedReturn = detailParams.get('volver');
+  const returnToBook = bookRoute && requestedReturn && (requestedReturn === bookRoute || requestedReturn.startsWith(`${bookRoute}?`)) ? requestedReturn : null;
 
   return (
     <>
@@ -874,12 +907,17 @@ function PanelDetalle({
             {isDirty && <span className="shrink-0 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-700 dark:bg-amber-500/20 dark:text-amber-300">Sin guardar</span>}
           </div>
           <p className="text-xs text-muted">{cal.evaluacion_nombre} · {cal.materia_nombre}</p>
+          <div className="mt-1 flex flex-wrap gap-2">
+            <Button type="button" variant="ghost" className="hidden min-h-11 lg:inline-flex" onClick={onBackToList}><ArrowLeft className="h-4 w-4" /> Volver a notas del grupo</Button>
+            {returnToBook && <Link to={returnToBook} className="focus-ring inline-flex min-h-11 items-center rounded-lg px-2 text-sm font-semibold text-brand-700 dark:text-brand-200">Volver al libro de notas</Link>}
+          </div>
           {cal.materia_id && detailPermissions.includes('evaluations.read') && <Link to={routes.materiaEvaluaciones(cal.materia_id)} className="focus-ring mt-1 inline-flex min-h-11 items-center gap-1 text-sm font-semibold text-brand-700 dark:text-brand-200"><ArrowLeft className="h-4 w-4" /> Volver a evaluaciones</Link>}
         </div>
       </div>
 
       <div className="min-w-0 flex-1 space-y-3 p-3 pb-32 [overflow-wrap:anywhere] sm:space-y-5 sm:p-5 sm:pb-32 lg:pb-5">
         {/* Nota principal */}
+        <h2 className="text-base font-bold">1. Nota y explicación</h2>
         <div className="flex items-center justify-between">
           <div>
             <p className="text-sm text-muted">{presentation.label}</p>
@@ -901,8 +939,10 @@ function PanelDetalle({
         </div>
 
         <section aria-labelledby="grade-summary-title" className="rounded-xl border border-border bg-surface-2 p-3">
-          <h2 id="grade-summary-title" className="text-base font-bold">Resumen de la valoración</h2>
-          {criterionRows.length ? <>
+          <h3 id="grade-summary-title" className="mb-2 text-sm font-bold">Por qué esta nota</h3>
+          {!presentation.processing && <GradeNoteExplanation cal={cal} score={presentation.score} />}
+          {criterionRows.length ? <details className="mt-2">
+            <summary className="focus-ring flex min-h-11 cursor-pointer items-center text-sm font-semibold">Ver valoración por criterios ({criterionRows.length})</summary>
             <p className="mt-1 text-xs text-muted">{rubricComponents.length ? 'Criterios de rúbrica registrados' : 'Valoración inicial guardada; no recalculada por ajustes globales.'}</p>
             <dl className="mt-2 divide-y divide-border text-sm">
               {criterionRows.map((criterion, index) => <div key={index} className="flex items-start justify-between gap-3 py-2">
@@ -910,10 +950,7 @@ function PanelDetalle({
                 <dd className="shrink-0 font-semibold">{formatCriterionNumber(criterion.puntaje)} / {formatCriterionNumber(criterion.maximo)}</dd>
               </div>)}
             </dl>
-          </> : <>
-            <p className="mt-1 text-sm text-muted">No hay valoración por criterio registrada.</p>
-            {activeBreakdown && <p className="mt-1 text-sm">Puntos por respuestas: <strong>{formatCriterionNumber(activeBreakdown.formula.puntos_obtenidos)} / {formatCriterionNumber(activeBreakdown.formula.puntos_posibles)}</strong>. Consulta el detalle para ver cada puntaje.</p>}
-          </>}
+          </details> : null}
         </section>
 
         {presentation.processing && (
@@ -978,15 +1015,12 @@ function PanelDetalle({
             <p className="mt-2 text-xs text-sky-800 dark:text-sky-200">Revisa el texto y la imagen por separado antes de confirmar la nota única.</p>
           </div>
         )}
-        <div ref={detailViewRef} className="scroll-mt-4 flex flex-wrap gap-2" aria-label="Vista de la revisión">
-          <Button className="xl:hidden" variant={mobileTab === 'resumen' ? 'primary' : 'outline'} onClick={() => changeDetailView('resumen')} aria-pressed={mobileTab === 'resumen'}>Resumen</Button>
-          <Button variant={mobileTab === 'revision' ? 'primary' : 'outline'} onClick={() => changeDetailView('revision')} aria-expanded={wideReview || mobileTab === 'revision' || editingComponentId !== null} aria-controls="grade-review-panel">Ver notas por respuesta</Button>
-          <Button variant={mobileTab === 'evidencia' ? 'primary' : 'outline'} onClick={() => changeDetailView('evidencia')} aria-expanded={wideReview || mobileTab === 'evidencia'} aria-controls="grade-evidence-panel">Ver evidencia</Button>
-        </div>
-        <div className="grid min-w-0 gap-4 xl:grid-cols-2 xl:items-start">
-          <div id="grade-evidence-panel" className={cn('min-w-0 space-y-4 xl:sticky xl:top-4', mobileTab !== 'evidencia' && 'hidden xl:block')}>
+        <div ref={detailViewRef} className="min-w-0 scroll-mt-4 space-y-3" aria-label="Vista de la revisión">
+          <section className="min-w-0 rounded-xl border border-border">
+            <button type="button" className="focus-ring flex min-h-14 w-full items-center justify-between gap-2 rounded-xl px-3 text-left font-semibold" onClick={() => changeDetailView('evidencia')} aria-expanded={mobileTab === 'evidencia'} aria-controls="grade-evidence-panel"><span>2. Evidencia</span><ChevronDown className={cn('h-5 w-5 shrink-0', mobileTab === 'evidencia' && 'rotate-180')} aria-hidden="true" /></button>
+          <div id="grade-evidence-panel" hidden={mobileTab !== 'evidencia'} className="min-w-0 space-y-4 border-t border-border p-3">
             {evidenceUrl ? (
-              <section ref={evidenceSectionRef} tabIndex={-1} aria-labelledby="evidence-title" className="scroll-mt-4 rounded-xl border border-border bg-surface-2 xl:sticky xl:top-4">
+              <section ref={evidenceSectionRef} tabIndex={-1} aria-labelledby="evidence-title" className="scroll-mt-4 rounded-xl border border-border bg-surface-2">
                 <div className="flex items-center justify-between border-b border-border px-4 py-3 text-sm font-semibold text-muted">
                   <h2 id="evidence-title" className="flex items-center gap-2 text-base font-bold text-fg">
                     {isPdfEvidence ? <FileText className="h-5 w-5" /> : <FileImage className="h-5 w-5" />}
@@ -1054,11 +1088,20 @@ function PanelDetalle({
             )}
           </div>
 
-          <div id="grade-review-panel" ref={reviewSectionRef} tabIndex={-1} className={cn('min-w-0 scroll-mt-4', mobileTab !== 'revision' && !editingComponentId && 'hidden xl:block')}>
+          </section>
+          <section className="min-w-0 rounded-xl border border-border">
+            <button type="button" className="focus-ring flex min-h-14 w-full items-center justify-between gap-2 rounded-xl px-3 text-left font-semibold" onClick={() => changeDetailView('revision')} aria-expanded={mobileTab === 'revision' || editingComponentId !== null} aria-controls="grade-review-panel"><span>3. Respuestas y puntajes</span><ChevronDown className={cn('h-5 w-5 shrink-0', (mobileTab === 'revision' || editingComponentId) && 'rotate-180')} aria-hidden="true" /></button>
+          <div id="grade-review-panel" ref={reviewSectionRef} tabIndex={-1} hidden={mobileTab !== 'revision' && !editingComponentId} className="min-w-0 scroll-mt-4 border-t border-border p-3">
             {detailParams.has('pregunta') && !activeBreakdown?.componentes.some((component) => [component.id, component.clave].includes(detailParams.get('pregunta')!)) && <p role="status" className="mb-3 text-sm text-amber-700 dark:text-amber-300">La referencia corresponde a otra versión. Se muestra la primera pregunta vigente; consulta el historial para comparar.</p>}
             {questionReview}
           </div>
+          </section>
         </div>
+
+        <details open={feedbackOpen || isDirty || showAjustar} className="rounded-xl border border-border p-3">
+          <summary className="focus-ring flex min-h-11 cursor-pointer items-center font-semibold" onClick={toggleFeedbackSection}>4. Retroalimentación</summary>
+          {presentation.processing ? <p className="text-sm text-muted">La retroalimentación estará disponible cuando termine el análisis.</p> : <Field label="Retroalimentación"><Textarea readOnly={!canGrade} value={adjFeedback} onChange={(e) => setAdjFeedback(e.target.value)} placeholder="Escribe o edita el feedback para el estudiante…" rows={4} /></Field>}
+        </details>
 
         {/* Pipeline — resumen colapsable */}
         {!!pipeline?.orchestrator && (
@@ -1113,19 +1156,6 @@ function PanelDetalle({
         ) : null}
         <Timeline events={cal.timeline} />
         </details>
-        {/* Feedback */}
-        {!presentation.processing && <details open={feedbackOpen || isDirty || showAjustar} className="rounded-xl border border-border p-3">
-          <summary className="focus-ring flex min-h-11 cursor-pointer items-center font-semibold" onClick={toggleFeedbackSection}>Retroalimentación del estudiante</summary>
-          <Field label="Retroalimentación">
-          <Textarea
-            readOnly={!canGrade}
-            value={adjFeedback}
-            onChange={(e) => setAdjFeedback(e.target.value)}
-            placeholder="Escribe o edita el feedback para el estudiante…"
-            rows={4}
-          />
-        </Field></details>}
-
         {/* Acciones */}
         {canGrade && !done && !presentation.processing && (
           <div className="hidden flex-wrap gap-2 lg:flex">
@@ -2065,23 +2095,6 @@ function GradingCenter() {
           </Select>
         </Field>
       </MobileReviewContext>
-      <Card className="mx-4 mb-4 hidden gap-4 p-4 sm:grid-cols-2 lg:grid">
-        <Field label="Materia">
-          <Select value={materiaId} onChange={(event) => changeMateria(event.target.value)}>
-            {materias?.map((m) => <option key={m.id} value={m.id}>{m.nombre}</option>)}
-          </Select>
-        </Field>
-        <Field label="Evaluación">
-          <Select value={evalId} onChange={(event) => changeEvaluation(event.target.value)}>
-            {(!evals || evals.length === 0) && <option value="">Sin evaluaciones</option>}
-            {evals?.map((ev) => (
-              <option key={ev.id} value={ev.id}>
-                {ev.tipo_actividad ? `${ev.tipo_actividad} · ` : ''}{ev.nombre}
-              </option>
-            ))}
-          </Select>
-        </Field>
-      </Card>
 
       {/* Main split view */}
       {isTeacher && canGrade && <GradingJobMonitor embedded />}
@@ -2257,6 +2270,7 @@ function GradingCenter() {
                   <PanelDetalle
                     key={`${selectedId}-${discardVersion}`}
                     cal={detalleQuery.data}
+                    onBackToList={() => setSelectedId(null)}
                     notaMaxima={notaMaxima}
                     studentMap={studentMap}
                     onConfirm={(id, _nota) => {

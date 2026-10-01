@@ -24,6 +24,14 @@ export interface NavItem {
   permission?: string;
 }
 
+export function visibleNavigationItems(items: NavItem[], allowed: ReadonlySet<string>): NavItem[] {
+  const canGradeFromSubject = allowed.has('subjects.read') && allowed.has('evaluations.read');
+  return items.filter((item) => (
+    (!item.permission || allowed.has(item.permission))
+    && !(item.to === '/app/calificaciones' && canGradeFromSubject)
+  ));
+}
+
 export const profesorNav: NavItem[] = [
   { label: 'Inicio', to: '/app', icon: LayoutDashboard, brandIcon: 'dashboard' },
   { label: 'Materias', to: '/app/materias', icon: BookOpen, brandIcon: 'subjects', permission: 'subjects.read' },

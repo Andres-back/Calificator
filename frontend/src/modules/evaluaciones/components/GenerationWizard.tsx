@@ -383,7 +383,9 @@ export function GenerationWizard({
   const generateLock = useRef(false);
   const confirmLock = useRef(false);
   const referenceInputRef = useRef<HTMLInputElement>(null);
-  const materiaNombre = availableMaterias.find((materia) => materia.id === state.materiaId)?.nombre ?? '';
+  const selectedMateria = availableMaterias.find((materia) => materia.id === state.materiaId);
+  const materiaNombre = selectedMateria?.nombre ?? '';
+  const fixedContext = Boolean(initialMateriaId || initialEvaluation);
 
   const dba = useQuery({
     queryKey: queryKeys.materias.dbaCombined(state.materiaId),
@@ -421,7 +423,7 @@ export function GenerationWizard({
   const confirm = useMutation({
     mutationFn: ({ id, payload }: { id: string; payload: Parameters<typeof updateEvaluacion>[1] }) => updateEvaluacion(id, payload),
     onSuccess: (evaluation) => {
-      if (!initialEvaluation) discardWizardDraft(localStorage, userId);
+      if (!initialEvaluation) discardWizardDraft(localStorage, userId, state.materiaId);
       onCompleted(evaluation);
     },
     onError: (error) => toast.error(toApiError(error).detail),
@@ -437,23 +439,32 @@ export function GenerationWizard({
       setRestorePrompt(false);
       return;
     }
-    const restored = loadWizardDraft(localStorage, userId);
+    const materiaId = initialMateriaId || availableMaterias[0]?.id || '';
+    const restored = materiaId ? loadWizardDraft(localStorage, userId, Date.now(), materiaId) : null;
     if (restored) {
       setState(restored);
       setRestorePrompt(true);
       return;
     }
-    setState(createEmptyWizardState(initialMateriaId || availableMaterias[0]?.id || ''));
+    setState(createEmptyWizardState(materiaId));
     setRestorePrompt(false);
     setCanPersist(true);
   }, [availableMaterias, initialEvaluation, initialMateriaId, open, userId]);
 
   useEffect(() => {
-    if (open && canPersist && !initialEvaluation) persistWizardDraft(localStorage, userId, state);
+    if (open && canPersist && !initialEvaluation && state.materiaId) persistWizardDraft(localStorage, userId, state);
   }, [canPersist, initialEvaluation, open, state, userId]);
 
   function patch(patchValue: Partial<WizardState>) {
     setState((current) => ({ ...current, ...patchValue }));
+  }
+
+  function selectMateria(materiaId: string) {
+    const restored = loadWizardDraft(localStorage, userId, Date.now(), materiaId);
+    setState(restored ?? createEmptyWizardState(materiaId));
+    setRestorePrompt(Boolean(restored));
+    setCanPersist(!restored);
+    setGenerationError(null);
   }
 
   function toggleDba(item: DBAUnifiedItem) {
@@ -558,8 +569,8 @@ export function GenerationWizard({
   }
 
   function resetDraft(close = false) {
-    discardWizardDraft(localStorage, userId);
-    setState(createEmptyWizardState(initialMateriaId || availableMaterias[0]?.id || ''));
+    discardWizardDraft(localStorage, userId, state.materiaId);
+    setState(createEmptyWizardState(initialMateriaId || state.materiaId || availableMaterias[0]?.id || ''));
     setRestorePrompt(false);
     setCanPersist(!close);
     if (close) onClose();
@@ -604,7 +615,7 @@ export function GenerationWizard({
               </div>
               <Button type="button" variant="ghost" size="icon" onClick={onClose} disabled={generate.isPending || confirm.isPending || extractReference.isPending} aria-label="Cerrar wizard"><X className="h-5 w-5" /></Button>
             </div>
-            <div className="mt-4"><PasosGuia currentStep={state.step} /></div>
+            <div className="mt-4"><PasosGuia currentStep={state.step} firstStepLabel={fixedContext ? 'Evaluación' : 'Materia'} /></div>
           </header>
 
           <div className="overflow-y-auto p-4 sm:p-5">
@@ -623,21 +634,18 @@ export function GenerationWizard({
                 <main className={cn('min-w-0 rounded-2xl border border-border bg-surface-2/50 p-4 sm:p-5', editingQuestions && 'order-2')}>
                   {state.step === 1 && (
                     <section aria-labelledby="wizard-step-title" className="space-y-5">
-                      <div><h3 id="wizard-step-title" className="text-xl font-bold">Datos básicos de la evaluación</h3><p className="mt-1 text-base text-muted">Confirma la materia, escribe un nombre y elige cómo responderá el grupo.</p></div>
-                      <Field label="Materia" required>
-                        {availableMaterias.length === 1 ? (
-                          <div className="flex min-h-12 items-center rounded-xl border border-border bg-surface px-4 text-base font-semibold">
-                            {availableMaterias[0]?.nombre}
+                      <div><h3 id="wizard-step-title" className="text-xl font-bold">Datos básicos de la evaluación</h3><p className="mt-1 text-base text-muted">{fixedContext ? 'Ya estás en tu materia. Escribe qué evaluarás y elige cómo responderá el grupo.' : 'Elige una materia, escribe un nombre y define cómo responderá el grupo.'}</p></div>
+                      <Field label={fixedContext ? 'Estás creando en' : 'Materia'} required={!fixedContext}>
+                        {fixedContext || availableMaterias.length === 1 ? (
+                          <div className="rounded-xl border border-border bg-surface px-4 py-3 text-base">
+                            <p className="font-semibold">{materiaNombre || 'Materia seleccionada'}</p>
+                            <p className="mt-1 text-sm text-muted">{[selectedMateria?.grado ? `Grado ${selectedMateria.grado}` : '', selectedMateria?.area ? `Área: ${selectedMateria.area}` : ''].filter(Boolean).join(' · ')}</p>
                           </div>
                         ) : (
-                          <div className="[&_select]:min-h-12 [&_select]:max-w-none [&_select]:text-base"><MateriaSelect value={state.materiaId} materias={availableMaterias} onChange={(materiaId) => patch({ materiaId, dbaIds: [], dbaPersonalizadoIds: [], generatedEvaluationId: null, questions: [] })} /></div>
+                          <div className="[&_select]:min-h-12 [&_select]:max-w-none [&_select]:text-base"><MateriaSelect value={state.materiaId} materias={availableMaterias} onChange={selectMateria} /></div>
                         )}
                       </Field>
                       <Field label="Nombre de la evaluación" required hint="Ejemplo: Evaluación de fracciones — período 2"><Input autoFocus value={state.nombre} onChange={(event) => patch({ nombre: event.target.value })} className="min-h-12 text-base" placeholder="Escribe un nombre claro" /></Field>
-                      <Field label="Descripción breve" hint="Opcional"><Textarea value={state.descripcion} onChange={(event) => patch({ descripcion: event.target.value })} className="min-h-24 text-base" placeholder="¿Qué tema o unidad quieres evaluar?" /></Field>
-                      <Field label="Fecha límite de entrega" hint="Opcional. Al vencer, quien no haya entregado recibirá 0.">
-                        <Input type="datetime-local" value={state.fechaLimiteEntrega} onChange={(event) => patch({ fechaLimiteEntrega: event.target.value })} className="min-h-12 text-base" />
-                      </Field>
                       <fieldset className="space-y-3">
                         <legend className="text-base font-semibold">¿Cómo responderán los estudiantes?</legend>
                         <div className="grid gap-3 sm:grid-cols-3">
@@ -653,6 +661,18 @@ export function GenerationWizard({
                           })}
                         </div>
                       </fieldset>
+                      <details className="rounded-xl border border-border bg-surface p-3">
+                        <summary className="focus-ring cursor-pointer rounded-lg py-2 text-base font-semibold">
+                          Opciones complementarias
+                          <span className="mt-1 block text-sm font-normal text-muted">{[state.descripcion.trim() ? 'Descripción configurada' : 'Sin descripción', state.fechaLimiteEntrega ? `Entrega: ${state.fechaLimiteEntrega.replace('T', ' ')}` : 'Sin fecha límite'].join(' · ')}</span>
+                        </summary>
+                        <div className="mt-3 space-y-4">
+                          <Field label="Descripción breve" hint="Opcional"><Textarea value={state.descripcion} onChange={(event) => patch({ descripcion: event.target.value })} className="min-h-24 text-base" placeholder="¿Qué tema o unidad quieres evaluar?" /></Field>
+                          <Field label="Fecha límite de entrega" hint="Opcional. Al vencer, quien no haya entregado recibirá 0.">
+                            <Input type="datetime-local" value={state.fechaLimiteEntrega} onChange={(event) => patch({ fechaLimiteEntrega: event.target.value })} className="min-h-12 text-base" />
+                          </Field>
+                        </div>
+                      </details>
                     </section>
                   )}
 
@@ -754,7 +774,7 @@ export function GenerationWizard({
                           );
                         })}
                       </div>
-                      <p className="text-sm text-muted">Mínimo {MIN_QUESTIONS} y máximo {MAX_QUESTIONS} preguntas.</p>
+                      <p className="text-sm text-muted">Mínimo {MIN_QUESTIONS} y máximo {MAX_QUESTIONS} preguntas. Escala de nota: 0 a {state.notaMaxima}.</p>
                     </section>
                   )}
 
@@ -784,7 +804,10 @@ export function GenerationWizard({
                         </div>
                       )}
                       <Field label="Texto de referencia y contenido extraído" hint={`${state.referenceText.length}/12000 caracteres`}><Textarea value={state.referenceText} onChange={(event) => patch({ referenceText: event.target.value })} className="min-h-48 text-base" maxLength={12000} placeholder="Pega aquí una lectura o sube un archivo para extraer su contenido..." /></Field>
-                      <Field label="Indicaciones adicionales para la IA" hint="Opcional"><Textarea value={state.instruccionesAdicionales} onChange={(event) => patch({ instruccionesAdicionales: event.target.value })} className="min-h-24 text-base" maxLength={2000} /></Field>
+                      <details className="rounded-xl border border-border bg-surface p-3">
+                        <summary className="focus-ring cursor-pointer rounded-lg py-2 font-semibold">Indicaciones adicionales <span className="block text-sm font-normal text-muted">{state.instruccionesAdicionales.trim() ? `${state.instruccionesAdicionales.length} caracteres configurados` : 'Opcional: sin indicaciones extra'}</span></summary>
+                        <div className="mt-3"><Field label="Indicaciones adicionales para la IA" hint="Opcional"><Textarea value={state.instruccionesAdicionales} onChange={(event) => patch({ instruccionesAdicionales: event.target.value })} className="min-h-24 text-base" maxLength={2000} /></Field></div>
+                      </details>
                     </section>
                   )}
 

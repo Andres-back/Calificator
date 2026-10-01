@@ -162,6 +162,9 @@ jobs:
       - name: Run mocked end-to-end tests
         run: npm run test:e2e
 
+      - name: Run contextual teacher flow regressions
+        run: npm run test:mock -- grading-review.mock.spec.ts
+
       - name: Upload E2E diagnostics on failure
         if: failure()
         uses: actions/upload-artifact@v4

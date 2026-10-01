@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useEffect, useMemo, useState } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
 import { useQueries, useQuery } from '@tanstack/react-query';
 import {
   ArrowRight,
@@ -19,6 +19,7 @@ import {
   Card,
   EmptyState,
   Input,
+  Select,
   RichContent,
   Skeleton,
 } from '@/components/ui';
@@ -90,12 +91,16 @@ function gradingHref(
   materiaId: string,
   evaluationId: string,
   studentId: string,
+  returnTo?: string,
+  gradeId?: string,
 ): string {
   const params = new URLSearchParams({
     materia: materiaId,
     evaluacion: evaluationId,
     estudiante: studentId,
   });
+  if (returnTo) params.set('volver', returnTo);
+  if (gradeId) params.set('calificacion', gradeId);
   return `${routes.calificacionesWorkspace}?${params.toString()}`;
 }
 
@@ -206,8 +211,11 @@ function TeacherGradebook() {
   const permissions = new Set(user?.permissions ?? []);
   const canReadGrades = permissions.has('grading.read');
   const canGrade = permissions.has('grading.grade');
-  const [filter, setFilter] = useState<FollowUpFilter>('todos');
-  const [search, setSearch] = useState('');
+  const [params] = useSearchParams();
+  const [filter, setFilter] = useState<FollowUpFilter>(() => params.get('filtro') === 'prioridad' ? 'prioridad' : params.get('filtro') === 'por_revisar' ? 'por_revisar' : 'todos');
+  const [search, setSearch] = useState(() => params.get('buscar') ?? '');
+  const [selectedEvaluationId, setSelectedEvaluationId] = useState(() => params.get('evaluacion') ?? '');
+  const [selectionNotice, setSelectionNotice] = useState('');
 
   const students = useMemo(() => {
     if (
@@ -233,16 +241,28 @@ function TeacherGradebook() {
     enabled: Boolean(materia.id),
   });
 
-  const evaluations = evaluationsQuery.data ?? [];
-  const trackedEvaluations = evaluations.filter(
+  const trackedEvaluations = useMemo(() => (evaluationsQuery.data ?? []).filter(
     (evaluation) => evaluation.estado !== 'borrador',
-  );
-  const openEvaluations = trackedEvaluations.filter(
+  ), [evaluationsQuery.data]);
+  const selectedEvaluation = trackedEvaluations.find((evaluation) => evaluation.id === selectedEvaluationId);
+  const visibleEvaluations = useMemo(() => selectedEvaluation ? [selectedEvaluation] : trackedEvaluations, [selectedEvaluation, trackedEvaluations]);
+  useEffect(() => {
+    if (selectedEvaluationId && evaluationsQuery.isSuccess && !evaluationsQuery.isFetching && !evaluationsQuery.data.some((evaluation) => evaluation.id === selectedEvaluationId && evaluation.estado !== 'borrador')) {
+      setSelectedEvaluationId('');
+      setSelectionNotice('La evaluación seleccionada ya no está disponible. Mostramos todas las evaluaciones.');
+    }
+  }, [evaluationsQuery.data, evaluationsQuery.isFetching, evaluationsQuery.isSuccess, selectedEvaluationId]);
+  const returnParams = new URLSearchParams();
+  if (selectedEvaluationId) returnParams.set('evaluacion', selectedEvaluationId);
+  if (search) returnParams.set('buscar', search);
+  if (filter !== 'todos') returnParams.set('filtro', filter);
+  const returnTo = `${routes.materiaBoletin(materia.id)}${returnParams.size ? `?${returnParams}` : ''}`;
+  const openEvaluations = visibleEvaluations.filter(
     (evaluation) => evaluation.estado !== 'cerrada',
   );
 
   const gradeQueries = useQueries({
-    queries: trackedEvaluations.map((evaluation) => ({
+    queries: visibleEvaluations.map((evaluation) => ({
       queryKey: ['calificaciones', evaluation.id],
       queryFn: () => listCalificaciones(evaluation.id),
       enabled: Boolean(evaluation.id) && canReadGrades,
@@ -252,21 +272,21 @@ function TeacherGradebook() {
 
   const gradesByEvaluation = useMemo(() => {
     const grades = new Map<string, Calificacion[]>();
-    trackedEvaluations.forEach((evaluation, index) => {
+    visibleEvaluations.forEach((evaluation, index) => {
       const data = gradeQueries[index]?.data;
       if (data) grades.set(evaluation.id, data);
     });
     return grades;
-  }, [trackedEvaluations, gradeQueries]);
+  }, [visibleEvaluations, gradeQueries]);
 
   const rows = useMemo(
     () =>
       buildFollowUpRows({
         students,
-        evaluations: trackedEvaluations,
+        evaluations: visibleEvaluations,
         gradesByEvaluation,
       }),
-    [trackedEvaluations, gradesByEvaluation, students],
+    [visibleEvaluations, gradesByEvaluation, students],
   );
   const summary = useMemo(() => summarizeFollowUp(rows), [rows]);
 
@@ -378,14 +398,27 @@ function TeacherGradebook() {
               Libro de notas por evaluación
             </h2>
             <p className="mt-1 max-w-3xl text-sm leading-6 text-muted">
+              {selectedEvaluation ? 'Resultado de esta evaluación. Pulsa una nota para consultar su explicación.' : <>
               Empieza por quienes aparecen primero. La prioridad es una
               sugerencia basada en decisiones docentes, evaluaciones faltantes
               y porcentaje del puntaje; tú decides el acompañamiento.
+              </>}
             </p>
           </div>
         </div>
       </Card>
 
+      <Card className="space-y-2 p-4">
+        <label className="block text-sm font-bold" htmlFor="gradebook-evaluation">Filtrar por evaluación</label>
+        <Select id="gradebook-evaluation" className="min-h-11 text-base" value={selectedEvaluationId} onChange={(event) => { setSelectedEvaluationId(event.target.value); setSelectionNotice(''); }}>
+          <option value="">Todas las evaluaciones</option>
+          {trackedEvaluations.map((evaluation) => <option key={evaluation.id} value={evaluation.id}>{evaluation.nombre}</option>)}
+        </Select>
+        {selectionNotice && <p role="status" className="text-sm text-muted">{selectionNotice}</p>}
+      </Card>
+
+      <details open={!selectedEvaluation} className="space-y-3 rounded-xl border border-border bg-surface p-4">
+      <summary className="focus-ring min-h-11 cursor-pointer py-2 font-semibold">Resumen y seguimiento{selectedEvaluation ? ' de esta evaluación' : ' del grupo'}</summary>
       {openEvaluations.length > 0 ? (
         <div className="rounded-xl border border-sky-200 bg-sky-50 p-4 text-sm text-sky-900 dark:border-sky-500/30 dark:bg-sky-500/10 dark:text-sky-100">
           <strong>
@@ -446,6 +479,7 @@ function TeacherGradebook() {
           <span className="text-sm text-muted">Decisiones guardadas</span>
         </Card>
       </div>
+      </details>
 
       <Card className="p-5">
         <div className="grid gap-4 lg:grid-cols-[minmax(240px,1fr)_auto] lg:items-end">
@@ -457,12 +491,14 @@ function TeacherGradebook() {
                 aria-hidden="true"
               />
               <Input
+                type="search"
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
-                className="pl-10"
+                className="min-h-11 pl-10 text-base"
                 placeholder="Escribe un nombre o correo"
               />
             </span>
+            {search && <Button variant="outline" className="mt-2 min-h-11" onClick={() => setSearch('')}>Limpiar búsqueda</Button>}
           </label>
           <div
             className="flex flex-wrap gap-2"
@@ -482,6 +518,7 @@ function TeacherGradebook() {
               <Button
                 key={value}
                 size="sm"
+                className="min-h-11"
                 variant={filter === value ? 'primary' : 'outline'}
                 aria-pressed={filter === value}
                 onClick={() => setFilter(value)}
@@ -494,11 +531,28 @@ function TeacherGradebook() {
       </Card>
 
       {visibleRows.length === 0 ? (
+        <div className="space-y-3">
         <EmptyState
           icon={Search}
           title="No encontramos estudiantes"
           description="Prueba otro nombre o cambia el filtro seleccionado."
         />
+        <Button variant="outline" onClick={() => { setFilter('todos'); setSearch(''); }}>Mostrar todo el grupo</Button>
+        </div>
+      ) : selectedEvaluation ? (
+        <ul aria-label={`Notas de ${selectedEvaluation.nombre}`} className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-surface">
+          {visibleRows.map((row) => {
+            const cell = row.cells[0];
+            const score = cell.status === 'decidida' ? cell.score : cell.status === 'por_revisar' ? suggestedScore(cell) : null;
+            const href = gradingHref(materia.id, cell.evaluationId, row.id, returnTo, cell.grade?.id);
+            const status = cell.status === 'calificando' ? 'Calificando' : cell.status === 'sin_nota' ? 'Sin calificación' : cell.status === 'por_revisar' ? 'Sugerencia · no definitiva' : cell.grade?.estado === 'publicada' ? 'Publicada' : 'Decisión guardada';
+            return <li key={row.id} className="flex min-h-16 items-center gap-2 px-3 py-2 sm:gap-4 sm:px-4">
+              <div className="min-w-0 flex-1"><p className="break-words text-sm font-semibold">{row.nombre}</p><p className="mt-0.5 text-xs text-muted">{status}</p></div>
+              {canReadGrades && cell.grade ? <Link to={href} aria-label={`Ver nota de ${row.nombre}`} className="focus-ring inline-flex min-h-11 shrink-0 items-center rounded-lg px-2 text-sm font-bold tabular-nums text-brand-700 dark:text-brand-200">{score == null ? '—' : `${score.toFixed(1)} / ${cell.maximumScore.toFixed(1)}`}</Link> : <span className="px-2 text-sm text-muted">—</span>}
+              {(canReadGrades && cell.grade) || canGrade ? <Link to={href} aria-label={`Ver detalle de ${row.nombre}`} className="focus-ring inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-lg border border-border text-brand-700 dark:text-brand-200"><ArrowRight className="h-5 w-5" aria-hidden="true" /></Link> : null}
+            </li>;
+          })}
+        </ul>
       ) : (
         <div className="space-y-4">
           {visibleRows.map((row) => {
@@ -570,6 +624,8 @@ function TeacherGradebook() {
                         materia.id,
                         action.cell.evaluationId,
                         row.id,
+                        returnTo,
+                        action.cell.grade?.id,
                       )}
                       className="focus-ring inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-brand-700 bg-brand-700 px-4 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-brand-800"
                     >
@@ -584,13 +640,14 @@ function TeacherGradebook() {
         </div>
       )}
 
-      <Card className="p-4 text-sm text-muted">
+      <details className="rounded-xl border border-border bg-surface p-4 text-sm text-muted">
+        <summary className="focus-ring min-h-11 cursor-pointer py-2 font-semibold text-fg">Cómo se interpreta el seguimiento</summary>
         <strong className="text-fg">Cómo se calcula:</strong> cada nota se
         convierte al porcentaje de su puntaje máximo antes de promediar. Menos
         de 60% se muestra como atención prioritaria; entre 60% y 75%, datos
         faltantes o sugerencias sin decisión se muestran para revisión. Es una
         ayuda para organizar el trabajo, no un diagnóstico automático.
-      </Card>
+      </details>
     </div>
   );
 }

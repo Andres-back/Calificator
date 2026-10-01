@@ -392,7 +392,7 @@ export function MateriaEvaluaciones() {
                       {(canReviewGrades || canGradeEvaluation) && !isDraft && (
                         <Link to={reviewRoute}>
                           <Button size="sm" variant={modality === 'online' ? 'secondary' : 'outline'}>
-                            <Eye className="h-4 w-4" /> {canGradeEvaluation ? 'Calificar' : 'Revisar notas'}
+                            <Eye className="h-4 w-4" /> Notas y entregas
                           </Button>
                         </Link>
                       )}

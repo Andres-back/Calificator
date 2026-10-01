@@ -41,6 +41,7 @@ import {
   isAttendanceDraftDirty,
   localDateIso,
   markPendingPresent,
+  searchAttendanceRecords,
   summarizeAttendanceDraft,
   type AttendanceDraft,
 } from './attendanceModel';
@@ -146,6 +147,7 @@ export function MateriaAsistencia() {
   const [baseline, setBaseline] = useState<AttendanceDraft>({});
   const [importOpen, setImportOpen] = useState(false);
   const [existingOpen, setExistingOpen] = useState(false);
+  const [search, setSearch] = useState('');
 
   const attendanceQuery = useQuery({
     queryKey: ['asistencia', materia.id, selectedDate],
@@ -161,6 +163,7 @@ export function MateriaAsistencia() {
   }, [attendanceQuery.data]);
 
   const summary = useMemo(() => summarizeAttendanceDraft(draft), [draft]);
+  const visibleStudents = useMemo(() => searchAttendanceRecords(attendanceQuery.data?.registros ?? [], search), [attendanceQuery.data, search]);
   const hasUnsavedChanges = useMemo(
     () => isAttendanceDraftDirty(draft, baseline),
     [baseline, draft],
@@ -369,7 +372,7 @@ export function MateriaAsistencia() {
               {summary.pendientes > 0 && (
                 <Button type="button" variant="outline" onClick={markAllPending}>
                   <CheckCircle2 className="h-5 w-5" aria-hidden="true" />
-                  Marcar pendientes como presentes
+                  Marcar pendientes como presentes (todo el grupo)
                 </Button>
               )}
             </div>
@@ -391,8 +394,19 @@ export function MateriaAsistencia() {
             </div>
           </section>
 
+          <Card className="space-y-3 p-4">
+            <Field label="Buscar estudiante" hint="Por nombre o correo. El resumen y el guardado incluyen a todo el grupo.">
+              <div className="flex items-center gap-2">
+                <Input type="search" value={search} onChange={(event) => setSearch(event.target.value)} className="min-h-11 min-w-0 text-base" placeholder="Escribe un nombre o correo" />
+                {search && <Button type="button" variant="outline" onClick={() => setSearch('')} aria-label="Limpiar búsqueda">Limpiar</Button>}
+              </div>
+            </Field>
+            <p role="status" className="text-sm text-muted">{visibleStudents.length} de {attendanceQuery.data.registros.length} estudiantes</p>
+            {visibleStudents.length === 0 && <div className="space-y-2"><p>No hay estudiantes con esa búsqueda.</p><Button type="button" variant="outline" onClick={() => setSearch('')}>Mostrar todo el grupo</Button></div>}
+          </Card>
+
           <div className="space-y-4">
-            {attendanceQuery.data.registros.map((student, index) => {
+            {visibleStudents.map(({ student, index }) => {
               const current = draft[student.estudiante_id] ?? {
                 estado: student.estado,
                 observacion: student.observacion ?? '',
