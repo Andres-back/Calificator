@@ -22,19 +22,22 @@ function json(route: Route, body: unknown, status = 200) {
   return route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(body) });
 }
 
-export async function installMocks(page: Page, role: 'profesor' | 'estudiante', options: { breakdown?: Record<string, unknown> } = {}) {
+type MockOptions = { breakdown?: Record<string, unknown>; permissions?: string[] };
+
+export async function installMocks(page: Page, role: 'profesor' | 'estudiante', options: MockOptions = {}) {
   let authenticated = false;
+  const activeUser = { ...(role === 'profesor' ? teacher : student), ...(options.permissions ? { permissions: options.permissions } : {}) };
   await page.route('**/api/**', async (route) => {
     const request = route.request();
     const path = new URL(request.url()).pathname.replace(/^\/api/, '');
     if (path === '/auth/login') { authenticated = true; return json(route, {}); }
     if (path === '/auth/refresh') return json(route, { detail: 'Sin sesión' }, 401);
-    if (path === '/auth/me') return authenticated ? json(route, { user: role === 'profesor' ? teacher : student }) : json(route, { detail: 'Sin sesión' }, 401);
+    if (path === '/auth/me') return authenticated ? json(route, { user: activeUser }) : json(route, { detail: 'Sin sesión' }, 401);
     if (path === '/users/me/authorization') {
-      const activeUser = role === 'profesor' ? teacher : student;
       return json(route, { profile: activeUser.rol, is_primary_admin: false, custom_role_id: null, custom_role_name: null, role_version: null, auth_version: 1, permissions: activeUser.permissions });
     }
     if (path === '/materias') return json(route, [materia]);
+    if (path === '/herramientas') return json(route, []);
     if (path === '/materias/m1/evaluaciones') return json(route, [evaluation]);
     if (path === '/materias/m1/estudiantes') return json(route, { ...materia, estudiantes: [student] });
     if (path === '/evaluaciones/e1') return json(route, evaluation);
@@ -58,7 +61,7 @@ export async function installMocks(page: Page, role: 'profesor' | 'estudiante', 
   });
 }
 
-export async function login(page: Page, role: 'profesor' | 'estudiante', options: { breakdown?: Record<string, unknown> } = {}) {
+export async function login(page: Page, role: 'profesor' | 'estudiante', options: MockOptions = {}) {
   await installMocks(page, role, options);
   await page.goto('/login');
   await page.getByLabel(/Correo/i).fill(role === 'profesor' ? teacher.email : student.email);

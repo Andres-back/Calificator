@@ -12,6 +12,14 @@ export interface AttendanceDraftRow {
 
 export type AttendanceDraft = Record<string, AttendanceDraftRow>;
 
+export function searchAttendanceRecords(records: AsistenciaDia['registros'], search: string) {
+  const normalize = (value: string) => value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('es').trim();
+  const query = normalize(search);
+  return records.map((student, index) => ({ student, index })).filter(({ student }) =>
+    !query || normalize(`${student.estudiante_nombre} ${student.estudiante_email ?? ''}`).includes(query),
+  );
+}
+
 export function createAttendanceDraft(day: AsistenciaDia): AttendanceDraft {
   return Object.fromEntries(
     day.registros.map((record) => [

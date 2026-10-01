@@ -43,6 +43,16 @@ const evaluations = [
 ] as Evaluacion[];
 
 describe('gradebookModel', () => {
+  it('keeps all students and isolates the selected evaluation including a real zero', () => {
+    const students = Array.from({ length: 30 }, (_, index) => ({ id: `student-${index}`, nombre: `Alumno ${index}`, email: `${index}@example.test` }));
+    const gradesByEvaluation = new Map([['eval-1', [grade({ estudiante_id: 'student-0', evaluacion_id: 'eval-1', estado: 'confirmada', nota_confirmada: 0 })]], ['eval-2', [grade({ estudiante_id: 'student-0', evaluacion_id: 'eval-2', estado: 'confirmada', nota_confirmada: 10 })]]]);
+    const filtered = buildFollowUpRows({ students, evaluations: [evaluations[0]], gradesByEvaluation });
+    expect(filtered).toHaveLength(30);
+    expect(filtered.every((row) => row.cells.length === 1 && row.cells[0].evaluationId === 'eval-1')).toBe(true);
+    expect(filtered.find((row) => row.id === 'student-0')?.cells[0].score).toBe(0);
+    expect(summarizeFollowUp(filtered).teacherDecisions).toBe(1);
+    expect(buildFollowUpRows({ students, evaluations, gradesByEvaluation }).find((row) => row.id === 'student-0')?.averagePercent).toBe(50);
+  });
   it('no cuenta evidencia en proceso como nota cero, faltante ni decisión pendiente', () => {
     const [row] = buildFollowUpRows({
       students: [{ id: 'student-1', nombre: 'Estudiante', email: 'student@example.test' }],

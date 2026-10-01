@@ -105,7 +105,7 @@ const rubricEvaluation: Evaluacion = {
     },
   ],
 };
-function renderWizard(onCompleted = vi.fn(), initialEvaluation: Evaluacion | null = null) {
+function renderWizard(onCompleted = vi.fn(), initialEvaluation: Evaluacion | null = null, subject = materia, contextual = true) {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   });
@@ -117,8 +117,8 @@ function renderWizard(onCompleted = vi.fn(), initialEvaluation: Evaluacion | nul
           open
           onClose={vi.fn()}
           userId="profesor-1"
-          materias={[materia]}
-          initialMateriaId={materia.id}
+          materias={[subject, { ...materia, id: 'other-subject', nombre: 'Otra materia' }]}
+          initialMateriaId={contextual ? subject.id : undefined}
           initialEvaluation={initialEvaluation}
           onCompleted={onCompleted}
         />
@@ -150,6 +150,42 @@ beforeEach(() => {
 });
 
 describe('GenerationWizard', () => {
+  it('inherits fixed subject context and folds optional fields with their saved summary', async () => {
+    const state = { ...createEmptyWizardState(materia.id), nombre: 'Guardada', descripcion: 'Fracciones', fechaLimiteEntrega: '2026-10-10T09:00' };
+    persistWizardDraft(localStorage, 'profesor-1', state);
+    const user = userEvent.setup();
+    renderWizard();
+    await user.click(await screen.findByRole('button', { name: 'Continuar' }));
+    expect(screen.getByText('Grado 7 · Área: Matemáticas')).toBeInTheDocument();
+    expect(screen.queryByRole('combobox')).not.toBeInTheDocument();
+    const options = screen.getByText(/Opciones complementarias/).closest('details');
+    expect(options).not.toHaveAttribute('open');
+    expect(options).toHaveTextContent('Descripción configurada');
+    expect(options).toHaveTextContent('2026-10-10 09:00');
+    await user.click(screen.getByText(/Opciones complementarias/));
+    expect(screen.getByLabelText(/Descripción breve/)).toHaveValue('Fracciones');
+    expect(screen.getByLabelText(/Fecha límite de entrega/)).toHaveValue('2026-10-10T09:00');
+  });
+
+  it('does not restore a different subject draft and keeps it recoverable', async () => {
+    const original = { ...createEmptyWizardState(materia.id), nombre: 'Trabajo en matemáticas' };
+    persistWizardDraft(localStorage, 'profesor-1', original);
+    const other = { ...materia, id: 'materia-B', nombre: 'Español', grado: null, area: null } as unknown as Materia;
+    const current = renderWizard(vi.fn(), null, other);
+    expect(screen.queryByText('Encontramos una evaluación sin terminar.')).not.toBeInTheDocument();
+    expect(screen.getByLabelText(/Nombre de la evaluación/)).toHaveValue('');
+    expect(screen.queryByText(/Grado 7/)).not.toBeInTheDocument();
+    current.unmount();
+    renderWizard();
+    await userEvent.setup().click(await screen.findByRole('button', { name: 'Continuar' }));
+    expect(screen.getByLabelText(/Nombre de la evaluación/)).toHaveValue(original.nombre);
+  });
+
+  it('keeps authorized subject selection in the general creator', () => {
+    renderWizard(vi.fn(), null, materia, false);
+    expect(screen.getByRole('combobox')).toHaveValue(materia.id);
+  });
+
   it('navigates the six accessible steps, reviews a question and confirms the normal evaluation', async () => {
     const user = userEvent.setup();
     const { onCompleted } = renderWizard();

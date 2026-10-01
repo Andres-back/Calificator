@@ -6,9 +6,11 @@ const STEP_LABELS = ['Materia', 'Enfoque', 'Configurar', 'Material', 'Revisar', 
 export function PasosGuia({
   currentStep,
   totalSteps = 6,
+  firstStepLabel = 'Materia',
 }: {
   currentStep: number;
   totalSteps?: number;
+  firstStepLabel?: string;
 }) {
   return (
     <div className="space-y-3">
@@ -27,7 +29,8 @@ export function PasosGuia({
         />
       </div>
       <nav aria-label="Progreso del wizard" className="flex items-center justify-between gap-1">
-        {STEP_LABELS.slice(0, totalSteps).map((label, index) => {
+        {STEP_LABELS.slice(0, totalSteps).map((defaultLabel, index) => {
+          const label = index === 0 ? firstStepLabel : defaultLabel;
           const stepNum = index + 1;
           const completed = stepNum < currentStep;
           const current = stepNum === currentStep;

@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 import { login } from '../fixtures/explainableGrading';
 
 const base = {
@@ -38,6 +38,142 @@ test('prioriza excepciones en móvil sin confirmar ni publicar automáticamente'
   await expect(page).toHaveURL(/pregunta=pregunta%3A2/);
   expect(mutations).toEqual([]);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBeTruthy();
+});
+
+const teacherPermissions = ['subjects.read', 'evaluations.read', 'evaluations.create', 'grading.read', 'grading.grade', 'grading.publish', 'gradebook.read', 'attendance.read', 'attendance.manage'];
+
+async function installGroupViews(page: Page) {
+  const roster = Array.from({ length: 100 }, (_, index) => ({ id: index === 0 ? 's1' : `s${index + 1}`, nombre: index === 0 ? 'Estudiante Prueba' : `Alumno ${index + 1}`, email: `alumno${index + 1}@example.test`, rol: 'estudiante', estado: 'activo' }));
+  const subject = { id: 'm1', profesor_id: 'p1', nombre: 'Matemáticas', area: 'Matemáticas', grado: '4', estado: 'activa', estudiantes: roster.slice(0, 30) };
+  const evaluation = { id: 'e1', materia_id: 'm1', profesor_id: 'p1', nombre: 'Multiplicación', nota_maxima: 5, estado: 'publicada', modalidad: 'online', preguntas: [], criterios: [], dba_ids: [], dba_personalizado_ids: [] };
+  await page.route('**/api/materias/m1/estudiantes', (route) => route.fulfill({ json: subject }));
+  await page.route('**/api/materias/m1/evaluaciones', (route) => route.fulfill({ json: [evaluation, { ...evaluation, id: 'e2', nombre: 'Otra evaluación', estado: 'cerrada' }, { ...evaluation, id: 'e3', nombre: 'Borrador', estado: 'borrador' }] }));
+  await page.route('**/api/evaluaciones/e1/calificaciones', (route) => route.fulfill({ json: [
+    { id: 'c1', evaluacion_id: 'e1', estudiante_id: 's1', nota_confirmada: 5, nota_sugerida: 5, estado: 'publicada', revisado_por_docente: true },
+    { id: 'c2', evaluacion_id: 'e1', estudiante_id: 's2', nota_confirmada: null, nota_sugerida: 0, estado: 'procesando' },
+    { id: 'c3', evaluacion_id: 'e1', estudiante_id: 's3', nota_confirmada: 0, nota_sugerida: 0, estado: 'publicada', revisado_por_docente: true },
+    { id: 'c4', evaluacion_id: 'e1', estudiante_id: 's4', nota_confirmada: null, nota_sugerida: 2.5, estado: 'pendiente' },
+  ] }));
+  await page.route('**/api/evaluaciones/e2/calificaciones', (route) => route.fulfill({ json: [{ id: 'other-grade', evaluacion_id: 'e2', estudiante_id: 's1', nota_confirmada: 1.5, estado: 'publicada', revisado_por_docente: true }] }));
+  await page.route('**/api/materias/m1/asistencia**', async (route) => {
+    const saved = route.request().method() === 'PUT' ? route.request().postDataJSON() : null;
+    await route.fulfill({ json: { materia_id: 'm1', fecha: saved?.fecha ?? new URL(route.request().url()).searchParams.get('fecha'), registros: roster.map((item) => {
+      const record = saved?.registros.find((entry: { estudiante_id: string }) => entry.estudiante_id === item.id);
+      return { estudiante_id: item.id, estudiante_nombre: item.nombre, estudiante_email: item.email, estado: record?.estado ?? null, observacion: record?.observacion ?? null };
+    }), resumen: { total: 100, pendientes: saved ? 0 : 100, presentes: saved ? 99 : 0, tarde: saved ? 1 : 0, ausentes: 0, excusas: 0 } } });
+  });
+  await page.route('**/api/materias/m1/asistencia/reporte?**', (route) => route.fulfill({ json: { materia_id: 'm1', jornadas_registradas: 0, estudiantes: [], jornadas: [], resumen: { total_registros: 0, presentes: 0, tarde: 0, ausentes: 0, excusas: 0, porcentaje_asistencia: 0 } } }));
+}
+
+for (const viewport of [{ width: 360, height: 800 }, { width: 390, height: 844 }, { width: 1366, height: 768 }]) {
+  for (const mode of ['light', 'dark']) {
+    test(`flujo docente progresivo ${viewport.width}px ${mode}`, async ({ page }) => {
+      test.setTimeout(60_000);
+      await page.setViewportSize(viewport);
+      await page.addInitScript((theme) => localStorage.setItem('xc-theme', JSON.stringify({ state: { mode: theme }, version: 0 })), mode);
+      await login(page, 'profesor', { permissions: teacherPermissions });
+      await installGroupViews(page);
+      const writes: string[] = [];
+      page.on('request', (request) => { if (request.method() !== 'GET' && !request.url().includes('/analytics/')) writes.push(request.url()); });
+
+      await page.goto('/app/materias/m1/boletin?evaluacion=e1');
+      const roster = page.getByRole('list', { name: 'Notas de Multiplicación' });
+      await expect(roster.getByRole('listitem')).toHaveCount(30);
+      await expect(roster.getByRole('listitem').filter({ hasText: 'Alumno 2' }).first()).toContainText('Calificando');
+      await expect(page.getByRole('link', { name: 'Ver nota de Alumno 3', exact: true })).toHaveText('0.0 / 5.0');
+      const firstFive = await roster.getByRole('listitem').evaluateAll((rows) => rows[4].getBoundingClientRect().bottom - rows[0].getBoundingClientRect().top);
+      expect(firstFive).toBeLessThanOrEqual(500);
+      await page.getByRole('searchbox', { name: 'Buscar estudiante' }).fill('prueba');
+      await expect(roster.getByRole('listitem')).toHaveCount(1);
+      await page.getByRole('link', { name: 'Ver nota de Estudiante Prueba', exact: true }).click();
+      await expect(page.getByRole('heading', { name: '1. Nota y explicación' })).toBeVisible();
+      const evidence = page.getByRole('button', { name: '2. Evidencia', exact: true });
+      const answers = page.getByRole('button', { name: '3. Respuestas y puntajes', exact: true });
+      await expect(evidence).toHaveAttribute('aria-expanded', 'false');
+      await expect(answers).toHaveAttribute('aria-expanded', 'false');
+      const feedback = page.locator('details').filter({ has: page.locator('summary', { hasText: '4. Retroalimentación' }) });
+      await expect(feedback).not.toHaveAttribute('open');
+      await page.screenshot({ path: `../output/playwright/teacher-flow/grade-${viewport.width}-${mode}.png`, fullPage: true });
+      await evidence.click();
+      await expect(page.locator('#grade-evidence-panel')).toBeVisible();
+      await answers.click();
+      await expect(page.locator('#grade-review-panel')).toBeVisible();
+      await expect(page.locator('#grade-evidence-panel')).toBeHidden();
+      const comparison = page.getByTestId('grade-answer-comparison').first();
+      await expect(comparison).toContainText('Respuesta de referencia');
+      expect((await comparison.boundingBox())!.height).toBeLessThan(180);
+      await feedback.locator('summary').click();
+      await expect(page.getByLabel(/Retroalimentación/).last()).toBeVisible();
+      await page.getByRole('link', { name: 'Volver al libro de notas' }).click();
+      await expect(page.getByRole('searchbox', { name: 'Buscar estudiante' })).toHaveValue('prueba');
+      await expect(page.getByRole('combobox', { name: 'Filtrar por evaluación' })).toHaveValue('e1');
+
+      await page.goto('/app/materias/m1/asistencia');
+      const search = page.getByRole('searchbox', { name: 'Buscar estudiante' });
+      await search.fill('alumno99@');
+      await expect(page.getByText('1 de 100 estudiantes', { exact: true })).toBeVisible({ timeout: 1_000 });
+      await page.getByRole('button', { name: 'Llegó tarde para Alumno 99', exact: true }).click();
+      await page.getByRole('textbox', { name: 'Observación para Alumno 99' }).fill('Con autorización');
+      await search.fill('sin coincidencia');
+      await expect(page.getByText('No hay estudiantes con esa búsqueda.')).toBeVisible();
+      await expect(page.getByRole('button', { name: 'Completa la lista' })).toBeDisabled();
+      await page.getByRole('button', { name: /Marcar pendientes como presentes/ }).click();
+      await search.fill('alumno99@');
+      await expect(page.getByRole('button', { name: 'Llegó tarde para Alumno 99', exact: true })).toHaveAttribute('aria-pressed', 'true');
+      await expect(page.getByRole('textbox', { name: 'Observación para Alumno 99' })).toHaveValue('Con autorización');
+      await page.getByRole('button', { name: 'Guardar asistencia' }).scrollIntoViewIfNeeded();
+      await expect(page.getByRole('button', { name: 'Guardar asistencia' })).toBeInViewport();
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBeTruthy();
+      const searchBounds = await search.boundingBox();
+      expect(searchBounds!.height).toBeGreaterThanOrEqual(44);
+      await page.screenshot({ path: `../output/playwright/teacher-flow/attendance-${viewport.width}-${mode}.png`, fullPage: true });
+      expect(writes).toEqual([]);
+      if (viewport.width === 360 && mode === 'light') {
+        const request = page.waitForRequest((item) => item.method() === 'PUT' && item.url().includes('/materias/m1/asistencia'));
+        await page.getByRole('button', { name: 'Guardar asistencia' }).click();
+        const payload = (await request).postDataJSON();
+        expect(payload.registros).toHaveLength(100);
+        expect(payload.registros.find((item: { estudiante_id: string }) => item.estudiante_id === 's99')).toMatchObject({ estado: 'tarde', observacion: 'Con autorización' });
+        await expect(page.getByRole('button', { name: 'Asistencia guardada', exact: true })).toBeDisabled();
+      }
+    });
+  }
+}
+
+test('abre enlaces a pregunta y hoja y protege el ajuste sin guardar', async ({ page }) => {
+  await login(page, 'profesor');
+  await page.goto('/app/calificaciones/workspace/e1?calificacion=c1&pregunta=pregunta%3A1');
+  await expect(page.getByRole('button', { name: '3. Respuestas y puntajes' })).toHaveAttribute('aria-expanded', 'true');
+  await page.getByRole('button', { name: 'Ajustar puntaje y explicación' }).click();
+  await page.getByLabel(/Puntos \(máximo/).fill('0.7');
+  await page.getByLabel(/Motivo interno del cambio/).fill('Revisión parcial');
+  await page.getByRole('button', { name: '2. Evidencia', exact: true }).click();
+  await expect(page.getByLabel(/Puntos \(máximo/)).toHaveValue('0.7');
+  await page.getByRole('button', { name: 'Volver a notas del grupo', exact: true }).click();
+  await expect(page.getByRole('dialog', { name: 'Cambios sin guardar' })).toBeVisible();
+  await page.getByRole('button', { name: 'Seguir editando', exact: true }).click();
+  await expect(page.getByLabel(/Puntos \(máximo/)).toHaveValue('0.7');
+  await page.getByRole('button', { name: 'Volver a notas del grupo', exact: true }).click();
+  await page.getByRole('button', { name: 'Descartar y continuar', exact: true }).click();
+  await page.goto('/app/calificaciones/workspace/e1?calificacion=c1&hoja=1');
+  await expect(page.getByRole('button', { name: '2. Evidencia', exact: true })).toHaveAttribute('aria-expanded', 'true');
+});
+
+test('crea desde una materia sin repetir el contexto y permite abrir opciones', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await login(page, 'profesor', { permissions: teacherPermissions });
+  await installGroupViews(page);
+  await page.goto('/app/materias/m1/evaluaciones');
+  await page.getByRole('button', { name: 'Crear paso a paso', exact: true }).click();
+  const dialog = page.getByRole('dialog', { name: 'Generar evaluación con IA' });
+  await expect(dialog.getByText('Grado 4 · Área: Matemáticas')).toBeVisible();
+  await expect(dialog.getByRole('combobox')).toHaveCount(0);
+  await dialog.getByLabel(/Nombre de la evaluación/).fill('Unidad del aula');
+  await dialog.locator('summary', { hasText: 'Opciones complementarias' }).click();
+  await dialog.getByLabel(/Descripción breve/).fill('Multiplicación');
+  await dialog.getByRole('button', { name: 'Siguiente' }).click();
+  await expect(dialog.getByText('Elige cómo orientar la evaluación')).toBeVisible();
+  expect(await dialog.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBeTruthy();
 });
 
 test('busca y selecciona estudiantes con fluidez en móvil', async ({ page }) => {

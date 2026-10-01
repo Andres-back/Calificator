@@ -356,7 +356,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "939b681f012f0e72136ff07dd92216a6dc3714d3ce411547b1acf97657b76268",
+  "source_digest": "e0b23bfa71b25f4dda50e7b718aaad0014a05cbee6d929b1e40879dc095f4ded",
   "surfaces": [
     {
       "actors": [
@@ -721,6 +721,12 @@
           "reference": "DELETE:/evaluaciones/{evaluacion_id}",
           "status": "direct",
           "test_path": "frontend/src/modules/herramientas/api.lifecycle.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "DELETE:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/materias/MateriaBoletin.test.tsx"
         },
         {
           "level": "unit",
@@ -3792,6 +3798,12 @@
           "level": "unit",
           "reference": "GET:/evaluaciones/{evaluacion_id}",
           "status": "direct",
+          "test_path": "frontend/src/modules/materias/MateriaBoletin.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
           "test_path": "frontend/src/modules/materias/MateriaDetailPage.test.tsx"
         },
         {
@@ -5231,6 +5243,12 @@
           "level": "unit",
           "reference": "GET:/materias",
           "status": "direct",
+          "test_path": "frontend/src/config/studentNavigation.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias",
+          "status": "direct",
           "test_path": "frontend/src/lib/analytics.test.ts"
         },
         {
@@ -5421,6 +5439,12 @@
           "reference": "GET:/materias/{materia_id}",
           "status": "direct",
           "test_path": "frontend/src/components/ui/P2Accessibility.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias/{materia_id}",
+          "status": "direct",
+          "test_path": "frontend/src/config/studentNavigation.test.ts"
         },
         {
           "level": "unit",
@@ -7817,6 +7841,12 @@
           "level": "unit",
           "reference": "PATCH:/evaluaciones/{evaluacion_id}",
           "status": "direct",
+          "test_path": "frontend/src/modules/materias/MateriaBoletin.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
           "test_path": "frontend/src/modules/materias/MateriaDetailPage.test.tsx"
         },
         {
@@ -8341,6 +8371,12 @@
           "reference": "PATCH:/materias/{materia_id}",
           "status": "direct",
           "test_path": "frontend/src/components/ui/P2Accessibility.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/materias/{materia_id}",
+          "status": "direct",
+          "test_path": "frontend/src/config/studentNavigation.test.ts"
         },
         {
           "level": "unit",
@@ -11015,6 +11051,12 @@
           "level": "unit",
           "reference": "POST:/evaluaciones",
           "status": "direct",
+          "test_path": "frontend/src/modules/materias/MateriaBoletin.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/evaluaciones",
+          "status": "direct",
           "test_path": "frontend/src/modules/materias/MateriaDetailPage.test.tsx"
         },
         {
@@ -13019,6 +13061,12 @@
           "reference": "POST:/materias",
           "status": "direct",
           "test_path": "frontend/src/components/ui/P2Accessibility.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/materias",
+          "status": "direct",
+          "test_path": "frontend/src/config/studentNavigation.test.ts"
         },
         {
           "level": "unit",
@@ -15271,6 +15319,12 @@
           "level": "unit",
           "reference": "/",
           "status": "direct",
+          "test_path": "frontend/src/modules/materias/MateriaBoletin.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
           "test_path": "frontend/src/modules/materias/MateriaCalificar.test.tsx"
         },
         {
@@ -16655,6 +16709,12 @@
           "level": "unit",
           "reference": "/app/calificaciones",
           "status": "direct",
+          "test_path": "frontend/src/config/studentNavigation.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/calificaciones",
+          "status": "direct",
           "test_path": "frontend/src/lib/analytics.test.ts"
         },
         {
@@ -17693,6 +17753,12 @@
           "level": "e2e",
           "reference": "/app/materias",
           "status": "direct",
+          "test_path": "frontend/e2e/mock/grading-review.mock.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app/materias",
+          "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
         },
         {
@@ -17730,6 +17796,12 @@
           "reference": "/app/materias",
           "status": "direct",
           "test_path": "frontend/src/components/ui/P2Accessibility.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/materias",
+          "status": "direct",
+          "test_path": "frontend/src/config/studentNavigation.test.ts"
         },
         {
           "level": "unit",
@@ -17878,6 +17950,12 @@
           "level": "e2e",
           "reference": "/app/materias/{id}",
           "status": "direct",
+          "test_path": "frontend/e2e/mock/grading-review.mock.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app/materias/{id}",
+          "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
         },
         {
@@ -17915,6 +17993,12 @@
           "reference": "/app/materias/{id}",
           "status": "direct",
           "test_path": "frontend/src/components/ui/P2Accessibility.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/materias/{id}",
+          "status": "direct",
+          "test_path": "frontend/src/config/studentNavigation.test.ts"
         },
         {
           "level": "unit",
@@ -20493,6 +20577,12 @@
           "reference": "DELETE:/evaluaciones/{id}",
           "status": "direct",
           "test_path": "frontend/src/modules/herramientas/api.lifecycle.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "DELETE:/evaluaciones/{id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/materias/MateriaBoletin.test.tsx"
         },
         {
           "level": "unit",
@@ -23795,6 +23885,12 @@
           "level": "unit",
           "reference": "GET:/evaluaciones/{id}",
           "status": "direct",
+          "test_path": "frontend/src/modules/materias/MateriaBoletin.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/{id}",
+          "status": "direct",
           "test_path": "frontend/src/modules/materias/MateriaDetailPage.test.tsx"
         },
         {
@@ -24625,6 +24721,12 @@
           "level": "unit",
           "reference": "GET:/materias/{id}",
           "status": "direct",
+          "test_path": "frontend/src/config/studentNavigation.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias/{id}",
+          "status": "direct",
           "test_path": "frontend/src/lib/analytics.test.ts"
         },
         {
@@ -25082,6 +25184,12 @@
           "reference": "GET:/materias",
           "status": "direct",
           "test_path": "frontend/src/components/ui/P2Accessibility.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias",
+          "status": "direct",
+          "test_path": "frontend/src/config/studentNavigation.test.ts"
         },
         {
           "level": "unit",
@@ -26795,6 +26903,12 @@
           "level": "unit",
           "reference": "PATCH:/evaluaciones/{id}",
           "status": "direct",
+          "test_path": "frontend/src/modules/materias/MateriaBoletin.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/evaluaciones/{id}",
+          "status": "direct",
           "test_path": "frontend/src/modules/materias/MateriaDetailPage.test.tsx"
         },
         {
@@ -27181,6 +27295,12 @@
           "reference": "PATCH:/materias/{id}",
           "status": "direct",
           "test_path": "frontend/src/components/ui/P2Accessibility.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/materias/{id}",
+          "status": "direct",
+          "test_path": "frontend/src/config/studentNavigation.test.ts"
         },
         {
           "level": "unit",
@@ -29908,6 +30028,12 @@
           "level": "unit",
           "reference": "POST:/evaluaciones",
           "status": "direct",
+          "test_path": "frontend/src/modules/materias/MateriaBoletin.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/evaluaciones",
+          "status": "direct",
           "test_path": "frontend/src/modules/materias/MateriaDetailPage.test.tsx"
         },
         {
@@ -30636,6 +30762,12 @@
           "reference": "POST:/materias",
           "status": "direct",
           "test_path": "frontend/src/components/ui/P2Accessibility.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/materias",
+          "status": "direct",
+          "test_path": "frontend/src/config/studentNavigation.test.ts"
         },
         {
           "level": "unit",
@@ -34943,6 +35075,12 @@
           "level": "unit",
           "reference": "calificaciones",
           "status": "direct",
+          "test_path": "frontend/src/config/studentNavigation.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "calificaciones",
+          "status": "direct",
           "test_path": "frontend/src/lib/analytics.test.ts"
         },
         {
@@ -34986,6 +35124,12 @@
           "reference": "calificaciones",
           "status": "direct",
           "test_path": "frontend/src/modules/evaluaciones/ResolverEvaluacionPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "calificaciones",
+          "status": "direct",
+          "test_path": "frontend/src/modules/materias/MateriaBoletin.test.tsx"
         },
         {
           "level": "unit",
@@ -35681,6 +35825,12 @@
           "level": "unit",
           "reference": "evaluaciones",
           "status": "direct",
+          "test_path": "frontend/src/config/studentNavigation.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "evaluaciones",
+          "status": "direct",
           "test_path": "frontend/src/lib/analytics.test.ts"
         },
         {
@@ -35712,6 +35862,12 @@
           "reference": "evaluaciones",
           "status": "direct",
           "test_path": "frontend/src/modules/herramientas/api.lifecycle.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "evaluaciones",
+          "status": "direct",
+          "test_path": "frontend/src/modules/materias/MateriaBoletin.test.tsx"
         },
         {
           "level": "unit",

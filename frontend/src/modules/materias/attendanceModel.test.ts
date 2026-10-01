@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   buildAttendancePayload,
   createAttendanceDraft,
+  searchAttendanceRecords,
   isAttendanceDraftDirty,
   localDateIso,
   markPendingPresent,
@@ -39,6 +40,28 @@ const day: AsistenciaDia = {
 };
 
 describe('attendanceModel', () => {
+  it('searches names and email without changing identities or original positions', () => {
+    const records = [...day.registros, { ...day.registros[0], estudiante_id: 'student-3', estudiante_nombre: 'María José', estudiante_email: 'interna-3@example.test' }];
+    expect(searchAttendanceRecords(records, '  MARIA JOSE  ')).toEqual([{ student: records[2], index: 2 }]);
+    expect(searchAttendanceRecords(records, 'INTERNA-3')).toEqual([{ student: records[2], index: 2 }]);
+    expect(searchAttendanceRecords(records, '   ')).toHaveLength(3);
+    expect(searchAttendanceRecords(records, 'sin coincidencias')).toEqual([]);
+  });
+
+  it('filters 100 students quickly while saving still includes hidden students and observations', () => {
+    const records = Array.from({ length: 100 }, (_, index) => ({ ...day.registros[0], estudiante_id: `student-${index}`, estudiante_nombre: `Alumno ${index}`, estado: null, observacion: null }));
+    const draft = createAttendanceDraft({ ...day, registros: records });
+    draft['student-1'] = { estado: 'tarde', observacion: 'Autorización' };
+    const start = performance.now();
+    expect(searchAttendanceRecords(records, 'Alumno 99')).toHaveLength(1);
+    expect(performance.now() - start).toBeLessThan(1000);
+    expect(summarizeAttendanceDraft(draft).pendientes).toBe(99);
+    expect(buildAttendancePayload(day.fecha, draft)).toBeNull();
+    const complete = markPendingPresent(draft);
+    expect(buildAttendancePayload(day.fecha, complete)?.registros).toHaveLength(100);
+    expect(complete['student-1']).toEqual({ estado: 'tarde', observacion: 'Autorización' });
+    expect(searchAttendanceRecords(records, '')).toHaveLength(100);
+  });
   it('keeps saved marks and exposes pending students', () => {
     const draft = createAttendanceDraft(day);
 

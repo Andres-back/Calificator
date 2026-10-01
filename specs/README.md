@@ -221,6 +221,11 @@ actualizar la especificación propietaria, su plan y sus tareas; no debe crear d
 
 ## Inventario técnico global
 
+## Evolución 078: flujo docente contextual y resultados ordenados
+
+- [078-asistencia-libro-notas](078-asistencia-libro-notas/spec.md), [issue #163](https://github.com/Andres-back/Calificator/issues/163): búsqueda de asistencia conservando el grupo completo, notas compactas por evaluación, resultado progresivo y creación que hereda el contexto de la materia.
+- Evoluciona 004/005/008/075 sin cambiar APIs, datos, permisos ni cálculo de notas. Mantiene acceso lateral de respaldo para roles sin recorrido contextual y borradores compatibles aislados por materia. Validación local y sintética en [quickstart](078-asistencia-libro-notas/quickstart.md); fusión y despliegue pendientes de autorización separada.
+
 ## Evolución 077: verificación rápida con Qwen
 
 - [077-qwen-fast-verification](077-qwen-fast-verification/spec.md), [issue #161](https://github.com/Andres-back/Calificator/issues/161): mantiene DeepSeek en extracción/principal y habilita Qwen 3.8 Flash con visión y sin pensamiento extendido en verificación y arbitraje.

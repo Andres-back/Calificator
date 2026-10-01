@@ -247,7 +247,7 @@ test('profesor recorre la materia, califica desde su evaluación y escribe un DB
     await expect(page.locator('main#main-content')).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
     if (tab === 'Evaluaciones') {
-      await page.getByRole('button', { name: 'Calificar', exact: true }).click();
+      await page.getByRole('button', { name: 'Notas y entregas', exact: true }).click();
       await expect(page).toHaveURL(/\/app\/calificaciones\?/);
       const context = new URL(page.url()).searchParams;
       expect(context.get('materia')).toBe('m1');

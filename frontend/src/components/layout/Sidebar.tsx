@@ -1,7 +1,7 @@
 import { NavLink } from 'react-router-dom';
 import { Bot, GraduationCap, ShieldCheck, X } from 'lucide-react';
 import { cn } from '@/lib/cn';
-import { adminNav, estudianteNav, profesorNav } from '@/config/nav';
+import { adminNav, estudianteNav, profesorNav, visibleNavigationItems } from '@/config/nav';
 import { useAuth } from '@/stores/auth';
 import { EducationalIcon } from '@/components/ui';
 import { routes } from '@/config/routes';
@@ -33,9 +33,7 @@ export function Sidebar({
     (item, index, items) => items.findIndex((candidate) => candidate.to === item.to) === index,
   );
   const allowed = new Set(user?.permissions ?? []);
-  const navItems = (user?.custom_role_id ? mixedNav : baseNav).filter(
-    (item) => !item.permission || allowed.has(item.permission),
-  );
+  const navItems = visibleNavigationItems(user?.custom_role_id ? mixedNav : baseNav, allowed);
   const roleMessage = user?.rol === 'admin'
     ? { title: 'IA bajo control', detail: 'Credenciales, modelos y rutas.', icon: ShieldCheck, to: '/app/admin/configuracion-ia', permission: 'admin_ai.manage' }
     : user?.rol === 'estudiante'
