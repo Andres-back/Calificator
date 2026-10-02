@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { readFileSync } from 'node:fs';
 import { login } from '../fixtures/explainableGrading';
 
 const base = {
@@ -117,6 +118,10 @@ for (const viewport of [{ width: 360, height: 800 }, { width: 390, height: 844 }
       await search.fill('sin coincidencia');
       await expect(page.getByText('No hay estudiantes con esa búsqueda.')).toBeVisible();
       await expect(page.getByRole('button', { name: 'Completa la lista' })).toBeDisabled();
+      const attendanceSummary = page.getByLabel('Resumen y guardado de asistencia');
+      await attendanceSummary.locator('summary').click();
+      await expect(attendanceSummary.getByText('Pendientes', { exact: true })).toBeVisible();
+      await attendanceSummary.locator('summary').click();
       await page.getByRole('button', { name: /Marcar pendientes como presentes/ }).click();
       await search.fill('alumno99@');
       await expect(page.getByRole('button', { name: 'Llegó tarde para Alumno 99', exact: true })).toHaveAttribute('aria-pressed', 'true');
@@ -230,4 +235,80 @@ test('busca y selecciona estudiantes con fluidez en móvil', async ({ page }) =>
   await page.setViewportSize({ width: 390, height: 844 });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBeTruthy();
   await page.screenshot({ path: '../output/playwright/mobile-grading/student-search-390x844.png', fullPage: true });
+});
+
+test('captura contextual en cuatro acciones, conserva paquete al refrescar y no publica', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await login(page, 'profesor', { permissions: teacherPermissions });
+  await installGroupViews(page);
+  const evaluation = { id: 'e1', materia_id: 'm1', profesor_id: 'p1', nombre: 'Multiplicación', nota_maxima: 5, estado: 'publicada', modalidad: 'fisica', preguntas: [], criterios: [], dba_ids: [], dba_personalizado_ids: [] };
+  await page.route('**/api/materias/m1/evaluaciones', (route) => route.fulfill({ json: [evaluation] }));
+  await page.route('**/api/evaluaciones/e1', (route) => route.fulfill({ json: evaluation }));
+  let release!: () => void;
+  let failRefresh = false;
+  let refreshing = false;
+  let queries = 0;
+  await page.route('**/api/evaluaciones/e1/calificaciones', async (route) => {
+    queries++;
+    if (refreshing) await new Promise<void>((resolve) => { release = resolve; });
+    await route.fulfill(failRefresh ? { status: 503, json: { detail: 'Refresco no disponible' } } : { json: [] });
+  });
+  let uploads = 0;
+  const writes: string[] = [];
+  const file = { name: 'evidencia.png', mimeType: 'image/png', buffer: readFileSync(new URL('../../public/branding/feature-grade.png', import.meta.url)) };
+  page.on('request', (request) => { if (request.method() !== 'GET' && /confirmar|ajustar|publicar/.test(request.url())) writes.push(request.url()); });
+  await page.route('**/api/calificaciones/foto', async (route) => {
+    uploads++;
+    const raw = route.request().postDataBuffer()!;
+    expect(raw.includes(file.buffer)).toBe(true);
+    expect(raw.toString()).toContain('\r\n\r\ns1\r\n');
+    expect(raw.toString()).toContain('\r\n\r\ne1\r\n');
+    await route.fulfill({ json: { id: 'new-grade', evaluacion_id: 'e1', materia_id: 'm1', estudiante_id: 's1', estado: 'procesando', nota_sugerida: null, nota_confirmada: null, resultado_json: { job_id: 'new-job' } } });
+  });
+  await page.goto('/app/materias/m1/evaluaciones');
+  // 1: abrir captura; 2: elegir identidad; 3: abrir cámara/selector; 4: enviar.
+  await page.getByRole('link', { name: 'Calificar por foto' }).click();
+  await expect(page).toHaveURL(/evaluacion=e1.*materia=m1.*modo=carga/);
+  const candidate = page.getByRole('option', { name: 'Estudiante Prueba', exact: true });
+  expect((await candidate.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+  await candidate.press('Enter');
+  const picker = page.waitForEvent('filechooser');
+  await page.getByRole('button', { name: /Elegir fotos o PDF/ }).click();
+  await (await picker).setFiles(file);
+  const send = page.getByRole('button', { name: 'Enviar a calificar', exact: true });
+  await expect(send).toBeEnabled();
+  await expect(page.getByRole('button', { name: 'Volver a revisión', exact: true }).last()).toBeDisabled();
+  await page.goBack();
+  await expect(page.getByRole('dialog', { name: 'Cambios sin guardar' })).toBeVisible();
+  await page.getByRole('button', { name: 'Seguir editando', exact: true }).click();
+  await expect(page.getByText('evidencia.png', { exact: true })).toBeVisible();
+
+  // Una actualización no puede desmontar ni vaciar el paquete preparado.
+  refreshing = true;
+  await page.evaluate(async (modulePath) => {
+    const { queryClient } = await import(/* @vite-ignore */ modulePath);
+    void queryClient.invalidateQueries({ queryKey: ['calificaciones', 'e1'] });
+  }, '/src/lib/queryClient.ts');
+  await expect.poll(() => queries).toBeGreaterThan(1);
+  await expect(send).toBeDisabled();
+  await expect(page.getByText('evidencia.png', { exact: true })).toBeVisible();
+  failRefresh = true;
+  refreshing = false;
+  release();
+  await expect(page.getByRole('button', { name: 'Reintentar consulta' })).toBeVisible();
+  await expect(page.getByText('evidencia.png', { exact: true })).toBeVisible();
+  await expect(send).toBeDisabled();
+  failRefresh = false;
+  await page.getByRole('button', { name: 'Reintentar consulta' }).click();
+  await expect(send).toBeEnabled();
+
+  await send.click();
+  await expect(page.getByRole('status').filter({ hasText: 'Entrega de Estudiante Prueba guardada' })).toBeVisible();
+  await expect(page.getByRole('combobox', { name: /Buscar estudiante para esta entrega/ })).toHaveValue('');
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  expect(uploads).toBe(1);
+  expect(writes).toEqual([]);
+  await page.getByRole('option', { name: 'Alumno 2', exact: true }).click();
+  await expect(page.getByText('evidencia.png', { exact: true })).toHaveCount(0);
+  await expect(page.getByRole('status').filter({ hasText: 'Entrega de Estudiante Prueba guardada' })).toBeVisible();
 });

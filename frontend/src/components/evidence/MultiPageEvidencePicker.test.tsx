@@ -1,10 +1,14 @@
 import { useState } from 'react';
-import { render, screen, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { MultiPageEvidencePicker } from './MultiPageEvidencePicker';
 import type { EvidencePage } from './evidencePayload';
+
+const analyze = vi.hoisted(() => vi.fn());
+vi.mock('./imageQuality', () => ({ analyzeEvidenceImage: analyze }));
+beforeEach(() => analyze.mockReset().mockResolvedValue(null));
 
 function Harness({ onError = vi.fn(), initialPages = [] }: { onError?: (message: string) => void; initialPages?: EvidencePage[] }) {
   const [pages, setPages] = useState<EvidencePage[]>(initialPages);
@@ -24,6 +28,42 @@ function cameraInput(): HTMLInputElement {
 }
 
 describe('MultiPageEvidencePicker', () => {
+  it('ignores a late file or camera selection after input has been disabled', () => {
+    const onChange = vi.fn();
+    const { rerender } = render(<MultiPageEvidencePicker pages={[]} onChange={onChange} />);
+    const camera = cameraInput();
+    const files = filesInput();
+    rerender(<MultiPageEvidencePicker pages={[]} onChange={onChange} disabled />);
+    const image = new File(['late'], 'late.jpg', { type: 'image/jpeg' });
+    fireEvent.change(camera, { target: { files: [image] } });
+    fireEvent.change(files, { target: { files: [image] } });
+    expect(onChange).not.toHaveBeenCalled();
+    expect(analyze).not.toHaveBeenCalled();
+  });
+
+  it('does not emit an old analysis after the capture was cleared', async () => {
+    let finish!: (result: null) => void;
+    analyze.mockReturnValue(new Promise<null>((resolve) => { finish = resolve; }));
+    const onChange = vi.fn();
+    const { rerender } = render(<MultiPageEvidencePicker pages={[]} onChange={onChange} />);
+    fireEvent.change(cameraInput(), { target: { files: [new File(['photo'], 'photo.jpg', { type: 'image/jpeg' })] } });
+    const added = onChange.mock.calls[0][0] as EvidencePage[];
+    rerender(<MultiPageEvidencePicker pages={added} onChange={onChange} />);
+    rerender(<MultiPageEvidencePicker pages={[]} onChange={onChange} />);
+    await act(async () => finish(null));
+    expect(onChange).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not emit pending analysis after unmounting', async () => {
+    let finish!: (result: null) => void;
+    analyze.mockReturnValue(new Promise<null>((resolve) => { finish = resolve; }));
+    const onChange = vi.fn();
+    const { unmount } = render(<MultiPageEvidencePicker pages={[]} onChange={onChange} />);
+    fireEvent.change(cameraInput(), { target: { files: [new File(['photo'], 'photo.jpg', { type: 'image/jpeg' })] } });
+    unmount();
+    await act(async () => finish(null));
+    expect(onChange).toHaveBeenCalledTimes(1);
+  });
   it('adds, orders, rotates and removes several photos', async () => {
     const user = userEvent.setup();
     render(<Harness />);

@@ -224,7 +224,12 @@ actualizar la especificación propietaria, su plan y sus tareas; no debe crear d
 ## Evolución 078: flujo docente contextual y resultados ordenados
 
 - [078-asistencia-libro-notas](078-asistencia-libro-notas/spec.md), [issue #163](https://github.com/Andres-back/Calificator/issues/163): búsqueda de asistencia conservando el grupo completo, notas compactas por evaluación, resultado progresivo y creación que hereda el contexto de la materia.
-- Evoluciona 004/005/008/075 sin cambiar APIs, datos, permisos ni cálculo de notas. Mantiene acceso lateral de respaldo para roles sin recorrido contextual y borradores compatibles aislados por materia. Validación local y sintética en [quickstart](078-asistencia-libro-notas/quickstart.md); fusión y despliegue pendientes de autorización separada.
+- Evoluciona 004/005/008/075 sin cambiar APIs, datos, permisos ni cálculo de notas. Mantiene acceso lateral de respaldo para roles sin recorrido contextual y borradores compatibles aislados por materia. Fusionada en PR #164 y desplegada; validación local/sintética y productiva de lectura en [quickstart](078-asistencia-libro-notas/quickstart.md).
+
+## Evolución 079: asistencia sin superposición y captura directa
+
+- [079-captura-docente-directa](079-captura-docente-directa/spec.md), [issue #165](https://github.com/Andres-back/Calificator/issues/165): resumen de asistencia en flujo normal en todas las anchuras, ayuda/desglose plegados y captura contextual en cuatro acciones sin confirmación repetida.
+- Evoluciona la interfaz docente de 078 y los módulos responsables 004/005/008; estos conservan sus entidades, endpoints y rutas. Sin nuevas APIs, tablas, permisos, dependencias o cálculos. [Validación](079-captura-docente-directa/quickstart.md) con datos sintéticos; fusión y producción requieren autorización separada.
 
 ## Evolución 077: verificación rápida con Qwen
 

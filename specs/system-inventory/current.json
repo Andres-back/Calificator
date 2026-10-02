@@ -356,7 +356,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "e0b23bfa71b25f4dda50e7b718aaad0014a05cbee6d929b1e40879dc095f4ded",
+  "source_digest": "c6d834807ba677c30a94ed077292a3ef802c421bccf5df5bd5729f19efb76ed0",
   "surfaces": [
     {
       "actors": [
@@ -10102,6 +10102,12 @@
           "reference": "POST:/calificaciones/foto",
           "status": "direct",
           "test_path": "frontend/e2e/explainable-grading.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/calificaciones/foto",
+          "status": "direct",
+          "test_path": "frontend/e2e/mock/grading-review.mock.spec.ts"
         },
         {
           "level": "unit",
@@ -28973,6 +28979,12 @@
           "reference": "POST:/calificaciones/foto",
           "status": "direct",
           "test_path": "frontend/e2e/explainable-grading.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/calificaciones/foto",
+          "status": "direct",
+          "test_path": "frontend/e2e/mock/grading-review.mock.spec.ts"
         },
         {
           "level": "unit",

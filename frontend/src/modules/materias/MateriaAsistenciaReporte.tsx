@@ -280,11 +280,11 @@ export function MateriaAsistenciaReporte({
       <Card className='p-5 sm:p-6'>
         <div className='flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between'>
           <div>
-            <div className='flex items-center gap-3'>
-              <span className='grid h-11 w-11 place-items-center rounded-lg bg-indigo-100 text-indigo-700 dark:bg-indigo-500/15 dark:text-indigo-200'>
+            <div className='flex min-w-0 items-center gap-3'>
+              <span className='grid h-11 w-11 shrink-0 place-items-center rounded-lg bg-indigo-100 text-indigo-700 dark:bg-indigo-500/15 dark:text-indigo-200'>
                 <FileBarChart2 className='h-5 w-5' aria-hidden='true' />
               </span>
-              <div>
+              <div className='min-w-0 break-words'>
                 <p className='text-xs font-bold uppercase tracking-[0.12em] text-muted'>Seguimiento histórico</p>
                 <h2 id='attendance-report-title' className='font-display text-2xl font-extrabold'>
                   Reporte de asistencia
@@ -299,7 +299,7 @@ export function MateriaAsistenciaReporte({
           <CalendarRange className='hidden h-8 w-8 text-muted lg:block' aria-hidden='true' />
         </div>
 
-        <div className='mt-6 grid gap-4 border-t border-border pt-5 md:grid-cols-2 xl:grid-cols-4'>
+        <div className='mt-6 grid grid-cols-1 gap-4 border-t border-border pt-5 md:grid-cols-2 xl:grid-cols-4 [&>label]:min-w-0 [&_input]:min-w-0 [&_select]:min-w-0'>
           <Field label='Tipo de periodo'>
             <Select value={periodType} onChange={(event) => setPeriodType(event.target.value as PeriodType)}>
               <option value='mes'>Mes</option>
@@ -343,7 +343,7 @@ export function MateriaAsistenciaReporte({
           )}
 
           <div className='flex items-end'>
-            <Button type='button' className='w-full' disabled={!rangeResolution.range} loading={reportQuery.isFetching} loadingLabel='Generando…' onClick={generateReport}>
+            <Button type='button' className='min-h-11 h-auto w-full py-2' disabled={!rangeResolution.range} loading={reportQuery.isFetching} loadingLabel='Generando…' onClick={generateReport}>
               <Search className='h-4 w-4' aria-hidden='true' />
               Generar reporte
             </Button>

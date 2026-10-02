@@ -1778,6 +1778,7 @@ function GradingCenter() {
   const [reviewCompleted, setReviewCompleted] = useState(false);
   const [savedStudents, setSavedStudents] = useState<Record<string, string[]>>({});
   const [acceptedUploads, setAcceptedUploads] = useState<Record<string, string[]>>({});
+  const [acceptedUploadNames, setAcceptedUploadNames] = useState<Record<string, string>>({});
   const [discardVersion, setDiscardVersion] = useState(0);
   const [batchResult, setBatchResult] = useState<BatchResult | null>(null);
   const blocker = useBlocker(({ currentLocation, nextLocation }) => {
@@ -2119,15 +2120,20 @@ function GradingCenter() {
           <Button variant="outline" onClick={() => void uploadGradesQuery.refetch()}>Reintentar consulta</Button>
         </Card>
       )}
-      {mode === 'carga' && canGrade && selectedEval && uploadGradesQuery.isSuccess && !uploadGradesQuery.isFetching && <GradingUploadPanel
+      {mode === 'carga' && canGrade && acceptedUploadNames[evalId] && <Card className="mx-4 mb-4 border-emerald-200 p-3 dark:border-emerald-500/30" role="status">
+        <p className="text-sm text-emerald-800 dark:text-emerald-200">Entrega de {acceptedUploadNames[evalId]} guardada y enviada a calificar. Puedes continuar con otro estudiante; ninguna nota se publica automáticamente.</p>
+      </Card>}
+      {mode === 'carga' && canGrade && selectedEval && uploadGradesQuery.data !== undefined && <GradingUploadPanel
         key={`${evalId}-${selectedStudentId ?? ''}-${discardVersion}`}
         evaluationId={evalId} students={uploadStudents} studentId={selectedStudentId ?? ''}
+        evaluationName={selectedEval.nombre} materiaName={selectedMateria?.nombre ?? 'Materia seleccionada'}
+        eligibilityVerified={uploadGradesQuery.isSuccess && !uploadGradesQuery.isFetching}
         onStudentChange={(id) => changeContext({ estudiante: id, calificacion: null, pregunta: null, hoja: null })}
         onDirtyChange={updateDirty}
-        onUploadAccepted={(studentId) => setAcceptedUploads((previous) => ({
-          ...previous,
-          [evalId]: [...new Set([...(previous[evalId] ?? []), studentId])],
-        }))}
+        onUploadAccepted={(studentId, name) => {
+          setAcceptedUploads((previous) => ({ ...previous, [evalId]: [...new Set([...(previous[evalId] ?? []), studentId])] }));
+          setAcceptedUploadNames((previous) => ({ ...previous, [evalId]: name }));
+        }}
       />}
       {directEvaluation.error && <p role="alert" className="p-4 text-rose-600">No se pudo abrir esta evaluación. Comprueba el acceso o selecciona otra.</p>}
       <div className={cn('min-w-0 flex-1 flex-col gap-4 lg:flex-row', mode === 'carga' ? 'hidden' : 'flex')}>
