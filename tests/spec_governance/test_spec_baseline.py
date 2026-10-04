@@ -81,6 +81,7 @@ ALL_SPECS = {
     "077-qwen-fast-verification",
     "078-asistencia-libro-notas",
     "079-captura-docente-directa",
+    "080-evaluaciones-criterios-movil",
 }
 OWNED_SPECS = {
     name
