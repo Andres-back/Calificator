@@ -1,7 +1,7 @@
 import { Check } from 'lucide-react';
 import { cn } from '@/lib/cn';
 
-const STEP_LABELS = ['Materia', 'Enfoque', 'Configurar', 'Material', 'Revisar', 'Confirmar'];
+const STEP_LABELS = ['Materia', 'Criterios', 'Preguntas', 'Material', 'Revisar', 'Confirmar'];
 
 export function PasosGuia({
   currentStep,
@@ -14,7 +14,7 @@ export function PasosGuia({
 }) {
   return (
     <div className="space-y-3">
-      <p className="text-center text-base font-semibold text-fg">Paso {currentStep} de {totalSteps}</p>
+      <p className="text-center text-sm font-semibold text-fg sm:text-base">Paso {currentStep} de {totalSteps}<span className="sm:hidden"> · {currentStep === 1 ? firstStepLabel : STEP_LABELS[currentStep - 1]}</span></p>
       <div
         className="flex h-2 w-full overflow-hidden rounded-full bg-border"
         role="progressbar"
@@ -28,7 +28,7 @@ export function PasosGuia({
           style={{ width: `${(currentStep / totalSteps) * 100}%` }}
         />
       </div>
-      <nav aria-label="Progreso del wizard" className="flex items-center justify-between gap-1">
+      <nav aria-label="Progreso del wizard" className="hidden items-center justify-between gap-1 sm:flex">
         {STEP_LABELS.slice(0, totalSteps).map((defaultLabel, index) => {
           const label = index === 0 ? firstStepLabel : defaultLabel;
           const stepNum = index + 1;

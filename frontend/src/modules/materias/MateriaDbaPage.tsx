@@ -26,6 +26,7 @@ import {
   type DBASuggestionItem,
 } from './dbaApi';
 import { queryClient } from '@/lib/queryClient';
+import { queryKeys } from '@/config/queryKeys';
 import { toApiError } from '@/lib/api';
 import { useAuth } from '@/stores/auth';
 import { useDeleteConfirm } from '@/lib/hooks';
@@ -81,9 +82,9 @@ function DocumentUploader({
         sugerencias: res.sugerencias,
       });
       if (res.sugerencias.length === 0) {
-        toast('No se generaron sugerencias de DBA. Revisa que el documento tenga contenido curricular.');
+        toast('No se generaron criterios de aprendizaje. Revisa que el documento tenga contenido curricular.');
       } else {
-        toast.success(`Se generaron ${res.sugerencias.length} sugerencia(s) de DBA`);
+        toast.success(`Se generaron ${res.sugerencias.length} sugerencias de criterios de aprendizaje`);
       }
     } catch (err) {
       toast.error(toApiError(err).detail);
@@ -99,8 +100,9 @@ function DocumentUploader({
         evidencias_aprendizaje: sug.evidencias_aprendizaje ?? undefined,
         ejemplo: sug.ejemplo ?? undefined,
       });
-      toast.success('DBA creado desde sugerencia');
+      toast.success('Criterio de aprendizaje creado desde sugerencia');
       queryClient.invalidateQueries({ queryKey: ['dba-personalizados', materiaId] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.materias.dbaCombined(materiaId) });
       onDone();
     } catch (err) {
       toast.error(toApiError(err).detail);
@@ -125,12 +127,12 @@ function DocumentUploader({
           <EmptyState
             icon={FileText}
             title="Sin sugerencias"
-            description="El documento no contenía suficiente contenido curricular para generar DBA."
+            description="El documento no contenía suficiente contenido curricular para generar criterios de aprendizaje."
           />
         ) : (
           <div className="space-y-3">
             <p className="text-sm font-semibold text-muted">
-              {result.sugerencias.length} DBA sugerido(s) del documento — revisa antes de crear:
+              {result.sugerencias.length} criterios sugeridos del documento — revisa antes de crear:
             </p>
             {result.sugerencias.map((sug, idx) => (
               <Card key={idx} className="p-4">
@@ -154,7 +156,7 @@ function DocumentUploader({
                 </div>
                 <div className="mt-3 flex gap-2">
                   <Button size="sm" onClick={() => handleCreateSuggestion(sug)}>
-                    <Plus className="h-4 w-4" /> Crear DBA
+                    <Plus className="h-4 w-4" /> Crear criterio
                   </Button>
                 </div>
               </Card>
@@ -182,7 +184,7 @@ function DocumentUploader({
         <Upload className="mb-3 h-10 w-10 text-muted" />
         <p className="text-sm font-semibold">Sube un PDF o Word (.docx)</p>
         <p className="mt-1 text-xs text-muted">
-          El sistema extraerá el texto y generará sugerencias de DBA automáticamente
+          El sistema extraerá el texto y sugerirá criterios de aprendizaje
         </p>
         <input
           ref={fileRef}
@@ -206,7 +208,7 @@ function DocumentUploader({
           <div className="flex gap-2">
             <Button variant="ghost" size="sm" onClick={() => setFile(null)}>Quitar</Button>
             <Button size="sm" onClick={handleUpload} loading={uploading} disabled={uploading}>
-              {uploading ? 'Procesando…' : 'Subir y generar DBA'}
+              {uploading ? 'Procesando…' : 'Subir y generar criterios'}
             </Button>
           </div>
         </div>
@@ -232,13 +234,17 @@ function DbaContent({ materiaId, canManage }: { materiaId: string; canManage: bo
   const { target: confirmDeleteTarget, setTarget: setConfirmDeleteTarget, mutation: remove } = useDeleteConfirm({
     mutationFn: deleteDbaPersonalizado,
     queryKey: ['dba-personalizados', materiaId],
-    successMessage: 'DBA desactivado.',
+    successMessage: 'Criterio de aprendizaje desactivado.',
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: queryKeys.materias.dbaCombined(materiaId) }); },
   });
 
   const { data: materia } = useQuery({ queryKey: ['materia', materiaId], queryFn: () => getMateria(materiaId) });
   const { data, isLoading, isError } = useQuery({ queryKey: ['dba-personalizados', materiaId], queryFn: () => listDbaPersonalizados(materiaId) });
 
-  const invalidate = () => queryClient.invalidateQueries({ queryKey: ['dba-personalizados', materiaId] });
+  const invalidate = () => {
+    queryClient.invalidateQueries({ queryKey: ['dba-personalizados', materiaId] });
+    queryClient.invalidateQueries({ queryKey: queryKeys.materias.dbaCombined(materiaId) });
+  };
 
   const openCreate = () => { setEditing(null); setForm(EMPTY); setOpen(true); };
   const openEdit = (d: DBAPersonalizado) => {
@@ -256,7 +262,7 @@ function DbaContent({ materiaId, canManage }: { materiaId: string; canManage: bo
       };
       return editing ? updateDbaPersonalizado(editing.id, payload) : createDbaPersonalizado(materiaId, payload);
     },
-    onSuccess: () => { invalidate(); toast.success(editing ? 'DBA actualizado' : 'DBA creado'); setOpen(false); },
+    onSuccess: () => { invalidate(); toast.success(editing ? 'Criterio actualizado' : 'Criterio creado'); setOpen(false); },
     onError: (e) => toast.error(toApiError(e).detail),
   });
 
@@ -272,9 +278,9 @@ function DbaContent({ materiaId, canManage }: { materiaId: string; canManage: bo
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0 flex-1">
           <PageHeader
-            title="DBA personalizados"
-            eyebrow="Derechos Básicos de Aprendizaje"
-            subtitle={materia ? `Gestiona los DBA para ${materia.nombre}.` : 'Crea y gestiona DBA personalizados.'}
+            title="Criterios de aprendizaje"
+            eyebrow="Aprendizajes que quieres comprobar"
+            subtitle={materia ? `Define qué deben demostrar los estudiantes de ${materia.nombre}. Podrás elegir estos criterios al crear cada evaluación.` : 'Crea y gestiona los criterios de tu materia.'}
           />
         </div>
         {canManage && <div className="flex shrink-0 flex-wrap items-center gap-2">
@@ -282,7 +288,7 @@ function DbaContent({ materiaId, canManage }: { materiaId: string; canManage: bo
             <Upload className="h-4 w-4" /> {showUploader ? 'Cerrar subida' : 'Subir PDF o Word'}
           </Button>
           <Button onClick={openCreate} disabled={save.isPending}>
-            <Plus className="h-4 w-4" /> Nuevo DBA
+            <Plus className="h-4 w-4" /> Nuevo criterio
           </Button>
         </div>}
       </div>
@@ -302,18 +308,18 @@ function DbaContent({ materiaId, canManage }: { materiaId: string; canManage: bo
         <Card className="flex items-start gap-3 border-rose-200 p-5 dark:border-rose-500/20">
           <AlertTriangle className="mt-0.5 h-5 w-5 text-rose-500" />
           <div>
-            <p className="font-semibold">No se pudieron cargar los DBA</p>
+            <p className="font-semibold">No se pudieron cargar los criterios</p>
             <p className="mt-1 text-sm text-muted">Revisa tu conexión e inténtalo de nuevo.</p>
           </div>
         </Card>
       ) : !data || data.length === 0 ? (
         <EmptyState
           icon={BookMarked}
-          title="Sin DBA personalizados"
-          description={canManage ? 'Crea tu primer DBA manualmente o sube un documento PDF/Word para generarlos automáticamente.' : 'No hay DBA personalizados disponibles para esta materia.'}
+          title="Sin criterios propios todavía"
+          description={canManage ? 'Escribe qué deben aprender tus estudiantes o sube un PDF/Word para obtener sugerencias. Después elige los criterios pertinentes para cada evaluación.' : 'No hay criterios propios disponibles para esta materia.'}
           action={canManage ?
             <div className="flex flex-wrap gap-2">
-              <Button onClick={openCreate}><Plus className="h-4 w-4" /> Nuevo DBA</Button>
+              <Button onClick={openCreate}><Plus className="h-4 w-4" /> Nuevo criterio</Button>
               <Button variant="secondary" onClick={() => setShowUploader(true)}>
                 <Upload className="h-4 w-4" /> Subir documento
               </Button>
@@ -333,10 +339,10 @@ function DbaContent({ materiaId, canManage }: { materiaId: string; canManage: bo
                       {dba.ejemplo && <p className="mt-1 text-sm text-muted"><b>Ejemplo:</b> {dba.ejemplo}</p>}
                     </div>
                     {canManage && <div className="flex shrink-0 gap-1">
-                      <Button size="icon" variant="ghost" onClick={() => openEdit(dba)} aria-label={`Editar DBA ${dba.enunciado}`} title="Editar">
+                      <Button size="icon" variant="ghost" onClick={() => openEdit(dba)} aria-label={`Editar criterio ${dba.enunciado}`} title="Editar">
                         <Pencil className="h-4 w-4" />
                       </Button>
-                      <Button size="icon" variant="ghost" onClick={() => setConfirmDeleteTarget({ id: dba.id, title: dba.enunciado })} className="text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10" aria-label={`Eliminar DBA ${dba.enunciado}`} title="Eliminar">
+                      <Button size="icon" variant="ghost" onClick={() => setConfirmDeleteTarget({ id: dba.id, title: dba.enunciado })} className="text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10" aria-label={`Eliminar criterio ${dba.enunciado}`} title="Eliminar">
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>}
@@ -349,9 +355,9 @@ function DbaContent({ materiaId, canManage }: { materiaId: string; canManage: bo
       )}
 
       {/* Modal crear/editar */}
-      {canManage && <Modal open={open} onClose={() => setOpen(false)} title={editing ? 'Editar DBA' : 'Nuevo DBA'}>
+      {canManage && <Modal open={open} onClose={() => setOpen(false)} title={editing ? 'Editar criterio de aprendizaje' : 'Nuevo criterio de aprendizaje'}>
         <div className="space-y-4">
-          <Field label="Enunciado" required hint="Describe el derecho básico de aprendizaje. Mínimo 10 caracteres.">
+          <Field label="Enunciado" required hint="Describe qué debe demostrar el estudiante. Mínimo 10 caracteres.">
             <Textarea
               value={form.enunciado}
               onChange={(event) => {
@@ -363,7 +369,7 @@ function DbaContent({ materiaId, canManage }: { materiaId: string; canManage: bo
               aria-invalid={Boolean(form.enunciado && !valid)}
             />
           </Field>
-          <Field label="Evidencias de aprendizaje" hint="Opcional. Indicadores observables de que el estudiante alcanzó el DBA.">
+          <Field label="Evidencias de aprendizaje" hint="Opcional. ¿Cómo reconocerás que el estudiante logró este aprendizaje?">
             <Textarea
               value={form.evidencias_aprendizaje}
               onChange={(event) => {
@@ -374,7 +380,7 @@ function DbaContent({ materiaId, canManage }: { materiaId: string; canManage: bo
               rows={2}
             />
           </Field>
-          <Field label="Ejemplo" hint="Opcional. Situación o caso concreto que ilustra el DBA.">
+          <Field label="Ejemplo" hint="Opcional. Situación o caso concreto que demuestra el aprendizaje.">
             <Textarea
               value={form.ejemplo}
               onChange={(event) => {
@@ -388,7 +394,7 @@ function DbaContent({ materiaId, canManage }: { materiaId: string; canManage: bo
           <div className="flex justify-end gap-3">
             <Button variant="ghost" onClick={() => setOpen(false)}>Cancelar</Button>
             <Button onClick={() => save.mutate()} disabled={!valid || save.isPending} loading={save.isPending}>
-              {editing ? 'Actualizar' : 'Crear DBA'}
+              {editing ? 'Actualizar' : 'Crear criterio'}
             </Button>
           </div>
         </div>
@@ -398,8 +404,8 @@ function DbaContent({ materiaId, canManage }: { materiaId: string; canManage: bo
         open={Boolean(confirmDeleteTarget)}
         onClose={() => setConfirmDeleteTarget(null)}
         onConfirm={() => remove.mutate()}
-        title="Desactivar DBA"
-        description="El DBA se desactivará y ya no estará disponible para nuevas evaluaciones. Las evaluaciones existentes no se ven afectadas."
+        title="Desactivar criterio de aprendizaje"
+        description="El criterio no estará disponible para nuevas evaluaciones. Las evaluaciones existentes no se modifican."
         confirmLabel="Desactivar"
         tone="danger"
         loading={remove.isPending}

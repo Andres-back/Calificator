@@ -257,12 +257,12 @@ test('profesor recorre la materia, califica desde su evaluación y escribe un DB
     }
   }
 
-  await page.getByRole('button', { name: 'Nuevo DBA' }).first().click();
+  await page.getByRole('button', { name: 'Nuevo criterio', exact: true }).first().click();
   await page.getByPlaceholder(/Comprende la relación/i).pressSequentially('Comprende y compara fracciones equivalentes.');
   await page.getByPlaceholder(/Identifica factores/i).fill('Explica el procedimiento con un ejemplo.');
   await page.getByPlaceholder(/Al visitar un humedal/i).fill('Representa un medio y dos cuartos.');
-  await expect(page.getByRole('button', { name: 'Crear DBA', exact: true })).toBeEnabled();
-  const createButton = page.getByRole('button', { name: 'Crear DBA', exact: true });
+  await expect(page.getByRole('button', { name: 'Crear criterio', exact: true })).toBeEnabled();
+  const createButton = page.getByRole('button', { name: 'Crear criterio', exact: true });
   if (browserName === 'webkit') {
     // WebKit observa el cierre inmediato del modal como un detach durante click();
     // dispatchEvent valida el mismo manejador sin el falso requisito de estabilidad visual.

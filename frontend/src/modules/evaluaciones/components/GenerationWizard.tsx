@@ -310,7 +310,7 @@ function XaliPanel({
     `Materia: ${materiaNombre || 'sin seleccionar'}`,
     `Paso: ${state.step} de 6`,
     `Enfoque: ${[
-      state.useDba ? `${state.dbaIds.length + state.dbaPersonalizadoIds.length} DBA` : '',
+      state.useDba ? `${state.dbaIds.length + state.dbaPersonalizadoIds.length} criterios de aprendizaje` : '',
       state.useRubric ? `rúbrica (${state.rubricCriteria.length || 'criterios sugeridos por IA'})` : '',
     ].filter(Boolean).join(' + ') || 'tema e instrucciones del docente'}`,
     `Tipos: ${selectedQuestionTypes(state.counts).map((type) => TYPE_COPY[type].label).join(', ') || 'sin configurar'}`,
@@ -333,7 +333,7 @@ function XaliPanel({
     <aside className="rounded-2xl border-2 border-violet-200 bg-violet-50/60 p-4 dark:border-violet-500/30 dark:bg-violet-500/10" aria-label="Asistencia opcional de Xali">
       <button type="button" onClick={() => setExpanded((value) => !value)} className="focus-ring flex min-h-12 w-full items-center gap-3 rounded-xl text-left" aria-expanded={expanded}>
         <span className="grid h-10 w-10 place-items-center rounded-full bg-violet-600 text-white"><Bot className="h-5 w-5" /></span>
-        <span className="min-w-0 flex-1"><span className="block text-base font-bold">Pregúntale a Xali</span><span className="block text-sm text-muted">Asistencia opcional y separada</span></span>
+        <span className="min-w-0 flex-1"><span className="block text-base font-bold">Pregúntale a Xali</span><span className="text-sm text-muted"><span className="sm:hidden">Ayuda opcional</span><span className="hidden sm:inline">Asistencia opcional y separada</span></span></span>
         {expanded ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
       </button>
       {expanded && (
@@ -383,6 +383,8 @@ export function GenerationWizard({
   const generateLock = useRef(false);
   const confirmLock = useRef(false);
   const referenceInputRef = useRef<HTMLInputElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
+  const generationWarnings = state.generationWarnings ?? [];
   const selectedMateria = availableMaterias.find((materia) => materia.id === state.materiaId);
   const materiaNombre = selectedMateria?.nombre ?? '';
   const fixedContext = Boolean(initialMateriaId || initialEvaluation);
@@ -390,7 +392,7 @@ export function GenerationWizard({
   const dba = useQuery({
     queryKey: queryKeys.materias.dbaCombined(state.materiaId),
     queryFn: () => listDbaCombinado(state.materiaId),
-    enabled: open && Boolean(state.materiaId) && state.useDba,
+    enabled: open && Boolean(state.materiaId),
     retry: false,
   });
 
@@ -401,6 +403,7 @@ export function GenerationWizard({
       setState((current) => ({
         ...current,
         generatedEvaluationId: evaluation.id,
+        generationWarnings: evaluation.blueprint?.reglas_feedback?.trazabilidad?.advertencias ?? [],
         generatedCriteria: normalizeRubricCriteria((evaluation.criterios ?? []) as Record<string, unknown>[]),
         questions: evaluationToEditableQuestions(evaluation),
       }));
@@ -454,6 +457,10 @@ export function GenerationWizard({
   useEffect(() => {
     if (open && canPersist && !initialEvaluation && state.materiaId) persistWizardDraft(localStorage, userId, state);
   }, [canPersist, initialEvaluation, open, state, userId]);
+
+  useEffect(() => {
+    if (contentRef.current) contentRef.current.scrollTop = 0;
+  }, [open, state.step]);
 
   function patch(patchValue: Partial<WizardState>) {
     setState((current) => ({ ...current, ...patchValue }));
@@ -600,25 +607,25 @@ export function GenerationWizard({
         onClose={onClose}
         title=""
         ariaLabel={initialEvaluation ? 'Editar contenido de la evaluación' : 'Generar evaluación con IA'}
-        className={cn(initialEvaluation ? 'max-w-[min(96vw,90rem)]' : 'max-w-6xl', 'p-0 sm:p-0')}
+        className={cn(initialEvaluation ? 'max-w-[min(96vw,90rem)]' : 'max-w-6xl', 'overflow-hidden p-0 sm:p-0')}
         showCloseButton={false}
         closeOnBackdrop={!generate.isPending && !confirm.isPending && !extractReference.isPending}
         closeOnEscape={!generate.isPending && !confirm.isPending && !extractReference.isPending}
       >
-        <div className="flex max-h-[calc(100dvh-2rem)] flex-col [&_button]:min-h-12 [&_button]:min-w-12">
-          <header className="sticky top-0 z-10 border-b border-border bg-surface/95 p-4 backdrop-blur sm:p-5">
+        <div className="flex h-[calc(100dvh-2rem)] max-h-[56rem] flex-col [&_button]:min-h-12 [&_button]:min-w-12">
+          <header className="shrink-0 border-b border-border bg-surface p-3 sm:p-5">
             <div className="flex items-center gap-3">
-              <span className="grid h-12 w-12 place-items-center rounded-xl bg-brand-100 text-brand-700"><Sparkles className="h-6 w-6" /></span>
+              <span className="hidden h-12 w-12 shrink-0 place-items-center rounded-xl bg-brand-100 text-brand-700 sm:grid"><Sparkles className="h-6 w-6" /></span>
               <div className="min-w-0 flex-1">
-                <h2 className="text-xl font-bold">{initialEvaluation ? 'Editar contenido de la evaluación' : 'Crear evaluación paso a paso'}</h2>
-                <p className="text-sm text-muted">{initialEvaluation ? 'Modifica, agrega, ordena o elimina criterios y preguntas antes de guardar.' : 'La IA prepara un borrador; tú revisas y decides.'}</p>
+                <h2 className="text-lg font-bold sm:text-xl">{initialEvaluation ? 'Editar evaluación' : 'Crear evaluación'}</h2>
+                <p className="hidden text-sm text-muted sm:block">{initialEvaluation ? 'Modifica, agrega, ordena o elimina criterios y preguntas antes de guardar.' : 'La IA prepara un borrador; tú revisas y decides.'}</p>
               </div>
               <Button type="button" variant="ghost" size="icon" onClick={onClose} disabled={generate.isPending || confirm.isPending || extractReference.isPending} aria-label="Cerrar wizard"><X className="h-5 w-5" /></Button>
             </div>
-            <div className="mt-4"><PasosGuia currentStep={state.step} firstStepLabel={fixedContext ? 'Evaluación' : 'Materia'} /></div>
+            <div className="mt-2 sm:mt-4"><PasosGuia currentStep={state.step} firstStepLabel={fixedContext ? 'Evaluación' : 'Materia'} /></div>
           </header>
 
-          <div className="overflow-y-auto p-4 sm:p-5">
+          <div ref={contentRef} data-testid="evaluation-wizard-content" className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-3 sm:p-5">
             {restorePrompt ? (
               <div role="alert" className="rounded-2xl border-2 border-amber-300 bg-amber-50 p-4 dark:bg-amber-500/10">
                 <p className="flex items-center gap-2 text-base font-bold text-amber-900 dark:text-amber-100"><AlertTriangle className="h-5 w-5" /> Encontramos una evaluación sin terminar.</p>
@@ -630,8 +637,8 @@ export function GenerationWizard({
                 </div>
               </div>
             ) : (
-              <div className={cn('grid gap-5', !editingQuestions && 'lg:grid-cols-[minmax(0,1fr)_320px]')}>
-                <main className={cn('min-w-0 rounded-2xl border border-border bg-surface-2/50 p-4 sm:p-5', editingQuestions && 'order-2')}>
+              <div className="grid gap-4">
+                <main className={cn('min-w-0 rounded-2xl border border-border bg-surface-2/50 p-3 sm:p-5', editingQuestions && 'order-2')}>
                   {state.step === 1 && (
                     <section aria-labelledby="wizard-step-title" className="space-y-5">
                       <div><h3 id="wizard-step-title" className="text-xl font-bold">Datos básicos de la evaluación</h3><p className="mt-1 text-base text-muted">{fixedContext ? 'Ya estás en tu materia. Escribe qué evaluarás y elige cómo responderá el grupo.' : 'Elige una materia, escribe un nombre y define cómo responderá el grupo.'}</p></div>
@@ -653,9 +660,9 @@ export function GenerationWizard({
                             const Icon = option.icon;
                             const selected = state.modalidad === option.value;
                             return (
-                              <label key={option.value} className={cn('focus-within:ring-2 focus-within:ring-focus flex min-h-32 cursor-pointer gap-3 rounded-xl border-2 p-4', selected ? 'border-brand-500 bg-brand-50 dark:bg-brand-500/10' : 'border-border bg-surface')}>
+                              <label key={option.value} className={cn('focus-within:ring-2 focus-within:ring-focus flex cursor-pointer gap-3 rounded-xl border-2 p-3 sm:min-h-32 sm:p-4', selected ? 'border-brand-500 bg-brand-50 dark:bg-brand-500/10' : 'border-border bg-surface')}>
                                 <input type="radio" name="modalidad" value={option.value} checked={selected} onChange={() => patch({ modalidad: option.value })} className="mt-1 h-5 w-5 shrink-0 accent-brand-600" />
-                                <span><Icon className="h-6 w-6 text-brand-700" aria-hidden="true" /><span className="mt-2 block font-bold">{option.label}</span><span className="mt-1 block text-sm leading-5 text-muted">{option.description}</span></span>
+                                <span><span className="flex items-center gap-2 font-bold"><Icon className="h-5 w-5 text-brand-700" aria-hidden="true" />{option.label}</span><span className="mt-1 block text-sm leading-5 text-muted">{option.description}</span></span>
                               </label>
                             );
                           })}
@@ -680,7 +687,7 @@ export function GenerationWizard({
                     <section aria-labelledby="wizard-step-title" className="space-y-5">
                       <div>
                         <h3 id="wizard-step-title" className="text-xl font-bold">Elige cómo orientar la evaluación</h3>
-                        <p className="mt-1 text-base text-muted">Puedes usar DBA, rúbrica, ambos o continuar sin ninguno. Tú decides.</p>
+                        <p className="mt-1 text-base text-muted">Elige qué aprendizajes comprobarás. La rúbrica es opcional.</p>
                       </div>
 
                       <div className="grid gap-3 sm:grid-cols-2">
@@ -694,7 +701,7 @@ export function GenerationWizard({
                             })}
                             className="mt-1 h-5 w-5 shrink-0 accent-brand-600"
                           />
-                          <span><span className="block text-base font-bold">Alinear con DBA</span><span className="mt-1 block text-sm leading-5 text-muted">Relaciona las preguntas con aprendizajes oficiales o personalizados.</span></span>
+                          <span><span className="block text-base font-bold">Usar criterios de aprendizaje</span><span className="mt-1 block text-sm leading-5 text-muted">Selecciona los de tu materia; solo se evaluarán los elegidos.{dba.data?.length ? ` Hay ${dba.data.length} disponibles.` : ''}</span></span>
                         </label>
                         <label className={cn('focus-within:ring-2 focus-within:ring-focus flex cursor-pointer gap-3 rounded-2xl border-2 p-4', state.useRubric ? 'border-violet-500 bg-violet-50 dark:bg-violet-500/10' : 'border-border bg-surface')}>
                           <input
@@ -715,8 +722,8 @@ export function GenerationWizard({
                       )}
 
                       {state.useDba && (
-                        <div className="space-y-3 rounded-2xl border border-sky-200 bg-surface p-4 dark:border-sky-500/30">
-                          <div><h4 className="font-bold">DBA para esta evaluación</h4><p className="text-sm text-muted">Seleccionados: {state.dbaIds.length + state.dbaPersonalizadoIds.length}</p></div>
+                        <div className="space-y-3 rounded-2xl border border-sky-200 bg-surface p-2 sm:p-4 dark:border-sky-500/30">
+                          <div><h4 className="font-bold">Criterios de esta materia</h4><p className="text-sm text-muted">La IA relacionará cada pregunta con tu selección.</p></div>
                           <DBASelector items={dba.data} selectedOfficial={state.dbaIds} selectedCustom={state.dbaPersonalizadoIds} loading={dba.isLoading} error={dba.isError} onToggle={toggleDba} spacious />
                         </div>
                       )}
@@ -789,8 +796,7 @@ export function GenerationWizard({
                         onChange={(event) => selectReferenceFile(event.target.files?.[0])}
                         aria-label="Seleccionar material de referencia"
                       />
-                      <div className="grid gap-3 sm:grid-cols-3">
-                        <div className="rounded-xl border-2 border-brand-500 bg-brand-50 p-4 dark:bg-brand-500/10"><FileText className="h-7 w-7 text-brand-700" /><p className="mt-2 text-base font-bold">Texto</p><Badge tone="success" className="mt-2">Compatible</Badge></div>
+                      <div className="grid grid-cols-2 gap-3">
                         <button type="button" onClick={() => referenceInputRef.current?.click()} disabled={extractReference.isPending} className="focus-ring rounded-xl border-2 border-border bg-surface p-4 text-left transition hover:border-brand-400 hover:bg-brand-50 disabled:opacity-60 dark:hover:bg-brand-500/10"><FileImage className="h-7 w-7 text-brand-700" /><p className="mt-2 text-base font-bold">Subir imagen</p><p className="mt-1 text-sm text-muted">JPG, PNG o WebP · máximo 10 MB</p></button>
                         <button type="button" onClick={() => referenceInputRef.current?.click()} disabled={extractReference.isPending} className="focus-ring rounded-xl border-2 border-border bg-surface p-4 text-left transition hover:border-brand-400 hover:bg-brand-50 disabled:opacity-60 dark:hover:bg-brand-500/10"><FileText className="h-7 w-7 text-brand-700" /><p className="mt-2 text-base font-bold">Subir PDF</p><p className="mt-1 text-sm text-muted">Digital o escaneado · máximo 10 MB</p></button>
                       </div>
@@ -820,6 +826,7 @@ export function GenerationWizard({
                       </section>
                     ) : (
                       <section aria-labelledby="wizard-step-title" className="space-y-4">
+                        {generationWarnings.length > 0 && <div role="status" className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-950 dark:bg-amber-500/10 dark:text-amber-100">{generationWarnings.join(' ')}</div>}
                         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
                           <div><h3 id="wizard-step-title" className="text-xl font-bold">Revisa y edita la evaluación</h3><p className="mt-1 text-base text-muted">Ajusta la rúbrica y las preguntas antes de confirmar. La IA propone; tú decides.</p></div>
                           <div className="flex flex-wrap items-center gap-2">
@@ -862,7 +869,7 @@ export function GenerationWizard({
                         {[
                           ['Nombre', state.nombre], ['Materia', materiaNombre],
                           ['Enfoque', [
-                            state.useDba ? `${state.dbaIds.length + state.dbaPersonalizadoIds.length} DBA` : '',
+                            state.useDba ? `${state.dbaIds.length + state.dbaPersonalizadoIds.length} criterios de aprendizaje` : '',
                             state.useRubric ? 'Rúbrica' : '',
                           ].filter(Boolean).join(' + ') || 'Generación libre'],
                           ['Criterios', String(state.generatedCriteria.length)],
@@ -875,7 +882,7 @@ export function GenerationWizard({
                     </section>
                   )}
                 </main>
-                <div className={cn(editingQuestions && 'order-1')}>
+                <div className="order-3">
                   <XaliPanel state={state} materiaNombre={materiaNombre} onSuggestion={(suggestion, target) => setXaliConfirmation({ suggestion, target })} />
                 </div>
               </div>
@@ -883,12 +890,14 @@ export function GenerationWizard({
           </div>
 
           {!restorePrompt && (
-            <footer className="sticky bottom-0 z-10 flex flex-col-reverse gap-3 border-t border-border bg-surface/95 p-4 backdrop-blur sm:flex-row sm:items-center sm:justify-between sm:p-5">
-              <Button size="xl" fullWidth variant="outline" onClick={() => patch({ step: Math.max(1, state.step - 1) })} disabled={state.step === 1 || generate.isPending || confirm.isPending} icon={<ArrowLeft className="h-5 w-5" />} className="sm:w-auto">Atrás</Button>
-              <div className="text-center text-sm text-muted" aria-live="polite">{validation ?? 'Paso completo. Puedes continuar.'}</div>
+            <footer className="shrink-0 border-t border-border bg-surface p-3 sm:p-5">
+              {validation && <p className="mb-2 text-center text-xs text-muted sm:text-sm" aria-live="polite">{validation}</p>}
+              <div className="flex items-center justify-between gap-2">
+              <Button variant="outline" onClick={() => patch({ step: Math.max(1, state.step - 1) })} disabled={state.step === 1 || generate.isPending || confirm.isPending || extractReference.isPending} icon={<ArrowLeft className="h-5 w-5" />}>Atrás</Button>
               {state.step === 6
-                ? <Button size="xl" fullWidth onClick={confirmEvaluation} loading={confirm.isPending} disabled={Boolean(validation) || confirm.isPending} icon={<Check className="h-5 w-5" />} className="sm:w-auto">{initialEvaluation ? 'Guardar cambios' : 'Crear evaluación'}</Button>
-                : <Button size="xl" fullWidth onClick={() => { const error = validateStep(state); if (error) toast.error(error); else patch({ step: Math.min(6, state.step + 1) }); }} disabled={Boolean(validation) || generate.isPending} icon={<ArrowRight className="h-5 w-5" />} className="sm:w-auto">Siguiente</Button>}
+                ? <Button onClick={confirmEvaluation} loading={confirm.isPending} disabled={Boolean(validation) || confirm.isPending} icon={<Check className="h-5 w-5" />}>{initialEvaluation ? 'Guardar cambios' : 'Crear evaluación'}</Button>
+                : <Button onClick={() => { const error = validateStep(state); if (error) toast.error(error); else patch({ step: Math.min(6, state.step + 1) }); }} disabled={Boolean(validation) || generate.isPending || extractReference.isPending} icon={<ArrowRight className="h-5 w-5" />}>Siguiente</Button>}
+              </div>
             </footer>
           )}
         </div>

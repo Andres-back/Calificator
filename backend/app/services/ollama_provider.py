@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 from dataclasses import dataclass
 from typing import Any
+from urllib.parse import urlsplit
 
 import httpx
 
@@ -163,8 +164,15 @@ class OllamaEmbeddingProvider:
         transport: httpx.AsyncBaseTransport | None = None,
     ) -> None:
         normalized_url = base_url.rstrip("/")
-        if not normalized_url.startswith(
-            ("http://ollama:", "http://127.0.0.1:", "http://localhost:")
+        address = urlsplit(normalized_url)
+        if (
+            address.scheme != "http"
+            or address.hostname not in {"ollama", "xcalificator_ollama", "127.0.0.1", "localhost"}
+            or address.username is not None
+            or address.password is not None
+            or address.path
+            or address.query
+            or address.fragment
         ):
             raise ValueError(
                 "La dirección del servicio institucional de embeddings no está autorizada"

@@ -77,6 +77,7 @@ export interface WizardState {
   instruccionesAdicionales: string;
   generatedEvaluationId: string | null;
   generatedCriteria: EditableRubricCriterion[];
+  generationWarnings?: string[];
   questions: EditableQuestion[];
 }
 
@@ -112,6 +113,7 @@ export function createEmptyWizardState(materiaId = ''): WizardState {
     instruccionesAdicionales: '',
     generatedEvaluationId: null,
     generatedCriteria: [],
+    generationWarnings: [],
     questions: [],
   };
 }
@@ -135,7 +137,7 @@ export function validateStep(state: WizardState, step = state.step): string | nu
     if (state.nombre.trim().length < 2) return 'Escribe un nombre de al menos 2 caracteres.';
   }
   if (step === 2 && state.useDba && state.dbaIds.length + state.dbaPersonalizadoIds.length === 0) {
-    return 'Seleccionaste alineación con DBA. Elige al menos uno o desactiva esa opción.';
+    return 'Elige al menos un criterio de aprendizaje o desactiva esa opción para continuar sin criterios.';
   }
   if (step === 3) {
     const total = totalQuestionCount(state.counts);
@@ -495,6 +497,7 @@ export function evaluationToWizardState(evaluation: Evaluacion): WizardState {
     counts,
     generatedEvaluationId: evaluation.id,
     generatedCriteria: normalizeRubricCriteria(criteria),
+    generationWarnings: evaluation.blueprint?.reglas_feedback?.trazabilidad?.advertencias ?? [],
     questions,
   };
 }

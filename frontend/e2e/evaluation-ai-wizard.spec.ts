@@ -148,7 +148,7 @@ async function reachReviewStep(page: Page) {
   await page.getByRole('button', { name: 'Generar con IA' }).first().click();
   await page.getByLabel(/Nombre de la evaluación/i).fill('Evaluación IA E2E');
   await page.getByRole('button', { name: 'Siguiente' }).click();
-  await page.getByRole('checkbox', { name: /Alinear con DBA/i }).check();
+  await page.getByRole('checkbox', { name: /Usar criterios de aprendizaje/i }).check();
   await page.getByRole('button', { name: /DBA-1/i }).click();
   await page.getByRole('button', { name: 'Siguiente' }).click();
   await page.getByRole('button', { name: 'Siguiente' }).click();
@@ -219,3 +219,57 @@ test('manual creation remains available and the wizard fits a 390x844 viewport',
   const noHorizontalOverflow = await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth);
   expect(noHorizontalOverflow).toBe(true);
 });
+
+for (const viewport of [{ width: 360, height: 800 }, { width: 390, height: 844 }]) {
+  test(`criterios y creación completos sin superposición en ${viewport.width}px`, async ({ page }, testInfo) => {
+    await page.setViewportSize(viewport);
+    await mockApplication(page);
+    const ownCriterion = { ...dba, id: 'own-criterion', fuente: 'personalizado', codigo: null, descripcion: 'Explica fracciones equivalentes con un ejemplo.' };
+    await page.route('**/api/materias/materia-1/dba', (route) => route.fulfill({
+      json: [ownCriterion, ...Array.from({ length: 20 }, (_, index) => ({ ...dba, id: `official-${index}`, codigo: `Referencia ${index}`, descripcion: `Multiplicaciones del nivel ${index}.` }))],
+    }));
+    let generationPayload: Record<string, unknown> | undefined;
+    await page.route('**/api/evaluaciones/generar-borrador', (route) => {
+      generationPayload = route.request().postDataJSON();
+      return route.fulfill({ status: 201, json: generatedEvaluation() });
+    });
+    await loginAndOpenEvaluations(page);
+    await page.getByRole('button', { name: 'Generar con IA' }).first().click();
+    await page.getByLabel(/Nombre de la evaluación/).fill('Fracciones para revisar');
+    await page.getByRole('button', { name: 'Siguiente' }).click();
+    await page.getByRole('checkbox', { name: /Usar criterios de aprendizaje/ }).check();
+    const search = page.getByRole('searchbox', { name: 'Buscar criterios de aprendizaje' });
+    await search.fill('fracciones');
+    await page.getByRole('button', { name: /Explica fracciones equivalentes/ }).click();
+    await search.fill('multiplicaciones');
+    await expect(page.getByText('1 seleccionados · 20 disponibles en esta búsqueda')).toBeVisible();
+    await search.fill('fracciones');
+    await expect(page.getByRole('button', { name: /Explica fracciones equivalentes/ })).toHaveAttribute('aria-pressed', 'true');
+    const content = page.getByTestId('evaluation-wizard-content');
+    const dialog = page.getByRole('dialog', { name: /Generar evaluación/ });
+    await expect(content).toBeVisible();
+    const layout = await content.evaluate((element) => {
+      const body = element.getBoundingClientRect();
+      const footer = element.parentElement!.querySelector('footer')!.getBoundingClientRect();
+      const header = element.parentElement!.querySelector('header')!.getBoundingClientRect();
+      return { bodyHeight: body.height, overlaps: body.bottom > footer.top + 1 || body.top < header.bottom - 1 };
+    });
+    expect(layout.bodyHeight).toBeGreaterThan(400);
+    expect(layout.overlaps).toBe(false);
+    expect(await dialog.evaluate((element) => element.scrollWidth <= element.clientWidth + 1)).toBe(true);
+    await page.screenshot({ path: testInfo.outputPath('criterios-mobile.png') });
+    await content.evaluate((element) => { element.scrollTop = element.scrollHeight; });
+    await page.getByRole('button', { name: 'Siguiente' }).click();
+    await expect.poll(() => content.evaluate((element) => element.scrollTop)).toBe(0);
+    await page.getByRole('button', { name: 'Siguiente' }).click();
+    await page.getByRole('button', { name: 'Siguiente' }).click();
+    await page.getByRole('button', { name: 'Generar borrador' }).click();
+    await expect(page.getByText('Revisa y edita la evaluación')).toBeVisible();
+    expect(generationPayload).toMatchObject({ dba_ids: [], dba_personalizado_ids: ['own-criterion'] });
+    await page.getByLabel(/Enunciado/).fill('Pregunta revisada desde celular');
+    await page.getByRole('button', { name: 'Siguiente' }).click();
+    await page.getByRole('button', { name: 'Crear evaluación' }).click();
+    await expect(dialog).toBeHidden();
+    await expect(page.getByText('Fracciones para revisar').first()).toBeVisible();
+  });
+}
