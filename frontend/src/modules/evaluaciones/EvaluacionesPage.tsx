@@ -342,7 +342,7 @@ function EvaluationFormModal({
           <p className="mt-1">La IA calificará automáticamente según los criterios que definas. Si no agregas criterios, la calificación será más general.</p>
         </div>
 
-        <Field label="DBA" hint="Opcional. Puedes generar con DBA, con rúbrica, con ambos o sin ninguno.">
+        <Field label="Criterios de aprendizaje" hint="Opcional. Selecciona únicamente los aprendizajes que evaluarás; puedes añadir una rúbrica o continuar sin criterios.">
           <DBASelector
             items={dbaItems}
             selectedOfficial={form.dba_ids}
@@ -362,7 +362,7 @@ function EvaluationFormModal({
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-semibold text-fg">Borrador alineado con IA</p>
                 <p className="mt-1 text-xs text-muted">
-                  Usa el enfoque que elijas: DBA, criterios de rúbrica, ambos o generación libre. Se guarda como borrador para que lo revises.
+                  Usa los criterios de aprendizaje que elijas, una rúbrica o generación libre. Se guarda como borrador para que lo revises.
                 </p>
                 <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-end">
                   <div className="sm:w-48">

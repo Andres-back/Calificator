@@ -231,6 +231,11 @@ actualizar la especificación propietaria, su plan y sus tareas; no debe crear d
 - [079-captura-docente-directa](079-captura-docente-directa/spec.md), [issue #165](https://github.com/Andres-back/Calificator/issues/165): resumen de asistencia en flujo normal en todas las anchuras, ayuda/desglose plegados y captura contextual en cuatro acciones sin confirmación repetida.
 - Evoluciona la interfaz docente de 078 y los módulos responsables 004/005/008; estos conservan sus entidades, endpoints y rutas. Sin nuevas APIs, tablas, permisos, dependencias o cálculos. [Validación](079-captura-docente-directa/quickstart.md) con datos sintéticos; fusión y producción requieren autorización separada.
 
+## Evolución 080: evaluaciones con criterios y creación móvil
+
+- [080-evaluaciones-criterios-movil](080-evaluaciones-criterios-movil/spec.md), [issue #167](https://github.com/Andres-back/Calificator/issues/167): recupera generación ante fallo institucional de embeddings, explicita degradación de referencias y permite buscar/seleccionar criterios con interfaz móvil compacta.
+- Evoluciona 004/005/012; contratos, entidades y evaluaciones existentes permanecen compatibles. Sin nuevas tablas o APIs. [Validación](080-evaluaciones-criterios-movil/quickstart.md).
+
 ## Evolución 077: verificación rápida con Qwen
 
 - [077-qwen-fast-verification](077-qwen-fast-verification/spec.md), [issue #161](https://github.com/Andres-back/Calificator/issues/161): mantiene DeepSeek en extracción/principal y habilita Qwen 3.8 Flash con visión y sin pensamiento extendido en verificación y arbitraje.

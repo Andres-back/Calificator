@@ -8,7 +8,8 @@ from app.services.ollama_provider import OllamaEmbeddingProvider, OllamaProvider
 
 
 @pytest.mark.asyncio
-async def test_internal_ollama_embedding_provider_sends_batch() -> None:
+@pytest.mark.parametrize("base_url", ["http://ollama:11434", "http://xcalificator_ollama:11434", "http://localhost:11434", "http://127.0.0.1:11434"])
+async def test_internal_ollama_embedding_provider_sends_batch(base_url) -> None:
     async def handler(request: httpx.Request) -> httpx.Response:
         assert request.url.path == "/api/embed"
         payload = __import__("json").loads(request.content)
@@ -21,7 +22,7 @@ async def test_internal_ollama_embedding_provider_sends_batch() -> None:
         return httpx.Response(200, json={"embeddings": [[0.1, 0.2], [0.3, 0.4]]})
 
     provider = OllamaEmbeddingProvider(
-        base_url="http://ollama:11434",
+        base_url=base_url,
         transport=httpx.MockTransport(handler),
     )
     result = await provider.embed(
@@ -30,6 +31,16 @@ async def test_internal_ollama_embedding_provider_sends_batch() -> None:
     )
 
     assert result == [[0.1, 0.2], [0.3, 0.4]]
+
+
+@pytest.mark.parametrize("base_url", [
+    "http://ollama:11434@evil.example", "http://xcalificator_ollama.evil.example:11434",
+    "https://ollama:11434", "http://ollama:11434/private", "http://ollama:11434?target=evil",
+    "http://ollama:11434#fragment", "http://user:password@localhost:11434",
+])
+def test_embedding_provider_rejects_untrusted_addresses(base_url) -> None:
+    with pytest.raises(ValueError, match="no está autorizada"):
+        OllamaEmbeddingProvider(base_url=base_url)
 
 
 @pytest.mark.asyncio

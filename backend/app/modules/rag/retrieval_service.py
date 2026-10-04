@@ -23,6 +23,8 @@ async def search_chunks(
     profesor_id: UUID | None = None,
     tipo: str | None = None,
     limit: int = 8,
+    *,
+    exclude_types: tuple[str, ...] = (),
 ) -> list[dict]:
     """Devuelve solo fragmentos del mismo proveedor, modelo, dimensión y versión."""
     embedded = await embed_single_with_metadata(query, db=db, teacher_id=profesor_id)
@@ -58,6 +60,9 @@ async def search_chunks(
     if tipo:
         filters.append("c.tipo = :tipo")
         params["tipo"] = tipo
+    for index, excluded_type in enumerate(exclude_types):
+        filters.append(f"c.tipo <> :excluded_type_{index}")
+        params[f"excluded_type_{index}"] = excluded_type
     where_sql = "WHERE " + " AND ".join(filters)
 
     try:

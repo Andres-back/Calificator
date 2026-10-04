@@ -118,9 +118,16 @@ async def build_context_for_evaluation_creation(
     dba_texto: str,
     metas: list[str],
     limit: int = 8,
+    *,
+    profesor_id: UUID | None = None,
 ) -> list[dict]:
-    query = f"Crear evaluación. DBA: {dba_texto}. Metas: {', '.join(metas)}"
-    return await search_chunks(db, query, materia_id=materia_id, limit=limit)
+    query = f"Crear evaluación. Criterios seleccionados: {dba_texto}. Metas: {', '.join(metas)}"
+    # Los criterios seleccionados ya se incluyen directamente en el prompt.
+    # El catálogo no enlaza sus chunks a esos IDs: no incorporar otros criterios.
+    return await search_chunks(
+        db, query, materia_id=materia_id, profesor_id=profesor_id,
+        limit=limit, exclude_types=("dba",),
+    )
 
 
 async def build_context_for_xali(

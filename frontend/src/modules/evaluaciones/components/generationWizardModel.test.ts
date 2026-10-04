@@ -52,7 +52,7 @@ describe('generation wizard model', () => {
     expect(validateStep(state, 2)).toBeNull();
 
     state.useDba = true;
-    expect(validateStep(state, 2)).toMatch(/DBA/i);
+    expect(validateStep(state, 2)).toMatch(/criterio de aprendizaje/i);
     state.dbaIds = ['dba-1'];
     state.counts = { opcion_multiple: 31, abierta: 0, verdadero_falso: 0, completar: 0 };
     expect(validateStep(state, 3)).toMatch(/entre 3 y 30/i);

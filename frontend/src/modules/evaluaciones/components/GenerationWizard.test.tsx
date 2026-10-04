@@ -150,6 +150,29 @@ beforeEach(() => {
 });
 
 describe('GenerationWizard', () => {
+  it('searches without losing selection, sends only chosen criteria and shows degraded RAG warning', async () => {
+    mocks.listDba.mockResolvedValue([
+      { id: 'own-1', fuente: 'personalizado', codigo: null, descripcion: 'Interpreta fracciones equivalentes.', area: 'Matemáticas', grado: '7' },
+      { id: 'own-2', fuente: 'personalizado', codigo: null, descripcion: 'Resuelve multiplicaciones.', area: 'Matemáticas', grado: '7' },
+    ]);
+    const warning = 'No se pudieron consultar las referencias guardadas.';
+    mocks.generate.mockResolvedValue({ ...evaluation, blueprint: { reglas_feedback: { trazabilidad: { rag_estado: 'no_disponible', advertencias: [warning] } } } });
+    const user = userEvent.setup();
+    renderWizard();
+    await user.type(screen.getByLabelText(/Nombre de la evaluación/), 'Prueba de fracciones');
+    await user.click(screen.getByRole('button', { name: 'Siguiente' }));
+    await user.click(screen.getByRole('checkbox', { name: /Usar criterios de aprendizaje/ }));
+    await user.click(await screen.findByRole('button', { name: /Interpreta fracciones/ }));
+    await user.type(screen.getByRole('searchbox', { name: 'Buscar criterios de aprendizaje' }), 'multiplica');
+    expect(screen.queryByRole('button', { name: /Interpreta fracciones/ })).not.toBeInTheDocument();
+    expect(screen.getByRole('status')).toHaveTextContent('1 seleccionados');
+    await user.clear(screen.getByRole('searchbox', { name: 'Buscar criterios de aprendizaje' }));
+    expect(screen.getByRole('button', { name: /Interpreta fracciones/ })).toHaveAttribute('aria-pressed', 'true');
+    for (let step = 0; step < 3; step++) await user.click(screen.getByRole('button', { name: 'Siguiente' }));
+    await user.click(screen.getByRole('button', { name: 'Generar borrador' }));
+    await waitFor(() => expect(mocks.generate).toHaveBeenCalledWith(expect.objectContaining({ dba_ids: [], dba_personalizado_ids: ['own-1'] })));
+    expect(await screen.findByText(warning)).toBeInTheDocument();
+  });
   it('inherits fixed subject context and folds optional fields with their saved summary', async () => {
     const state = { ...createEmptyWizardState(materia.id), nombre: 'Guardada', descripcion: 'Fracciones', fechaLimiteEntrega: '2026-10-10T09:00' };
     persistWizardDraft(localStorage, 'profesor-1', state);
@@ -184,6 +207,7 @@ describe('GenerationWizard', () => {
   it('keeps authorized subject selection in the general creator', () => {
     renderWizard(vi.fn(), null, materia, false);
     expect(screen.getByRole('combobox')).toHaveValue(materia.id);
+    expect(mocks.listDba).not.toHaveBeenCalled();
   });
 
   it('navigates the six accessible steps, reviews a question and confirms the normal evaluation', async () => {
@@ -201,7 +225,7 @@ describe('GenerationWizard', () => {
     expect(await screen.findByText('Elige cómo orientar la evaluación')).toBeInTheDocument();
     expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '2');
 
-    await user.click(screen.getByRole('checkbox', { name: /Alinear con DBA/i }));
+    await user.click(screen.getByRole('checkbox', { name: /Usar criterios de aprendizaje/i }));
     await user.click(await screen.findByRole('button', { name: /DBA-1/i }));
     await user.click(screen.getByRole('button', { name: 'Siguiente' }));
     expect(screen.getByText('Configura las preguntas')).toBeInTheDocument();
@@ -322,7 +346,8 @@ describe('GenerationWizard', () => {
     expect(screen.getByRole('dialog', { name: /Editar contenido/i })).toHaveClass('max-w-[min(96vw,90rem)]');
     const questionList = screen.getByRole('list', { name: 'Preguntas editables' });
     expect(questionList).not.toHaveClass('max-h-[52vh]', 'overflow-y-auto');
-    expect(screen.getByRole('complementary', { name: 'Asistencia opcional de Xali' }).parentElement).toHaveClass('order-1');
+    expect(screen.getByRole('complementary', { name: 'Asistencia opcional de Xali' }).parentElement).toHaveClass('order-3');
+    expect(screen.getByTestId('evaluation-wizard-content')).toHaveClass('min-h-0', 'flex-1', 'overflow-y-auto');
   });
   it('recovers, discards, and starts over from a saved draft', async () => {
     const state = createEmptyWizardState(materia.id);

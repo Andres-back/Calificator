@@ -356,7 +356,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "c6d834807ba677c30a94ed077292a3ef802c421bccf5df5bd5729f19efb76ed0",
+  "source_digest": "c9261421d34bd9d23d2418f569550c9de4f81e97ccf4e43fc3663df46b2607e6",
   "surfaces": [
     {
       "actors": [
@@ -3480,12 +3480,6 @@
           "reference": "GET:/dba",
           "status": "direct",
           "test_path": "frontend/src/modules/evaluaciones/components/GenerationWizard.test.tsx"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/dba",
-          "status": "direct",
-          "test_path": "frontend/src/modules/evaluaciones/components/generationWizardModel.test.ts"
         },
         {
           "level": "unit",
@@ -23376,12 +23370,6 @@
           "reference": "GET:/dba",
           "status": "direct",
           "test_path": "frontend/src/modules/evaluaciones/components/GenerationWizard.test.tsx"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/dba",
-          "status": "direct",
-          "test_path": "frontend/src/modules/evaluaciones/components/generationWizardModel.test.ts"
         },
         {
           "level": "unit",

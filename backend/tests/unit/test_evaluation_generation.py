@@ -161,7 +161,7 @@ def test_prompt_and_validator_support_rubric_without_dba() -> None:
     )
     criteria = generation_service._criteria_payload(content, request)
 
-    assert "No se seleccionaron DBA" in prompt
+    assert "No se seleccionaron criterios de aprendizaje" in prompt
     assert "Genera una rubrica explicita" in prompt
     assert criteria[0]["nombre"] == "Usa evidencias"
     assert criteria[0]["peso_porcentaje"] == 100.0
@@ -221,8 +221,9 @@ class FakeDB:
         self.rollbacks += 1
 
 
+@pytest.mark.parametrize("rag_available", [True, False])
 def test_generate_draft_persists_private_answers_and_teacher_review_trace(
-    monkeypatch,
+    monkeypatch, rag_available,
 ) -> None:
     dba_ids = [uuid4(), uuid4()]
     rag_id = uuid4()
@@ -254,6 +255,9 @@ def test_generate_draft_persists_private_answers_and_teacher_review_trace(
         }
     ]
     raw = make_content(dba_ids, rag_id).model_dump(mode="json")
+    if not rag_available:
+        for question in raw["preguntas"]:
+            question["fuente_contexto_ids"] = []
     db = FakeDB()
     captured = {}
 
@@ -266,7 +270,10 @@ def test_generate_draft_persists_private_answers_and_teacher_review_trace(
     async def get_custom(_db, _ids, **_kwargs):
         return []
 
-    async def build_context(_db, _materia_id, _dba_text, _metas):
+    async def build_context(_db, _materia_id, _dba_text, _metas, *, profesor_id):
+        assert profesor_id == teacher.id
+        if not rag_available:
+            raise retrieval_service.EmbeddingUnavailableError("Unavailable")
         return rag_chunks
 
     class FakeRouter:
@@ -324,8 +331,17 @@ def test_generate_draft_persists_private_answers_and_teacher_review_trace(
     assert sum(Decimal(item["puntaje"]) for item in result.preguntas) == Decimal("5")
     assert all("respuesta_esperada" not in item for item in result.preguntas)
     assert len(result.respuestas_esperadas) == 3
-    assert captured["extra"].contexto_rag[0]["id"] == str(rag_id)
     trace = captured["extra"].reglas_feedback["trazabilidad"]
+    if rag_available:
+        assert captured["extra"].contexto_rag[0]["id"] == str(rag_id)
+        assert trace["rag_estado"] == "recuperado"
+        assert trace["advertencias"] == []
+    else:
+        assert captured["extra"].contexto_rag == []
+        assert trace["rag_estado"] == "no_disponible"
+        assert trace["advertencias"]
+        assert trace["fuentes_rag_recuperadas"] == []
+        assert str(rag_id) not in captured["prompt"]
     assert trace["generada_por_ia"] is True
     assert trace["requiere_validacion_docente"] is True
     assert set(trace["dba_cubiertos"]) == {str(value) for value in dba_ids}

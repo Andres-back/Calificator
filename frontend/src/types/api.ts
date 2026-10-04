@@ -186,6 +186,8 @@ export interface Evaluacion {
       trazabilidad?: {
         generada_por_ia?: boolean;
         requiere_validacion_docente?: boolean;
+        rag_estado?: 'recuperado' | 'sin_resultados' | 'no_disponible';
+        advertencias?: string[];
       };
     };
   } | null;
