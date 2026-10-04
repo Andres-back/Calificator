@@ -207,6 +207,7 @@ describe('GenerationWizard', () => {
   it('keeps authorized subject selection in the general creator', () => {
     renderWizard(vi.fn(), null, materia, false);
     expect(screen.getByRole('combobox')).toHaveValue(materia.id);
+    expect(mocks.listDba).not.toHaveBeenCalled();
   });
 
   it('navigates the six accessible steps, reviews a question and confirms the normal evaluation', async () => {

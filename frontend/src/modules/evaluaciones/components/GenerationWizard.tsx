@@ -392,7 +392,7 @@ export function GenerationWizard({
   const dba = useQuery({
     queryKey: queryKeys.materias.dbaCombined(state.materiaId),
     queryFn: () => listDbaCombinado(state.materiaId),
-    enabled: open && Boolean(state.materiaId),
+    enabled: open && Boolean(state.materiaId) && state.useDba,
     retry: false,
   });
 
