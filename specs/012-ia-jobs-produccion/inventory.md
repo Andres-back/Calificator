@@ -45,5 +45,5 @@ Sin decisiones explícitas de permiso para este dominio.
 
 ## Hallazgos
 
+- **medium · contract_mismatch**: 5 llamadas frontend no tienen endpoint backend canónico coincidente en el análisis estático.
 - **low · missing_coverage**: 12 superficies de 012-ia-jobs-produccion no tienen evidencia de prueba observable.
-- **medium · contract_mismatch**: 4 llamadas frontend no tienen endpoint backend canónico coincidente en el análisis estático.

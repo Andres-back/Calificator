@@ -122,6 +122,27 @@ export function evaluationPdfUrl(evaluacionId: string, descargar = false): strin
   const base = import.meta.env.VITE_API_URL ?? '/api';
   return base + '/evaluaciones/' + evaluacionId + '/pdf' + (descargar ? '?descargar=true' : '');
 }
+
+export async function getEvaluationDocument(
+  evaluacionId: string,
+  format: 'pdf' | 'docx',
+  soluciones = false,
+  signal?: AbortSignal,
+): Promise<Blob> {
+  try {
+    const { data } = await api.get<Blob>(`/evaluaciones/${evaluacionId}/${format}`, {
+      params: { soluciones }, responseType: 'blob', signal,
+    });
+    return data;
+  } catch (error) {
+    // Axios devuelve los errores JSON como Blob cuando se solicita un documento.
+    const response = (error as { response?: { data?: unknown } }).response;
+    if (response?.data instanceof Blob) {
+      try { response.data = JSON.parse(await response.data.text()); } catch { /* Mantener el error HTTP original. */ }
+    }
+    throw error;
+  }
+}
 export async function getMiSolicitudRevision(evaluacionId: string): Promise<IncidenciaRead | null> {
   const { data } = await api.get<IncidenciaRead | null>(`/evaluaciones/${evaluacionId}/mi-solicitud-revision`);
   return data;

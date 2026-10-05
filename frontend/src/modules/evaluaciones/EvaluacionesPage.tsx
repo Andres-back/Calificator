@@ -9,6 +9,7 @@ import { PageHeader } from '@/components/layout/PageHeader';
 import { useMaterias, MateriaSelect } from '@/modules/materias/MateriaSelect';
 import { listDbaCombinado } from '@/modules/materias/dbaApi';
 import { GenerationWizard } from './components/GenerationWizard';
+import { EvaluationPreviewModal } from './components/EvaluationPreviewModal';
 import { DBASelector } from './components/DBASelector';
 import { queryKeys } from '@/config/queryKeys';
 import {
@@ -410,6 +411,7 @@ export function EvaluacionesPage() {
   const [open, setOpen] = useState(false);
   const [wizardOpen, setWizardOpen] = useState(false);
   const [editingEval, setEditingEval] = useState<Evaluacion | null>(null);
+  const [previewEval, setPreviewEval] = useState<Evaluacion | null>(null);
   const [form, setForm] = useState<EvaluationForm>(() => emptyForm(materiaId));
   const [pending, setPending] = useState<Record<ListField, string>>(emptyPending);
 
@@ -692,6 +694,11 @@ export function EvaluacionesPage() {
                       </div>
                     </div>
                     <div className="flex w-full flex-wrap gap-2 sm:w-auto sm:justify-end">
+                      {user?.rol !== 'estudiante' && permissions.has('evaluations.read') && (
+                        <Button size="sm" variant="outline" onClick={() => setPreviewEval(ev)}>
+                          <Eye className="h-4 w-4" aria-hidden="true" /> Visualizar
+                        </Button>
+                      )}
                       {isStudent && canSubmit
                         && ['publicada', 'en_calificacion', 'pendiente_revision', 'cerrada'].includes(ev.estado) && (
                         <Link
@@ -726,6 +733,10 @@ export function EvaluacionesPage() {
         </>
       )}
 
+      {previewEval && (
+        <EvaluationPreviewModal evaluation={previewEval} onClose={() => setPreviewEval(null)}
+          canViewSolutions={user?.rol === 'admin' || previewEval.profesor_id === user?.id} />
+      )}
       {user && canCreate && (
         <GenerationWizard
           open={wizardOpen}

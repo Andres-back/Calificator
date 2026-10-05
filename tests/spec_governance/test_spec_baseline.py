@@ -82,6 +82,7 @@ ALL_SPECS = {
     "078-asistencia-libro-notas",
     "079-captura-docente-directa",
     "080-evaluaciones-criterios-movil",
+    "081-evaluacion-vista-word",
 }
 OWNED_SPECS = {
     name

@@ -45,6 +45,9 @@ vi.mock('@/modules/evaluaciones/components/GenerationWizard', () => ({
       </div>
     ) : null,
 }));
+vi.mock('@/modules/evaluaciones/components/EvaluationPreviewModal', () => ({
+  EvaluationPreviewModal: ({ evaluation }: { evaluation: Evaluacion }) => <div role="dialog" aria-label="Vista final">{evaluation.nombre}</div>,
+}));
 vi.mock('./MateriaContext', () => ({
   useMateriaContext: () => mocks.context,
 }));
@@ -136,6 +139,17 @@ beforeEach(() => {
 });
 
 describe('MateriaEvaluaciones teacher creation flow', () => {
+  it('allows preview with read permission only without opening the editor or changing records', async () => {
+    const user = userEvent.setup();
+    mocks.list.mockResolvedValue([evaluation]);
+    useAuth.setState({ user: { ...useAuth.getState().user!, permissions: ['evaluations.read'] } });
+    renderPage();
+    await user.click(await screen.findByRole('button', { name: 'Visualizar' }));
+    expect(screen.getByRole('dialog', { name: 'Vista final' })).toHaveTextContent(evaluation.nombre);
+    expect(screen.queryByRole('button', { name: 'Editar preguntas' })).not.toBeInTheDocument();
+    expect(mocks.update).not.toHaveBeenCalled();
+    expect(mocks.publish).not.toHaveBeenCalled();
+  });
   it('offers direct capture for paper/mixed only, preserving review and context', async () => {
     mocks.list.mockResolvedValue([
       { ...evaluation, estado: 'publicada', modalidad: 'fisica' },

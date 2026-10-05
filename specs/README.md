@@ -236,6 +236,11 @@ actualizar la especificación propietaria, su plan y sus tareas; no debe crear d
 - [080-evaluaciones-criterios-movil](080-evaluaciones-criterios-movil/spec.md), [issue #167](https://github.com/Andres-back/Calificator/issues/167): recupera generación ante fallo institucional de embeddings, explicita degradación de referencias y permite buscar/seleccionar criterios con interfaz móvil compacta.
 - Evoluciona 004/005/012; contratos, entidades y evaluaciones existentes permanecen compatibles. Sin nuevas tablas o APIs. [Validación](080-evaluaciones-criterios-movil/quickstart.md).
 
+## Evolución 081: vista final y Word editable
+
+- [081-evaluacion-vista-word](081-evaluacion-vista-word/spec.md), [issue #169](https://github.com/Andres-back/Calificator/issues/169): «Visualizar» desde las listas docentes, PDF final y Word editable, con solucionario explícito y protegido.
+- Evoluciona 005, que conserva responsabilidad única de evaluaciones y sus endpoints, incluido `GET /evaluaciones/{evaluacion_id}/docx`. Sin nuevas tablas, permisos, dependencias ni cambios de generación/calificación. Orígenes de material mantienen PDF específico; Word no compatible se rechaza con explicación. [Validación](081-evaluacion-vista-word/quickstart.md).
+
 ## Evolución 077: verificación rápida con Qwen
 
 - [077-qwen-fast-verification](077-qwen-fast-verification/spec.md), [issue #161](https://github.com/Andres-back/Calificator/issues/161): mantiene DeepSeek en extracción/principal y habilita Qwen 3.8 Flash con visión y sin pensamiento extendido en verificación y arbitraje.

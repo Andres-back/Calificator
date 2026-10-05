@@ -2,12 +2,13 @@ from decimal import Decimal
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Response, UploadFile, status
+from starlette.concurrency import run_in_threadpool
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.permissions import get_current_user, require_permission_now
 from app.core.rate_limit import rate_limit
 from app.db.session import get_db
-from app.modules.evaluaciones import generation_service, service
+from app.modules.evaluaciones import export_service, generation_service, service
 from app.modules.evaluaciones.digitalize_service import (
     detect_digitalization_mime,
     extract_evaluation_text,
@@ -253,21 +254,13 @@ async def get_student_activity(
     return await service.get_student_activity(db, evaluacion_id, current_user)
 
 
-@router.get("/evaluaciones/{evaluacion_id}/pdf")
-async def download_evaluation_pdf(
-    evaluacion_id: UUID,
-    soluciones: bool = False,
-    descargar: bool = False,
-    current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
-) -> Response:
-    """Muestra o descarga la evaluación/material asignado sin filtrar soluciones."""
+async def _load_export_material(db, evaluacion_id, current_user, soluciones):
     require_permission_now(current_user, "evaluations.read")
     await service.ensure_can_read_evaluation(db, evaluacion_id, current_user)
     evaluacion = await service.get_evaluation_or_404(db, evaluacion_id)
     if soluciones and not (
         current_user.rol == UserRole.ADMIN.value
-        or evaluacion.profesor_id == current_user.id
+        or (current_user.rol == UserRole.PROFESOR.value and evaluacion.profesor_id == current_user.id)
     ):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -283,54 +276,59 @@ async def download_evaluation_pdf(
         if material is None:
             raise HTTPException(status_code=404, detail="Material asignado no encontrado")
     else:
-        expected_by_number: dict[object, object] = {}
-        for index, answer in enumerate(evaluacion.respuestas_esperadas or [], start=1):
-            if not isinstance(answer, dict):
-                continue
-            number = answer.get("numero", index)
-            expected_by_number[number] = next(
-                (
-                    answer.get(key)
-                    for key in ("respuesta", "texto", "respuesta_esperada", "valor")
-                    if answer.get(key) not in (None, "", [])
-                ),
-                None,
-            )
-        questions: list[dict] = []
-        for index, question in enumerate(evaluacion.preguntas or [], start=1):
-            if not isinstance(question, dict):
-                continue
-            printable = dict(question)
-            number = printable.get("numero", index)
-            if soluciones and expected_by_number.get(number) is not None:
-                printable["respuesta_correcta"] = expected_by_number[number]
-            questions.append(printable)
-        material = {
-            "tipo": "examen",
-            "titulo": evaluacion.nombre,
-            "contenido_json": {
-                "titulo": evaluacion.nombre,
-                "instrucciones": evaluacion.descripcion or "Lee y responde cada punto.",
-                "preguntas": questions,
-                "total_puntaje": evaluacion.nota_maxima,
-            },
-            "created_at": evaluacion.created_at,
-        }
+        try:
+            material = export_service.build_evaluation_material(evaluacion, soluciones=soluciones)
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+    return evaluacion, material
+
+
+@router.get("/evaluaciones/{evaluacion_id}/pdf")
+async def download_evaluation_pdf(
+    evaluacion_id: UUID,
+    soluciones: bool = False,
+    descargar: bool = False,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> Response:
+    """Documento final para estudiantes o solucionario autorizado, sin mutaciones."""
+    evaluacion, material = await _load_export_material(db, evaluacion_id, current_user, soluciones)
 
     from app.modules.herramientas.pdf_render import render_material_pdf
 
-    pdf = render_material_pdf(material, soluciones=soluciones)
-    safe_name = "".join(
-        char for char in evaluacion.nombre if char.isalnum() or char in {" ", "-", "_"}
-    ).strip()[:100] or "evaluacion"
-    disposition = "attachment" if descargar else "inline"
+    pdf = await run_in_threadpool(render_material_pdf, material, soluciones=soluciones)
+    name = evaluacion.nombre + (" - solucionario" if soluciones else "")
     return Response(
         content=pdf,
         media_type="application/pdf",
         headers={
-            "Content-Disposition": f'{disposition}; filename="{safe_name}.pdf"',
+            "Content-Disposition": export_service.document_disposition(name, 'pdf', descargar),
             "Cache-Control": "private, no-store",
             "X-Content-Type-Options": "nosniff",
+        },
+    )
+
+
+@router.get("/evaluaciones/{evaluacion_id}/docx")
+async def download_evaluation_docx(
+    evaluacion_id: UUID,
+    soluciones: bool = False,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> Response:
+    evaluacion, material = await _load_export_material(db, evaluacion_id, current_user, soluciones)
+    try:
+        document = await run_in_threadpool(export_service.render_evaluation_docx, material, soluciones=soluciones)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    name = evaluacion.nombre + (" - solucionario" if soluciones else "")
+    return Response(
+        content=document,
+        media_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        headers={
+            'Content-Disposition': export_service.document_disposition(name, 'docx', True),
+            'Cache-Control': 'private, no-store',
+            'X-Content-Type-Options': 'nosniff',
         },
     )
 

@@ -49,8 +49,15 @@ def test_feature_014_resolves_ten_permission_findings_and_detects_regression() -
         if finding["category"] == "authorization_mismatch"
     ]
 
-    assert len(overrides) == 10
-    assert len(override_ids) == 10
+    baseline = [item for item in overrides if item['issue_url'].endswith('/17')]
+    assert len(baseline) == 10
+    assert len({item['surface_id'] for item in baseline}) == 10
+    export_overrides = [item for item in overrides if item['issue_url'].endswith('/169')]
+    assert {item['surface_id'] for item in export_overrides} == {
+        'backend:GET:/evaluaciones/{evaluacion_id}/pdf',
+        'backend:GET:/evaluaciones/{evaluacion_id}/docx',
+    }
+    assert len(override_ids) == len(overrides)
     assert authorization_findings == []
     overridden_surfaces = {
         surface["id"]: surface
