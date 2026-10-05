@@ -83,6 +83,7 @@ ALL_SPECS = {
     "079-captura-docente-directa",
     "080-evaluaciones-criterios-movil",
     "081-evaluacion-vista-word",
+    "083-rag-preflight",
 }
 OWNED_SPECS = {
     name

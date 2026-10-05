@@ -15,3 +15,4 @@
 - Análisis previo: 5 requisitos/5 tareas, 100% de cobertura, 0 contradicciones o problemas críticos; lista de revisión 21/21 completa.
 - Convergencia de implementación: 5 FR, 4 escenarios de aceptación, decisiones de autorización/compatibilidad/errores y 8 principios constitucionales revisados, sin trabajo de implementación faltante. CI, merge y prueba productiva son gates posteriores, todavía pendientes aquí; se documentarán en el PR.
 - La medición previa fue 59.253 s. No se promete que todos los casos queden bajo 20 s.
+- CI detectó falta de registro de 083 en la baseline; se añadió y se regeneró el inventario técnico (567 superficies, nueva evidencia de prueba para `rag_sources`). Sin cambios de propiedad de módulos ni controles debilitados.

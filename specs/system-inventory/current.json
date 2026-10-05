@@ -383,7 +383,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "66ebd32311b71d8f0fbec373a0b1b9a81e199d42df94fb0eba113113c5634fab",
+  "source_digest": "33fd5a06b01e2d98417b2cffe05d7ea8131fce74d63ecfd19ae50f74fe756533",
   "surfaces": [
     {
       "actors": [
@@ -37922,6 +37922,12 @@
           "reference": "rag_sources",
           "status": "direct",
           "test_path": "backend/tests/unit/test_photo_grading_failures.py"
+        },
+        {
+          "level": "unit",
+          "reference": "rag_sources",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_rag_embedding_space.py"
         }
       ]
     },

@@ -26,7 +26,7 @@ Antes de generar el vector de consulta, ejecutar una comprobación parametrizada
 
 ## Estructura del proyecto
 
-`backend/app/modules/rag/retrieval_service.py`, `backend/tests/unit/test_rag_embedding_space.py`, actualización del doble de prueba en `backend/tests/integration/test_explainable_grading_pipeline.py`, `specs/083-rag-preflight/` y `specs/README.md`.
+`backend/app/modules/rag/retrieval_service.py`, `backend/tests/unit/test_rag_embedding_space.py`, actualización del doble de prueba en `backend/tests/integration/test_explainable_grading_pipeline.py`, `specs/083-rag-preflight/`, `specs/README.md` y registro de la especificación en `tests/spec_governance/test_spec_baseline.py`. Regenerar inventario solo si el gate detecta deriva.
 
 ## Decisiones y complejidad
 

@@ -23,3 +23,7 @@
 ## Dependencias y ejecución
 
 T001 → T002 (rojo) → T003 → T004 (verde) → T005. Cambios pequeños en los mismos archivos, sin implementación paralela. MVP completo: evitar trabajo inexistente conservando material autorizado. CI y despliegue/benchmark demo se verificarán después de completar las tareas de implementación; sus resultados se registrarán en el PR sin afirmar aprobación anticipada.
+
+## Fase 5: Convergencia de gobernanza
+
+- [x] T006 Registrar 083 en tests/spec_governance/test_spec_baseline.py y validar el inventario técnico con scripts/build_system_inventory.py; regenerar si corresponde (FR-005, parcial).
