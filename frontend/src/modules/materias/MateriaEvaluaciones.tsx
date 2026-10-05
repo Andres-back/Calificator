@@ -39,6 +39,7 @@ import {
 } from '@/modules/evaluaciones/api';
 import { DigitalizarEvaluacionModal } from '@/modules/evaluaciones/components/DigitalizarEvaluacionModal';
 import { GenerationWizard } from '@/modules/evaluaciones/components/GenerationWizard';
+import { EvaluationPreviewModal } from '@/modules/evaluaciones/components/EvaluationPreviewModal';
 import { getStudentEvaluationAction, getStudentEvaluationStatus } from '@/modules/evaluaciones/studentProgress';
 import { useAuth } from '@/stores/auth';
 import { useMateriaContext } from './MateriaContext';
@@ -78,13 +79,15 @@ export function MateriaEvaluaciones() {
   const user = useAuth((state) => state.user);
   const permissions = new Set(user?.permissions ?? []);
   const canCreateEvaluation = !isStudent && permissions.has('evaluations.create');
+  const canViewEvaluation = !isStudent && permissions.has('evaluations.read');
   const canUpdateEvaluation = !isStudent && permissions.has('evaluations.update');
   const canPublishEvaluation = !isStudent && permissions.has('evaluations.publish');
   const canDeleteEvaluation = !isStudent && permissions.has('evaluations.delete');
   const canGradeEvaluation = !isStudent && permissions.has('grading.grade');
   const canReviewGrades = !isStudent && permissions.has('grading.read');
   const canSubmitEvaluation = permissions.has('evaluations.submit');
-  const canManageEvaluations = canCreateEvaluation
+  const canManageEvaluations = canViewEvaluation
+    || canCreateEvaluation
     || canUpdateEvaluation
     || canPublishEvaluation
     || canDeleteEvaluation
@@ -96,6 +99,7 @@ export function MateriaEvaluaciones() {
   const [digitalizeOpen, setDigitalizeOpen] = useState(false);
   const [editingEval, setEditingEval] = useState<Evaluacion | null>(null);
   const [contentEditingEval, setContentEditingEval] = useState<Evaluacion | null>(null);
+  const [previewEval, setPreviewEval] = useState<Evaluacion | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Evaluacion | null>(null);
   const [form, setForm] = useState<EvaluationForm>(emptyForm);
   const [searchParams, setSearchParams] = useSearchParams();
@@ -342,6 +346,11 @@ export function MateriaEvaluaciones() {
                 </div>
 
                 <div className="mt-4 flex flex-wrap gap-2">
+                  {canViewEvaluation && (
+                    <Button size="sm" variant="outline" onClick={() => setPreviewEval(evaluation)}>
+                      <Eye className="h-4 w-4" aria-hidden="true" /> Visualizar
+                    </Button>
+                  )}
                   {canManageEvaluations ? (
                     <>
                       {canUpdateEvaluation && (
@@ -447,6 +456,10 @@ export function MateriaEvaluaciones() {
         />
       )}
 
+      {previewEval && (
+        <EvaluationPreviewModal evaluation={previewEval} onClose={() => setPreviewEval(null)}
+          canViewSolutions={user?.rol === 'admin' || previewEval.profesor_id === user?.id} />
+      )}
       {canCreateEvaluation && (
         <DigitalizarEvaluacionModal
           open={digitalizeOpen}

@@ -1,18 +1,18 @@
 {
   "counts": {
     "by_coverage": {
-      "covered": 471,
+      "covered": 473,
       "missing": 94
     },
     "by_kind": {
-      "endpoint": 266,
-      "frontend_call": 180,
+      "endpoint": 267,
+      "frontend_call": 181,
       "frontend_route": 36,
       "integration": 7,
       "job": 18,
       "table": 58
     },
-    "total": 565
+    "total": 567
   },
   "exceptions": [],
   "findings": [
@@ -117,6 +117,20 @@
       ]
     },
     {
+      "category": "contract_mismatch",
+      "description": "5 llamadas frontend no tienen endpoint backend canónico coincidente en el análisis estático.",
+      "id": "F-7D81DF8A8B45",
+      "issue_url": "",
+      "severity": "medium",
+      "surface_ids": [
+        "frontend_call:GET:/admin/users/{id}:frontend/src/modules/admin/usersApi.ts",
+        "frontend_call:GET:/evaluaciones/{evaluacionId}/{format}:frontend/src/modules/evaluaciones/api.ts",
+        "frontend_call:POST:/admin/roles/{id}:frontend/src/modules/admin/authorizationApi.ts",
+        "frontend_call:POST:/impacto/estudios/{id}/{action}:frontend/src/modules/analytics/AnalyticsPage.tsx",
+        "frontend_call:POST:/jobs/{jobId}:frontend/src/modules/evaluaciones/components/DigitalizationJobMonitor.tsx"
+      ]
+    },
+    {
       "category": "missing_coverage",
       "description": "12 superficies de 012-ia-jobs-produccion no tienen evidencia de prueba observable.",
       "id": "F-B4FA37D13617",
@@ -135,19 +149,6 @@
         "job:tasks.ingest_rag",
         "job:tasks.recover_expired_local_jobs",
         "job:tasks.send_password_reset_email"
-      ]
-    },
-    {
-      "category": "contract_mismatch",
-      "description": "4 llamadas frontend no tienen endpoint backend canónico coincidente en el análisis estático.",
-      "id": "F-D1DBF5E00BFE",
-      "issue_url": "",
-      "severity": "medium",
-      "surface_ids": [
-        "frontend_call:GET:/admin/users/{id}:frontend/src/modules/admin/usersApi.ts",
-        "frontend_call:POST:/admin/roles/{id}:frontend/src/modules/admin/authorizationApi.ts",
-        "frontend_call:POST:/impacto/estudios/{id}/{action}:frontend/src/modules/analytics/AnalyticsPage.tsx",
-        "frontend_call:POST:/jobs/{jobId}:frontend/src/modules/evaluaciones/components/DigitalizationJobMonitor.tsx"
       ]
     },
     {
@@ -226,6 +227,32 @@
     }
   ],
   "permission_overrides": [
+    {
+      "actors": [
+        "admin",
+        "estudiante",
+        "profesor"
+      ],
+      "evidence": [
+        "backend/tests/unit/test_evaluation_exports.py"
+      ],
+      "issue_url": "https://github.com/Andres-back/Calificator/issues/169",
+      "reason": "La autorización compartida exige evaluations.read y ensure_can_read_evaluation; el solucionario solo admite propietario docente o administrador autorizado.",
+      "surface_id": "backend:GET:/evaluaciones/{evaluacion_id}/pdf"
+    },
+    {
+      "actors": [
+        "admin",
+        "estudiante",
+        "profesor"
+      ],
+      "evidence": [
+        "backend/tests/unit/test_evaluation_exports.py"
+      ],
+      "issue_url": "https://github.com/Andres-back/Calificator/issues/169",
+      "reason": "La exportación reutiliza la autorización de lectura y propiedad de PDF; matrícula y publicación siguen validadas por el servicio y soluciones denegadas a estudiante o docente ajeno.",
+      "surface_id": "backend:GET:/evaluaciones/{evaluacion_id}/docx"
+    },
     {
       "actors": [
         "admin",
@@ -356,7 +383,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "c9261421d34bd9d23d2418f569550c9de4f81e97ccf4e43fc3663df46b2607e6",
+  "source_digest": "66ebd32311b71d8f0fbec373a0b1b9a81e199d42df94fb0eba113113c5634fab",
   "surfaces": [
     {
       "actors": [
@@ -592,7 +619,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "DELETE:/evaluaciones/{evaluacion_id}",
-      "source_line": 404,
+      "source_line": 402,
       "source_path": "backend/app/modules/evaluaciones/router.py",
       "states": [],
       "tests": [
@@ -637,6 +664,12 @@
           "reference": "DELETE:/evaluaciones/{evaluacion_id}",
           "status": "direct",
           "test_path": "frontend/e2e/evaluation-ai-wizard.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "DELETE:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/evaluation-preview.spec.ts"
         },
         {
           "level": "e2e",
@@ -703,6 +736,12 @@
           "reference": "DELETE:/evaluaciones/{evaluacion_id}",
           "status": "direct",
           "test_path": "frontend/src/modules/evaluaciones/api.lifecycle.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "DELETE:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/evaluaciones/api.test.ts"
         },
         {
           "level": "unit",
@@ -2771,6 +2810,12 @@
           "level": "e2e",
           "reference": "GET:/auth/me",
           "status": "direct",
+          "test_path": "frontend/e2e/evaluation-preview.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/auth/me",
+          "status": "direct",
           "test_path": "frontend/e2e/explainable-grading.spec.ts"
         },
         {
@@ -3658,7 +3703,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "GET:/evaluaciones/{evaluacion_id}",
-      "source_line": 236,
+      "source_line": 237,
       "source_path": "backend/app/modules/evaluaciones/router.py",
       "states": [],
       "tests": [
@@ -3703,6 +3748,12 @@
           "reference": "GET:/evaluaciones/{evaluacion_id}",
           "status": "direct",
           "test_path": "frontend/e2e/evaluation-ai-wizard.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/evaluation-preview.spec.ts"
         },
         {
           "level": "e2e",
@@ -3769,6 +3820,12 @@
           "reference": "GET:/evaluaciones/{evaluacion_id}",
           "status": "direct",
           "test_path": "frontend/src/modules/evaluaciones/api.lifecycle.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/evaluaciones/api.test.ts"
         },
         {
           "level": "unit",
@@ -3847,7 +3904,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "GET:/evaluaciones/{evaluacion_id}/actividad",
-      "source_line": 246,
+      "source_line": 247,
       "source_path": "backend/app/modules/evaluaciones/router.py",
       "states": [],
       "tests": [
@@ -3919,6 +3976,44 @@
           "reference": "GET:/evaluaciones/{evaluacion_id}/calificaciones",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/CalificacionesWorkspace.mobile.test.tsx"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "admin",
+        "estudiante",
+        "profesor"
+      ],
+      "authorization": [
+        "explicit_permission_override",
+        "get_current_user"
+      ],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
+        "function": "download_evaluation_docx",
+        "permission_override_evidence": [
+          "backend/tests/unit/test_evaluation_exports.py"
+        ],
+        "permission_override_issue": "https://github.com/Andres-back/Calificator/issues/169",
+        "permission_override_reason": "La exportación reutiliza la autorización de lectura y propiedad de PDF; matrícula y publicación siguen validadas por el servicio y soluciones denegadas a estudiante o docente ajeno.",
+        "registered": true,
+        "router": "router"
+      },
+      "id": "backend:GET:/evaluaciones/{evaluacion_id}/docx",
+      "kind": "endpoint",
+      "owner_spec": "005-evaluaciones",
+      "signature": "GET:/evaluaciones/{evaluacion_id}/docx",
+      "source_line": 312,
+      "source_path": "backend/app/modules/evaluaciones/router.py",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/{evaluacion_id}/docx",
+          "status": "domain",
+          "test_path": "frontend/src/modules/materias/MateriaEvaluaciones.test.tsx"
         }
       ]
     },
@@ -4123,13 +4218,18 @@
         "profesor"
       ],
       "authorization": [
-        "get_current_user",
-        "require_permission_now:evaluations.read"
+        "explicit_permission_override",
+        "get_current_user"
       ],
       "consumers": [],
       "coverage": "covered",
       "details": {
         "function": "download_evaluation_pdf",
+        "permission_override_evidence": [
+          "backend/tests/unit/test_evaluation_exports.py"
+        ],
+        "permission_override_issue": "https://github.com/Andres-back/Calificator/issues/169",
+        "permission_override_reason": "La autorización compartida exige evaluations.read y ensure_can_read_evaluation; el solucionario solo admite propietario docente o administrador autorizado.",
         "registered": true,
         "router": "router"
       },
@@ -4137,7 +4237,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "GET:/evaluaciones/{evaluacion_id}/pdf",
-      "source_line": 256,
+      "source_line": 286,
       "source_path": "backend/app/modules/evaluaciones/router.py",
       "states": [],
       "tests": [
@@ -5177,6 +5277,12 @@
           "level": "e2e",
           "reference": "GET:/materias",
           "status": "direct",
+          "test_path": "frontend/e2e/evaluation-preview.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/materias",
+          "status": "direct",
           "test_path": "frontend/e2e/explainable-grading.spec.ts"
         },
         {
@@ -5373,6 +5479,12 @@
           "reference": "GET:/materias/{materia_id}",
           "status": "direct",
           "test_path": "frontend/e2e/evaluation-ai-wizard.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/materias/{materia_id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/evaluation-preview.spec.ts"
         },
         {
           "level": "e2e",
@@ -5750,7 +5862,7 @@
       "kind": "endpoint",
       "owner_spec": "003-usuarios-materias-matriculas",
       "signature": "GET:/materias/{materia_id}/evaluaciones",
-      "source_line": 226,
+      "source_line": 227,
       "source_path": "backend/app/modules/evaluaciones/router.py",
       "states": [],
       "tests": [
@@ -6702,6 +6814,12 @@
           "level": "e2e",
           "reference": "GET:/users/me",
           "status": "direct",
+          "test_path": "frontend/e2e/evaluation-preview.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/users/me",
+          "status": "direct",
           "test_path": "frontend/e2e/explainable-grading.spec.ts"
         },
         {
@@ -6823,6 +6941,12 @@
           "reference": "GET:/users/me/authorization",
           "status": "direct",
           "test_path": "frontend/e2e/evaluation-ai-wizard.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/users/me/authorization",
+          "status": "direct",
+          "test_path": "frontend/e2e/evaluation-preview.spec.ts"
         },
         {
           "level": "e2e",
@@ -7701,7 +7825,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "PATCH:/evaluaciones/{evaluacion_id}",
-      "source_line": 337,
+      "source_line": 335,
       "source_path": "backend/app/modules/evaluaciones/router.py",
       "states": [],
       "tests": [
@@ -7746,6 +7870,12 @@
           "reference": "PATCH:/evaluaciones/{evaluacion_id}",
           "status": "direct",
           "test_path": "frontend/e2e/evaluation-ai-wizard.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/evaluation-preview.spec.ts"
         },
         {
           "level": "e2e",
@@ -7812,6 +7942,12 @@
           "reference": "PATCH:/evaluaciones/{evaluacion_id}",
           "status": "direct",
           "test_path": "frontend/src/modules/evaluaciones/api.lifecycle.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/evaluaciones/api.test.ts"
         },
         {
           "level": "unit",
@@ -7957,7 +8093,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "PATCH:/evaluaciones/{evaluacion_id}/validar-estructura",
-      "source_line": 415,
+      "source_line": 413,
       "source_path": "backend/app/modules/evaluaciones/router.py",
       "states": [],
       "tests": [
@@ -8310,6 +8446,12 @@
           "level": "e2e",
           "reference": "PATCH:/materias/{materia_id}",
           "status": "direct",
+          "test_path": "frontend/e2e/evaluation-preview.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/materias/{materia_id}",
+          "status": "direct",
           "test_path": "frontend/e2e/explainable-grading.spec.ts"
         },
         {
@@ -8585,6 +8727,12 @@
           "reference": "PATCH:/users/me",
           "status": "direct",
           "test_path": "frontend/e2e/evaluation-ai-wizard.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/users/me",
+          "status": "direct",
+          "test_path": "frontend/e2e/evaluation-preview.spec.ts"
         },
         {
           "level": "e2e",
@@ -9106,6 +9254,12 @@
           "reference": "POST:/analytics/evento",
           "status": "direct",
           "test_path": "backend/tests/unit/test_authorization_contracts.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/analytics/evento",
+          "status": "direct",
+          "test_path": "frontend/e2e/evaluation-preview.spec.ts"
         },
         {
           "level": "e2e",
@@ -10917,7 +11071,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "POST:/evaluaciones",
-      "source_line": 216,
+      "source_line": 217,
       "source_path": "backend/app/modules/evaluaciones/router.py",
       "states": [],
       "tests": [
@@ -10962,6 +11116,12 @@
           "reference": "POST:/evaluaciones",
           "status": "direct",
           "test_path": "frontend/e2e/evaluation-ai-wizard.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/evaluaciones",
+          "status": "direct",
+          "test_path": "frontend/e2e/evaluation-preview.spec.ts"
         },
         {
           "level": "e2e",
@@ -11028,6 +11188,12 @@
           "reference": "POST:/evaluaciones",
           "status": "direct",
           "test_path": "frontend/src/modules/evaluaciones/api.lifecycle.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/evaluaciones",
+          "status": "direct",
+          "test_path": "frontend/src/modules/evaluaciones/api.test.ts"
         },
         {
           "level": "unit",
@@ -11105,7 +11271,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "POST:/evaluaciones/externa/digitalizar",
-      "source_line": 196,
+      "source_line": 197,
       "source_path": "backend/app/modules/evaluaciones/router.py",
       "states": [],
       "tests": [
@@ -11149,7 +11315,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "POST:/evaluaciones/externa/digitalizar-con-archivo",
-      "source_line": 78,
+      "source_line": 79,
       "source_path": "backend/app/modules/evaluaciones/router.py",
       "states": [],
       "tests": [
@@ -11193,7 +11359,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "POST:/evaluaciones/generar-borrador",
-      "source_line": 182,
+      "source_line": 183,
       "source_path": "backend/app/modules/evaluaciones/router.py",
       "states": [],
       "tests": [
@@ -11237,7 +11403,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "POST:/evaluaciones/referencia/extraer",
-      "source_line": 38,
+      "source_line": 39,
       "source_path": "backend/app/modules/evaluaciones/router.py",
       "states": [],
       "tests": [
@@ -11269,7 +11435,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "POST:/evaluaciones/sorpresa",
-      "source_line": 206,
+      "source_line": 207,
       "source_path": "backend/app/modules/evaluaciones/router.py",
       "states": [],
       "tests": [
@@ -11307,7 +11473,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "POST:/evaluaciones/{evaluacion_id}/activar-recepcion",
-      "source_line": 382,
+      "source_line": 380,
       "source_path": "backend/app/modules/evaluaciones/router.py",
       "states": [],
       "tests": [
@@ -11407,7 +11573,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "POST:/evaluaciones/{evaluacion_id}/cerrar",
-      "source_line": 371,
+      "source_line": 369,
       "source_path": "backend/app/modules/evaluaciones/router.py",
       "states": [],
       "tests": [
@@ -11445,7 +11611,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "POST:/evaluaciones/{evaluacion_id}/crear-blueprint",
-      "source_line": 349,
+      "source_line": 347,
       "source_path": "backend/app/modules/evaluaciones/router.py",
       "states": [],
       "tests": [
@@ -11607,7 +11773,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "POST:/evaluaciones/{evaluacion_id}/pausar-recepcion",
-      "source_line": 393,
+      "source_line": 391,
       "source_path": "backend/app/modules/evaluaciones/router.py",
       "states": [],
       "tests": [
@@ -11645,7 +11811,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "POST:/evaluaciones/{evaluacion_id}/publicar",
-      "source_line": 360,
+      "source_line": 358,
       "source_path": "backend/app/modules/evaluaciones/router.py",
       "states": [],
       "tests": [
@@ -13001,6 +13167,12 @@
           "reference": "POST:/materias",
           "status": "direct",
           "test_path": "frontend/e2e/evaluation-ai-wizard.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/materias",
+          "status": "direct",
+          "test_path": "frontend/e2e/evaluation-preview.spec.ts"
         },
         {
           "level": "e2e",
@@ -14605,6 +14777,12 @@
           "level": "unit",
           "reference": "/",
           "status": "direct",
+          "test_path": "backend/tests/unit/test_evaluation_exports.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
           "test_path": "backend/tests/unit/test_evaluation_generation.py"
         },
         {
@@ -14852,6 +15030,12 @@
           "reference": "/",
           "status": "direct",
           "test_path": "frontend/e2e/evaluation-ai-wizard.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "frontend/e2e/evaluation-preview.spec.ts"
         },
         {
           "level": "e2e",
@@ -15223,6 +15407,12 @@
           "level": "unit",
           "reference": "/",
           "status": "direct",
+          "test_path": "frontend/src/modules/evaluaciones/api.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
           "test_path": "frontend/src/modules/evaluaciones/components/DigitalizarEvaluacionModal.test.tsx"
         },
         {
@@ -15230,6 +15420,12 @@
           "reference": "/",
           "status": "direct",
           "test_path": "frontend/src/modules/evaluaciones/components/DigitalizationJobMonitor.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "frontend/src/modules/evaluaciones/components/EvaluationPreviewModal.test.tsx"
         },
         {
           "level": "unit",
@@ -15565,6 +15761,12 @@
           "reference": "/app",
           "status": "direct",
           "test_path": "frontend/e2e/evaluation-ai-wizard.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app",
+          "status": "direct",
+          "test_path": "frontend/e2e/evaluation-preview.spec.ts"
         },
         {
           "level": "e2e",
@@ -17215,6 +17417,12 @@
           "level": "e2e",
           "reference": "/app/evaluaciones",
           "status": "direct",
+          "test_path": "frontend/e2e/evaluation-preview.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app/evaluaciones",
+          "status": "direct",
           "test_path": "frontend/e2e/explainable-grading.spec.ts"
         },
         {
@@ -17747,6 +17955,12 @@
           "level": "e2e",
           "reference": "/app/materias",
           "status": "direct",
+          "test_path": "frontend/e2e/evaluation-preview.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app/materias",
+          "status": "direct",
           "test_path": "frontend/e2e/explainable-grading.spec.ts"
         },
         {
@@ -17939,6 +18153,12 @@
           "reference": "/app/materias/{id}",
           "status": "domain",
           "test_path": "frontend/e2e/accessibility/teacher-ai-configuration.a11y.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app/materias/{id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/evaluation-preview.spec.ts"
         },
         {
           "level": "e2e",
@@ -20498,6 +20718,12 @@
           "level": "e2e",
           "reference": "DELETE:/evaluaciones/{id}",
           "status": "direct",
+          "test_path": "frontend/e2e/evaluation-preview.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "DELETE:/evaluaciones/{id}",
+          "status": "direct",
           "test_path": "frontend/e2e/explainable-grading.spec.ts"
         },
         {
@@ -20559,6 +20785,12 @@
           "reference": "DELETE:/evaluaciones/{id}",
           "status": "direct",
           "test_path": "frontend/src/modules/evaluaciones/api.lifecycle.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "DELETE:/evaluaciones/{id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/evaluaciones/api.test.ts"
         },
         {
           "level": "unit",
@@ -22903,6 +23135,12 @@
           "level": "e2e",
           "reference": "GET:/auth/me",
           "status": "direct",
+          "test_path": "frontend/e2e/evaluation-preview.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/auth/me",
+          "status": "direct",
           "test_path": "frontend/e2e/explainable-grading.spec.ts"
         },
         {
@@ -23319,7 +23557,7 @@
       "kind": "frontend_call",
       "owner_spec": "004-dba-asistencia-curriculo",
       "signature": "GET:/dba",
-      "source_line": 151,
+      "source_line": 172,
       "source_path": "frontend/src/modules/evaluaciones/api.ts",
       "states": [],
       "tests": [
@@ -23603,7 +23841,7 @@
       "kind": "frontend_call",
       "owner_spec": "005-evaluaciones",
       "signature": "GET:/evaluaciones/{evaluacionId}/mi-desglose",
-      "source_line": 163,
+      "source_line": 184,
       "source_path": "frontend/src/modules/evaluaciones/api.ts",
       "states": [],
       "tests": [
@@ -23659,7 +23897,7 @@
       "kind": "frontend_call",
       "owner_spec": "005-evaluaciones",
       "signature": "GET:/evaluaciones/{evaluacionId}/mi-solicitud-revision",
-      "source_line": 126,
+      "source_line": 147,
       "source_path": "frontend/src/modules/evaluaciones/api.ts",
       "states": [],
       "tests": [
@@ -23668,6 +23906,202 @@
           "reference": "GET:/evaluaciones/{evaluacionId}/mi-solicitud-revision",
           "status": "domain",
           "test_path": "frontend/src/modules/materias/MateriaEvaluaciones.test.tsx"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "ambiguous"
+      ],
+      "authorization": [],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
+        "backend_contract": null,
+        "backend_contract_candidates": [],
+        "contract_status": "unmatched"
+      },
+      "id": "frontend_call:GET:/evaluaciones/{evaluacionId}/{format}:frontend/src/modules/evaluaciones/api.ts",
+      "kind": "frontend_call",
+      "owner_spec": "005-evaluaciones",
+      "signature": "GET:/evaluaciones/{evaluacionId}/{format}",
+      "source_line": 133,
+      "source_path": "frontend/src/modules/evaluaciones/api.ts",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/{evaluacionId}/{format}",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_api_contract.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/{evaluacionId}/{format}",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_business_flow_smoke.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/{evaluacionId}/{format}",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_explainable_grading_flow.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/{evaluacionId}/{format}",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_evaluation_generation.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/{evaluacionId}/{format}",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_material_conversion_contract.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/evaluaciones/{evaluacionId}/{format}",
+          "status": "direct",
+          "test_path": "frontend/e2e/accessibility/student-feedback-story.a11y.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/evaluaciones/{evaluacionId}/{format}",
+          "status": "direct",
+          "test_path": "frontend/e2e/evaluation-ai-wizard.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/evaluaciones/{evaluacionId}/{format}",
+          "status": "direct",
+          "test_path": "frontend/e2e/evaluation-preview.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/evaluaciones/{evaluacionId}/{format}",
+          "status": "direct",
+          "test_path": "frontend/e2e/explainable-grading.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/evaluaciones/{evaluacionId}/{format}",
+          "status": "direct",
+          "test_path": "frontend/e2e/mock/grading-review.mock.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/evaluaciones/{evaluacionId}/{format}",
+          "status": "direct",
+          "test_path": "frontend/e2e/p2-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/evaluaciones/{evaluacionId}/{format}",
+          "status": "direct",
+          "test_path": "frontend/e2e/resources-creation.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/evaluaciones/{evaluacionId}/{format}",
+          "status": "direct",
+          "test_path": "frontend/e2e/roster-import.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/evaluaciones/{evaluacionId}/{format}",
+          "status": "direct",
+          "test_path": "frontend/e2e/student-activity-delivery.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/evaluaciones/{evaluacionId}/{format}",
+          "status": "direct",
+          "test_path": "frontend/e2e/visual/student-feedback-story.visual.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/{evaluacionId}/{format}",
+          "status": "direct",
+          "test_path": "frontend/src/components/seo/RouteMetadata.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/{evaluacionId}/{format}",
+          "status": "direct",
+          "test_path": "frontend/src/lib/analytics.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/{evaluacionId}/{format}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/evaluaciones/ResolverEvaluacionPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/{evaluacionId}/{format}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/evaluaciones/api.lifecycle.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/{evaluacionId}/{format}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/evaluaciones/api.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/{evaluacionId}/{format}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/evaluaciones/components/DigitalizarEvaluacionModal.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/{evaluacionId}/{format}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/evaluaciones/components/DigitalizationJobMonitor.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/{evaluacionId}/{format}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/api.lifecycle.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/{evaluacionId}/{format}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/materias/MateriaBoletin.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/{evaluacionId}/{format}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/materias/MateriaDetailPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/{evaluacionId}/{format}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/materias/MateriaEvaluaciones.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/{evaluacionId}/{format}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/materias/MateriaVistaGeneral.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/{evaluacionId}/{format}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/materias/MateriasListPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/{evaluacionId}/{format}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/materias/teacherFlowModel.test.ts"
         }
       ]
     },
@@ -23795,6 +24229,12 @@
           "level": "e2e",
           "reference": "GET:/evaluaciones/{id}",
           "status": "direct",
+          "test_path": "frontend/e2e/evaluation-preview.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/evaluaciones/{id}",
+          "status": "direct",
           "test_path": "frontend/e2e/explainable-grading.spec.ts"
         },
         {
@@ -23856,6 +24296,12 @@
           "reference": "GET:/evaluaciones/{id}",
           "status": "direct",
           "test_path": "frontend/src/modules/evaluaciones/api.lifecycle.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/{id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/evaluaciones/api.test.ts"
         },
         {
           "level": "unit",
@@ -24655,6 +25101,12 @@
           "level": "e2e",
           "reference": "GET:/materias/{id}",
           "status": "direct",
+          "test_path": "frontend/e2e/evaluation-preview.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/materias/{id}",
+          "status": "direct",
           "test_path": "frontend/e2e/explainable-grading.spec.ts"
         },
         {
@@ -25118,6 +25570,12 @@
           "reference": "GET:/materias",
           "status": "direct",
           "test_path": "frontend/e2e/evaluation-ai-wizard.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/materias",
+          "status": "direct",
+          "test_path": "frontend/e2e/evaluation-preview.spec.ts"
         },
         {
           "level": "e2e",
@@ -25688,6 +26146,12 @@
           "reference": "GET:/users/me/authorization",
           "status": "direct",
           "test_path": "frontend/e2e/evaluation-ai-wizard.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/users/me/authorization",
+          "status": "direct",
+          "test_path": "frontend/e2e/evaluation-preview.spec.ts"
         },
         {
           "level": "e2e",
@@ -26813,6 +27277,12 @@
           "level": "e2e",
           "reference": "PATCH:/evaluaciones/{id}",
           "status": "direct",
+          "test_path": "frontend/e2e/evaluation-preview.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/evaluaciones/{id}",
+          "status": "direct",
           "test_path": "frontend/e2e/explainable-grading.spec.ts"
         },
         {
@@ -26874,6 +27344,12 @@
           "reference": "PATCH:/evaluaciones/{id}",
           "status": "direct",
           "test_path": "frontend/src/modules/evaluaciones/api.lifecycle.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/evaluaciones/{id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/evaluaciones/api.test.ts"
         },
         {
           "level": "unit",
@@ -27229,6 +27705,12 @@
           "reference": "PATCH:/materias/{id}",
           "status": "direct",
           "test_path": "frontend/e2e/evaluation-ai-wizard.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/materias/{id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/evaluation-preview.spec.ts"
         },
         {
           "level": "e2e",
@@ -28410,6 +28892,12 @@
           "reference": "POST:/analytics/evento",
           "status": "direct",
           "test_path": "backend/tests/unit/test_authorization_contracts.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/analytics/evento",
+          "status": "direct",
+          "test_path": "frontend/e2e/evaluation-preview.spec.ts"
         },
         {
           "level": "e2e",
@@ -29698,7 +30186,7 @@
       "kind": "frontend_call",
       "owner_spec": "007-entregas-estudiante",
       "signature": "POST:/evaluaciones/{evaluacionId}/entregas/archivo",
-      "source_line": 147,
+      "source_line": 168,
       "source_path": "frontend/src/modules/evaluaciones/api.ts",
       "states": [],
       "tests": [
@@ -29754,7 +30242,7 @@
       "kind": "frontend_call",
       "owner_spec": "005-evaluaciones",
       "signature": "POST:/evaluaciones/{evaluacionId}/solicitud-revision",
-      "source_line": 133,
+      "source_line": 154,
       "source_path": "frontend/src/modules/evaluaciones/api.ts",
       "states": [],
       "tests": [
@@ -29944,6 +30432,12 @@
           "level": "e2e",
           "reference": "POST:/evaluaciones",
           "status": "direct",
+          "test_path": "frontend/e2e/evaluation-preview.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/evaluaciones",
+          "status": "direct",
           "test_path": "frontend/e2e/explainable-grading.spec.ts"
         },
         {
@@ -30005,6 +30499,12 @@
           "reference": "POST:/evaluaciones",
           "status": "direct",
           "test_path": "frontend/src/modules/evaluaciones/api.lifecycle.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/evaluaciones",
+          "status": "direct",
+          "test_path": "frontend/src/modules/evaluaciones/api.test.ts"
         },
         {
           "level": "unit",
@@ -30702,6 +31202,12 @@
           "reference": "POST:/materias",
           "status": "direct",
           "test_path": "frontend/e2e/evaluation-ai-wizard.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/materias",
+          "status": "direct",
+          "test_path": "frontend/e2e/evaluation-preview.spec.ts"
         },
         {
           "level": "e2e",
@@ -35669,6 +36175,12 @@
           "level": "unit",
           "reference": "evaluaciones",
           "status": "direct",
+          "test_path": "backend/tests/unit/test_evaluation_exports.py"
+        },
+        {
+          "level": "unit",
+          "reference": "evaluaciones",
+          "status": "direct",
           "test_path": "backend/tests/unit/test_evaluation_generation.py"
         },
         {
@@ -35777,6 +36289,12 @@
           "level": "e2e",
           "reference": "evaluaciones",
           "status": "direct",
+          "test_path": "frontend/e2e/evaluation-preview.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "evaluaciones",
+          "status": "direct",
           "test_path": "frontend/e2e/explainable-grading.spec.ts"
         },
         {
@@ -35844,6 +36362,12 @@
           "reference": "evaluaciones",
           "status": "direct",
           "test_path": "frontend/src/modules/evaluaciones/api.lifecycle.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "evaluaciones",
+          "status": "direct",
+          "test_path": "frontend/src/modules/evaluaciones/api.test.ts"
         },
         {
           "level": "unit",
@@ -36499,6 +37023,12 @@
           "reference": "materias",
           "status": "direct",
           "test_path": "frontend/e2e/evaluation-ai-wizard.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "materias",
+          "status": "direct",
+          "test_path": "frontend/e2e/evaluation-preview.spec.ts"
         },
         {
           "level": "e2e",
@@ -37732,6 +38262,12 @@
           "reference": "users",
           "status": "direct",
           "test_path": "frontend/e2e/evaluation-ai-wizard.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "users",
+          "status": "direct",
+          "test_path": "frontend/e2e/evaluation-preview.spec.ts"
         },
         {
           "level": "e2e",

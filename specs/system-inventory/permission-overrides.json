@@ -2,6 +2,20 @@
   "schema_version": 1,
   "permission_overrides": [
     {
+      "surface_id": "backend:GET:/evaluaciones/{evaluacion_id}/pdf",
+      "actors": ["admin", "estudiante", "profesor"],
+      "reason": "La autorización compartida exige evaluations.read y ensure_can_read_evaluation; el solucionario solo admite propietario docente o administrador autorizado.",
+      "issue_url": "https://github.com/Andres-back/Calificator/issues/169",
+      "evidence": ["backend/tests/unit/test_evaluation_exports.py"]
+    },
+    {
+      "surface_id": "backend:GET:/evaluaciones/{evaluacion_id}/docx",
+      "actors": ["admin", "estudiante", "profesor"],
+      "reason": "La exportación reutiliza la autorización de lectura y propiedad de PDF; matrícula y publicación siguen validadas por el servicio y soluciones denegadas a estudiante o docente ajeno.",
+      "issue_url": "https://github.com/Andres-back/Calificator/issues/169",
+      "evidence": ["backend/tests/unit/test_evaluation_exports.py"]
+    },
+    {
       "surface_id": "backend:GET:/herramientas/materias/{materia_id}/recursos",
       "actors": ["admin", "estudiante", "profesor"],
       "reason": "El servicio valida gestión docente o matrícula activa y filtra recursos publicados para estudiantes.",

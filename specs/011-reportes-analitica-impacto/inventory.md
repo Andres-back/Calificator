@@ -88,4 +88,4 @@
 ## Hallazgos
 
 - **low · missing_coverage**: 18 superficies de 011-reportes-analitica-impacto no tienen evidencia de prueba observable.
-- **medium · contract_mismatch**: 4 llamadas frontend no tienen endpoint backend canónico coincidente en el análisis estático.
+- **medium · contract_mismatch**: 5 llamadas frontend no tienen endpoint backend canónico coincidente en el análisis estático.
