@@ -27,23 +27,8 @@ async def search_chunks(
     exclude_types: tuple[str, ...] = (),
 ) -> list[dict]:
     """Devuelve solo fragmentos del mismo proveedor, modelo, dimensión y versión."""
-    embedded = await embed_single_with_metadata(query, db=db, teacher_id=profesor_id)
-    embedding_str = "[" + ",".join(str(value) for value in embedded.vector) + "]"
-    filters: list[str] = [
-        "c.embedding_provider = :embedding_provider",
-        "c.embedding_model = :embedding_model",
-        "c.embedding_dimensions = :embedding_dimensions",
-        "c.embedding_space_version = :embedding_space_version",
-        "c.embedding_vec IS NOT NULL",
-    ]
-    params: dict = {
-        "embedding": embedding_str,
-        "embedding_provider": embedded.space.provider,
-        "embedding_model": embedded.space.model,
-        "embedding_dimensions": embedded.space.dimensions,
-        "embedding_space_version": embedded.space.version,
-        "limit": limit,
-    }
+    filters: list[str] = ["c.embedding_vec IS NOT NULL"]
+    params: dict = {}
     if materia_id:
         filters.append(
             "((c.materia_id = CAST(:materia_id AS uuid) "
@@ -66,6 +51,41 @@ async def search_chunks(
     where_sql = "WHERE " + " AND ".join(filters)
 
     try:
+        # No vector de consulta puede recuperar referencias inexistentes.
+        # Reutilizar el alcance completo evita esperar por fuentes de otro docente.
+        async with db.begin_nested():
+            candidates = await db.execute(
+                text(
+                    f"""
+                    SELECT EXISTS (
+                        SELECT 1 FROM rag_chunks c
+                        JOIN rag_sources s ON s.id = c.source_id
+                        {where_sql}
+                    )
+                    """
+                ),
+                params,
+            )
+            if not candidates.scalar_one():
+                return []
+
+        embedded = await embed_single_with_metadata(query, db=db, teacher_id=profesor_id)
+        params.update({
+            "embedding": "[" + ",".join(str(value) for value in embedded.vector) + "]",
+            "embedding_provider": embedded.space.provider,
+            "embedding_model": embedded.space.model,
+            "embedding_dimensions": embedded.space.dimensions,
+            "embedding_space_version": embedded.space.version,
+            "limit": limit,
+        })
+        # Mantener la compatibilidad exacta; el preflight es conservador y
+        # no predice el espacio de la configuración efectiva del docente.
+        where_sql += (
+            " AND c.embedding_provider = :embedding_provider"
+            " AND c.embedding_model = :embedding_model"
+            " AND c.embedding_dimensions = :embedding_dimensions"
+            " AND c.embedding_space_version = :embedding_space_version"
+        )
         async with db.begin_nested():
             result = await db.execute(
                 text(
@@ -83,6 +103,8 @@ async def search_chunks(
                 ),
                 params,
             )
+    except EmbeddingUnavailableError:
+        raise
     except Exception as exc:  # noqa: BLE001
         logger.warning("Semantic search unavailable: %s", type(exc).__name__)
         raise EmbeddingUnavailableError(

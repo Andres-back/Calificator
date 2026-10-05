@@ -257,4 +257,9 @@ actualizar la especificación propietaria, su plan y sus tareas; no debe crear d
 - No modifica permisos persistidos, contratos del backend, matrículas, entregas ni calificaciones.
 
 - [Inventario canónico JSON](system-inventory/current.json)
+
+## Hotfix 083: evitar embedding sin referencias accesibles
+
+- [083-rag-preflight](083-rag-preflight/spec.md), [issue #172](https://github.com/Andres-back/Calificator/issues/172): comprueba fuentes vectorizadas autorizadas antes de generar el vector de consulta. Evoluciona 009 (RAG) y beneficia 008 (calificación), que conservan responsabilidad canónica.
+- Sin tablas, APIs, proveedores, criterios ni notas modificadas. [Validación](083-rag-preflight/quickstart.md).
 - [Especificación del generador y gate de deriva](013-inventario-tecnico-exhaustivo/spec.md)

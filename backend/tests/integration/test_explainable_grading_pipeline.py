@@ -305,6 +305,9 @@ def test_rag_query_excludes_foreign_or_removed_sources_at_database_boundary(monk
             return False
 
     class Result:
+        def scalar_one(self):
+            return True
+
         def fetchall(self):
             return []
 
@@ -313,7 +316,7 @@ def test_rag_query_excludes_foreign_or_removed_sources_at_database_boundary(monk
             return Nested()
 
         async def execute(self, statement, params):
-            executed.append((str(statement), params))
+            executed.append((str(statement), dict(params)))
             return Result()
 
     async def fake_embedding(_query, **_kwargs):
@@ -334,7 +337,10 @@ def test_rag_query_excludes_foreign_or_removed_sources_at_database_boundary(monk
     result = asyncio.run(retrieval_service.search_chunks(
         FakeDb(), "consulta", materia_id=materia_id, profesor_id=profesor_id,
     ))
-    sql, params = executed[0]
+    assert len(executed) == 2
+    assert "SELECT EXISTS" in executed[0][0]
+    assert "embedding_provider" not in executed[0][1]
+    sql, params = executed[1]
     normalized = " ".join(sql.split())
     assert "JOIN rag_sources s ON s.id = c.source_id" in normalized
     assert "c.materia_id = CAST(:materia_id AS uuid)" in normalized
