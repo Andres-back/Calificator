@@ -268,3 +268,8 @@ actualizar la especificación propietaria, su plan y sus tareas; no debe crear d
 
 - [084-docente-mobile-first](084-docente-mobile-first/spec.md), [issue #174](https://github.com/Andres-back/Calificator/issues/174): vista previa dentro del celular, criterios/rúbrica independientes, materias breves, registro manual/foto con fichas privadas y perfil propio.
 - Especificación, [plan](084-docente-mobile-first/plan.md) y revisión asistida aprobados. Cinco historias implementadas, pruebas backend/frontend, matriz final Chromium/WebKit y construcciones Docker aprobadas. Converge sin trabajo pendiente; [PR #175](https://github.com/Andres-back/Calificator/pull/175) abierto, CI remoto en curso. Sin fusión/despliegue. [Evidencia](084-docente-mobile-first/quickstart.md); no altera notas/evidencias.
+
+## Evolución 085: asistencia con guardado automático
+
+- [085-asistencia-autoguardado](085-asistencia-autoguardado/spec.md), [issue #176](https://github.com/Andres-back/Calificator/issues/176): cada marca se guarda sin completar el grupo; cola de correcciones, observaciones y reintento explícito en interfaz móvil compacta.
+- Evoluciona 004, que conserva responsabilidad única de asistencia y sus tablas/rutas. PATCH aditivo; PUT completo compatible; sin migraciones, notas ni evidencias modificadas. [Validación](085-asistencia-autoguardado/quickstart.md). Fusión/despliegue sujetos a autorización separada y CI verde.

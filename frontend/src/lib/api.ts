@@ -125,6 +125,8 @@ api.interceptors.response.use(
   async (error: AxiosError) => {
     const config = error.config as SessionRequestConfig | undefined;
     releaseRequest(config);
+    // Query cancellation is intentional (e.g. stale attendance reads), not a server failure.
+    if (axios.isCancel(error)) return Promise.reject(error);
 
     if (error.response?.status !== 401 || !config || isAuthPathWithoutRefresh(config)) {
       reportHttpError(error, config);

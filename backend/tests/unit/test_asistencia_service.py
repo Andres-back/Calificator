@@ -49,3 +49,15 @@ def test_duplicate_student_in_daily_payload_is_rejected() -> None:
                 ],
             }
         )
+
+
+def test_partial_attendance_requires_nonempty_unique_rows():
+    from app.modules.asistencia.schemas import AsistenciaDiaPatch
+
+    student_id = uuid4()
+    row = {"estudiante_id": str(student_id), "estado": "tarde"}
+    assert len(AsistenciaDiaPatch(fecha=date.today(), registros=[row]).registros) == 1
+    with pytest.raises(ValidationError):
+        AsistenciaDiaPatch(fecha=date.today(), registros=[])
+    with pytest.raises(ValidationError, match="dos veces"):
+        AsistenciaDiaPatch(fecha=date.today(), registros=[row, row])

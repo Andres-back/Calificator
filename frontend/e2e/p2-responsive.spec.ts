@@ -353,7 +353,7 @@ test(`asistencia sin superposición ${viewport.name} ${theme}`, async ({ page })
   await page.addInitScript((mode) => localStorage.setItem('xc-theme', JSON.stringify({ state: { mode }, version: 0 })), theme);
   await installApiMocks(page, 'profesor');
   await page.route('**/api/materias/m1/asistencia?**', (route) => fulfillJson(route, {
-    materia_id: 'm1', fecha: '2026-08-09',
+    materia_id: 'm1', fecha: new URL(route.request().url()).searchParams.get('fecha'),
     registros: Array.from({ length: 30 }, (_, index) => ({
       estudiante_id: `student-${index}`,
       estudiante_nombre: `Estudiante ${index + 1}`,
@@ -396,8 +396,8 @@ test(`asistencia sin superposición ${viewport.name} ${theme}`, async ({ page })
   await page.evaluate(() => { document.documentElement.style.zoom = '2'; });
   await summaryCard.scrollIntoViewIfNeeded();
   expect(await summaryCard.evaluate((element) => getComputedStyle(element).position)).toBe('relative');
-  await expect(summaryCard.getByRole('button', { name: 'Completa la lista' })).toBeInViewport();
-  expect(await summaryCard.getByRole('button', { name: 'Completa la lista' }).evaluate((element) => element.scrollHeight <= element.clientHeight + 1)).toBe(true);
+  await expect(summaryCard.getByRole('status')).toBeInViewport();
+  expect(await summaryCard.getByRole('status').evaluate((element) => element.scrollHeight <= element.clientHeight + 1)).toBe(true);
   const zoomLayout = await page.evaluate(() => ({
     scroll: document.documentElement.scrollWidth, client: document.documentElement.clientWidth, inner: window.innerWidth,
     boxes: ['html', 'body', '#root', 'header', 'main'].map((selector) => {

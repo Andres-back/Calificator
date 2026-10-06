@@ -4,12 +4,14 @@ from datetime import date
 from uuid import UUID
 
 from fastapi import HTTPException, status
-from sqlalchemy import select
+from sqlalchemy import func, select
+from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modules.asistencia.models import AsistenciaRegistro
 from app.modules.asistencia.schemas import (
     AsistenciaDiaRead,
+    AsistenciaDiaPatch,
     AsistenciaDiaUpsert,
     AsistenciaEstudianteRead,
     AsistenciaReporteDiaRead,
@@ -112,7 +114,7 @@ async def get_attendance_day(
         select(AsistenciaRegistro).where(
             AsistenciaRegistro.materia_id == materia.id,
             AsistenciaRegistro.fecha == attendance_date,
-        )
+        ).execution_options(populate_existing=True)
     )
     records_by_student = {record.estudiante_id: record for record in records_result}
 
@@ -164,34 +166,40 @@ async def save_attendance_day(
             detail="No se guardó la asistencia: " + " y ".join(details) + ".",
         )
 
-    existing_result = await db.scalars(
-        select(AsistenciaRegistro).where(
-            AsistenciaRegistro.materia_id == materia.id,
-            AsistenciaRegistro.fecha == payload.fecha,
-        )
-    )
-    existing_by_student = {record.estudiante_id: record for record in existing_result}
-
-    for submitted in payload.registros:
-        observation = submitted.observacion.strip() if submitted.observacion else None
-        record = existing_by_student.get(submitted.estudiante_id)
-        if record is None:
-            record = AsistenciaRegistro(
-                materia_id=materia.id,
-                estudiante_id=submitted.estudiante_id,
-                registrado_por=actor.id,
-                fecha=payload.fecha,
-                estado=submitted.estado.value,
-                observacion=observation,
-            )
-            db.add(record)
-        else:
-            record.estado = submitted.estado.value
-            record.observacion = observation
-            record.registrado_por = actor.id
-
+    await _upsert_attendance(db, materia, payload, actor)
     await db.commit()
     return await get_attendance_day(db, materia, payload.fecha)
+
+
+async def patch_attendance_day(
+    db: AsyncSession, materia: Materia, payload: AsistenciaDiaPatch, actor: User,
+) -> AsistenciaDiaRead:
+    ensure_attendance_date_is_valid(payload.fecha)
+    active_ids = {student.id for student in await _list_active_students(db, materia.id)}
+    if any(record.estudiante_id not in active_ids for record in payload.registros):
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+                            detail="No se guardó la asistencia: hay estudiantes que no pertenecen a la materia.")
+    await _upsert_attendance(db, materia, payload, actor)
+    await db.commit()
+    return await get_attendance_day(db, materia, payload.fecha)
+
+
+async def _upsert_attendance(
+    db: AsyncSession, materia: Materia, payload: AsistenciaDiaUpsert, actor: User,
+) -> None:
+    if not payload.registros:
+        return
+    rows = [{"materia_id": materia.id, "estudiante_id": record.estudiante_id,
+             "fecha": payload.fecha, "estado": record.estado.value,
+             "observacion": (record.observacion or "").strip() or None,
+             "registrado_por": actor.id}
+            for record in sorted(payload.registros, key=lambda item: str(item.estudiante_id))]
+    statement = insert(AsistenciaRegistro).values(rows)
+    await db.execute(statement.on_conflict_do_update(
+        constraint="uq_asistencia_materia_estudiante_fecha",
+        set_={"estado": statement.excluded.estado, "observacion": statement.excluded.observacion,
+              "registrado_por": statement.excluded.registrado_por, "updated_at": func.now()},
+    ))
 
 
 async def get_attendance_report(

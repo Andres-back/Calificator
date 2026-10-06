@@ -98,6 +98,14 @@ export function buildAttendancePayload(
   };
 }
 
+/** An immutable partial payload; unmarked and unchanged students stay untouched. */
+export function buildAttendancePatchPayload(fecha: string, draft: AttendanceDraft, baseline: AttendanceDraft): AsistenciaDiaInput | null {
+  const changed = Object.fromEntries(Object.entries(draft).filter(([id, row]) =>
+    row.estado !== null && (!baseline[id] || isAttendanceDraftDirty({ [id]: row }, { [id]: baseline[id] })),
+  ));
+  return Object.keys(changed).length ? buildAttendancePayload(fecha, changed) : null;
+}
+
 export function localDateIso(now = new Date()): string {
   const year = now.getFullYear();
   const month = String(now.getMonth() + 1).padStart(2, '0');

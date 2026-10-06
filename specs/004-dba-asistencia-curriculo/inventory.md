@@ -2,7 +2,7 @@
 
 > Archivo generado por `python scripts/build_system_inventory.py --write`. No editar manualmente.
 
-**Superficies propietarias:** 26
+**Superficies propietarias:** 28
 
 | Tipo | Firma | Actores | Cobertura | Fuente |
 |---|---|---|---|---|
@@ -13,6 +13,7 @@
 | endpoint | `GET:/materias/{materia_id}/dba` | admin, estudiante, profesor | covered | `backend/app/modules/dba/router.py:156` |
 | endpoint | `GET:/materias/{materia_id}/dba-personalizados` | admin, estudiante, profesor | missing | `backend/app/modules/dba/router.py:79` |
 | endpoint | `PATCH:/dba-personalizados/{dba_id}` | admin, profesor | covered | `backend/app/modules/dba/router.py:122` |
+| endpoint | `PATCH:/materias/{materia_id}/asistencia` | admin, profesor | covered | `backend/app/modules/asistencia/router.py:54` |
 | endpoint | `POST:/dba/importar` | admin, profesor | covered | `backend/app/modules/dba/router.py:53` |
 | endpoint | `POST:/materias/{materia_id}/dba-personalizados` | admin, profesor | missing | `backend/app/modules/dba/router.py:95` |
 | endpoint | `POST:/materias/{materia_id}/dba-personalizados/upload-document` | admin, profesor | missing | `backend/app/modules/dba/router.py:176` |
@@ -21,14 +22,15 @@
 | frontend_route | `/app/materias/{id}/dba` | admin, profesor | covered | `frontend/src/config/routes.ts:40` |
 | frontend_call | `DELETE:/dba-personalizados/{id}` | ambiguous | covered | `frontend/src/modules/materias/dbaApi.ts:33` |
 | frontend_call | `GET:/dba` | ambiguous | covered | `frontend/src/modules/evaluaciones/api.ts:172` |
-| frontend_call | `GET:/materias/{materiaId}/asistencia/reporte` | ambiguous | covered | `frontend/src/modules/materias/asistenciaApi.ts:81` |
+| frontend_call | `GET:/materias/{materiaId}/asistencia/reporte` | ambiguous | covered | `frontend/src/modules/materias/asistenciaApi.ts:82` |
 | frontend_call | `GET:/materias/{materiaId}/asistencia` | admin, profesor | covered | `frontend/src/modules/materias/asistenciaApi.ts:70` |
 | frontend_call | `GET:/materias/{materiaId}/dba-personalizados` | ambiguous | covered | `frontend/src/modules/materias/dbaApi.ts:13` |
 | frontend_call | `GET:/materias/{materiaId}/dba` | admin, profesor | covered | `frontend/src/modules/materias/dbaApi.ts:18` |
 | frontend_call | `PATCH:/dba-personalizados/{id}` | ambiguous | covered | `frontend/src/modules/materias/dbaApi.ts:28` |
+| frontend_call | `PATCH:/materias/{materiaId}/asistencia` | admin, profesor | covered | `frontend/src/modules/materias/asistenciaApi.ts:98` |
 | frontend_call | `POST:/materias/{materiaId}/dba-personalizados/upload-document` | ambiguous | covered | `frontend/src/modules/materias/dbaApi.ts:58` |
 | frontend_call | `POST:/materias/{materiaId}/dba-personalizados` | ambiguous | covered | `frontend/src/modules/materias/dbaApi.ts:23` |
-| frontend_call | `PUT:/materias/{materiaId}/asistencia` | admin, profesor | covered | `frontend/src/modules/materias/asistenciaApi.ts:92` |
+| frontend_call | `PUT:/materias/{materiaId}/asistencia` | admin, profesor | covered | `frontend/src/modules/materias/asistenciaApi.ts:93` |
 | table | `asistencia_registros` | system | covered | `backend/app/modules/asistencia/models.py:13` |
 | table | `dba_catalog` | system | missing | `backend/app/modules/dba/models.py:12` |
 | table | `dba_personalizados` | system | missing | `backend/app/modules/dba/models.py:35` |

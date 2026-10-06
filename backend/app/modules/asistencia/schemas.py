@@ -32,6 +32,10 @@ class AsistenciaEstudianteRead(BaseModel):
     observacion: str | None
 
 
+class AsistenciaDiaPatch(AsistenciaDiaUpsert):
+    registros: list[AsistenciaRegistroInput] = Field(min_length=1)
+
+
 class AsistenciaResumenRead(BaseModel):
     total: int
     presentes: int

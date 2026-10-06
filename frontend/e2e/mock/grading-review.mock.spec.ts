@@ -43,6 +43,46 @@ test('prioriza excepciones en móvil sin confirmar ni publicar automáticamente'
 
 const teacherPermissions = ['subjects.read', 'evaluations.read', 'evaluations.create', 'grading.read', 'grading.grade', 'grading.publish', 'gradebook.read', 'attendance.read', 'attendance.manage'];
 
+test('asistencia recupera errores y protege observación pendiente en celular', async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 800 });
+  await login(page, 'profesor', { permissions: teacherPermissions });
+  await installGroupViews(page);
+  let fail = true;
+  await page.route('**/api/materias/m1/asistencia', async (route) => {
+    if (route.request().method() === 'PATCH' && fail) {
+      fail = false;
+      await route.fulfill({ status: 500, json: { detail: 'No se pudo guardar. Reintenta.' } });
+    } else await route.fallback();
+  });
+  await page.goto('/app/materias/m1/asistencia');
+  const search = page.getByRole('searchbox', { name: 'Buscar estudiante' });
+  await search.fill('alumno99@');
+  await page.getByRole('button', { name: 'Ausente para Alumno 99', exact: true }).click();
+  await expect(page.getByText('No guardado', { exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Ausente para Alumno 99', exact: true })).toHaveAttribute('aria-pressed', 'true');
+  await page.getByRole('button', { name: 'Reintentar asistencia para Alumno 99', exact: true }).click();
+  await expect(page.getByText('Guardado', { exact: true })).toBeVisible();
+  await search.fill('alumno98@');
+  const observation = page.getByRole('textbox', { name: 'Observación para Alumno 98' });
+  await observation.fill('Falta escoger estado');
+  await expect(observation).toBeFocused();
+  const date = page.getByLabel(/Fecha de la asistencia/);
+  const originalDate = await date.inputValue();
+  page.once('dialog', (dialog) => dialog.dismiss());
+  await date.fill('2026-10-01');
+  await expect(date).toHaveValue(originalDate);
+  await page.getByRole('combobox', { name: 'Sección de la materia', exact: true }).selectOption({ label: 'Evaluaciones' });
+  await expect(page.getByRole('dialog', { name: 'Hay cambios sin guardar' })).toBeVisible();
+  await page.getByRole('button', { name: 'Seguir registrando', exact: true }).click();
+  await expect(observation).toHaveValue('Falta escoger estado');
+  await page.getByRole('button', { name: 'Con excusa para Alumno 98', exact: true }).click();
+  await expect(page.getByText('Guardado', { exact: true })).toBeVisible();
+  await page.reload();
+  await search.fill('alumno98@');
+  await expect(observation).toHaveValue('Falta escoger estado');
+  await expect(page.getByRole('button', { name: 'Con excusa para Alumno 98', exact: true })).toHaveAttribute('aria-pressed', 'true');
+});
+
 async function installGroupViews(page: Page) {
   const roster = Array.from({ length: 100 }, (_, index) => ({ id: index === 0 ? 's1' : `s${index + 1}`, nombre: index === 0 ? 'Estudiante Prueba' : `Alumno ${index + 1}`, email: `alumno${index + 1}@example.test`, rol: 'estudiante', estado: 'activo' }));
   const subject = { id: 'm1', profesor_id: 'p1', nombre: 'Matemáticas', area: 'Matemáticas', grado: '4', estado: 'activa', estudiantes: roster.slice(0, 30) };
@@ -56,14 +96,29 @@ async function installGroupViews(page: Page) {
     { id: 'c4', evaluacion_id: 'e1', estudiante_id: 's4', nota_confirmada: null, nota_sugerida: 2.5, estado: 'pendiente' },
   ] }));
   await page.route('**/api/evaluaciones/e2/calificaciones', (route) => route.fulfill({ json: [{ id: 'other-grade', evaluacion_id: 'e2', estudiante_id: 's1', nota_confirmada: 1.5, estado: 'publicada', revisado_por_docente: true }] }));
+  const days = new Map<string, Map<string, { estado: string; observacion: string | null }>>();
   await page.route('**/api/materias/m1/asistencia**', async (route) => {
-    const saved = route.request().method() === 'PUT' ? route.request().postDataJSON() : null;
-    await route.fulfill({ json: { materia_id: 'm1', fecha: saved?.fecha ?? new URL(route.request().url()).searchParams.get('fecha'), registros: roster.map((item) => {
-      const record = saved?.registros.find((entry: { estudiante_id: string }) => entry.estudiante_id === item.id);
-      return { estudiante_id: item.id, estudiante_nombre: item.nombre, estudiante_email: item.email, estado: record?.estado ?? null, observacion: record?.observacion ?? null };
-    }), resumen: { total: 100, pendientes: saved ? 0 : 100, presentes: saved ? 99 : 0, tarde: saved ? 1 : 0, ausentes: 0, excusas: 0 } } });
+    const request = route.request();
+    const saved = request.method() === 'PATCH' ? request.postDataJSON() : null;
+    const fecha = saved?.fecha ?? new URL(request.url()).searchParams.get('fecha');
+    const records = days.get(fecha) ?? new Map();
+    if (saved) {
+      expect(request.method()).toBe('PATCH');
+      for (const record of saved.registros) records.set(record.estudiante_id, record);
+      days.set(fecha, records);
+    }
+    const count = (estado: string) => [...records.values()].filter((row) => row.estado === estado).length;
+    await route.fulfill({ json: { materia_id: 'm1', fecha, registros: roster.map((item) => ({
+      estudiante_id: item.id, estudiante_nombre: item.nombre, estudiante_email: item.email,
+      estado: records.get(item.id)?.estado ?? null, observacion: records.get(item.id)?.observacion ?? null,
+    })), resumen: { total: 100, pendientes: 100 - records.size, presentes: count('presente'), tarde: count('tarde'), ausentes: count('ausente'), excusas: count('excusa') } } });
   });
-  await page.route('**/api/materias/m1/asistencia/reporte?**', (route) => route.fulfill({ json: { materia_id: 'm1', jornadas_registradas: 0, estudiantes: [], jornadas: [], resumen: { total_registros: 0, presentes: 0, tarde: 0, ausentes: 0, excusas: 0, porcentaje_asistencia: 0 } } }));
+  await page.route('**/api/materias/m1/asistencia/reporte?**', (route) => {
+    const records = [...days.values()].flatMap((rows) => [...rows.values()]);
+    const count = (estado: string) => records.filter((row) => row.estado === estado).length;
+    const url = new URL(route.request().url());
+    return route.fulfill({ json: { materia_id: 'm1', fecha_desde: url.searchParams.get('fecha_desde'), fecha_hasta: url.searchParams.get('fecha_hasta'), jornadas_registradas: days.size, estudiantes: [], jornadas: [], resumen: { total_registros: records.length, presentes: count('presente'), tarde: count('tarde'), ausentes: count('ausente'), excusas: count('excusa'), porcentaje_asistencia: 100 } } });
+  });
 }
 
 for (const viewport of [{ width: 360, height: 800 }, { width: 390, height: 844 }, { width: 1366, height: 768 }]) {
@@ -113,11 +168,13 @@ for (const viewport of [{ width: 360, height: 800 }, { width: 390, height: 844 }
       const search = page.getByRole('searchbox', { name: 'Buscar estudiante' });
       await search.fill('alumno99@');
       await expect(page.getByText('1 de 100 estudiantes', { exact: true })).toBeVisible({ timeout: 1_000 });
+      const firstPatch = page.waitForRequest((request) => request.method() === 'PATCH' && request.url().endsWith('/materias/m1/asistencia'));
       await page.getByRole('button', { name: 'Llegó tarde para Alumno 99', exact: true }).click();
+      expect((await firstPatch).postDataJSON().registros).toEqual([{ estudiante_id: 's99', estado: 'tarde', observacion: null }]);
       await page.getByRole('textbox', { name: 'Observación para Alumno 99' }).fill('Con autorización');
       await search.fill('sin coincidencia');
       await expect(page.getByText('No hay estudiantes con esa búsqueda.')).toBeVisible();
-      await expect(page.getByRole('button', { name: 'Completa la lista' })).toBeDisabled();
+      await expect(page.getByRole('button', { name: 'Completa la lista' })).toHaveCount(0);
       const attendanceSummary = page.getByLabel('Resumen y guardado de asistencia');
       await attendanceSummary.locator('summary').click();
       await expect(attendanceSummary.getByText('Pendientes', { exact: true })).toBeVisible();
@@ -126,21 +183,20 @@ for (const viewport of [{ width: 360, height: 800 }, { width: 390, height: 844 }
       await search.fill('alumno99@');
       await expect(page.getByRole('button', { name: 'Llegó tarde para Alumno 99', exact: true })).toHaveAttribute('aria-pressed', 'true');
       await expect(page.getByRole('textbox', { name: 'Observación para Alumno 99' })).toHaveValue('Con autorización');
-      await page.getByRole('button', { name: 'Guardar asistencia' }).scrollIntoViewIfNeeded();
-      await expect(page.getByRole('button', { name: 'Guardar asistencia' })).toBeInViewport();
+      await expect(page.getByRole('button', { name: 'Guardar asistencia' })).toHaveCount(0);
+      await expect(attendanceSummary.getByRole('status')).toHaveText('No hay cambios sin guardar');
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBeTruthy();
       const searchBounds = await search.boundingBox();
       expect(searchBounds!.height).toBeGreaterThanOrEqual(44);
       await page.screenshot({ path: `../output/playwright/teacher-flow/attendance-${viewport.width}-${mode}.png`, fullPage: true });
-      expect(writes).toEqual([]);
-      if (viewport.width === 360 && mode === 'light') {
-        const request = page.waitForRequest((item) => item.method() === 'PUT' && item.url().includes('/materias/m1/asistencia'));
-        await page.getByRole('button', { name: 'Guardar asistencia' }).click();
-        const payload = (await request).postDataJSON();
-        expect(payload.registros).toHaveLength(100);
-        expect(payload.registros.find((item: { estudiante_id: string }) => item.estudiante_id === 's99')).toMatchObject({ estado: 'tarde', observacion: 'Con autorización' });
-        await expect(page.getByRole('button', { name: 'Asistencia guardada', exact: true })).toBeDisabled();
-      }
+      expect(writes.length).toBeGreaterThan(0);
+      expect(writes.every((url) => url.endsWith('/materias/m1/asistencia'))).toBe(true);
+      await page.reload();
+      await search.fill('alumno99@');
+      await expect(page.getByRole('button', { name: 'Llegó tarde para Alumno 99', exact: true })).toHaveAttribute('aria-pressed', 'true');
+      await expect(page.getByRole('textbox', { name: 'Observación para Alumno 99' })).toHaveValue('Con autorización');
+      await attendanceSummary.locator('summary').click();
+      await expect(attendanceSummary.getByText('99', { exact: true })).toBeVisible();
     });
   }
 }

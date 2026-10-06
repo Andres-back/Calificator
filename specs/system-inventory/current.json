@@ -1,18 +1,18 @@
 {
   "counts": {
     "by_coverage": {
-      "covered": 476,
+      "covered": 478,
       "missing": 95
     },
     "by_kind": {
-      "endpoint": 268,
-      "frontend_call": 183,
+      "endpoint": 269,
+      "frontend_call": 184,
       "frontend_route": 37,
       "integration": 7,
       "job": 18,
       "table": 58
     },
-    "total": 571
+    "total": 573
   },
   "exceptions": [],
   "findings": [
@@ -384,7 +384,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "dbfda557a3914ccbf82c596183cb3821b18f7b672b4bb4d3a18a433ae16f0c05",
+  "source_digest": "9a1bcbc24729500fff16e04836a3643edd4273cb44455bf16ca21c9e6b85e7e9",
   "surfaces": [
     {
       "actors": [
@@ -5370,6 +5370,12 @@
           "level": "unit",
           "reference": "GET:/materias",
           "status": "direct",
+          "test_path": "frontend/src/lib/api.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias",
+          "status": "direct",
           "test_path": "frontend/src/modules/dashboard/DashboardEstudiante.test.tsx"
         },
         {
@@ -5578,6 +5584,12 @@
           "reference": "GET:/materias/{materia_id}",
           "status": "direct",
           "test_path": "frontend/src/lib/analytics.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias/{materia_id}",
+          "status": "direct",
+          "test_path": "frontend/src/lib/api.test.ts"
         },
         {
           "level": "unit",
@@ -8569,6 +8581,12 @@
           "level": "unit",
           "reference": "PATCH:/materias/{materia_id}",
           "status": "direct",
+          "test_path": "frontend/src/lib/api.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/materias/{materia_id}",
+          "status": "direct",
           "test_path": "frontend/src/modules/dashboard/DashboardEstudiante.test.tsx"
         },
         {
@@ -8630,6 +8648,50 @@
           "reference": "PATCH:/materias/{materia_id}",
           "status": "direct",
           "test_path": "frontend/src/modules/xali/XaliPage.test.tsx"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "admin",
+        "profesor"
+      ],
+      "authorization": [
+        "get_current_user",
+        "require_permission_now:attendance.manage"
+      ],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
+        "function": "patch_attendance_day",
+        "registered": true,
+        "router": "router"
+      },
+      "id": "backend:PATCH:/materias/{materia_id}/asistencia",
+      "kind": "endpoint",
+      "owner_spec": "004-dba-asistencia-curriculo",
+      "signature": "PATCH:/materias/{materia_id}/asistencia",
+      "source_line": 54,
+      "source_path": "backend/app/modules/asistencia/router.py",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "PATCH:/materias/{materia_id}/asistencia",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_asistencia_report.py"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/materias/{materia_id}/asistencia",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_asistencia_service.py"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/materias/{materia_id}/asistencia",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_authorization_contracts.py"
         }
       ]
     },
@@ -13331,6 +13393,12 @@
           "level": "unit",
           "reference": "POST:/materias",
           "status": "direct",
+          "test_path": "frontend/src/lib/api.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/materias",
+          "status": "direct",
           "test_path": "frontend/src/modules/dashboard/DashboardEstudiante.test.tsx"
         },
         {
@@ -14743,6 +14811,12 @@
           "level": "unit",
           "reference": "/",
           "status": "direct",
+          "test_path": "backend/tests/integration/test_attendance_autosave.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
           "test_path": "backend/tests/integration/test_business_flow_smoke.py"
         },
         {
@@ -15746,6 +15820,12 @@
           "reference": "/",
           "status": "direct",
           "test_path": "frontend/src/modules/materias/teacherFlowModel.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "frontend/src/modules/materias/useAttendanceAutosave.test.tsx"
         },
         {
           "level": "unit",
@@ -25498,6 +25578,12 @@
           "level": "unit",
           "reference": "GET:/materias/{id}",
           "status": "direct",
+          "test_path": "frontend/src/lib/api.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias/{id}",
+          "status": "direct",
           "test_path": "frontend/src/modules/dashboard/DashboardEstudiante.test.tsx"
         },
         {
@@ -25578,7 +25664,7 @@
       "kind": "frontend_call",
       "owner_spec": "004-dba-asistencia-curriculo",
       "signature": "GET:/materias/{materiaId}/asistencia/reporte",
-      "source_line": 81,
+      "source_line": 82,
       "source_path": "frontend/src/modules/materias/asistenciaApi.ts",
       "states": [],
       "tests": [
@@ -25973,6 +26059,12 @@
           "reference": "GET:/materias",
           "status": "direct",
           "test_path": "frontend/src/lib/analytics.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias",
+          "status": "direct",
+          "test_path": "frontend/src/lib/api.test.ts"
         },
         {
           "level": "unit",
@@ -28125,6 +28217,12 @@
           "level": "unit",
           "reference": "PATCH:/materias/{id}",
           "status": "direct",
+          "test_path": "frontend/src/lib/api.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/materias/{id}",
+          "status": "direct",
           "test_path": "frontend/src/modules/dashboard/DashboardEstudiante.test.tsx"
         },
         {
@@ -28186,6 +28284,43 @@
           "reference": "PATCH:/materias/{id}",
           "status": "direct",
           "test_path": "frontend/src/modules/xali/XaliPage.test.tsx"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "admin",
+        "profesor"
+      ],
+      "authorization": [
+        "RequireRole"
+      ],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
+        "backend_contract": "backend:PATCH:/materias/{materia_id}/asistencia",
+        "backend_contract_candidates": [],
+        "contract_status": "matched"
+      },
+      "id": "frontend_call:PATCH:/materias/{materiaId}/asistencia:frontend/src/modules/materias/asistenciaApi.ts",
+      "kind": "frontend_call",
+      "owner_spec": "004-dba-asistencia-curriculo",
+      "signature": "PATCH:/materias/{materiaId}/asistencia",
+      "source_line": 98,
+      "source_path": "frontend/src/modules/materias/asistenciaApi.ts",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "PATCH:/materias/{materiaId}/asistencia",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_materias_service.py"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/materias/{materiaId}/asistencia",
+          "status": "domain",
+          "test_path": "frontend/src/modules/materias/MateriasListPage.test.tsx"
         }
       ]
     },
@@ -31798,6 +31933,12 @@
           "level": "unit",
           "reference": "POST:/materias",
           "status": "direct",
+          "test_path": "frontend/src/lib/api.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/materias",
+          "status": "direct",
           "test_path": "frontend/src/modules/dashboard/DashboardEstudiante.test.tsx"
         },
         {
@@ -32925,7 +33066,7 @@
       "kind": "frontend_call",
       "owner_spec": "004-dba-asistencia-curriculo",
       "signature": "PUT:/materias/{materiaId}/asistencia",
-      "source_line": 92,
+      "source_line": 93,
       "source_path": "frontend/src/modules/materias/asistenciaApi.ts",
       "states": [],
       "tests": [
@@ -35806,6 +35947,12 @@
           "level": "unit",
           "reference": "calificaciones",
           "status": "direct",
+          "test_path": "backend/tests/integration/test_attendance_autosave.py"
+        },
+        {
+          "level": "unit",
+          "reference": "calificaciones",
+          "status": "direct",
           "test_path": "backend/tests/integration/test_evaluation_criteria_update.py"
         },
         {
@@ -36623,6 +36770,12 @@
           "reference": "evaluaciones",
           "status": "direct",
           "test_path": "backend/tests/integration/test_api_contract.py"
+        },
+        {
+          "level": "unit",
+          "reference": "evaluaciones",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_attendance_autosave.py"
         },
         {
           "level": "unit",
@@ -37463,6 +37616,12 @@
           "level": "unit",
           "reference": "materias",
           "status": "direct",
+          "test_path": "backend/tests/integration/test_attendance_autosave.py"
+        },
+        {
+          "level": "unit",
+          "reference": "materias",
+          "status": "direct",
           "test_path": "backend/tests/integration/test_business_flow_smoke.py"
         },
         {
@@ -37655,6 +37814,12 @@
           "level": "unit",
           "reference": "materias",
           "status": "direct",
+          "test_path": "frontend/src/lib/api.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "materias",
+          "status": "direct",
           "test_path": "frontend/src/modules/dashboard/DashboardEstudiante.test.tsx"
         },
         {
@@ -37780,6 +37945,12 @@
           "reference": "matriculas",
           "status": "direct",
           "test_path": "backend/tests/integration/test_api_contract.py"
+        },
+        {
+          "level": "unit",
+          "reference": "matriculas",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_attendance_autosave.py"
         },
         {
           "level": "unit",
@@ -38721,6 +38892,12 @@
           "reference": "users",
           "status": "direct",
           "test_path": "backend/tests/integration/test_api_contract.py"
+        },
+        {
+          "level": "unit",
+          "reference": "users",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_attendance_autosave.py"
         },
         {
           "level": "unit",

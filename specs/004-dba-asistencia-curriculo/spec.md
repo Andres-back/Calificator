@@ -54,4 +54,10 @@ Como equipo, necesito actualizar estos artefactos cuando cambie el comportamient
 - Se conservan arquitectura y contratos públicos durante la línea base.
 ## Inventario técnico
 
+## Comportamiento de asistencia — evolución 085
+
+La selección de estado del alumno inicia guardado parcial automático, sin completar el grupo ni pulsar Guardar. Una cola por materia/fecha conserva correcciones durante envíos; la pantalla distingue pendiente de guardar, guardando, guardado y error con reintento. Observaciones sin estado esperan la selección. Salida/cambio de fecha advierten si quedan cambios sin confirmar. Resumen no fijo, búsqueda y marcado de pendientes conservados.
+
+PATCH aditivo valida autorización, matrícula activa y lote completo antes de escribir mediante upsert; PUT histórico sigue exigiendo roster completo. No hay migración ni cambios de calificaciones/evidencias. [085](../085-asistencia-autoguardado/spec.md) y [contrato vigente](./contracts/interfaces.md) describen la evolución del dominio canónico 004.
+
 - [Ver superficies, permisos y cobertura de este dominio](./inventory.md).

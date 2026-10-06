@@ -1,14 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useBlocker } from 'react-router-dom';
-import toast from 'react-hot-toast';
 import {
   Check,
   CheckCircle2,
   Clock3,
   FileCheck2,
   FileBarChart2,
-  Save,
   ShieldCheck,
   UserCheck,
   Users,
@@ -32,22 +30,18 @@ import { useAuth } from '@/stores/auth';
 import { useMateriaContext } from './MateriaContext';
 import {
   getAsistenciaDia,
-  saveAsistenciaDia,
-  type AsistenciaEstado,
+  patchAsistenciaDia,
 } from './asistenciaApi';
 import {
-  buildAttendancePayload,
-  createAttendanceDraft,
-  isAttendanceDraftDirty,
   localDateIso,
-  markPendingPresent,
   searchAttendanceRecords,
   summarizeAttendanceDraft,
-  type AttendanceDraft,
 } from './attendanceModel';
 import { MateriaAsistenciaReporte } from './MateriaAsistenciaReporte';
 import { RosterImportDialog } from './RosterImportDialog';
 import { ExistingStudentsDialog } from './ExistingStudentsDialog';
+import { useAttendanceAutosave } from './useAttendanceAutosave';
+import type { AsistenciaEstado } from './asistenciaApi';
 
 const STATUS_OPTIONS: {
   value: AsistenciaEstado;
@@ -143,31 +137,28 @@ export function MateriaAsistencia() {
   const queryClient = useQueryClient();
   const today = useMemo(() => localDateIso(), []);
   const [selectedDate, setSelectedDate] = useState(today);
-  const [draft, setDraft] = useState<AttendanceDraft>({});
-  const [baseline, setBaseline] = useState<AttendanceDraft>({});
   const [importOpen, setImportOpen] = useState(false);
   const [existingOpen, setExistingOpen] = useState(false);
   const [search, setSearch] = useState('');
 
   const attendanceQuery = useQuery({
     queryKey: ['asistencia', materia.id, selectedDate],
-    queryFn: () => getAsistenciaDia(materia.id, selectedDate),
+    queryFn: ({ signal }) => getAsistenciaDia(materia.id, selectedDate, signal),
     enabled: canReadAttendance && Boolean(materia.id),
   });
 
-  useEffect(() => {
-    if (!attendanceQuery.data) return;
-    const loadedDraft = createAttendanceDraft(attendanceQuery.data);
-    setDraft(loadedDraft);
-    setBaseline(loadedDraft);
-  }, [attendanceQuery.data]);
+  const autosave = useAttendanceAutosave(materia.id, selectedDate, attendanceQuery.data,
+    (payload) => patchAsistenciaDia(materia.id, payload),
+    async (savedDay) => {
+      // Do not allow an older GET to replace the acknowledged PATCH in the cache.
+      await queryClient.cancelQueries({ queryKey: ['asistencia', savedDay.materia_id, savedDay.fecha], exact: true });
+      queryClient.setQueryData(['asistencia', savedDay.materia_id, savedDay.fecha], savedDay);
+      void queryClient.invalidateQueries({ queryKey: ['asistencia-reporte', savedDay.materia_id] });
+    });
+  const { draft, hasUnsavedChanges, updateStatus, updateObservation, markAllPending } = autosave;
 
   const summary = useMemo(() => summarizeAttendanceDraft(draft), [draft]);
   const visibleStudents = useMemo(() => searchAttendanceRecords(attendanceQuery.data?.registros ?? [], search), [attendanceQuery.data, search]);
-  const hasUnsavedChanges = useMemo(
-    () => isAttendanceDraftDirty(draft, baseline),
-    [baseline, draft],
-  );
   const blocker = useBlocker(
     ({ currentLocation, nextLocation }) =>
       hasUnsavedChanges && currentLocation.pathname !== nextLocation.pathname,
@@ -183,28 +174,6 @@ export function MateriaAsistencia() {
     return () => window.removeEventListener('beforeunload', warnBeforeUnload);
   }, [hasUnsavedChanges]);
 
-  const saveMutation = useMutation({
-    mutationFn: () => {
-      const payload = buildAttendancePayload(selectedDate, draft);
-      if (!payload) throw new Error('Completa la asistencia antes de guardar.');
-      return saveAsistenciaDia(materia.id, payload);
-    },
-    onSuccess: (savedDay) => {
-      queryClient.setQueryData(['asistencia', materia.id, selectedDate], savedDay);
-      void queryClient.invalidateQueries({ queryKey: ['asistencia-reporte', materia.id] });
-      const savedDraft = createAttendanceDraft(savedDay);
-      setDraft(savedDraft);
-      setBaseline(savedDraft);
-      toast.success('Asistencia guardada correctamente.');
-    },
-    onError: (error) => {
-      const message = error instanceof Error && !('response' in error)
-        ? error.message
-        : toApiError(error).detail;
-      toast.error(message);
-    },
-  });
-
   const changeDate = (nextDate: string) => {
     if (!nextDate || nextDate === selectedDate) return;
     if (
@@ -213,33 +182,7 @@ export function MateriaAsistencia() {
     ) {
       return;
     }
-    setDraft({});
-    setBaseline({});
     setSelectedDate(nextDate);
-  };
-
-  const updateStatus = (studentId: string, estado: AsistenciaEstado) => {
-    setDraft((current) => ({
-      ...current,
-      [studentId]: {
-        observacion: current[studentId]?.observacion ?? '',
-        estado,
-      },
-    }));
-  };
-
-  const updateObservation = (studentId: string, observacion: string) => {
-    setDraft((current) => ({
-      ...current,
-      [studentId]: {
-        estado: current[studentId]?.estado ?? null,
-        observacion,
-      },
-    }));
-  };
-
-  const markAllPending = () => {
-    setDraft((current) => markPendingPresent(current));
   };
 
   if (!canReadAttendance) return null;
@@ -293,19 +236,18 @@ export function MateriaAsistencia() {
           <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
             <div className="max-w-2xl">
               <p className="mt-4 text-sm leading-6 text-muted">
-                Marca a todo el grupo y revisa el resumen. Nada se guarda hasta que pulses
-                <strong className="text-fg"> Guardar asistencia</strong>.
+                Cada selección se guarda automáticamente. Puedes seguir marcando mientras se guarda.
               </p>
             </div>
             <div className="flex items-center gap-2 rounded-lg border border-emerald-300 bg-white/80 px-4 py-3 text-sm text-emerald-800 dark:border-emerald-500/30 dark:bg-surface/80 dark:text-emerald-200">
               <ShieldCheck className="h-5 w-5 shrink-0" aria-hidden="true" />
-              Puedes corregir cualquier marca antes de guardar.
+              Puedes corregir cualquier marca; la corrección también se guarda.
             </div>
           </div>
           <div className="mt-6 grid gap-5 border-t border-brand-200 pt-5 dark:border-brand-500/20 md:grid-cols-3">
             <GuideStep number={1} title="Elige el día" description="Hoy aparece seleccionado automáticamente." />
             <GuideStep number={2} title="Marca cada estudiante" description="Usa uno de los cuatro estados grandes." />
-            <GuideStep number={3} title="Revisa y guarda" description="No podrás guardar si queda alguien pendiente." />
+            <GuideStep number={3} title="Comprueba el guardado" description="Cada alumno muestra Guardando, Guardado o Reintentar." />
           </div>
         </details>
       </Card>
@@ -390,7 +332,7 @@ export function MateriaAsistencia() {
           </section>
 
           <Card className="space-y-3 p-4">
-            <Field label="Buscar estudiante" hint="Por nombre o correo. El resumen y el guardado incluyen a todo el grupo.">
+            <Field label="Buscar estudiante" hint="Por nombre o correo. Cada marca se guarda, aunque haya otros pendientes.">
               <div className="flex items-center gap-2">
                 <Input type="search" value={search} onChange={(event) => setSearch(event.target.value)} className="min-h-11 min-w-0 text-base" placeholder="Escribe un nombre o correo" />
                 {search && <Button type="button" variant="outline" onClick={() => setSearch('')} aria-label="Limpiar búsqueda">Limpiar</Button>}
@@ -430,9 +372,19 @@ export function MateriaAsistencia() {
                           : 'bg-amber-100 text-amber-900 dark:bg-amber-500/15 dark:text-amber-200',
                       )}
                     >
-                      {current.estado ? 'Marcado' : 'Pendiente'}
+                      {autosave.status(student.estudiante_id) === 'error' ? 'No guardado'
+                        : autosave.status(student.estudiante_id) === 'saving' ? 'Guardando…'
+                        : autosave.status(student.estudiante_id) === 'pending' ? 'Pendiente de guardar'
+                        : autosave.status(student.estudiante_id) === 'saved' ? 'Guardado' : 'Pendiente'}
                     </span>
                   </div>
+                  {autosave.status(student.estudiante_id) === 'error' && (
+                    <div role="alert" className="mt-2 flex flex-wrap items-center gap-2 text-sm text-rose-700 dark:text-rose-300">
+                      <span>No se pudo guardar. Tu selección sigue aquí.</span>
+                      <Button type="button" variant="outline" onClick={() => autosave.retry(student.estudiante_id)} aria-label={`Reintentar asistencia para ${student.estudiante_nombre}`}>Reintentar</Button>
+                    </div>
+                  )}
+                  {!current.estado && current.observacion.trim() && <p className="mt-2 text-sm text-amber-700 dark:text-amber-200">Selecciona un estado para guardar la observación.</p>}
 
                   <fieldset className="mt-4">
                     <legend className="mb-2 text-sm font-semibold">Estado de asistencia</legend>
@@ -472,6 +424,7 @@ export function MateriaAsistencia() {
                       onChange={(event) =>
                         updateObservation(student.estudiante_id, event.target.value)
                       }
+                      onBlur={() => autosave.flushObservation(student.estudiante_id)}
                       className="mt-2 text-base"
                       placeholder="Escribe una nota breve si la necesitas"
                       aria-label={`Observación para ${student.estudiante_nombre}`}
@@ -490,30 +443,16 @@ export function MateriaAsistencia() {
               <p aria-live="polite" className="text-sm font-semibold tabular-nums">
                 {summary.total - summary.pendientes}/{summary.total} marcados · {summary.pendientes} pendientes
               </p>
-              <Button
-                type="button"
-                className="h-auto min-h-11 w-full py-2 sm:w-auto"
-                disabled={summary.pendientes > 0 || !hasUnsavedChanges}
-                loading={saveMutation.isPending}
-                loadingLabel="Guardando asistencia…"
-                onClick={() => saveMutation.mutate()}
-              >
-                <Save className="h-5 w-5" aria-hidden="true" />
-                {summary.pendientes > 0
-                  ? 'Completa la lista'
-                  : hasUnsavedChanges
-                    ? 'Guardar asistencia'
-                    : 'Asistencia guardada'}
-              </Button>
+              <p role="status" className="text-sm text-muted">
+                {autosave.errors ? `${autosave.errors} cambios no guardados`
+                  : hasUnsavedChanges ? 'Hay cambios pendientes de guardar' : 'No hay cambios sin guardar'}
+              </p>
+              {autosave.errors > 0 && <Button type="button" variant="outline" onClick={() => autosave.retry()}>Reintentar cambios</Button>}
             </div>
             <details className="mt-1">
               <summary className="focus-ring min-h-11 cursor-pointer content-center rounded-lg text-sm font-semibold text-brand-700 dark:text-brand-200">Ver desglose y estado</summary>
               <p className="mb-3 text-sm text-muted">
-                {summary.pendientes > 0
-                  ? 'Completa los estudiantes pendientes para habilitar el guardado.'
-                  : hasUnsavedChanges
-                    ? 'La lista está completa y tiene cambios sin guardar.'
-                    : 'La asistencia de este día ya está guardada.'}
+                Cada marca se guarda automáticamente. Los alumnos pendientes todavía no tienen estado seleccionado.
               </p>
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
                 <SummaryItem
