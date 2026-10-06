@@ -84,3 +84,7 @@ La [evolución 075](../075-revision-docente-compacta/spec.md) organiza el mismo 
 La lista distingue cero real, sin entrega, procesamiento, error y nota publicada. Los filtros son independientes de la paginación; la búsqueda limita filas, no cambia los contadores del examen. Un cursor que deja de pertenecer al filtro responde 409 para reiniciar la lista explícitamente.
 
 Carga, nota manual, reemplazo, ajuste, confirmación y publicación conservan sus endpoints y permisos. Los resultados grupales mantienen seleccionados solo los fallos. Se retiran tres páginas React sin consumidores, no sus APIs de salón/boletín. No se modifica fórmula, configuración de IA ni base de datos.
+
+## Evolución 087: claridad del detalle docente
+
+[087-calificacion-clara](../087-calificacion-clara/spec.md) conserva el flujo y los registros anteriores. El detalle prioriza nota vigente y estado, con cálculo/criterios, evidencia, respuestas y retroalimentación progresivos. Distingue avisos generales de respuestas sin alertas individuales; sus acciones abren el detalle pertinente y los códigos originales permanecen bajo demanda. Un aviso histórico no reabre ni despublica la nota. La confianza informada no prueba coincidencia de evaluadores ni exactitud. La revisión de lectura no recalifica ni publica; ajustes, versiones, permisos y protección de borradores se conservan.

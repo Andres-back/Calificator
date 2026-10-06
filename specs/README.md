@@ -277,3 +277,7 @@ actualizar la especificación propietaria, su plan y sus tareas; no debe crear d
 ## Hotfix 086: diagnóstico de embeddings en administración
 
 - [086-embedding-admin-check](086-embedding-admin-check/spec.md), [issue #178](https://github.com/Andres-back/Calificator/issues/178): prueba sintética real del embedding interno, sin clave de nube ni cambios de rutas efectivas o datos académicos. Evoluciona el panel propiedad de 021; sin nuevas superficies o tablas.
+
+## Evolución 087: revisión de calificaciones clara
+
+- [087-calificacion-clara](087-calificacion-clara/spec.md), [issue #180](https://github.com/Andres-back/Calificator/issues/180): resumen móvil compacto, avisos generales e individuales comprensibles, cálculo progresivo y trazas originales consultables. Dominio propietario: 008; sin nuevas rutas, endpoints, tablas o políticas de calificación.

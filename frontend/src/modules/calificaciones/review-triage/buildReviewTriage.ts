@@ -18,7 +18,47 @@ export type ReviewTriageSummary = {
   exceptions: ReviewTriageItem[];
   counts: Record<ReviewTriageLevel, number>;
   globalBlockers: string[];
+  globalReasons?: string[];
 };
+
+export type ReviewNoticeTarget = 'revision' | 'evidencia' | 'retroalimentacion';
+
+export function describeReviewBlocker(raw: string): { message: string; guidance: string; action: string; target: ReviewNoticeTarget } {
+  const reason = raw.replace(/^feedback_quality:/, '').trim();
+  if (reason === 'nota_global_no_coincide_con_suma') return {
+    message: 'La valoración global de la IA y el cálculo por preguntas no coinciden.',
+    guidance: 'Revisa los puntajes antes de confirmar.', action: 'Revisar puntajes', target: 'revision',
+  };
+  if (reason === 'feedback_contradice_desglose') return {
+    message: 'La retroalimentación no coincide con los puntajes registrados.',
+    guidance: 'Comprueba las respuestas antes de compartirla.', action: 'Revisar retroalimentación', target: 'retroalimentacion',
+  };
+  if (reason === 'clave_incompleta') return {
+    message: 'Faltan respuestas de referencia para completar la revisión.',
+    guidance: 'Comprueba la clave de las preguntas indicadas.', action: 'Revisar respuestas de referencia', target: 'revision',
+  };
+  if (reason === 'hoja_faltante' || reason === 'componentes_o_evidencia_pendientes') return {
+    message: reason === 'hoja_faltante' ? 'Falta una hoja de la evidencia.' : 'Falta información para completar la revisión.',
+    guidance: 'Comprueba la evidencia y las respuestas pendientes.', action: 'Ver evidencia', target: 'evidencia',
+  };
+  if (/^(Cobertura |cobertura_|componentes_duplicados)/.test(reason)) return {
+    message: 'El desglose no cubre de forma consistente todas las preguntas.',
+    guidance: 'Comprueba las preguntas y sus puntajes.', action: 'Revisar puntajes', target: 'revision',
+  };
+  if (reason.startsWith('verificador_ia:') || reason === 'verificador_solicita_revision') return {
+    message: 'El verificador de IA solicita una comprobación docente.',
+    guidance: 'Contrasta las respuestas con la evidencia.', action: 'Revisar respuestas', target: 'revision',
+  };
+  if (reason === 'revision_docente_pendiente') return {
+    message: 'La sugerencia necesita una revisión docente.',
+    guidance: 'Comprueba las respuestas y sus puntajes antes de confirmar.', action: 'Revisar puntajes', target: 'revision',
+  };
+  return {
+    message: 'Hay un aviso que necesita revisión.',
+    guidance: 'Comprueba la evaluación antes de confirmar. El motivo original está en el detalle.',
+    action: 'Revisar evaluación', target: 'revision',
+  };
+}
 
 export const REVIEW_CONFIDENCE_THRESHOLD = 0.7;
 
@@ -108,9 +148,9 @@ function humanizeBlocker(blocker: string): string {
   return blocker.replace(/^componente_pendiente:/, 'Componente pendiente: ').replace(/_/g, ' ');
 }
 
-export function buildReviewTriage(breakdown: GradeBreakdownData, verifierAlerts: string[] = []): ReviewTriageSummary {
+export function buildReviewTriage(breakdown: GradeBreakdownData | null, verifierAlerts: string[] = []): ReviewTriageSummary {
   const targetedNumbers = new Set(verifierAlerts.flatMap((alert) => [...questionNumbersInAlert(alert)]));
-  const items = [...breakdown.componentes]
+  const items = [...(breakdown?.componentes ?? [])]
     .sort((a, b) => a.orden - b.orden)
     .map(classifyReviewComponent)
     .map((item) => {
@@ -124,9 +164,9 @@ export function buildReviewTriage(breakdown: GradeBreakdownData, verifierAlerts:
   const safe = items.filter((item) => item.level === 'safe');
   const attention = items.filter((item) => item.level === 'attention');
   const blocked = items.filter((item) => item.level === 'blocked');
-  const globalBlockers = [
-    ...(breakdown.cobertura_estado !== 'completa' ? [`Cobertura ${breakdown.cobertura_estado}`] : []),
-    ...(breakdown.bloqueos ?? []).filter((blocker) => !blocker.startsWith('componente_pendiente:')).map(humanizeBlocker),
+  const globalReasons = [
+    ...(breakdown && breakdown.cobertura_estado !== 'completa' ? [`Cobertura ${breakdown.cobertura_estado}`] : []),
+    ...(breakdown?.bloqueos ?? []).filter((blocker) => !blocker.startsWith('componente_pendiente:')),
     ...verifierAlerts.filter((alert) => questionNumbersInAlert(alert).size === 0),
   ];
   return {
@@ -136,6 +176,7 @@ export function buildReviewTriage(breakdown: GradeBreakdownData, verifierAlerts:
     blocked,
     exceptions: [...blocked, ...attention],
     counts: { safe: safe.length, attention: attention.length, blocked: blocked.length },
-    globalBlockers: [...new Set(globalBlockers)],
+    globalBlockers: [...new Set(globalReasons.map(humanizeBlocker))],
+    globalReasons: [...new Set(globalReasons)],
   };
 }

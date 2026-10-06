@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { GradeBreakdownData, GradeComponentData } from '@/types/api';
-import { buildReviewTriage, classifyReviewComponent, hasVerifierReviewSignals } from './buildReviewTriage';
+import { buildReviewTriage, classifyReviewComponent, describeReviewBlocker, hasVerifierReviewSignals } from './buildReviewTriage';
 
 const component = (overrides: Partial<GradeComponentData> = {}): GradeComponentData => ({
   id: 'p1', clave: 'pregunta:1', orden: 0, tipo: 'pregunta', numero: '1', titulo: 'Pregunta 1',
@@ -62,6 +62,15 @@ describe('classifyReviewComponent', () => {
 });
 
 describe('buildReviewTriage', () => {
+  it('preserva motivos originales, sin desglose y sin certificar exactitud', () => {
+    const raw = 'feedback_quality:nota_global_no_coincide_con_suma';
+    const result = buildReviewTriage({ ...breakdown([component()]), bloqueos: [raw] });
+    expect(result.globalReasons).toContain(raw);
+    expect(result.counts).toEqual({ safe: 1, attention: 0, blocked: 0 });
+    expect(describeReviewBlocker(raw)).toMatchObject({ target: 'revision', action: 'Revisar puntajes' });
+    expect(buildReviewTriage(null).items).toEqual([]);
+    expect(describeReviewBlocker('aviso_nuevo')).toMatchObject({ message: 'Hay un aviso que necesita revisión.' });
+  });
   it('produce grupos exclusivos y ordena bloqueadas antes que atención', () => {
     const safe = component({ id: 'safe', clave: 'pregunta:1', orden: 0 });
     const attention = component({ id: 'attention', clave: 'pregunta:2', orden: 1, valoraciones: [] });
