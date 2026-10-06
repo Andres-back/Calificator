@@ -188,3 +188,11 @@ fecha límite: antes de publicar el conector Windows al público.
 ## Inventario técnico
 
 Las superficies de backend, frontend, datos y trabajos propiedad de esta especificación se mantienen en [inventory.md](./inventory.md).
+
+## Evolución 086: comprobación de embeddings institucionales
+
+- La prueba administrativa reconoce el catálogo persistido, incluido `ollama_internal`, sin exigir una credencial de nube al servicio interno.
+- Una comprobación interna genera exactamente un vector con texto sintético fijo, valida dimensiones y valores finitos, e informa éxito/latencia o error seguro. No guarda vectores ni altera configuración, notas o evidencias.
+- La URL interna se toma del despliegue, nunca de una dirección introducida para probar. Ollama Cloud conserva su API key y comprobación independientes.
+- La tarjeta distingue servicio interno sin comprobar, nube configurada sin comprobar, conexión comprobada y error. El resultado es transitorio; recargar no certifica disponibilidad actual ni dispara inferencia automática.
+- El interno no ofrece API propia docente, edición de URL o actualización de catálogo cloud. [Hotfix 086](../086-embedding-admin-check/spec.md), issue #178.

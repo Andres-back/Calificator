@@ -29,7 +29,8 @@ from app.services.ai_model_discovery import (
     discover_provider_models,
     persist_discovered_models,
 )
-from app.services.ollama_provider import OllamaCloudProvider, OllamaProviderError
+from app.services.ollama_provider import OllamaCloudProvider, OllamaEmbeddingProvider, OllamaProviderError
+from app.services.embedding_service import EmbeddingUnavailableError, _validate_vectors
 from app.services.opencode_request import new_opencode_session_id, opencode_headers
 from app.modules.admin_ai_config.usage_service import (
     enrich_feature_performance,
@@ -85,80 +86,6 @@ def _global_config_payload(
     }
 
 
-def _provider_list() -> list[dict[str, Any]]:
-    """Lista maestra de proveedores con su config actual desde settings/env."""
-    return [
-        {
-            "name": "openai",
-            "label": "OpenAI",
-            "base_url": "https://api.openai.com/v1",
-            "model": settings.OPENAI_MODEL,
-            "priority": 1,
-            "timeout_seconds": settings.OPENAI_TIMEOUT_SECONDS,
-            "max_retries": 2,
-            "auth_configured": bool(settings.OPENAI_API_KEY),
-        },
-        {
-            "name": "open_code",
-            "label": "OpenCode",
-            "base_url": settings.OPEN_CODE_BASE_URL,
-            "model": settings.OPEN_CODE_MODEL,
-            "priority": 1,
-            "timeout_seconds": settings.OPEN_CODE_TIMEOUT_SECONDS,
-            "max_retries": 2,
-            "auth_configured": bool(settings.OPEN_CODE_API_KEY),
-        },
-        {
-            "name": "groq",
-            "label": "Groq",
-            "base_url": "https://api.groq.com/openai/v1",
-            "model": settings.GROQ_MODEL,
-            "priority": 2,
-            "timeout_seconds": settings.GROQ_TIMEOUT_SECONDS,
-            "max_retries": 2,
-            "auth_configured": bool(settings.GROQ_API_KEY),
-        },
-        {
-            "name": "ollama",
-            "label": "Ollama Cloud",
-            "base_url": settings.OLLAMA_CLOUD_BASE_URL,
-            "model": settings.OLLAMA_MODEL,
-            "priority": 3,
-            "timeout_seconds": settings.OLLAMA_TIMEOUT_SECONDS,
-            "max_retries": 1,
-            "auth_configured": bool(settings.OLLAMA_API_KEY),
-        },
-        {
-            "name": "template",
-            "label": "Fallback por plantilla",
-            "base_url": None,
-            "model": None,
-            "priority": 4,
-            "timeout_seconds": 5,
-            "max_retries": 0,
-            "auth_configured": True,
-        },
-        {
-            "name": "openai_image",
-            "label": "OpenAI Imágenes",
-            "base_url": "https://api.openai.com/v1",
-            "model": settings.OPENAI_IMAGE_MODEL,
-            "priority": 1,
-            "timeout_seconds": settings.OPENAI_IMAGE_TIMEOUT_SECONDS,
-            "max_retries": 2,
-            "auth_configured": bool(settings.OPENAI_API_KEY),
-        },
-        {
-            "name": "cloudflare_image",
-            "label": "Cloudflare Images",
-            "base_url": None,
-            "model": settings.CLOUDFLARE_IMAGE_MODEL,
-            "priority": 2,
-            "timeout_seconds": settings.CLOUDFLARE_TIMEOUT_SECONDS,
-            "max_retries": 1,
-            "auth_configured": bool(settings.CLOUDFLARE_API_TOKEN),
-        },
-    ]
 
 
 def _feature_routing() -> list[dict[str, Any]]:
@@ -194,7 +121,7 @@ async def _test_provider_connection(
     credentials: EffectiveAICredentials,
     provider_config: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
-    """Run a credential check without generating billable content."""
+    """Check credentials or internal embeddings using no educational data."""
     result = {"status": "unknown", "latency_ms": None, "http_code": None, "error": None}
     start = datetime.now(timezone.utc)
     provider_config = provider_config or {}
@@ -229,6 +156,25 @@ async def _test_provider_connection(
             result["latency_ms"] = int(elapsed)
             if r.status_code != 200:
                 result["error"] = r.text[:200]
+
+        elif provider == "ollama_internal":
+            # Use only the deployment-controlled address, never a supplied URL.
+            vectors = await OllamaEmbeddingProvider(
+                base_url=settings.OLLAMA_ENDPOINT,
+                timeout_seconds=settings.EMBEDDING_TIMEOUT_SECONDS,
+            ).embed(
+                model=str(provider_config.get("model") or settings.EMBEDDING_MODEL),
+                inputs=["Comprobación técnica del servicio institucional de embeddings."],
+            )
+            try:
+                _validate_vectors(vectors, 1, settings.EMBEDDING_DIMENSIONS)
+            except (EmbeddingUnavailableError, TypeError, ValueError) as exc:
+                raise EmbeddingUnavailableError(
+                    "El servicio institucional devolvió un vector incompatible"
+                ) from exc
+            result["status"] = "ok"
+            result["http_code"] = 200
+            result["latency_ms"] = int((datetime.now(timezone.utc) - start).total_seconds() * 1000)
 
         elif provider == "ollama":
             client = OllamaCloudProvider(
@@ -275,6 +221,9 @@ async def _test_provider_connection(
             result["latency_ms"] = 0
             result["http_code"] = 200
 
+        else:
+            raise ValueError("Este proveedor no tiene una comprobación compatible")
+
     except (httpx.TimeoutException, OllamaProviderError) as exc:
         elapsed = (datetime.now(timezone.utc) - start).total_seconds() * 1000
         result["status"] = "error"
@@ -284,7 +233,10 @@ async def _test_provider_connection(
         elapsed = (datetime.now(timezone.utc) - start).total_seconds() * 1000
         result["status"] = "error"
         result["latency_ms"] = int(elapsed)
-        result["error"] = str(exc)[:200]
+        if provider == "ollama_internal" and not isinstance(exc, EmbeddingUnavailableError):
+            result["error"] = "No se pudo comprobar el servicio institucional de embeddings"
+        else:
+            result["error"] = str(exc)[:200]
 
     return result
 
@@ -612,15 +564,19 @@ async def test_provider(
 ) -> dict:
     """Prueba la conexión con un proveedor de IA específico."""
     require_permission_now(current_user, "admin_ai.manage")
-    valid_providers = {p["name"] for p in _provider_list()}
-    if provider not in valid_providers:
-        return {"status": "error", "detail": f"Proveedor desconocido: {provider}"}
-
-    credentials = await get_effective_ai_credentials(db)
     svc = AIConfigService(db=db)
     provider_config = next(
         (item for item in await svc.get_all_providers() if item.get("id") == provider),
         None,
+    )
+    if provider_config is None:
+        return {
+            "status": "error", "latency_ms": None, "http_code": None,
+            "error": "Proveedor desconocido", "detail": "Proveedor desconocido",
+        }
+    credentials = (
+        EffectiveAICredentials() if provider == "ollama_internal"
+        else await get_effective_ai_credentials(db)
     )
     if payload and payload.model:
         compatible = any(item.get("provider_id") == provider and item.get("model_id") == payload.model and payload.capability in (item.get("capabilities") or []) and item.get("active") for item in await svc.get_all_models())
