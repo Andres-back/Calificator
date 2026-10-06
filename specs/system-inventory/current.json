@@ -384,7 +384,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "b5e53f12fbc2a8fd89ef0fcf4ae35eb6f6126c07297b3d98f27eec26acfc7c93",
+  "source_digest": "36990255b597c14d3a45914ab5f4fd902ec00ecc43528f0e8aa18a16ad5d6a3d",
   "surfaces": [
     {
       "actors": [
@@ -1077,7 +1077,7 @@
       "kind": "endpoint",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "DELETE:/profesor/ai-credentials/{provider}",
-      "source_line": 1273,
+      "source_line": 1229,
       "source_path": "backend/app/modules/admin_ai_config/router.py",
       "states": [],
       "tests": [
@@ -1226,7 +1226,7 @@
       "kind": "endpoint",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "GET:/admin/ai-audit",
-      "source_line": 923,
+      "source_line": 879,
       "source_path": "backend/app/modules/admin_ai_config/router.py",
       "states": [],
       "tests": [
@@ -1263,7 +1263,7 @@
       "kind": "endpoint",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "GET:/admin/ai-config",
-      "source_line": 335,
+      "source_line": 287,
       "source_path": "backend/app/modules/admin_ai_config/router.py",
       "states": [],
       "tests": [
@@ -1306,7 +1306,7 @@
       "kind": "endpoint",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "GET:/admin/ai-config-hash",
-      "source_line": 891,
+      "source_line": 847,
       "source_path": "backend/app/modules/admin_ai_config/router.py",
       "states": [],
       "tests": [
@@ -1343,7 +1343,7 @@
       "kind": "endpoint",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "GET:/admin/ai-control-center",
-      "source_line": 485,
+      "source_line": 437,
       "source_path": "backend/app/modules/admin_ai_config/router.py",
       "states": [],
       "tests": [
@@ -1386,7 +1386,7 @@
       "kind": "endpoint",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "GET:/admin/ai-control-center/effective",
-      "source_line": 517,
+      "source_line": 469,
       "source_path": "backend/app/modules/admin_ai_config/router.py",
       "states": [],
       "tests": []
@@ -1410,7 +1410,7 @@
       "kind": "endpoint",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "GET:/admin/ai-control-center/usage",
-      "source_line": 494,
+      "source_line": 446,
       "source_path": "backend/app/modules/admin_ai_config/router.py",
       "states": [],
       "tests": [
@@ -1453,7 +1453,7 @@
       "kind": "endpoint",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "GET:/admin/ai-settings",
-      "source_line": 412,
+      "source_line": 364,
       "source_path": "backend/app/modules/admin_ai_config/router.py",
       "states": [],
       "tests": [
@@ -1502,7 +1502,7 @@
       "kind": "endpoint",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "GET:/admin/ai-usage",
-      "source_line": 679,
+      "source_line": 635,
       "source_path": "backend/app/modules/admin_ai_config/router.py",
       "states": [],
       "tests": [
@@ -6576,7 +6576,7 @@
       "kind": "endpoint",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "GET:/profesor/ai-config",
-      "source_line": 1071,
+      "source_line": 1027,
       "source_path": "backend/app/modules/admin_ai_config/router.py",
       "states": [],
       "tests": [
@@ -6626,7 +6626,7 @@
       "kind": "endpoint",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "GET:/profesor/ai-providers/ollama/models",
-      "source_line": 1315,
+      "source_line": 1271,
       "source_path": "backend/app/modules/admin_ai_config/router.py",
       "states": [],
       "tests": []
@@ -7309,7 +7309,7 @@
       "kind": "endpoint",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "PATCH:/admin/ai-config",
-      "source_line": 348,
+      "source_line": 300,
       "source_path": "backend/app/modules/admin_ai_config/router.py",
       "states": [],
       "tests": [
@@ -7352,10 +7352,16 @@
       "kind": "endpoint",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "PATCH:/admin/ai-providers/{provider_id}",
-      "source_line": 845,
+      "source_line": 801,
       "source_path": "backend/app/modules/admin_ai_config/router.py",
       "states": [],
       "tests": [
+        {
+          "level": "unit",
+          "reference": "PATCH:/admin/ai-providers/{provider_id}",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_admin_embedding_check.py"
+        },
         {
           "level": "unit",
           "reference": "PATCH:/admin/ai-providers/{provider_id}",
@@ -8747,7 +8753,7 @@
       "kind": "endpoint",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "PATCH:/profesor/ai-config",
-      "source_line": 952,
+      "source_line": 908,
       "source_path": "backend/app/modules/admin_ai_config/router.py",
       "states": [],
       "tests": [
@@ -8978,7 +8984,7 @@
       "kind": "endpoint",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "POST:/admin/ai-cache/clear",
-      "source_line": 689,
+      "source_line": 645,
       "source_path": "backend/app/modules/admin_ai_config/router.py",
       "states": [],
       "tests": []
@@ -9002,7 +9008,7 @@
       "kind": "endpoint",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "POST:/admin/ai-control-center/validate",
-      "source_line": 546,
+      "source_line": 498,
       "source_path": "backend/app/modules/admin_ai_config/router.py",
       "states": [],
       "tests": [
@@ -9033,7 +9039,7 @@
       "kind": "endpoint",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "POST:/admin/ai-providers/{provider}/models/refresh",
-      "source_line": 640,
+      "source_line": 596,
       "source_path": "backend/app/modules/admin_ai_config/router.py",
       "states": [],
       "tests": []
@@ -9057,7 +9063,7 @@
       "kind": "endpoint",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "POST:/admin/ai-providers/{provider}/test",
-      "source_line": 606,
+      "source_line": 558,
       "source_path": "backend/app/modules/admin_ai_config/router.py",
       "states": [],
       "tests": []
@@ -9081,7 +9087,7 @@
       "kind": "endpoint",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "POST:/admin/ai-settings/restore-defaults",
-      "source_line": 862,
+      "source_line": 818,
       "source_path": "backend/app/modules/admin_ai_config/router.py",
       "states": [],
       "tests": []
@@ -9105,7 +9111,7 @@
       "kind": "endpoint",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "POST:/admin/ai-settings/restore-previous",
-      "source_line": 874,
+      "source_line": 830,
       "source_path": "backend/app/modules/admin_ai_config/router.py",
       "states": [],
       "tests": [
@@ -13900,7 +13906,7 @@
       "kind": "endpoint",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "POST:/profesor/ai-providers/ollama/models/refresh",
-      "source_line": 1295,
+      "source_line": 1251,
       "source_path": "backend/app/modules/admin_ai_config/router.py",
       "states": [],
       "tests": []
@@ -13925,7 +13931,7 @@
       "kind": "endpoint",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "POST:/profesor/ai-providers/{provider}/test",
-      "source_line": 1350,
+      "source_line": 1306,
       "source_path": "backend/app/modules/admin_ai_config/router.py",
       "states": [],
       "tests": [
@@ -14313,7 +14319,7 @@
       "kind": "endpoint",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "PUT:/admin/ai-control-center/publish",
-      "source_line": 562,
+      "source_line": 514,
       "source_path": "backend/app/modules/admin_ai_config/router.py",
       "states": [],
       "tests": [
@@ -14350,7 +14356,7 @@
       "kind": "endpoint",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "PUT:/admin/ai-features",
-      "source_line": 796,
+      "source_line": 752,
       "source_path": "backend/app/modules/admin_ai_config/router.py",
       "states": [],
       "tests": [
@@ -14387,10 +14393,16 @@
       "kind": "endpoint",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "PUT:/admin/ai-providers",
-      "source_line": 768,
+      "source_line": 724,
       "source_path": "backend/app/modules/admin_ai_config/router.py",
       "states": [],
       "tests": [
+        {
+          "level": "unit",
+          "reference": "PUT:/admin/ai-providers",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_admin_embedding_check.py"
+        },
         {
           "level": "unit",
           "reference": "PUT:/admin/ai-providers",
@@ -14418,7 +14430,7 @@
       "kind": "endpoint",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "PUT:/admin/ai-settings/publish",
-      "source_line": 702,
+      "source_line": 658,
       "source_path": "backend/app/modules/admin_ai_config/router.py",
       "states": [],
       "tests": [
@@ -14648,7 +14660,7 @@
       "kind": "endpoint",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "PUT:/profesor/ai-config",
-      "source_line": 1183,
+      "source_line": 1139,
       "source_path": "backend/app/modules/admin_ai_config/router.py",
       "states": [],
       "tests": [
@@ -14698,7 +14710,7 @@
       "kind": "endpoint",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "PUT:/profesor/ai-credentials/{provider}",
-      "source_line": 1248,
+      "source_line": 1204,
       "source_path": "backend/app/modules/admin_ai_config/router.py",
       "states": [],
       "tests": [
@@ -14878,6 +14890,12 @@
           "reference": "/",
           "status": "direct",
           "test_path": "backend/tests/unit/authorization_helpers.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_admin_embedding_check.py"
         },
         {
           "level": "unit",
@@ -15442,6 +15460,12 @@
           "reference": "/",
           "status": "direct",
           "test_path": "frontend/src/modules/admin/AdminUsersPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "frontend/src/modules/admin/ai/sections/ProvidersSection.test.tsx"
         },
         {
           "level": "unit",
@@ -20808,6 +20832,12 @@
           "test_path": "backend/tests/unit/test_admin_ai_usage_service.py"
         },
         {
+          "level": "unit",
+          "reference": "DELETE:/admin/roles/{id}",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_admin_embedding_check.py"
+        },
+        {
           "level": "e2e",
           "reference": "DELETE:/admin/roles/{id}",
           "status": "domain",
@@ -20908,6 +20938,12 @@
           "reference": "DELETE:/admin/users/{id}",
           "status": "domain",
           "test_path": "backend/tests/unit/test_admin_ai_usage_service.py"
+        },
+        {
+          "level": "unit",
+          "reference": "DELETE:/admin/users/{id}",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_admin_embedding_check.py"
         },
         {
           "level": "e2e",
@@ -21677,6 +21713,12 @@
           "test_path": "backend/tests/unit/test_admin_ai_usage_service.py"
         },
         {
+          "level": "unit",
+          "reference": "GET:/admin/ai-audit",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_admin_embedding_check.py"
+        },
+        {
           "level": "e2e",
           "reference": "GET:/admin/ai-audit",
           "status": "direct",
@@ -21779,6 +21821,12 @@
           "test_path": "backend/tests/unit/test_admin_ai_usage_service.py"
         },
         {
+          "level": "unit",
+          "reference": "GET:/admin/ai-config-hash",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_admin_embedding_check.py"
+        },
+        {
           "level": "e2e",
           "reference": "GET:/admin/ai-config-hash",
           "status": "direct",
@@ -21879,6 +21927,12 @@
           "reference": "GET:/admin/ai-control-center/usage",
           "status": "domain",
           "test_path": "backend/tests/unit/test_admin_ai_usage_service.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/admin/ai-control-center/usage",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_admin_embedding_check.py"
         },
         {
           "level": "e2e",
@@ -21987,6 +22041,12 @@
           "reference": "GET:/admin/ai-control-center",
           "status": "domain",
           "test_path": "backend/tests/unit/test_admin_ai_usage_service.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/admin/ai-control-center",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_admin_embedding_check.py"
         },
         {
           "level": "e2e",
@@ -22103,6 +22163,12 @@
           "test_path": "backend/tests/unit/test_admin_ai_usage_service.py"
         },
         {
+          "level": "unit",
+          "reference": "GET:/admin/ai-settings",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_admin_embedding_check.py"
+        },
+        {
           "level": "e2e",
           "reference": "GET:/admin/ai-settings",
           "status": "direct",
@@ -22211,6 +22277,12 @@
           "test_path": "backend/tests/unit/test_admin_ai_usage_service.py"
         },
         {
+          "level": "unit",
+          "reference": "GET:/admin/ai-usage",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_admin_embedding_check.py"
+        },
+        {
           "level": "e2e",
           "reference": "GET:/admin/ai-usage",
           "status": "domain",
@@ -22313,6 +22385,12 @@
           "test_path": "backend/tests/unit/test_admin_ai_usage_service.py"
         },
         {
+          "level": "unit",
+          "reference": "GET:/admin/authorization/audit",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_admin_embedding_check.py"
+        },
+        {
           "level": "e2e",
           "reference": "GET:/admin/authorization/audit",
           "status": "domain",
@@ -22407,6 +22485,12 @@
           "reference": "GET:/admin/authorization/modules",
           "status": "domain",
           "test_path": "backend/tests/unit/test_admin_ai_usage_service.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/admin/authorization/modules",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_admin_embedding_check.py"
         },
         {
           "level": "e2e",
@@ -22511,6 +22595,12 @@
           "test_path": "backend/tests/unit/test_admin_ai_usage_service.py"
         },
         {
+          "level": "unit",
+          "reference": "GET:/admin/mail/config",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_admin_embedding_check.py"
+        },
+        {
           "level": "e2e",
           "reference": "GET:/admin/mail/config",
           "status": "domain",
@@ -22607,6 +22697,12 @@
           "test_path": "backend/tests/unit/test_admin_ai_usage_service.py"
         },
         {
+          "level": "unit",
+          "reference": "GET:/admin/mail/recovery-status",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_admin_embedding_check.py"
+        },
+        {
           "level": "e2e",
           "reference": "GET:/admin/mail/recovery-status",
           "status": "domain",
@@ -22701,6 +22797,12 @@
           "reference": "GET:/admin/roles",
           "status": "domain",
           "test_path": "backend/tests/unit/test_admin_ai_usage_service.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/admin/roles",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_admin_embedding_check.py"
         },
         {
           "level": "e2e",
@@ -22805,6 +22907,12 @@
           "test_path": "backend/tests/unit/test_admin_ai_usage_service.py"
         },
         {
+          "level": "unit",
+          "reference": "GET:/admin/users/{id}",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_admin_embedding_check.py"
+        },
+        {
           "level": "e2e",
           "reference": "GET:/admin/users/{id}",
           "status": "domain",
@@ -22905,6 +23013,12 @@
           "reference": "GET:/admin/users",
           "status": "domain",
           "test_path": "backend/tests/unit/test_admin_ai_usage_service.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/admin/users",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_admin_embedding_check.py"
         },
         {
           "level": "e2e",
@@ -26541,6 +26655,12 @@
           "test_path": "backend/tests/unit/test_admin_ai_usage_service.py"
         },
         {
+          "level": "unit",
+          "reference": "GET:/users/me/authorization",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_admin_embedding_check.py"
+        },
+        {
           "level": "e2e",
           "reference": "GET:/users/me/authorization",
           "status": "direct",
@@ -26871,6 +26991,12 @@
           "test_path": "backend/tests/unit/test_admin_ai_usage_service.py"
         },
         {
+          "level": "unit",
+          "reference": "PATCH:/admin/ai-config",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_admin_embedding_check.py"
+        },
+        {
           "level": "e2e",
           "reference": "PATCH:/admin/ai-config",
           "status": "direct",
@@ -26979,6 +27105,12 @@
           "test_path": "backend/tests/unit/test_admin_ai_usage_service.py"
         },
         {
+          "level": "unit",
+          "reference": "PATCH:/admin/ai-providers/{id}",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_admin_embedding_check.py"
+        },
+        {
           "level": "e2e",
           "reference": "PATCH:/admin/ai-providers/{id}",
           "status": "domain",
@@ -27081,6 +27213,12 @@
           "test_path": "backend/tests/unit/test_admin_ai_usage_service.py"
         },
         {
+          "level": "unit",
+          "reference": "PATCH:/admin/roles/{id}",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_admin_embedding_check.py"
+        },
+        {
           "level": "e2e",
           "reference": "PATCH:/admin/roles/{id}",
           "status": "domain",
@@ -27175,6 +27313,12 @@
           "reference": "PATCH:/admin/users/{id}/solicitud-docente",
           "status": "domain",
           "test_path": "backend/tests/unit/test_admin_ai_usage_service.py"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/admin/users/{id}/solicitud-docente",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_admin_embedding_check.py"
         },
         {
           "level": "e2e",
@@ -27277,6 +27421,12 @@
           "reference": "PATCH:/admin/users/{id}",
           "status": "domain",
           "test_path": "backend/tests/unit/test_admin_ai_usage_service.py"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/admin/users/{id}",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_admin_embedding_check.py"
         },
         {
           "level": "e2e",
@@ -28547,6 +28697,12 @@
           "test_path": "backend/tests/unit/test_admin_ai_usage_service.py"
         },
         {
+          "level": "unit",
+          "reference": "POST:/admin/ai-cache/clear",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_admin_embedding_check.py"
+        },
+        {
           "level": "e2e",
           "reference": "POST:/admin/ai-cache/clear",
           "status": "domain",
@@ -28641,6 +28797,12 @@
           "reference": "POST:/admin/ai-control-center/validate",
           "status": "domain",
           "test_path": "backend/tests/unit/test_admin_ai_usage_service.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/admin/ai-control-center/validate",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_admin_embedding_check.py"
         },
         {
           "level": "e2e",
@@ -28739,6 +28901,12 @@
           "test_path": "backend/tests/unit/test_admin_ai_usage_service.py"
         },
         {
+          "level": "unit",
+          "reference": "POST:/admin/ai-providers/{providerId}/models/refresh",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_admin_embedding_check.py"
+        },
+        {
           "level": "e2e",
           "reference": "POST:/admin/ai-providers/{providerId}/models/refresh",
           "status": "domain",
@@ -28833,6 +29001,12 @@
           "reference": "POST:/admin/ai-providers/{providerId}/test",
           "status": "domain",
           "test_path": "backend/tests/unit/test_admin_ai_usage_service.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/admin/ai-providers/{providerId}/test",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_admin_embedding_check.py"
         },
         {
           "level": "e2e",
@@ -28931,6 +29105,12 @@
           "test_path": "backend/tests/unit/test_admin_ai_usage_service.py"
         },
         {
+          "level": "unit",
+          "reference": "POST:/admin/ai-settings/restore-defaults",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_admin_embedding_check.py"
+        },
+        {
           "level": "e2e",
           "reference": "POST:/admin/ai-settings/restore-defaults",
           "status": "domain",
@@ -29025,6 +29205,12 @@
           "reference": "POST:/admin/ai-settings/restore-previous",
           "status": "domain",
           "test_path": "backend/tests/unit/test_admin_ai_usage_service.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/admin/ai-settings/restore-previous",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_admin_embedding_check.py"
         },
         {
           "level": "e2e",
@@ -29129,6 +29315,12 @@
           "test_path": "backend/tests/unit/test_admin_ai_usage_service.py"
         },
         {
+          "level": "unit",
+          "reference": "POST:/admin/mail/test",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_admin_embedding_check.py"
+        },
+        {
           "level": "e2e",
           "reference": "POST:/admin/mail/test",
           "status": "domain",
@@ -29225,6 +29417,12 @@
           "test_path": "backend/tests/unit/test_admin_ai_usage_service.py"
         },
         {
+          "level": "unit",
+          "reference": "POST:/admin/roles/{id}",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_admin_embedding_check.py"
+        },
+        {
           "level": "e2e",
           "reference": "POST:/admin/roles/{id}",
           "status": "domain",
@@ -29319,6 +29517,12 @@
           "reference": "POST:/admin/roles",
           "status": "domain",
           "test_path": "backend/tests/unit/test_admin_ai_usage_service.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/admin/roles",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_admin_embedding_check.py"
         },
         {
           "level": "e2e",
@@ -29421,6 +29625,12 @@
           "reference": "POST:/admin/users",
           "status": "domain",
           "test_path": "backend/tests/unit/test_admin_ai_usage_service.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/admin/users",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_admin_embedding_check.py"
         },
         {
           "level": "e2e",
@@ -32538,6 +32748,12 @@
           "test_path": "backend/tests/unit/test_admin_ai_usage_service.py"
         },
         {
+          "level": "unit",
+          "reference": "PUT:/admin/ai-control-center/publish",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_admin_embedding_check.py"
+        },
+        {
           "level": "e2e",
           "reference": "PUT:/admin/ai-control-center/publish",
           "status": "direct",
@@ -32646,6 +32862,12 @@
           "test_path": "backend/tests/unit/test_admin_ai_usage_service.py"
         },
         {
+          "level": "unit",
+          "reference": "PUT:/admin/ai-features",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_admin_embedding_check.py"
+        },
+        {
           "level": "e2e",
           "reference": "PUT:/admin/ai-features",
           "status": "domain",
@@ -32748,6 +32970,12 @@
           "test_path": "backend/tests/unit/test_admin_ai_usage_service.py"
         },
         {
+          "level": "unit",
+          "reference": "PUT:/admin/ai-providers",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_admin_embedding_check.py"
+        },
+        {
           "level": "e2e",
           "reference": "PUT:/admin/ai-providers",
           "status": "domain",
@@ -32848,6 +33076,12 @@
           "reference": "PUT:/admin/ai-settings/publish",
           "status": "domain",
           "test_path": "backend/tests/unit/test_admin_ai_usage_service.py"
+        },
+        {
+          "level": "unit",
+          "reference": "PUT:/admin/ai-settings/publish",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_admin_embedding_check.py"
         },
         {
           "level": "e2e",
@@ -32956,6 +33190,12 @@
           "reference": "PUT:/admin/mail/config",
           "status": "domain",
           "test_path": "backend/tests/unit/test_admin_ai_usage_service.py"
+        },
+        {
+          "level": "unit",
+          "reference": "PUT:/admin/mail/config",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_admin_embedding_check.py"
         },
         {
           "level": "e2e",
@@ -33400,6 +33640,12 @@
           "level": "unit",
           "reference": "ollama",
           "status": "direct",
+          "test_path": "backend/tests/unit/test_admin_embedding_check.py"
+        },
+        {
+          "level": "unit",
+          "reference": "ollama",
+          "status": "direct",
           "test_path": "backend/tests/unit/test_ai_configuration_resolver.py"
         },
         {
@@ -33467,6 +33713,12 @@
           "reference": "ollama",
           "status": "direct",
           "test_path": "frontend/src/modules/admin/AdminAIConfigPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "ollama",
+          "status": "direct",
+          "test_path": "frontend/src/modules/admin/ai/sections/ProvidersSection.test.tsx"
         },
         {
           "level": "unit",
@@ -33651,6 +33903,12 @@
           "reference": "openai",
           "status": "direct",
           "test_path": "backend/tests/integration/test_ai_configuration_secret_safety.py"
+        },
+        {
+          "level": "unit",
+          "reference": "openai",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_admin_embedding_check.py"
         },
         {
           "level": "unit",

@@ -273,3 +273,7 @@ actualizar la especificación propietaria, su plan y sus tareas; no debe crear d
 
 - [085-asistencia-autoguardado](085-asistencia-autoguardado/spec.md), [issue #176](https://github.com/Andres-back/Calificator/issues/176): cada marca se guarda sin completar el grupo; cola de correcciones, observaciones y reintento explícito en interfaz móvil compacta.
 - Evoluciona 004, que conserva responsabilidad única de asistencia y sus tablas/rutas. PATCH aditivo; PUT completo compatible; sin migraciones, notas ni evidencias modificadas. [Validación](085-asistencia-autoguardado/quickstart.md). Fusión/despliegue sujetos a autorización separada y CI verde.
+
+## Hotfix 086: diagnóstico de embeddings en administración
+
+- [086-embedding-admin-check](086-embedding-admin-check/spec.md), [issue #178](https://github.com/Andres-back/Calificator/issues/178): prueba sintética real del embedding interno, sin clave de nube ni cambios de rutas efectivas o datos académicos. Evoluciona el panel propiedad de 021; sin nuevas superficies o tablas.

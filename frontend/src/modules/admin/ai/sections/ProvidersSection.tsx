@@ -7,6 +7,7 @@ const PROVIDER_ICONS: Record<string, LucideIcon> = {
   open_code: Sparkles,
   groq: Activity,
   ollama: Server,
+  ollama_internal: Server,
   template: ShieldCheck,
   openai_image: ImageIcon,
   cloudflare_image: Cpu,
@@ -15,7 +16,9 @@ const PROVIDER_ICONS: Record<string, LucideIcon> = {
 function providerStatus(provider: AIProvider) {
   if (!provider.active) return <Badge tone="neutral">Inactivo</Badge>;
   if (provider.last_test_status === 'error' || provider.last_test_error) return <Badge tone="error">Error</Badge>;
-  if (provider.auth_configured) return <Badge tone="success">Disponible</Badge>;
+  if (provider.last_test_status === 'ok') return <Badge tone="success">Conexión comprobada</Badge>;
+  if (provider.id === 'ollama_internal') return <Badge tone="neutral">Servicio interno</Badge>;
+  if (provider.auth_configured) return <Badge tone="neutral">Configurado</Badge>;
   return <Badge tone="warning">Sin configurar</Badge>;
 }
 
@@ -38,6 +41,7 @@ function ProviderEditor({
 }) {
   const Icon = PROVIDER_ICONS[provider.id] ?? Cpu;
   const isTemplate = provider.id === 'template';
+  const isInternal = provider.id === 'ollama_internal';
 
   return (
     <Card className="p-4">
@@ -55,6 +59,7 @@ function ProviderEditor({
       </div>
 
       <div className="mt-4 space-y-3">
+        {isInternal && <p className="text-xs text-muted">Servicio institucional sin API key. La comprobación genera un vector con texto ficticio y verifica su compatibilidad.</p>}
         <Field label="Modelo">
           <Input
             value={provider.model ?? ''}
@@ -89,7 +94,7 @@ function ProviderEditor({
         />
       </label>
 
-      {!isTemplate && (
+      {!isTemplate && !isInternal && (
         <label className="mt-3 flex cursor-pointer items-center justify-between gap-3 rounded-xl border border-border bg-surface-2/60 p-3 text-sm">
           <span>
             <span className="block font-semibold">Permitir API propia del docente</span>
@@ -104,7 +109,7 @@ function ProviderEditor({
           />
         </label>
       )}
-      {!isTemplate && (
+      {!isTemplate && !isInternal && (
         <details className="mt-3 rounded-lg border border-border bg-surface-2/40 px-3 py-2">
           <summary className="cursor-pointer text-sm font-semibold text-fg">Ajustes avanzados</summary>
           <div className="mt-3 space-y-3 border-t border-border pt-3">
@@ -152,7 +157,7 @@ function ProviderEditor({
       <Button size="sm" variant="outline" className="mt-3 w-full" loading={isTesting} disabled={testsDisabled} onClick={() => onTest(provider.id)}>
         Probar conexión
       </Button>
-      {!isTemplate && (
+      {!isTemplate && !isInternal && (
         <Button size="sm" variant="outline" className="mt-2 w-full" loading={isRefreshingModels} disabled={!provider.auth_configured || isRefreshingModels} onClick={() => onRefreshModels(provider.id)}>
           <RefreshCw className="h-4 w-4" /> Actualizar modelos
         </Button>

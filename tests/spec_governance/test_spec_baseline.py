@@ -86,6 +86,7 @@ ALL_SPECS = {
     "083-rag-preflight",
     "084-docente-mobile-first",
     "085-asistencia-autoguardado",
+    "086-embedding-admin-check",
 }
 OWNED_SPECS = {
     name
