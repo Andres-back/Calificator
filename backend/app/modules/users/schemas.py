@@ -2,7 +2,7 @@ from datetime import datetime
 from enum import StrEnum
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 
 from app.shared.enums import SolicitudDocenteEstado, UserEstado, UserRole
 
@@ -30,9 +30,23 @@ class UserUpdate(BaseModel):
 
 
 class UserSelfUpdate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
     nombre: str | None = Field(default=None, min_length=2, max_length=160)
     email: EmailStr | None = None
     password: str | None = Field(default=None, min_length=8, max_length=128)
+    current_password: str | None = Field(default=None, max_length=128)
+
+    @field_validator("nombre", "email", "password", "current_password", mode="before")
+    @classmethod
+    def reject_nulls(cls, value):
+        if value is None:
+            raise ValueError("El campo no puede ser nulo")
+        return value
+
+    @field_validator("nombre", mode="before")
+    @classmethod
+    def strip_name(cls, value):
+        return value.strip() if isinstance(value, str) else value
 
 
 class SolicitudDocenteDecision(StrEnum):

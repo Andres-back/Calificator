@@ -1,11 +1,13 @@
 import { useEffect, useId, useRef, useState, type RefObject } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { ChevronDown, ClipboardCheck, LogOut, Menu } from 'lucide-react';
+import { ChevronDown, ClipboardCheck, LogOut, Menu, UserRound } from 'lucide-react';
 import { EducationalIcon, ThemeToggle } from '@/components/ui';
 import type { EducationalIconName } from '@/components/ui/EducationalIcon';
 import { useAuth } from '@/stores/auth';
+import { routes } from '@/config/routes';
 
 const TEACHER_CONTEXTS: Array<{ match: string; label: string; brandIcon: EducationalIconName }> = [
+  { match: '/app/perfil', label: 'Mi perfil', brandIcon: 'ai-settings' },
   { match: '/app/configuracion-ia', label: 'Mi configuración de IA', brandIcon: 'ai-settings' },
   { match: '/app/materias', label: 'Materias y grupos', brandIcon: 'subjects' },
   { match: '/app/calificaciones', label: 'Revisión de calificaciones', brandIcon: 'grade-evidence' },
@@ -64,7 +66,7 @@ export function Topbar({
   }, [open]);
 
   return (
-    <header className="safe-area-pt sticky top-0 z-30 flex min-h-16 items-center gap-3 border-b border-border bg-surface/95 px-4 backdrop-blur-xl lg:px-8">
+    <header className="safe-area-pt sticky top-0 z-30 flex min-h-16 items-center gap-3 border-b border-border bg-surface/95 px-4 backdrop-blur-xl max-[480px]:gap-1 max-[480px]:px-2 lg:px-8">
       <button
         ref={menuButtonRef}
         type="button"
@@ -76,7 +78,7 @@ export function Topbar({
       >
         <Menu className="h-5 w-5" aria-hidden="true" />
       </button>
-      <div className="min-w-0 flex-1">
+      <div className="min-w-0 flex-1 max-[480px]:[&>div]:hidden">
         {user?.rol === 'profesor' && (
           <div className="flex min-w-0 items-center gap-2.5">
             <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-white/90 shadow-sm ring-1 ring-border dark:bg-white/10">
@@ -114,8 +116,7 @@ export function Topbar({
           ref={accountButtonRef}
           type="button"
           onClick={() => setOpen((value) => !value)}
-          onBlur={() => window.setTimeout(() => setOpen(false), 150)}
-          className="focus-ring flex min-h-11 items-center gap-2 rounded-lg border border-border bg-surface px-2 py-1.5 transition-colors hover:border-brand-300"
+          className="focus-ring flex min-h-11 items-center gap-2 rounded-lg border border-border bg-surface px-2 py-1.5 transition-colors hover:border-brand-300 max-[480px]:min-w-11 max-[480px]:px-1"
           aria-expanded={open}
           aria-haspopup="menu"
           aria-controls={accountMenuId}
@@ -123,11 +124,12 @@ export function Topbar({
         >
           <span className="grid h-8 w-8 place-items-center rounded-md bg-brand-700 text-xs font-bold text-white">{initials}</span>
           <span className="hidden max-w-[140px] truncate text-sm font-medium sm:block">{user?.nombre}</span>
-          <ChevronDown className="h-4 w-4 text-muted" aria-hidden="true" />
+          <ChevronDown className="h-4 w-4 text-muted max-[480px]:hidden" aria-hidden="true" />
         </button>
         {open && (
           <div
             id={accountMenuId}
+            onBlur={(event) => { if (!event.currentTarget.contains(event.relatedTarget)) setOpen(false); }}
             className="absolute right-0 mt-2 w-64 max-w-[calc(100vw-2rem)] overflow-hidden rounded-lg border border-border bg-surface-elevated shadow-lg"
             role="menu"
           >
@@ -138,9 +140,10 @@ export function Topbar({
                 {user?.rol}
               </span>
             </div>
+            <Link to={routes.profile} role="menuitem" onClick={() => setOpen(false)} className="focus-ring flex min-h-11 items-center gap-2 px-4 py-3 text-sm font-medium hover:bg-surface-2"><UserRound className="h-4 w-4" aria-hidden="true" /> Mi perfil</Link>
             <button
               type="button"
-              onMouseDown={async () => {
+              onClick={async () => {
                 await logout();
                 navigate('/login');
               }}

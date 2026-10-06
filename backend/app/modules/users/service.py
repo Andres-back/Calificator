@@ -6,7 +6,7 @@ from sqlalchemy import func, or_, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.security import get_password_hash
+from app.core.security import get_password_hash, verify_password
 from app.modules.users.models import User
 from app.modules.users.schemas import (
     AdminUserRead,
@@ -362,6 +362,36 @@ async def update_user(
             },
         )
     return user
+
+
+async def update_self_user(db: AsyncSession, actor: User, payload: UserSelfUpdate) -> tuple[User, bool]:
+    """Own-profile writes only; lock and validate before any field is changed."""
+    user = await db.scalar(select(User).where(User.id == actor.id).with_for_update().execution_options(populate_existing=True))
+    if not user or user.estado != UserEstado.ACTIVO.value:
+        raise HTTPException(status_code=401, detail="La sesión ya no está activa")
+    data = payload.model_dump(exclude_unset=True, exclude={"current_password"})
+    email_changed = "email" in data and data["email"].lower() != user.email.lower()
+    password_changed = "password" in data
+    if email_changed or password_changed:
+        if not payload.current_password or not verify_password(payload.current_password, user.password_hash):
+            # A field error must not trigger the client's expired-session refresh.
+            raise HTTPException(status_code=422, detail="La contraseña actual no es correcta")
+    if email_changed:
+        existing = await get_user_by_email(db, data["email"])
+        if existing and existing.id != user.id:
+            raise HTTPException(status_code=409, detail="El correo ya está registrado")
+        from app.modules.auth.models import PasswordResetRequest
+
+        await db.execute(update(PasswordResetRequest).where(
+            PasswordResetRequest.user_id == user.id,
+            PasswordResetRequest.consumed_at.is_(None),
+            PasswordResetRequest.invalidated_at.is_(None),
+        ).values(invalidated_at=_now()))
+    # Reuse the existing unique-email handling, hash and token-version revocation.
+    updated = await update_user(db, user, UserSelfUpdate.model_validate(data))
+    if data:
+        await audit(db, event="user_self_updated", user_id=user.id, metadata={"target_user_id": str(user.id), "changed_fields": sorted(data)})
+    return updated, password_changed
 
 
 async def admin_user_read(db: AsyncSession, user: User) -> AdminUserRead:

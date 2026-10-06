@@ -13,7 +13,8 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 from app.core.security import verify_password
 from app.db.base import import_models
 from app.modules.importacion_estudiantes.models import ImportacionEstudiantesFila, ImportacionEstudiantesLote
-from app.modules.importacion_estudiantes.schemas import FilaUpdate
+from app.modules.importacion_estudiantes.schemas import FilaUpdate, LoteManualCreate
+from app.modules.importacion_estudiantes.service import create_manual_lote
 from app.modules.importacion_estudiantes.service import confirm_lote, enroll_existing, expire_abandoned_lotes, get_lote, replace_rows, reset_temporary_password, searchable_students
 from app.modules.materias.models import Materia
 from app.modules.matriculas.models import Matricula
@@ -41,7 +42,96 @@ async def _subject(db: AsyncSession, teacher: User | None = None) -> tuple[User,
     subject = Materia(profesor_id=teacher.id, nombre="Materia de prueba", codigo_matricula=uuid4().hex[:12])
     db.add(subject)
     await db.flush()
+    teacher._effective_permissions = {"subjects.update"}
     return teacher, subject
+
+
+@pytest.mark.asyncio
+async def test_manual_lote_replay_preserves_one_batch_and_rejects_changed_content():
+    engine, connection, transaction, db = await _session()
+    try:
+        teacher, subject = await _subject(db)
+        payload = LoteManualCreate(operation_id=uuid4(), filas=[FilaUpdate(nombre_revisado="Ana Ruiz", decision="crear")])
+        first, created = await create_manual_lote(db, subject.id, payload, teacher)
+        assert created and first.estado == "revision" and first.job_id is None
+        again, created = await create_manual_lote(db, subject.id, payload, teacher)
+        assert not created and again.id == first.id and len(again.filas) == 1
+        with pytest.raises(HTTPException) as exc:
+            await create_manual_lote(db, subject.id, payload.model_copy(update={"filas": [FilaUpdate(nombre_revisado="Otra Persona", decision="crear")]}), teacher)
+        assert exc.value.status_code == 409
+        result = await confirm_lote(db, first.id, teacher)
+        assert result["creados"] == 1
+        repeated, _ = await create_manual_lote(db, subject.id, payload, teacher)
+        assert repeated.estado == "confirmado"
+        assert (await confirm_lote(db, repeated.id, teacher))["credenciales"] == []
+    finally:
+        await db.close()
+        await transaction.rollback()
+        await connection.close()
+        await engine.dispose()
+
+
+@pytest.mark.asyncio
+async def test_manual_lote_requires_effective_permission_before_any_write():
+    engine, connection, transaction, db = await _session()
+    try:
+        teacher, subject = await _subject(db)
+        teacher._effective_permissions = set()
+        payload = LoteManualCreate(operation_id=uuid4(), filas=[FilaUpdate(nombre_revisado="Ana Ruiz", decision="crear")])
+        with pytest.raises(HTTPException) as exc:
+            await create_manual_lote(db, subject.id, payload, teacher)
+        assert exc.value.status_code == 403
+        assert await db.get(ImportacionEstudiantesLote, payload.operation_id) is None
+    finally:
+        await db.close()
+        await transaction.rollback()
+        await connection.close()
+        await engine.dispose()
+
+
+@pytest.mark.asyncio
+async def test_manual_uuid_cannot_be_reused_in_another_subject():
+    engine, connection, transaction, db = await _session()
+    try:
+        teacher, subject = await _subject(db)
+        _, second = await _subject(db, teacher)
+        payload = LoteManualCreate(operation_id=uuid4(), filas=[FilaUpdate(nombre_revisado="Ana Ruiz", decision="crear")])
+        await create_manual_lote(db, subject.id, payload, teacher)
+        with pytest.raises(HTTPException) as exc:
+            await create_manual_lote(db, second.id, payload, teacher)
+        assert exc.value.status_code == 409
+        assert await db.scalar(select(func.count(ImportacionEstudiantesFila.id)).where(ImportacionEstudiantesFila.lote_id == payload.operation_id)) == 1
+    finally:
+        await db.close()
+        await transaction.rollback()
+        await connection.close()
+        await engine.dispose()
+
+
+@pytest.mark.asyncio
+async def test_parallel_manual_creation_has_one_batch_and_no_users_before_confirmation():
+    engine = create_async_engine(TEST_URL)
+    sessions = async_sessionmaker(engine, expire_on_commit=False)
+    async with sessions() as setup:
+        teacher, subject = await _subject(setup)
+        await setup.commit()
+    payload = LoteManualCreate(operation_id=uuid4(), filas=[FilaUpdate(nombre_revisado="Ana Ruiz", decision="crear")])
+    async def create_once():
+        async with sessions() as db:
+            actor = await db.get(User, teacher.id)
+            actor._effective_permissions = {"subjects.update"}
+            batch, created = await create_manual_lote(db, subject.id, payload, actor)
+            await db.commit()
+            return batch.id, created
+    try:
+        results = await asyncio.wait_for(asyncio.gather(create_once(), create_once()), timeout=15)
+        assert [item[0] for item in results] == [payload.operation_id, payload.operation_id]
+        assert sorted(item[1] for item in results) == [False, True]
+        async with sessions() as db:
+            assert await db.scalar(select(func.count(ImportacionEstudiantesFila.id)).where(ImportacionEstudiantesFila.lote_id == payload.operation_id)) == 1
+            assert await db.scalar(select(func.count(Matricula.id)).where(Matricula.materia_id == subject.id)) == 0
+    finally:
+        await engine.dispose()
 
 
 @pytest.mark.asyncio
@@ -236,12 +326,20 @@ async def test_parallel_confirmation_creates_one_account_only() -> None:
         batch = ImportacionEstudiantesLote(materia_id=subject.id, creado_por=teacher.id, archivo_nombre="lista.jpg", archivo_sha256="f" * 64, estado="revision")
         setup.add(batch)
         await setup.flush()
-        setup.add(ImportacionEstudiantesFila(lote_id=batch.id, orden=1, nombre_detectado="Sara Sol", nombre_revisado="Sara Sol", confianza=1, decision="crear", advertencias=[]))
+        setup.add(ImportacionEstudiantesFila(lote_id=batch.id, orden=1, nombre_detectado="Sara Sol", nombre_revisado="Sara Sol", confianza=1, decision="crear", duplicado_confirmado=True, advertencias=[]))
         await setup.commit()
+    ready = asyncio.Barrier(2)
     async def confirm_once():
         async with sessions() as db:
             actor = await db.get(User, teacher.id)
+            actor._effective_permissions = {"subjects.update"}
+            # The HTTP route reads the batch before calling the locked service.
+            # Keep both identity maps primed until both requests are ready.
+            cached_lote = await get_lote(db, batch.id, actor)
+            assert cached_lote.estado == "revision"
+            await ready.wait()
             result = await confirm_lote(db, batch.id, actor)
+            assert cached_lote.estado == "confirmado"
             await db.commit()
             return result
     try:
@@ -249,6 +347,39 @@ async def test_parallel_confirmation_creates_one_account_only() -> None:
         assert sorted(len(result["credenciales"]) for result in results) == [0, 1]
         async with sessions() as db:
             assert await db.scalar(select(func.count(Matricula.id)).where(Matricula.materia_id == subject.id)) == 1
+    finally:
+        await engine.dispose()
+
+
+@pytest.mark.asyncio
+async def test_rows_cannot_change_after_external_confirmation_with_cached_batch() -> None:
+    engine = create_async_engine(TEST_URL)
+    sessions = async_sessionmaker(engine, expire_on_commit=False)
+    async with sessions() as setup:
+        teacher, subject = await _subject(setup)
+        batch = ImportacionEstudiantesLote(materia_id=subject.id, creado_por=teacher.id, archivo_nombre="lista.jpg", archivo_sha256="2" * 64, estado="revision")
+        setup.add(batch)
+        await setup.flush()
+        setup.add(ImportacionEstudiantesFila(lote_id=batch.id, orden=1, nombre_detectado="Sara Sol", nombre_revisado="Sara Sol", confianza=1, decision="crear", advertencias=[]))
+        await setup.commit()
+    try:
+        async with sessions() as stale:
+            actor = await stale.get(User, teacher.id)
+            actor._effective_permissions = {"subjects.update"}
+            cached_lote = await get_lote(stale, batch.id, actor)
+            async with sessions() as writer:
+                writer_actor = await writer.get(User, teacher.id)
+                writer_actor._effective_permissions = {"subjects.update"}
+                await confirm_lote(writer, batch.id, writer_actor)
+                await writer.commit()
+            assert cached_lote.estado == "revision"
+            with pytest.raises(HTTPException) as error:
+                await replace_rows(stale, cached_lote, [FilaUpdate(nombre_revisado="Nombre cambiado", decision="crear")], actor)
+            assert error.value.status_code == 409
+            await stale.rollback()
+        async with sessions() as check:
+            assert await check.scalar(select(ImportacionEstudiantesFila.nombre_revisado).where(ImportacionEstudiantesFila.lote_id == batch.id)) == "Sara Sol"
+            assert await check.scalar(select(func.count(Matricula.id)).where(Matricula.materia_id == subject.id)) == 1
     finally:
         await engine.dispose()
 

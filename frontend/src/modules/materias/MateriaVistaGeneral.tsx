@@ -1,5 +1,5 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import {
   ArrowRight,
@@ -23,6 +23,7 @@ import {
   EmptyState,
   Skeleton,
   Modal,
+  ConfirmDialog,
 } from '@/components/ui';
 import type { EducationalIconName } from '@/components/ui';
 import { listEvaluaciones } from '@/modules/evaluaciones/api';
@@ -36,6 +37,10 @@ import type { MateriaConEstudiantes } from '@/types/api';
 import { RosterImportDialog } from './RosterImportDialog';
 import { ExistingStudentsDialog } from './ExistingStudentsDialog';
 import { resetTemporaryPassword } from './rosterImportApi';
+import type { RosterConfirmation } from './rosterImportApi';
+import { RosterManualDialog } from './RosterManualDialog';
+import { RosterCredentials } from './RosterCredentials';
+import { useAuth } from '@/stores/auth';
 
 export function MateriaVistaGeneral() {
   const { materia, canManageMateria } = useMateriaContext();
@@ -50,7 +55,11 @@ export function MateriaVistaGeneral() {
 function TeacherOverview({ materia }: { materia: MateriaConEstudiantes }) {
   const [importOpen, setImportOpen] = useState(false);
   const [existingOpen, setExistingOpen] = useState(false);
-  const [temporaryAccess, setTemporaryAccess] = useState<{ email: string; password_temporal: string } | null>(null);
+  const [manualOpen, setManualOpen] = useState(false);
+  const [resetStudent, setResetStudent] = useState<{ id: string; nombre: string } | null>(null);
+  const [temporaryAccess, setTemporaryAccess] = useState<RosterConfirmation | null>(null);
+  const user = useAuth((state) => state.user);
+  const canRegister = user?.permissions?.includes('subjects.update') ?? false;
   const evaluationsQuery = useQuery({
     queryKey: ['evaluaciones', materia.id],
     queryFn: () => listEvaluaciones(materia.id),
@@ -65,7 +74,10 @@ function TeacherOverview({ materia }: { materia: MateriaConEstudiantes }) {
     },
     onError: (error) => toast.error(toApiError(error).detail),
   });
-  const resetAccess = useMutation({ mutationFn: (studentId: string) => resetTemporaryPassword(materia.id, studentId), onSuccess: (value) => { setTemporaryAccess(value); toast.success('Nueva clave temporal creada'); }, onError: (error) => toast.error(toApiError(error).detail) });
+  const resetAccess = useMutation({ gcTime: 0, mutationFn: (student: { id: string; nombre: string }) => resetTemporaryPassword(materia.id, student.id), onSuccess: (value, student) => { setResetStudent(null); setTemporaryAccess({ creados: 0, matriculados_existentes: 0, ya_matriculados: 0, omitidos: 0, credenciales_mostradas_una_vez: true, credenciales: [{ ...value, nombre: student.nombre }] }); toast.success('Nueva clave temporal creada'); }, onError: (error) => toast.error(toApiError(error).detail) });
+  const clearResetResult = resetAccess.reset;
+  useEffect(() => { if (resetAccess.data) clearResetResult(); }, [resetAccess.data, clearResetResult]);
+  useEffect(() => { setTemporaryAccess(null); setResetStudent(null); setImportOpen(false); setManualOpen(false); setExistingOpen(false); clearResetResult(); }, [materia.id, user?.id, clearResetResult]);
 
   const copy = async () => {
     try {
@@ -89,21 +101,15 @@ function TeacherOverview({ materia }: { materia: MateriaConEstudiantes }) {
 
   return (
     <div className="space-y-5">
-      <TeacherJourney
-        materiaId={materia.id}
-        studentCount={materia.estudiantes.length}
-        evaluationCount={evaluationsQuery.data?.length ?? 0}
-        loading={evaluationsQuery.isLoading}
-        error={evaluationsQuery.isError}
-        onRetry={() => void evaluationsQuery.refetch()}
-      />
-
-      <div className="grid items-start gap-4 lg:grid-cols-[320px_1fr]">
-        <Card id="codigo-inscripcion" className="scroll-mt-6 p-5">
+      {evaluationsQuery.isError && <div role="alert" className="rounded-xl border border-rose-300 p-3"><p>No pudimos revisar las evaluaciones</p><Button variant="outline" onClick={() => void evaluationsQuery.refetch()}>Reintentar</Button></div>}
+      <div className="grid items-start gap-4 lg:grid-cols-[1fr_280px]">
+        <details id="codigo-inscripcion" className="order-2 scroll-mt-6 rounded-xl border border-border bg-surface p-3">
+        <summary className="focus-ring min-h-11 cursor-pointer content-center rounded-lg font-semibold">Código de inscripción</summary>
+        <Card className="mt-3 p-3">
           <div className="flex items-center justify-between gap-3">
             <div>
               <p className="text-sm font-semibold text-muted">
-                Código de inscripción
+                Inscripción por código
               </p>
               <p className="text-xs text-muted">
                 Compártelo solo con estudiantes de esta materia.
@@ -130,21 +136,20 @@ function TeacherOverview({ materia }: { materia: MateriaConEstudiantes }) {
             </Button>
           </div>
         </Card>
+        </details>
 
-        <Card className="p-5">
+        <Card className="order-1 p-4 sm:p-5">
           <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p className="inline-flex items-center gap-2 font-display font-bold">
                 <Users className="h-5 w-5 text-brand-500" /> Estudiantes
               </p>
-              <p className="text-xs text-muted">
-                Listado de estudiantes matriculados en esta clase.
-              </p>
             </div>
             <div className="flex flex-wrap items-center gap-2">
               <Badge tone="neutral">{materia.estudiantes.length}</Badge>
-              <Button size="sm" variant="outline" onClick={() => setExistingOpen(true)}><UserPlus className="h-4 w-4" /> Ya registrados</Button>
-              <Button size="sm" onClick={() => setImportOpen(true)}><Camera className="h-4 w-4" /> Importar foto</Button>
+              {canRegister && <><Button size="sm" className="min-h-11" variant="outline" onClick={() => setExistingOpen(true)}><UserPlus className="h-4 w-4" /> Ya registrados</Button>
+              <Button size="sm" className="min-h-11" variant="outline" onClick={() => setManualOpen(true)}><UserPlus className="h-4 w-4" /> Registrar manualmente</Button>
+              <Button size="sm" className="min-h-11" onClick={() => setImportOpen(true)}><Camera className="h-4 w-4" /> Importar foto</Button></>}
             </div>
           </div>
           {materia.estudiantes.length === 0 ? (
@@ -174,17 +179,23 @@ function TeacherOverview({ materia }: { materia: MateriaConEstudiantes }) {
                     </p>
                   </div>
                   <Badge tone="neutral">Matriculado</Badge>
-                  {estudiante.email_es_interno && <Button size="sm" variant="outline" loading={resetAccess.isPending} onClick={() => resetAccess.mutate(estudiante.id)}><KeyRound className="h-4 w-4" /> Nueva clave</Button>}
+                  {canRegister && estudiante.email_es_interno && <Button size="sm" className="min-h-11" variant="outline" disabled={resetAccess.isPending} onClick={() => setResetStudent({ id: estudiante.id, nombre: estudiante.nombre })}><KeyRound className="h-4 w-4" /> Nueva clave</Button>}
                 </li>
               ))}
             </ul>
           )}
         </Card>
       </div>
-      <RosterImportDialog open={importOpen} materiaId={materia.id} onClose={() => setImportOpen(false)} />
+      <details className="rounded-xl border border-border bg-surface p-3">
+        <summary className="focus-ring min-h-11 cursor-pointer content-center rounded-lg font-semibold">Guía opcional de la materia</summary>
+        <div className="mt-3"><TeacherJourney materiaId={materia.id} studentCount={materia.estudiantes.length} evaluationCount={evaluationsQuery.data?.length ?? 0} loading={evaluationsQuery.isLoading} error={false} onRetry={() => void evaluationsQuery.refetch()} /></div>
+      </details>
+      {importOpen && <RosterImportDialog open materiaId={materia.id} onClose={() => setImportOpen(false)} />}
+      {manualOpen && <RosterManualDialog materiaId={materia.id} onClose={() => setManualOpen(false)} />}
       <ExistingStudentsDialog open={existingOpen} materiaId={materia.id} onClose={() => setExistingOpen(false)} />
+      <ConfirmDialog open={Boolean(resetStudent)} onClose={() => { if (!resetAccess.isPending) setResetStudent(null); }} title="¿Renovar la clave del estudiante?" description={`La clave anterior de ${resetStudent?.nombre ?? ''} dejará de funcionar en todas sus materias y sus sesiones se cerrarán. Imprimir o cancelar no cambia ninguna clave.`} confirmLabel="Renovar clave" loading={resetAccess.isPending} onConfirm={() => { if (resetStudent) resetAccess.mutate(resetStudent); }} />
       <Modal open={Boolean(temporaryAccess)} onClose={() => setTemporaryAccess(null)} title="Nueva clave temporal" description="Entrégala directamente al estudiante. Solo se muestra en este momento.">
-        {temporaryAccess && <div className="space-y-3"><p className="break-all rounded-lg bg-surface-2 p-3 text-sm"><strong>Usuario:</strong> {temporaryAccess.email}</p><p className="break-all rounded-lg bg-surface-2 p-3 text-sm"><strong>Clave:</strong> {temporaryAccess.password_temporal}</p><Button className="w-full" onClick={() => void navigator.clipboard.writeText(`Usuario: ${temporaryAccess.email}\nClave temporal: ${temporaryAccess.password_temporal}`)}><Copy className="h-4 w-4" /> Copiar acceso</Button></div>}
+        {temporaryAccess && <RosterCredentials result={temporaryAccess} renewed />}
       </Modal>
     </div>
   );
@@ -309,6 +320,10 @@ function TeacherJourney({
               {state.recommendedStep === 'invite' ? (
                 <a
                   href={recommended.to}
+                  onClick={() => {
+                    const code = document.getElementById('codigo-inscripcion');
+                    if (code instanceof HTMLDetailsElement) code.open = true;
+                  }}
                   className="focus-ring inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-lg bg-brand-700 px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-800"
                 >
                   {recommended.label}

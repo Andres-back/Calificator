@@ -54,6 +54,10 @@ class LoteUpdate(BaseModel):
     filas: list[FilaUpdate] = Field(min_length=1, max_length=100)
 
 
+class LoteManualCreate(LoteUpdate):
+    operation_id: UUID
+
+
 class CredencialCreada(BaseModel):
     estudiante_id: UUID
     nombre: str

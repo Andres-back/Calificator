@@ -25,7 +25,7 @@ export function ExistingStudentsDialog({ open, materiaId, onClose }: { open: boo
   };
   const enroll = useMutation({ mutationFn: () => enrollExistingStudents(materiaId, selected), onSuccess: (result) => { toast.success(`${result.matriculados} estudiantes añadidos`); void queryClient.invalidateQueries({ queryKey: ['materia', materiaId] }); setSelected([]); onClose(); }, onError: (error) => toast.error(toApiError(error).detail) });
   return <Modal open={open} onClose={onClose} title="Agregar estudiantes existentes" description="Reutiliza cuentas verificadas de tus otras materias. Mantendrán el mismo usuario, contraseña e historial." className="max-w-2xl">
-    <div className="relative"><Search className="pointer-events-none absolute left-3 top-3 h-5 w-5 text-muted" /><Input className="pl-10" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar por nombre o usuario" /></div>
+    <div className="relative"><Search className="pointer-events-none absolute left-3 top-3 h-5 w-5 text-muted" /><Input className="pl-10 text-base" aria-label="Buscar estudiantes existentes" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar por nombre o usuario" /></div>
     <div className="mt-3 flex min-h-11 items-center justify-between gap-3">
       <span className="text-sm text-muted">{selected.length} {selected.length === 1 ? 'seleccionado' : 'seleccionados'}</span>
       <Button

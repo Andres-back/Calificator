@@ -106,7 +106,7 @@ export function MateriaDetailPage() {
   const selectedTabHref = tabHref(visibleTabs.find((tab) => isActiveTab(tab.to))?.to ?? '');
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Back + header */}
       <Link to="/app/materias" className="inline-flex items-center gap-1.5 text-sm font-medium text-muted hover:text-fg">
         <ArrowLeft className="h-4 w-4" /> Volver a {canManageMateria ? 'Materias' : 'Mis materias'}
@@ -116,18 +116,22 @@ export function MateriaDetailPage() {
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         className={cn(
-          'relative flex flex-col gap-4 overflow-hidden sm:flex-row sm:items-start',
+          'relative flex items-start gap-3 overflow-hidden',
           canManageMateria
-            ? 'teacher-page-header rounded-3xl border border-indigo-100 bg-gradient-to-br from-white via-white to-indigo-50/80 p-5 shadow-card dark:border-indigo-500/20 dark:from-surface dark:via-surface dark:to-indigo-950/40 sm:p-6'
+            ? 'teacher-page-header rounded-2xl border border-indigo-100 bg-gradient-to-br from-white via-white to-indigo-50/80 p-3 shadow-card dark:border-indigo-500/20 dark:from-surface dark:via-surface dark:to-indigo-950/40 sm:p-5'
             : 'border-b border-border pb-4',
         )}
       >
         {canManageMateria && <div className="pointer-events-none absolute -right-16 -top-24 h-52 w-52 rounded-full bg-sky-300/20 blur-3xl" aria-hidden="true" />}
         {canManageMateria && <div className="pointer-events-none absolute -bottom-20 left-1/3 h-36 w-36 rounded-full bg-violet-300/10 blur-3xl" aria-hidden="true" />}
-        <div className="relative z-10 grid h-20 w-20 shrink-0 place-items-center rounded-2xl bg-white/90 shadow-sm ring-1 ring-border dark:bg-white/10">
-          <EducationalIcon name={getSubjectEducationalIcon(materia.area)} className="h-[4.5rem] w-[4.5rem]" />
+        <div className="relative z-10 grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-white/90 shadow-sm ring-1 ring-border dark:bg-white/10 sm:h-16 sm:w-16">
+          <EducationalIcon name={getSubjectEducationalIcon(materia.area)} className="h-11 w-11 sm:h-14 sm:w-14" />
         </div>
         <div className="relative z-10 min-w-0 flex-1">
+          <h1 className="break-words font-display text-xl font-extrabold tracking-tight sm:text-2xl">{materia.nombre}</h1>
+          {materia.estado !== 'activa' && <Badge tone="warning" className="mt-1 capitalize">{materia.estado}</Badge>}
+          <details className="mt-1">
+          <summary className="focus-ring min-h-11 cursor-pointer content-center rounded-lg text-sm font-semibold text-muted">Información de la materia</summary>
           <div className="flex flex-wrap items-center gap-2">
             <Badge tone={materia.estado === 'activa' ? 'success' : 'neutral'} className="capitalize">{materia.estado}</Badge>
             <span className="text-sm text-muted">{[materia.area, materia.grado].filter(Boolean).join(' · ') || 'Sin área o grado definidos'}</span>
@@ -137,8 +141,8 @@ export function MateriaDetailPage() {
               </span>
             )}
           </div>
-          <h1 className="mt-2 font-display text-2xl font-extrabold tracking-tight sm:text-3xl">{materia.nombre}</h1>
           {materia.descripcion && <p className="mt-2 max-w-2xl text-sm leading-6 text-muted">{materia.descripcion}</p>}
+          </details>
         </div>
       </motion.section>
 

@@ -417,7 +417,7 @@ function TeacherGradebook() {
         {selectionNotice && <p role="status" className="text-sm text-muted">{selectionNotice}</p>}
       </Card>
 
-      <details open={!selectedEvaluation} className="space-y-3 rounded-xl border border-border bg-surface p-4">
+      <details className="space-y-3 rounded-xl border border-border bg-surface p-4">
       <summary className="focus-ring min-h-11 cursor-pointer py-2 font-semibold">Resumen y seguimiento{selectedEvaluation ? ' de esta evaluación' : ' del grupo'}</summary>
       {openEvaluations.length > 0 ? (
         <div className="rounded-xl border border-sky-200 bg-sky-50 p-4 text-sm text-sky-900 dark:border-sky-500/30 dark:bg-sky-500/10 dark:text-sky-100">

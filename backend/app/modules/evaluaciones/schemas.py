@@ -34,6 +34,7 @@ class EvaluacionCreate(BaseModel):
 
 
 class EvaluacionUpdate(BaseModel):
+    expected_updated_at: datetime | None = None
     nombre: str | None = Field(default=None, min_length=2, max_length=220)
     descripcion: str | None = None
     nota_maxima: Decimal | None = Field(default=None, gt=0)

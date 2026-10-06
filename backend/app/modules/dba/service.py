@@ -58,6 +58,7 @@ async def get_dba_personalizado_records_for_evaluation(
     *,
     materia_id: UUID,
     profesor_id: UUID,
+    retained_ids: set[UUID] | None = None,
 ) -> list[DBAPersonalizado]:
     if not dba_ids:
         return []
@@ -69,7 +70,7 @@ async def get_dba_personalizado_records_for_evaluation(
             detail="One or more custom DBA ids are invalid",
         )
     for row in rows:
-        if not row.activo:
+        if not row.activo and row.id not in (retained_ids or set()):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="One or more custom DBA ids are inactive",

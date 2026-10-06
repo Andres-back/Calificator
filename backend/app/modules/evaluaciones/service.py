@@ -1,3 +1,4 @@
+from datetime import timezone
 from decimal import Decimal
 from uuid import UUID
 
@@ -11,6 +12,7 @@ from app.modules.dba.service import get_dba_personalizado_records_for_evaluation
 from app.modules.evaluaciones.blueprint_service import (
     build_blueprint_payload,
     grading_answer_key_status,
+    normalize_dba_records,
 )
 from app.modules.evaluaciones.modality_service import (
     normalize_question_modalities,
@@ -568,12 +570,30 @@ async def update_evaluation(
     payload: EvaluacionUpdate,
 ) -> Evaluacion:
     data = payload.model_dump(exclude_unset=True)
+    expected_updated_at = data.pop("expected_updated_at", None)
+    if expected_updated_at is not None:
+        # Refresh under a row lock: a read-before-lock comparison loses races.
+        locked = await db.scalar(
+            select(Evaluacion)
+            .where(Evaluacion.id == evaluacion.id, Evaluacion.deleted_at.is_(None))
+            .with_for_update()
+            .execution_options(populate_existing=True)
+        )
+        if locked is None:
+            raise HTTPException(status_code=404, detail="Evaluación no disponible")
+        evaluacion = locked
+        def utc_naive(value):
+            return value.astimezone(timezone.utc).replace(tzinfo=None) if value.tzinfo else value
+        if utc_naive(evaluacion.updated_at) != utc_naive(expected_updated_at):
+            raise HTTPException(status_code=409, detail="La evaluación cambió. Conservamos tu edición; vuelve a abrirla con la versión actual antes de guardar.")
     if "estado" in data:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="El estado de una evaluacion solo puede cambiar mediante endpoints dedicados.",
         )
     structural_update = bool(STRUCTURAL_FIELDS.intersection(data))
+    criteria_only = bool(data) and set(data) <= {"criterios", "dba_ids", "dba_personalizado_ids"}
+    retained_custom_ids = {UUID(value) for value in evaluacion.dba_personalizado_ids}
 
     rebuild_blueprint = False
     dba_ids = [UUID(value) for value in evaluacion.dba_ids]
@@ -614,7 +634,10 @@ async def update_evaluation(
         rebuild_blueprint = True
 
     if rebuild_blueprint:
-        await _build_or_update_blueprint(db, evaluacion, dba_ids, dba_personalizado_ids)
+        if criteria_only:
+            await _update_blueprint_criteria(db, evaluacion, dba_ids, dba_personalizado_ids, retained_custom_ids)
+        else:
+            await _build_or_update_blueprint(db, evaluacion, dba_ids, dba_personalizado_ids)
 
     # Una evaluación asignada continúa siendo editable por su profesor, pero
     # debe conservar una estructura válida mientras siga visible al estudiante.
@@ -623,6 +646,35 @@ async def update_evaluation(
 
     await db.commit()
     return await get_evaluation_or_404(db, evaluacion.id)
+
+
+async def _update_blueprint_criteria(
+    db: AsyncSession,
+    evaluacion: Evaluacion,
+    dba_ids: list[UUID],
+    custom_ids: list[UUID],
+    retained_ids: set[UUID],
+) -> None:
+    """Limited update: never normalize existing questions, answer keys or feedback."""
+    official = await get_dba_records(db, dba_ids)
+    custom = await get_dba_personalizado_records_for_evaluation(
+        db, custom_ids, materia_id=evaluacion.materia_id,
+        profesor_id=evaluacion.profesor_id, retained_ids=retained_ids,
+    )
+    blueprint = await db.scalar(select(EvaluacionBlueprint).where(EvaluacionBlueprint.evaluacion_id == evaluacion.id))
+    if blueprint is None:
+        blueprint = EvaluacionBlueprint(**build_blueprint_payload(
+            evaluacion_id=evaluacion.id, tipo_origen=evaluacion.tipo_origen,
+            dba_records=[*official, *custom], metas=evaluacion.metas_profesor,
+            criterios=evaluacion.criterios, preguntas=evaluacion.preguntas,
+            respuestas_esperadas=evaluacion.respuestas_esperadas,
+        ))
+        db.add(blueprint)
+        evaluacion.blueprint = blueprint
+    else:
+        blueprint.dba = normalize_dba_records([*official, *custom])
+        blueprint.criterios = evaluacion.criterios
+    await db.flush()
 
 
 async def rebuild_blueprint(

@@ -19,6 +19,7 @@ export const routes = {
 
   /* ── Genéricas protegidas ── */
   app: '/app',
+  profile: '/app/perfil',
   forbidden: '/app/403',
   notFound: '/app/404',
 

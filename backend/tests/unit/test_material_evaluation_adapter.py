@@ -1,6 +1,10 @@
 from __future__ import annotations
 
 from decimal import Decimal
+import asyncio
+from copy import deepcopy
+from types import SimpleNamespace
+from uuid import uuid4
 
 import pytest
 
@@ -10,6 +14,7 @@ from app.modules.herramientas.evaluation_adapter import (
     is_evaluable_material_type,
 )
 from app.shared.enums import EvaluacionModalidad, MaterialTipo
+from app.modules.evaluaciones import service as evaluation_service
 
 
 MATERIAL_CONTENTS: dict[str, dict] = {
@@ -239,3 +244,25 @@ def test_adapter_rejects_non_evaluable_or_invalid_materials(
             note_max=note_max,
             modality=EvaluacionModalidad.ONLINE,
         )
+
+
+@pytest.mark.parametrize("material_type", sorted(MATERIAL_CONTENTS))
+def test_criteria_patch_preserves_all_material_question_keys_and_feedback(monkeypatch, material_type):
+    structure = build_evaluation_structure(material_type, MATERIAL_CONTENTS[material_type], note_max=5, modality=EvaluacionModalidad.MIXTA)
+    blueprint = SimpleNamespace(**deepcopy(structure), dba=[{"historical": True}])
+    evaluation = SimpleNamespace(id=uuid4(), materia_id=uuid4(), profesor_id=uuid4(), criterios=[{"nombre": "Nuevo", "puntaje_maximo": 5}])
+    before = deepcopy(blueprint.__dict__)
+    class DB:
+        async def scalar(self, _statement):
+            return blueprint
+        async def flush(self):
+            pass
+    async def no_references(*_args, **_kwargs):
+        return []
+    monkeypatch.setattr(evaluation_service, "get_dba_records", no_references)
+    monkeypatch.setattr(evaluation_service, "get_dba_personalizado_records_for_evaluation", no_references)
+    asyncio.run(evaluation_service._update_blueprint_criteria(DB(), evaluation, [], [], set()))
+    for field, value in before.items():
+        if field not in {"criterios", "dba"}:
+            assert getattr(blueprint, field) == value
+    assert blueprint.criterios == evaluation.criterios

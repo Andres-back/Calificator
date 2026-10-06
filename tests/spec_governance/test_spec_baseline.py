@@ -84,6 +84,7 @@ ALL_SPECS = {
     "080-evaluaciones-criterios-movil",
     "081-evaluacion-vista-word",
     "083-rag-preflight",
+    "084-docente-mobile-first",
 }
 OWNED_SPECS = {
     name

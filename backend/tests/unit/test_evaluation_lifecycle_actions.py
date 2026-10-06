@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import asyncio
+from copy import deepcopy
+from datetime import datetime, timezone
 from types import SimpleNamespace
 from uuid import uuid4
 
@@ -198,6 +200,68 @@ def test_assigned_evaluation_keeps_structural_editing_enabled(monkeypatch) -> No
     assert evaluation.respuestas_esperadas[0]["respuesta"] == "B) 48"
     assert evaluation.estado == EvaluacionEstado.PUBLICADA.value
     assert db.commits == 1
+
+
+def test_criteria_only_patch_preserves_complex_questions_keys_and_blueprint(monkeypatch) -> None:
+    evaluation = _evaluation(state=EvaluacionEstado.PUBLICADA.value, reception_enabled=True)
+    evaluation.materia_id, evaluation.profesor_id = uuid4(), uuid4()
+    evaluation.preguntas[0]["metadata"] = {"source_page": 3, "legacy": [1, 2]}
+    evaluation.blueprint.preguntas = [{"id": "historical", "tipo": "actividad", "metadata": {"keep": True}}]
+    evaluation.blueprint.respuestas_esperadas = [{"numero": 1, "respuesta": {"parts": ["B", "36"]}}]
+    before = deepcopy((evaluation.preguntas, evaluation.respuestas_esperadas, evaluation.blueprint.__dict__))
+    class CriteriaDB(FakeDB):
+        async def scalar(self, _statement):
+            return evaluation.blueprint
+        async def flush(self):
+            pass
+    async def official(_db, ids):
+        assert ids == []
+        return []
+    async def custom(_db, ids, **kwargs):
+        assert ids == []
+        assert kwargs["retained_ids"] == set()
+        return []
+    monkeypatch.setattr(service, "get_dba_records", official)
+    monkeypatch.setattr(service, "get_dba_personalizado_records_for_evaluation", custom)
+    _patch_reload(monkeypatch, evaluation)
+    db = CriteriaDB()
+    criteria = [{"nombre": "Comprensión", "puntaje_maximo": 5, "peso_porcentaje": 100}]
+    asyncio.run(service.update_evaluation(db, evaluation, EvaluacionUpdate(criterios=criteria)))
+    assert evaluation.criterios == evaluation.blueprint.criterios == criteria
+    assert (evaluation.preguntas, evaluation.respuestas_esperadas) == before[:2]
+    for field, value in before[2].items():
+        if field not in {"criterios", "dba"}:
+            assert getattr(evaluation.blueprint, field) == value
+    assert db.commits == 1
+
+
+@pytest.mark.parametrize("matches", [True, False])
+def test_version_precondition_locks_before_modifying_criteria(monkeypatch, matches) -> None:
+    evaluation = _evaluation(state=EvaluacionEstado.PUBLICADA.value, reception_enabled=True)
+    evaluation.updated_at = datetime(2026, 10, 5, 12)
+    class LockedDB(FakeDB):
+        async def scalar(self, statement):
+            assert statement._for_update_arg is not None
+            assert statement.get_execution_options()["populate_existing"] is True
+            return evaluation
+    db = LockedDB()
+    _patch_reload(monkeypatch, evaluation)
+    async def update_criteria(*_args, **_kwargs):
+        pass
+    monkeypatch.setattr(service, "_update_blueprint_criteria", update_criteria)
+    previous = deepcopy(evaluation.criterios)
+    expected = datetime(2026, 10, 5, 12 if matches else 11, tzinfo=timezone.utc)
+    payload = EvaluacionUpdate(expected_updated_at=expected, criterios=[{"nombre": "Nueva", "puntaje_maximo": 5}])
+    if matches:
+        asyncio.run(service.update_evaluation(db, evaluation, payload))
+        assert db.commits == 1
+        assert not hasattr(evaluation, "expected_updated_at")
+    else:
+        with pytest.raises(HTTPException) as exc:
+            asyncio.run(service.update_evaluation(db, evaluation, payload))
+        assert exc.value.status_code == 409
+        assert evaluation.criterios == previous
+        assert db.commits == 0
 
 
 def test_structure_validation_rejects_assigned_evaluation_with_stable_conflict() -> None:

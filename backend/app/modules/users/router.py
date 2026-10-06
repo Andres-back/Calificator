@@ -23,17 +23,25 @@ router = APIRouter(tags=["users"])
 
 
 @router.get("/users/me", response_model=UserSelfRead)
-async def get_me(current_user: User = Depends(get_current_user)) -> User:
+async def get_me(response: Response, current_user: User = Depends(get_current_user)) -> User:
+    response.headers["Cache-Control"] = "private, no-store"
     return current_user
 
 
 @router.patch("/users/me", response_model=UserSelfRead)
 async def patch_me(
     payload: UserSelfUpdate,
+    response: Response,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> User:
-    return await service.update_user(db, current_user, payload)
+    user, password_changed = await service.update_self_user(db, current_user, payload)
+    response.headers["Cache-Control"] = "private, no-store"
+    if password_changed:
+        from app.modules.auth.service import clear_auth_cookies
+
+        clear_auth_cookies(response)
+    return user
 
 
 @router.get("/admin/users", response_model=list[AdminUserRead])

@@ -4,16 +4,16 @@ import hashlib
 from uuid import UUID
 from sqlalchemy import select, text
 
-from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
+from fastapi import APIRouter, Depends, File, HTTPException, Query, Response, UploadFile, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.core.permissions import get_current_user
+from app.core.permissions import get_current_user, require_permission_now
 from app.core.rate_limit import rate_limit
 from app.db.session import get_db
 from app.modules.importacion_estudiantes import service
 from app.modules.importacion_estudiantes.models import ImportacionEstudiantesLote
-from app.modules.importacion_estudiantes.schemas import ConfirmacionRead, ExistingEnrollmentRequest, ExistingStudentRead, LoteCreated, LoteRead, LoteUpdate, TemporaryPasswordRead
+from app.modules.importacion_estudiantes.schemas import ConfirmacionRead, ExistingEnrollmentRequest, ExistingStudentRead, LoteCreated, LoteManualCreate, LoteRead, LoteUpdate, TemporaryPasswordRead
 from app.modules.jobs import service as jobs_service
 from app.modules.materias.service import ensure_can_manage_materia
 from app.modules.users.models import User
@@ -31,6 +31,7 @@ async def create_import(
     db: AsyncSession = Depends(get_db),
     _: None = Depends(rate_limit(limit=10, window_seconds=3600, scope="roster-import")),
 ) -> dict:
+    require_permission_now(actor, "subjects.update")
     await ensure_can_manage_materia(db, materia_id, actor)
     try:
         content = await read_upload_limited(archivo, MAX_ROSTER_PHOTO)
@@ -68,6 +69,15 @@ async def list_imports(materia_id: UUID, actor: User = Depends(get_current_user)
     return list((await db.scalars(select(ImportacionEstudiantesLote).options(selectinload(ImportacionEstudiantesLote.filas)).where(ImportacionEstudiantesLote.materia_id == materia_id, ImportacionEstudiantesLote.estado.in_(["procesando", "revision", "error"])).order_by(ImportacionEstudiantesLote.created_at.desc()).limit(10))).all())
 
 
+@router.post("/{materia_id}/importaciones-estudiantes/manual", response_model=LoteRead)
+async def manual_import(materia_id: UUID, payload: LoteManualCreate, response: Response, actor: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    lote, created = await service.create_manual_lote(db, materia_id, payload, actor)
+    await db.commit()
+    response.status_code = 201 if created else 200
+    response.headers["Cache-Control"] = "no-store"
+    return lote
+
+
 @router.get("/{materia_id}/importaciones-estudiantes/{lote_id}", response_model=LoteRead)
 async def read_import(materia_id: UUID, lote_id: UUID, actor: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     lote = await service.get_lote(db, lote_id, actor)
@@ -78,6 +88,7 @@ async def read_import(materia_id: UUID, lote_id: UUID, actor: User = Depends(get
 
 @router.put("/{materia_id}/importaciones-estudiantes/{lote_id}", response_model=LoteRead)
 async def update_import(materia_id: UUID, lote_id: UUID, payload: LoteUpdate, actor: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    require_permission_now(actor, "subjects.update")
     lote = await service.get_lote(db, lote_id, actor)
     if lote.materia_id != materia_id:
         raise HTTPException(status_code=404, detail="Importación no encontrada")
@@ -88,6 +99,7 @@ async def update_import(materia_id: UUID, lote_id: UUID, payload: LoteUpdate, ac
 
 @router.delete("/{materia_id}/importaciones-estudiantes/{lote_id}", status_code=204)
 async def cancel_import(materia_id: UUID, lote_id: UUID, actor: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    require_permission_now(actor, "subjects.update")
     lote = await service.get_lote(db, lote_id, actor)
     if lote.materia_id != materia_id or lote.estado == "confirmado":
         raise HTTPException(status_code=409, detail="La importación confirmada no se puede cancelar")
@@ -105,7 +117,9 @@ async def cancel_import(materia_id: UUID, lote_id: UUID, actor: User = Depends(g
 
 
 @router.post("/{materia_id}/importaciones-estudiantes/{lote_id}/confirmar", response_model=ConfirmacionRead)
-async def confirm_import(materia_id: UUID, lote_id: UUID, actor: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+async def confirm_import(materia_id: UUID, lote_id: UUID, response: Response, actor: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    require_permission_now(actor, "subjects.update")
+    response.headers["Cache-Control"] = "no-store"
     lote = await service.get_lote(db, lote_id, actor)
     if lote.materia_id != materia_id:
         raise HTTPException(status_code=404, detail="Importación no encontrada")
@@ -132,7 +146,8 @@ async def enroll_existing(materia_id: UUID, payload: ExistingEnrollmentRequest, 
 
 
 @router.post("/{materia_id}/estudiantes/{student_id}/clave-temporal", response_model=TemporaryPasswordRead)
-async def reset_student_password(materia_id: UUID, student_id: UUID, actor: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+async def reset_student_password(materia_id: UUID, student_id: UUID, response: Response, actor: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    response.headers["Cache-Control"] = "no-store"
     result = await service.reset_temporary_password(db, materia_id, student_id, actor)
     await db.commit()
     return result

@@ -7,6 +7,9 @@ import type { Evaluacion } from '@/types/api';
 
 const mocks = vi.hoisted(() => ({ document: vi.fn(), revoke: vi.fn(), create: vi.fn() }));
 vi.mock('../api', () => ({ getEvaluationDocument: mocks.document }));
+vi.mock('./EvaluationPdfViewer', () => ({ default: ({ blob }: { blob: Blob }) => (
+  <section title="Formato final de la evaluación" data-document-type={blob.type}>Documento renderizado</section>
+) }));
 const evaluation: Evaluacion = {
   id: 'evaluation-1', materia_id: 'subject', nombre: 'Operaciones', profesor_id: 'teacher',
   descripcion: null, tipo_origen: 'nativa', modalidad: 'fisica', nota_maxima: 5,
@@ -32,7 +35,8 @@ describe('EvaluationPreviewModal', () => {
     const close = vi.fn();
     const user = userEvent.setup();
     const view = render(<EvaluationPreviewModal evaluation={evaluation} canViewSolutions onClose={close} />);
-    expect(await screen.findByTitle('Formato final de la evaluación')).toHaveAttribute('src', 'blob:document#view=FitH');
+    expect(await screen.findByTitle('Formato final de la evaluación')).toHaveAttribute('data-document-type', 'application/pdf');
+    expect(document.querySelector('iframe')).toBeNull();
     expect(mocks.document).toHaveBeenCalledWith(evaluation.id, 'pdf', false, expect.any(AbortSignal));
     expect(screen.queryByRole('button', { name: /editar/i })).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Descargar PDF' })).toBeEnabled();
