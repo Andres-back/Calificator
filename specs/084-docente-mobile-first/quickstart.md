@@ -1,6 +1,6 @@
 # Validación de 084
 
-Estado: cinco historias implementadas y validación local terminada. PR y CI remoto pendientes. En fase de plan no se ejecutaron pruebas; los resultados posteriores están separados abajo. Las instrucciones previstas restantes no son evidencia de finalización.
+Estado: cinco historias implementadas y validación local terminada. [PR #175](https://github.com/Andres-back/Calificator/pull/175) abierto y adjunto al chat; CI remoto en curso. En fase de plan no se ejecutaron pruebas; los resultados posteriores están separados abajo. Las instrucciones previstas restantes no son evidencia de finalización.
 
 ## Evidencia local del primer incremento (2026-10-05)
 
@@ -90,7 +90,15 @@ La revisión final debe completar inventario/gobernanza, matriz y Converge antes
 - Paquete final: `npm run build`, `npm run audit:build`, `npm run audit:actions` y `npm run lint:strict` aprobados después de los ajustes de reflujo. Inventario generado y verificado: **571 superficies**. Sin nueva migración ni cambios de IA.
 - Chromium final de los cuatro archivos del alcance: **41 aprobadas**, en 4,9 minutos. Comando: `npx playwright test e2e/p2-responsive.spec.ts e2e/profile.spec.ts e2e/roster-import.spec.ts e2e/evaluation-preview.spec.ts --workers=1 --grep-invert 'es usable en (768|1024|1366|1920)|estudiante es usable|admin es usable' --max-failures=1`. Incluye PDF realmente pintado y descargas en cinco tamaños, separación estudiantil, editor en cinco tamaños, encabezado móvil, asistencia, modo oscuro, perfil e impresión/replay. Los aborts al cerrar el visor son cancelaciones esperadas de solicitudes; no se amplió CSP ni se omitieron permisos. La matriz general de otros roles/escritorio fue ejecutada en WebKit y volverá a correr completa en CI Chromium.
 - Gobernanza previa a abrir PR: **40 aprobadas**, excluida temporalmente solo la comprobación de tareas totalmente terminadas porque abrir/adjuntar el PR y comprobar CI todavía es T035. La trazabilidad ahora enumera individualmente los quince FR, no abreviaturas de rangos que el validador no reconoce. El gate no se debilitó; debe pasar íntegro tras completar la entrega.
-- PR y CI remoto pendientes; nada de lo anterior autoriza fusión o demuestra funcionamiento en producción. No se probaron Brave/iPhone físicos ni se realizaron llamadas reales a proveedores.
+- Al terminar esta matriz todavía no se había abierto el PR; su estado posterior se registra abajo. Nada de lo anterior autoriza fusión o demuestra funcionamiento en producción. No se probaron Brave/iPhone físicos ni se realizaron llamadas reales a proveedores.
+
+### Converge y entrega de rama
+
+- Converge final: **46 requisitos/criterios/escenarios** (15 FR, 7 SC, 24 escenarios), **8 decisiones técnicas** y **8 principios constitucionales** revisados. Cero hallazgos nuevos missing/partial/contradicts/unrequested; las tareas T036/T037 de accesibilidad y espacio de teclado ya cuentan con implementación y evidencia. No se añadió una fase vacía ni se reescribieron tareas durante Converge.
+- Evidencia por área: visor/cancelación/worker local y exports; editor limitado con bloqueo de versión y preservación histórica; materia/progresividad y reflujo; lote manual/replay concurrente, permisos efectivos e impresión aislada; perfil propio, revocación de sesión y recuperación. Los formatos gráficos que el exportador Word ya no soportaba continúan como limitación documentada, no como una corrección fingida del visor.
+- [PR #175](https://github.com/Andres-back/Calificator/pull/175), rama `codex/084-docente-mobile-first`, base main, `Closes #174`, con ambas etiquetas de aprobación; adjuntado a este chat. Primera consulta remota: Spec governance, Backend quality and tests, Frontend quality/build/E2E y Container builds **en ejecución**. Abrir/adjuntar/consultar el PR completa T035, no equivale a aprobar sus checks ni a fusionar. La primera revisión publicada conserva T034/T035 pendientes hasta registrar estos hechos; el siguiente commit cierra ese registro sin debilitar el gate.
+- Las 37 tareas están ejecutadas; fusión y despliegue siguen fuera de la autorización de este incremento. Antes de merge debe comprobarse CI íntegro verde y autorización humana específica.
+- Gate local completo después de registrar el PR/Converge: **41 pruebas de gobernanza aprobadas**, inventario vigente y diff sin errores. El primer CI remoto rechazó únicamente T034/T035 aún pendientes en el commit inicial (40 aprobadas, una fallida); el cierre documental se publica en el siguiente commit y vuelve a ejecutar los controles. Las construcciones remotas de contenedores de ese primer commit sí terminaron correctamente; no sustituyen el estado de CI del último commit.
 
 Registrar comando, fecha, resultado, entorno y suites omitidas; imágenes solo con fixtures no sensibles. Automatización WebKit no reemplaza prueba física iOS: declarar qué se probó y qué no. No prometer reproducción productiva basada en mocks.
 

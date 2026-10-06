@@ -71,8 +71,8 @@ Objetivo: nombre/email/password propios con validación y salida de sesión pred
 - [x] T031 Completar matriz transversal de cinco recorridos en frontend/e2e/p2-responsive.spec.ts, evaluation-preview.spec.ts, roster-import.spec.ts y profile.spec.ts: tamaños del plan, claro/oscuro, error, foco, scroll y ausencia de acceso cruzado; declarar límites de Brave/iPhone físicos.
 - [x] T032 Actualizar documentación/contratos canónicos responsables e inventario specs/system-inventory/current.json mediante generador existente cuando cambien rutas/contratos; registrar evidencia, limitaciones y procedimiento de rollback en specs/084-docente-mobile-first/quickstart.md y specs/README.md.
 - [x] T033 Ejecutar TypeScript/lint/pruebas/build/auditoría aplicables de frontend/package.json y backend/tests, comprobar Docker/CI pertinente sin credenciales reales; no declarar aprobados tests omitidos ni sustituir ejecución por mocks.
-- [ ] T034 Ejecutar speckit-converge contra specs/084-docente-mobile-first/spec.md, plan.md y tasks.md; resolver cualquier tarea nueva antes de cerrar trabajo y dejar marcadas únicamente tareas realmente completadas.
-- [ ] T035 Abrir PR de codex/084-docente-mobile-first enlazado a issue #174, adjuntarlo a este chat y comprobar Spec governance/CI según .github/workflows/ci.yml; preparar entrega sin push directo a main ni despliegue/fusión no autorizados.
+- [x] T034 Ejecutar speckit-converge contra specs/084-docente-mobile-first/spec.md, plan.md y tasks.md; resolver cualquier tarea nueva antes de cerrar trabajo y dejar marcadas únicamente tareas realmente completadas.
+- [x] T035 Abrir PR de codex/084-docente-mobile-first enlazado a issue #174, adjuntarlo a este chat y comprobar Spec governance/CI según .github/workflows/ci.yml; preparar entrega sin push directo a main ni despliegue/fusión no autorizados.
 
 ## Dependencias
 

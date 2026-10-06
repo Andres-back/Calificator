@@ -4,7 +4,7 @@
 
 **Created**: 2026-10-05
 
-**Status**: Especificación, plan y revisión asistida aprobados por el usuario (2026-10-05). Cinco historias implementadas; pruebas locales de backend/frontend, matriz final Chromium/WebKit y construcciones Docker aprobadas. PR/CI remoto pendientes. Sin despliegue.
+**Status**: Especificación, plan y revisión asistida aprobados por el usuario (2026-10-05). Cinco historias implementadas; pruebas locales de backend/frontend, matriz final Chromium/WebKit y construcciones Docker aprobadas. Converge sin trabajo pendiente. [PR #175](https://github.com/Andres-back/Calificator/pull/175) abierto; CI remoto en curso. Sin fusión ni despliegue.
 
 **Issue**: [#174](https://github.com/Andres-back/Calificator/issues/174).
 
