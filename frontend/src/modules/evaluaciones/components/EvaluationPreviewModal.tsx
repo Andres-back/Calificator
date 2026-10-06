@@ -1,11 +1,12 @@
-import { useEffect, useRef, useState } from 'react';
+import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { Download, ExternalLink, FileText } from 'lucide-react';
 import { Button, Modal, Select } from '@/components/ui';
 import { toApiError } from '@/lib/api';
 import { getEvaluationDocument } from '../api';
 import type { Evaluacion } from '@/types/api';
 
-interface PreviewFile { evaluationId: string; solutions: boolean; url: string }
+interface PreviewFile { evaluationId: string; solutions: boolean; url: string; blob: Blob }
+const EvaluationPdfViewer = lazy(() => import('./EvaluationPdfViewer'));
 
 function documentName(evaluation: Evaluacion, solutions: boolean, extension: 'pdf' | 'docx') {
   const name = evaluation.nombre.replace(/[^\p{L}\p{N} _-]/gu, '').trim().slice(0, 100) || 'evaluacion';
@@ -54,7 +55,7 @@ export function EvaluationPreviewModal({ evaluation, canViewSolutions, onClose }
       .then((blob) => {
         if (controller.signal.aborted) return;
         url = URL.createObjectURL(blob);
-        setFile({ evaluationId, solutions: showSolutions, url });
+        setFile({ evaluationId, solutions: showSolutions, url, blob });
       })
       .catch((failure) => {
         if (!controller.signal.aborted) setError(toApiError(failure).detail);
@@ -95,8 +96,8 @@ export function EvaluationPreviewModal({ evaluation, canViewSolutions, onClose }
               <span className="sr-only">Versión del documento</span>
               <Select value={showSolutions ? 'solutions' : 'student'} disabled={wordPending}
                 onChange={(event) => setSolutions(event.currentTarget.value === 'solutions')}>
-                <option value="student">Evaluación para estudiantes</option>
-                <option value="solutions">Solucionario docente</option>
+                <option value="student">Sin respuestas</option>
+                <option value="solutions">Solucionario</option>
               </Select>
             </label>
           ) : <p className="text-sm text-muted">Evaluación para estudiantes · Sin respuestas</p>}
@@ -107,7 +108,7 @@ export function EvaluationPreviewModal({ evaluation, canViewSolutions, onClose }
             </a>
           )}
         </div>
-        <p className="text-xs text-muted">{showSolutions ? 'Uso exclusivo del docente: incluye las respuestas guardadas.' : 'Este es el documento final para entregar o imprimir, sin respuestas correctas.'}</p>
+        <p className="text-xs text-muted">{showSolutions ? 'Solo docente: respuestas guardadas.' : 'Versión sin respuestas para imprimir.'}</p>
       </div>
       <div className="min-h-0 flex-1 overflow-auto rounded-lg border border-border bg-surface-2">
         {error ? (
@@ -116,8 +117,9 @@ export function EvaluationPreviewModal({ evaluation, canViewSolutions, onClose }
             <Button variant="outline" onClick={() => setRetry((value) => value + 1)}>Volver a intentar</Button>
           </div>
         ) : currentFile ? (
-          <iframe title="Formato final de la evaluación" src={`${currentFile.url}#view=FitH`}
-            className="h-full min-h-64 w-full border-0 bg-white" />
+          <Suspense fallback={<p role="status" className="p-5 text-sm text-muted">Cargando visor…</p>}>
+            <EvaluationPdfViewer key={`${currentFile.evaluationId}:${currentFile.solutions}:${currentFile.url}`} blob={currentFile.blob} />
+          </Suspense>
         ) : <p role="status" className="p-5 text-sm text-muted">Preparando vista final…</p>}
       </div>
       <div className="mt-3 shrink-0 space-y-2 border-t border-border pt-3">
@@ -131,7 +133,7 @@ export function EvaluationPreviewModal({ evaluation, canViewSolutions, onClose }
             <FileText className="h-4 w-4 shrink-0" aria-hidden="true" /> Descargar Word
           </Button>
         </div>
-        <p className="text-xs leading-5 text-muted">Si el visor no aparece, usa «Abrir PDF». El Word es editable; sus cambios no se sincronizan con XCalificator.</p>
+        <p className="text-xs leading-5 text-muted">Word editable: sus cambios no se sincronizan con XCalificator.</p>
       </div>
     </Modal>
   );

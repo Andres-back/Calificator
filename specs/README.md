@@ -263,3 +263,8 @@ actualizar la especificación propietaria, su plan y sus tareas; no debe crear d
 - [083-rag-preflight](083-rag-preflight/spec.md), [issue #172](https://github.com/Andres-back/Calificator/issues/172): comprueba fuentes vectorizadas autorizadas antes de generar el vector de consulta. Evoluciona 009 (RAG) y beneficia 008 (calificación), que conservan responsabilidad canónica.
 - Sin tablas, APIs, proveedores, criterios ni notas modificadas. [Validación](083-rag-preflight/quickstart.md).
 - [Especificación del generador y gate de deriva](013-inventario-tecnico-exhaustivo/spec.md)
+
+## Evolución 084: docente primero en celular
+
+- [084-docente-mobile-first](084-docente-mobile-first/spec.md), [issue #174](https://github.com/Andres-back/Calificator/issues/174): vista previa dentro del celular, criterios/rúbrica independientes, materias breves, registro manual/foto con fichas privadas y perfil propio.
+- Especificación, [plan](084-docente-mobile-first/plan.md) y revisión asistida aprobados. Cinco historias implementadas, pruebas backend/frontend, matriz final Chromium/WebKit y construcciones Docker aprobadas; PR/CI remoto pendientes. Sin despliegue. [Evidencia](084-docente-mobile-first/quickstart.md); no altera notas/evidencias.

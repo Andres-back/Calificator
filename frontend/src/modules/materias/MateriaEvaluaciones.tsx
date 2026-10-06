@@ -38,6 +38,7 @@ import {
   type EvaluacionUpdate,
 } from '@/modules/evaluaciones/api';
 import { DigitalizarEvaluacionModal } from '@/modules/evaluaciones/components/DigitalizarEvaluacionModal';
+import { EvaluationCriteriaEditor } from '@/modules/evaluaciones/components/EvaluationCriteriaEditor';
 import { GenerationWizard } from '@/modules/evaluaciones/components/GenerationWizard';
 import { EvaluationPreviewModal } from '@/modules/evaluaciones/components/EvaluationPreviewModal';
 import { getStudentEvaluationAction, getStudentEvaluationStatus } from '@/modules/evaluaciones/studentProgress';
@@ -100,6 +101,7 @@ export function MateriaEvaluaciones() {
   const [editingEval, setEditingEval] = useState<Evaluacion | null>(null);
   const [contentEditingEval, setContentEditingEval] = useState<Evaluacion | null>(null);
   const [previewEval, setPreviewEval] = useState<Evaluacion | null>(null);
+  const [criteriaEval, setCriteriaEval] = useState<Evaluacion | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Evaluacion | null>(null);
   const [form, setForm] = useState<EvaluationForm>(emptyForm);
   const [searchParams, setSearchParams] = useSearchParams();
@@ -233,7 +235,7 @@ export function MateriaEvaluaciones() {
                 <h2 className="mt-1 font-display text-lg font-bold">
                   ¿Cómo quieres empezar?
                 </h2>
-                <p className="mt-1 max-w-2xl text-sm leading-6 text-muted">
+                <p className="mt-1 hidden max-w-2xl text-sm leading-6 text-muted sm:block">
                   Crea una evaluación guiada o convierte directamente una prueba
                   que ya tengas en foto o PDF.
                 </p>
@@ -250,7 +252,7 @@ export function MateriaEvaluaciones() {
               </Button>
             </div>
           </div>
-          <p className="mt-3 text-xs font-semibold text-brand-700 dark:text-brand-200 lg:text-right">
+          <p className="mt-3 hidden text-xs font-semibold text-brand-700 dark:text-brand-200 sm:block lg:text-right">
             Recomendado: crear paso a paso. La IA nunca publica sin tu revisión.
           </p>
         </Card>
@@ -361,6 +363,9 @@ export function MateriaEvaluaciones() {
                           <Button size="sm" variant="secondary" onClick={() => { setContentEditingEval(evaluation); setWizardOpen(true); }}>
                             <ClipboardCheck className="h-4 w-4" /> Editar preguntas
                           </Button>
+                          <Button size="sm" variant="outline" onClick={() => setCriteriaEval(evaluation)}>
+                            <ClipboardCheck className="h-4 w-4" /> Criterios y rúbrica
+                          </Button>
                         </>
                       )}
 
@@ -460,6 +465,7 @@ export function MateriaEvaluaciones() {
         <EvaluationPreviewModal evaluation={previewEval} onClose={() => setPreviewEval(null)}
           canViewSolutions={user?.rol === 'admin' || previewEval.profesor_id === user?.id} />
       )}
+      {canUpdateEvaluation && criteriaEval && <EvaluationCriteriaEditor evaluation={criteriaEval} onClose={() => setCriteriaEval(null)} onCompleted={() => { setCriteriaEval(null); refresh(); toast.success('Criterios actualizados; las notas anteriores se conservan'); }} />}
       {canCreateEvaluation && (
         <DigitalizarEvaluacionModal
           open={digitalizeOpen}

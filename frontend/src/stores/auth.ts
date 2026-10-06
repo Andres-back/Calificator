@@ -11,6 +11,7 @@ interface AuthState {
   login: (email: string, password: string) => Promise<User>;
   register: (data: { nombre: string; email: string; password: string; solicitar_docente?: boolean; acepta_terminos: true; acepta_privacidad: true }) => Promise<User>;
   logout: () => Promise<void>;
+  clearSession: () => void;
 }
 
 function clearAuthenticatedState() {
@@ -38,6 +39,7 @@ async function loadAuthenticatedUser(): Promise<User> {
 export const useAuth = create<AuthState>((set) => ({
   user: null,
   status: 'idle',
+  clearSession: clearAuthenticatedState,
 
   fetchMe: async () => {
     set({ status: 'loading' });

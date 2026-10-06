@@ -40,7 +40,7 @@ export interface EvaluacionGenerarRequest {
   fecha_limite_entrega?: string | null;
 }
 
-export type EvaluacionUpdate = Partial<Omit<EvaluacionCreate, 'materia_id' | 'tipo_origen'>>;
+export type EvaluacionUpdate = Partial<Omit<EvaluacionCreate, 'materia_id' | 'tipo_origen'>> & { expected_updated_at?: string };
 
 export interface ListDBAParams {
   area?: string;

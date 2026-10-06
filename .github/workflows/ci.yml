@@ -17,7 +17,7 @@ permissions:
 env:
   NODE_VERSION: '22'
   NPM_VERSION: '11.6.1'
-  AUDITED_FRONTEND_LOCK_SHA256: 'd698cd1d33b9266ed9f66c4ea90fde9aa6b49ba922517c2a70f22b35b6614d04'
+  AUDITED_FRONTEND_LOCK_SHA256: '967158cfa53578c77d3ad90468d7ec8a812bef066492cf9e61778d2590b12a69'
   PYTHON_VERSION: '3.11'
 
 jobs:
@@ -58,6 +58,8 @@ jobs:
       REDIS_URL: redis://127.0.0.1:6379/0
       RUN_DB_SMOKE: '1'
       SPEC031_TEST_DATABASE_URL: postgresql+asyncpg://xcalificator:test-password@127.0.0.1:5432/xcalificator_test
+      SPEC061_TEST_DATABASE_URL: postgresql+asyncpg://xcalificator:test-password@127.0.0.1:5432/xcalificator_test
+      SPEC084_TEST_DATABASE_URL: postgresql+asyncpg://xcalificator:test-password@127.0.0.1:5432/xcalificator_test
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4

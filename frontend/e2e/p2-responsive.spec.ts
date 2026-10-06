@@ -156,7 +156,7 @@ async function installApiMocks(page: Page, targetRole: Role) {
 const routesByRole: Record<Role, string[]> = {
   profesor: [
     '/app', '/app/materias', '/app/evaluaciones', '/app/materias/m1', '/app/materias/m1/evaluaciones',
-    '/app/materias/m1/calificar', '/app/materias/m1/asistencia', '/app/materias/m1/boletin', '/app/materias/m1/dba',
+    '/app/materias/m1/recursos', '/app/materias/m1/calificar', '/app/materias/m1/asistencia', '/app/materias/m1/boletin', '/app/materias/m1/dba',
     '/app/herramientas', '/app/herramientas/nuevo', '/app/herramientas/h1', '/app/calificaciones/workspace',
     '/app/analytics', '/app/presentaciones', '/app/reportes', '/app/xali',
   ],
@@ -177,13 +177,15 @@ for (const role of ['profesor', 'estudiante', 'admin'] as const) {
       await page.getByLabel(/Correo/i).fill(users[role].email);
       await page.locator('input[type="password"]').fill('password-for-test');
       await page.getByRole('button', { name: /Iniciar sesión/i }).click();
-      await page.goto('/app');
+      await expect(page).toHaveURL(/\/app$/);
       await expect(page.locator('main#main-content')).toBeVisible();
+      await page.waitForLoadState('networkidle');
       const atmosphere = page.locator('.app-atmosphere');
       await expect(atmosphere).toHaveAttribute('aria-hidden', 'true');
       await expect(atmosphere.locator('img')).toHaveAttribute('src', '/branding/learning-atmosphere-v2.webp');
       page.on('pageerror', (error) => errors.push(error.message));
       page.on('console', (message) => { if (message.type() === 'error') errors.push(message.text()); });
+      page.on('requestfailed', (request) => errors.push(`${request.method()} ${request.url()}: ${request.failure()?.errorText}`));
 
       if (viewport.width < 1024) {
         const menuButton = page.getByRole('button', { name: 'Abrir menú principal' });
@@ -197,8 +199,21 @@ for (const role of ['profesor', 'estudiante', 'admin'] as const) {
       await page.screenshot({ path: `../output/playwright/p2/${role}-dashboard-${viewport.name}.png`, fullPage: true });
 
       for (const route of routesByRole[role]) {
-        await page.goto(route);
+        // Login already navigated to /app. Reloading it here cancels lazy
+        // dashboard images/queries; normal in-app navigation does not reload it.
+        if (new URL(page.url()).pathname !== route) await page.goto(route);
         await expect(page.locator('main#main-content')).toBeVisible();
+        // The shell is visible before its lazy page and queries finish. Navigate
+        // only after the page settles, otherwise WebKit aborts pending modules.
+        await expect(page.locator('main#main-content').getByText('Cargando…', { exact: true })).toHaveCount(0);
+        await page.waitForLoadState('networkidle');
+        if (role === 'profesor' && viewport.width <= 390 && new URL(page.url()).pathname.startsWith('/app/materias/m1')) {
+          for (const element of [page.getByRole('heading', { name: materia.nombre, exact: true }), page.getByRole('combobox', { name: 'Sección de la materia' })]) {
+            const bounds = (await element.boundingBox())!;
+            expect(bounds.y).toBeGreaterThanOrEqual(0);
+            expect(bounds.y + bounds.height).toBeLessThanOrEqual(viewport.height);
+          }
+        }
         await expect.poll(
           () => page.evaluate(() => {
             const documentWidth = document.documentElement.scrollWidth;
@@ -227,6 +242,60 @@ for (const role of ['profesor', 'estudiante', 'admin'] as const) {
     });
   }
 }
+for (const viewport of viewports.filter((item) => item.width !== 1024)) {
+test(`criterios guardan y reabren sin escribir preguntas ni notas en ${viewport.name}`, async ({ page }) => {
+  await page.setViewportSize({ width: viewport.width, height: viewport.height });
+  if (viewport.width === 390) await page.addInitScript(() => localStorage.setItem('xc-theme', JSON.stringify({ state: { mode: 'dark' }, version: 0 })));
+  await installApiMocks(page, 'profesor');
+  let saved = { ...evaluacion };
+  const writes: Record<string, unknown>[] = [];
+  const item = { id: 'criterion-084', materia_id: 'm1', enunciado: 'Reconoce fracciones equivalentes', activo: true, created_at: '2026-10-05T10:00:00Z' };
+  let created = false;
+  await page.route('**/api/materias/m1/dba-personalizados', async (route) => {
+    if (route.request().method() === 'POST') { created = true; return fulfillJson(route, item, 201); }
+    return fulfillJson(route, created ? [item] : []);
+  });
+  await page.route('**/api/materias/m1/dba', (route) => fulfillJson(route, created ? [{ ...item, fuente: 'personalizado', codigo: null, descripcion: item.enunciado }] : []));
+  await page.route('**/api/materias/m1/evaluaciones', (route) => fulfillJson(route, [saved]));
+  await page.route('**/api/evaluaciones/e1', async (route) => {
+    if (route.request().method() === 'PATCH') {
+      const body = route.request().postDataJSON();
+      writes.push(body); saved = { ...saved, ...body, updated_at: '2026-10-05T15:00:00Z' };
+    }
+    return fulfillJson(route, saved);
+  });
+  await page.goto('/login');
+  await page.getByLabel(/Correo/i).fill(users.profesor.email);
+  await page.locator('input[type="password"]').fill('password-for-test');
+  await page.getByRole('button', { name: /Iniciar sesión/i }).click();
+  await expect(page).toHaveURL(/\/app$/);
+  await page.waitForLoadState('networkidle');
+  await page.goto('/app/materias/m1/evaluaciones');
+  await page.getByRole('button', { name: 'Criterios y rúbrica' }).click();
+  await page.getByText('Crear criterio de aprendizaje', { exact: true }).click();
+  await page.getByRole('textbox', { name: 'Qué aprenderá el estudiante' }).fill(item.enunciado);
+  await page.getByRole('button', { name: 'Crear y seleccionar' }).click();
+  await expect(page.getByRole('button', { name: /Reconoce fracciones equivalentes/ })).toHaveAttribute('aria-pressed', 'true');
+  if (viewport.width <= 390) {
+    await page.setViewportSize({ width: viewport.width, height: 420 });
+    const saveButton = page.getByRole('button', { name: 'Guardar criterios' });
+    await saveButton.scrollIntoViewIfNeeded();
+    await saveButton.focus();
+    await expect(saveButton).toBeFocused();
+    const rect = (await saveButton.boundingBox())!;
+    expect(rect.y + rect.height).toBeLessThanOrEqual(420);
+  }
+  await page.getByRole('button', { name: 'Guardar criterios' }).click();
+  await expect(page.getByRole('button', { name: 'Guardar criterios' })).toHaveCount(0);
+  await page.setViewportSize({ width: viewport.width, height: viewport.height });
+  expect(writes).toEqual([{ expected_updated_at: evaluacion.updated_at, dba_personalizado_ids: [item.id] }]);
+  await page.getByRole('button', { name: 'Criterios y rúbrica' }).click();
+  await expect(page.getByRole('button', { name: /Reconoce fracciones equivalentes/ })).toHaveAttribute('aria-pressed', 'true');
+  expect(saved.preguntas).toEqual(evaluacion.preguntas);
+  expect(saved.respuestas_esperadas).toEqual(evaluacion.respuestas_esperadas);
+});
+}
+
 test('profesor recorre la materia, califica desde su evaluación y escribe un DBA sin perder la página', async ({ page, browserName }) => {
   test.setTimeout(90_000);
   await page.setViewportSize({ width: 390, height: 844 });
@@ -242,6 +311,9 @@ test('profesor recorre la materia, califica desde su evaluación y escribe un DB
   page.on('console', (message) => { if (message.type() === 'error') errors.push(message.text()); });
 
   await expect(page.getByRole('combobox', { name: 'Sección de la materia' }).locator('option', { hasText: /^Calificar$/ })).toHaveCount(0);
+  await expect(page.getByText('Información de la materia').locator('..')).not.toHaveAttribute('open');
+  await expect(page.getByText('Guía opcional de la materia').locator('..')).not.toHaveAttribute('open');
+  await expect(page.getByRole('button', { name: 'Importar foto' })).toBeVisible();
   for (const tab of ['Vista general', 'Evaluaciones', 'Recursos', 'Asistencia', 'Boletín', 'Criterios de aprendizaje']) {
     await page.getByRole('combobox', { name: 'Sección de la materia' }).selectOption({ label: tab });
     await expect(page.locator('main#main-content')).toBeVisible();
@@ -325,8 +397,15 @@ test(`asistencia sin superposición ${viewport.name} ${theme}`, async ({ page })
   await summaryCard.scrollIntoViewIfNeeded();
   expect(await summaryCard.evaluate((element) => getComputedStyle(element).position)).toBe('relative');
   await expect(summaryCard.getByRole('button', { name: 'Completa la lista' })).toBeInViewport();
+  expect(await summaryCard.getByRole('button', { name: 'Completa la lista' }).evaluate((element) => element.scrollHeight <= element.clientHeight + 1)).toBe(true);
   const zoomLayout = await page.evaluate(() => ({
     scroll: document.documentElement.scrollWidth, client: document.documentElement.clientWidth, inner: window.innerWidth,
+    boxes: ['html', 'body', '#root', 'header', 'main'].map((selector) => {
+      const element = document.querySelector<HTMLElement>(selector)!;
+      const bounds = element.getBoundingClientRect();
+      return { selector, width: bounds.width, right: bounds.right, scroll: element.scrollWidth, client: element.clientWidth, zoom: getComputedStyle(element).zoom };
+    }),
+    overflowing: Array.from(document.querySelectorAll<HTMLElement>('main *')).filter((element) => element.clientWidth > 0 && element.scrollWidth > element.clientWidth + 1 && !element.closest('details:not([open])')).slice(0, 20).map((element) => ({ tag: element.tagName, text: element.textContent?.slice(0, 35), className: element.className, client: element.clientWidth, scroll: element.scrollWidth })),
     offenders: Array.from(document.querySelectorAll('main *')).filter((element) => !element.closest('details:not([open])') && element.getBoundingClientRect().right > window.innerWidth + 1 && element.getBoundingClientRect().width > 0).sort((a, b) => b.getBoundingClientRect().right - a.getBoundingClientRect().right).slice(0, 12).map((element) => ({ tag: element.tagName, text: element.textContent?.slice(0, 70), className: element.className, right: element.getBoundingClientRect().right })),
   }));
   if (viewport.width === 360 && theme === 'light') await page.screenshot({ path: '../output/playwright/teacher-flow/attendance-079-zoom.png', fullPage: false });
@@ -371,17 +450,26 @@ for (const viewport of [viewports[1], viewports[4]]) {
     await page.getByLabel(/Correo/i).fill(users.profesor.email);
     await page.locator('input[type="password"]').fill('password-for-test');
     await page.getByRole('button', { name: /Iniciar sesión/i }).click();
+    await expect(page).toHaveURL(/\/app$/);
+    await expect(page.locator('main#main-content')).toBeVisible();
+    await page.waitForLoadState('networkidle');
     await page.getByRole('button', { name: 'Cambiar tema' }).click();
     await expect(page.locator('html')).toHaveClass(/dark/);
+    const errors: string[] = [];
+    page.on('pageerror', (error) => errors.push(error.message));
+    page.on('console', (message) => { if (message.type() === 'error') errors.push(message.text()); });
 
     for (const route of routesByRole.profesor) {
-      await page.goto(route);
+      if (new URL(page.url()).pathname !== route) await page.goto(route);
       await expect(page.locator('main#main-content')).toBeVisible();
+      await expect(page.locator('main#main-content').getByText('Cargando…', { exact: true })).toHaveCount(0);
+      await page.waitForLoadState('networkidle');
       await expect(page.locator('html')).toHaveClass(/dark/);
       await expect.poll(
         () => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1),
         { message: `profesor oscuro ${viewport.name} presenta overflow horizontal en ${route}` },
       ).toBe(true);
     }
+    expect(errors, errors.join('\n')).toEqual([]);
   });
 }

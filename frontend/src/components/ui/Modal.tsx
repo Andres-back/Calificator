@@ -142,7 +142,7 @@ export function Modal({
               <button
                 type="button"
                 onClick={onClose}
-                className="focus-ring absolute right-3 top-3 grid min-h-10 min-w-10 place-items-center rounded-lg text-muted transition hover:bg-surface-2 hover:text-fg"
+                className="focus-ring absolute right-3 top-3 grid min-h-11 min-w-11 place-items-center rounded-lg text-muted transition hover:bg-surface-2 hover:text-fg"
                 aria-label="Cerrar diálogo"
               >
                 <X className="h-5 w-5" aria-hidden="true" />

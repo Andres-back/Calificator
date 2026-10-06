@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
@@ -93,6 +93,13 @@ beforeEach(() => {
 });
 
 describe('MateriaDetailPage for students', () => {
+  it('keeps secondary subject information folded while navigation stays available', async () => {
+    materiaApi.getMateria.mockResolvedValue(materia);
+    renderDetail();
+    await waitFor(() => expect(screen.getByRole('heading', { name: 'Ciencias' })).toBeVisible());
+    expect(screen.getByText('Información de la materia').closest('details')).not.toHaveAttribute('open');
+    expect(screen.getByRole('combobox', { name: 'Sección de la materia' })).toBeInTheDocument();
+  });
   it('retira Calificar cuando Evaluaciones es accesible al docente', async () => {
     materiaApi.getMateriaEstudiantes.mockResolvedValue({ ...materia, estudiantes: [] });
     useAuth.setState({ user: { id: 'p1', nombre: 'Docente', email: 'p@example.test', rol: 'profesor', estado: 'activo', permissions: ['subjects.read', 'evaluations.read', 'grading.grade'] } });

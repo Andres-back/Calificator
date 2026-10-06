@@ -12,6 +12,7 @@ from fastapi import HTTPException
 
 from app.modules.asistencia import router as asistencia_router
 from app.modules.dba import router as dba_router
+from app.modules.dba import service as dba_service
 from app.modules.evaluaciones import service as evaluaciones_service
 from app.modules.herramientas import service as herramientas_service
 from app.shared.enums import UserRole
@@ -33,6 +34,28 @@ MATRIX_PATH = (
     / "contracts"
     / "authorization-matrix.md"
 )
+
+
+@pytest.mark.parametrize("active,retained,foreign,expected", [
+    (False, True, False, None), (False, False, False, 400),
+    (True, False, True, 403), (False, True, True, 403),
+])
+def test_custom_criteria_retention_does_not_relax_ownership(active, retained, foreign, expected):
+    owner, subject, criterion_id = uuid4(), uuid4(), uuid4()
+    row = SimpleNamespace(id=criterion_id, activo=active, profesor_id=uuid4() if foreign else owner, materia_id=subject)
+    class CriteriaDB:
+        async def scalars(self, _statement):
+            return [row]
+    call = dba_service.get_dba_personalizado_records_for_evaluation(
+        CriteriaDB(), [criterion_id], materia_id=subject, profesor_id=owner,
+        retained_ids={criterion_id} if retained else set(),
+    )
+    if expected:
+        with pytest.raises(HTTPException) as exc:
+            asyncio.run(call)
+        assert exc.value.status_code == expected
+    else:
+        assert asyncio.run(call) == [row]
 
 
 def test_authorization_matrix_defines_exactly_the_ten_canonical_surfaces() -> None:
@@ -347,3 +370,22 @@ def test_student_payload_sanitizer_removes_nested_answer_keys() -> None:
 def test_denial_helper_rejects_sensitive_values() -> None:
     response = SimpleNamespace(status_code=403, text='{"detail":"Not enough permissions"}')
     assert_denied(response, forbidden_values=["Actividad publicada", "27"])
+
+
+@pytest.mark.parametrize("operation", ["photo", "cancel", "confirm", "rows", "enroll"])
+def test_roster_writes_require_effective_permission_before_accessing_data(operation):
+    from app.modules.importacion_estudiantes import router, service
+
+    actor = SimpleNamespace(id=uuid4(), rol="profesor", _effective_permissions=set())
+    db = object()  # Access would fail if the authorization gate ran too late.
+    subject_id, batch_id = uuid4(), uuid4()
+    calls = {
+        "photo": lambda: router.create_import(subject_id, archivo=None, actor=actor, db=db),
+        "cancel": lambda: router.cancel_import(subject_id, batch_id, actor=actor, db=db),
+        "confirm": lambda: service.confirm_lote(db, batch_id, actor),
+        "rows": lambda: service.replace_rows(db, SimpleNamespace(id=batch_id, estado="revision"), [], actor),
+        "enroll": lambda: service.enroll_existing(db, subject_id, [], actor),
+    }
+    with pytest.raises(HTTPException) as exc:
+        asyncio.run(calls[operation]())
+    assert exc.value.status_code == 403

@@ -11,6 +11,7 @@ const mocks = vi.hoisted(() => ({
   extractReference: vi.fn(),
   update: vi.fn(),
   listDba: vi.fn(),
+  createDba: vi.fn(),
   sendMessage: vi.fn(),
 }));
 
@@ -21,6 +22,7 @@ vi.mock('../api', () => ({
 }));
 vi.mock('@/modules/materias/dbaApi', () => ({
   listDbaCombinado: mocks.listDba,
+  createDbaPersonalizado: mocks.createDba,
 }));
 vi.mock('@/modules/xali/api', () => ({
   sendMessage: mocks.sendMessage,
@@ -150,6 +152,30 @@ beforeEach(() => {
 });
 
 describe('GenerationWizard', () => {
+  it('keeps question edits when subject and evaluation queries refetch', async () => {
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const content = (subject: Materia, saved: Evaluacion) => <QueryClientProvider client={client}><GenerationWizard open userId="profesor-1" onClose={vi.fn()} materias={[subject]} initialMateriaId={subject.id} initialEvaluation={saved} onCompleted={vi.fn()} /></QueryClientProvider>;
+    const view = render(content(materia, evaluation));
+    const user = userEvent.setup();
+    await user.clear(screen.getByLabelText(/Enunciado/));
+    await user.type(screen.getByLabelText(/Enunciado/), 'Cambio aún sin guardar');
+    view.rerender(content({ ...materia }, { ...evaluation }));
+    expect(screen.getByLabelText(/Enunciado/)).toHaveValue('Cambio aún sin guardar');
+  });
+  it('saves only the changed rubric without round-tripping saved questions', async () => {
+    const user = userEvent.setup();
+    renderWizard(vi.fn(), rubricEvaluation);
+    await user.clear(screen.getByLabelText('Nombre del criterio 1'));
+    await user.type(screen.getByLabelText('Nombre del criterio 1'), 'Comprensión revisada');
+    await user.click(screen.getByRole('button', { name: 'Siguiente' }));
+    await user.click(screen.getByRole('button', { name: 'Guardar cambios' }));
+    await waitFor(() => expect(mocks.update).toHaveBeenCalledOnce());
+    expect(Object.keys(mocks.update.mock.calls[0][1]).sort()).toEqual(['criterios', 'expected_updated_at']);
+  });
+  it('offers criteria after digitalization even when it has no rubric', () => {
+    renderWizard(vi.fn(), { ...evaluation, tipo_origen: 'externa_digitalizada' });
+    expect(screen.getByRole('button', { name: 'Criterios y rúbrica' })).toBeInTheDocument();
+  });
   it('searches without losing selection, sends only chosen criteria and shows degraded RAG warning', async () => {
     mocks.listDba.mockResolvedValue([
       { id: 'own-1', fuente: 'personalizado', codigo: null, descripcion: 'Interpreta fracciones equivalentes.', area: 'Matemáticas', grado: '7' },

@@ -48,6 +48,9 @@ vi.mock('@/modules/evaluaciones/components/GenerationWizard', () => ({
 vi.mock('@/modules/evaluaciones/components/EvaluationPreviewModal', () => ({
   EvaluationPreviewModal: ({ evaluation }: { evaluation: Evaluacion }) => <div role="dialog" aria-label="Vista final">{evaluation.nombre}</div>,
 }));
+vi.mock('@/modules/evaluaciones/components/EvaluationCriteriaEditor', () => ({
+  EvaluationCriteriaEditor: ({ evaluation }: { evaluation: Evaluacion }) => <div role="dialog" aria-label="Criterios y rúbrica">{evaluation.nombre}</div>,
+}));
 vi.mock('./MateriaContext', () => ({
   useMateriaContext: () => mocks.context,
 }));
@@ -139,6 +142,17 @@ beforeEach(() => {
 });
 
 describe('MateriaEvaluaciones teacher creation flow', () => {
+  it('opens criteria directly from the saved evaluation, never for a read-only teacher', async () => {
+    mocks.list.mockResolvedValue([evaluation]);
+    const view = renderPage();
+    await userEvent.setup().click(await screen.findByRole('button', { name: 'Criterios y rúbrica' }));
+    expect(screen.getByRole('dialog', { name: 'Criterios y rúbrica' })).toHaveTextContent(evaluation.nombre);
+    view.unmount();
+    useAuth.setState({ user: { ...useAuth.getState().user!, permissions: ['evaluations.read'] } });
+    renderPage();
+    await screen.findByText(evaluation.nombre);
+    expect(screen.queryByRole('button', { name: 'Criterios y rúbrica' })).not.toBeInTheDocument();
+  });
   it('allows preview with read permission only without opening the editor or changing records', async () => {
     const user = userEvent.setup();
     mocks.list.mockResolvedValue([evaluation]);

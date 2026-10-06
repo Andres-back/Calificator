@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import re
+import hashlib
+import json
 import secrets
 import unicodedata
 from datetime import datetime, timezone
@@ -8,12 +10,14 @@ from uuid import UUID
 
 from fastapi import HTTPException
 from sqlalchemy import func, or_, select, text
+from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.core.security import get_password_hash
+from app.core.permissions import require_permission_now
 from app.modules.importacion_estudiantes.models import ImportacionEstudiantesFila, ImportacionEstudiantesLote
-from app.modules.importacion_estudiantes.schemas import FilaUpdate
+from app.modules.importacion_estudiantes.schemas import FilaUpdate, LoteManualCreate
 from app.modules.materias.models import Materia
 from app.modules.materias.service import ensure_can_manage_materia
 from app.modules.matriculas.models import Matricula
@@ -86,6 +90,7 @@ async def expire_abandoned_lotes(db: AsyncSession, before: datetime) -> list[str
 
 
 async def replace_rows(db: AsyncSession, lote: ImportacionEstudiantesLote, rows: list[FilaUpdate], actor: User) -> ImportacionEstudiantesLote:
+    require_permission_now(actor, "subjects.update")
     if lote.estado != "revision":
         raise HTTPException(status_code=409, detail="La lista ya no está disponible para edición")
     original_rows = list((await db.scalars(
@@ -130,6 +135,27 @@ async def replace_rows(db: AsyncSession, lote: ImportacionEstudiantesLote, rows:
     return await get_lote(db, lote.id, actor)
 
 
+async def create_manual_lote(db: AsyncSession, materia_id: UUID, payload: LoteManualCreate, actor: User):
+    require_permission_now(actor, "subjects.update")
+    await ensure_can_manage_materia(db, materia_id, actor)
+    fingerprint = hashlib.sha256(json.dumps(
+        [row.model_dump(mode="json", exclude={"id"}) for row in payload.filas],
+        sort_keys=True, ensure_ascii=False, separators=(",", ":"),
+    ).encode()).hexdigest()
+    # PostgreSQL owns the uniqueness decision, including simultaneous replays.
+    inserted = await db.scalar(insert(ImportacionEstudiantesLote).values(
+        id=payload.operation_id, materia_id=materia_id, creado_por=actor.id,
+        archivo_nombre="Registro manual", archivo_sha256=fingerprint,
+        estado="revision", resultado_json={"origen": "manual"},
+    ).on_conflict_do_nothing(index_elements=[ImportacionEstudiantesLote.id]).returning(ImportacionEstudiantesLote.id))
+    lote = await get_lote(db, payload.operation_id, actor)
+    if lote.materia_id != materia_id or lote.creado_por != actor.id or lote.archivo_nombre != "Registro manual" or lote.archivo_sha256 != fingerprint:
+        raise HTTPException(status_code=409, detail="Este registro ya se utilizó para otra lista. No se crearon nuevas cuentas.")
+    if inserted:
+        lote = await replace_rows(db, lote, payload.filas, actor)
+    return lote, bool(inserted)
+
+
 async def _current_students(db: AsyncSession, materia_id: UUID) -> list[User]:
     return list((await db.scalars(select(User).join(Matricula, Matricula.estudiante_id == User.id).where(Matricula.materia_id == materia_id, Matricula.estado == MatriculaEstado.ACTIVO.value))).all())
 
@@ -159,6 +185,7 @@ async def _enroll(db: AsyncSession, materia_id: UUID, student_id: UUID) -> str:
 
 
 async def confirm_lote(db: AsyncSession, lote_id: UUID, actor: User) -> dict:
+    require_permission_now(actor, "subjects.update")
     lote = await db.scalar(select(ImportacionEstudiantesLote).where(ImportacionEstudiantesLote.id == lote_id).with_for_update())
     if not lote:
         raise HTTPException(status_code=404, detail="Importación no encontrada")
@@ -224,6 +251,7 @@ async def searchable_students(db: AsyncSession, materia: Materia, query: str) ->
 
 
 async def enroll_existing(db: AsyncSession, materia_id: UUID, student_ids: list[UUID], actor: User) -> dict:
+    require_permission_now(actor, "subjects.update")
     materia = await ensure_can_manage_materia(db, materia_id, actor)
     allowed = await _accessible_students(db, materia, student_ids)
     if not set(student_ids).issubset(allowed):
@@ -237,9 +265,10 @@ async def enroll_existing(db: AsyncSession, materia_id: UUID, student_ids: list[
 
 
 async def reset_temporary_password(db: AsyncSession, materia_id: UUID, student_id: UUID, actor: User) -> dict:
+    require_permission_now(actor, "subjects.update")
     await ensure_can_manage_materia(db, materia_id, actor)
     enrolled = await db.scalar(select(Matricula.id).where(Matricula.materia_id == materia_id, Matricula.estudiante_id == student_id, Matricula.estado == MatriculaEstado.ACTIVO.value))
-    student = await db.get(User, student_id)
+    student = await db.scalar(select(User).where(User.id == student_id).with_for_update().execution_options(populate_existing=True))
     if not enrolled or not student or student.rol != UserRole.ESTUDIANTE.value or not student.email_es_interno:
         raise HTTPException(status_code=404, detail="Estudiante no encontrado en esta materia")
     password = temporary_password()

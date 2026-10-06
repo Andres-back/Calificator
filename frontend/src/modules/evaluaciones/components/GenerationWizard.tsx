@@ -16,13 +16,15 @@ import { sendMessage } from '@/modules/xali/api';
 import type { DBAUnifiedItem, Evaluacion, EvaluacionModalidad, Materia } from '@/types/api';
 import { extraerReferenciaEvaluacion, generarBorradorEvaluacion, updateEvaluacion, type EvaluacionGenerarRequest } from '../api';
 import { DBASelector } from './DBASelector';
+import { RubricEditor } from './RubricEditor';
+import { EvaluationCriteriaEditor } from './EvaluationCriteriaEditor';
 import { PasosGuia } from './PasosGuia';
 import {
-  createBlankQuestion, createBlankRubricCriterion, createEmptyWizardState, discardWizardDraft, duplicateQuestion,
+  createBlankQuestion, createEmptyWizardState, discardWizardDraft, duplicateQuestion,
   evaluationToEditableQuestions, evaluationToWizardState, loadWizardDraft, MAX_QUESTIONS, MIN_QUESTIONS,
-  moveQuestion, moveRubricCriterion, normalizeRubricCriteria, persistWizardDraft, prepareRubricCriteriaForSave, QUESTION_TYPES, questionsToUpdatePayload,
-  rebalanceRubricWeights, renumberQuestions, rubricWeightTotal, selectedQuestionTypes, totalQuestionCount, validateQuestion,
-  validateReferenceFile, validateRubricCriteria, validateStep, type EditableQuestion, type EditableRubricCriterion, type QuestionType, type WizardState,
+  moveQuestion, normalizeRubricCriteria, persistWizardDraft, prepareRubricCriteriaForSave, QUESTION_TYPES, questionsToUpdatePayload,
+  renumberQuestions, selectedQuestionTypes, totalQuestionCount, validateQuestion,
+  validateReferenceFile, validateStep, type EditableQuestion, type QuestionType, type WizardState,
 } from './generationWizardModel';
 
 const TYPE_COPY: Record<QuestionType, { label: string; description: string; icon: typeof ListChecks }> = {
@@ -212,90 +214,6 @@ function QuestionCard({
 }
 
 
-function RubricEditor({
-  criteria,
-  onChange,
-}: {
-  criteria: EditableRubricCriterion[];
-  onChange: (criteria: EditableRubricCriterion[]) => void;
-}) {
-  const totalWeight = rubricWeightTotal(criteria);
-  const error = validateRubricCriteria(criteria);
-
-  function updateCriterion(index: number, criterionPatch: Partial<EditableRubricCriterion>) {
-    onChange(criteria.map((criterion, currentIndex) => (
-      currentIndex === index ? { ...criterion, ...criterionPatch } : criterion
-    )));
-  }
-
-  return (
-    <section aria-label="Editor de rúbrica" className="rounded-2xl border border-violet-200 bg-violet-50/60 p-4 dark:border-violet-500/30 dark:bg-violet-500/10">
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-        <div>
-          <div className="flex flex-wrap items-center gap-2">
-            <h4 className="text-lg font-bold">Rúbrica editable</h4>
-            <Badge tone={error ? 'warning' : 'success'}>Peso total: {totalWeight} %</Badge>
-          </div>
-          <p className="mt-1 max-w-2xl text-sm leading-5 text-muted">La IA creó este borrador. Ajusta los criterios antes de confirmar; los cambios serán los que use la evaluación.</p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Button type="button" variant="outline" onClick={() => onChange(rebalanceRubricWeights(criteria))} disabled={!criteria.length}>
-            <ListChecks className="h-4 w-4" /> Distribuir pesos
-          </Button>
-          <Button type="button" variant="outline" onClick={() => onChange(createBlankRubricCriterion(criteria))}>
-            <Plus className="h-4 w-4" /> Agregar criterio
-          </Button>
-        </div>
-      </div>
-
-      {error && <p role="alert" className="mt-3 rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm font-semibold text-amber-950 dark:bg-amber-500/10 dark:text-amber-100">{error}</p>}
-
-      <div role="list" aria-label="Criterios editables" className="mt-4 space-y-3">
-        {criteria.map((criterion, index) => (
-          <article role="listitem" key={`rubric-${index}`} className="rounded-xl border border-violet-200 bg-surface p-4 dark:border-violet-500/20">
-            <div className="mb-4 flex flex-wrap items-center gap-2 border-b border-border pb-3">
-              <span className="grid h-9 w-9 place-items-center rounded-full bg-violet-100 text-sm font-bold text-violet-800 dark:bg-violet-500/20 dark:text-violet-100">{index + 1}</span>
-              <p className="min-w-0 flex-1 font-bold">Criterio {index + 1}</p>
-              <Button type="button" variant="ghost" size="icon" onClick={() => onChange(moveRubricCriterion(criteria, index, -1))} disabled={index === 0} aria-label={`Subir criterio ${index + 1}`}><ArrowUp className="h-4 w-4" /></Button>
-              <Button type="button" variant="ghost" size="icon" onClick={() => onChange(moveRubricCriterion(criteria, index, 1))} disabled={index === criteria.length - 1} aria-label={`Bajar criterio ${index + 1}`}><ArrowDown className="h-4 w-4" /></Button>
-              <Button type="button" variant="ghost" size="icon" onClick={() => onChange(criteria.filter((_, currentIndex) => currentIndex !== index))} aria-label={`Eliminar criterio ${index + 1}`}><Trash2 className="h-4 w-4" /></Button>
-            </div>
-
-            <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_10rem]">
-              <Field label="Nombre" required>
-                <Input value={criterion.nombre} onChange={(event) => updateCriterion(index, { nombre: event.target.value })} aria-label={`Nombre del criterio ${index + 1}`} className="min-h-12 text-base" />
-              </Field>
-              <Field label="Peso porcentual" required>
-                <Input type="number" min={0.01} max={100} step={0.01} value={criterion.peso_porcentaje} onChange={(event) => updateCriterion(index, { peso_porcentaje: Number(event.target.value) })} aria-label={`Peso del criterio ${index + 1}`} className="min-h-12 text-base" />
-              </Field>
-            </div>
-            <Field label="Descripción" hint="Opcional, pero ayuda a que la calificación sea transparente.">
-              <Textarea value={criterion.descripcion} onChange={(event) => updateCriterion(index, { descripcion: event.target.value })} aria-label={`Descripción del criterio ${index + 1}`} className="min-h-20 text-base" />
-            </Field>
-
-            {Object.keys(criterion.niveles).length > 0 && (
-              <div className="mt-4 rounded-xl bg-surface-2 p-3">
-                <p className="text-sm font-bold">Descriptores de desempeño</p>
-                <div className="mt-3 grid gap-3 lg:grid-cols-2">
-                  {Object.entries(criterion.niveles).map(([level, description]) => (
-                    <Field key={level} label={level}>
-                      <Textarea
-                        value={description}
-                        onChange={(event) => updateCriterion(index, { niveles: { ...criterion.niveles, [level]: event.target.value } })}
-                        aria-label={`Descripción del nivel ${level} del criterio ${index + 1}`}
-                        className="min-h-20 text-sm"
-                      />
-                    </Field>
-                  ))}
-                </div>
-              </div>
-            )}
-          </article>
-        ))}
-      </div>
-    </section>
-  );
-}
 function XaliPanel({
   state, materiaNombre, onSuggestion,
 }: {
@@ -384,6 +302,10 @@ export function GenerationWizard({
   const confirmLock = useRef(false);
   const referenceInputRef = useRef<HTMLInputElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
+  const initializedKey = useRef<string | null>(null);
+  const savedEvaluation = useRef<Evaluacion | null>(initialEvaluation);
+  const initialSavedState = useRef<WizardState | null>(null);
+  const [criteriaEditing, setCriteriaEditing] = useState<Evaluacion | null>(null);
   const generationWarnings = state.generationWarnings ?? [];
   const selectedMateria = availableMaterias.find((materia) => materia.id === state.materiaId);
   const materiaNombre = selectedMateria?.nombre ?? '';
@@ -399,6 +321,7 @@ export function GenerationWizard({
   const generate = useMutation({
     mutationFn: (payload: EvaluacionGenerarRequest) => generarBorradorEvaluacion(payload),
     onSuccess: (evaluation) => {
+      savedEvaluation.current = evaluation;
       setGenerationError(null);
       setState((current) => ({
         ...current,
@@ -434,15 +357,20 @@ export function GenerationWizard({
   });
 
   useEffect(() => {
-    if (!open) return;
+    if (!open) { initializedKey.current = null; setCriteriaEditing(null); return; }
+    const materiaId = initialMateriaId || availableMaterias[0]?.id || '';
+    const key = `${userId}:${initialEvaluation?.id ?? 'new'}:${materiaId}`;
+    if (initializedKey.current === key) return;
+    initializedKey.current = key;
+    savedEvaluation.current = initialEvaluation;
+    initialSavedState.current = initialEvaluation ? evaluationToWizardState(initialEvaluation) : null;
     setGenerationError(null);
     setCanPersist(false);
     if (initialEvaluation) {
-      setState(evaluationToWizardState(initialEvaluation));
+      setState(initialSavedState.current!);
       setRestorePrompt(false);
       return;
     }
-    const materiaId = initialMateriaId || availableMaterias[0]?.id || '';
     const restored = materiaId ? loadWizardDraft(localStorage, userId, Date.now(), materiaId) : null;
     if (restored) {
       setState(restored);
@@ -559,19 +487,34 @@ export function GenerationWizard({
     const error = validateStep(state, 5);
     if (error) { toast.error(error); return; }
     confirmLock.current = true;
+    const currentPayload = evaluationPayload(state);
+    const initialPayload = initialSavedState.current ? evaluationPayload(initialSavedState.current) : null;
+    const payload = initialEvaluation && initialPayload
+      ? Object.fromEntries(Object.entries(currentPayload).filter(([key, value]) => JSON.stringify(value) !== JSON.stringify(initialPayload[key as keyof typeof initialPayload])))
+      : currentPayload;
     confirm.mutate({
       id: state.generatedEvaluationId,
-      payload: {
-        nombre: state.nombre.trim(),
-        descripcion: state.descripcion.trim() || undefined,
-        modalidad: state.modalidad,
-        nota_maxima: state.notaMaxima,
-        fecha_limite_entrega: state.fechaLimiteEntrega ? new Date(state.fechaLimiteEntrega).toISOString() : null,
-        dba_ids: state.useDba ? state.dbaIds : [],
-        dba_personalizado_ids: state.useDba ? state.dbaPersonalizadoIds : [],
-        criterios: state.useRubric ? prepareRubricCriteriaForSave(state.generatedCriteria, state.notaMaxima) : state.generatedCriteria,
-        ...questionsToUpdatePayload(state.questions),
-      },
+      payload: { ...payload, expected_updated_at: savedEvaluation.current?.updated_at },
+    });
+  }
+
+  function evaluationPayload(current: WizardState) {
+    return {
+      nombre: current.nombre.trim(), descripcion: current.descripcion.trim() || undefined,
+      modalidad: current.modalidad, nota_maxima: current.notaMaxima,
+      fecha_limite_entrega: current.fechaLimiteEntrega ? new Date(current.fechaLimiteEntrega).toISOString() : null,
+      dba_ids: current.useDba ? current.dbaIds : [],
+      dba_personalizado_ids: current.useDba ? current.dbaPersonalizadoIds : [],
+      criterios: current.useRubric ? prepareRubricCriteriaForSave(current.generatedCriteria, current.notaMaxima) : current.generatedCriteria,
+      ...questionsToUpdatePayload(current.questions),
+    };
+  }
+
+  function editCriteria() {
+    if (!savedEvaluation.current) return;
+    setCriteriaEditing({ ...savedEvaluation.current,
+      dba_ids: state.useDba ? state.dbaIds : [], dba_personalizado_ids: state.useDba ? state.dbaPersonalizadoIds : [],
+      criterios: evaluationPayload(state).criterios,
     });
   }
 
@@ -603,7 +546,7 @@ export function GenerationWizard({
   return (
     <>
       <Modal
-        open={open}
+        open={open && !criteriaEditing}
         onClose={onClose}
         title=""
         ariaLabel={initialEvaluation ? 'Editar contenido de la evaluación' : 'Generar evaluación con IA'}
@@ -843,6 +786,7 @@ export function GenerationWizard({
                         {state.useRubric && (
                           <RubricEditor criteria={state.generatedCriteria} onChange={(generatedCriteria) => patch({ generatedCriteria })} />
                         )}
+                        <Button type="button" variant="outline" onClick={editCriteria}>Criterios y rúbrica</Button>
                         <div role="list" aria-label="Preguntas editables" className="space-y-4">
                           {state.questions.map((question, index) => (
                             <QuestionCard
@@ -902,6 +846,15 @@ export function GenerationWizard({
           )}
         </div>
       </Modal>
+
+      {criteriaEditing && <EvaluationCriteriaEditor evaluation={criteriaEditing} onClose={() => setCriteriaEditing(null)} onCompleted={(evaluation) => {
+        savedEvaluation.current = evaluation;
+        const next = evaluationToWizardState(evaluation);
+        const criteriaPatch = { dbaIds: next.dbaIds, dbaPersonalizadoIds: next.dbaPersonalizadoIds, useDba: next.useDba, generatedCriteria: next.generatedCriteria, useRubric: next.useRubric };
+        if (initialSavedState.current) initialSavedState.current = { ...initialSavedState.current, ...criteriaPatch };
+        patch(criteriaPatch); setCriteriaEditing(null);
+        toast.success('Criterios guardados. Tus preguntas en edición se conservan.');
+      }} />}
 
       <ConfirmDialog open={Boolean(xaliConfirmation)} onClose={() => setXaliConfirmation(null)} onConfirm={applyXali} title="¿Aplicar la sugerencia de Xali?" description="Xali nunca modifica el wizard sin tu aprobación." confirmLabel="Sí, aplicar">
         {xaliConfirmation && <div className="space-y-2 rounded-xl border border-violet-200 bg-violet-50 p-3 dark:bg-violet-500/10"><p className="text-sm"><strong>Campo:</strong> {xaliConfirmation.target}</p><p className="text-sm leading-6">{xaliConfirmation.suggestion}</p></div>}

@@ -16,9 +16,9 @@
 | endpoint | `PUT:/admin/mail/config` | ambiguous | covered | `backend/app/modules/admin_mail/router.py:58` |
 | frontend_route | `/` | public | covered | `frontend/src/config/routes.ts:8` |
 | frontend_route | `/app` | authenticated | covered | `frontend/src/config/routes.ts:21` |
-| frontend_route | `/app/403` | authenticated | covered | `frontend/src/config/routes.ts:22` |
-| frontend_route | `/app/404` | authenticated | covered | `frontend/src/config/routes.ts:23` |
-| frontend_route | `/app/admin/correo` | admin | covered | `frontend/src/config/routes.ts:66` |
+| frontend_route | `/app/403` | authenticated | covered | `frontend/src/config/routes.ts:23` |
+| frontend_route | `/app/404` | authenticated | covered | `frontend/src/config/routes.ts:24` |
+| frontend_route | `/app/admin/correo` | admin | covered | `frontend/src/config/routes.ts:67` |
 | frontend_route | `/app/cambiar-clave-inicial` | authenticated | covered | `frontend/src/config/routes.ts:18` |
 | frontend_route | `/registro` | public | covered | `frontend/src/config/routes.ts:10` |
 | integration | `cloudflare` | system | covered | `backend/app/core/config.py:1` |

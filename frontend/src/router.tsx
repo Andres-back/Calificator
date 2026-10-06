@@ -23,6 +23,7 @@ const CookiesPage = lazy(() => import('@/modules/legal/LegalPages').then((m) => 
 const PrivacyNoticePage = lazy(() => import('@/modules/legal/LegalPages').then((m) => ({ default: m.PrivacyNoticePage })));
 const PilotInformationPage = lazy(() => import('@/modules/legal/LegalPages').then((m) => ({ default: m.PilotInformationPage })));
 const DashboardPage = lazy(() => import('@/modules/dashboard/DashboardPage').then((m) => ({ default: m.DashboardPage })));
+const ProfilePage = lazy(() => import('@/modules/users/ProfilePage').then((m) => ({ default: m.ProfilePage })));
 const ListPage = lazy(() => import('@/modules/herramientas/ListPage').then((m) => ({ default: m.ListPage })));
 const GeneratePage = lazy(() => import('@/modules/herramientas/GeneratePage').then((m) => ({ default: m.GeneratePage })));
 const DetailPage = lazy(() => import('@/modules/herramientas/DetailPage').then((m) => ({ default: m.DetailPage })));
@@ -83,6 +84,7 @@ export const router = createBrowserRouter([{
         errorElement: <RouterErrorBoundary />,
         children: [
           { index: true, element: lazyPage(<DashboardPage />) },
+          { path: 'perfil', element: lazyPage(<ProfilePage />) },
 
           /* ── Página 403 dentro del shell ── */
           { path: '403', element: lazyPage(<ForbiddenPage />) },

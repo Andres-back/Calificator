@@ -15,7 +15,6 @@ import {
   Loader2,
 } from 'lucide-react';
 import { Button, Card, Skeleton, EmptyState, Modal, Field, Textarea, ConfirmDialog } from '@/components/ui';
-import { PageHeader } from '@/components/layout/PageHeader';
 import { getMateria } from './api';
 import {
   listDbaPersonalizados,
@@ -277,11 +276,8 @@ function DbaContent({ materiaId, canManage }: { materiaId: string; canManage: bo
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0 flex-1">
-          <PageHeader
-            title="Criterios de aprendizaje"
-            eyebrow="Aprendizajes que quieres comprobar"
-            subtitle={materia ? `Define qué deben demostrar los estudiantes de ${materia.nombre}. Podrás elegir estos criterios al crear cada evaluación.` : 'Crea y gestiona los criterios de tu materia.'}
-          />
+          <h2 className="font-display text-xl font-bold">Criterios de aprendizaje</h2>
+          <details className="mt-1"><summary className="focus-ring min-h-11 cursor-pointer content-center rounded-lg text-sm font-semibold text-muted">Cómo usar los criterios</summary><p className="mt-2 text-sm text-muted">{materia ? `Define qué deben demostrar los estudiantes de ${materia.nombre}. Elige los criterios pertinentes para cada evaluación.` : 'Crea y gestiona los criterios de tu materia.'}</p></details>
         </div>
         {canManage && <div className="flex shrink-0 flex-wrap items-center gap-2">
           <Button variant="secondary" onClick={() => setShowUploader(!showUploader)}>

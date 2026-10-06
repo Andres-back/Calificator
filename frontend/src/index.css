@@ -217,6 +217,7 @@
 
   .teacher-shell #main-content {
     position: relative;
+    overflow-wrap: anywhere;
     background-image:
       radial-gradient(circle at 8% 2%, rgb(99 102 241 / 0.10), transparent 24rem),
       radial-gradient(circle at 94% 14%, rgb(14 165 233 / 0.09), transparent 25rem),
@@ -456,4 +457,15 @@
 @keyframes scan {
   0%, 100% { top: 18%; opacity: 0.1; }
   50% { top: 82%; opacity: 0.9; }
+}
+
+#roster-private-print { display: none; }
+@media print {
+  body.roster-printing { position: static !important; overflow: visible !important; width: auto !important; }
+  body.roster-printing > *:not(#roster-private-print) { display: none !important; }
+  body.roster-printing #roster-private-print { display: block; color: #111; background: #fff; font: 14px sans-serif; }
+  #roster-private-print h1 { font-size: 20px; margin: 0 0 16px; }
+  #roster-private-print article { break-inside: avoid; border: 1px dashed #666; padding: 16px; margin: 0 0 16px; overflow-wrap: anywhere; }
+  #roster-private-print h2 { font-size: 18px; font-weight: bold; }
+  #roster-private-print p { margin: 8px 0; }
 }

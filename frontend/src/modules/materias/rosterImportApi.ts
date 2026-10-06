@@ -46,6 +46,10 @@ export async function createRosterImport(materiaId: string, file: File) {
   const { data } = await api.post<{ id: string; job_id: string; estado: string }>(`/materias/${materiaId}/importaciones-estudiantes`, form);
   return data;
 }
+export async function createManualRoster(materiaId: string, operationId: string, rows: RosterRow[]) {
+  const { data } = await api.post<RosterBatch>(`/materias/${materiaId}/importaciones-estudiantes/manual`, { operation_id: operationId, filas: rows.map(({ nombre_revisado, decision, estudiante_existente_id, duplicado_confirmado }) => ({ nombre_revisado, decision, estudiante_existente_id, duplicado_confirmado })) });
+  return data;
+}
 export async function getRosterImport(materiaId: string, batchId: string) {
   const { data } = await api.get<RosterBatch>(`/materias/${materiaId}/importaciones-estudiantes/${batchId}`);
   return data;

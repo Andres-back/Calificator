@@ -29,11 +29,11 @@ export function MateriaRecursos() {
           <div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-sky-600 text-white"><Library className="h-5 w-5" /></div>
           <div>
             <h2 className="font-display text-xl font-extrabold">{canManageResource || canCreateResource ? 'Recursos del salón' : 'Material para repasar'}</h2>
-            <p className="mt-1 text-sm text-muted">
+            <details className="mt-1"><summary className="focus-ring min-h-11 cursor-pointer content-center rounded-lg text-sm font-semibold text-muted">Acerca de los recursos</summary><p className="mt-1 text-sm text-muted">
               {canManageResource || canCreateResource
                 ? 'Aquí aparecen desde el borrador los recursos creados para esta materia. Decide cuándo serán apoyo o actividad.'
                 : 'Consulta los recursos que tu docente preparó para ayudarte a practicar.'}
-            </p>
+            </p></details>
           </div>
         </div>
         {canCreateResource && (

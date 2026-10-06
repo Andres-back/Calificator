@@ -310,7 +310,7 @@ export function MateriaAsistencia() {
         </details>
       </Card>
 
-      <Card className="p-5 sm:p-6">
+      <Card className="p-5 max-[480px]:p-2 sm:p-6">
         <div className="grid grid-cols-1 gap-5 md:grid-cols-2 md:items-end">
           <Field
             label="Fecha de la asistencia"
@@ -321,7 +321,7 @@ export function MateriaAsistencia() {
               value={selectedDate}
               max={today}
               onChange={(event) => changeDate(event.target.value)}
-              className="h-12 min-w-0 text-base"
+              className="h-12 min-w-0 text-base max-[480px]:px-1"
             />
           </Field>
           <div className="rounded-lg border border-border bg-surface-2 px-4 py-3">
@@ -365,7 +365,7 @@ export function MateriaAsistencia() {
                 </p>
               </div>
               {summary.pendientes > 0 && (
-                <Button type="button" variant="outline" onClick={markAllPending}>
+                <Button type="button" className="h-auto min-h-11 py-2" variant="outline" onClick={markAllPending}>
                   <CheckCircle2 className="h-5 w-5" aria-hidden="true" />
                   Marcar pendientes como presentes (todo el grupo)
                 </Button>
@@ -414,11 +414,11 @@ export function MateriaAsistencia() {
                     current.estado === null && 'border-amber-300 dark:border-amber-500/40',
                   )}
                 >
-                  <div className="flex items-start gap-3">
+                  <div className="flex flex-wrap items-start gap-3">
                     <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-surface-2 text-sm font-extrabold text-secondary">
                       {index + 1}
                     </span>
-                    <div className="min-w-0">
+                    <div className="min-w-0 flex-1">
                       <p className="text-lg font-bold">{student.estudiante_nombre}</p>
                       <p className="truncate text-sm text-muted">{student.estudiante_email}</p>
                     </div>
@@ -436,7 +436,7 @@ export function MateriaAsistencia() {
 
                   <fieldset className="mt-4">
                     <legend className="mb-2 text-sm font-semibold">Estado de asistencia</legend>
-                    <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
+                    <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,7rem),1fr))] gap-2">
                       {STATUS_OPTIONS.map((option) => {
                         const selected = current.estado === option.value;
                         return (
@@ -447,7 +447,7 @@ export function MateriaAsistencia() {
                             aria-label={`${option.label} para ${student.estudiante_nombre}`}
                             onClick={() => updateStatus(student.estudiante_id, option.value)}
                             className={cn(
-                              'focus-ring flex min-h-12 items-center justify-center gap-2 rounded-lg border px-3 text-sm font-bold transition-colors',
+                              'focus-ring flex min-h-12 min-w-0 flex-wrap items-center justify-center gap-2 rounded-lg border px-3 text-sm font-bold transition-colors',
                               selected
                                 ? option.selectedClass
                                 : 'border-border bg-surface text-fg hover:border-brand-400 hover:bg-brand-50 dark:hover:bg-brand-500/10',
@@ -472,7 +472,7 @@ export function MateriaAsistencia() {
                       onChange={(event) =>
                         updateObservation(student.estudiante_id, event.target.value)
                       }
-                      className="mt-2"
+                      className="mt-2 text-base"
                       placeholder="Escribe una nota breve si la necesitas"
                       aria-label={`Observación para ${student.estudiante_nombre}`}
                     />
@@ -492,7 +492,7 @@ export function MateriaAsistencia() {
               </p>
               <Button
                 type="button"
-                className="min-h-11 w-full sm:w-auto"
+                className="h-auto min-h-11 w-full py-2 sm:w-auto"
                 disabled={summary.pendientes > 0 || !hasUnsavedChanges}
                 loading={saveMutation.isPending}
                 loadingLabel="Guardando asistencia…"

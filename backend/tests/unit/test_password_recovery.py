@@ -14,6 +14,16 @@ from app.modules.auth.password_recovery_service import (
     utcnow,
 )
 from app.shared.enums import UserEstado
+from app.modules.users.schemas import UserSelfUpdate
+from pydantic import ValidationError
+
+
+def test_self_profile_rejects_administrative_fields_and_explicit_nulls():
+    for payload in ({"rol": "admin"}, {"estado": "activo"}, {"id": str(uuid4())}, {"nombre": None}, {"email": None}, {"password": None}):
+        with pytest.raises(ValidationError):
+            UserSelfUpdate.model_validate(payload)
+    assert UserSelfUpdate(nombre="  Docente  ").nombre == "Docente"
+    assert UserSelfUpdate().model_dump(exclude_unset=True) == {}
 
 
 class FakeSession:
