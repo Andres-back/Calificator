@@ -28,6 +28,7 @@ export function gradePresentation(grade: Pick<Calificacion, 'estado' | 'resultad
   const score = effectiveGradeScore(grade);
   const processing = isGradeProcessing(grade) && score == null;
   if (processing) return { label: 'Calificando', score: null, processing: true };
+  if (grade.estado === 'publicada') return { label: 'Publicada', score, processing: false };
   if (grade.nota_confirmada != null) return { label: 'Confirmada', score, processing: false };
   if (score != null) return { label: 'Sugerida', score, processing: false };
   return { label: 'Revisión necesaria', score: null, processing: false };

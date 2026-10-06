@@ -228,7 +228,10 @@ export function GradeNoteExplanation({ cal, score }: { cal: CalificacionDetalle;
   return (
     <div className="space-y-2 text-sm">
       <p>Puntos registrados: <strong>{Number(formula.puntos_obtenidos).toFixed(2)} / {Number(formula.puntos_posibles).toFixed(2)}</strong>.</p>
+      <details>
+      <summary className="focus-ring flex min-h-11 cursor-pointer items-center font-semibold text-brand-700 dark:text-brand-200">Ver cálculo de la nota</summary>
       <p className="text-muted">Nota proporcional registrada: {Number(formula.nota_base).toFixed(2)} / {Number(formula.nota_maxima).toFixed(1)}. Los puntajes y sus motivos se consultan en «Respuestas y puntajes».</p>
+      </details>
       {adjustment !== 0 && (
         <div className="space-y-1 rounded-lg bg-surface-2 p-2">
           <p>Ajuste docente registrado: <strong>{adjustment > 0 ? '+' : ''}{adjustment.toFixed(2)}</strong>, separado de los puntos por respuesta.</p>
@@ -324,39 +327,34 @@ function AIPipelineSummary({
   const confianzaMedia = confianza != null && confianza >= 0.4 && confianza < 0.7;
   const arbiterInvoked = Boolean(strategy?.arbiter_invoked);
 
-  let summary: { label: string; tone: string; icon: string };
+  let summary: string;
   if (answerKeyIncomplete) {
-    summary = { label: 'La clave de respuestas está incompleta. Valida las respuestas antes de confirmar.', tone: 'rose', icon: '⚠' };
+    summary = 'El análisis registró una clave de respuestas incompleta.';
   } else if (graderAError && graderBError) {
-    summary = { label: 'Error en análisis automático. Se requiere revisión docente.', tone: 'rose', icon: '⚠️' };
+    summary = 'El análisis automático registró errores en ambos evaluadores.';
   } else if (discrepancia) {
-    summary = { label: 'El verificador detectó diferencias y se solicitó arbitraje. Revisa los criterios.', tone: 'amber', icon: '⚡' };
+    summary = 'El verificador registró diferencias entre valoraciones.';
   } else if (verifierRequiresReview) {
-    summary = { label: 'Los modelos completaron la calificación, pero el verificador dejó observaciones para revisión docente.', tone: 'amber', icon: '⚠' };
+    summary = 'El verificador dejó observaciones en el análisis original.';
   } else if (confianzaAlta) {
-    summary = { label: 'La calificación y su verificación coincidieron. Confianza alta.', tone: 'emerald', icon: '✓' };
+    summary = 'Confianza alta informada por la IA; no garantiza una calificación correcta.';
   } else if (confianzaMedia) {
-    summary = { label: 'Confianza media. Revisa los criterios detenidamente.', tone: 'amber', icon: '→' };
+    summary = 'Confianza media informada por la IA.';
   } else {
-    summary = { label: 'Confianza baja. Se recomienda revisión detallada.', tone: 'rose', icon: '⚠' };
+    summary = 'Confianza baja informada por la IA.';
   }
 
-  const toneBorder = {
-    emerald: 'border-emerald-200 dark:border-emerald-500/30',
-    amber: 'border-amber-200 dark:border-amber-500/30',
-    rose: 'border-rose-200 dark:border-rose-500/30',
-  }[summary.tone] ?? 'border-border';
-
   return (
-    <div className={`rounded-xl border ${toneBorder}`}>
+    <div className="rounded-xl border border-border">
       <button
         type="button"
         onClick={() => setExpanded(!expanded)}
-        className="focus-ring flex w-full items-center justify-between px-4 py-3 text-left"
+        aria-expanded={expanded}
+        className="focus-ring flex min-h-11 w-full items-center justify-between gap-2 px-4 py-3 text-left"
       >
         <span className="flex items-center gap-2 text-sm font-semibold">
           <Sparkles className="h-4 w-4 text-brand-500" />
-          <span>{summary.icon} {summary.label}</span>
+          <span>Detalles del análisis de IA</span>
         </span>
         <span className="flex items-center gap-1 text-xs text-muted">
           {expanded ? 'Ocultar detalles' : 'Ver detalles'}
@@ -366,6 +364,7 @@ function AIPipelineSummary({
 
       {expanded && (
         <div className="space-y-2 border-t border-border px-4 py-3 text-xs">
+          <p>{summary}</p>
           {timings?.total ? (
             <div className="mb-2 rounded-lg bg-surface-2 px-3 py-2 text-muted">
               Tiempo total: <strong className="text-fg">{Math.round(timings.total / 1000)} s</strong>
@@ -630,7 +629,7 @@ function PanelDetalle({
   const verifierRequiresReview = hasVerifierReviewSignals(graderB, strategy);
   const activeBreakdown = editingSnapshot ?? cal.desglose;
   const reviewTriage = useMemo(
-    () => activeBreakdown ? buildReviewTriage(activeBreakdown, verifierAlerts) : null,
+    () => buildReviewTriage(activeBreakdown ?? null, verifierAlerts),
     [activeBreakdown, verifierAlerts],
   );
   const selectedQuestion = activeBreakdown?.componentes.find((component) => component.id === detailParams.get('pregunta') || component.clave === detailParams.get('pregunta')) ?? activeBreakdown?.componentes[0];
@@ -649,6 +648,7 @@ function PanelDetalle({
   };
   const [evidenceLoadError, setEvidenceLoadError] = useState(false);
   const evidenceSectionRef = useRef<HTMLElement | null>(null);
+  const feedbackSectionRef = useRef<HTMLDetailsElement | null>(null);
   const adjustmentSectionRef = useRef<HTMLDivElement | null>(null);
   const retryMutation = useMutation({
     mutationFn: () => reintentarCalificacionFoto(cal.id),
@@ -799,8 +799,10 @@ function PanelDetalle({
     : !activeBreakdown ? criterios.filter((item) => typeof item.nombre === 'string' && item.nombre.trim()) : [];
   const formatCriterionNumber = (value: unknown) => value == null || String(value).trim() === '' || !Number.isFinite(Number(value)) ? '—' : Number(value).toFixed(2);
   const alertas = [...new Set([
-    ...((graderA?.alertas ?? []) as string[]),
-    ...verifierAlerts,
+    ...(Array.isArray(graderA?.alertas) ? graderA.alertas.map(String).filter(Boolean) : []),
+    ...(!activeBreakdown ? verifierAlerts : []),
+    ...(answerKeyIncomplete ? ['clave_incompleta'] : []),
+    ...(graderA?.requiere_revision_docente || graderB?.requiere_revision_docente || strategy?.arbiter_reason === 'verifier_requested' ? ['verificador_solicita_revision'] : []),
   ])];
   const evidenceUrl = cal.entrega_archivo_url;
   const evidencePages = Math.max(1, cal.entrega_evidencia_paginas || 1);
@@ -810,6 +812,8 @@ function PanelDetalle({
     || /\.pdf(?:$|[?#])/i.test(evidenceUrl ?? '')
   );
   const manualReview = cal.estado === 'requiere_revision';
+  if ((manualReview || activeBreakdown?.requiere_revision) && reviewTriage.exceptions.length === 0 && reviewTriage.globalBlockers.length === 0 && alertas.length === 0) alertas.push('revision_docente_pendiente');
+  const hasReviewNotices = reviewTriage.items.length > 0 || reviewTriage.globalBlockers.length > 0 || alertas.length > 0;
   const evidencePageUrl = evidenceUrl ? `${evidenceUrl}/paginas/${evidencePage}` : null;
 
   function showEvidencePage(page: number) {
@@ -920,7 +924,7 @@ function PanelDetalle({
         <h2 className="text-base font-bold">1. Nota y explicación</h2>
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm text-muted">{presentation.label}</p>
+            <p className="text-sm text-muted">{presentation.score == null ? presentation.label : 'Nota'}</p>
             {presentation.score == null ? (
               <div className="mt-2 flex items-center gap-2 font-semibold text-brand-600 dark:text-brand-300">
                 {presentation.processing && <LoaderCircle className="h-5 w-5 animate-spin" aria-hidden="true" />}
@@ -938,8 +942,7 @@ function PanelDetalle({
           </Badge>
         </div>
 
-        <section aria-labelledby="grade-summary-title" className="rounded-xl border border-border bg-surface-2 p-3">
-          <h3 id="grade-summary-title" className="mb-2 text-sm font-bold">Por qué esta nota</h3>
+        <section aria-label="Cálculo y criterios registrados" className="text-sm">
           {!presentation.processing && <GradeNoteExplanation cal={cal} score={presentation.score} />}
           {criterionRows.length ? <details className="mt-2">
             <summary className="focus-ring flex min-h-11 cursor-pointer items-center text-sm font-semibold">Ver valoración por criterios ({criterionRows.length})</summary>
@@ -963,42 +966,29 @@ function PanelDetalle({
           </Card>
         )}
 
-        {answerKeyIncomplete && (
-          <Card className="flex items-start gap-3 border-rose-200 bg-rose-50 p-4 dark:border-rose-500/30 dark:bg-rose-500/10">
-            <ShieldAlert className="mt-0.5 h-5 w-5 shrink-0 text-rose-600 dark:text-rose-300" />
-            <div>
-              <p className="font-semibold text-rose-900 dark:text-rose-100">Clave de respuestas incompleta</p>
-              <p className="mt-1 text-sm leading-6 text-rose-800 dark:text-rose-200">
-                Faltan respuestas de referencia para las preguntas {((answerKey?.missing_questions as unknown[]) ?? []).join(', ') || 'indicadas'}. La confianza automática se limita y debes validar la clave antes de confirmar.
-              </p>
-            </div>
-          </Card>
-        )}
-
-        {manualReview && (
-          <Card className="flex items-start gap-3 border-amber-200 bg-amber-50 p-4 dark:border-amber-500/30 dark:bg-amber-500/10">
-            <ShieldAlert className="mt-0.5 h-5 w-5 shrink-0 text-amber-600 dark:text-amber-300" />
-            <div>
-              <p className="font-semibold text-amber-900 dark:text-amber-100">Sugerencia de IA pendiente de revisión manual</p>
-              <p className="mt-1 text-sm leading-6 text-amber-800 dark:text-amber-200">
-                No se asignó cero ni se publicó la nota. Comprueba la evidencia y guarda abajo la nota correcta.
-              </p>
-            </div>
-          </Card>
-        )}
-
-        {/* Confianza */}
-        {reviewTriage ? (
+        {/* Los avisos no cambian la nota ni las políticas de confirmación. */}
+        {hasReviewNotices && <details open={done || presentation.processing ? undefined : true} className={done || presentation.processing ? 'rounded-xl border border-border p-3' : ''}>
+          {(done || presentation.processing) && <summary className="focus-ring flex min-h-11 cursor-pointer items-center font-semibold">Ver revisión del análisis original</summary>}
           <ReviewTriagePanel
             compact
             summary={reviewTriage}
+            historical={done || presentation.processing}
+            processing={presentation.processing}
+            extraReasons={alertas}
+            onReviewGeneral={(target) => {
+              if (target === 'evidencia') showEvidencePage(evidencePage);
+              else if (target === 'retroalimentacion') {
+                setFeedbackOpen(true);
+                window.requestAnimationFrame(() => { feedbackSectionRef.current?.focus({ preventScroll: true }); feedbackSectionRef.current?.scrollIntoView({ block: 'start' }); });
+              } else if (mobileTab !== 'revision') changeDetailView('revision');
+              else reviewSectionRef.current?.scrollIntoView({ block: 'start' });
+            }}
             selectedComponentId={selectedQuestion?.id}
             onSelectComponent={(componentId) => openReviewComponent(componentId)}
             analyticsContext={{ evaluacionId: cal.evaluacion_id, calificacionId: cal.id }}
           />
-        ) : null}
+        </details>}
         {canGrade && manualReview && evidenceUrl && <Button variant="outline" loading={retryMutation.isPending} disabled={retryMutation.isPending} onClick={() => retryMutation.mutate()}><RotateCcw className="h-4 w-4" /> Volver a analizar la evidencia</Button>}
-        {alertas.length > 0 && <div role="status" className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200">{alertas.map((alerta, index) => <p key={index}>⚠️ {alerta}</p>)}</div>}
 
         {/* Evidencia */}
         {evidenciaConsolidada?.modalidad === 'mixta' && (
@@ -1098,7 +1088,7 @@ function PanelDetalle({
           </section>
         </div>
 
-        <details open={feedbackOpen || isDirty || showAjustar} className="rounded-xl border border-border p-3">
+        <details ref={feedbackSectionRef} tabIndex={-1} open={feedbackOpen || isDirty || showAjustar} className="scroll-mt-4 rounded-xl border border-border p-3">
           <summary className="focus-ring flex min-h-11 cursor-pointer items-center font-semibold" onClick={toggleFeedbackSection}>4. Retroalimentación</summary>
           {presentation.processing ? <p className="text-sm text-muted">La retroalimentación estará disponible cuando termine el análisis.</p> : <Field label="Retroalimentación"><Textarea readOnly={!canGrade} value={adjFeedback} onChange={(e) => setAdjFeedback(e.target.value)} placeholder="Escribe o edita el feedback para el estudiante…" rows={4} /></Field>}
         </details>
@@ -1183,15 +1173,7 @@ function PanelDetalle({
             </Button>
           </div>
         )}
-        {published && (
-          <Card className="flex items-start gap-3 border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-500/30 dark:bg-emerald-500/10">
-            <CheckCircle2 className="mt-0.5 h-5 w-5 text-emerald-500" />
-            <div>
-              <p className="font-semibold text-emerald-800 dark:text-emerald-200">Resultados publicados</p>
-              <p className="text-sm text-emerald-700 dark:text-emerald-300">El estudiante ya puede ver su nota y retroalimentación.</p>
-            </div>
-          </Card>
-        )}
+        {published && <p className="text-sm text-muted">El estudiante ya puede ver su nota y retroalimentación.</p>}
 
         {canGrade && showAjustar && !presentation.processing && (
           <div ref={adjustmentSectionRef} className="scroll-mt-24">
@@ -2252,6 +2234,7 @@ function GradingCenter() {
 
         {/* Right panel — detail */}
         <div
+          data-testid="grade-review-panel"
           className={`min-h-0 min-w-0 flex-1 ${
             selectedId
               ? 'fixed inset-0 z-30 flex h-[100dvh] max-h-[100dvh] flex-col overflow-hidden bg-surface lg:static lg:z-auto lg:h-auto lg:max-h-none'

@@ -18,10 +18,39 @@ const breakdown = (components: GradeComponentData[]): GradeBreakdownData => ({
 });
 
 describe('ReviewTriagePanel', () => {
+  it('no afirma una decisión docente si el análisis todavía está en proceso', () => {
+    render(<ReviewTriagePanel compact historical processing summary={buildReviewTriage(null)} extraReasons={['aviso_previo']} onSelectComponent={() => undefined} />);
+    expect(screen.getByText(/La calificación sigue en proceso/)).toBeInTheDocument();
+    expect(screen.queryByText(/ya tiene una decisión docente/)).not.toBeInTheDocument();
+  });
+  it('no promete ausencia de incertidumbre cuando hay un aviso general sin excepciones', () => {
+    const code = 'feedback_quality:nota_global_no_coincide_con_suma';
+    const summary = buildReviewTriage({ ...breakdown([component('p1', 0)]), bloqueos: [code] });
+    const review = vi.fn();
+    render(<ReviewTriagePanel compact summary={summary} onSelectComponent={() => undefined} onReviewGeneral={review} />);
+    expect(screen.queryByText(/Sin señales de incertidumbre/)).not.toBeInTheDocument();
+    expect(screen.getByText(/La valoración global de la IA y el cálculo por preguntas no coinciden/)).toBeInTheDocument();
+    expect(screen.getByText('1 aviso general')).toBeInTheDocument();
+    expect(screen.queryByText('0 por revisar')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Revisar puntajes' }));
+    expect(review).toHaveBeenCalledWith('revision');
+    fireEvent.click(screen.getByText('Ver detalle de los avisos'));
+    expect(screen.getByText(code)).toBeInTheDocument();
+  });
+
+  it('conserva motivos desconocidos y distingue avisos del análisis anterior', () => {
+    const summary = buildReviewTriage({ ...breakdown([]), bloqueos: ['motivo_nuevo:42'] });
+    render(<ReviewTriagePanel compact historical summary={summary} onSelectComponent={() => undefined} />);
+    expect(screen.getByText('Avisos del análisis original')).toBeInTheDocument();
+    expect(screen.getByText(/Hay un aviso que necesita revisión/)).toBeInTheDocument();
+    expect(screen.queryByText(/antes de confirmar/)).not.toBeInTheDocument();
+    fireEvent.click(screen.getByText('Ver detalle de los avisos'));
+    expect(screen.getByText('motivo_nuevo:42')).toBeInTheDocument();
+  });
   it('muestra conteos, razones y el estado sin alertas sin prometer exactitud', () => {
     const safe = buildReviewTriage(breakdown([component('p1', 0)]));
     const view = render(<ReviewTriagePanel summary={safe} onSelectComponent={() => undefined} />);
-    expect(screen.getByText('1 segura')).toBeInTheDocument();
+    expect(screen.getByText('1 sin alertas individuales')).toBeInTheDocument();
     expect(screen.getByText(/No detectamos señales de incertidumbre/)).toBeInTheDocument();
     expect(screen.getByText(/confirma la nota/)).toBeInTheDocument();
 
@@ -33,8 +62,8 @@ describe('ReviewTriagePanel', () => {
   it('informa bloqueos globales sin asignarlos a una respuesta', () => {
     const summary = buildReviewTriage({ ...breakdown([component('p1', 0)]), cobertura_estado: 'incompleta', bloqueos: ['hoja_faltante'] });
     render(<ReviewTriagePanel summary={summary} onSelectComponent={() => undefined} />);
-    expect(screen.getByRole('alert')).toHaveTextContent('Cobertura incompleta');
-    expect(screen.getByRole('alert')).toHaveTextContent('hoja faltante');
+    expect(screen.getByRole('alert')).toHaveTextContent('El desglose no cubre de forma consistente todas las preguntas.');
+    expect(screen.getByRole('alert')).toHaveTextContent('Falta una hoja de la evidencia.');
   });
 
   it('salta a la primera y siguiente excepción sin recorrer respuestas seguras', () => {
@@ -56,7 +85,7 @@ describe('ReviewTriagePanel', () => {
     const summary = buildReviewTriage(breakdown([component('safe', 0)]));
     const select = vi.fn();
     render(<ReviewTriagePanel summary={summary} onSelectComponent={select} />);
-    fireEvent.click(screen.getByText('Ver respuestas seguras (1)'));
+    fireEvent.click(screen.getByText('Ver respuestas sin alertas (1)'));
     const button = screen.getByRole('button', { name: /Pregunta 1/ });
     button.focus();
     expect(button).toHaveFocus();

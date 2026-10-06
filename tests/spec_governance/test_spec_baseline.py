@@ -87,6 +87,7 @@ ALL_SPECS = {
     "084-docente-mobile-first",
     "085-asistencia-autoguardado",
     "086-embedding-admin-check",
+    "087-calificacion-clara",
 }
 OWNED_SPECS = {
     name

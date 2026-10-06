@@ -13,6 +13,10 @@ function grade(overrides: Partial<Calificacion> = {}): Calificacion {
 }
 
 describe('gradePresentation', () => {
+  it('identifica la nota publicada sin cambiar la nota docente', () => {
+    expect(gradePresentation(grade({ estado: 'publicada', nota_confirmada: 4.7, nota_sugerida: 5 })))
+      .toEqual({ label: 'Publicada', score: 4.7, processing: false });
+  });
   it.each(['queued', 'running', 'retrying', 'waiting_connector'])('mantiene %s sin nota provisional', (pipeline_status) => {
     expect(gradePresentation(grade({ estado: 'sugerida', resultado_json: { pipeline_status } })))
       .toEqual({ label: 'Calificando', score: null, processing: true });

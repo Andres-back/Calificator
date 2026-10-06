@@ -1,22 +1,24 @@
 import { expect, test } from '@playwright/test';
 import { login } from '../fixtures/explainableGrading';
 
-for (const viewport of [
+for (const theme of ['light', 'dark'] as const) for (const viewport of [
   { width: 360, height: 800 },
   { width: 390, height: 844 },
   { width: 768, height: 1024 },
   { width: 1366, height: 768 },
   { width: 1920, height: 1080 },
-]) test(`revisión conserva foco, scroll y controles en ${viewport.width}px`, async ({ page }) => {
+]) test(`revisión conserva foco, scroll y controles ${theme} en ${viewport.width}px`, async ({ page }) => {
   await page.setViewportSize(viewport);
   await login(page, 'profesor');
   await page.goto('/app/calificaciones/workspace/e1');
   await page.getByText('Estudiante Prueba', { exact: true }).click();
 
-  await expect(page.getByRole('heading', { name: 'Resumen de la valoración' })).toBeVisible();
-  await page.getByRole('button', { name: 'Ver notas por respuesta', exact: true }).click();
+  await page.evaluate((activeTheme) => document.documentElement.classList.toggle('dark', activeTheme === 'dark'), theme);
+  await expect(page.getByRole('heading', { name: '1. Nota y explicación' })).toBeVisible();
+  await page.getByRole('button', { name: '3. Respuestas y puntajes', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Nota explicada respuesta por respuesta' })).toBeVisible();
-  const controls = page.locator('button:visible, a:visible, input:visible, textarea:visible, select:visible');
+  const panel = page.getByTestId('grade-review-panel');
+  const controls = panel.locator('button:visible, a:visible, input:visible, textarea:visible, select:visible, summary:visible');
   const count = await controls.count();
   expect(count).toBeGreaterThan(0);
   for (let index = 0; index < count; index += 1) {
@@ -32,11 +34,21 @@ for (const viewport of [
       return { label, width: rect.width, height: rect.height, html: html.outerHTML.slice(0, 240) };
     });
     expect(result.label, 'Control ' + String(index + 1) + ' sin nombre accesible: ' + result.html).not.toBe('');
-    expect(result.height, result.label + ' no alcanza el alto táctil').toBeGreaterThanOrEqual(40);
-    expect(result.width, result.label + ' no alcanza el ancho táctil').toBeGreaterThanOrEqual(40);
+    expect(result.height, result.label + ' no alcanza el alto táctil').toBeGreaterThanOrEqual(44);
+    expect(result.width, result.label + ' no alcanza el ancho táctil').toBeGreaterThanOrEqual(44);
   }
 
   await page.keyboard.press('Tab');
   expect(await page.evaluate(() => document.activeElement !== document.body)).toBeTruthy();
+  await panel.locator('summary', { hasText: '4. Retroalimentación' }).click();
+  const feedback = panel.locator('textarea');
+  await feedback.evaluate((element) => element.scrollIntoView({ block: 'center' }));
+  await feedback.focus();
+  await expect(feedback).toBeFocused();
+  await expect.poll(async () => {
+    const box = await feedback.boundingBox();
+    const bar = await page.getByLabel('Acciones de la calificación').boundingBox();
+    return box!.y >= 0 && box!.y + box!.height <= (bar?.y ?? viewport.height);
+  }).toBe(true);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBeTruthy();
 });

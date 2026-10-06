@@ -30,7 +30,8 @@ test('prioriza excepciones en móvil sin confirmar ni publicar automáticamente'
   await page.goto('/app/calificaciones/workspace/e1');
   await page.getByText('Estudiante Prueba', { exact: true }).click();
 
-  await expect(page.getByRole('heading', { name: 'Revisa primero las excepciones' })).toBeVisible();
+  await page.locator('summary', { hasText: 'Ver revisión del análisis original' }).click();
+  await expect(page.getByRole('heading', { name: 'Avisos del análisis original' })).toBeVisible();
   await expect(page.getByText('1 por revisar')).toBeVisible();
   await expect(page.getByText('1 bloqueada')).toBeVisible();
   await page.getByRole('button', { name: /Revisar primera excepción/ }).click();

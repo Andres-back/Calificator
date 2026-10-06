@@ -19,6 +19,33 @@ const breakdown = {
 };
 const grade = { id: 'c1', evaluacion_id: 'e1', estudiante_id: 's1', materia_id: 'm1', nota_sugerida: 5, nota_confirmada: 5, confianza: 0.98, feedback: 'Muy bien.', estado: 'publicada', revisado_por_docente: true, resultado_json: {}, created_at: '2026-08-21T00:00:00Z', updated_at: '2026-08-21T00:00:00Z' };
 
+test('aviso general con respuestas sin alertas conduce al desglose sin escribir notas', async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 800 });
+  await login(page, 'profesor');
+  const code = 'feedback_quality:nota_global_no_coincide_con_suma';
+  await page.route('**/api/calificaciones/c1/detalle', (route) => json(route, {
+    ...grade, estado: 'requiere_revision', nota_confirmada: null, estudiante_nombre: student.nombre,
+    evaluacion_nombre: evaluation.nombre, materia_nombre: materia.nombre, nota_maxima: 5,
+    timeline: [], guia_revision: [], entrega_archivo_url: null, resultado_json: {},
+    desglose: { ...breakdown, requiere_revision: true, bloqueos: [code] },
+  }));
+  const writes: string[] = [];
+  page.on('request', (request) => {
+    if (request.method() !== 'GET' && /\/api\/calificaciones\//.test(request.url())) writes.push(request.url());
+  });
+  await page.goto('/app/calificaciones?evaluacion=e1&calificacion=c1');
+  await expect(page.getByRole('heading', { name: 'Qué necesitas revisar' })).toBeVisible();
+  await expect(page.getByText('1 aviso general')).toBeVisible();
+  await expect(page.getByText(/Sin señales de incertidumbre/)).toHaveCount(0);
+  await expect(page.getByText(code, { exact: true })).not.toBeVisible();
+  await page.getByRole('button', { name: 'Revisar puntajes', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Nota explicada respuesta por respuesta' })).toBeVisible();
+  await page.getByRole('button', { name: 'Ajustar puntaje y explicación', exact: true }).click();
+  await expect(page.getByLabel(/Puntos \(máximo/)).toBeVisible();
+  expect(writes).toEqual([]);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBeTruthy();
+});
+
 function json(route: Route, body: unknown, status = 200) {
   return route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(body) });
 }
@@ -89,8 +116,8 @@ test('resumen móvil preserva contexto y despliega detalles sin mutaciones', asy
   const mutations: string[] = [];
   page.on('request', (request) => { if (request.method() !== 'GET' && /calificaciones|jobs/.test(request.url())) mutations.push(request.url()); });
   await page.goto('/app/calificaciones?materia=m1&evaluacion=e1&calificacion=c1');
-  await expect(page.getByRole('heading', { name: 'Por qué esta nota' })).toBeVisible();
-  await expect(page.getByRole('region', { name: 'Por qué esta nota' })).toContainText('Puntos registrados: 1.00 / 1.00');
+  await expect(page.getByRole('heading', { name: '1. Nota y explicación' })).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Cálculo y criterios registrados' })).toContainText('Puntos registrados: 1.00 / 1.00');
   await expect(page.getByText(/Ver valoración por criterios/)).toHaveCount(0);
   await expect(page.getByRole('heading', { name: 'Nota explicada respuesta por respuesta' })).toBeHidden();
   await expect(page.getByRole('link', { name: 'Volver a evaluaciones' })).toHaveAttribute('href', '/app/materias/m1/evaluaciones');
@@ -117,7 +144,7 @@ test('rúbrica y criterios históricos conservan ausencia de puntaje sin inventa
     desglose_heredado: historical,
   }));
   await page.goto('/app/calificaciones?evaluacion=e1&calificacion=c1');
-  const summary = page.getByRole('region', { name: 'Por qué esta nota' });
+  const summary = page.getByRole('region', { name: 'Cálculo y criterios registrados' });
   await summary.getByText('Ver valoración por criterios (1)', { exact: true }).click();
   await expect(summary).toContainText('Comprensión registrada');
   await expect(summary).toContainText('— / 1.00');
@@ -138,9 +165,11 @@ test('detalle en procesamiento no convierte ausencia de nota en cero y mantiene 
   }));
   await page.goto('/app/calificaciones?evaluacion=e1&calificacion=c1');
   await expect(page.getByText('Calificando en segundo plano', { exact: true })).toBeVisible();
+  await page.locator('summary', { hasText: 'Ver revisión del análisis original' }).click();
+  await page.locator('summary', { hasText: 'Ver detalle de los avisos' }).click();
   await expect(page.getByText('Comprobar evidencia pendiente', { exact: false })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Confirmar nota', exact: true })).toHaveCount(0);
-  await expect(page.getByRole('region', { name: 'Por qué esta nota' })).not.toContainText('0.00');
+  await expect(page.getByRole('region', { name: 'Cálculo y criterios registrados' })).not.toContainText('0.00');
 });
 
 test('ajustar 1 a 0.7 guarda versión, conserva historial y no publica', async ({ page }) => {
@@ -173,7 +202,7 @@ test('ajustar 1 a 0.7 guarda versión, conserva historial y no publica', async (
   await expect(page.getByRole('button', { name: 'Ajustar puntaje y explicación' })).toBeVisible();
   await expect(page.locator('#grade-component-q1').getByText('0.70 / 1.00', { exact: true })).toBeVisible();
   await page.getByRole('button', { name: '3. Respuestas y puntajes', exact: true }).click();
-  await expect(page.getByRole('region', { name: 'Por qué esta nota' })).toContainText('0.70 / 1.00');
+  await expect(page.getByRole('region', { name: 'Cálculo y criterios registrados' })).toContainText('0.70 / 1.00');
   await page.getByText('Historial y opciones de la nota', { exact: true }).click();
   await page.getByRole('button', { name: 'Historial del cálculo' }).click();
   await expect(page.getByText('Versión 2 · vigente', { exact: true })).toBeVisible();

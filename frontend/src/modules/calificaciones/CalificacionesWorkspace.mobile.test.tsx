@@ -5,6 +5,15 @@ import { GradeNoteExplanation, MobileReviewActionBar, MobileReviewContext } from
 import type { CalificacionDetalle } from '@/types/api';
 
 describe('centro de calificaciones en celular', () => {
+  it('expone una escala distinta solo al abrir el cálculo sin inventar una nota', async () => {
+    const cal = { estado: 'sugerida', timeline: [], desglose: { formula: { puntos_obtenidos: 8, puntos_posibles: 10, nota_maxima: 100, nota_base: 80, ajuste_global: 0, nota_final: 80 }, componentes: [] } } as unknown as CalificacionDetalle;
+    render(<GradeNoteExplanation cal={cal} score={80} />);
+    const control = screen.getByText('Ver cálculo de la nota');
+    expect(control.closest('details')).not.toHaveAttribute('open');
+    await userEvent.click(control);
+    expect(control.closest('details')).toHaveAttribute('open');
+    expect(screen.getByText(/Nota proporcional registrada: 80.00/)).toBeInTheDocument();
+  });
   it('explains the stored calculation and distinguishes a teacher global adjustment', () => {
     const cal = { estado: 'ajustada', timeline: [], desglose: { formula: { puntos_obtenidos: 2, puntos_posibles: 4, nota_maxima: 5, nota_base: 2.5, ajuste_global: 0.3, nota_final: 2.8 }, componentes: [], ajuste_global_detalle: { motivo_interno: 'Procedimiento adicional verificado' } } } as unknown as CalificacionDetalle;
     render(<GradeNoteExplanation cal={cal} score={2.8} />);
