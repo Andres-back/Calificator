@@ -90,3 +90,7 @@ Incrementos aislados por historia, sin migración prevista. Primero visor; despu
 
 - [x] T036 Completar controles móviles del registro en frontend/src/modules/materias/RosterReview.tsx y ExistingStudentsDialog.tsx: texto de campos 16 px, objetivos táctiles de confirmación >=44 px y prueba dirigida de dimensiones/foco según FR-014 y plan: accesibilidad (partial, MEDIUM).
 - [x] T037 Añadir verificación real de viewport reducido y orientación/foco/scroll del editor y perfil en frontend/e2e/p2-responsive.spec.ts y profile.spec.ts; registrar límites de teclado nativo en quickstart.md según SC-007, FR-014 y US1/Edge Cases (partial, MEDIUM).
+
+## Phase 10: Convergence
+
+- [x] T038 Refrescar el estado del lote bajo bloqueo antes de confirmar o sustituir filas en backend/app/modules/importacion_estudiantes/service.py; probar dos sesiones con el lote previamente cargado y rechazo de edición tras confirmación externa en backend/tests/integration/test_roster_import_flow.py, conservando una sola alta y secretos emitidos una sola vez según FR-007, FR-010, FR-013 y plan: replay transaccional (partial, HIGH).

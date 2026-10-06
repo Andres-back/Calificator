@@ -91,6 +91,14 @@ async def expire_abandoned_lotes(db: AsyncSession, before: datetime) -> list[str
 
 async def replace_rows(db: AsyncSession, lote: ImportacionEstudiantesLote, rows: list[FilaUpdate], actor: User) -> ImportacionEstudiantesLote:
     require_permission_now(actor, "subjects.update")
+    # The router may already hold a stale ORM instance. Serialize edits with
+    # confirmation and refresh columns before deciding whether writes are allowed.
+    lote = await db.scalar(select(ImportacionEstudiantesLote).where(
+        ImportacionEstudiantesLote.id == lote.id,
+    ).with_for_update().execution_options(populate_existing=True))
+    if not lote:
+        raise HTTPException(status_code=404, detail="Importación no encontrada")
+    await ensure_can_manage_materia(db, lote.materia_id, actor)
     if lote.estado != "revision":
         raise HTTPException(status_code=409, detail="La lista ya no está disponible para edición")
     original_rows = list((await db.scalars(
@@ -186,7 +194,7 @@ async def _enroll(db: AsyncSession, materia_id: UUID, student_id: UUID) -> str:
 
 async def confirm_lote(db: AsyncSession, lote_id: UUID, actor: User) -> dict:
     require_permission_now(actor, "subjects.update")
-    lote = await db.scalar(select(ImportacionEstudiantesLote).where(ImportacionEstudiantesLote.id == lote_id).with_for_update())
+    lote = await db.scalar(select(ImportacionEstudiantesLote).where(ImportacionEstudiantesLote.id == lote_id).with_for_update().execution_options(populate_existing=True))
     if not lote:
         raise HTTPException(status_code=404, detail="Importación no encontrada")
     await ensure_can_manage_materia(db, lote.materia_id, actor)

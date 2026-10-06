@@ -326,13 +326,20 @@ async def test_parallel_confirmation_creates_one_account_only() -> None:
         batch = ImportacionEstudiantesLote(materia_id=subject.id, creado_por=teacher.id, archivo_nombre="lista.jpg", archivo_sha256="f" * 64, estado="revision")
         setup.add(batch)
         await setup.flush()
-        setup.add(ImportacionEstudiantesFila(lote_id=batch.id, orden=1, nombre_detectado="Sara Sol", nombre_revisado="Sara Sol", confianza=1, decision="crear", advertencias=[]))
+        setup.add(ImportacionEstudiantesFila(lote_id=batch.id, orden=1, nombre_detectado="Sara Sol", nombre_revisado="Sara Sol", confianza=1, decision="crear", duplicado_confirmado=True, advertencias=[]))
         await setup.commit()
+    ready = asyncio.Barrier(2)
     async def confirm_once():
         async with sessions() as db:
             actor = await db.get(User, teacher.id)
             actor._effective_permissions = {"subjects.update"}
+            # The HTTP route reads the batch before calling the locked service.
+            # Keep both identity maps primed until both requests are ready.
+            cached_lote = await get_lote(db, batch.id, actor)
+            assert cached_lote.estado == "revision"
+            await ready.wait()
             result = await confirm_lote(db, batch.id, actor)
+            assert cached_lote.estado == "confirmado"
             await db.commit()
             return result
     try:
@@ -340,6 +347,39 @@ async def test_parallel_confirmation_creates_one_account_only() -> None:
         assert sorted(len(result["credenciales"]) for result in results) == [0, 1]
         async with sessions() as db:
             assert await db.scalar(select(func.count(Matricula.id)).where(Matricula.materia_id == subject.id)) == 1
+    finally:
+        await engine.dispose()
+
+
+@pytest.mark.asyncio
+async def test_rows_cannot_change_after_external_confirmation_with_cached_batch() -> None:
+    engine = create_async_engine(TEST_URL)
+    sessions = async_sessionmaker(engine, expire_on_commit=False)
+    async with sessions() as setup:
+        teacher, subject = await _subject(setup)
+        batch = ImportacionEstudiantesLote(materia_id=subject.id, creado_por=teacher.id, archivo_nombre="lista.jpg", archivo_sha256="2" * 64, estado="revision")
+        setup.add(batch)
+        await setup.flush()
+        setup.add(ImportacionEstudiantesFila(lote_id=batch.id, orden=1, nombre_detectado="Sara Sol", nombre_revisado="Sara Sol", confianza=1, decision="crear", advertencias=[]))
+        await setup.commit()
+    try:
+        async with sessions() as stale:
+            actor = await stale.get(User, teacher.id)
+            actor._effective_permissions = {"subjects.update"}
+            cached_lote = await get_lote(stale, batch.id, actor)
+            async with sessions() as writer:
+                writer_actor = await writer.get(User, teacher.id)
+                writer_actor._effective_permissions = {"subjects.update"}
+                await confirm_lote(writer, batch.id, writer_actor)
+                await writer.commit()
+            assert cached_lote.estado == "revision"
+            with pytest.raises(HTTPException) as error:
+                await replace_rows(stale, cached_lote, [FilaUpdate(nombre_revisado="Nombre cambiado", decision="crear")], actor)
+            assert error.value.status_code == 409
+            await stale.rollback()
+        async with sessions() as check:
+            assert await check.scalar(select(ImportacionEstudiantesFila.nombre_revisado).where(ImportacionEstudiantesFila.lote_id == batch.id)) == "Sara Sol"
+            assert await check.scalar(select(func.count(Matricula.id)).where(Matricula.materia_id == subject.id)) == 1
     finally:
         await engine.dispose()
 
