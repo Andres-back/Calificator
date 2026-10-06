@@ -333,9 +333,9 @@ export function MateriaAsistencia() {
 
           <Card className="space-y-3 p-4">
             <Field label="Buscar estudiante" hint="Por nombre o correo. Cada marca se guarda, aunque haya otros pendientes.">
-              <div className="flex items-center gap-2">
-                <Input type="search" value={search} onChange={(event) => setSearch(event.target.value)} className="min-h-11 min-w-0 text-base" placeholder="Escribe un nombre o correo" />
-                {search && <Button type="button" variant="outline" onClick={() => setSearch('')} aria-label="Limpiar búsqueda">Limpiar</Button>}
+              <div className="flex flex-wrap items-center gap-2">
+                <Input type="search" value={search} onChange={(event) => setSearch(event.target.value)} className="min-h-11 min-w-0 flex-1 basis-32 text-base" placeholder="Escribe un nombre o correo" />
+                {search && <Button type="button" variant="outline" className="shrink-0 whitespace-nowrap px-3" onClick={() => setSearch('')} aria-label="Limpiar búsqueda">Limpiar</Button>}
               </div>
             </Field>
             <p role="status" className="text-sm text-muted">{visibleStudents.length} de {attendanceQuery.data.registros.length} estudiantes</p>

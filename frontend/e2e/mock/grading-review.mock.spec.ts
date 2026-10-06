@@ -188,6 +188,7 @@ for (const viewport of [{ width: 360, height: 800 }, { width: 390, height: 844 }
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBeTruthy();
       const searchBounds = await search.boundingBox();
       expect(searchBounds!.height).toBeGreaterThanOrEqual(44);
+      expect(await page.getByRole('button', { name: 'Limpiar búsqueda', exact: true }).evaluate((button) => getComputedStyle(button).whiteSpace)).toBe('nowrap');
       await page.screenshot({ path: `../output/playwright/teacher-flow/attendance-${viewport.width}-${mode}.png`, fullPage: true });
       expect(writes.length).toBeGreaterThan(0);
       expect(writes.every((url) => url.endsWith('/materias/m1/asistencia'))).toBe(true);

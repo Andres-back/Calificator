@@ -77,3 +77,5 @@ Artefactos visuales locales ignorados en `output/playwright/teacher-flow/`. Ning
 ## Convergencia
 
 Primer análisis: 12 FR, 6 SC, 11 escenarios de aceptación, 9 decisiones del plan y 8 principios revisados. Una brecha HIGH/partial: registro de nueva especificación en listado de gobernanza. T023 añadida y registro corregido. Cierre documental/PR/CI se conserva como gate T022 antes de fusión. Sin cambios fuera del alcance funcional ni de APIs de calificación.
+
+PR [#177](https://github.com/Andres-back/Calificator/pull/177) abierto. Controles completos backend y contenedores aprobaron en la primera ejecución; batería frontend remota y gobernanza del cierre documental pendientes al redactar. Usuario autorizó fusión/producción **solo con todos los controles verdes**. Estado remoto definitivo y revisión desplegada se registrarán en comentarios del PR/issue, sin certificar por adelantado. Convergencia posterior sin brechas de código; las tareas de repositorio están completas, no el gate externo.

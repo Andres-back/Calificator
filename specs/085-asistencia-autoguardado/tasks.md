@@ -48,7 +48,7 @@ Alcance y plan aprobados; checklist final revisado 8/8 con autorización humana.
 
 - [x] T020 Ejecutar pruebas enfocadas, tipos/lint y builds aplicables; registrar comandos, resultados y limitaciones en `specs/085-asistencia-autoguardado/quickstart.md`.
 - [x] T021 Actualizar dominio canónico `specs/004-dba-asistencia-curriculo/spec.md`, `contracts/interfaces.md`, índice `specs/README.md` e inventario generado `specs/system-inventory/current.json` con PATCH y comportamiento vigente sin duplicar responsabilidad.
-- [ ] T022 Ejecutar Converge, completar evidencia/tareas y abrir PR enlazado a #176 con `specs/085-asistencia-autoguardado/{spec,plan,tasks}.md`; verificar CI completo sin fusionar ni desplegar sin autorización.
+- [x] T022 Ejecutar Converge, completar evidencia/tareas y abrir PR enlazado a #176 con `specs/085-asistencia-autoguardado/{spec,plan,tasks}.md`; verificar CI completo sin fusionar ni desplegar sin autorización.
 
 ## Dependencias
 
@@ -70,4 +70,8 @@ SC-001/SC-004/SC-006: T011; SC-002: T012; SC-003: T012,T015; SC-005: T019. T001,
 
 ## Fase 7: Convergencia
 
-- [ ] T023 Registrar `085-asistencia-autoguardado` en el listado activo de `tests/spec_governance/test_spec_baseline.py` y comprobar pruebas de gobernanza e inventario según Constitución VII y plan: trazabilidad (partial, HIGH).
+- [x] T023 Registrar `085-asistencia-autoguardado` en el listado activo de `tests/spec_governance/test_spec_baseline.py` y comprobar pruebas de gobernanza e inventario según Constitución VII y plan: trazabilidad (partial, HIGH).
+
+## Cierre de repositorio y gate externo
+
+Implementación/tareas documentales completadas; PR #177 creado y controles completos lanzados. Los marcadores no certifican el resultado remoto ni autorizan fusión. El gate de CI permanece abierto hasta todos los checks verdes del HEAD final; autorización humana recibida exclusivamente bajo esa condición. El resultado remoto y commit desplegado se registrarán en el PR/issue para no disparar otra ejecución con cada actualización de estado.
