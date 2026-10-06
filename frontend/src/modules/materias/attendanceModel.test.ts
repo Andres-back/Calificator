@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   buildAttendancePayload,
+  buildAttendancePatchPayload,
   createAttendanceDraft,
   searchAttendanceRecords,
   isAttendanceDraftDirty,
@@ -40,6 +41,16 @@ const day: AsistenciaDia = {
 };
 
 describe('attendanceModel', () => {
+  it('builds only changed marked rows and snapshots observations without completing the roster', () => {
+    const baseline = createAttendanceDraft(day);
+    const draft = { ...baseline, 'student-1': { estado: 'tarde' as const, observacion: '  Autorización  ' } };
+    const payload = buildAttendancePatchPayload(day.fecha, draft, baseline);
+    expect(payload?.registros).toEqual([{ estudiante_id: 'student-1', estado: 'tarde', observacion: 'Autorización' }]);
+    draft['student-1'].observacion = 'Después';
+    expect(payload?.registros[0].observacion).toBe('Autorización');
+    expect(buildAttendancePatchPayload(day.fecha, baseline, baseline)).toBeNull();
+    expect(buildAttendancePayload(day.fecha, draft)).toBeNull();
+  });
   it('searches names and email without changing identities or original positions', () => {
     const records = [...day.registros, { ...day.registros[0], estudiante_id: 'student-3', estudiante_nombre: 'María José', estudiante_email: 'interna-3@example.test' }];
     expect(searchAttendanceRecords(records, '  MARIA JOSE  ')).toEqual([{ student: records[2], index: 2 }]);

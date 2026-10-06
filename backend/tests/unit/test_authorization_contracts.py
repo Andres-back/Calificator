@@ -185,6 +185,45 @@ def test_attendance_owner_and_admin_preserve_success_contract(monkeypatch) -> No
         assert get_response.json()["materia_id"] == str(materia_id)
 
 
+def test_attendance_patch_checks_permissions_and_ownership_before_writing(monkeypatch):
+    writes = []
+
+    async def deny(*_args):
+        raise HTTPException(status_code=403, detail="Not enough permissions")
+
+    async def write(*_args):
+        writes.append("written")
+        raise AssertionError("No debe escribir asistencia ajena")
+
+    monkeypatch.setattr(asistencia_router.materias_service, "ensure_can_manage_materia", deny)
+    monkeypatch.setattr(asistencia_router.service, "patch_attendance_day", write)
+    payload = {"fecha": "2026-08-14", "registros": [{"estudiante_id": str(uuid4()), "estado": "presente"}]}
+    for role in (UserRole.ESTUDIANTE, UserRole.PROFESOR):
+        response = authenticated_client(make_user(role)).patch(f"/api/materias/{uuid4()}/asistencia", json=payload)
+        assert response.status_code == 403
+    assert writes == []
+
+
+def test_attendance_patch_owner_success(monkeypatch):
+    subject_id, student_id = uuid4(), uuid4()
+
+    async def allow(*_args):
+        return SimpleNamespace(id=subject_id)
+
+    async def write(_db, _subject, payload, _actor):
+        assert len(payload.registros) == 1
+        return {"materia_id": subject_id, "fecha": payload.fecha, "registros": [],
+                "resumen": {"total": 2, "presentes": 1, "tarde": 0, "ausentes": 0, "excusas": 0, "pendientes": 1}}
+
+    monkeypatch.setattr(asistencia_router.materias_service, "ensure_can_manage_materia", allow)
+    monkeypatch.setattr(asistencia_router.service, "patch_attendance_day", write)
+    response = authenticated_client(make_user(UserRole.PROFESOR)).patch(
+        f"/api/materias/{subject_id}/asistencia",
+        json={"fecha": "2026-08-14", "registros": [{"estudiante_id": str(student_id), "estado": "presente"}]})
+    assert response.status_code == 200
+    assert response.json()["resumen"]["pendientes"] == 1
+
+
 def test_dba_combined_denies_before_listing_and_preserves_success(monkeypatch) -> None:
     materia_id = uuid4()
     outsider = make_user(UserRole.PROFESOR)

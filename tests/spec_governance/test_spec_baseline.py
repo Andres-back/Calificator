@@ -85,6 +85,7 @@ ALL_SPECS = {
     "081-evaluacion-vista-word",
     "083-rag-preflight",
     "084-docente-mobile-first",
+    "085-asistencia-autoguardado",
 }
 OWNED_SPECS = {
     name

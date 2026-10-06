@@ -66,9 +66,10 @@ export interface AsistenciaDiaInput {
   registros: AsistenciaRegistroInput[];
 }
 
-export async function getAsistenciaDia(materiaId: string, fecha: string): Promise<AsistenciaDia> {
+export async function getAsistenciaDia(materiaId: string, fecha: string, signal?: AbortSignal): Promise<AsistenciaDia> {
   const { data } = await api.get<AsistenciaDia>(`/materias/${materiaId}/asistencia`, {
     params: { fecha },
+    signal,
   });
   return data;
 }
@@ -90,5 +91,10 @@ export async function saveAsistenciaDia(
   payload: AsistenciaDiaInput,
 ): Promise<AsistenciaDia> {
   const { data } = await api.put<AsistenciaDia>(`/materias/${materiaId}/asistencia`, payload);
+  return data;
+}
+
+export async function patchAsistenciaDia(materiaId: string, payload: AsistenciaDiaInput): Promise<AsistenciaDia> {
+  const { data } = await api.patch<AsistenciaDia>(`/materias/${materiaId}/asistencia`, payload);
   return data;
 }

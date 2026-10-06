@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { AxiosError, type AxiosResponse, type InternalAxiosRequestConfig } from 'axios';
+import { AxiosError, CanceledError, type AxiosResponse, type InternalAxiosRequestConfig } from 'axios';
+import { getReporter } from './errorReporter';
 import { api, resetSessionExpiryState, setSessionExpiredHandler, toApiError } from './api';
 
 const originalAdapter = api.defaults.adapter;
@@ -27,6 +28,19 @@ afterEach(() => {
 });
 
 describe('session interceptor', () => {
+  it('does not report intentional query cancellation or refresh the session', async () => {
+    const report = vi.spyOn(getReporter(), 'captureException');
+    const expired = vi.fn();
+    const adapter = vi.fn(async (config: InternalAxiosRequestConfig) => { throw new CanceledError('canceled', config); });
+    api.defaults.adapter = adapter;
+    setSessionExpiredHandler(expired);
+    try {
+      await expect(api.get('/materias/test/asistencia')).rejects.toBeInstanceOf(CanceledError);
+      expect(adapter).toHaveBeenCalledTimes(1);
+      expect(expired).not.toHaveBeenCalled();
+      expect(report).not.toHaveBeenCalled();
+    } finally { report.mockRestore(); }
+  });
   it('clears application session state after a 401 and failed refresh', async () => {
     const onExpired = vi.fn();
     const adapter = vi.fn(async (config: InternalAxiosRequestConfig) => {
