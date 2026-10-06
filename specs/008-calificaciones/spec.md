@@ -88,3 +88,7 @@ Carga, nota manual, reemplazo, ajuste, confirmación y publicación conservan su
 ## Evolución 087: claridad del detalle docente
 
 [087-calificacion-clara](../087-calificacion-clara/spec.md) conserva el flujo y los registros anteriores. El detalle prioriza nota vigente y estado, con cálculo/criterios, evidencia, respuestas y retroalimentación progresivos. Distingue avisos generales de respuestas sin alertas individuales; sus acciones abren el detalle pertinente y los códigos originales permanecen bajo demanda. Un aviso histórico no reabre ni despublica la nota. La confianza informada no prueba coincidencia de evaluadores ni exactitud. La revisión de lectura no recalifica ni publica; ajustes, versiones, permisos y protección de borradores se conservan.
+
+## Evolución 088: espacio de revisión amplio
+
+[088-revision-amplia](../088-revision-amplia/spec.md) aprovecha el ancho disponible exclusivamente en revisión docente. Desde 1280 px muestra lista legible de 320–360 px y detalle con desplazamientos independientes, búsqueda accesible e identidad del alumno visible. Por debajo mantiene lista o detalle, con bloqueo del fondo y retorno contextual. Contexto y acciones comparten una cabecera compacta; los filtros usan un selector sin desplazamiento horizontal. Carga, publicación, temporizador, resultados grupales y selectores abiertos conservan desplazamiento accesible. Sin cambios de permisos, APIs, notas, modelos o datos: consultar nunca confirma, publica ni recalifica. Borradores y conflictos de versión continúan protegidos.

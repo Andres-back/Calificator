@@ -9,7 +9,6 @@ import {
   LoaderCircle, Pause, Play, Search, ShieldAlert, Sparkles, Square, X,
 } from 'lucide-react';
 import { Badge, Button, Card, ConfirmDialog, Field, Input, Modal, Select, Skeleton, Textarea } from '@/components/ui';
-import { PageHeader } from '@/components/layout/PageHeader';
 import { useMaterias } from '@/modules/materias/MateriaSelect';
 import { useEstudiantes } from '@/modules/materias/hooks';
 import { getEvaluacion, listEvaluaciones } from '@/modules/evaluaciones/api';
@@ -94,11 +93,15 @@ export function MobileReviewContext({
   materiaName,
   evaluationName,
   forceOpen,
+  actions,
+  onOpenChange,
   children,
 }: {
   materiaName?: string;
   evaluationName?: string;
   forceOpen: boolean;
+  actions?: ReactNode;
+  onOpenChange?: (open: boolean) => void;
   children: ReactNode;
 }) {
   const [open, setOpen] = useState(forceOpen);
@@ -108,19 +111,23 @@ export function MobileReviewContext({
     if (!userToggled.current) setOpen(forceOpen);
   }, [forceOpen]);
 
+  useEffect(() => { onOpenChange?.(open); }, [onOpenChange, open]);
+
   return (
-    <Card className="mx-4 mb-4 overflow-hidden p-0">
+    <Card data-testid="grade-review-header" className="relative mb-3 shrink-0 p-0">
+      <div className="flex flex-wrap items-center gap-x-2 px-2">
+      <h1 className="sr-only">Calificaciones</h1>
       <button
         type="button"
         aria-expanded={open}
         aria-controls="mobile-grading-context"
         onClick={() => { userToggled.current = true; setOpen((value) => !value); }}
-        className="focus-ring flex min-h-14 w-full items-center justify-between gap-3 px-4 py-3 text-left"
+        className="focus-ring flex min-h-14 min-w-0 flex-1 basis-full items-center justify-between gap-3 rounded-lg px-2 py-2 text-left sm:basis-0"
       >
         <span className="min-w-0">
-          <span className="block text-xs font-bold uppercase tracking-wide text-brand-700 dark:text-brand-300">Estás revisando</span>
-          <span className="mt-0.5 block truncate text-sm font-bold text-fg">{materiaName || 'Selecciona una materia'}</span>
-          <span className="block truncate text-xs text-muted">{evaluationName || 'Selecciona una evaluación'}</span>
+          <span className="block text-xs font-bold text-brand-700 dark:text-brand-300">Estás revisando</span>
+          <span className="block break-words text-sm font-bold text-fg">{evaluationName || 'Selecciona una evaluación'}</span>
+          <span className="block break-words text-xs text-muted">{materiaName || 'Selecciona una materia'}</span>
         </span>
         <span className="flex shrink-0 items-center gap-1 text-sm font-semibold text-brand-700 dark:text-brand-200">
           {open ? 'Ocultar' : 'Cambiar'}
@@ -128,7 +135,9 @@ export function MobileReviewContext({
           <span className="sr-only"> materia o evaluación</span>
         </span>
       </button>
-      {open && <div id="mobile-grading-context" className="grid gap-4 border-t border-border p-4">{children}</div>}
+      {actions}
+      </div>
+      {open && <div id="mobile-grading-context" className="grid gap-4 border-t border-border p-4 sm:grid-cols-2">{children}</div>}
     </Card>
   );
 }
@@ -180,7 +189,7 @@ export function MobileReviewActionBar({
         : null;
 
   return (
-    <div className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-surface/95 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 shadow-[0_-12px_32px_rgba(15,23,42,0.16)] backdrop-blur lg:hidden" aria-label="Acciones de la calificación">
+    <div className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-surface/95 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 shadow-[0_-12px_32px_rgba(15,23,42,0.16)] backdrop-blur xl:hidden" aria-label="Acciones de la calificación">
       {blockMessage && <p role="status" className="mb-2 text-center text-xs font-semibold text-amber-700 dark:text-amber-300">{blockMessage}</p>}
       {processing && <p role="status" className="mb-2 text-center text-xs text-muted">La IA sigue analizando esta entrega. Puedes revisar otro estudiante.</p>}
       <div className="mx-auto grid max-w-xl grid-cols-2 gap-2">
@@ -904,22 +913,22 @@ function PanelDetalle({
     <>
     <div className="flex min-h-0 min-w-0 flex-col">
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-border px-5 py-4">
+      <div data-testid="grade-review-identity" className="sticky top-0 z-10 flex items-center justify-between border-b border-border bg-surface/95 px-3 py-2 backdrop-blur sm:px-4">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
             <p className="break-words font-display text-lg font-bold">{cal.estudiante_nombre || estudiante?.nombre || 'Estudiante'}</p>
             {isDirty && <span className="shrink-0 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-700 dark:bg-amber-500/20 dark:text-amber-300">Sin guardar</span>}
           </div>
           <p className="text-xs text-muted">{cal.evaluacion_nombre} · {cal.materia_nombre}</p>
-          <div className="mt-1 flex flex-wrap gap-2">
-            <Button type="button" variant="ghost" className="hidden min-h-11 lg:inline-flex" onClick={onBackToList}><ArrowLeft className="h-4 w-4" /> Volver a notas del grupo</Button>
+          <div className="flex flex-wrap items-center gap-x-2">
+            <Button type="button" variant="ghost" className="hidden min-h-11 px-2 xl:inline-flex" onClick={onBackToList}><ArrowLeft className="h-4 w-4" /> Volver a notas del grupo</Button>
             {returnToBook && <Link to={returnToBook} className="focus-ring inline-flex min-h-11 items-center rounded-lg px-2 text-sm font-semibold text-brand-700 dark:text-brand-200">Volver al libro de notas</Link>}
+            {cal.materia_id && detailPermissions.includes('evaluations.read') && <Link to={routes.materiaEvaluaciones(cal.materia_id)} className="focus-ring inline-flex min-h-11 items-center gap-1 rounded-lg px-2 text-sm font-semibold text-brand-700 dark:text-brand-200"><ArrowLeft className="h-4 w-4" /> Volver a evaluaciones</Link>}
           </div>
-          {cal.materia_id && detailPermissions.includes('evaluations.read') && <Link to={routes.materiaEvaluaciones(cal.materia_id)} className="focus-ring mt-1 inline-flex min-h-11 items-center gap-1 text-sm font-semibold text-brand-700 dark:text-brand-200"><ArrowLeft className="h-4 w-4" /> Volver a evaluaciones</Link>}
         </div>
       </div>
 
-      <div className="min-w-0 flex-1 space-y-3 p-3 pb-32 [overflow-wrap:anywhere] sm:space-y-5 sm:p-5 sm:pb-32 lg:pb-5">
+      <div className="min-w-0 flex-1 space-y-3 p-3 pb-32 [overflow-wrap:anywhere] sm:space-y-5 sm:p-5 sm:pb-32 xl:pb-5">
         {/* Nota principal */}
         <h2 className="text-base font-bold">1. Nota y explicación</h2>
         <div className="flex items-center justify-between">
@@ -1148,7 +1157,7 @@ function PanelDetalle({
         </details>
         {/* Acciones */}
         {canGrade && !done && !presentation.processing && (
-          <div className="hidden flex-wrap gap-2 lg:flex">
+          <div className="hidden flex-wrap gap-2 xl:flex">
             {presentation.score != null && <Button
               onClick={() => onConfirm(cal.id, Number(adjNota))}
               loading={confirmPending}
@@ -1167,7 +1176,7 @@ function PanelDetalle({
           </div>
         )}
         {canPublish && done && !published && (
-          <div className="hidden flex-wrap gap-2 lg:flex">
+          <div className="hidden flex-wrap gap-2 xl:flex">
             <Button onClick={() => onPublish(cal.id)} loading={publishPending} disabled={publishPending || isDirty || editingComponentDirty || showGlobalAdjustment}>
               <CheckCircle2 className="h-4 w-4" /> Publicar al estudiante
             </Button>
@@ -1757,6 +1766,10 @@ function GradingCenter() {
   const updateDirty = useCallback((dirty: boolean) => { dirtyRef.current = dirty; setMobileDirty(dirty); }, []);
   const [manualGradeOpen, setManualGradeOpen] = useState(false);
   const [mobileMoreActionsOpen, setMobileMoreActionsOpen] = useState(false);
+  const [contextExpanded, setContextExpanded] = useState(false);
+  const reviewRosterRef = useRef<HTMLDivElement>(null);
+  const reviewScrollRef = useRef<HTMLDivElement>(null);
+  const previousSelectedId = useRef<string | null>(null);
   const [reviewCompleted, setReviewCompleted] = useState(false);
   const [savedStudents, setSavedStudents] = useState<Record<string, string[]>>({});
   const [acceptedUploads, setAcceptedUploads] = useState<Record<string, string[]>>({});
@@ -1786,8 +1799,20 @@ function GradingCenter() {
 
   const materiaId = directEvaluation.data?.materia_id ?? searchParams.get('materia') ?? '';
 
-  useBodyScrollLock(Boolean(selectedId) && mode !== 'carga');
+  useBodyScrollLock(Boolean(selectedId) && mode !== 'carga', '(max-width: 1279px)');
 
+  useEffect(() => {
+    const previous = previousSelectedId.current;
+    previousSelectedId.current = selectedId;
+    if (mode !== 'revision') return;
+    if (selectedId) {
+      reviewScrollRef.current?.focus({ preventScroll: true });
+    } else if (previous) {
+      const row = reviewRosterRef.current?.querySelector<HTMLButtonElement>(`[data-review-grade="${CSS.escape(previous)}"]`);
+      const search = reviewRosterRef.current?.querySelector<HTMLInputElement>('input[type="search"]');
+      (row ?? search)?.focus({ preventScroll: true });
+    }
+  }, [selectedId, mode]);
 
   useEffect(() => {
     if (!materiaId && !evalIdParam && materias?.[0]) changeContext({ materia: materias[0].id }, true);
@@ -2009,63 +2034,36 @@ function GradingCenter() {
     setSelectedBatch(new Set());
   }
 
+  const splitLayout = isTeacher && Boolean(evalId && materiaId) && mode === 'revision' && !contextExpanded
+    && !mobileMoreActionsOpen && !batchResult && selectedBatch.size === 0
+    && !gradingFeatureFlags.teacherWorkTiming && !directEvaluation.error;
   return (
-    <div className="flex min-h-full min-w-0 flex-col">
-      {!selectedId && materiaId && permissions.includes('evaluations.read') && <Link to={routes.materiaEvaluaciones(materiaId)} className="focus-ring mb-2 inline-flex min-h-11 items-center gap-2 self-start rounded-lg px-2 text-sm font-semibold text-brand-700 dark:text-brand-200"><ArrowLeft className="h-4 w-4" /> Volver a evaluaciones</Link>}
-      {/* Header */}
-      <PageHeader
-        title="Calificaciones"
-        eyebrow="Centro de calificación"
-        subtitle="Un examen, sus estudiantes y cada respuesta en el mismo lugar."
-        action={
-          <>
-          <div className="w-full lg:hidden">
-            {mode === 'carga' ? (
-              <Button type="button" variant="outline" fullWidth disabled={mobileDirty} onClick={returnToReview}>
-                <ArrowLeft className="h-4 w-4" /> Volver a revisión
-              </Button>
-            ) : (
-              <div className="space-y-2">
-                <div className="grid grid-cols-2 gap-2">
-                  {canGrade && <Button fullWidth disabled={!evalId} onClick={() => changeContext({ modo: 'carga' })}>
-                    <Camera className="h-4 w-4" /> Añadir entregas
-                  </Button>}
-                  <Button fullWidth variant="outline" aria-expanded={mobileMoreActionsOpen} onClick={() => setMobileMoreActionsOpen((open) => !open)}>
-                    Más acciones <ChevronDown className={cn('h-4 w-4 transition-transform', mobileMoreActionsOpen && 'rotate-180')} />
-                  </Button>
-                </div>
-                {mobileMoreActionsOpen && (
-                  <div className="grid gap-2 rounded-xl border border-border bg-surface p-2">
-                    {materiaId && <Link to={routes.materiaBoletin(materiaId)} className="focus-ring inline-flex min-h-11 items-center justify-center gap-2 rounded-lg px-4 text-sm font-semibold text-fg hover:bg-surface-2"><BookOpenCheck className="h-4 w-4" /> Libro de notas</Link>}
-                    {canGrade && evalId && estudiantes.length > 0 && <Button type="button" variant="ghost" fullWidth disabled={mobileDirty} onClick={() => { setManualGradeOpen(true); setMobileMoreActionsOpen(false); }}><Pencil className="h-4 w-4" /> Establecer nota sin documento</Button>}
-                    {canPublish && <Button variant="ghost" fullWidth disabled={!evalId} onClick={() => { changeContext({ modo: mode === 'publicacion' ? null : 'publicacion', calificacion: null, estudiante: null, pregunta: null, hoja: null }); setMobileMoreActionsOpen(false); }}>{mode === 'publicacion' ? 'Volver a revisión' : 'Resumen y publicación'}</Button>}
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-          <div className="hidden max-w-full flex-nowrap gap-2 overflow-x-auto pb-1 [scrollbar-width:thin] lg:flex">
-            {mode === 'carga' ? (
-              <Button type="button" variant="outline" className="shrink-0" disabled={mobileDirty} onClick={returnToReview}>
-                <ArrowLeft className="h-4 w-4" /> Volver a revisión
-              </Button>
-            ) : <>
-              {materiaId && <Link to={routes.materiaBoletin(materiaId)} className="focus-ring inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-lg border border-border bg-surface px-4 text-sm font-semibold text-fg transition-colors hover:bg-surface-2"><BookOpenCheck className="h-4 w-4" /> Libro de notas</Link>}
-              {canGrade && evalId && estudiantes.length > 0 && <Button type="button" variant="outline" className="shrink-0" disabled={mobileDirty} onClick={() => setManualGradeOpen(true)}><Pencil className="h-4 w-4" /> Establecer nota</Button>}
-              {canGrade && <Button variant="outline" className="shrink-0" disabled={!evalId} onClick={() => changeContext({ modo: 'carga' })}><Camera className="h-4 w-4" /> Añadir entregas</Button>}
-              {canPublish && <Button variant="outline" className="shrink-0" disabled={!evalId} onClick={() => changeContext({ modo: mode === 'publicacion' ? null : 'publicacion', calificacion: null, estudiante: null, pregunta: null, hoja: null })}>{mode === 'publicacion' ? 'Volver a revisión' : 'Resumen y publicación'}</Button>}
-            </>}
-          </div>
-          </>
-        }
-      />
-
-      {gradingFeatureFlags.teacherWorkTiming && evalId && (
-        <TeacherWorkTimer key={evalId} evaluacionId={evalId} />
-      )}
-
-      {/* Selectores */}
-      <MobileReviewContext materiaName={selectedMateria?.nombre} evaluationName={selectedEval?.nombre} forceOpen={!materiaId || !evalId}>
+    <div data-grading-layout={splitLayout ? 'split' : 'flow'} className={cn(
+      'flex min-w-0 flex-col [&_button]:min-h-11 [&_button]:min-w-11', splitLayout ? 'xl:h-full xl:min-h-0' : 'min-h-full',
+    )}>
+      <MobileReviewContext materiaName={selectedMateria?.nombre} evaluationName={selectedEval?.nombre}
+        forceOpen={!materiaId || !evalId} onOpenChange={setContextExpanded}
+        actions={<div className="relative flex w-full shrink-0 items-center justify-between gap-2 py-1 sm:w-auto">
+          {mode === 'carga' ? (
+            <Button type="button" variant="outline" disabled={mobileDirty} onClick={returnToReview}>
+              <ArrowLeft className="h-4 w-4" /> Volver a revisión
+            </Button>
+          ) : <>
+            {canGrade && <Button className="min-h-11" disabled={!evalId} onClick={() => changeContext({ modo: 'carga' })}>
+              <Camera className="h-4 w-4" /> Añadir entregas
+            </Button>}
+            <Button className="min-h-11" variant="outline" aria-expanded={mobileMoreActionsOpen}
+              aria-controls="grading-more-actions" onClick={() => setMobileMoreActionsOpen((open) => !open)}>
+              Más acciones <ChevronDown className={cn('h-4 w-4 transition-transform', mobileMoreActionsOpen && 'rotate-180')} />
+            </Button>
+            {mobileMoreActionsOpen && <div id="grading-more-actions" className="absolute right-0 top-full z-20 grid w-64 max-w-[calc(100vw-2rem)] gap-1 rounded-xl border border-border bg-surface p-2 shadow-lg">
+              {materiaId && permissions.includes('evaluations.read') && <Link to={routes.materiaEvaluaciones(materiaId)} className="focus-ring flex min-h-11 items-center gap-2 rounded-lg px-3 text-sm font-semibold hover:bg-surface-2"><ArrowLeft className="h-4 w-4" /> Volver a evaluaciones</Link>}
+              {materiaId && <Link to={routes.materiaBoletin(materiaId)} className="focus-ring flex min-h-11 items-center gap-2 rounded-lg px-3 text-sm font-semibold hover:bg-surface-2"><BookOpenCheck className="h-4 w-4" /> Libro de notas</Link>}
+              {canGrade && evalId && estudiantes.length > 0 && <Button variant="ghost" fullWidth disabled={mobileDirty} onClick={() => { setManualGradeOpen(true); setMobileMoreActionsOpen(false); }}><Pencil className="h-4 w-4" /> Establecer nota</Button>}
+              {canPublish && <Button variant="ghost" fullWidth disabled={!evalId} onClick={() => { changeContext({ modo: mode === 'publicacion' ? null : 'publicacion', calificacion: null, estudiante: null, pregunta: null, hoja: null }); setMobileMoreActionsOpen(false); }}>{mode === 'publicacion' ? 'Volver a revisión' : 'Resumen y publicación'}</Button>}
+            </div>}
+          </>}
+        </div>}>
         <Field label="Materia">
           <Select value={materiaId} onChange={(event) => changeMateria(event.target.value)}>
             {materias?.map((materia) => <option key={materia.id} value={materia.id}>{materia.nombre}</option>)}
@@ -2079,8 +2077,12 @@ function GradingCenter() {
         </Field>
       </MobileReviewContext>
 
+      {gradingFeatureFlags.teacherWorkTiming && evalId && (
+        <TeacherWorkTimer key={evalId} evaluacionId={evalId} />
+      )}
+
       {/* Main split view */}
-      {isTeacher && canGrade && <GradingJobMonitor embedded />}
+      {isTeacher && canGrade && <div className="max-h-[35dvh] shrink-0 overflow-y-auto"><GradingJobMonitor embedded /></div>}
       {mode === 'publicacion' && <Card className="mx-4 mb-4 space-y-2 p-4">
         <h2 className="font-bold">Resumen de notas del examen</h2>
         <p className="text-sm text-muted">{counters?.todas ?? 0} alumnos · {counters?.pendientes ?? 0} por revisar · {counters?.procesando ?? 0} calificando · {counters?.publicadas ?? 0} publicadas.</p>
@@ -2118,18 +2120,19 @@ function GradingCenter() {
         }}
       />}
       {directEvaluation.error && <p role="alert" className="p-4 text-rose-600">No se pudo abrir esta evaluación. Comprueba el acceso o selecciona otra.</p>}
-      <div className={cn('min-w-0 flex-1 flex-col gap-4 lg:flex-row', mode === 'carga' ? 'hidden' : 'flex')}>
+      <div className={cn('min-w-0 flex-1 flex-col gap-3 xl:flex-row', splitLayout && 'xl:min-h-0', mode === 'carga' ? 'hidden' : 'flex')}>
         {/* Left panel — list */}
-        <div className={`min-w-0 flex-col border-border ${selectedId ? 'hidden lg:flex lg:w-64 lg:shrink-0 lg:border-r' : 'flex flex-1'} ${!evalId ? 'flex-1' : ''}`}>
+        <div ref={reviewRosterRef} data-testid="grade-review-roster" className={cn('min-w-0 flex-col rounded-xl border border-border bg-surface',
+          selectedId ? 'hidden xl:flex xl:w-80 xl:shrink-0 2xl:w-[22.5rem]' : 'flex flex-1',
+          splitLayout && 'xl:min-h-0',
+        )}>
           {/* Summary + filters */}
           {evalId && counters && (
-            <div className="sticky top-0 z-10 space-y-3 border-b border-border bg-surface/95 px-4 pb-4 pt-2 backdrop-blur lg:static lg:bg-transparent">
-              <div className="flex items-center justify-between">
-                <div className="flex gap-4">
-                  <div><p className="text-lg font-extrabold text-amber-600">{counters.pendientes}</p><p className="text-xs text-muted">Por revisar</p></div>
-                  <div><p className="text-lg font-extrabold text-emerald-600">{counters.publicadas}</p><p className="text-xs text-muted">Publicadas</p></div>
-                  <div><p className="text-lg font-extrabold text-fg">{counters.todas}</p><p className="text-xs text-muted">Alumnos</p></div>
-                </div>
+            <div className="sticky top-0 z-10 shrink-0 space-y-2 rounded-t-xl border-b border-border bg-surface/95 p-3 backdrop-blur xl:static">
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted">
+                <span><strong className="text-fg">{counters.todas}</strong> alumnos</span>
+                <span><strong className="text-amber-700 dark:text-amber-300">{counters.pendientes}</strong> por revisar</span>
+                <span><strong className="text-emerald-700 dark:text-emerald-300">{counters.publicadas}</strong> publicadas</span>
               </div>
               <div className="flex flex-col gap-2">
                 <div className="relative flex-1">
@@ -2158,25 +2161,18 @@ function GradingCenter() {
                     <LoaderCircle className="h-3.5 w-3.5 animate-spin" /> Buscando sin bloquear la lista…
                   </p>
                 )}
-                <div className="flex max-w-full flex-nowrap gap-0.5 overflow-x-auto rounded-lg bg-surface-2 p-0.5 [scrollbar-width:thin]">
-                  {(['todas', 'pendientes', 'alertas', 'procesando', 'publicadas'] as const).map((f) => (
-                    <button
-                      key={f}
-                      type="button"
-                      onClick={() => changeContext({ filtro: f })}
-                      aria-pressed={gradeFilter === f}
-                      className={`focus-ring min-h-11 shrink-0 whitespace-nowrap rounded-md px-3 text-xs font-semibold capitalize transition ${gradeFilter === f ? 'bg-surface text-fg shadow-sm' : 'text-muted hover:text-fg'}`}
-                    >
-                      {f} ({counters[f]})
-                    </button>
+                <Select aria-label="Filtrar estudiantes por estado" value={gradeFilter}
+                  onChange={(event) => changeContext({ filtro: event.target.value })} className="min-h-11">
+                  {(['todas', 'pendientes', 'alertas', 'procesando', 'publicadas'] as const).map((filter) => (
+                    <option key={filter} value={filter}>{filter === 'todas' ? 'Todos los estados' : filter} ({counters[filter]})</option>
                   ))}
-                </div>
+                </Select>
               </div>
             </div>
           )}
 
           {/* Student list */}
-          <div className="flex-1 px-4 pb-4">
+          <div data-testid="grade-review-students" role="region" tabIndex={0} aria-label="Lista de estudiantes" className={cn('min-w-0 flex-1 px-3 pb-3 outline-none focus-visible:ring-2 focus-visible:ring-brand-500', splitLayout && 'xl:min-h-0 xl:overflow-y-auto xl:overscroll-contain')}>
             {!evalId ? (
               <div className="flex flex-1 items-center justify-center py-12 text-sm text-muted">
                 Selecciona materia y evaluación para comenzar.
@@ -2204,6 +2200,7 @@ function GradingCenter() {
                   return (
                     <div
                       key={row.estudiante_id}
+                      data-review-student={row.estudiante_id}
                       className={`flex w-full items-center gap-2 rounded-xl border p-2 text-left transition-all ${
                         selected ? 'border-brand-300 bg-brand-50 dark:bg-brand-500/10' : 'border-border bg-surface hover:bg-surface-2'
                       }`}
@@ -2211,7 +2208,7 @@ function GradingCenter() {
                       {canGrade && row.calificacion_id && <button type="button" role="checkbox" aria-label={`Seleccionar nota de ${row.nombre}`} aria-checked={selectedBatch.has(row.calificacion_id)} className="focus-ring grid h-11 w-11 shrink-0 place-items-center rounded-lg disabled:opacity-40" disabled={row.nota == null} onClick={() => toggleSelect(row.calificacion_id!)}>
                         <span aria-hidden="true" className={cn('grid h-5 w-5 place-items-center rounded border border-muted', selectedBatch.has(row.calificacion_id) && 'border-brand-600 bg-brand-600 text-white')}>{selectedBatch.has(row.calificacion_id) ? '✓' : ''}</span>
                       </button>}
-                      <button type="button" className="focus-ring flex min-h-14 min-w-0 flex-1 items-center gap-2 rounded-lg p-1 text-left" onClick={() => {
+                      <button type="button" data-review-grade={row.calificacion_id ?? undefined} className="focus-ring flex min-h-14 min-w-0 flex-1 items-center gap-2 rounded-lg p-1 text-left" onClick={() => {
                         changeContext({ calificacion: row.calificacion_id, estudiante: row.estudiante_id, pregunta: null, hoja: null });
                         setReviewCompleted(false);
                       }}>
@@ -2237,20 +2234,20 @@ function GradingCenter() {
           data-testid="grade-review-panel"
           className={`min-h-0 min-w-0 flex-1 ${
             selectedId
-              ? 'fixed inset-0 z-30 flex h-[100dvh] max-h-[100dvh] flex-col overflow-hidden bg-surface lg:static lg:z-auto lg:h-auto lg:max-h-none'
-              : reviewCompleted ? 'flex items-center justify-center' : 'hidden lg:flex lg:items-center lg:justify-center'
+              ? 'fixed inset-0 z-30 flex h-[100dvh] max-h-[100dvh] flex-col overflow-hidden rounded-xl border border-border bg-surface xl:static xl:z-auto xl:h-auto xl:max-h-none'
+              : reviewCompleted ? 'flex items-center justify-center' : 'hidden xl:flex xl:items-center xl:justify-center'
           }`}
         >
           {selectedId && mode !== 'carga' ? (
             <>
               {/* Mobile overlay close */}
-              <div className="sticky top-0 z-10 flex shrink-0 items-center justify-between border-b border-border bg-surface px-4 pb-2 pt-[max(0.5rem,env(safe-area-inset-top))] lg:hidden">
+              <div className="sticky top-0 z-10 flex shrink-0 items-center justify-between border-b border-border bg-surface px-4 pb-2 pt-[max(0.5rem,env(safe-area-inset-top))] xl:hidden">
                 <button type="button" onClick={() => setSelectedId(null)} className="flex min-h-11 items-center gap-2 rounded-lg px-2 text-sm font-semibold text-muted">
                   <ArrowLeft className="h-4 w-4" /> Volver a lista
                 </button>
                 {mobileDirty && <span className="text-[10px] font-semibold text-amber-600">Sin guardar</span>}
               </div>
-              <div className="min-h-0 flex-1 overflow-y-auto lg:overflow-visible">
+              <div ref={reviewScrollRef} data-testid="grade-review-scroll" role="region" tabIndex={0} aria-label="Detalle de la calificación" className={cn('min-h-0 flex-1 overflow-y-auto outline-none focus-visible:ring-2 focus-visible:ring-brand-500', splitLayout ? 'xl:overscroll-contain' : 'xl:overflow-visible')}>
                 {detalleQuery.isLoading ? (
                   <div className="h-full space-y-4 overflow-y-auto p-5">{Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-20" />)}</div>
                 ) : detalleQuery.error ? (
@@ -2290,7 +2287,7 @@ function GradingCenter() {
               </div>
             </>
           ) : (
-            <div className={cn('items-center justify-center p-5 text-sm text-muted lg:flex', reviewCompleted ? 'flex' : 'hidden')}>
+            <div className={cn('items-center justify-center p-5 text-sm text-muted xl:flex', reviewCompleted ? 'flex' : 'hidden')}>
               {reviewCompleted ? (
                 <Card className="max-w-md border-emerald-200 p-6 text-center dark:border-emerald-500/30">
                   <CheckCircle2 className="mx-auto h-10 w-10 text-emerald-500" />

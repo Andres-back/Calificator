@@ -9,7 +9,7 @@ for (const theme of ['light', 'dark'] as const) for (const viewport of [
   { width: 1920, height: 1080 },
 ]) test(`revisión conserva foco, scroll y controles ${theme} en ${viewport.width}px`, async ({ page }) => {
   await page.setViewportSize(viewport);
-  await login(page, 'profesor');
+  await login(page, 'profesor', { rosterSize: 30 });
   await page.goto('/app/calificaciones/workspace/e1');
   await page.getByText('Estudiante Prueba', { exact: true }).click();
 
@@ -18,6 +18,13 @@ for (const theme of ['light', 'dark'] as const) for (const viewport of [
   await page.getByRole('button', { name: '3. Respuestas y puntajes', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Nota explicada respuesta por respuesta' })).toBeVisible();
   const panel = page.getByTestId('grade-review-panel');
+  if (viewport.width >= 1280) {
+    const roster = page.getByTestId('grade-review-roster');
+    expect((await roster.boundingBox())!.width).toBeGreaterThanOrEqual(320);
+    await expect(roster.getByRole('searchbox')).toBeInViewport();
+    await roster.getByRole('combobox', { name: 'Filtrar estudiantes por estado' }).focus();
+    await expect(roster.getByRole('combobox')).toBeFocused();
+  }
   const controls = panel.locator('button:visible, a:visible, input:visible, textarea:visible, select:visible, summary:visible');
   const count = await controls.count();
   expect(count).toBeGreaterThan(0);
@@ -50,5 +57,26 @@ for (const theme of ['light', 'dark'] as const) for (const viewport of [
     const bar = await page.getByLabel('Acciones de la calificación').boundingBox();
     return box!.y >= 0 && box!.y + box!.height <= (bar?.y ?? viewport.height);
   }).toBe(true);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBeTruthy();
+  await page.getByRole('button', { name: viewport.width >= 1280 ? 'Volver a notas del grupo' : 'Volver a lista', exact: true }).click();
+  await expect(page.getByTestId('grade-review-roster').getByRole('button', { name: /Estudiante Prueba/ })).toBeFocused();
+  expect(await page.evaluate(() => document.body.style.position)).not.toBe('fixed');
+});
+
+test('088 reflow equivalente a zoom 200 % y altura reducida conserva edición y retorno', async ({ page }) => {
+  // 1366×768 / 2: viewport CSS equivalente; no simula un teclado nativo ni el zoom del navegador.
+  await page.setViewportSize({ width: 683, height: 384 });
+  await login(page, 'profesor', { rosterSize: 30, questionCount: 20 });
+  await page.goto('/app/calificaciones?evaluacion=e1&calificacion=c1&estudiante=s1');
+  await page.getByRole('button', { name: '3. Respuestas y puntajes', exact: true }).click();
+  await page.getByRole('button', { name: 'Pregunta 20', exact: true }).click();
+  await page.getByRole('button', { name: 'Ajustar puntaje y explicación', exact: true }).click();
+  const feedback = page.getByLabel('Explicación para el estudiante');
+  await feedback.scrollIntoViewIfNeeded();
+  await feedback.focus();
+  await expect(feedback).toBeFocused();
+  await page.getByRole('button', { name: 'Cancelar', exact: true }).click();
+  await page.getByRole('button', { name: 'Volver a lista', exact: true }).click();
+  await expect(page.getByRole('searchbox', { name: 'Buscar estudiante' })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBeTruthy();
 });

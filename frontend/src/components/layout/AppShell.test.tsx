@@ -19,6 +19,7 @@ function renderShell(initialPath = '/app') {
         <Route path="/app" element={<AppShell />}>
           <Route index element={<div>Inicio docente</div>} />
           <Route path="materias" element={<div>Materias docente</div>} />
+          <Route path="calificaciones" element={<div>Revisión docente</div>} />
           <Route path="configuracion-ia" element={<div>Configuración IA docente</div>} />
         </Route>
       </Routes>
@@ -55,6 +56,17 @@ afterEach(() => {
 });
 
 describe('AppShell mobile navigation', () => {
+  it('amplía solo la revisión docente y conserva el ancho de otros módulos y del estudiante', () => {
+    const review = renderShell('/app/calificaciones');
+    expect(review.container.querySelector('main > .relative')).toHaveClass('max-w-none');
+    review.unmount();
+    const subjects = renderShell('/app/materias');
+    expect(subjects.container.querySelector('main > .relative')).toHaveClass('max-w-7xl');
+    subjects.unmount();
+    useAuth.setState({ user: { ...useAuth.getState().user!, rol: 'estudiante' } });
+    const studentReview = renderShell('/app/calificaciones');
+    expect(studentReview.container.querySelector('main > .relative')).toHaveClass('max-w-7xl');
+  });
   it('libera el contenido al pasar a escritorio con el menú abierto', async () => {
     let matches = false;
     let resize: (() => void) | undefined;

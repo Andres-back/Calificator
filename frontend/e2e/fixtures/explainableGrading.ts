@@ -22,11 +22,25 @@ function json(route: Route, body: unknown, status = 200) {
   return route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(body) });
 }
 
-type MockOptions = { breakdown?: Record<string, unknown>; permissions?: string[] };
+type MockOptions = { breakdown?: Record<string, unknown>; permissions?: string[]; rosterSize?: number; questionCount?: number };
 
 export async function installMocks(page: Page, role: 'profesor' | 'estudiante', options: MockOptions = {}) {
   let authenticated = false;
   const activeUser = { ...(role === 'profesor' ? teacher : student), ...(options.permissions ? { permissions: options.permissions } : {}) };
+  const students = Array.from({ length: options.rosterSize ?? 1 }, (_, index) => ({
+    ...student, id: `s${index + 1}`,
+    nombre: index === 0 ? student.nombre : `Alumno ${String(index + 1).padStart(3, '0')} María Fernanda López`,
+    email: `alumno-${index + 1}@example.test`,
+  }));
+  const grades = students.map((item, index) => ({ ...grade, id: `c${index + 1}`, estudiante_id: item.id }));
+  const activeBreakdown = options.breakdown ?? (options.questionCount ? {
+    ...breakdown,
+    formula: { ...breakdown.formula, puntos_obtenidos: options.questionCount, puntos_posibles: options.questionCount },
+    componentes: Array.from({ length: options.questionCount }, (_, index) => ({
+      ...breakdown.componentes[0], id: `q${index + 1}`, clave: `pregunta:${index + 1}`, orden: index,
+      numero: String(index + 1), titulo: `Pregunta ${index + 1}: explica cómo obtuviste el resultado`,
+    })),
+  } : breakdown);
   await page.route('**/api/**', async (route) => {
     const request = route.request();
     const path = new URL(request.url()).pathname.replace(/^\/api/, '');
@@ -39,17 +53,35 @@ export async function installMocks(page: Page, role: 'profesor' | 'estudiante', 
     if (path === '/materias') return json(route, [materia]);
     if (path === '/herramientas') return json(route, []);
     if (path === '/materias/m1/evaluaciones') return json(route, [evaluation]);
-    if (path === '/materias/m1/estudiantes') return json(route, { ...materia, estudiantes: [student] });
+    if (path === '/materias/m1/estudiantes') return json(route, { ...materia, estudiantes: students });
     if (path === '/evaluaciones/e1') return json(route, evaluation);
-    if (path === '/evaluaciones/e1/calificaciones') return json(route, [grade]);
-    if (path === '/evaluaciones/e1/revision') return json(route, {
-      evaluacion_id: 'e1', materia_id: 'm1', total_alumnos: 1, siguiente_cursor: null,
-      contadores: { todas: 1, pendientes: 0, alertas: 0, procesando: 0, publicadas: 1 },
-      alumnos: [{ estudiante_id: 's1', nombre: student.nombre, calificacion_id: 'c1', entrega_id: 't1', job_id: null, estado: 'publicada', nota: 5,
-        resumen_revision: { version: 1, cobertura: 'completa', bloqueos: [], componentes_pendientes: 0, componentes_ilegibles: 0, pqrs_abiertas: null, tiene_alertas: false } }],
-    });
+    if (path === '/evaluaciones/e1/calificaciones') return json(route, grades);
+    if (path === '/evaluaciones/e1/revision') {
+      const params = new URL(request.url()).searchParams;
+      const normalized = (value: string) => value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+      const filtered = students.filter((item) => normalized(item.nombre).includes(normalized(params.get('q') ?? ''))
+        && (!params.get('estudiante_id') || item.id === params.get('estudiante_id'))
+        && ['todas', 'publicadas'].includes(params.get('filtro') ?? 'todas'));
+      const offset = Number(params.get('cursor') ?? 0);
+      const limit = Number(params.get('limit') ?? 50);
+      return json(route, {
+        evaluacion_id: 'e1', materia_id: 'm1', total_alumnos: students.length,
+        siguiente_cursor: offset + limit < filtered.length ? String(offset + limit) : null,
+        contadores: { todas: students.length, pendientes: 0, alertas: 0, procesando: 0, publicadas: students.length },
+        alumnos: filtered.slice(offset, offset + limit).map((item) => ({ estudiante_id: item.id, nombre: item.nombre,
+          calificacion_id: grades.find((entry) => entry.estudiante_id === item.id)!.id, entrega_id: `t${item.id}`, job_id: null, estado: 'publicada', nota: 5,
+          resumen_revision: { version: 1, cobertura: 'completa', bloqueos: [], componentes_pendientes: 0, componentes_ilegibles: 0, pqrs_abiertas: null, tiene_alertas: false } })),
+      });
+    }
     if (path === '/calificaciones/bandeja-docente') return json(route, { items: [], total: 0, solicitudes_revision: 0, pendientes_calificacion: 0 });
-    if (path === '/calificaciones/c1/detalle') return json(route, { ...grade, evaluacion_nombre: evaluation.nombre, materia_nombre: materia.nombre, estudiante_nombre: student.nombre, estudiante_email: student.email, nota_maxima: 5, entrega_tipo: 'online', entrega_archivo_url: null, entrega_evidencia_paginas: 0, entrega_evidencia_tipo: null, entrega_respuesta_texto: 'P1: 24', entrega_created_at: grade.created_at, timeline: [], guia_revision: [], desglose: options.breakdown ?? breakdown, desglose_heredado: false, respuestas_liberadas: true });
+    const selectedGrade = grades.find((item) => path === `/calificaciones/${item.id}/detalle`);
+    if (selectedGrade) {
+      const selectedStudent = students.find((item) => item.id === selectedGrade.estudiante_id)!;
+      return json(route, { ...selectedGrade, evaluacion_nombre: evaluation.nombre, materia_nombre: materia.nombre,
+        estudiante_nombre: selectedStudent.nombre, estudiante_email: selectedStudent.email, nota_maxima: 5, entrega_tipo: 'online',
+        entrega_archivo_url: null, entrega_evidencia_paginas: 0, entrega_evidencia_tipo: null, entrega_respuesta_texto: 'P1: 24',
+        entrega_created_at: grade.created_at, timeline: [], guia_revision: [], desglose: activeBreakdown, desglose_heredado: false, respuestas_liberadas: true });
+    }
     if (path === '/calificaciones/c1/incidencias') return json(route, []);
     if (path === '/calificaciones/c1/desglose/historial') return json(route, [{ id: 'd1', version: 1, origen: 'automatico', nota_final: 5, activo: true, actor_nombre: null, created_at: grade.created_at }]);
     if (path === '/evaluaciones/e1/mi-entrega') return json(route, { id: 't1', evaluacion_id: 'e1', estudiante_id: 's1', materia_id: 'm1', tipo: 'online', estado: 'revisada', respuesta_texto: 'P1: 24', archivo_url: null, evidencia_paginas: 0, evidencia_tipo: null, reemplazo_solicitado: false, motivo_reemplazo: null, created_at: grade.created_at });

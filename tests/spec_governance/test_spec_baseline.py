@@ -88,6 +88,7 @@ ALL_SPECS = {
     "085-asistencia-autoguardado",
     "086-embedding-admin-check",
     "087-calificacion-clara",
+    "088-revision-amplia",
 }
 OWNED_SPECS = {
     name
