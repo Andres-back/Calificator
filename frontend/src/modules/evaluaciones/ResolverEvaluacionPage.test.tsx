@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { AxiosError } from 'axios';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { ResolverEvaluacionPage } from './ResolverEvaluacionPage';
@@ -38,7 +39,7 @@ vi.mock('@/modules/calificaciones/student-feedback/XaliFeedbackStory', () => ({
   ),
 }));
 
-function renderPage() {
+function renderPage(entry = '/app/evaluaciones/evaluation-1/resolver') {
   const client = new QueryClient({
     defaultOptions: {
       queries: { retry: false },
@@ -47,7 +48,7 @@ function renderPage() {
   });
   return render(
     <QueryClientProvider client={client}>
-      <MemoryRouter initialEntries={['/app/evaluaciones/evaluation-1/resolver']}>
+      <MemoryRouter initialEntries={[entry]}>
         <Routes>
           <Route
             path="/app/evaluaciones/:id/resolver"
@@ -114,6 +115,63 @@ beforeEach(() => {
 });
 
 describe('ResolverEvaluacionPage', () => {
+  it('scrolls to the result after a slower delivery lookup finishes', async () => {
+    mocks.getEvaluation.mockResolvedValue({ ...await mocks.getEvaluation(), mi_nota_confirmada: 4 });
+    let finishDelivery!: (value: null) => void;
+    mocks.getMyDelivery.mockReturnValue(new Promise(resolve => { finishDelivery = resolve; }));
+    const scroll = vi.fn();
+    const originalLookup = document.getElementById.bind(document);
+    const lookup = vi.spyOn(document, 'getElementById').mockImplementation(id => {
+      const element = originalLookup(id);
+      if (element && id === 'mi-resultado') Object.defineProperty(element, 'scrollIntoView', { configurable: true, value: scroll });
+      return element;
+    });
+    try {
+      renderPage('/app/evaluaciones/evaluation-1/resolver#mi-resultado');
+      await waitFor(() => expect(mocks.getMyDelivery).toHaveBeenCalled());
+      expect(scroll).not.toHaveBeenCalled();
+      finishDelivery(null);
+      await waitFor(() => expect(scroll).toHaveBeenCalledWith({ block: 'start', behavior: 'auto' }));
+    } finally {
+      lookup.mockRestore();
+    }
+  });
+
+  it('opens a published zero without a delivery and uses a neutral absent-detail message', async () => {
+    mocks.getEvaluation.mockResolvedValue({ ...await mocks.getEvaluation(), mi_nota_confirmada: 0 });
+    renderPage('/app/evaluaciones/evaluation-1/resolver#mi-resultado');
+    expect(await screen.findByText('Detalle por respuesta no disponible')).toBeInTheDocument();
+    expect(document.getElementById('mi-resultado')).toHaveTextContent('Tu nota es 0.0 de 5.0');
+    expect(screen.queryByText('Detalle histórico')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Tu respuesta')).not.toBeInTheDocument();
+    expect(mocks.createDelivery).not.toHaveBeenCalled();
+  });
+
+  it('distinguishes a breakdown error and retries only the read', async () => {
+    mocks.getEvaluation.mockResolvedValue({ ...await mocks.getEvaluation(), mi_nota_confirmada: 4 });
+    mocks.getMyBreakdown.mockRejectedValueOnce(new AxiosError('Unavailable', undefined, undefined, undefined, { status: 500 } as never)).mockResolvedValue(null);
+    const user = userEvent.setup();
+    renderPage();
+    expect(await screen.findByRole('heading', { name: 'No pudimos cargar la explicación de tu nota' })).toBeInTheDocument();
+    expect(screen.queryByText('Detalle por respuesta no disponible')).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Reintentar' }));
+    expect(await screen.findByText('Detalle por respuesta no disponible')).toBeInTheDocument();
+    expect(mocks.getMyBreakdown).toHaveBeenCalledTimes(2);
+    expect(mocks.createDelivery).not.toHaveBeenCalled();
+    expect(mocks.createFileDelivery).not.toHaveBeenCalled();
+    expect(mocks.requestReview).not.toHaveBeenCalled();
+  });
+
+  it('does not turn a forbidden breakdown into a historical result or retry control', async () => {
+    mocks.getEvaluation.mockResolvedValue({ ...await mocks.getEvaluation(), mi_nota_confirmada: 4 });
+    mocks.getMyBreakdown.mockRejectedValue(new AxiosError('Forbidden', undefined, undefined, undefined, { status: 403 } as never));
+    renderPage();
+    expect(await screen.findByRole('heading', { name: 'No tienes acceso a esta explicación' })).toBeInTheDocument();
+    expect(screen.queryByText('Detalle histórico')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Reintentar' })).not.toBeInTheDocument();
+    expect(mocks.createDelivery).not.toHaveBeenCalled();
+  });
+
   it('confirms the saved delivery and does not ask the student to resend it', async () => {
     const user = userEvent.setup();
     renderPage();

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+from copy import deepcopy
 from datetime import datetime
 from types import SimpleNamespace
 from uuid import uuid4
@@ -27,6 +28,74 @@ class FakeDB:
 
     async def commit(self) -> None:
         self.commits += 1
+
+
+@pytest.mark.parametrize("assignment", ["actividad", "apoyo"])
+def test_crossword_resource_projects_safe_grid_only_for_activity(monkeypatch, assignment):
+    content = {
+        "titulo": "Crucigrama ficticio",
+        "crucigrama": {"grid": [["S", "O", "L"], ["", "", ""]]},
+        "preguntas_horizontales": [{"numero": 1, "pista": "Estrella cercana", "respuesta": "SOL", "fila": 0, "columna": 0}],
+    }
+    original = deepcopy(content)
+    row = SimpleNamespace(
+        id=uuid4(), tipo="crucigrama", titulo="Crucigrama ficticio", materia_id=uuid4(),
+        materia_nombre="Ciencias", contenido_json=content, archivo_url=None,
+        created_at=datetime.now(), updated_at=None, asignacion_tipo=assignment,
+        publicado_estudiantes=True, fecha_publicacion=None, evaluacion_id=uuid4(),
+        evaluacion_estado="publicada", evaluacion_modalidad="online",
+        evaluacion_recepcion_habilitada=True,
+    )
+    student = SimpleNamespace(id=uuid4(), rol="estudiante")
+
+    async def not_owned(*_args):
+        return None
+
+    async def can_read(_db, subject_id, user):
+        assert subject_id == row.materia_id and user is student
+
+    monkeypatch.setattr(service, "get_material", not_owned)
+    monkeypatch.setattr(service.materias_service, "ensure_can_read_materia", can_read)
+    db = FakeDB([row])
+    result = asyncio.run(service.get_material_for_user(db, row.id, student))
+    assert content == original
+    assert db.commits == 0
+    if assignment == "actividad":
+        safe = result["contenido_json"]
+        assert "crucigrama" not in safe and "grid" not in safe
+        assert safe["grid_mascara"] == [[True, True, True], [False, False, False]]
+        assert safe["pistas_horizontales"][0]["longitud"] == 3
+        assert "respuesta" not in safe["pistas_horizontales"][0]
+    else:
+        assert result["contenido_json"] == original
+
+
+def test_resource_author_keeps_full_content_without_student_projection(monkeypatch):
+    teacher = SimpleNamespace(id=uuid4(), rol="profesor")
+    owned = {"contenido_json": {"crucigrama": {"grid": [["S"]]}}, "asignacion_tipo": "actividad"}
+
+    async def get_owned(*_args):
+        return owned
+
+    monkeypatch.setattr(service, "get_material", get_owned)
+    db = FakeDB()
+    assert asyncio.run(service.get_material_for_user(db, uuid4(), teacher)) is owned
+    assert db.executions == [] and db.commits == 0
+
+
+def test_resource_read_denies_unenrolled_student_before_projecting_content(monkeypatch):
+    async def not_owned(*_args):
+        return None
+
+    async def denied(*_args):
+        raise HTTPException(status_code=403, detail="Not enrolled")
+
+    monkeypatch.setattr(service, "get_material", not_owned)
+    monkeypatch.setattr(service.materias_service, "ensure_can_read_materia", denied)
+    db = FakeDB([SimpleNamespace(materia_id=uuid4())])
+    with pytest.raises(HTTPException) as error:
+        asyncio.run(service.get_material_for_user(db, uuid4(), SimpleNamespace(id=uuid4())))
+    assert error.value.status_code == 403 and db.commits == 0
 
 
 def test_get_material_selects_delivery_visibility_alias() -> None:

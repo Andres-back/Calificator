@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useLocation, useParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { ArrowLeft, BookOpenCheck, CheckCircle2, ClipboardCheck, Clock3, Download, FileUp, LoaderCircle, MessageSquareWarning, PauseCircle, Send, TriangleAlert } from 'lucide-react';
-import { Badge, Button, Card, ConfirmDialog, EmptyState, Field, Modal, RichContent, Select, Skeleton, statusTone, Textarea } from '@/components/ui';
+import { Badge, Button, Card, ConfirmDialog, EmptyState, Field, Modal, QueryError, RichContent, Select, Skeleton, statusTone, Textarea } from '@/components/ui';
 import { MultiPageEvidencePicker } from '@/components/evidence/MultiPageEvidencePicker';
 import { evidenceFiles, evidenceRotations, hasUnusableEvidence, type EvidencePage } from '@/components/evidence/evidencePayload';
 import { PageHeader } from '@/components/layout/PageHeader';
@@ -50,6 +50,7 @@ const MULTIPLE_ATTEMPT_POLICIES = new Set([
 ]);
 export function ResolverEvaluacionPage() {
   const { id } = useParams();
+  const location = useLocation();
   const evaluacionId = id ?? '';
   const queryClient = useQueryClient();
   const studentId = useAuth((state) => state.user?.id ?? 'anonymous');
@@ -139,9 +140,15 @@ export function ResolverEvaluacionPage() {
   const allowsMultipleAttempts = MULTIPLE_ATTEMPT_POLICIES.has(
     evaluacion?.politica_intento ?? 'un_intento',
   );
-  const showDeliverySummary = (enviada || Boolean(existingDelivery))
+  const showDeliverySummary = (enviada || Boolean(existingDelivery) || evaluacion?.mi_nota_confirmada != null)
     && !needsRetry
     && !startingNewAttempt;
+  const breakdownErrorStatus = myBreakdown.isError ? toApiError(myBreakdown.error).status : null;
+  useEffect(() => {
+    if (location.hash === '#mi-resultado' && showDeliverySummary && !isLoading && !myDelivery.isLoading) {
+      document.getElementById('mi-resultado')?.scrollIntoView?.({ block: 'start', behavior: 'auto' });
+    }
+  }, [location.hash, showDeliverySummary, isLoading, myDelivery.isLoading]);
   const answerFormEnabled = permiteRespuestaOnline
     && disponible
     && !estaCerrada
@@ -349,7 +356,7 @@ export function ResolverEvaluacionPage() {
         subtitle="Resuelve únicamente tu actividad y entrégala para revisión docente."
         breadcrumbs={[{ label: 'Evaluaciones', to: '/app/evaluaciones' }, { label: evaluacion.nombre }]}
         backAction={<Link to="/app/evaluaciones" className="focus-ring inline-flex h-11 items-center justify-center gap-2 rounded-lg border border-border bg-surface px-5 text-sm font-semibold text-fg transition-colors hover:bg-surface-2"><ArrowLeft className="h-4 w-4" aria-hidden="true" /> Volver</Link>}
-        action={<a href={evaluationPdfUrl(evaluacionId, true)}><Button variant="outline"><Download className="h-4 w-4" /> {assignedMaterial ? 'Descargar material' : 'Descargar evaluación'}</Button></a>}
+        action={<a href={evaluationPdfUrl(evaluacionId, true)} className="focus-ring inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-border bg-surface px-4 text-sm font-semibold"><Download className="h-4 w-4" /> {assignedMaterial ? 'Descargar material' : 'Descargar evaluación'}</a>}
       />
 
       <Card className="space-y-4 border-l-4 border-l-brand-500 p-5">
@@ -408,8 +415,8 @@ export function ResolverEvaluacionPage() {
             <div><p className="font-display text-lg font-bold">Material que debes resolver</p><p className="mt-1 text-sm text-muted">Abre el recurso completo aquí o descárgalo para imprimirlo y resolverlo a mano.</p></div>
           </div>
           <div className="flex flex-col gap-2 sm:flex-row">
-            <Link to={'/app/recursos/' + assignedMaterial.material_id}><Button variant="outline" className="w-full"><BookOpenCheck className="h-4 w-4" /> Ver material</Button></Link>
-            <a href={evaluationPdfUrl(evaluacionId, true)}><Button className="w-full"><Download className="h-4 w-4" /> Descargar PDF</Button></a>
+            <Link to={'/app/recursos/' + assignedMaterial.material_id} className="focus-ring inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg border border-border px-4 font-semibold"><BookOpenCheck className="h-4 w-4" /> Ver material</Link>
+            <a href={evaluationPdfUrl(evaluacionId, true)} className="focus-ring inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg bg-brand-600 px-4 font-semibold text-white"><Download className="h-4 w-4" /> Descargar PDF</a>
           </div>
         </Card>
       )}
@@ -503,7 +510,7 @@ export function ResolverEvaluacionPage() {
             </Card>
           )}
           {showDeliverySummary ? (
-            <Card className={`space-y-4 p-5 ${deliveryIsGrading ? 'border-brand-200 dark:border-brand-500/30' : 'border-emerald-200 dark:border-emerald-500/30'}`}>
+            <Card id="mi-resultado" tabIndex={-1} className={`scroll-mt-24 space-y-4 p-5 ${deliveryIsGrading ? 'border-brand-200 dark:border-brand-500/30' : 'border-emerald-200 dark:border-emerald-500/30'}`}>
               <div className="flex items-start gap-3">
                 {deliveryIsGrading
                   ? <LoaderCircle className="mt-0.5 h-5 w-5 animate-spin text-brand-500" aria-hidden="true" />
@@ -532,8 +539,8 @@ export function ResolverEvaluacionPage() {
                           : 'Tu respuesta fue recibida y está pendiente de calificación docente.'}
                   </p>
                   {evaluacion?.mi_nota_confirmada != null && (
-                    <Link to="/app/calificaciones/boletin" className="mt-2 inline-flex text-sm font-semibold text-brand-700 hover:underline dark:text-brand-300">
-                      Ver nota y retroalimentación
+                    <Link to="/app/calificaciones/boletin" className="focus-ring mt-2 inline-flex min-h-11 items-center text-sm font-semibold text-brand-700 hover:underline dark:text-brand-300">
+                      Volver a mis resultados
                     </Link>
                   )}
                 </div>
@@ -542,6 +549,13 @@ export function ResolverEvaluacionPage() {
                 <div className="border-t border-emerald-200 pt-5 dark:border-emerald-500/25">
                   {myBreakdown.isLoading ? (
                     <Skeleton className="h-56" />
+                  ) : myBreakdown.isError ? (
+                    <QueryError
+                      error={myBreakdown.error}
+                      title={breakdownErrorStatus === 403 ? 'No tienes acceso a esta explicación' : 'No pudimos cargar la explicación de tu nota'}
+                      description={breakdownErrorStatus === 403 ? 'Consulta con tu docente si necesitas revisar el acceso a este resultado.' : breakdownErrorStatus === 401 ? 'Tu sesión expiró. Inicia sesión nuevamente.' : 'Tu nota se conserva. Puedes intentar cargar la explicación nuevamente sin volver a entregar la evaluación.'}
+                      onRetry={breakdownErrorStatus === 403 || breakdownErrorStatus === 401 ? undefined : () => { void myBreakdown.refetch(); }}
+                    />
                   ) : myBreakdown.data ? (
                     <div className="space-y-6">
                       <XaliFeedbackStory
@@ -556,8 +570,8 @@ export function ResolverEvaluacionPage() {
                     </div>
                   ) : (
                     <div className="rounded-xl border border-border p-4">
-                      <p className="font-bold">Detalle histórico</p>
-                      <p className="mt-1 text-sm leading-6 text-muted">Esta nota fue creada antes del desglose respuesta por respuesta. Conservamos la retroalimentación original sin inventar datos.</p>
+                      <p className="font-bold">Detalle por respuesta no disponible</p>
+                      <p className="mt-1 text-sm leading-6 text-muted">No hay un desglose publicado para esta evaluación. Tu nota se conserva; consulta la retroalimentación general en mis resultados o pregunta a tu docente.</p>
                     </div>
                   )}
                 </div>

@@ -36,6 +36,22 @@ beforeEach(() => {
 });
 
 describe('libro docente contextual', () => {
+  it('shows student results with explanation links, no export, and no teacher queries', async () => {
+    mocks.context.canManageMateria = false;
+    useAuth.setState({ user: { id: 'student', nombre: 'Alumno', email: 'student@example.test', rol: 'estudiante', estado: 'activo' }, status: 'authenticated' });
+    mocks.boletin.mockResolvedValue([
+      { evaluacion_id: 'eval-1', evaluacion_nombre: 'Primera evaluación', nota_confirmada: 0, nota_maxima: 5, feedback: 'Revisa el procedimiento.', estado: 'confirmada' },
+      { evaluacion_id: 'eval-2', evaluacion_nombre: 'Segunda evaluación', nota_confirmada: null, nota_maxima: 5, estado: 'procesando' },
+    ]);
+    renderPage();
+    expect(await screen.findByRole('link', { name: 'Ver explicación de mi nota' })).toHaveAttribute('href', '/app/evaluaciones/eval-1/resolver#mi-resultado');
+    expect(screen.getByText('0.0')).toBeInTheDocument();
+    expect(screen.getByText('Calificando')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Exportar notas' })).not.toBeInTheDocument();
+    expect(mocks.list).not.toHaveBeenCalled();
+    expect(mocks.grades).not.toHaveBeenCalled();
+  });
+
   it('shows every student and only the selected evaluation, preserving states and combined filters', async () => {
     const user = userEvent.setup();
     renderPage();

@@ -813,9 +813,11 @@ async def get_material_for_user(
     await materias_service.ensure_can_read_materia(db, row.materia_id, current_user)
     material = _material_row(row)
     if row.asignacion_tipo == "actividad":
-        material["contenido_json"] = evaluaciones_service.sanitize_student_payload(
-            material["contenido_json"] if isinstance(material["contenido_json"], dict) else {}
-        )
+        material["contenido_json"] = evaluaciones_service.build_student_activity_payload(
+            material["tipo"],
+            material["titulo"],
+            material["contenido_json"] if isinstance(material["contenido_json"], dict) else {},
+        )["contenido"]
     return material
 
 

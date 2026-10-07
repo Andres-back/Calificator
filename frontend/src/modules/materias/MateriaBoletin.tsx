@@ -20,7 +20,6 @@ import {
   EmptyState,
   Input,
   Select,
-  RichContent,
   Skeleton,
 } from '@/components/ui';
 import { listEvaluaciones } from '@/modules/evaluaciones/api';
@@ -33,6 +32,7 @@ import { useAuth } from '@/stores/auth';
 import type { Calificacion } from '@/types/api';
 import { isGradeProcessing } from '@/modules/calificaciones/gradePresentation';
 import { useMateriaContext } from './MateriaContext';
+import { StudentResultCard } from '@/modules/calificaciones/StudentResultCard';
 import { GradebookExport } from './GradebookExport';
 import {
   buildFollowUpRows,
@@ -711,41 +711,12 @@ function StudentGradebook({ materiaId }: { materiaId: string }) {
   return (
     <div className="space-y-4">
       <Card className="border-brand-200 bg-brand-50/60 p-5 dark:border-brand-500/30 dark:bg-brand-500/10">
-        <h2 className="font-display text-xl font-extrabold">Mis avances</h2>
+        <h2 className="font-display text-xl font-extrabold">Mis resultados</h2>
         <p className="mt-1 text-sm text-muted">
-          Revisa la nota y, sobre todo, la retroalimentación de tu docente.
+          Consulta tus notas y cómo mejorar.
         </p>
       </Card>
-      {boletin.map((item) => {
-        const score = normalizeNumeric(item.nota_confirmada);
-        const maximum = normalizeNumeric(item.nota_maxima);
-        return (
-          <Card key={item.evaluacion_id} className="p-5">
-            <div className="flex flex-wrap items-start justify-between gap-4">
-              <div className="min-w-0 flex-1">
-                <h3 className="font-display text-lg font-bold">
-                  {item.evaluacion_nombre}
-                </h3>
-                <div className="mt-3 rounded-xl bg-surface-2 p-4 text-sm text-muted">
-                  {item.feedback ? (
-                    <RichContent content={item.feedback} variant="feedback" />
-                  ) : (
-                    'Tu docente todavía no agregó retroalimentación.'
-                  )}
-                </div>
-              </div>
-              <div className="min-w-24 rounded-xl bg-brand-700 p-4 text-center text-white">
-                <p className="font-display text-3xl font-extrabold">
-                  {score == null ? '—' : score.toFixed(1)}
-                </p>
-                <p className="text-xs text-white/75">
-                  / {maximum == null ? '—' : maximum.toFixed(1)}
-                </p>
-              </div>
-            </div>
-          </Card>
-        );
-      })}
+      {boletin.map((item) => <StudentResultCard key={item.evaluacion_id} item={item} />)}
     </div>
   );
 }
