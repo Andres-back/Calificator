@@ -45,7 +45,7 @@ Issue #184; rama `codex/089-inicio-docente-movil`; alcance y plan aprobados. Rev
 - [x] T015 Registrar comprobaciones físicas iPhone/Android o disponibilidad pendiente explícita, según quickstart, en specs/089-inicio-docente-movil/quickstart.md; no confundir emulación e instalación real ni afirmar cobertura física inexistente (FR-010, SC-004).
 - [x] T016 Ejecutar Converge sobre specs/089-inicio-docente-movil/spec.md, plan.md y tasks.md y resolver cualquier tarea añadida antes de solicitar entrega (FR-001–010, SC-001–006, Constitución VII).
 - [x] T017 Documentar trazabilidad e invariantes de APIs/registros en specs/README.md y specs/089-inicio-docente-movil/quickstart.md; comprobar diff limpio y ningún cambio de backend, datos, manifest o rutas efectivas (FR-002/010, Constitución IV/VI/VII).
-- [ ] T018 Abrir PR enlazado al issue #184 con los artefactos specs/089-inicio-docente-movil completos y resultados; adjuntar PR al chat y comprobar CI requerido sin bypass. Solicitar autorización de fusión/despliegue por separado (Constitución VII/VIII).
+- [x] T018 Abrir PR enlazado al issue #184 con los artefactos specs/089-inicio-docente-movil completos y resultados; adjuntar PR al chat y comprobar CI requerido sin bypass. Solicitar autorización de fusión/despliegue por separado (Constitución VII/VIII).
 
 ## Dependencias y paralelismo
 

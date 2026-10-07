@@ -54,3 +54,7 @@ Producción solo tras aprobación de plan, implementación, tareas completas, PR
 **Pendiente**: iPhone físico (Safari y app desde pantalla de inicio) y Android físico (Chrome y PWA instalada). No hay dispositivo disponible en este entorno para certificar instalación, teclado virtual, áreas seguras y cierre/reapertura reales. Solicitar esas comprobaciones con el protocolo anterior antes de afirmar validación física.
 
 No se cambiaron backend, cuentas, notas, evidencias, asistencia, criterios, trabajos, claves, proveedores, manifest, rutas efectivas ni service workers. El bootstrap únicamente incluye la raíz instalada en la comprobación de sesión existente. CI remoto ejecutará las suites generales frontend/backend/E2E y contenedores antes de permitir una fusión; no se repiten localmente suites ajenas sin motivo.
+
+## Entrega para revisión
+
+PR [#185](https://github.com/Andres-back/Calificator/pull/185), enlazado a #184 y adjunto al chat, con etiquetas `spec-approved` y `plan-approved`. Primer estado remoto comprobado: Backend quality and tests, Frontend quality/build/E2E, Container builds y Spec governance en curso. No se certifica CI verde por haber abierto el PR; tampoco se habilita auto-merge o bypass. Se solicita autorización de fusión/despliegue por separado, condicionada a los controles completos en verde. Producción continúa sin este cambio.
