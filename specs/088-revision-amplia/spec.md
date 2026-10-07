@@ -94,4 +94,4 @@ Como docente que alterna celular y computador, quiero una vista apropiada al esp
 - Dos paneles se usan solo cuando ambos sean legibles; en celular y pantallas estrechas se mantiene una vista a la vez.
 - El dominio responsable sigue siendo calificaciones. No se crean rutas, usuarios, datos académicos ni llamadas adicionales a IA.
 - Las listas de 30/100 y nombres largos serán sintéticas; no se necesitan notas productivas para comprobar distribución.
-- Alcance y plan aprobados por el usuario el 2026-10-06 mediante «APRUEBO» en turnos separados; revisión de checklist autorizada mediante «AUTORIZO» y completada 10/10 antes de implementar. Sin fusión ni despliegue autorizados para esta evolución.
+- Alcance y plan aprobados por el usuario el 2026-10-06 mediante «APRUEBO» en turnos separados; revisión de checklist autorizada mediante «AUTORIZO» y completada 10/10 antes de implementar. Autorización posterior «FUSION» para fusionar el PR #183 y verificar el despliegue automático solo con todos los controles verdes.

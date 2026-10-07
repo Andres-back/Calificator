@@ -39,6 +39,10 @@ Prueba independiente: resize 1279/1280 con edición, foco/retorno y detalle móv
 - [x] T012 Actualizar contrato vivo en specs/008-calificaciones/spec.md e índice/inventario mediante scripts/build_system_inventory.py si corresponde; ejecutar gobernanza y revisión de alcance sin datos productivos.
 - [x] T013 Ejecutar Converge contra specs/088-revision-amplia/spec.md, plan.md y tasks.md; registrar resultado en quickstart.md desde fase de implementación y cerrar únicamente trabajo probado. Preparar PR enlazado al issue sin fusionar ni desplegar.
 
+## Fase 7: Ajuste de regresión detectado por CI
+
+- [x] T014 Adaptar el recorrido existente de materia en frontend/e2e/p2-responsive.spec.ts para abrir «Más acciones» antes de «Volver a evaluaciones» (FR-004/007/009), conservando las comprobaciones de contexto, criterios y ausencia de errores. Ejecutar el caso focalizado, registrar resultado y regenerar el inventario sin retirar verificaciones de CI.
+
 ## Dependencias
 
 T001 → T002 → T003 → T004 → T005 → T006 → T007 → T008 → T009 → T010 → T011 → T012 → T013.

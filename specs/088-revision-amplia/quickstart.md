@@ -1,6 +1,6 @@
 # Guía de validación
 
-Estado: alcance y plan aprobados el 2026-10-06; checklist 10/10 revisada con autorización antes de implementar. Implementación local completada y convergencia limpia; PR preparado, pendiente de CI completo y revisión. Sin fusión ni despliegue autorizados.
+Estado: alcance y plan aprobados el 2026-10-06; checklist 10/10 revisada con autorización antes de implementar. Implementación local completada y convergencia limpia; PR #183 pendiente de CI completo. Autorización posterior «FUSION» para fusionar y verificar el despliegue automático únicamente con todos los controles verdes.
 
 ## Preparación
 
@@ -58,4 +58,10 @@ Validación sintética local: no sustituye CI completo ni comprobación posterio
 
 ## Converge y entrega
 
-Converge ejecutado después de Implement, contra estado presente y solo intención de spec/plan/tasks y constitución. Inventario: 9 FR + 5 SC + 11 escenarios de aceptación = 25; seis decisiones técnicas y ocho principios constitucionales revisados. Cero brechas missing/partial/contradicts/unrequested, de cualquier severidad. No se añadieron fases vacías ni se modificó tasks.md durante Converge. El cierre de T013 y este registro corresponden a la fase posterior de implementación/entrega. Borrador de PR preparado, enlazado a #182 y sin autorización de fusión/despliegue.
+Converge ejecutado después de Implement, contra estado presente y solo intención de spec/plan/tasks y constitución. Inventario: 9 FR + 5 SC + 11 escenarios de aceptación = 25; seis decisiones técnicas y ocho principios constitucionales revisados. Cero brechas missing/partial/contradicts/unrequested, de cualquier severidad. No se añadieron fases vacías ni se modificó tasks.md durante Converge. El cierre de T013 y este registro corresponden a la fase posterior de implementación/entrega. En ese momento se preparó el PR enlazado a #182 sin autorización de fusión/despliegue; la autorización posterior queda registrada en el estado y el cierre de CI.
+
+## Cierre de CI
+
+El primer CI del PR #183 (HEAD `46d0515`) pasó backend, contenedores y gobernanza. El frontend llegó a 108/109 E2E: el recorrido de materia seguía buscando «Volver a evaluaciones» sin abrir el nuevo menú «Más acciones». T014 adapta esa interacción al flujo aprobado, sin cambiar código funcional ni retirar comprobaciones. La fusión queda condicionada al CI completo del nuevo HEAD.
+
+Regresión focalizada T014: `node node_modules/@playwright/test/cli.js test e2e/p2-responsive.spec.ts --grep 'profesor recorre la materia' --reporter=line`, 1/1 Chromium (8.9 s); mismo comando con `--browser=webkit`, 1/1 (10.3 s). Se conservan permisos, contexto materia/evaluación, recorrido de secciones, creación del criterio y cero errores de consola. No se repitió localmente toda la suite: el CI completo del PR sigue siendo obligatorio.

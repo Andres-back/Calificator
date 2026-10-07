@@ -2,7 +2,7 @@
 
 **Rama**: `codex/088-revision-amplia` | **Fecha**: 2026-10-06 | **Spec**: [spec.md](./spec.md) | **Issue**: [#182](https://github.com/Andres-back/Calificator/issues/182)
 
-Estado: alcance y plan aprobados por el usuario mediante «APRUEBO», en turnos separados el 2026-10-06. Checklist revisada 10/10 con autorización humana antes de implementar. Sin autorización de fusión o despliegue.
+Estado: alcance y plan aprobados por el usuario mediante «APRUEBO», en turnos separados el 2026-10-06. Checklist revisada 10/10 con autorización humana antes de implementar. El usuario autorizó posteriormente mediante «FUSION» la fusión del PR #183 y su despliegue automático, exclusivamente con todos los controles verdes.
 
 ## Resumen
 
