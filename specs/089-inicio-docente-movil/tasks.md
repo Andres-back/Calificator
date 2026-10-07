@@ -49,6 +49,25 @@ Issue #184; rama `codex/089-inicio-docente-movil`; alcance y plan aprobados. Rev
 
 ## Dependencias y paralelismo
 
+## Trazabilidad explícita para gobernanza
+
+| Requisito | Tareas responsables |
+|---|---|
+| FR-001 | T003–T007, T013 |
+| FR-002 | T002–T007, T017 |
+| FR-003 | T008–T009, T013 |
+| FR-004 | T008–T009, T013 |
+| FR-005 | T008–T011, T013 |
+| FR-006 | T010–T011, T013 |
+| FR-007 | T010, T012–T013 |
+| FR-008 | T008–T010, T012–T013 |
+| FR-009 | T008–T009, T011–T014 |
+| FR-010 | T002, T010, T013–T015, T017 |
+
+Los identificadores se enumeran individualmente para el validador; los rangos de tareas solo resumen las tareas existentes, no crean ni marcan trabajo adicional.
+
+## Secuencia de ejecución
+
 T001–002 → T003 → T004 → T005/006 → T007 → T008 → T009 → T010 → T011 → T012 → T013 → T014 → T015 → T016 → T017 → T018. T005 y T006 son independientes y pueden prepararse en paralelo; ejecución secuencial válida sin subagentes. No editar DashboardPage/test simultáneamente entre historias.
 
 Ejemplos por historia: US1 permite T005/T006 en archivos distintos; US2 se mantiene secuencial para probar antes de la composición; US3 se mantiene secuencial por integración compartida de dashboard. Las pruebas de motores se ejecutan en secuencia para conservar servidor 4175.
