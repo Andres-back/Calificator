@@ -90,6 +90,7 @@ ALL_SPECS = {
     "087-calificacion-clara",
     "088-revision-amplia",
     "089-inicio-docente-movil",
+    "090-accesos-notas-exportacion",
 }
 OWNED_SPECS = {
     name

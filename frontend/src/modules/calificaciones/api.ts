@@ -6,8 +6,8 @@ export async function getBandejaDocente(): Promise<BandejaDocenteRead> {
   return data;
 }
 
-export async function listCalificaciones(evaluacionId: string): Promise<Calificacion[]> {
-  const { data } = await api.get<Calificacion[]>(`/evaluaciones/${evaluacionId}/calificaciones`);
+export async function listCalificaciones(evaluacionId: string, options?: { readOnly?: boolean }): Promise<Calificacion[]> {
+  const { data } = await api.get<Calificacion[]>(`/evaluaciones/${evaluacionId}/calificaciones`, options?.readOnly ? { params: { solo_lectura: true } } : undefined);
   return data;
 }
 

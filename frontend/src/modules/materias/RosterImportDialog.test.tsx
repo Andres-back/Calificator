@@ -14,7 +14,7 @@ const confirmation = { creados: 1, matriculados_existentes: 0, ya_matriculados: 
 function wrap(children: React.ReactNode) { return render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })}>{children}</QueryClientProvider>); }
 beforeEach(() => {
   vi.clearAllMocks();
-  useAuth.setState({ user: { id: 'teacher' } as never, status: 'authenticated' });
+  useAuth.setState({ user: { id: 'teacher', permissions: ['subjects.update'] } as never, status: 'authenticated' });
   mocks.get.mockResolvedValue(batch);
   mocks.put.mockResolvedValue(batch);
   mocks.confirm.mockResolvedValue(confirmation);

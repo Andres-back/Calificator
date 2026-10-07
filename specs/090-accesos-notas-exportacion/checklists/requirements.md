@@ -1,5 +1,7 @@
 # Lista de calidad de especificación: accesos y exportación de notas
 
+Actualización 2026-10-07: el usuario aprobó solo exportaciones y autorizó revisar checklist y continuar. Historias 1/4 y sus requisitos quedan diferidos según «Alcance vigente aprobado»; los registros previos de revisión se conservan como historial. Revisión actual específica: exportaciones.md, 8/8. No se declara implementación de cambios diferidos.
+
 **Propósito**: revisar el alcance antes de planificar, sin certificar implementación.
 **Creada**: 2026-10-07
 **Especificación**: [spec.md](../spec.md)

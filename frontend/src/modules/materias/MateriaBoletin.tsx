@@ -33,6 +33,7 @@ import { useAuth } from '@/stores/auth';
 import type { Calificacion } from '@/types/api';
 import { isGradeProcessing } from '@/modules/calificaciones/gradePresentation';
 import { useMateriaContext } from './MateriaContext';
+import { GradebookExport } from './GradebookExport';
 import {
   buildFollowUpRows,
   normalizeNumeric,
@@ -216,6 +217,8 @@ function TeacherGradebook() {
   const [search, setSearch] = useState(() => params.get('buscar') ?? '');
   const [selectedEvaluationId, setSelectedEvaluationId] = useState(() => params.get('evaluacion') ?? '');
   const [selectionNotice, setSelectionNotice] = useState('');
+  const [exportOpen, setExportOpen] = useState(false);
+  useEffect(() => { setExportOpen(false); }, [materia.id, user?.id]);
 
   const students = useMemo(() => {
     if (
@@ -409,6 +412,7 @@ function TeacherGradebook() {
       </Card>
 
       <Card className="space-y-2 p-4">
+        {canReadGrades && <Button variant="outline" className="min-h-11" onClick={() => setExportOpen(true)}>Exportar notas</Button>}
         <label className="block text-sm font-bold" htmlFor="gradebook-evaluation">Filtrar por evaluación</label>
         <Select id="gradebook-evaluation" className="min-h-11 text-base" value={selectedEvaluationId} onChange={(event) => { setSelectedEvaluationId(event.target.value); setSelectionNotice(''); }}>
           <option value="">Todas las evaluaciones</option>
@@ -416,6 +420,7 @@ function TeacherGradebook() {
         </Select>
         {selectionNotice && <p role="status" className="text-sm text-muted">{selectionNotice}</p>}
       </Card>
+      {exportOpen && canReadGrades && <GradebookExport key={materia.id + user?.id} materiaId={materia.id} materiaName={materia.nombre} evaluations={trackedEvaluations} initialEvaluationId={selectedEvaluationId} studentCount={students.length} onClose={() => setExportOpen(false)} />}
 
       <details className="space-y-3 rounded-xl border border-border bg-surface p-4">
       <summary className="focus-ring min-h-11 cursor-pointer py-2 font-semibold">Resumen y seguimiento{selectedEvaluation ? ' de esta evaluación' : ' del grupo'}</summary>

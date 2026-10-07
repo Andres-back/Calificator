@@ -773,12 +773,14 @@ async def list_calificaciones(
     evaluacion_id: UUID,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
+    solo_lectura: bool = False,
 ) -> list:
     require_permission_now(current_user, "grading.read")
     evaluacion = await evaluaciones_service.ensure_can_manage_evaluation(
         db, evaluacion_id, current_user
     )
-    await service.assign_overdue_zero_grades(db, evaluacion)
+    if not solo_lectura:
+        await service.assign_overdue_zero_grades(db, evaluacion)
     return await service.list_calificaciones_for_evaluacion(db, evaluacion_id)
 
 

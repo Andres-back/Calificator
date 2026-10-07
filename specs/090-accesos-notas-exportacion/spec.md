@@ -1,6 +1,10 @@
-# Especificación: accesos cortos y exportación de accesos y notas
+# Especificación: exportación de accesos y notas
 
-**Rama**: `codex/090-accesos-notas-exportacion` | **Creada**: 2026-10-07 | **Estado**: Borrador; pendiente aprobación humana | **Issue**: #186
+**Rama**: `codex/090-accesos-notas-exportacion` | **Creada**: 2026-10-07 | **Estado**: Solo exportaciones aprobado | **Issue**: #186
+
+## Alcance vigente aprobado
+
+El usuario aprobó «Solo exportaciones por ahora». Son exigibles Historia 2 y 3, FR-004 a FR-013 y SC-002 a SC-006. Historia 1 y 4, FR-001 a FR-003, FR-014 a FR-018 y SC-001, SC-007 a SC-009 quedan DIFERIDOS en issue #188, no criterios de cierre de este PR. Se mantiene renovación individual existente; no se añade renovación masiva. Verificador opcional: #187, fuera de alcance.
 
 **Solicitud**: facilitar la entrega de accesos desde Estudiantes, acortar los usuarios creados desde listas, reutilizar cuentas entre materias propias o de distintos docentes mediante autorización y exportar el libro de notas de una materia para una o varias evaluaciones. No modificar registros anteriores ni el proceso de calificación.
 
@@ -13,6 +17,7 @@
 - El usuario eligió el flujo mixto: el docente propietario o el administrador aprueban solicitudes de reutilización de listas entre materias; el administrador también puede matricular directamente desde interfaz.
 - El usuario pide que la foto permita reutilizar cuentas existentes cuando coincidan nombre completo y grado. Las coincidencias únicas autorizadas se proponen por defecto; las de otro docente requieren autorización y las ambiguas requieren revisión. Un mismo alumno conserva su cuenta en materias de distintos profesores.
 - El usuario confirmó continuar y recordó expresamente todos los cambios anteriores. El plan técnico y su aprobación continúan pendientes; este documento no certifica implementación.
+- Ante la ausencia de botones en producción, el usuario pidió «continua terminalo». Se priorizan las exportaciones dentro de este cambio, sin declarar completado el modo de calificación separado de #187.
 
 ## Escenarios de usuario y pruebas
 

@@ -40,6 +40,7 @@ import { resetTemporaryPassword } from './rosterImportApi';
 import type { RosterConfirmation } from './rosterImportApi';
 import { RosterManualDialog } from './RosterManualDialog';
 import { RosterCredentials } from './RosterCredentials';
+import { RosterAccessDelivery } from './RosterAccessDelivery';
 import { useAuth } from '@/stores/auth';
 
 export function MateriaVistaGeneral() {
@@ -56,6 +57,7 @@ function TeacherOverview({ materia }: { materia: MateriaConEstudiantes }) {
   const [importOpen, setImportOpen] = useState(false);
   const [existingOpen, setExistingOpen] = useState(false);
   const [manualOpen, setManualOpen] = useState(false);
+  const [deliveryOpen, setDeliveryOpen] = useState(false);
   const [resetStudent, setResetStudent] = useState<{ id: string; nombre: string } | null>(null);
   const [temporaryAccess, setTemporaryAccess] = useState<RosterConfirmation | null>(null);
   const user = useAuth((state) => state.user);
@@ -77,7 +79,7 @@ function TeacherOverview({ materia }: { materia: MateriaConEstudiantes }) {
   const resetAccess = useMutation({ gcTime: 0, mutationFn: (student: { id: string; nombre: string }) => resetTemporaryPassword(materia.id, student.id), onSuccess: (value, student) => { setResetStudent(null); setTemporaryAccess({ creados: 0, matriculados_existentes: 0, ya_matriculados: 0, omitidos: 0, credenciales_mostradas_una_vez: true, credenciales: [{ ...value, nombre: student.nombre }] }); toast.success('Nueva clave temporal creada'); }, onError: (error) => toast.error(toApiError(error).detail) });
   const clearResetResult = resetAccess.reset;
   useEffect(() => { if (resetAccess.data) clearResetResult(); }, [resetAccess.data, clearResetResult]);
-  useEffect(() => { setTemporaryAccess(null); setResetStudent(null); setImportOpen(false); setManualOpen(false); setExistingOpen(false); clearResetResult(); }, [materia.id, user?.id, clearResetResult]);
+  useEffect(() => { setTemporaryAccess(null); setResetStudent(null); setImportOpen(false); setManualOpen(false); setExistingOpen(false); setDeliveryOpen(false); clearResetResult(); }, [materia.id, user?.id, clearResetResult]);
 
   const copy = async () => {
     try {
@@ -147,6 +149,7 @@ function TeacherOverview({ materia }: { materia: MateriaConEstudiantes }) {
             </div>
             <div className="flex flex-wrap items-center gap-2">
               <Badge tone="neutral">{materia.estudiantes.length}</Badge>
+              {canRegister && <Button size="sm" className="min-h-11" variant="outline" disabled={!materia.estudiantes.length} onClick={() => setDeliveryOpen(true)}><KeyRound className="h-4 w-4" /> Entregar accesos</Button>}
               {canRegister && <><Button size="sm" className="min-h-11" variant="outline" onClick={() => setExistingOpen(true)}><UserPlus className="h-4 w-4" /> Ya registrados</Button>
               <Button size="sm" className="min-h-11" variant="outline" onClick={() => setManualOpen(true)}><UserPlus className="h-4 w-4" /> Registrar manualmente</Button>
               <Button size="sm" className="min-h-11" onClick={() => setImportOpen(true)}><Camera className="h-4 w-4" /> Importar foto</Button></>}
@@ -192,10 +195,11 @@ function TeacherOverview({ materia }: { materia: MateriaConEstudiantes }) {
       </details>
       {importOpen && <RosterImportDialog open materiaId={materia.id} onClose={() => setImportOpen(false)} />}
       {manualOpen && <RosterManualDialog materiaId={materia.id} onClose={() => setManualOpen(false)} />}
+      {deliveryOpen && canRegister && <RosterAccessDelivery key={materia.id + user?.id} materiaId={materia.id} onClose={() => setDeliveryOpen(false)} />}
       <ExistingStudentsDialog open={existingOpen} materiaId={materia.id} onClose={() => setExistingOpen(false)} />
       <ConfirmDialog open={Boolean(resetStudent)} onClose={() => { if (!resetAccess.isPending) setResetStudent(null); }} title="¿Renovar la clave del estudiante?" description={`La clave anterior de ${resetStudent?.nombre ?? ''} dejará de funcionar en todas sus materias y sus sesiones se cerrarán. Imprimir o cancelar no cambia ninguna clave.`} confirmLabel="Renovar clave" loading={resetAccess.isPending} onConfirm={() => { if (resetStudent) resetAccess.mutate(resetStudent); }} />
       <Modal open={Boolean(temporaryAccess)} onClose={() => setTemporaryAccess(null)} title="Nueva clave temporal" description="Entrégala directamente al estudiante. Solo se muestra en este momento.">
-        {temporaryAccess && <RosterCredentials result={temporaryAccess} renewed />}
+        {temporaryAccess && <RosterCredentials result={temporaryAccess} subjectName={materia.nombre} renewed />}
       </Modal>
     </div>
   );

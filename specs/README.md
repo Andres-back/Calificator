@@ -289,3 +289,5 @@ actualizar la especificación propietaria, su plan y sus tareas; no debe crear d
 ## Evolución 089: inicio docente en iPhone y Android
 
 - [089-inicio-docente-movil](089-inicio-docente-movil/spec.md), [issue #184](https://github.com/Andres-back/Calificator/issues/184): inicio por icono con bootstrap de sesión, materias primero con búsqueda y accesos contextuales, pendientes resumidos y guía omisible. Propietario: 002 (navegación/acceso); reutiliza materias de 003 y bandeja de 008, sin apropiarse de sus contratos. No añade endpoints, tablas, rutas, identidad de manifest ni reglas de calificación.
+
+- [090-accesos-notas-exportacion](090-accesos-notas-exportacion/spec.md), [issue #186](https://github.com/Andres-back/Calificator/issues/186): entrega permanente de accesos (usuarios y claves recién emitidas, selección/copiar/CSV/imprimir), exportación del libro por una/varias evaluaciones con estados sin ceros ficticios. Reutiliza contratos de 003/008 y permisos existentes; consulta de calificaciones añade modo solo_lectura compatible, sin mutaciones. No nuevas tablas/rutas frontend; usuarios cortos y reutilización compartida diferidos.

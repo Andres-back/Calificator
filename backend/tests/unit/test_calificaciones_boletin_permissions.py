@@ -1,7 +1,10 @@
 from types import SimpleNamespace
+from unittest.mock import AsyncMock
 from uuid import uuid4
 
 from fastapi.testclient import TestClient
+from fastapi import HTTPException
+import pytest
 
 from app.core.permissions import get_current_user
 from app.db.session import get_db
@@ -61,6 +64,49 @@ def test_profesor_ajeno_no_puede_ver_boletin(monkeypatch) -> None:
     )
 
     assert response.status_code == 403
+
+
+@pytest.mark.parametrize("read_only", [True, False])
+def test_export_read_only_never_assigns_zero_but_default_behavior_is_preserved(monkeypatch, read_only):
+    teacher = _user("profesor")
+    evaluation_id = uuid4()
+    evaluation = SimpleNamespace(id=evaluation_id, profesor_id=teacher.id)
+    ensure = AsyncMock(return_value=evaluation)
+    overdue = AsyncMock(return_value=[])
+    listing = AsyncMock(return_value=[])
+    monkeypatch.setattr(calificaciones_router.evaluaciones_service, "ensure_can_manage_evaluation", ensure)
+    monkeypatch.setattr(calificaciones_service, "assign_overdue_zero_grades", overdue)
+    monkeypatch.setattr(calificaciones_service, "list_calificaciones_for_evaluacion", listing)
+    suffix = "?solo_lectura=true" if read_only else ""
+    response = _client_with_user(teacher).get(f"/api/evaluaciones/{evaluation_id}/calificaciones{suffix}")
+    assert response.status_code == 200
+    assert response.json() == []
+    ensure.assert_awaited_once()
+    listing.assert_awaited_once()
+    assert overdue.await_count == (0 if read_only else 1)
+
+
+def test_read_only_does_not_bypass_subject_ownership(monkeypatch):
+    ensure = AsyncMock(side_effect=HTTPException(status_code=403, detail="Sin permiso"))
+    listing = AsyncMock()
+    overdue = AsyncMock()
+    monkeypatch.setattr(calificaciones_router.evaluaciones_service, "ensure_can_manage_evaluation", ensure)
+    monkeypatch.setattr(calificaciones_service, "list_calificaciones_for_evaluacion", listing)
+    monkeypatch.setattr(calificaciones_service, "assign_overdue_zero_grades", overdue)
+    response = _client_with_user(_user("profesor")).get(f"/api/evaluaciones/{uuid4()}/calificaciones?solo_lectura=true")
+    assert response.status_code == 403
+    listing.assert_not_awaited()
+    overdue.assert_not_awaited()
+
+
+def test_read_only_does_not_bypass_effective_grading_permission(monkeypatch):
+    teacher = _user("profesor")
+    teacher._effective_permissions = frozenset()
+    ensure = AsyncMock()
+    monkeypatch.setattr(calificaciones_router.evaluaciones_service, "ensure_can_manage_evaluation", ensure)
+    response = _client_with_user(teacher).get(f"/api/evaluaciones/{uuid4()}/calificaciones?solo_lectura=true")
+    assert response.status_code == 403
+    ensure.assert_not_awaited()
 
 
 def test_estudiante_no_puede_ver_boletin_ajeno(monkeypatch) -> None:

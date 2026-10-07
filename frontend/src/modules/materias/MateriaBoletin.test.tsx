@@ -41,6 +41,7 @@ describe('libro docente contextual', () => {
     renderPage();
     await user.selectOptions(await screen.findByLabelText('Filtrar por evaluación'), 'eval-1');
     const list = await screen.findByRole('list', { name: 'Notas de Primera evaluación' });
+    expect(screen.getByRole('button', { name: 'Exportar notas' })).toBeVisible();
     expect(within(list).getAllByRole('listitem')).toHaveLength(30);
     expect(screen.queryByRole('option', { name: 'Borrador oculto' })).not.toBeInTheDocument();
     expect(within(list).getByText('0.0 / 5.0')).toBeInTheDocument();
