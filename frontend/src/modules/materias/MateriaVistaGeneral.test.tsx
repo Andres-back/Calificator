@@ -93,6 +93,7 @@ describe('MateriaVistaGeneral teacher journey', () => {
     renderOverview();
     expect(screen.queryByRole('button', { name: 'Importar foto' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Registrar manualmente' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Entregar accesos' })).not.toBeInTheDocument();
   });
   it('keeps the students task visible and the guide and enrollment code closed', async () => {
     mocks.listEvaluaciones.mockResolvedValue([]);
@@ -100,6 +101,7 @@ describe('MateriaVistaGeneral teacher journey', () => {
     expect(screen.getByText('Guía opcional de la materia').closest('details')).not.toHaveAttribute('open');
     expect(screen.getByText('Código de inscripción').closest('details')).not.toHaveAttribute('open');
     expect(screen.getByRole('button', { name: 'Importar foto' })).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Entregar accesos' })).toBeVisible();
   });
   it('guides an empty class to invite students first', async () => {
     mocks.listEvaluaciones.mockResolvedValue([]);
