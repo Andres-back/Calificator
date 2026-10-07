@@ -18,7 +18,7 @@
 - [x] Requisitos comprobables sin ambigüedades críticas.
 - [x] Criterios de éxito medibles.
 - [x] Resultados expresados desde la experiencia del usuario.
-- [x] Escenarios de aceptación definidos para las tres historias.
+- [x] Escenarios de aceptación definidos para las cuatro historias.
 - [x] Casos límite identificados.
 - [x] Alcance y exclusiones explícitos.
 - [x] Supuestos y dependencias documentados.
@@ -26,13 +26,13 @@
 ## Preparación de la función
 
 - [x] Requisitos vinculados a escenarios de aceptación.
-- [x] Historias cubren altas, entrega posterior y exportación por evaluación.
+- [x] Historias cubren altas, entrega posterior, exportación por evaluación y reutilización autorizada entre docentes.
 - [x] Criterios verifican conservación de datos, privacidad y estados pendientes.
 - [x] Requisitos no prescriben arquitectura de implementación.
 
 ## Revisión
 
-Specify: 16/16 satisfechos. FR-001–003 y la historia 1 acotan usuarios nuevos y duplicados; FR-004–006 separan descarga y renovación; FR-007–009 concretan evaluaciones, alumnos y estados de notas; FR-010–013 cubren permisos, cuentas internas, movilidad y conservación de registros. Los formatos de entrega son resultados solicitados, no una arquitectura prescrita.
+Specify: 16/16 satisfechos. FR-001–003 y la historia 1 acotan usuarios nuevos y duplicados; FR-004–006 separan descarga y renovación; FR-007–009 concretan evaluaciones, alumnos y estados de notas; FR-010–013 cubren permisos, cuentas internas, movilidad y conservación de registros. FR-014–018 y la historia 4 incorporan la ampliación explícita del usuario: flujo mixto, coincidencias revisadas y separación académica por materia. Los formatos de entrega son resultados solicitados, no una arquitectura prescrita.
 
 ## Resultado de Clarify
 
