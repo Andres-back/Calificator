@@ -43,8 +43,8 @@
 
 - [x] T014 Ejecutar pytest/Vitest dirigidos, TypeScript, lint y build aplicables; registrar resultados y limitaciones en specs/091-estudiante-recursos-resultados/quickstart.md.
 - [x] T015 Verificar recursos→actividad y boletines→explicación en 360/390/1366 px claro/oscuro en Chromium/WebKit, con Playwright CLI y recorridos existentes; guardar evidencia en output/playwright/ y specs/091-estudiante-recursos-resultados/quickstart.md.
-- [ ] T016 Ejecutar Converge sobre specs/091-estudiante-recursos-resultados/ y completar cualquier brecha antes de cerrar tasks.md; actualizar índice specs/README.md sin certificar producción.
-- [ ] T017 Publicar rama y PR enlazado a #192 con espec/plan aprobados, tareas y evidencia en specs/091-estudiante-recursos-resultados/quickstart.md; no fusionar ni desplegar sin autorización aparte y CI verde.
+- [x] T016 Ejecutar Converge sobre specs/091-estudiante-recursos-resultados/ y completar cualquier brecha antes de cerrar tasks.md; actualizar índice specs/README.md sin certificar producción.
+- [x] T017 Publicar rama y PR enlazado a #192 con espec/plan aprobados, tareas y evidencia en specs/091-estudiante-recursos-resultados/quickstart.md; no fusionar ni desplegar sin autorización aparte y CI verde.
 
 ## Dependencias y ejecución
 

@@ -1,6 +1,6 @@
 # Validación prevista
 
-**Estado**: alcance/plan y revisión asistida aprobados; implementación verificada localmente. PR preparado para CI; producción sin cambios.
+**Estado**: alcance/plan y revisión asistida aprobados; implementación verificada localmente. [PR #193](https://github.com/Andres-back/Calificator/pull/193) publicado; CI pendiente, producción sin cambios.
 
 ## Revisión previa
 
@@ -36,3 +36,9 @@ Lista de requisitos: requirements 16/16 y student-ux 8/8. Revisión asistida aut
 - Inventario técnico regenerado con el script existente (573 superficies, sin endpoints/tablas nuevos); lista de especificaciones del test de baseline incorpora 091. Ambos controles de gobernanza se ejecutan antes del PR.
 - Docker no está activo: backend validado con Python local y fixtures aislados. Contrato HTML/PDF cubierto; build Docker y motor PDF Linux quedan a cargo de CI, sin certificar una prueba productiva.
 - No nuevas dependencias, migraciones, consultas por tarjeta, llamadas LLM ni cambios de notas/usuarios/evidencias. Warning de build por chunk >500 kB conservado; no error de compilación.
+
+## Entrega
+
+Rama `codex/091-estudiante-recursos-resultados` publicada y PR #193 enlazado a #192, con etiquetas de alcance y plan aprobados. No se ha fusionado ni desplegado; CI verde y autorización aparte siguen siendo obligatorios.
+
+Converge: 13 FR, 6 SC, 12 escenarios de aceptación, 5 decisiones del plan y 8 principios constitucionales contrastados con código/pruebas; cero brechas missing/partial/contradicts/unrequested y ninguna tarea nueva. Converge no reescribió artefactos; Implement registra T016 terminada. Hooks previos/posteriores ausentes. Las 17 tareas están completas; controles remotos todavía pendientes.
