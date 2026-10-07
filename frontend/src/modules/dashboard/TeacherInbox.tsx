@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
   AlertCircle,
@@ -97,7 +98,8 @@ function CaseList({
   );
 }
 
-export function TeacherInbox() {
+export function TeacherInbox({ compact = false }: { compact?: boolean }) {
+  const [expanded, setExpanded] = useState(false);
   const inboxQuery = useQuery({
     queryKey: ['bandeja-docente'],
     queryFn: getBandejaDocente,
@@ -105,6 +107,7 @@ export function TeacherInbox() {
   });
 
   if (inboxQuery.isLoading) {
+    if (compact) return <Card className="p-3" role="status">Actualizando pendientes…</Card>;
     return (
       <Card className="space-y-4 p-5" aria-label="Cargando bandeja docente">
         <Skeleton className="h-7 w-52" />
@@ -122,7 +125,7 @@ export function TeacherInbox() {
         <AlertCircle className="h-5 w-5 shrink-0 text-amber-600" aria-hidden="true" />
         <div>
           <p className="text-sm font-bold">No pudimos actualizar la bandeja</p>
-          <button type="button" onClick={() => inboxQuery.refetch()} className="mt-1 text-xs font-semibold text-brand-600">
+          <button type="button" onClick={() => inboxQuery.refetch()} className="focus-ring mt-1 min-h-11 min-w-11 rounded-lg px-2 text-sm font-semibold text-brand-600">
             Intentar de nuevo
           </button>
         </div>
@@ -140,6 +143,22 @@ export function TeacherInbox() {
     ? inbox.pendientes_revision
     : pending.length;
   const total = openClaims + pendingReviews;
+
+  if (compact) return (
+    <section aria-label="Atención docente" className="rounded-2xl border border-border bg-surface">
+      <div className="flex flex-wrap items-center justify-between gap-2 px-3 py-2">
+        <div className="min-w-0 text-sm">
+          {total === 0 ? <p className="flex items-center gap-2 font-semibold"><CheckCircle2 className="h-4 w-4 text-emerald-600" aria-hidden="true" />Todo al día</p>
+            : <p><strong>{pendingReviews}</strong> notas por revisar · <strong>{openClaims}</strong> solicitudes</p>}
+        </div>
+        {total > 0 && <button type="button" aria-expanded={expanded} aria-controls="teacher-pending-cases" onClick={() => setExpanded(!expanded)} className="focus-ring min-h-11 min-w-11 rounded-lg px-3 text-sm font-bold text-brand-600 dark:text-brand-300">{expanded ? 'Ocultar pendientes' : 'Ver pendientes'}</button>}
+      </div>
+      {expanded && total > 0 && <div id="teacher-pending-cases" className="grid gap-3 border-t border-border p-3 lg:grid-cols-2">
+        <CaseList title="Reclamos y solicitudes" description="Solicitudes de revisión de estudiantes." items={claims} total={openClaims} emptyText="No tienes reclamos abiertos" kind="claim" />
+        <CaseList title="Entregas por revisar" description="Notas pendientes de tu decisión." items={pending} total={pendingReviews} emptyText="No tienes entregas pendientes" kind="pending" />
+      </div>}
+    </section>
+  );
 
   if (total === 0) {
     return (

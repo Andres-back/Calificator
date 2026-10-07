@@ -384,7 +384,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "75eac690cf7f03fa75d87d2cc767d753bd52b7ff0dc26d737fc6ea179f11084e",
+  "source_digest": "df25e71b593694730522726e113cdca20d8114b8a5d2fd91fe97cbc405d529f8",
   "surfaces": [
     {
       "actors": [
@@ -725,6 +725,12 @@
           "reference": "DELETE:/evaluaciones/{evaluacion_id}",
           "status": "direct",
           "test_path": "frontend/src/lib/analytics.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "DELETE:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/dashboard/DashboardPage.test.tsx"
         },
         {
           "level": "unit",
@@ -3829,6 +3835,12 @@
           "reference": "GET:/evaluaciones/{evaluacion_id}",
           "status": "direct",
           "test_path": "frontend/src/lib/analytics.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/dashboard/DashboardPage.test.tsx"
         },
         {
           "level": "unit",
@@ -8010,6 +8022,12 @@
           "level": "unit",
           "reference": "PATCH:/evaluaciones/{evaluacion_id}",
           "status": "direct",
+          "test_path": "frontend/src/modules/dashboard/DashboardPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
           "test_path": "frontend/src/modules/evaluaciones/ResolverEvaluacionPage.test.tsx"
         },
         {
@@ -9409,6 +9427,12 @@
           "reference": "POST:/analytics/evento",
           "status": "direct",
           "test_path": "frontend/e2e/explainable-grading.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/analytics/evento",
+          "status": "direct",
+          "test_path": "frontend/e2e/p2-responsive.spec.ts"
         },
         {
           "level": "unit",
@@ -11348,6 +11372,12 @@
           "level": "unit",
           "reference": "POST:/evaluaciones",
           "status": "direct",
+          "test_path": "frontend/src/modules/dashboard/DashboardPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/evaluaciones",
+          "status": "direct",
           "test_path": "frontend/src/modules/evaluaciones/ResolverEvaluacionPage.test.tsx"
         },
         {
@@ -11541,6 +11571,12 @@
           "reference": "POST:/evaluaciones/generar-borrador",
           "status": "direct",
           "test_path": "frontend/e2e/evaluation-ai-wizard.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/evaluaciones/generar-borrador",
+          "status": "direct",
+          "test_path": "frontend/e2e/p2-responsive.spec.ts"
         },
         {
           "level": "unit",
@@ -14127,6 +14163,12 @@
           "test_path": "frontend/e2e/evaluation-ai-wizard.spec.ts"
         },
         {
+          "level": "e2e",
+          "reference": "POST:/xali/chat",
+          "status": "direct",
+          "test_path": "frontend/e2e/p2-responsive.spec.ts"
+        },
+        {
           "level": "unit",
           "reference": "POST:/xali/chat",
           "status": "domain",
@@ -15465,6 +15507,12 @@
           "level": "unit",
           "reference": "/",
           "status": "direct",
+          "test_path": "frontend/src/lib/installedApp.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
           "test_path": "frontend/src/modules/admin/AdminAIConfigPage.test.tsx"
         },
         {
@@ -16161,6 +16209,12 @@
           "reference": "/app",
           "status": "domain",
           "test_path": "frontend/src/modules/admin/AdminAIConfigPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/app",
+          "status": "direct",
+          "test_path": "frontend/src/modules/auth/LandingPage.test.tsx"
         },
         {
           "level": "unit",
@@ -18337,6 +18391,12 @@
           "level": "unit",
           "reference": "/app/materias",
           "status": "direct",
+          "test_path": "frontend/src/modules/dashboard/DashboardPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/materias",
+          "status": "direct",
           "test_path": "frontend/src/modules/materias/MateriaDetailPage.test.tsx"
         },
         {
@@ -18535,6 +18595,12 @@
           "reference": "/app/materias/{id}",
           "status": "domain",
           "test_path": "frontend/src/modules/admin/AdminAIConfigPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/materias/{id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/dashboard/DashboardPage.test.tsx"
         },
         {
           "level": "unit",
@@ -21220,6 +21286,12 @@
           "reference": "DELETE:/evaluaciones/{id}",
           "status": "direct",
           "test_path": "frontend/src/lib/analytics.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "DELETE:/evaluaciones/{id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/dashboard/DashboardPage.test.tsx"
         },
         {
           "level": "unit",
@@ -24578,6 +24650,12 @@
           "level": "unit",
           "reference": "GET:/evaluaciones/{evaluacionId}/{format}",
           "status": "direct",
+          "test_path": "frontend/src/modules/dashboard/DashboardPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/{evaluacionId}/{format}",
+          "status": "direct",
           "test_path": "frontend/src/modules/evaluaciones/ResolverEvaluacionPage.test.tsx"
         },
         {
@@ -24827,6 +24905,12 @@
           "reference": "GET:/evaluaciones/{id}",
           "status": "direct",
           "test_path": "frontend/src/lib/analytics.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/{id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/dashboard/DashboardPage.test.tsx"
         },
         {
           "level": "unit",
@@ -27958,6 +28042,12 @@
           "level": "unit",
           "reference": "PATCH:/evaluaciones/{id}",
           "status": "direct",
+          "test_path": "frontend/src/modules/dashboard/DashboardPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/evaluaciones/{id}",
+          "status": "direct",
           "test_path": "frontend/src/modules/evaluaciones/ResolverEvaluacionPage.test.tsx"
         },
         {
@@ -29760,6 +29850,12 @@
           "test_path": "frontend/e2e/explainable-grading.spec.ts"
         },
         {
+          "level": "e2e",
+          "reference": "POST:/analytics/evento",
+          "status": "direct",
+          "test_path": "frontend/e2e/p2-responsive.spec.ts"
+        },
+        {
           "level": "unit",
           "reference": "POST:/analytics/evento",
           "status": "direct",
@@ -30949,6 +31045,12 @@
           "test_path": "frontend/e2e/evaluation-ai-wizard.spec.ts"
         },
         {
+          "level": "e2e",
+          "reference": "POST:/evaluaciones/generar-borrador",
+          "status": "direct",
+          "test_path": "frontend/e2e/p2-responsive.spec.ts"
+        },
+        {
           "level": "unit",
           "reference": "POST:/evaluaciones/generar-borrador",
           "status": "domain",
@@ -31359,6 +31461,12 @@
           "reference": "POST:/evaluaciones",
           "status": "direct",
           "test_path": "frontend/src/lib/analytics.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/evaluaciones",
+          "status": "direct",
+          "test_path": "frontend/src/modules/dashboard/DashboardPage.test.tsx"
         },
         {
           "level": "unit",
@@ -32578,6 +32686,12 @@
           "reference": "POST:/xali/chat",
           "status": "direct",
           "test_path": "frontend/e2e/evaluation-ai-wizard.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/xali/chat",
+          "status": "direct",
+          "test_path": "frontend/e2e/p2-responsive.spec.ts"
         },
         {
           "level": "unit",
@@ -36935,12 +37049,6 @@
           "level": "unit",
           "reference": "entregas",
           "status": "direct",
-          "test_path": "frontend/src/modules/dashboard/DashboardPage.test.tsx"
-        },
-        {
-          "level": "unit",
-          "reference": "entregas",
-          "status": "direct",
           "test_path": "frontend/src/modules/evaluaciones/ResolverEvaluacionPage.test.tsx"
         },
         {
@@ -37358,6 +37466,12 @@
           "reference": "evaluaciones",
           "status": "direct",
           "test_path": "frontend/src/lib/analytics.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "evaluaciones",
+          "status": "direct",
+          "test_path": "frontend/src/modules/dashboard/DashboardPage.test.tsx"
         },
         {
           "level": "unit",

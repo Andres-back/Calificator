@@ -194,19 +194,19 @@ export function GuidedTour({
           exit={{ opacity: 0, scale: 0.97 }}
           transition={reduceMotion ? { duration: 0 } : { type: 'spring', damping: 24, stiffness: 300 }}
         >
-          <button type="button" onClick={() => close(false)} aria-label="Cerrar guía" className="focus-ring absolute right-2 top-2 grid min-h-10 min-w-10 place-items-center rounded-lg text-muted hover:bg-surface-2 hover:text-fg">
+          <button type="button" onClick={() => close(false)} aria-label="Cerrar guía" className="focus-ring absolute right-2 top-2 grid min-h-11 min-w-11 place-items-center rounded-lg text-muted hover:bg-surface-2 hover:text-fg">
             <X className="h-4 w-4" aria-hidden="true" />
           </button>
           <p className="text-xs font-semibold uppercase tracking-wide text-brand-700 dark:text-brand-300">Paso {index + 1} de {total}</p>
           <h2 className="mt-1 pr-8 font-display text-lg font-bold">{step.title}</h2>
           <p className="mt-1.5 text-sm leading-6 text-secondary">{step.description}</p>
           <div className="mt-4 flex flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-between">
-            <button type="button" onClick={() => close(false)} className="focus-ring inline-flex min-h-10 items-center justify-center gap-1 rounded-lg px-2 text-xs font-medium text-secondary hover:bg-surface-2 hover:text-fg">
+            <button type="button" onClick={() => close(false)} className="focus-ring inline-flex min-h-11 min-w-11 items-center justify-center gap-1 rounded-lg px-2 text-xs font-medium text-secondary hover:bg-surface-2 hover:text-fg">
               <SkipForward className="h-3.5 w-3.5" aria-hidden="true" /> Saltar
             </button>
             <div className="flex gap-2">
-              {!isFirst && <Button size="sm" variant="outline" onClick={previous}><ArrowLeft className="h-4 w-4" aria-hidden="true" /> Anterior</Button>}
-              <Button size="sm" onClick={next}>
+              {!isFirst && <Button size="sm" className="min-h-11" variant="outline" onClick={previous}><ArrowLeft className="h-4 w-4" aria-hidden="true" /> Anterior</Button>}
+              <Button size="sm" className="min-h-11" onClick={next}>
                 {isLast ? <><Check className="h-4 w-4" aria-hidden="true" /> Finalizar</> : <>Siguiente <ArrowRight className="h-4 w-4" aria-hidden="true" /></>}
               </Button>
             </div>

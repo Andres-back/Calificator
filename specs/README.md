@@ -285,3 +285,7 @@ actualizar la especificación propietaria, su plan y sus tareas; no debe crear d
 ## Evolución 088: revisión amplia y compacta
 
 - [088-revision-amplia](088-revision-amplia/spec.md), [issue #182](https://github.com/Andres-back/Calificator/issues/182): lista de estudiantes legible, cabecera compacta y scroll independiente en escritorio; una vista a la vez en celular. Propietario: 008; usa el shell de 002 sin modificar su navegación general. Sin altas de superficies, tablas, endpoints o reglas de calificación.
+
+## Evolución 089: inicio docente en iPhone y Android
+
+- [089-inicio-docente-movil](089-inicio-docente-movil/spec.md), [issue #184](https://github.com/Andres-back/Calificator/issues/184): inicio por icono con bootstrap de sesión, materias primero con búsqueda y accesos contextuales, pendientes resumidos y guía omisible. Propietario: 002 (navegación/acceso); reutiliza materias de 003 y bandeja de 008, sin apropiarse de sus contratos. No añade endpoints, tablas, rutas, identidad de manifest ni reglas de calificación.

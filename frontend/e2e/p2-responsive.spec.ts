@@ -72,8 +72,8 @@ async function fulfillJson(route: Route, body: unknown, status = 200) {
   await route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(body) });
 }
 
-async function installApiMocks(page: Page, targetRole: Role) {
-  let currentUser: (typeof users)[Role] | null = null;
+async function installApiMocks(page: Page, targetRole: Role, authenticated = false) {
+  let currentUser: (typeof users)[Role] | null = authenticated ? users[targetRole] : null;
   await page.route('**/api/**', async (route) => {
     const request = route.request();
     const url = new URL(request.url());
@@ -180,6 +180,8 @@ for (const role of ['profesor', 'estudiante', 'admin'] as const) {
       await expect(page).toHaveURL(/\/app$/);
       await expect(page.locator('main#main-content')).toBeVisible();
       await page.waitForLoadState('networkidle');
+      const welcomeGuide = page.getByRole('button', { name: 'Saltar', exact: true });
+      if (await welcomeGuide.isVisible()) await welcomeGuide.click();
       const atmosphere = page.locator('.app-atmosphere');
       await expect(atmosphere).toHaveAttribute('aria-hidden', 'true');
       await expect(atmosphere.locator('img')).toHaveAttribute('src', '/branding/learning-atmosphere-v2.webp');
@@ -414,6 +416,176 @@ test(`asistencia sin superposición ${viewport.name} ${theme}`, async ({ page })
 });
 }
 }
+
+async function prepareTeacherHome(page: Page, theme = 'light') {
+  await page.addInitScript((mode) => {
+    localStorage.setItem('xc-theme', JSON.stringify({ state: { mode }, version: 0 }));
+    localStorage.setItem('xcalificator:tour:profesor:teacher-home:v1', 'completed');
+  }, theme);
+  await installApiMocks(page, 'profesor', true);
+}
+
+function isUnexpectedTeacherHomeRequest(method: string, path: string) {
+  return path.startsWith('/api/') && (
+    (method !== 'GET' && !path.startsWith('/api/analytics/'))
+    || /(?:^|\/)(?:generar[^/]*|vision|xali\/chat)(?:\/|$)/.test(path)
+  );
+}
+
+test('inicio docente móvil distingue consultas de revisión y operaciones de IA', () => {
+  expect(isUnexpectedTeacherHomeRequest('GET', '/api/evaluaciones/e1/revision')).toBe(false);
+  expect(isUnexpectedTeacherHomeRequest('GET', '/api/calificaciones/bandeja-docente')).toBe(false);
+  expect(isUnexpectedTeacherHomeRequest('POST', '/api/analytics/evento')).toBe(false);
+  for (const path of ['/api/calificaciones/vision', '/api/evaluaciones/generar-borrador', '/api/xali/chat']) {
+    expect(isUnexpectedTeacherHomeRequest('GET', path)).toBe(true);
+    expect(isUnexpectedTeacherHomeRequest('POST', path)).toBe(true);
+  }
+  expect(isUnexpectedTeacherHomeRequest('PATCH', '/api/calificaciones/g1')).toBe(true);
+});
+
+for (const viewport of viewports.filter((item) => item.width !== 1024)) {
+  for (const theme of ['light', 'dark']) {
+    test(`inicio docente móvil distribución ${viewport.name} ${theme}`, async ({ page, browserName }) => {
+      await page.setViewportSize(viewport);
+      await prepareTeacherHome(page, theme);
+      const subjects = [materia, { ...materia, id: 'm2', nombre: 'Lectura comprensiva 8°' }, { ...materia, id: 'm3', nombre: 'Ciencias naturales 8°' }];
+      await page.route('**/api/materias', (route) => fulfillJson(route, subjects));
+      const unexpected: string[] = [];
+      const errors: string[] = [];
+      page.on('pageerror', (error) => errors.push(error.message));
+      page.on('request', (request) => {
+        const path = new URL(request.url()).pathname;
+        if (isUnexpectedTeacherHomeRequest(request.method(), path)) unexpected.push(request.method() + ' ' + path);
+      });
+      await page.goto('/app');
+      const cards = page.getByTestId('teacher-subject-card');
+      await expect(cards).toHaveCount(3);
+      await expect(page.getByRole('heading', { name: 'Hola, Profesor' })).toBeVisible();
+      if (theme === 'dark') await expect(page.locator('html')).toHaveClass(/dark/);
+      else await expect(page.locator('html')).not.toHaveClass(/dark/);
+      if (viewport.width <= 390) {
+        for (const card of [cards.nth(0), cards.nth(1)]) {
+          const box = (await card.boundingBox())!;
+          expect(box.y).toBeGreaterThanOrEqual(0);
+          expect(box.y + box.height).toBeLessThanOrEqual(viewport.height);
+        }
+        await page.screenshot({ path: `../output/playwright/teacher-home/${browserName}-${viewport.name}-${theme}.png` });
+      }
+      const touchBounds = await page.locator('main#main-content').locator('button, a, input').evaluateAll((elements) => elements.filter((el) => el.getBoundingClientRect().width > 0).map((el) => ({ label: el.textContent, w: el.getBoundingClientRect().width, h: el.getBoundingClientRect().height })));
+      expect(touchBounds.filter((b) => b.w < 44 || b.h < 44)).toEqual([]);
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
+      const search = page.getByRole('searchbox', { name: 'Buscar materia' });
+      await search.focus();
+      await search.fill('Lectura');
+      await expect(cards).toHaveCount(1);
+      const clear = page.getByRole('button', { name: 'Limpiar búsqueda' });
+      await clear.focus();
+      await page.keyboard.press('Enter');
+      await expect(cards).toHaveCount(3);
+      await page.getByRole('link', { name: 'Evaluaciones de Matemáticas 8°' }).click();
+      await expect(page).toHaveURL(/\/materias\/m1\/evaluaciones$/);
+      await page.getByRole('button', { name: 'Notas y entregas', exact: true }).click();
+      await expect(page).toHaveURL(/\/app\/calificaciones\?/);
+      expect(new URL(page.url()).searchParams.get('evaluacion')).toBe('e1');
+      await expect(page.locator('main#main-content')).toBeVisible();
+      await page.waitForLoadState('networkidle');
+      expect(unexpected).toEqual([]);
+      expect(errors).toEqual([]);
+    });
+  }
+}
+
+for (const role of ['profesor', 'estudiante', 'admin'] as const) {
+  test(`inicio docente móvil raíz instalada conserva rol ${role}`, async ({ page, browserName }) => {
+    const errors: string[] = [];
+    page.on('pageerror', (error) => errors.push(error.message));
+    await page.addInitScript((ios) => {
+      localStorage.setItem('xcalificator:tour:profesor:teacher-home:v1', 'completed');
+      if (ios) Object.defineProperty(navigator, 'standalone', { value: true });
+      else {
+        const original = window.matchMedia.bind(window);
+        window.matchMedia = (query) => query === '(display-mode: standalone)' ? { ...original(query), matches: true } : original(query);
+      }
+    }, browserName === 'webkit');
+    await installApiMocks(page, role, true);
+    await page.goto('/');
+    await expect(page).toHaveURL(/\/app$/);
+    await expect(page.locator('main#main-content')).toBeVisible();
+    if (role === 'profesor') await expect(page.getByRole('searchbox', { name: 'Buscar materia' })).toBeVisible();
+    else await expect(page.getByRole('searchbox', { name: 'Buscar materia' })).toHaveCount(0);
+    await expect(page.getByText(/Código abierto · buscamos docentes/)).toHaveCount(0);
+    await page.waitForLoadState('networkidle');
+    expect(errors).toEqual([]);
+  });
+}
+
+test('inicio docente móvil navegador público y app sin sesión', async ({ page }) => {
+  await installApiMocks(page, 'profesor');
+  await page.goto('/');
+  await expect(page.getByText(/Código abierto · buscamos docentes/)).toBeVisible();
+  await page.addInitScript(() => Object.defineProperty(navigator, 'standalone', { value: true }));
+  await page.reload();
+  await expect(page).toHaveURL(/\/login(?:\?reason=session-expired)?$/);
+  await expect(page.getByRole('button', { name: /Iniciar sesión/ })).toBeVisible();
+  await expect(page.getByRole('searchbox', { name: 'Buscar materia' })).toHaveCount(0);
+  await page.waitForLoadState('networkidle');
+});
+
+test('inicio docente móvil ayuda, treinta materias y fallos independientes', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await prepareTeacherHome(page);
+  await page.route('**/api/materias', (route) => fulfillJson(route, Array.from({ length: 30 }, (_, i) => ({ ...materia, id: 'm' + (i + 1), nombre: 'Grupo ' + (i + 1) }))));
+  await page.route('**/api/calificaciones/bandeja-docente', (route) => fulfillJson(route, { detail: 'Fallo sintético' }, 500));
+  await page.route('**/api/herramientas**', (route) => fulfillJson(route, { detail: 'Fallo sintético' }, 500));
+  await page.goto('/app');
+  await expect(page.getByTestId('teacher-subject-card')).toHaveCount(30);
+  await expect(page.getByText('No pudimos actualizar la bandeja')).toBeVisible();
+  await page.getByRole('searchbox', { name: 'Buscar materia' }).fill('Grupo 30');
+  await expect(page.getByTestId('teacher-subject-card')).toHaveCount(1);
+  await page.getByRole('button', { name: 'Cómo empezar' }).click();
+  await expect(page.getByRole('dialog', { name: 'Guía: Empieza por tu materia' })).toBeVisible();
+  await page.getByRole('button', { name: 'Saltar', exact: true }).click();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await page.getByRole('button', { name: 'Herramientas y recursos' }).click();
+  await expect(page.getByText('No pudimos cargar los materiales')).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Evaluaciones de Grupo 30' })).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
+});
+
+test('inicio docente móvil guía inicial omisible y permisos personalizados', async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 800 });
+  await installApiMocks(page, 'profesor', true);
+  await page.route('**/api/users/me/authorization', (route) => fulfillJson(route, {
+    profile: 'profesor', custom_role_id: 'limited', permissions: ['subjects.read', 'evaluations.read'], auth_version: 1,
+  }));
+  const inboxCalls: string[] = [];
+  page.on('request', (request) => { if (request.url().includes('bandeja-docente')) inboxCalls.push(request.url()); });
+  await page.goto('/app');
+  const guide = page.getByRole('dialog', { name: 'Guía: Empieza por tu materia' });
+  await expect(guide).toBeVisible();
+  for (const button of await guide.getByRole('button').all()) {
+    // Wait for the existing entrance spring; subpixel rounding is not a smaller CSS target.
+    await expect.poll(async () => {
+      const box = (await button.boundingBox())!;
+      return Math.min(Math.round(box.width), Math.round(box.height));
+    }).toBeGreaterThanOrEqual(44);
+  }
+  await page.getByRole('button', { name: 'Saltar', exact: true }).click();
+  await expect(guide).toHaveCount(0);
+  await expect(page.getByRole('link', { name: /Asistencia de/ })).toHaveCount(0);
+  expect(inboxCalls).toEqual([]);
+  await page.reload();
+  await expect(page.getByRole('searchbox', { name: 'Buscar materia' })).toBeVisible();
+  await page.waitForTimeout(700); // Beyond the documented automatic guide delay.
+  await expect(guide).toHaveCount(0);
+  const reopen = page.getByRole('button', { name: 'Cómo empezar' });
+  await reopen.focus();
+  await page.keyboard.press('Enter');
+  await expect(guide).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(guide).toHaveCount(0);
+  await expect(reopen).toBeFocused();
+});
 
 test('el estudio solo aparece al administrador autorizado y diferencia sus métricas', async ({ page }) => {
   await installApiMocks(page, 'admin');

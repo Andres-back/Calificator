@@ -3,6 +3,7 @@ import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '@/stores/auth';
 import { LoadingScreen } from '@/components/ui';
 import { routes } from '@/config/routes';
+import { isInstalledApp } from '@/lib/installedApp';
 
 const PUBLIC_PATHS = new Set([
   routes.home,
@@ -21,7 +22,8 @@ const PUBLIC_PATHS = new Set([
 export function AuthBootstrap({ children }: { children: React.ReactNode }) {
   const { status, fetchMe } = useAuth();
   const isPublicPath =
-    typeof window !== 'undefined' && PUBLIC_PATHS.has(window.location.pathname);
+    typeof window !== 'undefined' && PUBLIC_PATHS.has(window.location.pathname)
+    && !(window.location.pathname === routes.home && isInstalledApp());
 
   useEffect(() => {
     if (status === 'idle' && !isPublicPath) void fetchMe();
