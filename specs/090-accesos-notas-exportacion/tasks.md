@@ -1,5 +1,19 @@
 # Tareas: exportaciones de accesos y notas
 
+## Enmienda #190 — implementación del plan ampliado
+- [x] T012 Registrar aprobación y revisar checklist en specs/090-accesos-notas-exportacion/checklists/exportaciones.md; analizar spec/plan/tasks.
+- [x] T013 [US3] Actualizar pruebas de columnas exactas, correspondencia, homónimos y encabezados repetidos en frontend/src/modules/materias/GradebookExport.test.tsx (FR-007, FR-008).
+- [x] T014 [US3] Simplificar matriz de frontend/src/modules/materias/GradebookExport.tsx sin cambiar lecturas, decisiones ni permisos (FR-009, FR-010, FR-012).
+- [x] T015 [US2] Añadir pruebas de selección, confirmación, exclusión, fallos parciales y sesión en frontend/src/modules/materias/RosterCredentials.test.tsx y RosterImportDialog.test.tsx (FR-004, FR-005, FR-006, FR-010).
+- [x] T016 [US2] Integrar renovación explícita y resultados efímeros en frontend/src/modules/materias/RosterAccessDelivery.tsx y RosterCredentials.tsx, reutilizando rosterImportApi.ts (FR-005, FR-006, FR-011).
+- [x] T017 [US2] Comprobar permisos/renovación vigente con backend/tests/integration/test_roster_import_flow.py y sus rutas actuales; adaptar frontend/e2e/mock/exports.mock.spec.ts a notas mínimas, renovación y foto sintética (FR-010, FR-013).
+- [x] T018 Ejecutar pruebas focalizadas, typecheck/lint/build y E2E, revisar inventario/gobernanza y registrar evidencia en specs/090-accesos-notas-exportacion/quickstart.md (FR-012, FR-013).
+- [x] T019 Converger y preparar PR enlazado #190; actualizar specs/090-accesos-notas-exportacion/tasks.md sin fusionar antes de CI verde/autorización.
+
+Cierre técnico #190: checklist 14/14 con revisión autorizada, Analyze sin conflictos, 28 pruebas frontend, 14 integraciones backend aisladas y cuatro E2E verdes; typecheck/lint/build y auditorías verdes. Converge del alcance activo sin brechas ni tareas adicionales; la primera gobernanza mostró solo tareas aún sin marcar y se revalida tras completar este registro. Inventario 573 superficies. Publicación del PR, CI, merge y producción se informan separadamente: estos marcadores no los certifican.
+
+Dependencias de la enmienda: T012 → T013 → T014; T012 → T015 → T016 → T017; ambas historias → T018 → T019. Pruebas de US2 y US3 independientes pueden prepararse en paralelo, sin agentes. MVP notas mínimas, luego entrega explícita. Las tareas históricas siguientes pertenecen al PR #189 y conservan su estado.
+
 ## Fase 1: Preparación
 - [x] T001 Registrar alcance reducido/aprobación, revisar lista y analizar specs/090-accesos-notas-exportacion.
 

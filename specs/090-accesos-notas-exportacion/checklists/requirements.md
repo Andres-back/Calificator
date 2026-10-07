@@ -9,6 +9,8 @@ Actualización 2026-10-07: el usuario aprobó solo exportaciones y autorizó rev
 
 ## Calidad del contenido
 
+Enmienda #190 revisada el 2026-10-07: formato mínimo, selección de una/varias evaluaciones, decisiones vigentes, pendientes vacíos, cero real, homónimos y encabezados repetidos, CSV seguro y conservación de permisos/datos están definidos y verificables. Cero aclaraciones necesarias. Formato aprobado por el usuario («aprove»); plan ampliado aprobado separadamente («adelante»). No certifica implementación ni altera el historial del PR #189.
+
 - [x] Sin detalles de arquitectura, lenguajes o dependencias de implementación.
 - [x] Centrada en entregar accesos y registrar notas con menos trabajo docente.
 - [x] Escrita para personas no técnicas.
@@ -33,6 +35,8 @@ Actualización 2026-10-07: el usuario aprobó solo exportaciones y autorizó rev
 - [x] Requisitos no prescriben arquitectura de implementación.
 
 ## Revisión
+
+Ampliación #190: Specify/Clarify revisados 16/16, sin cambiar marcadores ni añadir preguntas redundantes; consentimiento de renovación, cuentas personales excluidas, fallo incierto sin reintento, claves efímeras y alta por foto están claros. Formato, ampliación y plan ampliado aprobados. Checklist adicional revisado con autorización «Sí, revisa y continúa». Dominios/roles, interacción, privacidad, errores, contratos y aceptación cubiertos; sin hooks previos/posteriores. No certifica implementación.
 
 Specify: 16/16 satisfechos. FR-001–003 y la historia 1 acotan usuarios nuevos y duplicados; FR-004–006 separan descarga y renovación; FR-007–009 concretan evaluaciones, alumnos y estados de notas; FR-010–013 cubren permisos, cuentas internas, movilidad y conservación de registros. FR-014–018 y la historia 4 incorporan la ampliación explícita del usuario: flujo mixto, coincidencias revisadas y separación académica por materia. Los formatos de entrega son resultados solicitados, no una arquitectura prescrita.
 
