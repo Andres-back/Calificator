@@ -384,7 +384,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "6acaa0de0c3c973ff5588a9d024b924181e30d88bce092db7cf554cd9a06a7bb",
+  "source_digest": "75eac690cf7f03fa75d87d2cc767d753bd52b7ff0dc26d737fc6ea179f11084e",
   "surfaces": [
     {
       "actors": [
@@ -2662,6 +2662,12 @@
           "reference": "GET:/analytics/sesiones-trabajo",
           "status": "domain",
           "test_path": "backend/tests/unit/test_analytics_events.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/analytics/sesiones-trabajo",
+          "status": "direct",
+          "test_path": "frontend/e2e/mock/grading-review.mock.spec.ts"
         },
         {
           "level": "unit",
@@ -5160,6 +5166,12 @@
           "reference": "GET:/jobs/{job_id}",
           "status": "direct",
           "test_path": "backend/tests/unit/test_ollama_cloud_provider.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/jobs/{job_id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/mock/grading-review.mock.spec.ts"
         },
         {
           "level": "unit",
@@ -9442,6 +9454,12 @@
           "reference": "POST:/analytics/sesiones-trabajo",
           "status": "domain",
           "test_path": "backend/tests/unit/test_analytics_events.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/analytics/sesiones-trabajo",
+          "status": "direct",
+          "test_path": "frontend/e2e/mock/grading-review.mock.spec.ts"
         },
         {
           "level": "unit",
@@ -17185,6 +17203,12 @@
           "level": "unit",
           "reference": "/app/calificaciones",
           "status": "direct",
+          "test_path": "frontend/src/components/layout/AppShell.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/calificaciones",
+          "status": "direct",
           "test_path": "frontend/src/components/seo/RouteMetadata.test.tsx"
         },
         {
@@ -23532,6 +23556,12 @@
       "states": [],
       "tests": [
         {
+          "level": "e2e",
+          "reference": "GET:/analytics/sesiones-trabajo",
+          "status": "direct",
+          "test_path": "frontend/e2e/mock/grading-review.mock.spec.ts"
+        },
+        {
           "level": "unit",
           "reference": "GET:/analytics/sesiones-trabajo",
           "status": "direct",
@@ -25443,6 +25473,12 @@
           "test_path": "backend/tests/unit/test_ollama_cloud_provider.py"
         },
         {
+          "level": "e2e",
+          "reference": "GET:/jobs/{jobId}",
+          "status": "direct",
+          "test_path": "frontend/e2e/mock/grading-review.mock.spec.ts"
+        },
+        {
           "level": "unit",
           "reference": "GET:/jobs/{jobId}",
           "status": "domain",
@@ -25499,6 +25535,12 @@
           "reference": "GET:/jobs/{jobId}",
           "status": "direct",
           "test_path": "backend/tests/unit/test_ollama_cloud_provider.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/jobs/{jobId}",
+          "status": "direct",
+          "test_path": "frontend/e2e/mock/grading-review.mock.spec.ts"
         },
         {
           "level": "unit",
@@ -29779,6 +29821,12 @@
       "states": [],
       "tests": [
         {
+          "level": "e2e",
+          "reference": "POST:/analytics/sesiones-trabajo",
+          "status": "direct",
+          "test_path": "frontend/e2e/mock/grading-review.mock.spec.ts"
+        },
+        {
           "level": "unit",
           "reference": "POST:/analytics/sesiones-trabajo",
           "status": "direct",
@@ -31814,6 +31862,12 @@
           "reference": "POST:/jobs/{jobId}",
           "status": "direct",
           "test_path": "backend/tests/unit/test_ollama_cloud_provider.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/jobs/{jobId}",
+          "status": "direct",
+          "test_path": "frontend/e2e/mock/grading-review.mock.spec.ts"
         },
         {
           "level": "unit",
@@ -36488,6 +36542,12 @@
           "reference": "calificaciones",
           "status": "direct",
           "test_path": "frontend/src/components/auth/RouteGuards.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "calificaciones",
+          "status": "direct",
+          "test_path": "frontend/src/components/layout/AppShell.test.tsx"
         },
         {
           "level": "unit",

@@ -1,7 +1,104 @@
 import { expect, test, type Page, type Route } from '@playwright/test';
 import { readFileSync } from 'node:fs';
+import { login as loginReviewFixture } from './fixtures/explainableGrading';
+
+test('088 revisión amplia mantiene lista y detalle independientes', async ({ page }) => {
+  await page.setViewportSize({ width: 1366, height: 768 });
+  await loginReviewFixture(page, 'profesor', { rosterSize: 30, questionCount: 20 });
+  const writes: string[] = [];
+  page.on('request', (request) => { if (request.method() !== 'GET' && /\/api\/calificaciones\//.test(request.url())) writes.push(request.url()); });
+  await page.goto('/app/calificaciones?materia=m1&evaluacion=e1&calificacion=c1&estudiante=s1');
+  const roster = page.getByTestId('grade-review-roster');
+  const list = page.getByTestId('grade-review-students');
+  const detail = page.getByTestId('grade-review-scroll');
+  await expect(page.getByRole('heading', { name: '1. Nota y explicación' })).toBeVisible();
+  expect((await roster.boundingBox())!.width).toBeGreaterThanOrEqual(320);
+  await page.getByRole('button', { name: '3. Respuestas y puntajes', exact: true }).click();
+  await page.getByRole('button', { name: 'Pregunta 20', exact: true }).click();
+  await detail.hover();
+  await page.mouse.wheel(0, 700);
+  await expect.poll(() => detail.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
+  expect(await list.evaluate((element) => element.scrollTop)).toBe(0);
+  await expect(page.getByRole('searchbox', { name: 'Buscar estudiante' })).toBeInViewport();
+  await expect(page.getByTestId('grade-review-identity')).toBeInViewport();
+  const before = await detail.evaluate((element) => element.scrollTop);
+  await list.hover();
+  await page.mouse.wheel(0, 500);
+  await expect.poll(() => list.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
+  expect(await detail.evaluate((element) => element.scrollTop)).toBe(before);
+  await page.getByRole('searchbox', { name: 'Buscar estudiante' }).fill('Alumno 020');
+  await roster.getByRole('button', { name: /Alumno 020 María Fernanda López/ }).click();
+  await expect(page.getByTestId('grade-review-identity')).toContainText('Alumno 020 María Fernanda López');
+  expect(writes).toEqual([]);
+});
+
+test('088 cabecera compacta deja cinco filas y conserva edición al redimensionar', async ({ page }) => {
+  await page.setViewportSize({ width: 1366, height: 768 });
+  await loginReviewFixture(page, 'profesor', { rosterSize: 30, questionCount: 20 });
+  await page.goto('/app/calificaciones?materia=m1&evaluacion=e1&calificacion=c1&estudiante=s1');
+  const header = page.getByTestId('grade-review-header');
+  expect((await header.boundingBox())!.height).toBeLessThanOrEqual(112);
+  const list = page.getByTestId('grade-review-students');
+  const visibleRows = await list.evaluate((element) => {
+    const box = element.getBoundingClientRect();
+    return [...element.querySelectorAll('[data-review-student]')].filter((row) => {
+      const rect = row.getBoundingClientRect(); return rect.top >= box.top && rect.bottom <= box.bottom;
+    }).length;
+  });
+  expect(visibleRows).toBeGreaterThanOrEqual(5);
+  await page.getByRole('button', { name: '3. Respuestas y puntajes', exact: true }).click();
+  await page.getByRole('button', { name: 'Ajustar puntaje y explicación', exact: true }).click();
+  await page.getByLabel(/Puntos \(máximo/).fill('0.7');
+  await page.setViewportSize({ width: 1279, height: 768 });
+  await expect(page.getByRole('button', { name: 'Volver a lista', exact: true })).toBeVisible();
+  await expect.poll(() => page.evaluate(() => document.body.style.position)).toBe('fixed');
+  await expect(page.getByLabel(/Puntos \(máximo/)).toHaveValue('0.7');
+  await page.setViewportSize({ width: 1280, height: 768 });
+  await expect.poll(() => page.evaluate(() => document.body.style.position)).not.toBe('fixed');
+  await expect(page.getByLabel(/Puntos \(máximo/)).toHaveValue('0.7');
+  await page.getByRole('button', { name: 'Volver a notas del grupo', exact: true }).click();
+  await expect(page.getByRole('dialog', { name: 'Cambios sin guardar' })).toBeVisible();
+});
 
 const teacher = { id: 'p1', nombre: 'Profesora Prueba', email: 'profesora@example.test', rol: 'profesor', estado: 'activo', permissions: ['subjects.read', 'evaluations.read', 'grading.read', 'grading.grade', 'grading.publish'] };
+
+test('088 cien alumnos conservan búsqueda, filtros, paginación y modos completos', async ({ page }) => {
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  await loginReviewFixture(page, 'profesor', { rosterSize: 100 });
+  await page.goto('/app/calificaciones?materia=m1&evaluacion=e1&calificacion=c1&estudiante=s1');
+  const roster = page.getByTestId('grade-review-roster');
+  const students = page.getByTestId('grade-review-students');
+  await expect(students.locator('[data-review-student]').first()).toBeVisible();
+  const initialRows = await students.locator('[data-review-student]').count();
+  expect(initialRows).toBeGreaterThan(0);
+  expect(initialRows).toBeLessThan(100);
+  await students.getByRole('button', { name: 'Más estudiantes' }).click();
+  await expect.poll(() => students.locator('[data-review-student]').count()).toBeGreaterThan(initialRows);
+  await roster.getByRole('searchbox').fill('Alumno 099');
+  await expect(students.locator('[data-review-student]')).toHaveCount(1);
+  await students.getByRole('button', { name: /Alumno 099 María Fernanda López/ }).click();
+  await expect(page.getByTestId('grade-review-identity')).toContainText('Alumno 099');
+  await roster.getByRole('checkbox', { name: /Seleccionar nota de Alumno 099/ }).click();
+  await expect(page.getByText('1 seleccionado', { exact: true })).toBeVisible();
+  // El transform del toolbar animado puede introducir error subpíxel en DOMRect.
+  expect(Math.round((await page.getByRole('button', { name: 'Confirmar todos', exact: true }).boundingBox())!.height * 100) / 100).toBeGreaterThanOrEqual(44);
+  await expect(page.locator('[data-grading-layout]')).toHaveAttribute('data-grading-layout', 'flow');
+  await page.getByRole('button', { name: 'Limpiar', exact: true }).click();
+  await expect(page.locator('[data-grading-layout]')).toHaveAttribute('data-grading-layout', 'split');
+  await roster.getByRole('combobox').selectOption('pendientes');
+  await expect(roster.getByText('No hay resultados con ese filtro.')).toBeVisible();
+  await roster.getByRole('combobox').selectOption('publicadas');
+  await expect(students.locator('[data-review-student]')).toHaveCount(1);
+  await page.getByRole('button', { name: 'Más acciones', exact: true }).click();
+  await page.getByRole('button', { name: 'Resumen y publicación', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Resumen de notas del examen' })).toBeVisible();
+  await page.getByRole('button', { name: 'Más acciones', exact: true }).click();
+  await page.getByRole('button', { name: 'Volver a revisión', exact: true }).click();
+  await page.getByRole('button', { name: /Estás revisando/ }).click();
+  await expect(page.getByRole('combobox', { name: 'Evaluación', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: /Estás revisando/ }).click();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBeTruthy();
+});
 const student = { id: 's1', nombre: 'Estudiante Prueba', email: 'estudiante@example.test', rol: 'estudiante', estado: 'activo', permissions: ['subjects.read', 'evaluations.read', 'evaluations.submit', 'grading.read', 'gradebook.read'] };
 const materia = { id: 'm1', profesor_id: 'p1', nombre: 'Matemáticas', area: 'Matemáticas', grado: '4', codigo_matricula: 'MATE4', estado: 'activa' };
 const evaluation = {
@@ -292,14 +389,15 @@ test('la rueda sobre el panel derecho desplaza la revisión en escritorio', asyn
   await page.goto('/app/calificaciones/workspace/e1');
   await page.getByText('Estudiante Prueba', { exact: true }).click();
 
-  const main = page.locator('main#main-content');
+  const scroller = page.getByTestId('grade-review-scroll');
   const reviewHeading = page.getByRole('heading', { name: 'Nota explicada respuesta por respuesta' });
   await page.getByRole('button', { name: '3. Respuestas y puntajes', exact: true }).click();
   await expect(reviewHeading).toBeVisible();
   await reviewHeading.hover();
-  const before = await main.evaluate((element) => element.scrollTop);
+  const before = await scroller.evaluate((element) => element.scrollTop);
   await page.mouse.wheel(0, 900);
-  await expect.poll(() => main.evaluate((element) => element.scrollTop)).toBeGreaterThan(before + 40);
+  await expect.poll(() => scroller.evaluate((element) => element.scrollTop)).toBeGreaterThan(before + 40);
+  expect(await page.locator('main#main-content').evaluate((element) => element.scrollTop)).toBe(0);
 });
 
 test('estudiante ve el desglose publicado y selecciona una pregunta para reclamar', async ({ page }) => {
@@ -510,10 +608,10 @@ test('30 matriculados, ocho reclamos y alumno sin entrega sin nota ficticia', as
     return json(route, { evaluacion_id: 'e1', materia_id: 'm1', total_alumnos: 30, siguiente_cursor: null, contadores: { todas: 30, pendientes: 29, alertas: 8, procesando: 1, publicadas: 0 }, alumnos: filtered });
   });
   await page.goto('/app/calificaciones?evaluacion=e1');
-  await page.getByRole('button', { name: 'alertas (8)' }).click();
+  await page.getByRole('combobox', { name: 'Filtrar estudiantes por estado' }).selectOption('alertas');
   await expect(page.getByRole('button', { name: /Alumno 08/ })).toBeVisible();
   await expect(page.getByRole('button', { name: /Alumno 09/ })).toHaveCount(0);
-  await page.getByRole('button', { name: 'todas (30)' }).click();
+  await page.getByRole('combobox', { name: 'Filtrar estudiantes por estado' }).selectOption('todas');
   await expect(page.getByRole('button', { name: /Alumno 29/ })).not.toContainText('0.0');
   await expect(page.getByRole('button', { name: /Alumno 28/ })).toContainText('0.0');
   await page.getByRole('button', { name: /Alumno 30/ }).click();
@@ -658,6 +756,7 @@ test('publicación parcial conserva solo el fallo y no repite notas exitosas', a
     ] });
   });
   await page.goto('/app/calificaciones?evaluacion=e1');
+  await page.getByRole('button', { name: 'Más acciones', exact: true }).click();
   await page.getByRole('button', { name: 'Resumen y publicación' }).click();
   await expect(page.getByRole('heading', { name: 'Resumen de notas del examen' })).toBeVisible();
   await page.getByRole('checkbox', { name: 'Seleccionar nota de Alumno 1' }).click();

@@ -10,7 +10,7 @@ for (const theme of ['light', 'dark'] as const) {
     { width: 1920, height: 1080 },
   ]) test(`revisión ${theme} en ${viewport.width}px`, async ({ page }) => {
     await page.setViewportSize(viewport);
-    await login(page, 'profesor');
+    await login(page, 'profesor', { rosterSize: 30 });
     await page.goto('/app/calificaciones/workspace/e1');
     await page.getByText('Estudiante Prueba', { exact: true }).click();
     await page.evaluate((activeTheme) => {
@@ -19,6 +19,7 @@ for (const theme of ['light', 'dark'] as const) {
     await expect(page.getByRole('heading', { name: '1. Nota y explicación' })).toBeVisible();
     await expect(page.getByRole('button', { name: '3. Respuestas y puntajes', exact: true })).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBeTruthy();
+    await page.screenshot({ path: `output/playwright/088-review-${theme}-${viewport.width}.png`, fullPage: true, animations: 'disabled' });
     await expect(page).toHaveScreenshot(`grading-review-${theme}-${viewport.width}.png`, {
       fullPage: true,
       animations: 'disabled',

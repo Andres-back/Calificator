@@ -9,6 +9,59 @@ const base = {
   evidencia_paginas: [1], valoraciones: [],
 };
 
+test('088 contexto y menú permanecen alcanzables en vista estrecha y escritorio', async ({ page }) => {
+  await login(page, 'profesor', { rosterSize: 30 });
+  await page.goto('/app/calificaciones?evaluacion=e1');
+  for (const width of [360, 1279, 1366]) {
+    await page.setViewportSize({ width, height: 800 });
+    await page.getByRole('button', { name: /Estás revisando/ }).click();
+    await expect(page.getByRole('combobox', { name: 'Evaluación', exact: true })).toBeVisible();
+    await page.getByRole('button', { name: /Estás revisando/ }).click();
+    await page.getByRole('button', { name: 'Más acciones', exact: true }).click();
+    await expect(page.getByRole('link', { name: 'Libro de notas', exact: true })).toBeInViewport();
+    await expect(page.getByRole('button', { name: 'Establecer nota', exact: true })).toBeInViewport();
+    await page.getByRole('button', { name: 'Más acciones', exact: true }).click();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBeTruthy();
+  }
+});
+
+test('088 lote largo y temporizador opcional conservan controles alcanzables', async ({ page }) => {
+  await page.setViewportSize({ width: 1366, height: 768 });
+  const job = { jobId: 'batch1', evaluacionId: 'e1', materiaId: 'm1', estudianteId: '', estudianteNombre: 'Lote sintético',
+    createdAt: new Date().toISOString(), kind: 'batch', completed: true,
+    summary: { total: 30, queued: 0, running: 0, retrying: 0, success: 0, requires_review: 30, failed_permanent: 0, cancelled: 0 } };
+  await page.addInitScript((stored) => localStorage.setItem('xcalificator.pending-gradings.v1', JSON.stringify([stored])), job);
+  await login(page, 'profesor', { rosterSize: 30 });
+  await page.route('**/api/jobs/batch1/items*', (route) => route.fulfill({ json: { items: Array.from({ length: 30 }, (_, index) => ({
+    job_id: `item${index}`, estudiante_nombre: `Alumno ${index + 1}`, estado: 'requires_review', progreso: 100,
+  })) } }));
+  await page.route('**/api/analytics/sesiones-trabajo*', (route) => route.fulfill({ json: { items: [], total: 0, limit: 30, offset: 0 } }));
+  const writes: string[] = [];
+  page.on('request', (request) => { if (request.method() !== 'GET' && /\/api\/(calificaciones|jobs)\//.test(request.url())) writes.push(request.url()); });
+  await page.goto('/app/calificaciones?evaluacion=e1&calificacion=c1&estudiante=s1');
+  const workspace = page.locator('[data-grading-layout]');
+  const monitor = workspace.getByLabel('Calificaciones en cola');
+  await monitor.getByRole('button', { name: 'Ver casos', exact: true }).click();
+  const lastCase = monitor.getByText('Caso 30 · Alumno 30', { exact: true });
+  await lastCase.scrollIntoViewIfNeeded();
+  await expect(lastCase).toBeInViewport();
+  for (const control of [monitor.getByRole('button', { name: 'Reintentar', exact: true }).last(), monitor.getByRole('button', { name: 'Cerrar resumen del lote' })]) {
+    const box = (await control.boundingBox())!;
+    expect(box.width).toBeGreaterThanOrEqual(44);
+    expect(box.height).toBeGreaterThanOrEqual(44);
+  }
+  await monitor.getByRole('button', { name: 'Ocultar casos', exact: true }).click();
+  if (process.env.VITE_TEACHER_WORK_TIMING_ENABLED === 'true') {
+    await expect(workspace).toHaveAttribute('data-grading-layout', 'flow');
+    const start = workspace.getByRole('button', { name: 'Iniciar voluntariamente', exact: true });
+    await start.scrollIntoViewIfNeeded();
+    await expect(start).toBeInViewport();
+  }
+  await workspace.getByRole('button', { name: '3. Respuestas y puntajes', exact: true }).click();
+  await expect(workspace.getByRole('heading', { name: 'Nota explicada respuesta por respuesta' })).toBeVisible();
+  expect(writes).toEqual([]);
+});
+
 const breakdown = {
   id: 'd1', calificacion_id: 'c1', version: 1, origen: 'automatico', cobertura_estado: 'completa',
   requiere_revision: true, created_at: '2026-09-19T00:00:00Z', claves_liberadas: true,

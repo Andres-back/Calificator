@@ -324,6 +324,7 @@ test('profesor recorre la materia, califica desde su evaluación y escribe un DB
       const context = new URL(page.url()).searchParams;
       expect(context.get('materia')).toBe('m1');
       expect(context.get('evaluacion')).toBe('e1');
+      await page.getByRole('button', { name: 'Más acciones', exact: true }).click();
       await page.getByRole('link', { name: 'Volver a evaluaciones', exact: true }).click();
       await expect(page).toHaveURL(/\/app\/materias\/m1\/evaluaciones$/);
     }

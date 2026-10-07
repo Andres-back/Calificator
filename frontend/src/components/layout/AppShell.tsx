@@ -14,6 +14,7 @@ export function AppShell() {
   const role = useAuth((state) => state.user?.rol);
   const isStudent = role === 'estudiante';
   const isTeacher = role === 'profesor';
+  const isGradingReview = isTeacher && location.pathname === '/app/calificaciones';
   const [mobileOpen, setMobileOpen] = useState(false);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
   const appContentRef = useRef<HTMLDivElement>(null);
@@ -108,6 +109,7 @@ export function AppShell() {
           className={cn(
             'safe-area-pb relative min-w-0 flex-1 px-4 py-5 outline-none sm:px-6 lg:min-h-0 lg:overflow-y-auto lg:px-8 lg:py-7',
             isStudent && 'sm:py-7 lg:px-10 lg:py-9',
+            isGradingReview && 'xl:px-4 xl:py-3 xl:[&:has([data-grading-layout=split])]:overflow-hidden',
           )}
         >
           <div className="app-atmosphere" aria-hidden="true">
@@ -115,7 +117,9 @@ export function AppShell() {
             <span className="app-atmosphere-orb app-atmosphere-orb-primary" />
             <span className="app-atmosphere-orb app-atmosphere-orb-secondary" />
           </div>
-          <div className="relative mx-auto max-w-7xl">
+          <div className={cn('relative mx-auto', isGradingReview
+            ? 'max-w-none xl:[&:has([data-grading-layout=split])]:h-full'
+            : 'max-w-7xl')}>
             <Outlet />
           </div>
         </main>

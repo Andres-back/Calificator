@@ -281,3 +281,7 @@ actualizar la especificación propietaria, su plan y sus tareas; no debe crear d
 ## Evolución 087: revisión de calificaciones clara
 
 - [087-calificacion-clara](087-calificacion-clara/spec.md), [issue #180](https://github.com/Andres-back/Calificator/issues/180): resumen móvil compacto, avisos generales e individuales comprensibles, cálculo progresivo y trazas originales consultables. Dominio propietario: 008; sin nuevas rutas, endpoints, tablas o políticas de calificación.
+
+## Evolución 088: revisión amplia y compacta
+
+- [088-revision-amplia](088-revision-amplia/spec.md), [issue #182](https://github.com/Andres-back/Calificator/issues/182): lista de estudiantes legible, cabecera compacta y scroll independiente en escritorio; una vista a la vez en celular. Propietario: 008; usa el shell de 002 sin modificar su navegación general. Sin altas de superficies, tablas, endpoints o reglas de calificación.
