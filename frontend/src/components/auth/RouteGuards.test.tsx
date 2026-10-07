@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter, Outlet, Route, Routes, useOutletContext } from 'react-router-dom';
 import { AuthBootstrap, RequireAuth } from './RequireAuth';
@@ -24,7 +24,33 @@ beforeEach(() => {
   window.history.replaceState({}, '', '/');
 });
 
+afterEach(() => vi.unstubAllGlobals());
+
 describe('auth bootstrap', () => {
+  it.each(['android', 'iphone'])('checks session before redirecting the installed root on %s', (platform) => {
+    vi.stubGlobal('matchMedia', vi.fn().mockImplementation((query: string) => ({ matches: query === '(display-mode: standalone)' && platform === 'android', addListener: vi.fn(), removeListener: vi.fn() })));
+    if (platform === 'iphone') vi.stubGlobal('navigator', { standalone: true });
+    const fetchMe = vi.fn().mockResolvedValue(undefined);
+    useAuth.setState({ user: null, status: 'idle', fetchMe });
+    render(<AuthBootstrap><p>Root redirect</p></AuthBootstrap>);
+    expect(fetchMe).toHaveBeenCalledOnce();
+    expect(screen.queryByText('Root redirect')).not.toBeInTheDocument();
+    expect(screen.getByText('Iniciando XCalificator…')).toBeInTheDocument();
+  });
+  it('keeps the regular root public', () => {
+    vi.stubGlobal('matchMedia', vi.fn().mockReturnValue({ matches: false }));
+    const fetchMe = vi.fn();
+    useAuth.setState({ status: 'idle', fetchMe });
+    render(<AuthBootstrap><p>Public landing</p></AuthBootstrap>);
+    expect(screen.getByText('Public landing')).toBeInTheDocument();
+    expect(fetchMe).not.toHaveBeenCalled();
+  });
+  it('releases an installed root only after bootstrap finishes', () => {
+    vi.stubGlobal('matchMedia', vi.fn().mockReturnValue({ matches: true }));
+    useAuth.setState({ user: userFor('profesor'), status: 'authenticated' });
+    render(<AuthBootstrap><p>Validated entry</p></AuthBootstrap>);
+    expect(screen.getByText('Validated entry')).toBeInTheDocument();
+  });
   it.each([
     routes.login,
     routes.privacy,
@@ -44,6 +70,15 @@ describe('auth bootstrap', () => {
   });
 });
 describe('route guards', () => {
+  it('requires a temporary password change before entering work', () => {
+    useAuth.setState({ user: { ...userFor('profesor'), debe_cambiar_password: true }, status: 'authenticated' });
+    render(<MemoryRouter initialEntries={['/app']}><Routes>
+      <Route element={<RequireAuth />}><Route path="/app" element={<p>Work</p>} /></Route>
+      <Route path={routes.initialPassword} element={<p>Change initial password</p>} />
+    </Routes></MemoryRouter>);
+    expect(screen.getByText('Change initial password')).toBeInTheDocument();
+    expect(screen.queryByText('Work')).not.toBeInTheDocument();
+  });
   it('redirects an unauthenticated visitor to login', () => {
     render(
       <MemoryRouter initialEntries={['/app']}>

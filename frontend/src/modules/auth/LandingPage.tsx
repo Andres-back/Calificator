@@ -1,4 +1,5 @@
-import { Link } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
+import { isInstalledApp } from '@/lib/installedApp';
 import {
   ArrowRight,
   BookOpenCheck,
@@ -40,6 +41,7 @@ const steps = [
 ];
 
 export function LandingPage() {
+  if (isInstalledApp()) return <Navigate to={routes.app} replace />;
   return (
     <div className="min-h-dvh overflow-hidden bg-surface text-fg">
       <header className="relative z-20 border-b border-border/80 bg-surface/90 backdrop-blur-xl">

@@ -8,6 +8,11 @@ export default defineConfig({
     timeout: 10_000,
   },
   retries: 0,
+  projects: [
+    { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
+    // WebKit covers this mobile increment without doubling unrelated legacy suites.
+    { name: 'webkit', testMatch: '**/p2-responsive.spec.ts', grep: /inicio docente móvil/, use: { ...devices['Desktop Safari'] } },
+  ],
   use: {
     baseURL: 'http://127.0.0.1:4175',
     trace: 'retain-on-failure',
