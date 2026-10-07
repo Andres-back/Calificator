@@ -384,7 +384,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "f38cc56f604a853f03dcfcfd76366843500f44b77d202240bca2eca632043e95",
+  "source_digest": "df25e71b593694730522726e113cdca20d8114b8a5d2fd91fe97cbc405d529f8",
   "surfaces": [
     {
       "actors": [
@@ -9429,6 +9429,12 @@
           "test_path": "frontend/e2e/explainable-grading.spec.ts"
         },
         {
+          "level": "e2e",
+          "reference": "POST:/analytics/evento",
+          "status": "direct",
+          "test_path": "frontend/e2e/p2-responsive.spec.ts"
+        },
+        {
           "level": "unit",
           "reference": "POST:/analytics/evento",
           "status": "direct",
@@ -11565,6 +11571,12 @@
           "reference": "POST:/evaluaciones/generar-borrador",
           "status": "direct",
           "test_path": "frontend/e2e/evaluation-ai-wizard.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/evaluaciones/generar-borrador",
+          "status": "direct",
+          "test_path": "frontend/e2e/p2-responsive.spec.ts"
         },
         {
           "level": "unit",
@@ -14149,6 +14161,12 @@
           "reference": "POST:/xali/chat",
           "status": "direct",
           "test_path": "frontend/e2e/evaluation-ai-wizard.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/xali/chat",
+          "status": "direct",
+          "test_path": "frontend/e2e/p2-responsive.spec.ts"
         },
         {
           "level": "unit",
@@ -29832,6 +29850,12 @@
           "test_path": "frontend/e2e/explainable-grading.spec.ts"
         },
         {
+          "level": "e2e",
+          "reference": "POST:/analytics/evento",
+          "status": "direct",
+          "test_path": "frontend/e2e/p2-responsive.spec.ts"
+        },
+        {
           "level": "unit",
           "reference": "POST:/analytics/evento",
           "status": "direct",
@@ -31019,6 +31043,12 @@
           "reference": "POST:/evaluaciones/generar-borrador",
           "status": "direct",
           "test_path": "frontend/e2e/evaluation-ai-wizard.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/evaluaciones/generar-borrador",
+          "status": "direct",
+          "test_path": "frontend/e2e/p2-responsive.spec.ts"
         },
         {
           "level": "unit",
@@ -32656,6 +32686,12 @@
           "reference": "POST:/xali/chat",
           "status": "direct",
           "test_path": "frontend/e2e/evaluation-ai-wizard.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/xali/chat",
+          "status": "direct",
+          "test_path": "frontend/e2e/p2-responsive.spec.ts"
         },
         {
           "level": "unit",

@@ -58,3 +58,9 @@ No se cambiaron backend, cuentas, notas, evidencias, asistencia, criterios, trab
 ## Entrega para revisión
 
 PR [#185](https://github.com/Andres-back/Calificator/pull/185), enlazado a #184 y adjunto al chat, con etiquetas `spec-approved` y `plan-approved`. Primer estado remoto comprobado: Backend quality and tests, Frontend quality/build/E2E, Container builds y Spec governance en curso. No se certifica CI verde por haber abierto el PR; tampoco se habilita auto-merge o bypass. Se solicita autorización de fusión/despliegue por separado, condicionada a los controles completos en verde. Producción continúa sin este cambio.
+
+## Corrección de validación autorizada — 2026-10-07
+
+CI del HEAD inicial `e75775d`: backend y contenedores verdes; gobernanza falló por no incorporar 089 en ALL_SPECS. Frontend: 131 E2E pasaron y diez fallaron por clasificar el GET de `revision` como `vision`. No era evidencia de una llamada real a IA; el detector buscaba una subcadena sin límites. La espera de red añadida al cierre de la prueba permitió observar esa consulta y dejó visible el defecto del detector.
+
+Se añadió 089 al conjunto estricto, sin excluir pruebas ni modificar propietarios. El detector distingue segmentos; una regresión verifica que revisión/lectura son válidas mientras generación, visión, chat y escritura de notas siguen siendo rechazados. Prueba focalizada: **22 casos verdes en una corrida**, diez distribuciones más una regresión por motor (Chromium y WebKit). TypeScript y lint estricto verdes. Gobernanza completa local: **41 pruebas verdes** e inventario vigente de 573 superficies. Converge posterior: los dos hallazgos parciales resueltos, cero brechas adicionales en el alcance de corrección; T019/T020 completas. No hubo cambios de código funcional, modelos, tiempos de calificación o datos. Se actualiza el inventario derivado de las pruebas y se vuelve a solicitar CI completo sobre el nuevo HEAD; la fusión sigue sin autorización.

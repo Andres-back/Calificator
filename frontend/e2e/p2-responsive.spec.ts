@@ -425,6 +425,24 @@ async function prepareTeacherHome(page: Page, theme = 'light') {
   await installApiMocks(page, 'profesor', true);
 }
 
+function isUnexpectedTeacherHomeRequest(method: string, path: string) {
+  return path.startsWith('/api/') && (
+    (method !== 'GET' && !path.startsWith('/api/analytics/'))
+    || /(?:^|\/)(?:generar[^/]*|vision|xali\/chat)(?:\/|$)/.test(path)
+  );
+}
+
+test('inicio docente móvil distingue consultas de revisión y operaciones de IA', () => {
+  expect(isUnexpectedTeacherHomeRequest('GET', '/api/evaluaciones/e1/revision')).toBe(false);
+  expect(isUnexpectedTeacherHomeRequest('GET', '/api/calificaciones/bandeja-docente')).toBe(false);
+  expect(isUnexpectedTeacherHomeRequest('POST', '/api/analytics/evento')).toBe(false);
+  for (const path of ['/api/calificaciones/vision', '/api/evaluaciones/generar-borrador', '/api/xali/chat']) {
+    expect(isUnexpectedTeacherHomeRequest('GET', path)).toBe(true);
+    expect(isUnexpectedTeacherHomeRequest('POST', path)).toBe(true);
+  }
+  expect(isUnexpectedTeacherHomeRequest('PATCH', '/api/calificaciones/g1')).toBe(true);
+});
+
 for (const viewport of viewports.filter((item) => item.width !== 1024)) {
   for (const theme of ['light', 'dark']) {
     test(`inicio docente móvil distribución ${viewport.name} ${theme}`, async ({ page, browserName }) => {
@@ -437,7 +455,7 @@ for (const viewport of viewports.filter((item) => item.width !== 1024)) {
       page.on('pageerror', (error) => errors.push(error.message));
       page.on('request', (request) => {
         const path = new URL(request.url()).pathname;
-        if (path.startsWith('/api/') && ((request.method() !== 'GET' && !path.startsWith('/api/analytics/')) || /generar|vision|\/xali\/chat/.test(path))) unexpected.push(request.method() + ' ' + path);
+        if (isUnexpectedTeacherHomeRequest(request.method(), path)) unexpected.push(request.method() + ' ' + path);
       });
       await page.goto('/app');
       const cards = page.getByTestId('teacher-subject-card');

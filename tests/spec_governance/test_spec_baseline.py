@@ -89,6 +89,7 @@ ALL_SPECS = {
     "086-embedding-admin-check",
     "087-calificacion-clara",
     "088-revision-amplia",
+    "089-inicio-docente-movil",
 }
 OWNED_SPECS = {
     name

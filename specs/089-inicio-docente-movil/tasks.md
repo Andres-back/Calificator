@@ -75,3 +75,10 @@ Ejemplos por historia: US1 permite T005/T006 en archivos distintos; US2 se manti
 ## Estrategia
 
 MVP técnico: US1 estabiliza entrada y sesión, validable independientemente. Después US2 y US3 completan el alcance aprobado antes de PR; no desplegar un MVP parcial. Primero regresiones y luego implementación por historia. Cada tarea se marca solo tras ejecutarla; ninguna lista de calidad certifica funcionamiento. No tareas de IA, migraciones, APK, App Store, offline ni acceso a credenciales.
+
+## Phase 7: Convergence
+
+Revisión del 2026-10-07, correcciones autorizadas por el usuario tras diagnosticar CI. Dos brechas parciales de validación, sin cambios al alcance funcional o a datos: inventario de specs de pruebas incompleto (Constitución VII) y detector de IA que confunde `revision` con `vision` (SC-005/FR-010). Se conservan las pruebas y los controles; no se omite CI.
+
+- [x] T019 Añadir `089-inicio-docente-movil` a ALL_SPECS en tests/spec_governance/test_spec_baseline.py y verificar identificación/artefactos, manteniendo igualdad estricta y propietarios funcionales per Constitución VII (partial).
+- [x] T020 Corregir el detector de peticiones en frontend/e2e/p2-responsive.spec.ts con límites de segmento, cubrir consultas de revisión permitidas y llamadas IA/escrituras rechazadas, y reejecutar distribución en Chromium/WebKit antes de actualizar PR #185 per SC-005 y FR-010 (partial).
