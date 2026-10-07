@@ -1,4 +1,6 @@
 # Datos
+Ampliación #190: selección de IDs autorizados con email_es_interno; confirmación de renovación, estado renovando y resultado efímero por estudiante (clave recibida / error incierto / no intentado). La operación existente actualiza password_hash, debe_cambiar_password y auth_version; no añade columnas ni conserva la clave como texto. Descargar resultado no modifica estos campos. Foto/manual mantiene resultado efímero existente de cuentas nuevas.
+Enmienda #190: la tabla descargada proyecta únicamente nombre del alumno y score de cada FollowUpCell. Identidades, escala y estado se siguen usando internamente, no se exportan. Encabezados únicos por evaluación con ordinal si coincide el nombre; filas independientes por estudiante_id, incluso con nombres idénticos. No hay transición de estado ni cambio persistente.
 Entrega efímera: estudiante_id, nombre, email, password_temporal opcional. Selección IDs; claves solo desde RosterConfirmation recién recibida; nunca persistidas. Sesión cambiada bloquea y cierre desmonta.
 Libro: materia y matrícula existentes, evaluaciones no borrador, calificaciones por evaluación. FollowUpCell: score nullable, maximumScore, status decidida/por_revisar/calificando/sin_nota; misma última calificación que libro.
 Estados UI: selección → cargando → descargado/error. Reintento solo lectura. Sin nuevos modelos/tablas/migraciones.

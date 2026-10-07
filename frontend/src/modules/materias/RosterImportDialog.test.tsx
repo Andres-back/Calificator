@@ -5,6 +5,8 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { RosterImportDialog } from './RosterImportDialog';
 import { RosterManualDialog } from './RosterManualDialog';
 import { useAuth } from '@/stores/auth';
+import { downloadCsv } from '@/lib/csvExport';
+vi.mock('@/lib/csvExport', () => ({ downloadCsv: vi.fn() }));
 
 const mocks = vi.hoisted(() => ({ get: vi.fn(), put: vi.fn(), confirm: vi.fn(), manual: vi.fn() }));
 vi.mock('./rosterImportApi', async (original) => ({ ...await original<typeof import('./rosterImportApi')>(), getRosterImport: mocks.get, updateRosterImport: mocks.put, confirmRosterImport: mocks.confirm, createManualRoster: mocks.manual, listExistingStudents: vi.fn().mockResolvedValue([]) }));
@@ -27,6 +29,17 @@ it('recovers a lost confirmation response without repeating row writes', async (
   expect(await screen.findByText(/Las claves anteriores no se pueden recuperar/)).toBeVisible();
   expect(mocks.put).toHaveBeenCalledOnce();
   expect(mocks.confirm).toHaveBeenCalledTimes(2);
+});
+it('downloads newly issued photo-registration credentials without confirming or renewing again', async () => {
+  mocks.confirm.mockResolvedValue({ ...confirmation, credenciales_mostradas_una_vez: true, credenciales: [{ estudiante_id: 'a', nombre: 'Ana', email: 'ana@example.test', password_temporal: 'Foto-Sintetica' }] });
+  const view = wrap(<RosterImportDialog open materiaId="m1" initialBatchId="b1" onClose={vi.fn()} />);
+  const user = userEvent.setup();
+  await user.click(await screen.findByRole('button', { name: 'Confirmar 1 estudiantes' }));
+  await user.click(await screen.findByRole('button', { name: 'Descargar accesos CSV' }));
+  expect(downloadCsv).toHaveBeenCalledWith(expect.any(String), [['Nombre', 'Usuario', 'Clave temporal'], ['Ana', 'ana@example.test', 'Foto-Sintetica']]);
+  expect(mocks.confirm).toHaveBeenCalledOnce();
+  view.unmount();
+  expect(screen.queryByText(/Foto-Sintetica/)).not.toBeInTheDocument();
 });
 it('shows an explicit retry when the private batch cannot be read', async () => {
   mocks.get.mockRejectedValue(new Error('Unavailable'));

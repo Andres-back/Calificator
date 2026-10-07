@@ -1,4 +1,6 @@
 # Validación
+Ampliación #190 (plan aprobado e implementado): probar selección todos/algunos, cancelación sin POST, exclusión de cuenta personal, confirmación explícita, una llamada por ID, conservación de claves recibidas en fallo parcial, detención sin reintentar en red incierta y eliminación en cambio de sesión. Probar CSV tras confirmación de importación por foto sintética: nombre/usuario/clave recién emitida. No renovar claves de alumnos reales para validar.
+Enmienda #190: `npx vitest run src/modules/materias/GradebookExport.test.tsx src/modules/materias/RosterCredentials.test.tsx src/modules/materias/RosterImportDialog.test.tsx src/modules/materias/MateriaVistaGeneral.test.tsx src/lib/csvExport.test.ts`; typecheck/lint y `npx playwright test --config=e2e/mock exports.mock.spec.ts`. Una evaluación: dos columnas exactas, nombre y nota. Dos: tres columnas, notas de la evaluación correcta. Probar encabezados repetidos, homónimos, cero decidido y tres estados pendientes vacíos; no usuarios, escala ni estado. Conservar evidencia previa como histórico, sin presentarla como prueba de la enmienda.
 Datos sintéticos únicamente.
 - Frontend: npm run typecheck, npm run lint:strict, Vitest focalizado csvExport/RosterCredentials/MateriaVistaGeneral/GradebookExport/MateriaBoletin/gradebookModel; npm run build.
 - Estudiantes: todos/algunos, copiar/CSV/print; antigua clave vacía y cero renovaciones automáticas. Alta ficticia entrega clave nueva; cerrar/cambiar sesión retira secretos.
@@ -6,6 +8,13 @@ Datos sintéticos únicamente.
 - E2E sintético Chromium/WebKit a 360×800 y 390×844 y escritorio: sin overflow, selector/descarga. Validación física iPhone/Android declarada pendiente si no disponible.
 - Inventario/gobernanza y PR #186 con ambas etiquetas y CI verde antes de merge; no renovaciones masivas reales.
 
-## Evidencia local — 2026-10-07
+## Evidencia local histórica #186 / PR #189 — 2026-10-07
 TypeScript, lint estricto, 32 pruebas frontend en 7 archivos, 11 backend (lectura pura, compatibilidad y permisos), build y auditorías de acciones/build verdes. Dos E2E Chromium/WebKit: 360×800 claro, 390×844 oscuro y 1280×800, 30 alumnos ficticios, archivos completos con búsqueda activa y cero escrituras. No se afirma prueba física iPhone/Android ni despliegue.
 Primera corrida E2E: faltaba gradebook.read en cuenta ficticia. Se corrigió solo fixture y corrida completa verde, sin eludir guardas.
+
+## Evidencia local de la enmienda #190 — 2026-10-07
+TypeScript, lint estricto, 28 pruebas frontend en cinco archivos, cuatro E2E Chromium/WebKit y 14 integraciones backend verdes. E2E pasivo a 360×800 claro, 390×844 oscuro y 1280×800 con 30 alumnos; renovación confirmada y alta por foto sintética a 390×844. Sin desbordamiento horizontal. CSV notas: exactamente nombre + columnas elegidas; pendientes vacíos, cero confirmado, homónimos y encabezados duplicados cubiertos. CSV accesos: claves recién recibidas; cancelación y descarga sin renovación. Fallo parcial conserva la clave recibida y no intenta el tercer alumno; cambio de sesión corta el lote y oculta claves. Backend PostgreSQL aislado migrado: 14 pruebas, sin saltos; renovación sin permiso/otro docente rechazada sin cambiar hash/auth_version, clave anterior inválida tras consentimiento y cambio obligatorio activo. No operaciones con alumnos reales.
+
+Compilación y auditorías de acciones/build verdes; inventario regenerado con 573 superficies (solo evidencia de prueba y digest). El primer E2E falló porque la expectativa exigía comillas innecesarias para celdas sencillas; se corrigió la expectativa, no se relajó la seguridad del CSV. La primera preparación backend encontró PostgreSQL iniciándose y después una imagen sin pytest; se esperó su disponibilidad y se usó la imagen de pruebas instalada, sin cambios al producto.
+
+Converge técnico: historias 2/3, diez FR activos, cinco SC y decisiones del plan contrastados con el código; sin brechas funcionales ni tareas nuevas. Gobernanza local PASS y 41 pruebas verdes tras cerrar las tareas realizadas; inventario vigente. Historias 1/4, usuarios cortos/compartidos (#188) y verificador (#187) siguen fuera del alcance aprobado. No se afirma prueba física de teléfonos, CI remoto, merge ni despliegue: se informan separadamente en el PR.

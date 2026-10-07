@@ -21,7 +21,7 @@ beforeEach(() => {
   ]);
 });
 function show() { return render(<GradebookExport materiaId="m" materiaName="Clase" evaluations={evaluations as never} initialEvaluationId="e1" studentCount={4} onClose={vi.fn()} />); }
-it('exports every student, real zero and pending states using read-only queries', async () => {
+it('exports only student name and evaluation grade, preserving real zero and empty pending grades', async () => {
   show();
   expect(screen.getByRole('checkbox', { name: 'Uno' })).toBeChecked();
   expect(screen.getByRole('checkbox', { name: 'Dos' })).not.toBeChecked();
@@ -29,10 +29,12 @@ it('exports every student, real zero and pending states using read-only queries'
   await waitFor(() => expect(mocks.download).toHaveBeenCalledOnce());
   const rows = mocks.download.mock.calls[0][1] as string[][];
   expect(rows).toHaveLength(5);
-  expect(rows.find(row => row[0] === 'a')).toEqual(['a', 'a@example.test', '0', '5', 'Decisión guardada']);
-  expect(rows.find(row => row[0] === 'b')).toEqual(['b', 'b@example.test', '', '5', 'Por revisar']);
-  expect(rows.find(row => row[0] === 'c')).toEqual(['c', 'c@example.test', '', '5', 'Calificando']);
-  expect(rows.find(row => row[0] === 'd')).toEqual(['d', 'd@example.test', '', '5', 'Sin calificación']);
+  expect(rows[0]).toEqual(['Nombre del estudiante', 'Uno']);
+  expect(rows.find(row => row[0] === 'a')).toEqual(['a', '0']);
+  expect(rows.find(row => row[0] === 'b')).toEqual(['b', '']);
+  expect(rows.find(row => row[0] === 'c')).toEqual(['c', '']);
+  expect(rows.find(row => row[0] === 'd')).toEqual(['d', '']);
+  expect(rows.every(row => row.length === 2)).toBe(true);
   expect(mocks.grades).toHaveBeenCalledWith('e1', { readOnly: true });
 });
 it('selects all but never downloads on partial failure', async () => {
@@ -52,8 +54,25 @@ it('supports several evaluations and disables an empty selection', async () => {
   await user.click(screen.getByRole('button', { name: 'Descargar notas CSV' }));
   await waitFor(() => expect(mocks.download).toHaveBeenCalledOnce());
   expect(mocks.grades).toHaveBeenCalledTimes(2);
-  expect(mocks.download.mock.calls[0][1][0]).toHaveLength(8);
+  expect(mocks.download.mock.calls[0][1][0]).toEqual(['Nombre del estudiante', 'Uno', 'Dos']);
   expect(mocks.download.mock.calls[0][1]).toHaveLength(5);
+});
+it('keeps each evaluation grade in its column and distinguishes repeated headings and students', async () => {
+  const repeated = [evaluations[0], { ...evaluations[1], nombre: 'Uno' }, { ...evaluations[1], id: 'e3', nombre: 'Uno (1)' }];
+  mocks.list.mockResolvedValue(repeated);
+  mocks.students.mockResolvedValue({ id: 'm', estudiantes: [{ id: 'a', nombre: 'Ana', email: 'a@example.test' }, { id: 'b', nombre: 'Ana', email: 'b@example.test' }] });
+  mocks.grades.mockImplementation((id: string) => Promise.resolve([
+    { id: id + '-a', estudiante_id: 'a', estado: 'confirmada', nota_confirmada: id === 'e1' ? 0 : id === 'e2' ? 7.5 : 4.3, updated_at: '2026-10-07' },
+    { id: id + '-b', estudiante_id: 'b', estado: 'confirmada', nota_confirmada: id === 'e1' ? 3.7 : id === 'e2' ? 8 : 9.1, updated_at: '2026-10-07' },
+  ]));
+  render(<GradebookExport materiaId="m" materiaName="Clase" evaluations={repeated as never} initialEvaluationId="" studentCount={2} onClose={vi.fn()} />);
+  await userEvent.setup().click(screen.getByRole('button', { name: 'Descargar notas CSV' }));
+  await waitFor(() => expect(mocks.download).toHaveBeenCalledOnce());
+  const rows = mocks.download.mock.calls[0][1] as string[][];
+  expect(rows[0]).toEqual(['Nombre del estudiante', 'Uno (2)', 'Uno (3)', 'Uno (1)']);
+  expect(rows).toContainEqual(['Ana', '0', '7,5', '4,3']);
+  expect(rows).toContainEqual(['Ana', '3,7', '8', '9,1']);
+  expect(rows).toHaveLength(3);
 });
 it('rejects removed evaluation selections', async () => {
   mocks.list.mockResolvedValue([]); show();

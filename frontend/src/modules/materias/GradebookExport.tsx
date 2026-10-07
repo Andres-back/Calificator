@@ -47,14 +47,21 @@ export function GradebookExport({ materiaId, materiaName, evaluations, initialEv
       }
       if (!valid()) return;
       const rows = buildFollowUpRows({ students: subject.estudiantes, evaluations: scope, gradesByEvaluation: grades });
-      const labels = { decidida: 'Decisión guardada', por_revisar: 'Por revisar', calificando: 'Calificando', sin_nota: 'Sin calificación' };
       const decimal = (value: number) => String(value).replace('.', ',');
+      const reserved = new Set(scope.map(item => item.nombre));
+      const used = new Set(['Nombre del estudiante']);
+      const headings = scope.map(item => {
+        let label = item.nombre;
+        if (used.has(label) || scope.filter(other => other.nombre === label).length > 1) {
+          let ordinal = 1;
+          do { label = `${item.nombre} (${ordinal++})`; } while (reserved.has(label) || used.has(label));
+        }
+        used.add(label);
+        return label;
+      });
       downloadCsv('Notas-' + materiaName, [
-        ['Nombre', 'Usuario', ...scope.flatMap(item => [item.nombre + ' — Nota', item.nombre + ' — Escala', item.nombre + ' — Estado'])],
-        ...rows.map(row => [row.nombre, row.email, ...row.cells.flatMap(cell => [
-          cell.score == null ? '' : decimal(cell.score), decimal(cell.maximumScore),
-          cell.grade?.estado === 'publicada' && cell.status === 'decidida' ? 'Publicada' : labels[cell.status],
-        ])]),
+        ['Nombre del estudiante', ...headings],
+        ...rows.map(row => [row.nombre, ...row.cells.map(cell => cell.score == null ? '' : decimal(cell.score))]),
       ]);
       setMessage('Descarga preparada: ' + rows.length + ' estudiantes y ' + scope.length + ' evaluaciones.');
     } catch (cause) {
@@ -65,7 +72,7 @@ export function GradebookExport({ materiaId, materiaName, evaluations, initialEv
     }
   }
   if (!permitted) return null;
-  return <Modal open onClose={onClose} title="Exportar notas" description="Incluye todo el grupo, aunque tengas una búsqueda activa. Las notas sin decisión docente quedan vacías.">
+  return <Modal open onClose={onClose} title="Exportar notas" description="Nombre del estudiante y una columna de nota por evaluación. Incluye todo el grupo; las notas pendientes quedan vacías.">
     <div className="space-y-4">
       <div className="flex flex-wrap gap-2"><Button variant="outline" className="min-h-11" disabled={busy} onClick={() => setSelected(evaluations.map(item => item.id))}>Todas</Button><Button variant="outline" className="min-h-11" disabled={busy} onClick={() => setSelected([])}>Ninguna</Button></div>
       <fieldset disabled={busy} className="min-w-0 space-y-1"><legend className="mb-2 font-semibold">Evaluaciones</legend>

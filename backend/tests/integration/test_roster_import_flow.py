@@ -281,11 +281,23 @@ async def test_temporary_password_reset_is_scoped_and_revokes_old_password() -> 
         access = (await confirm_lote(db, batch.id, teacher))["credenciales"][0]
         student = await db.get(User, access["estudiante_id"])
         old_version = student.auth_version
+        old_hash = student.password_hash
+        outsider, _ = await _subject(db)
+        with pytest.raises(HTTPException) as error:
+            await reset_temporary_password(db, subject.id, student.id, outsider)
+        assert error.value.status_code == 403
+        teacher._effective_permissions = set()
+        with pytest.raises(HTTPException) as error:
+            await reset_temporary_password(db, subject.id, student.id, teacher)
+        assert error.value.status_code == 403
+        assert student.password_hash == old_hash and student.auth_version == old_version
+        teacher._effective_permissions = {"subjects.update"}
         reset = await reset_temporary_password(db, subject.id, student.id, teacher)
         assert reset["password_temporal"] != access["password_temporal"]
         assert verify_password(reset["password_temporal"], student.password_hash)
         assert not verify_password(access["password_temporal"], student.password_hash)
         assert student.auth_version == old_version + 1
+        assert student.debe_cambiar_password is True
     finally:
         await db.close()
         await transaction.rollback()

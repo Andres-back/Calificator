@@ -384,7 +384,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "d02b8c9dc2eb349836013e44d7348cfe665c46c24f5e75edf768c1744ebd41f4",
+  "source_digest": "0b4b80417ef4c909364c347a13e006cbacd275125fcd3daf1278b76d9acd14fd",
   "surfaces": [
     {
       "actors": [
@@ -38529,6 +38529,12 @@
           "reference": "materias",
           "status": "direct",
           "test_path": "frontend/src/modules/materias/MateriasListPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "materias",
+          "status": "direct",
+          "test_path": "frontend/src/modules/materias/RosterCredentials.test.tsx"
         },
         {
           "level": "unit",

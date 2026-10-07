@@ -4,11 +4,34 @@
 
 ## Alcance vigente aprobado
 
-El usuario aprobó «Solo exportaciones por ahora». Son exigibles Historia 2 y 3, FR-004 a FR-013 y SC-002 a SC-006. Historia 1 y 4, FR-001 a FR-003, FR-014 a FR-018 y SC-001, SC-007 a SC-009 quedan DIFERIDOS en issue #188, no criterios de cierre de este PR. Se mantiene renovación individual existente; no se añade renovación masiva. Verificador opcional: #187, fuera de alcance.
+El usuario aprobó «Solo exportaciones por ahora» para PR #189. Son exigibles Historia 2 y 3, FR-004 a FR-013 y SC-002 a SC-006. Historia 1 y 4, FR-001 a FR-003, FR-014 a FR-018 y SC-001, SC-007 a SC-009 quedan DIFERIDOS en issue #188. Enmienda #190: el usuario amplió el alcance a renovación explícita de claves para todos/algunos estudiantes internos desde «Entregar accesos», y confirmó entregar las claves nuevas al registrar por foto. No recuperar claves históricas ni renovarlas al descargar. Verificador opcional: #187, fuera de alcance.
 
 **Solicitud**: facilitar la entrega de accesos desde Estudiantes, acortar los usuarios creados desde listas, reutilizar cuentas entre materias propias o de distintos docentes mediante autorización y exportar el libro de notas de una materia para una o varias evaluaciones. No modificar registros anteriores ni el proceso de calificación.
 
 ## Aclaraciones
+
+### Ampliación de entrega de claves — issue #190 (alcance y plan aprobados)
+
+- Q: ¿Apruebas añadir «Generar nuevas claves y entregar» junto al CSV simplificado de notas? → A: «adelante y cuando recien los registre por foto igual». Selección de todos/algunos, confirmación independiente y aviso del cambio en todas las materias.
+- Las cuentas nuevas desde foto/manual entregan nombre, usuario y clave temporal recién generada en ese momento, para copiar, descargar o imprimir. Reutilizar cuentas existentes no genera ni muestra claves anteriores; podrán renovarse explícitamente después.
+- «Entregar accesos» permite renovar únicamente cuentas internas matriculadas y autorizadas. Antes de confirmar indica seleccionados, elegibles y excluidos; el docente puede cancelar sin cambios. Descargar un archivo no renueva claves.
+- Si una renovación falla, se conservan las claves recibidas correctamente y se identifica el alumno sin resultado confirmado; no se inventa una clave ni se repite automáticamente la solicitud. No se anuncia éxito total. Un fallo de red puede haber cambiado esa clave: se advierte y cualquier nueva renovación exige confirmación otra vez.
+- Cambiar de sesión o perder permisos elimina claves de la vista y detiene nuevas solicitudes; no se registran en almacenamiento del navegador, caché de consultas, logs ni servidor como texto recuperable. El cierre de la ventana durante una renovación se bloquea hasta recibir el resultado para no perder una clave emitida silenciosamente.
+
+**Éxito de la ampliación**: en pruebas sintéticas, alta desde foto entrega exactamente las claves recién emitidas; renovar cambia solo cuentas internas seleccionadas tras confirmación; cancelar, copiar, imprimir y descargar producen cero renovaciones; fallos parciales conservan el 100% de las claves recibidas y distinguen pendientes/inciertos. No se modifican notas, evidencias, matrículas ni claves de alumnos no seleccionados.
+
+### Enmienda de CSV de notas — issue #190 (formato aprobado)
+
+El usuario aprobó este formato el 2026-10-07 («aprove»): primera columna «Nombre del estudiante» y una columna por evaluación seleccionada, cuyo encabezado es el nombre de la evaluación y cuyo valor es la nota docente vigente. No incluir usuario, escala ni estado como columnas. Una nota aún no decidida queda vacía; un cero confirmado se conserva. Sustituye únicamente el formato descrito en Historia 3, FR-008 y SC-004. El formato de accesos, las notas guardadas y las reglas de autorización no cambian. El plan ampliado recibió aprobación separada («adelante») antes de implementar.
+
+**Aceptación de la enmienda**:
+
+1. Una evaluación seleccionada produce exactamente dos columnas: «Nombre del estudiante» y el nombre de esa evaluación; varias producen una columna de nombre más una por evaluación, en el orden elegido.
+2. Cada alumno matriculado tiene una fila, y cada nota coincide con su decisión docente vigente; no se incluyen usuarios ni columnas de escala/estado. Las sugerencias sin confirmar, en proceso y ausentes quedan vacías, nunca como cero.
+3. Evaluaciones con nombres idénticos se distinguen mediante un sufijo de ordinal en el encabezado, sin cambiar sus nombres guardados. Los alumnos homónimos mantienen filas independientes; no se agrupan por nombre.
+4. El archivo conserva acentos, decimales y protección frente a fórmulas, sin modificar calificaciones ni datos. Las exportaciones de accesos permanecen idénticas.
+
+**Resultado verificable**: con N evaluaciones seleccionadas y M alumnos, el archivo tiene exactamente N+1 columnas y M+1 filas contando encabezados; cero datos personales adicionales, cero pendientes convertidos en cero y cero escrituras.
 
 ### Sesión 2026-10-07
 
@@ -54,7 +77,7 @@ El profesor encuentra un botón permanente «Entregar accesos» en Estudiantes. 
 
 ### Historia 3 - Exportar las notas de una o varias evaluaciones (Prioridad: P1)
 
-Desde el libro de notas de la materia, el profesor selecciona una, varias o todas las evaluaciones disponibles y descarga una tabla compatible con Excel, con los alumnos en filas y la nota y estado de cada evaluación en columnas.
+Desde el libro de notas de la materia, el profesor selecciona una, varias o todas las evaluaciones disponibles y descarga una tabla compatible con Excel, con el nombre del estudiante y una columna de nota por evaluación, encabezada por su nombre.
 
 **Razón de prioridad**: permite trasladar las notas a los registros docentes sin copiarlas a mano y sin confundir resultados pendientes con notas definitivas.
 
@@ -63,8 +86,8 @@ Desde el libro de notas de la materia, el profesor selecciona una, varias o toda
 **Aceptación**:
 
 1. **Dada** una evaluación seleccionada en el libro, **cuando** abre «Exportar notas», **entonces** esa evaluación queda seleccionada inicialmente; puede añadir otras o elegir «Todas» sin salir de la materia.
-2. **Dadas** varias evaluaciones seleccionadas, **cuando** descarga, **entonces** el archivo contiene todos los alumnos matriculados, sus nombres y usuarios, y solamente las evaluaciones seleccionadas, identificadas por nombre y escala de nota.
-3. **Dada** una nota confirmada o manual, **cuando** se exporta, **entonces** coincide con la decisión docente vigente. Las sugerencias sin confirmar no se exportan como notas definitivas; se indica «Por revisar». «Calificando» y «Sin calificación» dejan la nota vacía. Un cero confirmado sí se conserva como cero.
+2. **Dadas** varias evaluaciones seleccionadas, **cuando** descarga, **entonces** el archivo contiene todos los alumnos matriculados, «Nombre del estudiante» y una columna por evaluación seleccionada, identificada por nombre; no incluye usuario, escala ni estado.
+3. **Dada** una nota confirmada o manual, **cuando** se exporta, **entonces** coincide con la decisión docente vigente. Las sugerencias sin confirmar, «Calificando» y «Sin calificación» dejan la nota vacía. Un cero confirmado sí se conserva como cero.
 4. **Dado** un filtro de búsqueda o seguimiento en pantalla, **cuando** prepara la exportación, **entonces** se informa que el archivo contiene todos los alumnos de la materia y se muestra su cantidad; el filtro no omite alumnos silenciosamente.
 5. **Dada** una consulta incompleta, fallida o una evaluación que dejó de estar disponible, **cuando** intenta exportar, **entonces** no recibe un archivo aparentemente completo; ve el problema y puede reintentar o corregir la selección.
 
@@ -112,14 +135,14 @@ El docente crea una materia y añade alumnos de una materia propia o solicita un
 - **FR-003**: El nuevo formato DEBE aplicarse solo a nuevas cuentas internas creadas desde foto o registro manual. Asociar alumnos existentes a otra materia NO DEBE cambiar usuario, contraseña ni identidad.
 - **FR-004**: Estudiantes DEBE ofrecer «Entregar accesos» de forma permanente al docente autorizado, con selección individual, «Todos», recuento, copiar, descarga compatible con Excel y fichas individuales imprimibles.
 - **FR-005**: Exportar accesos DEBE incluir contraseñas únicamente cuando estén disponibles tras alta o renovación explícita en la sesión actual. No DEBE recuperar contraseñas anteriores, guardarlas en texto plano ni cambiarlas por descargar, copiar o imprimir.
-- **FR-006**: La renovación de claves de alumnos internos seleccionados DEBE ser una acción separada con confirmación explícita de su efecto en todas las materias y sesiones; se excluyen cuentas personales y alumnos fuera del alcance de gestión. Un resultado parcial DEBE permitir identificar qué claves sí cambiaron.
+- **FR-006**: «Entregar accesos» DEBE permitir generar claves temporales nuevas para todos/algunos alumnos internos seleccionados como acción separada con confirmación explícita de su efecto en todas las materias y sesiones; se excluyen cuentas personales y alumnos fuera del alcance de gestión. Un resultado parcial DEBE conservar claves recibidas, identificar fallos/inciertos y no repetir solicitudes automáticamente. La importación por foto/manual DEBE permitir entregar las claves recién creadas; reutilizar alumnos no renueva sus claves.
 - **FR-007**: El libro de notas DEBE ofrecer «Exportar notas» para una, varias o todas las evaluaciones no borrador disponibles de esa materia, con selección inicial coherente con la evaluación abierta y recuento visible de evaluaciones y alumnos.
-- **FR-008**: La exportación de notas DEBE incluir todos los alumnos matriculados, independientemente del filtro de búsqueda/seguimiento, con nombre, usuario, nota, estado y escala por evaluación seleccionada. Solo las decisiones docentes vigentes ocupan la columna de nota definitiva; estados pendientes no equivalen a cero.
+- **FR-008**: La exportación de notas DEBE incluir todos los alumnos matriculados, independientemente del filtro de búsqueda/seguimiento, con «Nombre del estudiante» y una columna por evaluación seleccionada, encabezada por su nombre y con la nota docente vigente. No incluye usuario, escala ni estado como columnas; pendientes quedan vacíos y cero confirmado se conserva. Nombres repetidos de evaluaciones se distinguen por ordinal, sin renombrar registros ni fusionar alumnos homónimos.
 - **FR-009**: Las descargas DEBEN reflejar una carga completa y correcta del alcance elegido; no se habilitan ante datos incompletos, consultas fallidas o selecciones obsoletas. Exportar NO DEBE recalcular, confirmar ni publicar notas.
 - **FR-010**: La entrega y exportación DEBEN respetar permisos y pertenencia a la materia; ningún estudiante ni docente sin autorización accede a notas o credenciales ajenas. Archivos de notas NO DEBEN contener contraseñas, fotos ni retroalimentación privada.
 - **FR-011**: Los accesos internos DEBEN identificarse como usuarios de inicio de sesión, no buzones reales; no se enviarán recuperaciones a sus direcciones ficticias. La entrega advertirá que las credenciales son privadas y que se distribuyen individualmente.
 - **FR-012**: Los archivos DEBEN abrirse con columnas y acentos correctos en Excel y herramientas compatibles, sin ejecutar como fórmulas textos controlados por usuarios. La interfaz DEBE funcionar desde iPhone, Android y escritorio, sin desbordamiento de página ni paneles que bloqueen controles.
-- **FR-013**: El cambio DEBE conservar calificaciones, evidencias, matrículas, cuentas anteriores, cambio obligatorio de clave temporal y flujos existentes. No añadirá llamadas a IA para exportar ni cambios al razonamiento de calificación.
+- **FR-013**: El cambio DEBE conservar calificaciones, evidencias, matrículas, identidades y cambio obligatorio de clave temporal. Claves previas solo cambian por renovación explícita confirmada de alumnos internos seleccionados. No añadirá llamadas a IA para exportar ni cambios al razonamiento de calificación.
 - **FR-014**: La selección de alumnos existentes DEBE poder filtrarse por materia propia o lista autorizada, conservando búsqueda y selección individual/«Todos». Reutilizar solo añade matrículas; nunca clona cuentas.
 - **FR-015**: El docente DEBE poder solicitar una lista de otro docente mediante referencia compartida. El propietario o administrador autorizado DEBEN poder aprobar o rechazar; la autorización queda limitada a alumnos concretos y una materia destino, sin abrir un catálogo público de listas ajenas.
 - **FR-016**: El administrador autorizado DEBE poder matricular estudiantes existentes directamente desde interfaz y gestionar solicitudes pendientes. Toda decisión DEBE registrar solicitante, aprobador, origen, destino, alumnos y estado.
@@ -139,7 +162,7 @@ El docente crea una materia y añade alumnos de una materia propia o solicita un
 - **SC-001**: En las pruebas con apellidos repetidos y altas simultáneas, el 100% de las cuentas nuevas entregadas tienen usuarios únicos con el formato aprobado, sin sufijos de tres cifras; las cuentas ya existentes permanecen idénticas.
 - **SC-002**: Desde Estudiantes se accede a la selección de entrega con un toque y se puede entregar a «Todos» sin seleccionar a cada alumno; copiar/descargar/imprimir no modifica ninguna contraseña ni matrícula.
 - **SC-003**: Desde el libro se prepara una exportación de una o varias evaluaciones sin abandonar la materia; el archivo incluye exactamente las evaluaciones elegidas y todos los alumnos indicados por el recuento.
-- **SC-004**: Para cada resultado del conjunto de prueba, nota definitiva, escala y estado coinciden con el libro; hay cero pendientes convertidos en cero o sugerencias exportadas como definitivas.
+- **SC-004**: Para M alumnos y N evaluaciones seleccionadas, el CSV tiene M+1 filas y N+1 columnas contando encabezados; cada nota coincide con el libro. Hay cero pendientes convertidos en cero, sugerencias exportadas como definitivas o columnas adicionales de usuario, escala o estado.
 - **SC-005**: Las pruebas de permisos rechazan el 100% de los intentos fuera del alcance del actor; las exportaciones de notas contienen cero contraseñas y las descargas pasivas producen cero escrituras de notas o claves.
 - **SC-006**: Los recorridos de selección, copiar y descarga se verifican a 360×800 y 390×844 en motores representativos de Android/iPhone y a 1280×800, sin desbordamiento horizontal de la página ni controles inaccesibles. La impresión individual conserva un formato legible en la vista de impresión; las comprobaciones físicas pendientes se declaran por separado.
 - **SC-007**: En las pruebas con dos docentes y aprobación docente/administrativa, cada alumno conserva exactamente una cuenta y las matrículas esperadas; cero contraseñas cambiadas y cero registros académicos copiados.
