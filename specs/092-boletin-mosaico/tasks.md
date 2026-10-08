@@ -47,3 +47,7 @@ T001 → T002 → T003 → US1 (T004–T005) → US2 (T006–T008) → US3 (T009
 Paralelización posible, no necesaria: tras T008, preparar E2E T010 mientras se revisa T009 en otro archivo; tras implementar, validaciones frontend T011 y backend T012 son independientes. Mantener secuenciales ediciones del mismo archivo, sin requerir agentes adicionales.
 
 Cobertura: US1 tiene dos tareas, US2 tres y US3 dos; fundamentos y cierre cubren requisitos transversales. Catorce tareas, IDs secuenciales, todas con rutas y criterios. Marcar solo tareas realmente completadas.
+
+## Phase 6: Convergence
+
+- [x] T015 Registrar `092-boletin-mosaico` en la lista de especificaciones activas de las pruebas `tests/spec_governance/` y ejecutar su batería antes de reenviar el PR, según Constitución VII y VIII (partial). CI detectó el registro administrativo faltante; no eliminar ni relajar la comprobación.

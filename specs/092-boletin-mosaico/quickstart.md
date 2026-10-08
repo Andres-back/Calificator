@@ -59,4 +59,6 @@ Entrega: [PR #195](https://github.com/Andres-back/Calificator/pull/195), enlazad
 
 ## Converge
 
-Resultado limpio: 10 requisitos funcionales, 6 criterios de éxito, 12 escenarios de aceptación, 9 casos límite, 7 decisiones técnicas y 8 principios constitucionales revisados contra código y evidencia local. Sin hallazgos `missing`, `partial`, `contradicts` o `unrequested`; no se añadieron tareas de convergencia. La entrega del PR es una tarea administrativa posterior, no una capacidad ausente.
+Revisión inicial limpia sobre funcionalidad: 10 requisitos funcionales, 6 criterios de éxito, 12 escenarios de aceptación, 9 casos límite, 7 decisiones técnicas y 8 principios constitucionales contrastados con código/evidencia local. La entrega del PR es administrativa, no una capacidad ausente.
+
+CI del PR detectó un hallazgo administrativo `partial`: `test_baseline_contains_all_active_specs` no incluía la nueva 092. Converge añadió T015 (Constitución VII/VIII). Se añadió únicamente el nombre a `ALL_SPECS` en `tests/spec_governance/test_spec_baseline.py`, sin relajar comprobaciones; prueba específica 1/1 y batería completa `C:/Python313/python.exe -m pytest tests/spec_governance -q` 41/41. Revisión final de T015 y su evidencia sin tareas pendientes ni hallazgos accionables. La corrección no requiere reconstrucción del frontend porque no modifica código funcional.
