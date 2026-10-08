@@ -38,7 +38,7 @@
 - [x] T011 Ejecutar pruebas focalizadas de boletín/modelo/exportación/scroll, TypeScript/lint/build y matriz Chromium/WebKit de `specs/092-boletin-mosaico/quickstart.md`; corregir fallos y registrar evidencia real, sin datos productivos.
 - [x] T012 Ejecutar regresiones aplicables de `backend/tests/unit/test_calificaciones_boletin_permissions.py` y pruebas existentes de modo solo lectura; documentar comandos/resultados en `specs/092-boletin-mosaico/quickstart.md` (FR-010; SC-006).
 - [x] T013 Revisar eliminación de código de presentación sin consumidores en `frontend/src/modules/materias/MateriaBoletin.tsx`, ejecutar Converge y actualizar evidencia/estado de `specs/092-boletin-mosaico/` y `specs/README.md`; no cambiar cálculos ni vista estudiante.
-- [ ] T014 Crear PR enlazado al issue #194 con artefactos completos, aprobaciones y verificación; adjuntarlo al chat y registrar enlace en `specs/092-boletin-mosaico/quickstart.md`. No fusionar ni desplegar sin autorización separada y CI verde.
+- [x] T014 Crear PR enlazado al issue #194 con artefactos completos, aprobaciones y verificación; adjuntarlo al chat y registrar enlace en `specs/092-boletin-mosaico/quickstart.md`. No fusionar ni desplegar sin autorización separada y CI verde.
 
 ## Dependencias y estrategia
 

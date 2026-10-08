@@ -55,6 +55,8 @@ Registrar evidencia una vez al cierre; repetir solo casos afectados por correcci
 
 Fusión, CI remoto completo y verificación productiva no se declaran terminados en esta evidencia local.
 
+Entrega: [PR #195](https://github.com/Andres-back/Calificator/pull/195), enlazado a #194, etiquetas `spec-approved` y `plan-approved`, adjunto al chat. CI remoto pendiente; no fusionado ni desplegado.
+
 ## Converge
 
 Resultado limpio: 10 requisitos funcionales, 6 criterios de éxito, 12 escenarios de aceptación, 9 casos límite, 7 decisiones técnicas y 8 principios constitucionales revisados contra código y evidencia local. Sin hallazgos `missing`, `partial`, `contradicts` o `unrequested`; no se añadieron tareas de convergencia. La entrega del PR es una tarea administrativa posterior, no una capacidad ausente.
