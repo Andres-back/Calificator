@@ -167,9 +167,11 @@ def _render_image_box(image: Any, *, alt: str, cls: str = "material-image") -> s
 # ── Crucigrama ───────────────────────────────────────────────────────────────
 def _render_crucigrama(c: dict, soluciones: bool) -> str:
     nested = c.get("crucigrama") or {}
-    grid = nested.get("grid") or c.get("grilla") or []
-    horiz = c.get("preguntas_horizontales") or nested.get("pistas_horizontal") or []
-    vert = c.get("preguntas_vertical") or c.get("preguntas_verticales") or nested.get("pistas_vertical") or []
+    safe_mask = c.get("grid_mascara")
+    masked = isinstance(safe_mask, list)
+    grid = safe_mask if masked else nested.get("grid") or c.get("grilla") or []
+    horiz = c.get("pistas_horizontales") or c.get("preguntas_horizontales") or nested.get("pistas_horizontal") or []
+    vert = c.get("pistas_verticales") or c.get("preguntas_vertical") or c.get("preguntas_verticales") or nested.get("pistas_vertical") or []
 
     numbers: dict[tuple[int, int], int] = {}
     for item in list(horiz) + list(vert):
@@ -182,11 +184,12 @@ def _render_crucigrama(c: dict, soluciones: bool) -> str:
     for r, row in enumerate(grid):
         cells = []
         for col, ch in enumerate(row):
-            ch = str(ch or "").strip()
-            if ch:
+            letter_value = "" if masked else str(ch or "").strip()
+            filled = bool(ch) if masked else bool(letter_value)
+            if filled:
                 num = numbers.get((r, col))
                 badge = f'<span class="num">{_e(num)}</span>' if num else ""
-                letter = _e(ch.upper()) if soluciones else ""
+                letter = _e(letter_value.upper()) if soluciones and not masked else ""
                 cells.append(f'<td class="cell">{badge}{letter}</td>')
             else:
                 cells.append('<td class="block"></td>')

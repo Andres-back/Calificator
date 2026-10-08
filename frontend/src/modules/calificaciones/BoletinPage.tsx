@@ -8,6 +8,7 @@ import { toApiError } from '@/lib/api';
 import { useAuth } from '@/stores/auth';
 import { getBoletin } from './api';
 import { boletinTour } from './tourSteps';
+import { StudentResultCard } from './StudentResultCard';
 import type { BoletinItem, User } from '@/types/api';
 
 function studentLabel(student: User) {
@@ -38,10 +39,11 @@ function formatStatus(value: string) {
   return labels[value] ?? value.split('_').join(' ');
 }
 
-function BoletinList({ items }: { items: BoletinItem[] }) {
+function BoletinList({ items, student = false }: { items: BoletinItem[]; student?: boolean }) {
   return (
     <div className="grid gap-3" data-tour="boletin-lista">
       {items.map((item) => {
+        if (student) return <StudentResultCard key={item.evaluacion_id} item={item} />;
         const confirmed = item.nota_confirmada != null;
         return (
           <Card key={`${item.evaluacion_id}-${item.estado}`} className={`border-l-4 p-5 ${confirmed ? 'border-l-emerald-500' : 'border-l-amber-500'}`}>
@@ -139,9 +141,9 @@ export function BoletinPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title={isStudent ? 'Mi boletin' : 'Boletin'}
+        title={isStudent ? 'Mis resultados' : 'Boletin'}
         eyebrow="Seguimiento académico"
-        subtitle="Consulta notas confirmadas y retroalimentación organizada. Este boletín es informativo y no editable."
+        subtitle={isStudent ? 'Consulta tus notas y cómo mejorar.' : 'Consulta notas confirmadas y retroalimentación organizada. Este boletín es informativo y no editable.'}
         action={
           <Button variant="outline" onClick={openTour}>
             <HelpCircle className="h-4 w-4" />
@@ -152,13 +154,13 @@ export function BoletinPage() {
 
       <GuidedTour steps={boletinTour} open={tourOpen} onClose={closeTour} tourId="boletin" role={user?.rol ?? 'estudiante'} version={1} />
 
-      <Card data-tour="boletin-info" className="flex items-start gap-3 p-5">
+      {isStudent ? <p data-tour="boletin-info" className="text-sm text-muted">Las notas pendientes aún no son definitivas.</p> : <Card data-tour="boletin-info" className="flex items-start gap-3 p-5">
         <ShieldCheck className="mt-0.5 h-5 w-5 text-emerald-500" />
         <div>
           <p className="font-semibold">Solo las notas confirmadas son definitivas.</p>
           <p className="text-sm text-muted">Si una evaluación aún no tiene nota confirmada, aparecerá como pendiente de confirmación docente.</p>
         </div>
-      </Card>
+      </Card>}
 
       {materiasError ? (
         <QueryError error={materiasQueryError} onRetry={() => void refetchMaterias()} />
@@ -166,7 +168,7 @@ export function BoletinPage() {
         <EmptyState icon={GraduationCap} title="No hay materias disponibles" />
       ) : (
         <>
-          <Card className="grid gap-4 p-5 md:grid-cols-2">
+          <Card className={`grid gap-4 p-5 ${isStudent ? '' : 'md:grid-cols-2'}`}>
             <Field label="Materia" required>
               {loadingMaterias ? (
                 <Skeleton className="h-11" />
@@ -213,12 +215,16 @@ export function BoletinPage() {
             <EmptyState icon={GraduationCap} title="Sin boletin disponible" description="Aun no hay notas confirmadas o registros para esta seleccion." />
           ) : (
             <div className="space-y-4">
-              <div className="grid gap-3 sm:grid-cols-3">
+              {isStudent ? <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted" aria-label="Resumen de resultados">
+                <span>{boletinSummary.total} evaluaciones</span>
+                <span>{boletinSummary.confirmed} publicadas</span>
+                <span>{boletinSummary.pending} pendientes</span>
+              </div> : <div className="grid gap-3 sm:grid-cols-3">
                 <BulletinMetric icon={ListChecks} label="Evaluaciones" value={boletinSummary.total} tone="neutral" />
                 <BulletinMetric icon={CheckCircle2} label="Confirmadas" value={boletinSummary.confirmed} tone="success" />
                 <BulletinMetric icon={Clock3} label="Pendientes" value={boletinSummary.pending} tone="warning" />
-              </div>
-              <BoletinList items={boletin} />
+              </div>}
+              <BoletinList items={boletin} student={isStudent} />
             </div>
           )}
         </>

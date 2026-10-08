@@ -77,7 +77,7 @@ test('student reads the assigned activity without answer keys and can continue t
 
   await expect(page.getByRole('heading', { name: material.titulo })).toBeVisible();
   await expect(page.getByText('¿Cuánto es 3 × 9?')).toBeVisible();
-  await expect(page.getByText('Este es el material que debes resolver.')).toBeVisible();
+  await expect(page.getByText('Actividad con entrega')).toBeVisible();
   await expect(page.getByRole('link', { name: /Ir a entregar/i })).toHaveAttribute(
     'href',
     `/app/evaluaciones/${material.evaluacion_id}/resolver`,

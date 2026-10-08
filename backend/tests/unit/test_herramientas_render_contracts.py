@@ -66,6 +66,19 @@ def test_every_resource_type_has_a_dedicated_pdf_renderer() -> None:
     assert RENDERABLE_TYPES.issubset(_RENDERERS)
 
 
+def test_crossword_safe_mask_prints_empty_cells_and_clues_without_letters():
+    safe = {
+        "grid_mascara": [[True, True, False]],
+        "pistas_horizontales": [{"numero": 1, "pista": "Dos primeras letras", "fila": 0, "columna": 0, "longitud": 2}],
+        "pistas_verticales": [],
+    }
+    html = render_material_html({"tipo": "crucigrama", "titulo": "Prueba", "contenido_json": safe}, soluciones=False)
+    assert html.count('<td class="cell">') == 2
+    assert html.count('<td class="block">') == 1
+    assert "Dos primeras letras" in html and '<span class="num">1</span>' in html
+    assert "TRUE" not in html and "FALSE" not in html
+
+
 @pytest.mark.parametrize("tipo", sorted(RENDERABLE_TYPES))
 def test_every_resource_type_renders_complete_html(tipo: str) -> None:
     html = render_material_html(

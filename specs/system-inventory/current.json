@@ -384,7 +384,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "0b4b80417ef4c909364c347a13e006cbacd275125fcd3daf1278b76d9acd14fd",
+  "source_digest": "bb8d5f99080dc419f32a95ce37b59847d807ab0e92fcd99f21f14b5d2a4838b3",
   "surfaces": [
     {
       "actors": [
@@ -736,6 +736,12 @@
           "level": "unit",
           "reference": "DELETE:/evaluaciones/{evaluacion_id}",
           "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/StudentResultCard.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "DELETE:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
           "test_path": "frontend/src/modules/dashboard/DashboardPage.test.tsx"
         },
         {
@@ -767,6 +773,12 @@
           "reference": "DELETE:/evaluaciones/{evaluacion_id}",
           "status": "direct",
           "test_path": "frontend/src/modules/evaluaciones/components/DigitalizationJobMonitor.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "DELETE:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/StudentResourcePage.test.tsx"
         },
         {
           "level": "unit",
@@ -925,6 +937,12 @@
           "reference": "DELETE:/herramientas/{material_id}",
           "status": "direct",
           "test_path": "frontend/src/modules/herramientas/ListPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "DELETE:/herramientas/{material_id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/StudentResourcePage.test.tsx"
         },
         {
           "level": "unit",
@@ -3858,6 +3876,12 @@
           "level": "unit",
           "reference": "GET:/evaluaciones/{evaluacion_id}",
           "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/StudentResultCard.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
           "test_path": "frontend/src/modules/dashboard/DashboardPage.test.tsx"
         },
         {
@@ -3889,6 +3913,12 @@
           "reference": "GET:/evaluaciones/{evaluacion_id}",
           "status": "direct",
           "test_path": "frontend/src/modules/evaluaciones/components/DigitalizationJobMonitor.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/StudentResourcePage.test.tsx"
         },
         {
           "level": "unit",
@@ -4503,6 +4533,12 @@
           "level": "unit",
           "reference": "GET:/herramientas",
           "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/StudentResourcePage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/herramientas",
+          "status": "direct",
           "test_path": "frontend/src/modules/herramientas/api.lifecycle.test.ts"
         },
         {
@@ -4741,6 +4777,12 @@
           "reference": "GET:/herramientas/{material_id}",
           "status": "direct",
           "test_path": "frontend/src/modules/herramientas/ListPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/herramientas/{material_id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/StudentResourcePage.test.tsx"
         },
         {
           "level": "unit",
@@ -8064,6 +8106,12 @@
           "level": "unit",
           "reference": "PATCH:/evaluaciones/{evaluacion_id}",
           "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/StudentResultCard.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
           "test_path": "frontend/src/modules/dashboard/DashboardPage.test.tsx"
         },
         {
@@ -8095,6 +8143,12 @@
           "reference": "PATCH:/evaluaciones/{evaluacion_id}",
           "status": "direct",
           "test_path": "frontend/src/modules/evaluaciones/components/DigitalizationJobMonitor.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/StudentResourcePage.test.tsx"
         },
         {
           "level": "unit",
@@ -8359,6 +8413,12 @@
           "reference": "PATCH:/herramientas/{material_id}",
           "status": "direct",
           "test_path": "frontend/src/modules/herramientas/ListPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/herramientas/{material_id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/StudentResourcePage.test.tsx"
         },
         {
           "level": "unit",
@@ -11432,6 +11492,12 @@
           "level": "unit",
           "reference": "POST:/evaluaciones",
           "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/StudentResultCard.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/evaluaciones",
+          "status": "direct",
           "test_path": "frontend/src/modules/dashboard/DashboardPage.test.tsx"
         },
         {
@@ -11463,6 +11529,12 @@
           "reference": "POST:/evaluaciones",
           "status": "direct",
           "test_path": "frontend/src/modules/evaluaciones/components/DigitalizationJobMonitor.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/evaluaciones",
+          "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/StudentResourcePage.test.tsx"
         },
         {
           "level": "unit",
@@ -15171,6 +15243,12 @@
           "level": "unit",
           "reference": "/",
           "status": "direct",
+          "test_path": "backend/tests/unit/test_herramientas_render_contracts.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
           "test_path": "backend/tests/unit/test_image_preprocessing.py"
         },
         {
@@ -15681,6 +15759,12 @@
           "level": "unit",
           "reference": "/",
           "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/StudentResultCard.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
           "test_path": "frontend/src/modules/calificaciones/aiPipelineLabels.test.ts"
         },
         {
@@ -15850,6 +15934,12 @@
           "reference": "/",
           "status": "direct",
           "test_path": "frontend/src/modules/herramientas/MaterialContentEditor.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/StudentResourcePage.test.tsx"
         },
         {
           "level": "unit",
@@ -16316,6 +16406,12 @@
           "level": "unit",
           "reference": "/app",
           "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/StudentResultCard.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/app",
+          "status": "direct",
           "test_path": "frontend/src/modules/dashboard/DashboardPage.test.tsx"
         },
         {
@@ -16323,6 +16419,18 @@
           "reference": "/app",
           "status": "direct",
           "test_path": "frontend/src/modules/evaluaciones/ResolverEvaluacionPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/app",
+          "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/StudentResourcePage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/app",
+          "status": "direct",
+          "test_path": "frontend/src/modules/materias/MateriaBoletin.test.tsx"
         },
         {
           "level": "unit",
@@ -17919,7 +18027,25 @@
           "level": "unit",
           "reference": "/app/evaluaciones",
           "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/StudentResultCard.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/evaluaciones",
+          "status": "direct",
           "test_path": "frontend/src/modules/evaluaciones/ResolverEvaluacionPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/evaluaciones",
+          "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/StudentResourcePage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/evaluaciones",
+          "status": "direct",
+          "test_path": "frontend/src/modules/materias/MateriaBoletin.test.tsx"
         },
         {
           "level": "unit",
@@ -19800,6 +19926,12 @@
         {
           "level": "unit",
           "reference": "/app/recursos/{id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/StudentResourcePage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/recursos/{id}",
           "status": "domain",
           "test_path": "frontend/src/modules/profesor_ai/TeacherAIConfigPage.test.tsx"
         }
@@ -21405,6 +21537,12 @@
           "level": "unit",
           "reference": "DELETE:/evaluaciones/{id}",
           "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/StudentResultCard.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "DELETE:/evaluaciones/{id}",
+          "status": "direct",
           "test_path": "frontend/src/modules/dashboard/DashboardPage.test.tsx"
         },
         {
@@ -21436,6 +21574,12 @@
           "reference": "DELETE:/evaluaciones/{id}",
           "status": "direct",
           "test_path": "frontend/src/modules/evaluaciones/components/DigitalizationJobMonitor.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "DELETE:/evaluaciones/{id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/StudentResourcePage.test.tsx"
         },
         {
           "level": "unit",
@@ -21593,6 +21737,12 @@
           "reference": "DELETE:/herramientas/{id}",
           "status": "direct",
           "test_path": "frontend/src/modules/herramientas/ListPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "DELETE:/herramientas/{id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/StudentResourcePage.test.tsx"
         },
         {
           "level": "unit",
@@ -24776,6 +24926,12 @@
           "level": "unit",
           "reference": "GET:/evaluaciones/{evaluacionId}/{format}",
           "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/StudentResultCard.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/{evaluacionId}/{format}",
+          "status": "direct",
           "test_path": "frontend/src/modules/dashboard/DashboardPage.test.tsx"
         },
         {
@@ -24807,6 +24963,12 @@
           "reference": "GET:/evaluaciones/{evaluacionId}/{format}",
           "status": "direct",
           "test_path": "frontend/src/modules/evaluaciones/components/DigitalizationJobMonitor.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/{evaluacionId}/{format}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/StudentResourcePage.test.tsx"
         },
         {
           "level": "unit",
@@ -25048,6 +25210,12 @@
           "level": "unit",
           "reference": "GET:/evaluaciones/{id}",
           "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/StudentResultCard.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/{id}",
+          "status": "direct",
           "test_path": "frontend/src/modules/dashboard/DashboardPage.test.tsx"
         },
         {
@@ -25079,6 +25247,12 @@
           "reference": "GET:/evaluaciones/{id}",
           "status": "direct",
           "test_path": "frontend/src/modules/evaluaciones/components/DigitalizationJobMonitor.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/{id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/StudentResourcePage.test.tsx"
         },
         {
           "level": "unit",
@@ -25377,6 +25551,12 @@
           "reference": "GET:/herramientas/{id}",
           "status": "direct",
           "test_path": "frontend/src/modules/herramientas/ListPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/herramientas/{id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/StudentResourcePage.test.tsx"
         },
         {
           "level": "unit",
@@ -28204,6 +28384,12 @@
           "level": "unit",
           "reference": "PATCH:/evaluaciones/{id}",
           "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/StudentResultCard.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/evaluaciones/{id}",
+          "status": "direct",
           "test_path": "frontend/src/modules/dashboard/DashboardPage.test.tsx"
         },
         {
@@ -28235,6 +28421,12 @@
           "reference": "PATCH:/evaluaciones/{id}",
           "status": "direct",
           "test_path": "frontend/src/modules/evaluaciones/components/DigitalizationJobMonitor.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/evaluaciones/{id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/StudentResourcePage.test.tsx"
         },
         {
           "level": "unit",
@@ -28435,6 +28627,12 @@
           "reference": "PATCH:/herramientas/{id}",
           "status": "direct",
           "test_path": "frontend/src/modules/herramientas/ListPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/herramientas/{id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/StudentResourcePage.test.tsx"
         },
         {
           "level": "unit",
@@ -31646,6 +31844,12 @@
           "level": "unit",
           "reference": "POST:/evaluaciones",
           "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/StudentResultCard.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/evaluaciones",
+          "status": "direct",
           "test_path": "frontend/src/modules/dashboard/DashboardPage.test.tsx"
         },
         {
@@ -31677,6 +31881,12 @@
           "reference": "POST:/evaluaciones",
           "status": "direct",
           "test_path": "frontend/src/modules/evaluaciones/components/DigitalizationJobMonitor.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/evaluaciones",
+          "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/StudentResourcePage.test.tsx"
         },
         {
           "level": "unit",
@@ -31852,6 +32062,12 @@
           "reference": "POST:/herramientas/{endpoint}",
           "status": "direct",
           "test_path": "frontend/src/modules/herramientas/ListPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/herramientas/{endpoint}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/StudentResourcePage.test.tsx"
         },
         {
           "level": "unit",
@@ -37687,6 +37903,12 @@
           "level": "unit",
           "reference": "evaluaciones",
           "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/StudentResultCard.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "evaluaciones",
+          "status": "direct",
           "test_path": "frontend/src/modules/dashboard/DashboardPage.test.tsx"
         },
         {
@@ -37718,6 +37940,12 @@
           "reference": "evaluaciones",
           "status": "direct",
           "test_path": "frontend/src/modules/evaluaciones/components/DigitalizationJobMonitor.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "evaluaciones",
+          "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/StudentResourcePage.test.tsx"
         },
         {
           "level": "unit",
