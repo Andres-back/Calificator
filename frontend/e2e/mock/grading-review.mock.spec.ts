@@ -143,13 +143,13 @@ async function installGroupViews(page: Page) {
   const evaluation = { id: 'e1', materia_id: 'm1', profesor_id: 'p1', nombre: 'Multiplicación', nota_maxima: 5, estado: 'publicada', modalidad: 'online', preguntas: [], criterios: [], dba_ids: [], dba_personalizado_ids: [] };
   await page.route('**/api/materias/m1/estudiantes', (route) => route.fulfill({ json: subject }));
   await page.route('**/api/materias/m1/evaluaciones', (route) => route.fulfill({ json: [evaluation, { ...evaluation, id: 'e2', nombre: 'Otra evaluación', estado: 'cerrada' }, { ...evaluation, id: 'e3', nombre: 'Borrador', estado: 'borrador' }] }));
-  await page.route('**/api/evaluaciones/e1/calificaciones', (route) => route.fulfill({ json: [
+  await page.route(/\/api\/evaluaciones\/e1\/calificaciones(?:\?.*)?$/, (route) => route.fulfill({ json: [
     { id: 'c1', evaluacion_id: 'e1', estudiante_id: 's1', nota_confirmada: 5, nota_sugerida: 5, estado: 'publicada', revisado_por_docente: true },
     { id: 'c2', evaluacion_id: 'e1', estudiante_id: 's2', nota_confirmada: null, nota_sugerida: 0, estado: 'procesando' },
     { id: 'c3', evaluacion_id: 'e1', estudiante_id: 's3', nota_confirmada: 0, nota_sugerida: 0, estado: 'publicada', revisado_por_docente: true },
     { id: 'c4', evaluacion_id: 'e1', estudiante_id: 's4', nota_confirmada: null, nota_sugerida: 2.5, estado: 'pendiente' },
   ] }));
-  await page.route('**/api/evaluaciones/e2/calificaciones', (route) => route.fulfill({ json: [{ id: 'other-grade', evaluacion_id: 'e2', estudiante_id: 's1', nota_confirmada: 1.5, estado: 'publicada', revisado_por_docente: true }] }));
+  await page.route(/\/api\/evaluaciones\/e2\/calificaciones(?:\?.*)?$/, (route) => route.fulfill({ json: [{ id: 'other-grade', evaluacion_id: 'e2', estudiante_id: 's1', nota_confirmada: 1.5, estado: 'publicada', revisado_por_docente: true }] }));
   const days = new Map<string, Map<string, { estado: string; observacion: string | null }>>();
   await page.route('**/api/materias/m1/asistencia**', async (route) => {
     const request = route.request();
@@ -187,15 +187,22 @@ for (const viewport of [{ width: 360, height: 800 }, { width: 390, height: 844 }
       page.on('request', (request) => { if (request.method() !== 'GET' && !request.url().includes('/analytics/')) writes.push(request.url()); });
 
       await page.goto('/app/materias/m1/boletin?evaluacion=e1');
-      const roster = page.getByRole('list', { name: 'Notas de Multiplicación' });
+      const roster = page.getByRole('list', { name: 'Estudiantes del boletín' });
       await expect(roster.getByRole('listitem')).toHaveCount(30);
-      await expect(roster.getByRole('listitem').filter({ hasText: 'Alumno 2' }).first()).toContainText('Calificando');
-      await expect(page.getByRole('link', { name: 'Ver nota de Alumno 3', exact: true })).toHaveText('0.0 / 5.0');
-      const firstFive = await roster.getByRole('listitem').evaluateAll((rows) => rows[4].getBoundingClientRect().bottom - rows[0].getBoundingClientRect().top);
-      expect(firstFive).toBeLessThanOrEqual(500);
+      await expect(roster.getByRole('button', { name: 'Ver boletín de Alumno 2', exact: true })).toContainText('Calificando');
+      await expect(roster.getByRole('button', { name: 'Ver boletín de Alumno 3', exact: true })).toContainText('0.0 / 5.0');
+      const columns = await roster.evaluate((element) => getComputedStyle(element).gridTemplateColumns.split(' ').length);
+      expect(columns).toBe(viewport.width < 640 ? 2 : 4);
+      const firstFour = await roster.getByRole('listitem').evaluateAll((rows) => rows[3].getBoundingClientRect().bottom - rows[0].getBoundingClientRect().top);
+      expect(firstFour).toBeLessThanOrEqual(500);
       await page.getByRole('searchbox', { name: 'Buscar estudiante' }).fill('prueba');
       await expect(roster.getByRole('listitem')).toHaveCount(1);
-      await page.getByRole('link', { name: 'Ver nota de Estudiante Prueba', exact: true }).click();
+      await page.getByRole('button', { name: 'Ver boletín de Estudiante Prueba', exact: true }).click();
+      const preview = page.getByRole('dialog', { name: 'Boletín de Estudiante Prueba', exact: true });
+      await expect(preview.getByRole('listitem')).toHaveCount(2);
+      await expect(preview.getByText('5.0 / 5.0', { exact: true })).toBeVisible();
+      await expect(preview.getByText('1.5 / 5.0', { exact: true })).toBeVisible();
+      await preview.getByRole('link', { name: 'Ver explicación de Multiplicación', exact: true }).click();
       await expect(page.getByRole('heading', { name: '1. Nota y explicación' })).toBeVisible();
       const evidence = page.getByRole('button', { name: '2. Evidencia', exact: true });
       const answers = page.getByRole('button', { name: '3. Respuestas y puntajes', exact: true });

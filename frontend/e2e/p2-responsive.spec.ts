@@ -72,6 +72,110 @@ async function fulfillJson(route: Route, body: unknown, status = 200) {
   await route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(body) });
 }
 
+for (const width of [360, 390, 768, 1280]) {
+  for (const theme of ['light', 'dark']) {
+    test(`boletín docente en mosaico ${width}px ${theme}`, async ({ page, browserName }) => {
+      await page.setViewportSize({ width, height: 844 });
+      await page.addInitScript(mode => localStorage.setItem('xc-theme', JSON.stringify({ state: { mode }, version: 0 })), theme);
+      await installApiMocks(page, 'profesor', true);
+      const longName = 'María Alejandra Rodríguez Fernández';
+      const students = Array.from({ length: 30 }, (_, index) => ({ id: `s${index}`, nombre: index < 2 ? longName : `Estudiante ${index}`, email: `alumno${index}@example.test` }));
+      const exams = Array.from({ length: 12 }, (_, index) => ({ ...evaluacion, id: `exam${index}`, nombre: `Evaluación ${index + 1}: comprensión y resolución`, nota_maxima: index === 11 ? 10 : 5 }));
+      const reads: string[] = [];
+      const writes: string[] = [];
+      const errors: string[] = [];
+      page.on('pageerror', error => errors.push(error.message));
+      // La telemetría de navegación existente no modifica registros académicos.
+      page.on('request', request => { if (request.url().includes('/api/') && request.method() !== 'GET' && new URL(request.url()).pathname !== '/api/analytics/evento') writes.push(request.method() + ' ' + new URL(request.url()).pathname); });
+      await page.route('**/api/materias/m1/estudiantes', route => fulfillJson(route, { ...materia, estudiantes: students }));
+      await page.route('**/api/materias/m1/evaluaciones', route => fulfillJson(route, exams));
+      await page.route('**/api/evaluaciones/exam*/calificaciones*', route => {
+        const url = new URL(route.request().url());
+        expect(url.searchParams.get('solo_lectura')).toBe('true');
+        const id = url.pathname.split('/')[3];
+        reads.push(id);
+        const index = Number(id.replace('exam', ''));
+        return fulfillJson(route, index === 4 ? [] : [{
+          id: `grade${index}`, estudiante_id: 's0', evaluacion_id: id,
+          estado: index === 0 ? 'publicada' : index === 2 ? 'sugerida' : index === 3 ? 'procesando' : 'confirmada',
+          nota_confirmada: index === 0 ? 4.67 : index === 1 ? 0 : index > 4 ? 4 : null,
+          nota_sugerida: index === 2 ? 2.5 : index === 3 ? 0 : null,
+          resultado_json: index === 3 ? { pipeline_status: 'running' } : {}, updated_at: '2026-10-08T00:00:00Z',
+        }]);
+      });
+      await page.goto('/app/materias/m1/boletin');
+      const list = page.getByRole('list', { name: 'Estudiantes del boletín' });
+      await expect(list.getByRole('button')).toHaveCount(30);
+      if (theme === 'dark') await expect(page.locator('html')).toHaveClass(/dark/);
+      else await expect(page.locator('html')).not.toHaveClass(/dark/);
+      await expect(list.getByText(longName, { exact: true })).toHaveCount(2);
+      await expect(list.getByText('alumno0@example.test')).toBeVisible();
+      await expect(list.getByText('alumno1@example.test')).toBeVisible();
+      if ((width === 390 && theme === 'dark') || (width === 1280 && theme === 'light')) {
+        await page.screenshot({ path: `../output/playwright/boletin-092/${browserName}-${width}-${theme}-mosaico.png` });
+      }
+      await page.getByLabel('Buscar estudiante').fill('alumno0@');
+      await page.getByLabel('Filtrar por evaluación').selectOption('exam0');
+      await expect(list.getByRole('button')).toHaveCount(1);
+      const tile = list.getByRole('button', { name: `Ver boletín de ${longName}` });
+      await tile.scrollIntoViewIfNeeded();
+      await tile.focus();
+      const scrollBefore = await page.evaluate(() => ({ document: window.scrollY, main: document.querySelector('main#main-content')?.scrollTop ?? 0 }));
+      const readsBefore = reads.length;
+      await tile.evaluate(element => element.addEventListener('click', () => {
+        const openedAt = performance.now();
+        const observer = new MutationObserver(() => {
+          const results = document.querySelector('[role="dialog"] ul[aria-label="Notas del estudiante"]');
+          if (results?.children.length === 12) {
+            element.setAttribute('data-preview-latency', String(performance.now() - openedAt));
+            observer.disconnect();
+          }
+        });
+        observer.observe(document.body, { childList: true, subtree: true });
+      }, { once: true }));
+      await tile.click();
+      const dialog = page.getByRole('dialog', { name: `Boletín de ${longName}` });
+      await expect(dialog.getByRole('listitem')).toHaveCount(12);
+      await expect(dialog.getByText('4.67 / 5.0', { exact: true })).toBeVisible();
+      await expect(tile).toHaveAttribute('data-preview-latency', /^\d/);
+      const latency = Number(await tile.getAttribute('data-preview-latency'));
+      expect(latency).toBeLessThan(1000);
+      test.info().annotations.push({ type: 'cached-preview-ms', description: String(Math.round(latency)) });
+      await expect(dialog.getByText('0.0 / 5.0', { exact: true })).toHaveCount(1);
+      await expect(dialog.getByText('Sugerencia IA · pendiente de revisión')).toHaveCount(1);
+      await expect(dialog.getByText('Confirmada · sin publicar')).toHaveCount(8);
+      await expect(dialog.getByText('Calificando')).toHaveCount(1);
+      await expect(dialog.getByText('Sin calificación')).toHaveCount(1);
+      expect(reads.length).toBe(readsBefore);
+      await expect.poll(() => dialog.evaluate(element => element.scrollWidth <= element.clientWidth + 1)).toBe(true);
+      const close = dialog.getByRole('button', { name: 'Cerrar boletín', exact: true });
+      await close.scrollIntoViewIfNeeded();
+      await expect(dialog.getByText('4.0 / 10.0')).toBeVisible();
+      await expect(close).toBeVisible();
+      expect(await close.evaluate(element => element.getBoundingClientRect().height)).toBeGreaterThanOrEqual(44);
+      await close.focus();
+      await page.keyboard.press('Tab');
+      await expect(dialog.getByRole('button', { name: 'Cerrar diálogo' })).toBeFocused();
+      if (width === 390 || width === 1280) {
+        await dialog.evaluate(element => { element.scrollTop = 0; });
+        await page.screenshot({ path: `../output/playwright/boletin-092/${browserName}-${width}-${theme}.png` });
+      }
+      await page.keyboard.press('Escape');
+      await expect(dialog).toHaveCount(0);
+      await expect(tile).toBeFocused();
+      await expect(page.getByLabel('Buscar estudiante')).toHaveValue('alumno0@');
+      await expect(page.getByLabel('Filtrar por evaluación')).toHaveValue('exam0');
+      await expect.poll(() => page.evaluate(() => ({ document: window.scrollY, main: document.querySelector('main#main-content')?.scrollTop ?? 0 }))).toEqual(scrollBefore);
+      await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
+      await page.getByRole('button', { name: 'Exportar notas' }).click();
+      await expect(page.getByRole('dialog', { name: 'Exportar notas' })).toBeVisible();
+      await expect(page.getByRole('dialog')).toHaveCount(1);
+      expect(writes).toEqual([]);
+      expect(errors).toEqual([]);
+    });
+  }
+}
+
 async function installApiMocks(page: Page, targetRole: Role, authenticated = false) {
   let currentUser: (typeof users)[Role] | null = authenticated ? users[targetRole] : null;
   await page.route('**/api/**', async (route) => {

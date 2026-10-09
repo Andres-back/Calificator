@@ -84,7 +84,7 @@ describe('MateriaVistaGeneral teacher journey', () => {
     expect(mocks.resetTemporaryPassword).not.toHaveBeenCalled();
     await user.click(screen.getByRole('button', { name: 'Nueva clave' }));
     await user.click(screen.getByRole('button', { name: 'Renovar clave' }));
-    expect(await screen.findByRole('button', { name: 'Imprimir seleccionados' })).toBeVisible();
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Imprimir seleccionados' })).toBeVisible());
     expect(mocks.resetTemporaryPassword).toHaveBeenCalledOnce();
   });
   it('hides registration and renewal without the effective permission', async () => {

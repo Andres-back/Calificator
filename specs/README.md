@@ -295,3 +295,7 @@ actualizar la especificación propietaria, su plan y sus tareas; no debe crear d
 ## Evolución 091: recursos y resultados del estudiante
 
 - [091-estudiante-recursos-resultados](091-estudiante-recursos-resultados/spec.md), [issue #192](https://github.com/Andres-back/Calificator/issues/192), [PR #193](https://github.com/Andres-back/Calificator/pull/193): proteger soluciones de recursos evaluativos, evitar verificaciones falsas, enlazar boletines con la explicación de nota y distinguir error de carga de ausencia histórica. Evoluciona 074 y reutiliza los propietarios 006/007/008; sin cambios académicos persistidos. Alcance, [plan](091-estudiante-recursos-resultados/plan.md) y checklist aprobados; implementación, pruebas locales y Converge completados. CI pendiente y autorización separada antes de merge; no desplegado.
+
+## Evolución 092: boletín docente en mosaico
+
+- [092-boletin-mosaico](092-boletin-mosaico/spec.md), [issue #194](https://github.com/Andres-back/Calificator/issues/194): fichas compactas y boletín individual por materia con filtros, explicación y exportación existentes. Propietario 008; sin nuevas rutas, tablas, notas o cambios de vista estudiante 091. Alcance/plan aprobados y [lista UX](092-boletin-mosaico/checklists/ux.md) revisada con autorización (8/8). Implementación, pruebas locales y Converge completos: [evidencia](092-boletin-mosaico/quickstart.md). Sin fusionar/desplegar; CI remoto y autorización separada obligatorios.
