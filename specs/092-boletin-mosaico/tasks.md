@@ -55,3 +55,7 @@ Cobertura: US1 tiene dos tareas, US2 tres y US3 dos; fundamentos y cierre cubren
 ## Phase 7: Convergence
 
 - [x] T016 Esperar visibilidad real tras la animación en `frontend/src/modules/materias/MateriaVistaGeneral.test.tsx`, conservando confirmación, cancelación y llamada única de renovación; ejecutar regresión focalizada y CI completo antes del merge, según FR-010 y Constitución VII/VIII (partial). No cambiar código funcional, omitir pruebas ni desactivar animaciones.
+
+## Phase 8: Convergence
+
+- [x] T017 Actualizar el recorrido existente `frontend/e2e/mock/grading-review.mock.spec.ts` al mosaico y previsualización aprobados, incluyendo fixtures de consultas con `solo_lectura=true`; conservar las verificaciones de 30 alumnos, búsqueda, notas/estados, distribución compacta, explicación, retorno de filtros y asistencia en 360/390/1366 claro/oscuro; ejecutar regresión focalizada y CI completo según FR-001/004/007/010, SC-006 y Constitución VII/VIII (partial). No omitir pruebas ni modificar código funcional para restaurar la lista sustituida.
