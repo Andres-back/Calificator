@@ -11,6 +11,7 @@ Evoluciona la presentación docente del dominio responsable 008 (calificaciones 
 - 2026-10-08: el usuario respondió «aprove» a la propuesta de mosaico, previsualización de todas las notas de la materia, explicación y conservación de filtros/exportación. Alcance aprobado; el plan técnico, la fusión y el despliegue no están aprobados todavía.
 - 2026-10-08: el usuario respondió nuevamente «aprove» a la presentación del plan técnico. Plan aprobado; fusión y despliegue siguen requiriendo autorización separada y CI verde.
 - 2026-10-08: «autorizo» permite revisar los ocho requisitos de la lista de calidad y continuar. Revisión 8/8 sin inconsistencias; implementación autorizada, no fusión ni producción.
+- 2026-10-08: tras la entrega del PR #195 y el aviso de CI pendiente, el usuario respondió «adelante». Autoriza continuar con fusión y verificación productiva exclusivamente con todos los controles verdes; no permite eludir CI ni cambiar registros académicos.
 
 ## Escenarios de usuario y pruebas
 

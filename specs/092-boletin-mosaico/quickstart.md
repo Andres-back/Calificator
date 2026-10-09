@@ -62,3 +62,11 @@ Entrega: [PR #195](https://github.com/Andres-back/Calificator/pull/195), enlazad
 Revisión inicial limpia sobre funcionalidad: 10 requisitos funcionales, 6 criterios de éxito, 12 escenarios de aceptación, 9 casos límite, 7 decisiones técnicas y 8 principios constitucionales contrastados con código/evidencia local. La entrega del PR es administrativa, no una capacidad ausente.
 
 CI del PR detectó un hallazgo administrativo `partial`: `test_baseline_contains_all_active_specs` no incluía la nueva 092. Converge añadió T015 (Constitución VII/VIII). Se añadió únicamente el nombre a `ALL_SPECS` en `tests/spec_governance/test_spec_baseline.py`, sin relajar comprobaciones; prueba específica 1/1 y batería completa `C:/Python313/python.exe -m pytest tests/spec_governance -q` 41/41. Revisión final de T015 y su evidencia sin tareas pendientes ni hallazgos accionables. La corrección no requiere reconstrucción del frontend porque no modifica código funcional.
+
+## Cierre autorizado y corrección de CI
+
+El usuario autorizó continuar con «adelante» el 2026-10-08. Fusión y verificación productiva condicionadas a todos los controles verdes. Producción comprobada por SSH en lectura antes de fusionar: commit `3803df8c25fb9cfaf1bb144fc886985093465e96`, backend/web/worker saludables; no se modificaron servicios ni datos.
+
+CI del HEAD `9ac3a06` pasó backend, contenedores y gobernanza; frontend tuvo 571/572 pruebas correctas. Falló la comprobación inmediata de visibilidad de «Imprimir seleccionados» en `MateriaVistaGeneral.test.tsx`, durante la animación del diálogo. Converge añadió T016; Implement sustituyó esa comprobación por `waitFor` de visibilidad, manteniendo las aserciones de consentimiento, cancelación y renovación única. Regresiones focalizadas de vista general y boletín: 22/22. Sin código funcional ni contratos cambiados; CI completo del nuevo HEAD sigue siendo obligatorio antes del merge.
+
+Tras la corrección, gobernanza local completa 41/41 y digest del inventario regenerado (573 superficies). Converge de T016: aserción de visibilidad eventual, consentimiento, cancelación y llamada única conservados; sin nuevos hallazgos funcionales ni tareas pendientes. Hooks ausentes; listas de requisitos 16/16 y UX 8/8 intactas.

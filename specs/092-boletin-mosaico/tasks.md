@@ -51,3 +51,7 @@ Cobertura: US1 tiene dos tareas, US2 tres y US3 dos; fundamentos y cierre cubren
 ## Phase 6: Convergence
 
 - [x] T015 Registrar `092-boletin-mosaico` en la lista de especificaciones activas de las pruebas `tests/spec_governance/` y ejecutar su batería antes de reenviar el PR, según Constitución VII y VIII (partial). CI detectó el registro administrativo faltante; no eliminar ni relajar la comprobación.
+
+## Phase 7: Convergence
+
+- [x] T016 Esperar visibilidad real tras la animación en `frontend/src/modules/materias/MateriaVistaGeneral.test.tsx`, conservando confirmación, cancelación y llamada única de renovación; ejecutar regresión focalizada y CI completo antes del merge, según FR-010 y Constitución VII/VIII (partial). No cambiar código funcional, omitir pruebas ni desactivar animaciones.
