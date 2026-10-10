@@ -50,8 +50,8 @@ Prueba independiente: búsqueda/marcado/observación y reintento en desktop y m�
 ## Fase 6: Validación transversal
 
 - [x] T020 Ejecutar TypeScript, lint, build y regresiones aplicables; documentar resultados y limitaciones reales en `specs/093-recursos-vista-docente/quickstart.md` (SC-006, Constitución VII).
-- [ ] T021 Ejecutar Converge sobre `specs/093-recursos-vista-docente/spec.md`, `plan.md`, `tasks.md` y código; completar cualquier tarea añadida antes de declarar entrega.
-- [ ] T022 Actualizar trazabilidad/estado en `specs/README.md` y `specs/093-recursos-vista-docente/quickstart.md`; abrir PR enlazado a #196 con controles CI requeridos y sin merge/despliegue no autorizado.
+- [x] T021 Ejecutar Converge sobre `specs/093-recursos-vista-docente/spec.md`, `plan.md`, `tasks.md` y código; completar cualquier tarea añadida antes de declarar entrega.
+- [x] T022 Actualizar trazabilidad/estado en `specs/README.md` y `specs/093-recursos-vista-docente/quickstart.md`; abrir PR enlazado a #196 con controles CI requeridos y sin merge/despliegue no autorizado.
 
 ## Dependencias y ejecución
 
@@ -64,3 +64,19 @@ MVP: historia 1, luego bandeja y asistencia como incrementos independientes, sin
 ## Gate previo (2026-10-10)
 
 Checklist base 16/16 y custom 8/8 con revisión expresamente autorizada. Analyze de solo lectura: FR-001–005 → T003–012; FR-006–007 → T013–015; FR-008–010 → T016–019; FR-011 → T004/007/008/011/013/018/020; SC-001–002 → T003/005/012; SC-003 → T013–015; SC-004–005 → T016/017/019; SC-006 → T011/012/015/018/020. 17 requisitos/criterios, 22 tareas, cobertura 100 %, cero ambigüedades bloqueantes, duplicaciones, conflictos constitucionales o tareas sin correspondencia. Hooks ausentes. Implement solo consulta checklist; no vuelve a modificarlo.
+
+## Entrega local (2026-10-10)
+
+Referencias individuales para el validador CI, que no expande rangos: FR-002 → T003/T006/T007/T009/T012 (logro, evidencia, regla, niveles y pesos); FR-007 → T013/T014/T015 (carga, error, incoherencia y actualización). Las referencias restantes están explícitas en las tareas y el gate previo.
+
+Converge de solo lectura: 17 FR/SC, 13 escenarios de aceptación, seis decisiones técnicas y ocho principios constitucionales revisados. Cero hallazgos missing/partial/contradicts/unrequested; sin nuevas tareas ni cambios en tasks.md durante Converge (hash antes/después idéntico). Marcador T021 actualizado después, como seguimiento de Implement. T011 usa la proyección real de recursos en `test_material_classroom_assignment.py`; pruebas de fórmula/consenso/ciclo de vida conservadas y ejecutadas. T020 incluye registro de baseline 093 e inventario actualizado, sin relajar CI.
+
+PR [#197](https://github.com/Andres-back/Calificator/pull/197) creado y enlazado a #196, con ambas etiquetas de aprobación. Evidencia y limitaciones en quickstart.md. Estas 22 tareas acreditan implementación y entrega a revisión, no CI remoto completo, merge ni despliegue; siguen pendientes como controles de entrega, no como funciones nuevas.
+
+## Phase 7: Convergence
+
+Segunda inspección visual: F1, partial, MEDIUM, FR-008/SC-005. `attendance-long-names-360.png` muestra que el indicador ocupa ancho del nombre y provoca demasiados saltos de línea. La ausencia de overflow no prueba por sí sola legibilidad. Un hallazgo; las demás obligaciones no cambian.
+
+- [x] T023 Mejorar la cabecera de alumno en `frontend/src/modules/materias/MateriaAsistencia.tsx`, mostrando guardado debajo del nombre en celular y conservando alineación compacta en escritorio; repetir matriz de asistencia y revisar captura de nombres largos, sin modificar cola ni datos, per FR-008/SC-005 (partial).
+
+T023 implementada: nombre y guardado en filas separadas del encabezado móvil; alineación original compacta en escritorio. Matriz final Chromium 11/11 y WebKit 2/2, TypeScript/lint y build Docker frontend correctos. Captura de nombres largos a 360 px inspeccionada después del ajuste. Sin cambios de persistencia ni nuevos consumidores.

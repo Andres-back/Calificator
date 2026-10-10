@@ -356,8 +356,8 @@ export function MateriaAsistencia() {
                     current.estado === null && 'border-amber-300 dark:border-amber-500/40',
                   )}
                 >
-                  <div className="flex min-w-0 items-center gap-2">
-                    <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-surface-2 text-xs font-extrabold text-secondary">
+                  <div className="grid min-w-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-x-2 gap-y-1 lg:flex lg:gap-2">
+                    <span className="row-span-2 grid h-8 w-8 shrink-0 place-items-center rounded-full bg-surface-2 text-xs font-extrabold text-secondary">
                       {index + 1}
                     </span>
                     <div className="min-w-0 flex-1">
@@ -366,7 +366,7 @@ export function MateriaAsistencia() {
                     </div>
                     <span
                       className={cn(
-                        'ml-auto shrink-0 rounded-full px-2 py-1 text-[11px] font-bold lg:max-w-20 lg:whitespace-normal',
+                        'w-fit max-w-full shrink-0 rounded-full px-2 py-1 text-[11px] font-bold lg:ml-auto lg:max-w-20 lg:whitespace-normal',
                         current.estado
                           ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-500/15 dark:text-emerald-200'
                           : 'bg-amber-100 text-amber-900 dark:bg-amber-500/15 dark:text-amber-200',
