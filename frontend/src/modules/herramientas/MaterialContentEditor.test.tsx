@@ -27,6 +27,12 @@ function EditorHarness() {
 }
 
 describe('MaterialContentEditor', () => {
+  it('shows criterion evidence and scoring rule without exposing internal references', () => {
+    render(<MaterialContentEditor value={{ criterios: [{ nombre: 'Identificación', descripcion: 'Identifica el concepto.', evidencia: 'Palabra escrita.', regla_puntuacion: 'Puntaje por acierto.', preguntas_numeros: [1] }] }} onChange={() => {}} />);
+    expect(screen.getByLabelText('Evidencia que se valorará')).toHaveValue('Palabra escrita.');
+    expect(screen.getByLabelText('Cómo se otorgan los puntos')).toHaveValue('Puntaje por acierto.');
+    expect(screen.queryByText('preguntas numeros')).not.toBeInTheDocument();
+  });
   it('edita preguntas y respuestas sin mostrar metadatos técnicos', async () => {
     const user = userEvent.setup();
     render(<EditorHarness />);

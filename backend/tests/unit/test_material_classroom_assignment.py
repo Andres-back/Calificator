@@ -312,7 +312,9 @@ def test_activity_payload_keeps_material_metadata_and_sanitizes_generic_content(
                     "enunciado": "Representa un medio.",
                     "respuesta_esperada": "1/2",
                 }
-            ]
+            ],
+            "criterios": [{"nombre": "Comprender fracciones", "descripcion": "Demuestra comprensión en la representación solicitada."}],
+            "_xcalificator": {"errores_criterios": ["Diagnóstico privado"], "criterios_rubrica": ["Fuente privada"]},
         },
         material_id=material_id,
     )
@@ -322,6 +324,8 @@ def test_activity_payload_keeps_material_metadata_and_sanitizes_generic_content(
     assert payload["interactivo"] is False
     assert payload["contenido"]["puntos"][0]["enunciado"] == "Representa un medio."
     assert "respuesta_esperada" not in payload["contenido"]["puntos"][0]
+    assert payload["contenido"]["criterios"][0]["nombre"] == "Comprender fracciones"
+    assert "_xcalificator" not in payload["contenido"]
 
 def test_editing_word_search_rebuilds_grid_and_removes_stale_words() -> None:
     rebuilt = service._rebuild_edited_puzzle(
@@ -342,6 +346,31 @@ def test_editing_word_search_rebuilds_grid_and_removes_stale_words() -> None:
     assert len(rebuilt["grilla"]) >= 5
     assert rebuilt["sopa_letras"]["grid"] == rebuilt["grilla"]
     assert {item["palabra"] for item in rebuilt["banco"]} == {"SUMA", "RESTA"}
+
+
+def test_criteria_only_edit_does_not_rebuild_saved_puzzle(monkeypatch):
+    import json
+    material_id = uuid4()
+    teacher = SimpleNamespace(id=uuid4())
+    content = {"preguntas_horizontales": [{"pista": "Estrella cercana", "respuesta": "SOL"}],
+               "preguntas_verticales": [], "crucigrama": {"grid": [["S", "O", "L"]]}}
+    async def get_material(*_args):
+        return {"tipo": "crucigrama", "contenido_json": content}
+    def must_not_rebuild(*_args):
+        raise AssertionError("Editar criterios no puede reconstruir preguntas o grilla")
+    class DB(FakeDB):
+        async def execute(self, statement, params):
+            self.executions.append((statement, params))
+            return SimpleNamespace(scalar_one_or_none=lambda: material_id)
+    monkeypatch.setattr(service, "get_material", get_material)
+    monkeypatch.setattr(service, "_rebuild_edited_puzzle", must_not_rebuild)
+    edited = deepcopy(content)
+    edited["criterios"] = [{"nombre": "Conceptos", "descripcion": "Identifica conceptos mediante pistas."}]
+    db = DB()
+    asyncio.run(service.update_material(db, material_id, teacher, {"contenido_json": edited}))
+    saved = json.loads(db.executions[0][1]["contenido_json"])
+    assert saved["crucigrama"] == content["crucigrama"]
+    assert saved["preguntas_horizontales"] == content["preguntas_horizontales"]
 
 
 def test_editing_matching_pairs_rebuilds_columns_and_solution_key() -> None:

@@ -2,8 +2,44 @@
 from __future__ import annotations
 
 from typing import Any
+from copy import deepcopy
+from decimal import Decimal
 
 from app.shared.enums import MaterialTipo
+
+
+def prepare_evaluation_criteria(material_type: str, content: dict[str, Any], source: dict[str, Any]) -> dict[str, Any]:
+    """Prepara solo criterios de un borrador; nunca regenera preguntas por este motivo."""
+    from app.modules.herramientas.evaluation_adapter import build_evaluation_structure, is_evaluable_material_type
+    from app.modules.herramientas.evaluation_criteria import teacher_criteria_from
+
+    if not is_evaluable_material_type(material_type):
+        return content
+    result = deepcopy(content)
+    trace = result.setdefault("_xcalificator", {})
+    if not isinstance(trace, dict):
+        trace = {}
+        result["_xcalificator"] = trace
+    try:
+        structure = build_evaluation_structure(material_type, result, note_max=5, modality="fisica",
+                                              teacher_criteria=teacher_criteria_from(source, result))
+        if not result.get("criterios"):
+            # Un criterio de propuesta usa porcentaje, no fija la nota máxima futura.
+            criteria = structure["criterios"]
+            for criterion in criteria:
+                criterion.pop("preguntas_numeros", None)  # relación global hasta configurar modalidad
+                criterion["peso_porcentaje"] = float(Decimal(str(criterion.pop("puntaje_maximo"))) * 20)
+            result["criterios"] = criteria
+        trace["errores_criterios"] = []
+    except ValueError as exc:
+        trace["errores_criterios"] = [str(exc)]
+    trace["requiere_validacion_docente"] = True
+    trace["criterios_origen"] = (
+        "docente" if teacher_criteria_from(source, content) else "propuesta_explicita" if content.get("criterios")
+        else "contenido" if content.get("criterios_revision") or any(isinstance(p, dict) and p.get("criterio_logro") for p in content.get("puntos", []) or [])
+        else "servidor"
+    )
+    return result
 
 
 LIST_KEYS: dict[MaterialTipo, tuple[str, ...]] = {
@@ -163,7 +199,7 @@ def normalize_material_content(
         _normalize_plan(normalized)
 
     for key in LIST_KEYS.get(tipo, ()):
-        values = _deduplicate(normalized.get(key))
+        values = normalized.get(key) if key == "criterios" and isinstance(normalized.get(key), list) else _deduplicate(normalized.get(key))
         if key in NUMBERED_KEYS:
             values = [
                 {**value, "numero": index}

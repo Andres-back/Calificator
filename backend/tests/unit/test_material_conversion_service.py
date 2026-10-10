@@ -3,6 +3,8 @@ from __future__ import annotations
 import asyncio
 from types import SimpleNamespace
 from uuid import uuid4
+import pytest
+from fastapi import HTTPException
 
 from app.modules.herramientas import service
 from app.modules.herramientas.schemas import ConvertirEvaluacionRequest
@@ -28,6 +30,7 @@ def test_conversion_delegates_to_the_canonical_evaluation_service(monkeypatch) -
         "titulo": "Multiplicacion de cuarto",
         "materia_id": subject_id,
         "input_json": {
+            "criterios_rubrica": ["Explicar el procedimiento solicitado"],
             "dba_ids": [str(dba_id), "uuid-invalido"],
             "dba_personalizado_ids": [],
         },
@@ -110,6 +113,7 @@ def test_conversion_delegates_to_the_canonical_evaluation_service(monkeypatch) -
     assert payload.intentos_permitidos == 2
     assert payload.tiempo_limite_minutos == 45
     assert payload.dba_ids == [dba_id]
+    assert payload.criterios[0]["nombre"] == "Explicar el procedimiento solicitado"
     assert {item["modalidad_respuesta"] for item in payload.preguntas} == {
         "online",
         "fisica",
@@ -161,4 +165,26 @@ def test_conversion_is_idempotent_for_an_already_linked_material(monkeypatch) ->
     )
 
     assert result is existing
+    assert db.executions == []
+
+
+def test_conversion_rejects_copied_criteria_before_writing(monkeypatch):
+    teacher = SimpleNamespace(id=uuid4())
+    subject_id = uuid4()
+    async def get_material(*_args):
+        return {"tipo": "examen", "materia_id": subject_id,
+                "contenido_json": {"preguntas": [{"enunciado": "Calcula el producto", "respuesta": "36"}],
+                                   "criterios": [{"nombre": "Punto 1", "descripcion": "Calcula el producto"}]}}
+    async def no_link(*_args):
+        return None
+    async def can_manage(*_args):
+        return SimpleNamespace(id=subject_id)
+    monkeypatch.setattr(service, "get_material", get_material)
+    monkeypatch.setattr(service, "_linked_evaluation", no_link)
+    monkeypatch.setattr(service.materias_service, "ensure_can_manage_materia", can_manage)
+    db = FakeDB()
+    with pytest.raises(HTTPException) as error:
+        asyncio.run(service.convertir_a_evaluacion(db, uuid4(), teacher, ConvertirEvaluacionRequest()))
+    assert error.value.status_code == 422
+    assert "logro" in error.value.detail
     assert db.executions == []

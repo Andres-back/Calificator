@@ -117,6 +117,7 @@ test('asistencia recupera errores y protege observación pendiente en celular', 
   await page.getByRole('button', { name: 'Reintentar asistencia para Alumno 99', exact: true }).click();
   await expect(page.getByText('Guardado', { exact: true })).toBeVisible();
   await search.fill('alumno98@');
+  await page.getByLabel('Abrir observación para Alumno 98', { exact: true }).click();
   const observation = page.getByRole('textbox', { name: 'Observación para Alumno 98' });
   await observation.fill('Falta escoger estado');
   await expect(observation).toBeFocused();
@@ -133,12 +134,16 @@ test('asistencia recupera errores y protege observación pendiente en celular', 
   await expect(page.getByText('Guardado', { exact: true })).toBeVisible();
   await page.reload();
   await search.fill('alumno98@');
+  await page.getByLabel('Abrir observación para Alumno 98', { exact: true }).click();
   await expect(observation).toHaveValue('Falta escoger estado');
   await expect(page.getByRole('button', { name: 'Con excusa para Alumno 98', exact: true })).toHaveAttribute('aria-pressed', 'true');
 });
 
-async function installGroupViews(page: Page) {
+async function installGroupViews(page: Page, longNames = false) {
   const roster = Array.from({ length: 100 }, (_, index) => ({ id: index === 0 ? 's1' : `s${index + 1}`, nombre: index === 0 ? 'Estudiante Prueba' : `Alumno ${index + 1}`, email: `alumno${index + 1}@example.test`, rol: 'estudiante', estado: 'activo' }));
+  if (longNames) {
+    for (const student of roster.slice(0, 2)) student.nombre = 'María Alejandra NombreExtenso ApellidoExtenso SegundoApellidoExtenso';
+  }
   const subject = { id: 'm1', profesor_id: 'p1', nombre: 'Matemáticas', area: 'Matemáticas', grado: '4', estado: 'activa', estudiantes: roster.slice(0, 30) };
   const evaluation = { id: 'e1', materia_id: 'm1', profesor_id: 'p1', nombre: 'Multiplicación', nota_maxima: 5, estado: 'publicada', modalidad: 'online', preguntas: [], criterios: [], dba_ids: [], dba_personalizado_ids: [] };
   await page.route('**/api/materias/m1/estudiantes', (route) => route.fulfill({ json: subject }));
@@ -175,7 +180,44 @@ async function installGroupViews(page: Page) {
   });
 }
 
-for (const viewport of [{ width: 360, height: 800 }, { width: 390, height: 844 }, { width: 1366, height: 768 }]) {
+for (const width of [360, 1280]) {
+  test(`asistencia identifica homónimos y nombres largos ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 800 });
+    await login(page, 'profesor', { permissions: teacherPermissions });
+    await installGroupViews(page, true);
+    await page.goto('/app/materias/m1/asistencia');
+    const search = page.getByRole('searchbox', { name: 'Buscar estudiante' });
+    await search.fill('NombreExtenso');
+    const list = page.getByLabel('Lista de asistencia');
+    const rows = list.locator(':scope > *');
+    await expect(rows).toHaveCount(2);
+    await expect(rows.first()).toContainText('SegundoApellidoExtenso');
+    await expect(rows.first()).toContainText('alumno1@example.test');
+    await expect(rows.nth(1)).toContainText('alumno2@example.test');
+    for (const control of await rows.first().getByRole('button').all()) {
+      const box = (await control.boundingBox())!;
+      expect(box.width).toBeGreaterThanOrEqual(44);
+      expect(box.height).toBeGreaterThanOrEqual(44);
+    }
+    const summary = rows.first().locator('summary');
+    await summary.focus();
+    await page.keyboard.press('Enter');
+    const observation = rows.first().getByRole('textbox');
+    await expect(observation).toBeVisible();
+    await observation.fill('Borrador sin marcar');
+    await summary.click();
+    await summary.click();
+    await expect(observation).toHaveValue('Borrador sin marcar');
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBeTruthy();
+    await page.screenshot({ path: `../output/playwright/teacher-flow/attendance-long-names-${width}.png`, fullPage: true });
+    await search.fill('alumno100@');
+    await expect(page.getByText('Alumno 100', { exact: true })).toBeVisible();
+    await page.getByRole('button', { name: 'Presente para Alumno 100', exact: true }).scrollIntoViewIfNeeded();
+    await expect(page.getByRole('button', { name: 'Presente para Alumno 100', exact: true })).toBeInViewport();
+  });
+}
+
+for (const viewport of [{ width: 360, height: 800 }, { width: 390, height: 844 }, { width: 768, height: 800 }, { width: 1280, height: 800 }]) {
   for (const mode of ['light', 'dark']) {
     test(`flujo docente progresivo ${viewport.width}px ${mode}`, async ({ page }) => {
       test.setTimeout(60_000);
@@ -192,7 +234,7 @@ for (const viewport of [{ width: 360, height: 800 }, { width: 390, height: 844 }
       await expect(roster.getByRole('button', { name: 'Ver boletín de Alumno 2', exact: true })).toContainText('Calificando');
       await expect(roster.getByRole('button', { name: 'Ver boletín de Alumno 3', exact: true })).toContainText('0.0 / 5.0');
       const columns = await roster.evaluate((element) => getComputedStyle(element).gridTemplateColumns.split(' ').length);
-      expect(columns).toBe(viewport.width < 640 ? 2 : 4);
+      expect(columns).toBe(viewport.width < 640 ? 2 : viewport.width < 1280 ? 3 : 4);
       const firstFour = await roster.getByRole('listitem').evaluateAll((rows) => rows[3].getBoundingClientRect().bottom - rows[0].getBoundingClientRect().top);
       expect(firstFour).toBeLessThanOrEqual(500);
       await page.getByRole('searchbox', { name: 'Buscar estudiante' }).fill('prueba');
@@ -227,12 +269,26 @@ for (const viewport of [{ width: 360, height: 800 }, { width: 390, height: 844 }
 
       await page.goto('/app/materias/m1/asistencia');
       const search = page.getByRole('searchbox', { name: 'Buscar estudiante' });
+      if (viewport.width === 1280) {
+        const rows = page.getByLabel('Lista de asistencia').locator(':scope > *');
+        await expect(rows).toHaveCount(100);
+        const first = await rows.first().boundingBox();
+        const eighth = await rows.nth(7).boundingBox();
+        expect(eighth!.y + eighth!.height - first!.y).toBeLessThanOrEqual(600);
+        for (const control of await rows.first().getByRole('button').all()) {
+          const bounds = await control.boundingBox();
+          expect(bounds!.height).toBeGreaterThanOrEqual(44);
+          expect(bounds!.width).toBeGreaterThanOrEqual(44);
+        }
+      }
       await search.fill('alumno99@');
       await expect(page.getByText('1 de 100 estudiantes', { exact: true })).toBeVisible({ timeout: 1_000 });
       const firstPatch = page.waitForRequest((request) => request.method() === 'PATCH' && request.url().endsWith('/materias/m1/asistencia'));
       await page.getByRole('button', { name: 'Llegó tarde para Alumno 99', exact: true }).click();
       expect((await firstPatch).postDataJSON().registros).toEqual([{ estudiante_id: 's99', estado: 'tarde', observacion: null }]);
+      await page.getByLabel('Abrir observación para Alumno 99', { exact: true }).click();
       await page.getByRole('textbox', { name: 'Observación para Alumno 99' }).fill('Con autorización');
+      await page.getByLabel('Abrir observación para Alumno 99', { exact: true }).click();
       await search.fill('sin coincidencia');
       await expect(page.getByText('No hay estudiantes con esa búsqueda.')).toBeVisible();
       await expect(page.getByRole('button', { name: 'Completa la lista' })).toHaveCount(0);
@@ -243,6 +299,7 @@ for (const viewport of [{ width: 360, height: 800 }, { width: 390, height: 844 }
       await page.getByRole('button', { name: /Marcar pendientes como presentes/ }).click();
       await search.fill('alumno99@');
       await expect(page.getByRole('button', { name: 'Llegó tarde para Alumno 99', exact: true })).toHaveAttribute('aria-pressed', 'true');
+      await page.getByLabel('Abrir observación para Alumno 99', { exact: true }).click();
       await expect(page.getByRole('textbox', { name: 'Observación para Alumno 99' })).toHaveValue('Con autorización');
       await expect(page.getByRole('button', { name: 'Guardar asistencia' })).toHaveCount(0);
       await expect(attendanceSummary.getByRole('status')).toHaveText('No hay cambios sin guardar');
@@ -256,6 +313,7 @@ for (const viewport of [{ width: 360, height: 800 }, { width: 390, height: 844 }
       await page.reload();
       await search.fill('alumno99@');
       await expect(page.getByRole('button', { name: 'Llegó tarde para Alumno 99', exact: true })).toHaveAttribute('aria-pressed', 'true');
+      await page.getByLabel('Abrir observación para Alumno 99', { exact: true }).click();
       await expect(page.getByRole('textbox', { name: 'Observación para Alumno 99' })).toHaveValue('Con autorización');
       await attendanceSummary.locator('summary').click();
       await expect(attendanceSummary.getByText('99', { exact: true })).toBeVisible();

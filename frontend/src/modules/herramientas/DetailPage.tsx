@@ -409,6 +409,32 @@ export function DetailPage() {
         </div>
       )}
 
+      {Array.isArray(aiTrace?.errores_criterios) && aiTrace.errores_criterios.length > 0 && (
+        <Card role="alert" className="border-amber-300 p-4 print:hidden">
+          <p className="font-bold">Revisa los criterios antes de evaluar</p>
+          <ul className="mt-2 list-disc space-y-1 pl-5 text-sm">
+            {aiTrace.errores_criterios.map((error, index) => <li key={index}>{String(error)}</li>)}
+          </ul>
+          <Button type="button" variant="outline" className="mt-3" onClick={startEditing}>Corregir criterios</Button>
+        </Card>
+      )}
+      {!editing && material.tipo !== 'rubrica' && Array.isArray(content.criterios) && content.criterios.length > 0 && (
+        <details className="rounded-xl border border-border bg-surface p-4 print:hidden">
+          <summary className="focus-ring min-h-11 cursor-pointer content-center rounded-lg font-bold">Qué se evaluará · criterios propuestos</summary>
+          <p className="my-2 text-sm text-muted">Son una guía para valorar el aprendizaje, no preguntas ni respuestas correctas. Revísalos antes de usar el recurso como evaluación.</p>
+          <div className="space-y-3">
+            {content.criterios.map((value, index) => {
+              const criterion = value && typeof value === 'object' ? value as Record<string, unknown> : {};
+              return <div key={index} className="border-t border-border pt-3 text-sm">
+                <p className="font-bold">{String(criterion.nombre ?? `Criterio ${index + 1}`)}</p>
+                <p className="mt-1 whitespace-pre-wrap">{String(criterion.descripcion ?? '')}</p>
+              </div>;
+            })}
+          </div>
+          <Button type="button" variant="outline" className="mt-3" onClick={startEditing}>Editar criterios</Button>
+        </details>
+      )}
+
       <Card className="p-5 sm:p-7 print:!border-0 print:!bg-transparent print:!p-0 print:!shadow-none">
         {editing ? (
           <div className="space-y-5">

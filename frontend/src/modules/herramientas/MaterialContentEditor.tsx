@@ -5,7 +5,7 @@ const HIDDEN_FIELDS = new Set([
   'titulo', '_xcalificator', '_alineacion', 'grilla', 'grid', 'grid_mascara', 'crucigrama',
   'palabras', 'banco_palabras', 'palabras_sin_ubicar', 'sopa_letras', 'imagen',
   'posiciones', 'pistas_horizontales', 'pistas_verticales', 'columna_izquierda',
-  'columna_derecha', 'soluciones',
+  'columna_derecha', 'soluciones', 'preguntas_numeros',
 ]);
 
 const LABELS: Record<string, string> = {
@@ -23,7 +23,7 @@ const LABELS: Record<string, string> = {
   puntaje_total: 'Puntaje total', criterios_revision: 'Criterios de revisión',
   lineas_respuesta: 'Líneas para responder', criterio_logro: 'Criterio de logro',
   diagnostico_inicial: 'Diagnóstico inicial', fortalezas: 'Fortalezas',
-  duracion_estimada: 'Duración estimada', evidencia: 'Evidencia',
+  duracion_estimada: 'Duración estimada', evidencia: 'Evidencia que se valorará', regla_puntuacion: 'Cómo se otorgan los puntos',
   responsable: 'Responsable', comprobacion_final: 'Comprobación final',
   recomendaciones_familia: 'Recomendaciones para la familia',
   pares: 'Pares', columna_izquierda: 'Columna izquierda', columna_derecha: 'Columna derecha',

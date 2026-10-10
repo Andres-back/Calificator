@@ -9,6 +9,7 @@ from decimal import Decimal, ROUND_HALF_UP
 from typing import Any
 
 from app.shared.enums import EvaluacionModalidad, MaterialTipo
+from app.modules.herramientas.evaluation_criteria import build_material_criteria
 
 
 EVALUABLE_MATERIAL_TYPES = frozenset(
@@ -357,32 +358,13 @@ def _weights(items: list[dict[str, Any]], note_max: Decimal) -> list[Decimal]:
     return result
 
 
-def _rubric_criteria(content: dict[str, Any], note_max: Decimal) -> list[dict[str, Any]]:
-    raw = _dict_items(content.get("criterios"))
-    if not raw:
-        return []
-    weights = _weights(
-        [{"peso": item.get("peso_porcentaje") or 1} for item in raw],
-        note_max,
-    )
-    return [
-        {
-            "id": index,
-            "nombre": _text(item.get("nombre")) or f"Criterio {index}",
-            "descripcion": _text(item.get("descripcion")),
-            "puntaje_maximo": float(weights[index - 1]),
-            "niveles": item.get("niveles") if isinstance(item.get("niveles"), dict) else {},
-        }
-        for index, item in enumerate(raw, start=1)
-    ]
-
-
 def build_evaluation_structure(
     material_type: str,
     content: dict[str, Any],
     *,
     note_max: float | Decimal,
     modality: str | EvaluacionModalidad,
+    teacher_criteria: list[str] | None = None,
 ) -> dict[str, Any]:
     """Devuelve preguntas, clave y criterios compatibles con el grader actual."""
     if not is_evaluable_material_type(material_type):
@@ -446,16 +428,7 @@ def build_evaluation_structure(
         if answer := _text(item.get("respuesta")):
             expected.append({"numero": index, "respuesta": answer})
 
-    rubric = _rubric_criteria(content, note)
-    criteria = rubric or [
-        {
-            "id": index,
-            "nombre": f"Punto {index}",
-            "descripcion": _text(question["enunciado"])[:240],
-            "puntaje_maximo": question["puntaje"],
-        }
-        for index, question in enumerate(questions, start=1)
-    ]
+    criteria = build_material_criteria(material_type, content, questions, note, teacher_criteria, expected)
     all_objective = bool(expected) and len(expected) == len(questions)
     if material_type in _MANUAL_EVIDENCE_TYPES:
         strategy = "manual"

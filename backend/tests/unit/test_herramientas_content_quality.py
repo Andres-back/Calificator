@@ -11,6 +11,27 @@ from app.modules.herramientas.schemas import GuiaRequest
 from app.shared.enums import MaterialTipo
 
 
+def test_criteria_proposal_preserves_material_and_exposes_actionable_error():
+    from copy import deepcopy
+    from app.modules.herramientas.content_quality import prepare_evaluation_criteria
+    content = {"preguntas": [{"enunciado": "Calcula el producto", "respuesta": "36"}],
+               "criterios": [{"nombre": "Punto 1", "descripcion": "Calcula el producto"}]}
+    before = deepcopy(content)
+    result = prepare_evaluation_criteria("examen", content, {})
+    assert result["preguntas"] == before["preguntas"]
+    assert result["criterios"] == before["criterios"]
+    assert result["_xcalificator"]["errores_criterios"]
+    assert content == before
+
+
+def test_teacher_proposal_is_editable_without_new_model_request():
+    from app.modules.herramientas.content_quality import prepare_evaluation_criteria
+    content = {"preguntas": [{"enunciado": "Explica la relación", "respuesta": "Referencia reservada"}]}
+    result = prepare_evaluation_criteria("taller", content, {"criterios_rubrica": ["Relaciona conceptos"]})
+    assert result["criterios"][0]["nombre"] == "Relaciona conceptos"
+    assert result["_xcalificator"]["errores_criterios"] == []
+
+
 def test_quality_contract_removes_duplicate_sections_and_renumbers() -> None:
     normalized, issues = normalize_material_content(
         MaterialTipo.FICHA,

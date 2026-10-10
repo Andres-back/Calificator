@@ -1,9 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router-dom';
 import { DashboardPage } from './DashboardPage';
+import { TeacherInbox } from './TeacherInbox';
 import { useAuth } from '@/stores/auth';
 import { markTourCompleted } from '@/components/ui/tourState';
 
@@ -33,6 +34,42 @@ beforeEach(() => {
 });
 
 describe('DashboardPage docente', () => {
+  it.each([true, false])('updates claims without hiding pending grades (compact=%s)', async (compact) => {
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    mocks.getBandejaDocente.mockResolvedValue({ reclamos_abiertos: 1, pendientes_revision: 1, reclamos: [], pendientes: [] });
+    render(<QueryClientProvider client={client}><MemoryRouter><TeacherInbox compact={compact} /></MemoryRouter></QueryClientProvider>);
+    if (compact) await userEvent.click(await screen.findByRole('button', { name: 'Ver pendientes' }));
+    expect(await screen.findByText('Reclamos y solicitudes')).toBeVisible();
+    mocks.getBandejaDocente.mockResolvedValue({ reclamos_abiertos: 0, pendientes_revision: 1, reclamos: [], pendientes: [] });
+    await act(async () => { await client.invalidateQueries({ queryKey: ['bandeja-docente'] }); });
+    await waitFor(() => expect(screen.queryByText('Reclamos y solicitudes')).not.toBeInTheDocument());
+    expect(screen.getByText('Entregas por revisar')).toBeVisible();
+    mocks.getBandejaDocente.mockResolvedValue({ reclamos_abiertos: 1, pendientes_revision: 1, reclamos: [], pendientes: [] });
+    await act(async () => { await client.invalidateQueries({ queryKey: ['bandeja-docente'] }); });
+    expect(await screen.findByText('Reclamos y solicitudes')).toBeVisible();
+    client.clear();
+  });
+  it.each([true, false])('omits empty claims and keeps pending grades (compact=%s)', async (compact) => {
+    mocks.getBandejaDocente.mockResolvedValue({ reclamos_abiertos: 0, pendientes_revision: 1, reclamos: [], pendientes: [] });
+    render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+      <MemoryRouter><TeacherInbox compact={compact} /></MemoryRouter></QueryClientProvider>);
+    if (compact) await userEvent.click(await screen.findByRole('button', { name: 'Ver pendientes' }));
+    expect(await screen.findByText('Entregas por revisar')).toBeVisible();
+    expect(screen.queryByText('Reclamos y solicitudes')).not.toBeInTheDocument();
+    expect(screen.queryByText(/0 solicitudes/)).not.toBeInTheDocument();
+    expect(screen.queryByText('No tienes entregas pendientes')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Actualizar casos' })).toBeVisible();
+  });
+  it('does not hide claim details when its counter incorrectly says zero', async () => {
+    mocks.getBandejaDocente.mockResolvedValue({ reclamos_abiertos: 0, pendientes_revision: 0, pendientes: [], reclamos: [{
+      id: 'c1', tipo: 'solicitud_revision', calificacion_id: 'g1', evaluacion_id: 'e1', estudiante_nombre: 'Ana Prueba',
+      materia_nombre: 'Matemáticas', evaluacion_nombre: 'Fracciones', motivo: 'nota',
+    }] });
+    renderDashboard();
+    await userEvent.click(await screen.findByRole('button', { name: 'Ver pendientes' }));
+    expect(screen.getByRole('link', { name: 'Revisar Ana Prueba en Fracciones' })).toBeVisible();
+    expect(screen.queryByText('Todo al día')).not.toBeInTheDocument();
+  });
   it('prioritizes contextual subject actions without a global grading shortcut', async () => {
     renderDashboard();
     expect(screen.getByRole('heading', { name: 'Hola, Profesor' })).toBeInTheDocument();

@@ -342,7 +342,7 @@ export function MateriaAsistencia() {
             {visibleStudents.length === 0 && <div className="space-y-2"><p>No hay estudiantes con esa búsqueda.</p><Button type="button" variant="outline" onClick={() => setSearch('')}>Mostrar todo el grupo</Button></div>}
           </Card>
 
-          <div className="space-y-4">
+          <div className="space-y-2" aria-label="Lista de asistencia">
             {visibleStudents.map(({ student, index }) => {
               const current = draft[student.estudiante_id] ?? {
                 estado: student.estado,
@@ -352,21 +352,21 @@ export function MateriaAsistencia() {
                 <Card
                   key={student.estudiante_id}
                   className={cn(
-                    'p-4 transition-colors sm:p-5',
+                    'min-w-0 p-3 transition-colors lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,1.6fr)_auto] lg:items-center lg:gap-x-3 lg:px-3 lg:py-2',
                     current.estado === null && 'border-amber-300 dark:border-amber-500/40',
                   )}
                 >
-                  <div className="flex flex-wrap items-start gap-3">
-                    <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-surface-2 text-sm font-extrabold text-secondary">
+                  <div className="flex min-w-0 items-center gap-2">
+                    <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-surface-2 text-xs font-extrabold text-secondary">
                       {index + 1}
                     </span>
                     <div className="min-w-0 flex-1">
-                      <p className="text-lg font-bold">{student.estudiante_nombre}</p>
-                      <p className="truncate text-sm text-muted">{student.estudiante_email}</p>
+                      <p className="break-words text-base font-bold leading-5 lg:text-sm">{student.estudiante_nombre}</p>
+                      <p className="truncate text-xs text-muted" title={student.estudiante_email}>{student.estudiante_email}</p>
                     </div>
                     <span
                       className={cn(
-                        'ml-auto rounded-full px-2.5 py-1 text-xs font-bold',
+                        'ml-auto shrink-0 rounded-full px-2 py-1 text-[11px] font-bold lg:max-w-20 lg:whitespace-normal',
                         current.estado
                           ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-500/15 dark:text-emerald-200'
                           : 'bg-amber-100 text-amber-900 dark:bg-amber-500/15 dark:text-amber-200',
@@ -379,16 +379,16 @@ export function MateriaAsistencia() {
                     </span>
                   </div>
                   {autosave.status(student.estudiante_id) === 'error' && (
-                    <div role="alert" className="mt-2 flex flex-wrap items-center gap-2 text-sm text-rose-700 dark:text-rose-300">
+                    <div role="alert" className="mt-2 flex flex-wrap items-center gap-2 text-sm text-rose-700 dark:text-rose-300 lg:col-span-3 lg:row-start-2">
                       <span>No se pudo guardar. Tu selección sigue aquí.</span>
                       <Button type="button" variant="outline" onClick={() => autosave.retry(student.estudiante_id)} aria-label={`Reintentar asistencia para ${student.estudiante_nombre}`}>Reintentar</Button>
                     </div>
                   )}
-                  {!current.estado && current.observacion.trim() && <p className="mt-2 text-sm text-amber-700 dark:text-amber-200">Selecciona un estado para guardar la observación.</p>}
+                  {!current.estado && current.observacion.trim() && <p className="mt-2 text-sm text-amber-700 dark:text-amber-200 lg:col-span-3 lg:row-start-2">Selecciona un estado para guardar la observación.</p>}
 
-                  <fieldset className="mt-4">
-                    <legend className="mb-2 text-sm font-semibold">Estado de asistencia</legend>
-                    <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,7rem),1fr))] gap-2">
+                  <fieldset className="mt-3 min-w-0 lg:col-start-2 lg:row-start-1 lg:mt-0">
+                    <legend className="sr-only">Estado de asistencia de {student.estudiante_nombre}</legend>
+                    <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:gap-1">
                       {STATUS_OPTIONS.map((option) => {
                         const selected = current.estado === option.value;
                         return (
@@ -399,13 +399,13 @@ export function MateriaAsistencia() {
                             aria-label={`${option.label} para ${student.estudiante_nombre}`}
                             onClick={() => updateStatus(student.estudiante_id, option.value)}
                             className={cn(
-                              'focus-ring flex min-h-12 min-w-0 flex-wrap items-center justify-center gap-2 rounded-lg border px-3 text-sm font-bold transition-colors',
+                              'focus-ring flex min-h-11 min-w-11 flex-wrap items-center justify-center gap-1 rounded-lg border px-2 py-1 text-sm font-bold transition-colors lg:px-1 lg:text-xs',
                               selected
                                 ? option.selectedClass
                                 : 'border-border bg-surface text-fg hover:border-brand-400 hover:bg-brand-50 dark:hover:bg-brand-500/10',
                             )}
                           >
-                            <option.icon className="h-5 w-5" aria-hidden="true" />
+                            <option.icon className="h-4 w-4 shrink-0 lg:hidden xl:block" aria-hidden="true" />
                             {option.label}
                           </button>
                         );
@@ -413,7 +413,11 @@ export function MateriaAsistencia() {
                     </div>
                   </fieldset>
 
-                  <label className="mt-4 block">
+                  <details className="mt-2 min-w-0 lg:col-start-3 lg:row-start-1 lg:mt-0 lg:[&[open]]:col-span-3 lg:[&[open]]:col-start-1 lg:[&[open]]:row-start-3">
+                    <summary aria-label={`Abrir observación para ${student.estudiante_nombre}`} className="focus-ring min-h-11 min-w-11 cursor-pointer content-center rounded-lg px-2 text-xs font-semibold text-brand-700 dark:text-brand-200">
+                      {current.observacion.trim() ? 'Observación añadida' : 'Observación'}
+                    </summary>
+                  <label className="mt-1 block">
                     <span className="text-sm font-semibold">Observación (opcional)</span>
                     <span className="mt-0.5 block text-xs text-muted">
                       Ejemplo: llegó con autorización o presentó excusa médica.
@@ -430,6 +434,7 @@ export function MateriaAsistencia() {
                       aria-label={`Observación para ${student.estudiante_nombre}`}
                     />
                   </label>
+                  </details>
                 </Card>
               );
             })}

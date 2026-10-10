@@ -384,7 +384,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "25a430d0a503121c66a6ee1f699d4867da95d8b7e4a81452928d1174fe39bb2b",
+  "source_digest": "a8d4e5379a791cfb5520dc2bb44284416d8028bcc9c58bd6b348aad802be6744",
   "surfaces": [
     {
       "actors": [
@@ -37464,6 +37464,12 @@
           "reference": "entregas",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/CalificacionesWorkspace.mobile.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "entregas",
+          "status": "direct",
+          "test_path": "frontend/src/modules/dashboard/DashboardPage.test.tsx"
         },
         {
           "level": "unit",

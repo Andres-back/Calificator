@@ -55,6 +55,8 @@ ACTIVE_RECEPTION_STATES = {
 }
 
 _STUDENT_FORBIDDEN_KEYS = {
+    "xcalificator",
+    "alineacion",
     "answer",
     "answers",
     "answerkey",
