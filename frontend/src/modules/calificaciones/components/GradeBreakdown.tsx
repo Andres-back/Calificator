@@ -30,7 +30,7 @@ export function GradeBreakdown({ breakdown, student = false, compactTeacher = fa
           <p className="text-sm text-muted">Cada puntaje muestra la evidencia y la razón que lo respalda.</p>
         </div>
         <Badge tone={breakdown.requiere_revision ? 'warning' : 'success'}>
-          {breakdown.requiere_revision ? 'Requiere revisión' : 'Desglose completo'}
+          {breakdown.requiere_revision ? 'Requiere revisión' : 'Puntajes registrados'}
         </Badge>
       </div>
       {onSelectComponent && !student ? <>
@@ -112,7 +112,7 @@ export function GradeBreakdown({ breakdown, student = false, compactTeacher = fa
                     ))}
                   </div>
                 ) : (
-                  <p className="mt-2">La valoración no atribuyó esta respuesta a una fuente RAG inexistente.</p>
+                  <p className="mt-2">No se registró material de apoyo para esta respuesta. Puedes comprobarla con la pregunta y la evidencia.</p>
                 )}
               </details>
             )}

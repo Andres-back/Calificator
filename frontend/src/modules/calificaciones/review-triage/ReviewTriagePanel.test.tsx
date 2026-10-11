@@ -20,7 +20,7 @@ const breakdown = (components: GradeComponentData[]): GradeBreakdownData => ({
 describe('ReviewTriagePanel', () => {
   it('no afirma una decisión docente si el análisis todavía está en proceso', () => {
     render(<ReviewTriagePanel compact historical processing summary={buildReviewTriage(null)} extraReasons={['aviso_previo']} onSelectComponent={() => undefined} />);
-    expect(screen.getByText(/La calificación sigue en proceso/)).toBeInTheDocument();
+    expect(screen.getByText(/La entrega sigue en análisis/)).toBeInTheDocument();
     expect(screen.queryByText(/ya tiene una decisión docente/)).not.toBeInTheDocument();
   });
   it('no promete ausencia de incertidumbre cuando hay un aviso general sin excepciones', () => {
@@ -29,29 +29,30 @@ describe('ReviewTriagePanel', () => {
     const review = vi.fn();
     render(<ReviewTriagePanel compact summary={summary} onSelectComponent={() => undefined} onReviewGeneral={review} />);
     expect(screen.queryByText(/Sin señales de incertidumbre/)).not.toBeInTheDocument();
-    expect(screen.getByText(/La valoración global de la IA y el cálculo por preguntas no coinciden/)).toBeInTheDocument();
+    expect(screen.getByText(/La nota propuesta por la IA no coincide con la suma de los puntos por pregunta/)).toBeInTheDocument();
     expect(screen.getByText('1 aviso general')).toBeInTheDocument();
     expect(screen.queryByText('0 por revisar')).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Revisar puntajes' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Revisar puntajes por pregunta' }));
     expect(review).toHaveBeenCalledWith('revision');
-    fireEvent.click(screen.getByText('Ver detalle de los avisos'));
-    expect(screen.getByText(code)).toBeInTheDocument();
+    expect(screen.queryByText(code)).not.toBeInTheDocument();
+    expect(screen.queryByText('Ver detalle de los avisos')).not.toBeInTheDocument();
+    expect(summary.globalReasons).toContain(code);
   });
 
   it('conserva motivos desconocidos y distingue avisos del análisis anterior', () => {
     const summary = buildReviewTriage({ ...breakdown([]), bloqueos: ['motivo_nuevo:42'] });
     render(<ReviewTriagePanel compact historical summary={summary} onSelectComponent={() => undefined} />);
-    expect(screen.getByText('Avisos del análisis original')).toBeInTheDocument();
-    expect(screen.getByText(/Hay un aviso que necesita revisión/)).toBeInTheDocument();
+    expect(screen.getByText('Avisos de la primera revisión')).toBeInTheDocument();
+    expect(screen.getByText(/En el análisis inicial se registró un aviso adicional/)).toBeInTheDocument();
     expect(screen.queryByText(/antes de confirmar/)).not.toBeInTheDocument();
-    fireEvent.click(screen.getByText('Ver detalle de los avisos'));
-    expect(screen.getByText('motivo_nuevo:42')).toBeInTheDocument();
+    expect(screen.queryByText('motivo_nuevo:42')).not.toBeInTheDocument();
+    expect(summary.globalReasons).toContain('motivo_nuevo:42');
   });
   it('muestra conteos, razones y el estado sin alertas sin prometer exactitud', () => {
     const safe = buildReviewTriage(breakdown([component('p1', 0)]));
     const view = render(<ReviewTriagePanel summary={safe} onSelectComponent={() => undefined} />);
-    expect(screen.getByText('1 sin alertas individuales')).toBeInTheDocument();
-    expect(screen.getByText(/No detectamos señales de incertidumbre/)).toBeInTheDocument();
+    expect(screen.getByText('1 sin avisos de revisión')).toBeInTheDocument();
+    expect(screen.getByText(/No hay avisos de revisión en estas respuestas/)).toBeInTheDocument();
     expect(screen.getByText(/confirma la nota/)).toBeInTheDocument();
 
     const attention = buildReviewTriage(breakdown([component('p2', 1, { explicacion: '' })]));
@@ -62,7 +63,7 @@ describe('ReviewTriagePanel', () => {
   it('informa bloqueos globales sin asignarlos a una respuesta', () => {
     const summary = buildReviewTriage({ ...breakdown([component('p1', 0)]), cobertura_estado: 'incompleta', bloqueos: ['hoja_faltante'] });
     render(<ReviewTriagePanel summary={summary} onSelectComponent={() => undefined} />);
-    expect(screen.getByRole('alert')).toHaveTextContent('El desglose no cubre de forma consistente todas las preguntas.');
+    expect(screen.getByRole('alert')).toHaveTextContent('No están revisadas todas las preguntas de forma consistente.');
     expect(screen.getByRole('alert')).toHaveTextContent('Falta una hoja de la evidencia.');
   });
 
@@ -74,10 +75,10 @@ describe('ReviewTriagePanel', () => {
     ]));
     const select = vi.fn();
     const view = render(<ReviewTriagePanel summary={summary} onSelectComponent={select} />);
-    fireEvent.click(screen.getByRole('button', { name: /Revisar primera excepción/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Revisar primera respuesta pendiente/ }));
     expect(select).toHaveBeenLastCalledWith('blocked', 'blocked', 1);
     view.rerender(<ReviewTriagePanel summary={summary} selectedComponentId="blocked" onSelectComponent={select} />);
-    fireEvent.click(screen.getByRole('button', { name: /Siguiente excepción/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Siguiente respuesta pendiente/ }));
     expect(select).toHaveBeenLastCalledWith('attention', 'attention', 2);
   });
 
@@ -85,12 +86,30 @@ describe('ReviewTriagePanel', () => {
     const summary = buildReviewTriage(breakdown([component('safe', 0)]));
     const select = vi.fn();
     render(<ReviewTriagePanel summary={summary} onSelectComponent={select} />);
-    fireEvent.click(screen.getByText('Ver respuestas sin alertas (1)'));
+    fireEvent.click(screen.getByText('Ver respuestas sin avisos (1)'));
     const button = screen.getByRole('button', { name: /Pregunta 1/ });
     button.focus();
     expect(button).toHaveFocus();
     fireEvent.keyDown(button, { key: 'Enter' });
     fireEvent.click(button);
     expect(select).toHaveBeenCalledWith('safe', 'safe', 1);
+  });
+
+  it('permite consultar un aviso histórico sin pedir confirmar de nuevo ni afirmar resolución', () => {
+    const review = vi.fn();
+    render(<ReviewTriagePanel compact historical summary={buildReviewTriage(breakdown([]))}
+      extraReasons={['feedback_quality:nota_global_no_coincide_con_suma']} onReviewGeneral={review} onSelectComponent={() => undefined} />);
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(screen.getByRole('note')).toHaveTextContent('En el análisis inicial, la IA propuso una nota distinta a la suma por preguntas.');
+    expect(screen.queryByText(/antes de confirmar|resuelt/)).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Ver puntajes por pregunta' }));
+    expect(review).toHaveBeenCalledWith('revision');
+  });
+
+  it('no reproduce diagnóstico del proveedor aunque sea desconocido', () => {
+    const diagnostic = 'provider_error:HTTP_503_trace_ab12';
+    render(<ReviewTriagePanel compact summary={buildReviewTriage(null)} extraReasons={[diagnostic]} onSelectComponent={() => undefined} />);
+    expect(screen.getByRole('alert')).toHaveTextContent('Hay información que debes comprobar antes de confirmar la nota.');
+    expect(screen.queryByText(diagnostic)).not.toBeInTheDocument();
   });
 });

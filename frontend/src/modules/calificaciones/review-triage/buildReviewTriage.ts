@@ -23,11 +23,11 @@ export type ReviewTriageSummary = {
 
 export type ReviewNoticeTarget = 'revision' | 'evidencia' | 'retroalimentacion';
 
-export function describeReviewBlocker(raw: string): { message: string; guidance: string; action: string; target: ReviewNoticeTarget } {
+function describePendingReviewBlocker(raw: string): { message: string; guidance: string; action: string; target: ReviewNoticeTarget } {
   const reason = raw.replace(/^feedback_quality:/, '').trim();
   if (reason === 'nota_global_no_coincide_con_suma') return {
-    message: 'La valoración global de la IA y el cálculo por preguntas no coinciden.',
-    guidance: 'Revisa los puntajes antes de confirmar.', action: 'Revisar puntajes', target: 'revision',
+    message: 'La nota propuesta por la IA no coincide con la suma de los puntos por pregunta.',
+    guidance: 'Compara los puntajes con las respuestas antes de confirmar la nota.', action: 'Revisar puntajes por pregunta', target: 'revision',
   };
   if (reason === 'feedback_contradice_desglose') return {
     message: 'La retroalimentación no coincide con los puntajes registrados.',
@@ -42,21 +42,51 @@ export function describeReviewBlocker(raw: string): { message: string; guidance:
     guidance: 'Comprueba la evidencia y las respuestas pendientes.', action: 'Ver evidencia', target: 'evidencia',
   };
   if (/^(Cobertura |cobertura_|componentes_duplicados)/.test(reason)) return {
-    message: 'El desglose no cubre de forma consistente todas las preguntas.',
-    guidance: 'Comprueba las preguntas y sus puntajes.', action: 'Revisar puntajes', target: 'revision',
+    message: 'No están revisadas todas las preguntas de forma consistente.',
+    guidance: 'Comprueba que cada pregunta tenga una respuesta y un puntaje registrados.', action: 'Revisar puntajes por pregunta', target: 'revision',
   };
   if (reason.startsWith('verificador_ia:') || reason === 'verificador_solicita_revision') return {
-    message: 'El verificador de IA solicita una comprobación docente.',
+    message: 'La segunda revisión de IA encontró algo que debes comprobar.',
     guidance: 'Contrasta las respuestas con la evidencia.', action: 'Revisar respuestas', target: 'revision',
   };
   if (reason === 'revision_docente_pendiente') return {
     message: 'La sugerencia necesita una revisión docente.',
-    guidance: 'Comprueba las respuestas y sus puntajes antes de confirmar.', action: 'Revisar puntajes', target: 'revision',
+    guidance: 'Comprueba las respuestas y sus puntajes antes de confirmar.', action: 'Revisar puntajes por pregunta', target: 'revision',
   };
   return {
-    message: 'Hay un aviso que necesita revisión.',
-    guidance: 'Comprueba la evaluación antes de confirmar. El motivo original está en el detalle.',
+    message: 'Hay información que debes comprobar antes de confirmar la nota.',
+    guidance: 'Compara las respuestas y sus puntajes con la evidencia del estudiante.',
     action: 'Revisar evaluación', target: 'revision',
+  };
+}
+
+export function describeReviewBlocker(raw: string, context: 'pending' | 'historical' | 'processing' = 'pending') {
+  const notice = describePendingReviewBlocker(raw);
+  if (context === 'pending') return notice;
+  const reason = raw.replace(/^feedback_quality:/, '').trim();
+  const initialMessages: Record<string, string> = {
+    nota_global_no_coincide_con_suma: 'En el análisis inicial, la IA propuso una nota distinta a la suma por preguntas.',
+    feedback_contradice_desglose: 'En el análisis inicial, la retroalimentación no coincidía con los puntajes.',
+    clave_incompleta: 'En el análisis inicial faltaban respuestas de referencia.',
+    hoja_faltante: 'En el análisis inicial se señaló que faltaba una hoja de la evidencia.',
+    componentes_o_evidencia_pendientes: 'En el análisis inicial faltaba información para revisar la entrega completa.',
+    revision_docente_pendiente: 'La sugerencia inicial quedó pendiente de la decisión del docente.',
+    verificador_solicita_revision: 'La segunda revisión de IA dejó observaciones en el análisis inicial.',
+  };
+  const message = initialMessages[reason]
+    ?? (/^(Cobertura |cobertura_|componentes_duplicados)/.test(reason)
+      ? 'En el análisis inicial no estaban revisadas todas las preguntas de forma consistente.'
+      : reason.startsWith('verificador_ia:')
+        ? initialMessages.verificador_solicita_revision
+        : 'En el análisis inicial se registró un aviso adicional. Puedes consultar las respuestas y la evidencia.');
+  return {
+    ...notice,
+    message,
+    guidance: context === 'processing'
+      ? 'La entrega sigue en análisis. La nota todavía no es definitiva.'
+      : 'Estos avisos pertenecen a la primera revisión; no cambian la nota actual.',
+    action: notice.target === 'evidencia' ? 'Ver evidencia'
+      : notice.target === 'retroalimentacion' ? 'Ver retroalimentación' : 'Ver puntajes por pregunta',
   };
 }
 
@@ -129,12 +159,12 @@ export function classifyReviewComponent(component: GradeComponentData): ReviewTr
     .map((valuation) => normalizedConfidence(valuation.confianza))
     .filter((value): value is number => value != null);
   if (confidences.some((confidence) => confidence < REVIEW_CONFIDENCE_THRESHOLD)) {
-    add(attention, 'low_confidence', 'Una verificación tiene confianza baja');
+    add(attention, 'low_confidence', 'La IA indicó dudas al revisar esta respuesta');
   }
   if (valuationsContradict(component)) add(attention, 'valuation_disagreement', 'Las verificaciones no coinciden');
   if (!component.explicacion?.trim()) add(attention, 'missing_explanation', 'Falta explicar cómo se obtuvo el puntaje');
   if (isAssisted(component) && valuations.length < 2 && confidences.length === 0) {
-    add(attention, 'insufficient_verification', 'Falta una segunda señal de verificación');
+    add(attention, 'insufficient_verification', 'No hay información suficiente para comprobar la revisión de IA');
   }
 
   const level: ReviewTriageLevel = blocked.length > 0 ? 'blocked' : attention.length > 0 ? 'attention' : 'safe';
