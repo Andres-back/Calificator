@@ -116,4 +116,5 @@ NO dibujes la grilla. Devuelve SOLO JSON:
             "pistas_vertical": grid["pistas_vertical"],
         },
         "palabras_sin_ubicar": grid["palabras_sin_ubicar"],
+        **({"criterios": result["criterios"]} if "criterios" in result else {}),
     }

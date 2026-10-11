@@ -27,6 +27,7 @@ function CaseList({
   emptyText,
   total,
   kind,
+  onRetry,
 }: {
   title: string;
   description: string;
@@ -34,6 +35,7 @@ function CaseList({
   emptyText: string;
   total: number;
   kind: 'claim' | 'pending';
+  onRetry: () => void;
 }) {
   const brandIcon = kind === 'claim' ? 'student-claim' : 'pending-reviews';
   const tone = kind === 'claim' ? 'amber' : 'brand';
@@ -55,8 +57,11 @@ function CaseList({
 
       {items.length === 0 ? (
         <div className="flex min-h-32 flex-col items-center justify-center px-5 py-7 text-center">
-          <CheckCircle2 className="h-7 w-7 text-emerald-500" aria-hidden="true" />
-          <p className="mt-2 text-sm font-semibold text-fg">{emptyText}</p>
+          {total > 0 ? <>
+            <AlertCircle className="h-7 w-7 text-amber-600" aria-hidden="true" />
+            <p className="mt-2 text-sm font-semibold text-fg">Hay casos pendientes, pero no pudimos mostrar su detalle.</p>
+            <button type="button" onClick={onRetry} className="focus-ring mt-2 min-h-11 min-w-11 rounded-lg px-3 text-sm font-bold text-brand-600">Actualizar casos</button>
+          </> : <><CheckCircle2 className="h-7 w-7 text-emerald-500" aria-hidden="true" /><p className="mt-2 text-sm font-semibold text-fg">{emptyText}</p></>}
         </div>
       ) : (
         <div className="divide-y divide-border">
@@ -136,12 +141,8 @@ export function TeacherInbox({ compact = false }: { compact?: boolean }) {
   const inbox = inboxQuery.data;
   const claims = Array.isArray(inbox.reclamos) ? inbox.reclamos : [];
   const pending = Array.isArray(inbox.pendientes) ? inbox.pendientes : [];
-  const openClaims = Number.isFinite(inbox.reclamos_abiertos)
-    ? inbox.reclamos_abiertos
-    : claims.length;
-  const pendingReviews = Number.isFinite(inbox.pendientes_revision)
-    ? inbox.pendientes_revision
-    : pending.length;
+  const openClaims = Math.max(claims.length, Number.isFinite(inbox.reclamos_abiertos) ? inbox.reclamos_abiertos : 0);
+  const pendingReviews = Math.max(pending.length, Number.isFinite(inbox.pendientes_revision) ? inbox.pendientes_revision : 0);
   const total = openClaims + pendingReviews;
 
   if (compact) return (
@@ -149,13 +150,13 @@ export function TeacherInbox({ compact = false }: { compact?: boolean }) {
       <div className="flex flex-wrap items-center justify-between gap-2 px-3 py-2">
         <div className="min-w-0 text-sm">
           {total === 0 ? <p className="flex items-center gap-2 font-semibold"><CheckCircle2 className="h-4 w-4 text-emerald-600" aria-hidden="true" />Todo al día</p>
-            : <p><strong>{pendingReviews}</strong> notas por revisar · <strong>{openClaims}</strong> solicitudes</p>}
+            : <p>{pendingReviews > 0 && <><strong>{pendingReviews}</strong> notas por revisar</>}{pendingReviews > 0 && openClaims > 0 && ' · '}{openClaims > 0 && <><strong>{openClaims}</strong> solicitudes</>}</p>}
         </div>
         {total > 0 && <button type="button" aria-expanded={expanded} aria-controls="teacher-pending-cases" onClick={() => setExpanded(!expanded)} className="focus-ring min-h-11 min-w-11 rounded-lg px-3 text-sm font-bold text-brand-600 dark:text-brand-300">{expanded ? 'Ocultar pendientes' : 'Ver pendientes'}</button>}
       </div>
-      {expanded && total > 0 && <div id="teacher-pending-cases" className="grid gap-3 border-t border-border p-3 lg:grid-cols-2">
-        <CaseList title="Reclamos y solicitudes" description="Solicitudes de revisión de estudiantes." items={claims} total={openClaims} emptyText="No tienes reclamos abiertos" kind="claim" />
-        <CaseList title="Entregas por revisar" description="Notas pendientes de tu decisión." items={pending} total={pendingReviews} emptyText="No tienes entregas pendientes" kind="pending" />
+      {expanded && total > 0 && <div id="teacher-pending-cases" className={`grid gap-3 border-t border-border p-3 ${openClaims > 0 && pendingReviews > 0 ? 'lg:grid-cols-2' : ''}`}>
+        {openClaims > 0 && <CaseList title="Reclamos y solicitudes" description="Solicitudes de revisión de estudiantes." items={claims} total={openClaims} emptyText="No tienes reclamos abiertos" kind="claim" onRetry={() => void inboxQuery.refetch()} />}
+        {pendingReviews > 0 && <CaseList title="Entregas por revisar" description="Notas pendientes de tu decisión." items={pending} total={pendingReviews} emptyText="No tienes entregas pendientes" kind="pending" onRetry={() => void inboxQuery.refetch()} />}
       </div>}
     </section>
   );
@@ -194,23 +195,25 @@ export function TeacherInbox({ compact = false }: { compact?: boolean }) {
             : 'Todo al día'}
         </Badge>
       </div>
-      <div className="grid gap-4 lg:grid-cols-2">
-        <CaseList
+      <div className={`grid gap-4 ${openClaims > 0 && pendingReviews > 0 ? 'lg:grid-cols-2' : ''}`}>
+        {openClaims > 0 && <CaseList
           title="Reclamos y solicitudes"
           description="Solicitudes de revisión enviadas por estudiantes."
           items={claims}
           total={openClaims}
           emptyText="No tienes reclamos abiertos"
           kind="claim"
-        />
-        <CaseList
+          onRetry={() => void inboxQuery.refetch()}
+        />}
+        {pendingReviews > 0 && <CaseList
           title="Entregas por revisar"
           description="Notas sugeridas o casos marcados para revisión."
           items={pending}
           total={pendingReviews}
           emptyText="No tienes entregas pendientes"
           kind="pending"
-        />
+          onRetry={() => void inboxQuery.refetch()}
+        />}
       </div>
     </section>
   );

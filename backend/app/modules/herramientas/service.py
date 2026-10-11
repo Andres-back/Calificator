@@ -24,7 +24,8 @@ from app.modules.herramientas.puzzle_builder import (
     build_word_search,
     normalize_word,
 )
-from app.modules.herramientas.content_quality import normalize_material_content
+from app.modules.herramientas.content_quality import normalize_material_content, prepare_evaluation_criteria
+from app.modules.herramientas.evaluation_criteria import teacher_criteria_from
 from app.modules.herramientas.generators import (
     crucigrama,
     cuento,
@@ -365,6 +366,7 @@ async def _save_material(
                 "criterios_rubrica": input_json.get("criterios_rubrica", []) if uses_rubric else [],
             }
         )
+    contenido_json = prepare_evaluation_criteria(tipo.value, contenido_json, input_json)
     inserted = await db.execute(
         text(
             "INSERT INTO materiales_generados "
@@ -595,8 +597,16 @@ async def update_material(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No hay campos válidos para actualizar")
 
     if "contenido_json" in campos and isinstance(campos["contenido_json"], dict):
-        campos["contenido_json"] = _rebuild_edited_puzzle(
-            str(existing["tipo"]), campos["contenido_json"]
+        old_content = existing.get("contenido_json") or {}
+        puzzle_inputs = {
+            "crucigrama": ("preguntas_horizontales", "preguntas_verticales"),
+            "sopa_letras": ("banco", "banco_palabras"),
+            "emparejar": ("pares",), "unir_columnas": ("pares",),
+        }.get(str(existing["tipo"]), ())
+        if not puzzle_inputs or any(old_content.get(key) != campos["contenido_json"].get(key) for key in puzzle_inputs):
+            campos["contenido_json"] = _rebuild_edited_puzzle(str(existing["tipo"]), campos["contenido_json"])
+        campos["contenido_json"] = prepare_evaluation_criteria(
+            str(existing["tipo"]), campos["contenido_json"], existing.get("input_json") or {}
         )
 
     if "materia_id" in campos:
@@ -1422,6 +1432,7 @@ async def convertir_a_evaluacion(
             material.get("contenido_json") or {},
             note_max=getattr(request, "nota_maxima"),
             modality=getattr(request, "modalidad"),
+            teacher_criteria=teacher_criteria_from(material.get("input_json") or {}, material.get("contenido_json") or {}),
         )
     except ValueError as exc:
         raise HTTPException(
