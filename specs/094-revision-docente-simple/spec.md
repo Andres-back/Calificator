@@ -4,7 +4,7 @@
 
 **Created**: 2026-10-11
 
-**Status**: Alcance, plan y lista aprobados; implementación y regresiones focalizadas completas. Preparación del PR, sin fusión ni despliegue.
+**Status**: Alcance, plan y lista aprobados; implementación y regresiones focalizadas completas. PR #199 abierto, CI remoto pendiente; sin fusión ni despliegue.
 
 **Issue**: [#198](https://github.com/Andres-back/Calificator/issues/198)
 

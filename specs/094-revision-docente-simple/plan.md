@@ -34,7 +34,7 @@ Revisión posterior al diseño: sin excepciones. No hay extensiones/hooks config
 - `frontend/src/modules/calificaciones/review-triage/ReviewTriagePanel.tsx`: panel activo frente a historial neutral; retirar listado técnico visible sin borrar sus fuentes.
 - `frontend/src/modules/calificaciones/CalificacionesWorkspace.tsx`: encabezado, cálculo, identidad/lista y secciones progresivas; mantener enlaces, permisos y handlers existentes.
 - `frontend/src/modules/calificaciones/components/`: reutilizar desglose/editor/historial actuales; revisar mensajes visibles en el recorrido sin tocar contratos.
-- Pruebas actuales del módulo, `frontend/e2e/mock/grading-review.mock.spec.ts` y regresiones backend de desglose/ajuste/autorización.
+- Pruebas actuales del módulo, `frontend/e2e/mock/grading-review.mock.spec.ts`, regresiones existentes de `frontend/e2e/explainable-grading.spec.ts` adaptadas a los mensajes nuevos, y regresiones backend de desglose/ajuste/autorización.
 - `specs/094-revision-docente-simple/`: diseño, checklist y tareas tras aprobación; registrar evolución en índice/inventario correspondiente.
 
 ## Secuencia propuesta
