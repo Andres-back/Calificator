@@ -38,6 +38,24 @@ beforeEach(() => {
 });
 
 describe('libro docente contextual', () => {
+  it('095 pliega filtros pero conserva su indicador y la búsqueda al cerrarlos', async () => {
+    const user = userEvent.setup();
+    renderPage();
+    await screen.findByRole('list', { name: 'Estudiantes del boletín' });
+    const toggle = screen.getByText('Filtros', { exact: true });
+    expect(toggle.closest('details')).not.toHaveAttribute('open');
+    await user.type(screen.getByLabelText('Buscar estudiante'), 'Alumno 0');
+    await user.click(toggle);
+    await user.selectOptions(screen.getByLabelText('Filtrar por evaluación'), 'eval-1');
+    await user.click(toggle);
+    expect(toggle.closest('details')).not.toHaveAttribute('open');
+    expect(screen.getByRole('status', { name: 'Filtros aplicados' })).toHaveTextContent('Primera evaluación');
+    expect(screen.getByLabelText('Buscar estudiante')).toHaveValue('Alumno 0');
+    expect(within(screen.getByRole('list', { name: 'Estudiantes del boletín' })).getAllByRole('listitem')).toHaveLength(1);
+    await user.click(screen.getByRole('button', { name: 'Quitar filtros' }));
+    expect(screen.getByLabelText('Buscar estudiante')).toHaveValue('Alumno 0');
+    expect(screen.queryByRole('status', { name: 'Filtros aplicados' })).not.toBeInTheDocument();
+  });
   it('reads grades without academic reconciliation and isolates the cache by reader', async () => {
     const { client } = renderPage();
     await screen.findByLabelText('Filtrar por evaluación');
@@ -204,7 +222,8 @@ describe('libro docente contextual', () => {
     const { client } = renderPage();
     await user.click(await screen.findByRole('button', { name: 'Ver boletín de Alumno 0' }));
     act(() => client.setQueryData(['calificaciones', 'eval-1', 'solo-lectura', 'materia-1', 'teacher'], [{ id: 'g1', estudiante_id: 'student-0', nota_confirmada: 4.67, estado: 'publicada', updated_at: '2026-01-02' }]));
-    expect(await within(screen.getByRole('dialog')).findByText('4.67 / 5.0')).toBeVisible();
+    // La nota puede estar en el DOM antes de terminar la animación de apertura.
+    await waitFor(() => expect(within(screen.getByRole('dialog')).getByText('4.67 / 5.0')).toBeVisible());
   });
 
   it.each(['materia', 'usuario', 'permiso', 'matricula'])('discards a private preview after changing %s', async (kind) => {

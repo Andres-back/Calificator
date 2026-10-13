@@ -220,6 +220,67 @@ for (const width of [360, 390, 768, 1280, 1440]) {
 
 const teacherPermissions = ['subjects.read', 'evaluations.read', 'evaluations.create', 'grading.read', 'grading.grade', 'grading.publish', 'gradebook.read', 'attendance.read', 'attendance.manage'];
 
+for (const width of [360, 390, 768, 1280, 1440]) {
+  for (const mode of ['light', 'dark']) {
+    test(`095 interfaz docente ligera ${width}px ${mode}`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 844 });
+      await page.addInitScript(theme => localStorage.setItem('xc-theme', JSON.stringify({ state: { mode: theme }, version: 0 })), mode);
+      await login(page, 'profesor', { permissions: [...teacherPermissions, 'evaluations.update', 'evaluations.publish', 'evaluations.delete'] });
+      await installGroupViews(page);
+      const evaluation = { id: 'e1', materia_id: 'm1', profesor_id: 'p1', nombre: 'Multiplicación', nota_maxima: 5, estado: 'publicada', modalidad: 'fisica', preguntas: [], criterios: [], dba_ids: [], dba_personalizado_ids: [] };
+      await page.route('**/api/materias/m1/evaluaciones', route => route.fulfill({ json: [evaluation] }));
+      const writes: string[] = [];
+      page.on('request', request => { if (request.method() !== 'GET' && /\/api\/(evaluaciones|calificaciones)\//.test(request.url())) writes.push(request.url()); });
+      await page.goto('/app/materias/m1/evaluaciones');
+      await expect(page.getByText('Grado 4', { exact: true })).toBeVisible();
+      const primary = page.getByRole('group', { name: 'Acciones principales de Multiplicación', exact: true });
+      await expect(primary.getByRole('button')).toHaveCount(1);
+      await expect(primary.getByRole('link')).toHaveCount(2);
+      await expect(page.getByRole('button', { name: 'Editar preguntas' })).toBeHidden();
+      const options = page.locator('summary', { hasText: 'Más opciones' });
+      await options.focus();
+      await page.keyboard.press('Enter');
+      await expect(page.getByRole('button', { name: 'Criterios y rúbrica' })).toBeVisible();
+      await page.getByRole('button', { name: 'Eliminar', exact: true }).click();
+      await expect(page.getByRole('dialog')).toBeVisible();
+      await page.getByRole('dialog').getByRole('button', { name: 'Conservar', exact: true }).click();
+      for (const control of await primary.locator('button,a').all()) {
+        const box = (await control.boundingBox())!;
+        expect(box.height).toBeGreaterThanOrEqual(44);
+        expect(box.width).toBeGreaterThanOrEqual(44);
+      }
+      await page.goto('/app/materias/m1/boletin');
+      const roster = page.getByRole('list', { name: 'Estudiantes del boletín' });
+      await expect(roster.getByRole('listitem')).toHaveCount(30);
+      const filters = page.locator('details').filter({ has: page.locator('summary', { hasText: 'Filtros' }) });
+      await expect(filters).not.toHaveAttribute('open');
+      if (width === 390) {
+        const first = (await roster.getByRole('listitem').first().boundingBox())!;
+        expect(first.y).toBeGreaterThanOrEqual(0);
+        expect(first.y + first.height).toBeLessThanOrEqual(844);
+      }
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBeTruthy();
+      await page.screenshot({ path: `../output/playwright/teacher-flow/boletin095-${width}-${mode}.png`, fullPage: false });
+      await filters.locator('summary').click();
+      await page.getByLabel('Filtrar por evaluación').selectOption('e1');
+      await filters.locator('summary').click();
+      await expect(page.getByRole('status', { name: 'Filtros aplicados' })).toContainText('Multiplicación');
+      await page.getByRole('searchbox', { name: 'Buscar estudiante' }).fill('prueba');
+      await roster.getByRole('button', { name: 'Ver boletín de Estudiante Prueba', exact: true }).click();
+      await page.getByRole('dialog').getByRole('link', { name: 'Ver explicación de Multiplicación', exact: true }).click();
+      await expect(page.getByRole('heading', { name: '1. Nota y explicación' })).toBeVisible();
+      await expect.poll(() => page.evaluate(() => localStorage.getItem('xcalificator.teacher-review.v1.p1'))).not.toBeNull();
+      await page.goto('/app');
+      const resume = page.getByRole('link', { name: 'Continuar revisión', exact: true });
+      await expect(resume).toHaveAttribute('href', /evaluacion=e1.*estudiante=s1.*calificacion=c1/);
+      await resume.click();
+      await expect(page.getByTestId('grade-review-identity')).toContainText('Estudiante Prueba');
+      await expect(page.getByRole('button', { name: '2. Evidencia', exact: true })).toBeVisible();
+      expect(writes).toEqual([]);
+    });
+  }
+}
+
 test('asistencia recupera errores y protege observación pendiente en celular', async ({ page }) => {
   await page.setViewportSize({ width: 360, height: 800 });
   await login(page, 'profesor', { permissions: teacherPermissions });
@@ -607,7 +668,8 @@ test('captura contextual en cuatro acciones, conserva paquete al refrescar y no 
   await expect(page.getByRole('dialog')).toHaveCount(0);
   expect(uploads).toBe(1);
   expect(writes).toEqual([]);
-  await page.getByRole('option', { name: 'Alumno 2', exact: true }).click();
+  await expect(page.getByText('1 de 30 registrados', { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Elegir a Alumno 2', exact: true }).click();
   await expect(page.getByText('evidencia.png', { exact: true })).toHaveCount(0);
   await expect(page.getByRole('status').filter({ hasText: 'Entrega de Estudiante Prueba guardada' })).toBeVisible();
 });

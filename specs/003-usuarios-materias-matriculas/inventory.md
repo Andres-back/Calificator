@@ -42,7 +42,7 @@
 | frontend_route | `/app/perfil` | authenticated | covered | `frontend/src/config/routes.ts:22` |
 | frontend_route | `/login` | public | covered | `frontend/src/config/routes.ts:9` |
 | frontend_call | `DELETE:/materias/{materiaId}/importaciones-estudiantes/{batchId}` | ambiguous | covered | `frontend/src/modules/materias/rosterImportApi.ts:62` |
-| frontend_call | `GET:/auth/me` | ambiguous | covered | `frontend/src/stores/auth.ts:25` |
+| frontend_call | `GET:/auth/me` | ambiguous | covered | `frontend/src/stores/auth.ts:27` |
 | frontend_call | `GET:/materias/{id}/estudiantes` | ambiguous | covered | `frontend/src/modules/materias/api.ts:21` |
 | frontend_call | `GET:/materias/{id}` | ambiguous | covered | `frontend/src/modules/materias/api.ts:17` |
 | frontend_call | `GET:/materias/{materiaId}/estudiantes-existentes` | ambiguous | covered | `frontend/src/modules/materias/rosterImportApi.ts:73` |
@@ -53,11 +53,11 @@
 | frontend_call | `PATCH:/materias/{id}` | ambiguous | covered | `frontend/src/modules/materias/api.ts:37` |
 | frontend_call | `PATCH:/users/me` | ambiguous | covered | `frontend/src/modules/users/api.ts:11` |
 | frontend_call | `POST:/auth/initial-password` | ambiguous | covered | `frontend/src/modules/auth/InitialPasswordPage.tsx:19` |
-| frontend_call | `POST:/auth/login` | ambiguous | covered | `frontend/src/stores/auth.ts:56` |
-| frontend_call | `POST:/auth/logout` | ambiguous | covered | `frontend/src/stores/auth.ts:76` |
+| frontend_call | `POST:/auth/login` | ambiguous | covered | `frontend/src/stores/auth.ts:60` |
+| frontend_call | `POST:/auth/logout` | ambiguous | covered | `frontend/src/stores/auth.ts:82` |
 | frontend_call | `POST:/auth/password-recovery/request` | ambiguous | covered | `frontend/src/modules/auth/passwordRecoveryApi.ts:7` |
 | frontend_call | `POST:/auth/password-recovery/reset` | ambiguous | covered | `frontend/src/modules/auth/passwordRecoveryApi.ts:24` |
-| frontend_call | `POST:/auth/register` | ambiguous | covered | `frontend/src/stores/auth.ts:66` |
+| frontend_call | `POST:/auth/register` | ambiguous | covered | `frontend/src/stores/auth.ts:71` |
 | frontend_call | `POST:/materias/{id}/regenerar-codigo` | ambiguous | covered | `frontend/src/modules/materias/api.ts:33` |
 | frontend_call | `POST:/materias/{materiaId}/importaciones-estudiantes/manual` | ambiguous | covered | `frontend/src/modules/materias/rosterImportApi.ts:50` |
 | frontend_call | `POST:/materias/{materiaId}/importaciones-estudiantes/{batchId}/confirmar` | ambiguous | covered | `frontend/src/modules/materias/rosterImportApi.ts:69` |

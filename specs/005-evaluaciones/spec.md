@@ -57,3 +57,7 @@ Como equipo, necesito actualizar estos artefactos cuando cambie el comportamient
 ## Inventario técnico
 
 - [Ver superficies, permisos y cobertura de este dominio](./inventory.md).
+
+## Evolución 095: acciones principales claras
+
+[095-flujo-docente-ligero](../095-flujo-docente-ligero/spec.md) limita a tres las acciones principales válidas por examen: visualizar, ver notas y calificar por foto cuando corresponda. Borradores conservan preparación/publicación; editar datos/preguntas/criterios, gestionar entregas y eliminar permanecen bajo Más opciones según permisos, con handlers y confirmaciones existentes. No modifica preguntas, notas, modalidades ni estados al consultar el menú.

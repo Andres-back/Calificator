@@ -93,6 +93,14 @@ beforeEach(() => {
 });
 
 describe('MateriaDetailPage for students', () => {
+  it('095 muestra el grado docente sin desplegar información secundaria', async () => {
+    materiaApi.getMateriaEstudiantes.mockResolvedValue({ ...materia, estudiantes: [] });
+    useAuth.setState({ user: { id: 'p1', nombre: 'Docente', email: 'p@example.test', rol: 'profesor', estado: 'activo', permissions: ['subjects.read', 'evaluations.read'] } });
+    renderDetail();
+    await waitFor(() => expect(screen.getByText('Grado 7')).toBeVisible());
+    expect(screen.getByText('Información de la materia').closest('details')).not.toHaveAttribute('open');
+    expect(screen.getByRole('heading', { name: 'Ciencias' })).toBeVisible();
+  });
   it('keeps secondary subject information folded while navigation stays available', async () => {
     materiaApi.getMateria.mockResolvedValue(materia);
     renderDetail();

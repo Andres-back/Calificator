@@ -7,11 +7,14 @@ import { DashboardPage } from './DashboardPage';
 import { TeacherInbox } from './TeacherInbox';
 import { useAuth } from '@/stores/auth';
 import { markTourCompleted } from '@/components/ui/tourState';
+import { readTeacherReviewResume, saveTeacherReviewResume } from '@/modules/calificaciones/teacherReviewResume';
+import { AxiosError, type InternalAxiosRequestConfig } from 'axios';
 
-const mocks = vi.hoisted(() => ({ listMaterials: vi.fn(), listMaterias: vi.fn(), getBandejaDocente: vi.fn() }));
+const mocks = vi.hoisted(() => ({ listMaterials: vi.fn(), listMaterias: vi.fn(), getBandejaDocente: vi.fn(), getEvaluacion: vi.fn(), getEvaluationReview: vi.fn() }));
 vi.mock('@/modules/herramientas/api', () => ({ listMaterials: mocks.listMaterials }));
 vi.mock('@/modules/materias/api', () => ({ listMaterias: mocks.listMaterias }));
-vi.mock('@/modules/calificaciones/api', () => ({ getBandejaDocente: mocks.getBandejaDocente }));
+vi.mock('@/modules/calificaciones/api', () => ({ getBandejaDocente: mocks.getBandejaDocente, getEvaluationReview: mocks.getEvaluationReview }));
+vi.mock('@/modules/evaluaciones/api', () => ({ getEvaluacion: mocks.getEvaluacion }));
 vi.mock('./DashboardEstudiante', () => ({ DashboardEstudiante: () => <p>Inicio estudiante</p> }));
 vi.mock('./DashboardAdmin', () => ({ DashboardAdmin: () => <p>Inicio admin</p> }));
 
@@ -34,6 +37,40 @@ beforeEach(() => {
 });
 
 describe('DashboardPage docente', () => {
+  it('095 continúa solo una revisión validada de la cuenta actual', async () => {
+    saveTeacherReviewResume('profesor-1', { materiaId: 'materia-1', evaluacionId: 'e1', estudianteId: 's1', calificacionId: 'c1' });
+    mocks.getEvaluacion.mockResolvedValue({ id: 'e1', materia_id: 'materia-1', nombre: 'Fracciones' });
+    mocks.getEvaluationReview.mockResolvedValue({ alumnos: [{ estudiante_id: 's1', calificacion_id: 'c1' }] });
+    renderDashboard();
+    const link = await screen.findByRole('link', { name: 'Continuar revisión' });
+    expect(link).toHaveAttribute('href', '/app/calificaciones?materia=materia-1&evaluacion=e1&estudiante=s1&calificacion=c1');
+    expect(screen.getByText('Matemáticas · Fracciones')).toBeVisible();
+    expect(mocks.getEvaluacion).toHaveBeenCalledOnce();
+    expect(mocks.getEvaluationReview).toHaveBeenCalledOnce();
+  });
+  it('095 no muestra ni consulta referencias de otra cuenta', async () => {
+    saveTeacherReviewResume('otro', { materiaId: 'materia-1', evaluacionId: 'e1' });
+    renderDashboard();
+    await screen.findByText('Matemáticas');
+    expect(screen.queryByRole('link', { name: 'Continuar revisión' })).not.toBeInTheDocument();
+    expect(mocks.getEvaluacion).not.toHaveBeenCalled();
+  });
+  it('095 acceso revocado descarta la referencia sin bloquear materias', async () => {
+    saveTeacherReviewResume('profesor-1', { materiaId: 'materia-1', evaluacionId: 'e1' });
+    mocks.getEvaluacion.mockRejectedValue(new AxiosError('denied', undefined, undefined, undefined, { status: 403, data: { detail: 'denied' }, statusText: 'Forbidden', headers: {}, config: {} as InternalAxiosRequestConfig }));
+    renderDashboard();
+    await screen.findByText('La revisión anterior ya no está disponible. Elige una materia.');
+    expect(screen.getByRole('link', { name: 'Evaluaciones de Matemáticas' })).toBeVisible();
+    expect(readTeacherReviewResume('profesor-1')).toBeNull();
+  });
+  it('095 alumno retirado devuelve continuación al grupo, sin otra identidad', async () => {
+    saveTeacherReviewResume('profesor-1', { materiaId: 'materia-1', evaluacionId: 'e1', estudianteId: 's1', calificacionId: 'c1' });
+    mocks.getEvaluacion.mockResolvedValue({ id: 'e1', materia_id: 'materia-1', nombre: 'Fracciones' });
+    mocks.getEvaluationReview.mockResolvedValue({ alumnos: [] });
+    renderDashboard();
+    expect(await screen.findByRole('link', { name: 'Continuar revisión' })).toHaveAttribute('href', '/app/calificaciones?materia=materia-1&evaluacion=e1');
+    expect(screen.getByText('El estudiante anterior ya no está disponible en esta revisión. Volverás al grupo.')).toBeVisible();
+  });
   it.each([true, false])('updates claims without hiding pending grades (compact=%s)', async (compact) => {
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     mocks.getBandejaDocente.mockResolvedValue({ reclamos_abiertos: 1, pendientes_revision: 1, reclamos: [], pendientes: [] });
@@ -74,7 +111,7 @@ describe('DashboardPage docente', () => {
     renderDashboard();
     expect(screen.getByRole('heading', { name: 'Hola, Profesor' })).toBeInTheDocument();
     expect(await screen.findByRole('link', { name: 'Evaluaciones de Matemáticas' })).toHaveAttribute('href', '/app/materias/materia-1/evaluaciones');
-    expect(screen.getByRole('link', { name: 'Asistencia de Matemáticas' })).toHaveAttribute('href', '/app/materias/materia-1/asistencia');
+    expect(screen.getByRole('link', { name: 'Pasar lista de Matemáticas' })).toHaveAttribute('href', '/app/materias/materia-1/asistencia');
     expect(screen.queryByRole('link', { name: /Calificar evidencia/ })).not.toBeInTheDocument();
     expect(mocks.listMaterials).not.toHaveBeenCalled();
   });
@@ -125,7 +162,7 @@ describe('DashboardPage docente', () => {
     useAuth.setState({ user: { ...useAuth.getState().user!, custom_role_id: 'limited', permissions: ['subjects.read', 'evaluations.read'] } });
     renderDashboard();
     expect(await screen.findByText(longName)).toBeInTheDocument();
-    expect(screen.queryByRole('link', { name: /Asistencia de/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /Pasar lista de/ })).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: /Nueva materia/ })).not.toBeInTheDocument();
     expect(mocks.getBandejaDocente).not.toHaveBeenCalled();
   });

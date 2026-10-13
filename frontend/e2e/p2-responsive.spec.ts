@@ -115,6 +115,7 @@ for (const width of [360, 390, 768, 1280]) {
         await page.screenshot({ path: `../output/playwright/boletin-092/${browserName}-${width}-${theme}-mosaico.png` });
       }
       await page.getByLabel('Buscar estudiante').fill('alumno0@');
+      await page.locator('summary', { hasText: 'Filtros' }).click();
       await page.getByLabel('Filtrar por evaluación').selectOption('exam0');
       await expect(list.getByRole('button')).toHaveCount(1);
       const tile = list.getByRole('button', { name: `Ver boletín de ${longName}` });
@@ -377,6 +378,7 @@ test(`criterios guardan y reabren sin escribir preguntas ni notas en ${viewport.
   await expect(page).toHaveURL(/\/app$/);
   await page.waitForLoadState('networkidle');
   await page.goto('/app/materias/m1/evaluaciones');
+  await page.locator('summary', { hasText: 'Más opciones' }).click();
   await page.getByRole('button', { name: 'Criterios y rúbrica' }).click();
   await page.getByText('Crear criterio de aprendizaje', { exact: true }).click();
   await page.getByRole('textbox', { name: 'Qué aprenderá el estudiante' }).fill(item.enunciado);
@@ -425,7 +427,7 @@ test('profesor recorre la materia, califica desde su evaluación y escribe un DB
     await expect(page.locator('main#main-content')).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
     if (tab === 'Evaluaciones') {
-      await page.getByRole('button', { name: 'Notas y entregas', exact: true }).click();
+      await page.getByRole('link', { name: 'Ver notas', exact: true }).click();
       await expect(page).toHaveURL(/\/app\/calificaciones\?/);
       const context = new URL(page.url()).searchParams;
       expect(context.get('materia')).toBe('m1');
@@ -588,7 +590,7 @@ for (const viewport of viewports.filter((item) => item.width !== 1024)) {
       await expect(cards).toHaveCount(3);
       await page.getByRole('link', { name: 'Evaluaciones de Matemáticas 8°' }).click();
       await expect(page).toHaveURL(/\/materias\/m1\/evaluaciones$/);
-      await page.getByRole('button', { name: 'Notas y entregas', exact: true }).click();
+      await page.getByRole('link', { name: 'Ver notas', exact: true }).click();
       await expect(page).toHaveURL(/\/app\/calificaciones\?/);
       expect(new URL(page.url()).searchParams.get('evaluacion')).toBe('e1');
       await expect(page.locator('main#main-content')).toBeVisible();
@@ -676,7 +678,7 @@ test('inicio docente móvil guía inicial omisible y permisos personalizados', a
   }
   await page.getByRole('button', { name: 'Saltar', exact: true }).click();
   await expect(guide).toHaveCount(0);
-  await expect(page.getByRole('link', { name: /Asistencia de/ })).toHaveCount(0);
+  await expect(page.getByRole('link', { name: /Pasar lista de/ })).toHaveCount(0);
   expect(inboxCalls).toEqual([]);
   await page.reload();
   await expect(page.getByRole('searchbox', { name: 'Buscar materia' })).toBeVisible();

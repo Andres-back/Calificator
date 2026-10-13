@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { useQueries, useQuery } from '@tanstack/react-query';
 import {
   ArrowRight,
+  ChevronDown,
   BookOpenCheck,
   Search,
   TriangleAlert,
@@ -72,6 +73,7 @@ function TeacherGradebook() {
   const [search, setSearch] = useState(() => params.get('buscar') ?? '');
   const [selectedEvaluationId, setSelectedEvaluationId] = useState(() => params.get('evaluacion') ?? '');
   const [selectionNotice, setSelectionNotice] = useState('');
+  const [filtersOpen, setFiltersOpen] = useState(() => Boolean(params.get('evaluacion') || params.get('filtro')));
   const [exportOpen, setExportOpen] = useState(false);
   const [selection, setSelection] = useState<{ materiaId: string; userId: string; studentId: string } | null>(null);
   const students = useMemo(() => 'estudiantes' in materia ? materia.estudiantes : [], [materia]);
@@ -148,28 +150,35 @@ function TeacherGradebook() {
   }
 
   return <div className="space-y-4">
-    <Card className="p-4">
+    <Card className="p-3 sm:p-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div><h2 className="font-display text-xl font-extrabold">Boletines</h2><p className="mt-1 text-sm text-muted">Selecciona un estudiante para ver sus notas.</p></div>
+        <h2 className="font-display text-xl font-extrabold">Boletines</h2>
         {canReadGrades && trackedEvaluations.length > 0 && <Button variant="outline" className="min-h-11" onClick={() => { setSelection(null); setExportOpen(true); }}>Exportar notas</Button>}
       </div>
-      <div className="mt-4 grid gap-3 sm:grid-cols-2">
+      <div className="mt-2">
         <label className="block min-w-0"><span className="text-sm font-semibold">Buscar estudiante</span>
           <span className="relative mt-1 block"><Search className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted" aria-hidden="true" />
             <Input type="search" value={search} onChange={event => setSearch(event.target.value)} className="min-h-11 pl-10 text-base" placeholder="Nombre o correo" />
           </span>
         </label>
-        {canReadGrades && <label className="block min-w-0" htmlFor="gradebook-evaluation"><span className="text-sm font-semibold">Filtrar por evaluación</span>
+      </div>
+      {canReadGrades && <details open={filtersOpen} onToggle={event => setFiltersOpen(event.currentTarget.open)} className="group mt-1">
+        <summary className="focus-ring flex min-h-11 cursor-pointer items-center justify-between gap-2 rounded-lg text-sm font-semibold"><span>Filtros</span><ChevronDown className="h-4 w-4 shrink-0 group-open:rotate-180" aria-hidden="true" /></summary>
+        <label className="block min-w-0" htmlFor="gradebook-evaluation"><span className="text-sm font-semibold">Filtrar por evaluación</span>
           <Select id="gradebook-evaluation" className="mt-1 min-h-11 text-base" value={selectedEvaluationId} onChange={event => { setSelectedEvaluationId(event.target.value); setSelectionNotice(''); }}>
             <option value="">Todas las evaluaciones</option>
             {trackedEvaluations.map(evaluation => <option key={evaluation.id} value={evaluation.id}>{evaluation.nombre}</option>)}
           </Select>
-        </label>}
-      </div>
+        </label>
+        <div className="mt-3 flex flex-wrap gap-2" role="group" aria-label="Filtrar estudiantes">
+          {([['todos', `Todos (${summary.students})`], ['prioridad', `Prioridad (${summary.highPriority + summary.needsFollowUp})`], ['por_revisar', `Por decidir (${pendingStudents})`]] as const).map(([value, label]) => <Button key={value} size="sm" className="min-h-11" variant={filter === value ? 'primary' : 'outline'} aria-pressed={filter === value} onClick={() => setFilter(value)}>{label}</Button>)}
+        </div>
+      </details>}
       {search && <Button variant="ghost" className="mt-2 min-h-11" onClick={() => setSearch('')}>Limpiar búsqueda</Button>}
       {selectionNotice && <p role="status" className="mt-2 text-sm text-muted">{selectionNotice}</p>}
-      {canReadGrades && <div className="mt-3 flex flex-wrap gap-2" role="group" aria-label="Filtrar estudiantes">
-        {([['todos', `Todos (${summary.students})`], ['prioridad', `Prioridad (${summary.highPriority + summary.needsFollowUp})`], ['por_revisar', `Por decidir (${pendingStudents})`]] as const).map(([value, label]) => <Button key={value} size="sm" className="min-h-11" variant={filter === value ? 'primary' : 'outline'} aria-pressed={filter === value} onClick={() => setFilter(value)}>{label}</Button>)}
+      {canReadGrades && (selectedEvaluation || filter !== 'todos') && <div role="status" aria-label="Filtros aplicados" className="mt-2 flex flex-wrap items-center gap-2 text-sm">
+        <span className="min-w-0 break-words text-muted">{selectedEvaluation?.nombre ?? 'Todas las evaluaciones'}{filter !== 'todos' ? ` · ${filter === 'por_revisar' ? 'Por decidir' : 'Prioridad'}` : ''}</span>
+        <Button variant="ghost" className="min-h-11" onClick={() => { setSelectedEvaluationId(''); setFilter('todos'); setSelectionNotice(''); }}>Quitar filtros</Button>
       </div>}
     </Card>
 

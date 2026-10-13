@@ -3,7 +3,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
 
-import { excludeSubmittedStudents } from '@/modules/calificaciones/submissionCandidates';
+import { excludeSubmittedStudents, summarizeCaptureRegistration } from '@/modules/calificaciones/submissionCandidates';
 import { GradingUploadPanel } from './MateriaCalificar';
 import type { EvidencePage } from '@/components/evidence/evidencePayload';
 
@@ -38,14 +38,20 @@ function renderPanel({
   onDirtyChange = vi.fn<(dirty: boolean) => void>(),
   eligibilityVerified = true,
   studentId = '',
+  progress,
+  suggestNextStudent = false,
+  students: suppliedStudents,
 }: {
   onStudentChange?: Mock<(id: string) => void>;
   onUploadAccepted?: Mock<(id: string, name: string) => void>;
   onDirtyChange?: Mock<(dirty: boolean) => void>;
   eligibilityVerified?: boolean;
   studentId?: string;
+  progress?: { total: number; registered: number };
+  suggestNextStudent?: boolean;
+  students?: { id: string; nombre: string }[];
 } = {}) {
-  const students = Array.from({ length: 24 }, (_, index) => ({
+  const students = suppliedStudents ?? Array.from({ length: 24 }, (_, index) => ({
     id: `student-${index + 1}`,
     nombre: index === 19 ? 'Ángela Zambrano' : `Estudiante ${index + 1}`,
   }));
@@ -61,6 +67,8 @@ function renderPanel({
         eligibilityVerified={eligibilityVerified}
         students={students}
         studentId={studentId}
+        progress={progress}
+        suggestNextStudent={suggestNextStudent}
         onStudentChange={onStudentChange}
         onDirtyChange={onDirtyChange}
         onUploadAccepted={onUploadAccepted}
@@ -76,6 +84,34 @@ beforeEach(() => {
 });
 
 describe('GradingUploadPanel student picker', () => {
+  it('095 progreso cuenta IDs del grupo una vez y no confunde registro con nota final', () => {
+    expect(summarizeCaptureRegistration([{ id: 's1' }, { id: 's1' }, { id: 's2' }], ['s1', 's1', 'other'])).toEqual({ total: 2, registered: 1 });
+    renderPanel({ progress: { total: 30, registered: 6 } });
+    expect(screen.getByText('6 de 30 registrados')).toBeVisible();
+    expect(screen.getByText(/No significa que la nota ya esté publicada/)).toBeVisible();
+  });
+  it('095 propone sin seleccionar ni abrir cámara o enviar automáticamente', async () => {
+    const { onStudentChange } = renderPanel({ suggestNextStudent: true });
+    expect(onStudentChange).not.toHaveBeenCalled();
+    await userEvent.click(screen.getByRole('button', { name: 'Elegir a Estudiante 1' }));
+    expect(onStudentChange).toHaveBeenCalledWith('student-1');
+    expect(mocks.calificar).not.toHaveBeenCalled();
+    expect(screen.getByTestId('evidence-picker')).toHaveAttribute('data-disabled', 'true');
+  });
+  it('095 no avanza ni propone mientras la disponibilidad no está verificada', () => {
+    renderPanel({ eligibilityVerified: false, suggestNextStudent: true, progress: { total: 30, registered: 6 } });
+    expect(screen.queryByText('6 de 30 registrados')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Elegir a Estudiante 1' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Enviar a calificar' })).toBeDisabled();
+  });
+  it('095 termina el grupo sin proponer otra identidad ni habilitar envío', () => {
+    renderPanel({ students: [], suggestNextStudent: true, progress: { total: 1, registered: 1 } });
+    expect(screen.getByText('1 de 1 registrados')).toBeVisible();
+    expect(screen.getByText(/No quedan estudiantes pendientes de entrega/)).toBeVisible();
+    expect(screen.queryByRole('button', { name: /^Elegir a/ })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Enviar a calificar' })).toBeDisabled();
+    expect(summarizeCaptureRegistration([], ['other'])).toEqual({ total: 0, registered: 0 });
+  });
   it('shows candidates immediately in normal flow, without choosing a student automatically', () => {
     const { onStudentChange } = renderPanel();
     expect(screen.getByRole('option', { name: 'Estudiante 1' })).toBeVisible();

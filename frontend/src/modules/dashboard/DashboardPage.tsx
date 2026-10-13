@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { ArrowRight, ChevronDown, HelpCircle, Plus, Search, X } from 'lucide-react';
@@ -12,15 +12,56 @@ import { DashboardEstudiante } from './DashboardEstudiante';
 import { DashboardAdmin } from './DashboardAdmin';
 import { TeacherInbox } from './TeacherInbox';
 import { routes } from '@/config/routes';
+import { getEvaluacion } from '@/modules/evaluaciones/api';
+import { getEvaluationReview } from '@/modules/calificaciones/api';
+import { clearTeacherReviewResume, readTeacherReviewResume, saveTeacherReviewResume, teacherReviewResumeHref } from '@/modules/calificaciones/teacherReviewResume';
+import { toApiError } from '@/lib/api';
+import type { Materia } from '@/types/api';
 
 const tourSteps: TourStep[] = [
-  { target: '#teacher-subjects-title', title: 'Empieza por tu materia', description: 'Busca tu grupo. Evaluaciones abre sus actividades y notas; Asistencia abre la lista del día.' },
+  { target: '#teacher-subjects-title', title: 'Empieza por tu materia', description: 'Busca tu grupo. Evaluaciones abre sus actividades y notas; Pasar lista abre la lista del día.' },
   { target: '#teacher-attention', title: 'Revisa cuando lo necesites', description: 'Abre los pendientes para consultar cada caso. La IA propone y tú decides la nota.' },
   { target: '#teacher-tools', title: 'Prepara tu próxima clase', description: 'Las herramientas y los recursos siguen disponibles aquí y en el menú.' },
 ];
 const actionClass = 'focus-ring inline-flex min-h-11 min-w-11 items-center justify-center gap-2 rounded-xl border border-border px-3 text-sm font-semibold transition hover:bg-surface-2';
 function searchText(value: string) {
   return value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('es');
+}
+
+function TeacherReviewResumeCard({ userId, materias }: { userId: string; materias: Materia[] }) {
+  const [resume, setResume] = useState(() => readTeacherReviewResume(userId));
+  const [notice, setNotice] = useState('');
+  const subject = materias.find(item => item.id === resume?.materiaId);
+  const evaluation = useQuery({ queryKey: ['teacher-review-resume', userId, resume?.evaluacionId],
+    queryFn: () => getEvaluacion(resume!.evaluacionId), enabled: Boolean(resume && subject), retry: false, staleTime: 30_000 });
+  const validEvaluation = Boolean(resume && subject && evaluation.data?.id === resume.evaluacionId && evaluation.data?.materia_id === resume.materiaId);
+  const student = useQuery({ queryKey: ['teacher-review-resume-student', userId, resume?.evaluacionId, resume?.estudianteId],
+    queryFn: ({ signal }) => getEvaluationReview(resume!.evaluacionId, { estudiante_id: resume!.estudianteId, limit: 1 }, signal),
+    enabled: Boolean(validEvaluation && resume?.estudianteId), retry: false, staleTime: 30_000 });
+  const failure = evaluation.error ?? student.error;
+  const permanentFailure = failure && [403, 404].includes(toApiError(failure).status);
+  const selectedStudent = student.data?.alumnos.find(item => item.estudiante_id === resume?.estudianteId
+    && (!resume?.calificacionId || item.calificacion_id === resume.calificacionId));
+  useEffect(() => {
+    if (!resume) return;
+    if (!subject || permanentFailure || (evaluation.isSuccess && !validEvaluation)) {
+      clearTeacherReviewResume(userId); setResume(null);
+      setNotice('La revisión anterior ya no está disponible. Elige una materia.');
+    } else if (resume.estudianteId && student.isSuccess && !selectedStudent) {
+      const group = { version: 1 as const, userId, materiaId: resume.materiaId, evaluacionId: resume.evaluacionId, updatedAt: Date.now() };
+      saveTeacherReviewResume(userId, group); setResume(group);
+      setNotice('El estudiante anterior ya no está disponible en esta revisión. Volverás al grupo.');
+    }
+  }, [resume, subject, permanentFailure, evaluation.isSuccess, validEvaluation, student.isSuccess, selectedStudent, userId]);
+  if (!resume) return notice ? <p role="status" className="text-sm text-muted">{notice}</p> : null;
+  if (failure && !permanentFailure) return <Card role="alert" className="space-y-2 p-3"><p>No pudimos abrir la revisión anterior. Puedes reintentar.</p>
+    <button type="button" className={actionClass} onClick={() => { if (evaluation.isError) void evaluation.refetch(); if (student.isError) void student.refetch(); }}>Reintentar revisión</button></Card>;
+  if (!validEvaluation || permanentFailure || (resume.estudianteId && (!student.isSuccess || !selectedStudent))) return null;
+  return <Card className="flex flex-wrap items-center justify-between gap-2 p-3">
+    <div className="min-w-0 flex-1"><p className="break-words text-sm font-semibold">{subject!.nombre} · {evaluation.data!.nombre}</p>
+      {notice && <p role="status" className="mt-1 text-xs text-muted">{notice}</p>}</div>
+    <Link to={teacherReviewResumeHref(resume)} className={actionClass}>Continuar revisión <ArrowRight className="h-4 w-4" aria-hidden="true" /></Link>
+  </Card>;
 }
 
 export function DashboardPage() {
@@ -37,6 +78,8 @@ function DashboardDocente() {
   const canReadResources = allowed.has('resources.read');
   const canCreateResources = allowed.has('resources.create');
   const canReview = allowed.has('submissions.review') && (allowed.has('grading.read') || allowed.has('grading.grade'));
+  const canResume = user?.rol === 'profesor' && canReadSubjects && allowed.has('evaluations.read') && allowed.has('grading.read');
+  useEffect(() => { if (user?.id && !canResume) clearTeacherReviewResume(user.id); }, [user?.id, canResume]);
   const [search, setSearch] = useState('');
   const [toolsOpen, setToolsOpen] = useState(false);
   const materiasQuery = useQuery({ queryKey: ['materias'], queryFn: listMaterias, enabled: canReadSubjects });
@@ -61,6 +104,7 @@ function DashboardDocente() {
       </header>
 
       {canReview && <div id="teacher-attention"><TeacherInbox compact /></div>}
+      {canResume && user && materiasQuery.isSuccess && <TeacherReviewResumeCard key={user.id} userId={user.id} materias={materias} />}
 
       <section id="teacher-subjects" aria-labelledby="teacher-subjects-title" className="min-w-0 space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
@@ -89,7 +133,7 @@ function DashboardDocente() {
                 </div>
                 <div className="mt-3 grid grid-cols-2 gap-2">
                   {allowed.has('evaluations.read') && <Link to={routes.materiaEvaluaciones(materia.id)} className={actionClass + ' border-brand-200 bg-brand-50 text-brand-700 dark:border-brand-500/30 dark:bg-brand-500/10 dark:text-brand-200'} aria-label={'Evaluaciones de ' + materia.nombre}>Evaluaciones</Link>}
-                  {(allowed.has('attendance.read') || allowed.has('attendance.manage')) && <Link to={routes.materiaAsistencia(materia.id)} className={actionClass} aria-label={'Asistencia de ' + materia.nombre}>Asistencia</Link>}
+                  {(allowed.has('attendance.read') || allowed.has('attendance.manage')) && <Link to={routes.materiaAsistencia(materia.id)} className={actionClass} aria-label={'Pasar lista de ' + materia.nombre}>Pasar lista</Link>}
                 </div>
               </Card>)}
             </div>}

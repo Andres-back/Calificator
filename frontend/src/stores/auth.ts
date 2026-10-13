@@ -3,6 +3,7 @@ import { api, resetSessionExpiryState, setSessionExpiredHandler } from '@/lib/ap
 import { queryClient } from '@/lib/queryClient';
 import type { User } from '@/types/api';
 import { getAuthorizationContext } from '@/modules/admin/authorizationApi';
+import { clearTeacherReviewResume } from '@/modules/calificaciones/teacherReviewResume';
 
 interface AuthState {
   user: User | null;
@@ -15,6 +16,7 @@ interface AuthState {
 }
 
 function clearAuthenticatedState() {
+  clearTeacherReviewResume();
   useAuth.setState({ user: null, status: 'unauthenticated' });
   void queryClient.cancelQueries();
   queryClient.clear();
@@ -45,15 +47,18 @@ export const useAuth = create<AuthState>((set) => ({
     set({ status: 'loading' });
     try {
       const user = await loadAuthenticatedUser();
+      if ((useAuth.getState().user && useAuth.getState().user?.id !== user.id) || user.rol !== 'profesor') clearTeacherReviewResume();
       resetSessionExpiryState();
       set({ user, status: 'authenticated' });
     } catch {
+      clearTeacherReviewResume();
       set({ user: null, status: 'unauthenticated' });
     }
   },
 
   login: async (email, password) => {
     await api.post('/auth/login', { email, password });
+    clearTeacherReviewResume();
     // Nunca servir datos cacheados de una sesión/cuenta anterior.
     queryClient.clear();
     const user = await loadAuthenticatedUser();
@@ -64,6 +69,7 @@ export const useAuth = create<AuthState>((set) => ({
 
   register: async (payload) => {
     await api.post('/auth/register', payload);
+    clearTeacherReviewResume();
     queryClient.clear();
     const user = await loadAuthenticatedUser();
     resetSessionExpiryState();

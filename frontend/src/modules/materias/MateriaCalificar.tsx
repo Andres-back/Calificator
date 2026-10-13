@@ -120,7 +120,7 @@ function StudentPicker({ students, studentId, disabled, onStudentChange }: {
 }
 
 /** Carga contextual: las decisiones sobre la nota pertenecen al centro de revisión. */
-export function GradingUploadPanel({ evaluationId, evaluationName, materiaName, eligibilityVerified, students, studentId, onStudentChange, onDirtyChange, onUploadAccepted }: {
+export function GradingUploadPanel({ evaluationId, evaluationName, materiaName, eligibilityVerified, students, studentId, onStudentChange, onDirtyChange, onUploadAccepted, progress, suggestNextStudent = false }: {
   evaluationId: string;
   evaluationName: string;
   materiaName: string;
@@ -130,6 +130,8 @@ export function GradingUploadPanel({ evaluationId, evaluationName, materiaName, 
   onStudentChange: (id: string) => void;
   onDirtyChange: (dirty: boolean) => void;
   onUploadAccepted: (studentId: string, name: string) => void;
+  progress?: { total: number; registered: number };
+  suggestNextStudent?: boolean;
 }) {
   const [pages, setPages] = useState<EvidencePage[]>([]);
   const [error, setError] = useState('');
@@ -179,6 +181,14 @@ export function GradingUploadPanel({ evaluationId, evaluationName, materiaName, 
   return <Card className="mx-4 mb-4 space-y-4 p-4" aria-label="Añadir entrega a la evaluación">
     <h2 className="text-lg font-bold">Añadir entregas</h2>
     <p className="break-words font-semibold">{evaluationName} · {materiaName}</p>
+    {progress && (eligibilityVerified ? <div role="status" aria-label="Progreso de entregas" className="space-y-1 text-sm">
+      <p className="font-semibold">{progress.registered} de {progress.total} registrados</p>
+      <p className="text-xs text-muted">Entregas o calificaciones registradas. No significa que la nota ya esté publicada.</p>
+    </div> : <p role="status" className="text-sm text-muted">Verificando entregas registradas…</p>)}
+    {suggestNextStudent && !studentId && eligibilityVerified && !pages.length && !upload.isPending && students[0] && <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border p-3">
+      <p className="min-w-0 break-words text-sm"><span className="block text-muted">Siguiente sugerido</span><strong>{students[0].nombre}</strong></p>
+      <Button type="button" className="min-h-11" variant="outline" aria-label={`Elegir a ${students[0].nombre}`} onClick={() => onStudentChange(students[0].id)}>Elegir estudiante</Button>
+    </div>}
     <p className="text-sm text-muted">Un paquete por estudiante: hasta 10 fotos ordenadas o un PDF de hasta 20 páginas.</p>
     <StudentPicker students={students} studentId={studentId} disabled={upload.isPending || !eligibilityVerified} onStudentChange={onStudentChange} />
     {studentId && !student && <p role="status" className="text-sm text-muted">Este estudiante no está disponible para otra entrega. Revisa su nota o elige uno pendiente.</p>}
