@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import type { Evaluacion } from '@/types/api';
 import {
   createEmptyWizardState,
@@ -7,13 +7,18 @@ import {
   evaluationToEditableQuestions,
   duplicateQuestion,
   loadWizardDraft,
+  getWizardStorage,
   MAX_REFERENCE_FILE_BYTES,
   moveQuestion,
   normalizeRubricCriteria,
+  normalizeWizardPhase,
   persistWizardDraft,
   prepareRubricCriteriaForSave,
   rebalanceRubricWeights,
   totalQuestionCount,
+  resizeQuestionCounts,
+  updateWizardTopic,
+  validatePreparation,
   validateQuestion,
   validateReferenceFile,
   validateRubricCriteria,
@@ -41,9 +46,66 @@ function validQuestion(overrides: Partial<EditableQuestion> = {}): EditableQuest
 }
 
 describe('generation wizard model', () => {
+  it.each([{ questions: [null] }, { dbaIds: null }, { generatedCriteria: [null] }, { descripcion: null }])('rejects structurally malformed drafts safely: %j', corrupt => {
+    localStorage.setItem(wizardStorageKey('teacher', 'm'), JSON.stringify({ version: WIZARD_VERSION, userId: 'teacher', savedAt: 1000, state: { ...createEmptyWizardState('m'), ...corrupt } }));
+    expect(loadWizardDraft(localStorage, 'teacher', 1001, 'm')).toBeNull();
+  });
+  it('suggests a name from the topic without overwriting a teacher name', () => {
+    const state = updateWizardTopic(createEmptyWizardState('m'), 'Fracciones');
+    expect(state).toMatchObject({ nombre: 'Evaluación de Fracciones', descripcion: 'Fracciones' });
+    expect(updateWizardTopic(state, 'Logaritmos').nombre).toBe('Evaluación de Logaritmos');
+    expect(updateWizardTopic({ ...state, nombre: 'Prueba del período', nombreAutomatico: false }, 'Otro tema').nombre).toBe('Prueba del período');
+    const legacy = { ...state, nombre: 'Borrador anterior', nombreAutomatico: undefined };
+    expect(updateWizardTopic(legacy, 'Otro tema').nombre).toBe('Borrador anterior');
+  });
+
+  it('resizes only active question types with an exact stable total', () => {
+    const counts = createEmptyWizardState('m').counts;
+    expect(resizeQuestionCounts(counts, 10)).toEqual({ opcion_multiple: 6, abierta: 4, verdadero_falso: 0, completar: 0 });
+    const custom = { opcion_multiple: 0, abierta: 4, verdadero_falso: 0, completar: 2 };
+    const resized = resizeQuestionCounts(custom, 5);
+    expect(resized).toEqual({ opcion_multiple: 0, abierta: 3, verdadero_falso: 0, completar: 2 });
+    expect(totalQuestionCount(resized)).toBe(5);
+    expect(resizeQuestionCounts(custom, 31)).toEqual(custom);
+    const empty = { opcion_multiple: 0, abierta: 0, verdadero_falso: 0, completar: 0 };
+    expect(resizeQuestionCounts(empty, 5)).toEqual(empty);
+  });
+
+  it('validates all preparation options without six navigation steps', () => {
+    const state = updateWizardTopic(createEmptyWizardState('m'), 'Fracciones');
+    expect(validatePreparation(state)).toBeNull();
+    expect(validatePreparation({ ...state, useDba: true })).toMatch(/criterio/i);
+    expect(validatePreparation({ ...state, referenceText: 'x'.repeat(12001) })).toMatch(/12.000/i);
+    expect(validatePreparation({ ...state, counts: { opcion_multiple: 0, abierta: 0, verdadero_falso: 0, completar: 0 } })).toMatch(/entre 3 y 30/i);
+    expect(validatePreparation({ ...state, notaMaxima: 0 })).toMatch(/nota máxima/i);
+    expect(validatePreparation({ ...state, fechaLimiteEntrega: 'fecha inválida' })).toMatch(/fecha/i);
+    expect(validateStep({ ...state, generatedEvaluationId: 'e', questions: [validQuestion()], notaMaxima: 0 }, 5)).toMatch(/nota máxima/i);
+  });
+
+  it.each([1, 2, 3, 4, 5, 6])('restores legacy step %i without losing questions or configuration', step => {
+    const state = { ...createEmptyWizardState('m'), step, nombre: 'Anterior', modalidad: 'mixta' as const, counts: { opcion_multiple: 0, abierta: 3, verdadero_falso: 0, completar: 0 }, generatedEvaluationId: 'saved', questions: [validQuestion()], dbaIds: ['criterion'] };
+    persistWizardDraft(localStorage, 'teacher', state, 1000);
+    const restored = loadWizardDraft(localStorage, 'teacher', 1001, 'm');
+    expect(restored).toMatchObject({ ...state, step: step >= 5 ? 5 : 1 });
+    expect(normalizeWizardPhase(state).step).toBe(step >= 5 ? 5 : 1);
+  });
+
+  it('keeps work usable when local storage is denied', () => {
+    const denied = { getItem: vi.fn(() => { throw new Error('denied'); }), setItem: vi.fn(() => { throw new Error('denied'); }), removeItem: vi.fn(() => { throw new Error('denied'); }) } as unknown as Storage;
+    expect(loadWizardDraft(denied, 'teacher', 1000, 'm')).toBeNull();
+    expect(persistWizardDraft(denied, 'teacher', createEmptyWizardState('m'), 1000)).toBe(false);
+    expect(() => discardWizardDraft(denied, 'teacher', 'm')).not.toThrow();
+  });
+
+  it('does not crash when the browser denies the storage object itself', () => {
+    const denied = vi.spyOn(window, 'localStorage', 'get').mockImplementation(() => { throw new Error('denied'); });
+    try { expect(getWizardStorage()).toBeNull(); } finally { denied.mockRestore(); }
+  });
+
   it('calculates quantities and validates navigation step by step', () => {
     const state = createEmptyWizardState();
-    expect(totalQuestionCount(state.counts)).toBe(3);
+    expect(totalQuestionCount(state.counts)).toBe(5);
+    expect(state.modalidad).toBe('fisica');
     expect(validateStep(state, 1)).toMatch(/materia/i);
 
     state.materiaId = 'materia-1';
@@ -94,7 +156,7 @@ describe('generation wizard model', () => {
     expect(raw).not.toContain('data:');
     expect(loadWizardDraft(localStorage, 'profesor-1', 1_001, state.materiaId)).toMatchObject({
       nombre: 'Borrador',
-      step: 4,
+      step: 1,
       referenceFile: { name: 'guia.pdf', needsReselection: true },
     });
   });

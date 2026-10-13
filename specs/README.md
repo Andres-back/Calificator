@@ -300,9 +300,13 @@ actualizar la especificación propietaria, su plan y sus tareas; no debe crear d
 
 - [092-boletin-mosaico](092-boletin-mosaico/spec.md), [issue #194](https://github.com/Andres-back/Calificator/issues/194): fichas compactas y boletín individual por materia con filtros, explicación y exportación existentes. Propietario 008; sin nuevas rutas, tablas, notas o cambios de vista estudiante 091. Alcance/plan aprobados y [lista UX](092-boletin-mosaico/checklists/ux.md) revisada con autorización (8/8). Implementación, pruebas locales y Converge completos: [evidencia](092-boletin-mosaico/quickstart.md). Sin fusionar/desplegar; CI remoto y autorización separada obligatorios.
 
+## Evolución 096: creación de evaluaciones en dos pantallas
+
+- [096-evaluacion-dos-pantallas](096-evaluacion-dos-pantallas/spec.md), [issue #202](https://github.com/Andres-back/Calificator/issues/202): Preparar/Revisar, entrada IA/foto-PDF/manual, personalización/ayuda a petición; conserva borradores v7, criterios seleccionados, revisión de respuestas y documentos. Alcance/[plan](096-evaluacion-dos-pantallas/plan.md) aprobados; listas base 16/16 y UX 10/10 revisadas con autorización. Implementado con regresiones sintéticas y matriz Chromium/WebKit; [resultados](096-evaluacion-dos-pantallas/quickstart.md). Propietario 005; entrega mediante PR y CI, sin fusión ni producción autorizadas.
+
 ## Evolución 095: flujo docente ligero en fase demo
 
-- [095-flujo-docente-ligero](095-flujo-docente-ligero/spec.md), [issue #200](https://github.com/Andres-back/Calificator/issues/200): cabeceras y acciones compactas, boletín progresivo, claridad de nota, continuación por cuenta, progreso y elección segura del siguiente alumno, vocabulario uniforme. Alcance/[plan](095-flujo-docente-ligero/plan.md) aprobados; listas base 16/16 y UX 10/10 revisadas con autorización. Implementación y pruebas focalizadas completas: [evidencia](095-flujo-docente-ligero/quickstart.md). Conserva propietarios 003/005/008, API y registros. Sin fusionar/desplegar; CI y autorización independiente obligatorios.
+- [095-flujo-docente-ligero](095-flujo-docente-ligero/spec.md), [issue #200](https://github.com/Andres-back/Calificator/issues/200): cabeceras y acciones compactas, boletín progresivo, claridad de nota, continuación por cuenta, progreso y elección segura del siguiente alumno, vocabulario uniforme. Alcance/[plan](095-flujo-docente-ligero/plan.md) aprobados; listas base 16/16 y UX 10/10 revisadas con autorización. Conserva propietarios 003/005/008, API y registros. [PR #201](https://github.com/Andres-back/Calificator/pull/201) fusionado con cuatro controles verdes; producción verificada el 2026-10-13 en main `9bc4455`, assets nuevos públicos y servicios saludables. [Evidencia de cierre](https://github.com/Andres-back/Calificator/pull/201#issuecomment-6152159782); sin modificaciones manuales de notas/evidencias.
 
 ## Evolución 094: revisión docente sencilla
 

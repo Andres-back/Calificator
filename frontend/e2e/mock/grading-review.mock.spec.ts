@@ -529,15 +529,16 @@ test('crea desde una materia sin repetir el contexto y permite abrir opciones', 
   await login(page, 'profesor', { permissions: teacherPermissions });
   await installGroupViews(page);
   await page.goto('/app/materias/m1/evaluaciones');
-  await page.getByRole('button', { name: 'Crear paso a paso', exact: true }).click();
+  await page.getByRole('button', { name: 'Crear evaluación', exact: true }).click();
+  await page.getByRole('button', { name: 'Crear con IA', exact: true }).click();
   const dialog = page.getByRole('dialog', { name: 'Generar evaluación con IA' });
   await expect(dialog.getByText('Grado 4 · Área: Matemáticas')).toBeVisible();
   await expect(dialog.getByRole('combobox')).toHaveCount(0);
+  await dialog.getByLabel(/Qué quieres evaluar/).fill('Multiplicación');
+  await dialog.locator('summary', { hasText: 'Personalizar' }).click();
   await dialog.getByLabel(/Nombre de la evaluación/).fill('Unidad del aula');
-  await dialog.locator('summary', { hasText: 'Opciones complementarias' }).click();
-  await dialog.getByLabel(/Descripción breve/).fill('Multiplicación');
-  await dialog.getByRole('button', { name: 'Siguiente' }).click();
-  await expect(dialog.getByText('Elige cómo orientar la evaluación')).toBeVisible();
+  await expect(dialog.getByRole('checkbox', { name: /Usar criterios de aprendizaje/ })).toBeVisible();
+  await expect(dialog.getByRole('progressbar')).toHaveAttribute('aria-valuemax', '2');
   expect(await dialog.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBeTruthy();
 });
 

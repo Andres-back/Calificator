@@ -10,6 +10,7 @@ import type { Evaluacion, MateriaConEstudiantes } from '@/types/api';
 const mocks = vi.hoisted(() => ({
   list: vi.fn(),
   update: vi.fn(),
+  create: vi.fn(),
   publish: vi.fn(),
   close: vi.fn(),
   activate: vi.fn(),
@@ -25,6 +26,7 @@ const mocks = vi.hoisted(() => ({
 vi.mock('@/modules/evaluaciones/api', () => ({
   listEvaluaciones: mocks.list,
   updateEvaluacion: mocks.update,
+  createEvaluacion: mocks.create,
   publicarEvaluacion: mocks.publish,
   cerrarEvaluacion: mocks.close,
   activarRecepcionEvaluacion: mocks.activate,
@@ -54,6 +56,7 @@ vi.mock('@/modules/evaluaciones/components/EvaluationCriteriaEditor', () => ({
 vi.mock('./MateriaContext', () => ({
   useMateriaContext: () => mocks.context,
 }));
+vi.mock('@/modules/materias/dbaApi', () => ({ listDbaCombinado: vi.fn().mockResolvedValue([]) }));
 vi.mock('react-hot-toast', () => ({
   default: { success: vi.fn(), error: vi.fn() },
 }));
@@ -120,6 +123,7 @@ beforeEach(() => {
   mocks.context.canManageMateria = true;
   mocks.context.isStudent = false;
   mocks.list.mockResolvedValue([]);
+  mocks.create.mockResolvedValue(evaluation);
   useAuth.setState({
     user: {
       id: 'profesor-1',
@@ -142,6 +146,21 @@ beforeEach(() => {
 });
 
 describe('MateriaEvaluaciones teacher creation flow', () => {
+  it('096 creates manually in the same subject through the existing form without publishing', async () => {
+    const user = userEvent.setup();
+    renderPage();
+    await user.click(screen.getByRole('button', { name: 'Crear evaluación' }));
+    await user.click(screen.getByRole('button', { name: 'Crear manualmente' }));
+    const dialog = screen.getByRole('dialog', { name: 'Crear manualmente · Ciencias' });
+    expect(within(dialog).getByLabelText(/^Materia/)).toHaveValue(materia.id);
+    expect(within(dialog).getByLabelText(/^Materia/)).toBeDisabled();
+    expect(mocks.create).not.toHaveBeenCalled();
+    await user.type(within(dialog).getByLabelText(/^Nombre/), 'Evaluación preparada');
+    await user.click(within(dialog).getByRole('button', { name: 'Crear manualmente' }));
+    await waitFor(() => expect(mocks.create).toHaveBeenCalledWith(expect.objectContaining({ materia_id: materia.id, nombre: 'Evaluación preparada' })));
+    expect(mocks.publish).not.toHaveBeenCalled();
+    expect(mocks.create.mock.calls[0][0]).not.toHaveProperty('estado');
+  });
   it('095 limita acciones principales y conserva ajustes con elección explícita', async () => {
     const user = userEvent.setup();
     mocks.list.mockResolvedValue([{ ...evaluation, estado: 'publicada', modalidad: 'fisica' }]);
@@ -238,25 +257,21 @@ describe('MateriaEvaluaciones teacher creation flow', () => {
     expect(screen.getByRole('link').getAttribute('href')).toBe('/app/evaluaciones/evaluation-1/resolver');
   });
 
-  it('offers the guided assistant as the recommended path and fixes the subject', async () => {
+  it('offers one creation entry and fixes the subject for the assistant', async () => {
     const user = userEvent.setup();
     renderPage();
 
     expect(
-      await screen.findByRole('heading', { name: '¿Cómo quieres empezar?' }),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText(
-        'Recomendado: crear paso a paso. La IA nunca publica sin tu revisión.',
-      ),
+      await screen.findByRole('heading', { name: 'Evaluaciones' }),
     ).toBeInTheDocument();
 
-    expect(screen.getAllByRole('button', { name: /Crear paso a paso/i })).toHaveLength(1);
-    expect(screen.getAllByRole('button', { name: /Digitalizar de foto\/PDF/i })).toHaveLength(1);
+    expect(screen.getAllByRole('button', { name: 'Crear evaluación' })).toHaveLength(1);
+    await user.click(screen.getByRole('button', { name: 'Crear evaluación' }));
+    expect(screen.getByRole('button', { name: 'Usar foto o PDF' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Registrar prueba existente/i })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Nueva evaluación/i })).not.toBeInTheDocument();
 
-    await user.click(screen.getByRole('button', { name: /Crear paso a paso/i }));
+    await user.click(screen.getByRole('button', { name: 'Crear con IA' }));
 
     expect(
       screen.getByRole('dialog', { name: 'Asistente de evaluación' }),

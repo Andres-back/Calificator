@@ -1,22 +1,19 @@
 import { Check } from 'lucide-react';
 import { cn } from '@/lib/cn';
 
-const STEP_LABELS = ['Materia', 'Criterios', 'Preguntas', 'Material', 'Revisar', 'Confirmar'];
+const STEP_LABELS = ['Preparar', 'Revisar'];
 
 export function PasosGuia({
   currentStep,
-  totalSteps = 6,
-  firstStepLabel = 'Materia',
 }: {
   currentStep: number;
-  totalSteps?: number;
-  firstStepLabel?: string;
 }) {
+  const totalSteps = STEP_LABELS.length;
   return (
-    <div className="space-y-3">
-      <p className="text-center text-sm font-semibold text-fg sm:text-base">Paso {currentStep} de {totalSteps}<span className="sm:hidden"> · {currentStep === 1 ? firstStepLabel : STEP_LABELS[currentStep - 1]}</span></p>
+    <div className="space-y-2">
+      <p className="sr-only">Paso {currentStep} de {totalSteps}</p>
       <div
-        className="flex h-2 w-full overflow-hidden rounded-full bg-border"
+        className="flex h-1 w-full overflow-hidden rounded-full bg-border"
         role="progressbar"
         aria-label={`Paso ${currentStep} de ${totalSteps}`}
         aria-valuenow={currentStep}
@@ -28,17 +25,17 @@ export function PasosGuia({
           style={{ width: `${(currentStep / totalSteps) * 100}%` }}
         />
       </div>
-      <nav aria-label="Progreso del wizard" className="hidden items-center justify-between gap-1 sm:flex">
+      <nav aria-label="Progreso de la evaluación" className="flex items-center justify-between gap-2">
         {STEP_LABELS.slice(0, totalSteps).map((defaultLabel, index) => {
-          const label = index === 0 ? firstStepLabel : defaultLabel;
+          const label = defaultLabel;
           const stepNum = index + 1;
           const completed = stepNum < currentStep;
           const current = stepNum === currentStep;
           return (
-            <div key={label} className="flex min-w-0 flex-col items-center gap-1">
+            <div key={label} className="flex min-w-0 items-center gap-2">
               <span
                 className={cn(
-                  'grid h-8 w-8 place-items-center rounded-full text-xs font-bold transition-colors motion-reduce:transition-none',
+                  'grid h-6 w-6 place-items-center rounded-full text-xs font-bold transition-colors motion-reduce:transition-none',
                   completed && 'bg-emerald-500 text-white',
                   current && 'bg-brand-600 text-white ring-2 ring-brand-300 ring-offset-2 ring-offset-surface',
                   stepNum > currentStep && 'bg-border text-muted',
@@ -49,7 +46,7 @@ export function PasosGuia({
                 {completed ? <Check className="h-4 w-4" aria-hidden="true" /> : stepNum}
               </span>
               <span className={cn(
-                'hidden max-w-20 truncate text-[11px] font-medium sm:block',
+                'text-sm font-semibold',
                 completed && 'text-emerald-600',
                 current && 'text-brand-700',
                 stepNum > currentStep && 'text-muted',
