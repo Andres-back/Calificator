@@ -11,3 +11,7 @@
 
 ## Fase 3: Integración
 - [X] T006 Incorporar el dominio a specs/README.md (FR-008)
+
+## Evolución 096
+
+- [X] T007 Trazar el asistente de dos pantallas, entrada común y conservación de contratos con [tareas 096](../096-evaluacion-dos-pantallas/tasks.md), issue #202 (FR-001, FR-002, FR-003, FR-004, FR-005, FR-006, FR-007, FR-008).

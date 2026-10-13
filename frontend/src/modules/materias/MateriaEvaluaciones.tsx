@@ -10,9 +10,7 @@ import {
   Eye,
   Pencil,
   PlayCircle,
-  Scan,
   Send,
-  Sparkles,
   Trash2,
 } from 'lucide-react';
 import {
@@ -41,6 +39,8 @@ import {
 import { DigitalizarEvaluacionModal } from '@/modules/evaluaciones/components/DigitalizarEvaluacionModal';
 import { EvaluationCriteriaEditor } from '@/modules/evaluaciones/components/EvaluationCriteriaEditor';
 import { GenerationWizard } from '@/modules/evaluaciones/components/GenerationWizard';
+import { EvaluationCreateMenu } from '@/modules/evaluaciones/components/EvaluationCreateMenu';
+import { ManualEvaluationDialog } from '@/modules/evaluaciones/EvaluacionesPage';
 import { EvaluationPreviewModal } from '@/modules/evaluaciones/components/EvaluationPreviewModal';
 import { getStudentEvaluationAction, getStudentEvaluationStatus } from '@/modules/evaluaciones/studentProgress';
 import { useAuth } from '@/stores/auth';
@@ -97,6 +97,7 @@ export function MateriaEvaluaciones() {
     || canReviewGrades;
   const isLearnerView = isStudent && canSubmitEvaluation;
   const [manualOpen, setManualOpen] = useState(false);
+  const [manualCreateOpen, setManualCreateOpen] = useState(false);
   const [wizardOpen, setWizardOpen] = useState(false);
   const [digitalizeOpen, setDigitalizeOpen] = useState(false);
   const [editingEval, setEditingEval] = useState<Evaluacion | null>(null);
@@ -223,40 +224,10 @@ export function MateriaEvaluaciones() {
   return (
     <div className="space-y-5">
       {canCreateEvaluation && (
-        <Card className="border-brand-200 bg-brand-50/50 p-5 dark:border-brand-500/25 dark:bg-brand-500/10">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-            <div className="flex items-start gap-3">
-              <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-brand-700 text-white">
-                <ClipboardCheck className="h-5 w-5" aria-hidden="true" />
-              </span>
-              <div>
-                <p className="text-xs font-bold uppercase tracking-wide text-brand-700 dark:text-brand-200">
-                  Preparar una evaluación
-                </p>
-                <h2 className="mt-1 font-display text-lg font-bold">
-                  ¿Cómo quieres empezar?
-                </h2>
-                <p className="mt-1 hidden max-w-2xl text-sm leading-6 text-muted sm:block">
-                  Crea una evaluación guiada o convierte directamente una prueba
-                  que ya tengas en foto o PDF.
-                </p>
-              </div>
-            </div>
-            <div className="flex flex-col gap-2 sm:flex-row">
-              <Button onClick={() => setWizardOpen(true)} size="lg">
-                <Sparkles className="h-5 w-5" />
-                Crear paso a paso
-              </Button>
-              <Button variant="outline" onClick={() => setDigitalizeOpen(true)} size="lg">
-                <Scan className="h-5 w-5" />
-                Digitalizar de foto/PDF
-              </Button>
-            </div>
-          </div>
-          <p className="mt-3 hidden text-xs font-semibold text-brand-700 dark:text-brand-200 sm:block lg:text-right">
-            Recomendado: crear paso a paso. La IA nunca publica sin tu revisión.
-          </p>
-        </Card>
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+          <h2 className="font-display text-lg font-bold">Evaluaciones</h2>
+          <EvaluationCreateMenu onAI={() => setWizardOpen(true)} onPhoto={() => setDigitalizeOpen(true)} onManual={() => setManualCreateOpen(true)} />
+        </div>
       )}
 
       {canManageEvaluations && (
@@ -414,7 +385,7 @@ export function MateriaEvaluaciones() {
         <EmptyState
           icon={ClipboardCheck}
           title="Aún no hay evaluaciones"
-          description="Usa las opciones de arriba para crearla paso a paso o digitalizar una foto o PDF."
+          description="Usa Crear evaluación para comenzar."
         />
       ) : (
         <EmptyState
@@ -440,6 +411,8 @@ export function MateriaEvaluaciones() {
           }}
         />
       )}
+
+      {canCreateEvaluation && manualCreateOpen && <ManualEvaluationDialog key={materia.id + user?.id} materia={materia} onClose={() => setManualCreateOpen(false)} onCompleted={() => { refresh(); setManualCreateOpen(false); toast.success('Evaluación creada como borrador'); }} />}
 
       {(canCreateEvaluation || canUpdateEvaluation) && user && (
         <GenerationWizard

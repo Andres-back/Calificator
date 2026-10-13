@@ -61,3 +61,7 @@ Como equipo, necesito actualizar estos artefactos cuando cambie el comportamient
 ## Evolución 095: acciones principales claras
 
 [095-flujo-docente-ligero](../095-flujo-docente-ligero/spec.md) limita a tres las acciones principales válidas por examen: visualizar, ver notas y calificar por foto cuando corresponda. Borradores conservan preparación/publicación; editar datos/preguntas/criterios, gestionar entregas y eliminar permanecen bajo Más opciones según permisos, con handlers y confirmaciones existentes. No modifica preguntas, notas, modalidades ni estados al consultar el menú.
+
+## Evolución 096: preparar y revisar
+
+[096-evaluacion-dos-pantallas](../096-evaluacion-dos-pantallas/spec.md), issue #202, simplifica el asistente IA a Preparar/Revisar con nombre sugerido, reparto visible, opciones y ayuda desplegables. Una entrada común ofrece IA, foto/PDF y creación manual desde materia o acceso general. Guarda el mismo borrador con validación/versionado y publica mediante acción separada. Conserva borradores v7, selección explícita de criterios, modalidades, respuestas y contratos de documentos; no cambia notas, evidencia ni proveedores.

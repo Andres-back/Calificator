@@ -15,3 +15,7 @@ Roles, trazabilidad, datos, accesibilidad, asincronía y gobernanza quedan cubie
 
 ## Decisión
 Conservar arquitectura; discrepancias pasan a backlog.
+
+## Incremento 096
+
+El [plan 096](../096-evaluacion-dos-pantallas/plan.md) reutiliza GenerationWizard, editores y API actuales, con dos etapas y selector compartido de métodos. El formulario manual existente se comparte entre acceso general y materia; no se duplica su validación ni transporte. Sin migraciones ni cambios backend; guardado diferencial y expected_updated_at conservados.

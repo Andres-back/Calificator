@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
@@ -10,6 +10,8 @@ import { useMaterias, MateriaSelect } from '@/modules/materias/MateriaSelect';
 import { listDbaCombinado } from '@/modules/materias/dbaApi';
 import { GenerationWizard } from './components/GenerationWizard';
 import { EvaluationPreviewModal } from './components/EvaluationPreviewModal';
+import { EvaluationCreateMenu } from './components/EvaluationCreateMenu';
+import { DigitalizarEvaluacionModal } from './components/DigitalizarEvaluacionModal';
 import { DBASelector } from './components/DBASelector';
 import { queryKeys } from '@/config/queryKeys';
 import {
@@ -191,7 +193,7 @@ function EvaluationFormModal({
   materias: { id: string; nombre: string }[] | undefined;
   isEdit: boolean;
   onSubmit: () => void;
-  onGenerateAI: () => void;
+  onGenerateAI?: () => void;
   isPending: boolean;
   aiPending: boolean;
 }) {
@@ -261,7 +263,7 @@ function EvaluationFormModal({
       <div className="space-y-6">
         <div className="grid gap-4 md:grid-cols-2">
           <Field label="Materia" required>
-            <Select value={form.materia_id} onChange={(event) => handleFormMateriaChange(event.target.value)} required disabled={isEdit}>
+            <Select value={form.materia_id} onChange={(event) => handleFormMateriaChange(event.target.value)} required disabled={isEdit || materias?.length === 1}>
               <option value="">Selecciona una materia</option>
               {materias?.map((materia) => (
                 <option key={materia.id} value={materia.id}>{materia.nombre}</option>
@@ -271,8 +273,8 @@ function EvaluationFormModal({
           </Field>
           <Field label="Modalidad" required>
             <Select value={form.modalidad} onChange={(event) => setForm({ ...form, modalidad: event.target.value as EvaluacionModalidad })} required>
-              <option value="online">Online</option>
-              <option value="fisica">Fisica</option>
+              <option value="online">En línea</option>
+              <option value="fisica">En papel</option>
               <option value="mixta">Mixta</option>
             </Select>
           </Field>
@@ -354,7 +356,7 @@ function EvaluationFormModal({
           />
         </Field>
 
-        {!isEdit && (
+        {!isEdit && onGenerateAI && (
           <div className="rounded-xl border border-brand-200 bg-brand-50/70 p-4 dark:border-brand-500/30 dark:bg-brand-500/10">
             <div className="flex items-start gap-3">
               <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-brand-100 text-brand-700 dark:bg-brand-500/20 dark:text-brand-200">
@@ -396,10 +398,72 @@ function EvaluationFormModal({
   );
 }
 
+function buildManualEvaluationPayload(form: EvaluationForm): EvaluacionCreate | null {
+    const nombre = form.nombre.trim();
+    if (!form.materia_id) { toast.error('Selecciona una materia'); return null; }
+    if (!nombre) { toast.error('El nombre es obligatorio'); return null; }
+    if (!form.modalidad) { toast.error('Selecciona una modalidad'); return null; }
+    if (!Number.isFinite(form.nota_maxima) || form.nota_maxima <= 0) { toast.error('La nota maxima debe ser mayor que 0'); return null; }
+    if (!listIsValid(form.criterios) || !listIsValid(form.preguntas) || !listIsValid(form.respuestas)) {
+      toast.error('Las listas no deben contener elementos vacios'); return null;
+    }
+    return {
+      materia_id: form.materia_id, nombre,
+      descripcion: form.descripcion.trim() || undefined,
+      tipo_origen: form.tipo_origen, modalidad: form.modalidad, nota_maxima: form.nota_maxima,
+      dba_ids: form.dba_ids, dba_personalizado_ids: form.dba_personalizado_ids,
+      metas_profesor: form.metas.map((m) => m.trim()).filter(Boolean),
+      criterios: form.criterios.map((n) => ({ nombre: n.trim() })),
+      preguntas: form.preguntas.map((e) => ({ enunciado: e.trim() })),
+      respuestas_esperadas: form.respuestas.map((t) => ({ texto: t.trim() })),
+    };
+  }
+
+
+export function ManualEvaluationDialog({ materia, onClose, onCompleted }: {
+  materia: { id: string; nombre: string };
+  onClose: () => void;
+  onCompleted: (evaluation: Evaluacion) => void;
+}) {
+  const user = useAuth(state => state.user);
+  const canCreate = user?.rol !== 'estudiante' && Boolean(user?.permissions?.includes('evaluations.create'));
+  const [form, setForm] = useState(() => emptyForm(materia.id));
+  const [pending, setPending] = useState<Record<ListField, string>>(emptyPending);
+  const lock = useRef(false);
+  const criteria = useQuery({
+    queryKey: queryKeys.materias.dbaCombined(materia.id),
+    queryFn: () => listDbaCombinado(materia.id),
+    enabled: canCreate && Boolean(materia.id),
+    retry: false,
+  });
+  const create = useMutation({
+    mutationFn: (payload: EvaluacionCreate) => createEvaluacion(payload),
+    onSuccess: evaluation => {
+      if (useAuth.getState().user?.id === user?.id && evaluation.materia_id === materia.id) onCompleted(evaluation);
+    },
+    onError: error => toast.error(toApiError(error).detail),
+    onSettled: () => { lock.current = false; },
+  });
+  if (!canCreate) return null;
+  return <EvaluationFormModal open onClose={() => { if (!create.isPending) onClose(); }}
+    title={`Crear manualmente · ${materia.nombre}`} form={form} setForm={setForm}
+    pending={pending} setPending={setPending} materias={[materia]}
+    dbaItems={criteria.data} loadingDBA={criteria.isLoading} dbaError={criteria.isError}
+    isEdit={false} isPending={create.isPending} aiPending={false}
+    onSubmit={() => {
+      if (create.isPending || lock.current) return;
+      const payload = buildManualEvaluationPayload(form);
+      if (!payload) return;
+      lock.current = true;
+      create.mutate(payload);
+    }}
+  />;
+}
+
 export function EvaluacionesPage() {
   const user = useAuth((state) => state.user);
   const permissions = new Set(user?.permissions ?? []);
-  const canCreate = permissions.has('evaluations.create');
+  const canCreate = user?.rol !== 'estudiante' && permissions.has('evaluations.create');
   const canUpdate = permissions.has('evaluations.update');
   const canPublish = permissions.has('evaluations.publish');
   const canSubmit = permissions.has('evaluations.submit');
@@ -410,6 +474,7 @@ export function EvaluacionesPage() {
   const materiaId = params.get('materia') || materias?.[0]?.id || '';
   const [open, setOpen] = useState(false);
   const [wizardOpen, setWizardOpen] = useState(false);
+  const [digitalizeOpen, setDigitalizeOpen] = useState(false);
   const [editingEval, setEditingEval] = useState<Evaluacion | null>(null);
   const [previewEval, setPreviewEval] = useState<Evaluacion | null>(null);
   const [form, setForm] = useState<EvaluationForm>(() => emptyForm(materiaId));
@@ -429,7 +494,7 @@ export function EvaluacionesPage() {
   const { data: dbaItems, isLoading: loadingDBA, isError: dbaError } = useQuery({
     queryKey: queryKeys.materias.dbaCombined(form.materia_id),
     queryFn: () => listDbaCombinado(form.materia_id),
-    enabled: open && !!form.materia_id,
+    enabled: open && (editingEval ? canUpdate : canCreate) && !!form.materia_id,
     retry: false,
   });
 
@@ -507,24 +572,7 @@ export function EvaluacionesPage() {
   }
 
   function buildCreatePayload(): EvaluacionCreate | null {
-    const nombre = form.nombre.trim();
-    if (!form.materia_id) { toast.error('Selecciona una materia'); return null; }
-    if (!nombre) { toast.error('El nombre es obligatorio'); return null; }
-    if (!form.modalidad) { toast.error('Selecciona una modalidad'); return null; }
-    if (!Number.isFinite(form.nota_maxima) || form.nota_maxima <= 0) { toast.error('La nota maxima debe ser mayor que 0'); return null; }
-    if (!listIsValid(form.criterios) || !listIsValid(form.preguntas) || !listIsValid(form.respuestas)) {
-      toast.error('Las listas no deben contener elementos vacios'); return null;
-    }
-    return {
-      materia_id: form.materia_id, nombre,
-      descripcion: form.descripcion.trim() || undefined,
-      tipo_origen: form.tipo_origen, modalidad: form.modalidad, nota_maxima: form.nota_maxima,
-      dba_ids: form.dba_ids, dba_personalizado_ids: form.dba_personalizado_ids,
-      metas_profesor: form.metas.map((m) => m.trim()).filter(Boolean),
-      criterios: form.criterios.map((n) => ({ nombre: n.trim() })),
-      preguntas: form.preguntas.map((e) => ({ enunciado: e.trim() })),
-      respuestas_esperadas: form.respuestas.map((t) => ({ texto: t.trim() })),
-    };
+    return buildManualEvaluationPayload(form);
   }
 
   function buildUpdatePayload(): EvaluacionUpdate | null {
@@ -613,7 +661,7 @@ export function EvaluacionesPage() {
             title="Evaluaciones"
             eyebrow={isStudent ? 'Tu aprendizaje' : 'Diseño evaluativo'}
             subtitle={isStudent ? 'Consulta las evaluaciones de tus materias y resuelve las que estén disponibles.' : 'Crea, publica y revisa evaluaciones con apoyo de IA.'}
-            action={canCreate && !noMaterias && <div className="flex flex-wrap gap-2"><Button onClick={() => setWizardOpen(true)}><Sparkles className="h-4 w-4" /> Generar con IA</Button><Button variant="outline" onClick={openCreateModal} disabled={!materiaId}><Plus className="h-4 w-4" /> Crear manualmente</Button></div>}
+            action={canCreate && !noMaterias && <EvaluationCreateMenu onAI={() => setWizardOpen(true)} onPhoto={() => setDigitalizeOpen(true)} onManual={openCreateModal} photoDisabled={!materias?.some(item => item.id === materiaId)} disabled={loadingMaterias || !materias?.some(item => item.id === materiaId)} />}
           />
         </div>
       </div>
@@ -655,7 +703,6 @@ export function EvaluacionesPage() {
               image="/branding/empty-no-evals.webp"
               title="Sin evaluaciones"
               description={isStudent ? 'No hay evaluaciones disponibles para esta materia.' : 'Crea la primera evaluación de esta materia.'}
-              action={canCreate && <div className="flex flex-wrap justify-center gap-2"><Button onClick={() => setWizardOpen(true)}><Sparkles className="h-4 w-4" /> Generar con IA</Button><Button variant="outline" onClick={openCreateModal}><Plus className="h-4 w-4" /> Crear manualmente</Button></div>}
             />
           ) : (
             <div className="grid gap-3">
@@ -737,6 +784,7 @@ export function EvaluacionesPage() {
         <EvaluationPreviewModal evaluation={previewEval} onClose={() => setPreviewEval(null)}
           canViewSolutions={user?.rol === 'admin' || previewEval.profesor_id === user?.id} />
       )}
+      {canCreate && digitalizeOpen && materias?.some(item => item.id === materiaId) && <DigitalizarEvaluacionModal open onClose={() => setDigitalizeOpen(false)} materiaId={materiaId} onCompleted={() => { queryClient.invalidateQueries({ queryKey: queryKeys.evaluaciones.list(materiaId) }); setDigitalizeOpen(false); }} />}
       {user && canCreate && (
         <GenerationWizard
           open={wizardOpen}
@@ -753,7 +801,7 @@ export function EvaluacionesPage() {
         />
       )}
       <EvaluationFormModal
-        open={open}
+        open={open && (editingEval ? canUpdate : canCreate)}
         onClose={() => { setOpen(false); setEditingEval(null); }}
         title={editingEval ? 'Editar evaluación' : 'Nueva evaluación'}
         form={form}

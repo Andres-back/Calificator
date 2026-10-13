@@ -8,6 +8,7 @@ import type { Evaluacion, Materia } from '@/types/api';
 
 const mocks = vi.hoisted(() => ({
   generate: vi.fn(),
+  get: vi.fn(),
   extractReference: vi.fn(),
   update: vi.fn(),
   listDba: vi.fn(),
@@ -17,6 +18,7 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock('../api', () => ({
   generarBorradorEvaluacion: mocks.generate,
+  getEvaluacion: mocks.get,
   extraerReferenciaEvaluacion: mocks.extractReference,
   updateEvaluacion: mocks.update,
 }));
@@ -140,6 +142,7 @@ beforeEach(() => {
     descripcion: 'Resuelve problemas con números racionales.',
   }]);
   mocks.generate.mockResolvedValue(evaluation);
+  mocks.get.mockResolvedValue(evaluation);
   mocks.extractReference.mockResolvedValue({
     texto: 'Contenido extraído del archivo',
     nombre_archivo: 'guia.pdf',
@@ -152,6 +155,127 @@ beforeEach(() => {
 });
 
 describe('GenerationWizard', () => {
+  it('only calls Xali on request and applies its suggestion after confirmation', async () => {
+    const user = userEvent.setup();
+    renderWizard(vi.fn(), evaluation);
+    expect(mocks.sendMessage).not.toHaveBeenCalled();
+    await user.click(screen.getByRole('button', { name: 'Necesito ayuda' }));
+    expect(mocks.sendMessage).not.toHaveBeenCalled();
+    await user.type(screen.getByLabelText('¿Qué necesitas mejorar?'), 'Aclara la pregunta');
+    await user.click(screen.getByRole('button', { name: 'Enviar a Xali' }));
+    await user.click(await screen.findByRole('button', { name: 'Revisar y aplicar' }));
+    expect((screen.getByLabelText(/Enunciado/) as HTMLTextAreaElement).value).not.toContain('Aclara el enunciado.');
+    await user.click(screen.getByRole('button', { name: 'Sí, aplicar' }));
+    expect((screen.getByLabelText(/Enunciado/) as HTMLTextAreaElement).value).toContain('Aclara el enunciado.');
+    expect(mocks.update).not.toHaveBeenCalled();
+  });
+  it('ignores a generation response after the account changes', async () => {
+    let resolve!: (evaluation: Evaluacion) => void;
+    mocks.generate.mockReturnValueOnce(new Promise<Evaluacion>(done => { resolve = done; }));
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const content = (userId: string) => <QueryClientProvider client={client}><GenerationWizard open userId={userId} materias={[materia]} initialMateriaId={materia.id} onClose={vi.fn()} onCompleted={vi.fn()} /></QueryClientProvider>;
+    const view = render(content('profesor-1'));
+    await userEvent.setup().type(screen.getByLabelText(/Qué quieres evaluar/), 'Fracciones');
+    fireEvent.click(screen.getByRole('button', { name: 'Generar evaluación' }));
+    await waitFor(() => expect(mocks.generate).toHaveBeenCalledOnce());
+    view.rerender(content('profesor-2'));
+    resolve(evaluation);
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Generar evaluación' })).toBeDisabled());
+    expect(screen.queryByText('Revisa y edita la evaluación')).not.toBeInTheDocument();
+    expect(screen.getByLabelText(/Qué quieres evaluar/)).toHaveValue('');
+  });
+
+  it('opens and focuses the missing learning-criteria selection without sending a request', async () => {
+    const user = userEvent.setup();
+    renderWizard();
+    await user.type(screen.getByLabelText(/Qué quieres evaluar/), 'Fracciones');
+    await user.click(screen.getByText('Personalizar', { exact: true }));
+    await user.click(screen.getByRole('checkbox', { name: /Usar criterios de aprendizaje/ }));
+    await user.click(screen.getByText('Personalizar', { exact: true }));
+    await user.click(screen.getByRole('button', { name: 'Generar evaluación' }));
+    await waitFor(() => expect(screen.getByRole('searchbox', { name: 'Buscar criterios de aprendizaje' })).toHaveFocus());
+    expect(mocks.generate).not.toHaveBeenCalled();
+  });
+  it('096 reveals invalid rubric fields before allowing a save', async () => {
+    const user = userEvent.setup();
+    renderWizard(vi.fn(), { ...rubricEvaluation, criterios: rubricEvaluation.criterios.map((criterion, index) => ({ ...criterion, peso_porcentaje: index ? 30 : 60 })) });
+    expect(screen.getByRole('button', { name: 'Guardar cambios' })).toBeDisabled();
+    await user.click(screen.getByRole('button', { name: 'Revisar pendientes' }));
+    expect(screen.getByLabelText('Nombre del criterio 1')).toBeVisible();
+    expect(mocks.update).not.toHaveBeenCalled();
+  });
+
+  it('096 retains changes on save failure and shows a retryable error', async () => {
+    mocks.update.mockRejectedValueOnce(new Error('offline'));
+    const user = userEvent.setup();
+    renderWizard(vi.fn(), evaluation);
+    await user.clear(screen.getByLabelText(/Enunciado/));
+    await user.type(screen.getByLabelText(/Enunciado/), 'Conservar edición');
+    await user.click(screen.getByRole('button', { name: 'Guardar cambios' }));
+    expect(await screen.findByRole('alert')).toBeInTheDocument();
+    expect(screen.getByLabelText(/Enunciado/)).toHaveValue('Conservar edición');
+    expect(screen.getByRole('button', { name: 'Guardar cambios' })).toBeEnabled();
+  });
+  it('096 prepares and reviews in two screens without publishing or confirming again', async () => {
+    const user = userEvent.setup();
+    const { onCompleted } = renderWizard();
+    expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuemax', '2');
+    expect(screen.queryByRole('button', { name: 'Siguiente' })).not.toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: /^En papel/ })).toBeChecked();
+    expect(screen.getByText('Personalizar').closest('details')).not.toHaveAttribute('open');
+    expect(screen.queryByRole('complementary', { name: 'Asistencia opcional de Xali' })).not.toBeInTheDocument();
+    await user.type(screen.getByLabelText(/Qué quieres evaluar/), 'Fracciones');
+    await user.click(screen.getByRole('button', { name: '10 preguntas' }));
+    await user.click(screen.getByRole('button', { name: 'Generar evaluación' }));
+    await waitFor(() => expect(mocks.generate).toHaveBeenCalledWith(expect.objectContaining({ nombre: 'Evaluación de Fracciones', tema: 'Fracciones', cantidad_preguntas: 10, modalidad: 'fisica' })));
+    expect(await screen.findByRole('button', { name: 'Guardar borrador' })).toBeInTheDocument();
+    expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '2');
+    await user.click(screen.getByRole('button', { name: 'Guardar borrador' }));
+    await waitFor(() => expect(onCompleted).toHaveBeenCalledWith(evaluation));
+    expect(mocks.generate).toHaveBeenCalledOnce();
+    expect(mocks.update.mock.calls[0][1]).not.toHaveProperty('estado');
+  });
+
+  it('096 retains preparation after a generation error and retries explicitly', async () => {
+    mocks.generate.mockRejectedValueOnce(new Error('offline'));
+    const user = userEvent.setup();
+    renderWizard();
+    await user.type(screen.getByLabelText(/Qué quieres evaluar/), 'Lectura comprensiva');
+    await user.click(screen.getByRole('button', { name: 'Generar evaluación' }));
+    await waitFor(() => expect(mocks.generate).toHaveBeenCalledOnce());
+    expect(await screen.findByRole('alert')).toBeInTheDocument();
+    expect(screen.getByLabelText(/Qué quieres evaluar/)).toHaveValue('Lectura comprensiva');
+    await user.click(screen.getByRole('button', { name: 'Generar evaluación' }));
+    await screen.findByRole('button', { name: 'Guardar borrador' });
+    expect(mocks.generate).toHaveBeenCalledTimes(2);
+  });
+
+  it('096 checks restored generated draft identity and version without replacing local edits', async () => {
+    const state = { ...createEmptyWizardState(materia.id), step: 6, nombre: 'Anterior', nombreAutomatico: false, generatedEvaluationId: evaluation.id, generatedUpdatedAt: evaluation.updated_at, questions: [{ clientId: 'local', numero: 1, tipo: 'abierta' as const, enunciado: 'Edición local', opciones: [], respuestaEsperada: 'Respuesta local', puntaje: 5, modalidadRespuesta: 'fisica' as const, dbaIds: [], expanded: true }] };
+    persistWizardDraft(localStorage, 'profesor-1', state);
+    const user = userEvent.setup();
+    renderWizard();
+    await user.click(await screen.findByRole('button', { name: 'Continuar' }));
+    await waitFor(() => expect(mocks.get).toHaveBeenCalledWith(evaluation.id));
+    expect(screen.getByLabelText(/Enunciado/)).toHaveValue('Edición local');
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Guardar borrador' })).toBeEnabled());
+    await user.click(screen.getByRole('button', { name: 'Guardar borrador' }));
+    await waitFor(() => expect(mocks.update).toHaveBeenCalledWith(evaluation.id, expect.objectContaining({ expected_updated_at: evaluation.updated_at })));
+    expect(mocks.generate).not.toHaveBeenCalled();
+  });
+
+  it('096 blocks a restored version conflict while retaining the questions', async () => {
+    const state = { ...createEmptyWizardState(materia.id), step: 6, nombre: 'Anterior', generatedEvaluationId: evaluation.id, generatedUpdatedAt: 'old-version', questions: [{ clientId: 'local', numero: 1, tipo: 'abierta' as const, enunciado: 'Edición conservada', opciones: [], respuestaEsperada: 'Respuesta local', puntaje: 5, modalidadRespuesta: 'fisica' as const, dbaIds: [], expanded: true }] };
+    persistWizardDraft(localStorage, 'profesor-1', state);
+    const user = userEvent.setup();
+    renderWizard();
+    await user.click(await screen.findByRole('button', { name: 'Continuar' }));
+    expect(await screen.findByText(/cambió desde que/)).toBeInTheDocument();
+    expect(screen.getByLabelText(/Enunciado/)).toHaveValue('Edición conservada');
+    expect(screen.getByRole('button', { name: 'Guardar borrador' })).toBeDisabled();
+    expect(mocks.update).not.toHaveBeenCalled();
+  });
+
   it('keeps question edits when subject and evaluation queries refetch', async () => {
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     const content = (subject: Materia, saved: Evaluacion) => <QueryClientProvider client={client}><GenerationWizard open userId="profesor-1" onClose={vi.fn()} materias={[subject]} initialMateriaId={subject.id} initialEvaluation={saved} onCompleted={vi.fn()} /></QueryClientProvider>;
@@ -165,15 +289,16 @@ describe('GenerationWizard', () => {
   it('saves only the changed rubric without round-tripping saved questions', async () => {
     const user = userEvent.setup();
     renderWizard(vi.fn(), rubricEvaluation);
+    await user.click(screen.getByText('Cómo se calificará'));
     await user.clear(screen.getByLabelText('Nombre del criterio 1'));
     await user.type(screen.getByLabelText('Nombre del criterio 1'), 'Comprensión revisada');
-    await user.click(screen.getByRole('button', { name: 'Siguiente' }));
     await user.click(screen.getByRole('button', { name: 'Guardar cambios' }));
     await waitFor(() => expect(mocks.update).toHaveBeenCalledOnce());
     expect(Object.keys(mocks.update.mock.calls[0][1]).sort()).toEqual(['criterios', 'expected_updated_at']);
   });
   it('offers criteria after digitalization even when it has no rubric', () => {
     renderWizard(vi.fn(), { ...evaluation, tipo_origen: 'externa_digitalizada' });
+    fireEvent.click(screen.getByText('Cómo se calificará'));
     expect(screen.getByRole('button', { name: 'Criterios y rúbrica' })).toBeInTheDocument();
   });
   it('searches without losing selection, sends only chosen criteria and shows degraded RAG warning', async () => {
@@ -185,8 +310,8 @@ describe('GenerationWizard', () => {
     mocks.generate.mockResolvedValue({ ...evaluation, blueprint: { reglas_feedback: { trazabilidad: { rag_estado: 'no_disponible', advertencias: [warning] } } } });
     const user = userEvent.setup();
     renderWizard();
-    await user.type(screen.getByLabelText(/Nombre de la evaluación/), 'Prueba de fracciones');
-    await user.click(screen.getByRole('button', { name: 'Siguiente' }));
+    await user.type(screen.getByLabelText(/Qué quieres evaluar/), 'Prueba de fracciones');
+    await user.click(screen.getByText('Personalizar', { exact: true }));
     await user.click(screen.getByRole('checkbox', { name: /Usar criterios de aprendizaje/ }));
     await user.click(await screen.findByRole('button', { name: /Interpreta fracciones/ }));
     await user.type(screen.getByRole('searchbox', { name: 'Buscar criterios de aprendizaje' }), 'multiplica');
@@ -194,8 +319,7 @@ describe('GenerationWizard', () => {
     expect(screen.getByRole('status')).toHaveTextContent('1 seleccionados');
     await user.clear(screen.getByRole('searchbox', { name: 'Buscar criterios de aprendizaje' }));
     expect(screen.getByRole('button', { name: /Interpreta fracciones/ })).toHaveAttribute('aria-pressed', 'true');
-    for (let step = 0; step < 3; step++) await user.click(screen.getByRole('button', { name: 'Siguiente' }));
-    await user.click(screen.getByRole('button', { name: 'Generar borrador' }));
+    await user.click(screen.getByRole('button', { name: 'Generar evaluación' }));
     await waitFor(() => expect(mocks.generate).toHaveBeenCalledWith(expect.objectContaining({ dba_ids: [], dba_personalizado_ids: ['own-1'] })));
     expect(await screen.findByText(warning)).toBeInTheDocument();
   });
@@ -207,12 +331,12 @@ describe('GenerationWizard', () => {
     await user.click(await screen.findByRole('button', { name: 'Continuar' }));
     expect(screen.getByText('Grado 7 · Área: Matemáticas')).toBeInTheDocument();
     expect(screen.queryByRole('combobox')).not.toBeInTheDocument();
-    const options = screen.getByText(/Opciones complementarias/).closest('details');
+    const options = screen.getByText('Personalizar', { exact: true }).closest('details');
     expect(options).not.toHaveAttribute('open');
-    expect(options).toHaveTextContent('Descripción configurada');
-    expect(options).toHaveTextContent('2026-10-10 09:00');
-    await user.click(screen.getByText(/Opciones complementarias/));
-    expect(screen.getByLabelText(/Descripción breve/)).toHaveValue('Fracciones');
+    expect(screen.getByLabelText(/Qué quieres evaluar/)).toHaveValue('Fracciones');
+    expect(screen.getByLabelText('Resumen de preparación')).toHaveTextContent('2026-10-10 09:00');
+    await user.click(screen.getByText('Personalizar', { exact: true }));
+    expect(screen.getByLabelText(/Qué quieres evaluar/)).toHaveValue('Fracciones');
     expect(screen.getByLabelText(/Fecha límite de entrega/)).toHaveValue('2026-10-10T09:00');
   });
 
@@ -236,44 +360,28 @@ describe('GenerationWizard', () => {
     expect(mocks.listDba).not.toHaveBeenCalled();
   });
 
-  it('navigates the six accessible steps, reviews a question and confirms the normal evaluation', async () => {
+  it('prepares criteria and reference material, reviews and saves in two screens', async () => {
     const user = userEvent.setup();
     const { onCompleted } = renderWizard();
-
     expect(screen.getByRole('dialog', { name: /Generar evaluación con IA/i })).toBeInTheDocument();
     expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '1');
-    const next = screen.getByRole('button', { name: 'Siguiente' });
-    expect(next).toBeDisabled();
-
-    await user.type(screen.getByLabelText(/Nombre de la evaluación/i), 'Evaluación IA');
-    await user.click(screen.getByRole('radio', { name: /^En papel\b/i }));
-    await user.click(next);
-    expect(await screen.findByText('Elige cómo orientar la evaluación')).toBeInTheDocument();
-    expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '2');
-
+    expect(screen.getByRole('button', { name: 'Generar evaluación' })).toBeDisabled();
+    await user.type(screen.getByLabelText(/Qué quieres evaluar/), 'Fracciones');
+    await user.click(screen.getByText('Personalizar', { exact: true }));
     await user.click(screen.getByRole('checkbox', { name: /Usar criterios de aprendizaje/i }));
     await user.click(await screen.findByRole('button', { name: /DBA-1/i }));
-    await user.click(screen.getByRole('button', { name: 'Siguiente' }));
-    expect(screen.getByText('Configura las preguntas')).toBeInTheDocument();
-
-    await user.click(screen.getByRole('button', { name: 'Siguiente' }));
-    expect(screen.getByText('Añade material de referencia')).toBeInTheDocument();
     await user.type(screen.getByLabelText(/Texto de referencia/i), 'Material del docente');
-    await user.click(screen.getByRole('button', { name: 'Siguiente' }));
-
-    await user.click(screen.getByRole('button', { name: 'Generar borrador' }));
-    expect(mocks.generate).toHaveBeenCalledWith(expect.objectContaining({ modalidad: 'fisica' }));
+    await user.click(screen.getByRole('button', { name: 'Generar evaluación' }));
+    expect(mocks.generate).toHaveBeenCalledWith(expect.objectContaining({ modalidad: 'fisica', dba_ids: ['dba-1'], material_referencia: 'Material del docente' }));
     expect(await screen.findByText('Revisa y edita la evaluación')).toBeInTheDocument();
+    expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '2');
     await user.clear(screen.getByLabelText(/Enunciado/i));
     await user.type(screen.getByLabelText(/Enunciado/i), 'Pregunta uno editada');
-    await user.click(screen.getByRole('button', { name: 'Siguiente' }));
-
-    expect(screen.getByText('Confirma la evaluación')).toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: 'Crear evaluación' }));
-
+    await user.click(screen.getByRole('button', { name: 'Guardar borrador' }));
     await waitFor(() => expect(mocks.update).toHaveBeenCalledTimes(1));
     expect(mocks.update.mock.calls[0][1].preguntas[0].enunciado).toBe('Pregunta uno editada');
     expect(onCompleted).toHaveBeenCalledWith(evaluation);
+    expect(screen.queryByText('Confirma la evaluación')).not.toBeInTheDocument();
   }, 10_000);
 
   it('prevents a double generation submit and keeps keyboard controls reachable', async () => {
@@ -282,13 +390,9 @@ describe('GenerationWizard', () => {
     const user = userEvent.setup();
     renderWizard();
 
-    await user.type(screen.getByLabelText(/Nombre de la evaluación/i), 'Evaluación IA');
-    await user.click(screen.getByRole('button', { name: 'Siguiente' }));
-    await user.click(screen.getByRole('button', { name: 'Siguiente' }));
-    await user.click(screen.getByRole('button', { name: 'Siguiente' }));
-    await user.click(screen.getByRole('button', { name: 'Siguiente' }));
+    await user.type(screen.getByLabelText(/Qué quieres evaluar/i), 'Evaluación IA');
 
-    const generateButton = screen.getByRole('button', { name: 'Generar borrador' });
+    const generateButton = screen.getByRole('button', { name: 'Generar evaluación' });
     fireEvent.click(generateButton);
     fireEvent.click(generateButton);
     await waitFor(() => expect(mocks.generate).toHaveBeenCalledTimes(1));
@@ -304,15 +408,12 @@ describe('GenerationWizard', () => {
     const user = userEvent.setup();
     renderWizard();
 
-    await user.type(screen.getByLabelText(/Nombre de la evaluación/i), 'Evaluación por rúbrica');
-    await user.click(screen.getByRole('button', { name: 'Siguiente' }));
+    await user.type(screen.getByLabelText(/Qué quieres evaluar/i), 'Evaluación por rúbrica');
+    await user.click(screen.getByText('Personalizar', { exact: true }));
     await user.click(screen.getByRole('checkbox', { name: /Evaluar con rúbrica/i }));
     await user.type(screen.getByLabelText('Nuevo criterio de rúbrica'), 'Argumentación con evidencias');
     await user.click(screen.getByRole('button', { name: /Agregar criterio/i }));
-    await user.click(screen.getByRole('button', { name: 'Siguiente' }));
-    await user.click(screen.getByRole('button', { name: 'Siguiente' }));
-    await user.click(screen.getByRole('button', { name: 'Siguiente' }));
-    await user.click(screen.getByRole('button', { name: 'Generar borrador' }));
+    await user.click(screen.getByRole('button', { name: 'Generar evaluación' }));
 
     await waitFor(() => expect(mocks.generate).toHaveBeenCalledWith(expect.objectContaining({
       dba_ids: [],
@@ -326,17 +427,14 @@ describe('GenerationWizard', () => {
     const user = userEvent.setup();
     renderWizard();
 
-    await user.type(screen.getByLabelText(/Nombre de la evaluación/i), 'Evaluación con guía');
-    await user.click(screen.getByRole('button', { name: 'Siguiente' }));
-    await user.click(screen.getByRole('button', { name: 'Siguiente' }));
-    await user.click(screen.getByRole('button', { name: 'Siguiente' }));
+    await user.type(screen.getByLabelText(/Qué quieres evaluar/i), 'Evaluación con guía');
+    await user.click(screen.getByText('Personalizar', { exact: true }));
     const file = new File(['contenido'], 'guia.pdf', { type: 'application/pdf' });
     await user.upload(screen.getByLabelText('Seleccionar material de referencia'), file);
 
     await waitFor(() => expect(mocks.extractReference).toHaveBeenCalledWith(materia.id, file));
     expect(await screen.findByDisplayValue('Contenido extraído del archivo')).toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: 'Siguiente' }));
-    await user.click(screen.getByRole('button', { name: 'Generar borrador' }));
+    await user.click(screen.getByRole('button', { name: 'Generar evaluación' }));
     await waitFor(() => expect(mocks.generate).toHaveBeenCalledWith(expect.objectContaining({
       material_referencia: 'Contenido extraído del archivo',
     })));
@@ -350,7 +448,6 @@ describe('GenerationWizard', () => {
     await user.click(screen.getByRole('button', { name: 'Agregar pregunta' }));
     await user.type(screen.getByLabelText(/Enunciado/i), '¿Cómo explicarías el procedimiento?');
     await user.type(screen.getByLabelText(/Respuesta esperada/i), 'Explica los pasos con claridad.');
-    await user.click(screen.getByRole('button', { name: 'Siguiente' }));
     await user.click(screen.getByRole('button', { name: 'Guardar cambios' }));
 
     await waitFor(() => expect(mocks.update).toHaveBeenCalledTimes(1));
@@ -372,6 +469,7 @@ describe('GenerationWizard', () => {
     expect(screen.getByRole('dialog', { name: /Editar contenido/i })).toHaveClass('max-w-[min(96vw,90rem)]');
     const questionList = screen.getByRole('list', { name: 'Preguntas editables' });
     expect(questionList).not.toHaveClass('max-h-[52vh]', 'overflow-y-auto');
+    fireEvent.click(screen.getByRole('button', { name: 'Necesito ayuda' }));
     expect(screen.getByRole('complementary', { name: 'Asistencia opcional de Xali' }).parentElement).toHaveClass('order-3');
     expect(screen.getByTestId('evaluation-wizard-content')).toHaveClass('min-h-0', 'flex-1', 'overflow-y-auto');
   });
@@ -385,12 +483,12 @@ describe('GenerationWizard', () => {
     const first = renderWizard();
     expect(await screen.findByText('Encontramos una evaluación sin terminar.')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Continuar' }));
-    expect(screen.getByText('Configura las preguntas')).toBeInTheDocument();
+    expect(screen.getByText('Prepara tu evaluación')).toBeInTheDocument();
     first.unmount();
 
     renderWizard();
     await user.click(await screen.findByRole('button', { name: 'Empezar de nuevo' }));
-    expect(screen.getByText('Datos básicos de la evaluación')).toBeInTheDocument();
+    expect(screen.getByText('Prepara tu evaluación')).toBeInTheDocument();
   });
   it('lets the teacher edit the AI rubric before confirming the evaluation', async () => {
     mocks.generate.mockResolvedValueOnce(rubricEvaluation);
@@ -398,14 +496,12 @@ describe('GenerationWizard', () => {
     const user = userEvent.setup();
     renderWizard();
 
-    await user.type(screen.getByLabelText(/Nombre de la evaluación/i), 'Evaluación con rúbrica editable');
-    await user.click(screen.getByRole('button', { name: 'Siguiente' }));
+    await user.type(screen.getByLabelText(/Qué quieres evaluar/i), 'Evaluación con rúbrica editable');
+    await user.click(screen.getByText('Personalizar', { exact: true }));
     await user.click(screen.getByRole('checkbox', { name: /Evaluar con rúbrica/i }));
-    await user.click(screen.getByRole('button', { name: 'Siguiente' }));
-    await user.click(screen.getByRole('button', { name: 'Siguiente' }));
-    await user.click(screen.getByRole('button', { name: 'Siguiente' }));
-    await user.click(screen.getByRole('button', { name: 'Generar borrador' }));
+    await user.click(screen.getByRole('button', { name: 'Generar evaluación' }));
 
+    await user.click(await screen.findByText('Cómo se calificará'));
     const criterionName = await screen.findByLabelText('Nombre del criterio 1');
     await user.clear(criterionName);
     await user.type(criterionName, 'Argumentación matemática');
@@ -415,7 +511,7 @@ describe('GenerationWizard', () => {
     const firstWeight = screen.getByLabelText('Peso del criterio 1');
     await user.clear(firstWeight);
     await user.type(firstWeight, '50');
-    expect(screen.getByRole('button', { name: 'Siguiente' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Guardar borrador' })).toBeDisabled();
     expect(screen.getAllByText(/deben sumar 100 %/i).length).toBeGreaterThan(0);
     const secondWeight = screen.getByLabelText('Peso del criterio 2');
     await user.clear(secondWeight);
@@ -425,8 +521,7 @@ describe('GenerationWizard', () => {
     await user.type(levelDescription, 'Justifica cada paso con precisión.');
 
     expect(screen.getByText('Peso total: 100 %')).toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: 'Siguiente' }));
-    await user.click(screen.getByRole('button', { name: 'Crear evaluación' }));
+    await user.click(screen.getByRole('button', { name: 'Guardar borrador' }));
 
     await waitFor(() => expect(mocks.update).toHaveBeenCalledTimes(1));
     expect(mocks.update.mock.calls[0][1].criterios[0]).toMatchObject({

@@ -96,6 +96,7 @@ ALL_SPECS = {
     "093-recursos-vista-docente",
     "094-revision-docente-simple",
     "095-flujo-docente-ligero",
+    "096-evaluacion-dos-pantallas",
 }
 OWNED_SPECS = {
     name

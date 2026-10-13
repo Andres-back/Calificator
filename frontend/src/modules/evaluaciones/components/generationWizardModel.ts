@@ -62,6 +62,8 @@ export interface WizardState {
   step: number;
   materiaId: string;
   nombre: string;
+  nombreAutomatico?: boolean;
+  generatedUpdatedAt?: string;
   descripcion: string;
   modalidad: EvaluacionModalidad;
   notaMaxima: number;
@@ -93,8 +95,9 @@ export function createEmptyWizardState(materiaId = ''): WizardState {
     step: 1,
     materiaId,
     nombre: '',
+    nombreAutomatico: true,
     descripcion: '',
-    modalidad: 'online',
+    modalidad: 'fisica',
     notaMaxima: 5,
     fechaLimiteEntrega: '',
     dbaIds: [],
@@ -103,8 +106,8 @@ export function createEmptyWizardState(materiaId = ''): WizardState {
     useRubric: false,
     rubricCriteria: [],
     counts: {
-      opcion_multiple: 2,
-      abierta: 1,
+      opcion_multiple: 3,
+      abierta: 2,
       verdadero_falso: 0,
       completar: 0,
     },
@@ -131,10 +134,46 @@ export function selectedQuestionTypes(counts: QuestionCounts): QuestionType[] {
   return QUESTION_TYPES.filter((type) => counts[type] > 0);
 }
 
+export function updateWizardTopic(state: WizardState, topic: string): WizardState {
+  return {
+    ...state,
+    descripcion: topic,
+    nombre: state.nombreAutomatico === true ? (topic.trim() ? `Evaluación de ${topic.trim()}`.slice(0, 200) : '') : state.nombre,
+  };
+}
+
+/** Conserva los tipos activos y reparte el total con restos deterministas. */
+export function resizeQuestionCounts(counts: QuestionCounts, total: number): QuestionCounts {
+  if (!Number.isInteger(total) || total < MIN_QUESTIONS || total > MAX_QUESTIONS) return counts;
+  const active = QUESTION_TYPES.filter(type => counts[type] > 0);
+  const originalTotal = totalQuestionCount(counts);
+  if (!active.length || !Number.isFinite(originalTotal)) return counts;
+  const next: QuestionCounts = { opcion_multiple: 0, abierta: 0, verdadero_falso: 0, completar: 0 };
+  const shares = active.map(type => ({ type, exact: counts[type] / originalTotal * total }));
+  shares.forEach(({ type, exact }) => { next[type] = Math.floor(exact); });
+  const remaining = total - totalQuestionCount(next);
+  shares.sort((a, b) => (b.exact % 1) - (a.exact % 1));
+  shares.slice(0, remaining).forEach(({ type }) => { next[type] += 1; });
+  return next;
+}
+
+/** No cambia preguntas/configuración: solo convierte la navegación antigua. */
+export function normalizeWizardPhase(state: WizardState): WizardState {
+  return { ...state, step: state.step >= 5 && state.generatedEvaluationId && state.questions.length ? 5 : 1 };
+}
+
+export function validatePreparation(state: WizardState): string | null {
+  if (state.nombreAutomatico && !state.descripcion.trim()) return 'Escribe qué quieres evaluar.';
+  return [1, 2, 3, 4].map(step => validateStep(state, step)).find(Boolean) ?? null;
+}
+
 export function validateStep(state: WizardState, step = state.step): string | null {
-  if (step === 1) {
+  if (step === 1 || step === 5) {
     if (!state.materiaId) return 'Selecciona una materia para continuar.';
     if (state.nombre.trim().length < 2) return 'Escribe un nombre de al menos 2 caracteres.';
+    if (state.nombre.trim().length > 220) return 'Acorta el nombre de la evaluación a 220 caracteres.';
+    if (!Number.isFinite(state.notaMaxima) || state.notaMaxima <= 0) return 'La nota máxima debe ser mayor que cero.';
+    if (state.fechaLimiteEntrega && !Number.isFinite(new Date(state.fechaLimiteEntrega).getTime())) return 'Revisa la fecha límite de entrega.';
   }
   if (step === 2 && state.useDba && state.dbaIds.length + state.dbaPersonalizadoIds.length === 0) {
     return 'Elige al menos un criterio de aprendizaje o desactiva esa opción para continuar sin criterios.';
@@ -485,6 +524,7 @@ export function evaluationToWizardState(evaluation: Evaluacion): WizardState {
     ...createEmptyWizardState(evaluation.materia_id),
     step: 5,
     nombre: evaluation.nombre,
+    nombreAutomatico: false,
     descripcion: evaluation.descripcion ?? '',
     modalidad: evaluation.modalidad ?? 'online',
     notaMaxima: Number(evaluation.nota_maxima),
@@ -553,7 +593,12 @@ export function questionsToUpdatePayload(questions: EditableQuestion[]) {
   };
 }
 
-export function persistWizardDraft(storage: Storage, userId: string, state: WizardState, now = Date.now()) {
+export function getWizardStorage(): Storage | null {
+  try { return window.localStorage; } catch { return null; }
+}
+
+export function persistWizardDraft(storage: Storage | null, userId: string, state: WizardState, now = Date.now()): boolean {
+  if (!storage) return false;
   const safeState: WizardState = {
     ...state,
     referenceFile: state.referenceFile
@@ -566,38 +611,70 @@ export function persistWizardDraft(storage: Storage, userId: string, state: Wiza
     savedAt: now,
     state: safeState,
   };
-  storage.setItem(wizardStorageKey(userId, state.materiaId), JSON.stringify(draft));
-  if (state.materiaId) removeMatchingLegacyDraft(storage, userId, state.materiaId);
+  try {
+    storage.setItem(wizardStorageKey(userId, state.materiaId), JSON.stringify(draft));
+    if (state.materiaId) removeMatchingLegacyDraft(storage, userId, state.materiaId);
+    return true;
+  } catch { return false; }
+}
+
+/** Comprueba estructura, no completitud: un borrador editable puede tener campos vacíos. */
+function hasDraftShape(state: WizardState): boolean {
+  const strings = (value: unknown): value is string[] => Array.isArray(value) && value.every(item => typeof item === 'string');
+  return ['materiaId', 'nombre', 'descripcion', 'fechaLimiteEntrega', 'referenceText', 'instruccionesAdicionales'].every(key => typeof state[key as keyof WizardState] === 'string')
+    && ['online', 'fisica', 'mixta'].includes(state.modalidad)
+    && Number.isFinite(state.step) && Number.isFinite(state.notaMaxima)
+    && typeof state.useDba === 'boolean' && typeof state.useRubric === 'boolean'
+    && (state.nombreAutomatico === undefined || typeof state.nombreAutomatico === 'boolean')
+    && (state.generatedUpdatedAt === undefined || typeof state.generatedUpdatedAt === 'string')
+    && strings(state.dbaIds) && strings(state.dbaPersonalizadoIds) && strings(state.rubricCriteria)
+    && (!state.generationWarnings || strings(state.generationWarnings))
+    && (state.generatedEvaluationId === null || typeof state.generatedEvaluationId === 'string')
+    && (state.referenceFile === null || Boolean(state.referenceFile
+      && typeof state.referenceFile.name === 'string' && typeof state.referenceFile.type === 'string'
+      && Number.isFinite(state.referenceFile.size) && Number.isFinite(state.referenceFile.lastModified)))
+    && Boolean(state.counts) && QUESTION_TYPES.every(type => Number.isFinite(state.counts[type]))
+    && Array.isArray(state.questions) && state.questions.every(question => question
+      && typeof question.clientId === 'string' && QUESTION_TYPES.includes(question.tipo)
+      && typeof question.enunciado === 'string' && typeof question.respuestaEsperada === 'string'
+      && strings(question.opciones) && strings(question.dbaIds) && Number.isFinite(question.puntaje)
+      && ['online', 'fisica', 'archivo'].includes(question.modalidadRespuesta))
+    && Array.isArray(state.generatedCriteria) && state.generatedCriteria.every(criterion => criterion
+      && typeof criterion.nombre === 'string' && typeof criterion.descripcion === 'string'
+      && Number.isFinite(criterion.peso_porcentaje) && strings(criterion.dba_ids)
+      && criterion.niveles && typeof criterion.niveles === 'object' && Object.values(criterion.niveles).every(value => typeof value === 'string'));
 }
 
 function readWizardDraft(storage: Storage, userId: string, key: string, now: number): WizardState | null {
-  const raw = storage.getItem(key);
-  if (!raw) return null;
   try {
+    const raw = storage.getItem(key);
+    if (!raw) return null;
     const draft = JSON.parse(raw) as StoredWizardDraft;
     if (
       draft.version !== WIZARD_VERSION
       || draft.userId !== userId
-      || !draft.state
+      || !draft.state || typeof draft.state !== 'object'
+      || !hasDraftShape(draft.state)
       || !Number.isFinite(draft.savedAt)
       || now - draft.savedAt > WIZARD_TTL_MS
     ) {
       storage.removeItem(key);
       return null;
     }
-    return {
+    return normalizeWizardPhase({
       ...draft.state,
       referenceFile: draft.state.referenceFile
         ? { ...draft.state.referenceFile, needsReselection: true }
         : null,
-    };
+    });
   } catch {
-    storage.removeItem(key);
+    try { storage.removeItem(key); } catch { /* El almacenamiento local es prescindible. */ }
     return null;
   }
 }
 
-export function loadWizardDraft(storage: Storage, userId: string, now = Date.now(), materiaId?: string): WizardState | null {
+export function loadWizardDraft(storage: Storage | null, userId: string, now = Date.now(), materiaId?: string): WizardState | null {
+  if (!storage) return null;
   if (materiaId) {
     const scoped = readWizardDraft(storage, userId, wizardStorageKey(userId, materiaId), now);
     if (scoped?.materiaId === materiaId) return scoped;
@@ -616,7 +693,8 @@ function removeMatchingLegacyDraft(storage: Storage, userId: string, materiaId: 
   }
 }
 
-export function discardWizardDraft(storage: Storage, userId: string, materiaId?: string) {
-  storage.removeItem(wizardStorageKey(userId, materiaId));
+export function discardWizardDraft(storage: Storage | null, userId: string, materiaId?: string) {
+  if (!storage) return;
+  try { storage.removeItem(wizardStorageKey(userId, materiaId)); } catch { /* No bloquear el cierre del editor. */ }
   if (materiaId) removeMatchingLegacyDraft(storage, userId, materiaId);
 }
