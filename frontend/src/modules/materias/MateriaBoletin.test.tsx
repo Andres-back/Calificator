@@ -222,7 +222,8 @@ describe('libro docente contextual', () => {
     const { client } = renderPage();
     await user.click(await screen.findByRole('button', { name: 'Ver boletín de Alumno 0' }));
     act(() => client.setQueryData(['calificaciones', 'eval-1', 'solo-lectura', 'materia-1', 'teacher'], [{ id: 'g1', estudiante_id: 'student-0', nota_confirmada: 4.67, estado: 'publicada', updated_at: '2026-01-02' }]));
-    expect(await within(screen.getByRole('dialog')).findByText('4.67 / 5.0')).toBeVisible();
+    // La nota puede estar en el DOM antes de terminar la animación de apertura.
+    await waitFor(() => expect(within(screen.getByRole('dialog')).getByText('4.67 / 5.0')).toBeVisible());
   });
 
   it.each(['materia', 'usuario', 'permiso', 'matricula'])('discards a private preview after changing %s', async (kind) => {
