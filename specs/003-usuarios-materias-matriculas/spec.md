@@ -59,3 +59,7 @@ Como equipo, necesito actualizar estos artefactos cuando cambie el comportamient
 ## Inventario técnico
 
 - [Ver superficies, permisos y cobertura de este dominio](./inventory.md).
+
+## Evolución 095: contexto docente y sesión
+
+[095-flujo-docente-ligero](../095-flujo-docente-ligero/spec.md) mantiene matrícula y perfil actuales; compacta la cabecera docente mostrando grado. El marcador local de continuación guarda únicamente IDs/fecha por docente y caduca a los siete días; cerrar/perder sesión o cambiar de cuenta lo elimina sin cambiar autenticación ni caché académica. No guarda archivos, respuestas, notas o contraseñas ni concede permisos. El rol estudiante conserva acceso y sus comprobaciones.

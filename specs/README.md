@@ -300,6 +300,10 @@ actualizar la especificación propietaria, su plan y sus tareas; no debe crear d
 
 - [092-boletin-mosaico](092-boletin-mosaico/spec.md), [issue #194](https://github.com/Andres-back/Calificator/issues/194): fichas compactas y boletín individual por materia con filtros, explicación y exportación existentes. Propietario 008; sin nuevas rutas, tablas, notas o cambios de vista estudiante 091. Alcance/plan aprobados y [lista UX](092-boletin-mosaico/checklists/ux.md) revisada con autorización (8/8). Implementación, pruebas locales y Converge completos: [evidencia](092-boletin-mosaico/quickstart.md). Sin fusionar/desplegar; CI remoto y autorización separada obligatorios.
 
+## Evolución 095: flujo docente ligero en fase demo
+
+- [095-flujo-docente-ligero](095-flujo-docente-ligero/spec.md), [issue #200](https://github.com/Andres-back/Calificator/issues/200): cabeceras y acciones compactas, boletín progresivo, claridad de nota, continuación por cuenta, progreso y elección segura del siguiente alumno, vocabulario uniforme. Alcance/[plan](095-flujo-docente-ligero/plan.md) aprobados; listas base 16/16 y UX 10/10 revisadas con autorización. Implementación y pruebas focalizadas completas: [evidencia](095-flujo-docente-ligero/quickstart.md). Conserva propietarios 003/005/008, API y registros. Sin fusionar/desplegar; CI y autorización independiente obligatorios.
+
 ## Evolución 094: revisión docente sencilla
 
 - [094-revision-docente-simple](094-revision-docente-simple/spec.md), [issue #198](https://github.com/Andres-back/Calificator/issues/198): mensajes humanos, avisos activos frente a historial, evidencia/puntajes accesibles y distribución celular/computador. Evoluciona 087/088 bajo el propietario 008; sin cambiar APIs, cálculo, modelos ni registros. Alcance y [plan](094-revision-docente-simple/plan.md) aprobados; listas base 16/16 y UX 8/8 revisadas con autorización. Implementación y regresiones locales completas: [evidencia](094-revision-docente-simple/quickstart.md). CI remoto y aprobación separada obligatorios antes de fusionar/desplegar.

@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router-dom';
@@ -142,9 +142,25 @@ beforeEach(() => {
 });
 
 describe('MateriaEvaluaciones teacher creation flow', () => {
+  it('095 limita acciones principales y conserva ajustes con elección explícita', async () => {
+    const user = userEvent.setup();
+    mocks.list.mockResolvedValue([{ ...evaluation, estado: 'publicada', modalidad: 'fisica' }]);
+    renderPage();
+    const primary = await screen.findByRole('group', { name: 'Acciones principales de Evaluación de ciencias' });
+    expect(within(primary).getAllByRole('button')).toHaveLength(1);
+    expect(within(primary).getAllByRole('link')).toHaveLength(2);
+    expect(within(primary).getByRole('link', { name: 'Ver notas' })).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Editar preguntas' })).not.toBeVisible();
+    await user.click(screen.getByText('Más opciones', { exact: true }));
+    await user.click(screen.getByRole('button', { name: 'Criterios y rúbrica' }));
+    expect(screen.getByRole('dialog', { name: 'Criterios y rúbrica' })).toHaveTextContent(evaluation.nombre);
+    expect(mocks.update).not.toHaveBeenCalled();
+    expect(mocks.remove).not.toHaveBeenCalled();
+  });
   it('opens criteria directly from the saved evaluation, never for a read-only teacher', async () => {
     mocks.list.mockResolvedValue([evaluation]);
     const view = renderPage();
+    await userEvent.setup().click(await screen.findByText('Más opciones', { exact: true }));
     await userEvent.setup().click(await screen.findByRole('button', { name: 'Criterios y rúbrica' }));
     expect(screen.getByRole('dialog', { name: 'Criterios y rúbrica' })).toHaveTextContent(evaluation.nombre);
     view.unmount();
@@ -176,7 +192,7 @@ describe('MateriaEvaluaciones teacher creation flow', () => {
     expect(capture).toHaveLength(2);
     expect(capture[0]).toHaveAttribute('href', '/app/calificaciones?evaluacion=evaluation-1&materia=materia-1&modo=carga');
     expect(capture[1]).toHaveAttribute('href', '/app/calificaciones?evaluacion=mixed&materia=materia-1&modo=carga');
-    expect(screen.getAllByRole('link', { name: 'Notas y entregas' })).toHaveLength(3);
+    expect(screen.getAllByRole('link', { name: 'Ver notas' })).toHaveLength(3);
   });
 
   it('does not grant capture to a read-only teacher', async () => {
@@ -189,9 +205,9 @@ describe('MateriaEvaluaciones teacher creation flow', () => {
   it('abre Calificar con evaluación y materia y no lo ofrece en borradores', async () => {
     mocks.list.mockResolvedValue([{ ...evaluation, estado: 'publicada' }, { ...evaluation, id: 'draft-1', nombre: 'Borrador' }]);
     renderPage();
-    const action = await screen.findByRole('link', { name: 'Notas y entregas' });
+    const action = await screen.findByRole('link', { name: 'Ver notas' });
     expect(action).toHaveAttribute('href', '/app/calificaciones?evaluacion=evaluation-1&materia=materia-1');
-    expect(screen.getAllByRole('link', { name: 'Notas y entregas' })).toHaveLength(1);
+    expect(screen.getAllByRole('link', { name: 'Ver notas' })).toHaveLength(1);
   });
   it('shows only learner actions with the real shared read permissions', async () => {
     mocks.context.canManageMateria = false;
@@ -260,7 +276,7 @@ describe('MateriaEvaluaciones teacher creation flow', () => {
       screen.getByRole('button', { name: 'Publicar' }),
     ).toBeInTheDocument();
     expect(
-      screen.queryByRole('link', { name: /Calificar|Revisar notas|Notas y entregas/i }),
+      screen.queryByRole('link', { name: /Calificar|Ver notas/i }),
     ).not.toBeInTheDocument();
   });
 

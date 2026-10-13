@@ -384,7 +384,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "f647015a3b7d84f882563e94d074a17291a8c2d57084c4284651baab87ad6469",
+  "source_digest": "34b5917b98ae5ca5f29a85f0319d83d44a8b37d4a83d110dfa25c3e06bee504b",
   "surfaces": [
     {
       "actors": [
@@ -2910,6 +2910,12 @@
           "reference": "GET:/auth/me",
           "status": "domain",
           "test_path": "frontend/src/lib/authorization.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/auth/me",
+          "status": "domain",
+          "test_path": "frontend/src/stores/auth.test.ts"
         }
       ]
     },
@@ -9733,6 +9739,12 @@
           "reference": "POST:/auth/initial-password",
           "status": "direct",
           "test_path": "frontend/src/modules/auth/InitialPasswordPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/auth/initial-password",
+          "status": "domain",
+          "test_path": "frontend/src/stores/auth.test.ts"
         }
       ]
     },
@@ -9887,6 +9899,12 @@
           "reference": "POST:/auth/login",
           "status": "domain",
           "test_path": "frontend/src/lib/authorization.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/auth/login",
+          "status": "domain",
+          "test_path": "frontend/src/stores/auth.test.ts"
         }
       ]
     },
@@ -9987,6 +10005,12 @@
           "reference": "POST:/auth/logout",
           "status": "domain",
           "test_path": "frontend/src/lib/authorization.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/auth/logout",
+          "status": "domain",
+          "test_path": "frontend/src/stores/auth.test.ts"
         }
       ]
     },
@@ -10081,6 +10105,12 @@
           "reference": "POST:/auth/password-recovery/request",
           "status": "domain",
           "test_path": "frontend/src/lib/authorization.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/auth/password-recovery/request",
+          "status": "domain",
+          "test_path": "frontend/src/stores/auth.test.ts"
         }
       ]
     },
@@ -10163,6 +10193,12 @@
           "reference": "POST:/auth/password-recovery/reset",
           "status": "domain",
           "test_path": "frontend/src/lib/authorization.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/auth/password-recovery/reset",
+          "status": "domain",
+          "test_path": "frontend/src/stores/auth.test.ts"
         }
       ]
     },
@@ -10251,6 +10287,12 @@
           "reference": "POST:/auth/password-recovery/validate",
           "status": "domain",
           "test_path": "frontend/src/lib/authorization.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/auth/password-recovery/validate",
+          "status": "domain",
+          "test_path": "frontend/src/stores/auth.test.ts"
         }
       ]
     },
@@ -10405,6 +10447,12 @@
           "reference": "POST:/auth/refresh",
           "status": "domain",
           "test_path": "frontend/src/lib/authorization.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/auth/refresh",
+          "status": "domain",
+          "test_path": "frontend/src/stores/auth.test.ts"
         }
       ]
     },
@@ -10499,6 +10547,12 @@
           "reference": "POST:/auth/register",
           "status": "domain",
           "test_path": "frontend/src/lib/authorization.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/auth/register",
+          "status": "domain",
+          "test_path": "frontend/src/stores/auth.test.ts"
         }
       ]
     },
@@ -15837,6 +15891,12 @@
           "level": "unit",
           "reference": "/",
           "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/teacherReviewResume.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
           "test_path": "frontend/src/modules/calificaciones/timeline.test.ts"
         },
         {
@@ -16143,6 +16203,12 @@
           "level": "unit",
           "reference": "/",
           "status": "direct",
+          "test_path": "frontend/src/stores/auth.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
           "test_path": "frontend/src/test/setup.ts"
         }
       ]
@@ -16407,6 +16473,12 @@
           "reference": "/app",
           "status": "direct",
           "test_path": "frontend/src/modules/calificaciones/StudentResultCard.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/app",
+          "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/teacherReviewResume.test.ts"
         },
         {
           "level": "unit",
@@ -17486,6 +17558,12 @@
           "reference": "/app/calificaciones",
           "status": "domain",
           "test_path": "frontend/src/modules/admin/AdminAIConfigPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/calificaciones",
+          "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/teacherReviewResume.test.ts"
         },
         {
           "level": "unit",
@@ -23964,7 +24042,7 @@
       "kind": "frontend_call",
       "owner_spec": "003-usuarios-materias-matriculas",
       "signature": "GET:/auth/me",
-      "source_line": 25,
+      "source_line": 27,
       "source_path": "frontend/src/stores/auth.ts",
       "states": [],
       "tests": [
@@ -30387,6 +30465,12 @@
           "reference": "POST:/auth/initial-password",
           "status": "direct",
           "test_path": "frontend/src/modules/auth/InitialPasswordPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/auth/initial-password",
+          "status": "domain",
+          "test_path": "frontend/src/stores/auth.test.ts"
         }
       ]
     },
@@ -30406,7 +30490,7 @@
       "kind": "frontend_call",
       "owner_spec": "003-usuarios-materias-matriculas",
       "signature": "POST:/auth/login",
-      "source_line": 56,
+      "source_line": 60,
       "source_path": "frontend/src/stores/auth.ts",
       "states": [],
       "tests": [
@@ -30506,7 +30590,7 @@
       "kind": "frontend_call",
       "owner_spec": "003-usuarios-materias-matriculas",
       "signature": "POST:/auth/logout",
-      "source_line": 76,
+      "source_line": 82,
       "source_path": "frontend/src/stores/auth.ts",
       "states": [],
       "tests": [
@@ -30627,6 +30711,12 @@
           "reference": "POST:/auth/password-recovery/request",
           "status": "domain",
           "test_path": "frontend/src/lib/authorization.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/auth/password-recovery/request",
+          "status": "domain",
+          "test_path": "frontend/src/stores/auth.test.ts"
         }
       ]
     },
@@ -30709,6 +30799,12 @@
           "reference": "POST:/auth/password-recovery/reset",
           "status": "domain",
           "test_path": "frontend/src/lib/authorization.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/auth/password-recovery/reset",
+          "status": "domain",
+          "test_path": "frontend/src/stores/auth.test.ts"
         }
       ]
     },
@@ -30728,7 +30824,7 @@
       "kind": "frontend_call",
       "owner_spec": "003-usuarios-materias-matriculas",
       "signature": "POST:/auth/register",
-      "source_line": 66,
+      "source_line": 71,
       "source_path": "frontend/src/stores/auth.ts",
       "states": [],
       "tests": [
@@ -37135,6 +37231,12 @@
           "level": "unit",
           "reference": "calificaciones",
           "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/teacherReviewResume.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "calificaciones",
+          "status": "direct",
           "test_path": "frontend/src/modules/dashboard/DashboardEstudiante.test.tsx"
         },
         {
@@ -37178,6 +37280,12 @@
           "reference": "calificaciones",
           "status": "direct",
           "test_path": "frontend/src/modules/materias/MateriaVistaGeneral.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "calificaciones",
+          "status": "direct",
+          "test_path": "frontend/src/stores/auth.test.ts"
         }
       ]
     },
@@ -38408,6 +38516,12 @@
           "reference": "mail_global_config",
           "status": "domain",
           "test_path": "frontend/src/lib/authorization.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "mail_global_config",
+          "status": "domain",
+          "test_path": "frontend/src/stores/auth.test.ts"
         }
       ]
     },
@@ -39129,6 +39243,12 @@
           "reference": "password_reset_requests",
           "status": "domain",
           "test_path": "frontend/src/lib/authorization.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "password_reset_requests",
+          "status": "domain",
+          "test_path": "frontend/src/stores/auth.test.ts"
         }
       ]
     },

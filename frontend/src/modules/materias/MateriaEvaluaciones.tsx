@@ -4,6 +4,7 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import {
   ClipboardCheck,
+  ChevronDown,
   Camera,
   Clock,
   Eye,
@@ -347,7 +348,7 @@ export function MateriaEvaluaciones() {
                   </div>
                 </div>
 
-                <div className="mt-4 flex flex-wrap gap-2">
+                <div role="group" aria-label={`Acciones principales de ${evaluation.nombre}`} className="mt-3 flex flex-wrap gap-2 [&_button]:min-h-11">
                   {canViewEvaluation && (
                     <Button size="sm" variant="outline" onClick={() => setPreviewEval(evaluation)}>
                       <Eye className="h-4 w-4" aria-hidden="true" /> Visualizar
@@ -355,20 +356,6 @@ export function MateriaEvaluaciones() {
                   )}
                   {canManageEvaluations ? (
                     <>
-                      {canUpdateEvaluation && (
-                        <>
-                          <Button size="sm" variant="outline" onClick={() => openEdit(evaluation)}>
-                            <Pencil className="h-4 w-4" /> Editar datos
-                          </Button>
-                          <Button size="sm" variant="secondary" onClick={() => { setContentEditingEval(evaluation); setWizardOpen(true); }}>
-                            <ClipboardCheck className="h-4 w-4" /> Editar preguntas
-                          </Button>
-                          <Button size="sm" variant="outline" onClick={() => setCriteriaEval(evaluation)}>
-                            <ClipboardCheck className="h-4 w-4" /> Criterios y rúbrica
-                          </Button>
-                        </>
-                      )}
-
                       {canPublishEvaluation && isDraft && (
                         <Button
                           size="sm"
@@ -379,36 +366,9 @@ export function MateriaEvaluaciones() {
                         </Button>
                       )}
 
-                      {canPublishEvaluation && !isDraft && (
-                        <>
-                          {receptionEnabled ? (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => pauseReception.mutate(evaluation.id)}
-                              loading={pauseReception.isPending}
-                            >
-                              <Eye className="h-4 w-4" /> Cerrar entregas
-                            </Button>
-                          ) : (
-                            <Button
-                              size="sm"
-                              variant="secondary"
-                              onClick={() => activateReception.mutate(evaluation.id)}
-                              loading={activateReception.isPending}
-                            >
-                              <PlayCircle className="h-4 w-4" /> Abrir entregas
-                            </Button>
-                          )}
-
-                        </>
-                      )}
-
                       {(canReviewGrades || canGradeEvaluation) && !isDraft && (
-                        <Link to={reviewRoute}>
-                          <Button size="sm" variant={modality === 'online' ? 'secondary' : 'outline'}>
-                            <Eye className="h-4 w-4" /> Notas y entregas
-                          </Button>
+                        <Link to={reviewRoute} className="focus-ring inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-border bg-surface px-3 text-sm font-semibold hover:bg-surface-2">
+                          <Eye className="h-4 w-4" aria-hidden="true" /> Ver notas
                         </Link>
                       )}
 
@@ -416,17 +376,6 @@ export function MateriaEvaluaciones() {
                         <Link to={`${reviewRoute}&modo=carga`} className="focus-ring inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700">
                           <Camera className="h-4 w-4" aria-hidden="true" /> Calificar por foto
                         </Link>
-                      )}
-
-                      {canDeleteEvaluation && (
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className="text-rose-700 dark:text-rose-300"
-                          onClick={() => setDeleteTarget(evaluation)}
-                        >
-                          <Trash2 className="h-4 w-4" /> Eliminar
-                        </Button>
                       )}
 
                     </>
@@ -443,6 +392,20 @@ export function MateriaEvaluaciones() {
                     </span>
                   )}
                 </div>
+                {canManageEvaluations && (canUpdateEvaluation || canDeleteEvaluation || (canPublishEvaluation && !isDraft)) && <details className="group mt-2 rounded-lg border border-border px-3">
+                  <summary className="focus-ring flex min-h-11 cursor-pointer items-center justify-between gap-2 rounded-lg text-sm font-semibold"><span>Más opciones</span><ChevronDown className="h-4 w-4 shrink-0 group-open:rotate-180" aria-hidden="true" /></summary>
+                  <div className="flex flex-wrap gap-2 border-t border-border py-3 [&_button]:min-h-11">
+                    {canUpdateEvaluation && <>
+                      <Button size="sm" variant="outline" onClick={() => openEdit(evaluation)}><Pencil className="h-4 w-4" /> Editar datos</Button>
+                      <Button size="sm" variant="outline" onClick={() => { setContentEditingEval(evaluation); setWizardOpen(true); }}><ClipboardCheck className="h-4 w-4" /> Editar preguntas</Button>
+                      <Button size="sm" variant="outline" onClick={() => setCriteriaEval(evaluation)}><ClipboardCheck className="h-4 w-4" /> Criterios y rúbrica</Button>
+                    </>}
+                    {canPublishEvaluation && !isDraft && (receptionEnabled
+                      ? <Button size="sm" variant="outline" onClick={() => pauseReception.mutate(evaluation.id)} loading={pauseReception.isPending}><Eye className="h-4 w-4" /> Cerrar entregas</Button>
+                      : <Button size="sm" variant="outline" onClick={() => activateReception.mutate(evaluation.id)} loading={activateReception.isPending}><PlayCircle className="h-4 w-4" /> Abrir entregas</Button>)}
+                    {canDeleteEvaluation && <Button size="sm" variant="ghost" className="text-rose-700 dark:text-rose-300" onClick={() => setDeleteTarget(evaluation)}><Trash2 className="h-4 w-4" /> Eliminar</Button>}
+                  </div>
+                </details>}
               </Card>
             );
           })}

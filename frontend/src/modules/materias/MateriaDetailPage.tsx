@@ -106,9 +106,9 @@ export function MateriaDetailPage() {
   const selectedTabHref = tabHref(visibleTabs.find((tab) => isActiveTab(tab.to))?.to ?? '');
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {/* Back + header */}
-      <Link to="/app/materias" className="inline-flex items-center gap-1.5 text-sm font-medium text-muted hover:text-fg">
+      <Link to="/app/materias" className="focus-ring inline-flex min-h-11 items-center gap-1.5 rounded-lg text-sm font-medium text-muted hover:text-fg">
         <ArrowLeft className="h-4 w-4" /> Volver a {canManageMateria ? 'Materias' : 'Mis materias'}
       </Link>
 
@@ -118,17 +118,16 @@ export function MateriaDetailPage() {
         className={cn(
           'relative flex items-start gap-3 overflow-hidden',
           canManageMateria
-            ? 'teacher-page-header rounded-2xl border border-indigo-100 bg-gradient-to-br from-white via-white to-indigo-50/80 p-3 shadow-card dark:border-indigo-500/20 dark:from-surface dark:via-surface dark:to-indigo-950/40 sm:p-5'
+            ? 'teacher-page-header rounded-xl border border-indigo-100 bg-surface p-2.5 dark:border-indigo-500/20 sm:p-4'
             : 'border-b border-border pb-4',
         )}
       >
-        {canManageMateria && <div className="pointer-events-none absolute -right-16 -top-24 h-52 w-52 rounded-full bg-sky-300/20 blur-3xl" aria-hidden="true" />}
-        {canManageMateria && <div className="pointer-events-none absolute -bottom-20 left-1/3 h-36 w-36 rounded-full bg-violet-300/10 blur-3xl" aria-hidden="true" />}
-        <div className="relative z-10 grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-white/90 shadow-sm ring-1 ring-border dark:bg-white/10 sm:h-16 sm:w-16">
-          <EducationalIcon name={getSubjectEducationalIcon(materia.area)} className="h-11 w-11 sm:h-14 sm:w-14" />
+        <div className="relative z-10 grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-surface-2 sm:h-12 sm:w-12">
+          <EducationalIcon name={getSubjectEducationalIcon(materia.area)} className="h-9 w-9 sm:h-11 sm:w-11" />
         </div>
         <div className="relative z-10 min-w-0 flex-1">
           <h1 className="break-words font-display text-xl font-extrabold tracking-tight sm:text-2xl">{materia.nombre}</h1>
+          {canManageMateria && materia.grado && <p className="text-sm text-muted">Grado {materia.grado}</p>}
           {materia.estado !== 'activa' && <Badge tone="warning" className="mt-1 capitalize">{materia.estado}</Badge>}
           <details className="mt-1">
           <summary className="focus-ring min-h-11 cursor-pointer content-center rounded-lg text-sm font-semibold text-muted">Información de la materia</summary>

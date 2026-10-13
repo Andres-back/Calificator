@@ -48,7 +48,8 @@ import { GradeBreakdownHistory } from './components/GradeBreakdownHistory';
 import { buildReviewTriage, hasVerifierReviewSignals } from './review-triage/buildReviewTriage';
 import { ReviewTriagePanel } from './review-triage/ReviewTriagePanel';
 import { formatAIModelSource } from './aiPipelineLabels';
-import { excludeSubmittedStudents } from './submissionCandidates';
+import { excludeSubmittedStudents, summarizeCaptureRegistration } from './submissionCandidates';
+import { clearTeacherReviewResume, readTeacherReviewResume, saveTeacherReviewResume } from './teacherReviewResume';
 import { effectiveGradeScore, formatGradeScore, gradePresentation, isGradeProcessing } from './gradePresentation';
 import { formatTimelineScore } from './timeline';
 import type { BatchResult, Calificacion, CalificacionDetalle, GradeBreakdownData, GradeComponentChange, ReviewFilter } from '@/types/api';
@@ -1743,6 +1744,8 @@ function GradingCenter() {
   }, [mode, searchParams]);
   const permissions = useAuth((state) => state.user?.permissions ?? []);
   const isTeacher = useAuth((state) => state.user?.rol === 'profesor');
+  const teacherId = useAuth((state) => state.user?.id);
+  const lastResumeContext = useRef('');
   const canGrade = permissions.includes('grading.grade');
   const canReviewClaims = permissions.includes('submissions.review');
   const canPublish = permissions.includes('grading.publish');
@@ -1904,6 +1907,25 @@ function GradingCenter() {
       return grade && isGradeProcessing(grade) ? 5_000 : false;
     },
   });
+
+  useEffect(() => {
+    if (!isTeacher || !teacherId || !permissions.includes('grading.read') || mode === 'carga') return;
+    if (directEvaluation.error && [403, 404].includes(toApiError(directEvaluation.error).status)) {
+      if (readTeacherReviewResume(teacherId)?.evaluacionId === evalId) clearTeacherReviewResume(teacherId);
+      return;
+    }
+    const evaluation = directEvaluation.data;
+    const detail = detalleQuery.data;
+    if (!evaluation || evaluation.id !== evalId || evaluation.materia_id !== materiaId) return;
+    if (selectedId && (!detalleQuery.isSuccess || detail?.id !== selectedId || detail.evaluacion_id !== evalId || detail.materia_id !== materiaId)) return;
+    if (!selectedId && selectedStudentId && !selectedStudentReference.isSuccess) return;
+    const studentId = selectedId ? detail?.estudiante_id : selectedRow?.estudiante_id;
+    const fingerprint = [teacherId, materiaId, evalId, selectedId ?? '', studentId ?? ''].join(':');
+    if (lastResumeContext.current === fingerprint) return;
+    lastResumeContext.current = fingerprint;
+    saveTeacherReviewResume(teacherId, { materiaId, evaluacionId: evalId,
+      ...(studentId ? { estudianteId: studentId } : {}), ...(selectedId ? { calificacionId: selectedId } : {}) });
+  }, [isTeacher, teacherId, permissions, mode, directEvaluation.data, directEvaluation.error, evalId, materiaId, selectedId, selectedStudentId, detalleQuery.data, detalleQuery.isSuccess, selectedStudentReference.isSuccess, selectedRow]);
 
   const invalidate = useCallback(() => {
     queryClient.invalidateQueries({ queryKey: ['calificaciones', evalId] });
@@ -2114,6 +2136,11 @@ function GradingCenter() {
       {mode === 'carga' && canGrade && selectedEval && uploadGradesQuery.data !== undefined && <GradingUploadPanel
         key={`${evalId}-${selectedStudentId ?? ''}-${discardVersion}`}
         evaluationId={evalId} students={uploadStudents} studentId={selectedStudentId ?? ''}
+        progress={summarizeCaptureRegistration(estudiantes, [
+          ...(uploadGradesQuery.data.filter(grade => grade.evaluacion_id === evalId).map(grade => grade.estudiante_id)),
+          ...(acceptedUploads[evalId] ?? []),
+        ])}
+        suggestNextStudent={Boolean(acceptedUploadNames[evalId])}
         evaluationName={selectedEval.nombre} materiaName={selectedMateria?.nombre ?? 'Materia seleccionada'}
         eligibilityVerified={uploadGradesQuery.isSuccess && !uploadGradesQuery.isFetching}
         onStudentChange={(id) => changeContext({ estudiante: id, calificacion: null, pregunta: null, hoja: null })}
