@@ -39,6 +39,7 @@ Prueba independiente: progreso único por grupo, elección explícita sin hereda
 - [x] T014 Ejecutar unidades/typecheck/lint/build y regresiones aplicables; documentar resultados reales en `specs/095-flujo-docente-ligero/quickstart.md` sin datos reales ni IA (FR-011, FR-012).
 - [x] T015 Actualizar índice/propietarios/baseline/inventario pertinentes, ejecutar gobernanza y Converge sin brechas en `specs/095-flujo-docente-ligero/` (FR-001, FR-002, FR-003, FR-004, FR-005, FR-006, FR-007, FR-008, FR-009, FR-010, FR-011, FR-012).
 - [x] T016 Abrir PR enlazado al issue #200 con aprobaciones, consultar CI y registrar entrega en `specs/095-flujo-docente-ligero/quickstart.md`; sin merge/despliegue no autorizados (FR-012).
+- [x] T017 Corregir el retorno de foco sin desplazamiento en `frontend/src/components/ui/Modal.tsx` tras el fallo remoto de ocho casos de boletín en 768/1280; conservar las aserciones existentes y comprobar Chromium/WebKit y regresión unitaria (FR-003, FR-010, FR-011).
 
 ## Dependencias y estrategia
 

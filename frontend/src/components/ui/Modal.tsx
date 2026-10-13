@@ -103,7 +103,8 @@ export function Modal({
     return () => {
       window.cancelAnimationFrame(frame);
       document.removeEventListener('keydown', handleKeyDown);
-      previouslyFocusedRef.current?.focus();
+      // Devolver el foco no debe desplazar la lista que queda detrás del diálogo.
+      previouslyFocusedRef.current?.focus({ preventScroll: true });
       previouslyFocusedRef.current = null;
     };
   }, [closeOnEscape, initialFocusRef, open]);

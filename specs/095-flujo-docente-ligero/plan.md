@@ -40,6 +40,7 @@ Revisión posterior al diseño: sin excepciones ni hooks. No hay incógnitas de 
 - `frontend/src/modules/materias/MateriaCalificar.tsx`: progreso y elección explícita de alumno sugerido; no alterar paquete, subida ni detección de calidad.
 - `frontend/src/modules/calificaciones/teacherReviewResume.ts` y pruebas: módulo pequeño independiente del transporte/autenticación para serializar/validar/descartar IDs permitidos. Integrar limpieza en `frontend/src/stores/auth.ts` con regresiones de sesión; no duplicar la autenticación.
 - Componentes UI actuales y pruebas de cada módulo; E2E existentes `frontend/e2e/mock/grading-review.mock.spec.ts`, `frontend/e2e/p2-responsive.spec.ts` y `frontend/e2e/explainable-grading.spec.ts`.
+- `frontend/src/components/ui/Modal.tsx`: retorno del foco con `preventScroll` para preservar la posición del boletín; corrección descubierta por CI, sin modificar bloqueo de scroll, teclado ni aserciones existentes. Regresión en `Modal.test.tsx`.
 - Especificaciones propietarias 003/004/005/008 y evolución 089/092/094: actualizar referencias pertinentes al terminar; inventario y baseline sin quitar controles.
 
 ## Decisiones y complejidad
