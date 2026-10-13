@@ -12,22 +12,23 @@ describe('centro de calificaciones en celular', () => {
     expect(control.closest('details')).not.toHaveAttribute('open');
     await userEvent.click(control);
     expect(control.closest('details')).toHaveAttribute('open');
-    expect(screen.getByText(/Nota proporcional registrada: 80.00/)).toBeInTheDocument();
+    expect(screen.getByText(/Equivale a 80.00/)).toBeInTheDocument();
+    expect(screen.getByText(/Puntos por respuestas/).closest('p')).toHaveTextContent('8.00 / 10.00');
   });
   it('explains the stored calculation and distinguishes a teacher global adjustment', () => {
     const cal = { estado: 'ajustada', timeline: [], desglose: { formula: { puntos_obtenidos: 2, puntos_posibles: 4, nota_maxima: 5, nota_base: 2.5, ajuste_global: 0.3, nota_final: 2.8 }, componentes: [], ajuste_global_detalle: { motivo_interno: 'Procedimiento adicional verificado' } } } as unknown as CalificacionDetalle;
     render(<GradeNoteExplanation cal={cal} score={2.8} />);
     expect(screen.getByText(/2.00.*4.00/)).toBeInTheDocument();
-    expect(screen.getByText(/Nota proporcional registrada: 2.50/)).toBeInTheDocument();
+    expect(screen.getByText(/Equivale a 2.50/)).toBeInTheDocument();
     expect(screen.getByText(/Ajuste docente registrado:/).closest('p')).toHaveTextContent('+0.30');
     expect(screen.getByText('Procedimiento adicional verificado')).toBeInTheDocument();
   });
 
   it('does not invent a reason for legacy grades or conceal an override of the breakdown', () => {
     const { rerender } = render(<GradeNoteExplanation cal={{ estado: 'confirmada', timeline: [] } as unknown as CalificacionDetalle} score={4} />);
-    expect(screen.getByText(/Sin explicación registrada/)).toBeInTheDocument();
+    expect(screen.getByText(/Esta nota no tiene puntajes por pregunta guardados/)).toBeInTheDocument();
     rerender(<GradeNoteExplanation cal={{ estado: 'ajustada', timeline: [{ tipo: 'ajustada', detalle: 'Decisión docente registrada' }], desglose: { formula: { puntos_obtenidos: 2, puntos_posibles: 4, nota_maxima: 5, nota_base: 2.5, ajuste_global: 0, nota_final: 2.5 }, componentes: [] } } as unknown as CalificacionDetalle} score={4} />);
-    expect(screen.getByText(/La nota vigente difiere del cálculo registrado/)).toBeInTheDocument();
+    expect(screen.getByText(/La nota actual es distinta del cálculo por respuestas/)).toBeInTheDocument();
     expect(screen.getByText('Decisión docente registrada')).toBeInTheDocument();
   });
   it('resume materia y evaluación y permite desplegar los selectores', async () => {

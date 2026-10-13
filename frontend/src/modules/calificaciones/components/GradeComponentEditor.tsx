@@ -78,7 +78,7 @@ export function GradeComponentEditor({ component, formula, saving, saveError, on
       </div>
       <div className="rounded-lg border border-brand-200 bg-surface px-3 py-2 text-sm dark:border-brand-500/30">
         <span className="font-semibold">Vista previa:</span> {previewPoints.toFixed(2)} / {possible.toFixed(2)} puntos → <strong>{previewGrade.toFixed(formula.decimales)}</strong> / {maxGrade.toFixed(formula.decimales)}.
-        <span className="ml-1 text-muted">La nota oficial se recalcula y versiona al guardar.</span>
+        <span className="ml-1 text-muted">Al guardar se actualiza la nota y el cambio queda en el historial.</span>
       </div>
       <Field label="Motivo interno del cambio" hint="Queda en el historial docente y no se muestra al estudiante." required>
         <Textarea value={reason} onChange={(event) => setReason(event.target.value)} rows={2} />

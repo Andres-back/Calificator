@@ -83,17 +83,140 @@ test('prioriza excepciones en móvil sin confirmar ni publicar automáticamente'
   await page.goto('/app/calificaciones/workspace/e1');
   await page.getByText('Estudiante Prueba', { exact: true }).click();
 
-  await page.locator('summary', { hasText: 'Ver revisión del análisis original' }).click();
-  await expect(page.getByRole('heading', { name: 'Avisos del análisis original' })).toBeVisible();
-  await expect(page.getByText('1 por revisar')).toBeVisible();
-  await expect(page.getByText('1 bloqueada')).toBeVisible();
-  await page.getByRole('button', { name: /Revisar primera excepción/ }).click();
+  await page.locator('summary', { hasText: 'Historial de revisión de IA' }).click();
+  await expect(page.getByText(/La nota actual ya tiene una decisión del docente/)).toBeVisible();
+  await expect(page.getByText('1 con observaciones iniciales')).toBeVisible();
+  await expect(page.getByText('1 sin revisión completa al inicio')).toBeVisible();
+  await page.getByRole('button', { name: /Ver primera respuesta con aviso/ }).click();
   await expect(page).toHaveURL(/pregunta=pregunta%3A3/);
-  await page.getByRole('button', { name: /Siguiente excepción/ }).click();
+  await page.getByRole('button', { name: /Ver siguiente respuesta con aviso/ }).click();
   await expect(page).toHaveURL(/pregunta=pregunta%3A2/);
   expect(mutations).toEqual([]);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBeTruthy();
 });
+
+for (const state of ['sugerida', 'procesando']) {
+  test(`094 estado ${state} no oculta avisos ni publica una nota`, async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await login(page, 'profesor', { breakdown });
+    const raw = 'feedback_quality:nota_global_no_coincide_con_suma';
+    const writes: string[] = [];
+    page.on('request', (request) => {
+      if (request.method() !== 'GET' && /\/api\/(calificaciones|evaluaciones)\//.test(request.url())) writes.push(request.url());
+    });
+    await page.route('**/api/calificaciones/c1/detalle', (route) => route.fulfill({ json: {
+      id: 'c1', evaluacion_id: 'e1', estudiante_id: 's1', materia_id: 'm1',
+      estudiante_nombre: 'Estudiante Prueba', evaluacion_nombre: 'Multiplicación', materia_nombre: 'Matemáticas',
+      nota_sugerida: state === 'procesando' ? null : 5, nota_confirmada: null, nota_maxima: 5,
+      confianza: 0.98, feedback: '', estado: state, revisado_por_docente: false,
+      resultado_json: state === 'procesando' ? { pipeline_status: 'running' } : {},
+      timeline: [], guia_revision: [], entrega_tipo: 'online', entrega_archivo_url: null,
+      entrega_respuesta_texto: 'P1: 24', entrega_evidencia_paginas: 0,
+      desglose: { ...breakdown, bloqueos: [raw] },
+      created_at: '2026-09-19T00:00:00Z', updated_at: '2026-09-19T00:00:00Z',
+    } }));
+    await page.goto('/app/calificaciones/workspace/e1?calificacion=c1');
+    const detail = page.getByTestId('grade-review-scroll');
+    if (state === 'procesando') {
+      await expect(detail.getByText('Analizando evidencia…', { exact: true })).toBeVisible();
+      await expect(detail.getByText('Calificando en segundo plano', { exact: true })).toBeVisible();
+      await expect(detail.getByText('0.0', { exact: true })).toHaveCount(0);
+      await detail.locator('summary', { hasText: 'Avisos del análisis en curso' }).click();
+      await expect(detail.getByText(/La entrega sigue en análisis/)).toBeVisible();
+      await expect(detail.getByText(/ya tiene una decisión del docente/)).toHaveCount(0);
+    } else {
+      await expect(detail.getByText('Nota sugerida por la IA', { exact: true })).toBeVisible();
+      await expect(detail.getByText('Por revisar', { exact: true })).toBeVisible();
+      await expect(detail.getByRole('alert')).toContainText('La nota propuesta por la IA no coincide con la suma de los puntos por pregunta.');
+      await detail.getByRole('button', { name: 'Revisar puntajes por pregunta', exact: true }).click();
+      await expect(detail.locator('#grade-review-panel')).toBeVisible();
+      await expect(detail.locator('summary', { hasText: 'Historial de revisión de IA' })).toHaveCount(0);
+    }
+    await expect(detail.getByText(raw, { exact: true })).toHaveCount(0);
+    expect(writes).toEqual([]);
+  });
+}
+
+for (const width of [360, 390, 768, 1280, 1440]) {
+  for (const mode of ['light', 'dark']) {
+    test(`094 revisión clara y evidencia conservada ${width}px ${mode}`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 800 });
+      await page.addInitScript((theme) => localStorage.setItem('xc-theme', JSON.stringify({ state: { mode: theme }, version: 0 })), mode);
+      const raw = 'feedback_quality:nota_global_no_coincide_con_suma';
+      const initialBreakdown = { ...breakdown, requiere_revision: false, bloqueos: [raw, 'provider_error:HTTP_503_trace_ab12'],
+        formula: { ...breakdown.formula, puntos_obtenidos: 2, puntos_posibles: 4, nota_base: 2.5, nota_final: 2.5 },
+        componentes: [{ ...base, id: 'safe', evidencia_paginas: [2], puntos_obtenidos: 2, puntos_maximos: 4 }],
+      };
+      await login(page, 'profesor', { rosterSize: 30, breakdown: initialBreakdown });
+      const longName = 'María Alejandra NombreExtenso ApellidoExtenso SegundoApellidoExtenso';
+      await page.route('**/api/calificaciones/*/detalle', async (route) => {
+        const id = new URL(route.request().url()).pathname.split('/').at(-2)!;
+        await route.fulfill({ json: { id, evaluacion_id: 'e1', estudiante_id: id.replace('c', 's'), materia_id: 'm1',
+          estudiante_nombre: longName, evaluacion_nombre: 'Multiplicación', materia_nombre: 'Matemáticas',
+          nota_sugerida: 5, nota_confirmada: 5, nota_maxima: 5, confianza: 0.98, feedback: 'Explica el procedimiento.',
+          estado: 'publicada', revisado_por_docente: true, resultado_json: {}, timeline: [], guia_revision: [],
+          desglose: initialBreakdown, entrega_tipo: 'imagen', entrega_respuesta_texto: null,
+          entrega_archivo_url: '/api/evidencia-sintetica', entrega_evidencia_paginas: 2,
+          created_at: '2026-09-19T00:00:00Z', updated_at: '2026-09-19T00:00:00Z' } });
+      });
+      // A synthetic image never leaves this mocked browser session.
+      await page.route('**/api/evidencia-sintetica**', (route) => route.fulfill({ contentType: 'image/png',
+        body: Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a9l8AAAAASUVORK5CYII=', 'base64') }));
+      const writes: string[] = [];
+      page.on('request', (request) => {
+        if (request.method() !== 'GET' && /\/api\/(calificaciones|evaluaciones)\//.test(request.url())) writes.push(request.url());
+      });
+      await page.goto('/app/calificaciones?evaluacion=e1');
+      const roster = page.getByTestId('grade-review-roster');
+      const search = roster.getByRole('searchbox', { name: 'Buscar estudiante' });
+      await search.fill('Alumno 030');
+      await expect(roster.locator('[data-review-grade]')).toHaveCount(1);
+      await search.fill('');
+      await expect(roster.locator('[data-review-grade]')).toHaveCount(30);
+      await roster.locator('[data-review-grade="c1"]').click();
+      await expect(page.getByTestId('grade-review-identity')).toContainText(longName);
+      const history = page.locator('details').filter({ has: page.locator('summary', { hasText: 'Historial de revisión de IA' }) });
+      await expect(history).not.toHaveAttribute('open');
+      await expect(page.getByText('Nota del estudiante', { exact: true })).toBeVisible();
+      await page.getByText('Ver cálculo de la nota', { exact: true }).click();
+      await expect(page.getByText(/Equivale a 2.50/)).toBeVisible();
+      await page.getByRole('button', { name: '2. Evidencia', exact: true }).click();
+      await expect(page.getByRole('img', { name: 'Hoja 1 de la evidencia del estudiante' })).toBeVisible();
+      await page.getByLabel('Páginas de evidencia').getByRole('button', { name: '2', exact: true }).click();
+      await expect(page.getByRole('img', { name: 'Hoja 2 de la evidencia del estudiante' })).toBeVisible();
+      await expect(page.getByRole('link', { name: 'Abrir en grande' })).toHaveAttribute('href', '/api/evidencia-sintetica/paginas/2');
+      await page.getByRole('button', { name: '3. Respuestas y puntajes', exact: true }).click();
+      await page.getByRole('button', { name: 'Ver hoja 2 de la evidencia', exact: true }).click();
+      await expect(page.getByRole('img', { name: 'Hoja 2 de la evidencia del estudiante' })).toBeVisible();
+      await history.locator('summary').click();
+      await expect(history).toContainText('En el análisis inicial, la IA propuso una nota distinta a la suma por preguntas.');
+      await expect(page.getByText(raw, { exact: true })).toHaveCount(0);
+      await expect(page.getByText('provider_error:HTTP_503_trace_ab12', { exact: true })).toHaveCount(0);
+      await history.getByRole('button', { name: 'Ver puntajes por pregunta' }).first().click();
+      await expect(page.locator('#grade-review-panel')).toBeVisible();
+      await history.locator('summary').click();
+      const scroller = page.getByTestId('grade-review-scroll');
+      await scroller.evaluate((element) => { element.scrollTop = element.scrollHeight; });
+      const options = page.locator('summary', { hasText: 'Historial y opciones de la nota' });
+      await options.scrollIntoViewIfNeeded();
+      await expect(options).toBeInViewport();
+      const bounds = await options.boundingBox();
+      expect(bounds!.height).toBeGreaterThanOrEqual(44);
+      if (width < 1280) {
+        const bar = page.getByLabel('Acciones de la calificación');
+        expect(bounds!.y + bounds!.height).toBeLessThanOrEqual((await bar.boundingBox())!.y);
+      }
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBeTruthy();
+      await scroller.evaluate((element) => { element.scrollTop = 0; });
+      await page.screenshot({ path: `../output/playwright/teacher-flow/review094-${width}-${mode}.png`, fullPage: true });
+      if (width < 1280) await page.getByRole('button', { name: 'Volver a lista', exact: true }).click();
+      await roster.locator('[data-review-grade="c2"]').click();
+      await expect(page.getByTestId('grade-review-identity')).toContainText(longName);
+      await expect(history).not.toHaveAttribute('open');
+      expect(writes).toEqual([]);
+    });
+  }
+}
 
 const teacherPermissions = ['subjects.read', 'evaluations.read', 'evaluations.create', 'grading.read', 'grading.grade', 'grading.publish', 'gradebook.read', 'attendance.read', 'attendance.manage'];
 

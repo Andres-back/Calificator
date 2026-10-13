@@ -135,7 +135,7 @@ test('aviso general con respuestas sin alertas conduce al desglose sin escribir 
   await expect(page.getByText('1 aviso general')).toBeVisible();
   await expect(page.getByText(/Sin señales de incertidumbre/)).toHaveCount(0);
   await expect(page.getByText(code, { exact: true })).not.toBeVisible();
-  await page.getByRole('button', { name: 'Revisar puntajes', exact: true }).click();
+  await page.getByRole('button', { name: 'Revisar puntajes por pregunta', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Nota explicada respuesta por respuesta' })).toBeVisible();
   await page.getByRole('button', { name: 'Ajustar puntaje y explicación', exact: true }).click();
   await expect(page.getByLabel(/Puntos \(máximo/)).toBeVisible();
@@ -214,7 +214,7 @@ test('resumen móvil preserva contexto y despliega detalles sin mutaciones', asy
   page.on('request', (request) => { if (request.method() !== 'GET' && /calificaciones|jobs/.test(request.url())) mutations.push(request.url()); });
   await page.goto('/app/calificaciones?materia=m1&evaluacion=e1&calificacion=c1');
   await expect(page.getByRole('heading', { name: '1. Nota y explicación' })).toBeVisible();
-  await expect(page.getByRole('region', { name: 'Cálculo y criterios registrados' })).toContainText('Puntos registrados: 1.00 / 1.00');
+  await expect(page.getByRole('region', { name: 'Cálculo y criterios registrados' })).toContainText('Puntos por respuestas: 1.00 / 1.00');
   await expect(page.getByText(/Ver valoración por criterios/)).toHaveCount(0);
   await expect(page.getByRole('heading', { name: 'Nota explicada respuesta por respuesta' })).toBeHidden();
   await expect(page.getByRole('link', { name: 'Volver a evaluaciones' })).toHaveAttribute('href', '/app/materias/m1/evaluaciones');
@@ -262,9 +262,10 @@ test('detalle en procesamiento no convierte ausencia de nota en cero y mantiene 
   }));
   await page.goto('/app/calificaciones?evaluacion=e1&calificacion=c1');
   await expect(page.getByText('Calificando en segundo plano', { exact: true })).toBeVisible();
-  await page.locator('summary', { hasText: 'Ver revisión del análisis original' }).click();
-  await page.locator('summary', { hasText: 'Ver detalle de los avisos' }).click();
-  await expect(page.getByText('Comprobar evidencia pendiente', { exact: false })).toBeVisible();
+  await page.locator('summary', { hasText: 'Avisos del análisis en curso' }).click();
+  await expect(page.getByText(/La entrega sigue en análisis/)).toBeVisible();
+  await expect(page.getByText('En el análisis inicial se registró un aviso adicional. Puedes consultar las respuestas y la evidencia.', { exact: true })).toBeVisible();
+  await expect(page.getByText('Comprobar evidencia pendiente', { exact: true })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Confirmar nota', exact: true })).toHaveCount(0);
   await expect(page.getByRole('region', { name: 'Cálculo y criterios registrados' })).not.toContainText('0.00');
 });

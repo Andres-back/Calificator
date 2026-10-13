@@ -67,9 +67,9 @@ describe('buildReviewTriage', () => {
     const result = buildReviewTriage({ ...breakdown([component()]), bloqueos: [raw] });
     expect(result.globalReasons).toContain(raw);
     expect(result.counts).toEqual({ safe: 1, attention: 0, blocked: 0 });
-    expect(describeReviewBlocker(raw)).toMatchObject({ target: 'revision', action: 'Revisar puntajes' });
+    expect(describeReviewBlocker(raw)).toMatchObject({ target: 'revision', action: 'Revisar puntajes por pregunta' });
     expect(buildReviewTriage(null).items).toEqual([]);
-    expect(describeReviewBlocker('aviso_nuevo')).toMatchObject({ message: 'Hay un aviso que necesita revisión.' });
+    expect(describeReviewBlocker('aviso_nuevo')).toMatchObject({ message: 'Hay información que debes comprobar antes de confirmar la nota.' });
   });
   it('produce grupos exclusivos y ordena bloqueadas antes que atención', () => {
     const safe = component({ id: 'safe', clave: 'pregunta:1', orden: 0 });

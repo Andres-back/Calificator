@@ -94,6 +94,7 @@ ALL_SPECS = {
     "091-estudiante-recursos-resultados",
     "092-boletin-mosaico",
     "093-recursos-vista-docente",
+    "094-revision-docente-simple",
 }
 OWNED_SPECS = {
     name

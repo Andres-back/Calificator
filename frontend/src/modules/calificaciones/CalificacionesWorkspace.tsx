@@ -226,7 +226,7 @@ export function GradeNoteExplanation({ cal, score }: { cal: CalificacionDetalle;
   if (!breakdown) {
     return (
       <div className="space-y-1 text-sm text-muted">
-        <p>Sin explicación registrada por respuesta. La nota histórica se conserva; no se inventaron puntajes.</p>
+        <p>Esta nota no tiene puntajes por pregunta guardados. Puedes consultar la decisión docente en el historial.</p>
         {decision && <p>{decision}</p>}
       </div>
     );
@@ -236,10 +236,10 @@ export function GradeNoteExplanation({ cal, score }: { cal: CalificacionDetalle;
   const overridesFormula = score != null && Math.abs(score - Number(formula.nota_final)) > 0.005;
   return (
     <div className="space-y-2 text-sm">
-      <p>Puntos registrados: <strong>{Number(formula.puntos_obtenidos).toFixed(2)} / {Number(formula.puntos_posibles).toFixed(2)}</strong>.</p>
+      <p>Puntos por respuestas: <strong>{Number(formula.puntos_obtenidos).toFixed(2)} / {Number(formula.puntos_posibles).toFixed(2)}</strong>.</p>
       <details>
       <summary className="focus-ring flex min-h-11 cursor-pointer items-center font-semibold text-brand-700 dark:text-brand-200">Ver cálculo de la nota</summary>
-      <p className="text-muted">Nota proporcional registrada: {Number(formula.nota_base).toFixed(2)} / {Number(formula.nota_maxima).toFixed(1)}. Los puntajes y sus motivos se consultan en «Respuestas y puntajes».</p>
+      <p className="text-muted">Equivale a {Number(formula.nota_base).toFixed(2)} / {Number(formula.nota_maxima).toFixed(1)} en la escala de esta evaluación, antes de cualquier ajuste del docente. Puedes comprobar cada respuesta en «Respuestas y puntajes».</p>
       </details>
       {adjustment !== 0 && (
         <div className="space-y-1 rounded-lg bg-surface-2 p-2">
@@ -249,7 +249,7 @@ export function GradeNoteExplanation({ cal, score }: { cal: CalificacionDetalle;
       )}
       {overridesFormula && (
         <div role="status" className="space-y-1 text-amber-800 dark:text-amber-200">
-          <p>La nota vigente difiere del cálculo registrado ({Number(formula.nota_final).toFixed(2)}). Consulta la decisión docente en el historial; no representa la suma original por respuestas.</p>
+          <p>La nota actual es distinta del cálculo por respuestas ({Number(formula.nota_final).toFixed(2)}). Consulta el historial para conocer la decisión del docente.</p>
           {decision && <p>{decision}</p>}
         </div>
       )}
@@ -380,19 +380,19 @@ function AIPipelineSummary({
               {timings.extraction ? ' · lectura ' + Math.round(timings.extraction / 1000) + ' s' : ''}
               {timings.primary ? ' · evaluación ' + Math.round(timings.primary / 1000) + ' s' : ''}
               {timings.secondary ? ' · verificación ' + Math.round(timings.secondary / 1000) + ' s' : ''}
-              {timings.consolidation ? ' · arbitraje ' + Math.round(timings.consolidation / 1000) + ' s' : ''}
+              {timings.consolidation ? ' · revisión final ' + Math.round(timings.consolidation / 1000) + ' s' : ''}
             </div>
           ) : null}
           {vision && (
-            <div className="flex items-center justify-between">
-              <span>Visión ({formatAIModelSource(vision)})</span>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span>Lectura de la imagen ({formatAIModelSource(vision)})</span>
               <span className={vision.usable !== false ? 'text-emerald-600' : 'text-rose-600'}>
                 {vision.usable !== false ? '✓' : '✗'} {vision.tiempo_ms ? `${vision.tiempo_ms}ms` : ''}
               </span>
             </div>
           )}
           {graderA && (
-            <div className="flex items-center justify-between">
+            <div className="flex flex-wrap items-center justify-between gap-2">
               <span>Calificador ({formatAIModelSource(graderA)})</span>
               <span className={graderA.error ? 'text-rose-600' : 'text-fg'}>
                 {graderA.nota != null ? Number(graderA.nota).toFixed(1) : '—'}{graderA.tiempo_ms ? ' · ' + Math.round(Number(graderA.tiempo_ms) / 1000) + 's' : ''}
@@ -400,9 +400,9 @@ function AIPipelineSummary({
             </div>
           )}
           {graderB && (
-            <div className="flex items-center justify-between">
+            <div className="flex flex-wrap items-center justify-between gap-2">
               <span>
-                {strategy?.secondary_mode === 'pro_recovery' ? 'Recuperación Pro' : 'Verificador rápido'}
+                {strategy?.secondary_mode === 'pro_recovery' ? 'Revisión adicional' : 'Segunda revisión'}
                 {' '}({formatAIModelSource(graderB)})
               </span>
               <span className={graderB.error ? 'text-rose-600' : 'text-fg'}>
@@ -411,13 +411,13 @@ function AIPipelineSummary({
             </div>
           )}
           {comparator && (
-            <div className="flex items-center justify-between border-t border-border pt-2 font-semibold">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border pt-2 font-semibold">
               <span>
                 {strategy?.secondary_mode === 'pro_recovery'
-                  ? 'Consolidado con recuperación Pro'
+                  ? 'Resultado con revisión adicional'
                   : arbiterInvoked
-                    ? `Árbitro Pro (${formatAIModelSource(comparator)})`
-                    : 'Consolidado'}
+                    ? `Revisión final (${formatAIModelSource(comparator)})`
+                    : 'Resultado del análisis'}
                 {discrepancia ? ' ⚠️' : ''}
               </span>
               <span>{comparator.nota_final != null ? Number(comparator.nota_final).toFixed(1) : '—'}</span>
@@ -823,6 +823,7 @@ function PanelDetalle({
   const manualReview = cal.estado === 'requiere_revision';
   if ((manualReview || activeBreakdown?.requiere_revision) && reviewTriage.exceptions.length === 0 && reviewTriage.globalBlockers.length === 0 && alertas.length === 0) alertas.push('revision_docente_pendiente');
   const hasReviewNotices = reviewTriage.items.length > 0 || reviewTriage.globalBlockers.length > 0 || alertas.length > 0;
+  const hasInitialReviewNotices = reviewTriage.exceptions.length > 0 || reviewTriage.globalBlockers.length > 0 || alertas.length > 0;
   const evidencePageUrl = evidenceUrl ? `${evidenceUrl}/paginas/${evidencePage}` : null;
 
   function showEvidencePage(page: number) {
@@ -908,12 +909,30 @@ function PanelDetalle({
   const bookRoute = cal.materia_id ? routes.materiaBoletin(cal.materia_id) : '';
   const requestedReturn = detailParams.get('volver');
   const returnToBook = bookRoute && requestedReturn && (requestedReturn === bookRoute || requestedReturn.startsWith(`${bookRoute}?`)) ? requestedReturn : null;
+  const reviewNotices = <ReviewTriagePanel
+    compact
+    summary={reviewTriage}
+    historical={done || presentation.processing}
+    processing={presentation.processing}
+    extraReasons={alertas}
+    onReviewGeneral={(target) => {
+      if (target === 'evidencia') showEvidencePage(evidencePage);
+      else if (target === 'retroalimentacion') {
+        setFeedbackOpen(true);
+        window.requestAnimationFrame(() => { feedbackSectionRef.current?.focus({ preventScroll: true }); feedbackSectionRef.current?.scrollIntoView({ block: 'start' }); });
+      } else if (mobileTab !== 'revision') changeDetailView('revision');
+      else reviewSectionRef.current?.scrollIntoView({ block: 'start' });
+    }}
+    selectedComponentId={selectedQuestion?.id}
+    onSelectComponent={(componentId) => openReviewComponent(componentId)}
+    analyticsContext={{ evaluacionId: cal.evaluacion_id, calificacionId: cal.id }}
+  />;
 
   return (
     <>
     <div className="flex min-h-0 min-w-0 flex-col">
       {/* Header */}
-      <div data-testid="grade-review-identity" className="sticky top-0 z-10 flex items-center justify-between border-b border-border bg-surface/95 px-3 py-2 backdrop-blur sm:px-4">
+      <div data-testid="grade-review-identity" className="z-10 flex items-center justify-between border-b border-border bg-surface/95 px-3 py-2 sm:px-4 xl:sticky xl:top-0 xl:backdrop-blur">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
             <p className="break-words font-display text-lg font-bold">{cal.estudiante_nombre || estudiante?.nombre || 'Estudiante'}</p>
@@ -931,9 +950,9 @@ function PanelDetalle({
       <div className="min-w-0 flex-1 space-y-3 p-3 pb-32 [overflow-wrap:anywhere] sm:space-y-5 sm:p-5 sm:pb-32 xl:pb-5">
         {/* Nota principal */}
         <h2 className="text-base font-bold">1. Nota y explicación</h2>
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <p className="text-sm text-muted">{presentation.score == null ? presentation.label : 'Nota'}</p>
+            <p className="text-sm text-muted">{presentation.score == null ? presentation.label : done ? 'Nota del estudiante' : 'Nota sugerida por la IA'}</p>
             {presentation.score == null ? (
               <div className="mt-2 flex items-center gap-2 font-semibold text-brand-600 dark:text-brand-300">
                 {presentation.processing && <LoaderCircle className="h-5 w-5 animate-spin" aria-hidden="true" />}
@@ -947,7 +966,7 @@ function PanelDetalle({
             )}
           </div>
           <Badge tone={presentation.processing ? 'brand' : done ? (published ? 'brand' : 'success') : 'warning'}>
-            {published ? 'Publicada' : done ? 'Confirmada' : presentation.processing ? 'Calificando' : manualReview ? 'Revisión manual' : 'Por revisar'}
+            {published ? 'Publicada' : done ? 'Confirmada' : presentation.processing ? 'Calificando' : 'Por revisar'}
           </Badge>
         </div>
 
@@ -976,27 +995,7 @@ function PanelDetalle({
         )}
 
         {/* Los avisos no cambian la nota ni las políticas de confirmación. */}
-        {hasReviewNotices && <details open={done || presentation.processing ? undefined : true} className={done || presentation.processing ? 'rounded-xl border border-border p-3' : ''}>
-          {(done || presentation.processing) && <summary className="focus-ring flex min-h-11 cursor-pointer items-center font-semibold">Ver revisión del análisis original</summary>}
-          <ReviewTriagePanel
-            compact
-            summary={reviewTriage}
-            historical={done || presentation.processing}
-            processing={presentation.processing}
-            extraReasons={alertas}
-            onReviewGeneral={(target) => {
-              if (target === 'evidencia') showEvidencePage(evidencePage);
-              else if (target === 'retroalimentacion') {
-                setFeedbackOpen(true);
-                window.requestAnimationFrame(() => { feedbackSectionRef.current?.focus({ preventScroll: true }); feedbackSectionRef.current?.scrollIntoView({ block: 'start' }); });
-              } else if (mobileTab !== 'revision') changeDetailView('revision');
-              else reviewSectionRef.current?.scrollIntoView({ block: 'start' });
-            }}
-            selectedComponentId={selectedQuestion?.id}
-            onSelectComponent={(componentId) => openReviewComponent(componentId)}
-            analyticsContext={{ evaluacionId: cal.evaluacion_id, calificacionId: cal.id }}
-          />
-        </details>}
+        {hasReviewNotices && !done && !presentation.processing && reviewNotices}
         {canGrade && manualReview && evidenceUrl && <Button variant="outline" loading={retryMutation.isPending} disabled={retryMutation.isPending} onClick={() => retryMutation.mutate()}><RotateCcw className="h-4 w-4" /> Volver a analizar la evidencia</Button>}
 
         {/* Evidencia */}
@@ -1020,8 +1019,8 @@ function PanelDetalle({
           <div id="grade-evidence-panel" hidden={mobileTab !== 'evidencia'} className="min-w-0 space-y-4 border-t border-border p-3">
             {evidenceUrl ? (
               <section ref={evidenceSectionRef} tabIndex={-1} aria-labelledby="evidence-title" className="scroll-mt-4 rounded-xl border border-border bg-surface-2">
-                <div className="flex items-center justify-between border-b border-border px-4 py-3 text-sm font-semibold text-muted">
-                  <h2 id="evidence-title" className="flex items-center gap-2 text-base font-bold text-fg">
+                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-3 py-2 text-sm font-semibold text-muted">
+                  <h2 id="evidence-title" className="flex flex-wrap items-center gap-2 text-base font-bold text-fg">
                     {isPdfEvidence ? <FileText className="h-5 w-5" /> : <FileImage className="h-5 w-5" />}
                     Evidencia del estudiante
                     <Badge tone="neutral">{evidencePages} {evidencePages === 1 ? 'hoja' : 'hojas'}</Badge>
@@ -1066,7 +1065,7 @@ function PanelDetalle({
                   />
                 )}
                 <div className="flex flex-col gap-2 border-t border-border p-3 sm:flex-row sm:items-center sm:justify-between">
-                  <p className="text-xs leading-5 text-muted">Si falta una página o no corresponde, solicita el paquete completo otra vez.</p>
+                  <p className="text-xs leading-5 text-muted">Si falta una hoja o la foto no corresponde, solicita todas las hojas de nuevo.</p>
                   {canReviewClaims && <Button type="button" size="sm" variant="outline" onClick={() => setReplacementOpen(true)}>
                     <RotateCcw className="h-4 w-4" /> Solicitar reemplazo
                   </Button>}
@@ -1099,8 +1098,13 @@ function PanelDetalle({
 
         <details ref={feedbackSectionRef} tabIndex={-1} open={feedbackOpen || isDirty || showAjustar} className="scroll-mt-4 rounded-xl border border-border p-3">
           <summary className="focus-ring flex min-h-11 cursor-pointer items-center font-semibold" onClick={toggleFeedbackSection}>4. Retroalimentación</summary>
-          {presentation.processing ? <p className="text-sm text-muted">La retroalimentación estará disponible cuando termine el análisis.</p> : <Field label="Retroalimentación"><Textarea readOnly={!canGrade} value={adjFeedback} onChange={(e) => setAdjFeedback(e.target.value)} placeholder="Escribe o edita el feedback para el estudiante…" rows={4} /></Field>}
+          {presentation.processing ? <p className="text-sm text-muted">La retroalimentación estará disponible cuando termine el análisis.</p> : <Field label="Retroalimentación"><Textarea readOnly={!canGrade} value={adjFeedback} onChange={(e) => setAdjFeedback(e.target.value)} placeholder="Escribe qué logró el estudiante y cómo puede mejorar…" rows={4} /></Field>}
         </details>
+
+        {hasInitialReviewNotices && (done || presentation.processing) && <details className="rounded-xl border border-border px-3">
+          <summary className="focus-ring flex min-h-11 cursor-pointer items-center font-semibold">{presentation.processing ? 'Avisos del análisis en curso' : 'Historial de revisión de IA'}</summary>
+          {reviewNotices}
+        </details>}
 
         {/* Pipeline — resumen colapsable */}
         {!!pipeline?.orchestrator && (
@@ -1149,7 +1153,7 @@ function PanelDetalle({
           </div>
         ) : cal.desglose_heredado ? (
           <Card className="border-border p-4">
-            <p className="font-bold">Calificación anterior al desglose explicable</p>
+            <p className="font-bold">Calificación anterior sin puntajes por pregunta</p>
             <p className="mt-1 text-sm leading-6 text-muted">La nota y los criterios históricos se conservan. No se inventaron puntajes por pregunta para esta entrega.</p>
           </Card>
         ) : null}
@@ -2164,7 +2168,7 @@ function GradingCenter() {
                 <Select aria-label="Filtrar estudiantes por estado" value={gradeFilter}
                   onChange={(event) => changeContext({ filtro: event.target.value })} className="min-h-11">
                   {(['todas', 'pendientes', 'alertas', 'procesando', 'publicadas'] as const).map((filter) => (
-                    <option key={filter} value={filter}>{filter === 'todas' ? 'Todos los estados' : filter} ({counters[filter]})</option>
+                    <option key={filter} value={filter}>{({ todas: 'Todos los estados', pendientes: 'Por revisar', alertas: 'Con avisos', procesando: 'Calificando', publicadas: 'Publicadas' })[filter]} ({counters[filter]})</option>
                   ))}
                 </Select>
               </div>
@@ -2181,7 +2185,7 @@ function GradingCenter() {
               <div className="space-y-2 pt-4">{Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-16" />)}</div>
             ) : reviewQuery.error ? (
               <div role="alert" className="space-y-3 py-6 text-sm">
-                <p>{toApiError(reviewQuery.error).detail}</p>
+                <p>No se pudo cargar la lista de estudiantes. Puedes volver a intentarlo.</p>
                 <Button variant="outline" onClick={() => { void queryClient.resetQueries({ queryKey: ['evaluation-review', evalId] }); }}>Actualizar lista</Button>
               </div>
             ) : counters?.todas === 0 ? (
@@ -2215,8 +2219,8 @@ function GradingCenter() {
                         <div className="min-w-0 flex-1">
                           <p className="break-words text-sm font-semibold">{row.nombre}</p>
                           <p className="text-xs capitalize text-muted">{row.estado === 'procesando' ? 'Calificando' : row.estado.replace(/_/g, ' ')}</p>
-                          {summary.tiene_alertas && <p className="text-xs font-semibold text-amber-700 dark:text-amber-300">Revisar alertas{summary.pqrs_abiertas ? ` · ${summary.pqrs_abiertas} reclamo(s)` : ''}</p>}
-                          {row.calificacion_id && summary.version == null && row.estado !== 'procesando' && <p className="text-xs text-muted">Sin desglose disponible</p>}
+                          {summary.tiene_alertas && <p className="text-xs font-semibold text-amber-700 dark:text-amber-300">{['confirmada', 'ajustada', 'publicada'].includes(row.estado) ? 'Avisos del análisis inicial' : 'Respuestas por comprobar'}{summary.pqrs_abiertas ? ` · ${summary.pqrs_abiertas} reclamo(s)` : ''}</p>}
+                          {row.calificacion_id && summary.version == null && row.estado !== 'procesando' && <p className="text-xs text-muted">Sin puntajes por pregunta guardados</p>}
                         </div>
                         <span className="shrink-0 text-lg font-bold">{row.estado === 'procesando' ? <LoaderCircle className="h-5 w-5 animate-spin" aria-label="Calificando" /> : row.nota == null ? '—' : formatGradeScore(Number(row.nota))}</span>
                       </button>
