@@ -47,3 +47,9 @@ T001 → T002 → T003; US1 T004 → T005; US2 T006 → T007; US3 T008 → T009 
 - [x] T015 Reservar altura real de MobileReviewActionBar en el scroller de frontend/src/modules/calificaciones/CalificacionesWorkspace.tsx y probar ocultación/limpieza en CalificacionesWorkspace.mobile.test.tsx; comprobar WebKit con poca altura sin botones interceptados (FR-009, SC-001; partial).
 
 Hallazgo F1, HIGH, FR-009: WebKit emulado 390×664, navegación Retroalimentación interceptada por barra inferior. Región extendida bajo la barra fija pese al padding de contenido. Reserva medida y liberada durante escritura; sin cambios académicos ni nuevos controles.
+
+## Fase 7: regresión detectada en CI
+
+- [x] T016 Actualizar la expectativa histórica de cálculo incompleto en frontend/e2e/mock/grading-review.mock.spec.ts y ejecutar sus 43 escenarios, preservando comprobación de cero mutaciones; regenerar inventario y documentar resultado en specs/100-feedback-demo-movil/quickstart.md (FR-003, FR-004, FR-010).
+
+CI del HEAD 6e506e4: 42/43 escenarios contextuales pasaron; la prueba de estado sugerida esperaba la redacción anterior sin identificar cálculo provisional. La corrección no modifica código de aplicación ni elimina aserciones de estado, avisos o ausencia de escrituras. Gobernanza vigente del mismo HEAD aprobada; su primer intento histórico falló porque el evento precedió a aplicar etiquetas.

@@ -191,7 +191,7 @@ for (const state of ['sugerida', 'procesando']) {
     } else {
       await expect(detail.getByText('Nota sugerida por la IA', { exact: true })).toBeVisible();
       await expect(detail.getByText('Por revisar', { exact: true })).toBeVisible();
-      await expect(detail.getByRole('alert')).toContainText('La IA propone 5.0, pero el cálculo por respuestas da 3.33.');
+      await expect(detail.getByRole('alert')).toContainText('La IA propone 5.0, pero el cálculo provisional da 3.33. Falta 1 pregunta por puntuar. Este cálculo aún no es una nota final.');
       await detail.getByRole('button', { name: 'Revisar ahora', exact: true }).click();
       await expect(detail.locator('#grade-review-panel')).toBeVisible();
       await expect(detail.locator('summary', { hasText: 'Historial de revisión de IA' })).toHaveCount(0);

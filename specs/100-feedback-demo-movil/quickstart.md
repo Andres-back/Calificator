@@ -57,3 +57,11 @@ CI verde, aprobación separada de fusión, despliegue automático desde main y v
 Limitaciones: WebKit es emulación, no instalación ni teclado físicos. No se recalificó ni consultó contenido de alumnos reales; ninguna llamada LLM o escritura en producción. La guía es manual; no registra ni promete instalación automática.
 
 Converge final: 10 requisitos funcionales, 5 resultados y 7 decisiones del plan cubiertos; ocho principios constitucionales conservados. F1 corregido, sin trabajo implementable restante. CI remoto, fusión y verificación de despliegue son entrega posterior, no acreditada por las pruebas locales.
+
+## Seguimiento del primer CI remoto
+
+HEAD 6e506e4: backend y contenedores aprobados. En frontend pasaron auditoría, TypeScript, lint, unidades, build y el bloque general E2E. El bloque contextual terminó 42/43: una expectativa de mensaje histórico no incluía «cálculo provisional» pese a un componente sin puntaje. Se actualiza únicamente esa expectativa al contrato FR-003, FR-004, sin retirar comprobaciones de avisos, estado ni cero escrituras. No hay cambios en código de aplicación.
+
+Gobernanza del mismo HEAD: el evento inicial de apertura falló por ausencia de etiquetas antes de aplicarlas; la ejecución posterior 38625177383 pasó con ambas aprobaciones. No se omiten ni se alteran reglas. Un nuevo commit vuelve a ejecutar todos los controles sobre su HEAD exacto.
+
+Corrección T016 validada: `npm.cmd run test:mock -- grading-review.mock.spec.ts` termina **43/43 verdes** en 6.0 minutos, usando datos sintéticos. Inventario regenerado/verificado: 573 superficies; únicamente cambia source_digest por la expectativa del test. No se repiten llamadas IA ni pruebas de backend/compilación locales porque el código de aplicación no cambió; CI remoto completo permanece obligatorio.
