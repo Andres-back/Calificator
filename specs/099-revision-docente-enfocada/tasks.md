@@ -38,3 +38,7 @@ T001 → T002 → pruebas T003/T005 → T004 → T006 → T007 → T008/T009 →
 ## Fase 7: Convergencia
 
 - [x] T012 Ajustar a 44 px cuatro controles pequeños de evidencia y pregunta vinculada a reclamo en frontend/src/modules/calificaciones/CalificacionesWorkspace.tsx; comprobar tamaño y reconstruir antes de entregar, por FR-008 y Constitución V (partial).
+
+## Corrección autorizada tras CI
+
+- [x] T013 Registrar 099 en ALL_SPECS de tests/spec_governance/test_spec_baseline.py, reproducir el control sobre archivos versionados sin incluir la propuesta 098 y actualizar specs/099-revision-docente-enfocada/quickstart.md; autorización «SI» del 2026-10-14. No cambiar aserciones ni aplicación (FR-011).

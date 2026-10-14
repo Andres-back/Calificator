@@ -42,3 +42,9 @@ No cambios backend, migraciones, modelos, notas, evidencias ni publicaciones; co
 ## Convergencia
 
 Revisión de 11 requisitos funcionales, seis criterios de éxito y siete decisiones del plan bajo ocho principios constitucionales. Hallazgo parcial: cuatro controles pequeños requerían altura táctil de 44 px; añadido T012, completado con clases explícitas y comprobación de botones de evidencia. Sin otras brechas de implementación detectadas. Inventario regenerado y comprobado: 573 superficies, sin altas de rutas/endpoints/tablas; gobernanza local del cambio preparado verde, tras expandir referencias abreviadas FR en tareas. CI remoto queda pendiente, sin eludir sus controles.
+
+## Corrección de registro tras CI — PR #208
+
+El control remoto detectó que 099 no estaba registrado en `tests/spec_governance/test_spec_baseline.py::ALL_SPECS`. La validación local anterior del PR y del inventario no incluía esa suite: no equivalía a gobernanza completa verde. Corrección autorizada por «SI»: añadir únicamente el identificador a la lista, sin relajar aserciones ni cambiar aplicación.
+
+Reproducido el AssertionError en una copia aislada mediante `git archive` del commit `60e47b9`, sin la propuesta 098 no versionada. Después de copiar el baseline corregido, las ocho funciones `test_*` del archivo pasaron por invocación directa con Python estándar; no se declara ejecución de pytest ni de sus 41 casos completos. T013 documenta el cierre local. CI del nuevo commit debe ejecutar la suite completa; frontend del commit anterior todavía estaba en progreso al consultar. Sin fusión/despliegue ni cambios académicos.
