@@ -1,10 +1,12 @@
 import { useEffect, useId, useRef, useState, type RefObject } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { ChevronDown, ClipboardCheck, LogOut, Menu, UserRound } from 'lucide-react';
+import { ChevronDown, ClipboardCheck, LogOut, Menu, Smartphone, UserRound } from 'lucide-react';
 import { EducationalIcon, ThemeToggle } from '@/components/ui';
 import type { EducationalIconName } from '@/components/ui/EducationalIcon';
 import { useAuth } from '@/stores/auth';
 import { routes } from '@/config/routes';
+import { isInstalledApp } from '@/lib/installedApp';
+import { HomeScreenGuide } from '@/components/install/HomeScreenShortcut';
 
 const TEACHER_CONTEXTS: Array<{ match: string; label: string; brandIcon: EducationalIconName }> = [
   { match: '/app/perfil', label: 'Mi perfil', brandIcon: 'ai-settings' },
@@ -39,6 +41,7 @@ export function Topbar({
   const navigate = useNavigate();
   const location = useLocation();
   const [open, setOpen] = useState(false);
+  const [shortcutOpen, setShortcutOpen] = useState(false);
   const accountButtonRef = useRef<HTMLButtonElement>(null);
   const accountMenuId = useId();
   const initials = (user?.nombre ?? '?')
@@ -141,6 +144,7 @@ export function Topbar({
               </span>
             </div>
             <Link to={routes.profile} role="menuitem" onClick={() => setOpen(false)} className="focus-ring flex min-h-11 items-center gap-2 px-4 py-3 text-sm font-medium hover:bg-surface-2"><UserRound className="h-4 w-4" aria-hidden="true" /> Mi perfil</Link>
+            {!isInstalledApp() && <button type="button" role="menuitem" aria-haspopup="dialog" onClick={() => { setOpen(false); accountButtonRef.current?.focus(); setShortcutOpen(true); }} className="focus-ring flex min-h-11 w-full items-center gap-2 px-4 py-3 text-sm font-medium hover:bg-surface-2"><Smartphone className="h-4 w-4" aria-hidden="true" /> Añadir al inicio</button>}
             <button
               type="button"
               onClick={async () => {
@@ -155,6 +159,7 @@ export function Topbar({
           </div>
         )}
       </div>
+      <HomeScreenGuide open={shortcutOpen} onClose={() => setShortcutOpen(false)} />
     </header>
   );
 }

@@ -3,6 +3,7 @@ import { AlertTriangle, CheckCircle2, EyeOff, FileSearch } from 'lucide-react';
 import { Badge } from '@/components/ui';
 import type { GradeBreakdownData } from '@/types/api';
 import { GradeFormula } from './GradeFormula';
+import { gradeCalculationPresentation } from './gradeCalculationPresentation';
 
 const stateLabel: Record<string, string> = {
   correcta: 'Correcta', parcial: 'Parcial', incorrecta: 'Incorrecta',
@@ -22,6 +23,7 @@ export function GradeBreakdown({ breakdown, student = false, compactTeacher = fa
   onSelectComponent?: (componentId: string) => void;
 }) {
   const compact = compactTeacher && !student;
+  const calculation = student ? undefined : gradeCalculationPresentation(breakdown);
   return (
     <section aria-labelledby="grade-breakdown-title" className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -42,8 +44,8 @@ export function GradeBreakdown({ breakdown, student = false, compactTeacher = fa
             className={`focus-ring min-h-11 min-w-11 rounded-lg border px-3 font-semibold ${component.id === selectedComponentId ? 'border-brand-500 bg-brand-600 text-white' : 'border-border bg-surface text-fg'}`}
           ><span>{component.numero ?? component.orden + 1}{component.requiere_revision ? ' !' : ''}</span>{compact && <span className="ml-2 text-xs font-normal">{component.puntos_obtenidos == null ? '—' : Number(component.puntos_obtenidos).toFixed(2)}/{Number(component.puntos_maximos).toFixed(2)} · {stateLabel[component.estado] ?? component.estado}</span>}</button>)}
         </nav>
-        <details className="rounded-lg border border-border px-3"><summary className="flex min-h-11 cursor-pointer items-center font-semibold">Cómo se calcula la nota · {Number(breakdown.formula.nota_final).toFixed(2)}</summary><GradeFormula formula={breakdown.formula} adjustmentDetail={breakdown.ajuste_global_detalle} /></details>
-      </> : <GradeFormula formula={breakdown.formula} adjustmentDetail={breakdown.ajuste_global_detalle} />}
+        <details className="rounded-lg border border-border px-3"><summary className="flex min-h-11 cursor-pointer items-center font-semibold">{calculation?.provisional ? calculation.label : 'Cómo se calcula la nota'} · {Number(breakdown.formula.nota_final).toFixed(2)}</summary><GradeFormula formula={breakdown.formula} adjustmentDetail={breakdown.ajuste_global_detalle} calculation={calculation} /></details>
+      </> : <GradeFormula formula={breakdown.formula} adjustmentDetail={breakdown.ajuste_global_detalle} calculation={calculation} />}
       <div className="space-y-3">
         {breakdown.componentes.filter((component) => student || !selectedComponentId || component.id === selectedComponentId).map((component) => (
           <article id={`grade-component-${component.id}`} key={component.id} tabIndex={-1} className="min-w-0 scroll-mt-24 rounded-xl border border-border bg-surface p-4 [overflow-wrap:anywhere]">

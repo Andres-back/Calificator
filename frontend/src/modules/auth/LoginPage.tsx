@@ -9,6 +9,7 @@ import { useAuth } from '@/stores/auth';
 import type { UserRole } from '@/types/api';
 import { routes } from '@/config/routes';
 import { LegalFooter } from '@/components/legal/LegalFooter';
+import { HomeScreenShortcut } from '@/components/install/HomeScreenShortcut';
 
 const LAST_EMAIL_KEY = 'xcalificator:last-login-email';
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -235,6 +236,7 @@ export function LoginPage() {
                 ¿Aún no tienes cuenta? <Link to={routes.register} className="font-bold text-brand-600 hover:underline dark:text-brand-300">Regístrate aquí</Link>
               </p>
               <p className="mt-2 text-center text-xs"><Link to={routes.home} className="text-muted hover:text-fg hover:underline">Volver al inicio</Link></p>
+              <div className="mt-4"><HomeScreenShortcut className="w-full" /></div>
 
               <p className="mt-5 text-center text-xs text-muted">Tu contraseña nunca se guarda en este dispositivo.</p>
 

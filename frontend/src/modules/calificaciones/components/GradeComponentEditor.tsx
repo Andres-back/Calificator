@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Button, Field, Input, Select, Textarea } from '@/components/ui';
 import type { GradeComponentData, GradeComponentChange, GradeFormulaData } from '@/types/api';
+import { formatScoreInput } from './gradeCalculationPresentation';
 
 export function GradeComponentEditor({ component, formula, saving, saveError, onCancel, onSave, onSaveAndNext, onSaveAndNextQuestion, onReload, onDirtyChange }: {
   component: GradeComponentData;
@@ -14,13 +15,13 @@ export function GradeComponentEditor({ component, formula, saving, saveError, on
   onReload?: () => void;
   onDirtyChange?: (dirty: boolean) => void;
 }) {
-  const [points, setPoints] = useState(String(component.puntos_obtenidos ?? ''));
+  const [points, setPoints] = useState(formatScoreInput(component.puntos_obtenidos));
   const [state, setState] = useState(component.estado);
   const [reason, setReason] = useState('');
   const [studentExplanation, setStudentExplanation] = useState(component.explicacion ?? '');
 
   useEffect(() => {
-    setPoints(String(component.puntos_obtenidos ?? ''));
+    setPoints(formatScoreInput(component.puntos_obtenidos));
     setState(component.estado);
     setReason('');
     setStudentExplanation(component.explicacion ?? '');
@@ -28,7 +29,7 @@ export function GradeComponentEditor({ component, formula, saving, saveError, on
 
   const numeric = Number(points);
   const originalPoints = Number(component.puntos_obtenidos ?? 0);
-  const dirty = points !== String(component.puntos_obtenidos ?? '')
+  const dirty = formatScoreInput(points) !== formatScoreInput(component.puntos_obtenidos)
     || state !== component.estado
     || reason.trim().length > 0
     || studentExplanation !== (component.explicacion ?? '');
@@ -63,8 +64,8 @@ export function GradeComponentEditor({ component, formula, saving, saveError, on
     <div className="space-y-4 rounded-xl border border-brand-200 bg-brand-50/40 p-4 dark:border-brand-500/30 dark:bg-brand-500/10">
       <p className="font-bold">Editar {component.tipo === 'pregunta' ? `pregunta ${component.numero ?? component.orden + 1}` : component.titulo}</p>
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field label={`Puntos (máximo ${Number(component.puntos_maximos).toFixed(2)})`} required>
-          <Input type="number" min={0} max={Number(component.puntos_maximos)} step="0.01" value={points} onChange={(event) => setPoints(event.target.value)} />
+        <Field label={`Puntos (máximo ${formatScoreInput(component.puntos_maximos)})`} required>
+          <Input type="number" inputMode="decimal" min={0} max={Number(component.puntos_maximos)} step="any" value={points} onChange={(event) => setPoints(event.target.value)} />
         </Field>
         <Field label="Estado" required>
           <Select value={state} onChange={(event) => setState(event.target.value)}>

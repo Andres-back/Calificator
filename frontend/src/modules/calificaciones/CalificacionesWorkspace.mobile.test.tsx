@@ -1,10 +1,30 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { GradeNoteExplanation, MobileReviewActionBar, MobileReviewContext } from './CalificacionesWorkspace';
 import type { CalificacionDetalle } from '@/types/api';
 
 describe('centro de calificaciones en celular', () => {
+  it('reserva la altura real de acciones y libera espacio cuando la barra se oculta', () => {
+    let height = 88;
+    const measure = vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(() => ({ height }) as DOMRect);
+    const view = render(<div data-testid="grade-review-scroll"><MobileReviewActionBar processing={false} done={false} published={false} score={4} canGrade canPublish dirty={false} componentDirty={false} advancedEditOpen={false} confirmPending={false} publishPending={false} onConfirm={vi.fn()} onPublish={vi.fn()} onAdjust={vi.fn()} onSaveChanges={vi.fn()} onNext={vi.fn()} /></div>);
+    const scroller = screen.getByTestId('grade-review-scroll');
+    expect(scroller.style.getPropertyValue('--grade-review-actions-height')).toBe('88px');
+    height = 0;
+    fireEvent(window, new Event('resize'));
+    expect(scroller.style.getPropertyValue('--grade-review-actions-height')).toBe('0px');
+    view.unmount();
+    expect(scroller.style.getPropertyValue('--grade-review-actions-height')).toBe('');
+    measure.mockRestore();
+  });
+  it('explica sugerida 2.5 frente a 1.85 provisional con dos preguntas pendientes', () => {
+    const cal = { estado: 'requiere_revision', timeline: [], desglose: { cobertura_estado: 'incompleta', formula: { puntos_obtenidos: 1.85, puntos_posibles: 5, nota_maxima: 5, nota_base: 1.85, ajuste_global: 0, nota_final: 1.85 }, componentes: [{ tipo: 'pregunta', puntos_obtenidos: null }, { tipo: 'pregunta', puntos_obtenidos: null }, { tipo: 'pregunta', puntos_obtenidos: 0 }] } } as unknown as CalificacionDetalle;
+    render(<GradeNoteExplanation cal={cal} score={2.5} />);
+    expect(screen.getByText(/Faltan 2 preguntas por puntuar/)).toBeInTheDocument();
+    expect(screen.getByText(/El cálculo provisional da 1.85/)).toHaveTextContent('2.50');
+    expect(screen.queryByText(/Consulta el historial para conocer la decisión del docente/)).not.toBeInTheDocument();
+  });
   it('no atribuye al docente una discrepancia mientras la nota sigue pendiente', () => {
     const cal = { estado: 'requiere_revision', timeline: [], desglose: { formula: { puntos_obtenidos: 2.48, puntos_posibles: 5, nota_maxima: 5, nota_base: 2.48, ajuste_global: 0, nota_final: 2.48 }, componentes: [] } } as unknown as CalificacionDetalle;
     render(<GradeNoteExplanation cal={cal} score={2.52} />);

@@ -384,7 +384,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "b81d231ab62cd651831880e4d94e3b9cec05ed134fdea2ccf53b4c9c14ac09b9",
+  "source_digest": "c653621d3b2ef0b2fd203c9e9269fbf73b2b27dd4b02c3335e47d46af3238574",
   "surfaces": [
     {
       "actors": [
@@ -15651,6 +15651,12 @@
           "level": "unit",
           "reference": "/",
           "status": "direct",
+          "test_path": "frontend/src/components/install/HomeScreenShortcut.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
           "test_path": "frontend/src/components/layout/AppShell.test.tsx"
         },
         {
@@ -15903,7 +15909,19 @@
           "level": "unit",
           "reference": "/",
           "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/components/GradeFeedback.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
           "test_path": "frontend/src/modules/calificaciones/components/GradeGlobalAdjustmentEditor.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/components/gradeCalculationPresentation.test.ts"
         },
         {
           "level": "unit",

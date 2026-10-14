@@ -98,7 +98,7 @@ jobs:
   frontend:
     name: Frontend quality, build and E2E
     runs-on: ubuntu-22.04
-    timeout-minutes: 25
+    timeout-minutes: 35
     defaults:
       run:
         working-directory: frontend

@@ -57,6 +57,10 @@ Como equipo, necesito actualizar estos artefactos cuando cambie el comportamient
 
 - [Ver superficies, permisos y cobertura de este dominio](./inventory.md).
 
+## Evolución 100: acceso directo al inicio
+
+[100-feedback-demo-movil](../100-feedback-demo-movil/spec.md) añade «Añadir al inicio» en portada, acceso y menú de cuenta de todos los roles. Muestra guía manual Android/iPhone con cierre/foco y oculta el botón en standalone. No cambia bootstrap, sesión, rutas, manifest, credenciales ni permisos, no instala una extensión/APK ni añade offline/service worker. Consultar ayuda no ejecuta acciones académicas ni acredita instalación física.
+
 ## Evolución 033: navegación docente unificada
 
 El acceso «Calificar y revisar» abre `/app/calificaciones` con contexto de materia/evaluación/alumno/pregunta/hoja/filtro en query. Los enlaces antiguos workspace, foto y materia/calificar son adaptadores; el boletín mantiene su ruta. La proyección exige `grading.read` y pertenencia a la evaluación; el estudiante no accede al centro aunque pueda leer sus propias notas. Carga/edición requieren `grading.grade`, publicación `grading.publish` y PQRS `submissions.review`, sin ampliar permisos por reunir controles. El detalle valida la correspondencia con la selección antes de renderizar.
