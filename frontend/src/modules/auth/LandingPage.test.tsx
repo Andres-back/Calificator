@@ -25,5 +25,6 @@ describe('LandingPage', () => {
     const loginLink = screen.getByRole('banner').querySelector('a[href="/login"]');
     expect(loginLink).toHaveTextContent('Ingresar');
     expect(loginLink).not.toHaveClass('hidden');
+    expect(screen.getByRole('button', { name: 'Añadir al inicio' })).toBeInTheDocument();
   });
 });

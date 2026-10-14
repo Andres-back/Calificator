@@ -9,7 +9,7 @@ const base = {
   evidencia_paginas: [1], valoraciones: [],
 };
 
-for (const viewport of [{ width: 360, height: 800 }, { width: 1366, height: 900 }]) {
+for (const viewport of [{ width: 360, height: 800 }, { width: 390, height: 664 }, { width: 1366, height: 900 }]) {
   test(`099 accesos claros, borrador y evidencia conservados ${viewport.width}px`, async ({ page }) => {
     await page.setViewportSize(viewport);
     await login(page, 'profesor');
@@ -27,13 +27,16 @@ for (const viewport of [{ width: 360, height: 800 }, { width: 1366, height: 900 
     await page.route('**/api/evidencia-prueba/paginas/1', (route) => route.fulfill({ contentType: 'image/svg+xml', body: '<svg xmlns="http://www.w3.org/2000/svg" width="400" height="500"><rect width="400" height="500" fill="white"/><text x="20" y="40">Evidencia sintética</text></svg>' }));
     await page.goto('/app/calificaciones?evaluacion=e1&calificacion=c1');
     const detail = page.getByTestId('grade-review-scroll');
-    await expect(detail.getByRole('alert')).toContainText('La IA propone 2.52, pero el cálculo por respuestas da 2.48.');
+    await expect(detail.getByRole('alert')).toContainText('La IA propone 2.52, pero el cálculo provisional da 2.48. Falta 1 pregunta por puntuar.');
     await expect(detail.getByText(/Consulta el historial para conocer la decisión del docente/)).toHaveCount(0);
     const nav = detail.getByRole('navigation', { name: 'Secciones de la calificación' });
     for (const control of await nav.getByRole('button').all()) {
       const box = (await control.boundingBox())!;
       expect(box.height).toBeGreaterThanOrEqual(44);
       expect(box.width).toBeGreaterThanOrEqual(44);
+      // Short viewports need normal vertical scrolling; controls must remain
+      // reachable, not all fit above the fold at the same time.
+      if (viewport.height < 700) await control.scrollIntoViewIfNeeded();
       await expect(control).toBeInViewport();
     }
     await page.screenshot({ path: `../output/playwright/teacher-flow/review099-${viewport.width}.png` });
@@ -48,6 +51,8 @@ for (const viewport of [{ width: 360, height: 800 }, { width: 1366, height: 900 
     await nav.getByRole('button', { name: 'Historial', exact: true }).click();
     await expect(detail.getByRole('heading', { name: 'Historial de la calificación' })).toBeVisible();
     await nav.getByRole('button', { name: 'Retroalimentación', exact: true }).click();
+    await expect(detail.getByTestId('grade-feedback-text')).toContainText('Identificaste al personaje.');
+    await detail.getByRole('button', { name: 'Editar retroalimentación', exact: true }).click();
     const feedback = detail.getByRole('textbox', { name: 'Retroalimentación', exact: true });
     await feedback.fill('Conserva este borrador docente.');
     await nav.getByRole('button', { name: 'Historial', exact: true }).click();
@@ -507,7 +512,7 @@ for (const viewport of [{ width: 360, height: 800 }, { width: 390, height: 844 }
       await expect(comparison).toContainText('Respuesta de referencia');
       expect((await comparison.boundingBox())!.height).toBeLessThan(180);
       await feedback.click();
-      await expect(page.getByLabel(/Retroalimentación/).last()).toBeVisible();
+      await expect(page.getByTestId('grade-feedback-text')).toBeVisible();
       await page.getByRole('link', { name: 'Volver al libro de notas' }).click();
       await expect(page.getByRole('searchbox', { name: 'Buscar estudiante' })).toHaveValue('prueba');
       await expect(page.getByRole('combobox', { name: 'Filtrar por evaluación' })).toHaveValue('e1');

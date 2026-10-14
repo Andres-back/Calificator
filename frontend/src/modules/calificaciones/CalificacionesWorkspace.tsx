@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useBlocker, useParams, useSearchParams, useLocation, Link, Navigate } from 'react-router-dom';
 import { useInfiniteQuery, useMutation, useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
@@ -44,6 +44,8 @@ import { GradingJobMonitor } from './GradingJobMonitor';
 import { RevisionGuide } from './RevisionGuide';
 import { GradeBreakdown } from './components/GradeBreakdown';
 import { GradeComponentEditor } from './components/GradeComponentEditor';
+import { GradeFeedback } from './components/GradeFeedback';
+import { gradeCalculationPresentation } from './components/gradeCalculationPresentation';
 import { GradeGlobalAdjustmentEditor } from './components/GradeGlobalAdjustmentEditor';
 import { GradeBreakdownHistory } from './components/GradeBreakdownHistory';
 import { buildReviewTriage, hasVerifierReviewSignals } from './review-triage/buildReviewTriage';
@@ -185,6 +187,24 @@ export function MobileReviewActionBar({
   onNext: () => void;
 }) {
   const navigationBlocked = dirty || componentDirty || advancedEditOpen || claimsDirty || confirmPending || publishPending || savePending;
+  const barRef = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    const bar = barRef.current;
+    const scroller = bar?.closest<HTMLElement>('[data-testid="grade-review-scroll"]');
+    if (!bar || !scroller) return;
+    // Reserve the actual fixed footer, including wrapped messages and safe area.
+    // A hidden writing/desktop footer measures zero and releases the space.
+    const update = () => scroller.style.setProperty('--grade-review-actions-height', `${bar.getBoundingClientRect().height}px`);
+    update();
+    const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(update);
+    observer?.observe(bar);
+    window.addEventListener('resize', update);
+    return () => {
+      observer?.disconnect();
+      window.removeEventListener('resize', update);
+      scroller.style.removeProperty('--grade-review-actions-height');
+    };
+  }, []);
   const blockMessage = claimsDirty ? 'Termina o cancela el reclamo antes de continuar.' : componentDirty
     ? 'Guarda o cancela la respuesta abierta antes de continuar.'
     : advancedEditOpen
@@ -194,7 +214,7 @@ export function MobileReviewActionBar({
         : null;
 
   return (
-    <div className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-surface/95 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 shadow-[0_-12px_32px_rgba(15,23,42,0.16)] backdrop-blur xl:hidden" aria-label="Acciones de la calificación">
+    <div ref={barRef} className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-surface/95 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 shadow-[0_-12px_32px_rgba(15,23,42,0.16)] backdrop-blur xl:hidden" aria-label="Acciones de la calificación">
       {blockMessage && <p role="status" className="mb-2 text-center text-xs font-semibold text-amber-700 dark:text-amber-300">{blockMessage}</p>}
       {processing && <p role="status" className="mb-2 text-center text-xs text-muted">La IA sigue analizando esta entrega. Puedes revisar otro estudiante.</p>}
       <div className="mx-auto grid max-w-xl grid-cols-2 gap-2">
@@ -237,10 +257,12 @@ export function GradeNoteExplanation({ cal, score, compact = false }: { cal: Cal
     );
   }
   const formula = breakdown.formula;
+  const calculation = gradeCalculationPresentation(breakdown);
   const adjustment = Number(formula.ajuste_global);
   const overridesFormula = score != null && Math.abs(score - Number(formula.nota_final)) > 0.005;
   const content = (
     <div className="space-y-2 text-sm">
+      {calculation.provisional && <p className="leading-6 text-amber-800 dark:text-amber-200">{calculation.explanation}</p>}
       <p>Puntos por respuestas: <strong>{Number(formula.puntos_obtenidos).toFixed(2)} / {Number(formula.puntos_posibles).toFixed(2)}</strong>.</p>
       {compact ? <p className="text-muted">Equivale a {Number(formula.nota_base).toFixed(2)} / {Number(formula.nota_maxima).toFixed(1)} en la escala de esta evaluación, antes de cualquier ajuste del docente.</p> : <details>
         <summary className="focus-ring flex min-h-11 cursor-pointer items-center font-semibold text-brand-700 dark:text-brand-200">Ver cálculo de la nota</summary>
@@ -256,7 +278,7 @@ export function GradeNoteExplanation({ cal, score, compact = false }: { cal: Cal
         <div role="status" className="space-y-1 text-amber-800 dark:text-amber-200">
           <p>{DONE_STATES.has(cal.estado)
             ? `La nota actual es distinta del cálculo por respuestas (${Number(formula.nota_final).toFixed(2)}). ${decision ? 'Consulta el historial para conocer la decisión del docente.' : 'No hay un motivo de ajuste registrado en este resultado.'}`
-            : `El cálculo por respuestas da ${Number(formula.nota_final).toFixed(2)}, distinto de la sugerencia de IA. Revisa los puntajes antes de confirmar.`}</p>
+            : `El ${calculation.label.toLowerCase()} da ${Number(formula.nota_final).toFixed(2)}, distinto de la sugerencia de IA (${score?.toFixed(2)}). Revisa los puntajes antes de confirmar.`}</p>
           {decision && <p>{decision}</p>}
         </div>
       )}
@@ -874,6 +896,15 @@ function PanelDetalle({
     return true;
   }
 
+  function revealFeedback() {
+    const target = feedbackSectionRef.current;
+    const scroller = target?.closest<HTMLElement>('[data-testid="grade-review-scroll"]');
+    const identity = panelScopeRef.current?.querySelector<HTMLElement>('[data-testid="grade-review-identity"]');
+    if (target && scroller) {
+      scroller.scrollTop += target.getBoundingClientRect().top - scroller.getBoundingClientRect().top - (identity?.getBoundingClientRect().height ?? 0) - 12;
+    } else target?.scrollIntoView({ block: 'start' });
+  }
+
   function changeDetailView(view: ReviewSection) {
     const nextView = mobileTab === view ? 'resumen' : view;
     if (!canChangeDetailView(nextView)) return;
@@ -883,6 +914,7 @@ function PanelDetalle({
       const target = nextView === 'revision' ? reviewSectionRef.current : nextView === 'evidencia' ? evidenceSectionRef.current : nextView === 'retroalimentacion' ? feedbackSectionRef.current : null;
       target?.focus({ preventScroll: true });
       if (nextView === 'revision' || nextView === 'evidencia') detailViewRef.current?.scrollIntoView({ block: 'start' });
+      if (nextView === 'retroalimentacion') revealFeedback();
     });
   }
 
@@ -941,8 +973,9 @@ function PanelDetalle({
   const requestedReturn = detailParams.get('volver');
   const returnToBook = bookRoute && requestedReturn && (requestedReturn === bookRoute || requestedReturn.startsWith(`${bookRoute}?`)) ? requestedReturn : null;
   const formulaScore = cal.desglose?.formula.nota_final != null ? Number(cal.desglose.formula.nota_final) : null;
+  const calculation = cal.desglose ? gradeCalculationPresentation(cal.desglose) : null;
   const scoreDifference = !done && !presentation.processing && presentation.score != null && formulaScore != null && Number.isFinite(formulaScore) && Math.abs(presentation.score - formulaScore) > 0.005
-    ? `La IA propone ${formatGradeScore(presentation.score)}, pero el cálculo por respuestas da ${formatGradeScore(formulaScore)}. Revisa los puntajes antes de confirmar.` : undefined;
+    ? `La IA propone ${formatGradeScore(presentation.score)}, pero el ${calculation?.label.toLowerCase() ?? 'cálculo por respuestas'} da ${formatGradeScore(formulaScore)}. ${calculation?.provisional ? calculation.explanation : 'Revisa los puntajes antes de confirmar.'}` : undefined;
   const reviewNotices = <ReviewTriagePanel
     compact
     focused={!done && !presentation.processing}
@@ -955,7 +988,7 @@ function PanelDetalle({
       if (target === 'evidencia') showEvidencePage(evidencePage);
       else if (target === 'retroalimentacion') {
         changeDetailView('retroalimentacion');
-        window.requestAnimationFrame(() => { feedbackSectionRef.current?.focus({ preventScroll: true }); feedbackSectionRef.current?.scrollIntoView({ block: 'start' }); });
+        window.requestAnimationFrame(() => { feedbackSectionRef.current?.focus({ preventScroll: true }); revealFeedback(); });
       } else if (mobileTab !== 'revision') changeDetailView('revision');
       else reviewSectionRef.current?.scrollIntoView({ block: 'start' });
     }}
@@ -1136,9 +1169,8 @@ function PanelDetalle({
           </section>
         </div>
 
-        <div id="grade-feedback-panel" ref={feedbackSectionRef} tabIndex={-1} hidden={mobileTab !== 'retroalimentacion'} className="scroll-mt-4 rounded-xl border border-border p-3">
-          <h2 className="mb-2 text-base font-bold">Retroalimentación para el estudiante</h2>
-          {presentation.processing ? <p className="text-sm text-muted">La retroalimentación estará disponible cuando termine el análisis.</p> : <Field label="Retroalimentación"><Textarea readOnly={!canGrade} value={adjFeedback} onChange={(e) => setAdjFeedback(e.target.value)} placeholder="Escribe qué logró el estudiante y cómo puede mejorar…" rows={4} /></Field>}
+        <div id="grade-feedback-panel" ref={feedbackSectionRef} tabIndex={-1} hidden={mobileTab !== 'retroalimentacion'} className="scroll-mt-4 rounded-xl border border-border p-4 sm:p-5 xl:scroll-mt-32">
+          {presentation.processing ? <><h2 className="mb-2 text-base font-bold">Retroalimentación para el estudiante</h2><p className="text-sm text-muted">La retroalimentación estará disponible cuando termine el análisis.</p></> : <GradeFeedback key={cal.id} value={adjFeedback} original={originalFeedback} canEdit={canGrade} onChange={setAdjFeedback} onSave={submitAjuste} saving={adjustPending} saveDisabled={adjNota === '' || editingComponentDirty || showGlobalAdjustment || claimDirty} error={adjError} onFinishEditing={mobileForm.finishWriting} />}
         </div>
 
         <div id="grade-history-panel" hidden={mobileTab !== 'historial'} className="space-y-3">
@@ -2325,7 +2357,7 @@ function GradingCenter() {
                 </button>
                 {mobileDirty && <span className="text-[10px] font-semibold text-amber-600">Sin guardar</span>}
               </div>
-              <div ref={reviewScrollRef} data-testid="grade-review-scroll" role="region" tabIndex={0} aria-label="Detalle de la calificación" className={cn('min-h-0 flex-1 overflow-y-auto outline-none focus-visible:ring-2 focus-visible:ring-brand-500', splitLayout ? 'xl:overscroll-contain' : 'xl:overflow-visible')}>
+              <div ref={reviewScrollRef} data-testid="grade-review-scroll" role="region" tabIndex={0} aria-label="Detalle de la calificación" className={cn('mb-[var(--grade-review-actions-height,5rem)] min-h-0 flex-1 overflow-y-auto outline-none focus-visible:ring-2 focus-visible:ring-brand-500 xl:mb-0', splitLayout ? 'xl:overscroll-contain' : 'xl:overflow-visible')}>
                 {detalleQuery.isLoading ? (
                   <div className="h-full space-y-4 overflow-y-auto p-5">{Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-20" />)}</div>
                 ) : detalleQuery.error ? (

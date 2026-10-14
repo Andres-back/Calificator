@@ -3,6 +3,26 @@ import { describe, expect, it, vi } from 'vitest';
 import { GradeComponentEditor } from './GradeComponentEditor';
 
 describe('GradeComponentEditor', () => {
+  it.each(['0.0000', '0.7000', '0.6250'])('abrir %s elimina ceros, conserva precisión y no marca dirty', (points) => {
+    const onDirtyChange = vi.fn();
+    render(<GradeComponentEditor component={{ id: 'p1', clave: 'pregunta:1', orden: 0, tipo: 'pregunta', numero: '1', titulo: 'Pregunta', respuesta_estudiante: 'A', respuesta_referencia: 'A', puntos_obtenidos: points, puntos_maximos: '1.0000', estado: 'correcta', explicacion: 'Respuesta registrada.', origen: 'ia', requiere_revision: false, evidencia_paginas: [] }} formula={{ puntos_obtenidos: points, puntos_posibles: 1, nota_maxima: 5, nota_base: 0, ajuste_global: 0, nota_antes_redondeo: 0, regla_redondeo: 'half_up', decimales: 2, nota_final: 0 }} onCancel={vi.fn()} onSave={vi.fn()} onDirtyChange={onDirtyChange} />);
+    expect(screen.getByRole('spinbutton')).toHaveValue(Number(points));
+    expect((screen.getByRole('spinbutton') as HTMLInputElement).value).toBe(String(Number(points)));
+    expect(onDirtyChange).not.toHaveBeenCalledWith(true);
+    expect(screen.getByRole('spinbutton')).toHaveAttribute('step', 'any');
+  });
+  it('mantiene máximo 0.625 exacto, rechaza 0.63 y no redondea al guardar', () => {
+    const onSave = vi.fn();
+    render(<GradeComponentEditor component={{ id: 'p1', clave: 'pregunta:1', orden: 0, tipo: 'pregunta', numero: '1', titulo: 'Pregunta', respuesta_estudiante: 'A', respuesta_referencia: 'A', puntos_obtenidos: '0.6250', puntos_maximos: '0.6250', estado: 'correcta', explicacion: 'Respuesta registrada.', origen: 'ia', requiere_revision: false, evidencia_paginas: [] }} formula={{ puntos_obtenidos: '0.6250', puntos_posibles: 5, nota_maxima: 5, nota_base: 0.625, ajuste_global: 0, nota_antes_redondeo: 0.625, regla_redondeo: 'half_up', decimales: 2, nota_final: 0.63 }} onCancel={vi.fn()} onSave={onSave} />);
+    const input = screen.getByLabelText(/Puntos \(máximo 0.625\)/);
+    expect(input).toHaveAttribute('max', '0.625');
+    fireEvent.change(screen.getByLabelText(/Motivo interno/), { target: { value: 'Revisión sustentada' } });
+    fireEvent.change(input, { target: { value: '0.63' } });
+    expect(screen.getByRole('button', { name: 'Guardar y recalcular' })).toBeDisabled();
+    fireEvent.change(input, { target: { value: '0.625' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar y recalcular' }));
+    expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ puntos_obtenidos: 0.625 }));
+  });
   it('exige motivo y explicación antes de guardar', () => {
     const onSave = vi.fn();
     render(<GradeComponentEditor component={{

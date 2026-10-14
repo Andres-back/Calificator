@@ -19,6 +19,16 @@ const breakdown: GradeBreakdownData = {
 };
 
 describe('GradeBreakdown', () => {
+  it('identifica el cálculo incompleto como provisional solo en la revisión docente', () => {
+    const incomplete = { ...breakdown, cobertura_estado: 'incompleta', componentes: [{ ...breakdown.componentes[0], puntos_obtenidos: null }], formula: { ...breakdown.formula, nota_final: 1.85 } };
+    const view = render(<GradeBreakdown breakdown={incomplete} onSelectComponent={vi.fn()} compactTeacher />);
+    expect(screen.getByText('Cálculo provisional · 1.85')).toBeInTheDocument();
+    expect(screen.getByText(/Falta 1 pregunta por puntuar/)).toBeInTheDocument();
+    expect(screen.queryByText('Nota final')).not.toBeInTheDocument();
+    view.rerender(<GradeBreakdown breakdown={incomplete} student />);
+    expect(screen.getByText('Nota final')).toBeInTheDocument();
+    expect(screen.queryByText(/Falta 1 pregunta por puntuar/)).not.toBeInTheDocument();
+  });
   it('usa comparación conjunta solo al pedir la variante docente y conserva el cero', () => {
     const zero = { ...breakdown, componentes: [{ ...breakdown.componentes[0], respuesta_estudiante: '0', respuesta_referencia: '0' }] };
     const view = render(<GradeBreakdown breakdown={zero} compactTeacher />);

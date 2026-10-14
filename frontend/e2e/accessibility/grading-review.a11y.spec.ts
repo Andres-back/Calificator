@@ -48,6 +48,7 @@ for (const theme of ['light', 'dark'] as const) for (const viewport of [
   await page.keyboard.press('Tab');
   expect(await page.evaluate(() => document.activeElement !== document.body)).toBeTruthy();
   await panel.getByRole('button', { name: 'Retroalimentación', exact: true }).click();
+  await panel.getByRole('button', { name: 'Editar retroalimentación', exact: true }).click();
   const feedback = panel.locator('textarea');
   await feedback.evaluate((element) => element.scrollIntoView({ block: 'center' }));
   await feedback.focus();

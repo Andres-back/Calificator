@@ -15,6 +15,7 @@ import {
 import { ThemeToggle } from '@/components/ui';
 import { routes } from '@/config/routes';
 import { LegalFooter } from '@/components/legal/LegalFooter';
+import { HomeScreenShortcut } from '@/components/install/HomeScreenShortcut';
 
 const benefits = [
   {
@@ -88,6 +89,7 @@ export function LandingPage() {
                   <Github className="h-4 w-4" /> Ver código en GitHub
                 </a>
               </div>
+              <div className="mt-4"><HomeScreenShortcut className="min-h-12 w-full sm:w-auto" /></div>
               <div className="mt-8 flex flex-wrap gap-x-5 gap-y-2 text-sm font-semibold text-muted">
                 <span className="inline-flex items-center gap-1.5"><CheckCircle2 className="h-4 w-4 text-emerald-500" /> Registro gratuito</span>
                 <span className="inline-flex items-center gap-1.5"><CheckCircle2 className="h-4 w-4 text-emerald-500" /> Revisión humana</span>
