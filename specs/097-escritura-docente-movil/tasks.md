@@ -48,3 +48,5 @@ T001 → T002 → T003/T004 → T005/T006 → T007/T008 → T009/T010 → T011 �
 - [x] T016 Ejecutar Converge y preparar actualización del PR #205 con gobernanza local verde; registrar autorización «fusion»/«sí» y cierre de entrega condicionado a CI verde y HEAD exacto (FR-012).
 
 CI y fusión son puertas externas de entrega, no tareas locales: no se declarará la fusión completada hasta confirmar el commit de main y el cierre del PR.
+
+- [x] T017 Esperar explícitamente la apertura asíncrona de rúbrica en la regresión de `GenerationWizard.test.tsx`, conservar bloqueo de guardado y cero mutaciones; verificar suite completa y actualizar evidencia/inventario antes de repetir CI (FR-008, FR-010, FR-012).

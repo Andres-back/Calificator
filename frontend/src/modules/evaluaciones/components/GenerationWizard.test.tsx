@@ -234,7 +234,7 @@ describe('GenerationWizard', () => {
     renderWizard(vi.fn(), { ...rubricEvaluation, criterios: rubricEvaluation.criterios.map((criterion, index) => ({ ...criterion, peso_porcentaje: index ? 30 : 60 })) });
     expect(screen.getByRole('button', { name: 'Guardar cambios' })).toBeDisabled();
     await user.click(screen.getByRole('button', { name: 'Revisar pendientes' }));
-    expect(screen.getByLabelText('Nombre del criterio 1')).toBeVisible();
+    await waitFor(() => expect(screen.getByLabelText('Nombre del criterio 1')).toBeVisible());
     expect(mocks.update).not.toHaveBeenCalled();
   });
   it('097 focuses the invalid score rather than moving subsequent typing into the statement', async () => {

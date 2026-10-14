@@ -50,3 +50,5 @@ Validación de la corrección:
 - Inventario: 573 superficies, baseline y gobernanza local comprobados; Converge sin nuevas brechas de código. Sin hooks de extensiones.
 
 La entrega sigue condicionada a CI remoto completo verde y fusión squash del HEAD comprobado. La autorización no permite bypass ni modificaciones manuales de producción. No se acredita un teclado físico ni velocidad de LLM por estas pruebas.
+
+CI posterior de c661dc3 tuvo 651/652 unidades verdes; la comprobación existente de visibilidad de rúbrica se ejecutaba antes de completar su apertura asíncrona. Se cambió exclusivamente esa aserción a waitFor, conservando visibilidad real, guardado bloqueado y cero mutaciones. No se omite la prueba ni se modifica la rúbrica. Suite completa local posterior: 103 archivos y 652/652 verdes en 60,11 segundos. Se actualiza inventario/gobernanza y se espera una nueva CI completa; ningún HEAD fallido se fusionó.
