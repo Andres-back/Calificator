@@ -18,6 +18,18 @@ const breakdown = (components: GradeComponentData[]): GradeBreakdownData => ({
 });
 
 describe('ReviewTriagePanel', () => {
+  it('prioriza la discrepancia sin desplegar todos los motivos ni perderlos', () => {
+    const summary = buildReviewTriage({ ...breakdown([component('p1', 0, { estado: 'ilegible' })]), cobertura_estado: 'incompleta', bloqueos: ['hoja_faltante', 'feedback_quality:nota_global_no_coincide_con_suma'] });
+    const review = vi.fn();
+    render(<ReviewTriagePanel focused compact summary={summary} onSelectComponent={vi.fn()} onReviewGeneral={review} />);
+    expect(screen.getByRole('alert')).toHaveTextContent('La nota propuesta por la IA no coincide');
+    expect(screen.queryByRole('button', { name: 'Ver evidencia' })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Revisar ahora' }));
+    expect(review).toHaveBeenCalledWith('revision');
+    fireEvent.click(screen.getByText(/Ver todos los avisos/));
+    expect(screen.getByRole('button', { name: 'Ver evidencia' })).toBeInTheDocument();
+    expect(summary.globalReasons).toContain('hoja_faltante');
+  });
   it('no afirma una decisión docente si el análisis todavía está en proceso', () => {
     render(<ReviewTriagePanel compact historical processing summary={buildReviewTriage(null)} extraReasons={['aviso_previo']} onSelectComponent={() => undefined} />);
     expect(screen.getByText(/La entrega sigue en análisis/)).toBeInTheDocument();

@@ -302,7 +302,11 @@ actualizar la especificación propietaria, su plan y sus tareas; no debe crear d
 
 ## Evolución 097: escritura docente móvil
 
-- [097-escritura-docente-movil](097-escritura-docente-movil/spec.md), [issue #204](https://github.com/Andres-back/Calificator/issues/204): crear/editar evaluaciones al escribir en iPhone/Android, teclado voluntario, cabecera compacta, Listo sin submit, viewport visible y opciones plegables. Alcance/[plan](097-escritura-docente-movil/plan.md) aprobados; listas base 16/16 y escritura 8/8 revisadas con autorización. Implementación y pruebas locales completas: [resultados](097-escritura-docente-movil/quickstart.md); propietario 005. CI remoto y autorización separada antes de fusión/producción; emulación no acredita teclado físico.
+- [097-escritura-docente-movil](097-escritura-docente-movil/spec.md), [issue #204](https://github.com/Andres-back/Calificator/issues/204): crear/editar evaluaciones al escribir en iPhone/Android, teclado voluntario, cabecera compacta, Listo sin submit, viewport visible y opciones plegables. Alcance/[plan](097-escritura-docente-movil/plan.md) aprobados; listas base 16/16 y escritura 8/8 revisadas con autorización. [PR #205](https://github.com/Andres-back/Calificator/pull/205) fusionado con cuatro controles verdes, main `d973199`; producción verificada el 2026-10-14: fuente desplegada coincide, backend/web saludables y hashes de assets públicos iguales al build validado. [Evidencia](https://github.com/Andres-back/Calificator/pull/205#issuecomment-6162516841). Propietario 005; emulación y verificación de despliegue no acreditan teclado físico.
+
+## Evolución 099: revisión docente enfocada
+
+- [099-revision-docente-enfocada](099-revision-docente-enfocada/spec.md), [issue #207](https://github.com/Andres-back/Calificator/issues/207): resumen compacto de nota, accesos a respuestas/evidencia/retroalimentación/historial y reclamos contextuales; avisos íntegros sin saturación, mensajes de discrepancia sin atribuir decisiones inexistentes. Propietario 008; sin cambios académicos ni inferencias nuevas. Alcance/[plan](099-revision-docente-enfocada/plan.md) aprobados, listas base 16/16 y UX 8/8 revisadas con autorización. Implementación, validación local y Converge completos: [evidencia](099-revision-docente-enfocada/quickstart.md). CI remoto pendiente; sin fusión/despliegue. Impresión del issue #206 queda pendiente y fuera del cambio.
 
 ## Evolución 096: creación de evaluaciones en dos pantallas
 

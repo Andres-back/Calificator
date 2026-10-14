@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { ArrowRight, CheckCircle2, ShieldAlert, TriangleAlert } from 'lucide-react';
 import { Button, Card } from '@/components/ui';
 import { trackEvent } from '@/lib/analytics';
@@ -6,6 +6,8 @@ import { describeReviewBlocker, type ReviewNoticeTarget, type ReviewTriageItem, 
 
 type Props = {
   compact?: boolean;
+  focused?: boolean;
+  primaryMessage?: string;
   historical?: boolean;
   processing?: boolean;
   extraReasons?: string[];
@@ -21,8 +23,10 @@ function componentLabel(item: ReviewTriageItem): string {
   return `${prefix} ${item.component.numero ?? item.component.orden + 1}`;
 }
 
-export function ReviewTriagePanel({ summary, selectedComponentId, onSelectComponent, analyticsContext, compact = false, historical = false, processing = false, extraReasons = [], onReviewGeneral }: Props) {
+export function ReviewTriagePanel({ summary, selectedComponentId, onSelectComponent, analyticsContext, compact = false, focused = false, primaryMessage, historical = false, processing = false, extraReasons = [], onReviewGeneral }: Props) {
+  const [detailsOpen, setDetailsOpen] = useState(false);
   const rawReasons = [...new Set([...(summary.globalReasons ?? summary.globalBlockers), ...extraReasons].filter(Boolean))];
+  if (focused) rawReasons.sort((a, b) => Number(b.includes('nota_global_no_coincide_con_suma')) - Number(a.includes('nota_global_no_coincide_con_suma')));
   const notices = [...new Map(rawReasons.map((raw) => {
     const notice = describeReviewBlocker(raw, processing ? 'processing' : historical ? 'historical' : 'pending');
     // Unknown notices stay distinct; known equivalent messages can share a display row.
@@ -59,6 +63,29 @@ export function ReviewTriagePanel({ summary, selectedComponentId, onSelectCompon
       });
     }
   };
+
+  if (focused && !historical) {
+    const firstException = summary.exceptions[0];
+    const firstNotice = notices[0];
+    const mismatch = Boolean(primaryMessage || rawReasons[0]?.includes('nota_global_no_coincide_con_suma'));
+    const hasNotices = Boolean(firstException || firstNotice || primaryMessage);
+    return <section aria-label="Resumen de revisión" className="space-y-2">
+      {hasNotices ? <div role="alert" className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-100">
+        <p className="font-semibold">{primaryMessage || (mismatch ? firstNotice?.message : firstException ? `${componentLabel(firstException)} necesita tu revisión.` : firstNotice?.message)}</p>
+        {summary.exceptions.length > 1 && <p className="mt-1">{summary.exceptions.length} respuestas necesitan comprobación.</p>}
+        <Button variant="outline" className="mt-2 min-h-11" onClick={() => {
+          if (mismatch) onReviewGeneral?.('revision');
+          else if (firstException) select(firstException, 1);
+          else if (firstNotice) onReviewGeneral?.(firstNotice.target);
+        }}>Revisar ahora <ArrowRight className="h-4 w-4" aria-hidden="true" /></Button>
+      </div> : <p className="text-sm text-muted">Sin avisos de revisión. Comprueba una muestra antes de confirmar.</p>}
+      {hasNotices && <details open={detailsOpen} className="rounded-lg border border-border px-3">
+        <summary className="focus-ring flex min-h-11 cursor-pointer items-center text-sm font-semibold" onClick={(event) => { event.preventDefault(); setDetailsOpen((open) => !open); }}>Ver todos los avisos</summary>
+        {detailsOpen && <ReviewTriagePanel summary={summary} compact selectedComponentId={selectedComponentId} onSelectComponent={onSelectComponent}
+          extraReasons={extraReasons} onReviewGeneral={onReviewGeneral} />}
+      </details>}
+    </section>;
+  }
 
   return (
     <Card className={`${compact ? 'space-y-2 p-3' : 'space-y-4 p-4'} ${historical ? 'border-0 shadow-none' : 'border-brand-200 dark:border-brand-500/30'}`} aria-labelledby="review-triage-title">

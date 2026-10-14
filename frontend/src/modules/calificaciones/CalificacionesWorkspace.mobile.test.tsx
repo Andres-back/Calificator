@@ -5,6 +5,12 @@ import { GradeNoteExplanation, MobileReviewActionBar, MobileReviewContext } from
 import type { CalificacionDetalle } from '@/types/api';
 
 describe('centro de calificaciones en celular', () => {
+  it('no atribuye al docente una discrepancia mientras la nota sigue pendiente', () => {
+    const cal = { estado: 'requiere_revision', timeline: [], desglose: { formula: { puntos_obtenidos: 2.48, puntos_posibles: 5, nota_maxima: 5, nota_base: 2.48, ajuste_global: 0, nota_final: 2.48 }, componentes: [] } } as unknown as CalificacionDetalle;
+    render(<GradeNoteExplanation cal={cal} score={2.52} />);
+    expect(screen.queryByText(/Consulta el historial para conocer la decisión del docente/)).not.toBeInTheDocument();
+    expect(screen.getByText(/Revisa los puntajes antes de confirmar/)).toHaveTextContent('2.48');
+  });
   it('expone una escala distinta solo al abrir el cálculo sin inventar una nota', async () => {
     const cal = { estado: 'sugerida', timeline: [], desglose: { formula: { puntos_obtenidos: 8, puntos_posibles: 10, nota_maxima: 100, nota_base: 80, ajuste_global: 0, nota_final: 80 }, componentes: [] } } as unknown as CalificacionDetalle;
     render(<GradeNoteExplanation cal={cal} score={80} />);

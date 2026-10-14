@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useBlocker, useParams, useSearchParams, useLocation, Link, Navigate } from 'react-router-dom';
 import { useInfiniteQuery, useMutation, useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
@@ -30,6 +30,7 @@ import { useAuth } from '@/stores/auth';
 import { GradingUploadPanel } from '@/modules/materias/MateriaCalificar';
 import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
+import { useMobileFormViewport } from '@/hooks/useMobileFormViewport';
 import { isStandardStudentProfile } from '@/lib/authorization';
 import {
   ajustarNota, ajustarNotaBatch, confirmarNota, confirmarNotaBatch,
@@ -52,6 +53,7 @@ import { excludeSubmittedStudents, summarizeCaptureRegistration } from './submis
 import { clearTeacherReviewResume, readTeacherReviewResume, saveTeacherReviewResume } from './teacherReviewResume';
 import { effectiveGradeScore, formatGradeScore, gradePresentation, isGradeProcessing } from './gradePresentation';
 import { formatTimelineScore } from './timeline';
+import { ReviewNavigation, type ReviewSection } from './ReviewNavigation';
 import type { BatchResult, Calificacion, CalificacionDetalle, GradeBreakdownData, GradeComponentChange, ReviewFilter } from '@/types/api';
 
 type WorkspaceGrade = Pick<Calificacion, 'id' | 'estudiante_id' | 'nota_sugerida' | 'nota_confirmada' | 'estado' | 'resultado_json'>;
@@ -153,6 +155,7 @@ export function MobileReviewActionBar({
   dirty,
   componentDirty,
   advancedEditOpen,
+  claimsDirty = false,
   confirmPending,
   publishPending,
   savePending = false,
@@ -171,6 +174,7 @@ export function MobileReviewActionBar({
   dirty: boolean;
   componentDirty: boolean;
   advancedEditOpen: boolean;
+  claimsDirty?: boolean;
   confirmPending: boolean;
   publishPending: boolean;
   savePending?: boolean;
@@ -180,8 +184,8 @@ export function MobileReviewActionBar({
   onSaveChanges: () => void;
   onNext: () => void;
 }) {
-  const navigationBlocked = dirty || componentDirty || advancedEditOpen || confirmPending || publishPending || savePending;
-  const blockMessage = componentDirty
+  const navigationBlocked = dirty || componentDirty || advancedEditOpen || claimsDirty || confirmPending || publishPending || savePending;
+  const blockMessage = claimsDirty ? 'Termina o cancela el reclamo antes de continuar.' : componentDirty
     ? 'Guarda o cancela la respuesta abierta antes de continuar.'
     : advancedEditOpen
       ? 'Termina o cancela el ajuste global antes de continuar.'
@@ -221,13 +225,13 @@ export function MobileReviewActionBar({
   );
 }
 
-export function GradeNoteExplanation({ cal, score }: { cal: CalificacionDetalle; score: number | null }) {
+export function GradeNoteExplanation({ cal, score, compact = false }: { cal: CalificacionDetalle; score: number | null; compact?: boolean }) {
   const breakdown = cal.desglose;
   const decision = [...(cal.timeline ?? [])].reverse().find((event) => event.tipo === 'ajustada' && event.detalle)?.detalle;
   if (!breakdown) {
     return (
       <div className="space-y-1 text-sm text-muted">
-        <p>Esta nota no tiene puntajes por pregunta guardados. Puedes consultar la decisión docente en el historial.</p>
+        <p>Esta nota no tiene puntajes por pregunta guardados. {decision ? 'Puedes consultar la decisión docente en el historial.' : 'Puedes consultar los detalles de la entrega en el historial.'}</p>
         {decision && <p>{decision}</p>}
       </div>
     );
@@ -235,13 +239,13 @@ export function GradeNoteExplanation({ cal, score }: { cal: CalificacionDetalle;
   const formula = breakdown.formula;
   const adjustment = Number(formula.ajuste_global);
   const overridesFormula = score != null && Math.abs(score - Number(formula.nota_final)) > 0.005;
-  return (
+  const content = (
     <div className="space-y-2 text-sm">
       <p>Puntos por respuestas: <strong>{Number(formula.puntos_obtenidos).toFixed(2)} / {Number(formula.puntos_posibles).toFixed(2)}</strong>.</p>
-      <details>
-      <summary className="focus-ring flex min-h-11 cursor-pointer items-center font-semibold text-brand-700 dark:text-brand-200">Ver cálculo de la nota</summary>
-      <p className="text-muted">Equivale a {Number(formula.nota_base).toFixed(2)} / {Number(formula.nota_maxima).toFixed(1)} en la escala de esta evaluación, antes de cualquier ajuste del docente. Puedes comprobar cada respuesta en «Respuestas y puntajes».</p>
-      </details>
+      {compact ? <p className="text-muted">Equivale a {Number(formula.nota_base).toFixed(2)} / {Number(formula.nota_maxima).toFixed(1)} en la escala de esta evaluación, antes de cualquier ajuste del docente.</p> : <details>
+        <summary className="focus-ring flex min-h-11 cursor-pointer items-center font-semibold text-brand-700 dark:text-brand-200">Ver cálculo de la nota</summary>
+        <p className="text-muted">Equivale a {Number(formula.nota_base).toFixed(2)} / {Number(formula.nota_maxima).toFixed(1)} en la escala de esta evaluación, antes de cualquier ajuste del docente. Puedes comprobar cada respuesta en «Respuestas y puntajes».</p>
+      </details>}
       {adjustment !== 0 && (
         <div className="space-y-1 rounded-lg bg-surface-2 p-2">
           <p>Ajuste docente registrado: <strong>{adjustment > 0 ? '+' : ''}{adjustment.toFixed(2)}</strong>, separado de los puntos por respuesta.</p>
@@ -250,12 +254,15 @@ export function GradeNoteExplanation({ cal, score }: { cal: CalificacionDetalle;
       )}
       {overridesFormula && (
         <div role="status" className="space-y-1 text-amber-800 dark:text-amber-200">
-          <p>La nota actual es distinta del cálculo por respuestas ({Number(formula.nota_final).toFixed(2)}). Consulta el historial para conocer la decisión del docente.</p>
+          <p>{DONE_STATES.has(cal.estado)
+            ? `La nota actual es distinta del cálculo por respuestas (${Number(formula.nota_final).toFixed(2)}). ${decision ? 'Consulta el historial para conocer la decisión del docente.' : 'No hay un motivo de ajuste registrado en este resultado.'}`
+            : `El cálculo por respuestas da ${Number(formula.nota_final).toFixed(2)}, distinto de la sugerencia de IA. Revisa los puntajes antes de confirmar.`}</p>
           {decision && <p>{decision}</p>}
         </div>
       )}
     </div>
   );
+  return compact ? <details><summary className="focus-ring flex min-h-11 cursor-pointer items-center font-semibold text-brand-700 dark:text-brand-200">Ver cálculo de la nota</summary>{content}</details> : content;
 }
 
 /* ─── Sub-componente: Timeline ─── */
@@ -435,13 +442,14 @@ function AIPipelineSummary({
 
 /* ─── Sub-componente: Incidencias ─── */
 
-function IncidenciasSection({ calificacionId, onOpenComponent }: { calificacionId: string; onOpenComponent?: (componentId: string) => void }) {
-  const [expanded, setExpanded] = useState<boolean | null>(null);
+export function IncidenciasSection({ calificacionId, active, onToggle, onDirtyChange, onOpenComponent }: { calificacionId: string; active: boolean; onToggle: () => void; onDirtyChange?: (dirty: boolean) => void; onOpenComponent?: (componentId: string) => void }) {
   const [showCreate, setShowCreate] = useState(false);
   const [newTipo, setNewTipo] = useState('confianza_baja');
   const [newDesc, setNewDesc] = useState('');
   const [resolveId, setResolveId] = useState<string | null>(null);
   const [resolveText, setResolveText] = useState('');
+  const claimDirty = showCreate || resolveId !== null;
+  useEffect(() => { onDirtyChange?.(claimDirty); }, [claimDirty, onDirtyChange]);
 
   const { data: incidencias, isLoading, isError, refetch } = useQuery({
     queryKey: ['incidencias', calificacionId],
@@ -465,24 +473,25 @@ function IncidenciasSection({ calificacionId, onOpenComponent }: { calificacionI
     onError: (e) => toast.error(toApiError(e).detail),
   });
   const openCount = incidencias?.filter((item) => item.estado === 'abierta').length ?? 0;
-  const showContent = (expanded ?? (openCount > 0 || isError)) || showCreate || resolveId !== null;
+  const showContent = active || showCreate || resolveId !== null;
+  const empty = !isLoading && !isError && incidencias?.length === 0;
 
   return (
-    <div className="rounded-xl border border-border">
-      <div className="flex items-center justify-between border-b border-border px-4 py-2">
-        <button type="button" className="focus-ring flex min-h-11 items-center gap-2 rounded-lg text-left text-sm font-semibold text-muted" aria-expanded={showContent} aria-controls={`grade-incidencias-${calificacionId}`} onClick={() => { if (showCreate || resolveId) { toast('Termina o cancela la incidencia antes de cerrar la sección.'); return; } setExpanded(!showContent); }}>
-          <ShieldAlert className="h-4 w-4 shrink-0" /> Incidencias y solicitudes {incidencias && incidencias.length > 0 && `(${incidencias.length})`}{openCount > 0 && ` · ${openCount} reclamo(s) o alerta(s) abierta(s)`}{isLoading && ' · consultando'}{isError && ' · consulta no disponible'}
+    <div className={cn('min-w-0', showContent && 'rounded-xl border border-border')}>
+      <div className="flex flex-wrap items-center justify-between gap-1">
+        {!empty && <button type="button" className="focus-ring flex min-h-11 min-w-0 items-center gap-2 rounded-lg px-2 text-left text-sm font-semibold text-muted" aria-expanded={showContent} aria-controls={`grade-incidencias-${calificacionId}`} onClick={() => { if (showCreate || resolveId) { toast('Termina o cancela el reclamo antes de cerrar la sección.'); return; } onToggle(); }}>
+          <ShieldAlert className="h-4 w-4 shrink-0" /> Quejas y reclamos{incidencias && incidencias.length > 0 && ` (${incidencias.length})`}{openCount > 0 && ` · ${openCount} abierto(s)`}{isLoading && ' · consultando'}{isError && ' · consulta no disponible'}
         </button>
-        <button type="button" onClick={() => setShowCreate(!showCreate)} className="focus-ring min-h-11 rounded-lg px-3 text-xs font-semibold text-brand-600 hover:text-brand-700">
-          + Nueva
-        </button>
+        }
+        {(!empty || showContent) ? <button type="button" onClick={() => { if (resolveId) { toast('Termina o cancela el reclamo abierto antes de registrar otro.'); return; } if (!active) onToggle(); setShowCreate(!showCreate); }} className="focus-ring min-h-11 rounded-lg px-3 text-xs font-semibold text-brand-600 hover:text-brand-700">{showCreate ? 'Cancelar' : 'Registrar reclamo'}</button>
+          : <details className="text-sm"><summary className="focus-ring flex min-h-11 cursor-pointer items-center px-2 font-semibold text-muted">Opciones de reclamos</summary><Button variant="ghost" onClick={() => { onToggle(); setShowCreate(true); }}>Registrar reclamo</Button></details>}
       </div>
 
       <div id={`grade-incidencias-${calificacionId}`} hidden={!showContent}>
       {showCreate && (
         <div className="space-y-3 border-b border-border px-4 py-3">
           <Field label="Tipo">
-            <select value={newTipo} onChange={(e) => setNewTipo(e.target.value)} className="focus-ring h-9 w-full rounded-lg border border-border bg-surface-2 px-3 text-sm">
+            <select value={newTipo} onChange={(e) => setNewTipo(e.target.value)} className="focus-ring h-11 w-full rounded-lg border border-border bg-surface-2 px-3 text-sm">
               <option value="imagen_no_usable">Imagen no utilizable</option>
               <option value="vision_failed">Error de visión</option>
               <option value="grader_error">Error de calificación</option>
@@ -496,8 +505,8 @@ function IncidenciasSection({ calificacionId, onOpenComponent }: { calificacionI
               className="focus-ring w-full rounded-lg border border-border bg-surface-2 p-2 text-sm" />
           </Field>
           <div className="flex justify-end gap-2">
-            <Button size="sm" variant="ghost" onClick={() => setShowCreate(false)}>Cancelar</Button>
-            <Button size="sm" onClick={() => createMut.mutate()} loading={createMut.isPending} disabled={!newDesc.trim()}>
+            <Button size="sm" className="min-h-11" variant="ghost" onClick={() => setShowCreate(false)}>Cancelar</Button>
+            <Button size="sm" className="min-h-11" onClick={() => createMut.mutate()} loading={createMut.isPending} disabled={!newDesc.trim()}>
               Crear incidencia
             </Button>
           </div>
@@ -507,7 +516,7 @@ function IncidenciasSection({ calificacionId, onOpenComponent }: { calificacionI
       {isLoading ? (
         <div className="space-y-2 p-4">{Array.from({ length: 2 }).map((_, i) => <Skeleton key={i} className="h-10" />)}</div>
       ) : isError ? (
-        <div role="alert" className="space-y-2 p-4 text-sm"><p>No se pudieron consultar las incidencias.</p><Button variant="outline" onClick={() => void refetch()}>Reintentar consulta</Button></div>
+        <div role="alert" className="space-y-2 p-4 text-sm"><p>No pudimos consultar los reclamos.</p><Button variant="outline" onClick={() => void refetch()}>Reintentar consulta</Button></div>
       ) : !incidencias || incidencias.length === 0 ? (
         <p className="p-4 text-center text-xs text-muted">Sin incidencias registradas.</p>
       ) : (
@@ -529,7 +538,7 @@ function IncidenciasSection({ calificacionId, onOpenComponent }: { calificacionI
                 </p>
               )}
               <p className="mt-1 text-muted">{inc.descripcion}</p>
-              {(inc.componente_clave || inc.componente_id) && onOpenComponent && <Button size="sm" variant="outline" onClick={() => onOpenComponent(inc.componente_clave || inc.componente_id!)}>Ver pregunta vinculada · versión {inc.desglose_version ?? 'no registrada'}</Button>}
+              {(inc.componente_clave || inc.componente_id) && onOpenComponent && <Button size="sm" className="min-h-11" variant="outline" onClick={() => onOpenComponent(inc.componente_clave || inc.componente_id!)}>Ver pregunta vinculada · versión {inc.desglose_version ?? 'no registrada'}</Button>}
               {inc.resolucion && <p className="mt-1 italic text-muted">Resolución: {inc.resolucion}</p>}
 
               {resolveId === inc.id && (
@@ -537,8 +546,8 @@ function IncidenciasSection({ calificacionId, onOpenComponent }: { calificacionI
                   <textarea value={resolveText} onChange={(e) => setResolveText(e.target.value)} rows={2} placeholder="¿Cómo se resolvió?"
                     className="focus-ring w-full rounded-lg border border-border bg-surface p-2 text-xs" />
                   <div className="flex justify-end gap-2">
-                    <Button size="sm" variant="ghost" onClick={() => setResolveId(null)}>Cancelar</Button>
-                    <Button size="sm" onClick={() => resolveMut.mutate()} loading={resolveMut.isPending} disabled={!resolveText.trim()}>
+                    <Button size="sm" className="min-h-11" variant="ghost" onClick={() => setResolveId(null)}>Cancelar</Button>
+                    <Button size="sm" className="min-h-11" onClick={() => resolveMut.mutate()} loading={resolveMut.isPending} disabled={!resolveText.trim()}>
                       Guardar resolución
                     </Button>
                   </div>
@@ -606,11 +615,13 @@ function PanelDetalle({
   const [pendingEditorAction, setPendingEditorAction] = useState<string | 'close' | null>(null);
   const [showGlobalAdjustment, setShowGlobalAdjustment] = useState(false);
   const [globalAdjustmentSnapshot, setGlobalAdjustmentSnapshot] = useState<GradeBreakdownData | null>(null);
+  const [claimDirty, setClaimDirty] = useState(false);
+  const panelScopeRef = useRef<HTMLDivElement>(null);
+  const mobileForm = useMobileFormViewport(true, panelScopeRef);
   const [detailParams, setDetailParams] = useSearchParams();
   const evidencePage = Math.max(1, Math.min(cal.entrega_evidencia_paginas || 1, Number(detailParams.get('hoja')) || 1));
   const setEvidencePage = (page: number) => setDetailParams((previous) => { const next = new URLSearchParams(previous); next.set('hoja', String(page)); return next; }, { replace: true });
-  const [mobileTab, setMobileTab] = useState<'resumen' | 'evidencia' | 'revision'>(() => detailParams.has('pregunta') ? 'revision' : detailParams.has('hoja') ? 'evidencia' : 'resumen');
-  const [feedbackOpen, setFeedbackOpen] = useState(false);
+  const [mobileTab, setMobileTab] = useState<ReviewSection>(() => detailParams.has('pregunta') ? 'revision' : detailParams.has('hoja') ? 'evidencia' : 'resumen');
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const detailPermissions = useAuth((state) => state.user?.permissions ?? []);
   const reviewSectionRef = useRef<HTMLDivElement | null>(null);
@@ -649,6 +660,8 @@ function PanelDetalle({
     setDetailParams((previous) => { const next = new URLSearchParams(previous); next.set('pregunta', component.clave); if (component.evidencia_paginas[0]) next.set('hoja', String(component.evidencia_paginas[0])); return next; });
   };
   const openReviewComponent = (componentId: string) => {
+    if (!canChangeDetailView('revision')) return;
+    mobileForm.finishWriting();
     selectQuestion(componentId);
     setMobileTab('revision');
     window.requestAnimationFrame(() => {
@@ -658,7 +671,7 @@ function PanelDetalle({
   };
   const [evidenceLoadError, setEvidenceLoadError] = useState(false);
   const evidenceSectionRef = useRef<HTMLElement | null>(null);
-  const feedbackSectionRef = useRef<HTMLDetailsElement | null>(null);
+  const feedbackSectionRef = useRef<HTMLDivElement | null>(null);
   const adjustmentSectionRef = useRef<HTMLDivElement | null>(null);
   const retryMutation = useMutation({
     mutationFn: () => reintentarCalificacionFoto(cal.id),
@@ -762,8 +775,8 @@ function PanelDetalle({
 
   // Notify parent about dirty state
   useEffect(() => {
-    onDirtyChange?.(isDirty || editingComponentDirty || showGlobalAdjustment || breakdownMutation.isPending);
-  }, [isDirty, editingComponentDirty, showGlobalAdjustment, breakdownMutation.isPending, onDirtyChange]);
+    onDirtyChange?.(isDirty || editingComponentDirty || showGlobalAdjustment || breakdownMutation.isPending || claimDirty);
+  }, [isDirty, editingComponentDirty, showGlobalAdjustment, breakdownMutation.isPending, claimDirty, onDirtyChange]);
 
   function requestComponentEdit(componentId: string) {
     if (editingComponentId && editingComponentId !== componentId && editingComponentDirty) {
@@ -828,6 +841,8 @@ function PanelDetalle({
   const evidencePageUrl = evidenceUrl ? `${evidenceUrl}/paginas/${evidencePage}` : null;
 
   function showEvidencePage(page: number) {
+    if (!canChangeDetailView('evidencia')) return;
+    mobileForm.finishWriting();
     const normalized = Math.min(evidencePages, Math.max(1, page));
     setEvidencePage(normalized);
     setEvidenceLoadError(false);
@@ -835,17 +850,39 @@ function PanelDetalle({
     window.requestAnimationFrame(() => evidenceSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
   }
 
-  function changeDetailView(view: 'resumen' | 'revision' | 'evidencia') {
-    const nextView = mobileTab === view ? 'resumen' : view;
+  function canChangeDetailView(nextView: ReviewSection) {
+    if (claimDirty && nextView !== 'reclamos') {
+      toast('Termina o cancela el reclamo antes de cambiar de sección.');
+      return false;
+    }
+    if (showGlobalAdjustment && nextView !== 'historial') {
+      toast('Guarda o cancela el ajuste global antes de cambiar de sección.');
+      return false;
+    }
+    if (editingComponentDirty && nextView !== 'revision' && nextView !== 'evidencia') {
+      toast('Guarda o cancela la respuesta antes de cambiar de sección.');
+      return false;
+    }
+    if (isDirty && mobileTab === 'retroalimentacion' && nextView !== 'retroalimentacion') {
+      toast('Guarda los cambios de retroalimentación antes de cambiar de sección.');
+      return false;
+    }
     if (nextView === 'resumen' && (editingComponentId || showGlobalAdjustment || isDirty)) {
       toast('Guarda o cancela los cambios antes de volver al resumen.');
-      return;
+      return false;
     }
+    return true;
+  }
+
+  function changeDetailView(view: ReviewSection) {
+    const nextView = mobileTab === view ? 'resumen' : view;
+    if (!canChangeDetailView(nextView)) return;
+    mobileForm.finishWriting();
     setMobileTab(nextView);
     if (nextView !== 'resumen') window.requestAnimationFrame(() => {
-      const target = nextView === 'revision' ? reviewSectionRef.current : evidenceSectionRef.current;
+      const target = nextView === 'revision' ? reviewSectionRef.current : nextView === 'evidencia' ? evidenceSectionRef.current : nextView === 'retroalimentacion' ? feedbackSectionRef.current : null;
       target?.focus({ preventScroll: true });
-      detailViewRef.current?.scrollIntoView({ block: 'start' });
+      if (nextView === 'revision' || nextView === 'evidencia') detailViewRef.current?.scrollIntoView({ block: 'start' });
     });
   }
 
@@ -859,17 +896,10 @@ function PanelDetalle({
   }
 
   function openAdjustment() {
+    if (!canChangeDetailView('retroalimentacion')) return;
+    setMobileTab('retroalimentacion');
     setShowAjustar(true);
     window.requestAnimationFrame(() => adjustmentSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }));
-  }
-
-  function toggleFeedbackSection(event: MouseEvent<HTMLElement>) {
-    event.preventDefault();
-    if (isDirty || showAjustar) {
-      toast('Guarda o cancela el ajuste antes de cerrar la retroalimentación.');
-      return;
-    }
-    setFeedbackOpen((open) => !open);
   }
 
   const questionReview = activeBreakdown ? (
@@ -910,8 +940,13 @@ function PanelDetalle({
   const bookRoute = cal.materia_id ? routes.materiaBoletin(cal.materia_id) : '';
   const requestedReturn = detailParams.get('volver');
   const returnToBook = bookRoute && requestedReturn && (requestedReturn === bookRoute || requestedReturn.startsWith(`${bookRoute}?`)) ? requestedReturn : null;
+  const formulaScore = cal.desglose?.formula.nota_final != null ? Number(cal.desglose.formula.nota_final) : null;
+  const scoreDifference = !done && !presentation.processing && presentation.score != null && formulaScore != null && Number.isFinite(formulaScore) && Math.abs(presentation.score - formulaScore) > 0.005
+    ? `La IA propone ${formatGradeScore(presentation.score)}, pero el cálculo por respuestas da ${formatGradeScore(formulaScore)}. Revisa los puntajes antes de confirmar.` : undefined;
   const reviewNotices = <ReviewTriagePanel
     compact
+    focused={!done && !presentation.processing}
+    primaryMessage={scoreDifference}
     summary={reviewTriage}
     historical={done || presentation.processing}
     processing={presentation.processing}
@@ -919,7 +954,7 @@ function PanelDetalle({
     onReviewGeneral={(target) => {
       if (target === 'evidencia') showEvidencePage(evidencePage);
       else if (target === 'retroalimentacion') {
-        setFeedbackOpen(true);
+        changeDetailView('retroalimentacion');
         window.requestAnimationFrame(() => { feedbackSectionRef.current?.focus({ preventScroll: true }); feedbackSectionRef.current?.scrollIntoView({ block: 'start' }); });
       } else if (mobileTab !== 'revision') changeDetailView('revision');
       else reviewSectionRef.current?.scrollIntoView({ block: 'start' });
@@ -931,9 +966,9 @@ function PanelDetalle({
 
   return (
     <>
-    <div className="flex min-h-0 min-w-0 flex-col">
+    <div ref={panelScopeRef} className="flex min-h-0 min-w-0 flex-col">
       {/* Header */}
-      <div data-testid="grade-review-identity" className="z-10 flex items-center justify-between border-b border-border bg-surface/95 px-3 py-2 sm:px-4 xl:sticky xl:top-0 xl:backdrop-blur">
+      <div data-testid="grade-review-identity" className="sticky top-0 z-10 flex items-center justify-between border-b border-border bg-surface/95 px-3 py-2 backdrop-blur sm:px-4">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
             <p className="break-words font-display text-lg font-bold">{cal.estudiante_nombre || estudiante?.nombre || 'Estudiante'}</p>
@@ -945,15 +980,16 @@ function PanelDetalle({
             {returnToBook && <Link to={returnToBook} className="focus-ring inline-flex min-h-11 items-center rounded-lg px-2 text-sm font-semibold text-brand-700 dark:text-brand-200">Volver al libro de notas</Link>}
             {cal.materia_id && detailPermissions.includes('evaluations.read') && <Link to={routes.materiaEvaluaciones(cal.materia_id)} className="focus-ring inline-flex min-h-11 items-center gap-1 rounded-lg px-2 text-sm font-semibold text-brand-700 dark:text-brand-200"><ArrowLeft className="h-4 w-4" /> Volver a evaluaciones</Link>}
           </div>
+          {mobileForm.isWriting && <Button type="button" variant="outline" size="sm" className="min-h-11" onClick={mobileForm.finishWriting}>Terminar de escribir</Button>}
         </div>
       </div>
 
       <div className="min-w-0 flex-1 space-y-3 p-3 pb-32 [overflow-wrap:anywhere] sm:space-y-5 sm:p-5 sm:pb-32 xl:pb-5">
         {/* Nota principal */}
-        <h2 className="text-base font-bold">1. Nota y explicación</h2>
+        <h2 className="sr-only">1. Nota y explicación</h2>
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <p className="text-sm text-muted">{presentation.score == null ? presentation.label : done ? 'Nota del estudiante' : 'Nota sugerida por la IA'}</p>
+            <p className="text-sm text-muted">{presentation.score == null ? presentation.label : done ? 'Nota confirmada' : 'Nota sugerida por la IA'}</p>
             {presentation.score == null ? (
               <div className="mt-2 flex items-center gap-2 font-semibold text-brand-600 dark:text-brand-300">
                 {presentation.processing && <LoaderCircle className="h-5 w-5 animate-spin" aria-hidden="true" />}
@@ -972,7 +1008,7 @@ function PanelDetalle({
         </div>
 
         <section aria-label="Cálculo y criterios registrados" className="text-sm">
-          {!presentation.processing && <GradeNoteExplanation cal={cal} score={presentation.score} />}
+          {!presentation.processing && <GradeNoteExplanation compact cal={cal} score={presentation.score} />}
           {criterionRows.length ? <details className="mt-2">
             <summary className="focus-ring flex min-h-11 cursor-pointer items-center text-sm font-semibold">Ver valoración por criterios ({criterionRows.length})</summary>
             <p className="mt-1 text-xs text-muted">{rubricComponents.length ? 'Criterios de rúbrica registrados' : 'Valoración inicial guardada; no recalculada por ajustes globales.'}</p>
@@ -996,8 +1032,13 @@ function PanelDetalle({
         )}
 
         {/* Los avisos no cambian la nota ni las políticas de confirmación. */}
-        {hasReviewNotices && !done && !presentation.processing && reviewNotices}
-        {canGrade && manualReview && evidenceUrl && <Button variant="outline" loading={retryMutation.isPending} disabled={retryMutation.isPending} onClick={() => retryMutation.mutate()}><RotateCcw className="h-4 w-4" /> Volver a analizar la evidencia</Button>}
+        {(hasReviewNotices || scoreDifference) && !done && !presentation.processing && reviewNotices}
+        <ReviewNavigation active={mobileTab} onChange={changeDetailView} />
+        {canReviewClaims && <IncidenciasSection calificacionId={cal.id} active={mobileTab === 'reclamos'} onToggle={() => changeDetailView('reclamos')} onDirtyChange={setClaimDirty} onOpenComponent={(id) => {
+          const component = activeBreakdown?.componentes.find((item) => item.id === id || item.clave === id);
+          if (component) openReviewComponent(component.id);
+          else { setDetailParams((previous) => { const next = new URLSearchParams(previous); next.set('pregunta', id); return next; }); toast('La pregunta pertenece a una versión anterior y no tiene equivalencia vigente.'); }
+        }} />}
 
         {/* Evidencia */}
         {evidenciaConsolidada?.modalidad === 'mixta' && (
@@ -1014,10 +1055,9 @@ function PanelDetalle({
             <p className="mt-2 text-xs text-sky-800 dark:text-sky-200">Revisa el texto y la imagen por separado antes de confirmar la nota única.</p>
           </div>
         )}
-        <div ref={detailViewRef} className="min-w-0 scroll-mt-4 space-y-3" aria-label="Vista de la revisión">
-          <section className="min-w-0 rounded-xl border border-border">
-            <button type="button" className="focus-ring flex min-h-14 w-full items-center justify-between gap-2 rounded-xl px-3 text-left font-semibold" onClick={() => changeDetailView('evidencia')} aria-expanded={mobileTab === 'evidencia'} aria-controls="grade-evidence-panel"><span>2. Evidencia</span><ChevronDown className={cn('h-5 w-5 shrink-0', mobileTab === 'evidencia' && 'rotate-180')} aria-hidden="true" /></button>
-          <div id="grade-evidence-panel" hidden={mobileTab !== 'evidencia'} className="min-w-0 space-y-4 border-t border-border p-3">
+        <div ref={detailViewRef} className={cn('min-w-0 scroll-mt-4', mobileTab === 'revision' && evidenceUrl && '2xl:grid 2xl:grid-cols-2 2xl:items-start 2xl:gap-3')} aria-label="Vista de la revisión">
+          <section hidden={mobileTab !== 'evidencia' && !(mobileTab === 'revision' && evidenceUrl)} className={cn('min-w-0 rounded-xl border border-border', mobileTab === 'revision' && 'hidden 2xl:block')}>
+          <div id="grade-evidence-panel" className="min-w-0 space-y-4 p-3">
             {evidenceUrl ? (
               <section ref={evidenceSectionRef} tabIndex={-1} aria-labelledby="evidence-title" className="scroll-mt-4 rounded-xl border border-border bg-surface-2">
                 <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-3 py-2 text-sm font-semibold text-muted">
@@ -1036,7 +1076,7 @@ function PanelDetalle({
                   </a>
                 </div>
                 <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-3 py-2">
-                  <Button type="button" size="sm" variant="ghost" disabled={evidencePage <= 1} onClick={() => showEvidencePage(evidencePage - 1)}>Anterior</Button>
+                  <Button type="button" size="sm" className="min-h-11" variant="ghost" disabled={evidencePage <= 1} onClick={() => showEvidencePage(evidencePage - 1)}>Anterior</Button>
                   <div className="flex max-w-full gap-1 overflow-x-auto py-1" aria-label="Páginas de evidencia">
                     {Array.from({ length: evidencePages }, (_, index) => index + 1).map((page) => (
                       <button
@@ -1048,7 +1088,7 @@ function PanelDetalle({
                       >{page}</button>
                     ))}
                   </div>
-                  <Button type="button" size="sm" variant="ghost" disabled={evidencePage >= evidencePages} onClick={() => showEvidencePage(evidencePage + 1)}>Siguiente</Button>
+                  <Button type="button" size="sm" className="min-h-11" variant="ghost" disabled={evidencePage >= evidencePages} onClick={() => showEvidencePage(evidencePage + 1)}>Siguiente</Button>
                 </div>
                 {evidenceLoadError ? (
                   <div role="alert" className="flex min-h-56 flex-col items-center justify-center gap-3 bg-surface p-5 text-center">
@@ -1067,7 +1107,7 @@ function PanelDetalle({
                 )}
                 <div className="flex flex-col gap-2 border-t border-border p-3 sm:flex-row sm:items-center sm:justify-between">
                   <p className="text-xs leading-5 text-muted">Si falta una hoja o la foto no corresponde, solicita todas las hojas de nuevo.</p>
-                  {canReviewClaims && <Button type="button" size="sm" variant="outline" onClick={() => setReplacementOpen(true)}>
+                  {canReviewClaims && <Button type="button" size="sm" className="min-h-11" variant="outline" onClick={() => setReplacementOpen(true)}>
                     <RotateCcw className="h-4 w-4" /> Solicitar reemplazo
                   </Button>}
                 </div>
@@ -1088,20 +1128,21 @@ function PanelDetalle({
           </div>
 
           </section>
-          <section className="min-w-0 rounded-xl border border-border">
-            <button type="button" className="focus-ring flex min-h-14 w-full items-center justify-between gap-2 rounded-xl px-3 text-left font-semibold" onClick={() => changeDetailView('revision')} aria-expanded={mobileTab === 'revision' || editingComponentId !== null} aria-controls="grade-review-panel"><span>3. Respuestas y puntajes</span><ChevronDown className={cn('h-5 w-5 shrink-0', (mobileTab === 'revision' || editingComponentId) && 'rotate-180')} aria-hidden="true" /></button>
-          <div id="grade-review-panel" ref={reviewSectionRef} tabIndex={-1} hidden={mobileTab !== 'revision' && !editingComponentId} className="min-w-0 scroll-mt-4 border-t border-border p-3">
+          <section hidden={mobileTab !== 'revision'} className="min-w-0 rounded-xl border border-border">
+          <div id="grade-review-panel" ref={reviewSectionRef} tabIndex={-1} className="min-w-0 scroll-mt-4 p-3">
             {detailParams.has('pregunta') && !activeBreakdown?.componentes.some((component) => [component.id, component.clave].includes(detailParams.get('pregunta')!)) && <p role="status" className="mb-3 text-sm text-amber-700 dark:text-amber-300">La referencia corresponde a otra versión. Se muestra la primera pregunta vigente; consulta el historial para comparar.</p>}
             {questionReview}
           </div>
           </section>
         </div>
 
-        <details ref={feedbackSectionRef} tabIndex={-1} open={feedbackOpen || isDirty || showAjustar} className="scroll-mt-4 rounded-xl border border-border p-3">
-          <summary className="focus-ring flex min-h-11 cursor-pointer items-center font-semibold" onClick={toggleFeedbackSection}>4. Retroalimentación</summary>
+        <div id="grade-feedback-panel" ref={feedbackSectionRef} tabIndex={-1} hidden={mobileTab !== 'retroalimentacion'} className="scroll-mt-4 rounded-xl border border-border p-3">
+          <h2 className="mb-2 text-base font-bold">Retroalimentación para el estudiante</h2>
           {presentation.processing ? <p className="text-sm text-muted">La retroalimentación estará disponible cuando termine el análisis.</p> : <Field label="Retroalimentación"><Textarea readOnly={!canGrade} value={adjFeedback} onChange={(e) => setAdjFeedback(e.target.value)} placeholder="Escribe qué logró el estudiante y cómo puede mejorar…" rows={4} /></Field>}
-        </details>
+        </div>
 
+        <div id="grade-history-panel" hidden={mobileTab !== 'historial'} className="space-y-3">
+        <h2 className="text-base font-bold">Historial de la calificación</h2>
         {hasInitialReviewNotices && (done || presentation.processing) && <details className="rounded-xl border border-border px-3">
           <summary className="focus-ring flex min-h-11 cursor-pointer items-center font-semibold">{presentation.processing ? 'Avisos del análisis en curso' : 'Historial de revisión de IA'}</summary>
           {reviewNotices}
@@ -1160,13 +1201,15 @@ function PanelDetalle({
         ) : null}
         <Timeline events={cal.timeline} />
         </details>
+        {canGrade && manualReview && evidenceUrl && <Button variant="outline" loading={retryMutation.isPending} disabled={retryMutation.isPending} onClick={() => retryMutation.mutate()}><RotateCcw className="h-4 w-4" /> Volver a analizar la evidencia</Button>}
+        </div>
         {/* Acciones */}
         {canGrade && !done && !presentation.processing && (
           <div className="hidden flex-wrap gap-2 xl:flex">
             {presentation.score != null && <Button
               onClick={() => onConfirm(cal.id, Number(adjNota))}
               loading={confirmPending}
-              disabled={confirmPending || adjNota === '' || isDirty || editingComponentDirty || showGlobalAdjustment}
+              disabled={confirmPending || adjNota === '' || isDirty || editingComponentDirty || showGlobalAdjustment || claimDirty}
             >
               <CheckCircle2 className="h-4 w-4" /> Confirmar nota
             </Button>}
@@ -1182,12 +1225,19 @@ function PanelDetalle({
         )}
         {canPublish && done && !published && (
           <div className="hidden flex-wrap gap-2 xl:flex">
-            <Button onClick={() => onPublish(cal.id)} loading={publishPending} disabled={publishPending || isDirty || editingComponentDirty || showGlobalAdjustment}>
+            <Button onClick={() => onPublish(cal.id)} loading={publishPending} disabled={publishPending || isDirty || editingComponentDirty || showGlobalAdjustment || claimDirty}>
               <CheckCircle2 className="h-4 w-4" /> Publicar al estudiante
             </Button>
           </div>
         )}
         {published && <p className="text-sm text-muted">El estudiante ya puede ver su nota y retroalimentación.</p>}
+        {canGrade && !done && !presentation.processing && <details className="xl:hidden">
+          <summary className="focus-ring flex min-h-11 cursor-pointer items-center text-sm font-semibold text-muted">Opciones de la nota</summary>
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" onClick={openAdjustment} disabled={claimDirty || editingComponentDirty || showGlobalAdjustment}>{presentation.score == null ? 'Establecer nota' : 'Ajustar nota'}</Button>
+            {!manualReview && <Button variant="ghost" disabled={isDirty || claimDirty || editingComponentDirty || showGlobalAdjustment} onClick={() => onRechazar(cal.id)}>Revisar manualmente</Button>}
+          </div>
+        </details>}
 
         {canGrade && showAjustar && !presentation.processing && (
           <div ref={adjustmentSectionRef} className="scroll-mt-24">
@@ -1210,13 +1260,8 @@ function PanelDetalle({
           </div>
         )}
 
-        {/* Incidencias */}
-        {canReviewClaims && <IncidenciasSection calificacionId={cal.id} onOpenComponent={(id) => {
-          const component = activeBreakdown?.componentes.find((item) => item.id === id || item.clave === id);
-          if (component) openReviewComponent(component.id);
-          else { setDetailParams((previous) => { const next = new URLSearchParams(previous); next.set('pregunta', id); return next; }); toast('La pregunta pertenece a una versión anterior y no tiene equivalencia vigente.'); }
-        }} />}
       </div>
+      <div hidden={mobileForm.isWriting}>
       <MobileReviewActionBar
         processing={presentation.processing}
         done={done}
@@ -1227,6 +1272,7 @@ function PanelDetalle({
         dirty={isDirty}
         componentDirty={editingComponentDirty}
         advancedEditOpen={showGlobalAdjustment}
+        claimsDirty={claimDirty}
         confirmPending={confirmPending}
         publishPending={publishPending}
         savePending={adjustPending}
@@ -1236,6 +1282,7 @@ function PanelDetalle({
         onSaveChanges={submitAjuste}
         onNext={onNextGrade}
       />
+      </div>
     </div>
     <ConfirmDialog
       open={pendingEditorAction !== null}
