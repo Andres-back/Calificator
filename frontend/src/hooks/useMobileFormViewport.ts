@@ -52,6 +52,7 @@ export function useMobileFormViewport(open: boolean, scope: RefObject<HTMLElemen
     let contracted = false;
     let updateFrame: number | undefined;
     let blurFrame: number | undefined;
+    let focusFrame: number | undefined;
     const update = () => {
       if (updateFrame !== undefined) window.cancelAnimationFrame(updateFrame);
       updateFrame = window.requestAnimationFrame(() => {
@@ -76,9 +77,16 @@ export function useMobileFormViewport(open: boolean, scope: RefObject<HTMLElemen
       });
     };
     const focus = (event: FocusEvent) => {
-      if (!editable(event.target instanceof Element ? event.target : null)) return;
-      setWriting(true);
-      ensureVisible();
+      const target = event.target instanceof Element ? event.target : null;
+      if (!editable(target)) return;
+      if (focusFrame !== undefined) window.cancelAnimationFrame(focusFrame);
+      // Let the native focus/input sequence finish before relaying out controlled
+      // inputs. A synchronous render here can restore their previous value.
+      focusFrame = window.requestAnimationFrame(() => {
+        if (document.activeElement !== target) return;
+        setWriting(true);
+        ensureVisible();
+      });
     };
     const blur = () => {
       if (blurFrame !== undefined) window.cancelAnimationFrame(blurFrame);
@@ -99,7 +107,7 @@ export function useMobileFormViewport(open: boolean, scope: RefObject<HTMLElemen
       viewport?.removeEventListener('resize', update);
       viewport?.removeEventListener('scroll', update);
       window.removeEventListener('resize', update);
-      for (const frame of [updateFrame, blurFrame, scrollFrame.current]) {
+      for (const frame of [updateFrame, blurFrame, focusFrame, scrollFrame.current]) {
         if (frame !== undefined) window.cancelAnimationFrame(frame);
       }
     };

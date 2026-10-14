@@ -4,6 +4,8 @@
 
 El usuario aclaró que sucede prácticamente igual en Android y aprobó «perfecto adelante» después de explicar el plan y solicitar aprobación/revisión de requisitos. Autoriza implementar; no fusionar ni desplegar. No proporcionó captura física, por lo que la validación de dispositivo real seguirá diferenciada de la emulación.
 
+Autorización posterior: solicitó «fusion» del PR #205 y respondió «sí» a corregir los fallos de CI antes de fusionar. La corrección permanece dentro de FR-003/005/007/010/012; la fusión queda condicionada a todos los controles verdes y HEAD exacto. No se autoriza eludir controles ni modificar datos de producción.
+
 Solicitud: «Mejoremos el UI para celular, ya que entré en iPhone y se ve como saturado cuando voy a escribir». Por el contexto del PR #203, se acota a preparar y revisar evaluaciones con IA y su formulario manual. No se rediseña toda la aplicación ni se cambia la calificación. La demo y los registros deben conservarse.
 
 ## Escenarios de usuario y pruebas

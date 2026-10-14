@@ -40,3 +40,11 @@ Prueba independiente: viewport reducido/orientación/foco no pierden texto; escr
 ## Dependencias y ejecución
 
 T001 → T002 → T003/T004 → T005/T006 → T007/T008 → T009/T010 → T011 → T012 → T013. Pruebas antes de los componentes afectados. Se pueden ejecutar juntas unidades de hook/Modal en archivos independientes; no editar un archivo simultáneamente ni delegar agentes. MVP US1, pero la entrega incluye las tres historias sin desplegar un manual a medias durante demo. Sin dependencias nuevas ni backend.
+
+## Corrección autorizada tras CI
+
+- [x] T014 Reproducir y corregir la conservación del nombre durante foco/Listo; comprobar valor y payload en `frontend/e2e/evaluation-ai-wizard.spec.ts` y regresiones pertinentes del hook/Wizard (FR-003, FR-005, FR-007, FR-010, FR-011).
+- [x] T015 Diagnosticar navegación WebKit y estabilizar el recorrido de pruebas sin ocultar errores; comprobar escenarios afectados y actualizar evidencia/inventario/gobernanza (FR-002, FR-004, FR-010, FR-012).
+- [x] T016 Ejecutar Converge y preparar actualización del PR #205 con gobernanza local verde; registrar autorización «fusion»/«sí» y cierre de entrega condicionado a CI verde y HEAD exacto (FR-012).
+
+CI y fusión son puertas externas de entrega, no tareas locales: no se declarará la fusión completada hasta confirmar el commit de main y el cierre del PR.

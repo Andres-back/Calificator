@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useMobileFormViewport } from './useMobileFormViewport';
@@ -20,6 +20,29 @@ beforeEach(() => {
 afterEach(() => { vi.unstubAllGlobals(); vi.restoreAllMocks(); });
 
 describe('mobile form viewport', () => {
+  it('defers presentation until after native focus/input and preserves a controlled name', async () => {
+    function ControlledName() {
+      const scope = useRef<HTMLDivElement>(null);
+      const mobile = useMobileFormViewport(true, scope);
+      const [name, setName] = useState('Nombre automático');
+      return <div ref={scope} data-writing={String(mobile.isWriting)}>
+        <input aria-label="Nombre" value={name} onChange={event => setName(event.target.value)} />
+        <button type="button" onClick={mobile.finishWriting}>Listo</button>
+      </div>;
+    }
+    render(<ControlledName />);
+    const field = screen.getByLabelText('Nombre') as HTMLInputElement;
+    act(() => field.focus());
+    expect(field.parentElement).toHaveAttribute('data-writing', 'false');
+    fireEvent.change(field, { target: { value: 'Nombre del docente' } });
+    field.setSelectionRange(2, 7);
+    await waitFor(() => expect(field.parentElement).toHaveAttribute('data-writing', 'true'));
+    expect(field).toHaveValue('Nombre del docente');
+    expect(field.selectionStart).toBe(2);
+    expect(field.selectionEnd).toBe(7);
+    fireEvent.click(screen.getByRole('button', { name: 'Listo' }));
+    expect(field).toHaveValue('Nombre del docente');
+  });
   it('reads visible bounds without focusing a field automatically', async () => {
     render(<Probe />);
     expect(screen.getByLabelText('Tema')).not.toHaveFocus();
@@ -33,7 +56,7 @@ describe('mobile form viewport', () => {
     const field = screen.getByLabelText('Tema') as HTMLTextAreaElement;
     act(() => field.focus());
     field.setSelectionRange(2, 7);
-    expect(state().writing).toBe(true);
+    await waitFor(() => expect(state().writing).toBe(true));
     act(() => { viewport.height = 320; viewport.dispatchEvent(new Event('resize')); });
     await waitFor(() => expect(state().viewport?.height).toBe(320));
     expect(screen.getByLabelText('Tema')).toBe(field);
@@ -60,11 +83,11 @@ describe('mobile form viewport', () => {
     act(() => { viewport.scale = 2; viewport.dispatchEvent(new Event('resize')); });
     await waitFor(() => expect(state().viewport).toBeUndefined());
   });
-  it('supports focus-only writing without the viewport API', () => {
+  it('supports focus-only writing without the viewport API', async () => {
     vi.stubGlobal('visualViewport', undefined);
     render(<Probe />);
     act(() => screen.getByLabelText('Tema').focus());
-    expect(state()).toMatchObject({ mobile: true, writing: true });
+    await waitFor(() => expect(state()).toMatchObject({ mobile: true, writing: true }));
     expect(state().viewport).toBeUndefined();
   });
   it('removes scoped viewport/media listeners when closing', () => {

@@ -145,6 +145,9 @@ async function loginAndOpenEvaluations(page: Page) {
   await page.locator('input[type="password"]').fill('password-for-test');
   await page.getByRole('button', { name: /Iniciar sesi.n/i }).click();
   await expect(page).toHaveURL(/\/app(?:\/materias)?$/);
+  // URL changes before the authenticated shell finishes mounting. Navigating
+  // again during that redirect can abort a WebKit load.
+  await expect(page.getByRole('button', { name: /Abrir menú de cuenta/ })).toBeVisible();
   await page.goto('/app/evaluaciones');
   await expect(page).toHaveURL(/\/app\/evaluaciones/);
 }
@@ -156,6 +159,16 @@ async function openAI(page: Page) {
 
 async function finishWritingIfVisible(page: Page) {
   const done = page.getByRole('button', { name: 'Listo', exact: true });
+  const dialog = page.getByRole('dialog');
+  if (await dialog.count() === 1) {
+    const mobileFieldFocused = await dialog.evaluate(element => {
+      const active = document.activeElement;
+      return window.matchMedia('(max-width: 639px), (max-width: 1023px) and (pointer: coarse)').matches
+        && element.contains(active) && (active instanceof HTMLInputElement || active instanceof HTMLTextAreaElement)
+        && !['checkbox', 'radio', 'file'].includes((active as HTMLInputElement).type);
+    });
+    if (mobileFieldFocused) await expect(done).toBeVisible();
+  }
   if (await done.isVisible()) await done.click();
 }
 
@@ -257,7 +270,9 @@ for (const viewport of [{ width: 360, height: 800 }, { width: 390, height: 844 }
     await finishWritingIfVisible(page);
     await page.locator('summary', { hasText: 'Personalizar' }).click();
     await page.getByLabel(/Nombre de la evaluación/).fill('Fracciones para revisar');
+    await expect(page.getByLabel(/Nombre de la evaluación/)).toHaveValue('Fracciones para revisar');
     await finishWritingIfVisible(page);
+    await expect(page.getByLabel(/Nombre de la evaluación/)).toHaveValue('Fracciones para revisar');
     await page.getByRole('checkbox', { name: /Usar criterios de aprendizaje/ }).check();
     const search = page.getByRole('searchbox', { name: 'Buscar criterios de aprendizaje' });
     await search.fill('fracciones');
@@ -286,7 +301,7 @@ for (const viewport of [{ width: 360, height: 800 }, { width: 390, height: 844 }
     await page.getByRole('button', { name: 'Generar evaluación' }).click();
     await expect.poll(() => content.evaluate((element) => element.scrollTop)).toBe(0);
     await expect(page.getByText('Revisa y edita la evaluación')).toBeVisible();
-    expect(generationPayload).toMatchObject({ dba_ids: [], dba_personalizado_ids: ['own-criterion'] });
+    expect(generationPayload).toMatchObject({ nombre: 'Fracciones para revisar', dba_ids: [], dba_personalizado_ids: ['own-criterion'] });
     await page.getByLabel(/Enunciado/).fill('Pregunta revisada desde celular');
     await finishWritingIfVisible(page);
     await page.getByRole('button', { name: 'Guardar borrador' }).click();
