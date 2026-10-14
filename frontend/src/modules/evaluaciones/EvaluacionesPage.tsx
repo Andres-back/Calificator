@@ -28,6 +28,7 @@ import {
 import { queryClient } from '@/lib/queryClient';
 import { toApiError } from '@/lib/api';
 import { cn } from '@/lib/cn';
+import { useMobileFormViewport } from '@/hooks/useMobileFormViewport';
 import { useAuth } from '@/stores/auth';
 import type { DBAUnifiedItem, Evaluacion, EvaluacionEstado, EvaluacionModalidad } from '@/types/api';
 import { getStudentEvaluationAction, getStudentEvaluationStatus } from './studentProgress';
@@ -135,12 +136,14 @@ function DynamicTextList({
   onRemove: (index: number) => void;
   hint?: string;
 }) {
+  const multiline = label === 'Preguntas' || label === 'Respuestas esperadas';
+  const TextControl = multiline ? Textarea : Input;
   return (
     <div className="space-y-2">
       <Field label={label} hint={hint}>
-        <div className="flex gap-2">
-          <Input value={pending} onChange={(event) => onPendingChange(event.target.value)} placeholder={placeholder} />
-          <Button type="button" variant="secondary" onClick={onAdd}>
+        <div className="flex items-start gap-2">
+          <TextControl className={cn('min-w-0 flex-1 text-base', multiline && 'min-h-24')} value={pending} onChange={(event) => onPendingChange(event.target.value)} placeholder={placeholder} />
+          <Button className="min-h-11 shrink-0 whitespace-nowrap" type="button" variant="secondary" onClick={onAdd}>
             <Plus className="h-4 w-4" />
             Agregar
           </Button>
@@ -149,9 +152,9 @@ function DynamicTextList({
       {values.length > 0 && (
         <div className="space-y-2">
           {values.map((value, index) => (
-            <div key={index} className="flex gap-2">
-              <Input value={value} onChange={(event) => onChange(index, event.target.value)} />
-              <Button type="button" variant="ghost" size="icon" onClick={() => onRemove(index)} aria-label="Eliminar">
+            <div key={index} className="flex items-start gap-2">
+              <TextControl aria-label={`${label} ${index + 1}`} className={cn('min-w-0 flex-1 text-base', multiline && 'min-h-24')} value={value} onChange={(event) => onChange(index, event.target.value)} />
+              <Button className="min-h-11 min-w-11 shrink-0" type="button" variant="ghost" size="icon" onClick={() => onRemove(index)} aria-label="Eliminar">
                 <Trash2 className="h-4 w-4" />
               </Button>
             </div>
@@ -197,6 +200,10 @@ function EvaluationFormModal({
   isPending: boolean;
   aiPending: boolean;
 }) {
+  const formRef = useRef<HTMLDivElement>(null);
+  const mobile = useMobileFormViewport(open, formRef);
+  const [optionsOpen, setOptionsOpen] = useState(() => !mobile.isMobile);
+
   function addListItem(field: ListField) {
     const value = pending[field].trim();
     if (!value) return;
@@ -258,141 +265,164 @@ function EvaluationFormModal({
     setForm((current) => ({ ...current, materia_id, dba_ids: [], dba_personalizado_ids: [] }));
   }
 
+  function submitFromDialog() {
+    // Presentation only: the existing submit handler still owns validation.
+    const field = !form.nombre.trim() ? 'name'
+      : !isEdit && (!Number.isFinite(form.nota_maxima) || form.nota_maxima <= 0) ? 'scale' : undefined;
+    if (field) {
+      if (field === 'scale') setOptionsOpen(true);
+      window.requestAnimationFrame(() => formRef.current?.querySelector<HTMLElement>(`[data-manual-field="${field}"]`)?.focus());
+    }
+    onSubmit();
+  }
+
   return (
-    <Modal open={open} onClose={onClose} title={title} className="max-w-4xl">
-      <div className="space-y-6">
-        <div className="grid gap-4 md:grid-cols-2">
-          <Field label="Materia" required>
-            <Select value={form.materia_id} onChange={(event) => handleFormMateriaChange(event.target.value)} required disabled={isEdit || materias?.length === 1}>
-              <option value="">Selecciona una materia</option>
-              {materias?.map((materia) => (
-                <option key={materia.id} value={materia.id}>{materia.nombre}</option>
-              ))}
-            </Select>
-            {isEdit && <p className="mt-1 text-xs text-muted">La materia no se puede cambiar al editar.</p>}
-          </Field>
-          <Field label="Modalidad" required>
-            <Select value={form.modalidad} onChange={(event) => setForm({ ...form, modalidad: event.target.value as EvaluacionModalidad })} required>
-              <option value="online">En línea</option>
-              <option value="fisica">En papel</option>
-              <option value="mixta">Mixta</option>
-            </Select>
-          </Field>
-        </div>
-
-        <div className="grid gap-4 md:grid-cols-[1fr_180px]">
-          <Field label="Nombre" required>
-            <Input value={form.nombre} onChange={(event) => setForm({ ...form, nombre: event.target.value })} placeholder="Examen unidad 1" required minLength={2} />
-          </Field>
-          <Field label="Nota maxima" required>
-            <Input type="number" min={0.1} step="0.1" value={form.nota_maxima} onChange={(event) => setForm({ ...form, nota_maxima: Number(event.target.value) })} required />
-          </Field>
-        </div>
-
-        <Field label="Descripcion">
-          <Textarea value={form.descripcion} onChange={(event) => setForm({ ...form, descripcion: event.target.value })} placeholder="Proposito, alcance o instrucciones generales." />
-        </Field>
-
-        <div className="grid gap-5 md:grid-cols-2">
-          <DynamicTextList
-            label="Metas del profesor"
-            placeholder="Ej. Identificar relaciones causa-efecto"
-            values={form.metas}
-            pending={pending.metas}
-            onPendingChange={(value) => setPending({ ...pending, metas: value })}
-            onAdd={() => addListItem('metas')}
-            onChange={(index, value) => updateListItem('metas', index, value)}
-            onRemove={(index) => removeListItem('metas', index)}
-            hint="¿Qué quieres que aprendan los estudiantes?"
-          />
-          <DynamicTextList
-            label="Criterios de evaluación / rúbrica"
-            placeholder="Ej. Procedimiento claro, uso de vocabulario técnico"
-            values={form.criterios}
-            pending={pending.criterios}
-            onPendingChange={(value) => setPending({ ...pending, criterios: value })}
-            onAdd={() => addListItem('criterios')}
-            onChange={(index, value) => updateListItem('criterios', index, value)}
-            onRemove={(index) => removeListItem('criterios', index)}
-            hint="Opcional. Si agregas criterios, la IA construirá una rúbrica con pesos y niveles."
-          />
-          <DynamicTextList
-            label="Preguntas"
-            placeholder="Escribe una pregunta para la evaluación"
-            values={form.preguntas}
-            pending={pending.preguntas}
-            onPendingChange={(value) => setPending({ ...pending, preguntas: value })}
-            onAdd={() => addListItem('preguntas')}
-            onChange={(index, value) => updateListItem('preguntas', index, value)}
-            onRemove={(index) => removeListItem('preguntas', index)}
-            hint="Las preguntas que responderán los estudiantes."
-          />
-          <DynamicTextList
-            label="Respuestas esperadas"
-            placeholder="Escribe la respuesta esperada para cada pregunta"
-            values={form.respuestas}
-            pending={pending.respuestas}
-            onPendingChange={(value) => setPending({ ...pending, respuestas: value })}
-            onAdd={() => addListItem('respuestas')}
-            onChange={(index, value) => updateListItem('respuestas', index, value)}
-            onRemove={(index) => removeListItem('respuestas', index)}
-            hint="La IA usará esto para calificar. Sé específico."
-          />
-        </div>
-
-        <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200">
-          <p className="font-semibold">💡 Tip: Define al menos las metas y los criterios</p>
-          <p className="mt-1">La IA calificará automáticamente según los criterios que definas. Si no agregas criterios, la calificación será más general.</p>
-        </div>
-
-        <Field label="Criterios de aprendizaje" hint="Opcional. Selecciona únicamente los aprendizajes que evaluarás; puedes añadir una rúbrica o continuar sin criterios.">
-          <DBASelector
-            items={dbaItems}
-            selectedOfficial={form.dba_ids}
-            selectedCustom={form.dba_personalizado_ids}
-            loading={loadingDBA}
-            error={dbaError}
-            onToggle={toggleDBA}
-          />
-        </Field>
-
-        {!isEdit && onGenerateAI && (
-          <div className="rounded-xl border border-brand-200 bg-brand-50/70 p-4 dark:border-brand-500/30 dark:bg-brand-500/10">
-            <div className="flex items-start gap-3">
-              <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-brand-100 text-brand-700 dark:bg-brand-500/20 dark:text-brand-200">
-                <Sparkles className="h-4 w-4" />
-              </span>
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-semibold text-fg">Borrador alineado con IA</p>
-                <p className="mt-1 text-xs text-muted">
-                  Usa los criterios de aprendizaje que elijas, una rúbrica o generación libre. Se guarda como borrador para que lo revises.
-                </p>
-                <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-end">
-                  <div className="sm:w-48">
-                    <Field label="Cantidad de preguntas">
-                      <Input
-                        type="number"
-                        min={3}
-                        max={30}
-                        value={form.cantidad_ia}
-                        onChange={(event) => setForm({ ...form, cantidad_ia: Number(event.target.value) })}
-                      />
-                    </Field>
-                  </div>
-                  <Button type="button" onClick={onGenerateAI} loading={aiPending} disabled={isPending}>
-                    <Sparkles className="h-4 w-4" />
-                    Generar borrador con IA
-                  </Button>
-                </div>
-              </div>
+    <Modal open={open} onClose={onClose} title={title}
+      mobileViewport={mobile.viewport} mobileWriting={mobile.isWriting}
+      className={cn('flex max-w-4xl flex-col overflow-hidden [&_input]:text-base [&_textarea]:text-base [&_select]:text-base [&_button]:min-h-11 [&_button]:min-w-11',
+        mobile.isMobile && 'rounded-none p-3 [&>h2]:mb-2 [&>h2]:min-h-11 [&>h2]:text-base',
+        mobile.isWriting && '[&_.writing-secondary]:hidden [&_label>span.text-secondary]:hidden')}>
+      <div ref={formRef} className="flex min-h-0 flex-1 flex-col">
+        <div data-mobile-scroll className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain pb-3">
+          <div className="writing-secondary grid gap-4 md:grid-cols-2">
+            {mobile.isMobile && (isEdit || materias?.length === 1) && <p className="text-sm font-semibold md:col-span-2">{materias?.find(item => item.id === form.materia_id)?.nombre}</p>}
+            <div className={cn(mobile.isMobile && (isEdit || materias?.length === 1) && 'hidden')}>
+            <Field label="Materia" required>
+              <Select value={form.materia_id} onChange={(event) => handleFormMateriaChange(event.target.value)} required disabled={isEdit || materias?.length === 1}>
+                <option value="">Selecciona una materia</option>
+                {materias?.map((materia) => <option key={materia.id} value={materia.id}>{materia.nombre}</option>)}
+              </Select>
+            </Field>
             </div>
+            <Field label="Modalidad" required>
+              <Select value={form.modalidad} onChange={(event) => setForm({ ...form, modalidad: event.target.value as EvaluacionModalidad })} required>
+                <option value="online">En línea</option><option value="fisica">En papel</option><option value="mixta">Mixta</option>
+              </Select>
+            </Field>
           </div>
-        )}
+          <Field label="Nombre" required>
+            <Input data-manual-field="name" value={form.nombre} onChange={(event) => setForm({ ...form, nombre: event.target.value })} placeholder="Examen unidad 1" required minLength={2} />
+          </Field>
+          <div className="grid gap-5 md:grid-cols-2">
+            <DynamicTextList
+              label="Preguntas"
+              placeholder="Escribe una pregunta para la evaluación"
+              values={form.preguntas}
+              pending={pending.preguntas}
+              onPendingChange={(value) => setPending({ ...pending, preguntas: value })}
+              onAdd={() => addListItem('preguntas')}
+              onChange={(index, value) => updateListItem('preguntas', index, value)}
+              onRemove={(index) => removeListItem('preguntas', index)}
+              hint="Las preguntas que responderán los estudiantes."
+            />
+            <DynamicTextList
+              label="Respuestas esperadas"
+              placeholder="Escribe la respuesta esperada para cada pregunta"
+              values={form.respuestas}
+              pending={pending.respuestas}
+              onPendingChange={(value) => setPending({ ...pending, respuestas: value })}
+              onAdd={() => addListItem('respuestas')}
+              onChange={(index, value) => updateListItem('respuestas', index, value)}
+              onRemove={(index) => removeListItem('respuestas', index)}
+              hint="La IA usará esto para calificar. Sé específico."
+            />
+          </div>
+          <details open={optionsOpen} onToggle={event => setOptionsOpen(event.currentTarget.open)}
+            className={cn('rounded-xl border border-border p-3', !optionsOpen && 'writing-secondary')}>
+            <summary className="writing-secondary min-h-11 cursor-pointer font-semibold">
+              <span>Personalizar</span>
+              <span className="ml-2 text-sm font-normal text-muted">{form.nota_maxima} puntos · {form.dba_ids.length + form.dba_personalizado_ids.length} criterios</span>
+            </summary>
+            <p className="writing-secondary mb-3 text-sm text-muted">
+              Nota máxima: {form.nota_maxima} · {form.dba_ids.length + form.dba_personalizado_ids.length} criterios de aprendizaje seleccionados
+            </p>
+            <div className="space-y-4">
+              <Field label="Nota maxima" required>
+                <Input data-manual-field="scale" type="number" min={0.1} step="0.1" value={form.nota_maxima} onChange={(event) => setForm({ ...form, nota_maxima: Number(event.target.value) })} required />
+              </Field>
+            <Field label="Descripcion">
+              <Textarea value={form.descripcion} onChange={(event) => setForm({ ...form, descripcion: event.target.value })} placeholder="Proposito, alcance o instrucciones generales." />
+            </Field>
 
-        <div className="flex flex-col-reverse gap-3 border-t border-border pt-4 sm:flex-row sm:justify-end">
-          <Button type="button" variant="outline" onClick={onClose}>Cancelar</Button>
-          <Button onClick={onSubmit} loading={isPending} disabled={aiPending}>{isEdit ? 'Guardar cambios' : 'Crear manualmente'}</Button>
+              <div className="grid gap-5 md:grid-cols-2">
+              <DynamicTextList
+                label="Metas del profesor"
+                placeholder="Ej. Identificar relaciones causa-efecto"
+                values={form.metas}
+                pending={pending.metas}
+                onPendingChange={(value) => setPending({ ...pending, metas: value })}
+                onAdd={() => addListItem('metas')}
+                onChange={(index, value) => updateListItem('metas', index, value)}
+                onRemove={(index) => removeListItem('metas', index)}
+                hint="¿Qué quieres que aprendan los estudiantes?"
+              />
+              <DynamicTextList
+                label="Criterios de evaluación / rúbrica"
+                placeholder="Ej. Procedimiento claro, uso de vocabulario técnico"
+                values={form.criterios}
+                pending={pending.criterios}
+                onPendingChange={(value) => setPending({ ...pending, criterios: value })}
+                onAdd={() => addListItem('criterios')}
+                onChange={(index, value) => updateListItem('criterios', index, value)}
+                onRemove={(index) => removeListItem('criterios', index)}
+                hint="Opcional. Si agregas criterios, la IA construirá una rúbrica con pesos y niveles."
+              />
+
+              </div>
+              <Field label="Criterios de aprendizaje" hint="Opcional. Selecciona únicamente los aprendizajes que evaluarás; puedes añadir una rúbrica o continuar sin criterios.">
+                <DBASelector
+                  items={dbaItems}
+                  selectedOfficial={form.dba_ids}
+                  selectedCustom={form.dba_personalizado_ids}
+                  loading={loadingDBA}
+                  error={dbaError}
+                  onToggle={toggleDBA}
+                />
+              </Field>
+
+              {!isEdit && onGenerateAI && (
+                <div className="rounded-xl border border-brand-200 bg-brand-50/70 p-4 dark:border-brand-500/30 dark:bg-brand-500/10">
+                  <div className="flex items-start gap-3">
+                    <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-brand-100 text-brand-700 dark:bg-brand-500/20 dark:text-brand-200">
+                      <Sparkles className="h-4 w-4" />
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-semibold text-fg">Borrador alineado con IA</p>
+                      <p className="mt-1 text-xs text-muted">
+                        Usa los criterios de aprendizaje que elijas, una rúbrica o generación libre. Se guarda como borrador para que lo revises.
+                      </p>
+                      <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-end">
+                        <div className="sm:w-48">
+                          <Field label="Cantidad de preguntas">
+                            <Input
+                              type="number"
+                              min={3}
+                              max={30}
+                              value={form.cantidad_ia}
+                              onChange={(event) => setForm({ ...form, cantidad_ia: Number(event.target.value) })}
+                            />
+                          </Field>
+                        </div>
+                        <Button type="button" onClick={onGenerateAI} loading={aiPending} disabled={isPending}>
+                          <Sparkles className="h-4 w-4" />
+                          Generar borrador con IA
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+            </div>
+          </details>
         </div>
+        <footer className="shrink-0 border-t border-border pt-2">
+          <Button className={cn('w-full', !mobile.isWriting && 'hidden')} type="button" onClick={mobile.finishWriting}>Listo</Button>
+          <div className={cn('flex flex-col-reverse gap-2 sm:flex-row sm:justify-end', mobile.isWriting && 'hidden')}>
+            <Button type="button" variant="outline" onClick={onClose}>Cancelar</Button>
+            <Button type="button" onClick={submitFromDialog} loading={isPending} disabled={aiPending}>{isEdit ? 'Guardar cambios' : 'Crear manualmente'}</Button>
+          </div>
+        </footer>
       </div>
     </Modal>
   );

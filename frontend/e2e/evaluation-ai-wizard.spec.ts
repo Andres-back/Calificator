@@ -1,6 +1,10 @@
 import { expect, test, type Page } from '@playwright/test';
 import { createEmptyWizardState, wizardStorageKey, WIZARD_VERSION } from '../src/modules/evaluaciones/components/generationWizardModel';
 
+// Full journeys now include finishing each mobile edit, not just filling fields.
+// This is a browser-flow deadline, never an LLM performance threshold.
+test.setTimeout(60_000);
+
 const teacher = {
   id: 'profesor-e2e',
   nombre: 'Profesora E2E',
@@ -150,14 +154,22 @@ async function openAI(page: Page) {
   await page.getByRole('button', { name: 'Crear con IA', exact: true }).click();
 }
 
+async function finishWritingIfVisible(page: Page) {
+  const done = page.getByRole('button', { name: 'Listo', exact: true });
+  if (await done.isVisible()) await done.click();
+}
+
 async function reachReviewStep(page: Page) {
   await openAI(page);
   await page.getByLabel(/Qué quieres evaluar/).fill('Fracciones');
+  await finishWritingIfVisible(page);
   await page.locator('summary', { hasText: 'Personalizar' }).click();
   await page.getByLabel(/Nombre de la evaluación/i).fill('Evaluación IA E2E');
+  await finishWritingIfVisible(page);
   await page.getByRole('checkbox', { name: /Usar criterios de aprendizaje/i }).check();
   await page.getByRole('button', { name: /DBA-1/i }).click();
   await page.getByLabel(/Texto de referencia/i).fill('Texto de referencia para las preguntas.');
+  await finishWritingIfVisible(page);
   await page.getByRole('button', { name: 'Generar evaluación' }).click();
   await expect(page.getByText('Revisa y edita la evaluación')).toBeVisible();
 }
@@ -171,6 +183,7 @@ test('profesor completes the two-screen AI flow and sees the normal evaluation i
   await reachReviewStep(page);
 
   await page.getByLabel(/Enunciado/i).fill('Pregunta editada por la profesora');
+  await finishWritingIfVisible(page);
   await page.getByRole('button', { name: 'Guardar borrador' }).click();
 
   await expect(page.getByRole('dialog', { name: /Generar evaluación/i })).not.toBeVisible();
@@ -185,6 +198,7 @@ test('recovers and discards a user-scoped draft after reload', async ({ page }) 
   await loginAndOpenEvaluations(page);
   await openAI(page);
   await page.getByLabel(/Qué quieres evaluar/).fill('Borrador recuperable');
+  await finishWritingIfVisible(page);
   await page.getByRole('button', { name: 'Cerrar asistente' }).click();
 
   await page.reload();
@@ -214,6 +228,7 @@ test('manual creation remains available and the wizard fits a 390x844 viewport',
   await page.getByRole('button', { name: 'Crear evaluación', exact: true }).click();
   await page.getByRole('button', { name: 'Crear manualmente' }).first().click();
   await page.getByLabel(/^Nombre/i).fill('Evaluación manual E2E');
+  await finishWritingIfVisible(page);
   await page.getByRole('button', { name: 'Crear manualmente' }).last().click();
   await expect(page.getByText('Evaluación manual E2E')).toBeVisible();
 
@@ -239,15 +254,20 @@ for (const viewport of [{ width: 360, height: 800 }, { width: 390, height: 844 }
     await loginAndOpenEvaluations(page);
     await openAI(page);
     await page.getByLabel(/Qué quieres evaluar/).fill('Fracciones');
+    await finishWritingIfVisible(page);
     await page.locator('summary', { hasText: 'Personalizar' }).click();
     await page.getByLabel(/Nombre de la evaluación/).fill('Fracciones para revisar');
+    await finishWritingIfVisible(page);
     await page.getByRole('checkbox', { name: /Usar criterios de aprendizaje/ }).check();
     const search = page.getByRole('searchbox', { name: 'Buscar criterios de aprendizaje' });
     await search.fill('fracciones');
+    await finishWritingIfVisible(page);
     await page.getByRole('button', { name: /Explica fracciones equivalentes/ }).click();
     await search.fill('multiplicaciones');
+    await finishWritingIfVisible(page);
     await expect(page.getByText('1 seleccionados · 20 disponibles en esta búsqueda')).toBeVisible();
     await search.fill('fracciones');
+    await finishWritingIfVisible(page);
     await expect(page.getByRole('button', { name: /Explica fracciones equivalentes/ })).toHaveAttribute('aria-pressed', 'true');
     const content = page.getByTestId('evaluation-wizard-content');
     const dialog = page.getByRole('dialog', { name: /Generar evaluación/ });
@@ -268,6 +288,7 @@ for (const viewport of [{ width: 360, height: 800 }, { width: 390, height: 844 }
     await expect(page.getByText('Revisa y edita la evaluación')).toBeVisible();
     expect(generationPayload).toMatchObject({ dba_ids: [], dba_personalizado_ids: ['own-criterion'] });
     await page.getByLabel(/Enunciado/).fill('Pregunta revisada desde celular');
+    await finishWritingIfVisible(page);
     await page.getByRole('button', { name: 'Guardar borrador' }).click();
     await expect(dialog).toBeHidden();
     await expect(page.getByText('Fracciones para revisar').first()).toBeVisible();
@@ -288,6 +309,7 @@ for (const width of [360, 390, 768, 1280, 1440]) {
       await expect(page.locator('details', { has: page.locator('summary', { hasText: 'Personalizar' }) })).not.toHaveAttribute('open');
       await expect(page.getByRole('complementary', { name: 'Asistencia opcional de Xali' })).toHaveCount(0);
       await page.getByLabel(/Qué quieres evaluar/).fill('Fracciones');
+      await finishWritingIfVisible(page);
       const assertLayout = async () => {
         expect(await dialog.evaluate((element) => element.scrollWidth <= element.clientWidth + 1)).toBe(true);
         const metrics = await content.evaluate(element => {
@@ -312,10 +334,13 @@ for (const width of [360, 390, 768, 1280, 1440]) {
       await page.getByRole('button', { name: 'Generar evaluación' }).click();
       await expect(page.getByRole('button', { name: 'Guardar borrador' })).toBeVisible();
       await page.getByLabel(/Enunciado/).fill('Pregunta revisada y conservada');
+      await finishWritingIfVisible(page);
       await page.getByLabel('Puntaje de la pregunta 1').fill('0');
+      await finishWritingIfVisible(page);
       await expect(page.getByRole('button', { name: 'Guardar borrador' })).toBeDisabled();
       await page.getByRole('button', { name: 'Revisar pendientes' }).click();
       await page.getByLabel('Puntaje de la pregunta 1').fill('2');
+      await finishWritingIfVisible(page);
       await assertLayout();
       await page.screenshot({ path: `../output/playwright/creation-096/${testInfo.project.name}-${width}-${theme}-revisar.png` });
       const saved = page.waitForRequest(request => request.method() === 'PATCH' && request.url().includes('/evaluaciones/evaluacion-ia-1'));
@@ -347,6 +372,7 @@ test('096 treinta preguntas y texto largo 390px dark mantienen edición y accion
   await openAI(page);
   await page.getByRole('button', { name: 'Continuar', exact: true }).click();
   await page.getByLabel(/Qué quieres evaluar/).fill('Comprensión, argumentación y explicación de los procedimientos del grupo');
+  await finishWritingIfVisible(page);
   await page.getByRole('button', { name: 'Personalizar cantidad' }).click();
   await expect(page.getByRole('heading', { name: 'Tipos de preguntas · 30 en total' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Agregar una pregunta de Respuesta abierta', exact: true })).toBeDisabled();
@@ -359,5 +385,114 @@ test('096 treinta preguntas y texto largo 390px dark mantienen edición y accion
   expect(await page.getByRole('dialog').evaluate(element => element.scrollWidth <= element.clientWidth + 1)).toBe(true);
   await page.screenshot({ path: `../output/playwright/creation-096/${testInfo.project.name}-390-dark-30-preguntas.png` });
   await page.getByRole('button', { name: 'Guardar borrador' }).click();
+  await expect(page.getByRole('dialog')).toBeHidden();
+});
+
+// Synthetic visual viewport geometry: these tests do not claim to open a real OS keyboard.
+async function resizeVisibleArea(page: Page, height: number, top: number) {
+  await page.evaluate(({ height, top }) => {
+    const viewport = window.visualViewport!;
+    Object.defineProperties(viewport, {
+      height: { configurable: true, value: height },
+      offsetTop: { configurable: true, value: top },
+      scale: { configurable: true, value: 1 },
+    });
+    viewport.dispatchEvent(new Event('resize'));
+  }, { height, top });
+}
+
+async function expectWritingLayout(page: Page, field: ReturnType<Page['getByLabel']>, height: number, top: number) {
+  const dialog = page.getByRole('dialog');
+  await expect(dialog).toHaveAttribute('data-writing', 'true');
+  await expect(dialog).toHaveCSS('height', `${height}px`);
+  // Spring transforms / device pixels can round the rendered box by one pixel.
+  await expect.poll(async () => Math.abs(((await dialog.boundingBox())?.height ?? 0) - height)).toBeLessThanOrEqual(1);
+  await expect.poll(async () => Math.abs(((await dialog.boundingBox())?.y ?? 0) - top)).toBeLessThanOrEqual(1);
+  await expect.poll(async () => field.evaluate(element => {
+    const input = element.getBoundingClientRect();
+    const area = element.closest('[data-mobile-scroll]')!.getBoundingClientRect();
+    const label = element.closest('label')?.getBoundingClientRect();
+    return input.top >= area.top - 1 && input.bottom <= area.bottom + 1 && (!label || label.top >= area.top - 1);
+  })).toBe(true);
+  const done = page.getByRole('button', { name: 'Listo', exact: true });
+  const rect = await done.boundingBox();
+  expect(rect!.height).toBeGreaterThanOrEqual(44);
+  expect(rect!.y + rect!.height).toBeLessThanOrEqual(top + height + 1);
+  expect(await dialog.evaluate(element => element.scrollWidth <= element.clientWidth + 1)).toBe(true);
+}
+
+for (const width of [360, 390]) {
+  for (const theme of ['light', 'dark'] as const) {
+    test(`097 escribir y revisar ${width}px ${theme} con altura visible reducida`, async ({ page }, testInfo) => {
+      await page.setViewportSize({ width, height: 844 });
+      await mockApplication(page);
+      await loginAndOpenEvaluations(page);
+      await page.evaluate(value => document.documentElement.classList.toggle('dark', value === 'dark'), theme);
+      await openAI(page);
+      const topic = page.getByLabel(/Qué quieres evaluar/);
+      await expect(topic).not.toBeFocused();
+      const mutations: string[] = [];
+      page.on('request', request => {
+        if (['POST', 'PATCH'].includes(request.method()) && request.url().includes('/api/')) mutations.push(request.url());
+      });
+      await topic.fill('Fracciones equivalentes');
+      await topic.evaluate(element => (element as HTMLTextAreaElement).setSelectionRange(2, 8));
+      await resizeVisibleArea(page, 340, 40);
+      await expectWritingLayout(page, topic, 340, 40);
+      expect(await topic.evaluate(element => (element as HTMLTextAreaElement).selectionStart)).toBe(2);
+      await page.screenshot({ path: `../output/playwright/097-escritura/${testInfo.project.name}-${width}-${theme}-escribir.png` });
+      await finishWritingIfVisible(page);
+      await resizeVisibleArea(page, 844, 0);
+      await expect(topic).toHaveValue('Fracciones equivalentes');
+      expect(mutations).toEqual([]);
+      await page.getByRole('button', { name: 'Generar evaluación', exact: true }).click();
+      const statement = page.getByLabel(/Enunciado/);
+      await statement.fill('Explica por qué dos fracciones son equivalentes.');
+      await resizeVisibleArea(page, 380, 24);
+      await expectWritingLayout(page, statement, 380, 24);
+      await page.getByLabel('Puntaje de la pregunta 1').fill('0');
+      await expect(page.getByRole('button', { name: 'Revisar pendientes' })).toBeVisible();
+      await page.getByLabel('Puntaje de la pregunta 1').fill('2');
+      await finishWritingIfVisible(page);
+      await resizeVisibleArea(page, 844, 0);
+      await expect(statement).toHaveValue('Explica por qué dos fracciones son equivalentes.');
+      await page.getByRole('button', { name: 'Guardar borrador', exact: true }).click();
+      await expect(page.getByRole('dialog')).toBeHidden();
+      expect(mutations).toHaveLength(2);
+    });
+  }
+}
+
+test('097 manual 390px conserva preguntas y opciones al escribir', async ({ page }, testInfo) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await mockApplication(page);
+  await loginAndOpenEvaluations(page);
+  await page.getByRole('button', { name: 'Crear evaluación', exact: true }).click();
+  await page.getByRole('button', { name: 'Crear manualmente', exact: true }).click();
+  await page.getByLabel(/^Nombre/).fill('Evaluación manual móvil');
+  await finishWritingIfVisible(page);
+  const question = page.getByPlaceholder('Escribe una pregunta para la evaluación');
+  await question.fill('¿Cómo obtendrías una fracción equivalente a 2/3?');
+  await resizeVisibleArea(page, 300, 50);
+  await expectWritingLayout(page, question, 300, 50);
+  await page.screenshot({ path: `../output/playwright/097-escritura/${testInfo.project.name}-manual-escribir.png` });
+  await finishWritingIfVisible(page);
+  await resizeVisibleArea(page, 844, 0);
+  await page.locator('summary', { hasText: 'Personalizar' }).click();
+  await page.getByLabel(/^Nota maxima/).focus();
+  await expect(page.getByRole('dialog')).toHaveAttribute('data-writing', 'true');
+  await page.getByLabel(/^Nota maxima/).fill('10');
+  await expect(page.getByLabel(/^Nota maxima/)).toHaveValue('10');
+  await finishWritingIfVisible(page);
+  await expect(page.getByLabel(/^Nota maxima/)).toHaveValue('10');
+  await page.locator('summary', { hasText: 'Personalizar' }).click();
+  await expect(page.getByLabel(/^Nota maxima/)).toHaveValue('10');
+  await expect(question).toHaveValue('¿Cómo obtendrías una fracción equivalente a 2/3?');
+  await question.locator('..').getByRole('button', { name: 'Agregar', exact: true }).click();
+  const submitted = page.waitForRequest(request => request.method() === 'POST' && new URL(request.url()).pathname === '/api/evaluaciones');
+  await page.getByRole('button', { name: 'Crear manualmente', exact: true }).click();
+  expect((await submitted).postDataJSON()).toMatchObject({
+    nota_maxima: 10, preguntas: [{ enunciado: '¿Cómo obtendrías una fracción equivalente a 2/3?' }],
+  });
   await expect(page.getByRole('dialog')).toBeHidden();
 });

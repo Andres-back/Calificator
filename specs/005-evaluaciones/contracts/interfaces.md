@@ -17,3 +17,7 @@ Diseño, aceptación y evidencia: [084-docente-mobile-first](../084-docente-mobi
 ## Creación 096
 
 Preparar/Revisar y selector de métodos reutilizan POST generar-borrador/crear, extracción de referencia, GET y PATCH de evaluación. La generación conserva el ID; guardar envía expected_updated_at y solo publica con la acción independiente vigente. La recuperación comprueba identidad, materia y versión sin reemplazar ediciones locales. PDF/Word se consultan desde Visualizar después de guardar, nunca por pulsación del editor. Contrato UI y compatibilidad: [096](../../096-evaluacion-dos-pantallas/contracts/ui.md).
+
+## Escritura 097
+
+El estado de presentación (foco, altura visible, Listo y pliegues) no añade ni cambia contratos HTTP. Listo solo termina la escritura; guardar/generar siguen siendo acciones explícitas, con ID/versionado/reglas anteriores. El formulario manual conserva serialización y validación; ante un dato inválido abre su sección y enfoca el campo sin enviar. [Contrato UI 097](../../097-escritura-docente-movil/contracts/ui.md).

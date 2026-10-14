@@ -384,7 +384,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "88a690f82b2edb20caeb53e6a1847d99e5c5deecc3812c2f45fec3669c4e9f44",
+  "source_digest": "78c8bd96d24e68d11de082a5d91ce3db140e66879a818e8ecde5e4b8f5265aa2",
   "surfaces": [
     {
       "actors": [
@@ -15724,6 +15724,12 @@
           "reference": "/",
           "status": "direct",
           "test_path": "frontend/src/hooks/useDebouncedValue.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "frontend/src/hooks/useMobileFormViewport.test.tsx"
         },
         {
           "level": "unit",

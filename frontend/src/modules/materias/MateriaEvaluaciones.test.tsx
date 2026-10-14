@@ -146,6 +146,35 @@ beforeEach(() => {
 });
 
 describe('MateriaEvaluaciones teacher creation flow', () => {
+  it('097 preserves manual pending text through Listo and personalization without creating records', async () => {
+    const media = vi.spyOn(window, 'matchMedia').mockImplementation(query => ({ matches: query.includes('max-width'), media: query, onchange: null, addListener() {}, removeListener() {}, addEventListener() {}, removeEventListener() {} } as unknown as MediaQueryList));
+    try {
+      const user = userEvent.setup();
+      renderPage();
+      await user.click(screen.getByRole('button', { name: 'Crear evaluación' }));
+      await user.click(screen.getByRole('button', { name: 'Crear manualmente' }));
+      const dialog = screen.getByRole('dialog', { name: 'Crear manualmente · Ciencias' });
+      const pending = within(dialog).getByPlaceholderText('Escribe una pregunta para la evaluación');
+      expect(pending.tagName).toBe('TEXTAREA');
+      expect(pending).not.toHaveFocus();
+      await user.type(pending, '¿Por qué cambia el agua de estado?');
+      await user.click(within(dialog).getByRole('button', { name: 'Listo' }));
+      await user.click(within(dialog).getByText('Personalizar', { exact: true }));
+      const scale = within(dialog).getByLabelText(/^Nota maxima/);
+      await user.clear(scale);
+      await user.type(scale, '10');
+      await user.click(within(dialog).getByRole('button', { name: 'Listo' }));
+      expect(scale).toHaveValue(10);
+      await user.click(within(dialog).getByText('Personalizar', { exact: true }));
+      expect(scale).toHaveValue(10);
+      expect(pending).toHaveValue('¿Por qué cambia el agua de estado?');
+      await user.click(within(dialog).getByRole('button', { name: 'Crear manualmente' }));
+      await waitFor(() => expect(within(dialog).getByLabelText(/^Nombre/)).toHaveFocus());
+      expect(pending).toHaveValue('¿Por qué cambia el agua de estado?');
+      expect(mocks.create).not.toHaveBeenCalled();
+      expect(mocks.publish).not.toHaveBeenCalled();
+    } finally { media.mockRestore(); }
+  });
   it('096 creates manually in the same subject through the existing form without publishing', async () => {
     const user = userEvent.setup();
     renderPage();

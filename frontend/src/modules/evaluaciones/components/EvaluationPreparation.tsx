@@ -8,10 +8,11 @@ import { DBASelector } from './DBASelector';
 import { MAX_QUESTIONS, MIN_QUESTIONS, QUESTION_TYPES, resizeQuestionCounts, totalQuestionCount, type WizardState } from './generationWizardModel';
 import { MODALITY_OPTIONS, TYPE_COPY } from './generationWizardOptions';
 
-export function EvaluationPreparation({ state, materias, fixedContext, expanded, onExpandedChange, onPatch, onTopicChange, onMateriaChange, onToggleCriterion, criteria, referenceInputRef, extracting, onReferenceFile }: {
+export function EvaluationPreparation({ state, materias, fixedContext, mobile = false, expanded, onExpandedChange, onPatch, onTopicChange, onMateriaChange, onToggleCriterion, criteria, referenceInputRef, extracting, onReferenceFile }: {
   state: WizardState;
   materias: Materia[];
   fixedContext: boolean;
+  mobile?: boolean;
   expanded: boolean;
   onExpandedChange: (open: boolean) => void;
   onPatch: (patch: Partial<WizardState>) => void;
@@ -42,12 +43,12 @@ export function EvaluationPreparation({ state, materias, fixedContext, expanded,
   };
 
   return <section aria-labelledby="wizard-step-title" className="space-y-4">
-    <h3 id="wizard-step-title" className="text-lg font-bold">Prepara tu evaluación</h3>
-    {fixedContext || materias.length === 1 ? <p className="break-words text-sm text-muted"><strong className="text-fg">{materia?.nombre ?? 'Materia seleccionada'}</strong>{materia?.grado || materia?.area ? <span className="block">{[materia?.grado ? `Grado ${materia.grado}` : '', materia?.area ? `Área: ${materia.area}` : ''].filter(Boolean).join(' · ')}</span> : null}</p>
+    <h3 id="wizard-step-title" className="writing-secondary text-lg font-bold">Prepara tu evaluación</h3>
+    {fixedContext || materias.length === 1 ? <p className="writing-secondary break-words text-sm text-muted"><strong className="text-fg">{materia?.nombre ?? 'Materia seleccionada'}</strong>{materia?.grado || materia?.area ? <span className="block">{[materia?.grado ? `Grado ${materia.grado}` : '', materia?.area ? `Área: ${materia.area}` : ''].filter(Boolean).join(' · ')}</span> : null}</p>
       : <Field label="Materia" required><MateriaSelect value={state.materiaId} materias={materias} onChange={onMateriaChange} /></Field>}
-    <Field label="¿Qué quieres evaluar?" required><Textarea data-prepare-field="topic" autoFocus value={state.descripcion} onChange={event => onTopicChange(event.target.value)} className="min-h-20 text-base" maxLength={2000} placeholder="Ejemplo: resolver sumas de fracciones y explicar el procedimiento" /></Field>
-    {state.nombre && <p className="break-words text-xs text-muted">Nombre: <strong>{state.nombre}</strong></p>}
-    <fieldset className="space-y-2">
+    <Field label="¿Qué quieres evaluar?" required><Textarea data-prepare-field="topic" autoFocus={!mobile} value={state.descripcion} onChange={event => onTopicChange(event.target.value)} className="min-h-20 text-base" maxLength={2000} placeholder="Ejemplo: resolver sumas de fracciones y explicar el procedimiento" /></Field>
+    {state.nombre && <p className="writing-secondary break-words text-xs text-muted">Nombre: <strong>{state.nombre}</strong></p>}
+    <fieldset className="writing-secondary space-y-2">
       <legend className="text-sm font-semibold">Cantidad de preguntas</legend>
       <div className="flex flex-wrap gap-2">
         {[5, 10].map(count => <Button key={count} type="button" variant={total === count ? 'primary' : 'outline'} aria-pressed={total === count} disabled={generated} onClick={() => onPatch({ counts: resizeQuestionCounts(state.counts, count) })}>{count} preguntas</Button>)}
@@ -55,7 +56,7 @@ export function EvaluationPreparation({ state, materias, fixedContext, expanded,
       </div>
       {generated && <p className="text-xs text-muted">Para cambiar la cantidad o los tipos, edita las preguntas en Revisar.</p>}
     </fieldset>
-    <fieldset className="space-y-2">
+    <fieldset className="writing-secondary space-y-2">
       <legend className="text-sm font-semibold">¿Cómo responderá el grupo?</legend>
       <div className="grid grid-cols-2 gap-2">
         {MODALITY_OPTIONS.filter(option => option.value !== 'mixta').map(option => <label key={option.value} className={cn('focus-within:ring-2 focus-within:ring-focus flex min-h-12 cursor-pointer items-center gap-2 rounded-xl border p-3', state.modalidad === option.value ? 'border-brand-500 bg-brand-50 dark:bg-brand-500/10' : 'border-border bg-surface')}>
@@ -65,8 +66,8 @@ export function EvaluationPreparation({ state, materias, fixedContext, expanded,
       </div>
       {state.modalidad === 'mixta' && <p className="text-sm font-semibold text-brand-700 dark:text-brand-200">Modalidad mixta seleccionada</p>}
     </fieldset>
-    <details open={expanded} onToggle={event => onExpandedChange(event.currentTarget.open)} className="group rounded-xl border border-border bg-surface">
-      <summary className="focus-ring flex min-h-12 cursor-pointer items-center justify-between gap-2 rounded-xl p-3 font-semibold"><span>Personalizar</span><ChevronDown aria-hidden="true" className="h-4 w-4 shrink-0 group-open:rotate-180" /></summary>
+    <details open={expanded} onToggle={event => onExpandedChange(event.currentTarget.open)} className={cn("group rounded-xl border border-border bg-surface", !expanded && "writing-secondary")}>
+      <summary className="writing-secondary focus-ring flex min-h-12 cursor-pointer items-center justify-between gap-2 rounded-xl p-3 font-semibold"><span>Personalizar</span><ChevronDown aria-hidden="true" className="h-4 w-4 shrink-0 group-open:rotate-180" /></summary>
       <div className="space-y-5 border-t border-border p-3 sm:p-4">
         <div className="grid gap-3 sm:grid-cols-2">
           <Field label="Nombre de la evaluación"><Input data-prepare-field="name" value={state.nombre} maxLength={200} onChange={event => onPatch({ nombre: event.target.value, nombreAutomatico: false })} className="min-h-12 text-base" /></Field>
@@ -106,6 +107,6 @@ export function EvaluationPreparation({ state, materias, fixedContext, expanded,
         <Field label="Indicaciones adicionales para la IA" hint="Opcional"><Textarea value={state.instruccionesAdicionales} onChange={event => onPatch({ instruccionesAdicionales: event.target.value })} className="min-h-24 text-base" maxLength={2000} /></Field>
       </div>
     </details>
-    <p aria-label="Resumen de preparación" className="break-words text-xs leading-5 text-muted">{summary}</p>
+    <p aria-label="Resumen de preparación" className="writing-secondary break-words text-xs leading-5 text-muted">{summary}</p>
   </section>;
 }

@@ -535,8 +535,11 @@ test('crea desde una materia sin repetir el contexto y permite abrir opciones', 
   await expect(dialog.getByText('Grado 4 · Área: Matemáticas')).toBeVisible();
   await expect(dialog.getByRole('combobox')).toHaveCount(0);
   await dialog.getByLabel(/Qué quieres evaluar/).fill('Multiplicación');
+  const done = dialog.getByRole('button', { name: 'Listo', exact: true });
+  if (await done.isVisible()) await done.click();
   await dialog.locator('summary', { hasText: 'Personalizar' }).click();
   await dialog.getByLabel(/Nombre de la evaluación/).fill('Unidad del aula');
+  if (await done.isVisible()) await done.click();
   await expect(dialog.getByRole('checkbox', { name: /Usar criterios de aprendizaje/ })).toBeVisible();
   await expect(dialog.getByRole('progressbar')).toHaveAttribute('aria-valuemax', '2');
   expect(await dialog.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBeTruthy();
