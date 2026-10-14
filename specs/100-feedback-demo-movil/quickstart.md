@@ -65,3 +65,11 @@ HEAD 6e506e4: backend y contenedores aprobados. En frontend pasaron auditoría, 
 Gobernanza del mismo HEAD: el evento inicial de apertura falló por ausencia de etiquetas antes de aplicarlas; la ejecución posterior 38625177383 pasó con ambas aprobaciones. No se omiten ni se alteran reglas. Un nuevo commit vuelve a ejecutar todos los controles sobre su HEAD exacto.
 
 Corrección T016 validada: `npm.cmd run test:mock -- grading-review.mock.spec.ts` termina **43/43 verdes** en 6.0 minutos, usando datos sintéticos. Inventario regenerado/verificado: 573 superficies; únicamente cambia source_digest por la expectativa del test. No se repiten llamadas IA ni pruebas de backend/compilación locales porque el código de aplicación no cambió; CI remoto completo permanece obligatorio.
+
+## Límite de ejecución del segundo CI
+
+HEAD 72a066d, run 38628652441: backend, contenedores y gobernanza aprobados. Frontend aprobó auditoría, TypeScript, lint, 686 unidades, build y 185 E2E generales (17 minutos). El job se canceló por agotar el límite de 25 minutos durante los 43 escenarios contextuales; no se acredita su finalización remota. No se fusionó.
+
+El usuario autoriza el 2026-10-14 mediante «ADELANTE» ampliar exclusivamente el límite del frontend a 35 minutos, sin retirar pruebas. El nuevo HEAD vuelve a ejecutar todos los controles; la fusión sigue condicionada a sus resultados verdes. No se repiten suites locales de aplicación para un cambio exclusivamente de presupuesto de CI y documentación.
+
+Comprobación T017: comparación literal con el workflow del HEAD anterior confirma que el único cambio es 25 → 35 en el job frontend; todos los pasos, permisos y otros límites permanecen intactos. `git diff --check` sin errores. La ejecución remota completa continúa siendo condición de entrega, no se declara aprobada por esta comprobación local.

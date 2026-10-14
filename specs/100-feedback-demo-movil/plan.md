@@ -2,7 +2,7 @@
 
 **Rama**: `codex/100-feedback-demo-movil` | **Fecha**: 2026-10-14 | **Spec**: [spec.md](./spec.md) | **Issue**: [#209](https://github.com/Andres-back/Calificator/issues/209)
 
-Estado: alcance y plan aprobados mediante «aprove»; simplificación a acceso directo manual confirmada con «si adelante». Implementación autorizada, sin autorización de fusión/despliegue.
+Estado: alcance y plan aprobados mediante «aprove»; simplificación a acceso directo manual confirmada con «si adelante». Fusión y despliegue autorizados únicamente con todos los controles verdes. El 2026-10-14, «ADELANTE» autoriza ampliar solo el límite del job frontend de 25 a 35 minutos, manteniendo todas las pruebas.
 
 ## Resumen
 
@@ -51,3 +51,7 @@ Reevaluación tras diseño: sin excepciones; cumplimiento por diseño, no prueba
 Alternativas rechazadas: filas fijas, redondear valores guardados, recalificar para unificar números, confirmar instalación solo por pulsar o añadir offline durante demo.
 
 Diseño: [research.md](research.md), [data-model.md](data-model.md), [contracts/ui.md](contracts/ui.md), [quickstart.md](quickstart.md). Lista base 16/16; revisión asistida UX y tareas autorizadas antes de código.
+
+## Enmienda de entrega autorizada
+
+El CI del HEAD 72a066d agotó el límite de 25 minutos después de aprobar unidades y 185 E2E generales; los escenarios contextuales aún se ejecutaban. Ampliar únicamente `jobs.frontend.timeout-minutes` a 35 en `.github/workflows/ci.yml` permite completar la suite obligatoria con margen acotado. No modifica pasos, pruebas, permisos, otros límites ni código de aplicación. El nuevo HEAD debe superar todos los controles antes de fusionar; no hay bypass ni despliegue manual.

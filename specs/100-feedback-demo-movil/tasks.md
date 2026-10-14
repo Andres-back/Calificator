@@ -53,3 +53,7 @@ Hallazgo F1, HIGH, FR-009: WebKit emulado 390×664, navegación Retroalimentaci�
 - [x] T016 Actualizar la expectativa histórica de cálculo incompleto en frontend/e2e/mock/grading-review.mock.spec.ts y ejecutar sus 43 escenarios, preservando comprobación de cero mutaciones; regenerar inventario y documentar resultado en specs/100-feedback-demo-movil/quickstart.md (FR-003, FR-004, FR-010).
 
 CI del HEAD 6e506e4: 42/43 escenarios contextuales pasaron; la prueba de estado sugerida esperaba la redacción anterior sin identificar cálculo provisional. La corrección no modifica código de aplicación ni elimina aserciones de estado, avisos o ausencia de escrituras. Gobernanza vigente del mismo HEAD aprobada; su primer intento histórico falló porque el evento precedió a aplicar etiquetas.
+
+## Fase 8: presupuesto de CI autorizado
+
+- [x] T017 Ampliar únicamente jobs.frontend.timeout-minutes de 25 a 35 en .github/workflows/ci.yml; verificar que todos los pasos, permisos y demás límites permanecen iguales y documentar aprobación y comprobaciones en specs/100-feedback-demo-movil/quickstart.md. El CI remoto del nuevo HEAD debe estar verde antes de fusionar (FR-009, FR-010).
