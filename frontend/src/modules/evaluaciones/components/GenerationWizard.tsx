@@ -9,6 +9,7 @@ import { Badge, Button, ConfirmDialog, Field, Input, Modal, Textarea } from '@/c
 import { queryKeys } from '@/config/queryKeys';
 import { toApiError } from '@/lib/api';
 import { cn } from '@/lib/cn';
+import { useMobileFormViewport } from '@/hooks/useMobileFormViewport';
 import { listDbaCombinado } from '@/modules/materias/dbaApi';
 import { sendMessage } from '@/modules/xali/api';
 import type { DBAUnifiedItem, Evaluacion, EvaluacionModalidad, Materia } from '@/types/api';
@@ -61,7 +62,7 @@ function QuestionCard({
       <button
         type="button"
         onClick={() => onChange({ expanded: !question.expanded })}
-        className="focus-ring flex min-h-14 w-full items-center gap-3 rounded-2xl p-3 text-left"
+        className="writing-secondary focus-ring flex min-h-14 w-full items-center gap-3 rounded-2xl p-3 text-left"
         aria-expanded={question.expanded}
         aria-controls={`question-${question.clientId}`}
       >
@@ -181,13 +182,13 @@ function QuestionCard({
               <p>No usamos como clave lo que escribió o marcó el estudiante. Completa esta respuesta antes de publicar.</p>
             </div>
           ) : question.answerExplanation ? (
-            <div role="note" className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm leading-6 text-emerald-950 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-100">
+            <div role="note" className="writing-secondary rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm leading-6 text-emerald-950 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-100">
               <p className="font-bold">Por qué se propone esta respuesta</p>
               <p>{question.answerExplanation}</p>
             </div>
           ) : null}
 
-          <div className="flex flex-wrap gap-2 border-t border-border pt-3">
+          <div className="writing-secondary flex flex-wrap gap-2 border-t border-border pt-3">
             <Button type="button" variant="outline" onClick={onDuplicate}><Copy className="h-4 w-4" /> Duplicar</Button>
             <Button type="button" variant="outline" onClick={() => onMove(-1)} disabled={index === 0}><ArrowUp className="h-4 w-4" /> Subir</Button>
             <Button type="button" variant="outline" onClick={() => onMove(1)} disabled={index === total - 1}><ArrowDown className="h-4 w-4" /> Bajar</Button>
@@ -294,12 +295,15 @@ export function GenerationWizard({
   const confirmLock = useRef(false);
   const referenceInputRef = useRef<HTMLInputElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
+  const formRef = useRef<HTMLDivElement>(null);
+  const closeRef = useRef<HTMLButtonElement>(null);
   const initializedKey = useRef<string | null>(null);
   const savedEvaluation = useRef<Evaluacion | null>(initialEvaluation);
   const initialSavedState = useRef<WizardState | null>(null);
   const activeContext = useRef({ userId, materiaId: state.materiaId, id: state.generatedEvaluationId });
   activeContext.current = { userId, materiaId: state.materiaId, id: state.generatedEvaluationId };
   const [criteriaEditing, setCriteriaEditing] = useState<Evaluacion | null>(null);
+  const mobile = useMobileFormViewport(open && !criteriaEditing, formRef);
   const generationWarnings = state.generationWarnings ?? [];
   const selectedMateria = availableMaterias.find((materia) => materia.id === state.materiaId);
   const materiaNombre = selectedMateria?.nombre ?? '';
@@ -547,8 +551,16 @@ export function GenerationWizard({
     }
     const index = state.questions.findIndex((question, position) => validateQuestion(question, position));
     if (index < 0) return;
+    const question = state.questions[index];
+    const invalidScore = question.enunciado.trim() && (!Number.isFinite(question.puntaje) || question.puntaje <= 0);
+    const selector = invalidScore ? `[aria-label="Puntaje de la pregunta ${index + 1}"]` : 'textarea';
+    const requestedBy = document.activeElement;
     patch({ questions: state.questions.map((question, position) => position === index ? { ...question, expanded: true } : question) });
-    window.requestAnimationFrame(() => contentRef.current?.querySelector<HTMLElement>(`#question-${state.questions[index].clientId} textarea`)?.focus());
+    window.requestAnimationFrame(() => {
+      // Do not steal focus if the teacher already moved to another field.
+      if (document.activeElement !== requestedBy) return;
+      contentRef.current?.querySelector<HTMLElement>(`#question-${question.clientId} ${selector}`)?.focus();
+    });
   }
 
   function confirmEvaluation() {
@@ -622,24 +634,27 @@ export function GenerationWizard({
         title=""
         ariaLabel={initialEvaluation ? 'Editar contenido de la evaluación' : 'Generar evaluación con IA'}
         className={cn(initialEvaluation ? 'max-w-[min(96vw,90rem)]' : 'max-w-6xl', 'overflow-hidden p-0 sm:p-0 max-sm:fixed max-sm:inset-0 max-sm:max-h-none max-sm:rounded-none')}
+        mobileViewport={mobile.viewport}
+        mobileWriting={mobile.isWriting}
+        initialFocusRef={closeRef}
         showCloseButton={false}
         closeOnBackdrop={!busy}
         closeOnEscape={!busy}
       >
-        <div className="flex h-[100dvh] flex-col [&_button]:min-h-12 [&_button]:min-w-12 sm:h-[calc(100dvh-2rem)] sm:max-h-[56rem]">
-          <header className="shrink-0 border-b border-border bg-surface p-3 pt-[max(0.75rem,env(safe-area-inset-top))] sm:p-5">
+        <div ref={formRef} className={cn('flex flex-col', mobile.isMobile ? 'h-[var(--mobile-form-height,100dvh)]' : 'h-[100dvh] sm:h-[calc(100dvh-2rem)] sm:max-h-[56rem]', mobile.isWriting ? '[&_button]:min-h-11 [&_button]:min-w-11 [&_.writing-secondary]:hidden [&_.writing-secondary]:m-0' : '[&_button]:min-h-12 [&_button]:min-w-12')}>
+          <header className="shrink-0 border-b border-border bg-surface p-3 pt-[max(0.75rem,env(safe-area-inset-top))] sm:p-5" style={mobile.isWriting ? { padding: '4px 8px', paddingTop: 'max(4px, env(safe-area-inset-top))' } : undefined}>
             <div className="flex items-center gap-3">
-              <span className="hidden h-12 w-12 shrink-0 place-items-center rounded-xl bg-brand-100 text-brand-700 sm:grid"><Sparkles className="h-6 w-6" /></span>
+              <span className="writing-secondary hidden h-12 w-12 shrink-0 place-items-center rounded-xl bg-brand-100 text-brand-700 sm:grid"><Sparkles className="h-6 w-6" /></span>
               <div className="min-w-0 flex-1">
-                <h2 className="text-lg font-bold sm:text-xl">{initialEvaluation ? 'Editar evaluación' : 'Crear evaluación'}</h2>
-                <p className="hidden text-sm text-muted sm:block">{initialEvaluation ? 'Modifica, agrega, ordena o elimina criterios y preguntas antes de guardar.' : 'La IA prepara un borrador; tú revisas y decides.'}</p>
+                <h2 className="text-lg font-bold sm:text-xl">{mobile.isWriting ? (state.step === 5 ? 'Editar pregunta' : 'Escribir evaluación') : initialEvaluation ? 'Editar evaluación' : 'Crear evaluación'}</h2>
+                <p className="writing-secondary hidden text-sm text-muted sm:block">{initialEvaluation ? 'Modifica, agrega, ordena o elimina criterios y preguntas antes de guardar.' : 'La IA prepara un borrador; tú revisas y decides.'}</p>
               </div>
-              <Button type="button" variant="ghost" size="icon" onClick={onClose} disabled={busy} aria-label="Cerrar asistente"><X className="h-5 w-5" /></Button>
+              <Button type="button" ref={closeRef} variant="ghost" size="icon" onClick={onClose} disabled={busy} aria-label="Cerrar asistente"><X className="h-5 w-5" /></Button>
             </div>
-            <div className="mt-2"><PasosGuia currentStep={state.step === 5 ? 2 : 1} /></div>
+            <div className="writing-secondary mt-2"><PasosGuia currentStep={state.step === 5 ? 2 : 1} /></div>
           </header>
 
-          <div ref={contentRef} data-testid="evaluation-wizard-content" className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-3 sm:p-5">
+          <div ref={contentRef} data-testid="evaluation-wizard-content" data-mobile-scroll className={cn("min-h-0 flex-1 overflow-y-auto overscroll-contain", mobile.isWriting ? "p-2" : "p-3 sm:p-5")}>
             {restorePrompt ? (
               <div role="alert" className="rounded-2xl border-2 border-amber-300 bg-amber-50 p-4 dark:bg-amber-500/10">
                 <p className="flex items-center gap-2 text-base font-bold text-amber-900 dark:text-amber-100"><AlertTriangle className="h-5 w-5" /> Encontramos una evaluación sin terminar.</p>
@@ -652,14 +667,14 @@ export function GenerationWizard({
               </div>
             ) : (
               <div className="grid gap-4">
-                <main className={cn('min-w-0 rounded-2xl border border-border bg-surface-2/50 p-3 sm:p-5', editingQuestions && 'order-2')}>
+                <main className={cn('min-w-0 rounded-2xl border border-border bg-surface-2/50 p-3 sm:p-5', editingQuestions && 'order-2', mobile.isWriting && 'border-transparent bg-transparent p-0 sm:p-0')}>
                   {generationError && <p role="alert" className="mb-3 rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-950 dark:bg-amber-500/10 dark:text-amber-100">{generationError}</p>}
                   {saveError && <p role="alert" className="mb-3 rounded-xl border border-amber-300 p-3 text-sm">{saveError}</p>}
                   {restoreError && <div role="alert" className="mb-3 space-y-2 rounded-xl border border-amber-300 p-3 text-sm"><p>{restoreError}</p><Button type="button" variant="outline" disabled={restoreGenerated.isPending} onClick={continueDraft}>Volver a comprobar</Button></div>}
                   {restoreGenerated.isPending && <p role="status" className="mb-3 text-sm text-muted">Comprobando tu borrador…</p>}
                   {storageNotice && <p role="status" className="mb-3 text-xs text-muted">No pudimos conservar el borrador en este dispositivo. Mantén esta ventana abierta hasta guardarlo.</p>}
                   {state.step !== 5 && <fieldset disabled={busy} className="min-w-0"><EvaluationPreparation
-                    state={state} materias={availableMaterias} fixedContext={fixedContext}
+                    state={state} materias={availableMaterias} fixedContext={fixedContext} mobile={mobile.isMobile}
                     expanded={personalizationOpen} onExpandedChange={setPersonalizationOpen}
                     onPatch={patch} onTopicChange={topic => setState(current => updateWizardTopic(current, topic))}
                     onMateriaChange={selectMateria} onToggleCriterion={toggleDba}
@@ -669,7 +684,7 @@ export function GenerationWizard({
                   {state.step === 5 && (
                     <section aria-labelledby="wizard-step-title" className="space-y-4">
                         {generationWarnings.length > 0 && <div role="status" className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-950 dark:bg-amber-500/10 dark:text-amber-100">{generationWarnings.join(' ')}</div>}
-                        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+                        <div className="writing-secondary flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
                           <div><h3 id="wizard-step-title" className="text-xl font-bold">Revisa y edita la evaluación</h3><p className="mt-1 text-base text-muted">Ajusta la rúbrica y las preguntas antes de confirmar. La IA propone; tú decides.</p></div>
                           <div className="flex flex-wrap items-center gap-2">
                             <Badge tone={questionErrors || !state.questions.length ? 'warning' : 'success'}>{!state.questions.length ? 'Agrega una pregunta' : questionErrors ? `${questionErrors} por corregir` : 'Todas válidas'}</Badge>
@@ -683,7 +698,7 @@ export function GenerationWizard({
                           </div>
                         )}
                         <details open={gradingOptionsOpen} onToggle={event => setGradingOptionsOpen(event.currentTarget.open)} className="rounded-xl border border-border bg-surface p-3">
-                          <summary className="focus-ring min-h-12 cursor-pointer py-2 font-semibold">Cómo se calificará</summary>
+                          <summary className="writing-secondary focus-ring min-h-12 cursor-pointer py-2 font-semibold">Cómo se calificará</summary>
                           {state.useRubric && (
                           <RubricEditor criteria={state.generatedCriteria} onChange={(generatedCriteria) => patch({ generatedCriteria })} />
                         )}
@@ -708,7 +723,7 @@ export function GenerationWizard({
                   )}
                 </main>
                 <div className="order-3">
-                  <Button type="button" variant="ghost" aria-expanded={helpOpen} onClick={() => setHelpOpen(value => !value)} disabled={busy}>Necesito ayuda</Button>
+                  <Button type="button" variant="ghost" className="writing-secondary" aria-expanded={helpOpen} onClick={() => setHelpOpen(value => !value)} disabled={busy}>Necesito ayuda</Button>
                   {helpOpen && <XaliPanel state={state} materiaNombre={materiaNombre} onSuggestion={(suggestion, target) => setXaliConfirmation({ suggestion, target })} />}
                 </div>
               </div>
@@ -716,9 +731,10 @@ export function GenerationWizard({
           </div>
 
           {!restorePrompt && (
-            <footer className="shrink-0 border-t border-border bg-surface p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:p-5">
-              {validation && <div className="mb-2 flex flex-wrap items-center gap-2"><p className="min-w-0 flex-1 text-xs text-muted" aria-live="polite">{validation}</p>{state.step === 5 && <Button type="button" variant="ghost" onClick={revealReviewErrors}>Revisar pendientes</Button>}</div>}
-              <div className="flex items-center justify-between gap-2">
+            <footer className="shrink-0 border-t border-border bg-surface p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:p-5" style={mobile.isWriting ? { padding: "4px 8px", paddingBottom: "max(4px, env(safe-area-inset-bottom))" } : undefined}>
+              {validation && (!mobile.isWriting || state.step === 5) && <div className="mb-2 flex flex-wrap items-center gap-2"><p className="min-w-0 flex-1 text-xs text-muted" aria-live="polite">{validation}</p>{state.step === 5 && <Button type="button" variant="ghost" onClick={revealReviewErrors}>Revisar pendientes</Button>}</div>}
+              <Button type="button" className={cn('w-full', !mobile.isWriting && 'hidden')} onClick={mobile.finishWriting}>Listo</Button>
+              <div className={cn("flex items-center justify-between gap-2", mobile.isWriting && "hidden")}>
                 {state.step === 5 ? <Button variant="outline" onClick={() => patch({ step: 1 })} disabled={busy} icon={<ArrowLeft className="h-5 w-5" />}>Preparar</Button> : <span className="hidden text-xs text-muted sm:inline">No se publicará automáticamente.</span>}
                 {state.step === 5
                   ? <Button onClick={confirmEvaluation} loading={confirm.isPending} disabled={Boolean(validation) || busy || Boolean(restoreError)} icon={<Check className="h-5 w-5" />}>{initialEvaluation ? 'Guardar cambios' : 'Guardar borrador'}</Button>

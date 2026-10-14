@@ -1,8 +1,9 @@
-import { useEffect, useId, useRef, type ReactNode, type RefObject } from 'react';
+import { useEffect, useId, useRef, type CSSProperties, type ReactNode, type RefObject } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { X } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
+import type { MobileFormViewport } from '@/hooks/useMobileFormViewport';
 
 const FOCUSABLE_SELECTOR = [
   'a[href]',
@@ -15,8 +16,19 @@ const FOCUSABLE_SELECTOR = [
 
 function getFocusableElements(container: HTMLElement | null) {
   if (!container) return [];
-  return Array.from(container.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR))
-    .filter((element) => element.getAttribute('aria-hidden') !== 'true');
+  const selector = container.hasAttribute('data-writing') ? `${FOCUSABLE_SELECTOR}, summary` : FOCUSABLE_SELECTOR;
+  return Array.from(container.querySelectorAll<HTMLElement>(selector))
+    .filter((element) => {
+      if (element.getAttribute('aria-hidden') === 'true') return false;
+      if (!container.hasAttribute('data-writing')) return true;
+      // Opt-in forms retain folded controls in the DOM to preserve editing.
+      // Their hidden controls must not become endpoints of the focus trap.
+      for (let node: HTMLElement | null = element; node && node !== container; node = node.parentElement) {
+        if (node.hidden || window.getComputedStyle(node).display === 'none') return false;
+        if (node instanceof HTMLDetailsElement && !node.open && !node.querySelector('summary')?.contains(element)) return false;
+      }
+      return true;
+    });
 }
 
 export function Modal({
@@ -31,6 +43,8 @@ export function Modal({
   showCloseButton = true,
   initialFocusRef,
   ariaLabel = 'Diálogo',
+  mobileViewport,
+  mobileWriting,
 }: {
   open: boolean;
   onClose: () => void;
@@ -43,6 +57,8 @@ export function Modal({
   showCloseButton?: boolean;
   initialFocusRef?: RefObject<HTMLElement | null>;
   ariaLabel?: string;
+  mobileViewport?: MobileFormViewport;
+  mobileWriting?: boolean;
 }) {
   const dialogRef = useRef<HTMLDivElement>(null);
   const previouslyFocusedRef = useRef<HTMLElement | null>(null);
@@ -130,7 +146,13 @@ export function Modal({
             aria-labelledby={title ? titleId : undefined}
             aria-describedby={description ? descriptionId : undefined}
             aria-label={title ? undefined : ariaLabel}
+            data-writing={mobileWriting === undefined ? undefined : String(mobileWriting)}
             tabIndex={-1}
+            style={mobileViewport ? {
+              position: 'fixed', top: mobileViewport.top, left: 0, right: 0, bottom: 'auto',
+              height: mobileViewport.height, maxHeight: mobileViewport.height,
+              '--mobile-form-height': `${mobileViewport.height}px`,
+            } as CSSProperties : undefined}
             className={cn('safe-area-pb relative max-h-[calc(100dvh-2rem)] w-full max-w-lg overflow-y-auto card glass p-5 sm:p-6', className)}
             initial={reduceMotion ? false : { opacity: 0, scale: 0.96, y: 12 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}

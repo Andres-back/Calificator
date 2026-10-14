@@ -97,6 +97,7 @@ ALL_SPECS = {
     "094-revision-docente-simple",
     "095-flujo-docente-ligero",
     "096-evaluacion-dos-pantallas",
+    "097-escritura-docente-movil",
 }
 OWNED_SPECS = {
     name

@@ -155,6 +155,39 @@ beforeEach(() => {
 });
 
 describe('GenerationWizard', () => {
+  it('097 opens mobile without text autofocus and Listo preserves the topic without submitting', async () => {
+    const media = vi.spyOn(window, 'matchMedia').mockImplementation(query => ({ matches: query.includes('max-width'), media: query, onchange: null, addListener() {}, removeListener() {}, addEventListener() {}, removeEventListener() {} } as unknown as MediaQueryList));
+    try {
+      const user = userEvent.setup();
+      renderWizard();
+      const topic = screen.getByLabelText(/Qué quieres evaluar/);
+      expect(topic).not.toHaveFocus();
+      await user.type(topic, 'Fracciones con ejemplos');
+      expect(await screen.findByRole('button', { name: 'Listo' })).toBeVisible();
+      expect(screen.getByRole('dialog')).toHaveAttribute('data-writing', 'true');
+      await user.click(screen.getByRole('button', { name: 'Listo' }));
+      expect(screen.getByLabelText(/Qué quieres evaluar/)).toBe(topic);
+      expect(topic).toHaveValue('Fracciones con ejemplos');
+      expect(screen.getByRole('button', { name: 'Generar evaluación' })).toBeVisible();
+      expect(mocks.generate).not.toHaveBeenCalled();
+      expect(mocks.update).not.toHaveBeenCalled();
+    } finally { media.mockRestore(); }
+  });
+
+  it('097 retains a pending answer edit while finishing mobile writing', async () => {
+    const media = vi.spyOn(window, 'matchMedia').mockImplementation(query => ({ matches: query.includes('max-width'), media: query, onchange: null, addListener() {}, removeListener() {}, addEventListener() {}, removeEventListener() {} } as unknown as MediaQueryList));
+    try {
+      const user = userEvent.setup();
+      renderWizard(vi.fn(), evaluation);
+      const statement = screen.getByLabelText(/Enunciado/);
+      await user.clear(statement);
+      await user.type(statement, 'Pregunta editada sin guardar');
+      await user.click(await screen.findByRole('button', { name: 'Listo' }));
+      expect(statement).toHaveValue('Pregunta editada sin guardar');
+      expect(screen.getByRole('button', { name: 'Guardar cambios' })).toBeVisible();
+      expect(mocks.update).not.toHaveBeenCalled();
+    } finally { media.mockRestore(); }
+  });
   it('only calls Xali on request and applies its suggestion after confirmation', async () => {
     const user = userEvent.setup();
     renderWizard(vi.fn(), evaluation);
@@ -201,7 +234,14 @@ describe('GenerationWizard', () => {
     renderWizard(vi.fn(), { ...rubricEvaluation, criterios: rubricEvaluation.criterios.map((criterion, index) => ({ ...criterion, peso_porcentaje: index ? 30 : 60 })) });
     expect(screen.getByRole('button', { name: 'Guardar cambios' })).toBeDisabled();
     await user.click(screen.getByRole('button', { name: 'Revisar pendientes' }));
-    expect(screen.getByLabelText('Nombre del criterio 1')).toBeVisible();
+    await waitFor(() => expect(screen.getByLabelText('Nombre del criterio 1')).toBeVisible());
+    expect(mocks.update).not.toHaveBeenCalled();
+  });
+  it('097 focuses the invalid score rather than moving subsequent typing into the statement', async () => {
+    const user = userEvent.setup();
+    renderWizard(vi.fn(), { ...evaluation, preguntas: evaluation.preguntas!.map((question, index) => index ? question : { ...question, puntaje: 0 }) });
+    await user.click(screen.getByRole('button', { name: 'Revisar pendientes' }));
+    await waitFor(() => expect(screen.getByLabelText('Puntaje de la pregunta 1')).toHaveFocus());
     expect(mocks.update).not.toHaveBeenCalled();
   });
 

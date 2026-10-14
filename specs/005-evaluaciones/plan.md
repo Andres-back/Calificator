@@ -19,3 +19,7 @@ Conservar arquitectura; discrepancias pasan a backlog.
 ## Incremento 096
 
 El [plan 096](../096-evaluacion-dos-pantallas/plan.md) reutiliza GenerationWizard, editores y API actuales, con dos etapas y selector compartido de métodos. El formulario manual existente se comparte entre acceso general y materia; no se duplica su validación ni transporte. Sin migraciones ni cambios backend; guardado diferencial y expected_updated_at conservados.
+
+## Incremento 097
+
+El [plan 097](../097-escritura-docente-movil/plan.md) añade un hook de presentación opt-in para foco y VisualViewport, listeners acotados y limpieza. Modal conserva defaults fuera del alcance; los formularios IA/manual mantienen controles montados y un scroll principal. Sin dependencias, cambios de API ni generación por foco/resize/Listo. Chromium/WebKit cubren alturas reducidas; la prueba física de iPhone/Android queda expresamente diferenciada.
