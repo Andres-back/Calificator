@@ -9,6 +9,62 @@ const base = {
   evidencia_paginas: [1], valoraciones: [],
 };
 
+for (const viewport of [{ width: 360, height: 800 }, { width: 1366, height: 900 }]) {
+  test(`099 accesos claros, borrador y evidencia conservados ${viewport.width}px`, async ({ page }) => {
+    await page.setViewportSize(viewport);
+    await login(page, 'profesor');
+    const writes: string[] = [];
+    page.on('request', (request) => { if (request.method() !== 'GET' && /\/api\/(calificaciones|evaluaciones|jobs)\//.test(request.url())) writes.push(request.url()); });
+    await page.route('**/api/calificaciones/c1/detalle', (route) => route.fulfill({ json: {
+      id: 'c1', evaluacion_id: 'e1', estudiante_id: 's1', materia_id: 'm1',
+      estudiante_nombre: 'Estudiante de prueba con nombre largo', evaluacion_nombre: 'Comprensión de lectura', materia_nombre: 'Lenguaje',
+      nota_sugerida: 2.52, nota_confirmada: null, nota_maxima: 5, confianza: 0.8, feedback: 'Identificaste al personaje. Revisa qué emoción expresa al inicio.',
+      estado: 'requiere_revision', revisado_por_docente: false, resultado_json: {}, timeline: [], guia_revision: [],
+      entrega_tipo: 'foto', entrega_archivo_url: '/api/evidencia-prueba', entrega_evidencia_paginas: 1,
+      desglose: { ...breakdown, formula: { ...breakdown.formula, puntos_obtenidos: 2.48, puntos_posibles: 5, nota_base: 2.48, nota_final: 2.48 }, bloqueos: ['feedback_quality:nota_global_no_coincide_con_suma', 'hoja_faltante'] },
+      created_at: '2026-10-14T00:00:00Z', updated_at: '2026-10-14T00:00:00Z',
+    } }));
+    await page.route('**/api/evidencia-prueba/paginas/1', (route) => route.fulfill({ contentType: 'image/svg+xml', body: '<svg xmlns="http://www.w3.org/2000/svg" width="400" height="500"><rect width="400" height="500" fill="white"/><text x="20" y="40">Evidencia sintética</text></svg>' }));
+    await page.goto('/app/calificaciones?evaluacion=e1&calificacion=c1');
+    const detail = page.getByTestId('grade-review-scroll');
+    await expect(detail.getByRole('alert')).toContainText('La IA propone 2.52, pero el cálculo por respuestas da 2.48.');
+    await expect(detail.getByText(/Consulta el historial para conocer la decisión del docente/)).toHaveCount(0);
+    const nav = detail.getByRole('navigation', { name: 'Secciones de la calificación' });
+    for (const control of await nav.getByRole('button').all()) {
+      const box = (await control.boundingBox())!;
+      expect(box.height).toBeGreaterThanOrEqual(44);
+      expect(box.width).toBeGreaterThanOrEqual(44);
+      await expect(control).toBeInViewport();
+    }
+    await page.screenshot({ path: `../output/playwright/teacher-flow/review099-${viewport.width}.png` });
+    await nav.getByRole('button', { name: 'Respuestas y puntajes', exact: true }).click();
+    await expect(detail.locator('#grade-review-panel')).toBeVisible();
+    await nav.getByRole('button', { name: 'Evidencia', exact: true }).click();
+    await expect(detail.getByRole('img', { name: 'Hoja 1 de la evidencia del estudiante' })).toBeVisible();
+    for (const control of await detail.locator('#grade-evidence-panel').getByRole('button').all()) {
+      expect((await control.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+    }
+    await expect(detail.locator('#grade-review-panel')).toBeHidden();
+    await nav.getByRole('button', { name: 'Historial', exact: true }).click();
+    await expect(detail.getByRole('heading', { name: 'Historial de la calificación' })).toBeVisible();
+    await nav.getByRole('button', { name: 'Retroalimentación', exact: true }).click();
+    const feedback = detail.getByRole('textbox', { name: 'Retroalimentación', exact: true });
+    await feedback.fill('Conserva este borrador docente.');
+    await nav.getByRole('button', { name: 'Historial', exact: true }).click();
+    await expect(feedback).toBeVisible();
+    await expect(feedback).toHaveValue('Conserva este borrador docente.');
+    if (viewport.width === 360) {
+      await feedback.focus();
+      await expect(detail.getByRole('button', { name: 'Terminar de escribir', exact: true })).toBeVisible();
+      await expect(page.getByLabel('Acciones de la calificación')).toBeHidden();
+      await detail.getByRole('button', { name: 'Terminar de escribir', exact: true }).click();
+      await expect(page.getByLabel('Acciones de la calificación')).toBeVisible();
+    }
+    expect(writes).toEqual([]);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBeTruthy();
+  });
+}
+
 test('088 contexto y menú permanecen alcanzables en vista estrecha y escritorio', async ({ page }) => {
   await login(page, 'profesor', { rosterSize: 30 });
   await page.goto('/app/calificaciones?evaluacion=e1');
@@ -57,7 +113,7 @@ test('088 lote largo y temporizador opcional conservan controles alcanzables', a
     await start.scrollIntoViewIfNeeded();
     await expect(start).toBeInViewport();
   }
-  await workspace.getByRole('button', { name: '3. Respuestas y puntajes', exact: true }).click();
+  await workspace.getByRole('button', { name: 'Respuestas y puntajes', exact: true }).click();
   await expect(workspace.getByRole('heading', { name: 'Nota explicada respuesta por respuesta' })).toBeVisible();
   expect(writes).toEqual([]);
 });
@@ -83,12 +139,14 @@ test('prioriza excepciones en móvil sin confirmar ni publicar automáticamente'
   await page.goto('/app/calificaciones/workspace/e1');
   await page.getByText('Estudiante Prueba', { exact: true }).click();
 
+  await page.getByRole('button', { name: 'Historial', exact: true }).click();
   await page.locator('summary', { hasText: 'Historial de revisión de IA' }).click();
   await expect(page.getByText(/La nota actual ya tiene una decisión del docente/)).toBeVisible();
   await expect(page.getByText('1 con observaciones iniciales')).toBeVisible();
   await expect(page.getByText('1 sin revisión completa al inicio')).toBeVisible();
   await page.getByRole('button', { name: /Ver primera respuesta con aviso/ }).click();
   await expect(page).toHaveURL(/pregunta=pregunta%3A3/);
+  await page.getByRole('button', { name: 'Historial', exact: true }).click();
   await page.getByRole('button', { name: /Ver siguiente respuesta con aviso/ }).click();
   await expect(page).toHaveURL(/pregunta=pregunta%3A2/);
   expect(mutations).toEqual([]);
@@ -121,14 +179,15 @@ for (const state of ['sugerida', 'procesando']) {
       await expect(detail.getByText('Analizando evidencia…', { exact: true })).toBeVisible();
       await expect(detail.getByText('Calificando en segundo plano', { exact: true })).toBeVisible();
       await expect(detail.getByText('0.0', { exact: true })).toHaveCount(0);
+      await detail.getByRole('button', { name: 'Historial', exact: true }).click();
       await detail.locator('summary', { hasText: 'Avisos del análisis en curso' }).click();
       await expect(detail.getByText(/La entrega sigue en análisis/)).toBeVisible();
       await expect(detail.getByText(/ya tiene una decisión del docente/)).toHaveCount(0);
     } else {
       await expect(detail.getByText('Nota sugerida por la IA', { exact: true })).toBeVisible();
       await expect(detail.getByText('Por revisar', { exact: true })).toBeVisible();
-      await expect(detail.getByRole('alert')).toContainText('La nota propuesta por la IA no coincide con la suma de los puntos por pregunta.');
-      await detail.getByRole('button', { name: 'Revisar puntajes por pregunta', exact: true }).click();
+      await expect(detail.getByRole('alert')).toContainText('La IA propone 5.0, pero el cálculo por respuestas da 3.33.');
+      await detail.getByRole('button', { name: 'Revisar ahora', exact: true }).click();
       await expect(detail.locator('#grade-review-panel')).toBeVisible();
       await expect(detail.locator('summary', { hasText: 'Historial de revisión de IA' })).toHaveCount(0);
     }
@@ -177,23 +236,25 @@ for (const width of [360, 390, 768, 1280, 1440]) {
       await expect(page.getByTestId('grade-review-identity')).toContainText(longName);
       const history = page.locator('details').filter({ has: page.locator('summary', { hasText: 'Historial de revisión de IA' }) });
       await expect(history).not.toHaveAttribute('open');
-      await expect(page.getByText('Nota del estudiante', { exact: true })).toBeVisible();
+      await expect(page.getByText('Nota confirmada', { exact: true })).toBeVisible();
       await page.getByText('Ver cálculo de la nota', { exact: true }).click();
       await expect(page.getByText(/Equivale a 2.50/)).toBeVisible();
-      await page.getByRole('button', { name: '2. Evidencia', exact: true }).click();
+      await page.getByRole('button', { name: 'Evidencia', exact: true }).click();
       await expect(page.getByRole('img', { name: 'Hoja 1 de la evidencia del estudiante' })).toBeVisible();
       await page.getByLabel('Páginas de evidencia').getByRole('button', { name: '2', exact: true }).click();
       await expect(page.getByRole('img', { name: 'Hoja 2 de la evidencia del estudiante' })).toBeVisible();
       await expect(page.getByRole('link', { name: 'Abrir en grande' })).toHaveAttribute('href', '/api/evidencia-sintetica/paginas/2');
-      await page.getByRole('button', { name: '3. Respuestas y puntajes', exact: true }).click();
+      await page.getByRole('button', { name: 'Respuestas y puntajes', exact: true }).click();
       await page.getByRole('button', { name: 'Ver hoja 2 de la evidencia', exact: true }).click();
       await expect(page.getByRole('img', { name: 'Hoja 2 de la evidencia del estudiante' })).toBeVisible();
+      await page.getByRole('button', { name: 'Historial', exact: true }).click();
       await history.locator('summary').click();
       await expect(history).toContainText('En el análisis inicial, la IA propuso una nota distinta a la suma por preguntas.');
       await expect(page.getByText(raw, { exact: true })).toHaveCount(0);
       await expect(page.getByText('provider_error:HTTP_503_trace_ab12', { exact: true })).toHaveCount(0);
       await history.getByRole('button', { name: 'Ver puntajes por pregunta' }).first().click();
       await expect(page.locator('#grade-review-panel')).toBeVisible();
+      await page.getByRole('button', { name: 'Historial', exact: true }).click();
       await history.locator('summary').click();
       const scroller = page.getByTestId('grade-review-scroll');
       await scroller.evaluate((element) => { element.scrollTop = element.scrollHeight; });
@@ -275,7 +336,7 @@ for (const width of [360, 390, 768, 1280, 1440]) {
       await expect(resume).toHaveAttribute('href', /evaluacion=e1.*estudiante=s1.*calificacion=c1/);
       await resume.click();
       await expect(page.getByTestId('grade-review-identity')).toContainText('Estudiante Prueba');
-      await expect(page.getByRole('button', { name: '2. Evidencia', exact: true })).toBeVisible();
+      await expect(page.getByRole('button', { name: 'Evidencia', exact: true })).toBeVisible();
       expect(writes).toEqual([]);
     });
   }
@@ -430,12 +491,12 @@ for (const viewport of [{ width: 360, height: 800 }, { width: 390, height: 844 }
       await expect(preview.getByText('1.5 / 5.0', { exact: true })).toBeVisible();
       await preview.getByRole('link', { name: 'Ver explicación de Multiplicación', exact: true }).click();
       await expect(page.getByRole('heading', { name: '1. Nota y explicación' })).toBeVisible();
-      const evidence = page.getByRole('button', { name: '2. Evidencia', exact: true });
-      const answers = page.getByRole('button', { name: '3. Respuestas y puntajes', exact: true });
+      const evidence = page.getByRole('button', { name: 'Evidencia', exact: true });
+      const answers = page.getByRole('button', { name: 'Respuestas y puntajes', exact: true });
       await expect(evidence).toHaveAttribute('aria-expanded', 'false');
       await expect(answers).toHaveAttribute('aria-expanded', 'false');
-      const feedback = page.locator('details').filter({ has: page.locator('summary', { hasText: '4. Retroalimentación' }) });
-      await expect(feedback).not.toHaveAttribute('open');
+      const feedback = page.getByRole('button', { name: 'Retroalimentación', exact: true });
+      await expect(feedback).toHaveAttribute('aria-expanded', 'false');
       await page.screenshot({ path: `../output/playwright/teacher-flow/grade-${viewport.width}-${mode}.png`, fullPage: true });
       await evidence.click();
       await expect(page.locator('#grade-evidence-panel')).toBeVisible();
@@ -445,7 +506,7 @@ for (const viewport of [{ width: 360, height: 800 }, { width: 390, height: 844 }
       const comparison = page.getByTestId('grade-answer-comparison').first();
       await expect(comparison).toContainText('Respuesta de referencia');
       expect((await comparison.boundingBox())!.height).toBeLessThan(180);
-      await feedback.locator('summary').click();
+      await feedback.click();
       await expect(page.getByLabel(/Retroalimentación/).last()).toBeVisible();
       await page.getByRole('link', { name: 'Volver al libro de notas' }).click();
       await expect(page.getByRole('searchbox', { name: 'Buscar estudiante' })).toHaveValue('prueba');
@@ -508,20 +569,21 @@ for (const viewport of [{ width: 360, height: 800 }, { width: 390, height: 844 }
 test('abre enlaces a pregunta y hoja y protege el ajuste sin guardar', async ({ page }) => {
   await login(page, 'profesor');
   await page.goto('/app/calificaciones/workspace/e1?calificacion=c1&pregunta=pregunta%3A1');
-  await expect(page.getByRole('button', { name: '3. Respuestas y puntajes' })).toHaveAttribute('aria-expanded', 'true');
+  await expect(page.getByRole('button', { name: 'Respuestas y puntajes' })).toHaveAttribute('aria-expanded', 'true');
   await page.getByRole('button', { name: 'Ajustar puntaje y explicación' }).click();
   await page.getByLabel(/Puntos \(máximo/).fill('0.7');
   await page.getByLabel(/Motivo interno del cambio/).fill('Revisión parcial');
-  await page.getByRole('button', { name: '2. Evidencia', exact: true }).click();
+  await page.getByRole('button', { name: 'Evidencia', exact: true }).click();
   await expect(page.getByLabel(/Puntos \(máximo/)).toHaveValue('0.7');
   await page.getByRole('button', { name: 'Volver a notas del grupo', exact: true }).click();
   await expect(page.getByRole('dialog', { name: 'Cambios sin guardar' })).toBeVisible();
   await page.getByRole('button', { name: 'Seguir editando', exact: true }).click();
+  await page.getByRole('button', { name: 'Respuestas y puntajes', exact: true }).click();
   await expect(page.getByLabel(/Puntos \(máximo/)).toHaveValue('0.7');
   await page.getByRole('button', { name: 'Volver a notas del grupo', exact: true }).click();
   await page.getByRole('button', { name: 'Descartar y continuar', exact: true }).click();
   await page.goto('/app/calificaciones/workspace/e1?calificacion=c1&hoja=1');
-  await expect(page.getByRole('button', { name: '2. Evidencia', exact: true })).toHaveAttribute('aria-expanded', 'true');
+  await expect(page.getByRole('button', { name: 'Evidencia', exact: true })).toHaveAttribute('aria-expanded', 'true');
 });
 
 test('crea desde una materia sin repetir el contexto y permite abrir opciones', async ({ page }) => {

@@ -15,7 +15,7 @@ for (const theme of ['light', 'dark'] as const) for (const viewport of [
 
   await page.evaluate((activeTheme) => document.documentElement.classList.toggle('dark', activeTheme === 'dark'), theme);
   await expect(page.getByRole('heading', { name: '1. Nota y explicación' })).toBeVisible();
-  await page.getByRole('button', { name: '3. Respuestas y puntajes', exact: true }).click();
+  await page.getByRole('button', { name: 'Respuestas y puntajes', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Nota explicada respuesta por respuesta' })).toBeVisible();
   const panel = page.getByTestId('grade-review-panel');
   if (viewport.width >= 1280) {
@@ -47,7 +47,7 @@ for (const theme of ['light', 'dark'] as const) for (const viewport of [
 
   await page.keyboard.press('Tab');
   expect(await page.evaluate(() => document.activeElement !== document.body)).toBeTruthy();
-  await panel.locator('summary', { hasText: '4. Retroalimentación' }).click();
+  await panel.getByRole('button', { name: 'Retroalimentación', exact: true }).click();
   const feedback = panel.locator('textarea');
   await feedback.evaluate((element) => element.scrollIntoView({ block: 'center' }));
   await feedback.focus();
@@ -68,7 +68,7 @@ test('088 reflow equivalente a zoom 200 % y altura reducida conserva edición y 
   await page.setViewportSize({ width: 683, height: 384 });
   await login(page, 'profesor', { rosterSize: 30, questionCount: 20 });
   await page.goto('/app/calificaciones?evaluacion=e1&calificacion=c1&estudiante=s1');
-  await page.getByRole('button', { name: '3. Respuestas y puntajes', exact: true }).click();
+  await page.getByRole('button', { name: 'Respuestas y puntajes', exact: true }).click();
   await page.getByRole('button', { name: 'Pregunta 20', exact: true }).click();
   await page.getByRole('button', { name: 'Ajustar puntaje y explicación', exact: true }).click();
   const feedback = page.getByLabel('Explicación para el estudiante');

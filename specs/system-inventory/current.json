@@ -384,7 +384,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "cda99ced879cbdb05a1a91d5d1996affd593a447fcf0e9ebdfc04c1852d98c3c",
+  "source_digest": "b81d231ab62cd651831880e4d94e3b9cec05ed134fdea2ccf53b4c9c14ac09b9",
   "surfaces": [
     {
       "actors": [
@@ -15844,6 +15844,18 @@
           "reference": "/",
           "status": "direct",
           "test_path": "frontend/src/modules/calificaciones/GradingJobMonitor.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/ReviewClaims.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/ReviewNavigation.test.tsx"
         },
         {
           "level": "unit",
@@ -37298,6 +37310,12 @@
           "reference": "calificaciones",
           "status": "direct",
           "test_path": "frontend/src/modules/calificaciones/GradingJobMonitor.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "calificaciones",
+          "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/ReviewClaims.test.tsx"
         },
         {
           "level": "unit",
