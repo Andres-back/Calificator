@@ -135,8 +135,12 @@ async def build_context_for_xali(
     materia_id: UUID,
     user_question: str,
     limit: int = 6,
+    *,
+    profesor_id: UUID | None = None,
+    include_global_catalog: bool = True,
 ) -> list[dict]:
-    return await search_chunks(db, user_question, materia_id=materia_id, limit=limit)
+    return await search_chunks(db, user_question, materia_id=materia_id, limit=limit,
+                               profesor_id=profesor_id, include_global_catalog=include_global_catalog)
 
 
 async def build_context_for_reinforcement_plan(

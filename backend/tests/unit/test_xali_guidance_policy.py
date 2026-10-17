@@ -297,6 +297,9 @@ def test_student_resource_uses_confirmed_evidence_and_creates_new_practice(monke
 
 def test_teacher_chat_keeps_pedagogical_control_without_student_filter(monkeypatch) -> None:
     class HistoryResult:
+        def scalar_one(self) -> bool:
+            return True
+
         def fetchall(self) -> list:
             return []
 
@@ -327,6 +330,5 @@ def test_teacher_chat_keeps_pedagogical_control_without_student_filter(monkeypat
         )
     )
 
-    assert response == (
-        "La respuesta correcta es una referencia reservada para el docente."
-    )
+    assert 'La respuesta correcta es una referencia reservada para el docente.' in response
+    assert 'sin consultar materiales' in response

@@ -12,3 +12,4 @@
 ## Fase 3: Integración
 - [X] T006 Incorporar el dominio a specs/README.md (FR-008)
 - [X] T032-REF Trazar procedencia por pregunta y aislamiento RAG implementados en `specs/032-calificacion-impacto-docente/` (FR-012).
+- [X] T033-REF Trazar contexto docente, fuentes, visuales, historial y pruebas sintéticas en `specs/104-xali-docente-visual/` (FR-001, FR-002, FR-003, FR-004, FR-005, FR-006, FR-007, FR-008).

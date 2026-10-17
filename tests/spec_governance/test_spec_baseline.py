@@ -101,6 +101,7 @@ ALL_SPECS = {
     "099-revision-docente-enfocada",
     "100-feedback-demo-movil",
     "102-camara-visor-completo",
+    "104-xali-docente-visual",
 }
 OWNED_SPECS = {
     name
