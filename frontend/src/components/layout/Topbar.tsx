@@ -7,6 +7,7 @@ import { useAuth } from '@/stores/auth';
 import { routes } from '@/config/routes';
 import { isInstalledApp } from '@/lib/installedApp';
 import { HomeScreenGuide } from '@/components/install/HomeScreenShortcut';
+import { adminNav } from '@/config/nav';
 
 const TEACHER_CONTEXTS: Array<{ match: string; label: string; brandIcon: EducationalIconName }> = [
   { match: '/app/perfil', label: 'Mi perfil', brandIcon: 'ai-settings' },
@@ -54,6 +55,8 @@ export function Topbar({
     ?? { label: 'Inicio docente', brandIcon: 'dashboard' as const };
   const studentContext = STUDENT_CONTEXTS.find((item) => location.pathname.startsWith(item.match))
     ?? { label: 'Mi inicio', brandIcon: 'dashboard' as const };
+  const adminContext = adminNav.find((item) => item.to !== '/app' && location.pathname.startsWith(item.to))
+    ?? adminNav[0];
 
   useEffect(() => {
     if (!open) return;
@@ -82,6 +85,17 @@ export function Topbar({
         <Menu className="h-5 w-5" aria-hidden="true" />
       </button>
       <div className="min-w-0 flex-1 max-[480px]:[&>div]:hidden">
+        {user?.rol === 'admin' && (
+          <div className="flex min-w-0 items-center gap-2.5">
+            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-white/90 shadow-sm ring-1 ring-border dark:bg-white/10">
+              <EducationalIcon name={adminContext.brandIcon ?? 'dashboard'} className="h-10 w-10" />
+            </span>
+            <div className="hidden min-w-0 sm:block">
+              <p className="text-[10px] font-extrabold uppercase tracking-[0.16em] text-brand-600 dark:text-brand-300">Administración</p>
+              <p className="truncate text-sm font-bold text-fg">{adminContext.label}</p>
+            </div>
+          </div>
+        )}
         {user?.rol === 'profesor' && (
           <div className="flex min-w-0 items-center gap-2.5">
             <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-white/90 shadow-sm ring-1 ring-border dark:bg-white/10">
