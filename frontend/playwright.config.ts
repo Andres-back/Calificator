@@ -11,7 +11,7 @@ export default defineConfig({
   projects: [
     { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
     // WebKit covers this mobile increment without doubling unrelated legacy suites.
-    { name: 'webkit', testMatch: ['**/p2-responsive.spec.ts', '**/evaluation-ai-wizard.spec.ts'], grep: /inicio docente móvil|boletín docente en mosaico|096.*(?:360|390)px|097/, use: { ...devices['Desktop Safari'] } },
+    { name: 'webkit', testMatch: ['**/p2-responsive.spec.ts', '**/evaluation-ai-wizard.spec.ts', '**/camera-capture.spec.ts', '**/evaluation-preview.spec.ts'], grep: /inicio docente móvil|boletín docente en mosaico|096.*(?:360|390)px|097|102|preview y descargas|lista global tiene visualización/, use: { ...devices['Desktop Safari'] } },
   ],
   use: {
     baseURL: 'http://127.0.0.1:4175',

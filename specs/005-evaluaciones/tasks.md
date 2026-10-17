@@ -16,6 +16,10 @@
 
 - [X] T007 Trazar el asistente de dos pantallas, entrada común y conservación de contratos con [tareas 096](../096-evaluacion-dos-pantallas/tasks.md), issue #202 (FR-001, FR-002, FR-003, FR-004, FR-005, FR-006, FR-007, FR-008).
 
+## Evolución 102
+
+- [X] T009 Trazar lectura completa y documentos autorizados mediante [tareas 102](../102-camara-visor-completo/tasks.md), issue #212 (FR-001, FR-002, FR-003, FR-004, FR-005, FR-006, FR-007, FR-008).
+
 ## Evolución 097
 
 - [X] T008 Documentar presentación de escritura móvil opt-in y conservación de contratos con [tareas 097](../097-escritura-docente-movil/tasks.md), issue #204 (FR-001, FR-002, FR-003, FR-004, FR-005, FR-006, FR-007, FR-008).

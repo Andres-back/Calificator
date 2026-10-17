@@ -27,6 +27,26 @@ beforeEach(() => {
 });
 
 describe('EvaluationPdfViewer', () => {
+  it('identifies the page with most visible content rather than a previous-page sliver', async () => {
+    let observePages = () => {};
+    vi.stubGlobal('IntersectionObserver', class {
+      constructor(callback: () => void) { observePages = callback; }
+      observe() {}
+      disconnect() {}
+    });
+    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (this: HTMLElement) {
+      if (this.hasAttribute('data-document-scroll')) return { width: 390, top: 100, bottom: 750, height: 650 } as DOMRect;
+      if (this.dataset.pdfPage === '1') return { width: 358, top: -100, bottom: 130, height: 230 } as DOMRect;
+      if (this.dataset.pdfPage === '2') return { width: 358, top: 130, bottom: 700, height: 570 } as DOMRect;
+      return { width: 390, top: 0, bottom: 0, height: 0 } as DOMRect;
+    });
+    render(<EvaluationPdfViewer blob={blob} />);
+    await screen.findByText('Leer texto de la página 2');
+    await act(async () => observePages());
+    expect(screen.getByText('Página 2 de 2', { selector: 'span' })).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Ampliar página' }));
+    expect(screen.getByText('Página 2 de 2', { selector: 'span' })).toBeInTheDocument();
+  });
   it('does not redraw when a scrollbar changes only clientWidth (Safari regression)', async () => {
     let resize = () => {};
     vi.stubGlobal('ResizeObserver', class {
@@ -57,9 +77,10 @@ describe('EvaluationPdfViewer', () => {
     render(<EvaluationPdfViewer blob={blob} />);
     await waitFor(() => expect(screen.getByLabelText('Página 1 de 2')).toHaveAttribute('data-rendered', 'true'));
     expect(screen.getByRole('button', { name: 'Página anterior' })).toBeDisabled();
-    await user.click(screen.getByText('Leer texto de esta página'));
+    await user.click(await screen.findByText('Leer texto de la página 1'));
     expect(await screen.findByText('Pregunta de página 1')).toBeVisible();
     await user.click(screen.getByRole('button', { name: 'Página siguiente' }));
+    await user.click(await screen.findByText('Leer texto de la página 2'));
     expect(await screen.findByText('Pregunta de página 2')).toBeVisible();
     expect(screen.getByRole('button', { name: 'Página siguiente' })).toBeDisabled();
     await user.click(screen.getByRole('button', { name: 'Ampliar página' }));
@@ -77,6 +98,19 @@ describe('EvaluationPdfViewer', () => {
     expect(mocks.destroy).toHaveBeenCalledOnce();
     expect(canvas.width).toBe(0);
     expect(canvas.height).toBe(0);
+  });
+
+  it('provides positions for twenty pages with at most three resident canvases', async () => {
+    const configured = mocks.load.getMockImplementation()!();
+    const loaded = await configured.promise;
+    loaded.numPages = 20;
+    render(<EvaluationPdfViewer blob={blob} />);
+    await waitFor(() => expect(screen.getByLabelText('Página 1 de 20')).toHaveAttribute('data-rendered', 'true'));
+    expect(document.querySelectorAll('[data-pdf-page]')).toHaveLength(20);
+    expect(document.querySelectorAll('canvas').length).toBeLessThanOrEqual(3);
+    for (let index = 1; index < 20; index++) await userEvent.click(screen.getByRole('button', { name: 'Página siguiente' }));
+    await waitFor(() => expect(screen.getByLabelText('Página 20 de 20')).toHaveAttribute('data-rendered', 'true'));
+    expect(document.querySelectorAll('canvas').length).toBeLessThanOrEqual(3);
   });
 
   it('reports load failure and retries without requesting a new evaluation', async () => {

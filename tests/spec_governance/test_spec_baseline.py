@@ -100,6 +100,7 @@ ALL_SPECS = {
     "097-escritura-docente-movil",
     "099-revision-docente-enfocada",
     "100-feedback-demo-movil",
+    "102-camara-visor-completo",
 }
 OWNED_SPECS = {
     name

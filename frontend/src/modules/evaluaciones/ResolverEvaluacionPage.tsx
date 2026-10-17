@@ -497,6 +497,7 @@ export function ResolverEvaluacionPage() {
               ) : (
                 <>
                   <MultiPageEvidencePicker
+                    contextKey={`${evaluacionId}:${studentId}`}
                     pages={evidencePages}
                     onChange={(pages) => { setEvidencePages(pages); setSubmissionIssue(null); setSubmitError(null); }}
                     disabled={!canUploadPhysical || entregarArchivo.isPending}
