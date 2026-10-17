@@ -1,8 +1,8 @@
 {
   "counts": {
     "by_coverage": {
-      "covered": 478,
-      "missing": 95
+      "covered": 479,
+      "missing": 94
     },
     "by_kind": {
       "endpoint": 269,
@@ -95,8 +95,8 @@
     },
     {
       "category": "missing_coverage",
-      "description": "14 superficies de 002-arquitectura-roles-seguridad no tienen evidencia de prueba observable.",
-      "id": "F-3EA637857F4D",
+      "description": "13 superficies de 002-arquitectura-roles-seguridad no tienen evidencia de prueba observable.",
+      "id": "F-5403AC2120D0",
       "issue_url": "",
       "severity": "low",
       "surface_ids": [
@@ -110,7 +110,6 @@
         "table:ai_tool_settings",
         "table:ai_usage_events",
         "table:ai_usage_logs",
-        "table:chat_messages",
         "table:evaluation_blueprints",
         "table:importacion_estudiantes_filas",
         "table:importacion_estudiantes_lotes"
@@ -384,7 +383,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "d90453054f2b18386c61995a86efcf4075e77bd0aceafd5c652862f3bb1195e4",
+  "source_digest": "c760ad7a2372fadab8450a0537ce065ca1906666fbe45db61fded96fee408550",
   "surfaces": [
     {
       "actors": [
@@ -1194,7 +1193,8 @@
       ],
       "authorization": [
         "get_current_user",
-        "require_permission_now:xali.use"
+        "require_permission_now:xali.use",
+        "require_role"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -1207,10 +1207,16 @@
       "kind": "endpoint",
       "owner_spec": "009-xali-rag-refuerzos",
       "signature": "DELETE:/xali/history",
-      "source_line": 119,
+      "source_line": 125,
       "source_path": "backend/app/modules/xali/router.py",
       "states": [],
       "tests": [
+        {
+          "level": "unit",
+          "reference": "DELETE:/xali/history",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_xali_teacher_visual.py"
+        },
         {
           "level": "unit",
           "reference": "DELETE:/xali/history",
@@ -1224,10 +1230,28 @@
           "test_path": "backend/tests/unit/test_xali_student_resources.py"
         },
         {
+          "level": "unit",
+          "reference": "DELETE:/xali/history",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_xali_teacher_context.py"
+        },
+        {
+          "level": "unit",
+          "reference": "DELETE:/xali/history",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_xali_visual_content.py"
+        },
+        {
           "level": "e2e",
           "reference": "DELETE:/xali/history",
           "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "DELETE:/xali/history",
+          "status": "direct",
+          "test_path": "frontend/e2e/xali-teacher-visual.spec.ts"
         },
         {
           "level": "unit",
@@ -1240,6 +1264,12 @@
           "reference": "DELETE:/xali/history",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/student-feedback/XaliFeedbackStory.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "DELETE:/xali/history",
+          "status": "domain",
+          "test_path": "frontend/src/modules/xali/XaliPage.teacher.test.tsx"
         },
         {
           "level": "unit",
@@ -2910,6 +2940,12 @@
           "reference": "GET:/auth/me",
           "status": "direct",
           "test_path": "frontend/e2e/teacher-ai-configuration.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/auth/me",
+          "status": "direct",
+          "test_path": "frontend/e2e/xali-teacher-visual.spec.ts"
         },
         {
           "level": "unit",
@@ -5463,6 +5499,12 @@
           "test_path": "frontend/e2e/student-activity-delivery.spec.ts"
         },
         {
+          "level": "e2e",
+          "reference": "GET:/materias",
+          "status": "direct",
+          "test_path": "frontend/e2e/xali-teacher-visual.spec.ts"
+        },
+        {
           "level": "unit",
           "reference": "GET:/materias",
           "status": "direct",
@@ -5569,6 +5611,12 @@
           "reference": "GET:/materias",
           "status": "direct",
           "test_path": "frontend/src/modules/presentaciones/PresentacionesPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias",
+          "status": "direct",
+          "test_path": "frontend/src/modules/xali/XaliPage.teacher.test.tsx"
         },
         {
           "level": "unit",
@@ -5700,6 +5748,12 @@
           "test_path": "frontend/e2e/student-activity-delivery.spec.ts"
         },
         {
+          "level": "e2e",
+          "reference": "GET:/materias/{materia_id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/xali-teacher-visual.spec.ts"
+        },
+        {
           "level": "unit",
           "reference": "GET:/materias/{materia_id}",
           "status": "direct",
@@ -5806,6 +5860,12 @@
           "reference": "GET:/materias/{materia_id}",
           "status": "direct",
           "test_path": "frontend/src/modules/presentaciones/PresentacionesPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias/{materia_id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/xali/XaliPage.teacher.test.tsx"
         },
         {
           "level": "unit",
@@ -7066,6 +7126,12 @@
           "test_path": "frontend/e2e/teacher-ai-configuration.spec.ts"
         },
         {
+          "level": "e2e",
+          "reference": "GET:/users/me",
+          "status": "direct",
+          "test_path": "frontend/e2e/xali-teacher-visual.spec.ts"
+        },
+        {
           "level": "unit",
           "reference": "GET:/users/me",
           "status": "domain",
@@ -7210,6 +7276,12 @@
           "test_path": "frontend/e2e/teacher-ai-configuration.spec.ts"
         },
         {
+          "level": "e2e",
+          "reference": "GET:/users/me/authorization",
+          "status": "direct",
+          "test_path": "frontend/e2e/xali-teacher-visual.spec.ts"
+        },
+        {
           "level": "unit",
           "reference": "GET:/users/me/authorization",
           "status": "domain",
@@ -7239,10 +7311,16 @@
       "kind": "endpoint",
       "owner_spec": "009-xali-rag-refuerzos",
       "signature": "GET:/xali/evaluaciones-entregadas",
-      "source_line": 44,
+      "source_line": 48,
       "source_path": "backend/app/modules/xali/router.py",
       "states": [],
       "tests": [
+        {
+          "level": "unit",
+          "reference": "GET:/xali/evaluaciones-entregadas",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_xali_teacher_visual.py"
+        },
         {
           "level": "unit",
           "reference": "GET:/xali/evaluaciones-entregadas",
@@ -7256,10 +7334,28 @@
           "test_path": "backend/tests/unit/test_xali_student_resources.py"
         },
         {
+          "level": "unit",
+          "reference": "GET:/xali/evaluaciones-entregadas",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_xali_teacher_context.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/xali/evaluaciones-entregadas",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_xali_visual_content.py"
+        },
+        {
           "level": "e2e",
           "reference": "GET:/xali/evaluaciones-entregadas",
           "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/xali/evaluaciones-entregadas",
+          "status": "domain",
+          "test_path": "frontend/e2e/xali-teacher-visual.spec.ts"
         },
         {
           "level": "unit",
@@ -7272,6 +7368,12 @@
           "reference": "GET:/xali/evaluaciones-entregadas",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/student-feedback/XaliFeedbackStory.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/xali/evaluaciones-entregadas",
+          "status": "domain",
+          "test_path": "frontend/src/modules/xali/XaliPage.teacher.test.tsx"
         },
         {
           "level": "unit",
@@ -7303,10 +7405,16 @@
       "kind": "endpoint",
       "owner_spec": "006-recursos-actividades",
       "signature": "GET:/xali/evaluaciones/{evaluacion_id}/recursos",
-      "source_line": 91,
+      "source_line": 95,
       "source_path": "backend/app/modules/xali/router.py",
       "states": [],
       "tests": [
+        {
+          "level": "unit",
+          "reference": "GET:/xali/evaluaciones/{evaluacion_id}/recursos",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_xali_teacher_visual.py"
+        },
         {
           "level": "unit",
           "reference": "GET:/xali/evaluaciones/{evaluacion_id}/recursos",
@@ -7323,6 +7431,24 @@
           "level": "unit",
           "reference": "GET:/xali/evaluaciones/{evaluacion_id}/recursos",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_xali_teacher_context.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/xali/evaluaciones/{evaluacion_id}/recursos",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_xali_visual_content.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/xali/evaluaciones/{evaluacion_id}/recursos",
+          "status": "domain",
+          "test_path": "frontend/e2e/xali-teacher-visual.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/xali/evaluaciones/{evaluacion_id}/recursos",
+          "status": "domain",
           "test_path": "frontend/src/components/xali/XaliMascot.test.tsx"
         },
         {
@@ -7330,6 +7456,12 @@
           "reference": "GET:/xali/evaluaciones/{evaluacion_id}/recursos",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/student-feedback/XaliFeedbackStory.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/xali/evaluaciones/{evaluacion_id}/recursos",
+          "status": "domain",
+          "test_path": "frontend/src/modules/xali/XaliPage.teacher.test.tsx"
         },
         {
           "level": "unit",
@@ -7347,7 +7479,8 @@
       ],
       "authorization": [
         "get_current_user",
-        "require_permission_now:xali.use"
+        "require_permission_now:xali.use",
+        "require_role"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -7360,10 +7493,16 @@
       "kind": "endpoint",
       "owner_spec": "009-xali-rag-refuerzos",
       "signature": "GET:/xali/history",
-      "source_line": 109,
+      "source_line": 113,
       "source_path": "backend/app/modules/xali/router.py",
       "states": [],
       "tests": [
+        {
+          "level": "unit",
+          "reference": "GET:/xali/history",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_xali_teacher_visual.py"
+        },
         {
           "level": "unit",
           "reference": "GET:/xali/history",
@@ -7377,10 +7516,28 @@
           "test_path": "backend/tests/unit/test_xali_student_resources.py"
         },
         {
+          "level": "unit",
+          "reference": "GET:/xali/history",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_xali_teacher_context.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/xali/history",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_xali_visual_content.py"
+        },
+        {
           "level": "e2e",
           "reference": "GET:/xali/history",
           "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/xali/history",
+          "status": "direct",
+          "test_path": "frontend/e2e/xali-teacher-visual.spec.ts"
         },
         {
           "level": "unit",
@@ -7393,6 +7550,12 @@
           "reference": "GET:/xali/history",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/student-feedback/XaliFeedbackStory.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/xali/history",
+          "status": "domain",
+          "test_path": "frontend/src/modules/xali/XaliPage.teacher.test.tsx"
         },
         {
           "level": "unit",
@@ -7430,6 +7593,12 @@
           "level": "unit",
           "reference": "GET:/xali/refuerzos/{refuerzo_id}",
           "status": "domain",
+          "test_path": "backend/tests/integration/test_xali_teacher_visual.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/xali/refuerzos/{refuerzo_id}",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_xali_guidance_policy.py"
         },
         {
@@ -7442,6 +7611,24 @@
           "level": "unit",
           "reference": "GET:/xali/refuerzos/{refuerzo_id}",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_xali_teacher_context.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/xali/refuerzos/{refuerzo_id}",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_xali_visual_content.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/xali/refuerzos/{refuerzo_id}",
+          "status": "domain",
+          "test_path": "frontend/e2e/xali-teacher-visual.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/xali/refuerzos/{refuerzo_id}",
+          "status": "domain",
           "test_path": "frontend/src/components/xali/XaliMascot.test.tsx"
         },
         {
@@ -7449,6 +7636,12 @@
           "reference": "GET:/xali/refuerzos/{refuerzo_id}",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/student-feedback/XaliFeedbackStory.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/xali/refuerzos/{refuerzo_id}",
+          "status": "domain",
+          "test_path": "frontend/src/modules/xali/XaliPage.teacher.test.tsx"
         },
         {
           "level": "unit",
@@ -8770,6 +8963,12 @@
           "test_path": "frontend/e2e/student-activity-delivery.spec.ts"
         },
         {
+          "level": "e2e",
+          "reference": "PATCH:/materias/{materia_id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/xali-teacher-visual.spec.ts"
+        },
+        {
           "level": "unit",
           "reference": "PATCH:/materias/{materia_id}",
           "status": "direct",
@@ -8876,6 +9075,12 @@
           "reference": "PATCH:/materias/{materia_id}",
           "status": "direct",
           "test_path": "frontend/src/modules/presentaciones/PresentacionesPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/materias/{materia_id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/xali/XaliPage.teacher.test.tsx"
         },
         {
           "level": "unit",
@@ -9136,6 +9341,12 @@
           "test_path": "frontend/e2e/teacher-ai-configuration.spec.ts"
         },
         {
+          "level": "e2e",
+          "reference": "PATCH:/users/me",
+          "status": "direct",
+          "test_path": "frontend/e2e/xali-teacher-visual.spec.ts"
+        },
+        {
           "level": "unit",
           "reference": "PATCH:/users/me",
           "status": "domain",
@@ -9171,6 +9382,12 @@
           "level": "unit",
           "reference": "PATCH:/xali/refuerzos/{refuerzo_id}",
           "status": "domain",
+          "test_path": "backend/tests/integration/test_xali_teacher_visual.py"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/xali/refuerzos/{refuerzo_id}",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_xali_guidance_policy.py"
         },
         {
@@ -9183,6 +9400,24 @@
           "level": "unit",
           "reference": "PATCH:/xali/refuerzos/{refuerzo_id}",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_xali_teacher_context.py"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/xali/refuerzos/{refuerzo_id}",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_xali_visual_content.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/xali/refuerzos/{refuerzo_id}",
+          "status": "domain",
+          "test_path": "frontend/e2e/xali-teacher-visual.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/xali/refuerzos/{refuerzo_id}",
+          "status": "domain",
           "test_path": "frontend/src/components/xali/XaliMascot.test.tsx"
         },
         {
@@ -9190,6 +9425,12 @@
           "reference": "PATCH:/xali/refuerzos/{refuerzo_id}",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/student-feedback/XaliFeedbackStory.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/xali/refuerzos/{refuerzo_id}",
+          "status": "domain",
+          "test_path": "frontend/src/modules/xali/XaliPage.teacher.test.tsx"
         },
         {
           "level": "unit",
@@ -9643,6 +9884,12 @@
           "reference": "POST:/analytics/evento",
           "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/analytics/evento",
+          "status": "direct",
+          "test_path": "frontend/e2e/xali-teacher-visual.spec.ts"
         },
         {
           "level": "unit",
@@ -13714,6 +13961,12 @@
           "test_path": "frontend/e2e/student-activity-delivery.spec.ts"
         },
         {
+          "level": "e2e",
+          "reference": "POST:/materias",
+          "status": "direct",
+          "test_path": "frontend/e2e/xali-teacher-visual.spec.ts"
+        },
+        {
           "level": "unit",
           "reference": "POST:/materias",
           "status": "direct",
@@ -13820,6 +14073,12 @@
           "reference": "POST:/materias",
           "status": "direct",
           "test_path": "frontend/src/modules/presentaciones/PresentacionesPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/materias",
+          "status": "direct",
+          "test_path": "frontend/src/modules/xali/XaliPage.teacher.test.tsx"
         },
         {
           "level": "unit",
@@ -14433,7 +14692,8 @@
       ],
       "authorization": [
         "get_current_user",
-        "require_permission_now:xali.use"
+        "require_permission_now:xali.use",
+        "require_role"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -14446,10 +14706,16 @@
       "kind": "endpoint",
       "owner_spec": "009-xali-rag-refuerzos",
       "signature": "POST:/xali/chat",
-      "source_line": 26,
+      "source_line": 27,
       "source_path": "backend/app/modules/xali/router.py",
       "states": [],
       "tests": [
+        {
+          "level": "unit",
+          "reference": "POST:/xali/chat",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_xali_teacher_visual.py"
+        },
         {
           "level": "unit",
           "reference": "POST:/xali/chat",
@@ -14461,6 +14727,18 @@
           "reference": "POST:/xali/chat",
           "status": "domain",
           "test_path": "backend/tests/unit/test_xali_student_resources.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/xali/chat",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_xali_teacher_context.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/xali/chat",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_xali_visual_content.py"
         },
         {
           "level": "e2e",
@@ -14475,6 +14753,12 @@
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
         },
         {
+          "level": "e2e",
+          "reference": "POST:/xali/chat",
+          "status": "direct",
+          "test_path": "frontend/e2e/xali-teacher-visual.spec.ts"
+        },
+        {
           "level": "unit",
           "reference": "POST:/xali/chat",
           "status": "domain",
@@ -14485,6 +14769,12 @@
           "reference": "POST:/xali/chat",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/student-feedback/XaliFeedbackStory.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/xali/chat",
+          "status": "domain",
+          "test_path": "frontend/src/modules/xali/XaliPage.teacher.test.tsx"
         },
         {
           "level": "unit",
@@ -14516,10 +14806,16 @@
       "kind": "endpoint",
       "owner_spec": "009-xali-rag-refuerzos",
       "signature": "POST:/xali/evaluaciones/{evaluacion_id}/chat",
-      "source_line": 54,
+      "source_line": 58,
       "source_path": "backend/app/modules/xali/router.py",
       "states": [],
       "tests": [
+        {
+          "level": "unit",
+          "reference": "POST:/xali/evaluaciones/{evaluacion_id}/chat",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_xali_teacher_visual.py"
+        },
         {
           "level": "unit",
           "reference": "POST:/xali/evaluaciones/{evaluacion_id}/chat",
@@ -14536,6 +14832,24 @@
           "level": "unit",
           "reference": "POST:/xali/evaluaciones/{evaluacion_id}/chat",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_xali_teacher_context.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/xali/evaluaciones/{evaluacion_id}/chat",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_xali_visual_content.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/xali/evaluaciones/{evaluacion_id}/chat",
+          "status": "domain",
+          "test_path": "frontend/e2e/xali-teacher-visual.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/xali/evaluaciones/{evaluacion_id}/chat",
+          "status": "domain",
           "test_path": "frontend/src/components/xali/XaliMascot.test.tsx"
         },
         {
@@ -14543,6 +14857,12 @@
           "reference": "POST:/xali/evaluaciones/{evaluacion_id}/chat",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/student-feedback/XaliFeedbackStory.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/xali/evaluaciones/{evaluacion_id}/chat",
+          "status": "domain",
+          "test_path": "frontend/src/modules/xali/XaliPage.teacher.test.tsx"
         },
         {
           "level": "unit",
@@ -14574,10 +14894,16 @@
       "kind": "endpoint",
       "owner_spec": "006-recursos-actividades",
       "signature": "POST:/xali/evaluaciones/{evaluacion_id}/recursos",
-      "source_line": 71,
+      "source_line": 75,
       "source_path": "backend/app/modules/xali/router.py",
       "states": [],
       "tests": [
+        {
+          "level": "unit",
+          "reference": "POST:/xali/evaluaciones/{evaluacion_id}/recursos",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_xali_teacher_visual.py"
+        },
         {
           "level": "unit",
           "reference": "POST:/xali/evaluaciones/{evaluacion_id}/recursos",
@@ -14594,6 +14920,24 @@
           "level": "unit",
           "reference": "POST:/xali/evaluaciones/{evaluacion_id}/recursos",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_xali_teacher_context.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/xali/evaluaciones/{evaluacion_id}/recursos",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_xali_visual_content.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/xali/evaluaciones/{evaluacion_id}/recursos",
+          "status": "domain",
+          "test_path": "frontend/e2e/xali-teacher-visual.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/xali/evaluaciones/{evaluacion_id}/recursos",
+          "status": "domain",
           "test_path": "frontend/src/components/xali/XaliMascot.test.tsx"
         },
         {
@@ -14601,6 +14945,12 @@
           "reference": "POST:/xali/evaluaciones/{evaluacion_id}/recursos",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/student-feedback/XaliFeedbackStory.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/xali/evaluaciones/{evaluacion_id}/recursos",
+          "status": "domain",
+          "test_path": "frontend/src/modules/xali/XaliPage.teacher.test.tsx"
         },
         {
           "level": "unit",
@@ -14638,6 +14988,12 @@
           "level": "unit",
           "reference": "POST:/xali/refuerzos/generar",
           "status": "domain",
+          "test_path": "backend/tests/integration/test_xali_teacher_visual.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/xali/refuerzos/generar",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_xali_guidance_policy.py"
         },
         {
@@ -14650,6 +15006,24 @@
           "level": "unit",
           "reference": "POST:/xali/refuerzos/generar",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_xali_teacher_context.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/xali/refuerzos/generar",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_xali_visual_content.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/xali/refuerzos/generar",
+          "status": "domain",
+          "test_path": "frontend/e2e/xali-teacher-visual.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/xali/refuerzos/generar",
+          "status": "domain",
           "test_path": "frontend/src/components/xali/XaliMascot.test.tsx"
         },
         {
@@ -14657,6 +15031,12 @@
           "reference": "POST:/xali/refuerzos/generar",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/student-feedback/XaliFeedbackStory.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/xali/refuerzos/generar",
+          "status": "domain",
+          "test_path": "frontend/src/modules/xali/XaliPage.teacher.test.tsx"
         },
         {
           "level": "unit",
@@ -15255,6 +15635,12 @@
           "level": "unit",
           "reference": "/",
           "status": "direct",
+          "test_path": "backend/tests/integration/test_xali_teacher_visual.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
           "test_path": "backend/tests/unit/authorization_helpers.py"
         },
         {
@@ -15576,6 +15962,18 @@
           "test_path": "backend/tests/unit/test_xali_guidance_policy.py"
         },
         {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_xali_teacher_context.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_xali_visual_content.py"
+        },
+        {
           "level": "e2e",
           "reference": "/",
           "status": "direct",
@@ -15718,6 +16116,12 @@
           "reference": "/",
           "status": "direct",
           "test_path": "frontend/e2e/visual/student-feedback-story.visual.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "frontend/e2e/xali-teacher-visual.spec.ts"
         },
         {
           "level": "unit",
@@ -16371,7 +16775,31 @@
           "level": "unit",
           "reference": "/",
           "status": "direct",
+          "test_path": "frontend/src/modules/xali/XaliPage.teacher.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
           "test_path": "frontend/src/modules/xali/XaliPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "frontend/src/modules/xali/components/TeacherResponse.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "frontend/src/modules/xali/useTeacherConversation.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "frontend/src/modules/xali/visualContent.test.ts"
         },
         {
           "level": "unit",
@@ -16599,6 +17027,12 @@
           "reference": "/app",
           "status": "direct",
           "test_path": "frontend/e2e/visual/student-feedback-story.visual.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app",
+          "status": "direct",
+          "test_path": "frontend/e2e/xali-teacher-visual.spec.ts"
         },
         {
           "level": "unit",
@@ -20439,6 +20873,12 @@
           "test_path": "frontend/e2e/teacher-ai-configuration.spec.ts"
         },
         {
+          "level": "e2e",
+          "reference": "/app/xali",
+          "status": "direct",
+          "test_path": "frontend/e2e/xali-teacher-visual.spec.ts"
+        },
+        {
           "level": "unit",
           "reference": "/app/xali",
           "status": "direct",
@@ -22256,6 +22696,12 @@
           "level": "unit",
           "reference": "DELETE:/xali/history",
           "status": "domain",
+          "test_path": "backend/tests/integration/test_xali_teacher_visual.py"
+        },
+        {
+          "level": "unit",
+          "reference": "DELETE:/xali/history",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_xali_guidance_policy.py"
         },
         {
@@ -22265,10 +22711,28 @@
           "test_path": "backend/tests/unit/test_xali_student_resources.py"
         },
         {
+          "level": "unit",
+          "reference": "DELETE:/xali/history",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_xali_teacher_context.py"
+        },
+        {
+          "level": "unit",
+          "reference": "DELETE:/xali/history",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_xali_visual_content.py"
+        },
+        {
           "level": "e2e",
           "reference": "DELETE:/xali/history",
           "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "DELETE:/xali/history",
+          "status": "direct",
+          "test_path": "frontend/e2e/xali-teacher-visual.spec.ts"
         },
         {
           "level": "unit",
@@ -22281,6 +22745,12 @@
           "reference": "DELETE:/xali/history",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/student-feedback/XaliFeedbackStory.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "DELETE:/xali/history",
+          "status": "domain",
+          "test_path": "frontend/src/modules/xali/XaliPage.teacher.test.tsx"
         },
         {
           "level": "unit",
@@ -24333,6 +24803,12 @@
           "reference": "GET:/auth/me",
           "status": "direct",
           "test_path": "frontend/e2e/teacher-ai-configuration.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/auth/me",
+          "status": "direct",
+          "test_path": "frontend/e2e/xali-teacher-visual.spec.ts"
         },
         {
           "level": "unit",
@@ -26409,6 +26885,12 @@
           "test_path": "frontend/e2e/student-activity-delivery.spec.ts"
         },
         {
+          "level": "e2e",
+          "reference": "GET:/materias/{id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/xali-teacher-visual.spec.ts"
+        },
+        {
           "level": "unit",
           "reference": "GET:/materias/{id}",
           "status": "direct",
@@ -26515,6 +26997,12 @@
           "reference": "GET:/materias/{id}",
           "status": "direct",
           "test_path": "frontend/src/modules/presentaciones/PresentacionesPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias/{id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/xali/XaliPage.teacher.test.tsx"
         },
         {
           "level": "unit",
@@ -26913,6 +27401,12 @@
           "test_path": "frontend/e2e/student-activity-delivery.spec.ts"
         },
         {
+          "level": "e2e",
+          "reference": "GET:/materias",
+          "status": "direct",
+          "test_path": "frontend/e2e/xali-teacher-visual.spec.ts"
+        },
+        {
           "level": "unit",
           "reference": "GET:/materias",
           "status": "direct",
@@ -27019,6 +27513,12 @@
           "reference": "GET:/materias",
           "status": "direct",
           "test_path": "frontend/src/modules/presentaciones/PresentacionesPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias",
+          "status": "direct",
+          "test_path": "frontend/src/modules/xali/XaliPage.teacher.test.tsx"
         },
         {
           "level": "unit",
@@ -27525,6 +28025,12 @@
           "test_path": "frontend/e2e/teacher-ai-configuration.spec.ts"
         },
         {
+          "level": "e2e",
+          "reference": "GET:/users/me/authorization",
+          "status": "direct",
+          "test_path": "frontend/e2e/xali-teacher-visual.spec.ts"
+        },
+        {
           "level": "unit",
           "reference": "GET:/users/me/authorization",
           "status": "domain",
@@ -27568,6 +28074,12 @@
           "level": "unit",
           "reference": "GET:/xali/evaluaciones-entregadas",
           "status": "domain",
+          "test_path": "backend/tests/integration/test_xali_teacher_visual.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/xali/evaluaciones-entregadas",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_xali_guidance_policy.py"
         },
         {
@@ -27577,10 +28089,28 @@
           "test_path": "backend/tests/unit/test_xali_student_resources.py"
         },
         {
+          "level": "unit",
+          "reference": "GET:/xali/evaluaciones-entregadas",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_xali_teacher_context.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/xali/evaluaciones-entregadas",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_xali_visual_content.py"
+        },
+        {
           "level": "e2e",
           "reference": "GET:/xali/evaluaciones-entregadas",
           "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/xali/evaluaciones-entregadas",
+          "status": "domain",
+          "test_path": "frontend/e2e/xali-teacher-visual.spec.ts"
         },
         {
           "level": "unit",
@@ -27593,6 +28123,12 @@
           "reference": "GET:/xali/evaluaciones-entregadas",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/student-feedback/XaliFeedbackStory.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/xali/evaluaciones-entregadas",
+          "status": "domain",
+          "test_path": "frontend/src/modules/xali/XaliPage.teacher.test.tsx"
         },
         {
           "level": "unit",
@@ -27626,6 +28162,12 @@
           "level": "unit",
           "reference": "GET:/xali/evaluaciones/{evaluacionId}/recursos",
           "status": "domain",
+          "test_path": "backend/tests/integration/test_xali_teacher_visual.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/xali/evaluaciones/{evaluacionId}/recursos",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_xali_guidance_policy.py"
         },
         {
@@ -27638,6 +28180,24 @@
           "level": "unit",
           "reference": "GET:/xali/evaluaciones/{evaluacionId}/recursos",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_xali_teacher_context.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/xali/evaluaciones/{evaluacionId}/recursos",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_xali_visual_content.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/xali/evaluaciones/{evaluacionId}/recursos",
+          "status": "domain",
+          "test_path": "frontend/e2e/xali-teacher-visual.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/xali/evaluaciones/{evaluacionId}/recursos",
+          "status": "domain",
           "test_path": "frontend/src/components/xali/XaliMascot.test.tsx"
         },
         {
@@ -27645,6 +28205,12 @@
           "reference": "GET:/xali/evaluaciones/{evaluacionId}/recursos",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/student-feedback/XaliFeedbackStory.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/xali/evaluaciones/{evaluacionId}/recursos",
+          "status": "domain",
+          "test_path": "frontend/src/modules/xali/XaliPage.teacher.test.tsx"
         },
         {
           "level": "unit",
@@ -27678,6 +28244,12 @@
           "level": "unit",
           "reference": "GET:/xali/history",
           "status": "domain",
+          "test_path": "backend/tests/integration/test_xali_teacher_visual.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/xali/history",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_xali_guidance_policy.py"
         },
         {
@@ -27687,10 +28259,28 @@
           "test_path": "backend/tests/unit/test_xali_student_resources.py"
         },
         {
+          "level": "unit",
+          "reference": "GET:/xali/history",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_xali_teacher_context.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/xali/history",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_xali_visual_content.py"
+        },
+        {
           "level": "e2e",
           "reference": "GET:/xali/history",
           "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/xali/history",
+          "status": "direct",
+          "test_path": "frontend/e2e/xali-teacher-visual.spec.ts"
         },
         {
           "level": "unit",
@@ -27703,6 +28293,12 @@
           "reference": "GET:/xali/history",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/student-feedback/XaliFeedbackStory.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/xali/history",
+          "status": "domain",
+          "test_path": "frontend/src/modules/xali/XaliPage.teacher.test.tsx"
         },
         {
           "level": "unit",
@@ -29168,6 +29764,12 @@
           "test_path": "frontend/e2e/student-activity-delivery.spec.ts"
         },
         {
+          "level": "e2e",
+          "reference": "PATCH:/materias/{id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/xali-teacher-visual.spec.ts"
+        },
+        {
           "level": "unit",
           "reference": "PATCH:/materias/{id}",
           "status": "direct",
@@ -29274,6 +29876,12 @@
           "reference": "PATCH:/materias/{id}",
           "status": "direct",
           "test_path": "frontend/src/modules/presentaciones/PresentacionesPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/materias/{id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/xali/XaliPage.teacher.test.tsx"
         },
         {
           "level": "unit",
@@ -29441,6 +30049,12 @@
           "reference": "PATCH:/users/me",
           "status": "direct",
           "test_path": "frontend/e2e/teacher-ai-configuration.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/users/me",
+          "status": "direct",
+          "test_path": "frontend/e2e/xali-teacher-visual.spec.ts"
         },
         {
           "level": "unit",
@@ -30580,6 +31194,12 @@
           "reference": "POST:/analytics/evento",
           "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/analytics/evento",
+          "status": "direct",
+          "test_path": "frontend/e2e/xali-teacher-visual.spec.ts"
         },
         {
           "level": "unit",
@@ -33058,6 +33678,12 @@
           "test_path": "frontend/e2e/student-activity-delivery.spec.ts"
         },
         {
+          "level": "e2e",
+          "reference": "POST:/materias",
+          "status": "direct",
+          "test_path": "frontend/e2e/xali-teacher-visual.spec.ts"
+        },
+        {
           "level": "unit",
           "reference": "POST:/materias",
           "status": "direct",
@@ -33164,6 +33790,12 @@
           "reference": "POST:/materias",
           "status": "direct",
           "test_path": "frontend/src/modules/presentaciones/PresentacionesPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/materias",
+          "status": "direct",
+          "test_path": "frontend/src/modules/xali/XaliPage.teacher.test.tsx"
         },
         {
           "level": "unit",
@@ -33471,6 +34103,12 @@
           "level": "unit",
           "reference": "POST:/xali/chat",
           "status": "domain",
+          "test_path": "backend/tests/integration/test_xali_teacher_visual.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/xali/chat",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_xali_guidance_policy.py"
         },
         {
@@ -33478,6 +34116,18 @@
           "reference": "POST:/xali/chat",
           "status": "domain",
           "test_path": "backend/tests/unit/test_xali_student_resources.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/xali/chat",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_xali_teacher_context.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/xali/chat",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_xali_visual_content.py"
         },
         {
           "level": "e2e",
@@ -33492,6 +34142,12 @@
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
         },
         {
+          "level": "e2e",
+          "reference": "POST:/xali/chat",
+          "status": "direct",
+          "test_path": "frontend/e2e/xali-teacher-visual.spec.ts"
+        },
+        {
           "level": "unit",
           "reference": "POST:/xali/chat",
           "status": "domain",
@@ -33502,6 +34158,12 @@
           "reference": "POST:/xali/chat",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/student-feedback/XaliFeedbackStory.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/xali/chat",
+          "status": "domain",
+          "test_path": "frontend/src/modules/xali/XaliPage.teacher.test.tsx"
         },
         {
           "level": "unit",
@@ -33535,6 +34197,12 @@
           "level": "unit",
           "reference": "POST:/xali/evaluaciones/{evaluacionId}/chat",
           "status": "domain",
+          "test_path": "backend/tests/integration/test_xali_teacher_visual.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/xali/evaluaciones/{evaluacionId}/chat",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_xali_guidance_policy.py"
         },
         {
@@ -33547,6 +34215,24 @@
           "level": "unit",
           "reference": "POST:/xali/evaluaciones/{evaluacionId}/chat",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_xali_teacher_context.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/xali/evaluaciones/{evaluacionId}/chat",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_xali_visual_content.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/xali/evaluaciones/{evaluacionId}/chat",
+          "status": "domain",
+          "test_path": "frontend/e2e/xali-teacher-visual.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/xali/evaluaciones/{evaluacionId}/chat",
+          "status": "domain",
           "test_path": "frontend/src/components/xali/XaliMascot.test.tsx"
         },
         {
@@ -33554,6 +34240,12 @@
           "reference": "POST:/xali/evaluaciones/{evaluacionId}/chat",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/student-feedback/XaliFeedbackStory.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/xali/evaluaciones/{evaluacionId}/chat",
+          "status": "domain",
+          "test_path": "frontend/src/modules/xali/XaliPage.teacher.test.tsx"
         },
         {
           "level": "unit",
@@ -33587,6 +34279,12 @@
           "level": "unit",
           "reference": "POST:/xali/evaluaciones/{evaluacionId}/recursos",
           "status": "domain",
+          "test_path": "backend/tests/integration/test_xali_teacher_visual.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/xali/evaluaciones/{evaluacionId}/recursos",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_xali_guidance_policy.py"
         },
         {
@@ -33599,6 +34297,24 @@
           "level": "unit",
           "reference": "POST:/xali/evaluaciones/{evaluacionId}/recursos",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_xali_teacher_context.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/xali/evaluaciones/{evaluacionId}/recursos",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_xali_visual_content.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/xali/evaluaciones/{evaluacionId}/recursos",
+          "status": "domain",
+          "test_path": "frontend/e2e/xali-teacher-visual.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/xali/evaluaciones/{evaluacionId}/recursos",
+          "status": "domain",
           "test_path": "frontend/src/components/xali/XaliMascot.test.tsx"
         },
         {
@@ -33606,6 +34322,12 @@
           "reference": "POST:/xali/evaluaciones/{evaluacionId}/recursos",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/student-feedback/XaliFeedbackStory.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/xali/evaluaciones/{evaluacionId}/recursos",
+          "status": "domain",
+          "test_path": "frontend/src/modules/xali/XaliPage.teacher.test.tsx"
         },
         {
           "level": "unit",
@@ -37201,6 +37923,12 @@
           "level": "unit",
           "reference": "calificaciones",
           "status": "direct",
+          "test_path": "backend/tests/integration/test_xali_teacher_visual.py"
+        },
+        {
+          "level": "unit",
+          "reference": "calificaciones",
+          "status": "direct",
           "test_path": "backend/tests/unit/test_ai_usage_pipeline.py"
         },
         {
@@ -37607,7 +38335,7 @@
       ],
       "authorization": [],
       "consumers": [],
-      "coverage": "missing",
+      "coverage": "covered",
       "details": {
         "active": false,
         "class": "migration_only",
@@ -37629,7 +38357,14 @@
       "source_line": 158,
       "source_path": "backend/alembic/versions/202606290002_phases_3_to_8.py",
       "states": [],
-      "tests": []
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "chat_messages",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_xali_teacher_visual.py"
+        }
+      ]
     },
     {
       "actors": [
@@ -37764,6 +38499,12 @@
           "reference": "entregas",
           "status": "direct",
           "test_path": "backend/tests/integration/test_explainable_grading_pipeline.py"
+        },
+        {
+          "level": "unit",
+          "reference": "entregas",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_xali_teacher_visual.py"
         },
         {
           "level": "unit",
@@ -38072,6 +38813,12 @@
           "reference": "evaluaciones",
           "status": "direct",
           "test_path": "backend/tests/integration/test_resource_assignment_access.py"
+        },
+        {
+          "level": "unit",
+          "reference": "evaluaciones",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_xali_teacher_visual.py"
         },
         {
           "level": "unit",
@@ -38426,6 +39173,12 @@
           "reference": "evaluaciones",
           "status": "direct",
           "test_path": "frontend/src/modules/materias/teacherFlowModel.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "evaluaciones",
+          "status": "direct",
+          "test_path": "frontend/src/modules/xali/XaliPage.teacher.test.tsx"
         },
         {
           "level": "unit",
@@ -38978,6 +39731,12 @@
           "level": "unit",
           "reference": "materias",
           "status": "direct",
+          "test_path": "backend/tests/integration/test_xali_teacher_visual.py"
+        },
+        {
+          "level": "unit",
+          "reference": "materias",
+          "status": "direct",
           "test_path": "backend/tests/unit/authorization_helpers.py"
         },
         {
@@ -39107,6 +39866,12 @@
           "test_path": "frontend/e2e/student-activity-delivery.spec.ts"
         },
         {
+          "level": "e2e",
+          "reference": "materias",
+          "status": "direct",
+          "test_path": "frontend/e2e/xali-teacher-visual.spec.ts"
+        },
+        {
           "level": "unit",
           "reference": "materias",
           "status": "direct",
@@ -39231,6 +39996,12 @@
           "reference": "materias",
           "status": "direct",
           "test_path": "frontend/src/modules/presentaciones/PresentacionesPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "materias",
+          "status": "direct",
+          "test_path": "frontend/src/modules/xali/XaliPage.teacher.test.tsx"
         },
         {
           "level": "unit",
@@ -40289,6 +41060,12 @@
           "level": "unit",
           "reference": "users",
           "status": "direct",
+          "test_path": "backend/tests/integration/test_xali_teacher_visual.py"
+        },
+        {
+          "level": "unit",
+          "reference": "users",
+          "status": "direct",
           "test_path": "backend/tests/unit/authorization_helpers.py"
         },
         {
@@ -40424,6 +41201,12 @@
           "test_path": "frontend/e2e/teacher-ai-configuration.spec.ts"
         },
         {
+          "level": "e2e",
+          "reference": "users",
+          "status": "direct",
+          "test_path": "frontend/e2e/xali-teacher-visual.spec.ts"
+        },
+        {
           "level": "unit",
           "reference": "users",
           "status": "direct",
@@ -40486,6 +41269,12 @@
         {
           "level": "unit",
           "reference": "xali_refuerzos",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_xali_teacher_visual.py"
+        },
+        {
+          "level": "unit",
+          "reference": "xali_refuerzos",
           "status": "direct",
           "test_path": "backend/tests/unit/test_model_metadata.py"
         },
@@ -40505,6 +41294,24 @@
           "level": "unit",
           "reference": "xali_refuerzos",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_xali_teacher_context.py"
+        },
+        {
+          "level": "unit",
+          "reference": "xali_refuerzos",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_xali_visual_content.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "xali_refuerzos",
+          "status": "domain",
+          "test_path": "frontend/e2e/xali-teacher-visual.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "xali_refuerzos",
+          "status": "domain",
           "test_path": "frontend/src/components/xali/XaliMascot.test.tsx"
         },
         {
@@ -40512,6 +41319,12 @@
           "reference": "xali_refuerzos",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/student-feedback/XaliFeedbackStory.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "xali_refuerzos",
+          "status": "domain",
+          "test_path": "frontend/src/modules/xali/XaliPage.teacher.test.tsx"
         },
         {
           "level": "unit",
@@ -40562,6 +41375,12 @@
         {
           "level": "unit",
           "reference": "xali_student_resources",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_xali_teacher_visual.py"
+        },
+        {
+          "level": "unit",
+          "reference": "xali_student_resources",
           "status": "direct",
           "test_path": "backend/tests/unit/test_model_metadata.py"
         },
@@ -40581,6 +41400,24 @@
           "level": "unit",
           "reference": "xali_student_resources",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_xali_teacher_context.py"
+        },
+        {
+          "level": "unit",
+          "reference": "xali_student_resources",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_xali_visual_content.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "xali_student_resources",
+          "status": "domain",
+          "test_path": "frontend/e2e/xali-teacher-visual.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "xali_student_resources",
+          "status": "domain",
           "test_path": "frontend/src/components/xali/XaliMascot.test.tsx"
         },
         {
@@ -40588,6 +41425,12 @@
           "reference": "xali_student_resources",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/student-feedback/XaliFeedbackStory.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "xali_student_resources",
+          "status": "domain",
+          "test_path": "frontend/src/modules/xali/XaliPage.teacher.test.tsx"
         },
         {
           "level": "unit",

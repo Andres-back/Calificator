@@ -22,7 +22,9 @@ import {
   Maximize2,
 } from 'lucide-react';
 import { Button, Card, Modal, RichContent, Select, QueryError, QueryLoading } from '@/components/ui';
-import { getHistory, sendMessage, clearHistory, listEvaluacionesEntregadas, sendEvaluationMessage, generateEvaluationResource, listEvaluationResources } from './api';
+import { listEvaluacionesEntregadas, sendEvaluationMessage, generateEvaluationResource, listEvaluationResources } from './api';
+import { useTeacherConversation } from './useTeacherConversation';
+import { TeacherResponse } from './components/TeacherResponse';
 import { XaliAvatar } from './components/XaliAvatar';
 import { useMaterias } from '@/modules/materias/MateriaSelect';
 import { toApiError } from '@/lib/api';
@@ -31,9 +33,9 @@ import { useAuth } from '@/stores/auth';
 import type { ChatMessage, XaliEvaluacionEntregada, XaliStudentResource, XaliStudentResourceType } from '@/types/api';
 
 const TEACHER_SUGGESTIONS = [
-  { icon: '📋', text: 'Organiza una explicación sobre fracciones' },
-  { icon: '💧', text: 'Crea una actividad sobre el ciclo del agua' },
-  { icon: '📝', text: 'Propón preguntas para evaluar comprensión lectora' },
+  { icon: '📋', text: 'Ayúdame a explicar un tema de esta materia' },
+  { icon: '📐', text: 'Quiero preparar un ejercicio con un apoyo visual' },
+  { icon: '📝', text: 'Ayúdame a preparar preguntas para mi clase' },
   { icon: '✍️', text: 'Ayúdame a mejorar esta retroalimentación' },
   { icon: '📊', text: 'Propón una rúbrica sencilla' },
   { icon: '🪜', text: 'Diseña una explicación paso a paso' },
@@ -77,11 +79,8 @@ export function XaliPage() {
 
   const { data: materias = [] } = useMaterias();
   const [materiaId, setMateriaId] = useState('');
-  const { data: history, isLoading: loadingHistory, isError: historyError, error: historyQueryError, refetch: refetchHistory } = useQuery({
-    queryKey: ['xali-history', user?.id ?? 'anon', materiaId],
-    queryFn: () => getHistory(materiaId || undefined),
-    enabled: !!user?.id && !isStudent,
-  });
+  const teacher = useTeacherConversation(user?.id, materiaId, !isStudent);
+  const { isLoading: loadingHistory, isError: historyError, error: historyQueryError, refetch: refetchHistory } = teacher.history;
   const { data: entregadas = [], isLoading: loadingEntregadas } = useQuery({
     queryKey: ['xali-evaluaciones-entregadas', user?.id ?? 'anon'],
     queryFn: listEvaluacionesEntregadas,
@@ -89,11 +88,15 @@ export function XaliPage() {
     refetchOnWindowFocus: true,
   });
   const [evaluacionContextualId, setEvaluacionContextualId] = useState('');
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [studentMessages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
-  const [thinking, setThinking] = useState(false);
-  const [failedPrompt, setFailedPrompt] = useState<string | null>(null);
-  const [failedDetail, setFailedDetail] = useState('');
+  const [studentThinking, setThinking] = useState(false);
+  const [studentFailedPrompt, setFailedPrompt] = useState<string | null>(null);
+  const [studentFailedDetail, setFailedDetail] = useState('');
+  const messages = isStudent ? studentMessages : teacher.messages;
+  const thinking = isStudent ? studentThinking : teacher.thinking;
+  const failedPrompt = isStudent ? studentFailedPrompt : teacher.failedPrompt;
+  const failedDetail = isStudent ? studentFailedDetail : teacher.detail;
   const [isAtBottom, setIsAtBottom] = useState(true);
   const [resource, setResource] = useState<XaliStudentResource | null>(null);
   const [resourcePending, setResourcePending] = useState<XaliStudentResourceType | null>(null);
@@ -101,7 +104,31 @@ export function XaliPage() {
   const [resourceOpen, setResourceOpen] = useState(false);
   const endRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const composerRef = useRef<HTMLFormElement>(null);
   const reduceMotion = useReducedMotion();
+
+  useEffect(() => {
+    if (isStudent) return;
+    const composer = composerRef.current;
+    let frame: number | undefined;
+    const reveal = () => {
+      if (frame !== undefined) cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        if (composer?.contains(document.activeElement) && typeof composer.scrollIntoView === 'function') {
+          composer.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'instant' });
+        }
+      });
+    };
+    composer?.addEventListener('focusin', reveal);
+    window.visualViewport?.addEventListener('resize', reveal);
+    window.addEventListener('resize', reveal);
+    return () => {
+      composer?.removeEventListener('focusin', reveal);
+      window.visualViewport?.removeEventListener('resize', reveal);
+      window.removeEventListener('resize', reveal);
+      if (frame !== undefined) cancelAnimationFrame(frame);
+    };
+  }, [isStudent]);
 
   const evaluacionesConfirmadas = useMemo(
     () => entregadas.filter(
@@ -121,9 +148,7 @@ export function XaliPage() {
     enabled: isStudent && Boolean(user?.id) && Boolean(evaluacionContextualId) && Boolean(evaluacionContextual?.puede_chatear),
   });
 
-  useEffect(() => {
-    if (!isStudent && history) setMessages(history);
-  }, [history, isStudent]);
+  useEffect(() => { if (!isStudent) setInput(''); }, [materiaId, user?.id, isStudent]);
   useEffect(() => {
     if (!isStudent) return;
     if (!evaluacionesConfirmadas.some((item) => item.evaluacion_id === evaluacionContextualId)) {
@@ -156,6 +181,10 @@ export function XaliPage() {
   const send = async (text: string, appendUserMessage = true) => {
     const msg = text.trim();
     if (!msg || thinking) return;
+    if (!isStudent) {
+      if (teacher.history.isLoading || teacher.history.isError || teacher.clearing || teacher.checking || (teacher.failedPrompt && !teacher.canRetry)) return;
+      setInput(''); await teacher.send(msg); return;
+    }
     if (isStudent && !evaluacionContextual?.puede_chatear) {
       toast.error('Selecciona una evaluación ya confirmada por tu docente.');
       return;
@@ -169,9 +198,7 @@ export function XaliPage() {
     }
     setThinking(true);
     try {
-      const { respuesta } = isStudent
-        ? await sendEvaluationMessage(evaluacionContextual!.evaluacion_id, msg)
-        : await sendMessage(msg, materiaId || undefined);
+      const { respuesta } = await sendEvaluationMessage(evaluacionContextual!.evaluacion_id, msg);
       const responseText = respuesta?.trim();
       if (!responseText) throw new Error('Xali no devolvió una respuesta. Intenta nuevamente.');
       setMessages((m) => [...m, { id: 'a' + Date.now(), role: 'assistant', mensaje: responseText, created_at: new Date().toISOString() }]);
@@ -217,7 +244,7 @@ export function XaliPage() {
   };
 
   const reset = async () => {
-    if (!isStudent) await clearHistory(materiaId || undefined);
+    if (!isStudent) { if (await teacher.reset()) toast.success('Conversación borrada. Las otras materias se conservan.'); return; }
     setMessages([]);
     toast.success(isStudent ? 'Conversación reiniciada' : 'Historial borrado');
   };
@@ -287,7 +314,7 @@ export function XaliPage() {
             </Select>
           )}
           <Select id="xali-subject-context" aria-label="Contexto de materia" value={materiaId} onChange={(e) => setMateriaId(e.target.value)} className={cn('w-full sm:w-48', isStudent && 'bg-white text-slate-900 dark:bg-slate-950 dark:text-white')}>
-            <option value="">Todas</option>
+            <option value="">{isStudent ? 'Todas' : 'Conversación general'}</option>
             {materias.map((m) => (
               <option key={m.id} value={m.id}>
                 {m.nombre}
@@ -295,7 +322,7 @@ export function XaliPage() {
             ))}
           </Select>
           {messages.length > 0 && (
-            <Button variant="ghost" size="icon" onClick={reset} aria-label="Borrar historial de Xali" title="Borrar historial">
+            <Button variant="ghost" size="icon" onClick={reset} disabled={!isStudent && (teacher.thinking || teacher.clearing || teacher.checking)} aria-label="Borrar historial de Xali" title="Borrar esta conversación">
               <Trash2 className="h-4 w-4" aria-hidden="true" />
             </Button>
           )}
@@ -304,7 +331,8 @@ export function XaliPage() {
 
       {materiaContextual && (
         <div className="rounded-xl border border-sky-300 bg-sky-50 px-4 py-2.5 text-sm text-sky-900 dark:border-sky-500/40 dark:bg-sky-500/10 dark:text-sky-100" role="status">
-          Xali está usando el contexto de <strong>{materiaContextual.nombre}</strong>.
+          {isStudent ? 'Xali está usando el contexto de ' : 'Hablando sobre: '}<strong>{materiaContextual.nombre}</strong>
+          {!isStudent && <span>{materiaContextual.area ? ` · ${materiaContextual.area}` : ''}{materiaContextual.grado ? ` · Grado ${materiaContextual.grado}` : ''}</span>}.
         </div>
       )}
 
@@ -351,15 +379,16 @@ export function XaliPage() {
           error={historyQueryError}
           onRetry={() => void refetchHistory()}
           title="No fue posible cargar el historial"
-          description="Puedes reintentar o iniciar una conversación nueva."
+          description="Vuelve a cargar el historial antes de enviar otro mensaje."
         />
       )}
+      {!isStudent && teacher.detail && !failedPrompt && <p role="alert" className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 dark:bg-amber-900/20 dark:text-amber-200">{teacher.detail}</p>}
 
       <div className={cn(isStudent && 'grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_23rem]')}>
       {/* ── Chat ── */}
-      <Card className="relative flex min-h-[480px] flex-1 flex-col overflow-hidden border-brand-100 bg-surface/95 sm:min-h-[540px] dark:border-brand-500/20">
+      <Card className={cn('relative flex min-h-[480px] flex-1 flex-col overflow-hidden border-brand-100 bg-surface/95 sm:min-h-[540px] dark:border-brand-500/20', !isStudent && '!min-h-0 h-[min(68dvh,42rem)]')}>
         {/* Messages */}
-        <div ref={scrollRef} className="flex-1 space-y-4 overflow-y-auto px-4 py-5 sm:px-6" role="log" aria-label="Historial de conversación con Xali" aria-live="polite" onScroll={(event) => { const element = event.currentTarget; setIsAtBottom(element.scrollHeight - element.scrollTop - element.clientHeight < 48); }}>
+        <div ref={scrollRef} className="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-5 sm:px-6" role="log" aria-label="Historial de conversación con Xali" aria-live="polite" onScroll={(event) => { const element = event.currentTarget; setIsAtBottom(element.scrollHeight - element.scrollTop - element.clientHeight < 48); }}>
           {loadingHistory && messages.length === 0 && !thinking && (
             <QueryLoading label="Cargando historial…" className="flex min-h-[220px] items-center justify-center" />
           )}
@@ -433,18 +462,21 @@ export function XaliPage() {
                     <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-slate-500 text-xs font-bold text-white shadow-sm">
                       {initials}
                     </span>
+                  ) : isStudent ? (
+                    <XaliAvatar size="xs" mood="student" />
                   ) : (
-                    <XaliAvatar size="xs" mood={isStudent ? 'student' : 'teacher'} />
+                    <span className="hidden sm:block"><XaliAvatar size="xs" mood="teacher" /></span>
                   )}
                   <div
                     className={cn(
-                      'max-w-[80%] px-4 py-2.5 text-sm leading-relaxed shadow-sm',
+                      'min-w-0 px-4 py-2.5 text-sm leading-relaxed shadow-sm',
+                      !me && !isStudent ? 'w-full max-w-full' : 'max-w-[80%]',
                       me
                         ? 'whitespace-pre-wrap rounded-2xl rounded-br-md bg-brand-600 text-white'
                         : 'rounded-2xl rounded-bl-md border border-border bg-surface text-fg',
                     )}
                   >
-                    {me ? m.mensaje : <RichContent content={m.mensaje} variant="chat" />}
+                    {me ? m.mensaje : isStudent ? <RichContent content={m.mensaje} variant="chat" /> : <TeacherResponse key={`${user?.id}:${materiaId}:${m.id}`} content={m.mensaje} />}
                   </div>
                 </motion.div>
               );
@@ -456,8 +488,9 @@ export function XaliPage() {
               <XaliAvatar size="xs" mood="thinking" />
               <div className="max-w-[90%] rounded-2xl rounded-bl-md border border-rose-300 bg-rose-50 px-4 py-3 text-sm text-rose-900 dark:border-rose-500/40 dark:bg-rose-500/10 dark:text-rose-100">
                 <p>{failedDetail || 'No pude responder ese mensaje. Revisa tu conexión o vuelve a intentarlo.'}</p>
-                <Button size="sm" variant="outline" className="mt-3" onClick={() => void send(failedPrompt, false)}>
-                  <RefreshCw className="h-4 w-4" aria-hidden="true" /> Reintentar mensaje
+                <Button size="sm" variant="outline" className="mt-3" disabled={!isStudent && teacher.checking}
+                  onClick={() => { if (isStudent) void send(failedPrompt, false); else if (teacher.canRetry) void teacher.retry(); else void teacher.reviewHistory(); }}>
+                  <RefreshCw className="h-4 w-4" aria-hidden="true" /> {isStudent ? 'Reintentar mensaje' : teacher.canRetry ? 'Enviar de nuevo' : 'Revisar historial'}
                 </Button>
               </div>
             </div>
@@ -484,7 +517,7 @@ export function XaliPage() {
           )}
           <div ref={endRef} />
         </div>
-        {!isAtBottom && (
+        {!isAtBottom && (isStudent || messages.length > 0) && (
           <Button type="button" size="sm" variant="secondary" className="absolute bottom-24 right-4 z-10 shadow-md" onClick={() => scrollToLatest()}>
             <ArrowDown className="h-4 w-4" aria-hidden="true" /> Ir al mensaje más reciente
           </Button>
@@ -492,8 +525,9 @@ export function XaliPage() {
 
         {/* Input */}
         <form
+          ref={composerRef}
           onSubmit={(e) => { e.preventDefault(); send(input); }}
-          className="flex items-center gap-3 border-t border-border bg-surface/80 p-4"
+          className="flex shrink-0 items-center gap-3 border-t border-border bg-surface/80 p-4"
         >
           <input
             value={input}
@@ -503,13 +537,13 @@ export function XaliPage() {
             aria-describedby="xali-input-help"
             autoComplete="off"
             disabled={contextualBlocked}
-            className="focus-ring min-h-12 flex-1 rounded-xl border border-border bg-surface-2 px-4 py-3 text-sm outline-none placeholder:text-muted/60 transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100 disabled:cursor-not-allowed disabled:opacity-60 dark:focus:ring-brand-500/20"
+            className="focus-ring min-h-12 min-w-0 flex-1 rounded-xl border border-border bg-surface-2 px-4 py-3 text-base outline-none placeholder:text-muted/60 transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100 disabled:cursor-not-allowed disabled:opacity-60 dark:focus:ring-brand-500/20"
           />
           <Button
             type="submit"
             size="icon"
             loading={thinking}
-            disabled={!input.trim() || contextualBlocked}
+            disabled={!input.trim() || contextualBlocked || (!isStudent && (teacher.history.isLoading || teacher.history.isError || teacher.clearing || teacher.checking || Boolean(teacher.failedPrompt && !teacher.canRetry)))}
             title="Enviar mensaje"
             aria-label="Enviar mensaje a Xali"
             className="!rounded-xl"

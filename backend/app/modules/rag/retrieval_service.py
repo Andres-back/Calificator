@@ -25,6 +25,7 @@ async def search_chunks(
     limit: int = 8,
     *,
     exclude_types: tuple[str, ...] = (),
+    include_global_catalog: bool = True,
 ) -> list[dict]:
     """Devuelve solo fragmentos del mismo proveedor, modelo, dimensión y versión."""
     filters: list[str] = ["c.embedding_vec IS NOT NULL"]
@@ -36,6 +37,8 @@ async def search_chunks(
             "OR (c.tipo = 'dba' AND c.profesor_id IS NULL AND s.profesor_id IS NULL))"
         )
         params["materia_id"] = str(materia_id)
+        if not include_global_catalog:
+            filters.append('c.materia_id = CAST(:materia_id AS uuid) AND s.materia_id = CAST(:materia_id AS uuid)')
     if profesor_id:
         filters.append(
             "((c.profesor_id = CAST(:profesor_id AS uuid) OR c.profesor_id IS NULL) "
