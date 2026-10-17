@@ -46,3 +46,11 @@ No se midió velocidad ni corrección pedagógica de un LLM real. La validación
 Converge realizado sobre el código actual y los artefactos aprobados, sin ampliar alcance: 11 requisitos, cinco criterios de éxito, 13 escenarios de aceptación, ocho decisiones del plan y ocho principios constitucionales revisados. Cero hallazgos missing/partial/contradicts/unrequested de código; no se añadió una fase vacía ni se reescribieron tareas por Converge. Inventario regenerado mecánicamente para las nuevas referencias de pruebas y catálogo de specs actualizado; revisión documental del propietario 009 enlaza este incremento. No hay hooks de extensiones registrados. PR y CI no equivalen a autorización de fusión o despliegue.
 
 Cierre local: `python -m pytest tests/spec_governance -q`: 41 aprobadas; inventario vigente con 573 superficies. Revalidación final del módulo Xali backend: 51 aprobadas y Ruff sin incidencias. Frontend Xali: 30 aprobadas, tipos y lint sin avisos; comprobación adicional 360 px claro en ambos motores: dos E2E aprobadas. No se alteró el alcance para lograr estos resultados.
+
+## Corrección autorizada del PR #217 — 2026-10-17
+
+CI del HEAD `cf3cf60859e012e67065604c78cf9e4b0ea3c0df`: backend, contenedores y gobernanza aprobados; 223 de 224 E2E aprobadas. La única fallida exigía altura visual exactamente ≥44 y recibió `43.999969482421875` para un botón CSS de 44 px. No fue un fallo de calificación ni de IA.
+
+El usuario autorizó corregir y actualizar el PR. La comprobación ahora exige altura CSS ≥44 sin tolerancia y usa polling para la altura visual con margen exclusivo de 0,001 px. Regresión sintética por motor: acepta el caso subpíxel, rechaza CSS de 43 px y rechaza una transformación que reduzca de verdad el área táctil. No se redondean indiscriminadamente valores hacia arriba, no se omiten pruebas y no cambian componentes, estilos, datos o APIs del producto.
+
+Revalidación: 16 E2E aprobadas con Chromium/WebKit, 360/390/1440 y ambos temas; tipos y lint estricto aprobados. Inventario sincronizado, manteniendo 573 superficies. El nuevo HEAD debe pasar su propia ejecución de CI: no hereda los verdes del anterior. Sin autorización de fusión ni despliegue.

@@ -47,3 +47,7 @@ Contexto docente autorizado independiente del RAG, historial aislado por usuario
 8. Preservar HTTP/formato público y datos anteriores. Las limitaciones de matemática del modelo se explican: validación garantiza representación de datos, no corrección absoluta de toda explicación pedagógica.
 
 Diseño completo en [research.md](./research.md), [data-model.md](./data-model.md), [contrato](./contracts/chat-visual.md) y [validación](./quickstart.md). La validación usa respuestas simuladas y no acredita la precisión pedagógica de un modelo real ni un despliegue en producción.
+
+## Corrección de medición E2E autorizada
+
+El usuario autorizó el 2026-10-17 corregir el fallo de CI por altura visual `43.999969482421875` para un control CSS de 44 px. La prueba conserva el mínimo estricto en CSS, espera la medición con polling y admite exclusivamente 0,001 px de precisión en DOMRect. Una regresión sintética debe rechazar tanto CSS de 43 px como una transformación que reduzca realmente el área táctil. No cambia componentes, estilos ni comportamiento del producto; sin omitir pruebas, fusionar o desplegar.

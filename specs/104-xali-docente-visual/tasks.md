@@ -37,3 +37,7 @@
 ## Dependencias y estrategia
 
 T001 → T002 → T003; T004 precede T005–T007; T003/T007 y T008 preceden T009/T010. T011 precede T012; T012 integra historias 1/2. T013/T014 comprueban el conjunto antes de T015/T016. Corpus y pruebas de backend/frontend pueden prepararse independientemente, sin delegación requerida. MVP verificable: contexto autorizado sin documentos; incremento siguiente: visuales; cierre: recuperación y móvil. No se omiten tareas del alcance aprobado.
+
+## Corrección de CI aprobada — 2026-10-17
+
+- [x] T017 Corregir la medición subpíxel de E2E sin rebajar los 44 px CSS, añadir regresión que rechaza controles realmente pequeños y repetir Chromium/WebKit; registrar resultado y actualizar PR #217 sin fusionar ni desplegar (FR-007, SC-003).

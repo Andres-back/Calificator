@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Locator, type Page } from '@playwright/test';
 
 test.use({ reducedMotion: 'reduce' });
 const corpus = JSON.parse(readFileSync(resolve(process.cwd(), '../specs/104-xali-docente-visual/fixtures/visuales.json'), 'utf8')) as { validos: Array<{ titulo: string }> };
@@ -8,6 +8,26 @@ const wire = (visuals: unknown[]) => `Ejemplos para preparar la clase.\n\n\`\`\`
 const teacher = { id: 't1', nombre: 'Docente sintético', rol: 'profesor', estado: 'activo', email: 'teacher@example.test', permissions: ['xali.use', 'subjects.read'] };
 const subjects = [{ id: 'm1', profesor_id: 't1', nombre: 'Matemáticas', area: 'Matemáticas', grado: '6', estado: 'activa' }, { id: 'm2', profesor_id: 't1', nombre: 'Lenguaje', area: 'Lenguaje', grado: '4', estado: 'activa' }];
 const message = (id: string, mensaje: string) => ({ id, role: 'assistant', mensaje, created_at: '2026-10-17T12:00:00Z' });
+
+async function expectTouchTarget(button: Locator, timeout = 10_000) {
+  // Keep the CSS minimum strict. Transformed DOMRects can lose a fraction of a
+  // pixel (CI observed 43.999969 for a 44px button); do not round smaller targets up.
+  await expect.poll(() => button.evaluate((element) => Number.parseFloat(getComputedStyle(element).height)), { timeout })
+    .toBeGreaterThanOrEqual(44);
+  await expect.poll(async () => (await button.boundingBox())?.height ?? 0, { timeout })
+    .toBeGreaterThanOrEqual(44 - 0.001);
+}
+
+test('104 tamaño táctil conserva 44px y solo tolera precisión subpíxel', async ({ page }) => {
+  await page.setContent('<button style="box-sizing:border-box;height:44px;transform:scaleY(0.9999993)">Control sintético</button>');
+  const button = page.getByRole('button', { name: 'Control sintético' });
+  await expectTouchTarget(button);
+  await button.evaluate((element) => { element.style.height = '43px'; });
+  await expect(expectTouchTarget(button, 200)).rejects.toThrow();
+  await button.evaluate((element) => { element.style.height = '44px'; element.style.transform = 'scaleY(0.98)'; });
+  await expect(expectTouchTarget(button, 200)).rejects.toThrow();
+});
+
 async function prepare(page: Page) {
   const writes: string[] = [];
   await page.route('**/api/**', (route) => {
@@ -38,7 +58,7 @@ for (const width of [360, 390, 1440]) for (const mode of ['light', 'dark']) {
     for (const visual of corpus.validos) {
       const button = page.getByRole('button', { name: `Ampliar ${visual.titulo}`, exact: true });
       await expect(button).toBeVisible();
-      expect((await button.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+      await expectTouchTarget(button);
       // Pointer stability on Windows WebKit can stall at desktop retina sizes.
       if (browserName === 'webkit') { await button.focus(); await button.press('Enter'); } else await button.click();
       const dialog = page.getByRole('dialog', { name: visual.titulo, exact: true });
