@@ -39,7 +39,10 @@ describe('EvaluationPreviewModal', () => {
     expect(document.querySelector('iframe')).toBeNull();
     expect(mocks.document).toHaveBeenCalledWith(evaluation.id, 'pdf', false, expect.any(AbortSignal));
     expect(screen.queryByRole('button', { name: /editar/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Descargar PDF' })).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Opciones' }));
     expect(screen.getByRole('button', { name: 'Descargar PDF' })).toBeEnabled();
+    expect(screen.getByRole('link', { name: /Ver evaluación completa/ })).toHaveAttribute('target', '_blank');
     await user.click(screen.getByRole('button', { name: 'Cerrar diálogo' }));
     expect(close).toHaveBeenCalledOnce();
     view.unmount();
@@ -50,9 +53,11 @@ describe('EvaluationPreviewModal', () => {
     const user = userEvent.setup();
     const view = render(<EvaluationPreviewModal evaluation={evaluation} canViewSolutions onClose={vi.fn()} />);
     await screen.findByTitle('Formato final de la evaluación');
+    await user.click(screen.getByRole('button', { name: 'Opciones' }));
     await user.selectOptions(screen.getByRole('combobox', { name: 'Versión del documento' }), 'solutions');
     await waitFor(() => expect(mocks.document).toHaveBeenCalledWith(evaluation.id, 'pdf', true, expect.any(AbortSignal)));
     view.rerender(<EvaluationPreviewModal evaluation={{ ...evaluation, id: 'evaluation-2' }} canViewSolutions onClose={vi.fn()} />);
+    await user.click(screen.getByRole('button', { name: 'Opciones' }));
     await waitFor(() => expect(screen.getByRole('combobox')).toHaveValue('student'));
     expect(mocks.document).toHaveBeenLastCalledWith('evaluation-2', 'pdf', false, expect.any(AbortSignal));
   });
@@ -78,6 +83,7 @@ describe('EvaluationPreviewModal', () => {
     const user = userEvent.setup();
     render(<EvaluationPreviewModal evaluation={evaluation} canViewSolutions onClose={vi.fn()} />);
     await screen.findByTitle('Formato final de la evaluación');
+    await user.click(screen.getByRole('button', { name: 'Opciones' }));
     mocks.document.mockRejectedValueOnce(httpError('Conserva este material en PDF'));
     await user.click(screen.getByRole('button', { name: 'Descargar Word' }));
     expect(await screen.findByRole('alert')).toHaveTextContent('Conserva este material en PDF');

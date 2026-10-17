@@ -4,6 +4,10 @@
 
 ## Escenarios de usuario y pruebas
 
+### Evolución 102: lectura completa
+
+[102-camara-visor-completo](../102-camara-visor-completo/spec.md), issue #212, mantiene los documentos autorizados PDF/Word y solucionario restringido, con lectura amplia de todas las páginas y opciones de descarga a petición. Sin modificar evaluación guardada, respuestas, notas ni API.
+
 ### Historia 1 - Flujo principal (Prioridad: P1)
 Como profesor, necesito crear, digitalizar, editar, asignar y controlar evaluaciones para obtener un resultado claro, seguro y trazable.
 

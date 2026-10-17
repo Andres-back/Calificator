@@ -662,7 +662,7 @@ test('busca y selecciona estudiantes con fluidez en móvil', async ({ page }) =>
   await picker.fill('angela');
   await page.getByRole('option', { name: 'Ángela Zambrano' }).click();
   await expect(page.getByText('Seleccionado: Ángela Zambrano')).toBeVisible();
-  await expect(page.getByRole('button', { name: /Elegir fotos o PDF/i })).toBeEnabled();
+  await expect(page.getByRole('button', { name: /Subir fotos o PDF/i })).toBeEnabled();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBeTruthy();
   await page.screenshot({ path: '../output/playwright/mobile-grading/student-search-360x800.png', fullPage: true });
   await page.setViewportSize({ width: 390, height: 844 });
@@ -706,7 +706,7 @@ test('captura contextual en cuatro acciones, conserva paquete al refrescar y no 
   expect((await candidate.boundingBox())!.height).toBeGreaterThanOrEqual(44);
   await candidate.press('Enter');
   const picker = page.waitForEvent('filechooser');
-  await page.getByRole('button', { name: /Elegir fotos o PDF/ }).click();
+  await page.getByRole('button', { name: /Subir fotos o PDF/ }).click();
   await (await picker).setFiles(file);
   const send = page.getByRole('button', { name: 'Enviar a calificar', exact: true });
   await expect(send).toBeEnabled();

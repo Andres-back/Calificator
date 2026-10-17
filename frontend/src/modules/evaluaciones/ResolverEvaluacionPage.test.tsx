@@ -390,7 +390,7 @@ describe('ResolverEvaluacionPage', () => {
     renderPage();
 
     const file = new File(['imagen'], 'taller.jpg', { type: 'image/jpeg' });
-    await screen.findByRole('button', { name: /Elegir fotos o PDF/ });
+    await screen.findByRole('button', { name: /Subir fotos o PDF/ });
     const fileInput = document.querySelector('input[type="file"][multiple]') as HTMLInputElement;
     await user.upload(fileInput, file);
     await user.click(screen.getByRole('button', { name: 'Revisar y entregar 1 hoja' }));

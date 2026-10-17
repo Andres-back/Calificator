@@ -4,6 +4,10 @@
 
 ## Escenarios de usuario y pruebas
 
+### Evolución 102: captura explícita
+
+[102-camara-visor-completo](../102-camara-visor-completo/spec.md), issue #212, añade cámara visible con confirmación y recuperación por archivos. Capturar no califica; se conservan identidad de entrega, límites, calidad, orden, envío explícito, evidencias y permisos del docente/estudiante.
+
 ### Historia 1 - Flujo principal (Prioridad: P1)
 Como profesor o estudiante, necesito calificar, revisar, publicar, consultar y reclamar notas trazables para obtener un resultado claro, seguro y trazable.
 

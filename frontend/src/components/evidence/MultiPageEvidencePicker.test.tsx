@@ -28,6 +28,34 @@ function cameraInput(): HTMLInputElement {
 }
 
 describe('MultiPageEvidencePicker', () => {
+  it('stops pending camera access and rejects late native files after context changes', async () => {
+    let allow!: (stream: MediaStream) => void;
+    const stop = vi.fn();
+    const getUserMedia = vi.fn(() => new Promise<MediaStream>((resolve) => { allow = resolve; }));
+    Object.defineProperty(navigator, 'mediaDevices', { configurable: true, value: { getUserMedia } });
+    const onChange = vi.fn();
+    const view = render(<MultiPageEvidencePicker contextKey="e1:s1" pages={[]} onChange={onChange} />);
+    await userEvent.click(screen.getByRole('button', { name: /^Tomar foto/ }));
+    expect(getUserMedia).toHaveBeenCalledOnce();
+    view.rerender(<MultiPageEvidencePicker contextKey="e1:s2" pages={[]} onChange={onChange} />);
+    await act(async () => allow({ getTracks: () => [{ stop }] } as unknown as MediaStream));
+    expect(stop).toHaveBeenCalledOnce();
+    fireEvent.change(cameraInput(), { target: { files: [new File(['late'], 'old.jpg', { type: 'image/jpeg' })] } });
+    expect(onChange).not.toHaveBeenCalled();
+    expect(screen.queryByRole('dialog', { name: 'Tomar foto' })).not.toBeInTheDocument();
+  });
+
+  it('rejects stale image-quality results from another context', async () => {
+    let finish!: (result: null) => void;
+    analyze.mockReturnValue(new Promise<null>((resolve) => { finish = resolve; }));
+    const onChange = vi.fn();
+    const view = render(<MultiPageEvidencePicker contextKey="e1:s1" pages={[]} onChange={onChange} />);
+    fireEvent.change(filesInput(), { target: { files: [new File(['photo'], 'old.jpg', { type: 'image/jpeg' })] } });
+    const previous = onChange.mock.calls[0][0] as EvidencePage[];
+    view.rerender(<MultiPageEvidencePicker contextKey="e1:s2" pages={previous} onChange={onChange} />);
+    await act(async () => finish(null));
+    expect(onChange).toHaveBeenCalledTimes(1);
+  });
   it('ignores a late file or camera selection after input has been disabled', () => {
     const onChange = vi.fn();
     const { rerender } = render(<MultiPageEvidencePicker pages={[]} onChange={onChange} />);
