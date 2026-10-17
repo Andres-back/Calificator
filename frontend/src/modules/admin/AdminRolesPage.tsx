@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Archive, Check, Copy, Eye, History, KeyRound, Pencil, Plus, ShieldCheck, Trash2, UsersRound } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { Badge, Button, Card, ConfirmDialog, EmptyState, Input, Modal, QueryError, Skeleton } from '@/components/ui';
+import { Badge, Button, Card, ConfirmDialog, EducationalIcon, EmptyState, Input, Modal, QueryError, Skeleton } from '@/components/ui';
 import { queryKeys } from '@/config/queryKeys';
 import { toApiError } from '@/lib/api';
 import { useAuth } from '@/stores/auth';
@@ -139,7 +139,7 @@ export function AdminRolesPage() {
         <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <Badge className="border-white/20 bg-white/15 text-white">Acceso modular</Badge>
-            <h1 className="mt-3 font-display text-3xl font-extrabold">Roles y permisos</h1>
+            <div className="mt-3 flex items-center gap-3"><EducationalIcon name="admin-roles" className="h-12 w-12" /><h1 className="min-w-0 font-display text-2xl font-extrabold sm:text-3xl">Roles y permisos</h1></div>
             <p className="mt-2 max-w-2xl text-indigo-50">Combina funciones de docencia, estudiantes y administración. Los permisos nunca reemplazan la propiedad de materias o evidencias.</p>
           </div>
           {canManage && <Button className="border-white/30 bg-white text-brand-900 hover:bg-indigo-50" onClick={() => setDraft({ ...emptyDraft })}>

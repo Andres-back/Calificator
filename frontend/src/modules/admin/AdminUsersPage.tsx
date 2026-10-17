@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { CheckCircle2, Pencil, Plus, Search, ShieldCheck, Trash2, UserCog, UserRoundCheck, XCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { Badge, Button, Card, ConfirmDialog, EmptyState, Input, Modal, QueryError, Skeleton } from '@/components/ui';
+import { Badge, Button, Card, ConfirmDialog, EducationalIcon, EmptyState, Input, Modal, QueryError, Skeleton } from '@/components/ui';
 import { toApiError } from '@/lib/api';
 import { useAuth } from '@/stores/auth';
 import type { User, UserRole, UserStatus } from '@/types/api';
@@ -102,7 +102,7 @@ export function AdminUsersPage() {
     <div className="space-y-6">
       <section className="rounded-3xl border border-brand-200 bg-gradient-to-br from-brand-800 via-brand-600 to-sky-600 p-6 text-white shadow-lg sm:p-8">
         <Badge className="border-white/20 bg-white/15 text-white">Administración</Badge>
-        <h1 className="mt-3 font-display text-3xl font-extrabold">Usuarios y roles</h1>
+        <div className="mt-3 flex items-center gap-3"><EducationalIcon name="admin-users" className="h-12 w-12" /><h1 className="min-w-0 font-display text-2xl font-extrabold sm:text-3xl">Usuarios y roles</h1></div>
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between"><p className="mt-2 max-w-2xl text-brand-50">Aprueba solicitudes docentes y administra accesos sin perder el historial académico.</p>{canCreate && <Button className="border-white/30 bg-white text-brand-900 hover:bg-brand-50" onClick={openCreate}><Plus className="h-4 w-4" /> Crear usuario</Button>}</div>
       </section>
 
