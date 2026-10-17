@@ -36,3 +36,7 @@ La primera ejecución E2E mostró todos los escenarios completados pero su proce
 Límites: WebKit Windows simula vídeo porque no reproduce canvas MediaStream; Chromium usa stream de canvas, ambos sintéticos. No se probaron webcams USB físicas ni cámara/teclado físicos de Android/iPhone. No se accedió a producción, estudiantes reales, claves ni APIs institucionales. La propuesta de Xali #215 está documentada, no implementada.
 
 Converge: nueve FR, cuatro SC, ocho principios constitucionales y siete decisiones del plan revisados; cero brechas accionables, sin fase vacía añadida. Implement cerró las once tareas tras registrar pruebas y revisión. No hay excepciones a la constitución ni autorización de fusión/despliegue inferida.
+
+## Corrección de gobernanza tras CI
+
+CI del HEAD inicial detectó un registro omitido en `ALL_SPECS`: faltaba 103. Converge añadió T012; se registró la especificación y se regeneró el inventario mediante el script oficial. Se mantienen 573 superficies; la deriva correspondía a referencias/cobertura de tests y digest de fuentes, sin añadir endpoints ni cambiar permisos. Se conserva la comparación estricta de especificaciones, sin exclusiones ni controles desactivados. La primera repetición local detectó únicamente la propia T012 aún abierta (40 pruebas correctas); se cerró tras completar registro/regeneración y se repitió el control completo.

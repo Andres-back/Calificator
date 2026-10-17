@@ -29,3 +29,7 @@
 ## Dependencias y entrega
 
 T001 → T002 → T003 → T004 → T005. T006 puede prepararse independientemente de cámaras tras T001; T007 depende de T006 y T008 depende de T007; T009 depende de T008. T010/T011 requieren ambas historias completas. No delegación adicional prevista. US1 se prueba independientemente mediante tres cámaras sintéticas; US2 mediante navegación/roles y assets. Implementación incremental con cámara primero e identidad después, sin migraciones ni despliegue manual.
+
+## Fase 5: Convergencia de CI
+
+- [x] T012 Registrar Spec 103 en tests/spec_governance/test_spec_baseline.py, regenerar specs/system-inventory/current.json y repetir tests/spec_governance e inventario --check, conservando validadores sin exclusiones (Constitución VII, plan: gobernanza; partial).
