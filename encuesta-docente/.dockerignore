@@ -1,0 +1,8 @@
+*
+!Dockerfile
+!requirements.txt
+!app.py
+!manage.py
+!settings.json
+!public/
+!public/**
