@@ -5,7 +5,13 @@ No utiliza usuarios, tablas, API keys ni servicios de IA de la aplicacion academ
 
 ## Respuestas
 
-El panel /encuesta-docente/admin/ requiere sus propias credenciales HTTP Basic.
+El panel /encuesta-docente/admin/ muestra un formulario de inicio de sesion propio.
+Usa ADMIN_USER y ADMIN_PASSWORD del .env existente, sin cambiar las credenciales.
+Las sesiones duran ocho horas; se guardan solo como hashes en SQLite y se revocan
+al pulsar Salir. La cookie es HttpOnly, Secure en HTTPS, SameSite=Strict y queda
+limitada a /encuesta-docente/admin. Ingresar y salir requieren CSRF del mismo origen.
+HTTP Basic preautenticado sigue disponible para las comprobaciones de administracion,
+pero los navegadores ya no dependen de su ventana emergente de credenciales.
 Permite buscar por docente, codigo, institucion, area, grado, etiquetas o notas;
 filtrar por institucion, estado, etiqueta, interes en demo, version y fecha;
 ordenar por fecha/nombre/institucion; leer cada respuesta y descargar su constancia.

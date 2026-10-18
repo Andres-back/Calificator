@@ -38,7 +38,7 @@ Rutas después de instalar el proxy:
 
 Estas son rutas de instalación previstas, no prueba de publicación. El código no despliega automáticamente en el VPS. Si usa un subdominio independiente, configure `PUBLIC_ORIGIN` con ese origen y `BASE_PATH=` vacío; adapte el proxy para `/`.
 
-El administrador usa autenticación HTTP Basic del navegador sobre HTTPS. El CSV excluye identidad y firma, pero sigue siendo **codificado, no garantizadamente anónimo**: los textos libres y combinaciones de contexto pueden identificar personas. Las constancias completas son privadas. No adjuntar datos reales a issues, PR, capturas públicas o el repositorio.
+El administrador inicia sesión desde un formulario web sobre HTTPS con las credenciales del `.env`. La sesión dura ocho horas y se revoca al pulsar Salir; no depende de la ventana emergente de HTTP Basic del navegador. El CSV excluye identidad y firma, pero sigue siendo **codificado, no garantizadamente anónimo**: los textos libres y combinaciones de contexto pueden identificar personas. Las constancias completas son privadas. No adjuntar datos reales a issues, PR, capturas públicas o el repositorio.
 
 ## Operación y conservación
 

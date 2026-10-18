@@ -22,6 +22,19 @@ body{background:radial-gradient(ellipse at 0 8%,#eef2ff 0,transparent 45%),#f8fa
 .options.compact{grid-template-columns:repeat(2,minmax(0,1fr))}.options.compact .option:last-child:nth-child(odd){grid-column:1 / -1}
 
 .admin-page{background:#f8fafc}
+.admin-account{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.login-page{background:#f8fafc;min-height:100dvh;display:grid;place-items:center;padding:32px 16px}
+.login-layout{width:min(100%,440px)}
+.login-layout>.brand{margin-bottom:24px}
+.login-form{padding:28px;border:1px solid var(--line);background:white;border-radius:8px}
+.login-form h1{font-size:25px;line-height:1.3;letter-spacing:0;margin:16px 0 28px}
+.login-form .field-label{margin:0 0 20px}
+.login-form input[type=text],.login-form input[type=password]{display:block;width:100%;min-height:48px;margin-top:8px;border:1px solid #cbd5e1;border-radius:8px;padding:11px 12px;font-size:16px}
+.login-form .button{width:100%;font-size:15px;min-height:48px}
+.login-form .check{align-items:center;font-size:14px}
+.login-form .check input{margin:0;width:18px;height:18px}
+#login-message{padding:12px;color:#9f1239;background:#fff1f2;border:1px solid #fecdd3;border-radius:6px;font-size:14px}
+.login-back{display:inline-flex;align-items:center;min-height:44px;margin-top:18px;font-size:14px}
 .admin-page .admin-layout{max-width:1320px;margin:28px auto;padding:0 28px 48px}
 .admin-heading{display:flex;align-items:center;justify-content:space-between;gap:16px}
 .admin-page h1{font-size:28px;line-height:1.3;letter-spacing:0;margin:26px 0 20px}

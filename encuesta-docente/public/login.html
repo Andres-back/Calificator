@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>Ingresar · Encuesta XCalificator</title>
+  <link rel="icon" href="../branding/logo-favicon.png" type="image/png">
+  <link rel="stylesheet" href="../styles.css">
+  <script type="module" src="../login.js"></script>
+</head>
+<body class="login-page">
+  <main class="login-layout">
+    <a class="brand" href="../"><span class="brand-logo"><img src="../branding/logo-full.webp" alt="XCalificator" width="210" height="210"></span></a>
+    <form id="login-form" class="login-form" method="post">
+      <span class="tag">ACCESO PRIVADO</span>
+      <h1>Administración de la encuesta</h1>
+      <p id="login-message" role="alert" hidden></p>
+      <label class="field-label" for="username">Usuario<input type="text" id="username" name="username" autocomplete="username" maxlength="180" autocapitalize="none" spellcheck="false" required></label>
+      <label class="field-label" for="password">Contraseña<input type="password" id="password" name="password" autocomplete="current-password" maxlength="1024" required></label>
+      <label class="check"><input type="checkbox" id="show-password"><span>Mostrar contraseña</span></label>
+      <button type="submit" id="login-submit" class="button primary">Ingresar</button>
+    </form>
+    <a class="login-back" href="../">Volver a la encuesta</a>
+  </main>
+</body>
+</html>

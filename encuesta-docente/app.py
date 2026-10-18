@@ -15,13 +15,14 @@ import time
 import uuid
 from contextlib import contextmanager
 from datetime import date, datetime, timezone
-from http.cookies import SimpleCookie
+from http.cookies import CookieError, SimpleCookie
 from pathlib import Path
 from urllib.parse import urlsplit
 
 ROOT = Path(__file__).resolve().parent
 MAX_BODY = 384 * 1024
 REVIEW_STATUSES = {'pending', 'reviewed', 'follow_up', 'excluded'}
+ADMIN_SESSION_SECONDS = 8 * 60 * 60
 
 
 class Invalid(ValueError):
@@ -205,6 +206,7 @@ class SurveyApplication:
             db.execute('CREATE TABLE IF NOT EXISTS responses (id TEXT PRIMARY KEY, created_at TEXT NOT NULL, payload_hash TEXT NOT NULL, receipt_hash TEXT NOT NULL, receipt_json TEXT NOT NULL)')
             # Researcher annotations do not alter the signed response or its hash.
             db.execute('CREATE TABLE IF NOT EXISTS response_reviews (response_id TEXT PRIMARY KEY REFERENCES responses(id) ON DELETE CASCADE, status TEXT NOT NULL, tags_json TEXT NOT NULL, notes TEXT NOT NULL, updated_at TEXT NOT NULL)')
+            db.execute('CREATE TABLE IF NOT EXISTS admin_sessions (token_hash TEXT PRIMARY KEY, expires_at INTEGER NOT NULL, credential_version TEXT NOT NULL)')
         if os.name != 'nt':
             os.chmod(self.database.parent, 0o700)
             os.chmod(self.database, 0o600)
@@ -246,20 +248,46 @@ class SurveyApplication:
             stamp, nonce, signature = token.split('.')
             expected = hmac.new(self.secret.encode(), (stamp + '.' + nonce).encode(), hashlib.sha256).hexdigest()
             return hmac.compare_digest(signature, expected) and 0 <= time.time() - int(stamp) < 43200 and environ.get('HTTP_ORIGIN') == self.origin
-        except (KeyError, ValueError):
+        except (KeyError, ValueError, CookieError):
             return False
+
+    def credentials_ok(self, user, password):
+        return bool(self.admin_user and len(self.admin_password) >= 20
+                    and isinstance(user, str) and isinstance(password, str)
+                    and hmac.compare_digest(user.encode(), self.admin_user.encode())
+                    and hmac.compare_digest(password.encode(), self.admin_password.encode()))
+
+    def credential_version(self):
+        return hmac.new(self.secret.encode(), ('admin:' + self.admin_user + ':' + self.admin_password).encode(), hashlib.sha256).hexdigest()
+
+    def admin_cookie(self, environ):
+        try:
+            token = SimpleCookie(environ.get('HTTP_COOKIE', ''))['survey_admin'].value
+            return token if re.fullmatch(r'[A-Za-z0-9_-]{64}', token) else ''
+        except (KeyError, CookieError):
+            return ''
+
+    def session_cookie(self, token='', *, clear=False):
+        secure = '; Secure' if self.origin.startswith('https://') else ''
+        return f'survey_admin={token}; Path={self.base}/admin; HttpOnly; SameSite=Strict; Max-Age={0 if clear else ADMIN_SESSION_SECONDS}{secure}'
 
     def authorized(self, environ):
         if not self.admin_user or len(self.admin_password) < 20:
             return False
         try:
             value = environ.get('HTTP_AUTHORIZATION', '')
-            if not value.startswith('Basic '):
-                return False
-            user, password = base64.b64decode(value[6:], validate=True).decode().split(':', 1)
-            return hmac.compare_digest(user.encode(), self.admin_user.encode()) and hmac.compare_digest(password.encode(), self.admin_password.encode())
+            if value.startswith('Basic '):
+                user, password = base64.b64decode(value[6:], validate=True).decode().split(':', 1)
+                if self.credentials_ok(user, password):
+                    return True
         except (ValueError, UnicodeError):
+            pass
+        token = self.admin_cookie(environ)
+        if not token:
             return False
+        with self.connect() as db:
+            row = db.execute('SELECT expires_at, credential_version FROM admin_sessions WHERE token_hash=?', (hashlib.sha256(token.encode()).hexdigest(),)).fetchone()
+        return bool(row and row[0] > time.time() and hmac.compare_digest(row[1], self.credential_version()))
 
     def __call__(self, environ, start_response):
         def respond(status, value, mime='application/json; charset=utf-8', extra=()):
@@ -312,11 +340,48 @@ class SurveyApplication:
                 if row[0] != payload_hash:
                     return respond('409 Conflict', {'error': 'Este envío ya se guardó con otro contenido. Conserve su constancia; contacte a los investigadores para corregirlo.'})
                 return respond('200 OK', json.loads(row[1]))
+            if path == '/admin/login':
+                if method == 'GET':
+                    if self.authorized(environ):
+                        return respond('302 Found', b'', extra=[('Location', self.base + '/admin/')])
+                    return respond('200 OK', (ROOT / 'public/login.html').read_bytes(), 'text/html; charset=utf-8')
+                if method != 'POST':
+                    return respond('405 Method Not Allowed', {'error': 'Método no permitido.'})
+                if not self.csrf_ok(environ):
+                    return respond('403 Forbidden', {'error': 'Actualice la página e intente ingresar de nuevo.'})
+                if self.limited(environ, admin=True):
+                    return respond('429 Too Many Requests', {'error': 'Demasiados intentos. Espere cinco minutos.'})
+                length = int(environ.get('CONTENT_LENGTH') or '0')
+                if not 1 <= length <= 4096:
+                    return respond('413 Content Too Large', {'error': 'Revise los datos de acceso.'})
+                if environ.get('CONTENT_TYPE', '').split(';')[0].strip().lower() != 'application/json':
+                    return respond('415 Unsupported Media Type', {'error': 'Se requiere JSON.'})
+                credentials = json.loads(environ['wsgi.input'].read(length).decode('utf-8'))
+                if not isinstance(credentials, dict) or set(credentials) != {'username', 'password'}:
+                    raise Invalid('Revise los datos de acceso.')
+                if not self.credentials_ok(credentials['username'], credentials['password']):
+                    return respond('401 Unauthorized', {'error': 'Usuario o contraseña incorrectos.'})
+                token = secrets.token_urlsafe(48)
+                now = int(time.time())
+                with self.connect() as db:
+                    db.execute('DELETE FROM admin_sessions WHERE expires_at<=?', (now,))
+                    db.execute('INSERT INTO admin_sessions VALUES (?, ?, ?)', (hashlib.sha256(token.encode()).hexdigest(), now + ADMIN_SESSION_SECONDS, self.credential_version()))
+                return respond('200 OK', {'redirect': self.base + '/admin/'}, extra=[('Set-Cookie', self.session_cookie(token))])
             if path == '/admin' or path.startswith('/admin/'):
                 if not self.authorized(environ):
+                    if path in ('/admin', '/admin/') and method == 'GET':
+                        return respond('302 Found', b'', extra=[('Location', self.base + '/admin/login')])
                     if self.limited(environ, admin=True):
                         return respond('429 Too Many Requests', {'error': 'Demasiados intentos. Espere cinco minutos.'})
-                    return respond('401 Unauthorized', {'error': 'Acceso reservado a investigadores.'}, extra=[('WWW-Authenticate', 'Basic realm="Investigación XCalificator", charset="UTF-8"')])
+                    return respond('401 Unauthorized', {'error': 'Inicie sesión para consultar las respuestas.'})
+                if path == '/admin/logout' and method == 'POST':
+                    if not self.csrf_ok(environ):
+                        return respond('403 Forbidden', {'error': 'Actualice la página antes de salir.'})
+                    token = self.admin_cookie(environ)
+                    if token:
+                        with self.connect() as db:
+                            db.execute('DELETE FROM admin_sessions WHERE token_hash=?', (hashlib.sha256(token.encode()).hexdigest(),))
+                    return respond('204 No Content', b'', extra=[('Set-Cookie', self.session_cookie(clear=True))])
                 if path.startswith('/admin/review/') and method == 'PUT':
                     if not self.csrf_ok(environ):
                         return respond('403 Forbidden', {'error': 'Actualice la página antes de guardar la revisión.'})
@@ -401,7 +466,7 @@ class SurveyApplication:
                 if path in ('/admin', '/admin/'):
                     return respond('200 OK', (ROOT / 'public/admin.html').read_bytes(), 'text/html; charset=utf-8')
                 return respond('404 Not Found', {'error': 'Ruta no encontrada.'})
-            files = {'/': ('index.html', 'text/html'), '/app.js': ('app.js', 'text/javascript'), '/admin.js': ('admin.js', 'text/javascript'), '/styles.css': ('styles.css', 'text/css'), '/branding/logo-full.webp': ('branding/logo-full.webp', 'image/webp'), '/branding/logo-favicon.png': ('branding/logo-favicon.png', 'image/png'), '/branding/inter-latin-400-normal.woff2': ('branding/inter-latin-400-normal.woff2', 'font/woff2'), '/branding/inter-latin-600-normal.woff2': ('branding/inter-latin-600-normal.woff2', 'font/woff2'), '/branding/plus-jakarta-sans-latin-600-normal.woff2': ('branding/plus-jakarta-sans-latin-600-normal.woff2', 'font/woff2')}
+            files = {'/': ('index.html', 'text/html'), '/app.js': ('app.js', 'text/javascript'), '/admin.js': ('admin.js', 'text/javascript'), '/login.js': ('login.js', 'text/javascript'), '/styles.css': ('styles.css', 'text/css'), '/branding/logo-full.webp': ('branding/logo-full.webp', 'image/webp'), '/branding/logo-favicon.png': ('branding/logo-favicon.png', 'image/png'), '/branding/inter-latin-400-normal.woff2': ('branding/inter-latin-400-normal.woff2', 'font/woff2'), '/branding/inter-latin-600-normal.woff2': ('branding/inter-latin-600-normal.woff2', 'font/woff2'), '/branding/plus-jakarta-sans-latin-600-normal.woff2': ('branding/plus-jakarta-sans-latin-600-normal.woff2', 'font/woff2')}
             if path in files and method == 'GET':
                 name, mime = files[path]
                 return respond('200 OK', (ROOT / 'public' / name).read_bytes(), mime + '; charset=utf-8')

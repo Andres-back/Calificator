@@ -10,7 +10,8 @@ let records = [], schema, activeRecord, activeReceipt, saving = false;
 
 async function request(url, options = {}) {
   const response = await fetch(url, {cache:'no-store', credentials:'same-origin', ...options});
-  const value = await response.json();
+  if (response.status === 401) location.replace(new URL('login', root));
+  const value = response.status === 204 ? {} : await response.json();
   if (!response.ok) throw new Error(value.error || 'No fue posible consultar las respuestas.');
   return value;
 }
@@ -122,6 +123,14 @@ $('#record-dialog').addEventListener('cancel', event => { if (saving) event.prev
 $('#download-record').addEventListener('click', () => downloadReceipt(activeReceipt, schema));
 $('#print-record').addEventListener('click', () => printReceipt(activeReceipt, schema));
 $('#refresh').addEventListener('click', load);
+$('#logout').addEventListener('click', async () => {
+  $('#logout').disabled = true;
+  try {
+    const session = await request(new URL('../api/session', root));
+    await request(new URL('logout', root), {method:'POST', headers:{'X-Survey-CSRF':session.csrf}});
+    location.replace(new URL('login', root));
+  } catch (error) { $('#admin-status').textContent = error.message; $('#logout').disabled = false; }
+});
 $('#filters').addEventListener('submit', event => event.preventDefault());
 $('#filters').addEventListener('input', render);
 $('#filters').addEventListener('reset', () => setTimeout(render, 0));
