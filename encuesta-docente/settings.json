@@ -1,8 +1,8 @@
 {
   "instrument_code": "LR-CR-01",
-  "instrument_version": "3.3-web",
-  "consent_version": "CI-NEC-01-v2-2026-10-18",
-  "title": "Necesidades docentes de calificación y retroalimentación",
+  "instrument_version": "4.0-web-breve",
+  "consent_version": "CI-NEC-01-v3-2026-10-18",
+  "title": "Diagnóstico breve de calificación y gestión de evidencias",
   "research_title": "XCalificator: impacto de la automatización de la evaluación con LLM, OCR y RAG en la eficiencia docente y la calidad de la retroalimentación",
   "researchers": [
     "Samir Andrés Ardila Cabrera",

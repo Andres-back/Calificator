@@ -1,91 +1,45 @@
-# Fundamentación de la elección del cuestionario LR-CR-01
+# Fundamentación de la elección y reducción del cuestionario
 
-Fecha de elaboración de este respaldo: 18 de octubre de 2026.
+Respaldo elaborado el 18 de octubre de 2026. Versión actual: **LR-CR-01 4.0-web-breve**. Es un instrumento de elaboración propia para el diagnóstico de XCalificator; no es una escala publicada o validada. Estas referencias sustentan decisiones de diseño y no acreditan que fueran consultadas antes de crear o aplicar los formularios originales.
 
-Actualización de alcance: la versión actual **3.3-web** recoge tiempos exclusivamente manuales y conserva una sola pregunta de invitación a demostración o piloto. Retira exposición previa, intención de uso y primera función a probar. Las menciones a esos campos en versiones anteriores describen su historial; no forman parte del cuestionario actual.
+## Por qué este instrumento
 
-## Qué se puede afirmar
+La propuesta sitúa el diagnóstico de necesidades en el Análisis de ADDIE y prevé entrevistas semiestructuradas a cinco docentes. El cuestionario permite recoger de manera asincrónica información comparable sobre contexto, carga manual y archivo de evaluaciones. Mantiene los temas del diagnóstico, pero el cambio de técnica debe explicarse: no permite la repregunta propia de una entrevista.
 
-LR-CR-01 es un **cuestionario de elaboración propia, específico para el diagnóstico de necesidades de XCalificator**, con preguntas cerradas, valoraciones ordinales y preguntas abiertas. El documento en papel se identifica como versión 3.0; su primera adaptación digital, como 3.1-web, y la ampliación de gestión de evidencias y reportes, como 3.2-web. No se ha identificado como copia o adaptación de una escala publicada previamente. No debe atribuirse a un autor externo ni describirse como instrumento estandarizado o validado.
+NASA (2023, sección 4.1.1.2.2) contempla encuestas y entrevistas para identificar necesidades, expectativas y restricciones de los interesados. Se aplica ese principio de ingeniería al proyecto; NASA no diseñó ni validó estas preguntas. [Fuente primaria](https://www.nasa.gov/reference/4-1-stakeholder-expectations-definition/).
 
-Este respaldo explicita ahora la pertinencia del instrumento y los criterios para mejorarlo. No acredita que las fuentes aquí reunidas se consultaran antes de construir o aplicar la versión en papel. Tampoco demuestra que se ejecutaran todas las etapas de diseño que recomiendan. En la tesis se debe conservar esa cronología.
+Artino et al. (2014) ofrecen un proceso de diseño de cuestionarios educativos que incluye revisión de literatura, construcción de ítems, revisión experta, entrevistas cognitivas y pilotaje. Sirve para planificar la revisión pendiente; citarlo no demuestra que todas esas etapas ya se ejecutaron. [Artículo y DOI](https://doi.org/10.3109/0142159X.2014.889814).
 
-## Por qué un cuestionario para este propósito
+## Por qué se redujo a 19 preguntas
 
-La propuesta aprobada ubica en la fase de Análisis de ADDIE la identificación de necesidades docentes, tiempos de calificación y variables. En su diagnóstico institucional propone entrevistas semiestructuradas a cinco docentes sobre formatos, tiempos y expectativas de retroalimentación. LR-CR-01 aborda esos temas y agrega prioridades, flujo esperado y restricciones operativas. La coincidencia temática sustenta su pertinencia; **el cambio de entrevista a cuestionario debe explicarse**, pues no son técnicas equivalentes. Una entrevista permite repreguntar y profundizar; la modalidad autoadministrada presenta los mismos enunciados y alternativas a todos, con menor posibilidad de aclaración inmediata. Las preguntas abiertas amplían la respuesta, pero no sustituyen la repregunta.
+El propósito actual es documentar la problemática, no especificar cada flujo del programa ni evaluar aceptación posterior. Por ello se conservaron contexto, tiempo manual, retroalimentación, criterios, organización y recuperación de evidencia, reportes, necesidades e invitación opcional. Se retiraron preguntas técnicas y repetidas y se dejó una sola respuesta abierta opcional.
 
-Desde la ingeniería de sistemas, NASA (2023, sección 4.1.1.2.2) reconoce encuestas, entrevistas y discusiones como medios para recoger expectativas, necesidades y restricciones de los interesados. La elección de LR-CR-01 es congruente con esa actividad de elicitación: preguntar a docentes qué necesitan que haga el sistema y bajo qué condiciones lo utilizarían. Se traslada el principio general al contexto educativo; no se afirma que NASA haya diseñado o avalado estos ítems. [Fuente metodológica de ingeniería](https://www.nasa.gov/reference/4-1-stakeholder-expectations-definition/).
+AAPOR recomienda reducir la carga mediante cuestionarios cortos y limitar preguntas difíciles o abiertas, además de preprobar el instrumento. Esa recomendación sustenta la reducción; no prescribe 19 preguntas ni garantiza una duración de 5–7 minutos. [Buenas prácticas de AAPOR](https://aapor.org/standards-and-ethics/best-practices/).
 
-La modalidad web permite la respuesta asincrónica y registra cada selección junto con su versión. Es una razón operativa del proyecto, no evidencia de superioridad psicométrica frente al papel. Debe comprobarse que la conectividad y la comprensión permitan responder; la dificultad de acceso no puede interpretarse como desinterés del docente. Conservar la modalidad en el análisis evita asumir equivalencia entre papel y web.
+Pew Research Center muestra que la redacción y el orden de las preguntas pueden afectar las respuestas. Por ello se pregunta primero por prácticas y dificultades, se incluyen alternativas sin dificultad o N/A y se reserva la invitación al programa para el final. El branding identifica al proyecto; no debe acompañarse de afirmaciones de mejora demostrada. [Guía de redacción](https://www.pewresearch.org/writing-survey-questions/).
 
-## Fundamentos del diseño y alcance de las citas
+## Matriz de coherencia
 
-**Diseño del cuestionario.** Artino et al. (2014) proponen un proceso que articula revisión de literatura, aportes de la población, redacción de ítems, revisión experta, entrevistas cognitivas y pilotaje. Esta guía orienta la evaluación de claridad y cobertura del LR-CR-01 y permite identificar pasos pendientes. Proviene de investigación en educación médica: su transferencia aquí es metodológica, sin asumir validación en docentes escolares. Consultar la tabla 1 y los pasos 4 a 7. [Texto académico](https://pmc.ncbi.nlm.nih.gov/articles/PMC4059192/).
+| Necesidad de evidencia | Preguntas actuales | Uso defendible | Comprobación adicional |
+|---|---|---|---|
+| Contexto del trabajo docente | 1–6 | Describir el grupo consultado y la unidad de la última evaluación manual | Registro institucional cuando corresponda |
+| Carga temporal y retroalimentación | 7–10 | Distribuciones de rangos y frecuencias declaradas, diferenciando procedencia | Tiempos exactos comparables en el piloto y calidad de comentarios |
+| Criterios y vínculo con la nota | 11 y 15 | Práctica declarada de uso y consulta de criterios | Verificación técnica y concordancia con referencia docente |
+| Archivo y búsqueda de evidencia | 12–14 | Medios usados y presencia o ausencia de dificultades | Tareas observadas de organización y búsqueda |
+| Informes por estudiante | 16–17 | Necesidad declarada de seguimiento y apoyo | Verificar exactitud/completitud y uso de reportes |
+| Necesidades no previstas | 18 | Categorías cualitativas de respuestas reales | Revisión de codificación y anonimización |
+| Reclutamiento voluntario | 19 | Interés en recibir una invitación | Información y consentimiento correspondientes al piloto |
 
-**Preguntas cerradas y abiertas.** Pew Research Center (s. f.) explica que los formatos producen información diferente y que redacción, alternativas y orden pueden afectar las respuestas. Esto fundamenta combinar categorías comparables con espacios donde el docente exponga necesidades no incluidas. También orienta comprobar exclusión entre alternativas y evitar preguntas ambiguas. No demuestra que todos los ítems actuales estén libres de sesgo. [Guía de diseño](https://www.pewresearch.org/writing-survey-questions/).
+Las frecuencias individuales son ordinales, no un puntaje psicométrico global. Su análisis exige interpretar los anclajes de cada pregunta; Sullivan y Artino (2013) explican las particularidades del análisis de ítems tipo Likert. [Artículo](https://doi.org/10.4300/JGME-5-4-18).
 
-**Valoraciones ordinales.** Sullivan y Artino (2013) distinguen el orden de las categorías de una distancia numérica necesariamente igual y discuten los límites de resumir respuestas con una media. En este diagnóstico se priorizan conteos y distribuciones por ítem, con denominadores explícitos. Es una elección analítica para esta muestra y propósito, no una prohibición universal de métodos paramétricos. Las preguntas categóricas de flujo no son escalas de acuerdo y sus códigos no se promedian. [Artículo académico](https://pmc.ncbi.nlm.nih.gov/articles/PMC3886444/).
+Boateng et al. (2018) presentan etapas de desarrollo y validación de escalas. Esta web no acredita esas etapas ni sustituye revisión de contenido o comprobación de comprensión. [Artículo](https://doi.org/10.3389/fpubh.2018.00149).
 
-**Fundamentación y validación son distintas.** Boateng et al. (2018) diferencian generación de ítems, evaluación de contenido, preprueba y evaluación de las propiedades de una escala. Por ello, una bibliografía pertinente o una aplicación funcional no bastan para declarar validez o fiabilidad. El LR-CR-01 se utiliza como conjunto descriptivo de preguntas; no se ha justificado una puntuación global de “necesidad”, “confianza” o “aceptación”. Consultar tabla 1 y fases 1 a 3. [Artículo académico](https://doi.org/10.3389/fpubh.2018.00149).
+## Pendientes y límites
 
-## Matriz de coherencia: propósito, dimensión y uso
+Los formularios de docentes ya recogidos son evidencia de aplicación, no de validación automática. No se ha acreditado con acta una revisión experta del cuestionario ni la comprensión y duración de la nueva versión. La revisión de la rúbrica del programa es un objeto distinto.
 
-La correspondencia siguiente es una justificación analítica del proyecto. Las referencias respaldan el enfoque general, no la validación particular de cada pregunta.
+Se debe preprobar la versión breve, registrar el tiempo real, documentar cambios y analizar respuestas por versión y fecha. No afirmar que necesidades recogidas durante el piloto precedieron al desarrollo. No generalizar una muestra voluntaria a todos los colegios. Los rangos no acreditan ahorro ni reemplazan la comparación manual/asistida.
 
-| Pregunta que necesita resolver el estudio | Bloque del LR-CR-01 | Tipo de información | Uso permitido | Respaldo |
-|---|---|---|---|---|
-| ¿En qué condiciones evalúan los docentes? | Cabecera y sección 1 | Institución, asignatura, carga, formatos y conectividad | Delimitar contexto y restricciones; documentar fecha de aplicación | Propuesta: fase Análisis; NASA, 2023 |
-| ¿Qué tiempo requiere su proceso manual? | Sección 2; método y sesión agregados en web | Minutos manuales por actividad y procedencia del dato | Construir línea base identificada; separar estimación y cronometraje, sin tiempos asistidos | Propuesta: tiempos actuales; diseño de registro propio |
-| ¿Qué dificultades encuentran? | Sección 3, ocho ítems | Valoraciones ordinales por situación | Describir frecuencia/gravedad percibida por ítem | Artino et al., 2014; Sullivan y Artino, 2013 |
-| ¿Qué funciones priorizan? | Sección 4, diecisiete ítems y lista narrativa en 3.2-web | Prioridad y funciones de mayor impacto | Orientar y contrastar requisitos; identificar desacuerdo | NASA, 2023; Pew Research Center, s. f. |
-| ¿Cómo conservan y recuperan evidencia y preparan seguimiento? | `evidence.*` y prioridades 4.16-4.17, agregadas en 3.2-web | Práctica reciente, dificultad y necesidad de información | Documentar el problema sin asumirlo; contrastar consulta e informes | Aplicación al proyecto del enfoque de NASA, 2023; elaboración propia |
-| ¿Cómo debe intervenir el docente? | Sección 5 | Preferencias ante notas, ilegibilidad y revisión | Definir escenarios y control docente esperado | NASA, 2023 |
-| ¿Qué retroalimentación esperan? | Sección 6 | Tipo de comentario y revisión antes de entrega | Formular necesidades de retroalimentación | Propuesta: expectativas; Artino et al., 2014 |
-| ¿Qué condiciones de operación y explicación necesitan? | Secciones 7 y 8 | Latencia esperada, recuperación, evidencia y acuerdo | Especificar restricciones y describir actitudes, sin confundirlas con desempeño real | NASA, 2023; Sullivan y Artino, 2013 |
-| ¿Qué quedó fuera de las opciones? | Sección 9 y observaciones | Ejemplos, errores inaceptables y necesidades en palabras del docente | Categorizar necesidades adicionales, contradicciones y casos críticos | Pew Research Center, s. f. |
-| ¿Desea recibir una invitación? | Ítem 10.3, único de sección 10 en 3.3-web | Interés en contacto para demostración o piloto | Invitar voluntariamente; no acreditar participación efectiva ni consentimiento para nuevas mediciones | Propósito de reclutamiento del proyecto |
+TAM se reserva para fundamentar otro instrumento de aceptación después de la experiencia de uso. La encuesta actual no mide satisfacción con XCalificator ni permite concluir eficacia del programa.
 
-Los fundamentos pedagógicos del contenido —rúbricas, evidencia, supervisión y retroalimentación— se desarrollan en la revisión bibliográfica del objetivo 1. Se debe enlazar esa revisión con los requisitos concretos, conservando la diferencia entre literatura que propone una función y docentes que efectivamente la requieren. Las valoraciones posteriores a la implementación sirven también para contrastar y refinar requisitos; no prueban que los requisitos iniciales surgieran de una encuesta anterior inexistente.
-
-## Por qué este instrumento y no una escala genérica
-
-El propósito reúne formatos de evaluación, carga, conectividad, tiempos, ilegibilidad, revisión, exportación y necesidades no previstas. Una medida global de satisfacción no contesta por sí sola esas preguntas operativas. Por eso es defendible emplear un cuestionario específico de diagnóstico y evaluar posteriormente satisfacción, calidad de retroalimentación y concordancia mediante registros adecuados a cada resultado.
-
-No se ha documentado una comparación sistemática de todos los instrumentos existentes ni que LR-CR-01 sea el mejor disponible. La formulación defendible es **elección pertinente al propósito y al contexto**, no superioridad demostrada ni inexistencia de alternativas. Las razones operativas se declaran como decisiones del proyecto, no como resultados de artículos externos.
-
-## Qué respaldo existe y qué falta
-
-| Evidencia | Situación acreditada |
-|---|---|
-| Correspondencia con los temas de diagnóstico de la propuesta | Documentada arriba; cambio de técnica identificado |
-| Referencias para justificar elección y diseño | Identificadas y contrastadas en este documento, con fecha de elaboración |
-| Respuestas de docentes reales | Seis cuestionarios de Fray Plácido revisados; uno incompleto. Es aplicación y diagnóstico, no validación automática |
-| Registro de ambigüedades y adaptación | Revisión consolidada de los originales y cambios de 3.0 a 3.1-web documentados |
-| Pruebas del software de encuesta | Verifican navegación, guardado, consentimiento y firma; no comprensión ni validez de las preguntas |
-| Revisión de contenido por expertos del cuestionario | No acreditada con acta o valoraciones. La revisión de la rúbrica del sistema es otro objeto |
-| Entrevistas cognitivas o preprueba documentada de la versión web | Pendientes de acreditar con docentes; no presentar pruebas automáticas como pilotaje metodológico |
-| Evidencia psicométrica de puntuaciones compuestas | No disponible; no se propone construir una puntuación total |
-
-Para una revisión de contenido, registrar quién revisa, fecha, experiencia pertinente y valoración de pertinencia, claridad y cobertura por ítem, con comentarios y decisión tomada. Para comprobar comprensión, pedir a docentes que expliquen con sus palabras qué entienden y cómo eligieron la respuesta; conservar incidencias, duración y cambios. Estas actividades son recomendaciones para completar evidencia, no procedimientos ya ejecutados. No se exige convertir este diagnóstico descriptivo en una nueva escala psicométrica si ese no es el objetivo.
-
-Hay puntos que requieren especial atención antes de ampliar la aplicación: D7 agrupa organizar, revisar y conservar papel; ciertos ítems de confianza combinan condiciones; la sección 3 reúne frecuencia y gravedad en sus anclajes. Una respuesta única no separa esos componentes. La selección principal de 6.1 y 10.2 reduce marcas múltiples, pero no recoge todas las preferencias secundarias. El listado de funciones puede orientar la atención hacia funcionalidades ya existentes. Es necesario probar comprensión y neutralidad; cualquier división de ítems o modificación de anclajes deberá crear una nueva versión y explicarse en el análisis, sin alterar respuestas históricas.
-
-## Redacción utilizable en la tesis
-
-> Para el diagnóstico de necesidades se empleó el cuestionario LR-CR-01, de elaboración propia y dirigido a los docentes participantes. Su elección se justifica por la necesidad de recoger información comparable sobre prácticas de evaluación, tiempos manuales, dificultades, prioridades y condiciones de trabajo, junto con respuestas abiertas que permitan identificar necesidades no previstas. La elicitación de expectativas mediante encuestas es congruente con la definición de necesidades de los interesados en ingeniería de sistemas (NASA, 2023). La revisión del diseño se apoya en las orientaciones de Artino et al. (2014) y Pew Research Center (s. f.). Las valoraciones se analizan por ítem, conservando su carácter ordinal y las omisiones (Sullivan y Artino, 2013). El instrumento se utiliza con alcance descriptivo; no se le atribuyen propiedades psicométricas no evaluadas (Boateng et al., 2018). El cuestionario difiere de las entrevistas semiestructuradas previstas en la propuesta, por lo que se declara el cambio de técnica. Las aplicaciones se identifican por su fecha real, sin presentarlas como diagnóstico anterior al desarrollo cuando no lo sean. La invitación opcional a demostración o piloto se distingue de la autorización para nuevas mediciones.
-
-Esta redacción justifica el uso; debe acompañarse de fechas, participantes, modalidad y procedimientos efectivamente realizados. No añade como ejecutada una revisión experta o preprueba pendiente.
-
-## Referencias
-
-Artino, A. R., Jr., La Rochelle, J. S., Dezee, K. J., y Gehlbach, H. (2014). Developing questionnaires for educational research: AMEE Guide No. 87. *Medical Teacher, 36*(6), 463–474. https://doi.org/10.3109/0142159X.2014.889814
-
-Boateng, G. O., Neilands, T. B., Frongillo, E. A., Melgar-Quiñonez, H. R., y Young, S. L. (2018). Best practices for developing and validating scales for health, social, and behavioral research: A primer. *Frontiers in Public Health, 6*, artículo 149. https://doi.org/10.3389/fpubh.2018.00149
-
-National Aeronautics and Space Administration [NASA]. (2023, 26 de julio). *4.1 Stakeholder expectations definition*. https://www.nasa.gov/reference/4-1-stakeholder-expectations-definition/ (Fecha de actualización de la página consultada.)
-
-Pew Research Center. (s. f.). *Writing survey questions*. https://www.pewresearch.org/writing-survey-questions/ (Consultado el 18 de octubre de 2026.)
-
-Sullivan, G. M., y Artino, A. R., Jr. (2013). Analyzing and interpreting data from Likert-type scales. *Journal of Graduate Medical Education, 5*(4), 541–542. https://doi.org/10.4300/JGME-5-4-18
-
-La propuesta aprobada, el cuestionario en papel y sus aplicaciones son fuentes internas del proyecto. Los artículos anteriores se añaden como respaldo metodológico de este instrumento y no modifican los recuentos cerrados de la revisión bibliográfica del objetivo 1.
+La fundamentación extensa y matriz de las versiones anteriores se conservan en [el historial de 3.3](versions/3.3-web/FUNDAMENTACION_INSTRUMENTO.md). La [metodología vigente](METODOLOGIA.md) y [cadena del problema](PLANTEAMIENTO_PROBLEMA.md) se refieren a las 19 preguntas actuales.

@@ -2,7 +2,7 @@
 
 Actualización: 18 de octubre de 2026. Alcance: necesidades docentes de calificación y gestión de evidencias, aunque el docente no participe en el piloto ni haya utilizado XCalificator.
 
-Versión actual **3.3-web**: esta encuesta pregunta solo por tiempos manuales, sin sugerencias automáticas, y deja una única invitación opcional a demostración o prueba piloto. La comparación con tiempos asistidos pertenece a otra recolección posterior; no se realiza en este cuestionario. Se conserva 3.2-web en el historial y se actualiza el consentimiento a v2.
+Versión actual **4.0-web-breve**: 19 preguntas, tiempos manuales por rangos declarados y una invitación opcional a demo/piloto. El tiempo exacto y su comparación con la herramienta se registran en otro instrumento. El consentimiento es v3; la versión ampliada y sus documentos se conservan en `versions/3.3-web/`.
 
 ## Formulación del problema y respuesta propuesta
 
@@ -14,12 +14,12 @@ La solución propuesta por XCalificator articula conservación y consulta de evi
 
 | Aspecto del problema | Información del cuestionario | Respuesta tecnológica que se contrasta | Comprobación posterior necesaria |
 |---|---|---|---|
-| Tiempo dedicado a calificar y retroalimentar | Sección 2 y dificultades de sección 3; distinguir tiempos cronometrados de estimados | Apoyo a la revisión y sugerencia de notas y comentarios | Comparación de sesiones manuales y asistidas con tareas y unidades comparables |
-| Organización de evaluaciones físicas | D7 y `evidence.storage` | Archivo vinculado a evaluación y estudiante | Comprobar asociación correcta, acceso autorizado y uso real; una fotografía cargada no basta |
-| Recuperación de una evaluación anterior | `evidence.retrieval` | Consulta del historial y apertura de evidencia (`4.16`) | Tarea de búsqueda con éxito/fracaso y, si se quiere afirmar ahorro de búsqueda, medición específica de su tiempo |
-| Relación entre nota y criterios | `evidence.traceability`, prioridades sobre rúbrica, evidencia y revisión | Criterios configurados por el docente y explicación de sugerencias | Trazabilidad y concordancia con referencia docente independiente; la utilidad percibida no demuestra exactitud |
-| Seguimiento por estudiante | `evidence.reporting` y prioridad de reporte (`4.17`) | Reportes con resultados y referencias a evidencia | Verificar correspondencia y completitud del reporte con los registros del estudiante |
-| Necesidad de apoyo tecnológico e invitación | Prioridades, flujo esperado y una pregunta opcional de interés en demostración o piloto | Herramienta que mantiene posibilidad de revisión y modificación docente | Aceptación y satisfacción después del uso en otro instrumento; el interés en una invitación no es satisfacción |
+| Tiempo dedicado a calificar y retroalimentar | Preguntas 7–10: rango manual y procedencia declarada; frecuencias de carga y retroalimentación | Apoyo a la revisión y sugerencia de notas y comentarios | Comparación de sesiones manuales y asistidas con tareas y unidades comparables |
+| Organización de evaluaciones físicas | Preguntas 12–13: `evidence.storage` y `evidence.organization` | Archivo vinculado a evaluación y estudiante | Comprobar asociación correcta, acceso autorizado y uso real; una fotografía cargada no basta |
+| Recuperación de una evaluación anterior | `evidence.retrieval` | Consulta del historial y apertura de evidencia (necesidad de apoyo en pregunta 17) | Tarea de búsqueda con éxito/fracaso y, si se quiere afirmar ahorro de búsqueda, medición específica de su tiempo |
+| Relación entre nota y criterios | Preguntas 11 y 15: uso y consulta de criterios | Criterios configurados por el docente y explicación de sugerencias | Trazabilidad y concordancia con referencia docente independiente; la utilidad percibida no demuestra exactitud |
+| Seguimiento por estudiante | Preguntas 16–17: `evidence.reporting` y apoyo en reportes | Reportes con resultados y referencias a evidencia | Verificar correspondencia y completitud del reporte con los registros del estudiante |
+| Necesidad de apoyo tecnológico e invitación | Pregunta 17 de necesidades y pregunta 19 de invitación opcional | Herramienta que mantiene posibilidad de revisión y modificación docente | Aceptación y satisfacción después del uso en otro instrumento; el interés en una invitación no es satisfacción |
 
 ## Texto para abrir el planteamiento, antes de completar el diagnóstico
 
@@ -29,19 +29,17 @@ Esta formulación presenta el problema que se estudia sin afirmar de antemano qu
 
 ## Cómo redactar después de analizar respuestas
 
-Utilizar número de docentes y denominador de cada pregunta; distinguir omisiones, N/A, colegio, área y experiencia previa con XCalificator. Ejemplos de estructura, sin cifras inventadas:
+Utilizar número de docentes y denominador de cada pregunta; distinguir omisiones, N/A, colegio y área; no se recoge exposición previa en esta versión. Ejemplos de estructura, sin cifras inventadas:
 
 - «Entre quienes necesitaron buscar una evaluación física, … docentes de … reportaron dificultad moderada, mucha dificultad o no haber logrado localizarla».
-- «En las sesiones manuales cronometradas disponibles, el tiempo de revisión fue …; se excluyeron de ese cálculo las estimaciones y los registros con alcance no aclarado».
-- «La consulta del historial recibió … y los reportes por estudiante …, con … respuestas no aplicables u omitidas».
+- «… docentes de … declararon dedicar entre … y … minutos a la última evaluación manual de un grupo; … basaron su respuesta en una estimación de memoria». No presentar ese intervalo como tiempo exacto verificado.
+- «… docentes indicaron necesitar apoyo para organizar evidencias y … para preparar informes; el denominador efectivo fue …».
 
 No completar esas expresiones hasta contar con los datos. La proporción que manifiesta una necesidad no es el porcentaje de mejora atribuible al programa. Tampoco una encuesta durante el piloto demuestra que el diagnóstico precedió al desarrollo.
 
 ## Cambios del cuestionario
 
-La versión **3.2-web** agrega cinco campos de práctica documental (`evidence.storage`, `.other`, `.retrieval`, `.traceability`, `.reporting`) y dos prioridades (`4.16` y `4.17`). El período de referencia de las nuevas preguntas es las últimas cuatro semanas de actividad docente. No se alteran las respuestas en papel ni las ya guardadas con versiones anteriores. Se conserva la configuración de 3.1-web en `versions/3.1-web/`; cada respuesta guardada conserva su propio esquema y consentimiento.
-
-Los cinco campos documentales y las dos prioridades son elaboraciones específicas del proyecto, no ítems tomados de una escala validada. Deben pasar la comprobación de comprensión y revisión de contenido descritas en [FUNDAMENTACION_INSTRUMENTO.md](FUNDAMENTACION_INSTRUMENTO.md). Se mantiene la finalidad de diagnóstico del consentimiento: no se agregan datos de estudiantes ni un nuevo procedimiento de investigación en el participante.
+La versión breve sustituye la lista técnica ampliada por cuatro bloques de diagnóstico. El [alcance metodológico](METODOLOGIA.md) detalla la correspondencia de las 19 preguntas y las limitaciones de comparación entre versiones. Los registros antiguos conservan sus enunciados, consentimientos y fechas originales.
 
 ## Fundamento y límites
 

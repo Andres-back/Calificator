@@ -1,14 +1,14 @@
 # Encuesta docente independiente de XCalificator
 
-Web pública sin cuenta para docentes, consentimiento informado, firma con dedo/ratón y confirmación accesible con nombre. Recoge el instrumento LR-CR-01 adaptado como **3.3-web**, conserva respuestas en SQLite y genera constancia imprimible. El acceso a resultados exige contraseña. Es una aplicación separada: no modifica ni requiere el backend, usuarios o base académica de XCalificator.
+Web pública sin cuenta, con la identidad visual de XCalificator: logotipo original, paleta índigo/violeta y tipografías locales Inter y Plus Jakarta Sans (licencias SIL OFL incluidas en `public/branding/`). No carga fuentes ni servicios externos.
 
-La adaptación y sus límites investigativos se documentan en [METODOLOGIA.md](METODOLOGIA.md). Cubre necesidades, preferencias y registro de línea base. No sustituye satisfacción posterior, comparación pareada de tiempos ni concordancia docente-IA.
+Versión actual **LR-CR-01 4.0-web-breve**: 19 preguntas en cuatro bloques, además de identificación, consentimiento y firma. Meta orientativa de **5–7 minutos**, pendiente de comprobar con docentes. Guarda en SQLite y genera constancia imprimible; resultados con acceso privado. Es una aplicación separada del backend académico.
 
-La [justificación de elección del cuestionario](FUNDAMENTACION_INSTRUMENTO.md) contiene referencias académicas, correspondencia entre preguntas y propósito y distinción entre fundamentación y validación.
+Recoge contexto, carga de calificación manual por rangos, dificultades, organización/consulta de evidencias y necesidades de apoyo. Una sola invitación final permite expresar interés en demo/piloto. No requiere haber usado el programa ni participar en el piloto. No evalúa satisfacción/TAM ni compara tiempos asistidos; la medición exacta del piloto es separada.
 
-El [planteamiento del problema](PLANTEAMIENTO_PROBLEMA.md) relaciona tiempo de calificación, organización y recuperación de evidencia, rúbricas e informes por estudiante con lo que se debe preguntar y comprobar. La versión 3.2-web amplía esos aspectos; conserva la configuración anterior en `versions/3.1-web/`.
+La reducción de 71 campos más seis actividades de tiempo a 19 preguntas está documentada en [METODOLOGIA.md](METODOLOGIA.md), junto con los límites de análisis. El consentimiento pasa a v3. Se conservan configuraciones anteriores y documentos de 3.3 en `versions/`; las respuestas previas mantienen su versión, esquema y autorización originales.
 
-La versión actual 3.3-web recoge **solo tiempos manuales**, sin XCalificator ni otra herramienta que sugiera notas o retroalimentación automáticamente. No pregunta si ya utilizó la herramienta, qué función probaría primero ni si participaría en mediciones de concordancia. La única invitación final pregunta si desea recibir contacto para una demostración o prueba piloto; no compromete su participación. El consentimiento pasa a v2 y se conserva 3.2-web en `versions/3.2-web/`.
+La [fundamentación](FUNDAMENTACION_INSTRUMENTO.md) respalda la elección y reducción sin atribuir validación no realizada. El [planteamiento del problema](PLANTEAMIENTO_PROBLEMA.md) relaciona diagnóstico, funciones y comprobaciones posteriores.
 
 ## Instalación en el mismo VPS
 

@@ -21,7 +21,7 @@ class SurveyTests(unittest.TestCase):
         self.assertEqual(status, 200)
         self.csrf = json.loads(response)['csrf']
         self.cookie = dict(headers)['Set-Cookie'].split(';')[0]
-        self.data = dict(submission_id=str(uuid.uuid4()), instrument_version=self.app.settings['instrument_version'], consent_version=self.app.settings['consent_version'], identity={'name':'DOCENTE PRUEBA SINTÉTICA', 'email':'test@example.org','phone':''}, answers={'institution':'COLEGIO DE PRUEBA','1.2':'1','9.1':'=NO_PUBLICAR()'}, times=[{'minutes':None,'method':None,'note':''} for _ in range(6)], measurement={'date':'','deliveries':None,'open_answers':None,'group':'','condition':'manual','scope':''}, consent={'participation':True,'data_processing':True,'signature_storage':False}, signature={'method':'typed','name':'DOCENTE PRUEBA SINTÉTICA','strokes':[]})
+        self.data = dict(submission_id=str(uuid.uuid4()), instrument_version=self.app.settings['instrument_version'], consent_version=self.app.settings['consent_version'], identity={'name':'DOCENTE PRUEBA SINTÉTICA', 'email':'test@example.org','phone':''}, answers={'institution':'COLEGIO DE PRUEBA','1.2':'1','9.1':'=NO_PUBLICAR()'}, times=[], measurement={'date':'','deliveries':None,'open_answers':None,'group':'','condition':'manual','scope':''}, consent={'participation':True,'data_processing':True,'signature_storage':False}, signature={'method':'typed','name':'DOCENTE PRUEBA SINTÉTICA','strokes':[]})
 
     def tearDown(self):
         self.temp.cleanup()
@@ -48,7 +48,7 @@ class SurveyTests(unittest.TestCase):
         self.assertEqual(receipt['response']['consent_version'],self.app.settings['consent_version'])
         self.assertEqual(len(receipt['consent_document']),8)
         self.assertEqual(receipt['schema_snapshot'],self.app.schema)
-        self.assertIsNone(receipt['response']['times'][0]['minutes'])
+        self.assertEqual(receipt['response']['times'],[])
 
     def test_retry_is_idempotent_and_content_change_is_rejected(self):
         first=self.submit();second=self.submit();self.assertEqual(first[2],second[2])
@@ -71,26 +71,32 @@ class SurveyTests(unittest.TestCase):
         self.assertEqual(status,200);self.assertNotIn(b'DOCENTE PRUEBA',body);self.assertNotIn(b'test@example',body)
         self.assertIn(b"'=NO_PUBLICAR()",body)
 
-    def test_numeric_time_needs_method_and_measured_context(self):
-        data=copy.deepcopy(self.data);data['times'][0]['minutes']=60
-        self.assertEqual(self.submit(data)[0],400)
-        data['times'][0]['method']='measured';self.assertEqual(self.submit(data)[0],400)
-        data['measurement'].update(date='2026-10-05',deliveries=24,group='Sexto B',condition='manual',scope='Solo revisión de entregas')
-        self.assertEqual(self.submit(data)[0],200)
-
-    def test_overlapping_time_requires_explanation(self):
-        data=copy.deepcopy(self.data);data['times'][0].update(minutes=50,method='estimated');data['times'][1].update(minutes=60,method='estimated')
-        self.assertEqual(self.submit(data)[0],400)
-        data['times'][1]['note']='Corresponde a otra evaluación.'
-        self.assertEqual(self.submit(data)[0],200)
-
-    def test_zero_missing_and_not_applicable_remain_distinct(self):
-        self.data['times'][0].update(minutes=0,method='estimated')
-        self.data['times'][1]['method']='not_performed'
-        self.data['answers'].update({'3.1':'na','3.2':'skip','3.3':None})
+    def test_time_ranges_preserve_provenance_without_inventing_minutes(self):
+        self.data['answers'].update({'manual.duration':'60to119','manual.basis':'measured','manual.deliveries':24})
         status,_,body=self.submit();self.assertEqual(status,200)
-        response=json.loads(body)['response'];self.assertEqual(response['times'][0]['minutes'],0);self.assertIsNone(response['times'][1]['minutes'])
-        self.assertEqual(response['answers']['3.1'],'na');self.assertEqual(response['answers']['3.2'],'skip');self.assertIsNone(response['answers']['3.3'])
+        response=json.loads(body)['response']
+        self.assertEqual(response['answers']['manual.duration'],'60to119')
+        self.assertEqual(response['answers']['manual.basis'],'measured')
+        self.assertEqual(response['times'],[])
+
+    def test_inconsistent_duration_and_basis_rejected(self):
+        for duration,basis in [(None,'measured'),('unknown','estimated'),('na','measured'),('60to119','na')]:
+            data=copy.deepcopy(self.data);data['answers'].update({'manual.duration':duration,'manual.basis':basis})
+            self.assertEqual(self.submit(data)[0],400)
+
+    def test_no_support_cannot_be_combined_with_support_needs(self):
+        self.data['answers']['needs.support']=['none','archive']
+        self.assertEqual(self.submit()[0],400)
+        self.data['answers']['needs.support']=['none']
+        self.assertEqual(self.submit()[0],200)
+
+    def test_missing_not_applicable_and_declined_remain_distinct(self):
+        self.data['answers'].update({'3.1':'na','3.2':'skip','rubric.use':None})
+        status,_,body=self.submit();self.assertEqual(status,200)
+        response=json.loads(body)['response']
+        self.assertEqual(response['answers']['3.1'],'na')
+        self.assertEqual(response['answers']['3.2'],'skip')
+        self.assertIsNone(response['answers']['rubric.use'])
 
     def test_double_mark_or_unknown_option_rejected(self):
         for value in [['1','5'],'6',{'value':'5'}]:
@@ -124,21 +130,39 @@ class SurveyTests(unittest.TestCase):
         self.assertEqual(self.request('/admin/',admin=True)[0],200)
 
     def test_evidence_neutral_responses_and_priorities_are_preserved(self):
-        self.data['answers'].update({'evidence.storage':['1','3'],'evidence.retrieval':'1','evidence.traceability':'na','evidence.reporting':'1','4.16':'1','4.17':'5'})
+        self.data['answers'].update({'evidence.storage':['1','3'],'evidence.retrieval':'1','evidence.traceability':'na','evidence.reporting':'1','needs.support':['archive','reports']})
         status,_,body=self.submit();self.assertEqual(status,200)
         answers=json.loads(body)['response']['answers']
         self.assertEqual(answers['evidence.retrieval'],'1')
         self.assertEqual(answers['evidence.traceability'],'na')
-        self.assertEqual(answers['4.16'],'1')
+        self.assertEqual(answers['needs.support'],['archive','reports'])
         status,_,body=self.request('/admin/export.csv',admin=True)
         self.assertEqual(status,200)
         self.assertIn('Ninguna dificultad'.encode(),body)
 
-    def test_evidence_other_requires_description(self):
-        self.data['answers']['evidence.storage']=['6']
+    def test_historical_receipt_exports_using_original_schema(self):
+        self.submit()
+        archived=self.app.settings.copy();archived.update(json.loads((Path(__file__).resolve().parents[1]/'versions/3.3-web/settings.json').read_text(encoding='utf-8')))
+        old_schema=json.loads((Path(__file__).resolve().parents[1]/'versions/3.3-web/schema.json').read_text(encoding='utf-8'))
+        with self.app.connect() as db:
+            row=db.execute('SELECT id,receipt_json FROM responses').fetchone()
+            receipt=json.loads(row[1]);receipt['schema_snapshot']=old_schema;receipt['settings']=archived
+            receipt['response']['instrument_version']='3.3-web'
+            receipt['response']['answers']={'institution':'COLEGIO DE PRUEBA','4.17':'5'}
+            receipt['response']['times']=[{'minutes':None,'method':None,'note':''} for _ in range(6)]
+            receipt['response']['times'][0].update(minutes=60,method='estimated')
+            db.execute('UPDATE responses SET receipt_json=? WHERE id=?',(canonical(receipt),row[0]))
+        status,_,body=self.request('/admin/export.csv',admin=True)
+        self.assertEqual(status,200)
+        self.assertIn(b'3.3-web',body)
+        self.assertIn(b'time.1.minutes',body)
+        self.assertIn(b'context.4.17',body)
+
+    def test_brief_instrument_does_not_accept_unrequested_chronometry(self):
+        self.data['times']=[{'minutes':30,'method':'estimated','note':''}]
         self.assertEqual(self.submit()[0],400)
-        self.data['answers']['evidence.other']='Archivo de la institución'
-        self.assertEqual(self.submit()[0],200)
+        self.data['times']=[];self.data['measurement']['deliveries']=24
+        self.assertEqual(self.submit()[0],400)
 
     def test_previous_instrument_is_not_silently_relabelled(self):
         self.data['instrument_version']='3.1-web'

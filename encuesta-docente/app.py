@@ -91,11 +91,19 @@ def validate(payload, schema, settings):
                 raise Invalid('Complete la institución educativa.')
     if '9' in answers.get('1.6', []) and not str(answers.get('1.6.other') or '').strip():
         raise Invalid('Describa el otro tipo de pregunta o quite la opción Otro.')
-    if '6' in answers.get('evidence.storage', []) and not str(answers.get('evidence.other') or '').strip():
+    if 'evidence.other' in questions and '6' in answers.get('evidence.storage', []) and not str(answers.get('evidence.other') or '').strip():
         raise Invalid('Describa el otro medio de conservación de evaluaciones o quite la opción Otro medio.')
+    support = answers.get('needs.support') or []
+    if 'none' in support and len(support) > 1:
+        raise Invalid('No necesito apoyo no puede combinarse con tareas que requieren apoyo.')
+    duration, basis = answers.get('manual.duration'), answers.get('manual.basis')
+    if basis in ('measured', 'estimated') and duration in (None, '', 'unknown', 'na', 'skip'):
+        raise Invalid('Indique un rango de tiempo o quite el método de obtención.')
+    if duration in ('lt30', '30to59', '60to119', '120to239', '240plus') and basis == 'na':
+        raise Invalid('Si indicó un tiempo, elija cómo lo obtuvo o deje esa pregunta sin responder.')
     times = payload['times']
-    if not isinstance(times, list) or len(times) != 6:
-        raise Invalid('Se esperan seis actividades de tiempo.')
+    if not isinstance(times, list) or len(times) != len(schema['time_activities']):
+        raise Invalid('Las actividades de tiempo no corresponden a esta versión.')
     methods = {x['value'] for x in schema['time_methods']} | {None}
     for item in times:
         if not isinstance(item, dict) or set(item) != {'minutes', 'method', 'note'} or item['method'] not in methods:
@@ -107,7 +115,7 @@ def validate(payload, schema, settings):
                 raise Invalid('Indique minutos válidos para cada actividad estimada o cronometrada.')
         elif value is not None:
             raise Invalid('Elija cómo obtuvo el tiempo o deje el dato vacío.')
-    if times[0]['minutes'] is not None and times[1]['minutes'] is not None and times[1]['minutes'] > times[0]['minutes'] and not times[1]['note'].strip():
+    if len(times) > 1 and times[0]['minutes'] is not None and times[1]['minutes'] is not None and times[1]['minutes'] > times[0]['minutes'] and not times[1]['note'].strip():
         raise Invalid('El tiempo de abiertas supera el de todas las entregas. Explique si se midieron actividades o sesiones diferentes.')
     measurement = payload['measurement']
     expected = {'date', 'deliveries', 'open_answers', 'group', 'condition', 'scope'}
@@ -130,6 +138,8 @@ def validate(payload, schema, settings):
         raise Invalid('Esta encuesta recoge únicamente tiempos de calificación manual, sin sugerencias automáticas de notas o retroalimentación.')
     if measured and (not measurement['date'] or not measurement['group'].strip() or not measurement['scope'].strip() or measurement['deliveries'] is None or not measurement['condition']):
         raise Invalid('Para un tiempo cronometrado complete fecha, grupo, entregas, condición y alcance de la sesión.')
+    if not schema['time_activities'] and measurement != {'date':'','deliveries':None,'open_answers':None,'group':'','condition':'manual','scope':''}:
+        raise Invalid('La versión breve no recoge registros de cronometraje: indique el rango en el cuestionario.')
     signature = payload['signature']
     if not isinstance(signature, dict) or set(signature) != {'method', 'name', 'strokes'} or signature['method'] not in ('drawn', 'typed'):
         raise Invalid('Revise la constancia de firma.')
@@ -162,7 +172,7 @@ def validate(payload, schema, settings):
 def consent_document(settings):
     return [
         {'title': 'Quiénes realizan el estudio', 'text': f"{', '.join(settings['researchers'])}, estudiantes de {settings['institution']}. Investigación de tesis: {settings['research_title']}. Contacto: {', '.join(settings['contact_emails'])}. Teléfono: {settings['contact_phone']}."},
-        {'title': 'Propósito y actividades', 'text': 'Identificar necesidades docentes de calificación manual y gestión de evidencias y orientar los requisitos de XCalificator. Se le invita a responder sobre su práctica, tiempos manuales, dificultades y preferencias. No necesita conocer ni haber utilizado la herramienta. La duración orientativa es de 15 a 20 minutos. Esta encuesta no evalúa tiempos con la herramienta ni satisfacción después de utilizarla.'},
+        {'title': 'Propósito y actividades', 'text': 'Identificar necesidades docentes de calificación manual y gestión de evidencias y orientar los requisitos de XCalificator. Se le invita a responder sobre su práctica, tiempos manuales, dificultades y preferencias. No necesita conocer ni haber utilizado la herramienta. La versión breve contiene 19 preguntas, además de identificación, autorización y constancia. Se prevé una duración de 5 a 7 minutos, aún por comprobar con docentes. El tiempo manual se recoge por rangos declarados, no como un cronometraje exacto. Esta encuesta no evalúa tiempos con la herramienta ni satisfacción después de utilizarla.'},
         {'title': 'Participación voluntaria', 'text': 'Puede no participar, omitir preguntas de opinión o retirarse antes de enviar, sin consecuencias académicas o laborales. No hay pago ni beneficio individual garantizado. El posible beneficio es orientar una herramienta para el trabajo docente. La carga principal es el tiempo de respuesta; existe riesgo de acceso indebido a información personal, que se reduce mediante acceso restringido y resguardo de datos. No incluya datos identificables de estudiantes.'},
         {'title': 'Datos y uso autorizado', 'text': 'Se recogen nombre, institución, contexto docente, respuestas, tiempos manuales y, si los facilita, correo y teléfono. También se conserva la constancia de aceptación, fecha del servidor, versión del cuestionario y del consentimiento y, únicamente si lo autoriza, el dibujo estático de su firma. Los contactos se usan para solicitudes sobre sus datos y, si expresa interés, para invitarle a una demostración o prueba piloto. Facilitar un contacto es opcional. No se recogen presión, velocidad ni patrones biométricos de escritura. El dibujo no verifica por sí solo su identidad.'},
         {'title': 'Confidencialidad y publicación', 'text': 'Los investigadores responsables accederán a los registros identificados para esta investigación. La tesis y un eventual artículo presentarán resultados agrupados, sin publicar nombres, contactos ni firmas. Los registros completos no se publicarán en la página. Las respuestas abiertas se revisarán para retirar identificadores antes de utilizarse en publicaciones. La web y su almacenamiento serán administrados por los investigadores en el servidor destinado al estudio.'},
@@ -355,7 +365,7 @@ class SurveyApplication:
                 if path in ('/admin', '/admin/'):
                     return respond('200 OK', (ROOT / 'public/admin.html').read_bytes(), 'text/html; charset=utf-8')
                 return respond('404 Not Found', {'error': 'Ruta no encontrada.'})
-            files = {'/': ('index.html', 'text/html'), '/app.js': ('app.js', 'text/javascript'), '/admin.js': ('admin.js', 'text/javascript'), '/styles.css': ('styles.css', 'text/css')}
+            files = {'/': ('index.html', 'text/html'), '/app.js': ('app.js', 'text/javascript'), '/admin.js': ('admin.js', 'text/javascript'), '/styles.css': ('styles.css', 'text/css'), '/branding/logo-full.webp': ('branding/logo-full.webp', 'image/webp'), '/branding/logo-favicon.png': ('branding/logo-favicon.png', 'image/png'), '/branding/inter-latin-400-normal.woff2': ('branding/inter-latin-400-normal.woff2', 'font/woff2'), '/branding/inter-latin-600-normal.woff2': ('branding/inter-latin-600-normal.woff2', 'font/woff2'), '/branding/plus-jakarta-sans-latin-600-normal.woff2': ('branding/plus-jakarta-sans-latin-600-normal.woff2', 'font/woff2')}
             if path in files and method == 'GET':
                 name, mime = files[path]
                 return respond('200 OK', (ROOT / 'public' / name).read_bytes(), mime + '; charset=utf-8')
