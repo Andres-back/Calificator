@@ -1,0 +1,11 @@
+[Unit]
+Description=Respaldo consistente de la encuesta docente independiente
+Requires=docker.service
+After=docker.service
+
+[Service]
+Type=oneshot
+UMask=0077
+Nice=10
+TimeoutStartSec=120
+ExecStart=/etc/komodo/stacks/encuesta-docente/backup.sh

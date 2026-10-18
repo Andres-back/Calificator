@@ -25,7 +25,7 @@ Los textos libres y las etiquetas aun pueden identificar personas: revisarlos an
 El despliegue VPS usa compose.vps.yaml y el proyecto Docker encuesta-docente.
 El volumen de respuestas es persistente: no usar down -v ni eliminar volumenes.
 El proxy central solo agrega /encuesta-docente/ al dominio existente.
-El puerto 8092 se enlaza unicamente a 127.0.0.1 para comprobaciones locales.
+El puerto 8092 solo existe en la red dedicada de Docker; no se publica en el host.
 
 El respaldo diario usa SQLite backup, copia un snapshot fuera del volumen a
 /var/backups/encuesta-docente y mantiene treinta dias con permisos privados.

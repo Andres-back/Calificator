@@ -6,8 +6,6 @@ services:
     container_name: encuesta_docente_app
     init: true
     env_file: .env
-    ports:
-      - "127.0.0.1:8092:8092"
     volumes:
       - respuestas:/data
     networks:
