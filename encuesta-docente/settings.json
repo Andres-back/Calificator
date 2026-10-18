@@ -1,12 +1,18 @@
 {
   "instrument_code": "LR-CR-01",
-  "instrument_version": "3.1-web",
+  "instrument_version": "3.2-web",
   "consent_version": "CI-NEC-01-v1-2026-10-18",
   "title": "Necesidades docentes de calificación y retroalimentación",
   "research_title": "XCalificator: impacto de la automatización de la evaluación con LLM, OCR y RAG en la eficiencia docente y la calidad de la retroalimentación",
-  "researchers": ["Samir Andrés Ardila Cabrera", "Daniel Felipe Mora Rosas"],
+  "researchers": [
+    "Samir Andrés Ardila Cabrera",
+    "Daniel Felipe Mora Rosas"
+  ],
   "institution": "Uniputumayo · Ingeniería de Sistemas",
-  "contact_emails": ["Samirardila.c@gmail.com", "danielfelipemorarosas@gmail.com"],
+  "contact_emails": [
+    "Samirardila.c@gmail.com",
+    "danielfelipemorarosas@gmail.com"
+  ],
   "contact_phone": "3124354040",
   "retention": "Las respuestas identificadas, los contactos y la firma se conservarán durante el proceso de validación de la tesis y, si se realiza, durante el proceso de publicación del artículo derivado. Al finalizar estos procesos se eliminarán los identificadores, los contactos y las firmas de los archivos de trabajo y de sus copias de respaldo conforme a su ciclo de eliminación; se conservarán únicamente resultados agregados o datos efectivamente anonimizados.",
   "enabled": true

@@ -21,7 +21,7 @@ class SurveyTests(unittest.TestCase):
         self.assertEqual(status, 200)
         self.csrf = json.loads(response)['csrf']
         self.cookie = dict(headers)['Set-Cookie'].split(';')[0]
-        self.data = dict(submission_id=str(uuid.uuid4()), instrument_version='3.1-web', consent_version=self.app.settings['consent_version'], identity={'name':'DOCENTE PRUEBA SINTÉTICA', 'email':'test@example.org','phone':''}, answers={'institution':'COLEGIO DE PRUEBA','1.2':'1','9.1':'=NO_PUBLICAR()'}, times=[{'minutes':None,'method':None,'note':''} for _ in range(6)], measurement={'date':'','deliveries':None,'open_answers':None,'group':'','condition':'','scope':''}, consent={'participation':True,'data_processing':True,'signature_storage':False}, signature={'method':'typed','name':'DOCENTE PRUEBA SINTÉTICA','strokes':[]})
+        self.data = dict(submission_id=str(uuid.uuid4()), instrument_version=self.app.settings['instrument_version'], consent_version=self.app.settings['consent_version'], identity={'name':'DOCENTE PRUEBA SINTÉTICA', 'email':'test@example.org','phone':''}, answers={'institution':'COLEGIO DE PRUEBA','1.2':'1','9.1':'=NO_PUBLICAR()'}, times=[{'minutes':None,'method':None,'note':''} for _ in range(6)], measurement={'date':'','deliveries':None,'open_answers':None,'group':'','condition':'','scope':''}, consent={'participation':True,'data_processing':True,'signature_storage':False}, signature={'method':'typed','name':'DOCENTE PRUEBA SINTÉTICA','strokes':[]})
 
     def tearDown(self):
         self.temp.cleanup()
@@ -122,6 +122,27 @@ class SurveyTests(unittest.TestCase):
         self.assertEqual(self.request('/admin.js')[0],200)
         self.assertEqual(self.request('/admin',admin=True)[0],302)
         self.assertEqual(self.request('/admin/',admin=True)[0],200)
+
+    def test_evidence_neutral_responses_and_priorities_are_preserved(self):
+        self.data['answers'].update({'evidence.storage':['1','3'],'evidence.retrieval':'1','evidence.traceability':'na','evidence.reporting':'1','4.16':'1','4.17':'5'})
+        status,_,body=self.submit();self.assertEqual(status,200)
+        answers=json.loads(body)['response']['answers']
+        self.assertEqual(answers['evidence.retrieval'],'1')
+        self.assertEqual(answers['evidence.traceability'],'na')
+        self.assertEqual(answers['4.16'],'1')
+        status,_,body=self.request('/admin/export.csv',admin=True)
+        self.assertEqual(status,200)
+        self.assertIn('Ninguna dificultad'.encode(),body)
+
+    def test_evidence_other_requires_description(self):
+        self.data['answers']['evidence.storage']=['6']
+        self.assertEqual(self.submit()[0],400)
+        self.data['answers']['evidence.other']='Archivo de la institución'
+        self.assertEqual(self.submit()[0],200)
+
+    def test_previous_instrument_is_not_silently_relabelled(self):
+        self.data['instrument_version']='3.1-web'
+        self.assertEqual(self.submit()[0],400)
 
 
 if __name__=='__main__':unittest.main()

@@ -4,7 +4,7 @@ Fecha de elaboración de este respaldo: 18 de octubre de 2026.
 
 ## Qué se puede afirmar
 
-LR-CR-01 es un **cuestionario de elaboración propia, específico para el diagnóstico de necesidades de XCalificator**, con preguntas cerradas, valoraciones ordinales y preguntas abiertas. El documento en papel se identifica como versión 3.0; su adaptación digital, como 3.1-web. No se ha identificado como copia o adaptación de una escala publicada previamente. No debe atribuirse a un autor externo ni describirse como instrumento estandarizado o validado.
+LR-CR-01 es un **cuestionario de elaboración propia, específico para el diagnóstico de necesidades de XCalificator**, con preguntas cerradas, valoraciones ordinales y preguntas abiertas. El documento en papel se identifica como versión 3.0; su primera adaptación digital, como 3.1-web, y la ampliación de gestión de evidencias y reportes, como 3.2-web. No se ha identificado como copia o adaptación de una escala publicada previamente. No debe atribuirse a un autor externo ni describirse como instrumento estandarizado o validado.
 
 Este respaldo explicita ahora la pertinencia del instrumento y los criterios para mejorarlo. No acredita que las fuentes aquí reunidas se consultaran antes de construir o aplicar la versión en papel. Tampoco demuestra que se ejecutaran todas las etapas de diseño que recomiendan. En la tesis se debe conservar esa cronología.
 
@@ -35,7 +35,8 @@ La correspondencia siguiente es una justificación analítica del proyecto. Las 
 | ¿En qué condiciones evalúan los docentes? | Cabecera y sección 1; exposición previa agregada en web | Institución, asignatura, carga, formatos, conectividad y experiencia previa | Delimitar contexto y restricciones; distinguir diagnóstico durante el uso de opiniones previas | Propuesta: fase Análisis; NASA, 2023 |
 | ¿Qué tiempo requiere su proceso? | Sección 2; método y sesión agregados en web | Minutos por actividad y procedencia del dato | Construir línea base identificada; separar estimación y cronometraje | Propuesta: tiempos actuales y comparación; diseño de registro propio |
 | ¿Qué dificultades encuentran? | Sección 3, ocho ítems | Valoraciones ordinales por situación | Describir frecuencia/gravedad percibida por ítem | Artino et al., 2014; Sullivan y Artino, 2013 |
-| ¿Qué funciones priorizan? | Sección 4, quince ítems y lista narrativa | Prioridad y funciones de mayor impacto | Orientar y contrastar requisitos; identificar desacuerdo | NASA, 2023; Pew Research Center, s. f. |
+| ¿Qué funciones priorizan? | Sección 4, diecisiete ítems y lista narrativa en 3.2-web | Prioridad y funciones de mayor impacto | Orientar y contrastar requisitos; identificar desacuerdo | NASA, 2023; Pew Research Center, s. f. |
+| ¿Cómo conservan y recuperan evidencia y preparan seguimiento? | `evidence.*` y prioridades 4.16-4.17, agregadas en 3.2-web | Práctica reciente, dificultad y necesidad de información | Documentar el problema sin asumirlo; contrastar consulta e informes | Aplicación al proyecto del enfoque de NASA, 2023; elaboración propia |
 | ¿Cómo debe intervenir el docente? | Sección 5 | Preferencias ante notas, ilegibilidad y revisión | Definir escenarios y control docente esperado | NASA, 2023 |
 | ¿Qué retroalimentación esperan? | Sección 6 | Tipo de comentario y revisión antes de entrega | Formular necesidades de retroalimentación | Propuesta: expectativas; Artino et al., 2014 |
 | ¿Qué condiciones de operación y explicación necesitan? | Secciones 7 y 8 | Latencia esperada, recuperación, evidencia y acuerdo | Especificar restricciones y describir actitudes, sin confundirlas con desempeño real | NASA, 2023; Sullivan y Artino, 2013 |

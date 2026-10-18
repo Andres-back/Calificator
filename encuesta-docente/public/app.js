@@ -94,6 +94,7 @@ async function next(){
   if(step===2)updateTimes();
   for(const input of $(`#panel-${step}`).querySelectorAll('input,select,textarea')){if(!input.checkValidity()){input.reportValidity();return;}}
   if(step===1&&[...document.querySelectorAll('[name="1.6"]:checked')].some(x=>x.value==='9')&&!$('#q-1-6-other').value.trim()){message('Describa el otro tipo de pregunta o quite la opción Otro.');return;}
+  if(step===1&&[...document.querySelectorAll('[name="evidence.storage"]:checked')].some(x=>x.value==='6')&&!$('#q-evidence-other').value.trim()){message('Describa el otro medio de conservación o quite la opción Otro medio.');return;}
   if(step<8){show(step+1);return;}
   const data=payload();
   if(data.signature.name.toLocaleLowerCase()!==data.identity.name.toLocaleLowerCase()){message('El nombre de la firma debe coincidir con su nombre completo.');return;}

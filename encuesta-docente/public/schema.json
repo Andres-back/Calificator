@@ -3,7 +3,7 @@
     {
       "id": "contexto",
       "title": "Su contexto docente",
-      "intro": "La cantidad de grupos y estudiantes describe su carga docente; no indica cuántas entregas se midieron.",
+      "intro": "Describa su práctica actual, aunque no utilice XCalificator. Los grupos y estudiantes a su cargo no equivalen a entregas medidas. Las preguntas sobre evidencia se refieren a las últimas cuatro semanas de actividad docente.",
       "questions": [
         {
           "id": "institution",
@@ -224,6 +224,148 @@
           "label": "Otro tipo de pregunta o evidencia",
           "type": "text",
           "maxlength": 250
+        },
+        {
+          "id": "evidence.storage",
+          "label": "En las últimas cuatro semanas de actividad docente, ¿cómo conservó las evaluaciones calificadas? Puede elegir varias opciones.",
+          "type": "multi",
+          "options": [
+            {
+              "value": "1",
+              "label": "Hojas físicas archivadas por estudiante o grupo"
+            },
+            {
+              "value": "2",
+              "label": "Hojas físicas sin un orden de archivo definido"
+            },
+            {
+              "value": "3",
+              "label": "Fotografías o archivos en carpetas digitales"
+            },
+            {
+              "value": "4",
+              "label": "Una plataforma que vincula cada evidencia con el estudiante y la evaluación"
+            },
+            {
+              "value": "5",
+              "label": "No conservé las evaluaciones después de entregarlas"
+            },
+            {
+              "value": "6",
+              "label": "Otro medio"
+            }
+          ]
+        },
+        {
+          "id": "evidence.other",
+          "label": "Si eligió otro medio, descríbalo.",
+          "type": "text",
+          "maxlength": 300
+        },
+        {
+          "id": "evidence.retrieval",
+          "label": "Cuando necesitó localizar una evaluación física ya calificada de un estudiante, ¿qué dificultad encontró para localizarla? Considere las últimas cuatro semanas de actividad docente.",
+          "type": "radio",
+          "options": [
+            {
+              "value": "1",
+              "label": "Ninguna dificultad"
+            },
+            {
+              "value": "2",
+              "label": "Poca dificultad"
+            },
+            {
+              "value": "3",
+              "label": "Dificultad moderada"
+            },
+            {
+              "value": "4",
+              "label": "Mucha dificultad"
+            },
+            {
+              "value": "5",
+              "label": "No logré localizarla"
+            },
+            {
+              "value": "na",
+              "label": "No necesité buscarla o no utilicé evaluaciones físicas"
+            },
+            {
+              "value": "skip",
+              "label": "Prefiero no responder"
+            }
+          ]
+        },
+        {
+          "id": "evidence.traceability",
+          "label": "Cuando revisó una nota anterior, ¿con qué frecuencia pudo consultar también los criterios o la rúbrica que había utilizado para asignarla? Considere las últimas cuatro semanas de actividad docente.",
+          "type": "radio",
+          "options": [
+            {
+              "value": "1",
+              "label": "Nunca"
+            },
+            {
+              "value": "2",
+              "label": "Rara vez"
+            },
+            {
+              "value": "3",
+              "label": "A veces"
+            },
+            {
+              "value": "4",
+              "label": "Frecuentemente"
+            },
+            {
+              "value": "5",
+              "label": "Siempre"
+            },
+            {
+              "value": "na",
+              "label": "No aplica"
+            },
+            {
+              "value": "skip",
+              "label": "Prefiero no responder"
+            }
+          ]
+        },
+        {
+          "id": "evidence.reporting",
+          "label": "En las últimas cuatro semanas de actividad docente, ¿con qué frecuencia necesitó reunir resultados de varias evaluaciones de un estudiante para preparar un informe o seguimiento?",
+          "type": "radio",
+          "options": [
+            {
+              "value": "1",
+              "label": "Nunca"
+            },
+            {
+              "value": "2",
+              "label": "Rara vez"
+            },
+            {
+              "value": "3",
+              "label": "A veces"
+            },
+            {
+              "value": "4",
+              "label": "Frecuentemente"
+            },
+            {
+              "value": "5",
+              "label": "Siempre"
+            },
+            {
+              "value": "na",
+              "label": "No aplica"
+            },
+            {
+              "value": "skip",
+              "label": "Prefiero no responder"
+            }
+          ]
         }
       ]
     },
@@ -1018,6 +1160,76 @@
         {
           "id": "4.15",
           "label": "Exportar o registrar fácilmente las calificaciones confirmadas.",
+          "type": "scale",
+          "options": [
+            {
+              "value": "1",
+              "label": "1"
+            },
+            {
+              "value": "2",
+              "label": "2"
+            },
+            {
+              "value": "3",
+              "label": "3"
+            },
+            {
+              "value": "4",
+              "label": "4"
+            },
+            {
+              "value": "5",
+              "label": "5"
+            },
+            {
+              "value": "na",
+              "label": "No aplica"
+            },
+            {
+              "value": "skip",
+              "label": "Prefiero no responder"
+            }
+          ]
+        },
+        {
+          "id": "4.16",
+          "label": "Consultar el historial de evaluaciones de un estudiante y abrir la evidencia de cada evaluación.",
+          "type": "scale",
+          "options": [
+            {
+              "value": "1",
+              "label": "1"
+            },
+            {
+              "value": "2",
+              "label": "2"
+            },
+            {
+              "value": "3",
+              "label": "3"
+            },
+            {
+              "value": "4",
+              "label": "4"
+            },
+            {
+              "value": "5",
+              "label": "5"
+            },
+            {
+              "value": "na",
+              "label": "No aplica"
+            },
+            {
+              "value": "skip",
+              "label": "Prefiero no responder"
+            }
+          ]
+        },
+        {
+          "id": "4.17",
+          "label": "Generar un reporte por estudiante con sus resultados de evaluación y referencias a las evidencias correspondientes.",
           "type": "scale",
           "options": [
             {

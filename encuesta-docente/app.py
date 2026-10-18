@@ -91,6 +91,8 @@ def validate(payload, schema, settings):
                 raise Invalid('Complete la institución educativa.')
     if '9' in answers.get('1.6', []) and not str(answers.get('1.6.other') or '').strip():
         raise Invalid('Describa el otro tipo de pregunta o quite la opción Otro.')
+    if '6' in answers.get('evidence.storage', []) and not str(answers.get('evidence.other') or '').strip():
+        raise Invalid('Describa el otro medio de conservación de evaluaciones o quite la opción Otro medio.')
     times = payload['times']
     if not isinstance(times, list) or len(times) != 6:
         raise Invalid('Se esperan seis actividades de tiempo.')
