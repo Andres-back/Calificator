@@ -264,7 +264,7 @@ class SurveyApplication:
     def __call__(self, environ, start_response):
         def respond(status, value, mime='application/json; charset=utf-8', extra=()):
             body = value if isinstance(value, bytes) else canonical(value).encode('utf-8')
-            headers = [('Content-Type', mime), ('Content-Length', str(len(body))), ('Cache-Control', 'no-store'), ('X-Content-Type-Options', 'nosniff'), ('Referrer-Policy', 'no-referrer'), ('X-Frame-Options', 'DENY'), ('Permissions-Policy', 'camera=(), microphone=(), geolocation=()'), ('Content-Security-Policy', "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'")]
+            headers = [('Content-Type', mime), ('Content-Length', str(len(body))), ('Cache-Control', 'no-store, no-transform'), ('X-Content-Type-Options', 'nosniff'), ('Referrer-Policy', 'no-referrer'), ('X-Frame-Options', 'DENY'), ('Permissions-Policy', 'camera=(), microphone=(), geolocation=()'), ('Content-Security-Policy', "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'")]
             start_response(status, headers + list(extra))
             return [body]
         path = environ.get('PATH_INFO', '')

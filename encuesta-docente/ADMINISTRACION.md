@@ -34,3 +34,8 @@ Las credenciales reales solo estan en el .env privado del servidor y en la nota
 privada de Obsidian entregada al propietario, nunca en Git.
 
 Validacion: python -m unittest discover -s tests -v.
+
+La encuesta envia Cache-Control: no-store, no-transform para evitar almacenamiento
+en cache e inyeccion automatica de scripts de Cloudflare en estas respuestas.
+Su politica CSP conserva script-src 'self'. No se agregan trackers al formulario.
+Referencia: https://developers.cloudflare.com/web-analytics/faq/

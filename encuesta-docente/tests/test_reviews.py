@@ -78,3 +78,9 @@ class ReviewTests(unittest.TestCase):
         self.assertIn(b'follow_up', body)
         self.assertIn(b'Colegio A', body)
         self.assertNotIn(self.review['notes'].encode(), body)
+
+    def test_responses_keep_strict_script_policy_and_prevent_edge_injection(self):
+        _, headers, _ = self.fixture.request('/')
+        headers = dict(headers)
+        self.assertEqual(headers['Cache-Control'], 'no-store, no-transform')
+        self.assertIn("script-src 'self';", headers['Content-Security-Policy'])
