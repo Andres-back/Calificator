@@ -1,5 +1,7 @@
 # Alcance metodológico del cuestionario web
 
+La [fundamentación de la elección del LR-CR-01](FUNDAMENTACION_INSTRUMENTO.md) desarrolla las razones, citas académicas, matriz de coherencia y evidencia pendiente. Las referencias sustentan pertinencia y criterios de diseño; no acreditan validación previa ni consulta anterior a la aplicación en papel.
+
 ## ¿Cubre lo necesario?
 
 **Sí para un diagnóstico de necesidades y prioridades del grupo docente consultado.** Mantiene las diez secciones del LR-CR-01 en papel y añade trazabilidad de autorización, método del dato temporal y contexto de medición. No constituye por sí solo una validación psicométrica del instrumento ni el cierre de la evaluación de impacto de la tesis.

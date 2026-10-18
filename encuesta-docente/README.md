@@ -4,6 +4,8 @@ Web pública sin cuenta para docentes, consentimiento informado, firma con dedo/
 
 La adaptación y sus límites investigativos se documentan en [METODOLOGIA.md](METODOLOGIA.md). Cubre necesidades, preferencias y registro de línea base. No sustituye satisfacción posterior, comparación pareada de tiempos ni concordancia docente-IA.
 
+La [justificación de elección del cuestionario](FUNDAMENTACION_INSTRUMENTO.md) contiene referencias académicas, correspondencia entre preguntas y propósito y distinción entre fundamentación y validación.
+
 ## Instalación en el mismo VPS
 
 Requiere Docker Compose y el proxy HTTPS que ya usa XCalificator. No requiere suscripción a un servicio de formularios ni APIs externas; utiliza almacenamiento y recursos del servidor existente. No publicar con GitHub Pages: una página estática no guarda las respuestas de este sistema.
