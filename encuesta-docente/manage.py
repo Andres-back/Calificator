@@ -22,6 +22,7 @@ path = Path(args.database)
 if not path.is_file():
     parser.error('No existe la base de datos indicada.')
 db = sqlite3.connect(path)
+db.execute('PRAGMA foreign_keys=ON')
 try:
     if args.command == 'stats':
         print(json.dumps({'respuestas': db.execute('SELECT count(*) FROM responses').fetchone()[0]}))

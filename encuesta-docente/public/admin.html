@@ -1,1 +1,69 @@
-<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>Respuestas · Investigación XCalificator</title><link rel="stylesheet" href="../styles.css"><script type="module" src="../admin.js"></script></head><body><main class="admin-layout"><a class="brand" href="../"><span class="brand-logo"><img src="../branding/logo-full.webp" alt="XCalificator" width="210" height="210"></span></a><span class="tag">ACCESO PRIVADO · INVESTIGADORES</span><h1>Respuestas de la encuesta</h1><p>La exportación utiliza códigos y excluye nombres, contactos y firmas. Revise los textos libres antes de compartirlos: pueden contener información identificable.</p><div class="inline-actions"><a class="button primary" href="export.csv">Exportar respuestas codificadas (CSV)</a><button class="button secondary" id="refresh">Actualizar lista</button></div><p class="notice small">Las constancias completas contienen datos personales. Descárguelas solo para los fines autorizados. No comparta esta contraseña ni publique las constancias.</p><p id="admin-status" role="status">Cargando…</p><table class="admin-table"><thead><tr><th>Código y fecha</th><th>Docente</th><th>Constancia</th></tr></thead><tbody id="records"></tbody></table></main></body></html>
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>Respuestas · Investigación XCalificator</title>
+  <link rel="icon" href="../branding/logo-favicon.png" type="image/png">
+  <link rel="stylesheet" href="../styles.css">
+  <script type="module" src="../admin.js"></script>
+</head>
+<body class="admin-page">
+  <main class="admin-layout">
+    <header class="admin-heading">
+      <a class="brand" href="../"><span class="brand-logo"><img src="../branding/logo-full.webp" alt="XCalificator" width="210" height="210"></span></a>
+      <span class="tag">INVESTIGACIÓN · ACCESO PRIVADO</span>
+    </header>
+    <h1>Respuestas de la encuesta</h1>
+    <div class="admin-summary" aria-label="Resumen de respuestas">
+      <div><strong id="count-total">0</strong><span>Recibidas</span></div>
+      <div><strong id="count-pending">0</strong><span>Por revisar</span></div>
+      <div><strong id="count-reviewed">0</strong><span>Revisadas</span></div>
+      <div><strong id="count-follow">0</strong><span>En seguimiento</span></div>
+    </div>
+    <div class="inline-actions">
+      <a class="button primary" href="export.csv">Exportar respuestas (CSV)</a>
+      <button class="button secondary" id="refresh" type="button">Actualizar</button>
+    </div>
+    <p class="admin-privacy">Acceso reservado a los investigadores. El CSV excluye nombres, contactos y firmas; revise los textos libres antes de compartirlo.</p>
+    <form id="filters" class="admin-filters" role="search">
+      <label class="filter-search">Buscar<input type="search" id="search" placeholder="Docente, código, institución, etiqueta…"></label>
+      <label>Institución<select id="institution"><option value="">Todas</option></select></label>
+      <label>Estado<select id="status"><option value="">Todos</option><option value="pending">Por revisar</option><option value="reviewed">Revisada</option><option value="follow_up">Seguimiento</option><option value="excluded">Excluida del análisis</option></select></label>
+      <label>Etiqueta<select id="tag"><option value="">Todas</option></select></label>
+      <label>Interés en demo<select id="interest"><option value="">Todos</option><option value="1">Sí</option><option value="2">Tal vez</option><option value="3">No</option><option value="skip">Prefiere no responder</option><option value="unanswered">Sin respuesta</option></select></label>
+      <label>Versión<select id="version"><option value="">Todas</option></select></label>
+      <label>Desde<input type="date" id="date-from"></label>
+      <label>Hasta<input type="date" id="date-to"></label>
+      <label>Ordenar<select id="sort"><option value="newest">Más recientes</option><option value="oldest">Más antiguas</option><option value="name">Nombre A–Z</option><option value="institution">Institución A–Z</option></select></label>
+      <button class="text-button" type="reset">Limpiar filtros</button>
+    </form>
+    <p id="admin-status" role="status" aria-live="polite">Cargando…</p>
+    <div class="admin-table-wrap" role="region" aria-label="Lista de respuestas" tabindex="0">
+      <table class="admin-table">
+        <thead><tr><th>Docente</th><th>Institución y área</th><th>Fecha</th><th>Revisión</th><th>Acciones</th></tr></thead>
+        <tbody id="records"></tbody>
+      </table>
+    </div>
+    <p id="empty-state" class="admin-empty" hidden>No hay respuestas para estos filtros.</p>
+  </main>
+  <dialog id="record-dialog" aria-labelledby="record-title">
+    <header class="record-heading"><h2 id="record-title">Respuesta</h2><button type="button" id="close-record" class="button secondary">Cerrar</button></header>
+    <p id="record-identity"></p>
+    <div class="inline-actions"><button type="button" id="download-record" class="button secondary">Descargar constancia</button><button type="button" id="print-record" class="button secondary">Imprimir</button></div>
+    <form id="review-form" class="review-editor">
+      <h3>Organización</h3>
+      <div class="field-grid">
+        <label class="field-label">Estado<select id="review-status"><option value="pending">Por revisar</option><option value="reviewed">Revisada</option><option value="follow_up">Seguimiento</option><option value="excluded">Excluida del análisis</option></select></label>
+        <label class="field-label">Etiquetas<input type="text" id="review-tags" maxlength="326" placeholder="Colegio A, piloto, grupo 1"><span class="hint">Hasta 8 etiquetas separadas por comas.</span></label>
+      </div>
+      <label class="field-label">Notas privadas<textarea id="review-notes" maxlength="2500" rows="3"></textarea></label>
+      <button type="submit" class="button primary" id="save-review">Guardar organización</button>
+      <p id="review-status-message" role="status" aria-live="polite"></p>
+    </form>
+    <h3>Respuestas originales</h3>
+    <div id="record-answers"></div>
+  </dialog>
+</body>
+</html>

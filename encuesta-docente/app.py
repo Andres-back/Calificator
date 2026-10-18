@@ -21,6 +21,7 @@ from urllib.parse import urlsplit
 
 ROOT = Path(__file__).resolve().parent
 MAX_BODY = 384 * 1024
+REVIEW_STATUSES = {'pending', 'reviewed', 'follow_up', 'excluded'}
 
 
 class Invalid(ValueError):
@@ -202,6 +203,8 @@ class SurveyApplication:
         with self.connect() as db:
             db.execute('PRAGMA journal_mode=WAL')
             db.execute('CREATE TABLE IF NOT EXISTS responses (id TEXT PRIMARY KEY, created_at TEXT NOT NULL, payload_hash TEXT NOT NULL, receipt_hash TEXT NOT NULL, receipt_json TEXT NOT NULL)')
+            # Researcher annotations do not alter the signed response or its hash.
+            db.execute('CREATE TABLE IF NOT EXISTS response_reviews (response_id TEXT PRIMARY KEY REFERENCES responses(id) ON DELETE CASCADE, status TEXT NOT NULL, tags_json TEXT NOT NULL, notes TEXT NOT NULL, updated_at TEXT NOT NULL)')
         if os.name != 'nt':
             os.chmod(self.database.parent, 0o700)
             os.chmod(self.database, 0o600)
@@ -210,6 +213,7 @@ class SurveyApplication:
     @contextmanager
     def connect(self):
         connection = sqlite3.connect(self.database, timeout=15)
+        connection.execute('PRAGMA foreign_keys=ON')
         try:
             with connection:
                 yield connection
@@ -313,20 +317,47 @@ class SurveyApplication:
                     if self.limited(environ, admin=True):
                         return respond('429 Too Many Requests', {'error': 'Demasiados intentos. Espere cinco minutos.'})
                     return respond('401 Unauthorized', {'error': 'Acceso reservado a investigadores.'}, extra=[('WWW-Authenticate', 'Basic realm="Investigación XCalificator", charset="UTF-8"')])
+                if path.startswith('/admin/review/') and method == 'PUT':
+                    if not self.csrf_ok(environ):
+                        return respond('403 Forbidden', {'error': 'Actualice la página antes de guardar la revisión.'})
+                    length = int(environ.get('CONTENT_LENGTH') or '0')
+                    if length < 1 or length > 16384:
+                        return respond('413 Content Too Large', {'error': 'La revisión supera el tamaño permitido.'})
+                    if environ.get('CONTENT_TYPE', '').split(';')[0].strip().lower() != 'application/json':
+                        return respond('415 Unsupported Media Type', {'error': 'Se requiere JSON.'})
+                    review = json.loads(environ['wsgi.input'].read(length).decode('utf-8'))
+                    if not isinstance(review, dict) or set(review) != {'status', 'tags', 'notes'}:
+                        raise Invalid('Revise el formato de la organización.')
+                    if not isinstance(review['status'], str) or review['status'] not in REVIEW_STATUSES:
+                        raise Invalid('Seleccione un estado válido.')
+                    tags = review['tags']
+                    if not isinstance(tags, list) or len(tags) > 8:
+                        raise Invalid('Puede guardar hasta ocho etiquetas.')
+                    tags = list(dict.fromkeys(text(tag, 40) for tag in tags))
+                    if any(not tag or any(ord(char) < 32 for char in tag) for tag in tags):
+                        raise Invalid('Las etiquetas deben contener texto válido.')
+                    notes = text(review['notes'], 2500)
+                    record_id = path.removeprefix('/admin/review/')
+                    now = datetime.now(timezone.utc).isoformat()
+                    with self.connect() as db:
+                        if not db.execute('SELECT 1 FROM responses WHERE id=?', (record_id,)).fetchone():
+                            return respond('404 Not Found', {'error': 'No se encontró la respuesta.'})
+                        db.execute('INSERT INTO response_reviews VALUES (?, ?, ?, ?, ?) ON CONFLICT(response_id) DO UPDATE SET status=excluded.status, tags_json=excluded.tags_json, notes=excluded.notes, updated_at=excluded.updated_at', (record_id, review['status'], canonical(tags), notes, now))
+                    return respond('200 OK', {'status': review['status'], 'tags': tags, 'notes': notes, 'updated_at': now})
                 if method != 'GET':
                     return respond('405 Method Not Allowed', {'error': 'Método no permitido.'})
                 if path == '/admin':
                     return respond('302 Found', b'', extra=[('Location', self.base + '/admin/')])
                 if path == '/admin/export.csv':
                     with self.connect() as db:
-                        rows = db.execute('SELECT id, created_at, receipt_json FROM responses ORDER BY created_at').fetchall()
+                        rows = db.execute('SELECT r.id, r.created_at, r.receipt_json, v.status, v.tags_json FROM responses r LEFT JOIN response_reviews v ON v.response_id=r.id ORDER BY r.created_at').fetchall()
                     data = io.StringIO(newline='')
                     writer = csv.writer(data)
-                    writer.writerow(['codigo', 'fecha_recepcion_utc', 'version', 'campo', 'pregunta', 'valor', 'respuesta_textual', 'estado'])
+                    writer.writerow(['codigo', 'fecha_recepcion_utc', 'version', 'campo', 'pregunta', 'valor', 'respuesta_textual', 'estado', 'estado_revision', 'etiquetas_revision'])
                     def cell(value):
                         display = canonical(value) if isinstance(value, (list, dict)) else '' if value is None else str(value)
                         return "'" + display if display.lstrip().startswith(('=', '+', '-', '@', '\t', '\r')) else display
-                    for id, stamp, document in rows:
+                    for id, stamp, document, review_status, review_tags in rows:
                         stored = json.loads(document)
                         value = stored['response']
                         original_schema = stored.get('schema_snapshot', self.schema)
@@ -351,12 +382,17 @@ class SurveyApplication:
                                     decoded = {m['value']:m['label'] for m in original_schema['time_methods']}.get(val,val)
                             elif key.startswith('measurement.'):
                                 label = {'date':'Fecha de medición','deliveries':'Entregas efectivamente calificadas','open_answers':'Respuestas abiertas calificadas','group':'Grupo medido','condition':'Condición de medición','scope':'Alcance e incidencias'}[key.removeprefix('measurement.')]
-                            writer.writerow([id, stamp, value['instrument_version'], key, label, cell(val), cell(decoded), state])
+                            writer.writerow([id, stamp, value['instrument_version'], key, label, cell(val), cell(decoded), state, review_status or 'pending', cell(json.loads(review_tags) if review_tags else [])])
                     return respond('200 OK', ('\ufeff' + data.getvalue()).encode('utf-8'), 'text/csv; charset=utf-8', [('Content-Disposition', 'attachment; filename="respuestas_codificadas.csv"')])
                 if path == '/admin/records':
                     with self.connect() as db:
-                        rows = db.execute('SELECT id, created_at, receipt_json FROM responses ORDER BY created_at DESC').fetchall()
-                    return respond('200 OK', [{'id': r[0], 'received_at': r[1], 'name': json.loads(r[2])['response']['identity']['name']} for r in rows])
+                        rows = db.execute('SELECT r.id, r.created_at, r.receipt_json, v.status, v.tags_json, v.notes, v.updated_at FROM responses r LEFT JOIN response_reviews v ON v.response_id=r.id ORDER BY r.created_at DESC').fetchall()
+                    records = []
+                    for record_id, stamp, encoded, review_status, tags, notes, updated in rows:
+                        response = json.loads(encoded)['response']
+                        answers = response['answers']
+                        records.append({'id': record_id, 'received_at': stamp, 'name': response['identity']['name'], 'institution': answers.get('institution') or '', 'area': answers.get('area') or '', 'grades': answers.get('grades') or '', 'version': response['instrument_version'], 'demo_interest': answers.get('10.3'), 'review': {'status': review_status or 'pending', 'tags': json.loads(tags) if tags else [], 'notes': notes or '', 'updated_at': updated}})
+                    return respond('200 OK', records)
                 if path.startswith('/admin/receipt/'):
                     id = path.removeprefix('/admin/receipt/')
                     with self.connect() as db:

@@ -20,3 +20,57 @@ body{background:radial-gradient(ellipse at 0 8%,#eef2ff 0,transparent 45%),#f8fa
 .panel{box-shadow:0 2px 5px #312e8104,0 18px 45px -30px #4338ca33}
 @media(max-width:740px){.brand-logo{width:172px;height:46px}.brand-logo img{width:172px;height:172px}.university{font-size:11px}.sidebar h1{font-size:28px}.sidebar>p{font-size:13px}.sidebar-note{font-size:11px}.sidebar-note strong{margin-left:0}.sidebar-note br{display:initial}}
 .options.compact{grid-template-columns:repeat(2,minmax(0,1fr))}.options.compact .option:last-child:nth-child(odd){grid-column:1 / -1}
+
+.admin-page{background:#f8fafc}
+.admin-page .admin-layout{max-width:1320px;margin:28px auto;padding:0 28px 48px}
+.admin-heading{display:flex;align-items:center;justify-content:space-between;gap:16px}
+.admin-page h1{font-size:28px;line-height:1.3;letter-spacing:0;margin:26px 0 20px}
+.admin-summary{display:grid;grid-template-columns:repeat(4,1fr);border-block:1px solid var(--line);margin-bottom:24px}
+.admin-summary>div{display:flex;align-items:center;gap:12px;padding:18px 12px}
+.admin-summary strong{font-size:28px;font-weight:600;color:#0f172a}
+.admin-summary span{font-size:13px;color:var(--muted)}
+.admin-privacy{font-size:12px;color:var(--muted);max-width:850px}
+.admin-filters{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin:24px 0;border-block:1px solid var(--line);padding:20px 0}
+.admin-filters label{font-size:12px;font-weight:600;min-width:0}
+.admin-filters input,.admin-filters select{margin-top:6px;min-height:44px;font-size:14px}
+.admin-filters input[type=search]{width:100%;border:1px solid #cbd5e1;border-radius:8px;background:#fff;padding:11px 12px}
+.admin-filters .filter-search{grid-column:span 2}
+.admin-filters .text-button{align-self:end;justify-self:start;min-height:44px;font-size:14px}
+.admin-table-wrap{overflow-x:auto;background:white;border-block:1px solid var(--line)}
+.admin-page .admin-table{min-width:840px;table-layout:fixed}
+.admin-page .admin-table th,.admin-page .admin-table td{padding:16px 12px;vertical-align:top;overflow-wrap:anywhere}
+.admin-page .admin-table th:first-child{width:23%}
+.admin-page .admin-table th:nth-child(2){width:24%}
+.admin-page .admin-table th:last-child{width:17%}
+.admin-table small{display:block;color:var(--muted);font-size:12px;margin-top:6px}
+.record-code{font-family:monospace}
+.admin-table .button{font-size:12px;padding:8px 12px;min-height:44px;gap:6px}
+.review-state{display:inline-block;font-size:12px;padding:4px 8px;border-radius:4px;background:#f1f5f9;color:#475569}
+.review-state.reviewed{background:#dcfce7;color:#166534}
+.review-state.follow_up{background:#fef3c7;color:#92400e}
+.review-state.excluded{background:#ffe4e6;color:#9f1239}
+.review-tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
+.review-tags span{font-size:11px;border:1px solid var(--line);padding:2px 6px;border-radius:4px}
+.admin-empty{text-align:center;padding:36px 16px;color:var(--muted)}
+.admin-page dialog{border-radius:8px;width:min(900px,calc(100vw - 24px));max-height:calc(100dvh - 24px);padding:24px;overflow-y:auto;overscroll-behavior:contain}
+.record-heading{display:flex;justify-content:space-between;gap:16px;align-items:start}
+.record-heading h2{font-size:23px;line-height:1.35;margin:4px 0;overflow-wrap:anywhere}
+#record-identity{font-size:14px;color:var(--muted);overflow-wrap:anywhere}
+.review-editor{border-block:1px solid var(--line);padding:6px 0 12px;margin:20px 0}
+.review-editor h3{font-size:18px}
+.review-editor label{margin-bottom:16px}
+.review-editor input,.review-editor textarea,.review-editor select{margin-top:7px}
+#review-status-message{font-size:14px;color:#166534}
+#record-answers dd{white-space:pre-wrap;font-size:14px}
+@media(max-width:740px){
+  .admin-page .admin-layout{padding-inline:16px;margin-top:16px}
+  .admin-heading{align-items:start;flex-direction:column;gap:8px}
+  .admin-page h1{font-size:25px;margin-top:24px}
+  .admin-summary{grid-template-columns:repeat(2,1fr)}
+  .admin-summary>div{padding:12px 4px;gap:8px}
+  .admin-summary strong{font-size:24px}
+  .admin-summary span{font-size:12px}
+  .admin-filters{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+  .admin-page dialog{padding:18px}
+  .record-heading h2{font-size:21px}
+}

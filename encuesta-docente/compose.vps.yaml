@@ -1,0 +1,41 @@
+name: encuesta-docente
+services:
+  encuesta-docente:
+    build: ./app/encuesta-docente
+    image: encuesta-docente:local
+    container_name: encuesta_docente_app
+    init: true
+    env_file: .env
+    ports:
+      - "127.0.0.1:8092:8092"
+    volumes:
+      - respuestas:/data
+    networks:
+      - encuesta_edge
+    restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp:size=16m,mode=1777
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    mem_limit: 256m
+    cpus: "1.0"
+    pids_limit: 64
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import os,urllib.request; urllib.request.urlopen('http://127.0.0.1:8092'+os.environ.get('BASE_PATH','/encuesta-docente')+'/health',timeout=3)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+volumes:
+  respuestas:
+    name: encuesta_docente_respuestas
+networks:
+  encuesta_edge:
+    name: encuesta_docente_edge
+    internal: true
