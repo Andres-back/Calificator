@@ -1,12 +1,14 @@
 # Encuesta docente independiente de XCalificator
 
-Web pública sin cuenta para docentes, consentimiento informado, firma con dedo/ratón y confirmación accesible con nombre. Recoge el instrumento LR-CR-01 adaptado como **3.2-web**, conserva respuestas en SQLite y genera constancia imprimible. El acceso a resultados exige contraseña. Es una aplicación separada: no modifica ni requiere el backend, usuarios o base académica de XCalificator.
+Web pública sin cuenta para docentes, consentimiento informado, firma con dedo/ratón y confirmación accesible con nombre. Recoge el instrumento LR-CR-01 adaptado como **3.3-web**, conserva respuestas en SQLite y genera constancia imprimible. El acceso a resultados exige contraseña. Es una aplicación separada: no modifica ni requiere el backend, usuarios o base académica de XCalificator.
 
 La adaptación y sus límites investigativos se documentan en [METODOLOGIA.md](METODOLOGIA.md). Cubre necesidades, preferencias y registro de línea base. No sustituye satisfacción posterior, comparación pareada de tiempos ni concordancia docente-IA.
 
 La [justificación de elección del cuestionario](FUNDAMENTACION_INSTRUMENTO.md) contiene referencias académicas, correspondencia entre preguntas y propósito y distinción entre fundamentación y validación.
 
 El [planteamiento del problema](PLANTEAMIENTO_PROBLEMA.md) relaciona tiempo de calificación, organización y recuperación de evidencia, rúbricas e informes por estudiante con lo que se debe preguntar y comprobar. La versión 3.2-web amplía esos aspectos; conserva la configuración anterior en `versions/3.1-web/`.
+
+La versión actual 3.3-web recoge **solo tiempos manuales**, sin XCalificator ni otra herramienta que sugiera notas o retroalimentación automáticamente. No pregunta si ya utilizó la herramienta, qué función probaría primero ni si participaría en mediciones de concordancia. La única invitación final pregunta si desea recibir contacto para una demostración o prueba piloto; no compromete su participación. El consentimiento pasa a v2 y se conserva 3.2-web en `versions/3.2-web/`.
 
 ## Instalación en el mismo VPS
 

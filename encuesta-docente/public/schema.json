@@ -3,7 +3,7 @@
     {
       "id": "contexto",
       "title": "Su contexto docente",
-      "intro": "Describa su práctica actual, aunque no utilice XCalificator. Los grupos y estudiantes a su cargo no equivalen a entregas medidas. Las preguntas sobre evidencia se refieren a las últimas cuatro semanas de actividad docente.",
+      "intro": "Describa su práctica habitual de evaluación manual. No necesita conocer ni haber utilizado XCalificator. Los grupos y estudiantes a su cargo no equivalen a entregas medidas. Las preguntas sobre evidencia se refieren a las últimas cuatro semanas de actividad docente.",
       "questions": [
         {
           "id": "institution",
@@ -23,29 +23,6 @@
           "label": "Grado(s)",
           "type": "text",
           "maxlength": 100
-        },
-        {
-          "id": "exposure",
-          "label": "¿Ha usado XCalificator antes de responder esta encuesta?",
-          "type": "radio",
-          "options": [
-            {
-              "value": "1",
-              "label": "No lo he utilizado."
-            },
-            {
-              "value": "2",
-              "label": "Solo lo he visto o probado en una demostración."
-            },
-            {
-              "value": "3",
-              "label": "Lo he utilizado para evaluaciones reales."
-            },
-            {
-              "value": "skip",
-              "label": "Prefiero no responder."
-            }
-          ]
         },
         {
           "id": "workload_groups",
@@ -371,8 +348,8 @@
     },
     {
       "id": "tiempos",
-      "title": "Tiempo y esfuerzo de calificación",
-      "intro": "Minutos por grupo. Indique cómo obtuvo cada tiempo. No sume actividades que se solapen. Si no tiene un dato, puede dejarlo sin responder.",
+      "title": "Tiempo y esfuerzo de calificación manual",
+      "intro": "Piense únicamente en la calificación manual, sin XCalificator ni otra herramienta que sugiera notas o retroalimentación automáticamente. Indique minutos por grupo y cómo obtuvo cada dato. No sume actividades que se solapen; puede omitir los datos que no tenga.",
       "questions": []
     },
     {
@@ -1793,8 +1770,8 @@
     },
     {
       "id": "casos",
-      "title": "Casos difíciles y participación posterior",
-      "intro": "No incluya nombres, fotografías ni información identificable de estudiantes. La invitación a un piloto es independiente de este consentimiento.",
+      "title": "Casos difíciles e invitación a una demostración o piloto",
+      "intro": "No incluya información identificable de estudiantes. Al final puede expresar si desea recibir una invitación para conocer o probar XCalificator. Su respuesta no lo compromete a participar.",
       "questions": [
         {
           "id": "9.1",
@@ -1827,58 +1804,8 @@
           "maxlength": 2500
         },
         {
-          "id": "10.1",
-          "label": "Si XCalificator resolviera adecuadamente estas necesidades, ¿lo utilizaría?",
-          "type": "radio",
-          "options": [
-            {
-              "value": "1",
-              "label": "Sí."
-            },
-            {
-              "value": "2",
-              "label": "Tal vez."
-            },
-            {
-              "value": "3",
-              "label": "No."
-            },
-            {
-              "value": "skip",
-              "label": "Prefiero no responder"
-            }
-          ]
-        },
-        {
-          "id": "10.2",
-          "label": "¿Qué probaría primero? Elija una opción principal.",
-          "type": "radio",
-          "options": [
-            {
-              "value": "1",
-              "label": "Calificación por fotografía/PDF."
-            },
-            {
-              "value": "2",
-              "label": "Calificación en línea."
-            },
-            {
-              "value": "3",
-              "label": "Preguntas abiertas."
-            },
-            {
-              "value": "4",
-              "label": "Retroalimentación automática."
-            },
-            {
-              "value": "skip",
-              "label": "Prefiero no responder"
-            }
-          ]
-        },
-        {
           "id": "10.3",
-          "label": "¿Aceptaría que le contactemos para invitarle posteriormente a una medición de tiempos y concordancia?",
+          "label": "¿Le gustaría que le contactemos para invitarle a una demostración o prueba piloto de XCalificator?",
           "type": "radio",
           "options": [
             {

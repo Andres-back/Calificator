@@ -2,6 +2,8 @@
 
 Actualización: 18 de octubre de 2026. Alcance: necesidades docentes de calificación y gestión de evidencias, aunque el docente no participe en el piloto ni haya utilizado XCalificator.
 
+Versión actual **3.3-web**: esta encuesta pregunta solo por tiempos manuales, sin sugerencias automáticas, y deja una única invitación opcional a demostración o prueba piloto. La comparación con tiempos asistidos pertenece a otra recolección posterior; no se realiza en este cuestionario. Se conserva 3.2-web en el historial y se actualiza el consentimiento a v2.
+
 ## Formulación del problema y respuesta propuesta
 
 El problema investigativo integra dos procesos relacionados: calificar evaluaciones y gestionar su evidencia a lo largo del tiempo. No basta con tener una nota registrada: el docente puede necesitar recuperar la evaluación que la respalda, consultar los criterios utilizados y reunir resultados de varias aplicaciones para hacer seguimiento a un estudiante. Se busca establecer si, en el grupo consultado, esas actividades generan dificultades y qué apoyo consideran pertinente.
@@ -17,7 +19,7 @@ La solución propuesta por XCalificator articula conservación y consulta de evi
 | Recuperación de una evaluación anterior | `evidence.retrieval` | Consulta del historial y apertura de evidencia (`4.16`) | Tarea de búsqueda con éxito/fracaso y, si se quiere afirmar ahorro de búsqueda, medición específica de su tiempo |
 | Relación entre nota y criterios | `evidence.traceability`, prioridades sobre rúbrica, evidencia y revisión | Criterios configurados por el docente y explicación de sugerencias | Trazabilidad y concordancia con referencia docente independiente; la utilidad percibida no demuestra exactitud |
 | Seguimiento por estudiante | `evidence.reporting` y prioridad de reporte (`4.17`) | Reportes con resultados y referencias a evidencia | Verificar correspondencia y completitud del reporte con los registros del estudiante |
-| Disposición a utilizar apoyo tecnológico | Prioridades, flujo esperado e intención de uso | Herramienta que mantiene posibilidad de revisión y modificación docente | Aceptación y satisfacción después del uso; las preferencias de no usuarios no son satisfacción |
+| Necesidad de apoyo tecnológico e invitación | Prioridades, flujo esperado y una pregunta opcional de interés en demostración o piloto | Herramienta que mantiene posibilidad de revisión y modificación docente | Aceptación y satisfacción después del uso en otro instrumento; el interés en una invitación no es satisfacción |
 
 ## Texto para abrir el planteamiento, antes de completar el diagnóstico
 

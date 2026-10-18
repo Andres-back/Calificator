@@ -21,7 +21,7 @@ class SurveyTests(unittest.TestCase):
         self.assertEqual(status, 200)
         self.csrf = json.loads(response)['csrf']
         self.cookie = dict(headers)['Set-Cookie'].split(';')[0]
-        self.data = dict(submission_id=str(uuid.uuid4()), instrument_version=self.app.settings['instrument_version'], consent_version=self.app.settings['consent_version'], identity={'name':'DOCENTE PRUEBA SINTÉTICA', 'email':'test@example.org','phone':''}, answers={'institution':'COLEGIO DE PRUEBA','1.2':'1','9.1':'=NO_PUBLICAR()'}, times=[{'minutes':None,'method':None,'note':''} for _ in range(6)], measurement={'date':'','deliveries':None,'open_answers':None,'group':'','condition':'','scope':''}, consent={'participation':True,'data_processing':True,'signature_storage':False}, signature={'method':'typed','name':'DOCENTE PRUEBA SINTÉTICA','strokes':[]})
+        self.data = dict(submission_id=str(uuid.uuid4()), instrument_version=self.app.settings['instrument_version'], consent_version=self.app.settings['consent_version'], identity={'name':'DOCENTE PRUEBA SINTÉTICA', 'email':'test@example.org','phone':''}, answers={'institution':'COLEGIO DE PRUEBA','1.2':'1','9.1':'=NO_PUBLICAR()'}, times=[{'minutes':None,'method':None,'note':''} for _ in range(6)], measurement={'date':'','deliveries':None,'open_answers':None,'group':'','condition':'manual','scope':''}, consent={'participation':True,'data_processing':True,'signature_storage':False}, signature={'method':'typed','name':'DOCENTE PRUEBA SINTÉTICA','strokes':[]})
 
     def tearDown(self):
         self.temp.cleanup()
@@ -143,6 +143,18 @@ class SurveyTests(unittest.TestCase):
     def test_previous_instrument_is_not_silently_relabelled(self):
         self.data['instrument_version']='3.1-web'
         self.assertEqual(self.submit()[0],400)
+
+    def test_assisted_times_are_rejected_even_without_measured_values(self):
+        for condition in ['assisted','other','']:
+            data=copy.deepcopy(self.data);data['measurement']['condition']=condition
+            self.assertEqual(self.submit(data)[0],400)
+
+    def test_single_optional_demo_invitation_and_no_usage_questions(self):
+        questions=[q for s in self.app.schema['sections'] for q in s['questions']]
+        self.assertEqual([q['id'] for q in questions if q['id'].startswith('10.')],['10.3'])
+        self.assertNotIn('exposure',[q['id'] for q in questions])
+        self.data['answers']['10.3']='3'
+        self.assertEqual(self.submit()[0],200)
 
 
 if __name__=='__main__':unittest.main()
