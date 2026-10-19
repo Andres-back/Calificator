@@ -91,7 +91,7 @@ test('088 lote largo y temporizador opcional conservan controles alcanzables', a
   const job = { jobId: 'batch1', evaluacionId: 'e1', materiaId: 'm1', estudianteId: '', estudianteNombre: 'Lote sintético',
     createdAt: new Date().toISOString(), kind: 'batch', completed: true,
     summary: { total: 30, queued: 0, running: 0, retrying: 0, success: 0, requires_review: 30, failed_permanent: 0, cancelled: 0 } };
-  await page.addInitScript((stored) => localStorage.setItem('xcalificator.pending-gradings.v1', JSON.stringify([stored])), job);
+  await page.addInitScript((stored) => localStorage.setItem('xcalificator.pending-gradings.v1:p1', JSON.stringify([stored])), job);
   await login(page, 'profesor', { rosterSize: 30 });
   await page.route('**/api/jobs/batch1/items*', (route) => route.fulfill({ json: { items: Array.from({ length: 30 }, (_, index) => ({
     job_id: `item${index}`, estudiante_nombre: `Alumno ${index + 1}`, estado: 'requires_review', progreso: 100,
@@ -102,6 +102,7 @@ test('088 lote largo y temporizador opcional conservan controles alcanzables', a
   await page.goto('/app/calificaciones?evaluacion=e1&calificacion=c1&estudiante=s1');
   const workspace = page.locator('[data-grading-layout]');
   const monitor = workspace.getByLabel('Calificaciones en cola');
+  await monitor.getByRole('button', { name: 'Ver progreso', exact: true }).click();
   await monitor.getByRole('button', { name: 'Ver casos', exact: true }).click();
   const lastCase = monitor.getByText('Caso 30 · Alumno 30', { exact: true });
   await lastCase.scrollIntoViewIfNeeded();
@@ -662,7 +663,7 @@ test('busca y selecciona estudiantes con fluidez en móvil', async ({ page }) =>
   await picker.fill('angela');
   await page.getByRole('option', { name: 'Ángela Zambrano' }).click();
   await expect(page.getByText('Seleccionado: Ángela Zambrano')).toBeVisible();
-  await expect(page.getByRole('button', { name: /Elegir fotos o PDF/i })).toBeEnabled();
+  await expect(page.getByRole('button', { name: /Subir fotos o PDF/i })).toBeEnabled();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBeTruthy();
   await page.screenshot({ path: '../output/playwright/mobile-grading/student-search-360x800.png', fullPage: true });
   await page.setViewportSize({ width: 390, height: 844 });
@@ -706,7 +707,7 @@ test('captura contextual en cuatro acciones, conserva paquete al refrescar y no 
   expect((await candidate.boundingBox())!.height).toBeGreaterThanOrEqual(44);
   await candidate.press('Enter');
   const picker = page.waitForEvent('filechooser');
-  await page.getByRole('button', { name: /Elegir fotos o PDF/ }).click();
+  await page.getByRole('button', { name: /Subir fotos o PDF/ }).click();
   await (await picker).setFiles(file);
   const send = page.getByRole('button', { name: 'Enviar a calificar', exact: true });
   await expect(send).toBeEnabled();

@@ -2187,7 +2187,7 @@ function GradingCenter() {
       )}
 
       {/* Main split view */}
-      {isTeacher && canGrade && <div className="max-h-[35dvh] shrink-0 overflow-y-auto"><GradingJobMonitor embedded /></div>}
+      {isTeacher && canGrade && <GradingJobMonitor embedded />}
       {mode === 'publicacion' && <Card className="mx-4 mb-4 space-y-2 p-4">
         <h2 className="font-bold">Resumen de notas del examen</h2>
         <p className="text-sm text-muted">{counters?.todas ?? 0} alumnos · {counters?.pendientes ?? 0} por revisar · {counters?.procesando ?? 0} calificando · {counters?.publicadas ?? 0} publicadas.</p>

@@ -103,6 +103,7 @@ export function AppShell() {
           menuButtonRef={menuButtonRef}
           menuExpanded={mobileOpen}
         />
+        {isTeacher && location.pathname !== '/app/calificaciones' && <GradingJobMonitor />}
         <main
           id="main-content"
           tabIndex={-1}
@@ -125,7 +126,6 @@ export function AppShell() {
         </main>
       </div>
       {isTeacher && <DigitalizationJobMonitor />}
-      {isTeacher && location.pathname !== '/app/calificaciones' && <GradingJobMonitor />}
     </div>
   );
 }

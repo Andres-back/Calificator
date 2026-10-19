@@ -9,6 +9,10 @@
 - [X] T004 [P] Documentar specs/008-calificaciones/quickstart.md (FR-007)
 - [X] T005 Validar specs/008-calificaciones/checklists/requirements.md (FR-001 a FR-008)
 
+## Evolución 102
+
+- [X] T007 Documentar captura confirmada, contexto y conservación de entrega mediante [tareas 102](../102-camara-visor-completo/tasks.md), issue #212 (FR-001, FR-002, FR-003, FR-004, FR-005, FR-006, FR-007, FR-008).
+
 ## Fase 3: Integración
 - [X] T006 Incorporar el dominio a specs/README.md (FR-008)
 - [X] T032-REF Enlazar recuperación, revisión explicable y protección de la nota implementadas en `specs/032-calificacion-impacto-docente/` (FR-004, FR-005, FR-006, FR-007, FR-008, FR-009, FR-010, FR-011, FR-013, FR-018).

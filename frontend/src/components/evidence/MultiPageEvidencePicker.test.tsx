@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { act, fireEvent, render, screen, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -28,6 +28,66 @@ function cameraInput(): HTMLInputElement {
 }
 
 describe('MultiPageEvidencePicker', () => {
+  it('remembers the chosen camera only while the preparation view remains mounted', async () => {
+    vi.spyOn(HTMLMediaElement.prototype, 'play').mockResolvedValue();
+    const getUserMedia = vi.fn(async (constraints: MediaStreamConstraints) => {
+      const video = constraints.video as MediaTrackConstraints;
+      const deviceId = typeof video.deviceId === 'object' && 'exact' in video.deviceId ? video.deviceId.exact : 'integrated';
+      const track = { stop: vi.fn(), getSettings: () => ({ deviceId }) };
+      return { getTracks: () => [track], getVideoTracks: () => [track] } as unknown as MediaStream;
+    });
+    const enumerateDevices = vi.fn().mockResolvedValue([
+      { kind: 'videoinput', deviceId: 'integrated', label: 'Integrada' },
+      { kind: 'videoinput', deviceId: 'usb', label: 'USB' },
+    ]);
+    Object.defineProperty(navigator, 'mediaDevices', { configurable: true, value: { getUserMedia, enumerateDevices } });
+    const onChange = vi.fn();
+    const view = render(<MultiPageEvidencePicker contextKey="e1:s1" pages={[]} onChange={onChange} />);
+    await userEvent.click(screen.getByRole('button', { name: /^Tomar foto/ }));
+    await screen.findByRole('option', { name: 'USB' });
+    fireEvent.change(screen.getByRole('combobox', { name: 'Cámara' }), { target: { value: 'usb' } });
+    await waitFor(() => expect(getUserMedia).toHaveBeenCalledTimes(2));
+    await userEvent.click(screen.getByRole('button', { name: 'Cancelar' }));
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    view.rerender(<MultiPageEvidencePicker contextKey="e1:s2" pages={[]} onChange={onChange} />);
+    await userEvent.click(screen.getByRole('button', { name: /^Tomar foto/ }));
+    await waitFor(() => expect(getUserMedia).toHaveBeenCalledTimes(3));
+    expect(getUserMedia.mock.calls[2][0].video).toMatchObject({ deviceId: { exact: 'usb' } });
+    expect(onChange).not.toHaveBeenCalled();
+    view.unmount();
+    render(<MultiPageEvidencePicker pages={[]} onChange={onChange} />);
+    await userEvent.click(screen.getByRole('button', { name: /^Tomar foto/ }));
+    await waitFor(() => expect(getUserMedia).toHaveBeenCalledTimes(4));
+    expect(getUserMedia.mock.calls[3][0].video).not.toHaveProperty('deviceId');
+  });
+  it('stops pending camera access and rejects late native files after context changes', async () => {
+    let allow!: (stream: MediaStream) => void;
+    const stop = vi.fn();
+    const getUserMedia = vi.fn(() => new Promise<MediaStream>((resolve) => { allow = resolve; }));
+    Object.defineProperty(navigator, 'mediaDevices', { configurable: true, value: { getUserMedia } });
+    const onChange = vi.fn();
+    const view = render(<MultiPageEvidencePicker contextKey="e1:s1" pages={[]} onChange={onChange} />);
+    await userEvent.click(screen.getByRole('button', { name: /^Tomar foto/ }));
+    expect(getUserMedia).toHaveBeenCalledOnce();
+    view.rerender(<MultiPageEvidencePicker contextKey="e1:s2" pages={[]} onChange={onChange} />);
+    await act(async () => allow({ getTracks: () => [{ stop }] } as unknown as MediaStream));
+    expect(stop).toHaveBeenCalledOnce();
+    fireEvent.change(cameraInput(), { target: { files: [new File(['late'], 'old.jpg', { type: 'image/jpeg' })] } });
+    expect(onChange).not.toHaveBeenCalled();
+    expect(screen.queryByRole('dialog', { name: 'Tomar foto' })).not.toBeInTheDocument();
+  });
+
+  it('rejects stale image-quality results from another context', async () => {
+    let finish!: (result: null) => void;
+    analyze.mockReturnValue(new Promise<null>((resolve) => { finish = resolve; }));
+    const onChange = vi.fn();
+    const view = render(<MultiPageEvidencePicker contextKey="e1:s1" pages={[]} onChange={onChange} />);
+    fireEvent.change(filesInput(), { target: { files: [new File(['photo'], 'old.jpg', { type: 'image/jpeg' })] } });
+    const previous = onChange.mock.calls[0][0] as EvidencePage[];
+    view.rerender(<MultiPageEvidencePicker contextKey="e1:s2" pages={previous} onChange={onChange} />);
+    await act(async () => finish(null));
+    expect(onChange).toHaveBeenCalledTimes(1);
+  });
   it('ignores a late file or camera selection after input has been disabled', () => {
     const onChange = vi.fn();
     const { rerender } = render(<MultiPageEvidencePicker pages={[]} onChange={onChange} />);

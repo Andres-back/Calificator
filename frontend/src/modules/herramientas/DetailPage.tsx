@@ -1,8 +1,7 @@
-import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
-import { motion } from 'framer-motion';
-import { useState, useCallback, useEffect, useMemo } from 'react';
-import { ArrowLeft, BookOpenCheck, Download, FileCheck2, Trash2, Gamepad2, Printer, Share2, Sparkles, Copy, ClipboardList, Pencil, Send } from 'lucide-react';
+import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
+import { ArrowLeft, BookOpenCheck, ClipboardList } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Badge, Button, Card, ConfirmDialog, EducationalIcon, Field, Input, LoadingScreen, Modal, Select } from '@/components/ui';
 import {
@@ -10,34 +9,42 @@ import {
   convertToEvaluacion,
   deleteMaterial,
   duplicateMaterial,
-  editMaterial,
   getMaterial,
   listMaterialEvaluaciones,
-  pdfUrl,
   setMaterialVisibility,
   type IntentPolicy,
 } from './api';
 import { TOOL_BY_TIPO, TOOL_EDUCATIONAL_ICON } from './meta';
-import { MaterialContentEditor } from './MaterialContentEditor';
+import { ResourceEditorPanel } from './components/ResourceEditorPanel';
+import { ResourceActions } from './components/ResourceActions';
+import { resourceCapabilities, resourceLinkClass, resourceReturnPath, resourceState } from './resourcePresentationModel';
+import { useAuth } from '@/stores/auth';
 import { CrucigramaView, SopaLetrasView, MatchingView, ContenidoView } from './views';
 import { useMaterias } from '@/modules/materias/MateriaSelect';
 import type { ToolContent } from './views/ContenidoView';
-import { cn } from '@/lib/cn';
 import { toApiError } from '@/lib/api';
-import { queryClient } from '@/lib/queryClient';
 import { routes } from '@/config/routes';
 import type { CrucigramaContenido, EvaluacionModalidad, MatchingContenido, SopaContenido } from '@/types/api';
 
 export function DetailPage() {
   const { id = '' } = useParams();
+  const accountId = useAuth(state => state.user?.id);
+  return <ResourceDetail key={`${accountId}:${id}`} id={id} />;
+}
+
+function ResourceDetail({ id }: { id: string }) {
+  const user = useAuth(state => state.user);
+  const queryClient = useQueryClient();
+  const location = useLocation();
+  const returnPath = resourceReturnPath(location.state?.resourceOrigin, user?.id);
+  const active = useRef(true);
+  useEffect(() => { active.current = true; return () => { active.current = false; }; }, []);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [handledAction, setHandledAction] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [editing, setEditing] = useState(false);
-  const [editTitle, setEditTitle] = useState('');
-  const [editContent, setEditContent] = useState<Record<string, unknown>>({});
-  const [saving, setSaving] = useState(false);
+  const [editingCriteria, setEditingCriteria] = useState(false);
   const [duplicating, setDuplicating] = useState(false);
   const [showAssignment, setShowAssignment] = useState(false);
   const [showConvert, setShowConvert] = useState(false);
@@ -53,13 +60,23 @@ export function DetailPage() {
   const [converting, setConverting] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const { data: materias = [] } = useMaterias();
-  const { data: material, isLoading } = useQuery({ queryKey: ['material', id], queryFn: () => getMaterial(id) });
+  const materialQuery = useQuery({ queryKey: ['material', id, user?.id], queryFn: () => getMaterial(id), enabled: Boolean(user?.id) });
+  const { data: material, isLoading } = materialQuery;
   const meta = material ? TOOL_BY_TIPO[material.tipo] : undefined;
   const linkedEvaluationsQuery = useQuery({
-    queryKey: ['material-evaluations', id],
+    queryKey: ['material-evaluations', id, user?.id],
     queryFn: () => listMaterialEvaluaciones(id),
-    enabled: Boolean(id),
+    enabled: Boolean(id && user?.id && material),
+    retry: false,
+    staleTime: 0,
+    refetchOnMount: 'always',
   });
+  const capabilities = resourceCapabilities(user?.permissions ?? [], linkedEvaluationsQuery.isFetchedAfterMount && linkedEvaluationsQuery.isSuccess && Array.isArray(linkedEvaluationsQuery.data));
+  useEffect(() => {
+    if (!capabilities.edit) setEditing(false);
+    if (!capabilities.assign) { setShowAssignment(false); setShowConvert(false); }
+    if (!capabilities.remove) setConfirmDelete(false);
+  }, [capabilities.edit, capabilities.assign, capabilities.remove]);
   const content = useMemo(() => material?.contenido_json ?? {}, [material?.contenido_json]);
   const contentTitle = ((typeof content.titulo === 'string' ? content.titulo : material?.titulo) ?? '');
   const instructions = typeof content.instrucciones === 'string' ? content.instrucciones : null;
@@ -70,13 +87,9 @@ export function DetailPage() {
   ) ? content._xcalificator as Record<string, unknown> : null;
   const alignedDba = Array.isArray(aiTrace?.dba_seleccionados) ? aiTrace.dba_seleccionados.length : 0;
   const pedagogicalApproach = aiTrace?.enfoque_pedagogico;
-  const approachLabel = pedagogicalApproach === 'dba_rubrica'
-    ? `Alineado con ${alignedDba} DBA${alignedDba === 1 ? '' : 's'} y criterios de rúbrica`
-    : pedagogicalApproach === 'dba'
-      ? `Alineado con ${alignedDba} DBA${alignedDba === 1 ? '' : 's'}`
-      : pedagogicalApproach === 'rubrica'
-        ? 'Orientado por criterios de rúbrica'
-        : 'Generado libremente a partir del tema y el grado';
+  const approachLabel = pedagogicalApproach === 'dba_rubrica' || pedagogicalApproach === 'dba'
+    ? `Basado en ${alignedDba} criterios de aprendizaje`
+    : pedagogicalApproach === 'rubrica' ? 'Orientado por criterios de rúbrica' : 'Creado a partir del tema y el grado';
 
   const linkedEvaluation = linkedEvaluationsQuery.data?.[0] ?? null;
   const linkedEvaluationId = linkedEvaluation?.id ?? material?.evaluacion_id ?? null;
@@ -85,6 +98,7 @@ export function DetailPage() {
   const activityCanBeShown = ['publicada', 'en_calificacion', 'pendiente_revision', 'cerrada'].includes(linkedState ?? '');
 
   const openConvert = () => {
+    if (!capabilities.convert) return;
     setConvertMateria(supportMateria || material?.materia_id || '');
     setConvertNombre(material?.titulo ?? contentTitle);
     setConvertModalidad(material?.evaluacion_modalidad ?? 'fisica');
@@ -95,33 +109,31 @@ export function DetailPage() {
   };
 
   const remove = async () => {
-    if (isDeleting) return;
+    if (isDeleting || !capabilities.remove) return;
     setIsDeleting(true);
     try {
       await deleteMaterial(id);
       await queryClient.invalidateQueries({ queryKey: ['materials'] });
+      if (!active.current) return;
       toast.success('Material eliminado');
-      navigate('/app/herramientas');
+      navigate(returnPath);
     } catch {
       toast.error('No fue posible eliminar el material. Intenta nuevamente.');
       setIsDeleting(false);
     }
   };
 
-  const handlePrint = () => {
-    window.print();
-  };
-
+  const canonicalShareUrl = new URL(material?.publicado_estudiantes ? `/app/recursos/${id}` : `/app/herramientas/${id}`, window.location.origin).href;
   const handleShare = async () => {
     try {
       if (navigator.share) {
         await navigator.share({
           title: contentTitle,
           text: `Revisa este material: ${contentTitle}`,
-          url: window.location.href,
+          url: canonicalShareUrl,
         });
       } else if (navigator.clipboard) {
-        await navigator.clipboard.writeText(window.location.href);
+        await navigator.clipboard.writeText(canonicalShareUrl);
         toast.success('Enlace copiado al portapapeles');
       } else {
         toast.error('No se pudo compartir el material.');
@@ -132,41 +144,26 @@ export function DetailPage() {
   };
 
   const startEditing = useCallback(() => {
-    setEditTitle(contentTitle);
-    setEditContent(structuredClone(content));
+    if (!capabilities.edit) return;
+    setEditingCriteria(false);
     setEditing(true);
-  }, [contentTitle, content]);
-
-  const saveEdits = async () => {
-    if (saving) return;
-    setSaving(true);
-    try {
-      const parsed = { ...editContent, titulo: editTitle.trim() || contentTitle };
-      await editMaterial(id, { titulo: editTitle.trim() || contentTitle, contenido_json: parsed });
-      await queryClient.invalidateQueries({ queryKey: ['material', id] });
-      setEditing(false);
-      toast.success('Material actualizado');
-    } catch (err) {
-      toast.error(toApiError(err).detail);
-    } finally {
-      setSaving(false);
-    }
-  };
+  }, [capabilities.edit]);
 
   const openAssignment = useCallback(() => {
+    if (!capabilities.assign) return;
     setSupportMateria(material?.materia_id ?? '');
     setShowAssignment(true);
-  }, [material?.materia_id]);
+  }, [material?.materia_id, capabilities.assign]);
 
   useEffect(() => {
     if (!material || handledAction) return;
     const action = searchParams.get('action');
-    if (action === 'edit') startEditing();
-    if (action === 'assign' && !linkedEvaluationId) openAssignment();
-    if (action === 'edit' || action === 'assign') setHandledAction(true);
-  }, [handledAction, linkedEvaluationId, material, openAssignment, searchParams, startEditing]);
+    if (action === 'edit' && capabilities.edit) startEditing();
+    if (action === 'assign' && !linkedEvaluationId && capabilities.assign) openAssignment();
+    if ((action === 'edit' && capabilities.edit) || (action === 'assign' && capabilities.assign)) setHandledAction(true);
+  }, [handledAction, linkedEvaluationId, material, openAssignment, searchParams, startEditing, capabilities.edit, capabilities.assign]);
   const handlePublishSupport = async () => {
-    if (!supportMateria || publishingSupport) return;
+    if (!supportMateria || publishingSupport || !capabilities.assign) return;
     setPublishingSupport(true);
     try {
       await assignMaterialAsSupport(id, supportMateria);
@@ -185,7 +182,7 @@ export function DetailPage() {
   };
 
   const handleToggleVisibility = async (visible: boolean) => {
-    if (publishingSupport) return;
+    if (publishingSupport || !capabilities.assign) return;
     setPublishingSupport(true);
     try {
       await setMaterialVisibility(id, visible);
@@ -203,11 +200,12 @@ export function DetailPage() {
     }
   };
   const handleDuplicate = async () => {
-    if (duplicating) return;
+    if (duplicating || !capabilities.duplicate) return;
     setDuplicating(true);
     try {
       const newMaterial = await duplicateMaterial(id);
       await queryClient.invalidateQueries({ queryKey: ['materials'] });
+      if (!active.current) return;
       toast.success('Material duplicado');
       navigate(`/app/herramientas/${newMaterial.id}`);
     } catch (err) {
@@ -218,7 +216,7 @@ export function DetailPage() {
   };
 
   const handleConvert = async () => {
-    if (converting) return;
+    if (converting || !capabilities.convert) return;
     if (!convertMateria) {
       toast.error('Selecciona la materia donde se administrará la evaluación.');
       return;
@@ -247,6 +245,7 @@ export function DetailPage() {
         queryClient.invalidateQueries({ queryKey: ['materials'] }),
         queryClient.invalidateQueries({ queryKey: ['materia-resources', convertMateria] }),
       ]);
+      if (!active.current) return;
       setShowConvert(false);
       toast.success(`Evaluación creada: ${result.nombre} (${result.preguntas?.length ?? 0} preguntas)`);
       navigate(routes.materiaEvaluaciones(result.materia_id));
@@ -257,7 +256,15 @@ export function DetailPage() {
     }
   };
   if (isLoading) return <LoadingScreen />;
-  if (!material) return <p className="text-muted">Material no encontrado.</p>;
+  if (materialQuery.isError) {
+    const status = toApiError(materialQuery.error).status;
+    return <div role="alert" className="space-y-3 rounded-xl border border-border bg-surface p-4">
+      <p>{status === 404 ? 'Este recurso no está disponible.' : status === 403 ? 'No tienes acceso a este recurso.' : 'No pudimos abrir el recurso. Intenta de nuevo.'}</p>
+      <Button variant="outline" onClick={() => void materialQuery.refetch()}>Volver a intentar</Button>
+      <Link to={returnPath} className={resourceLinkClass}>Volver a recursos</Link>
+    </div>;
+  }
+  if (!material) return null;
 
   const renderBody = () => {
     switch (material.tipo) {
@@ -269,199 +276,53 @@ export function DetailPage() {
     }
   };
 
+  const state = resourceState(material);
   return (
-    <div className="space-y-6">
-      {/* Print header — visible solo al imprimir */}
-      <div className="print-header hidden print:block">
-        <h1>{contentTitle}</h1>
-        <p className="meta">{meta?.label ?? material.tipo}{material.materia_nombre ? ` · ${material.materia_nombre}` : ''}</p>
-        <div className="student-info">
-          <span>Nombre: <span className="line">_______________________</span></span>
-          <span>Grado: <span className="line">___________</span></span>
-        </div>
-      </div>
-
-      {/* Breadcrumb — oculto al imprimir */}
-      <nav className="flex items-center gap-1.5 text-xs text-muted print:hidden" aria-label="Breadcrumb">
-        <Link to="/app/herramientas" className="hover:text-fg">Herramientas</Link>
-        <span aria-hidden>/</span>
-        <span className="text-fg">{meta?.label ?? material.tipo}</span>
-      </nav>
-
-      <Link to="/app/herramientas" className="inline-flex items-center gap-1.5 text-sm font-medium text-muted hover:text-fg print:hidden">
-        <ArrowLeft className="h-4 w-4" /> Volver a Herramientas
-      </Link>
-
-      <motion.div
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        className={cn(
-          'overflow-hidden rounded-2xl border border-border bg-gradient-to-br p-6 sm:p-8 print:hidden',
-          meta?.gradient ? 'from-surface to-surface-2' : 'from-surface to-surface-2',
-        )}
-      >
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <div className="grid h-16 w-16 place-items-center rounded-2xl bg-white/90 shadow-md ring-1 ring-border dark:bg-white/10">
-              <EducationalIcon name={TOOL_EDUCATIONAL_ICON[material.tipo]} className="h-14 w-14" />
-            </div>
-            <div>
-              <div className="flex flex-wrap items-center gap-2">
-                <Badge tone="brand">{meta?.label ?? material.tipo}</Badge>
-                {meta?.interactive && (
-                  <Badge tone="violet"><Gamepad2 className="h-3 w-3" /> Interactivo</Badge>
-                )}
-                {meta?.category && <Badge tone="neutral">{meta.category}</Badge>}
-              </div>
-              <h1 className="mt-2 font-display text-2xl font-extrabold sm:text-3xl">{contentTitle}</h1>
-              {material.materia_nombre && <p className="mt-1 text-sm text-muted">{material.materia_nombre}</p>}
-            </div>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <a href={pdfUrl(id, false)} target="_blank" rel="noreferrer">
-              <Button size="sm" variant="outline">
-                <Download className="h-4 w-4" /> PDF estudiante
-              </Button>
-            </a>
-            <a href={pdfUrl(id, true)} target="_blank" rel="noreferrer">
-              <Button size="sm" variant="outline">
-                <FileCheck2 className="h-4 w-4" /> PDF respuestas
-              </Button>
-            </a>
-            <Button size="icon" variant="ghost" onClick={handlePrint} title="Imprimir" aria-label="Imprimir material">
-              <Printer className="h-4 w-4" />
-            </Button>
-            <Button size="icon" variant="ghost" onClick={handleShare} title="Compartir" aria-label="Compartir material">
-              <Share2 className="h-4 w-4" />
-            </Button>
-            <Button size="sm" onClick={startEditing} title="Editar contenido">
-              <Pencil className="h-4 w-4" /> Editar contenido
-            </Button>
-            <Button size="sm" variant="outline" onClick={handleDuplicate} loading={duplicating} loadingLabel="Duplicando…" title="Duplicar material">
-              <Copy className="h-4 w-4" /> Duplicar
-            </Button>
-            {linkedEvaluationId ? (
-              <Link to={linkedMateriaId ? routes.materiaEvaluaciones(linkedMateriaId) : '/app/evaluaciones'}>
-                <Button size="sm" variant="outline" title="Abrir la actividad evaluable vinculada">
-                  <ClipboardList className="h-4 w-4" /> Abrir actividad
-                </Button>
-              </Link>
-            ) : (
-              <Button size="sm" variant="outline" onClick={openAssignment} title="Asignar este recurso a una clase">
-                <Send className="h-4 w-4" /> Asignar a clase
-              </Button>
-            )}
-            <Button size="icon" variant="ghost" onClick={() => setConfirmDelete(true)} className="text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-500/10" title="Eliminar" aria-label="Eliminar material">
-              <Trash2 className="h-4 w-4" />
-            </Button>
+    <div className="min-w-0 space-y-4">
+      <Link to={returnPath} className={resourceLinkClass}><ArrowLeft className="h-4 w-4" /> Volver a recursos</Link>
+      <header className="space-y-3 rounded-2xl border border-border bg-surface p-4">
+        <div className="flex items-start gap-3">
+          <EducationalIcon name={TOOL_EDUCATIONAL_ICON[material.tipo]} className="h-11 w-11 shrink-0" />
+          <div className="min-w-0 flex-1">
+            <p className="text-xs text-muted">{meta?.label ?? material.tipo}{material.materia_nombre ? ` · ${material.materia_nombre}` : ''}</p>
+            <h1 className="break-words font-display text-xl font-extrabold sm:text-2xl">{contentTitle}</h1>
           </div>
         </div>
-        {material.publicado_estudiantes ? (
-          <div className="mt-5 flex flex-col gap-3 rounded-xl border border-emerald-200 bg-emerald-50/80 px-4 py-3 text-sm dark:border-emerald-500/30 dark:bg-emerald-500/10 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-start gap-3">
-              {material.asignacion_tipo === 'actividad' ? <ClipboardList className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600 dark:text-emerald-300" /> : <BookOpenCheck className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600 dark:text-emerald-300" />}
-              <div>
-                <p className="font-bold text-emerald-900 dark:text-emerald-100">{material.asignacion_tipo === 'actividad' ? 'Actividad visible' : 'Visible como material de apoyo'}</p>
-                <p className="text-emerald-800/80 dark:text-emerald-100/70">
-                  {material.asignacion_tipo === 'actividad'
-                    ? `Los estudiantes pueden verla. ${material.evaluacion_recepcion_habilitada ? 'Las entregas están abiertas.' : 'Las entregas están cerradas.'}`
-                    : `Los estudiantes de ${material.materia_nombre ?? 'la materia'} pueden consultarlo y descargarlo. No genera nota.`}
-                </p>
-              </div>
-            </div>
-            <Button size="sm" variant="outline" onClick={() => void handleToggleVisibility(false)} loading={publishingSupport} loadingLabel="Ocultando…">Ocultar a estudiantes</Button>
-          </div>
-        ) : linkedEvaluationId ? (
-          <div className="mt-5 flex flex-col gap-3 rounded-xl border border-violet-200 bg-violet-50/80 px-4 py-3 text-sm dark:border-violet-500/30 dark:bg-violet-500/10 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-start gap-3">
-              <ClipboardList className="mt-0.5 h-5 w-5 shrink-0 text-violet-600 dark:text-violet-300" />
-              <div>
-                <p className="font-bold text-violet-900 dark:text-violet-100">Actividad vinculada y oculta</p>
-                <p className="text-violet-800/80 dark:text-violet-100/70">Sigue disponible para el profesor en {material.materia_nombre ?? 'la materia'}; ocultarla no borra entregas ni notas.</p>
-              </div>
-            </div>
-            {activityCanBeShown ? <Button size="sm" variant="outline" onClick={() => void handleToggleVisibility(true)} loading={publishingSupport} loadingLabel="Mostrando…">Mostrar a estudiantes</Button> : <Badge tone="neutral">Publica la evaluación para mostrarla</Badge>}
-          </div>
-        ) : (
-          <div className="mt-5 flex items-start gap-3 rounded-xl border border-border bg-surface/70 px-4 py-3 text-sm">
-            <Send className="mt-0.5 h-5 w-5 shrink-0 text-brand-600" />
-            <div>
-              <p className="font-bold">Guardado en {material.materia_nombre ?? 'la materia'} como borrador</p>
-              <p className="text-muted">Ya aparece en Recursos y en la materia. Elige si será apoyo para repasar o una actividad calificable.</p>
-            </div>
-          </div>
-        )}      </motion.div>
-
-      {aiTrace && (
-        <div className="flex gap-3 rounded-xl border border-violet-200 bg-violet-50 px-4 py-3 text-sm text-violet-900 dark:border-violet-500/30 dark:bg-violet-500/10 dark:text-violet-100 print:hidden">
-          <Sparkles className="mt-0.5 h-4 w-4 shrink-0" />
-          <div>
-            <p className="font-semibold">Borrador IA · {approachLabel}</p>
-            <p className="mt-0.5 text-xs opacity-80">La IA propone. Revisa el contenido y valida que sea apropiado para tu grupo antes de imprimir, descargar o compartir.</p>
-          </div>
-        </div>
-      )}
-
-      {instructions && material.tipo !== 'examen' && (
-        <div className="rounded-lg border border-brand-200 bg-brand-50 px-4 py-3 text-sm text-brand-800 dark:border-brand-500/30 dark:bg-brand-500/10 dark:text-brand-200 print:hidden">
-          <p className="font-semibold">Instrucciones</p>
-          <p className="mt-0.5">{instructions}</p>
-        </div>
-      )}
-
+        <Badge tone={state.tone}>{state.label}</Badge>
+        <ResourceActions id={id} capabilities={capabilities} activityPath={linkedEvaluationId ? (linkedMateriaId ? routes.materiaEvaluaciones(linkedMateriaId) : '/app/evaluaciones') : null}
+          visible={Boolean(material.publicado_estudiantes)} canShow={material.asignacion_tipo === 'apoyo' || activityCanBeShown}
+          busy={duplicating || publishingSupport || isDeleting} onEdit={startEditing} onAssign={openAssignment}
+          onShare={() => void handleShare()} onDuplicate={() => void handleDuplicate()}
+          onVisibility={visible => void handleToggleVisibility(visible)} onDelete={() => setConfirmDelete(true)} />
+      </header>
       {Array.isArray(aiTrace?.errores_criterios) && aiTrace.errores_criterios.length > 0 && (
-        <Card role="alert" className="border-amber-300 p-4 print:hidden">
+        <Card role="alert" className="border-amber-300 p-4">
           <p className="font-bold">Revisa los criterios antes de evaluar</p>
-          <ul className="mt-2 list-disc space-y-1 pl-5 text-sm">
-            {aiTrace.errores_criterios.map((error, index) => <li key={index}>{String(error)}</li>)}
-          </ul>
-          <Button type="button" variant="outline" className="mt-3" onClick={startEditing}>Corregir criterios</Button>
+          <ul className="mt-2 list-disc space-y-1 pl-5 text-sm">{aiTrace.errores_criterios.map((error, index) => <li key={index}>{String(error)}</li>)}</ul>
+          {capabilities.edit && <Button variant="outline" className="mt-3" onClick={() => { setEditingCriteria(true); setEditing(true); }}>Corregir criterios</Button>}
         </Card>
       )}
-      {!editing && material.tipo !== 'rubrica' && Array.isArray(content.criterios) && content.criterios.length > 0 && (
-        <details className="rounded-xl border border-border bg-surface p-4 print:hidden">
-          <summary className="focus-ring min-h-11 cursor-pointer content-center rounded-lg font-bold">Qué se evaluará · criterios propuestos</summary>
-          <p className="my-2 text-sm text-muted">Son una guía para valorar el aprendizaje, no preguntas ni respuestas correctas. Revísalos antes de usar el recurso como evaluación.</p>
-          <div className="space-y-3">
-            {content.criterios.map((value, index) => {
-              const criterion = value && typeof value === 'object' ? value as Record<string, unknown> : {};
-              return <div key={index} className="border-t border-border pt-3 text-sm">
-                <p className="font-bold">{String(criterion.nombre ?? `Criterio ${index + 1}`)}</p>
-                <p className="mt-1 whitespace-pre-wrap">{String(criterion.descripcion ?? '')}</p>
-              </div>;
-            })}
-          </div>
-          <Button type="button" variant="outline" className="mt-3" onClick={startEditing}>Editar criterios</Button>
+      <Card role="region" aria-label="Contenido del recurso" tabIndex={0} className="focus-ring min-w-0 overflow-x-auto p-4 sm:p-6" data-resource-body>
+        {instructions && material.tipo !== 'examen' && <p className="mb-4 whitespace-pre-wrap text-sm"><strong>Instrucciones: </strong>{instructions}</p>}
+        {renderBody()}
+      </Card>
+      {material.tipo !== 'rubrica' && Array.isArray(content.criterios) && content.criterios.length > 0 && (
+        <details className="rounded-xl border border-border bg-surface p-4">
+          <summary className="focus-ring min-h-11 cursor-pointer content-center rounded font-semibold">Qué se evaluará · criterios propuestos</summary>
+          <div className="space-y-3 py-3">{content.criterios.map((value, index) => {
+            const criterion = value && typeof value === 'object' ? value as Record<string, unknown> : {};
+            return <div key={index} className="text-sm"><p className="font-bold">{String(criterion.nombre ?? `Criterio ${index + 1}`)}</p><p className="whitespace-pre-wrap">{String(criterion.descripcion ?? '')}</p></div>;
+          })}</div>
+          {capabilities.edit && <Button variant="outline" onClick={() => { setEditingCriteria(true); setEditing(true); }}>Editar criterios</Button>}
         </details>
       )}
-
-      <Card className="p-5 sm:p-7 print:!border-0 print:!bg-transparent print:!p-0 print:!shadow-none">
-        {editing ? (
-          <div className="space-y-5">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <h3 className="font-display text-lg font-bold">Editor visual del recurso</h3>
-                <p className="mt-1 text-sm text-muted">Cambia textos, preguntas, respuestas y opciones sin editar código.</p>
-              </div>
-              <div className="flex gap-2 self-end sm:self-auto">
-                <Button size="sm" variant="ghost" onClick={() => setEditing(false)}>Cancelar</Button>
-                <Button size="sm" onClick={saveEdits} loading={saving} loadingLabel="Guardando…">Guardar cambios</Button>
-              </div>
-            </div>
-            <Field label="Título del recurso">
-              <Input value={editTitle} onChange={(event) => setEditTitle(event.target.value)} />
-            </Field>
-            <MaterialContentEditor value={editContent} onChange={setEditContent} />
-            {material.publicado_estudiantes && (
-              <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-100">
-                Al guardar, los estudiantes verán inmediatamente la versión actualizada del material.
-              </p>
-            )}
-          </div>
-        ) : (
-          renderBody()
-        )}
-      </Card>
+      <details className="rounded-xl border border-border bg-surface p-4">
+        <summary className="focus-ring min-h-11 cursor-pointer content-center rounded font-semibold">Información del recurso</summary>
+        <p className="mt-2 text-sm text-muted">{material.asignacion_tipo === 'apoyo' ? 'Material para repasar: no genera nota.' : linkedEvaluationId ? 'La actividad se administra desde Evaluaciones de la materia. Ocultar no borra entregas ni notas.' : 'Guardado como borrador. Asigna como apoyo para repasar o como actividad calificable.'}</p>
+        {aiTrace && <p className="mt-2 text-sm text-muted">Creado con ayuda de IA · {approachLabel}. Revisa su contenido antes de compartirlo.</p>}
+        {linkedEvaluationsQuery.isError && <div className="mt-3 space-y-2 text-sm"><p>Puedes leer este recurso. No pudimos habilitar sus opciones de edición.</p><Button variant="outline" onClick={() => void linkedEvaluationsQuery.refetch()}>Comprobar opciones de edición</Button></div>}
+      </details>
+      {editing && capabilities.edit && <ResourceEditorPanel material={material} criteria={editingCriteria} onClose={() => setEditing(false)} />}
       <ConfirmDialog
         open={confirmDelete}
         onClose={() => setConfirmDelete(false)}
@@ -472,9 +333,9 @@ export function DetailPage() {
         tone="danger"
         loading={isDeleting}
       />
-      {showAssignment && (
+      {showAssignment && capabilities.assign && (
         <Modal open onClose={() => setShowAssignment(false)} ariaLabel="Asignar recurso a una clase">
-          <div className="space-y-5 p-6">
+          <div className="space-y-4 [&_input]:text-base [&_select]:text-base">
             <div>
               <h2 className="font-display text-xl font-extrabold">Asignar a una clase</h2>
               <p className="mt-1 text-sm text-muted">Elige qué harán tus estudiantes con este recurso.</p>
@@ -498,24 +359,24 @@ export function DetailPage() {
                 <span className="mt-3 block font-bold">Material de apoyo</span>
                 <span className="mt-1 block text-sm text-muted">Queda disponible para leer, practicar o descargar. No requiere entrega ni genera nota.</span>
               </button>
-              <button
+              {capabilities.convert && <button
                 type="button"
-                disabled={!supportMateria}
+                disabled={!supportMateria || !capabilities.convert}
                 onClick={() => { setShowAssignment(false); setConvertMateria(supportMateria); openConvert(); }}
                 className="focus-ring rounded-2xl border border-violet-200 bg-violet-50/70 p-4 text-left transition hover:border-violet-400 disabled:cursor-not-allowed disabled:opacity-50 dark:border-violet-500/30 dark:bg-violet-500/10"
               >
                 <ClipboardList className="h-6 w-6 text-violet-600 dark:text-violet-300" />
                 <span className="mt-3 block font-bold">Taller o actividad evaluable</span>
                 <span className="mt-1 block text-sm text-muted">Crea un borrador editable con entregas, intentos y calificación dentro de Calificator.</span>
-              </button>
+              </button>}
             </div>
             <div className="flex justify-end"><Button variant="ghost" onClick={() => setShowAssignment(false)}>Cancelar</Button></div>
           </div>
         </Modal>
       )}
-      {showConvert && (
+      {showConvert && capabilities.convert && (
         <Modal open onClose={() => setShowConvert(false)} ariaLabel="Asignar como actividad evaluable">
-          <div className="space-y-5 p-6">
+          <div className="space-y-4 [&_input]:text-base [&_select]:text-base">
             <div>
               <h2 className="font-display text-xl font-extrabold">Asignar como actividad evaluable</h2>
               <p className="mt-1 text-sm text-muted">

@@ -1,8 +1,8 @@
 {
   "counts": {
     "by_coverage": {
-      "covered": 478,
-      "missing": 95
+      "covered": 483,
+      "missing": 90
     },
     "by_kind": {
       "endpoint": 269,
@@ -95,8 +95,25 @@
     },
     {
       "category": "missing_coverage",
-      "description": "14 superficies de 002-arquitectura-roles-seguridad no tienen evidencia de prueba observable.",
-      "id": "F-3EA637857F4D",
+      "description": "8 superficies de 012-ia-jobs-produccion no tienen evidencia de prueba observable.",
+      "id": "F-4DBB17A51B89",
+      "issue_url": "",
+      "severity": "low",
+      "surface_ids": [
+        "job:tasks.assign_overdue_grades",
+        "job:tasks.cleanup_expired_roster_imports",
+        "job:tasks.cleanup_password_reset_requests",
+        "job:tasks.export_report",
+        "job:tasks.get_ai_config_version",
+        "job:tasks.ingest_rag",
+        "job:tasks.recover_expired_local_jobs",
+        "job:tasks.send_password_reset_email"
+      ]
+    },
+    {
+      "category": "missing_coverage",
+      "description": "13 superficies de 002-arquitectura-roles-seguridad no tienen evidencia de prueba observable.",
+      "id": "F-5403AC2120D0",
       "issue_url": "",
       "severity": "low",
       "surface_ids": [
@@ -110,7 +127,6 @@
         "table:ai_tool_settings",
         "table:ai_usage_events",
         "table:ai_usage_logs",
-        "table:chat_messages",
         "table:evaluation_blueprints",
         "table:importacion_estudiantes_filas",
         "table:importacion_estudiantes_lotes"
@@ -147,27 +163,6 @@
         "backend:POST:/materias/{materia_id}/importaciones-estudiantes/manual",
         "backend:POST:/materias/{materia_id}/importaciones-estudiantes/{lote_id}/confirmar",
         "backend:PUT:/materias/{materia_id}/importaciones-estudiantes/{lote_id}"
-      ]
-    },
-    {
-      "category": "missing_coverage",
-      "description": "12 superficies de 012-ia-jobs-produccion no tienen evidencia de prueba observable.",
-      "id": "F-B4FA37D13617",
-      "issue_url": "",
-      "severity": "low",
-      "surface_ids": [
-        "backend:GET:/jobs/{job_id}/estado",
-        "backend:GET:/jobs/{job_id}/items",
-        "backend:POST:/jobs/{job_id}/cancelar",
-        "backend:POST:/jobs/{job_id}/reintentar",
-        "job:tasks.assign_overdue_grades",
-        "job:tasks.cleanup_expired_roster_imports",
-        "job:tasks.cleanup_password_reset_requests",
-        "job:tasks.export_report",
-        "job:tasks.get_ai_config_version",
-        "job:tasks.ingest_rag",
-        "job:tasks.recover_expired_local_jobs",
-        "job:tasks.send_password_reset_email"
       ]
     },
     {
@@ -384,7 +379,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "c653621d3b2ef0b2fd203c9e9269fbf73b2b27dd4b02c3335e47d46af3238574",
+  "source_digest": "32ff25ec9e4a05abb4b3e12b0a4f36d0fcee1d13c470a3088561ef1289abd5ab",
   "surfaces": [
     {
       "actors": [
@@ -449,6 +444,12 @@
           "reference": "DELETE:/admin/roles/{role_id}",
           "status": "direct",
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "DELETE:/admin/roles/{role_id}",
+          "status": "direct",
+          "test_path": "frontend/src/config/nav.test.ts"
         },
         {
           "level": "unit",
@@ -670,6 +671,12 @@
           "level": "e2e",
           "reference": "DELETE:/evaluaciones/{evaluacion_id}",
           "status": "direct",
+          "test_path": "frontend/e2e/camera-capture.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "DELETE:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
           "test_path": "frontend/e2e/evaluation-ai-wizard.spec.ts"
         },
         {
@@ -701,6 +708,12 @@
           "reference": "DELETE:/evaluaciones/{evaluacion_id}",
           "status": "direct",
           "test_path": "frontend/e2e/resources-creation.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "DELETE:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/resources-responsive.spec.ts"
         },
         {
           "level": "e2e",
@@ -912,6 +925,12 @@
           "level": "e2e",
           "reference": "DELETE:/herramientas/{material_id}",
           "status": "direct",
+          "test_path": "frontend/e2e/resources-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "DELETE:/herramientas/{material_id}",
+          "status": "direct",
           "test_path": "frontend/e2e/student-activity-delivery.spec.ts"
         },
         {
@@ -936,6 +955,12 @@
           "level": "unit",
           "reference": "DELETE:/herramientas/{material_id}",
           "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/DetailPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "DELETE:/herramientas/{material_id}",
+          "status": "direct",
           "test_path": "frontend/src/modules/herramientas/ListPage.test.tsx"
         },
         {
@@ -955,6 +980,12 @@
           "reference": "DELETE:/herramientas/{material_id}",
           "status": "direct",
           "test_path": "frontend/src/modules/herramientas/api.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "DELETE:/herramientas/{material_id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/resourcePresentationModel.test.ts"
         },
         {
           "level": "unit",
@@ -1188,7 +1219,8 @@
       ],
       "authorization": [
         "get_current_user",
-        "require_permission_now:xali.use"
+        "require_permission_now:xali.use",
+        "require_role"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -1201,10 +1233,16 @@
       "kind": "endpoint",
       "owner_spec": "009-xali-rag-refuerzos",
       "signature": "DELETE:/xali/history",
-      "source_line": 119,
+      "source_line": 125,
       "source_path": "backend/app/modules/xali/router.py",
       "states": [],
       "tests": [
+        {
+          "level": "unit",
+          "reference": "DELETE:/xali/history",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_xali_teacher_visual.py"
+        },
         {
           "level": "unit",
           "reference": "DELETE:/xali/history",
@@ -1218,10 +1256,28 @@
           "test_path": "backend/tests/unit/test_xali_student_resources.py"
         },
         {
+          "level": "unit",
+          "reference": "DELETE:/xali/history",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_xali_teacher_context.py"
+        },
+        {
+          "level": "unit",
+          "reference": "DELETE:/xali/history",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_xali_visual_content.py"
+        },
+        {
           "level": "e2e",
           "reference": "DELETE:/xali/history",
           "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "DELETE:/xali/history",
+          "status": "direct",
+          "test_path": "frontend/e2e/xali-teacher-visual.spec.ts"
         },
         {
           "level": "unit",
@@ -1234,6 +1290,12 @@
           "reference": "DELETE:/xali/history",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/student-feedback/XaliFeedbackStory.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "DELETE:/xali/history",
+          "status": "domain",
+          "test_path": "frontend/src/modules/xali/XaliPage.teacher.test.tsx"
         },
         {
           "level": "unit",
@@ -1713,6 +1775,12 @@
           "reference": "GET:/admin/mail/config",
           "status": "direct",
           "test_path": "backend/tests/integration/test_password_recovery_api.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/admin/mail/config",
+          "status": "direct",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
         }
       ]
     },
@@ -1741,6 +1809,12 @@
           "reference": "GET:/admin/mail/recovery-status",
           "status": "domain",
           "test_path": "backend/tests/integration/test_admin_mail_config.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/admin/mail/recovery-status",
+          "status": "direct",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
         }
       ]
     },
@@ -1807,6 +1881,12 @@
           "reference": "GET:/admin/roles",
           "status": "direct",
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/admin/roles",
+          "status": "direct",
+          "test_path": "frontend/src/config/nav.test.ts"
         },
         {
           "level": "unit",
@@ -1879,6 +1959,12 @@
           "reference": "GET:/admin/roles/{role_id}",
           "status": "direct",
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/admin/roles/{role_id}",
+          "status": "direct",
+          "test_path": "frontend/src/config/nav.test.ts"
         },
         {
           "level": "unit",
@@ -2843,7 +2929,19 @@
           "level": "e2e",
           "reference": "GET:/auth/me",
           "status": "direct",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/auth/me",
+          "status": "direct",
           "test_path": "frontend/e2e/auth-navigation.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/auth/me",
+          "status": "direct",
+          "test_path": "frontend/e2e/camera-capture.spec.ts"
         },
         {
           "level": "e2e",
@@ -2885,6 +2983,12 @@
           "level": "e2e",
           "reference": "GET:/auth/me",
           "status": "direct",
+          "test_path": "frontend/e2e/resources-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/auth/me",
+          "status": "direct",
           "test_path": "frontend/e2e/roster-import.spec.ts"
         },
         {
@@ -2898,6 +3002,12 @@
           "reference": "GET:/auth/me",
           "status": "direct",
           "test_path": "frontend/e2e/teacher-ai-configuration.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/auth/me",
+          "status": "direct",
+          "test_path": "frontend/e2e/xali-teacher-visual.spec.ts"
         },
         {
           "level": "unit",
@@ -3822,6 +3932,12 @@
           "level": "e2e",
           "reference": "GET:/evaluaciones/{evaluacion_id}",
           "status": "direct",
+          "test_path": "frontend/e2e/camera-capture.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
           "test_path": "frontend/e2e/evaluation-ai-wizard.spec.ts"
         },
         {
@@ -3853,6 +3969,12 @@
           "reference": "GET:/evaluaciones/{evaluacion_id}",
           "status": "direct",
           "test_path": "frontend/e2e/resources-creation.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/resources-responsive.spec.ts"
         },
         {
           "level": "e2e",
@@ -4515,6 +4637,12 @@
           "level": "e2e",
           "reference": "GET:/herramientas",
           "status": "direct",
+          "test_path": "frontend/e2e/resources-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/herramientas",
+          "status": "direct",
           "test_path": "frontend/e2e/student-activity-delivery.spec.ts"
         },
         {
@@ -4539,6 +4667,12 @@
           "level": "unit",
           "reference": "GET:/herramientas",
           "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/DetailPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/herramientas",
+          "status": "direct",
           "test_path": "frontend/src/modules/herramientas/ListPage.test.tsx"
         },
         {
@@ -4558,6 +4692,12 @@
           "reference": "GET:/herramientas",
           "status": "direct",
           "test_path": "frontend/src/modules/herramientas/api.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/herramientas",
+          "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/resourcePresentationModel.test.ts"
         },
         {
           "level": "unit",
@@ -4764,6 +4904,12 @@
           "level": "e2e",
           "reference": "GET:/herramientas/{material_id}",
           "status": "direct",
+          "test_path": "frontend/e2e/resources-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/herramientas/{material_id}",
+          "status": "direct",
           "test_path": "frontend/e2e/student-activity-delivery.spec.ts"
         },
         {
@@ -4788,6 +4934,12 @@
           "level": "unit",
           "reference": "GET:/herramientas/{material_id}",
           "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/DetailPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/herramientas/{material_id}",
+          "status": "direct",
           "test_path": "frontend/src/modules/herramientas/ListPage.test.tsx"
         },
         {
@@ -4807,6 +4959,12 @@
           "reference": "GET:/herramientas/{material_id}",
           "status": "direct",
           "test_path": "frontend/src/modules/herramientas/api.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/herramientas/{material_id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/resourcePresentationModel.test.ts"
         },
         {
           "level": "unit",
@@ -5216,10 +5374,28 @@
       "states": [],
       "tests": [
         {
+          "level": "e2e",
+          "reference": "GET:/jobs/pendientes",
+          "status": "direct",
+          "test_path": "frontend/e2e/materia-queue-mobile.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/jobs/pendientes",
+          "status": "direct",
+          "test_path": "frontend/e2e/resources-responsive.spec.ts"
+        },
+        {
           "level": "unit",
           "reference": "GET:/jobs/pendientes",
           "status": "direct",
           "test_path": "frontend/src/modules/calificaciones/GradingJobMonitor.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/jobs/pendientes",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/gradingJobs.test.ts"
         }
       ]
     },
@@ -5261,13 +5437,31 @@
           "level": "e2e",
           "reference": "GET:/jobs/{job_id}",
           "status": "direct",
+          "test_path": "frontend/e2e/materia-queue-mobile.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/jobs/{job_id}",
+          "status": "direct",
           "test_path": "frontend/e2e/mock/grading-review.mock.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/jobs/{job_id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/resources-responsive.spec.ts"
         },
         {
           "level": "unit",
           "reference": "GET:/jobs/{job_id}",
           "status": "direct",
           "test_path": "frontend/src/modules/calificaciones/GradingJobMonitor.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/jobs/{job_id}",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/gradingJobs.test.ts"
         },
         {
           "level": "unit",
@@ -5285,7 +5479,7 @@
         "get_current_user"
       ],
       "consumers": [],
-      "coverage": "missing",
+      "coverage": "covered",
       "details": {
         "function": "get_estado",
         "registered": true,
@@ -5298,7 +5492,14 @@
       "source_line": 167,
       "source_path": "backend/app/modules/jobs/router.py",
       "states": [],
-      "tests": []
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "GET:/jobs/{job_id}/estado",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/gradingJobs.test.ts"
+        }
+      ]
     },
     {
       "actors": [
@@ -5308,7 +5509,7 @@
         "get_current_user"
       ],
       "consumers": [],
-      "coverage": "missing",
+      "coverage": "covered",
       "details": {
         "function": "get_job_items",
         "registered": true,
@@ -5321,7 +5522,14 @@
       "source_line": 177,
       "source_path": "backend/app/modules/jobs/router.py",
       "states": [],
-      "tests": []
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "GET:/jobs/{job_id}/items",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/gradingJobs.test.ts"
+        }
+      ]
     },
     {
       "actors": [
@@ -5388,6 +5596,12 @@
           "level": "e2e",
           "reference": "GET:/materias",
           "status": "direct",
+          "test_path": "frontend/e2e/camera-capture.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/materias",
+          "status": "direct",
           "test_path": "frontend/e2e/evaluation-ai-wizard.spec.ts"
         },
         {
@@ -5401,6 +5615,12 @@
           "reference": "GET:/materias",
           "status": "direct",
           "test_path": "frontend/e2e/explainable-grading.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/materias",
+          "status": "direct",
+          "test_path": "frontend/e2e/materia-queue-mobile.spec.ts"
         },
         {
           "level": "e2e",
@@ -5430,6 +5650,12 @@
           "level": "e2e",
           "reference": "GET:/materias",
           "status": "direct",
+          "test_path": "frontend/e2e/resources-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/materias",
+          "status": "direct",
           "test_path": "frontend/e2e/roster-import.spec.ts"
         },
         {
@@ -5437,6 +5663,12 @@
           "reference": "GET:/materias",
           "status": "direct",
           "test_path": "frontend/e2e/student-activity-delivery.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/materias",
+          "status": "direct",
+          "test_path": "frontend/e2e/xali-teacher-visual.spec.ts"
         },
         {
           "level": "unit",
@@ -5508,7 +5740,19 @@
           "level": "unit",
           "reference": "GET:/materias",
           "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/DetailPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias",
+          "status": "direct",
           "test_path": "frontend/src/modules/herramientas/forms/base.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias",
+          "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/resourcePresentationModel.test.ts"
         },
         {
           "level": "unit",
@@ -5545,6 +5789,12 @@
           "reference": "GET:/materias",
           "status": "direct",
           "test_path": "frontend/src/modules/presentaciones/PresentacionesPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias",
+          "status": "direct",
+          "test_path": "frontend/src/modules/xali/XaliPage.teacher.test.tsx"
         },
         {
           "level": "unit",
@@ -5619,6 +5869,12 @@
           "level": "e2e",
           "reference": "GET:/materias/{materia_id}",
           "status": "direct",
+          "test_path": "frontend/e2e/camera-capture.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/materias/{materia_id}",
+          "status": "direct",
           "test_path": "frontend/e2e/evaluation-ai-wizard.spec.ts"
         },
         {
@@ -5632,6 +5888,12 @@
           "reference": "GET:/materias/{materia_id}",
           "status": "direct",
           "test_path": "frontend/e2e/explainable-grading.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/materias/{materia_id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/materia-queue-mobile.spec.ts"
         },
         {
           "level": "e2e",
@@ -5661,6 +5923,12 @@
           "level": "e2e",
           "reference": "GET:/materias/{materia_id}",
           "status": "direct",
+          "test_path": "frontend/e2e/resources-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/materias/{materia_id}",
+          "status": "direct",
           "test_path": "frontend/e2e/roster-import.spec.ts"
         },
         {
@@ -5668,6 +5936,12 @@
           "reference": "GET:/materias/{materia_id}",
           "status": "direct",
           "test_path": "frontend/e2e/student-activity-delivery.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/materias/{materia_id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/xali-teacher-visual.spec.ts"
         },
         {
           "level": "unit",
@@ -5739,7 +6013,19 @@
           "level": "unit",
           "reference": "GET:/materias/{materia_id}",
           "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/DetailPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias/{materia_id}",
+          "status": "direct",
           "test_path": "frontend/src/modules/herramientas/forms/base.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias/{materia_id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/resourcePresentationModel.test.ts"
         },
         {
           "level": "unit",
@@ -5776,6 +6062,12 @@
           "reference": "GET:/materias/{materia_id}",
           "status": "direct",
           "test_path": "frontend/src/modules/presentaciones/PresentacionesPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias/{materia_id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/xali/XaliPage.teacher.test.tsx"
         },
         {
           "level": "unit",
@@ -6973,7 +7265,19 @@
           "level": "e2e",
           "reference": "GET:/users/me",
           "status": "direct",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/users/me",
+          "status": "direct",
           "test_path": "frontend/e2e/auth-navigation.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/users/me",
+          "status": "direct",
+          "test_path": "frontend/e2e/camera-capture.spec.ts"
         },
         {
           "level": "e2e",
@@ -7015,6 +7319,12 @@
           "level": "e2e",
           "reference": "GET:/users/me",
           "status": "direct",
+          "test_path": "frontend/e2e/resources-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/users/me",
+          "status": "direct",
           "test_path": "frontend/e2e/roster-import.spec.ts"
         },
         {
@@ -7028,6 +7338,12 @@
           "reference": "GET:/users/me",
           "status": "direct",
           "test_path": "frontend/e2e/teacher-ai-configuration.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/users/me",
+          "status": "direct",
+          "test_path": "frontend/e2e/xali-teacher-visual.spec.ts"
         },
         {
           "level": "unit",
@@ -7111,7 +7427,19 @@
           "level": "e2e",
           "reference": "GET:/users/me/authorization",
           "status": "direct",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/users/me/authorization",
+          "status": "direct",
           "test_path": "frontend/e2e/auth-navigation.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/users/me/authorization",
+          "status": "direct",
+          "test_path": "frontend/e2e/camera-capture.spec.ts"
         },
         {
           "level": "e2e",
@@ -7153,6 +7481,12 @@
           "level": "e2e",
           "reference": "GET:/users/me/authorization",
           "status": "direct",
+          "test_path": "frontend/e2e/resources-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/users/me/authorization",
+          "status": "direct",
           "test_path": "frontend/e2e/roster-import.spec.ts"
         },
         {
@@ -7166,6 +7500,12 @@
           "reference": "GET:/users/me/authorization",
           "status": "direct",
           "test_path": "frontend/e2e/teacher-ai-configuration.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/users/me/authorization",
+          "status": "direct",
+          "test_path": "frontend/e2e/xali-teacher-visual.spec.ts"
         },
         {
           "level": "unit",
@@ -7197,10 +7537,16 @@
       "kind": "endpoint",
       "owner_spec": "009-xali-rag-refuerzos",
       "signature": "GET:/xali/evaluaciones-entregadas",
-      "source_line": 44,
+      "source_line": 48,
       "source_path": "backend/app/modules/xali/router.py",
       "states": [],
       "tests": [
+        {
+          "level": "unit",
+          "reference": "GET:/xali/evaluaciones-entregadas",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_xali_teacher_visual.py"
+        },
         {
           "level": "unit",
           "reference": "GET:/xali/evaluaciones-entregadas",
@@ -7214,10 +7560,28 @@
           "test_path": "backend/tests/unit/test_xali_student_resources.py"
         },
         {
+          "level": "unit",
+          "reference": "GET:/xali/evaluaciones-entregadas",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_xali_teacher_context.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/xali/evaluaciones-entregadas",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_xali_visual_content.py"
+        },
+        {
           "level": "e2e",
           "reference": "GET:/xali/evaluaciones-entregadas",
           "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/xali/evaluaciones-entregadas",
+          "status": "domain",
+          "test_path": "frontend/e2e/xali-teacher-visual.spec.ts"
         },
         {
           "level": "unit",
@@ -7230,6 +7594,12 @@
           "reference": "GET:/xali/evaluaciones-entregadas",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/student-feedback/XaliFeedbackStory.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/xali/evaluaciones-entregadas",
+          "status": "domain",
+          "test_path": "frontend/src/modules/xali/XaliPage.teacher.test.tsx"
         },
         {
           "level": "unit",
@@ -7261,10 +7631,16 @@
       "kind": "endpoint",
       "owner_spec": "006-recursos-actividades",
       "signature": "GET:/xali/evaluaciones/{evaluacion_id}/recursos",
-      "source_line": 91,
+      "source_line": 95,
       "source_path": "backend/app/modules/xali/router.py",
       "states": [],
       "tests": [
+        {
+          "level": "unit",
+          "reference": "GET:/xali/evaluaciones/{evaluacion_id}/recursos",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_xali_teacher_visual.py"
+        },
         {
           "level": "unit",
           "reference": "GET:/xali/evaluaciones/{evaluacion_id}/recursos",
@@ -7281,6 +7657,24 @@
           "level": "unit",
           "reference": "GET:/xali/evaluaciones/{evaluacion_id}/recursos",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_xali_teacher_context.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/xali/evaluaciones/{evaluacion_id}/recursos",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_xali_visual_content.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/xali/evaluaciones/{evaluacion_id}/recursos",
+          "status": "domain",
+          "test_path": "frontend/e2e/xali-teacher-visual.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/xali/evaluaciones/{evaluacion_id}/recursos",
+          "status": "domain",
           "test_path": "frontend/src/components/xali/XaliMascot.test.tsx"
         },
         {
@@ -7288,6 +7682,12 @@
           "reference": "GET:/xali/evaluaciones/{evaluacion_id}/recursos",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/student-feedback/XaliFeedbackStory.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/xali/evaluaciones/{evaluacion_id}/recursos",
+          "status": "domain",
+          "test_path": "frontend/src/modules/xali/XaliPage.teacher.test.tsx"
         },
         {
           "level": "unit",
@@ -7305,7 +7705,8 @@
       ],
       "authorization": [
         "get_current_user",
-        "require_permission_now:xali.use"
+        "require_permission_now:xali.use",
+        "require_role"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -7318,10 +7719,16 @@
       "kind": "endpoint",
       "owner_spec": "009-xali-rag-refuerzos",
       "signature": "GET:/xali/history",
-      "source_line": 109,
+      "source_line": 113,
       "source_path": "backend/app/modules/xali/router.py",
       "states": [],
       "tests": [
+        {
+          "level": "unit",
+          "reference": "GET:/xali/history",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_xali_teacher_visual.py"
+        },
         {
           "level": "unit",
           "reference": "GET:/xali/history",
@@ -7335,10 +7742,28 @@
           "test_path": "backend/tests/unit/test_xali_student_resources.py"
         },
         {
+          "level": "unit",
+          "reference": "GET:/xali/history",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_xali_teacher_context.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/xali/history",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_xali_visual_content.py"
+        },
+        {
           "level": "e2e",
           "reference": "GET:/xali/history",
           "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/xali/history",
+          "status": "direct",
+          "test_path": "frontend/e2e/xali-teacher-visual.spec.ts"
         },
         {
           "level": "unit",
@@ -7351,6 +7776,12 @@
           "reference": "GET:/xali/history",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/student-feedback/XaliFeedbackStory.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/xali/history",
+          "status": "domain",
+          "test_path": "frontend/src/modules/xali/XaliPage.teacher.test.tsx"
         },
         {
           "level": "unit",
@@ -7388,6 +7819,12 @@
           "level": "unit",
           "reference": "GET:/xali/refuerzos/{refuerzo_id}",
           "status": "domain",
+          "test_path": "backend/tests/integration/test_xali_teacher_visual.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/xali/refuerzos/{refuerzo_id}",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_xali_guidance_policy.py"
         },
         {
@@ -7400,6 +7837,24 @@
           "level": "unit",
           "reference": "GET:/xali/refuerzos/{refuerzo_id}",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_xali_teacher_context.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/xali/refuerzos/{refuerzo_id}",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_xali_visual_content.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/xali/refuerzos/{refuerzo_id}",
+          "status": "domain",
+          "test_path": "frontend/e2e/xali-teacher-visual.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/xali/refuerzos/{refuerzo_id}",
+          "status": "domain",
           "test_path": "frontend/src/components/xali/XaliMascot.test.tsx"
         },
         {
@@ -7407,6 +7862,12 @@
           "reference": "GET:/xali/refuerzos/{refuerzo_id}",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/student-feedback/XaliFeedbackStory.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/xali/refuerzos/{refuerzo_id}",
+          "status": "domain",
+          "test_path": "frontend/src/modules/xali/XaliPage.teacher.test.tsx"
         },
         {
           "level": "unit",
@@ -7559,6 +8020,12 @@
           "reference": "PATCH:/admin/roles/{role_id}",
           "status": "direct",
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/admin/roles/{role_id}",
+          "status": "direct",
+          "test_path": "frontend/src/config/nav.test.ts"
         },
         {
           "level": "unit",
@@ -8064,6 +8531,12 @@
           "level": "e2e",
           "reference": "PATCH:/evaluaciones/{evaluacion_id}",
           "status": "direct",
+          "test_path": "frontend/e2e/camera-capture.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
           "test_path": "frontend/e2e/evaluation-ai-wizard.spec.ts"
         },
         {
@@ -8095,6 +8568,12 @@
           "reference": "PATCH:/evaluaciones/{evaluacion_id}",
           "status": "direct",
           "test_path": "frontend/e2e/resources-creation.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/resources-responsive.spec.ts"
         },
         {
           "level": "e2e",
@@ -8412,6 +8891,12 @@
           "level": "e2e",
           "reference": "PATCH:/herramientas/{material_id}",
           "status": "direct",
+          "test_path": "frontend/e2e/resources-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/herramientas/{material_id}",
+          "status": "direct",
           "test_path": "frontend/e2e/student-activity-delivery.spec.ts"
         },
         {
@@ -8436,6 +8921,12 @@
           "level": "unit",
           "reference": "PATCH:/herramientas/{material_id}",
           "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/DetailPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/herramientas/{material_id}",
+          "status": "direct",
           "test_path": "frontend/src/modules/herramientas/ListPage.test.tsx"
         },
         {
@@ -8455,6 +8946,12 @@
           "reference": "PATCH:/herramientas/{material_id}",
           "status": "direct",
           "test_path": "frontend/src/modules/herramientas/api.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/herramientas/{material_id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/resourcePresentationModel.test.ts"
         },
         {
           "level": "unit",
@@ -8665,6 +9162,12 @@
           "level": "e2e",
           "reference": "PATCH:/materias/{materia_id}",
           "status": "direct",
+          "test_path": "frontend/e2e/camera-capture.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/materias/{materia_id}",
+          "status": "direct",
           "test_path": "frontend/e2e/evaluation-ai-wizard.spec.ts"
         },
         {
@@ -8678,6 +9181,12 @@
           "reference": "PATCH:/materias/{materia_id}",
           "status": "direct",
           "test_path": "frontend/e2e/explainable-grading.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/materias/{materia_id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/materia-queue-mobile.spec.ts"
         },
         {
           "level": "e2e",
@@ -8707,6 +9216,12 @@
           "level": "e2e",
           "reference": "PATCH:/materias/{materia_id}",
           "status": "direct",
+          "test_path": "frontend/e2e/resources-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/materias/{materia_id}",
+          "status": "direct",
           "test_path": "frontend/e2e/roster-import.spec.ts"
         },
         {
@@ -8714,6 +9229,12 @@
           "reference": "PATCH:/materias/{materia_id}",
           "status": "direct",
           "test_path": "frontend/e2e/student-activity-delivery.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/materias/{materia_id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/xali-teacher-visual.spec.ts"
         },
         {
           "level": "unit",
@@ -8785,7 +9306,19 @@
           "level": "unit",
           "reference": "PATCH:/materias/{materia_id}",
           "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/DetailPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/materias/{materia_id}",
+          "status": "direct",
           "test_path": "frontend/src/modules/herramientas/forms/base.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/materias/{materia_id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/resourcePresentationModel.test.ts"
         },
         {
           "level": "unit",
@@ -8822,6 +9355,12 @@
           "reference": "PATCH:/materias/{materia_id}",
           "status": "direct",
           "test_path": "frontend/src/modules/presentaciones/PresentacionesPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/materias/{materia_id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/xali/XaliPage.teacher.test.tsx"
         },
         {
           "level": "unit",
@@ -9019,7 +9558,19 @@
           "level": "e2e",
           "reference": "PATCH:/users/me",
           "status": "direct",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/users/me",
+          "status": "direct",
           "test_path": "frontend/e2e/auth-navigation.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/users/me",
+          "status": "direct",
+          "test_path": "frontend/e2e/camera-capture.spec.ts"
         },
         {
           "level": "e2e",
@@ -9061,6 +9612,12 @@
           "level": "e2e",
           "reference": "PATCH:/users/me",
           "status": "direct",
+          "test_path": "frontend/e2e/resources-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/users/me",
+          "status": "direct",
           "test_path": "frontend/e2e/roster-import.spec.ts"
         },
         {
@@ -9074,6 +9631,12 @@
           "reference": "PATCH:/users/me",
           "status": "direct",
           "test_path": "frontend/e2e/teacher-ai-configuration.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/users/me",
+          "status": "direct",
+          "test_path": "frontend/e2e/xali-teacher-visual.spec.ts"
         },
         {
           "level": "unit",
@@ -9111,6 +9674,12 @@
           "level": "unit",
           "reference": "PATCH:/xali/refuerzos/{refuerzo_id}",
           "status": "domain",
+          "test_path": "backend/tests/integration/test_xali_teacher_visual.py"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/xali/refuerzos/{refuerzo_id}",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_xali_guidance_policy.py"
         },
         {
@@ -9123,6 +9692,24 @@
           "level": "unit",
           "reference": "PATCH:/xali/refuerzos/{refuerzo_id}",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_xali_teacher_context.py"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/xali/refuerzos/{refuerzo_id}",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_xali_visual_content.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/xali/refuerzos/{refuerzo_id}",
+          "status": "domain",
+          "test_path": "frontend/e2e/xali-teacher-visual.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/xali/refuerzos/{refuerzo_id}",
+          "status": "domain",
           "test_path": "frontend/src/components/xali/XaliMascot.test.tsx"
         },
         {
@@ -9130,6 +9717,12 @@
           "reference": "PATCH:/xali/refuerzos/{refuerzo_id}",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/student-feedback/XaliFeedbackStory.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/xali/refuerzos/{refuerzo_id}",
+          "status": "domain",
+          "test_path": "frontend/src/modules/xali/XaliPage.teacher.test.tsx"
         },
         {
           "level": "unit",
@@ -9392,6 +9985,12 @@
         {
           "level": "unit",
           "reference": "POST:/admin/roles",
+          "status": "direct",
+          "test_path": "frontend/src/config/nav.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/admin/roles",
           "status": "domain",
           "test_path": "frontend/src/lib/authorization.test.ts"
         }
@@ -9564,6 +10163,18 @@
           "level": "e2e",
           "reference": "POST:/analytics/evento",
           "status": "direct",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/analytics/evento",
+          "status": "direct",
+          "test_path": "frontend/e2e/camera-capture.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/analytics/evento",
+          "status": "direct",
           "test_path": "frontend/e2e/evaluation-preview.spec.ts"
         },
         {
@@ -9577,6 +10188,18 @@
           "reference": "POST:/analytics/evento",
           "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/analytics/evento",
+          "status": "direct",
+          "test_path": "frontend/e2e/resources-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/analytics/evento",
+          "status": "direct",
+          "test_path": "frontend/e2e/xali-teacher-visual.spec.ts"
         },
         {
           "level": "unit",
@@ -10441,6 +11064,12 @@
           "reference": "POST:/auth/refresh",
           "status": "direct",
           "test_path": "frontend/e2e/resources-creation.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/auth/refresh",
+          "status": "direct",
+          "test_path": "frontend/e2e/resources-responsive.spec.ts"
         },
         {
           "level": "e2e",
@@ -11504,6 +12133,12 @@
           "level": "e2e",
           "reference": "POST:/evaluaciones",
           "status": "direct",
+          "test_path": "frontend/e2e/camera-capture.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/evaluaciones",
+          "status": "direct",
           "test_path": "frontend/e2e/evaluation-ai-wizard.spec.ts"
         },
         {
@@ -11535,6 +12170,12 @@
           "reference": "POST:/evaluaciones",
           "status": "direct",
           "test_path": "frontend/e2e/resources-creation.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/evaluaciones",
+          "status": "direct",
+          "test_path": "frontend/e2e/resources-responsive.spec.ts"
         },
         {
           "level": "e2e",
@@ -13484,7 +14125,7 @@
         "get_current_user"
       ],
       "consumers": [],
-      "coverage": "missing",
+      "coverage": "covered",
       "details": {
         "function": "cancelar_job",
         "registered": true,
@@ -13497,7 +14138,14 @@
       "source_line": 364,
       "source_path": "backend/app/modules/jobs/router.py",
       "states": [],
-      "tests": []
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "POST:/jobs/{job_id}/cancelar",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/gradingJobs.test.ts"
+        }
+      ]
     },
     {
       "actors": [
@@ -13507,7 +14155,7 @@
         "get_current_user"
       ],
       "consumers": [],
-      "coverage": "missing",
+      "coverage": "covered",
       "details": {
         "function": "retry_job",
         "registered": true,
@@ -13520,7 +14168,14 @@
       "source_line": 233,
       "source_path": "backend/app/modules/jobs/router.py",
       "states": [],
-      "tests": []
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "POST:/jobs/{job_id}/reintentar",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/gradingJobs.test.ts"
+        }
+      ]
     },
     {
       "actors": [
@@ -13585,6 +14240,12 @@
           "level": "e2e",
           "reference": "POST:/materias",
           "status": "direct",
+          "test_path": "frontend/e2e/camera-capture.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/materias",
+          "status": "direct",
           "test_path": "frontend/e2e/evaluation-ai-wizard.spec.ts"
         },
         {
@@ -13598,6 +14259,12 @@
           "reference": "POST:/materias",
           "status": "direct",
           "test_path": "frontend/e2e/explainable-grading.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/materias",
+          "status": "direct",
+          "test_path": "frontend/e2e/materia-queue-mobile.spec.ts"
         },
         {
           "level": "e2e",
@@ -13627,6 +14294,12 @@
           "level": "e2e",
           "reference": "POST:/materias",
           "status": "direct",
+          "test_path": "frontend/e2e/resources-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/materias",
+          "status": "direct",
           "test_path": "frontend/e2e/roster-import.spec.ts"
         },
         {
@@ -13634,6 +14307,12 @@
           "reference": "POST:/materias",
           "status": "direct",
           "test_path": "frontend/e2e/student-activity-delivery.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/materias",
+          "status": "direct",
+          "test_path": "frontend/e2e/xali-teacher-visual.spec.ts"
         },
         {
           "level": "unit",
@@ -13705,7 +14384,19 @@
           "level": "unit",
           "reference": "POST:/materias",
           "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/DetailPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/materias",
+          "status": "direct",
           "test_path": "frontend/src/modules/herramientas/forms/base.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/materias",
+          "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/resourcePresentationModel.test.ts"
         },
         {
           "level": "unit",
@@ -13742,6 +14433,12 @@
           "reference": "POST:/materias",
           "status": "direct",
           "test_path": "frontend/src/modules/presentaciones/PresentacionesPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/materias",
+          "status": "direct",
+          "test_path": "frontend/src/modules/xali/XaliPage.teacher.test.tsx"
         },
         {
           "level": "unit",
@@ -14355,7 +15052,8 @@
       ],
       "authorization": [
         "get_current_user",
-        "require_permission_now:xali.use"
+        "require_permission_now:xali.use",
+        "require_role"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -14368,10 +15066,16 @@
       "kind": "endpoint",
       "owner_spec": "009-xali-rag-refuerzos",
       "signature": "POST:/xali/chat",
-      "source_line": 26,
+      "source_line": 27,
       "source_path": "backend/app/modules/xali/router.py",
       "states": [],
       "tests": [
+        {
+          "level": "unit",
+          "reference": "POST:/xali/chat",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_xali_teacher_visual.py"
+        },
         {
           "level": "unit",
           "reference": "POST:/xali/chat",
@@ -14383,6 +15087,18 @@
           "reference": "POST:/xali/chat",
           "status": "domain",
           "test_path": "backend/tests/unit/test_xali_student_resources.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/xali/chat",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_xali_teacher_context.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/xali/chat",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_xali_visual_content.py"
         },
         {
           "level": "e2e",
@@ -14397,6 +15113,12 @@
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
         },
         {
+          "level": "e2e",
+          "reference": "POST:/xali/chat",
+          "status": "direct",
+          "test_path": "frontend/e2e/xali-teacher-visual.spec.ts"
+        },
+        {
           "level": "unit",
           "reference": "POST:/xali/chat",
           "status": "domain",
@@ -14407,6 +15129,12 @@
           "reference": "POST:/xali/chat",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/student-feedback/XaliFeedbackStory.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/xali/chat",
+          "status": "domain",
+          "test_path": "frontend/src/modules/xali/XaliPage.teacher.test.tsx"
         },
         {
           "level": "unit",
@@ -14438,10 +15166,16 @@
       "kind": "endpoint",
       "owner_spec": "009-xali-rag-refuerzos",
       "signature": "POST:/xali/evaluaciones/{evaluacion_id}/chat",
-      "source_line": 54,
+      "source_line": 58,
       "source_path": "backend/app/modules/xali/router.py",
       "states": [],
       "tests": [
+        {
+          "level": "unit",
+          "reference": "POST:/xali/evaluaciones/{evaluacion_id}/chat",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_xali_teacher_visual.py"
+        },
         {
           "level": "unit",
           "reference": "POST:/xali/evaluaciones/{evaluacion_id}/chat",
@@ -14458,6 +15192,24 @@
           "level": "unit",
           "reference": "POST:/xali/evaluaciones/{evaluacion_id}/chat",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_xali_teacher_context.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/xali/evaluaciones/{evaluacion_id}/chat",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_xali_visual_content.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/xali/evaluaciones/{evaluacion_id}/chat",
+          "status": "domain",
+          "test_path": "frontend/e2e/xali-teacher-visual.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/xali/evaluaciones/{evaluacion_id}/chat",
+          "status": "domain",
           "test_path": "frontend/src/components/xali/XaliMascot.test.tsx"
         },
         {
@@ -14465,6 +15217,12 @@
           "reference": "POST:/xali/evaluaciones/{evaluacion_id}/chat",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/student-feedback/XaliFeedbackStory.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/xali/evaluaciones/{evaluacion_id}/chat",
+          "status": "domain",
+          "test_path": "frontend/src/modules/xali/XaliPage.teacher.test.tsx"
         },
         {
           "level": "unit",
@@ -14496,10 +15254,16 @@
       "kind": "endpoint",
       "owner_spec": "006-recursos-actividades",
       "signature": "POST:/xali/evaluaciones/{evaluacion_id}/recursos",
-      "source_line": 71,
+      "source_line": 75,
       "source_path": "backend/app/modules/xali/router.py",
       "states": [],
       "tests": [
+        {
+          "level": "unit",
+          "reference": "POST:/xali/evaluaciones/{evaluacion_id}/recursos",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_xali_teacher_visual.py"
+        },
         {
           "level": "unit",
           "reference": "POST:/xali/evaluaciones/{evaluacion_id}/recursos",
@@ -14516,6 +15280,24 @@
           "level": "unit",
           "reference": "POST:/xali/evaluaciones/{evaluacion_id}/recursos",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_xali_teacher_context.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/xali/evaluaciones/{evaluacion_id}/recursos",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_xali_visual_content.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/xali/evaluaciones/{evaluacion_id}/recursos",
+          "status": "domain",
+          "test_path": "frontend/e2e/xali-teacher-visual.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/xali/evaluaciones/{evaluacion_id}/recursos",
+          "status": "domain",
           "test_path": "frontend/src/components/xali/XaliMascot.test.tsx"
         },
         {
@@ -14523,6 +15305,12 @@
           "reference": "POST:/xali/evaluaciones/{evaluacion_id}/recursos",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/student-feedback/XaliFeedbackStory.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/xali/evaluaciones/{evaluacion_id}/recursos",
+          "status": "domain",
+          "test_path": "frontend/src/modules/xali/XaliPage.teacher.test.tsx"
         },
         {
           "level": "unit",
@@ -14560,6 +15348,12 @@
           "level": "unit",
           "reference": "POST:/xali/refuerzos/generar",
           "status": "domain",
+          "test_path": "backend/tests/integration/test_xali_teacher_visual.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/xali/refuerzos/generar",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_xali_guidance_policy.py"
         },
         {
@@ -14572,6 +15366,24 @@
           "level": "unit",
           "reference": "POST:/xali/refuerzos/generar",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_xali_teacher_context.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/xali/refuerzos/generar",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_xali_visual_content.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/xali/refuerzos/generar",
+          "status": "domain",
+          "test_path": "frontend/e2e/xali-teacher-visual.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/xali/refuerzos/generar",
+          "status": "domain",
           "test_path": "frontend/src/components/xali/XaliMascot.test.tsx"
         },
         {
@@ -14579,6 +15391,12 @@
           "reference": "POST:/xali/refuerzos/generar",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/student-feedback/XaliFeedbackStory.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/xali/refuerzos/generar",
+          "status": "domain",
+          "test_path": "frontend/src/modules/xali/XaliPage.teacher.test.tsx"
         },
         {
           "level": "unit",
@@ -14761,6 +15579,12 @@
           "reference": "PUT:/admin/mail/config",
           "status": "direct",
           "test_path": "backend/tests/integration/test_password_recovery_api.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "PUT:/admin/mail/config",
+          "status": "direct",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
         }
       ]
     },
@@ -15177,6 +16001,12 @@
           "level": "unit",
           "reference": "/",
           "status": "direct",
+          "test_path": "backend/tests/integration/test_xali_teacher_visual.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
           "test_path": "backend/tests/unit/authorization_helpers.py"
         },
         {
@@ -15498,6 +16328,18 @@
           "test_path": "backend/tests/unit/test_xali_guidance_policy.py"
         },
         {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_xali_teacher_context.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_xali_visual_content.py"
+        },
+        {
           "level": "e2e",
           "reference": "/",
           "status": "direct",
@@ -15537,7 +16379,19 @@
           "level": "e2e",
           "reference": "/",
           "status": "direct",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/",
+          "status": "direct",
           "test_path": "frontend/e2e/auth-navigation.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "frontend/e2e/camera-capture.spec.ts"
         },
         {
           "level": "e2e",
@@ -15556,6 +16410,12 @@
           "reference": "/",
           "status": "direct",
           "test_path": "frontend/e2e/explainable-grading.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "frontend/e2e/materia-queue-mobile.spec.ts"
         },
         {
           "level": "e2e",
@@ -15603,6 +16463,12 @@
           "level": "e2e",
           "reference": "/",
           "status": "direct",
+          "test_path": "frontend/e2e/resources-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/",
+          "status": "direct",
           "test_path": "frontend/e2e/roster-import.spec.ts"
         },
         {
@@ -15636,10 +16502,22 @@
           "test_path": "frontend/e2e/visual/student-feedback-story.visual.spec.ts"
         },
         {
+          "level": "e2e",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "frontend/e2e/xali-teacher-visual.spec.ts"
+        },
+        {
           "level": "unit",
           "reference": "/",
           "status": "direct",
           "test_path": "frontend/src/components/auth/RouteGuards.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "frontend/src/components/evidence/CameraCapture.test.tsx"
         },
         {
           "level": "unit",
@@ -15706,6 +16584,12 @@
           "reference": "/",
           "status": "direct",
           "test_path": "frontend/src/components/xali/XaliMascot.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "frontend/src/config/nav.test.ts"
         },
         {
           "level": "unit",
@@ -15939,6 +16823,12 @@
           "level": "unit",
           "reference": "/",
           "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/gradingJobs.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
           "test_path": "frontend/src/modules/calificaciones/review-triage/ReviewTriagePanel.test.tsx"
         },
         {
@@ -16059,7 +16949,19 @@
           "level": "unit",
           "reference": "/",
           "status": "direct",
+          "test_path": "frontend/src/modules/evaluaciones/components/pdfRenderQueue.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
           "test_path": "frontend/src/modules/evaluaciones/studentProgress.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/DetailPage.test.tsx"
         },
         {
           "level": "unit",
@@ -16095,7 +16997,19 @@
           "level": "unit",
           "reference": "/",
           "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/components/ResourceEditorPanel.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
           "test_path": "frontend/src/modules/herramientas/forms/base.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/resourcePresentationModel.test.ts"
         },
         {
           "level": "unit",
@@ -16275,13 +17189,43 @@
           "level": "unit",
           "reference": "/",
           "status": "direct",
+          "test_path": "frontend/src/modules/xali/XaliPage.teacher.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
           "test_path": "frontend/src/modules/xali/XaliPage.test.tsx"
         },
         {
           "level": "unit",
           "reference": "/",
           "status": "direct",
+          "test_path": "frontend/src/modules/xali/components/TeacherResponse.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "frontend/src/modules/xali/useTeacherConversation.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "frontend/src/modules/xali/visualContent.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
           "test_path": "frontend/src/stores/auth.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "frontend/src/test/nginxPolicy.test.ts"
         },
         {
           "level": "unit",
@@ -16412,7 +17356,19 @@
           "level": "e2e",
           "reference": "/app",
           "status": "direct",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app",
+          "status": "direct",
           "test_path": "frontend/e2e/auth-navigation.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app",
+          "status": "direct",
+          "test_path": "frontend/e2e/camera-capture.spec.ts"
         },
         {
           "level": "e2e",
@@ -16431,6 +17387,12 @@
           "reference": "/app",
           "status": "direct",
           "test_path": "frontend/e2e/explainable-grading.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app",
+          "status": "direct",
+          "test_path": "frontend/e2e/materia-queue-mobile.spec.ts"
         },
         {
           "level": "e2e",
@@ -16466,6 +17428,12 @@
           "level": "e2e",
           "reference": "/app",
           "status": "direct",
+          "test_path": "frontend/e2e/resources-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app",
+          "status": "direct",
           "test_path": "frontend/e2e/roster-import.spec.ts"
         },
         {
@@ -16493,6 +17461,12 @@
           "test_path": "frontend/e2e/visual/student-feedback-story.visual.spec.ts"
         },
         {
+          "level": "e2e",
+          "reference": "/app",
+          "status": "direct",
+          "test_path": "frontend/e2e/xali-teacher-visual.spec.ts"
+        },
+        {
           "level": "unit",
           "reference": "/app",
           "status": "direct",
@@ -16515,6 +17489,12 @@
           "reference": "/app",
           "status": "direct",
           "test_path": "frontend/src/components/ui/P2Accessibility.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/app",
+          "status": "direct",
+          "test_path": "frontend/src/config/nav.test.ts"
         },
         {
           "level": "unit",
@@ -16574,7 +17554,19 @@
           "level": "unit",
           "reference": "/app",
           "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/DetailPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/app",
+          "status": "direct",
           "test_path": "frontend/src/modules/herramientas/StudentResourcePage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/app",
+          "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/resourcePresentationModel.test.ts"
         },
         {
           "level": "unit",
@@ -16593,6 +17585,12 @@
           "reference": "/app",
           "status": "direct",
           "test_path": "frontend/src/modules/materias/MateriaEvaluaciones.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/app",
+          "status": "direct",
+          "test_path": "frontend/src/modules/materias/MateriaRecursos.test.tsx"
         },
         {
           "level": "unit",
@@ -17097,6 +18095,12 @@
         {
           "level": "unit",
           "reference": "/app/admin/correo",
+          "status": "direct",
+          "test_path": "frontend/src/config/nav.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/admin/correo",
           "status": "domain",
           "test_path": "frontend/src/modules/admin/AdminAIConfigPage.test.tsx"
         },
@@ -17212,6 +18216,12 @@
           "reference": "/app/admin/roles",
           "status": "domain",
           "test_path": "frontend/e2e/teacher-ai-configuration.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/admin/roles",
+          "status": "direct",
+          "test_path": "frontend/src/config/nav.test.ts"
         },
         {
           "level": "unit",
@@ -17337,6 +18347,12 @@
           "reference": "/app/admin/usuarios",
           "status": "direct",
           "test_path": "frontend/src/components/seo/RouteMetadata.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/admin/usuarios",
+          "status": "direct",
+          "test_path": "frontend/src/config/nav.test.ts"
         },
         {
           "level": "unit",
@@ -17575,7 +18591,19 @@
           "level": "e2e",
           "reference": "/app/calificaciones",
           "status": "direct",
+          "test_path": "frontend/e2e/camera-capture.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app/calificaciones",
+          "status": "direct",
           "test_path": "frontend/e2e/explainable-grading.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app/calificaciones",
+          "status": "direct",
+          "test_path": "frontend/e2e/materia-queue-mobile.spec.ts"
         },
         {
           "level": "e2e",
@@ -18439,6 +19467,12 @@
         {
           "level": "e2e",
           "reference": "/app/herramientas",
+          "status": "direct",
+          "test_path": "frontend/e2e/resources-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app/herramientas",
           "status": "domain",
           "test_path": "frontend/e2e/teacher-ai-configuration.spec.ts"
         },
@@ -18453,6 +19487,24 @@
           "reference": "/app/herramientas",
           "status": "domain",
           "test_path": "frontend/src/modules/admin/AdminAIConfigPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/herramientas",
+          "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/DetailPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/herramientas",
+          "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/resourcePresentationModel.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/herramientas",
+          "status": "direct",
+          "test_path": "frontend/src/modules/materias/MateriaRecursos.test.tsx"
         },
         {
           "level": "unit",
@@ -18571,6 +19623,12 @@
         {
           "level": "e2e",
           "reference": "/app/herramientas/{id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/resources-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app/herramientas/{id}",
           "status": "domain",
           "test_path": "frontend/e2e/teacher-ai-configuration.spec.ts"
         },
@@ -18585,6 +19643,24 @@
           "reference": "/app/herramientas/{id}",
           "status": "domain",
           "test_path": "frontend/src/modules/admin/AdminAIConfigPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/herramientas/{id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/DetailPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/herramientas/{id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/resourcePresentationModel.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/herramientas/{id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/materias/MateriaRecursos.test.tsx"
         },
         {
           "level": "unit",
@@ -18703,6 +19779,12 @@
           "level": "e2e",
           "reference": "/app/materias",
           "status": "direct",
+          "test_path": "frontend/e2e/materia-queue-mobile.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app/materias",
+          "status": "direct",
           "test_path": "frontend/e2e/mock/exports.mock.spec.ts"
         },
         {
@@ -18716,6 +19798,12 @@
           "reference": "/app/materias",
           "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app/materias",
+          "status": "direct",
+          "test_path": "frontend/e2e/resources-responsive.spec.ts"
         },
         {
           "level": "e2e",
@@ -18776,6 +19864,12 @@
           "reference": "/app/materias",
           "status": "direct",
           "test_path": "frontend/src/modules/dashboard/DashboardPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/materias",
+          "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/resourcePresentationModel.test.ts"
         },
         {
           "level": "unit",
@@ -18918,6 +20012,12 @@
           "level": "e2e",
           "reference": "/app/materias/{id}",
           "status": "direct",
+          "test_path": "frontend/e2e/materia-queue-mobile.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app/materias/{id}",
+          "status": "direct",
           "test_path": "frontend/e2e/mock/exports.mock.spec.ts"
         },
         {
@@ -18931,6 +20031,12 @@
           "reference": "/app/materias/{id}",
           "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app/materias/{id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/resources-responsive.spec.ts"
         },
         {
           "level": "e2e",
@@ -18991,6 +20097,12 @@
           "reference": "/app/materias/{id}",
           "status": "direct",
           "test_path": "frontend/src/modules/dashboard/DashboardPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/materias/{id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/resourcePresentationModel.test.ts"
         },
         {
           "level": "unit",
@@ -19609,99 +20721,21 @@
       "kind": "frontend_route",
       "owner_spec": "006-recursos-actividades",
       "signature": "/app/materias/{id}/recursos",
-      "source_line": 36,
-      "source_path": "frontend/src/config/routes.ts",
+      "source_line": 67,
+      "source_path": "frontend/src/modules/materias/MateriaRecursos.tsx",
       "states": [],
       "tests": [
         {
           "level": "unit",
           "reference": "/app/materias/{id}/recursos",
           "status": "domain",
-          "test_path": "backend/tests/integration/test_admin_mail_config.py"
+          "test_path": "backend/tests/unit/test_materias_service.py"
         },
         {
           "level": "unit",
           "reference": "/app/materias/{id}/recursos",
           "status": "domain",
-          "test_path": "backend/tests/integration/test_ai_configuration_api.py"
-        },
-        {
-          "level": "unit",
-          "reference": "/app/materias/{id}/recursos",
-          "status": "domain",
-          "test_path": "backend/tests/integration/test_ai_configuration_concurrency.py"
-        },
-        {
-          "level": "unit",
-          "reference": "/app/materias/{id}/recursos",
-          "status": "domain",
-          "test_path": "backend/tests/integration/test_ai_configuration_migration.py"
-        },
-        {
-          "level": "unit",
-          "reference": "/app/materias/{id}/recursos",
-          "status": "domain",
-          "test_path": "backend/tests/integration/test_ai_configuration_secret_safety.py"
-        },
-        {
-          "level": "unit",
-          "reference": "/app/materias/{id}/recursos",
-          "status": "domain",
-          "test_path": "backend/tests/integration/test_ai_job_configuration_snapshot.py"
-        },
-        {
-          "level": "unit",
-          "reference": "/app/materias/{id}/recursos",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_ai_configuration_resolver.py"
-        },
-        {
-          "level": "unit",
-          "reference": "/app/materias/{id}/recursos",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_mail_configuration.py"
-        },
-        {
-          "level": "unit",
-          "reference": "/app/materias/{id}/recursos",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_nginx_security_config.py"
-        },
-        {
-          "level": "unit",
-          "reference": "/app/materias/{id}/recursos",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_production_config.py"
-        },
-        {
-          "level": "unit",
-          "reference": "/app/materias/{id}/recursos",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_worker_ai_config.py"
-        },
-        {
-          "level": "e2e",
-          "reference": "/app/materias/{id}/recursos",
-          "status": "domain",
-          "test_path": "frontend/e2e/accessibility/teacher-ai-configuration.a11y.spec.ts"
-        },
-        {
-          "level": "e2e",
-          "reference": "/app/materias/{id}/recursos",
-          "status": "domain",
-          "test_path": "frontend/e2e/teacher-ai-configuration.spec.ts"
-        },
-        {
-          "level": "unit",
-          "reference": "/app/materias/{id}/recursos",
-          "status": "domain",
-          "test_path": "frontend/src/modules/admin/AdminAIConfigPage.test.tsx"
-        },
-        {
-          "level": "unit",
-          "reference": "/app/materias/{id}/recursos",
-          "status": "domain",
-          "test_path": "frontend/src/modules/profesor_ai/TeacherAIConfigPage.test.tsx"
+          "test_path": "frontend/src/modules/materias/MateriasListPage.test.tsx"
         }
       ]
     },
@@ -20088,6 +21122,12 @@
         {
           "level": "unit",
           "reference": "/app/recursos/{id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/materias/MateriaRecursos.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/recursos/{id}",
           "status": "domain",
           "test_path": "frontend/src/modules/profesor_ai/TeacherAIConfigPage.test.tsx"
         }
@@ -20323,6 +21363,12 @@
           "reference": "/app/xali",
           "status": "domain",
           "test_path": "frontend/e2e/teacher-ai-configuration.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app/xali",
+          "status": "direct",
+          "test_path": "frontend/e2e/xali-teacher-visual.spec.ts"
         },
         {
           "level": "unit",
@@ -21336,6 +22382,18 @@
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
         },
         {
+          "level": "e2e",
+          "reference": "DELETE:/admin/roles/{id}",
+          "status": "domain",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "DELETE:/admin/roles/{id}",
+          "status": "direct",
+          "test_path": "frontend/src/config/nav.test.ts"
+        },
+        {
           "level": "unit",
           "reference": "DELETE:/admin/roles/{id}",
           "status": "domain",
@@ -21442,6 +22500,12 @@
           "reference": "DELETE:/admin/users/{id}",
           "status": "direct",
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "DELETE:/admin/users/{id}",
+          "status": "domain",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
         },
         {
           "level": "unit",
@@ -21627,6 +22691,12 @@
           "level": "e2e",
           "reference": "DELETE:/evaluaciones/{id}",
           "status": "direct",
+          "test_path": "frontend/e2e/camera-capture.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "DELETE:/evaluaciones/{id}",
+          "status": "direct",
           "test_path": "frontend/e2e/evaluation-ai-wizard.spec.ts"
         },
         {
@@ -21658,6 +22728,12 @@
           "reference": "DELETE:/evaluaciones/{id}",
           "status": "direct",
           "test_path": "frontend/e2e/resources-creation.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "DELETE:/evaluaciones/{id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/resources-responsive.spec.ts"
         },
         {
           "level": "e2e",
@@ -21806,7 +22882,7 @@
       "kind": "frontend_call",
       "owner_spec": "006-recursos-actividades",
       "signature": "DELETE:/herramientas/{id}",
-      "source_line": 44,
+      "source_line": 45,
       "source_path": "frontend/src/modules/herramientas/api.ts",
       "states": [],
       "tests": [
@@ -21868,6 +22944,12 @@
           "level": "e2e",
           "reference": "DELETE:/herramientas/{id}",
           "status": "direct",
+          "test_path": "frontend/e2e/resources-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "DELETE:/herramientas/{id}",
+          "status": "direct",
           "test_path": "frontend/e2e/student-activity-delivery.spec.ts"
         },
         {
@@ -21892,6 +22974,12 @@
           "level": "unit",
           "reference": "DELETE:/herramientas/{id}",
           "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/DetailPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "DELETE:/herramientas/{id}",
+          "status": "direct",
           "test_path": "frontend/src/modules/herramientas/ListPage.test.tsx"
         },
         {
@@ -21911,6 +22999,12 @@
           "reference": "DELETE:/herramientas/{id}",
           "status": "direct",
           "test_path": "frontend/src/modules/herramientas/api.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "DELETE:/herramientas/{id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/resourcePresentationModel.test.ts"
         },
         {
           "level": "unit",
@@ -22136,6 +23230,12 @@
           "level": "unit",
           "reference": "DELETE:/xali/history",
           "status": "domain",
+          "test_path": "backend/tests/integration/test_xali_teacher_visual.py"
+        },
+        {
+          "level": "unit",
+          "reference": "DELETE:/xali/history",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_xali_guidance_policy.py"
         },
         {
@@ -22145,10 +23245,28 @@
           "test_path": "backend/tests/unit/test_xali_student_resources.py"
         },
         {
+          "level": "unit",
+          "reference": "DELETE:/xali/history",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_xali_teacher_context.py"
+        },
+        {
+          "level": "unit",
+          "reference": "DELETE:/xali/history",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_xali_visual_content.py"
+        },
+        {
           "level": "e2e",
           "reference": "DELETE:/xali/history",
           "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "DELETE:/xali/history",
+          "status": "direct",
+          "test_path": "frontend/e2e/xali-teacher-visual.spec.ts"
         },
         {
           "level": "unit",
@@ -22161,6 +23279,12 @@
           "reference": "DELETE:/xali/history",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/student-feedback/XaliFeedbackStory.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "DELETE:/xali/history",
+          "status": "domain",
+          "test_path": "frontend/src/modules/xali/XaliPage.teacher.test.tsx"
         },
         {
           "level": "unit",
@@ -22251,6 +23375,12 @@
           "reference": "GET:/admin/ai-audit",
           "status": "domain",
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/admin/ai-audit",
+          "status": "domain",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
         },
         {
           "level": "e2e",
@@ -22363,6 +23493,12 @@
         {
           "level": "e2e",
           "reference": "GET:/admin/ai-config-hash",
+          "status": "domain",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/admin/ai-config-hash",
           "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
         },
@@ -22467,6 +23603,12 @@
           "reference": "GET:/admin/ai-control-center/usage",
           "status": "domain",
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/admin/ai-control-center/usage",
+          "status": "domain",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
         },
         {
           "level": "e2e",
@@ -22581,6 +23723,12 @@
           "reference": "GET:/admin/ai-control-center",
           "status": "domain",
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/admin/ai-control-center",
+          "status": "domain",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
         },
         {
           "level": "e2e",
@@ -22705,6 +23853,12 @@
         {
           "level": "e2e",
           "reference": "GET:/admin/ai-settings",
+          "status": "domain",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/admin/ai-settings",
           "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
         },
@@ -22819,6 +23973,12 @@
         {
           "level": "e2e",
           "reference": "GET:/admin/ai-usage",
+          "status": "domain",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/admin/ai-usage",
           "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
         },
@@ -22925,6 +24085,12 @@
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
         },
         {
+          "level": "e2e",
+          "reference": "GET:/admin/authorization/audit",
+          "status": "domain",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
+        },
+        {
           "level": "unit",
           "reference": "GET:/admin/authorization/audit",
           "status": "domain",
@@ -23025,6 +24191,12 @@
           "reference": "GET:/admin/authorization/modules",
           "status": "direct",
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/admin/authorization/modules",
+          "status": "domain",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
         },
         {
           "level": "unit",
@@ -23135,6 +24307,12 @@
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
         },
         {
+          "level": "e2e",
+          "reference": "GET:/admin/mail/config",
+          "status": "direct",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
+        },
+        {
           "level": "unit",
           "reference": "GET:/admin/mail/config",
           "status": "domain",
@@ -23237,6 +24415,12 @@
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
         },
         {
+          "level": "e2e",
+          "reference": "GET:/admin/mail/recovery-status",
+          "status": "direct",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
+        },
+        {
           "level": "unit",
           "reference": "GET:/admin/mail/recovery-status",
           "status": "domain",
@@ -23337,6 +24521,18 @@
           "reference": "GET:/admin/roles",
           "status": "direct",
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/admin/roles",
+          "status": "domain",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/admin/roles",
+          "status": "direct",
+          "test_path": "frontend/src/config/nav.test.ts"
         },
         {
           "level": "unit",
@@ -23447,6 +24643,12 @@
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
         },
         {
+          "level": "e2e",
+          "reference": "GET:/admin/users/{id}",
+          "status": "domain",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
+        },
+        {
           "level": "unit",
           "reference": "GET:/admin/users/{id}",
           "status": "domain",
@@ -23553,6 +24755,12 @@
           "reference": "GET:/admin/users",
           "status": "direct",
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/admin/users",
+          "status": "domain",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
         },
         {
           "level": "unit",
@@ -24152,7 +25360,19 @@
           "level": "e2e",
           "reference": "GET:/auth/me",
           "status": "direct",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/auth/me",
+          "status": "direct",
           "test_path": "frontend/e2e/auth-navigation.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/auth/me",
+          "status": "direct",
+          "test_path": "frontend/e2e/camera-capture.spec.ts"
         },
         {
           "level": "e2e",
@@ -24194,6 +25414,12 @@
           "level": "e2e",
           "reference": "GET:/auth/me",
           "status": "direct",
+          "test_path": "frontend/e2e/resources-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/auth/me",
+          "status": "direct",
           "test_path": "frontend/e2e/roster-import.spec.ts"
         },
         {
@@ -24207,6 +25433,12 @@
           "reference": "GET:/auth/me",
           "status": "direct",
           "test_path": "frontend/e2e/teacher-ai-configuration.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/auth/me",
+          "status": "direct",
+          "test_path": "frontend/e2e/xali-teacher-visual.spec.ts"
         },
         {
           "level": "unit",
@@ -25016,6 +26248,12 @@
           "level": "e2e",
           "reference": "GET:/evaluaciones/{evaluacionId}/{format}",
           "status": "direct",
+          "test_path": "frontend/e2e/camera-capture.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/evaluaciones/{evaluacionId}/{format}",
+          "status": "direct",
           "test_path": "frontend/e2e/evaluation-ai-wizard.spec.ts"
         },
         {
@@ -25047,6 +26285,12 @@
           "reference": "GET:/evaluaciones/{evaluacionId}/{format}",
           "status": "direct",
           "test_path": "frontend/e2e/resources-creation.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/evaluaciones/{evaluacionId}/{format}",
+          "status": "direct",
+          "test_path": "frontend/e2e/resources-responsive.spec.ts"
         },
         {
           "level": "e2e",
@@ -25300,6 +26544,12 @@
           "level": "e2e",
           "reference": "GET:/evaluaciones/{id}",
           "status": "direct",
+          "test_path": "frontend/e2e/camera-capture.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/evaluaciones/{id}",
+          "status": "direct",
           "test_path": "frontend/e2e/evaluation-ai-wizard.spec.ts"
         },
         {
@@ -25331,6 +26581,12 @@
           "reference": "GET:/evaluaciones/{id}",
           "status": "direct",
           "test_path": "frontend/e2e/resources-creation.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/evaluaciones/{id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/resources-responsive.spec.ts"
         },
         {
           "level": "e2e",
@@ -25534,7 +26790,7 @@
       "kind": "frontend_call",
       "owner_spec": "006-recursos-actividades",
       "signature": "GET:/herramientas/materias/{materiaId}/recursos",
-      "source_line": 29,
+      "source_line": 30,
       "source_path": "frontend/src/modules/herramientas/api.ts",
       "states": [],
       "tests": [
@@ -25577,7 +26833,7 @@
       "kind": "frontend_call",
       "owner_spec": "006-recursos-actividades",
       "signature": "GET:/herramientas/{id}/evaluaciones",
-      "source_line": 98,
+      "source_line": 99,
       "source_path": "frontend/src/modules/herramientas/api.ts",
       "states": [],
       "tests": [
@@ -25620,7 +26876,7 @@
       "kind": "frontend_call",
       "owner_spec": "006-recursos-actividades",
       "signature": "GET:/herramientas/{id}",
-      "source_line": 34,
+      "source_line": 35,
       "source_path": "frontend/src/modules/herramientas/api.ts",
       "states": [],
       "tests": [
@@ -25682,6 +26938,12 @@
           "level": "e2e",
           "reference": "GET:/herramientas/{id}",
           "status": "direct",
+          "test_path": "frontend/e2e/resources-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/herramientas/{id}",
+          "status": "direct",
           "test_path": "frontend/e2e/student-activity-delivery.spec.ts"
         },
         {
@@ -25706,6 +26968,12 @@
           "level": "unit",
           "reference": "GET:/herramientas/{id}",
           "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/DetailPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/herramientas/{id}",
+          "status": "direct",
           "test_path": "frontend/src/modules/herramientas/ListPage.test.tsx"
         },
         {
@@ -25725,6 +26993,12 @@
           "reference": "GET:/herramientas/{id}",
           "status": "direct",
           "test_path": "frontend/src/modules/herramientas/api.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/herramientas/{id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/resourcePresentationModel.test.ts"
         },
         {
           "level": "unit",
@@ -25938,7 +27212,7 @@
       "kind": "frontend_call",
       "owner_spec": "012-ia-jobs-produccion",
       "signature": "GET:/jobs/pendientes",
-      "source_line": 90,
+      "source_line": 109,
       "source_path": "frontend/src/modules/calificaciones/gradingJobs.ts",
       "states": [],
       "tests": [
@@ -25965,6 +27239,18 @@
           "reference": "GET:/jobs/pendientes",
           "status": "domain",
           "test_path": "backend/tests/unit/test_calificaciones_revision_workspace.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/jobs/pendientes",
+          "status": "direct",
+          "test_path": "frontend/e2e/materia-queue-mobile.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/jobs/pendientes",
+          "status": "direct",
+          "test_path": "frontend/e2e/resources-responsive.spec.ts"
         },
         {
           "level": "unit",
@@ -26002,7 +27288,7 @@
       "kind": "frontend_call",
       "owner_spec": "012-ia-jobs-produccion",
       "signature": "GET:/jobs/{jobId}",
-      "source_line": 156,
+      "source_line": 183,
       "source_path": "frontend/src/modules/calificaciones/gradingJobs.ts",
       "states": [],
       "tests": [
@@ -26040,7 +27326,19 @@
           "level": "e2e",
           "reference": "GET:/jobs/{jobId}",
           "status": "direct",
+          "test_path": "frontend/e2e/materia-queue-mobile.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/jobs/{jobId}",
+          "status": "direct",
           "test_path": "frontend/e2e/mock/grading-review.mock.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/jobs/{jobId}",
+          "status": "direct",
+          "test_path": "frontend/e2e/resources-responsive.spec.ts"
         },
         {
           "level": "unit",
@@ -26104,7 +27402,19 @@
           "level": "e2e",
           "reference": "GET:/jobs/{jobId}",
           "status": "direct",
+          "test_path": "frontend/e2e/materia-queue-mobile.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/jobs/{jobId}",
+          "status": "direct",
           "test_path": "frontend/e2e/mock/grading-review.mock.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/jobs/{jobId}",
+          "status": "direct",
+          "test_path": "frontend/e2e/resources-responsive.spec.ts"
         },
         {
           "level": "unit",
@@ -26214,6 +27524,12 @@
           "level": "e2e",
           "reference": "GET:/materias/{id}",
           "status": "direct",
+          "test_path": "frontend/e2e/camera-capture.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/materias/{id}",
+          "status": "direct",
           "test_path": "frontend/e2e/evaluation-ai-wizard.spec.ts"
         },
         {
@@ -26227,6 +27543,12 @@
           "reference": "GET:/materias/{id}",
           "status": "direct",
           "test_path": "frontend/e2e/explainable-grading.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/materias/{id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/materia-queue-mobile.spec.ts"
         },
         {
           "level": "e2e",
@@ -26256,6 +27578,12 @@
           "level": "e2e",
           "reference": "GET:/materias/{id}",
           "status": "direct",
+          "test_path": "frontend/e2e/resources-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/materias/{id}",
+          "status": "direct",
           "test_path": "frontend/e2e/roster-import.spec.ts"
         },
         {
@@ -26263,6 +27591,12 @@
           "reference": "GET:/materias/{id}",
           "status": "direct",
           "test_path": "frontend/e2e/student-activity-delivery.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/materias/{id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/xali-teacher-visual.spec.ts"
         },
         {
           "level": "unit",
@@ -26334,7 +27668,19 @@
           "level": "unit",
           "reference": "GET:/materias/{id}",
           "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/DetailPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias/{id}",
+          "status": "direct",
           "test_path": "frontend/src/modules/herramientas/forms/base.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias/{id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/resourcePresentationModel.test.ts"
         },
         {
           "level": "unit",
@@ -26371,6 +27717,12 @@
           "reference": "GET:/materias/{id}",
           "status": "direct",
           "test_path": "frontend/src/modules/presentaciones/PresentacionesPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias/{id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/xali/XaliPage.teacher.test.tsx"
         },
         {
           "level": "unit",
@@ -26712,6 +28064,12 @@
           "level": "e2e",
           "reference": "GET:/materias",
           "status": "direct",
+          "test_path": "frontend/e2e/camera-capture.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/materias",
+          "status": "direct",
           "test_path": "frontend/e2e/evaluation-ai-wizard.spec.ts"
         },
         {
@@ -26725,6 +28083,12 @@
           "reference": "GET:/materias",
           "status": "direct",
           "test_path": "frontend/e2e/explainable-grading.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/materias",
+          "status": "direct",
+          "test_path": "frontend/e2e/materia-queue-mobile.spec.ts"
         },
         {
           "level": "e2e",
@@ -26754,6 +28118,12 @@
           "level": "e2e",
           "reference": "GET:/materias",
           "status": "direct",
+          "test_path": "frontend/e2e/resources-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/materias",
+          "status": "direct",
           "test_path": "frontend/e2e/roster-import.spec.ts"
         },
         {
@@ -26761,6 +28131,12 @@
           "reference": "GET:/materias",
           "status": "direct",
           "test_path": "frontend/e2e/student-activity-delivery.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/materias",
+          "status": "direct",
+          "test_path": "frontend/e2e/xali-teacher-visual.spec.ts"
         },
         {
           "level": "unit",
@@ -26832,7 +28208,19 @@
           "level": "unit",
           "reference": "GET:/materias",
           "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/DetailPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias",
+          "status": "direct",
           "test_path": "frontend/src/modules/herramientas/forms/base.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias",
+          "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/resourcePresentationModel.test.ts"
         },
         {
           "level": "unit",
@@ -26869,6 +28257,12 @@
           "reference": "GET:/materias",
           "status": "direct",
           "test_path": "frontend/src/modules/presentaciones/PresentacionesPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias",
+          "status": "direct",
+          "test_path": "frontend/src/modules/xali/XaliPage.teacher.test.tsx"
         },
         {
           "level": "unit",
@@ -27312,7 +28706,19 @@
           "level": "e2e",
           "reference": "GET:/users/me/authorization",
           "status": "direct",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/users/me/authorization",
+          "status": "direct",
           "test_path": "frontend/e2e/auth-navigation.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/users/me/authorization",
+          "status": "direct",
+          "test_path": "frontend/e2e/camera-capture.spec.ts"
         },
         {
           "level": "e2e",
@@ -27354,6 +28760,12 @@
           "level": "e2e",
           "reference": "GET:/users/me/authorization",
           "status": "direct",
+          "test_path": "frontend/e2e/resources-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/users/me/authorization",
+          "status": "direct",
           "test_path": "frontend/e2e/roster-import.spec.ts"
         },
         {
@@ -27367,6 +28779,12 @@
           "reference": "GET:/users/me/authorization",
           "status": "direct",
           "test_path": "frontend/e2e/teacher-ai-configuration.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/users/me/authorization",
+          "status": "direct",
+          "test_path": "frontend/e2e/xali-teacher-visual.spec.ts"
         },
         {
           "level": "unit",
@@ -27412,6 +28830,12 @@
           "level": "unit",
           "reference": "GET:/xali/evaluaciones-entregadas",
           "status": "domain",
+          "test_path": "backend/tests/integration/test_xali_teacher_visual.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/xali/evaluaciones-entregadas",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_xali_guidance_policy.py"
         },
         {
@@ -27421,10 +28845,28 @@
           "test_path": "backend/tests/unit/test_xali_student_resources.py"
         },
         {
+          "level": "unit",
+          "reference": "GET:/xali/evaluaciones-entregadas",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_xali_teacher_context.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/xali/evaluaciones-entregadas",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_xali_visual_content.py"
+        },
+        {
           "level": "e2e",
           "reference": "GET:/xali/evaluaciones-entregadas",
           "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/xali/evaluaciones-entregadas",
+          "status": "domain",
+          "test_path": "frontend/e2e/xali-teacher-visual.spec.ts"
         },
         {
           "level": "unit",
@@ -27437,6 +28879,12 @@
           "reference": "GET:/xali/evaluaciones-entregadas",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/student-feedback/XaliFeedbackStory.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/xali/evaluaciones-entregadas",
+          "status": "domain",
+          "test_path": "frontend/src/modules/xali/XaliPage.teacher.test.tsx"
         },
         {
           "level": "unit",
@@ -27470,6 +28918,12 @@
           "level": "unit",
           "reference": "GET:/xali/evaluaciones/{evaluacionId}/recursos",
           "status": "domain",
+          "test_path": "backend/tests/integration/test_xali_teacher_visual.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/xali/evaluaciones/{evaluacionId}/recursos",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_xali_guidance_policy.py"
         },
         {
@@ -27482,6 +28936,24 @@
           "level": "unit",
           "reference": "GET:/xali/evaluaciones/{evaluacionId}/recursos",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_xali_teacher_context.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/xali/evaluaciones/{evaluacionId}/recursos",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_xali_visual_content.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/xali/evaluaciones/{evaluacionId}/recursos",
+          "status": "domain",
+          "test_path": "frontend/e2e/xali-teacher-visual.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/xali/evaluaciones/{evaluacionId}/recursos",
+          "status": "domain",
           "test_path": "frontend/src/components/xali/XaliMascot.test.tsx"
         },
         {
@@ -27489,6 +28961,12 @@
           "reference": "GET:/xali/evaluaciones/{evaluacionId}/recursos",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/student-feedback/XaliFeedbackStory.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/xali/evaluaciones/{evaluacionId}/recursos",
+          "status": "domain",
+          "test_path": "frontend/src/modules/xali/XaliPage.teacher.test.tsx"
         },
         {
           "level": "unit",
@@ -27522,6 +29000,12 @@
           "level": "unit",
           "reference": "GET:/xali/history",
           "status": "domain",
+          "test_path": "backend/tests/integration/test_xali_teacher_visual.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/xali/history",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_xali_guidance_policy.py"
         },
         {
@@ -27531,10 +29015,28 @@
           "test_path": "backend/tests/unit/test_xali_student_resources.py"
         },
         {
+          "level": "unit",
+          "reference": "GET:/xali/history",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_xali_teacher_context.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/xali/history",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_xali_visual_content.py"
+        },
+        {
           "level": "e2e",
           "reference": "GET:/xali/history",
           "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/xali/history",
+          "status": "direct",
+          "test_path": "frontend/e2e/xali-teacher-visual.spec.ts"
         },
         {
           "level": "unit",
@@ -27547,6 +29049,12 @@
           "reference": "GET:/xali/history",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/student-feedback/XaliFeedbackStory.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/xali/history",
+          "status": "domain",
+          "test_path": "frontend/src/modules/xali/XaliPage.teacher.test.tsx"
         },
         {
           "level": "unit",
@@ -27637,6 +29145,12 @@
           "reference": "PATCH:/admin/ai-config",
           "status": "domain",
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/admin/ai-config",
+          "status": "domain",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
         },
         {
           "level": "e2e",
@@ -27753,6 +29267,12 @@
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
         },
         {
+          "level": "e2e",
+          "reference": "PATCH:/admin/ai-providers/{id}",
+          "status": "domain",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
+        },
+        {
           "level": "unit",
           "reference": "PATCH:/admin/ai-providers/{id}",
           "status": "domain",
@@ -27861,6 +29381,18 @@
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
         },
         {
+          "level": "e2e",
+          "reference": "PATCH:/admin/roles/{id}",
+          "status": "domain",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/admin/roles/{id}",
+          "status": "direct",
+          "test_path": "frontend/src/config/nav.test.ts"
+        },
+        {
           "level": "unit",
           "reference": "PATCH:/admin/roles/{id}",
           "status": "domain",
@@ -27961,6 +29493,12 @@
           "reference": "PATCH:/admin/users/{id}/solicitud-docente",
           "status": "domain",
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/admin/users/{id}/solicitud-docente",
+          "status": "domain",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
         },
         {
           "level": "unit",
@@ -28069,6 +29607,12 @@
           "reference": "PATCH:/admin/users/{id}",
           "status": "direct",
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/admin/users/{id}",
+          "status": "domain",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
         },
         {
           "level": "unit",
@@ -28486,6 +30030,12 @@
           "level": "e2e",
           "reference": "PATCH:/evaluaciones/{id}",
           "status": "direct",
+          "test_path": "frontend/e2e/camera-capture.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/evaluaciones/{id}",
+          "status": "direct",
           "test_path": "frontend/e2e/evaluation-ai-wizard.spec.ts"
         },
         {
@@ -28517,6 +30067,12 @@
           "reference": "PATCH:/evaluaciones/{id}",
           "status": "direct",
           "test_path": "frontend/e2e/resources-creation.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/evaluaciones/{id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/resources-responsive.spec.ts"
         },
         {
           "level": "e2e",
@@ -28665,7 +30221,7 @@
       "kind": "frontend_call",
       "owner_spec": "006-recursos-actividades",
       "signature": "PATCH:/herramientas/{id}/visibilidad",
-      "source_line": 68,
+      "source_line": 69,
       "source_path": "frontend/src/modules/herramientas/api.ts",
       "states": [],
       "tests": [
@@ -28708,7 +30264,7 @@
       "kind": "frontend_call",
       "owner_spec": "006-recursos-actividades",
       "signature": "PATCH:/herramientas/{id}",
-      "source_line": 53,
+      "source_line": 54,
       "source_path": "frontend/src/modules/herramientas/api.ts",
       "states": [],
       "tests": [
@@ -28770,6 +30326,12 @@
           "level": "e2e",
           "reference": "PATCH:/herramientas/{id}",
           "status": "direct",
+          "test_path": "frontend/e2e/resources-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/herramientas/{id}",
+          "status": "direct",
           "test_path": "frontend/e2e/student-activity-delivery.spec.ts"
         },
         {
@@ -28794,6 +30356,12 @@
           "level": "unit",
           "reference": "PATCH:/herramientas/{id}",
           "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/DetailPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/herramientas/{id}",
+          "status": "direct",
           "test_path": "frontend/src/modules/herramientas/ListPage.test.tsx"
         },
         {
@@ -28813,6 +30381,12 @@
           "reference": "PATCH:/herramientas/{id}",
           "status": "direct",
           "test_path": "frontend/src/modules/herramientas/api.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/herramientas/{id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/resourcePresentationModel.test.ts"
         },
         {
           "level": "unit",
@@ -28949,6 +30523,12 @@
           "level": "e2e",
           "reference": "PATCH:/materias/{id}",
           "status": "direct",
+          "test_path": "frontend/e2e/camera-capture.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/materias/{id}",
+          "status": "direct",
           "test_path": "frontend/e2e/evaluation-ai-wizard.spec.ts"
         },
         {
@@ -28962,6 +30542,12 @@
           "reference": "PATCH:/materias/{id}",
           "status": "direct",
           "test_path": "frontend/e2e/explainable-grading.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/materias/{id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/materia-queue-mobile.spec.ts"
         },
         {
           "level": "e2e",
@@ -28991,6 +30577,12 @@
           "level": "e2e",
           "reference": "PATCH:/materias/{id}",
           "status": "direct",
+          "test_path": "frontend/e2e/resources-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/materias/{id}",
+          "status": "direct",
           "test_path": "frontend/e2e/roster-import.spec.ts"
         },
         {
@@ -28998,6 +30590,12 @@
           "reference": "PATCH:/materias/{id}",
           "status": "direct",
           "test_path": "frontend/e2e/student-activity-delivery.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/materias/{id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/xali-teacher-visual.spec.ts"
         },
         {
           "level": "unit",
@@ -29069,7 +30667,19 @@
           "level": "unit",
           "reference": "PATCH:/materias/{id}",
           "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/DetailPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/materias/{id}",
+          "status": "direct",
           "test_path": "frontend/src/modules/herramientas/forms/base.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/materias/{id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/resourcePresentationModel.test.ts"
         },
         {
           "level": "unit",
@@ -29106,6 +30716,12 @@
           "reference": "PATCH:/materias/{id}",
           "status": "direct",
           "test_path": "frontend/src/modules/presentaciones/PresentacionesPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/materias/{id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/xali/XaliPage.teacher.test.tsx"
         },
         {
           "level": "unit",
@@ -29212,7 +30828,19 @@
           "level": "e2e",
           "reference": "PATCH:/users/me",
           "status": "direct",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/users/me",
+          "status": "direct",
           "test_path": "frontend/e2e/auth-navigation.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/users/me",
+          "status": "direct",
+          "test_path": "frontend/e2e/camera-capture.spec.ts"
         },
         {
           "level": "e2e",
@@ -29254,6 +30882,12 @@
           "level": "e2e",
           "reference": "PATCH:/users/me",
           "status": "direct",
+          "test_path": "frontend/e2e/resources-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/users/me",
+          "status": "direct",
           "test_path": "frontend/e2e/roster-import.spec.ts"
         },
         {
@@ -29267,6 +30901,12 @@
           "reference": "PATCH:/users/me",
           "status": "direct",
           "test_path": "frontend/e2e/teacher-ai-configuration.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/users/me",
+          "status": "direct",
+          "test_path": "frontend/e2e/xali-teacher-visual.spec.ts"
         },
         {
           "level": "unit",
@@ -29393,6 +31033,12 @@
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
         },
         {
+          "level": "e2e",
+          "reference": "POST:/admin/ai-cache/clear",
+          "status": "domain",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
+        },
+        {
           "level": "unit",
           "reference": "POST:/admin/ai-cache/clear",
           "status": "domain",
@@ -29493,6 +31139,12 @@
           "reference": "POST:/admin/ai-control-center/validate",
           "status": "domain",
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/admin/ai-control-center/validate",
+          "status": "domain",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
         },
         {
           "level": "unit",
@@ -29597,6 +31249,12 @@
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
         },
         {
+          "level": "e2e",
+          "reference": "POST:/admin/ai-providers/{providerId}/models/refresh",
+          "status": "domain",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
+        },
+        {
           "level": "unit",
           "reference": "POST:/admin/ai-providers/{providerId}/models/refresh",
           "status": "domain",
@@ -29697,6 +31355,12 @@
           "reference": "POST:/admin/ai-providers/{providerId}/test",
           "status": "domain",
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/admin/ai-providers/{providerId}/test",
+          "status": "domain",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
         },
         {
           "level": "unit",
@@ -29801,6 +31465,12 @@
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
         },
         {
+          "level": "e2e",
+          "reference": "POST:/admin/ai-settings/restore-defaults",
+          "status": "domain",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
+        },
+        {
           "level": "unit",
           "reference": "POST:/admin/ai-settings/restore-defaults",
           "status": "domain",
@@ -29901,6 +31571,12 @@
           "reference": "POST:/admin/ai-settings/restore-previous",
           "status": "domain",
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/admin/ai-settings/restore-previous",
+          "status": "domain",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
         },
         {
           "level": "unit",
@@ -30011,6 +31687,12 @@
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
         },
         {
+          "level": "e2e",
+          "reference": "POST:/admin/mail/test",
+          "status": "domain",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
+        },
+        {
           "level": "unit",
           "reference": "POST:/admin/mail/test",
           "status": "domain",
@@ -30113,6 +31795,18 @@
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
         },
         {
+          "level": "e2e",
+          "reference": "POST:/admin/roles/{id}",
+          "status": "domain",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/admin/roles/{id}",
+          "status": "direct",
+          "test_path": "frontend/src/config/nav.test.ts"
+        },
+        {
           "level": "unit",
           "reference": "POST:/admin/roles/{id}",
           "status": "domain",
@@ -30213,6 +31907,18 @@
           "reference": "POST:/admin/roles",
           "status": "direct",
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/admin/roles",
+          "status": "domain",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/admin/roles",
+          "status": "direct",
+          "test_path": "frontend/src/config/nav.test.ts"
         },
         {
           "level": "unit",
@@ -30323,6 +32029,12 @@
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
         },
         {
+          "level": "e2e",
+          "reference": "POST:/admin/users",
+          "status": "domain",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
+        },
+        {
           "level": "unit",
           "reference": "POST:/admin/users",
           "status": "domain",
@@ -30387,6 +32099,18 @@
           "level": "e2e",
           "reference": "POST:/analytics/evento",
           "status": "direct",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/analytics/evento",
+          "status": "direct",
+          "test_path": "frontend/e2e/camera-capture.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/analytics/evento",
+          "status": "direct",
           "test_path": "frontend/e2e/evaluation-preview.spec.ts"
         },
         {
@@ -30400,6 +32124,18 @@
           "reference": "POST:/analytics/evento",
           "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/analytics/evento",
+          "status": "direct",
+          "test_path": "frontend/e2e/resources-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/analytics/evento",
+          "status": "direct",
+          "test_path": "frontend/e2e/xali-teacher-visual.spec.ts"
         },
         {
           "level": "unit",
@@ -31970,6 +33706,12 @@
           "level": "e2e",
           "reference": "POST:/evaluaciones",
           "status": "direct",
+          "test_path": "frontend/e2e/camera-capture.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/evaluaciones",
+          "status": "direct",
           "test_path": "frontend/e2e/evaluation-ai-wizard.spec.ts"
         },
         {
@@ -32001,6 +33743,12 @@
           "reference": "POST:/evaluaciones",
           "status": "direct",
           "test_path": "frontend/e2e/resources-creation.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/evaluaciones",
+          "status": "direct",
+          "test_path": "frontend/e2e/resources-responsive.spec.ts"
         },
         {
           "level": "e2e",
@@ -32167,7 +33915,7 @@
       "kind": "frontend_call",
       "owner_spec": "006-recursos-actividades",
       "signature": "POST:/herramientas/{endpoint}",
-      "source_line": 39,
+      "source_line": 40,
       "source_path": "frontend/src/modules/herramientas/api.ts",
       "states": [],
       "tests": [
@@ -32229,6 +33977,12 @@
           "level": "e2e",
           "reference": "POST:/herramientas/{endpoint}",
           "status": "direct",
+          "test_path": "frontend/e2e/resources-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/herramientas/{endpoint}",
+          "status": "direct",
           "test_path": "frontend/e2e/student-activity-delivery.spec.ts"
         },
         {
@@ -32248,6 +34002,12 @@
           "reference": "POST:/herramientas/{endpoint}",
           "status": "direct",
           "test_path": "frontend/src/modules/dashboard/DashboardPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/herramientas/{endpoint}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/DetailPage.test.tsx"
         },
         {
           "level": "unit",
@@ -32277,6 +34037,12 @@
           "level": "unit",
           "reference": "POST:/herramientas/{endpoint}",
           "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/resourcePresentationModel.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/herramientas/{endpoint}",
+          "status": "direct",
           "test_path": "frontend/src/modules/materias/MateriaRecursos.test.tsx"
         }
       ]
@@ -32300,7 +34066,7 @@
       "kind": "frontend_call",
       "owner_spec": "006-recursos-actividades",
       "signature": "POST:/herramientas/{id}/asignar-apoyo",
-      "source_line": 58,
+      "source_line": 59,
       "source_path": "frontend/src/modules/herramientas/api.ts",
       "states": [],
       "tests": [
@@ -32343,7 +34109,7 @@
       "kind": "frontend_call",
       "owner_spec": "006-recursos-actividades",
       "signature": "POST:/herramientas/{id}/convertir-evaluacion",
-      "source_line": 93,
+      "source_line": 94,
       "source_path": "frontend/src/modules/herramientas/api.ts",
       "states": [],
       "tests": [
@@ -32386,7 +34152,7 @@
       "kind": "frontend_call",
       "owner_spec": "006-recursos-actividades",
       "signature": "POST:/herramientas/{id}/duplicar",
-      "source_line": 73,
+      "source_line": 74,
       "source_path": "frontend/src/modules/herramientas/api.ts",
       "states": [],
       "tests": [
@@ -32429,7 +34195,7 @@
       "kind": "frontend_call",
       "owner_spec": "006-recursos-actividades",
       "signature": "POST:/herramientas/{id}/retirar-apoyo",
-      "source_line": 63,
+      "source_line": 64,
       "source_path": "frontend/src/modules/herramientas/api.ts",
       "states": [],
       "tests": [
@@ -32569,7 +34335,19 @@
           "level": "e2e",
           "reference": "POST:/jobs/{jobId}",
           "status": "direct",
+          "test_path": "frontend/e2e/materia-queue-mobile.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/jobs/{jobId}",
+          "status": "direct",
           "test_path": "frontend/e2e/mock/grading-review.mock.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/jobs/{jobId}",
+          "status": "direct",
+          "test_path": "frontend/e2e/resources-responsive.spec.ts"
         },
         {
           "level": "unit",
@@ -32815,6 +34593,12 @@
           "level": "e2e",
           "reference": "POST:/materias",
           "status": "direct",
+          "test_path": "frontend/e2e/camera-capture.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/materias",
+          "status": "direct",
           "test_path": "frontend/e2e/evaluation-ai-wizard.spec.ts"
         },
         {
@@ -32828,6 +34612,12 @@
           "reference": "POST:/materias",
           "status": "direct",
           "test_path": "frontend/e2e/explainable-grading.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/materias",
+          "status": "direct",
+          "test_path": "frontend/e2e/materia-queue-mobile.spec.ts"
         },
         {
           "level": "e2e",
@@ -32857,6 +34647,12 @@
           "level": "e2e",
           "reference": "POST:/materias",
           "status": "direct",
+          "test_path": "frontend/e2e/resources-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/materias",
+          "status": "direct",
           "test_path": "frontend/e2e/roster-import.spec.ts"
         },
         {
@@ -32864,6 +34660,12 @@
           "reference": "POST:/materias",
           "status": "direct",
           "test_path": "frontend/e2e/student-activity-delivery.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/materias",
+          "status": "direct",
+          "test_path": "frontend/e2e/xali-teacher-visual.spec.ts"
         },
         {
           "level": "unit",
@@ -32935,7 +34737,19 @@
           "level": "unit",
           "reference": "POST:/materias",
           "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/DetailPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/materias",
+          "status": "direct",
           "test_path": "frontend/src/modules/herramientas/forms/base.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/materias",
+          "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/resourcePresentationModel.test.ts"
         },
         {
           "level": "unit",
@@ -32972,6 +34786,12 @@
           "reference": "POST:/materias",
           "status": "direct",
           "test_path": "frontend/src/modules/presentaciones/PresentacionesPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/materias",
+          "status": "direct",
+          "test_path": "frontend/src/modules/xali/XaliPage.teacher.test.tsx"
         },
         {
           "level": "unit",
@@ -33279,6 +35099,12 @@
           "level": "unit",
           "reference": "POST:/xali/chat",
           "status": "domain",
+          "test_path": "backend/tests/integration/test_xali_teacher_visual.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/xali/chat",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_xali_guidance_policy.py"
         },
         {
@@ -33286,6 +35112,18 @@
           "reference": "POST:/xali/chat",
           "status": "domain",
           "test_path": "backend/tests/unit/test_xali_student_resources.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/xali/chat",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_xali_teacher_context.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/xali/chat",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_xali_visual_content.py"
         },
         {
           "level": "e2e",
@@ -33300,6 +35138,12 @@
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
         },
         {
+          "level": "e2e",
+          "reference": "POST:/xali/chat",
+          "status": "direct",
+          "test_path": "frontend/e2e/xali-teacher-visual.spec.ts"
+        },
+        {
           "level": "unit",
           "reference": "POST:/xali/chat",
           "status": "domain",
@@ -33310,6 +35154,12 @@
           "reference": "POST:/xali/chat",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/student-feedback/XaliFeedbackStory.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/xali/chat",
+          "status": "domain",
+          "test_path": "frontend/src/modules/xali/XaliPage.teacher.test.tsx"
         },
         {
           "level": "unit",
@@ -33343,6 +35193,12 @@
           "level": "unit",
           "reference": "POST:/xali/evaluaciones/{evaluacionId}/chat",
           "status": "domain",
+          "test_path": "backend/tests/integration/test_xali_teacher_visual.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/xali/evaluaciones/{evaluacionId}/chat",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_xali_guidance_policy.py"
         },
         {
@@ -33355,6 +35211,24 @@
           "level": "unit",
           "reference": "POST:/xali/evaluaciones/{evaluacionId}/chat",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_xali_teacher_context.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/xali/evaluaciones/{evaluacionId}/chat",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_xali_visual_content.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/xali/evaluaciones/{evaluacionId}/chat",
+          "status": "domain",
+          "test_path": "frontend/e2e/xali-teacher-visual.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/xali/evaluaciones/{evaluacionId}/chat",
+          "status": "domain",
           "test_path": "frontend/src/components/xali/XaliMascot.test.tsx"
         },
         {
@@ -33362,6 +35236,12 @@
           "reference": "POST:/xali/evaluaciones/{evaluacionId}/chat",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/student-feedback/XaliFeedbackStory.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/xali/evaluaciones/{evaluacionId}/chat",
+          "status": "domain",
+          "test_path": "frontend/src/modules/xali/XaliPage.teacher.test.tsx"
         },
         {
           "level": "unit",
@@ -33395,6 +35275,12 @@
           "level": "unit",
           "reference": "POST:/xali/evaluaciones/{evaluacionId}/recursos",
           "status": "domain",
+          "test_path": "backend/tests/integration/test_xali_teacher_visual.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/xali/evaluaciones/{evaluacionId}/recursos",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_xali_guidance_policy.py"
         },
         {
@@ -33407,6 +35293,24 @@
           "level": "unit",
           "reference": "POST:/xali/evaluaciones/{evaluacionId}/recursos",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_xali_teacher_context.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/xali/evaluaciones/{evaluacionId}/recursos",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_xali_visual_content.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/xali/evaluaciones/{evaluacionId}/recursos",
+          "status": "domain",
+          "test_path": "frontend/e2e/xali-teacher-visual.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/xali/evaluaciones/{evaluacionId}/recursos",
+          "status": "domain",
           "test_path": "frontend/src/components/xali/XaliMascot.test.tsx"
         },
         {
@@ -33414,6 +35318,12 @@
           "reference": "POST:/xali/evaluaciones/{evaluacionId}/recursos",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/student-feedback/XaliFeedbackStory.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/xali/evaluaciones/{evaluacionId}/recursos",
+          "status": "domain",
+          "test_path": "frontend/src/modules/xali/XaliPage.teacher.test.tsx"
         },
         {
           "level": "unit",
@@ -33540,6 +35450,12 @@
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
         },
         {
+          "level": "e2e",
+          "reference": "PUT:/admin/ai-control-center/publish",
+          "status": "domain",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
+        },
+        {
           "level": "unit",
           "reference": "PUT:/admin/ai-control-center/publish",
           "status": "domain",
@@ -33654,6 +35570,12 @@
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
         },
         {
+          "level": "e2e",
+          "reference": "PUT:/admin/ai-features",
+          "status": "domain",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
+        },
+        {
           "level": "unit",
           "reference": "PUT:/admin/ai-features",
           "status": "domain",
@@ -33762,6 +35684,12 @@
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
         },
         {
+          "level": "e2e",
+          "reference": "PUT:/admin/ai-providers",
+          "status": "domain",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
+        },
+        {
           "level": "unit",
           "reference": "PUT:/admin/ai-providers",
           "status": "domain",
@@ -33868,6 +35796,12 @@
           "reference": "PUT:/admin/ai-settings/publish",
           "status": "domain",
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PUT:/admin/ai-settings/publish",
+          "status": "domain",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
         },
         {
           "level": "unit",
@@ -33982,6 +35916,12 @@
           "reference": "PUT:/admin/mail/config",
           "status": "domain",
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PUT:/admin/mail/config",
+          "status": "direct",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
         },
         {
           "level": "unit",
@@ -37009,6 +38949,12 @@
           "level": "unit",
           "reference": "calificaciones",
           "status": "direct",
+          "test_path": "backend/tests/integration/test_xali_teacher_visual.py"
+        },
+        {
+          "level": "unit",
+          "reference": "calificaciones",
+          "status": "direct",
           "test_path": "backend/tests/unit/test_ai_usage_pipeline.py"
         },
         {
@@ -37243,7 +39189,19 @@
           "level": "e2e",
           "reference": "calificaciones",
           "status": "direct",
+          "test_path": "frontend/e2e/camera-capture.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "calificaciones",
+          "status": "direct",
           "test_path": "frontend/e2e/explainable-grading.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "calificaciones",
+          "status": "direct",
+          "test_path": "frontend/e2e/materia-queue-mobile.spec.ts"
         },
         {
           "level": "e2e",
@@ -37409,7 +39367,7 @@
       ],
       "authorization": [],
       "consumers": [],
-      "coverage": "missing",
+      "coverage": "covered",
       "details": {
         "active": false,
         "class": "migration_only",
@@ -37431,7 +39389,14 @@
       "source_line": 158,
       "source_path": "backend/alembic/versions/202606290002_phases_3_to_8.py",
       "states": [],
-      "tests": []
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "chat_messages",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_xali_teacher_visual.py"
+        }
+      ]
     },
     {
       "actors": [
@@ -37566,6 +39531,12 @@
           "reference": "entregas",
           "status": "direct",
           "test_path": "backend/tests/integration/test_explainable_grading_pipeline.py"
+        },
+        {
+          "level": "unit",
+          "reference": "entregas",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_xali_teacher_visual.py"
         },
         {
           "level": "unit",
@@ -37710,6 +39681,12 @@
           "reference": "entregas",
           "status": "direct",
           "test_path": "frontend/src/modules/herramientas/ListPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "entregas",
+          "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/resourcePresentationModel.test.ts"
         },
         {
           "level": "unit",
@@ -37874,6 +39851,12 @@
           "reference": "evaluaciones",
           "status": "direct",
           "test_path": "backend/tests/integration/test_resource_assignment_access.py"
+        },
+        {
+          "level": "unit",
+          "reference": "evaluaciones",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_xali_teacher_visual.py"
         },
         {
           "level": "unit",
@@ -38053,6 +40036,12 @@
           "level": "e2e",
           "reference": "evaluaciones",
           "status": "direct",
+          "test_path": "frontend/e2e/camera-capture.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "evaluaciones",
+          "status": "direct",
           "test_path": "frontend/e2e/evaluation-ai-wizard.spec.ts"
         },
         {
@@ -38090,6 +40079,12 @@
           "reference": "evaluaciones",
           "status": "direct",
           "test_path": "frontend/e2e/resources-creation.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "evaluaciones",
+          "status": "direct",
+          "test_path": "frontend/e2e/resources-responsive.spec.ts"
         },
         {
           "level": "e2e",
@@ -38173,6 +40168,12 @@
           "level": "unit",
           "reference": "evaluaciones",
           "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/DetailPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "evaluaciones",
+          "status": "direct",
           "test_path": "frontend/src/modules/herramientas/StudentResourcePage.test.tsx"
         },
         {
@@ -38222,6 +40223,12 @@
           "reference": "evaluaciones",
           "status": "direct",
           "test_path": "frontend/src/modules/materias/teacherFlowModel.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "evaluaciones",
+          "status": "direct",
+          "test_path": "frontend/src/modules/xali/XaliPage.teacher.test.tsx"
         },
         {
           "level": "unit",
@@ -38774,6 +40781,12 @@
           "level": "unit",
           "reference": "materias",
           "status": "direct",
+          "test_path": "backend/tests/integration/test_xali_teacher_visual.py"
+        },
+        {
+          "level": "unit",
+          "reference": "materias",
+          "status": "direct",
           "test_path": "backend/tests/unit/authorization_helpers.py"
         },
         {
@@ -38846,6 +40859,12 @@
           "level": "e2e",
           "reference": "materias",
           "status": "direct",
+          "test_path": "frontend/e2e/camera-capture.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "materias",
+          "status": "direct",
           "test_path": "frontend/e2e/evaluation-ai-wizard.spec.ts"
         },
         {
@@ -38859,6 +40878,12 @@
           "reference": "materias",
           "status": "direct",
           "test_path": "frontend/e2e/explainable-grading.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "materias",
+          "status": "direct",
+          "test_path": "frontend/e2e/materia-queue-mobile.spec.ts"
         },
         {
           "level": "e2e",
@@ -38888,6 +40913,12 @@
           "level": "e2e",
           "reference": "materias",
           "status": "direct",
+          "test_path": "frontend/e2e/resources-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "materias",
+          "status": "direct",
           "test_path": "frontend/e2e/roster-import.spec.ts"
         },
         {
@@ -38895,6 +40926,12 @@
           "reference": "materias",
           "status": "direct",
           "test_path": "frontend/e2e/student-activity-delivery.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "materias",
+          "status": "direct",
+          "test_path": "frontend/e2e/xali-teacher-visual.spec.ts"
         },
         {
           "level": "unit",
@@ -38966,7 +41003,19 @@
           "level": "unit",
           "reference": "materias",
           "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/DetailPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "materias",
+          "status": "direct",
           "test_path": "frontend/src/modules/herramientas/forms/base.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "materias",
+          "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/resourcePresentationModel.test.ts"
         },
         {
           "level": "unit",
@@ -39021,6 +41070,12 @@
           "reference": "materias",
           "status": "direct",
           "test_path": "frontend/src/modules/presentaciones/PresentacionesPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "materias",
+          "status": "direct",
+          "test_path": "frontend/src/modules/xali/XaliPage.teacher.test.tsx"
         },
         {
           "level": "unit",
@@ -40079,6 +42134,12 @@
           "level": "unit",
           "reference": "users",
           "status": "direct",
+          "test_path": "backend/tests/integration/test_xali_teacher_visual.py"
+        },
+        {
+          "level": "unit",
+          "reference": "users",
+          "status": "direct",
           "test_path": "backend/tests/unit/authorization_helpers.py"
         },
         {
@@ -40151,7 +42212,19 @@
           "level": "e2e",
           "reference": "users",
           "status": "direct",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "users",
+          "status": "direct",
           "test_path": "frontend/e2e/auth-navigation.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "users",
+          "status": "direct",
+          "test_path": "frontend/e2e/camera-capture.spec.ts"
         },
         {
           "level": "e2e",
@@ -40193,6 +42266,12 @@
           "level": "e2e",
           "reference": "users",
           "status": "direct",
+          "test_path": "frontend/e2e/resources-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "users",
+          "status": "direct",
           "test_path": "frontend/e2e/roster-import.spec.ts"
         },
         {
@@ -40206,6 +42285,24 @@
           "reference": "users",
           "status": "direct",
           "test_path": "frontend/e2e/teacher-ai-configuration.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "users",
+          "status": "direct",
+          "test_path": "frontend/e2e/xali-teacher-visual.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "users",
+          "status": "direct",
+          "test_path": "frontend/src/components/ui/EducationalIcon.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "users",
+          "status": "direct",
+          "test_path": "frontend/src/config/nav.test.ts"
         },
         {
           "level": "unit",
@@ -40270,6 +42367,12 @@
         {
           "level": "unit",
           "reference": "xali_refuerzos",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_xali_teacher_visual.py"
+        },
+        {
+          "level": "unit",
+          "reference": "xali_refuerzos",
           "status": "direct",
           "test_path": "backend/tests/unit/test_model_metadata.py"
         },
@@ -40289,6 +42392,24 @@
           "level": "unit",
           "reference": "xali_refuerzos",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_xali_teacher_context.py"
+        },
+        {
+          "level": "unit",
+          "reference": "xali_refuerzos",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_xali_visual_content.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "xali_refuerzos",
+          "status": "domain",
+          "test_path": "frontend/e2e/xali-teacher-visual.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "xali_refuerzos",
+          "status": "domain",
           "test_path": "frontend/src/components/xali/XaliMascot.test.tsx"
         },
         {
@@ -40296,6 +42417,12 @@
           "reference": "xali_refuerzos",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/student-feedback/XaliFeedbackStory.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "xali_refuerzos",
+          "status": "domain",
+          "test_path": "frontend/src/modules/xali/XaliPage.teacher.test.tsx"
         },
         {
           "level": "unit",
@@ -40346,6 +42473,12 @@
         {
           "level": "unit",
           "reference": "xali_student_resources",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_xali_teacher_visual.py"
+        },
+        {
+          "level": "unit",
+          "reference": "xali_student_resources",
           "status": "direct",
           "test_path": "backend/tests/unit/test_model_metadata.py"
         },
@@ -40365,6 +42498,24 @@
           "level": "unit",
           "reference": "xali_student_resources",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_xali_teacher_context.py"
+        },
+        {
+          "level": "unit",
+          "reference": "xali_student_resources",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_xali_visual_content.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "xali_student_resources",
+          "status": "domain",
+          "test_path": "frontend/e2e/xali-teacher-visual.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "xali_student_resources",
+          "status": "domain",
           "test_path": "frontend/src/components/xali/XaliMascot.test.tsx"
         },
         {
@@ -40372,6 +42523,12 @@
           "reference": "xali_student_resources",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/student-feedback/XaliFeedbackStory.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "xali_student_resources",
+          "status": "domain",
+          "test_path": "frontend/src/modules/xali/XaliPage.teacher.test.tsx"
         },
         {
           "level": "unit",

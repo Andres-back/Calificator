@@ -8,6 +8,7 @@ import toast from 'react-hot-toast';
 import { Modal } from '@/components/ui';
 import type { EvidencePage, EvidenceRotation } from './evidencePayload';
 import { analyzeEvidenceImage } from './imageQuality';
+import { CameraCapture } from './CameraCapture';
 
 const MAX_FILES = 10;
 const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
@@ -21,6 +22,7 @@ interface Props {
   onChange: (pages: EvidencePage[]) => void;
   disabled?: boolean;
   onError?: (message: string) => void;
+  contextKey?: string;
 }
 
 function PageVisual({ page, className }: { page: EvidencePage; className: string }) {
@@ -66,23 +68,41 @@ function PreviewModal({ page, pageNumber, onClose }: { page: EvidencePage | null
   );
 }
 
-export function MultiPageEvidencePicker({ pages, onChange, disabled = false, onError }: Props) {
+export function MultiPageEvidencePicker({ pages, onChange, disabled = false, onError, contextKey = '' }: Props) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const replacementIdRef = useRef<string | null>(null);
+  const selectionContext = useRef(contextKey);
+  const currentContext = useRef(contextKey);
+  currentContext.current = contextKey;
+  const [cameraRequest, setCameraRequest] = useState<{ id: string; context: string; replacementId: string | null } | null>(null);
+  const [preferredCameraId, setPreferredCameraId] = useState('');
   const pagesRef = useRef(pages);
   const mounted = useRef(true);
   const disabledRef = useRef(disabled);
   disabledRef.current = disabled;
   const [previewId, setPreviewId] = useState<string | null>(null);
   useEffect(() => { pagesRef.current = pages; }, [pages]);
+  useEffect(() => { setCameraRequest(null); replacementIdRef.current = null; }, [contextKey]);
   useEffect(() => {
     mounted.current = true;
     return () => { mounted.current = false; };
   }, []);
   const reportError = (message: string) => onError ? onError(message) : toast.error(message);
+  const openCamera = (replacementId: string | null = null) => {
+    if (disabledRef.current) return;
+    replacementIdRef.current = replacementId;
+    setCameraRequest({ id: crypto.randomUUID(), context: contextKey, replacementId });
+  };
+  const selectFiles = (nativeCamera: boolean, replacementId: string | null = null) => {
+    selectionContext.current = contextKey;
+    replacementIdRef.current = replacementId;
+    setCameraRequest(null);
+    (nativeCamera ? cameraInputRef : fileInputRef).current?.click();
+  };
 
   const addFiles = async (fileList: FileList | File[], replacementId: string | null = null) => {
+    const addedContext = contextKey;
     const incoming = Array.from(fileList);
     if (!incoming.length || disabledRef.current || !mounted.current) return;
     const currentPages = pagesRef.current;
@@ -130,7 +150,7 @@ export function MultiPageEvidencePicker({ pages, onChange, disabled = false, onE
       id: page.id,
       quality: await analyzeEvidenceImage(page.file),
     }))).then((assessments) => {
-      if (!mounted.current || disabledRef.current) return;
+      if (!mounted.current || disabledRef.current || currentContext.current !== addedContext) return;
       const byId = new Map(assessments.map((item) => [item.id, item.quality]));
       // Solo aplicar resultados a las mismas hojas que aún siguen en este paquete.
       if (!pagesRef.current.some((page) => byId.has(page.id))) return;
@@ -172,17 +192,17 @@ export function MultiPageEvidencePicker({ pages, onChange, disabled = false, onE
   return (
     <div className="space-y-4">
       <div className="grid gap-3 sm:grid-cols-2">
-        <button type="button" disabled={disabled || isPdf || pages.length >= MAX_FILES} onClick={() => { replacementIdRef.current = null; fileInputRef.current?.click(); }} className="focus-ring flex min-h-24 items-center gap-3 rounded-xl border-2 border-dashed border-brand-300 bg-brand-50/60 p-4 text-left transition hover:border-brand-500 hover:bg-brand-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-brand-500/40 dark:bg-brand-500/10">
+        <button type="button" disabled={disabled || isPdf || pages.length >= MAX_FILES} onClick={() => selectFiles(false)} className="focus-ring flex min-h-24 items-center gap-3 rounded-xl border-2 border-dashed border-brand-300 bg-brand-50/60 p-4 text-left transition hover:border-brand-500 hover:bg-brand-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-brand-500/40 dark:bg-brand-500/10">
           <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-white text-brand-600 shadow-sm dark:bg-white/10 dark:text-brand-200"><FilePlus2 className="h-6 w-6" /></span>
-          <span><strong className="block text-sm text-fg">{pages.length ? 'Agregar más fotos' : 'Elegir fotos o PDF'}</strong><span className="mt-1 block text-xs leading-5 text-muted">Hasta 10 fotos ordenadas o un PDF</span></span>
+          <span><strong className="block text-sm text-fg">{pages.length ? 'Agregar más fotos' : 'Subir fotos o PDF'}</strong><span className="mt-1 block text-xs leading-5 text-muted">Hasta 10 fotos ordenadas o un PDF</span></span>
         </button>
-        <button type="button" disabled={disabled || isPdf || pages.length >= MAX_FILES} onClick={() => { replacementIdRef.current = null; cameraInputRef.current?.click(); }} className="focus-ring flex min-h-24 items-center gap-3 rounded-xl border border-border bg-surface p-4 text-left transition hover:border-sky-400 hover:bg-sky-50/50 disabled:cursor-not-allowed disabled:opacity-50 dark:hover:bg-sky-500/10">
+        <button type="button" disabled={disabled || isPdf || pages.length >= MAX_FILES} onClick={() => openCamera()} className="focus-ring flex min-h-24 items-center gap-3 rounded-xl border border-border bg-surface p-4 text-left transition hover:border-sky-400 hover:bg-sky-50/50 disabled:cursor-not-allowed disabled:opacity-50 dark:hover:bg-sky-500/10">
           <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-sky-100 text-sky-700 dark:bg-sky-500/20 dark:text-sky-200"><Camera className="h-6 w-6" /></span>
-          <span><strong className="block text-sm text-fg">{pages.length ? 'Tomar otra foto' : 'Usar la cámara'}</strong><span className="mt-1 block text-xs leading-5 text-muted">Cada foto se añade como una hoja nueva</span></span>
+          <span><strong className="block text-sm text-fg">{pages.length ? 'Tomar otra foto' : 'Tomar foto'}</strong><span className="mt-1 block text-xs leading-5 text-muted">Abre la cámara y revisa la foto antes de añadirla</span></span>
         </button>
       </div>
-      <input ref={fileInputRef} type="file" disabled={disabled} multiple accept="image/jpeg,image/png,image/webp,application/pdf" className="hidden" onChange={(event) => { if (event.target.files) void addFiles(event.target.files); event.target.value = ''; }} />
-      <input ref={cameraInputRef} type="file" disabled={disabled} accept="image/*" capture="environment" className="hidden" onChange={(event) => { const replacementId = replacementIdRef.current; replacementIdRef.current = null; if (event.target.files) void addFiles(event.target.files, replacementId); event.target.value = ''; }} />
+      <input ref={fileInputRef} type="file" disabled={disabled} multiple accept="image/jpeg,image/png,image/webp,application/pdf" className="hidden" onChange={(event) => { const replacementId = replacementIdRef.current; replacementIdRef.current = null; if (event.target.files && selectionContext.current === contextKey) void addFiles(event.target.files, replacementId); event.target.value = ''; }} />
+      <input ref={cameraInputRef} type="file" disabled={disabled} accept="image/*" capture="environment" className="hidden" onChange={(event) => { const replacementId = replacementIdRef.current; replacementIdRef.current = null; if (event.target.files && selectionContext.current === contextKey) void addFiles(event.target.files, replacementId); event.target.value = ''; }} />
 
       {pages.length > 0 && <>
         <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-surface-2 px-4 py-3">
@@ -203,7 +223,7 @@ export function MultiPageEvidencePicker({ pages, onChange, disabled = false, onE
                 <div className="rounded-lg border border-amber-200 bg-amber-50 p-2 text-xs leading-5 text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-100">
                   <p className="flex items-center gap-1.5 font-bold"><AlertTriangle className="h-4 w-4" /> Revisa esta foto</p>
                   <p>{page.quality.warnings.join(' ')}</p>
-                  <button type="button" disabled={disabled} className="mt-1 font-bold underline disabled:opacity-50" onClick={() => { replacementIdRef.current = page.id; cameraInputRef.current?.click(); }}>Repetir foto</button>
+                  <button type="button" disabled={disabled} className="mt-1 font-bold underline disabled:opacity-50" onClick={() => openCamera(page.id)}>Repetir foto</button>
                   <span className="ml-2">o continúa si puedes leerla.</span>
                 </div>
               )}
@@ -211,7 +231,7 @@ export function MultiPageEvidencePicker({ pages, onChange, disabled = false, onE
                 <div className="rounded-lg border border-rose-200 bg-rose-50 p-2 text-xs leading-5 text-rose-900 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-100">
                   <p className="flex items-center gap-1.5 font-bold"><AlertTriangle className="h-4 w-4" /> Reemplaza esta foto</p>
                   <p>{page.quality.warnings.join(' ')}</p>
-                  <button type="button" disabled={disabled} className="mt-1 font-bold underline disabled:opacity-50" onClick={() => { replacementIdRef.current = page.id; cameraInputRef.current?.click(); }}>Reemplazar foto</button>
+                  <button type="button" disabled={disabled} className="mt-1 font-bold underline disabled:opacity-50" onClick={() => openCamera(page.id)}>Reemplazar foto</button>
                 </div>
               )}
               <div className="flex flex-wrap gap-1.5">
@@ -229,6 +249,15 @@ export function MultiPageEvidencePicker({ pages, onChange, disabled = false, onE
         {!isPdf && pages.length > 1 && <p className="rounded-xl border border-sky-200 bg-sky-50 p-3 text-sm leading-6 text-sky-900 dark:border-sky-500/30 dark:bg-sky-500/10 dark:text-sky-100">Revisa el orden: Xali leerá primero la hoja 1 y continuará hasta la hoja {pages.length}.</p>}
       </>}
       <PreviewModal page={previewIndex >= 0 ? pages[previewIndex] : null} pageNumber={previewIndex + 1} onClose={() => setPreviewId(null)} />
+      {cameraRequest && cameraRequest.context === contextKey && !disabled && !isPdf && <CameraCapture key={cameraRequest.id}
+        preferredCameraId={preferredCameraId} onCameraChange={setPreferredCameraId}
+        onClose={() => { setCameraRequest(null); replacementIdRef.current = null; }}
+        onUpload={() => selectFiles(false, cameraRequest.replacementId)}
+        onNativeCamera={() => selectFiles(true, cameraRequest.replacementId)}
+        onCapture={(file) => {
+          if (currentContext.current === cameraRequest.context && !disabledRef.current) void addFiles([file], cameraRequest.replacementId);
+          setCameraRequest(null); replacementIdRef.current = null;
+        }} />}
     </div>
   );
 }

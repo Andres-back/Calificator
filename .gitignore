@@ -11,6 +11,7 @@ htmlcov/
 venv/
 
 # Node / Vite / Playwright
+node_modules/
 frontend/node_modules/
 frontend/dist/
 frontend/coverage/

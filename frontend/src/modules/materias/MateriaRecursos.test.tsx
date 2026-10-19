@@ -74,8 +74,27 @@ describe('recursos canónicos de la materia', () => {
     expect(screen.getByText('Recurso activity')).toBeInTheDocument();
     expect(screen.getByText('Borrador')).toBeInTheDocument();
     expect(screen.getByText('Apoyo visible')).toBeInTheDocument();
-    expect(screen.getByText('Actividad visible')).toBeInTheDocument();
-    expect(screen.getByText('Recibe entregas')).toBeInTheDocument();
-    expect(screen.getAllByRole('button', { name: /Administrar/ })).toHaveLength(3);
+    expect(screen.getByText('Actividad · recibe entregas')).toBeInTheDocument();
+    expect(screen.getAllByRole('link', { name: 'Ver recurso' })).toHaveLength(3);
+    expect(document.querySelector('a button')).not.toBeInTheDocument();
+  });
+
+  it('preserves student read routes and does not expose author administration', async () => {
+    useAuth.setState(state => ({ user: { ...state.user!, rol: 'estudiante', permissions: ['resources.read'] } }));
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(<MemoryRouter><QueryClientProvider client={client}><MateriaRecursos /></QueryClientProvider></MemoryRouter>);
+    const links = await screen.findAllByRole('link', { name: 'Ver recurso' });
+    expect(links[0]).toHaveAttribute('href', '/app/recursos/draft');
+    expect(screen.queryByRole('link', { name: 'Crear recurso' })).not.toBeInTheDocument();
+  });
+
+  it('keeps a read-only teacher on the teacher reader without offering creation', async () => {
+    useAuth.setState(state => ({ user: { ...state.user!, permissions: ['resources.read'] } }));
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(<MemoryRouter><QueryClientProvider client={client}><MateriaRecursos /></QueryClientProvider></MemoryRouter>);
+    const links = await screen.findAllByRole('link', { name: 'Ver recurso' });
+    expect(links[0]).toHaveAttribute('href', '/app/herramientas/draft');
+    expect(screen.getByRole('heading', { name: 'Recursos del salón' })).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Crear recurso' })).not.toBeInTheDocument();
   });
 });

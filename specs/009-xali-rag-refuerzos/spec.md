@@ -2,6 +2,10 @@
 
 **Rama**: codex/009-xali-rag-refuerzos | **Creada**: 2026-08-14 | **Estado**: Aprobada | **Issue**: #10
 
+## Evolución docente 104
+
+[104 Xali docente contextual y visual](../104-xali-docente-visual/spec.md), [issue #215](https://github.com/Andres-back/Calificator/issues/215): contexto autorizado de materia sin depender de documentos, historial general separado, fuentes acotadas y apoyos declarativos ampliables. Reutiliza texto/metadata existentes, permisos y LLMRouter; conserva el flujo estudiantil, las notas y evidencias. Alcance y plan aprobados; ver [validación](../104-xali-docente-visual/quickstart.md). Sin fusión ni producción autorizadas para este incremento.
+
 ## Escenarios de usuario y pruebas
 
 ### Historia 1 - Flujo principal (Prioridad: P1)

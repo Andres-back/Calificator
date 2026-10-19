@@ -4,6 +4,10 @@
 
 ## Escenarios de usuario y pruebas
 
+### Evolución 102: lectura completa
+
+[102-camara-visor-completo](../102-camara-visor-completo/spec.md), issue #212, mantiene los documentos autorizados PDF/Word y solucionario restringido, con lectura amplia de todas las páginas y opciones de descarga a petición. Sin modificar evaluación guardada, respuestas, notas ni API.
+
 ### Historia 1 - Flujo principal (Prioridad: P1)
 Como profesor, necesito crear, digitalizar, editar, asignar y controlar evaluaciones para obtener un resultado claro, seguro y trazable.
 
@@ -65,6 +69,10 @@ Como equipo, necesito actualizar estos artefactos cuando cambie el comportamient
 ## Evolución 096: preparar y revisar
 
 [096-evaluacion-dos-pantallas](../096-evaluacion-dos-pantallas/spec.md), issue #202, simplifica el asistente IA a Preparar/Revisar con nombre sugerido, reparto visible, opciones y ayuda desplegables. Una entrada común ofrece IA, foto/PDF y creación manual desde materia o acceso general. Guarda el mismo borrador con validación/versionado y publica mediante acción separada. Conserva borradores v7, selección explícita de criterios, modalidades, respuestas y contratos de documentos; no cambia notas, evidencia ni proveedores.
+
+## Evolución 105: éxito contextual
+
+[105-materia-movil-cola](../105-materia-movil-cola/spec.md) conserva el éxito visible en el paso Revisar y elimina únicamente el toast redundante de generación que podía cubrir la cabecera. No altera errores, advertencias, preguntas, guardado, modalidades ni publicación.
 
 ## Evolución 097: escritura móvil despejada
 

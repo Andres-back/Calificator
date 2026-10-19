@@ -63,7 +63,7 @@ describe('resource library lifecycle', () => {
     expect(screen.getByText('Apoyo visible')).toBeInTheDocument();
     expect(screen.getByText('Actividad · entregas cerradas')).toBeInTheDocument();
     expect(screen.queryByText('Apoyo publicado')).not.toBeInTheDocument();
-    expect(screen.getAllByRole('button', { name: /Asignar|Administrar|Abrir actividad/ })).toHaveLength(3);
+    expect(screen.getAllByRole('link', { name: 'Ver recurso' })).toHaveLength(3);
     for (const icon of ['resources', 'interactive-games', 'archived-drafts', 'pdf-ready', 'prepare-evaluation']) {
       expect(document.querySelector(`[data-educational-icon="${icon}"]`)).toBeInTheDocument();
     }
@@ -83,12 +83,30 @@ describe('resource library lifecycle', () => {
     await waitFor(() => expect(screen.queryByText('Recurso draft')).not.toBeInTheDocument());
     expect(screen.getByText('1 resultado')).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Más acciones para Recurso support' }));
-    expect(screen.getByRole('menuitem', { name: 'Descargar PDF' })).toBeInTheDocument();
-    expect(screen.getByRole('menuitem', { name: 'Duplicar recurso' })).toBeInTheDocument();
-    expect(screen.getByRole('menuitem', { name: 'Eliminar recurso' })).toBeInTheDocument();
-
+    fireEvent.click(screen.getByRole('button', { name: 'Más opciones para Recurso support' }));
+    expect(screen.getByRole('link', { name: 'PDF para estudiantes' })).toBeInTheDocument();
+    expect(mocks.deleteMaterial).not.toHaveBeenCalled();
     fireEvent.keyDown(document, { key: 'Escape' });
-    await waitFor(() => expect(screen.queryByRole('menu')).not.toBeInTheDocument());
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+
+    fireEvent.change(screen.getByRole('combobox', { name: 'Materia' }), { target: { value: 'none' } });
+    expect(screen.getByText('No encontramos recursos')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Limpiar filtros' }));
+    expect(screen.getAllByRole('link', { name: 'Ver recurso' })).toHaveLength(3);
+    expect(mocks.deleteMaterial).not.toHaveBeenCalled();
+    expect(mocks.duplicateMaterial).not.toHaveBeenCalled();
+  });
+
+  it('loads additional pages only when requested and identifies partial search', async () => {
+    mocks.listMaterials.mockResolvedValueOnce(Array.from({ length: 50 }, (_, i) => resource(String(i), null, false)))
+      .mockResolvedValueOnce([resource('50', null, false)]);
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(<MemoryRouter><QueryClientProvider client={client}><ListPage /></QueryClientProvider></MemoryRouter>);
+    await screen.findByText('Recurso 49');
+    expect(mocks.listMaterials).toHaveBeenCalledTimes(1);
+    expect(screen.getByText(/La búsqueda y los filtros se aplican a los 50 recursos cargados/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Cargar más' }));
+    expect(await screen.findByText('Recurso 50')).toBeInTheDocument();
+    expect(mocks.listMaterials).toHaveBeenLastCalledWith(undefined, { limit: 50, offset: 50 });
   });
 });

@@ -676,7 +676,7 @@ test('dos paquetes quedan en cola, un fallo conserva hojas para reintentar', asy
   await expect(page).toHaveURL(/estudiante=s2/);
   // La URL cambia antes de que React remonte el formulario para el nuevo alumno.
   await expect(page.getByRole('status').filter({ hasText: 'Seleccionado: Segundo estudiante' })).toBeVisible();
-  await expect(page.getByRole('button', { name: /Elegir fotos o PDF/ })).toBeEnabled();
+  await expect(page.getByRole('button', { name: /Subir fotos o PDF/ })).toBeEnabled();
   await page.locator('input[type=file][multiple]').setInputFiles({ ...file, name: 'segunda-entrega.png' });
   const submitButton = page.getByRole('button', { name: 'Enviar a calificar', exact: true });
   await expect(submitButton).toBeEnabled();
@@ -693,7 +693,7 @@ test('dos paquetes quedan en cola, un fallo conserva hojas para reintentar', asy
     expect(packet.toString()).toContain('name="rotaciones"\r\n\r\n[0]');
   }
   await page.reload();
-  expect(await page.evaluate(() => JSON.parse(localStorage.getItem('xcalificator.pending-gradings.v1') ?? '[]').length)).toBe(2);
+  expect(await page.evaluate(() => JSON.parse(localStorage.getItem('xcalificator.pending-gradings.v1:p1') ?? '[]').length)).toBe(2);
 });
 
 test('lectura docente y enlaces antiguos conservan contexto sin habilitar escritura', async ({ page }) => {

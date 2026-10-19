@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
@@ -9,10 +9,8 @@ import {
   CalendarCheck2,
   Camera,
   ChartNoAxesCombined,
-  CheckCircle2,
   CircleArrowRight,
   ClipboardCheck,
-  GraduationCap,
   Plus,
   UserPlus,
 } from 'lucide-react';
@@ -38,6 +36,7 @@ import { cn } from '@/lib/cn';
 import { useAuth } from '@/stores/auth';
 import { routes } from '@/config/routes';
 import { JoinMateriaModal } from './UnirseMateriaPage';
+import { useMobileFormViewport } from '@/hooks/useMobileFormViewport';
 import {
   getPostCreateDestination,
   getTeacherActionGuide,
@@ -118,6 +117,8 @@ export function MateriasListPage() {
   const [open, setOpen] = useState(false);
   const [joinOpen, setJoinOpen] = useState(searchParams.get('unirse') === '1');
   const [form, setForm] = useState(EMPTY_FORM);
+  const formRef = useRef<HTMLFormElement>(null);
+  const mobile = useMobileFormViewport(open, formRef);
   const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['materias'],
     queryFn: listMaterias,
@@ -420,40 +421,30 @@ export function MateriasListPage() {
           open={open}
           onClose={closeCreateModal}
           title="Crear una materia"
-          className="max-w-2xl"
+          className="flex max-w-2xl flex-col overflow-hidden"
+          mobileViewport={mobile.viewport}
+          mobileWriting={mobile.isWriting}
           closeOnBackdrop={!create.isPending}
           closeOnEscape={!create.isPending}
         >
           <form
+            ref={formRef}
             onSubmit={(event) => {
               event.preventDefault();
-              if (canSubmit) create.mutate();
+              if (canSubmit && !create.isPending) create.mutate();
             }}
-            className="space-y-5"
+            className="flex min-h-0 flex-1 flex-col"
           >
-            <div className="flex items-start gap-3 rounded-xl border border-brand-200 bg-brand-50 p-4 dark:border-brand-500/30 dark:bg-brand-500/10">
-              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-brand-700 text-white">
-                <GraduationCap className="h-5 w-5" aria-hidden="true" />
-              </span>
-              <div>
-                <p className="text-xs font-bold uppercase tracking-wide text-brand-700 dark:text-brand-200">
-                  Paso 1 de 2
-                </p>
-                <p className="mt-1 font-bold">Identifica la clase</p>
-                <p className="mt-1 text-sm leading-6 text-muted">
-                  Área y grado permiten mostrar los aprendizajes del MEN
-                  correctos. Después te llevaremos a {nextStepLabel}.
-                </p>
-              </div>
-            </div>
+            {mobile.isWriting && <Button type="button" variant="ghost" className="mb-2 min-h-11 shrink-0 self-end" onClick={mobile.finishWriting}>Listo</Button>}
+            <div data-mobile-scroll className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain px-1 pb-2">
+            {!mobile.isWriting && <p className="text-sm text-muted">Después podrás {nextStepLabel}.</p>}
 
             <Field
               label="Nombre de la materia"
-              hint="Usa un nombre corto que reconozcas fácilmente."
               required
             >
               <Input
-                autoFocus
+                className="text-base sm:text-sm"
                 value={form.nombre}
                 onChange={(event) =>
                   setForm({ ...form, nombre: event.target.value })
@@ -467,10 +458,10 @@ export function MateriasListPage() {
             <div className="grid gap-4 sm:grid-cols-2">
               <Field
                 label="Área"
-                hint="Puedes elegir una sugerencia o escribir otra."
                 required
               >
                 <Input
+                  className="text-base sm:text-sm"
                   list="materia-area-suggestions"
                   value={form.area}
                   onChange={(event) =>
@@ -488,10 +479,10 @@ export function MateriasListPage() {
 
               <Field
                 label="Grado"
-                hint="Puedes elegir una sugerencia o escribir otra."
                 required
               >
                 <Input
+                  className="text-base sm:text-sm"
                   list="materia-grade-suggestions"
                   value={form.grado}
                   onChange={(event) =>
@@ -508,11 +499,16 @@ export function MateriasListPage() {
               </Field>
             </div>
 
+            <details className="rounded-xl border border-border px-3">
+            <summary className="focus-ring flex min-h-11 cursor-pointer items-center font-semibold">Más opciones</summary>
+            <div className="space-y-3 pb-3">
+            <p className="text-sm text-muted">Puedes elegir sugerencias o escribir otra área y grado. Estos datos ayudan a encontrar los criterios de aprendizaje de tu clase.</p>
             <Field
               label="Descripción"
               hint="Opcional. Por ejemplo: curso 7A, jornada de la mañana."
             >
               <Textarea
+                className="text-base sm:text-sm"
                 value={form.descripcion}
                 onChange={(event) =>
                   setForm({ ...form, descripcion: event.target.value })
@@ -520,38 +516,20 @@ export function MateriasListPage() {
                 placeholder="Una nota breve para distinguir esta clase"
               />
             </Field>
-
-            <div
-              aria-live="polite"
-              className={cn(
-                'flex items-start gap-3 rounded-xl border p-4 text-sm',
-                canSubmit
-                  ? 'border-emerald-200 bg-emerald-50 text-emerald-900 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-100'
-                  : 'border-border bg-surface-2 text-muted',
-              )}
-            >
-              <CheckCircle2
-                className={cn(
-                  'mt-0.5 h-5 w-5 shrink-0',
-                  canSubmit ? 'text-emerald-600' : 'text-muted',
-                )}
-                aria-hidden="true"
-              />
-              <p>
-                {canSubmit
-                  ? `Todo listo. Crearemos la materia y continuaremos con ${nextStepLabel}.`
-                  : 'Completa nombre, área y grado para continuar.'}
-              </p>
             </div>
+            </details>
 
             {reachedMateriaLimit && (
               <p className="text-sm text-amber-700 dark:text-amber-300">{LIMIT_MESSAGE}</p>
             )}
-
-            <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            </div>
+            <div className="mt-3 shrink-0 border-t border-border pt-3">
+            {!canSubmit && <p className="mb-2 text-xs text-muted">Completa nombre, área y grado para continuar.</p>}
+            <div className="flex gap-2 sm:justify-end">
               <Button
                 type="button"
                 variant="outline"
+                className="min-h-11"
                 onClick={closeCreateModal}
                 disabled={create.isPending}
               >
@@ -560,12 +538,14 @@ export function MateriasListPage() {
               <Button
                 type="submit"
                 size="lg"
+                className="min-h-11 flex-1 sm:flex-none"
                 loading={create.isPending}
                 disabled={!canSubmit || create.isPending}
               >
                 Crear y continuar
                 <ArrowRight className="h-5 w-5" aria-hidden="true" />
               </Button>
+            </div>
             </div>
           </form>
         </Modal>

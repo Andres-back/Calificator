@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.permissions import get_current_user, require_permission_now, require_role
 from app.db.session import get_db
 from app.modules.xali import service
+from app.modules.xali.teacher_context import authorize_context
 from app.modules.xali.schemas import (
     XaliEvaluacionEntregadaRead,
     XaliEvaluationChatRequest,
@@ -30,13 +31,16 @@ async def chat(
     db: AsyncSession = Depends(get_db),
 ) -> dict:
     require_permission_now(current_user, "xali.use")
+    require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
     is_teacher = current_user.rol in (UserRole.PROFESOR, UserRole.ADMIN)
+    materia = await authorize_context(db, current_user, payload.materia_id)
     respuesta = await service.chat(
         db,
         estudiante_id=current_user.id,
         materia_id=payload.materia_id,
         mensaje=payload.mensaje,
         is_teacher=is_teacher,
+        teacher_materia=materia,
     )
     return {"respuesta": respuesta, "materia_id": payload.materia_id}
 
@@ -113,6 +117,8 @@ async def get_history(
     db: AsyncSession = Depends(get_db),
 ) -> list:
     require_permission_now(current_user, "xali.use")
+    require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
+    await authorize_context(db, current_user, materia_id)
     return await service.get_history(db, current_user.id, materia_id)
 
 
@@ -123,5 +129,7 @@ async def clear_history(
     db: AsyncSession = Depends(get_db),
 ) -> Response:
     require_permission_now(current_user, "xali.use")
+    require_role(current_user, [UserRole.PROFESOR, UserRole.ADMIN])
+    await authorize_context(db, current_user, materia_id)
     await service.clear_history(db, current_user.id, materia_id)
     return Response(status_code=status.HTTP_204_NO_CONTENT)

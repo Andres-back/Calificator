@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -8,6 +8,7 @@ import {
 } from './gradingJobs';
 import { GradingJobMonitor } from './GradingJobMonitor';
 import { calificarLoteAsincrono } from './api';
+import { useAuth } from '@/stores/auth';
 
 const mocks = vi.hoisted(() => ({
   get: vi.fn(),
@@ -19,7 +20,7 @@ const mocks = vi.hoisted(() => ({
   success: vi.fn(),
 }));
 
-vi.mock('@/lib/api', () => ({ api: { get: mocks.get, post: mocks.post } }));
+vi.mock('@/lib/api', () => ({ api: { get: mocks.get, post: mocks.post }, setSessionExpiredHandler: vi.fn() }));
 vi.mock('@/lib/queryClient', () => ({
   queryClient: { invalidateQueries: mocks.invalidateQueries },
 }));
@@ -35,9 +36,54 @@ vi.mock('react-hot-toast', () => ({
 beforeEach(() => {
   vi.clearAllMocks();
   window.localStorage.clear();
+  useAuth.setState({ user: { id: 'teacher-a', nombre: 'Docente', email: 'teacher@example.test', rol: 'profesor', estado: 'activo' }, status: 'authenticated' });
 });
 
 describe('GradingJobMonitor', () => {
+  it('dismisses a ready notice containing the previous student name on account change', async () => {
+    addPendingGrading({ jobId: 'ready', evaluacionId: 'exam', materiaId: 'subject', estudianteId: 'student', estudianteNombre: 'Nombre anterior' });
+    mocks.get.mockResolvedValue({ data: { estado: 'success', progreso: 100 } });
+    render(<MemoryRouter><GradingJobMonitor /></MemoryRouter>);
+    await waitFor(() => expect(mocks.custom).toHaveBeenCalled());
+    act(() => useAuth.setState({ user: { ...useAuth.getState().user!, id: 'teacher-b' } }));
+    expect(mocks.dismiss).toHaveBeenCalledWith('grading-ready-ready');
+  });
+  it('clears expanded names immediately when the account changes', async () => {
+    addPendingGrading({ jobId: 'old-job', evaluacionId: 'exam', materiaId: 'subject', estudianteId: 'student', estudianteNombre: 'Nombre anterior' });
+    mocks.get.mockReturnValue(new Promise(() => undefined));
+    render(<MemoryRouter><GradingJobMonitor /></MemoryRouter>);
+    fireEvent.click(screen.getByRole('button', { name: 'Ver progreso' }));
+    expect(screen.getByText('Nombre anterior')).toBeInTheDocument();
+    act(() => useAuth.setState({ user: { ...useAuth.getState().user!, id: 'teacher-b' } }));
+    expect(screen.queryByText('Nombre anterior')).not.toBeInTheDocument();
+    expect(screen.queryByRole('complementary')).not.toBeInTheDocument();
+  });
+
+  it('keeps a completed batch accessible alongside active work', async () => {
+    addPendingGrading({ jobId: 'active', evaluacionId: 'exam', materiaId: 'subject', estudianteId: 'student', estudianteNombre: 'Activo' });
+    addPendingGrading({ jobId: 'attention', evaluacionId: 'exam', materiaId: 'subject', estudianteId: '', estudianteNombre: 'Lote pendiente de revisión', kind: 'batch', completed: true });
+    mocks.get.mockReturnValue(new Promise(() => undefined));
+    render(<MemoryRouter><GradingJobMonitor /></MemoryRouter>);
+    expect(screen.getByText('Hay calificaciones por revisar')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Ver progreso' }));
+    fireEvent.change(screen.getByRole('combobox', { name: 'Trabajo a consultar' }), { target: { value: 'attention' } });
+    expect(screen.getByText('Lote terminado con casos por revisar')).toBeInTheDocument();
+  });
+  it('starts compact, minimizes without deleting work and restores focus', async () => {
+    addPendingGrading({ jobId: 'job-compact', evaluacionId: 'exam', materiaId: 'subject', estudianteId: 'student', estudianteNombre: 'Alumno sintético' });
+    mocks.get.mockResolvedValue({ data: { estado: 'running', progreso: 20 } });
+    render(<MemoryRouter><GradingJobMonitor embedded /></MemoryRouter>);
+    const expand = screen.getByRole('button', { name: 'Ver progreso' });
+    expect(expand).toHaveAttribute('aria-expanded', 'false');
+    expect(screen.queryByText('Alumno sintético')).not.toBeInTheDocument();
+    fireEvent.click(expand);
+    expect(screen.getByText('Alumno sintético')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Minimizar progreso' }));
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Ver progreso' })).toHaveFocus());
+    expect(readPendingGradings()).toHaveLength(1);
+    expect(mocks.post).not.toHaveBeenCalled();
+    await waitFor(() => expect(mocks.get).toHaveBeenCalledWith('/jobs/job-compact'));
+  });
   it('sends one ordered student id per batch evidence', async () => {
     mocks.post.mockResolvedValue({ data: {
       job_id: 'parent-job', estado: 'queued', entrega_ids: ['delivery-1', 'delivery-2'],
@@ -67,7 +113,7 @@ describe('GradingJobMonitor', () => {
     });
     const [stored] = readPendingGradings();
     window.localStorage.setItem(
-      'xcalificator.pending-gradings.v1',
+      'xcalificator.pending-gradings.v1:teacher-a',
       JSON.stringify([{
         ...stored,
         createdAt: new Date(Date.now() - 100_000).toISOString(),
@@ -88,6 +134,7 @@ describe('GradingJobMonitor', () => {
       </MemoryRouter>,
     );
 
+    fireEvent.click(screen.getByRole('button', { name: 'Ver progreso' }));
     expect(await screen.findByText(/El trabajo sigue pendiente/)).toHaveTextContent(
       'Tu evidencia está guardada',
     );
@@ -116,6 +163,7 @@ describe('GradingJobMonitor', () => {
       summary: { total: 30, queued: 8, running: 4, retrying: 1, success: 14, requires_review: 2, failed_permanent: 1, cancelled: 0 },
     } });
     render(<MemoryRouter><GradingJobMonitor /></MemoryRouter>);
+    fireEvent.click(screen.getByRole('button', { name: 'Ver progreso' }));
     expect(await screen.findByText('14 listas · 13 en curso · 3 por revisar')).toBeInTheDocument();
     expect(mocks.get).toHaveBeenCalledWith('/jobs/pendientes');
     expect(mocks.get).toHaveBeenCalledWith('/jobs/parent-job');
@@ -138,6 +186,7 @@ describe('GradingJobMonitor', () => {
 
     render(<MemoryRouter><GradingJobMonitor /></MemoryRouter>);
 
+    fireEvent.click(await screen.findByRole('button', { name: 'Ver progreso' }));
     expect(await screen.findByText('Ana Recuperada')).toBeInTheDocument();
     expect(readPendingGradings()[0]).toMatchObject({
       jobId: 'recovered-job', evaluacionId: 'evaluation-2', materiaId: 'subject-2',
@@ -175,6 +224,7 @@ describe('GradingJobMonitor', () => {
 
     render(<MemoryRouter><GradingJobMonitor /></MemoryRouter>);
 
+    fireEvent.click(screen.getByRole('button', { name: 'Ver progreso' }));
     expect(await screen.findByText('Lote terminado con casos por revisar')).toBeInTheDocument();
     expect(readPendingGradings()[0]).toMatchObject({ completed: true });
     expect(mocks.invalidateQueries).toHaveBeenCalledWith({ queryKey: ['evaluation-review', 'evaluation-1'] });

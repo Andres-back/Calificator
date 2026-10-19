@@ -192,7 +192,7 @@ export function GradingUploadPanel({ evaluationId, evaluationName, materiaName, 
     <p className="text-sm text-muted">Un paquete por estudiante: hasta 10 fotos ordenadas o un PDF de hasta 20 páginas.</p>
     <StudentPicker students={students} studentId={studentId} disabled={upload.isPending || !eligibilityVerified} onStudentChange={onStudentChange} />
     {studentId && !student && <p role="status" className="text-sm text-muted">Este estudiante no está disponible para otra entrega. Revisa su nota o elige uno pendiente.</p>}
-    <MultiPageEvidencePicker pages={pages} onChange={(next) => { setPages(next); setError(''); }} disabled={!student || upload.isPending} onError={setError} />
+    <MultiPageEvidencePicker contextKey={`${evaluationId}:${studentId}`} pages={pages} onChange={(next) => { setPages(next); setError(''); }} disabled={!student || upload.isPending} onError={setError} />
     {error && <p role="alert" className="text-sm text-rose-600 dark:text-rose-300">{error} Conservamos las hojas para que puedas corregir o reintentar.</p>}
     {qualityPending && <p role="status" className="text-sm text-muted">Comprobando la calidad de las fotos…</p>}
     {pages.length > 0 && <div className="rounded-xl border border-border bg-surface-2 p-3 text-sm">

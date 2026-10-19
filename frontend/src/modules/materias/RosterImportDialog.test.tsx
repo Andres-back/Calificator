@@ -45,7 +45,7 @@ it('shows an explicit retry when the private batch cannot be read', async () => 
   mocks.get.mockRejectedValue(new Error('Unavailable'));
   wrap(<RosterImportDialog open materiaId="m1" initialBatchId="b1" onClose={vi.fn()} />);
   expect(await screen.findByRole('alert')).toHaveTextContent('No pudimos consultar');
-  expect(screen.getByRole('button', { name: 'Reintentar' })).toBeVisible();
+  await waitFor(() => expect(screen.getByRole('button', { name: 'Reintentar' })).toBeVisible());
   expect(mocks.put).not.toHaveBeenCalled();
 });
 it('creates a reviewed manual batch with a stable operation id and no photo request', async () => {

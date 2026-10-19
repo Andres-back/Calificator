@@ -4,6 +4,10 @@
 
 ## Escenarios de usuario y pruebas
 
+### Evolución 102: captura explícita
+
+[102-camara-visor-completo](../102-camara-visor-completo/spec.md), issue #212, añade cámara visible con confirmación y recuperación por archivos. Capturar no califica; se conservan identidad de entrega, límites, calidad, orden, envío explícito, evidencias y permisos del docente/estudiante.
+
 ### Historia 1 - Flujo principal (Prioridad: P1)
 Como profesor o estudiante, necesito calificar, revisar, publicar, consultar y reclamar notas trazables para obtener un resultado claro, seguro y trazable.
 
@@ -104,6 +108,10 @@ Carga, nota manual, reemplazo, ajuste, confirmación y publicación conservan su
 ## Evolución 099: revisión enfocada por secciones
 
 [099-revision-docente-enfocada](../099-revision-docente-enfocada/spec.md) reemplaza la acumulación de avisos de portada por un resumen priorizado y detalle íntegro a petición. Conserva nota sugerida/confirmada y diferencia frente al cálculo, sin atribuir una decisión docente no registrada. Respuestas, Evidencia, Retroalimentación e Historial tienen accesos directos; celular muestra un contenido principal y mantiene identidad visible, refinando la decisión visual de 094. Escritorio amplio permite comparar foto y respuestas. Reclamos existentes tienen acceso contextual, los resueltos permanecen consultables y carga/error no equivalen a ausencia; sin registros se conserva el alta en opciones. Borradores y permisos siguen protegidos; al escribir en móvil la barra inferior cede espacio. Sin cambios en valores, fórmulas, modelos, contratos ni registros académicos.
+
+## Evolución 105: seguimiento discreto
+
+[105-materia-movil-cola](../105-materia-movil-cola/spec.md) inicia el monitor compacto con cantidad/estado y Ver progreso; puede minimizarse sin retirar, cancelar, reenviar ni detener trabajos. Funciona embebido y en otras páginas sin superponer captura. Conserva incidencias, resultados y reintentos; pendientes locales se aíslan por cuenta y recuperación tardía no se aplica a otra sesión. El almacenamiento legado permanece intacto, pero sus nombres sin propietario no se muestran como autorizados; pendientes activos se recuperan desde servidor. No modifica notas ni evidencias.
 
 ## Evolución 100: retroalimentación legible y precisión visible
 

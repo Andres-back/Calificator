@@ -32,7 +32,7 @@
 | table | `ai_tool_settings` | system | missing | `backend/alembic/versions/202609100001_admin_tool_ai_control.py:36` |
 | table | `ai_usage_events` | system | missing | `backend/alembic/versions/202607280002a_create_ai_usage_events.py:22` |
 | table | `ai_usage_logs` | system | missing | `backend/alembic/versions/202606290002_phases_3_to_8.py:193` |
-| table | `chat_messages` | system | missing | `backend/alembic/versions/202606290002_phases_3_to_8.py:158` |
+| table | `chat_messages` | system | covered | `backend/alembic/versions/202606290002_phases_3_to_8.py:158` |
 | table | `evaluation_blueprints` | system | missing | `backend/alembic/versions/202606290001_initial_phase_1_2.py:121` |
 | table | `importacion_estudiantes_filas` | system | missing | `backend/app/modules/importacion_estudiantes/models.py:33` |
 | table | `importacion_estudiantes_lotes` | system | missing | `backend/app/modules/importacion_estudiantes/models.py:11` |
@@ -44,5 +44,5 @@ Sin decisiones explícitas de permiso para este dominio.
 
 ## Hallazgos
 
-- **low · missing_coverage**: 14 superficies de 002-arquitectura-roles-seguridad no tienen evidencia de prueba observable.
+- **low · missing_coverage**: 13 superficies de 002-arquitectura-roles-seguridad no tienen evidencia de prueba observable.
 - **low · orphan_candidate**: 20 superficies no alcanzables o históricas se conservan como candidatas a retiro.

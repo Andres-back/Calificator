@@ -304,9 +304,29 @@ actualizar la especificación propietaria, su plan y sus tareas; no debe crear d
 
 - [097-escritura-docente-movil](097-escritura-docente-movil/spec.md), [issue #204](https://github.com/Andres-back/Calificator/issues/204): crear/editar evaluaciones al escribir en iPhone/Android, teclado voluntario, cabecera compacta, Listo sin submit, viewport visible y opciones plegables. Alcance/[plan](097-escritura-docente-movil/plan.md) aprobados; listas base 16/16 y escritura 8/8 revisadas con autorización. [PR #205](https://github.com/Andres-back/Calificator/pull/205) fusionado con cuatro controles verdes, main `d973199`; producción verificada el 2026-10-14: fuente desplegada coincide, backend/web saludables y hashes de assets públicos iguales al build validado. [Evidencia](https://github.com/Andres-back/Calificator/pull/205#issuecomment-6162516841). Propietario 005; emulación y verificación de despliegue no acreditan teclado físico.
 
+## Evolución 104: Xali docente contextual y visual
+
+- [104-xali-docente-visual](104-xali-docente-visual/spec.md), [issue #215](https://github.com/Andres-back/Calificator/issues/215): contexto autorizado por materia incluso sin documentos, fuentes pertinentes y tablas/gráficos/figuras/planos ampliables con datos validados. Propietario 009. Alcance y plan aprobados, listas base 16/16 y UX 6/6 revisadas con autorización. [Evidencia local y limitaciones](104-xali-docente-visual/quickstart.md). Sin uso de IA de pago, datos reales ni cambios académicos; CI y revisión separados antes de fusionar o desplegar.
+
 ## Evolución 100: retroalimentación legible y demo en el celular
 
 - [100-feedback-demo-movil](100-feedback-demo-movil/spec.md), [issue #209](https://github.com/Andres-back/Calificator/issues/209): lectura/edición amplia, cálculo provisional claro, decimales exactos y «Añadir al inicio» como guía de acceso directo Android/iPhone. Propietarios 008/002; sin backend, modelos, cambios académicos, extensión, APK ni offline. Alcance/[plan](100-feedback-demo-movil/plan.md) aprobados, listas base 16/16 y UX 8/8 revisadas con autorización. Implementación y verificaciones locales: [evidencia](100-feedback-demo-movil/quickstart.md). CI remoto pendiente; sin fusión/despliegue. Impresión 098 fuera del cambio.
+
+## Evolución 106: recursos docentes claros
+
+- [106-recursos-vista-clara](106-recursos-vista-clara/spec.md), [issue #220](https://github.com/Andres-back/Calificator/issues/220): búsqueda y filtros antes de resúmenes, «Ver recurso», lectura compacta, documentos diferenciados y editor móvil protegido. Propietarios 006/003, exclusivamente frontend; sin cambiar datos guardados, juegos, generación o contratos. Spec/plan aprobados y listas base 16/16 y UX 8/8 revisadas con autorización; [validación y limitaciones](106-recursos-vista-clara/quickstart.md). CI y aprobación separada obligatorios antes de fusionar/desplegar.
+
+## Evolución 103: cámaras seleccionables e iconos administrativos
+
+- [103-camaras-iconos-admin](103-camaras-iconos-admin/spec.md), [issue #214](https://github.com/Andres-back/Calificator/issues/214): elección/actualización de cámaras autorizadas, recuperación y preferencia solo en memoria; tres iconos transparentes para Usuarios/Roles/Correo, reutilizando Inicio. Spec, plan y revisión de requisitos aprobados el 2026-10-17; listas base 16/16 y UX 6/6. Sin cambios de backend, permisos, notas o evidencias. La [propuesta de Xali docente contextual y visual](103-camaras-iconos-admin/propuesta-xali-docente.md) se registra en [#215](https://github.com/Andres-back/Calificator/issues/215) únicamente como especificación adicional, con implementación/diseño propios pendientes. [Validación](103-camaras-iconos-admin/quickstart.md); [assets y prompts](103-camaras-iconos-admin/assets.md). Sin fusión ni despliegue autorizados todavía para esta entrega.
+
+## Evolución 105: materia móvil y cola discreta
+
+- [105-materia-movil-cola](105-materia-movil-cola/spec.md), [issue #218](https://github.com/Andres-back/Calificator/issues/218): formulario de materia breve con escritura móvil adaptada; monitor compacto/minimizable sin detener trabajos; éxito contextual del borrador. Propietarios 003/005/008. Alcance y plan aprobados el 2026-10-18, revisión base y UX completas. Pruebas sintéticas en Chromium/WebKit y ambos temas; [resultados](105-materia-movil-cola/quickstart.md). Sin cambios académicos, pruebas físicas ni producción. CI remoto y autorización separada antes de fusión.
+
+## Evolución 102: cámara y evaluación completa
+
+- [102-camara-visor-completo](102-camara-visor-completo/spec.md), [issue #212](https://github.com/Andres-back/Calificator/issues/212): cámara integrada confirmada y subida alternativa; lectura amplia continua con documentos bajo Opciones. Propietarios 005/008; sin alterar notas/evidencias/IA ni mezclar Spec 101. Usuario aprobó [plan](102-camara-visor-completo/plan.md) y autorizó revisión de [lista UX](102-camara-visor-completo/checklists/ux.md): Specify 16/16, UX 8/8. Implementación y regresiones locales en [quickstart](102-camara-visor-completo/quickstart.md); PR/CI pendientes. Sin fusión/despliegue manual.
 
 ## Evolución 099: revisión docente enfocada
 

@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useRef, useState } from 'react';
+import { lazy, Suspense, useEffect, useId, useRef, useState } from 'react';
 import { Download, ExternalLink, FileText } from 'lucide-react';
 import { Button, Modal, Select } from '@/components/ui';
 import { toApiError } from '@/lib/api';
@@ -33,16 +33,22 @@ export function EvaluationPreviewModal({ evaluation, canViewSolutions, onClose }
   const [retry, setRetry] = useState(0);
   const [wordPending, setWordPending] = useState(false);
   const [wordError, setWordError] = useState<string | null>(null);
+  const [optionsOpen, setOptionsOpen] = useState(false);
+  const optionsId = useId();
   const wordController = useRef<AbortController | null>(null);
   const evaluationId = evaluation?.id;
   const showSolutions = solutions && canViewSolutions;
 
   useEffect(() => {
     setSolutions(false);
+    setOptionsOpen(false);
+  }, [evaluationId]);
+
+  useEffect(() => {
     setWordError(null);
     setWordPending(false);
     return () => wordController.current?.abort();
-  }, [evaluationId]);
+  }, [evaluationId, showSolutions]);
 
   useEffect(() => {
     setFile(null);
@@ -87,13 +93,14 @@ export function EvaluationPreviewModal({ evaluation, canViewSolutions, onClose }
 
   return (
     <Modal open={Boolean(evaluation)} onClose={onClose} title="Visualizar evaluación"
-      className="flex h-[calc(100dvh-2rem)] max-w-5xl flex-col overflow-hidden p-4 sm:p-5">
-      <div className="mb-3 shrink-0 space-y-2">
-        <p className="break-words font-semibold">{evaluation?.nombre}</p>
-        <div className="flex flex-wrap items-center gap-2">
+      className="fixed inset-0 flex h-[100dvh] max-h-[100dvh] max-w-none flex-col overflow-hidden rounded-none p-3 pt-[max(0.75rem,env(safe-area-inset-top))] sm:inset-3 sm:h-[calc(100dvh-1.5rem)] sm:max-h-[calc(100dvh-1.5rem)] sm:w-auto sm:rounded-xl sm:p-4">
+      <div className="relative mb-2 flex shrink-0 items-center gap-2">
+        <p className="min-w-0 flex-1 truncate text-sm font-semibold" title={evaluation?.nombre}>{evaluation?.nombre}</p>
+        <Button variant="outline" className="min-h-11 shrink-0 px-3" aria-expanded={optionsOpen} aria-controls={optionsId} onClick={() => setOptionsOpen(!optionsOpen)}>Opciones</Button>
+        {optionsOpen && <div id={optionsId} className="absolute right-0 top-full z-10 mt-2 max-h-[65dvh] w-[min(22rem,100%)] space-y-3 overflow-auto rounded-xl border border-border bg-surface p-3 shadow-xl">
           {canViewSolutions ? (
-            <label className="min-w-0 flex-1 text-sm">
-              <span className="sr-only">Versión del documento</span>
+            <label className="block text-sm">
+              <span className="mb-1 block">Versión del documento</span>
               <Select value={showSolutions ? 'solutions' : 'student'} disabled={wordPending}
                 onChange={(event) => setSolutions(event.currentTarget.value === 'solutions')}>
                 <option value="student">Sin respuestas</option>
@@ -103,14 +110,25 @@ export function EvaluationPreviewModal({ evaluation, canViewSolutions, onClose }
           ) : <p className="text-sm text-muted">Evaluación para estudiantes · Sin respuestas</p>}
           {currentFile && (
             <a href={currentFile.url} target="_blank" rel="noopener noreferrer"
-              className="focus-ring inline-flex min-h-11 items-center gap-2 rounded-lg px-2 text-sm font-semibold text-brand-600 dark:text-brand-300">
-              <ExternalLink className="h-4 w-4" aria-hidden="true" /> Abrir PDF
+              className="focus-ring flex min-h-11 items-center gap-2 rounded-lg px-2 text-sm font-semibold text-brand-600 dark:text-brand-300">
+              <ExternalLink className="h-4 w-4 shrink-0" aria-hidden="true" /> Ver evaluación completa (otra pestaña)
             </a>
           )}
-        </div>
-        <p className="text-xs text-muted">{showSolutions ? 'Solo docente: respuestas guardadas.' : 'Versión sin respuestas para imprimir.'}</p>
+          <p className="text-xs text-muted">{showSolutions ? 'Solo docente: respuestas guardadas.' : 'Versión sin respuestas para imprimir.'}</p>
+          {wordError && <p role="alert" className="break-words text-sm text-rose-700 dark:text-rose-300">{wordError}</p>}
+          <div className="grid gap-2">
+            <Button size="sm" className="min-h-11" variant="outline" disabled={!currentFile || !evaluation}
+              onClick={() => { if (currentFile && evaluation) downloadUrl(currentFile.url, documentName(evaluation, showSolutions, 'pdf')); }}>
+              <Download className="h-4 w-4 shrink-0" aria-hidden="true" /> Descargar PDF
+            </Button>
+            <Button size="sm" className="min-h-11" onClick={downloadWord} loading={wordPending} disabled={!currentFile}>
+              <FileText className="h-4 w-4 shrink-0" aria-hidden="true" /> Descargar Word
+            </Button>
+          </div>
+          <p className="text-xs leading-5 text-muted">Word editable: sus cambios no se sincronizan con XCalificator.</p>
+        </div>}
       </div>
-      <div className="min-h-0 flex-1 overflow-auto rounded-lg border border-border bg-surface-2">
+      <div className="min-h-0 flex-1 overflow-hidden rounded-lg border border-border bg-surface-2">
         {error ? (
           <div role="alert" className="space-y-3 p-5">
             <p className="text-sm">{error}</p>
@@ -121,19 +139,6 @@ export function EvaluationPreviewModal({ evaluation, canViewSolutions, onClose }
             <EvaluationPdfViewer key={`${currentFile.evaluationId}:${currentFile.solutions}:${currentFile.url}`} blob={currentFile.blob} />
           </Suspense>
         ) : <p role="status" className="p-5 text-sm text-muted">Preparando vista final…</p>}
-      </div>
-      <div className="mt-3 shrink-0 space-y-2 border-t border-border pt-3">
-        {wordError && <p role="alert" className="break-words text-sm text-rose-700 dark:text-rose-300">{wordError}</p>}
-        <div className="grid grid-cols-2 gap-2">
-          <Button size="sm" className="min-h-11 px-2" variant="outline" disabled={!currentFile || !evaluation}
-            onClick={() => { if (currentFile && evaluation) downloadUrl(currentFile.url, documentName(evaluation, showSolutions, 'pdf')); }}>
-            <Download className="h-4 w-4 shrink-0" aria-hidden="true" /> Descargar PDF
-          </Button>
-          <Button size="sm" className="min-h-11 px-2" onClick={downloadWord} loading={wordPending} disabled={!currentFile}>
-            <FileText className="h-4 w-4 shrink-0" aria-hidden="true" /> Descargar Word
-          </Button>
-        </div>
-        <p className="text-xs leading-5 text-muted">Word editable: sus cambios no se sincronizan con XCalificator.</p>
       </div>
     </Modal>
   );
