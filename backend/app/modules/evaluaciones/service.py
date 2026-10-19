@@ -213,6 +213,7 @@ def _student_safe_evaluation(evaluacion: Evaluacion, progress: dict | None = Non
         "criterios": sanitize_student_payload(evaluacion.criterios),
         "preguntas": sanitize_student_payload(safe_questions),
         "respuestas_esperadas": [],
+        "contenido_version_id": getattr(evaluacion, 'contenido_version_id', None),
         "created_at": evaluacion.created_at,
         "updated_at": evaluacion.updated_at,
         "blueprint": None,

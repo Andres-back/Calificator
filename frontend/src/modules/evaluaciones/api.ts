@@ -1,6 +1,6 @@
 import { api } from '@/lib/api';
 import { useQuery } from '@tanstack/react-query';
-import type { DBARead, EntregaOnlineCreate, EntregaRead, Evaluacion, EvaluacionModalidad, GradeBreakdownData, IncidenciaRead, SolicitudRevisionMotivo, StudentActivity } from '@/types/api';
+import type { EvaluationVisualManifest, DBARead, EntregaOnlineCreate, EntregaRead, Evaluacion, EvaluacionModalidad, GradeBreakdownData, IncidenciaRead, SolicitudRevisionMotivo, StudentActivity } from '@/types/api';
 
 export interface EvaluacionCreate {
   materia_id: string;
@@ -16,6 +16,7 @@ export interface EvaluacionCreate {
   criterios?: Record<string, unknown>[];
   preguntas?: Record<string, unknown>[];
   respuestas_esperadas?: Record<string, unknown>[];
+  contenido_visual?: EvaluationVisualManifest;
 }
 
 export interface EvaluacionGenerarRequest {
@@ -40,7 +41,9 @@ export interface EvaluacionGenerarRequest {
   fecha_limite_entrega?: string | null;
 }
 
-export type EvaluacionUpdate = Partial<Omit<EvaluacionCreate, 'materia_id' | 'tipo_origen'>> & { expected_updated_at?: string };
+export type EvaluacionUpdate = Partial<Omit<EvaluacionCreate, 'materia_id' | 'tipo_origen'>> & {
+  expected_updated_at?: string; expected_content_version_id?: string | null;
+};
 
 export interface ListDBAParams {
   area?: string;
@@ -53,6 +56,19 @@ export async function listEvaluaciones(materiaId: string): Promise<Evaluacion[]>
 }
 export async function getEvaluacion(id: string): Promise<Evaluacion> {
   const { data } = await api.get<Evaluacion>(`/evaluaciones/${id}`);
+  return data;
+}
+export async function getEvaluationResource(evaluationId: string, resourceId: string, versionId?: string | null, signal?: AbortSignal): Promise<Blob> {
+  const { data } = await api.get<Blob>(`/evaluaciones/${encodeURIComponent(evaluationId)}/recursos/${encodeURIComponent(resourceId)}`, {
+    params: versionId ? { version_id: versionId } : undefined, responseType: 'blob', signal,
+  });
+  if (!['image/png', 'image/jpeg', 'image/webp'].includes(data.type)) throw new Error('Formato de imagen no disponible');
+  return data;
+}
+export async function getEvaluationOriginal(evaluationId: string, versionId?: string | null): Promise<Blob> {
+  const { data } = await api.get<Blob>(`/evaluaciones/${encodeURIComponent(evaluationId)}/original`, {
+    params: versionId ? { version_id: versionId } : undefined, responseType: 'blob',
+  });
   return data;
 }
 export async function createEvaluacion(payload: EvaluacionCreate): Promise<Evaluacion> {
@@ -128,10 +144,11 @@ export async function getEvaluationDocument(
   format: 'pdf' | 'docx',
   soluciones = false,
   signal?: AbortSignal,
+  versionId?: string | null,
 ): Promise<Blob> {
   try {
     const { data } = await api.get<Blob>(`/evaluaciones/${evaluacionId}/${format}`, {
-      params: { soluciones }, responseType: 'blob', signal,
+      params: { soluciones, ...(versionId ? { version_id: versionId } : {}) }, responseType: 'blob', signal,
     });
     return data;
   } catch (error) {

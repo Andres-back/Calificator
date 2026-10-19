@@ -1,6 +1,8 @@
 import { CheckCircle2, Circle, Send } from 'lucide-react';
 
 import { Badge, Button, Card, Field, Input, RichContent, Textarea } from '@/components/ui';
+import type { Evaluacion } from '@/types/api';
+import { EvaluationContentViewer } from './components/EvaluationContentViewer';
 
 type Question = Record<string, unknown>;
 
@@ -23,6 +25,7 @@ function questionOptions(question: Question): string[] {
 }
 
 interface Props {
+  evaluation?: Pick<Evaluacion, 'id' | 'contenido_visual' | 'contenido_version_id'>;
   questions: Question[];
   answers: Record<number, string>;
   onAnswerChange: (number: number, value: string) => void;
@@ -34,6 +37,7 @@ interface Props {
 }
 
 export function StudentAnswerSheet({
+  evaluation,
   questions,
   answers,
   onAnswerChange,
@@ -100,6 +104,8 @@ export function StudentAnswerSheet({
                 {(answers[number] ?? '').trim() && <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-300">Respondida</span>}
               </div>
               <RichContent content={questionText(question, index)} variant="evaluation" className="mb-5" />
+              {evaluation && <EvaluationContentViewer evaluationId={evaluation.id} versionId={evaluation.contenido_version_id}
+                content={evaluation.contenido_visual} questionId={String(question.contenido_id || '')} />}
               {options.length > 0 ? (
                 <fieldset className="space-y-2" disabled={submitting}>
                   <legend className="sr-only">Respuesta de la pregunta {number}</legend>

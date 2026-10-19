@@ -89,6 +89,10 @@ export function Modal({
     });
 
     const handleKeyDown = (event: KeyboardEvent) => {
+      // A figure can open above an existing evaluation preview. Only the
+      // topmost dialog traps focus or handles Escape; the underlying draft stays.
+      const dialogs = document.querySelectorAll('[role="dialog"][aria-modal="true"]');
+      if (dialogs.item(dialogs.length - 1) !== dialogRef.current) return;
       if (event.key === 'Escape' && closeOnEscape) {
         event.preventDefault();
         onCloseRef.current();

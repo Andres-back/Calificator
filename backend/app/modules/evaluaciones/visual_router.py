@@ -4,17 +4,16 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Response, UploadFile
 from pydantic import ValidationError
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
 from app.core.permissions import get_current_user, require_any_permission_now, require_permission_now
 from app.db.session import get_db
-from app.modules.calificaciones.models import Entrega
 from app.modules.evaluaciones import service
 from app.modules.evaluaciones.models import EvaluacionRecurso
 from app.modules.evaluaciones.visual_schemas import VisualManifest, VisualUploadRequest
 from app.modules.evaluaciones.visual_service import MAX_RESOURCE_BYTES, get_content_revision, read_resource_bytes, stage_resource
+from app.modules.evaluaciones.visual_serialization import authorized_content_revision
 from app.modules.materias.service import ensure_can_manage_materia
 from app.modules.users.models import User
 from app.services.storage_service import PRIVATE_MIME_EXTENSIONS, read_upload_limited
@@ -89,19 +88,7 @@ async def preview_resource_proposal(
 
 
 async def _authorized_revision(db: AsyncSession, evaluation_id: UUID, version_id: UUID | None, user: User):
-    await service.ensure_can_read_evaluation(db, evaluation_id, user)
-    evaluation = await service.get_evaluation_or_404(db, evaluation_id)
-    selected_version = version_id or evaluation.contenido_version_id
-    if selected_version is None:
-        raise HTTPException(404, "Esta evaluación no tiene material visual guardado")
-    if not _is_manager(user, evaluation.profesor_id) and selected_version != evaluation.contenido_version_id:
-        delivery = await db.scalar(select(Entrega.id).where(
-            Entrega.evaluacion_id == evaluation.id, Entrega.estudiante_id == user.id,
-            Entrega.contenido_version_id == selected_version,
-        ))
-        if delivery is None:
-            raise HTTPException(403, "No tienes acceso a esta versión de la evaluación")
-    return evaluation, await get_content_revision(db, evaluation.id, selected_version)
+    return await authorized_content_revision(db, evaluation_id, version_id, user)
 
 
 @router.get("/evaluaciones/{evaluacion_id}/recursos/{recurso_id}")

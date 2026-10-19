@@ -12,6 +12,7 @@ import { useAuth } from '@/stores/auth';
 import { crearEntregaArchivo, crearEntregaOnline, evaluationPdfUrl, getActividadEstudiante, getEvaluacion, getMiDesglose, getMiEntrega, getMiSolicitudRevision, solicitarRevisionEvaluacion } from './api';
 import { StudentActivityPlayer } from './StudentActivityPlayer';
 import { StudentAnswerSheet } from './StudentAnswerSheet';
+import { EvaluationContentViewer } from './components/EvaluationContentViewer';
 import { GradeBreakdown } from '@/modules/calificaciones/components/GradeBreakdown';
 import { XaliFeedbackStory } from '@/modules/calificaciones/student-feedback/XaliFeedbackStory';
 import type { SolicitudRevisionMotivo } from '@/types/api';
@@ -424,6 +425,7 @@ export function ResolverEvaluacionPage() {
         <section className={'space-y-4 ' + (modalidad === 'fisica' ? 'order-2' : '')}>
           {assignedMaterial && (
             <StudentActivityPlayer
+              evaluation={evaluacion}
               activity={assignedMaterial}
               onAnswersChange={modalidad === 'online' && assignedMaterial.interactivo ? handleActivityAnswers : ignoreActivityAnswers}
               readOnly={modalidad !== 'online' || !assignedMaterial.interactivo}
@@ -438,7 +440,9 @@ export function ResolverEvaluacionPage() {
               {preguntasOnline.map((pregunta, index) => {
                 const number = Number(pregunta.numero ?? index + 1);
                 return (
-                  <div key={number} id={`pregunta-${number}`} className="rounded-lg border border-border bg-surface p-4 sm:p-5 scroll-mt-24"><p className="text-xs font-semibold uppercase text-muted">Pregunta {number}</p><RichContent content={textFromQuestion(pregunta, index)} variant="evaluation" className="mt-2" /></div>
+                  <div key={number} id={`pregunta-${number}`} className="min-w-0 rounded-lg border border-border bg-surface p-4 sm:p-5 scroll-mt-24"><p className="text-xs font-semibold uppercase text-muted">Pregunta {number}</p><RichContent content={textFromQuestion(pregunta, index)} variant="evaluation" className="mt-2" />
+                    {evaluacion && <EvaluationContentViewer evaluationId={evaluacion.id} versionId={evaluacion.contenido_version_id} content={evaluacion.contenido_visual} questionId={String(pregunta.contenido_id || '')} />}
+                  </div>
                 );
               })}
             </div>
@@ -650,6 +654,7 @@ export function ResolverEvaluacionPage() {
               </Card>
             ) : (
             <StudentAnswerSheet
+              evaluation={evaluacion}
               questions={preguntasOnline}
               answers={answers}
               onAnswerChange={handleAnswerChange}

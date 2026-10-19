@@ -2,6 +2,15 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { expect, it, vi } from 'vitest';
 import { Modal } from './Modal';
 
+it('only closes the top dialog when a figure is enlarged above a preview', () => {
+  const parentClose = vi.fn(); const childClose = vi.fn();
+  render(<><Modal open title="Evaluación" onClose={parentClose}>Borrador conservado</Modal>
+    <Modal open title="Figura" onClose={childClose}>Figura ampliada</Modal></>);
+  fireEvent.keyDown(document, { key: 'Escape' });
+  expect(childClose).toHaveBeenCalledOnce();
+  expect(parentClose).not.toHaveBeenCalled();
+});
+
 it('keeps focus within opt-in writing forms without focusing folded controls', () => {
   render(<Modal open title="Escribir" onClose={vi.fn()} mobileWriting>
     <details><summary>Opciones</summary><input aria-label="Oculto" /></details>

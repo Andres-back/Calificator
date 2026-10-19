@@ -5,7 +5,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-from app.modules.evaluaciones.visual_schemas import VisualManifest
+from app.modules.evaluaciones.visual_schemas import StudentVisualContent, VisualManifest
 
 from app.shared.enums import (
     BlueprintNivelContexto,
@@ -99,6 +99,8 @@ class EvaluacionRead(BaseModel):
     criterios: list[dict[str, Any]]
     preguntas: list[dict[str, Any]]
     respuestas_esperadas: list[dict[str, Any]]
+    contenido_version_id: UUID | None = None
+    contenido_visual: StudentVisualContent | VisualManifest | None = None
     created_at: datetime
     updated_at: datetime
     blueprint: EvaluacionBlueprintRead | None = None

@@ -58,6 +58,8 @@ async def visual_http(visual_scope, monkeypatch):
     def app_for(role, user_id):
         app = FastAPI()
         app.include_router(router, prefix="/api")
+        from app.modules.evaluaciones.router import router as evaluation_router
+        app.include_router(evaluation_router, prefix="/api")
 
         async def user_override():
             return SimpleNamespace(id=user_id, rol=role, _effective_permissions=default_permissions_for_role(role))
@@ -71,6 +73,27 @@ async def visual_http(visual_scope, monkeypatch):
         return app
 
     return app_for, owner, student_id, ids
+
+
+@pytest.mark.asyncio
+async def test_evaluation_and_list_response_keep_teacher_original_private_from_students(visual_http):
+    app_for, owner, student, ids = visual_http
+    for role, user in (("profesor", owner), ("estudiante", student)):
+        async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app_for(role, user)), base_url="http://testserver") as client:
+            detail = await client.get(f"/api/evaluaciones/{ids['evaluation']}")
+            assert detail.status_code == 200, detail.text
+            value = detail.json()
+            assert value['contenido_version_id'] == str(ids['version'])
+            if role == 'estudiante':
+                assert set(value['contenido_visual']) == {'schema_version', 'bloques'}
+                assert value['respuestas_esperadas'] == []
+                assert 'procedencia' not in value['contenido_visual']['bloques'][0]
+                assert str(ids['original']) not in detail.text
+            else:
+                assert value['contenido_visual']['original_recurso_id'] == str(ids['original'])
+            listing = await client.get(f"/api/materias/{ids['subject']}/evaluaciones")
+            assert listing.status_code == 200, listing.text
+            assert listing.json()[0]['contenido_visual'] == value['contenido_visual']
 
 
 @pytest.mark.asyncio

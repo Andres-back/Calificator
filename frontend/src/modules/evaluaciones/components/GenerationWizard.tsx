@@ -18,6 +18,7 @@ import { EvaluationPreparation } from './EvaluationPreparation';
 import { TYPE_COPY } from './generationWizardOptions';
 import { RubricEditor } from './RubricEditor';
 import { EvaluationCriteriaEditor } from './EvaluationCriteriaEditor';
+import { EvaluationSourceReview } from './EvaluationSourceReview';
 import { PasosGuia } from './PasosGuia';
 import {
   createBlankQuestion, createEmptyWizardState, discardWizardDraft, duplicateQuestion, getWizardStorage,
@@ -576,7 +577,8 @@ export function GenerationWizard({
     confirm.mutate({
       userId,
       id: state.generatedEvaluationId,
-      payload: { ...payload, expected_updated_at: savedEvaluation.current?.updated_at },
+      payload: { ...payload, expected_updated_at: savedEvaluation.current?.updated_at,
+        ...(savedEvaluation.current?.contenido_version_id ? { expected_content_version_id: savedEvaluation.current.contenido_version_id } : {}) },
     });
   }
 
@@ -704,6 +706,9 @@ export function GenerationWizard({
                         <Button type="button" variant="outline" onClick={editCriteria}>Criterios y rúbrica</Button>
                         </details>
                         <div role="list" aria-label="Preguntas editables" className="space-y-4">
+                          {state.contenidoVisual && state.generatedEvaluationId && <EvaluationSourceReview
+                            evaluationId={state.generatedEvaluationId} versionId={state.contenidoVersionId} manifest={state.contenidoVisual}
+                            questions={state.questions.filter(question => question.contenidoId).map(question => ({ id: question.contenidoId!, label: `Pregunta ${question.numero}` }))} />}
                           {state.questions.map((question, index) => (
                             <QuestionCard
                               key={question.clientId}

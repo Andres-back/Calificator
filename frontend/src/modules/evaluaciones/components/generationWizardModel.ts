@@ -1,4 +1,4 @@
-import type { Evaluacion, EvaluacionModalidad } from '@/types/api';
+import type { Evaluacion, EvaluacionModalidad, EvaluationVisualManifest } from '@/types/api';
 
 export const WIZARD_VERSION = 7;
 export const WIZARD_TTL_MS = 7 * 24 * 60 * 60 * 1000;
@@ -32,6 +32,7 @@ export interface ReferenceFileMetadata {
 }
 
 export interface EditableQuestion {
+  contenidoId?: string;
   clientId: string;
   numero: number;
   tipo: QuestionType;
@@ -59,6 +60,8 @@ export interface EditableRubricCriterion extends Record<string, unknown> {
   dba_ids: string[];
 }
 export interface WizardState {
+  contenidoVisual?: EvaluationVisualManifest;
+  contenidoVersionId?: string | null;
   step: number;
   materiaId: string;
   nombre: string;
@@ -414,6 +417,7 @@ export function evaluationToEditableQuestions(evaluation: Evaluacion): EditableQ
         : [];
     return {
       clientId: `${evaluation.id}-${index}-${Date.now()}`,
+      contenidoId: typeof question.contenido_id === 'string' ? question.contenido_id : undefined,
       numero: index + 1,
       tipo,
       enunciado: String(question.enunciado ?? ''),
@@ -536,6 +540,9 @@ export function evaluationToWizardState(evaluation: Evaluacion): WizardState {
     rubricCriteria: criteria.map((criterion) => String(criterion.nombre ?? '')).filter(Boolean),
     counts,
     generatedEvaluationId: evaluation.id,
+    contenidoVisual: evaluation.contenido_visual && 'cobertura' in evaluation.contenido_visual
+      ? evaluation.contenido_visual : undefined,
+    contenidoVersionId: evaluation.contenido_version_id,
     generatedCriteria: normalizeRubricCriteria(criteria),
     generationWarnings: evaluation.blueprint?.reglas_feedback?.trazabilidad?.advertencias ?? [],
     questions,
@@ -548,6 +555,7 @@ export function duplicateQuestion(questions: EditableQuestion[], index: number) 
   const copy: EditableQuestion = {
     ...original,
     clientId: `${original.clientId}-copy-${Date.now()}`,
+    contenidoId: original.contenidoId ? crypto.randomUUID() : undefined,
     enunciado: `${original.enunciado} (copia)`,
     opciones: [...original.opciones],
     dbaIds: [...original.dbaIds],
@@ -572,6 +580,7 @@ export function moveQuestion(questions: EditableQuestion[], index: number, direc
 export function questionsToUpdatePayload(questions: EditableQuestion[]) {
   return {
     preguntas: questions.map((question) => ({
+      ...(question.contenidoId ? { contenido_id: question.contenidoId } : {}),
       numero: question.numero,
       tipo: question.tipo,
       enunciado: question.enunciado.trim(),
