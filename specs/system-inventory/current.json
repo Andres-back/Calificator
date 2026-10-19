@@ -379,7 +379,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "cb2c1b72cc57b952bf33bec929695857eaff1aa8c1406c1bcbf4b6cc1406e19c",
+  "source_digest": "32ff25ec9e4a05abb4b3e12b0a4f36d0fcee1d13c470a3088561ef1289abd5ab",
   "surfaces": [
     {
       "actors": [
@@ -444,6 +444,12 @@
           "reference": "DELETE:/admin/roles/{role_id}",
           "status": "direct",
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "DELETE:/admin/roles/{role_id}",
+          "status": "direct",
+          "test_path": "frontend/src/config/nav.test.ts"
         },
         {
           "level": "unit",
@@ -1769,6 +1775,12 @@
           "reference": "GET:/admin/mail/config",
           "status": "direct",
           "test_path": "backend/tests/integration/test_password_recovery_api.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/admin/mail/config",
+          "status": "direct",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
         }
       ]
     },
@@ -1797,6 +1809,12 @@
           "reference": "GET:/admin/mail/recovery-status",
           "status": "domain",
           "test_path": "backend/tests/integration/test_admin_mail_config.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/admin/mail/recovery-status",
+          "status": "direct",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
         }
       ]
     },
@@ -1863,6 +1881,12 @@
           "reference": "GET:/admin/roles",
           "status": "direct",
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/admin/roles",
+          "status": "direct",
+          "test_path": "frontend/src/config/nav.test.ts"
         },
         {
           "level": "unit",
@@ -1935,6 +1959,12 @@
           "reference": "GET:/admin/roles/{role_id}",
           "status": "direct",
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/admin/roles/{role_id}",
+          "status": "direct",
+          "test_path": "frontend/src/config/nav.test.ts"
         },
         {
           "level": "unit",
@@ -2894,6 +2924,12 @@
           "reference": "GET:/auth/me",
           "status": "direct",
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/auth/me",
+          "status": "direct",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
         },
         {
           "level": "e2e",
@@ -7229,6 +7265,12 @@
           "level": "e2e",
           "reference": "GET:/users/me",
           "status": "direct",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/users/me",
+          "status": "direct",
           "test_path": "frontend/e2e/auth-navigation.spec.ts"
         },
         {
@@ -7380,6 +7422,12 @@
           "reference": "GET:/users/me/authorization",
           "status": "direct",
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/users/me/authorization",
+          "status": "direct",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
         },
         {
           "level": "e2e",
@@ -7972,6 +8020,12 @@
           "reference": "PATCH:/admin/roles/{role_id}",
           "status": "direct",
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/admin/roles/{role_id}",
+          "status": "direct",
+          "test_path": "frontend/src/config/nav.test.ts"
         },
         {
           "level": "unit",
@@ -9504,6 +9558,12 @@
           "level": "e2e",
           "reference": "PATCH:/users/me",
           "status": "direct",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/users/me",
+          "status": "direct",
           "test_path": "frontend/e2e/auth-navigation.spec.ts"
         },
         {
@@ -9925,6 +9985,12 @@
         {
           "level": "unit",
           "reference": "POST:/admin/roles",
+          "status": "direct",
+          "test_path": "frontend/src/config/nav.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/admin/roles",
           "status": "domain",
           "test_path": "frontend/src/lib/authorization.test.ts"
         }
@@ -10092,6 +10158,12 @@
           "reference": "POST:/analytics/evento",
           "status": "direct",
           "test_path": "backend/tests/unit/test_authorization_contracts.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/analytics/evento",
+          "status": "direct",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
         },
         {
           "level": "e2e",
@@ -15507,6 +15579,12 @@
           "reference": "PUT:/admin/mail/config",
           "status": "direct",
           "test_path": "backend/tests/integration/test_password_recovery_api.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "PUT:/admin/mail/config",
+          "status": "direct",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
         }
       ]
     },
@@ -16301,6 +16379,12 @@
           "level": "e2e",
           "reference": "/",
           "status": "direct",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/",
+          "status": "direct",
           "test_path": "frontend/e2e/auth-navigation.spec.ts"
         },
         {
@@ -16500,6 +16584,12 @@
           "reference": "/",
           "status": "direct",
           "test_path": "frontend/src/components/xali/XaliMascot.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "frontend/src/config/nav.test.ts"
         },
         {
           "level": "unit",
@@ -17266,6 +17356,12 @@
           "level": "e2e",
           "reference": "/app",
           "status": "direct",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app",
+          "status": "direct",
           "test_path": "frontend/e2e/auth-navigation.spec.ts"
         },
         {
@@ -17393,6 +17489,12 @@
           "reference": "/app",
           "status": "direct",
           "test_path": "frontend/src/components/ui/P2Accessibility.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/app",
+          "status": "direct",
+          "test_path": "frontend/src/config/nav.test.ts"
         },
         {
           "level": "unit",
@@ -17993,6 +18095,12 @@
         {
           "level": "unit",
           "reference": "/app/admin/correo",
+          "status": "direct",
+          "test_path": "frontend/src/config/nav.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/admin/correo",
           "status": "domain",
           "test_path": "frontend/src/modules/admin/AdminAIConfigPage.test.tsx"
         },
@@ -18108,6 +18216,12 @@
           "reference": "/app/admin/roles",
           "status": "domain",
           "test_path": "frontend/e2e/teacher-ai-configuration.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/admin/roles",
+          "status": "direct",
+          "test_path": "frontend/src/config/nav.test.ts"
         },
         {
           "level": "unit",
@@ -18233,6 +18347,12 @@
           "reference": "/app/admin/usuarios",
           "status": "direct",
           "test_path": "frontend/src/components/seo/RouteMetadata.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/admin/usuarios",
+          "status": "direct",
+          "test_path": "frontend/src/config/nav.test.ts"
         },
         {
           "level": "unit",
@@ -22262,6 +22382,18 @@
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
         },
         {
+          "level": "e2e",
+          "reference": "DELETE:/admin/roles/{id}",
+          "status": "domain",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "DELETE:/admin/roles/{id}",
+          "status": "direct",
+          "test_path": "frontend/src/config/nav.test.ts"
+        },
+        {
           "level": "unit",
           "reference": "DELETE:/admin/roles/{id}",
           "status": "domain",
@@ -22368,6 +22500,12 @@
           "reference": "DELETE:/admin/users/{id}",
           "status": "direct",
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "DELETE:/admin/users/{id}",
+          "status": "domain",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
         },
         {
           "level": "unit",
@@ -23241,6 +23379,12 @@
         {
           "level": "e2e",
           "reference": "GET:/admin/ai-audit",
+          "status": "domain",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/admin/ai-audit",
           "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
         },
@@ -23349,6 +23493,12 @@
         {
           "level": "e2e",
           "reference": "GET:/admin/ai-config-hash",
+          "status": "domain",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/admin/ai-config-hash",
           "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
         },
@@ -23453,6 +23603,12 @@
           "reference": "GET:/admin/ai-control-center/usage",
           "status": "domain",
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/admin/ai-control-center/usage",
+          "status": "domain",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
         },
         {
           "level": "e2e",
@@ -23567,6 +23723,12 @@
           "reference": "GET:/admin/ai-control-center",
           "status": "domain",
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/admin/ai-control-center",
+          "status": "domain",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
         },
         {
           "level": "e2e",
@@ -23691,6 +23853,12 @@
         {
           "level": "e2e",
           "reference": "GET:/admin/ai-settings",
+          "status": "domain",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/admin/ai-settings",
           "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
         },
@@ -23805,6 +23973,12 @@
         {
           "level": "e2e",
           "reference": "GET:/admin/ai-usage",
+          "status": "domain",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/admin/ai-usage",
           "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
         },
@@ -23911,6 +24085,12 @@
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
         },
         {
+          "level": "e2e",
+          "reference": "GET:/admin/authorization/audit",
+          "status": "domain",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
+        },
+        {
           "level": "unit",
           "reference": "GET:/admin/authorization/audit",
           "status": "domain",
@@ -24011,6 +24191,12 @@
           "reference": "GET:/admin/authorization/modules",
           "status": "direct",
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/admin/authorization/modules",
+          "status": "domain",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
         },
         {
           "level": "unit",
@@ -24121,6 +24307,12 @@
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
         },
         {
+          "level": "e2e",
+          "reference": "GET:/admin/mail/config",
+          "status": "direct",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
+        },
+        {
           "level": "unit",
           "reference": "GET:/admin/mail/config",
           "status": "domain",
@@ -24223,6 +24415,12 @@
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
         },
         {
+          "level": "e2e",
+          "reference": "GET:/admin/mail/recovery-status",
+          "status": "direct",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
+        },
+        {
           "level": "unit",
           "reference": "GET:/admin/mail/recovery-status",
           "status": "domain",
@@ -24323,6 +24521,18 @@
           "reference": "GET:/admin/roles",
           "status": "direct",
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/admin/roles",
+          "status": "domain",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/admin/roles",
+          "status": "direct",
+          "test_path": "frontend/src/config/nav.test.ts"
         },
         {
           "level": "unit",
@@ -24433,6 +24643,12 @@
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
         },
         {
+          "level": "e2e",
+          "reference": "GET:/admin/users/{id}",
+          "status": "domain",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
+        },
+        {
           "level": "unit",
           "reference": "GET:/admin/users/{id}",
           "status": "domain",
@@ -24539,6 +24755,12 @@
           "reference": "GET:/admin/users",
           "status": "direct",
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/admin/users",
+          "status": "domain",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
         },
         {
           "level": "unit",
@@ -25133,6 +25355,12 @@
           "reference": "GET:/auth/me",
           "status": "direct",
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/auth/me",
+          "status": "direct",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
         },
         {
           "level": "e2e",
@@ -28478,6 +28706,12 @@
           "level": "e2e",
           "reference": "GET:/users/me/authorization",
           "status": "direct",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/users/me/authorization",
+          "status": "direct",
           "test_path": "frontend/e2e/auth-navigation.spec.ts"
         },
         {
@@ -28915,6 +29149,12 @@
         {
           "level": "e2e",
           "reference": "PATCH:/admin/ai-config",
+          "status": "domain",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/admin/ai-config",
           "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
         },
@@ -29027,6 +29267,12 @@
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
         },
         {
+          "level": "e2e",
+          "reference": "PATCH:/admin/ai-providers/{id}",
+          "status": "domain",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
+        },
+        {
           "level": "unit",
           "reference": "PATCH:/admin/ai-providers/{id}",
           "status": "domain",
@@ -29135,6 +29381,18 @@
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
         },
         {
+          "level": "e2e",
+          "reference": "PATCH:/admin/roles/{id}",
+          "status": "domain",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/admin/roles/{id}",
+          "status": "direct",
+          "test_path": "frontend/src/config/nav.test.ts"
+        },
+        {
           "level": "unit",
           "reference": "PATCH:/admin/roles/{id}",
           "status": "domain",
@@ -29235,6 +29493,12 @@
           "reference": "PATCH:/admin/users/{id}/solicitud-docente",
           "status": "domain",
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/admin/users/{id}/solicitud-docente",
+          "status": "domain",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
         },
         {
           "level": "unit",
@@ -29343,6 +29607,12 @@
           "reference": "PATCH:/admin/users/{id}",
           "status": "direct",
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/admin/users/{id}",
+          "status": "domain",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
         },
         {
           "level": "unit",
@@ -30558,6 +30828,12 @@
           "level": "e2e",
           "reference": "PATCH:/users/me",
           "status": "direct",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/users/me",
+          "status": "direct",
           "test_path": "frontend/e2e/auth-navigation.spec.ts"
         },
         {
@@ -30757,6 +31033,12 @@
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
         },
         {
+          "level": "e2e",
+          "reference": "POST:/admin/ai-cache/clear",
+          "status": "domain",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
+        },
+        {
           "level": "unit",
           "reference": "POST:/admin/ai-cache/clear",
           "status": "domain",
@@ -30857,6 +31139,12 @@
           "reference": "POST:/admin/ai-control-center/validate",
           "status": "domain",
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/admin/ai-control-center/validate",
+          "status": "domain",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
         },
         {
           "level": "unit",
@@ -30961,6 +31249,12 @@
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
         },
         {
+          "level": "e2e",
+          "reference": "POST:/admin/ai-providers/{providerId}/models/refresh",
+          "status": "domain",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
+        },
+        {
           "level": "unit",
           "reference": "POST:/admin/ai-providers/{providerId}/models/refresh",
           "status": "domain",
@@ -31061,6 +31355,12 @@
           "reference": "POST:/admin/ai-providers/{providerId}/test",
           "status": "domain",
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/admin/ai-providers/{providerId}/test",
+          "status": "domain",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
         },
         {
           "level": "unit",
@@ -31165,6 +31465,12 @@
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
         },
         {
+          "level": "e2e",
+          "reference": "POST:/admin/ai-settings/restore-defaults",
+          "status": "domain",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
+        },
+        {
           "level": "unit",
           "reference": "POST:/admin/ai-settings/restore-defaults",
           "status": "domain",
@@ -31265,6 +31571,12 @@
           "reference": "POST:/admin/ai-settings/restore-previous",
           "status": "domain",
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/admin/ai-settings/restore-previous",
+          "status": "domain",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
         },
         {
           "level": "unit",
@@ -31375,6 +31687,12 @@
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
         },
         {
+          "level": "e2e",
+          "reference": "POST:/admin/mail/test",
+          "status": "domain",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
+        },
+        {
           "level": "unit",
           "reference": "POST:/admin/mail/test",
           "status": "domain",
@@ -31477,6 +31795,18 @@
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
         },
         {
+          "level": "e2e",
+          "reference": "POST:/admin/roles/{id}",
+          "status": "domain",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/admin/roles/{id}",
+          "status": "direct",
+          "test_path": "frontend/src/config/nav.test.ts"
+        },
+        {
           "level": "unit",
           "reference": "POST:/admin/roles/{id}",
           "status": "domain",
@@ -31577,6 +31907,18 @@
           "reference": "POST:/admin/roles",
           "status": "direct",
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/admin/roles",
+          "status": "domain",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/admin/roles",
+          "status": "direct",
+          "test_path": "frontend/src/config/nav.test.ts"
         },
         {
           "level": "unit",
@@ -31687,6 +32029,12 @@
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
         },
         {
+          "level": "e2e",
+          "reference": "POST:/admin/users",
+          "status": "domain",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
+        },
+        {
           "level": "unit",
           "reference": "POST:/admin/users",
           "status": "domain",
@@ -31746,6 +32094,12 @@
           "reference": "POST:/analytics/evento",
           "status": "direct",
           "test_path": "backend/tests/unit/test_authorization_contracts.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/analytics/evento",
+          "status": "direct",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
         },
         {
           "level": "e2e",
@@ -35096,6 +35450,12 @@
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
         },
         {
+          "level": "e2e",
+          "reference": "PUT:/admin/ai-control-center/publish",
+          "status": "domain",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
+        },
+        {
           "level": "unit",
           "reference": "PUT:/admin/ai-control-center/publish",
           "status": "domain",
@@ -35210,6 +35570,12 @@
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
         },
         {
+          "level": "e2e",
+          "reference": "PUT:/admin/ai-features",
+          "status": "domain",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
+        },
+        {
           "level": "unit",
           "reference": "PUT:/admin/ai-features",
           "status": "domain",
@@ -35318,6 +35684,12 @@
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
         },
         {
+          "level": "e2e",
+          "reference": "PUT:/admin/ai-providers",
+          "status": "domain",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
+        },
+        {
           "level": "unit",
           "reference": "PUT:/admin/ai-providers",
           "status": "domain",
@@ -35424,6 +35796,12 @@
           "reference": "PUT:/admin/ai-settings/publish",
           "status": "domain",
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PUT:/admin/ai-settings/publish",
+          "status": "domain",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
         },
         {
           "level": "unit",
@@ -35538,6 +35916,12 @@
           "reference": "PUT:/admin/mail/config",
           "status": "domain",
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PUT:/admin/mail/config",
+          "status": "direct",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
         },
         {
           "level": "unit",
@@ -41828,6 +42212,12 @@
           "level": "e2e",
           "reference": "users",
           "status": "direct",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "users",
+          "status": "direct",
           "test_path": "frontend/e2e/auth-navigation.spec.ts"
         },
         {
@@ -41901,6 +42291,18 @@
           "reference": "users",
           "status": "direct",
           "test_path": "frontend/e2e/xali-teacher-visual.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "users",
+          "status": "direct",
+          "test_path": "frontend/src/components/ui/EducationalIcon.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "users",
+          "status": "direct",
+          "test_path": "frontend/src/config/nav.test.ts"
         },
         {
           "level": "unit",

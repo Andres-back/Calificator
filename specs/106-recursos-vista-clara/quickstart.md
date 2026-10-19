@@ -60,3 +60,9 @@ Desde raíz: `python scripts/build_system_inventory.py --check` y `python -m pyt
 ## Límites de la entrega
 
 Solo datos sintéticos; sin IA pagada, VPS, imágenes de alumnos ni cambios académicos. Emulación no acredita teclado/teléfono físico Android/iPhone. Queda una prueba posterior con docentes: encontrar → revisar → editar → preparar PDF sin guía, registrando tiempo, dudas y errores. CI remoto y una autorización separada son obligatorios antes de fusionar o desplegar.
+
+## Entrega conjunta autorizada — 2026-10-19
+
+El usuario autorizó la actualización en producción de los iconos administrativos y el PR pendiente de recursos. Se incorpora la rama de Spec 103 (PR #216) en este PR #221 para comprobar ambos cambios juntos y efectuar una sola actualización web. Se conservan los contratos y escenarios de ambas especificaciones y los cambios vigentes de `main`; no se incorpora Spec 101 ni otro trabajo en curso.
+
+La entrega mantiene todas las comprobaciones CI requeridas. Los fallos intermitentes de animación/navegación se documentan en la guía de 103 y se sincronizan sin eliminar aserciones ni activar reintentos del runner. Tras la fusión se verificará que los archivos funcionales de #216 están incluidos en `main` antes de cerrar ese PR como incorporado; no se confundirá ese cierre con una segunda fusión independiente. Hasta entonces no se acredita producción actualizada.

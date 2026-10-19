@@ -76,6 +76,7 @@ export function MultiPageEvidencePicker({ pages, onChange, disabled = false, onE
   const currentContext = useRef(contextKey);
   currentContext.current = contextKey;
   const [cameraRequest, setCameraRequest] = useState<{ id: string; context: string; replacementId: string | null } | null>(null);
+  const [preferredCameraId, setPreferredCameraId] = useState('');
   const pagesRef = useRef(pages);
   const mounted = useRef(true);
   const disabledRef = useRef(disabled);
@@ -249,6 +250,7 @@ export function MultiPageEvidencePicker({ pages, onChange, disabled = false, onE
       </>}
       <PreviewModal page={previewIndex >= 0 ? pages[previewIndex] : null} pageNumber={previewIndex + 1} onClose={() => setPreviewId(null)} />
       {cameraRequest && cameraRequest.context === contextKey && !disabled && !isPdf && <CameraCapture key={cameraRequest.id}
+        preferredCameraId={preferredCameraId} onCameraChange={setPreferredCameraId}
         onClose={() => { setCameraRequest(null); replacementIdRef.current = null; }}
         onUpload={() => selectFiles(false, cameraRequest.replacementId)}
         onNativeCamera={() => selectFiles(true, cameraRequest.replacementId)}

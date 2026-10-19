@@ -2,7 +2,7 @@ import { useEffect, useState, type FormEvent } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { CheckCircle2, KeyRound, MailCheck, Send, Server, ShieldCheck, TriangleAlert } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { Badge, Button, Card, Field, Input, QueryError, Skeleton } from '@/components/ui';
+import { Badge, Button, Card, EducationalIcon, Field, Input, QueryError, Skeleton } from '@/components/ui';
 import { toApiError } from '@/lib/api';
 import {
   getMailConfig,
@@ -80,7 +80,7 @@ export function AdminMailConfigPage() {
     <div className="space-y-6">
       <section className="rounded-3xl border border-brand-200 bg-gradient-to-br from-brand-800 via-brand-600 to-sky-600 p-6 text-white shadow-lg sm:p-8">
         <Badge className="border-white/20 bg-white/15 text-white">Administración</Badge>
-        <h1 className="mt-3 font-display text-3xl font-extrabold">Correo y recuperación</h1>
+        <div className="mt-3 flex items-center gap-3"><EducationalIcon name="admin-mail" className="h-12 w-12" /><h1 className="min-w-0 font-display text-2xl font-extrabold sm:text-3xl">Correo y recuperación</h1></div>
         <p className="mt-2 max-w-2xl text-brand-50">
           Configura el remitente institucional para recuperar contraseñas. La clave se cifra y nunca vuelve a mostrarse.
         </p>

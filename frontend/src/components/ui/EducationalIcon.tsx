@@ -9,6 +9,9 @@ export type EducationalIconName =
   | 'reports'
   | 'xali'
   | 'ai-settings'
+  | 'admin-users'
+  | 'admin-roles'
+  | 'admin-mail'
   | 'crossword'
   | 'word-search'
   | 'matching'
@@ -61,6 +64,9 @@ const EDUCATIONAL_ICON_ASSET: Record<EducationalIconName, string> = {
   reports: 'reports',
   xali: 'xali',
   'ai-settings': 'ai-settings',
+  'admin-users': 'admin-users',
+  'admin-roles': 'admin-roles',
+  'admin-mail': 'admin-mail',
   crossword: 'crossword',
   'word-search': 'word-search',
   matching: 'matching',
@@ -139,6 +145,12 @@ function Glyph({ name }: { name: EducationalIconName }) {
   if (fallbackName) return <Glyph name={fallbackName} />;
 
   switch (name) {
+    case 'admin-users':
+      return <><circle cx="12" cy="7" r="3" /><path d="M6 21v-2a6 6 0 0 1 12 0v2M5 5a3 3 0 0 0 0 6M19 5a3 3 0 0 1 0 6M2 21v-3a5 5 0 0 1 3-4M22 21v-3a5 5 0 0 0-3-4" /></>;
+    case 'admin-roles':
+      return <><path d="m12 3 8 3v6c0 5-8 9-8 9s-8-4-8-9V6zM8 12l3 3 5-6" /></>;
+    case 'admin-mail':
+      return <><rect x="3" y="5" width="18" height="14" rx="2" /><path d="m3 6 9 7 9-7M3 18l6-6M21 18l-6-6" /></>;
     case 'dashboard':
       return <><rect x="3.5" y="3.5" width="7" height="7" rx="2" /><rect x="13.5" y="3.5" width="7" height="4.5" rx="2" /><rect x="13.5" y="11" width="7" height="9.5" rx="2" /><rect x="3.5" y="13" width="7" height="7.5" rx="2" /></>;
     case 'subjects':

@@ -101,6 +101,7 @@ ALL_SPECS = {
     "099-revision-docente-enfocada",
     "100-feedback-demo-movil",
     "102-camara-visor-completo",
+    "103-camaras-iconos-admin",
     "104-xali-docente-visual",
     "105-materia-movil-cola",
     "106-recursos-vista-clara",
