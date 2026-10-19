@@ -45,3 +45,20 @@ La encuesta envia Cache-Control: no-store, no-transform para evitar almacenamien
 en cache e inyeccion automatica de scripts de Cloudflare en estas respuestas.
 Su politica CSP conserva script-src 'self'. No se agregan trackers al formulario.
 Referencia: https://developers.cloudflare.com/web-analytics/faq/
+
+## Formato separado del piloto
+
+`/retroalimentacion-piloto/` recibe observaciones y sugerencias del uso del piloto,
+con consentimiento y firma al final. Sus respuestas se conservan en otra base,
+`retroalimentacion-piloto.sqlite3`, y se consultan en
+`/retroalimentacion-piloto/admin/`. Comparte las credenciales administrativas del
+servicio, pero usa sesiones, registros y revisiones propios. El panel identifica
+el instrumento y no presenta el filtro de interés en una demostración del diagnóstico.
+
+`compose.vps.yaml` verifica la salud de los dos formularios sin publicar puertos.
+La copia actualizada de `backup.vps.sh` respalda las dos bases en archivos separados
+y conserva el plazo de treinta días de los respaldos diarios. Al actualizar el VPS,
+copiar también este script a la ubicación que usa el servicio systemd; modificar
+solo el archivo del repositorio no cambia una copia instalada previamente.
+Añadir al proxy central la ruta `/retroalimentacion-piloto/`, apuntando al mismo
+contenedor en la red dedicada. No modificar el volumen de respuestas existente.

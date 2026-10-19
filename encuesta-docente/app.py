@@ -3,6 +3,7 @@ import base64
 import csv
 import hashlib
 import hmac
+from html import escape
 import io
 import json
 import math
@@ -23,6 +24,12 @@ ROOT = Path(__file__).resolve().parent
 MAX_BODY = 384 * 1024
 REVIEW_STATUSES = {'pending', 'reviewed', 'follow_up', 'excluded'}
 ADMIN_SESSION_SECONDS = 8 * 60 * 60
+
+
+def study_today():
+    # Fecha de referencia del estudio en Colombia, independiente del huso del VPS.
+    from datetime import timedelta
+    return datetime.now(timezone(timedelta(hours=-5))).date()
 
 
 class Invalid(ValueError):
@@ -55,10 +62,16 @@ def validate(payload, schema, settings):
     if payload['instrument_version'] != settings['instrument_version'] or payload['consent_version'] != settings['consent_version']:
         raise Invalid('El cuestionario o el consentimiento cambió. Actualice la página antes de responder.')
     consent = payload['consent']
-    if not isinstance(consent, dict) or set(consent) != {'participation', 'data_processing', 'signature_storage'}:
+    consent_keys = {'participation', 'data_processing', 'signature_storage'}
+    feedback = settings.get('kind') == 'pilot_feedback'
+    if feedback:
+        consent_keys.add('feedback_confirmation')
+    if not isinstance(consent, dict) or set(consent) != consent_keys:
         raise Invalid('Revise las autorizaciones.')
     if consent['participation'] is not True or consent['data_processing'] is not True or not isinstance(consent['signature_storage'], bool):
         raise Invalid('Se requiere aceptar la participación y el tratamiento descrito para enviar datos.')
+    if feedback and consent['feedback_confirmation'] is not True:
+        raise Invalid('Confirme que las observaciones corresponden a su experiencia de prueba o demostración.')
     identity = payload['identity']
     if not isinstance(identity, dict) or set(identity) != {'name', 'email', 'phone'}:
         raise Invalid('Datos de identificación inválidos.')
@@ -76,7 +89,7 @@ def validate(payload, schema, settings):
         value = answers.get(key)
         if value in (None, ''):
             if q.get('required'):
-                raise Invalid('Complete la institución educativa.')
+                raise Invalid('Complete el campo requerido: ' + q['label'])
             continue
         if q['type'] in ('radio', 'scale'):
             if value not in {x['value'] for x in q['options']}:
@@ -87,10 +100,19 @@ def validate(payload, schema, settings):
                 raise Invalid('Revise la selección de tipos de pregunta.')
         elif q['type'] == 'number':
             integer(value, q['min'], q['max'])
+        elif q['type'] == 'date':
+            try:
+                parsed_date = date.fromisoformat(value)
+                if parsed_date > study_today():
+                    raise ValueError()
+            except (ValueError, TypeError):
+                raise Invalid('Revise la fecha de la prueba; no puede estar en el futuro.')
         else:
             cleaned = text(value, q.get('maxlength', 2500))
             if q.get('required') and not cleaned:
-                raise Invalid('Complete la institución educativa.')
+                raise Invalid('Complete el campo requerido: ' + q['label'])
+    if feedback and not (answers.get('feedback.functions') or []):
+        raise Invalid('Seleccione al menos una función utilizada u observada, o la opción Otra actividad.')
     if '9' in answers.get('1.6', []) and not str(answers.get('1.6.other') or '').strip():
         raise Invalid('Describa el otro tipo de pregunta o quite la opción Otro.')
     if 'evidence.other' in questions and '6' in answers.get('evidence.storage', []) and not str(answers.get('evidence.other') or '').strip():
@@ -136,11 +158,14 @@ def validate(payload, schema, settings):
                 raise ValueError()
         except (ValueError, TypeError):
             raise Invalid('Revise la fecha de medición; no puede estar en el futuro.')
-    if measurement['condition'] != 'manual':
+    condition = 'pilot_feedback' if feedback else 'manual'
+    if measurement['condition'] != condition:
+        if feedback:
+            raise Invalid('Este formato recoge observaciones del piloto, no una medición de tiempos.')
         raise Invalid('Esta encuesta recoge únicamente tiempos de calificación manual, sin sugerencias automáticas de notas o retroalimentación.')
     if measured and (not measurement['date'] or not measurement['group'].strip() or not measurement['scope'].strip() or measurement['deliveries'] is None or not measurement['condition']):
         raise Invalid('Para un tiempo cronometrado complete fecha, grupo, entregas, condición y alcance de la sesión.')
-    if not schema['time_activities'] and measurement != {'date':'','deliveries':None,'open_answers':None,'group':'','condition':'manual','scope':''}:
+    if not schema['time_activities'] and measurement != {'date':'','deliveries':None,'open_answers':None,'group':'','condition':condition,'scope':''}:
         raise Invalid('La versión breve no recoge registros de cronometraje: indique el rango en el cuestionario.')
     signature = payload['signature']
     if not isinstance(signature, dict) or set(signature) != {'method', 'name', 'strokes'} or signature['method'] not in ('drawn', 'typed'):
@@ -172,6 +197,8 @@ def validate(payload, schema, settings):
 
 
 def consent_document(settings):
+    if settings.get('kind') == 'pilot_feedback':
+        return feedback_consent_document(settings)
     return [
         {'title': 'Quiénes realizan el estudio', 'text': f"{', '.join(settings['researchers'])}, estudiantes de {settings['institution']}. Investigación de tesis: {settings['research_title']}. Contacto: {', '.join(settings['contact_emails'])}. Teléfono: {settings['contact_phone']}."},
         {'title': 'Propósito y actividades', 'text': 'Identificar necesidades docentes de calificación manual y gestión de evidencias y orientar los requisitos de XCalificator. Se le invita a responder sobre su práctica, tiempos manuales, dificultades y preferencias. No necesita conocer ni haber utilizado la herramienta. La versión breve contiene 19 preguntas, además de identificación, autorización y constancia. Se prevé una duración de 5 a 7 minutos, aún por comprobar con docentes. El tiempo manual se recoge por rangos declarados, no como un cronometraje exacto. Esta encuesta no evalúa tiempos con la herramienta ni satisfacción después de utilizarla.'},
@@ -184,13 +211,34 @@ def consent_document(settings):
     ]
 
 
+def feedback_consent_document(settings):
+    return [
+        {'title': 'Quiénes realizan el estudio', 'text': f"{', '.join(settings['researchers'])}, estudiantes de {settings['institution']}. Investigación de tesis: {settings['research_title']}. Contacto: {', '.join(settings['contact_emails'])}. Teléfono: {settings['contact_phone']}."},
+        {'title': 'Propósito y actividades', 'text': 'Documentar la experiencia de los docentes en las pruebas o plan piloto de XCalificator, sus observaciones y sugerencias de mejora, como evidencia para la tesis y un eventual artículo. Responda después de utilizar el programa o participar en una demostración e indique cuál fue su experiencia. Son nueve preguntas, además de identificación, autorización y firma. La duración orientativa es de 5 a 7 minutos y se comprobará con docentes. Este formato no mide por sí solo ahorro de tiempo, exactitud de notas ni aceptación mediante TAM.'},
+        {'title': 'Participación voluntaria', 'text': 'Participar es voluntario. Puede no participar o retirarse antes de enviar, sin consecuencias académicas o laborales. Para registrar una retroalimentación se solicita nombre, institución, fecha, modalidad de prueba, actividad y una observación; las sugerencias y otros campos señalados son opcionales. Puede expresar aspectos favorables, dificultades o que no encontró problemas; no se exige una valoración positiva. No hay pago ni beneficio individual garantizado. La carga es el tiempo de respuesta y existe riesgo de acceso indebido a información personal, reducido mediante acceso restringido y resguardo de datos. No incluya datos identificables de estudiantes.'},
+        {'title': 'Datos y uso autorizado', 'text': 'Se recogen nombre, institución, contexto de la prueba, funciones utilizadas u observadas, comentarios y, si los facilita, correo y teléfono. Se conserva la constancia de aceptación, fecha de recepción, versiones del formato y consentimiento y, solo con su autorización específica, el dibujo estático de su firma. Los contactos se usan para atender solicitudes relacionadas con sus datos. No se recogen presión, velocidad ni patrones biométricos de escritura. Este formato no autoriza nuevas pruebas, acceso a datos de estudiantes ni comunicaciones distintas de las finalidades descritas.'},
+        {'title': 'Confidencialidad y publicación', 'text': 'Los investigadores responsables tendrán acceso a los registros identificados para analizar la prueba y documentar mejoras del programa. La tesis y un eventual artículo presentarán resultados agrupados y síntesis de los comentarios, sin publicar nombres, contactos, firmas ni formularios identificados. Se revisarán los textos y detalles contextuales antes de publicar para retirar identificadores. Las constancias firmadas se conservarán como evidencia privada de la investigación; no se publicarán en la web. El servidor y almacenamiento serán administrados por los investigadores.'},
+        {'title': 'Conservación', 'text': settings['retention']},
+        {'title': 'Sus derechos y copia', 'text': 'Puede consultar, actualizar o rectificar sus datos, obtener prueba de la autorización, solicitar revocación o supresión cuando proceda y conocer el uso de su información. Dirija su solicitud a los contactos indicados y, cuando corresponda, presente queja ante la Superintendencia de Industria y Comercio. Al enviar podrá descargar una constancia con sus respuestas, autorización, firma y código de consulta. Si su contribución ya fue anonimizada irreversiblemente o incorporada a resultados agregados, no será posible aislarla.'},
+        {'title': 'Confirmación y firma', 'text': 'Al final confirme que las observaciones describen su experiencia de uso o demostración. Puede dibujar su firma con el dedo o ratón, autorizando guardar ese dibujo, o confirmar con su nombre completo y aceptación expresa. La firma dibujada es opcional y no es una firma digital certificada; la aplicación no certifica identidad ni acredita por sí sola participación efectiva. Se vinculan respuestas, autorización, versiones y fecha mediante una constancia. Firmar no equivale a aprobar todos los resultados del proyecto, certificar su eficacia ni garantizar una publicación.'}
+    ]
+
+
 class SurveyApplication:
-    def __init__(self, *, database=None, origin=None, secret=None, admin_user=None, admin_password=None, base_path=None):
+    def __init__(self, *, database=None, origin=None, secret=None, admin_user=None, admin_password=None, base_path=None, instrument='needs'):
+        if instrument not in ('needs', 'feedback'):
+            raise ValueError('Instrumento desconocido.')
         self.settings = json.loads((ROOT / 'settings.json').read_text(encoding='utf-8'))
-        self.schema = json.loads((ROOT / 'public/schema.json').read_text(encoding='utf-8'))
+        if instrument == 'feedback':
+            self.settings.update(json.loads((ROOT / 'feedback/settings.json').read_text(encoding='utf-8')))
+        schema_file = 'feedback/schema.json' if instrument == 'feedback' else 'public/schema.json'
+        self.schema = json.loads((ROOT / schema_file).read_text(encoding='utf-8'))
         self.consent = consent_document(self.settings)
         self.origin = (origin or os.environ.get('PUBLIC_ORIGIN', '')).rstrip('/')
-        self.base = (base_path if base_path is not None else os.environ.get('BASE_PATH', '/encuesta-docente')).rstrip('/')
+        base_default = os.environ.get('FEEDBACK_BASE_PATH', '/retroalimentacion-piloto') if instrument == 'feedback' else os.environ.get('BASE_PATH', '/encuesta-docente')
+        self.base = (base_path if base_path is not None else base_default).rstrip('/')
+        self.cookie_name = 'pilot_feedback_csrf' if instrument == 'feedback' else 'survey_csrf'
+        self.admin_cookie_name = 'pilot_feedback_admin' if instrument == 'feedback' else 'survey_admin'
         self.secret = secret or os.environ.get('SECRET_KEY', '')
         self.admin_user = admin_user if admin_user is not None else os.environ.get('ADMIN_USER', '')
         self.admin_password = admin_password if admin_password is not None else os.environ.get('ADMIN_PASSWORD', '')
@@ -199,7 +247,9 @@ class SurveyApplication:
         parsed = urlsplit(self.origin)
         if parsed.path or parsed.query or parsed.fragment or parsed.scheme not in ('https', 'http') or (parsed.scheme != 'https' and parsed.hostname not in ('127.0.0.1', 'localhost')):
             raise RuntimeError('PUBLIC_ORIGIN debe ser un origen HTTPS, o HTTP local para desarrollo.')
-        self.database = Path(database or os.environ.get('DATABASE_PATH', str(ROOT / 'data/encuestas.sqlite3')))
+        needs_database = Path(os.environ.get('DATABASE_PATH', str(ROOT / 'data/encuestas.sqlite3')))
+        default_database = os.environ.get('FEEDBACK_DATABASE_PATH', str(needs_database.with_name('retroalimentacion-piloto.sqlite3'))) if instrument == 'feedback' else str(needs_database)
+        self.database = Path(database or default_database)
         self.database.parent.mkdir(parents=True, exist_ok=True)
         with self.connect() as db:
             db.execute('PRAGMA journal_mode=WAL')
@@ -211,6 +261,16 @@ class SurveyApplication:
             os.chmod(self.database.parent, 0o700)
             os.chmod(self.database, 0o600)
         self.rate, self.rate_lock = {}, threading.Lock()
+
+    def index_html(self):
+        markup = (ROOT / 'public/index.html').read_text(encoding='utf-8')
+        ui = self.settings.get('ui', {})
+        if ui.get('page_title'):
+            markup = re.sub(r'<title>.*?</title>', lambda _: '<title>' + escape(ui['page_title']) + '</title>', markup, count=1)
+        for key, tag, id in [('eyebrow','div','survey-eyebrow'),('heading','h1','survey-heading'),('description','p','survey-description'),('duration','span','survey-duration'),('aside','div','survey-aside')]:
+            if ui.get(key):
+                markup = re.sub(rf'(<{tag}[^>]*id="{id}"[^>]*>).*?(</{tag}>)', lambda match: match[1] + escape(ui[key]) + match[2], markup, count=1, flags=re.S)
+        return markup.encode('utf-8')
 
     @contextmanager
     def connect(self):
@@ -243,7 +303,7 @@ class SurveyApplication:
         try:
             cookies = SimpleCookie(environ.get('HTTP_COOKIE', ''))
             token = environ.get('HTTP_X_SURVEY_CSRF', '')
-            if not token or not hmac.compare_digest(cookies['survey_csrf'].value, token):
+            if not token or not hmac.compare_digest(cookies[self.cookie_name].value, token):
                 return False
             stamp, nonce, signature = token.split('.')
             expected = hmac.new(self.secret.encode(), (stamp + '.' + nonce).encode(), hashlib.sha256).hexdigest()
@@ -262,14 +322,14 @@ class SurveyApplication:
 
     def admin_cookie(self, environ):
         try:
-            token = SimpleCookie(environ.get('HTTP_COOKIE', ''))['survey_admin'].value
+            token = SimpleCookie(environ.get('HTTP_COOKIE', ''))[self.admin_cookie_name].value
             return token if re.fullmatch(r'[A-Za-z0-9_-]{64}', token) else ''
         except (KeyError, CookieError):
             return ''
 
     def session_cookie(self, token='', *, clear=False):
         secure = '; Secure' if self.origin.startswith('https://') else ''
-        return f'survey_admin={token}; Path={self.base}/admin; HttpOnly; SameSite=Strict; Max-Age={0 if clear else ADMIN_SESSION_SECONDS}{secure}'
+        return f'{self.admin_cookie_name}={token}; Path={self.base}/admin; HttpOnly; SameSite=Strict; Max-Age={0 if clear else ADMIN_SESSION_SECONDS}{secure}'
 
     def authorized(self, environ):
         if not self.admin_user or len(self.admin_password) < 20:
@@ -314,7 +374,7 @@ class SurveyApplication:
                     return respond('429 Too Many Requests', {'error': 'Espere un minuto antes de volver a intentar.'})
                 token = self.token()
                 secure = '; Secure' if self.origin.startswith('https://') else ''
-                return respond('200 OK', {'csrf': token}, extra=[('Set-Cookie', f'survey_csrf={token}; Path={self.base or "/"}; HttpOnly; SameSite=Strict; Max-Age=43200{secure}')])
+                return respond('200 OK', {'csrf': token}, extra=[('Set-Cookie', f'{self.cookie_name}={token}; Path={self.base or "/"}; HttpOnly; SameSite=Strict; Max-Age=43200{secure}')])
             if path == '/api/responses' and method == 'POST':
                 if not self.settings['enabled']:
                     return respond('503 Service Unavailable', {'error': 'La recolección está cerrada.'})
@@ -344,7 +404,10 @@ class SurveyApplication:
                 if method == 'GET':
                     if self.authorized(environ):
                         return respond('302 Found', b'', extra=[('Location', self.base + '/admin/')])
-                    return respond('200 OK', (ROOT / 'public/login.html').read_bytes(), 'text/html; charset=utf-8')
+                    content = (ROOT / 'public/login.html').read_text(encoding='utf-8')
+                    if self.settings.get('kind') == 'pilot_feedback':
+                        content = content.replace('Ingresar · Encuesta XCalificator', 'Ingresar · Retroalimentación del piloto').replace('Administración de la encuesta', 'Retroalimentación del piloto').replace('Volver a la encuesta', 'Volver al formato del piloto')
+                    return respond('200 OK', content.encode('utf-8'), 'text/html; charset=utf-8')
                 if method != 'POST':
                     return respond('405 Method Not Allowed', {'error': 'Método no permitido.'})
                 if not self.csrf_ok(environ):
@@ -428,7 +491,8 @@ class SurveyApplication:
                         original_schema = stored.get('schema_snapshot', self.schema)
                         questions = {q['id']: q for s in original_schema['sections'] for q in s['questions']}
                         fields = {'context.' + k: value['answers'].get(k) for k in questions}
-                        fields.update({'measurement.' + k: v for k, v in value['measurement'].items()})
+                        if stored['settings'].get('kind') != 'pilot_feedback':
+                            fields.update({'measurement.' + k: v for k, v in value['measurement'].items()})
                         for i, item in enumerate(value['times'], 1):
                             fields.update({f'time.{i}.{k}': v for k, v in item.items()})
                         for key, val in fields.items():
@@ -469,7 +533,8 @@ class SurveyApplication:
             files = {'/': ('index.html', 'text/html'), '/app.js': ('app.js', 'text/javascript'), '/admin.js': ('admin.js', 'text/javascript'), '/login.js': ('login.js', 'text/javascript'), '/styles.css': ('styles.css', 'text/css'), '/branding/logo-full.webp': ('branding/logo-full.webp', 'image/webp'), '/branding/logo-favicon.png': ('branding/logo-favicon.png', 'image/png'), '/branding/inter-latin-400-normal.woff2': ('branding/inter-latin-400-normal.woff2', 'font/woff2'), '/branding/inter-latin-600-normal.woff2': ('branding/inter-latin-600-normal.woff2', 'font/woff2'), '/branding/plus-jakarta-sans-latin-600-normal.woff2': ('branding/plus-jakarta-sans-latin-600-normal.woff2', 'font/woff2')}
             if path in files and method == 'GET':
                 name, mime = files[path]
-                return respond('200 OK', (ROOT / 'public' / name).read_bytes(), mime + '; charset=utf-8')
+                content = self.index_html() if path == '/' else (ROOT / 'public' / name).read_bytes()
+                return respond('200 OK', content, mime + '; charset=utf-8')
             return respond('404 Not Found', {'error': 'Página no encontrada.'})
         except (Invalid, ValueError, UnicodeError, TypeError, KeyError) as exc:
             message = str(exc) if isinstance(exc, Invalid) else 'No se pudo interpretar el envío. Revise los campos.'
@@ -479,7 +544,23 @@ class SurveyApplication:
 
 
 def create_application():
-    return SurveyApplication()
+    return InstrumentRouter(SurveyApplication(), SurveyApplication(instrument='feedback'))
+
+
+class InstrumentRouter:
+    def __init__(self, needs, feedback):
+        if needs.base == feedback.base or needs.database.resolve() == feedback.database.resolve():
+            raise RuntimeError('Los dos instrumentos requieren rutas y bases de datos diferentes.')
+        self.apps = sorted((needs, feedback), key=lambda app: len(app.base), reverse=True)
+
+    def __call__(self, environ, start_response):
+        path = environ.get('PATH_INFO', '')
+        for app in self.apps:
+            if path == app.base or path.startswith(app.base + '/'):
+                return app(environ, start_response)
+        body = b'{"error":"Pagina no encontrada."}'
+        start_response('404 Not Found', [('Content-Type', 'application/json'), ('Content-Length', str(len(body))), ('Cache-Control', 'no-store')])
+        return [body]
 
 
 if __name__ == '__main__':
@@ -498,4 +579,5 @@ if __name__ == '__main__':
             pass
     server = make_server('127.0.0.1', args.port, create_application(), server_class=Server, handler_class=Quiet)
     print(f'Encuesta local: http://127.0.0.1:{args.port}' + os.environ.get('BASE_PATH', '/encuesta-docente') + '/', flush=True)
+    print(f'Retroalimentación local: http://127.0.0.1:{args.port}' + os.environ.get('FEEDBACK_BASE_PATH', '/retroalimentacion-piloto') + '/', flush=True)
     server.serve_forever()

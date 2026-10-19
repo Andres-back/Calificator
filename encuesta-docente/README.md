@@ -10,6 +10,16 @@ La reducción de 71 campos más seis actividades de tiempo a 19 preguntas está 
 
 La [fundamentación](FUNDAMENTACION_INSTRUMENTO.md) respalda la elección y reducción sin atribuir validación no realizada. El [planteamiento del problema](PLANTEAMIENTO_PROBLEMA.md) relaciona diagnóstico, funciones y comprobaciones posteriores.
 
+## Retroalimentación firmada del piloto
+
+El mismo servicio incluye un formato separado **FR-PIL-01 1.0-web**, de nueve preguntas sobre la prueba, observaciones y sugerencias, con firma en pantalla y constancia descargable. Es para docentes que utilizaron XCalificator o presenciaron una demostración, registrando la diferencia. No sustituye satisfacción/TAM ni mediciones de impacto. El [protocolo de retroalimentación](RETROALIMENTACION_PILOTO.md) detalla propósito, análisis y custodia.
+
+- Docentes del piloto: `/retroalimentacion-piloto/`.
+- Investigadores: `/retroalimentacion-piloto/admin/`, con las mismas credenciales del servicio.
+- Base independiente: `retroalimentacion-piloto.sqlite3`, junto a la base de encuesta; en Docker queda en el mismo volumen `/data`.
+
+Para actualizar una instalación existente, reconstruir el servicio y añadir las nuevas ubicaciones de `nginx-location.conf` al servidor HTTPS, validar y recargar Nginx. No es necesario regenerar `.env`; `FEEDBACK_BASE_PATH` y `FEEDBACK_DATABASE_PATH` son opcionales. Las respuestas de diagnóstico se conservan. Cada formato tiene su propia configuración de cierre (`enabled`).
+
 ## Instalación en el mismo VPS
 
 Requiere Docker Compose y el proxy HTTPS que ya usa XCalificator. No requiere suscripción a un servicio de formularios ni APIs externas; utiliza almacenamiento y recursos del servidor existente. No publicar con GitHub Pages: una página estática no guarda las respuestas de este sistema.
@@ -35,6 +45,7 @@ Rutas después de instalar el proxy:
 - Docentes: `https://xcalificator.daimuz.com/encuesta-docente/`
 - Investigadores: `https://xcalificator.daimuz.com/encuesta-docente/admin/`
 - Salud: `/encuesta-docente/health`
+- Salud de retroalimentación: `/retroalimentacion-piloto/health`
 
 Estas son rutas de instalación previstas, no prueba de publicación. El código no despliega automáticamente en el VPS. Si usa un subdominio independiente, configure `PUBLIC_ORIGIN` con ese origen y `BASE_PATH=` vacío; adapte el proxy para `/`.
 
@@ -76,5 +87,7 @@ python -m unittest discover -s tests -v
 ```
 
 Vista local: `http://127.0.0.1:8092/encuesta-docente/`. El servidor integrado es solo para desarrollo; producción usa Gunicorn en el contenedor. Para probar el panel local, defina `ADMIN_USER` y un `ADMIN_PASSWORD` de al menos 20 caracteres en el entorno antes de iniciar. Use una base separada mediante `DATABASE_PATH` para pruebas; no copiar datos ficticios a producción.
+
+Retroalimentación local: `http://127.0.0.1:8092/retroalimentacion-piloto/`. Para pruebas, puede fijar también `FEEDBACK_DATABASE_PATH` a una base de prueba diferente. Si no se indica, se crea junto a `DATABASE_PATH`.
 
 El servicio usa bibliotecas estándar de Python y Gunicorn 23.0.0 en producción. No añade servicios de IA ni comparte información con proveedores de IA. La exportación y la impresión funcionan sin servicios externos.

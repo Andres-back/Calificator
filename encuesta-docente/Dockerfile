@@ -7,6 +7,7 @@ RUN pip install --no-cache-dir -r requirements.txt \
     && mkdir /data && chown encuesta:encuesta /data
 COPY --chown=encuesta:encuesta app.py manage.py settings.json ./
 COPY --chown=encuesta:encuesta public ./public
+COPY --chown=encuesta:encuesta feedback ./feedback
 USER encuesta
 EXPOSE 8092
 CMD ["gunicorn", "app:create_application()", "--bind", "0.0.0.0:8092", "--workers", "1", "--threads", "4", "--timeout", "45", "--access-logfile", "/dev/null"]

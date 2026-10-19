@@ -1,0 +1,20 @@
+{
+  "kind": "pilot_feedback",
+  "instrument_code": "FR-PIL-01",
+  "instrument_version": "1.0-web",
+  "consent_version": "CI-PIL-RET-01-v1-2026-10-19",
+  "title": "Retroalimentación docente de las pruebas y plan piloto de XCalificator",
+  "enabled": true,
+  "ui": {
+    "page_title": "Retroalimentación del piloto · XCalificator",
+    "eyebrow": "EXPERIENCIA EN LAS PRUEBAS",
+    "heading": "Sus observaciones cuentan.",
+    "description": "Cuéntenos qué probó en XCalificator, qué ocurrió y qué mejoraría. Sus comentarios ayudarán a documentar el piloto.",
+    "duration": "9 preguntas · 5–7 min estimados",
+    "aside": "Retroalimentación del piloto · FR-PIL-01",
+    "invitation": "Le invitamos a registrar su experiencia de prueba o demostración de XCalificator, sus observaciones y sugerencias. Lea la información y decida libremente si desea participar.",
+    "identity_note": "Nombre e institución vinculan su autorización. Complete también la fecha, modalidad, actividad y una observación de la prueba. Los campos señalados como opcionales pueden omitirse. No incluya datos de estudiantes.",
+    "participation_label": "He leído la información, he podido consultar los contactos indicados y acepto participar voluntariamente en este registro de retroalimentación del piloto.",
+    "final_note": "Esta autorización cubre el registro y análisis de sus observaciones para la tesis y un eventual artículo, conforme al consentimiento. No autoriza nuevas pruebas ni publicación de formularios identificados."
+  }
+}

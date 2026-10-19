@@ -28,6 +28,9 @@ async function load() {
   try {
     const config = await request(new URL('../api/config', root));
     schema = config.schema;
+    document.querySelector('h1').textContent=config.settings.title;
+    document.title=config.settings.title+' · Administración';
+    $('#interest').closest('label').hidden=config.settings.kind==='pilot_feedback';
     records = await request(new URL('records', root));
     populate('#institution', records.map(record => record.institution), 'Todas');
     populate('#version', records.map(record => record.version), 'Todas');

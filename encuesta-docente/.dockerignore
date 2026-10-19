@@ -6,3 +6,5 @@
 !settings.json
 !public/
 !public/**
+!feedback/
+!feedback/**
