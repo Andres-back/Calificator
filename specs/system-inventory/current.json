@@ -379,7 +379,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "13af1d8067a6029035e7be977e5b2b9a7e146a1b52fa2c9696d43fa9d0e5b387",
+  "source_digest": "32ff25ec9e4a05abb4b3e12b0a4f36d0fcee1d13c470a3088561ef1289abd5ab",
   "surfaces": [
     {
       "actors": [
@@ -444,6 +444,12 @@
           "reference": "DELETE:/admin/roles/{role_id}",
           "status": "direct",
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "DELETE:/admin/roles/{role_id}",
+          "status": "direct",
+          "test_path": "frontend/src/config/nav.test.ts"
         },
         {
           "level": "unit",
@@ -707,6 +713,12 @@
           "level": "e2e",
           "reference": "DELETE:/evaluaciones/{evaluacion_id}",
           "status": "direct",
+          "test_path": "frontend/e2e/resources-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "DELETE:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
           "test_path": "frontend/e2e/roster-import.spec.ts"
         },
         {
@@ -913,6 +925,12 @@
           "level": "e2e",
           "reference": "DELETE:/herramientas/{material_id}",
           "status": "direct",
+          "test_path": "frontend/e2e/resources-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "DELETE:/herramientas/{material_id}",
+          "status": "direct",
           "test_path": "frontend/e2e/student-activity-delivery.spec.ts"
         },
         {
@@ -937,6 +955,12 @@
           "level": "unit",
           "reference": "DELETE:/herramientas/{material_id}",
           "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/DetailPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "DELETE:/herramientas/{material_id}",
+          "status": "direct",
           "test_path": "frontend/src/modules/herramientas/ListPage.test.tsx"
         },
         {
@@ -956,6 +980,12 @@
           "reference": "DELETE:/herramientas/{material_id}",
           "status": "direct",
           "test_path": "frontend/src/modules/herramientas/api.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "DELETE:/herramientas/{material_id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/resourcePresentationModel.test.ts"
         },
         {
           "level": "unit",
@@ -1745,6 +1775,12 @@
           "reference": "GET:/admin/mail/config",
           "status": "direct",
           "test_path": "backend/tests/integration/test_password_recovery_api.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/admin/mail/config",
+          "status": "direct",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
         }
       ]
     },
@@ -1773,6 +1809,12 @@
           "reference": "GET:/admin/mail/recovery-status",
           "status": "domain",
           "test_path": "backend/tests/integration/test_admin_mail_config.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/admin/mail/recovery-status",
+          "status": "direct",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
         }
       ]
     },
@@ -1839,6 +1881,12 @@
           "reference": "GET:/admin/roles",
           "status": "direct",
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/admin/roles",
+          "status": "direct",
+          "test_path": "frontend/src/config/nav.test.ts"
         },
         {
           "level": "unit",
@@ -1911,6 +1959,12 @@
           "reference": "GET:/admin/roles/{role_id}",
           "status": "direct",
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/admin/roles/{role_id}",
+          "status": "direct",
+          "test_path": "frontend/src/config/nav.test.ts"
         },
         {
           "level": "unit",
@@ -2875,6 +2929,12 @@
           "level": "e2e",
           "reference": "GET:/auth/me",
           "status": "direct",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/auth/me",
+          "status": "direct",
           "test_path": "frontend/e2e/auth-navigation.spec.ts"
         },
         {
@@ -2918,6 +2978,12 @@
           "reference": "GET:/auth/me",
           "status": "direct",
           "test_path": "frontend/e2e/resources-creation.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/auth/me",
+          "status": "direct",
+          "test_path": "frontend/e2e/resources-responsive.spec.ts"
         },
         {
           "level": "e2e",
@@ -3908,6 +3974,12 @@
           "level": "e2e",
           "reference": "GET:/evaluaciones/{evaluacion_id}",
           "status": "direct",
+          "test_path": "frontend/e2e/resources-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
           "test_path": "frontend/e2e/roster-import.spec.ts"
         },
         {
@@ -4565,6 +4637,12 @@
           "level": "e2e",
           "reference": "GET:/herramientas",
           "status": "direct",
+          "test_path": "frontend/e2e/resources-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/herramientas",
+          "status": "direct",
           "test_path": "frontend/e2e/student-activity-delivery.spec.ts"
         },
         {
@@ -4589,6 +4667,12 @@
           "level": "unit",
           "reference": "GET:/herramientas",
           "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/DetailPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/herramientas",
+          "status": "direct",
           "test_path": "frontend/src/modules/herramientas/ListPage.test.tsx"
         },
         {
@@ -4608,6 +4692,12 @@
           "reference": "GET:/herramientas",
           "status": "direct",
           "test_path": "frontend/src/modules/herramientas/api.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/herramientas",
+          "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/resourcePresentationModel.test.ts"
         },
         {
           "level": "unit",
@@ -4814,6 +4904,12 @@
           "level": "e2e",
           "reference": "GET:/herramientas/{material_id}",
           "status": "direct",
+          "test_path": "frontend/e2e/resources-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/herramientas/{material_id}",
+          "status": "direct",
           "test_path": "frontend/e2e/student-activity-delivery.spec.ts"
         },
         {
@@ -4838,6 +4934,12 @@
           "level": "unit",
           "reference": "GET:/herramientas/{material_id}",
           "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/DetailPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/herramientas/{material_id}",
+          "status": "direct",
           "test_path": "frontend/src/modules/herramientas/ListPage.test.tsx"
         },
         {
@@ -4857,6 +4959,12 @@
           "reference": "GET:/herramientas/{material_id}",
           "status": "direct",
           "test_path": "frontend/src/modules/herramientas/api.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/herramientas/{material_id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/resourcePresentationModel.test.ts"
         },
         {
           "level": "unit",
@@ -5272,6 +5380,12 @@
           "test_path": "frontend/e2e/materia-queue-mobile.spec.ts"
         },
         {
+          "level": "e2e",
+          "reference": "GET:/jobs/pendientes",
+          "status": "direct",
+          "test_path": "frontend/e2e/resources-responsive.spec.ts"
+        },
+        {
           "level": "unit",
           "reference": "GET:/jobs/pendientes",
           "status": "direct",
@@ -5330,6 +5444,12 @@
           "reference": "GET:/jobs/{job_id}",
           "status": "direct",
           "test_path": "frontend/e2e/mock/grading-review.mock.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/jobs/{job_id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/resources-responsive.spec.ts"
         },
         {
           "level": "unit",
@@ -5530,6 +5650,12 @@
           "level": "e2e",
           "reference": "GET:/materias",
           "status": "direct",
+          "test_path": "frontend/e2e/resources-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/materias",
+          "status": "direct",
           "test_path": "frontend/e2e/roster-import.spec.ts"
         },
         {
@@ -5614,7 +5740,19 @@
           "level": "unit",
           "reference": "GET:/materias",
           "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/DetailPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias",
+          "status": "direct",
           "test_path": "frontend/src/modules/herramientas/forms/base.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias",
+          "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/resourcePresentationModel.test.ts"
         },
         {
           "level": "unit",
@@ -5785,6 +5923,12 @@
           "level": "e2e",
           "reference": "GET:/materias/{materia_id}",
           "status": "direct",
+          "test_path": "frontend/e2e/resources-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/materias/{materia_id}",
+          "status": "direct",
           "test_path": "frontend/e2e/roster-import.spec.ts"
         },
         {
@@ -5869,7 +6013,19 @@
           "level": "unit",
           "reference": "GET:/materias/{materia_id}",
           "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/DetailPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias/{materia_id}",
+          "status": "direct",
           "test_path": "frontend/src/modules/herramientas/forms/base.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias/{materia_id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/resourcePresentationModel.test.ts"
         },
         {
           "level": "unit",
@@ -7109,6 +7265,12 @@
           "level": "e2e",
           "reference": "GET:/users/me",
           "status": "direct",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/users/me",
+          "status": "direct",
           "test_path": "frontend/e2e/auth-navigation.spec.ts"
         },
         {
@@ -7152,6 +7314,12 @@
           "reference": "GET:/users/me",
           "status": "direct",
           "test_path": "frontend/e2e/resources-creation.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/users/me",
+          "status": "direct",
+          "test_path": "frontend/e2e/resources-responsive.spec.ts"
         },
         {
           "level": "e2e",
@@ -7259,6 +7427,12 @@
           "level": "e2e",
           "reference": "GET:/users/me/authorization",
           "status": "direct",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/users/me/authorization",
+          "status": "direct",
           "test_path": "frontend/e2e/auth-navigation.spec.ts"
         },
         {
@@ -7302,6 +7476,12 @@
           "reference": "GET:/users/me/authorization",
           "status": "direct",
           "test_path": "frontend/e2e/resources-creation.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/users/me/authorization",
+          "status": "direct",
+          "test_path": "frontend/e2e/resources-responsive.spec.ts"
         },
         {
           "level": "e2e",
@@ -7840,6 +8020,12 @@
           "reference": "PATCH:/admin/roles/{role_id}",
           "status": "direct",
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/admin/roles/{role_id}",
+          "status": "direct",
+          "test_path": "frontend/src/config/nav.test.ts"
         },
         {
           "level": "unit",
@@ -8387,6 +8573,12 @@
           "level": "e2e",
           "reference": "PATCH:/evaluaciones/{evaluacion_id}",
           "status": "direct",
+          "test_path": "frontend/e2e/resources-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
           "test_path": "frontend/e2e/roster-import.spec.ts"
         },
         {
@@ -8699,6 +8891,12 @@
           "level": "e2e",
           "reference": "PATCH:/herramientas/{material_id}",
           "status": "direct",
+          "test_path": "frontend/e2e/resources-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/herramientas/{material_id}",
+          "status": "direct",
           "test_path": "frontend/e2e/student-activity-delivery.spec.ts"
         },
         {
@@ -8723,6 +8921,12 @@
           "level": "unit",
           "reference": "PATCH:/herramientas/{material_id}",
           "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/DetailPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/herramientas/{material_id}",
+          "status": "direct",
           "test_path": "frontend/src/modules/herramientas/ListPage.test.tsx"
         },
         {
@@ -8742,6 +8946,12 @@
           "reference": "PATCH:/herramientas/{material_id}",
           "status": "direct",
           "test_path": "frontend/src/modules/herramientas/api.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/herramientas/{material_id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/resourcePresentationModel.test.ts"
         },
         {
           "level": "unit",
@@ -9006,6 +9216,12 @@
           "level": "e2e",
           "reference": "PATCH:/materias/{materia_id}",
           "status": "direct",
+          "test_path": "frontend/e2e/resources-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/materias/{materia_id}",
+          "status": "direct",
           "test_path": "frontend/e2e/roster-import.spec.ts"
         },
         {
@@ -9090,7 +9306,19 @@
           "level": "unit",
           "reference": "PATCH:/materias/{materia_id}",
           "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/DetailPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/materias/{materia_id}",
+          "status": "direct",
           "test_path": "frontend/src/modules/herramientas/forms/base.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/materias/{materia_id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/resourcePresentationModel.test.ts"
         },
         {
           "level": "unit",
@@ -9330,6 +9558,12 @@
           "level": "e2e",
           "reference": "PATCH:/users/me",
           "status": "direct",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/users/me",
+          "status": "direct",
           "test_path": "frontend/e2e/auth-navigation.spec.ts"
         },
         {
@@ -9373,6 +9607,12 @@
           "reference": "PATCH:/users/me",
           "status": "direct",
           "test_path": "frontend/e2e/resources-creation.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/users/me",
+          "status": "direct",
+          "test_path": "frontend/e2e/resources-responsive.spec.ts"
         },
         {
           "level": "e2e",
@@ -9745,6 +9985,12 @@
         {
           "level": "unit",
           "reference": "POST:/admin/roles",
+          "status": "direct",
+          "test_path": "frontend/src/config/nav.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/admin/roles",
           "status": "domain",
           "test_path": "frontend/src/lib/authorization.test.ts"
         }
@@ -9917,6 +10163,12 @@
           "level": "e2e",
           "reference": "POST:/analytics/evento",
           "status": "direct",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/analytics/evento",
+          "status": "direct",
           "test_path": "frontend/e2e/camera-capture.spec.ts"
         },
         {
@@ -9936,6 +10188,12 @@
           "reference": "POST:/analytics/evento",
           "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/analytics/evento",
+          "status": "direct",
+          "test_path": "frontend/e2e/resources-responsive.spec.ts"
         },
         {
           "level": "e2e",
@@ -10806,6 +11064,12 @@
           "reference": "POST:/auth/refresh",
           "status": "direct",
           "test_path": "frontend/e2e/resources-creation.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/auth/refresh",
+          "status": "direct",
+          "test_path": "frontend/e2e/resources-responsive.spec.ts"
         },
         {
           "level": "e2e",
@@ -11906,6 +12170,12 @@
           "reference": "POST:/evaluaciones",
           "status": "direct",
           "test_path": "frontend/e2e/resources-creation.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/evaluaciones",
+          "status": "direct",
+          "test_path": "frontend/e2e/resources-responsive.spec.ts"
         },
         {
           "level": "e2e",
@@ -14024,6 +14294,12 @@
           "level": "e2e",
           "reference": "POST:/materias",
           "status": "direct",
+          "test_path": "frontend/e2e/resources-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/materias",
+          "status": "direct",
           "test_path": "frontend/e2e/roster-import.spec.ts"
         },
         {
@@ -14108,7 +14384,19 @@
           "level": "unit",
           "reference": "POST:/materias",
           "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/DetailPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/materias",
+          "status": "direct",
           "test_path": "frontend/src/modules/herramientas/forms/base.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/materias",
+          "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/resourcePresentationModel.test.ts"
         },
         {
           "level": "unit",
@@ -15291,6 +15579,12 @@
           "reference": "PUT:/admin/mail/config",
           "status": "direct",
           "test_path": "backend/tests/integration/test_password_recovery_api.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "PUT:/admin/mail/config",
+          "status": "direct",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
         }
       ]
     },
@@ -16085,6 +16379,12 @@
           "level": "e2e",
           "reference": "/",
           "status": "direct",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/",
+          "status": "direct",
           "test_path": "frontend/e2e/auth-navigation.spec.ts"
         },
         {
@@ -16158,6 +16458,12 @@
           "reference": "/",
           "status": "direct",
           "test_path": "frontend/e2e/resources-creation.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "frontend/e2e/resources-responsive.spec.ts"
         },
         {
           "level": "e2e",
@@ -16278,6 +16584,12 @@
           "reference": "/",
           "status": "direct",
           "test_path": "frontend/src/components/xali/XaliMascot.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "frontend/src/config/nav.test.ts"
         },
         {
           "level": "unit",
@@ -16649,6 +16961,12 @@
           "level": "unit",
           "reference": "/",
           "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/DetailPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
           "test_path": "frontend/src/modules/herramientas/ListPage.test.tsx"
         },
         {
@@ -16679,7 +16997,19 @@
           "level": "unit",
           "reference": "/",
           "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/components/ResourceEditorPanel.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
           "test_path": "frontend/src/modules/herramientas/forms/base.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/resourcePresentationModel.test.ts"
         },
         {
           "level": "unit",
@@ -17026,6 +17356,12 @@
           "level": "e2e",
           "reference": "/app",
           "status": "direct",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app",
+          "status": "direct",
           "test_path": "frontend/e2e/auth-navigation.spec.ts"
         },
         {
@@ -17092,6 +17428,12 @@
           "level": "e2e",
           "reference": "/app",
           "status": "direct",
+          "test_path": "frontend/e2e/resources-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app",
+          "status": "direct",
           "test_path": "frontend/e2e/roster-import.spec.ts"
         },
         {
@@ -17152,6 +17494,12 @@
           "level": "unit",
           "reference": "/app",
           "status": "direct",
+          "test_path": "frontend/src/config/nav.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "/app",
+          "status": "direct",
           "test_path": "frontend/src/config/seoAssets.test.ts"
         },
         {
@@ -17206,7 +17554,19 @@
           "level": "unit",
           "reference": "/app",
           "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/DetailPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/app",
+          "status": "direct",
           "test_path": "frontend/src/modules/herramientas/StudentResourcePage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/app",
+          "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/resourcePresentationModel.test.ts"
         },
         {
           "level": "unit",
@@ -17225,6 +17585,12 @@
           "reference": "/app",
           "status": "direct",
           "test_path": "frontend/src/modules/materias/MateriaEvaluaciones.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/app",
+          "status": "direct",
+          "test_path": "frontend/src/modules/materias/MateriaRecursos.test.tsx"
         },
         {
           "level": "unit",
@@ -17729,6 +18095,12 @@
         {
           "level": "unit",
           "reference": "/app/admin/correo",
+          "status": "direct",
+          "test_path": "frontend/src/config/nav.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/admin/correo",
           "status": "domain",
           "test_path": "frontend/src/modules/admin/AdminAIConfigPage.test.tsx"
         },
@@ -17844,6 +18216,12 @@
           "reference": "/app/admin/roles",
           "status": "domain",
           "test_path": "frontend/e2e/teacher-ai-configuration.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/admin/roles",
+          "status": "direct",
+          "test_path": "frontend/src/config/nav.test.ts"
         },
         {
           "level": "unit",
@@ -17969,6 +18347,12 @@
           "reference": "/app/admin/usuarios",
           "status": "direct",
           "test_path": "frontend/src/components/seo/RouteMetadata.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/admin/usuarios",
+          "status": "direct",
+          "test_path": "frontend/src/config/nav.test.ts"
         },
         {
           "level": "unit",
@@ -19083,6 +19467,12 @@
         {
           "level": "e2e",
           "reference": "/app/herramientas",
+          "status": "direct",
+          "test_path": "frontend/e2e/resources-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app/herramientas",
           "status": "domain",
           "test_path": "frontend/e2e/teacher-ai-configuration.spec.ts"
         },
@@ -19097,6 +19487,24 @@
           "reference": "/app/herramientas",
           "status": "domain",
           "test_path": "frontend/src/modules/admin/AdminAIConfigPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/herramientas",
+          "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/DetailPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/herramientas",
+          "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/resourcePresentationModel.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/herramientas",
+          "status": "direct",
+          "test_path": "frontend/src/modules/materias/MateriaRecursos.test.tsx"
         },
         {
           "level": "unit",
@@ -19215,6 +19623,12 @@
         {
           "level": "e2e",
           "reference": "/app/herramientas/{id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/resources-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app/herramientas/{id}",
           "status": "domain",
           "test_path": "frontend/e2e/teacher-ai-configuration.spec.ts"
         },
@@ -19229,6 +19643,24 @@
           "reference": "/app/herramientas/{id}",
           "status": "domain",
           "test_path": "frontend/src/modules/admin/AdminAIConfigPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/herramientas/{id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/DetailPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/herramientas/{id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/resourcePresentationModel.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/herramientas/{id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/materias/MateriaRecursos.test.tsx"
         },
         {
           "level": "unit",
@@ -19371,6 +19803,12 @@
           "level": "e2e",
           "reference": "/app/materias",
           "status": "direct",
+          "test_path": "frontend/e2e/resources-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app/materias",
+          "status": "direct",
           "test_path": "frontend/e2e/roster-import.spec.ts"
         },
         {
@@ -19426,6 +19864,12 @@
           "reference": "/app/materias",
           "status": "direct",
           "test_path": "frontend/src/modules/dashboard/DashboardPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/materias",
+          "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/resourcePresentationModel.test.ts"
         },
         {
           "level": "unit",
@@ -19592,6 +20036,12 @@
           "level": "e2e",
           "reference": "/app/materias/{id}",
           "status": "direct",
+          "test_path": "frontend/e2e/resources-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app/materias/{id}",
+          "status": "direct",
           "test_path": "frontend/e2e/roster-import.spec.ts"
         },
         {
@@ -19647,6 +20097,12 @@
           "reference": "/app/materias/{id}",
           "status": "direct",
           "test_path": "frontend/src/modules/dashboard/DashboardPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/materias/{id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/resourcePresentationModel.test.ts"
         },
         {
           "level": "unit",
@@ -20265,99 +20721,21 @@
       "kind": "frontend_route",
       "owner_spec": "006-recursos-actividades",
       "signature": "/app/materias/{id}/recursos",
-      "source_line": 36,
-      "source_path": "frontend/src/config/routes.ts",
+      "source_line": 67,
+      "source_path": "frontend/src/modules/materias/MateriaRecursos.tsx",
       "states": [],
       "tests": [
         {
           "level": "unit",
           "reference": "/app/materias/{id}/recursos",
           "status": "domain",
-          "test_path": "backend/tests/integration/test_admin_mail_config.py"
+          "test_path": "backend/tests/unit/test_materias_service.py"
         },
         {
           "level": "unit",
           "reference": "/app/materias/{id}/recursos",
           "status": "domain",
-          "test_path": "backend/tests/integration/test_ai_configuration_api.py"
-        },
-        {
-          "level": "unit",
-          "reference": "/app/materias/{id}/recursos",
-          "status": "domain",
-          "test_path": "backend/tests/integration/test_ai_configuration_concurrency.py"
-        },
-        {
-          "level": "unit",
-          "reference": "/app/materias/{id}/recursos",
-          "status": "domain",
-          "test_path": "backend/tests/integration/test_ai_configuration_migration.py"
-        },
-        {
-          "level": "unit",
-          "reference": "/app/materias/{id}/recursos",
-          "status": "domain",
-          "test_path": "backend/tests/integration/test_ai_configuration_secret_safety.py"
-        },
-        {
-          "level": "unit",
-          "reference": "/app/materias/{id}/recursos",
-          "status": "domain",
-          "test_path": "backend/tests/integration/test_ai_job_configuration_snapshot.py"
-        },
-        {
-          "level": "unit",
-          "reference": "/app/materias/{id}/recursos",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_ai_configuration_resolver.py"
-        },
-        {
-          "level": "unit",
-          "reference": "/app/materias/{id}/recursos",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_mail_configuration.py"
-        },
-        {
-          "level": "unit",
-          "reference": "/app/materias/{id}/recursos",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_nginx_security_config.py"
-        },
-        {
-          "level": "unit",
-          "reference": "/app/materias/{id}/recursos",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_production_config.py"
-        },
-        {
-          "level": "unit",
-          "reference": "/app/materias/{id}/recursos",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_worker_ai_config.py"
-        },
-        {
-          "level": "e2e",
-          "reference": "/app/materias/{id}/recursos",
-          "status": "domain",
-          "test_path": "frontend/e2e/accessibility/teacher-ai-configuration.a11y.spec.ts"
-        },
-        {
-          "level": "e2e",
-          "reference": "/app/materias/{id}/recursos",
-          "status": "domain",
-          "test_path": "frontend/e2e/teacher-ai-configuration.spec.ts"
-        },
-        {
-          "level": "unit",
-          "reference": "/app/materias/{id}/recursos",
-          "status": "domain",
-          "test_path": "frontend/src/modules/admin/AdminAIConfigPage.test.tsx"
-        },
-        {
-          "level": "unit",
-          "reference": "/app/materias/{id}/recursos",
-          "status": "domain",
-          "test_path": "frontend/src/modules/profesor_ai/TeacherAIConfigPage.test.tsx"
+          "test_path": "frontend/src/modules/materias/MateriasListPage.test.tsx"
         }
       ]
     },
@@ -20740,6 +21118,12 @@
           "reference": "/app/recursos/{id}",
           "status": "direct",
           "test_path": "frontend/src/modules/herramientas/StudentResourcePage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/recursos/{id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/materias/MateriaRecursos.test.tsx"
         },
         {
           "level": "unit",
@@ -21998,6 +22382,18 @@
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
         },
         {
+          "level": "e2e",
+          "reference": "DELETE:/admin/roles/{id}",
+          "status": "domain",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "DELETE:/admin/roles/{id}",
+          "status": "direct",
+          "test_path": "frontend/src/config/nav.test.ts"
+        },
+        {
           "level": "unit",
           "reference": "DELETE:/admin/roles/{id}",
           "status": "domain",
@@ -22104,6 +22500,12 @@
           "reference": "DELETE:/admin/users/{id}",
           "status": "direct",
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "DELETE:/admin/users/{id}",
+          "status": "domain",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
         },
         {
           "level": "unit",
@@ -22331,6 +22733,12 @@
           "level": "e2e",
           "reference": "DELETE:/evaluaciones/{id}",
           "status": "direct",
+          "test_path": "frontend/e2e/resources-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "DELETE:/evaluaciones/{id}",
+          "status": "direct",
           "test_path": "frontend/e2e/roster-import.spec.ts"
         },
         {
@@ -22474,7 +22882,7 @@
       "kind": "frontend_call",
       "owner_spec": "006-recursos-actividades",
       "signature": "DELETE:/herramientas/{id}",
-      "source_line": 44,
+      "source_line": 45,
       "source_path": "frontend/src/modules/herramientas/api.ts",
       "states": [],
       "tests": [
@@ -22536,6 +22944,12 @@
           "level": "e2e",
           "reference": "DELETE:/herramientas/{id}",
           "status": "direct",
+          "test_path": "frontend/e2e/resources-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "DELETE:/herramientas/{id}",
+          "status": "direct",
           "test_path": "frontend/e2e/student-activity-delivery.spec.ts"
         },
         {
@@ -22560,6 +22974,12 @@
           "level": "unit",
           "reference": "DELETE:/herramientas/{id}",
           "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/DetailPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "DELETE:/herramientas/{id}",
+          "status": "direct",
           "test_path": "frontend/src/modules/herramientas/ListPage.test.tsx"
         },
         {
@@ -22579,6 +22999,12 @@
           "reference": "DELETE:/herramientas/{id}",
           "status": "direct",
           "test_path": "frontend/src/modules/herramientas/api.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "DELETE:/herramientas/{id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/resourcePresentationModel.test.ts"
         },
         {
           "level": "unit",
@@ -22953,6 +23379,12 @@
         {
           "level": "e2e",
           "reference": "GET:/admin/ai-audit",
+          "status": "domain",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/admin/ai-audit",
           "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
         },
@@ -23061,6 +23493,12 @@
         {
           "level": "e2e",
           "reference": "GET:/admin/ai-config-hash",
+          "status": "domain",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/admin/ai-config-hash",
           "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
         },
@@ -23165,6 +23603,12 @@
           "reference": "GET:/admin/ai-control-center/usage",
           "status": "domain",
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/admin/ai-control-center/usage",
+          "status": "domain",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
         },
         {
           "level": "e2e",
@@ -23279,6 +23723,12 @@
           "reference": "GET:/admin/ai-control-center",
           "status": "domain",
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/admin/ai-control-center",
+          "status": "domain",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
         },
         {
           "level": "e2e",
@@ -23403,6 +23853,12 @@
         {
           "level": "e2e",
           "reference": "GET:/admin/ai-settings",
+          "status": "domain",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/admin/ai-settings",
           "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
         },
@@ -23517,6 +23973,12 @@
         {
           "level": "e2e",
           "reference": "GET:/admin/ai-usage",
+          "status": "domain",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/admin/ai-usage",
           "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
         },
@@ -23623,6 +24085,12 @@
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
         },
         {
+          "level": "e2e",
+          "reference": "GET:/admin/authorization/audit",
+          "status": "domain",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
+        },
+        {
           "level": "unit",
           "reference": "GET:/admin/authorization/audit",
           "status": "domain",
@@ -23723,6 +24191,12 @@
           "reference": "GET:/admin/authorization/modules",
           "status": "direct",
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/admin/authorization/modules",
+          "status": "domain",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
         },
         {
           "level": "unit",
@@ -23833,6 +24307,12 @@
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
         },
         {
+          "level": "e2e",
+          "reference": "GET:/admin/mail/config",
+          "status": "direct",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
+        },
+        {
           "level": "unit",
           "reference": "GET:/admin/mail/config",
           "status": "domain",
@@ -23935,6 +24415,12 @@
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
         },
         {
+          "level": "e2e",
+          "reference": "GET:/admin/mail/recovery-status",
+          "status": "direct",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
+        },
+        {
           "level": "unit",
           "reference": "GET:/admin/mail/recovery-status",
           "status": "domain",
@@ -24035,6 +24521,18 @@
           "reference": "GET:/admin/roles",
           "status": "direct",
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/admin/roles",
+          "status": "domain",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/admin/roles",
+          "status": "direct",
+          "test_path": "frontend/src/config/nav.test.ts"
         },
         {
           "level": "unit",
@@ -24145,6 +24643,12 @@
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
         },
         {
+          "level": "e2e",
+          "reference": "GET:/admin/users/{id}",
+          "status": "domain",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
+        },
+        {
           "level": "unit",
           "reference": "GET:/admin/users/{id}",
           "status": "domain",
@@ -24251,6 +24755,12 @@
           "reference": "GET:/admin/users",
           "status": "direct",
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/admin/users",
+          "status": "domain",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
         },
         {
           "level": "unit",
@@ -24850,6 +25360,12 @@
           "level": "e2e",
           "reference": "GET:/auth/me",
           "status": "direct",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/auth/me",
+          "status": "direct",
           "test_path": "frontend/e2e/auth-navigation.spec.ts"
         },
         {
@@ -24893,6 +25409,12 @@
           "reference": "GET:/auth/me",
           "status": "direct",
           "test_path": "frontend/e2e/resources-creation.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/auth/me",
+          "status": "direct",
+          "test_path": "frontend/e2e/resources-responsive.spec.ts"
         },
         {
           "level": "e2e",
@@ -25768,6 +26290,12 @@
           "level": "e2e",
           "reference": "GET:/evaluaciones/{evaluacionId}/{format}",
           "status": "direct",
+          "test_path": "frontend/e2e/resources-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/evaluaciones/{evaluacionId}/{format}",
+          "status": "direct",
           "test_path": "frontend/e2e/roster-import.spec.ts"
         },
         {
@@ -26058,6 +26586,12 @@
           "level": "e2e",
           "reference": "GET:/evaluaciones/{id}",
           "status": "direct",
+          "test_path": "frontend/e2e/resources-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/evaluaciones/{id}",
+          "status": "direct",
           "test_path": "frontend/e2e/roster-import.spec.ts"
         },
         {
@@ -26256,7 +26790,7 @@
       "kind": "frontend_call",
       "owner_spec": "006-recursos-actividades",
       "signature": "GET:/herramientas/materias/{materiaId}/recursos",
-      "source_line": 29,
+      "source_line": 30,
       "source_path": "frontend/src/modules/herramientas/api.ts",
       "states": [],
       "tests": [
@@ -26299,7 +26833,7 @@
       "kind": "frontend_call",
       "owner_spec": "006-recursos-actividades",
       "signature": "GET:/herramientas/{id}/evaluaciones",
-      "source_line": 98,
+      "source_line": 99,
       "source_path": "frontend/src/modules/herramientas/api.ts",
       "states": [],
       "tests": [
@@ -26342,7 +26876,7 @@
       "kind": "frontend_call",
       "owner_spec": "006-recursos-actividades",
       "signature": "GET:/herramientas/{id}",
-      "source_line": 34,
+      "source_line": 35,
       "source_path": "frontend/src/modules/herramientas/api.ts",
       "states": [],
       "tests": [
@@ -26404,6 +26938,12 @@
           "level": "e2e",
           "reference": "GET:/herramientas/{id}",
           "status": "direct",
+          "test_path": "frontend/e2e/resources-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/herramientas/{id}",
+          "status": "direct",
           "test_path": "frontend/e2e/student-activity-delivery.spec.ts"
         },
         {
@@ -26428,6 +26968,12 @@
           "level": "unit",
           "reference": "GET:/herramientas/{id}",
           "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/DetailPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/herramientas/{id}",
+          "status": "direct",
           "test_path": "frontend/src/modules/herramientas/ListPage.test.tsx"
         },
         {
@@ -26447,6 +26993,12 @@
           "reference": "GET:/herramientas/{id}",
           "status": "direct",
           "test_path": "frontend/src/modules/herramientas/api.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/herramientas/{id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/resourcePresentationModel.test.ts"
         },
         {
           "level": "unit",
@@ -26695,6 +27247,12 @@
           "test_path": "frontend/e2e/materia-queue-mobile.spec.ts"
         },
         {
+          "level": "e2e",
+          "reference": "GET:/jobs/pendientes",
+          "status": "direct",
+          "test_path": "frontend/e2e/resources-responsive.spec.ts"
+        },
+        {
           "level": "unit",
           "reference": "GET:/jobs/pendientes",
           "status": "domain",
@@ -26777,6 +27335,12 @@
           "test_path": "frontend/e2e/mock/grading-review.mock.spec.ts"
         },
         {
+          "level": "e2e",
+          "reference": "GET:/jobs/{jobId}",
+          "status": "direct",
+          "test_path": "frontend/e2e/resources-responsive.spec.ts"
+        },
+        {
           "level": "unit",
           "reference": "GET:/jobs/{jobId}",
           "status": "domain",
@@ -26845,6 +27409,12 @@
           "reference": "GET:/jobs/{jobId}",
           "status": "direct",
           "test_path": "frontend/e2e/mock/grading-review.mock.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/jobs/{jobId}",
+          "status": "direct",
+          "test_path": "frontend/e2e/resources-responsive.spec.ts"
         },
         {
           "level": "unit",
@@ -27008,6 +27578,12 @@
           "level": "e2e",
           "reference": "GET:/materias/{id}",
           "status": "direct",
+          "test_path": "frontend/e2e/resources-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/materias/{id}",
+          "status": "direct",
           "test_path": "frontend/e2e/roster-import.spec.ts"
         },
         {
@@ -27092,7 +27668,19 @@
           "level": "unit",
           "reference": "GET:/materias/{id}",
           "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/DetailPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias/{id}",
+          "status": "direct",
           "test_path": "frontend/src/modules/herramientas/forms/base.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias/{id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/resourcePresentationModel.test.ts"
         },
         {
           "level": "unit",
@@ -27530,6 +28118,12 @@
           "level": "e2e",
           "reference": "GET:/materias",
           "status": "direct",
+          "test_path": "frontend/e2e/resources-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/materias",
+          "status": "direct",
           "test_path": "frontend/e2e/roster-import.spec.ts"
         },
         {
@@ -27614,7 +28208,19 @@
           "level": "unit",
           "reference": "GET:/materias",
           "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/DetailPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias",
+          "status": "direct",
           "test_path": "frontend/src/modules/herramientas/forms/base.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias",
+          "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/resourcePresentationModel.test.ts"
         },
         {
           "level": "unit",
@@ -28100,6 +28706,12 @@
           "level": "e2e",
           "reference": "GET:/users/me/authorization",
           "status": "direct",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/users/me/authorization",
+          "status": "direct",
           "test_path": "frontend/e2e/auth-navigation.spec.ts"
         },
         {
@@ -28143,6 +28755,12 @@
           "reference": "GET:/users/me/authorization",
           "status": "direct",
           "test_path": "frontend/e2e/resources-creation.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/users/me/authorization",
+          "status": "direct",
+          "test_path": "frontend/e2e/resources-responsive.spec.ts"
         },
         {
           "level": "e2e",
@@ -28531,6 +29149,12 @@
         {
           "level": "e2e",
           "reference": "PATCH:/admin/ai-config",
+          "status": "domain",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/admin/ai-config",
           "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
         },
@@ -28643,6 +29267,12 @@
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
         },
         {
+          "level": "e2e",
+          "reference": "PATCH:/admin/ai-providers/{id}",
+          "status": "domain",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
+        },
+        {
           "level": "unit",
           "reference": "PATCH:/admin/ai-providers/{id}",
           "status": "domain",
@@ -28751,6 +29381,18 @@
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
         },
         {
+          "level": "e2e",
+          "reference": "PATCH:/admin/roles/{id}",
+          "status": "domain",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/admin/roles/{id}",
+          "status": "direct",
+          "test_path": "frontend/src/config/nav.test.ts"
+        },
+        {
           "level": "unit",
           "reference": "PATCH:/admin/roles/{id}",
           "status": "domain",
@@ -28851,6 +29493,12 @@
           "reference": "PATCH:/admin/users/{id}/solicitud-docente",
           "status": "domain",
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/admin/users/{id}/solicitud-docente",
+          "status": "domain",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
         },
         {
           "level": "unit",
@@ -28959,6 +29607,12 @@
           "reference": "PATCH:/admin/users/{id}",
           "status": "direct",
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/admin/users/{id}",
+          "status": "domain",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
         },
         {
           "level": "unit",
@@ -29418,6 +30072,12 @@
           "level": "e2e",
           "reference": "PATCH:/evaluaciones/{id}",
           "status": "direct",
+          "test_path": "frontend/e2e/resources-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/evaluaciones/{id}",
+          "status": "direct",
           "test_path": "frontend/e2e/roster-import.spec.ts"
         },
         {
@@ -29561,7 +30221,7 @@
       "kind": "frontend_call",
       "owner_spec": "006-recursos-actividades",
       "signature": "PATCH:/herramientas/{id}/visibilidad",
-      "source_line": 68,
+      "source_line": 69,
       "source_path": "frontend/src/modules/herramientas/api.ts",
       "states": [],
       "tests": [
@@ -29604,7 +30264,7 @@
       "kind": "frontend_call",
       "owner_spec": "006-recursos-actividades",
       "signature": "PATCH:/herramientas/{id}",
-      "source_line": 53,
+      "source_line": 54,
       "source_path": "frontend/src/modules/herramientas/api.ts",
       "states": [],
       "tests": [
@@ -29666,6 +30326,12 @@
           "level": "e2e",
           "reference": "PATCH:/herramientas/{id}",
           "status": "direct",
+          "test_path": "frontend/e2e/resources-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/herramientas/{id}",
+          "status": "direct",
           "test_path": "frontend/e2e/student-activity-delivery.spec.ts"
         },
         {
@@ -29690,6 +30356,12 @@
           "level": "unit",
           "reference": "PATCH:/herramientas/{id}",
           "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/DetailPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/herramientas/{id}",
+          "status": "direct",
           "test_path": "frontend/src/modules/herramientas/ListPage.test.tsx"
         },
         {
@@ -29709,6 +30381,12 @@
           "reference": "PATCH:/herramientas/{id}",
           "status": "direct",
           "test_path": "frontend/src/modules/herramientas/api.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/herramientas/{id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/resourcePresentationModel.test.ts"
         },
         {
           "level": "unit",
@@ -29899,6 +30577,12 @@
           "level": "e2e",
           "reference": "PATCH:/materias/{id}",
           "status": "direct",
+          "test_path": "frontend/e2e/resources-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/materias/{id}",
+          "status": "direct",
           "test_path": "frontend/e2e/roster-import.spec.ts"
         },
         {
@@ -29983,7 +30667,19 @@
           "level": "unit",
           "reference": "PATCH:/materias/{id}",
           "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/DetailPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/materias/{id}",
+          "status": "direct",
           "test_path": "frontend/src/modules/herramientas/forms/base.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/materias/{id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/resourcePresentationModel.test.ts"
         },
         {
           "level": "unit",
@@ -30132,6 +30828,12 @@
           "level": "e2e",
           "reference": "PATCH:/users/me",
           "status": "direct",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/users/me",
+          "status": "direct",
           "test_path": "frontend/e2e/auth-navigation.spec.ts"
         },
         {
@@ -30175,6 +30877,12 @@
           "reference": "PATCH:/users/me",
           "status": "direct",
           "test_path": "frontend/e2e/resources-creation.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/users/me",
+          "status": "direct",
+          "test_path": "frontend/e2e/resources-responsive.spec.ts"
         },
         {
           "level": "e2e",
@@ -30325,6 +31033,12 @@
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
         },
         {
+          "level": "e2e",
+          "reference": "POST:/admin/ai-cache/clear",
+          "status": "domain",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
+        },
+        {
           "level": "unit",
           "reference": "POST:/admin/ai-cache/clear",
           "status": "domain",
@@ -30425,6 +31139,12 @@
           "reference": "POST:/admin/ai-control-center/validate",
           "status": "domain",
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/admin/ai-control-center/validate",
+          "status": "domain",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
         },
         {
           "level": "unit",
@@ -30529,6 +31249,12 @@
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
         },
         {
+          "level": "e2e",
+          "reference": "POST:/admin/ai-providers/{providerId}/models/refresh",
+          "status": "domain",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
+        },
+        {
           "level": "unit",
           "reference": "POST:/admin/ai-providers/{providerId}/models/refresh",
           "status": "domain",
@@ -30629,6 +31355,12 @@
           "reference": "POST:/admin/ai-providers/{providerId}/test",
           "status": "domain",
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/admin/ai-providers/{providerId}/test",
+          "status": "domain",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
         },
         {
           "level": "unit",
@@ -30733,6 +31465,12 @@
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
         },
         {
+          "level": "e2e",
+          "reference": "POST:/admin/ai-settings/restore-defaults",
+          "status": "domain",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
+        },
+        {
           "level": "unit",
           "reference": "POST:/admin/ai-settings/restore-defaults",
           "status": "domain",
@@ -30833,6 +31571,12 @@
           "reference": "POST:/admin/ai-settings/restore-previous",
           "status": "domain",
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/admin/ai-settings/restore-previous",
+          "status": "domain",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
         },
         {
           "level": "unit",
@@ -30943,6 +31687,12 @@
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
         },
         {
+          "level": "e2e",
+          "reference": "POST:/admin/mail/test",
+          "status": "domain",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
+        },
+        {
           "level": "unit",
           "reference": "POST:/admin/mail/test",
           "status": "domain",
@@ -31045,6 +31795,18 @@
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
         },
         {
+          "level": "e2e",
+          "reference": "POST:/admin/roles/{id}",
+          "status": "domain",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/admin/roles/{id}",
+          "status": "direct",
+          "test_path": "frontend/src/config/nav.test.ts"
+        },
+        {
           "level": "unit",
           "reference": "POST:/admin/roles/{id}",
           "status": "domain",
@@ -31145,6 +31907,18 @@
           "reference": "POST:/admin/roles",
           "status": "direct",
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/admin/roles",
+          "status": "domain",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/admin/roles",
+          "status": "direct",
+          "test_path": "frontend/src/config/nav.test.ts"
         },
         {
           "level": "unit",
@@ -31255,6 +32029,12 @@
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
         },
         {
+          "level": "e2e",
+          "reference": "POST:/admin/users",
+          "status": "domain",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
+        },
+        {
           "level": "unit",
           "reference": "POST:/admin/users",
           "status": "domain",
@@ -31319,6 +32099,12 @@
           "level": "e2e",
           "reference": "POST:/analytics/evento",
           "status": "direct",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/analytics/evento",
+          "status": "direct",
           "test_path": "frontend/e2e/camera-capture.spec.ts"
         },
         {
@@ -31338,6 +32124,12 @@
           "reference": "POST:/analytics/evento",
           "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/analytics/evento",
+          "status": "direct",
+          "test_path": "frontend/e2e/resources-responsive.spec.ts"
         },
         {
           "level": "e2e",
@@ -32956,6 +33748,12 @@
           "level": "e2e",
           "reference": "POST:/evaluaciones",
           "status": "direct",
+          "test_path": "frontend/e2e/resources-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/evaluaciones",
+          "status": "direct",
           "test_path": "frontend/e2e/roster-import.spec.ts"
         },
         {
@@ -33117,7 +33915,7 @@
       "kind": "frontend_call",
       "owner_spec": "006-recursos-actividades",
       "signature": "POST:/herramientas/{endpoint}",
-      "source_line": 39,
+      "source_line": 40,
       "source_path": "frontend/src/modules/herramientas/api.ts",
       "states": [],
       "tests": [
@@ -33179,6 +33977,12 @@
           "level": "e2e",
           "reference": "POST:/herramientas/{endpoint}",
           "status": "direct",
+          "test_path": "frontend/e2e/resources-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/herramientas/{endpoint}",
+          "status": "direct",
           "test_path": "frontend/e2e/student-activity-delivery.spec.ts"
         },
         {
@@ -33198,6 +34002,12 @@
           "reference": "POST:/herramientas/{endpoint}",
           "status": "direct",
           "test_path": "frontend/src/modules/dashboard/DashboardPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/herramientas/{endpoint}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/DetailPage.test.tsx"
         },
         {
           "level": "unit",
@@ -33227,6 +34037,12 @@
           "level": "unit",
           "reference": "POST:/herramientas/{endpoint}",
           "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/resourcePresentationModel.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/herramientas/{endpoint}",
+          "status": "direct",
           "test_path": "frontend/src/modules/materias/MateriaRecursos.test.tsx"
         }
       ]
@@ -33250,7 +34066,7 @@
       "kind": "frontend_call",
       "owner_spec": "006-recursos-actividades",
       "signature": "POST:/herramientas/{id}/asignar-apoyo",
-      "source_line": 58,
+      "source_line": 59,
       "source_path": "frontend/src/modules/herramientas/api.ts",
       "states": [],
       "tests": [
@@ -33293,7 +34109,7 @@
       "kind": "frontend_call",
       "owner_spec": "006-recursos-actividades",
       "signature": "POST:/herramientas/{id}/convertir-evaluacion",
-      "source_line": 93,
+      "source_line": 94,
       "source_path": "frontend/src/modules/herramientas/api.ts",
       "states": [],
       "tests": [
@@ -33336,7 +34152,7 @@
       "kind": "frontend_call",
       "owner_spec": "006-recursos-actividades",
       "signature": "POST:/herramientas/{id}/duplicar",
-      "source_line": 73,
+      "source_line": 74,
       "source_path": "frontend/src/modules/herramientas/api.ts",
       "states": [],
       "tests": [
@@ -33379,7 +34195,7 @@
       "kind": "frontend_call",
       "owner_spec": "006-recursos-actividades",
       "signature": "POST:/herramientas/{id}/retirar-apoyo",
-      "source_line": 63,
+      "source_line": 64,
       "source_path": "frontend/src/modules/herramientas/api.ts",
       "states": [],
       "tests": [
@@ -33526,6 +34342,12 @@
           "reference": "POST:/jobs/{jobId}",
           "status": "direct",
           "test_path": "frontend/e2e/mock/grading-review.mock.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/jobs/{jobId}",
+          "status": "direct",
+          "test_path": "frontend/e2e/resources-responsive.spec.ts"
         },
         {
           "level": "unit",
@@ -33825,6 +34647,12 @@
           "level": "e2e",
           "reference": "POST:/materias",
           "status": "direct",
+          "test_path": "frontend/e2e/resources-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/materias",
+          "status": "direct",
           "test_path": "frontend/e2e/roster-import.spec.ts"
         },
         {
@@ -33909,7 +34737,19 @@
           "level": "unit",
           "reference": "POST:/materias",
           "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/DetailPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/materias",
+          "status": "direct",
           "test_path": "frontend/src/modules/herramientas/forms/base.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/materias",
+          "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/resourcePresentationModel.test.ts"
         },
         {
           "level": "unit",
@@ -34610,6 +35450,12 @@
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
         },
         {
+          "level": "e2e",
+          "reference": "PUT:/admin/ai-control-center/publish",
+          "status": "domain",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
+        },
+        {
           "level": "unit",
           "reference": "PUT:/admin/ai-control-center/publish",
           "status": "domain",
@@ -34724,6 +35570,12 @@
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
         },
         {
+          "level": "e2e",
+          "reference": "PUT:/admin/ai-features",
+          "status": "domain",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
+        },
+        {
           "level": "unit",
           "reference": "PUT:/admin/ai-features",
           "status": "domain",
@@ -34832,6 +35684,12 @@
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
         },
         {
+          "level": "e2e",
+          "reference": "PUT:/admin/ai-providers",
+          "status": "domain",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
+        },
+        {
           "level": "unit",
           "reference": "PUT:/admin/ai-providers",
           "status": "domain",
@@ -34938,6 +35796,12 @@
           "reference": "PUT:/admin/ai-settings/publish",
           "status": "domain",
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PUT:/admin/ai-settings/publish",
+          "status": "domain",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
         },
         {
           "level": "unit",
@@ -35052,6 +35916,12 @@
           "reference": "PUT:/admin/mail/config",
           "status": "domain",
           "test_path": "frontend/e2e/admin-authorization.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PUT:/admin/mail/config",
+          "status": "direct",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
         },
         {
           "level": "unit",
@@ -38816,6 +39686,12 @@
           "level": "unit",
           "reference": "entregas",
           "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/resourcePresentationModel.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "entregas",
+          "status": "direct",
           "test_path": "frontend/src/modules/materias/MateriaEvaluaciones.test.tsx"
         },
         {
@@ -39208,6 +40084,12 @@
           "level": "e2e",
           "reference": "evaluaciones",
           "status": "direct",
+          "test_path": "frontend/e2e/resources-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "evaluaciones",
+          "status": "direct",
           "test_path": "frontend/e2e/roster-import.spec.ts"
         },
         {
@@ -39281,6 +40163,12 @@
           "reference": "evaluaciones",
           "status": "direct",
           "test_path": "frontend/src/modules/evaluaciones/components/DigitalizationJobMonitor.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "evaluaciones",
+          "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/DetailPage.test.tsx"
         },
         {
           "level": "unit",
@@ -40025,6 +40913,12 @@
           "level": "e2e",
           "reference": "materias",
           "status": "direct",
+          "test_path": "frontend/e2e/resources-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "materias",
+          "status": "direct",
           "test_path": "frontend/e2e/roster-import.spec.ts"
         },
         {
@@ -40109,7 +41003,19 @@
           "level": "unit",
           "reference": "materias",
           "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/DetailPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "materias",
+          "status": "direct",
           "test_path": "frontend/src/modules/herramientas/forms/base.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "materias",
+          "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/resourcePresentationModel.test.ts"
         },
         {
           "level": "unit",
@@ -41306,6 +42212,12 @@
           "level": "e2e",
           "reference": "users",
           "status": "direct",
+          "test_path": "frontend/e2e/admin-icons.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "users",
+          "status": "direct",
           "test_path": "frontend/e2e/auth-navigation.spec.ts"
         },
         {
@@ -41354,6 +42266,12 @@
           "level": "e2e",
           "reference": "users",
           "status": "direct",
+          "test_path": "frontend/e2e/resources-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "users",
+          "status": "direct",
           "test_path": "frontend/e2e/roster-import.spec.ts"
         },
         {
@@ -41373,6 +42291,18 @@
           "reference": "users",
           "status": "direct",
           "test_path": "frontend/e2e/xali-teacher-visual.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "users",
+          "status": "direct",
+          "test_path": "frontend/src/components/ui/EducationalIcon.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "users",
+          "status": "direct",
+          "test_path": "frontend/src/config/nav.test.ts"
         },
         {
           "level": "unit",

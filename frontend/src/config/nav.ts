@@ -44,11 +44,11 @@ export const profesorNav: NavItem[] = [
 ];
 
 export const adminNav: NavItem[] = [
-  { label: 'Inicio', to: '/app', icon: LayoutDashboard },
-  { label: 'Usuarios', to: '/app/admin/usuarios', icon: UsersRound, permission: 'users.read' },
-  { label: 'Roles y permisos', to: '/app/admin/roles', icon: ShieldCheck, permission: 'roles.read' },
+  { label: 'Inicio', to: '/app', icon: LayoutDashboard, brandIcon: 'dashboard' },
+  { label: 'Usuarios', to: '/app/admin/usuarios', icon: UsersRound, brandIcon: 'admin-users', permission: 'users.read' },
+  { label: 'Roles y permisos', to: '/app/admin/roles', icon: ShieldCheck, brandIcon: 'admin-roles', permission: 'roles.read' },
   { label: 'IA y credenciales', to: '/app/admin/configuracion-ia', icon: Settings2, brandIcon: 'ai-settings', permission: 'admin_ai.manage' },
-  { label: 'Correo y recuperación', to: '/app/admin/correo', icon: Mail, permission: 'admin_settings.manage' },
+  { label: 'Correo y recuperación', to: '/app/admin/correo', icon: Mail, brandIcon: 'admin-mail', permission: 'admin_settings.manage' },
   { label: 'Presentaciones', to: '/app/presentaciones', icon: Presentation, brandIcon: 'presentations', permission: 'presentations.read' },
   { label: 'Reportes', to: '/app/reportes', icon: BarChart3, brandIcon: 'reports', permission: 'reports.read' },
   { label: 'Asistente Xali', to: '/app/xali', icon: Sparkles, brandIcon: 'xali', permission: 'xali.use' },

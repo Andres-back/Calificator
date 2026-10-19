@@ -1,4 +1,4 @@
-import { render } from '@testing-library/react';
+import { fireEvent, render } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -8,6 +8,7 @@ import { getSubjectEducationalIcon } from './educationalIconModel';
 const icons: EducationalIconName[] = [
   'dashboard', 'subjects', 'resources', 'presentations', 'reports', 'xali',
   'ai-settings', 'crossword', 'word-search', 'matching', 'exam',
+  'admin-users', 'admin-roles', 'admin-mail',
   'learning-guide', 'workshop', 'story', 'coloring', 'rubric',
   'reinforcement', 'quick-quiz', 'reading', 'concept-map', 'flashcards',
   'prepare-evaluation', 'pending-reviews', 'student-claim', 'grade-evidence',
@@ -19,6 +20,7 @@ const icons: EducationalIconName[] = [
 ];
 
 const illustratedAssets = [
+  'admin-users', 'admin-roles', 'admin-mail',
   'dashboard', 'subjects', 'resources', 'presentations', 'reports', 'xali',
   'ai-settings', 'crossword', 'word-search', 'matching', 'learning-guide',
   'workshop', 'story', 'coloring', 'reinforcement', 'reading', 'concept-map',
@@ -32,11 +34,19 @@ const illustratedAssets = [
 ];
 
 describe('EducationalIcon', () => {
-  it('publica los 45 recortes aprobados dentro del paquete del frontend', () => {
-    expect(illustratedAssets).toHaveLength(45);
+  it('publica las 48 ilustraciones dentro del paquete del frontend', () => {
+    expect(illustratedAssets).toHaveLength(48);
     for (const asset of illustratedAssets) {
       expect(existsSync(resolve(process.cwd(), 'public', 'branding', 'semantic-icons', asset + '.webp'))).toBe(true);
     }
+  });
+
+  it.each(['admin-users', 'admin-roles', 'admin-mail'] as const)('recupera %s si falla su imagen', (name) => {
+    const { container } = render(<EducationalIcon name={name} />);
+    fireEvent.error(container.querySelector('img')!);
+    expect(container.querySelector('img')).toHaveAttribute('hidden');
+    expect(container.querySelector('svg')).not.toHaveStyle({ display: 'none' });
+    expect(container.querySelector('svg')?.children.length).toBeGreaterThan(0);
   });
 
   it.each([

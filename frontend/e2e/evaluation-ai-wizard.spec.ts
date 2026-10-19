@@ -430,6 +430,8 @@ async function expectWritingLayout(page: Page, field: ReturnType<Page['getByLabe
     return input.top >= area.top - 1 && input.bottom <= area.bottom + 1 && (!label || label.top >= area.top - 1);
   })).toBe(true);
   const done = page.getByRole('button', { name: 'Listo', exact: true });
+  // Keep the 44px touch target requirement, but measure after its spring settles.
+  await expect.poll(async () => (await done.boundingBox())?.height ?? 0).toBeGreaterThanOrEqual(44);
   const rect = await done.boundingBox();
   expect(rect!.height).toBeGreaterThanOrEqual(44);
   expect(rect!.y + rect!.height).toBeLessThanOrEqual(top + height + 1);

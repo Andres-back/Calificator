@@ -20,8 +20,9 @@ export async function getToolCatalog(): Promise<ToolCatalogItem[]> {
   return Array.isArray(data) ? data : [];
 }
 
-export async function listMaterials(tipo?: string): Promise<MaterialListItem[]> {
-  const { data } = await api.get<MaterialListItem[]>(BASE, { params: tipo ? { tipo } : undefined });
+export async function listMaterials(tipo?: string, page?: { limit: number; offset: number }): Promise<MaterialListItem[]> {
+  const params = { ...(tipo ? { tipo } : {}), ...page };
+  const { data } = await api.get<MaterialListItem[]>(BASE, { params: Object.keys(params).length ? params : undefined });
   return data;
 }
 

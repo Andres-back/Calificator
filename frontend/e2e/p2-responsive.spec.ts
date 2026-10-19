@@ -377,7 +377,9 @@ test(`criterios guardan y reabren sin escribir preguntas ni notas en ${viewport.
   await page.getByRole('button', { name: /Iniciar sesión/i }).click();
   await expect(page).toHaveURL(/\/app$/);
   await page.waitForLoadState('networkidle');
-  await page.goto('/app/materias/m1/evaluaciones');
+  // URL and network idleness alone do not establish that the auth shell mounted.
+  await expect(page.getByRole('button', { name: /Abrir menú de cuenta/ })).toBeVisible();
+  await page.goto('/app/materias/m1/evaluaciones', { waitUntil: 'domcontentloaded' });
   await page.locator('summary', { hasText: 'Más opciones' }).click();
   await page.getByRole('button', { name: 'Criterios y rúbrica' }).click();
   await page.getByText('Crear criterio de aprendizaje', { exact: true }).click();

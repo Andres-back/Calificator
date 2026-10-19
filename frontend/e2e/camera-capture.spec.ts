@@ -9,11 +9,22 @@ const evaluation = { id: 'e1', materia_id: 'm1', profesor_id: 't', nombre: 'Prue
 
 async function prepare(page: Page, denied = false, simulateVideo = false) {
   await page.addInitScript(({ deny, stubVideo }) => {
-    const state = { calls: 0, stopped: 0, audio: true };
+    const state = { calls: 0, stopped: 0, audio: true, selected: '' };
     Object.assign(window, { __cameraTest: state });
-    Object.defineProperty(navigator, 'mediaDevices', { configurable: true, value: { getUserMedia: async (constraints: MediaStreamConstraints) => {
+    Object.defineProperty(navigator, 'mediaDevices', { configurable: true, value: {
+      enumerateDevices: async () => [
+        { kind: 'videoinput', deviceId: 'integrated', label: 'Cámara integrada' },
+        { kind: 'videoinput', deviceId: 'usb', label: 'Cámara USB' },
+        { kind: 'videoinput', deviceId: 'other', label: '' },
+        { kind: 'audioinput', deviceId: 'mic', label: 'Micrófono' },
+      ],
+      getUserMedia: async (constraints: MediaStreamConstraints) => {
       state.calls++; state.audio = constraints.audio !== false;
       if (deny) throw new DOMException('Denied', 'NotAllowedError');
+      const videoConstraints = constraints.video as MediaTrackConstraints;
+      state.selected = typeof videoConstraints.deviceId === 'object' && 'exact' in videoConstraints.deviceId
+        ? String(videoConstraints.deviceId.exact) : 'integrated';
+      const selectedId = state.selected;
       const canvas = document.createElement('canvas'); canvas.width = 1200; canvas.height = 1600;
       const context = canvas.getContext('2d')!; context.fillStyle = 'white'; context.fillRect(0, 0, 1200, 1600);
       context.fillStyle = 'black'; context.font = '30px sans-serif';
@@ -32,10 +43,14 @@ async function prepare(page: Page, denied = false, simulateVideo = false) {
           if (args[0] instanceof HTMLVideoElement) args[0] = canvas;
           Reflect.apply(draw, this, args);
         };
-        return { getTracks: () => [{ stop: () => { state.stopped++; } }] } as unknown as MediaStream;
+        const track = { stop: () => { state.stopped++; }, getSettings: () => ({ deviceId: selectedId }) };
+        return { getTracks: () => [track], getVideoTracks: () => [track] } as unknown as MediaStream;
       }
       const stream = canvas.captureStream(1);
-      stream.getTracks().forEach((track) => { const stop = track.stop.bind(track); track.stop = () => { state.stopped++; stop(); }; });
+      stream.getTracks().forEach((track) => {
+        const stop = track.stop.bind(track); track.stop = () => { state.stopped++; stop(); };
+        const settings = track.getSettings.bind(track); track.getSettings = () => ({ ...settings(), deviceId: selectedId });
+      });
       return stream;
     } } });
   }, { deny: denied, stubVideo: simulateVideo });
@@ -59,7 +74,7 @@ async function prepare(page: Page, denied = false, simulateVideo = false) {
 }
 
 for (const width of [360, 390, 1440]) {
-  test(`102 cámara integrada, revisión y confirmación en ${width}px`, async ({ page, browserName }, testInfo) => {
+  test(`102/103 cámaras seleccionables, revisión y confirmación en ${width}px`, async ({ page, browserName }, testInfo) => {
     // Exercise desktop keyboard accessibility; Windows WebKit throttles rAF
     // during pointer-stability checks at large retina viewports.
     const activate = async (button: Locator) => {
@@ -74,10 +89,22 @@ for (const width of [360, 390, 1440]) {
     await activate(page.getByRole('button', { name: /^Tomar foto/ }));
     const dialog = page.getByRole('dialog', { name: 'Tomar foto' });
     await expect(dialog.getByRole('button', { name: 'Tomar foto', exact: true })).toBeEnabled();
+    const cameras = dialog.getByRole('combobox', { name: 'Cámara', exact: true });
+    await expect(cameras).toHaveValue('integrated');
+    for (const device of ['usb', 'other']) {
+      await cameras.selectOption(device);
+      await expect(dialog.getByRole('button', { name: 'Tomar foto', exact: true })).toBeEnabled();
+      await expect.poll(() => page.evaluate(() => (window as unknown as { __cameraTest: { selected: string } }).__cameraTest.selected)).toBe(device);
+    }
+    await expect(cameras.getByRole('option', { name: 'Cámara 3' })).toHaveCount(1);
+    await expect(cameras.getByRole('option', { name: 'Micrófono' })).toHaveCount(0);
+    await expect(dialog).toHaveCSS('opacity', '1');
+    await expect(dialog.locator('..')).toHaveCSS('opacity', '1');
     await page.screenshot({ path: testInfo.outputPath('camera.png') });
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     await activate(dialog.getByRole('button', { name: 'Tomar foto', exact: true }));
     await expect(dialog.getByRole('img', { name: 'Foto para revisar' })).toBeVisible();
+    await expect(cameras).toBeDisabled();
     await activate(dialog.getByRole('button', { name: 'Repetir foto' }));
     await expect(dialog.getByRole('button', { name: 'Tomar foto', exact: true })).toBeEnabled();
     await activate(dialog.getByRole('button', { name: 'Tomar foto', exact: true }));
@@ -86,6 +113,8 @@ for (const width of [360, 390, 1440]) {
     await expect(page.getByText('1 hoja seleccionada')).toBeVisible();
     expect(await page.evaluate(() => (window as unknown as { __cameraTest: { audio: boolean } }).__cameraTest.audio)).toBe(false);
     expect(writes).toEqual([]);
+    const cameraState = await page.evaluate(() => (window as unknown as { __cameraTest: { stopped: number; calls: number } }).__cameraTest);
+    expect(cameraState.stopped).toBe(cameraState.calls);
   });
 }
 

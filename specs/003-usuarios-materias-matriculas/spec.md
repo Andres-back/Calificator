@@ -60,6 +60,10 @@ Como equipo, necesito actualizar estos artefactos cuando cambie el comportamient
 
 - [Ver superficies, permisos y cobertura de este dominio](./inventory.md).
 
+## Evolución 106: recursos de la materia
+
+[106-recursos-vista-clara](../106-recursos-vista-clara/spec.md), issue #220: «Ver recurso» y estados coherentes con la biblioteca; origen de regreso limitado a la materia y cuenta actuales, sin controles anidados. El estudiante conserva su ruta de lectura y las asociaciones existentes no se modifican. Propietario principal 006.
+
 ## Evolución 105: crear materia desde celular
 
 [105-materia-movil-cola](../105-materia-movil-cola/spec.md) prioriza nombre, área y grado; descripción y ayuda quedan en Más opciones. Reutiliza adaptación al espacio visible, no fuerza teclado al abrir y ofrece Listo sin enviar. Conserva valores, sugerencias, validaciones, límite de materias, permisos, payload y destino del alta.
