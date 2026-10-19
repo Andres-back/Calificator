@@ -52,3 +52,7 @@ El usuario autorizó actualizar los iconos administrativos en producción y fusi
 - Los primeros intentos dentro del sandbox fallaron por permisos de archivos temporales; se repitieron fuera del sandbox y terminaron con código 0, sin relajar comprobaciones.
 
 CI del HEAD actualizado y verificación de producción siguen siendo obligatorios; estos resultados locales no acreditan cámara física ni despliegue.
+
+CI detectó además una aserción heredada de visibilidad durante la animación del diálogo de importación. Se sincronizan únicamente las pruebas: esperar visibilidad real de «Reintentar», esperar el objetivo táctil de 44 px antes de medir «Listo» y esperar el menú de cuenta antes de navegar desde el login en la regresión de criterios. Se conservan las aserciones, los umbrales, los escenarios y la política de cero reintentos automáticos del runner. Sin cambios al código de producción por esta estabilización.
+
+Verificación posterior: cuatro pruebas de importación aprobadas y nueve ejecuciones WebKit aprobadas (tres repeticiones explícitas de cada escenario afectado); tipos, lint, 41 pruebas de gobernanza e inventario de 573 superficies correctos.
