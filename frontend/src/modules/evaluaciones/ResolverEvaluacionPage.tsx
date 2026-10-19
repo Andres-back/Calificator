@@ -9,7 +9,7 @@ import { evidenceFiles, evidenceRotations, hasUnusableEvidence, type EvidencePag
 import { PageHeader } from '@/components/layout/PageHeader';
 import { toApiError } from '@/lib/api';
 import { useAuth } from '@/stores/auth';
-import { crearEntregaArchivo, crearEntregaOnline, evaluationPdfUrl, getActividadEstudiante, getEvaluacion, getMiDesglose, getMiEntrega, getMiSolicitudRevision, solicitarRevisionEvaluacion } from './api';
+import { crearEntregaArchivo, crearEntregaOnline, evaluationPdfUrl, getActividadEstudiante, getEvaluacion, getMiDesglose, getMiEntrega, getMiSolicitudRevision, iniciarEntregaOnline, solicitarRevisionEvaluacion } from './api';
 import { StudentActivityPlayer } from './StudentActivityPlayer';
 import { StudentAnswerSheet } from './StudentAnswerSheet';
 import { EvaluationContentViewer } from './components/EvaluationContentViewer';
@@ -68,8 +68,9 @@ export function ResolverEvaluacionPage() {
   const [firstIncomplete, setFirstIncomplete] = useState<number | null>(null);
   const [onlineConfirmOpen, setOnlineConfirmOpen] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [attemptSequence, setAttemptSequence] = useState(0);
 
-  const { data: evaluacion, isLoading, error } = useQuery({
+  const { data: currentEvaluation, isLoading, error } = useQuery({
     queryKey: ['evaluacion', evaluacionId],
     queryFn: () => getEvaluacion(evaluacionId),
     enabled: Boolean(evaluacionId),
@@ -84,11 +85,35 @@ export function ResolverEvaluacionPage() {
     retry: false,
     refetchInterval: (query) => {
       const delivery = query.state.data;
-      const queued = delivery?.estado === 'recibida' && (evaluacion?.modalidad !== 'mixta' || Boolean(delivery.archivo_url));
+      const queued = delivery?.estado === 'recibida' && (currentEvaluation?.modalidad !== 'mixta' || Boolean(delivery.archivo_url));
       return delivery?.estado === 'procesando' || queued ? 5_000 : false;
     },
     refetchOnWindowFocus: true,
   });
+
+  const needsContentAttempt = Boolean(currentEvaluation?.contenido_version_id
+    && ['online', 'mixta'].includes(currentEvaluation.modalidad ?? ''));
+  const contentAttempt = useQuery({
+    queryKey: ['online-content-attempt', evaluacionId, studentId, attemptSequence],
+    queryFn: () => iniciarEntregaOnline(evaluacionId),
+    enabled: needsContentAttempt && myDelivery.isSuccess && !enviada
+      && (!myDelivery.data || startingNewAttempt)
+      && currentEvaluation?.recepcion_habilitada !== false
+      && ['publicada', 'en_calificacion', 'pendiente_revision'].includes(currentEvaluation?.estado ?? ''),
+    retry: false,
+    staleTime: 0,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+  });
+  // Reception stays current, but answering always uses the conserved content.
+  const pinned = contentAttempt.data?.evaluacion;
+  const evaluacion = currentEvaluation && pinned ? { ...currentEvaluation,
+    nombre: pinned.nombre, descripcion: pinned.descripcion, nota_maxima: pinned.nota_maxima,
+    modalidad: pinned.modalidad, tipo_origen: pinned.tipo_origen,
+    preguntas: pinned.preguntas, criterios: pinned.criterios, metas_profesor: pinned.metas_profesor,
+    contenido_visual: pinned.contenido_visual, contenido_version_id: pinned.contenido_version_id,
+  } : currentEvaluation;
 
   const activityQuery = useQuery({
     queryKey: ['evaluacion-actividad', evaluacionId],
@@ -151,13 +176,15 @@ export function ResolverEvaluacionPage() {
     }
   }, [location.hash, showDeliverySummary, isLoading, myDelivery.isLoading]);
   const answerFormEnabled = permiteRespuestaOnline
+    && (!needsContentAttempt || (contentAttempt.isSuccess && !contentAttempt.isFetching))
     && disponible
     && !estaCerrada
     && !enviada
     && (!existingDelivery || needsRetry || (allowsMultipleAttempts && startingNewAttempt));
   const serializedAnswers = serializeAnswers(preguntasOnline, answers);
   const answeredCount = Object.values(answers).filter((answer) => answer.trim()).length;
-  const draftKey = 'xcalificator:evaluacion:draft:' + studentId + ':' + evaluacionId;
+  const draftKey = 'xcalificator:evaluacion:draft:' + studentId + ':' + evaluacionId
+    + (contentAttempt.data ? ':' + contentAttempt.data.entrega_id : '');
   const handleAnswerChange = useCallback((number: number, value: string) => {
     setAnswers((current) => ({ ...current, [number]: value }));
     setFirstIncomplete((current) => current === number ? null : current);
@@ -198,14 +225,14 @@ export function ResolverEvaluacionPage() {
   }, [draftKey]);
 
   useEffect(() => {
-    if (enviada || existingDelivery) return;
+    if (enviada || (existingDelivery && !startingNewAttempt)) return;
     if (!Object.values(answers).some((answer) => answer.trim())) return;
     try {
       sessionStorage.setItem(draftKey, JSON.stringify(answers));
     } catch {
       // El navegador puede bloquear el almacenamiento; la resolución continúa normalmente.
     }
-  }, [answers, draftKey, enviada, existingDelivery]);
+  }, [answers, draftKey, enviada, existingDelivery, startingNewAttempt]);
 
   useEffect(() => {
     if (!deliveryRequiresTeacherAttention || !existingDelivery) return;
@@ -217,7 +244,9 @@ export function ResolverEvaluacionPage() {
   }, [deliveryRequiresTeacherAttention, existingDelivery]);
 
   const entregar = useMutation({
-    mutationFn: () => crearEntregaOnline(evaluacionId, { respuesta_texto: serializedAnswers }),
+    mutationFn: () => crearEntregaOnline(evaluacionId, { respuesta_texto: serializedAnswers,
+      ...(needsContentAttempt && contentAttempt.data ? { entrega_id: contentAttempt.data.entrega_id } : {}),
+    }),
     onSuccess: (delivery) => {
       queryClient.setQueryData(['mi-entrega', evaluacionId], delivery);
       setEnviada(true);
@@ -349,6 +378,15 @@ export function ResolverEvaluacionPage() {
     );
   }
 
+  if (needsContentAttempt && myDelivery.isError) {
+    return <QueryError title="No pudimos consultar tu entrega" error={myDelivery.error} onRetry={() => void myDelivery.refetch()} />;
+  }
+  if (needsContentAttempt && !showDeliverySummary && disponible && (!contentAttempt.isSuccess || contentAttempt.isFetching)) {
+    return contentAttempt.isError
+      ? <QueryError title="No pudimos preparar tu evaluación" error={contentAttempt.error} onRetry={() => void contentAttempt.refetch()} />
+      : <div role="status" className="space-y-4"><p>Preparando tu evaluación…</p><Skeleton className="h-72" /></div>;
+  }
+
   return (
     <div className="space-y-6">
       <PageHeader
@@ -357,7 +395,7 @@ export function ResolverEvaluacionPage() {
         subtitle="Resuelve únicamente tu actividad y entrégala para revisión docente."
         breadcrumbs={[{ label: 'Evaluaciones', to: '/app/evaluaciones' }, { label: evaluacion.nombre }]}
         backAction={<Link to="/app/evaluaciones" className="focus-ring inline-flex h-11 items-center justify-center gap-2 rounded-lg border border-border bg-surface px-5 text-sm font-semibold text-fg transition-colors hover:bg-surface-2"><ArrowLeft className="h-4 w-4" aria-hidden="true" /> Volver</Link>}
-        action={<a href={evaluationPdfUrl(evaluacionId, true)} className="focus-ring inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-border bg-surface px-4 text-sm font-semibold"><Download className="h-4 w-4" /> {assignedMaterial ? 'Descargar material' : 'Descargar evaluación'}</a>}
+        action={<a href={evaluationPdfUrl(evaluacionId, true, contentAttempt.data?.evaluacion.contenido_version_id)} className="focus-ring inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-border bg-surface px-4 text-sm font-semibold"><Download className="h-4 w-4" /> {assignedMaterial ? 'Descargar material' : 'Descargar evaluación'}</a>}
       />
 
       <Card className="space-y-4 border-l-4 border-l-brand-500 p-5">
@@ -593,6 +631,7 @@ export function ResolverEvaluacionPage() {
                     setEnviada(false);
                     setSubmissionIssue(null);
                     setStartingNewAttempt(true);
+                    setAttemptSequence((value) => value + 1);
                   }}
                 >
                   Nuevo intento

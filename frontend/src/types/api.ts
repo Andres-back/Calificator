@@ -542,6 +542,7 @@ export interface EntregaRead {
 
 export interface EntregaOnlineCreate {
   respuesta_texto: string;
+  entrega_id?: string;
 }
 
 export interface StudentActivity {

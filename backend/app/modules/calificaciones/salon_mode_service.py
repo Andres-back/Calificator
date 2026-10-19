@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import uuid
-from decimal import Decimal
 from uuid import UUID
 
 from sqlalchemy import select
@@ -11,14 +10,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.permissions import is_student_enrolled
 from app.core.logging import get_logger
 from app.modules.calificaciones import service as calificaciones_service
-from app.modules.calificaciones.breakdown_service import create_automatic_breakdown
-from app.modules.calificaciones.grading_service import grade_submission
+from app.modules.calificaciones import photo_service
 from app.modules.calificaciones.models import Calificacion, Entrega, SalonSesion, SalonSesionEstudiante
-from app.modules.evaluaciones.blueprint_service import evaluation_to_grading_blueprint
+from app.modules.evaluaciones.grading_visual_context import pin_new_submission_content
 from app.modules.evaluaciones.models import Evaluacion
 from app.modules.matriculas.models import Matricula
+from app.services.storage_service import save_upload, resolve_upload_path
 from app.shared.enums import (
-    CalificacionEstado, EntregaEstado, EntregaTipo,
+    EntregaEstado, EntregaTipo,
     MatriculaEstado, SalonEstudianteEstado,
 )
 
@@ -144,64 +143,27 @@ async def grade_student_photo(
         )
         await db.flush()
 
+    entrega = Entrega(evaluacion_id=evaluacion.id, estudiante_id=estudiante_id,
+        materia_id=evaluacion.materia_id, tipo=EntregaTipo.PDF.value if image_mime == 'application/pdf' else EntregaTipo.FOTO.value,
+        estado=EntregaEstado.PROCESANDO.value, visual_text_json={})
+    await pin_new_submission_content(db, evaluacion, entrega)
+    filename = 'evidencia.pdf' if image_mime == 'application/pdf' else 'evidencia.jpg'
+    stored_url = await save_upload(image_bytes, filename, subfolder='entregas', max_size_bytes=15 * 1024 * 1024)
+    entrega.archivo_url = stored_url
+    persisted = False
     try:
-        grading = await grade_submission(
-            db,
-            evaluacion_id=evaluacion.id,
-            materia_id=evaluacion.materia_id,
-            blueprint=evaluation_to_grading_blueprint(evaluacion),
-            image_bytes=image_bytes,
-            image_mime=image_mime,
-            user_id=profesor_id,
-        )
-        calificaciones_service.validate_score_within_evaluation(
-            grading.nota_sugerida, evaluacion, "nota_sugerida",
-        )
-        calificaciones_service.transition_to_grading_if_needed(evaluacion)
-
-        entrega = Entrega(
-            evaluacion_id=evaluacion.id,
-            estudiante_id=estudiante_id,
-            materia_id=evaluacion.materia_id,
-            tipo=EntregaTipo.FOTO.value,
-            estado=EntregaEstado.CALIFICADA.value,
-            visual_text_json=grading.raw_model_output,
-        )
         db.add(entrega)
-        await db.flush()
-
-        calificacion = Calificacion(
-            evaluacion_id=evaluacion.id,
-            entrega_id=entrega.id,
-            estudiante_id=estudiante_id,
-            materia_id=evaluacion.materia_id,
-            profesor_id=profesor_id,
-            nota_sugerida=grading.nota_sugerida,
-            confianza=Decimal(str(grading.confianza)),
-            feedback=grading.feedback_estudiante,
-            resultado_json=grading.raw_model_output,
-            estado=CalificacionEstado.SUGERIDA.value,
-        )
-        db.add(calificacion)
-        await db.flush()
-        await create_automatic_breakdown(
-            db,
-            calificacion=calificacion,
-            blueprint=evaluation_to_grading_blueprint(evaluacion),
-            raw_output=grading.raw_model_output,
-            pipeline_run_id=f"salon:{sesion_id or entrega.id}:{entrega.id}",
-        )
-
-        if sesion_id:
-            await update_estudiante_estado(
-                db, sesion_id, estudiante_id,
-                SalonEstudianteEstado.CALIFICADO.value,
-            )
-
-        await db.commit()
-        await db.refresh(calificacion)
-        return calificacion
-
+        await db.commit()  # Release the evaluation lock and preserve evidence before inference.
+        persisted = True
+        await db.refresh(entrega)
+    except Exception:
+        await db.rollback()
+        if not persisted:
+            resolve_upload_path(stored_url).unlink(missing_ok=True)
+        raise
+    try:
+        calificacion = await photo_service.grade_persisted_photo(db, evaluacion=evaluacion, entrega=entrega,
+            estudiante_id=estudiante_id, profesor_id=profesor_id, image_bytes=image_bytes, image_mime=image_mime)
     except Exception as e:
         if sesion_id:
             await update_estudiante_estado(
@@ -211,3 +173,8 @@ async def grade_student_photo(
             )
         await db.commit()
         raise
+    if sesion_id:
+        await update_estudiante_estado(db, sesion_id, estudiante_id,
+            SalonEstudianteEstado.ERROR.value if calificacion.nota_sugerida is None else SalonEstudianteEstado.CALIFICADO.value)
+        await db.commit()
+    return calificacion

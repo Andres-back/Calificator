@@ -120,6 +120,10 @@ export async function crearEntregaOnline(evaluacionId: string, payload: EntregaO
   const { data } = await api.post<EntregaRead>(`/evaluaciones/${evaluacionId}/entregas`, payload);
   return data;
 }
+export async function iniciarEntregaOnline(evaluacionId: string): Promise<{ entrega_id: string; evaluacion: Evaluacion }> {
+  const { data } = await api.post<{ entrega_id: string; evaluacion: Evaluacion }>(`/evaluaciones/${evaluacionId}/iniciar-entrega`);
+  return data;
+}
 export async function getMiEntrega(evaluacionId: string): Promise<EntregaRead | null> {
   try {
     const { data } = await api.get<EntregaRead>(`/evaluaciones/${evaluacionId}/mi-entrega`);
@@ -134,9 +138,12 @@ export async function getActividadEstudiante(evaluacionId: string): Promise<Stud
   const { data } = await api.get<StudentActivity | null>(`/evaluaciones/${evaluacionId}/actividad`);
   return data;
 }
-export function evaluationPdfUrl(evaluacionId: string, descargar = false): string {
+export function evaluationPdfUrl(evaluacionId: string, descargar = false, versionId?: string | null): string {
   const base = import.meta.env.VITE_API_URL ?? '/api';
-  return base + '/evaluaciones/' + evaluacionId + '/pdf' + (descargar ? '?descargar=true' : '');
+  const params = new URLSearchParams();
+  if (descargar) params.set('descargar', 'true');
+  if (versionId) params.set('version_id', versionId);
+  return base + '/evaluaciones/' + evaluacionId + '/pdf' + (params.size ? '?' + params.toString() : '');
 }
 
 export async function getEvaluationDocument(

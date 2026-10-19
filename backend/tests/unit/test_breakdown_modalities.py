@@ -60,6 +60,11 @@ def test_salon_mode_persists_explainable_breakdown_before_commit(monkeypatch):
         async def refresh(self, value):
             calls.append(("refresh", value))
 
+        async def scalar(self, query):
+            from app.modules.evaluaciones.models import Evaluacion
+            assert query.column_descriptions[0].get('entity') is Evaluacion
+            return SimpleNamespace(contenido_version_id=None)
+
     async def enrolled(*_args, **_kwargs):
         return True
 
@@ -67,12 +72,19 @@ def test_salon_mode_persists_explainable_breakdown_before_commit(monkeypatch):
         return None
 
     async def grading(*_args, **_kwargs):
-        return SimpleNamespace(
+        from app.modules.calificaciones.schemas import GradingResult
+        assert any(item[0] == 'commit' for item in calls)
+        assert next(item[1] for item in calls if item[0] == 'add').archivo_url
+        return GradingResult(
             nota_sugerida=Decimal("4.5"),
+            nota_maxima=Decimal('5'),
             confianza=Decimal("0.9"),
             feedback_estudiante="Explicación verificable",
             raw_model_output={"grader_a": {}, "grader_b": {}},
         )
+
+    async def save(*_args, **_kwargs):
+        return '/uploads/entregas/synthetic.png'
 
     async def persist(*_args, **kwargs):
         calls.append(("breakdown", kwargs["calificacion"]))
@@ -82,9 +94,10 @@ def test_salon_mode_persists_explainable_breakdown_before_commit(monkeypatch):
     monkeypatch.setattr(salon_mode_service.calificaciones_service, "ensure_evaluation_accepts_grading", lambda _evaluation: None)
     monkeypatch.setattr(salon_mode_service.calificaciones_service, "validate_score_within_evaluation", lambda *_args: None)
     monkeypatch.setattr(salon_mode_service.calificaciones_service, "transition_to_grading_if_needed", lambda _evaluation: None)
-    monkeypatch.setattr(salon_mode_service, "grade_submission", grading)
-    monkeypatch.setattr(salon_mode_service, "create_automatic_breakdown", persist)
-    monkeypatch.setattr(salon_mode_service, "evaluation_to_grading_blueprint", lambda _evaluation: {"nota_maxima": 5, "preguntas": [{"numero": 1, "puntaje": 1}]})
+    monkeypatch.setattr(salon_mode_service, 'save_upload', save)
+    monkeypatch.setattr(salon_mode_service.photo_service, "grade_submission", grading)
+    monkeypatch.setattr(salon_mode_service.photo_service, "create_automatic_breakdown", persist)
+    monkeypatch.setattr(salon_mode_service.photo_service, "evaluation_to_grading_blueprint", lambda _evaluation: {"nota_maxima": 5, "preguntas": [{"numero": 1, "puntaje": 1}]})
 
     evaluation = SimpleNamespace(id=uuid4(), materia_id=uuid4())
     asyncio.run(salon_mode_service.grade_student_photo(
@@ -97,5 +110,5 @@ def test_salon_mode_persists_explainable_breakdown_before_commit(monkeypatch):
     ))
 
     breakdown_index = next(index for index, item in enumerate(calls) if item[0] == "breakdown")
-    commit_index = next(index for index, item in enumerate(calls) if item[0] == "commit")
+    commit_index = max(index for index, item in enumerate(calls) if item[0] == "commit")
     assert breakdown_index < commit_index

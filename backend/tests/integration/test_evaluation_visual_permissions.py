@@ -17,9 +17,15 @@ from app.modules.evaluaciones.visual_router import router
 from app.modules.evaluaciones.visual_schemas import VisualUploadRequest
 from app.modules.evaluaciones.visual_service import stage_resource
 from app.modules.matriculas.models import Matricula
-from tests.integration.test_evaluation_visual_persistence import (  # noqa: F401
-    TEST_URL, database, image_manifest, legacy_evaluation, synthetic_png, visual_scope,
-)
+from tests.integration import test_evaluation_visual_persistence as persistence
+
+# Reuse the isolated fixtures, not the application database configuration.
+TEST_URL = persistence.TEST_URL
+database = persistence.database
+visual_scope = persistence.visual_scope
+image_manifest = persistence.image_manifest
+legacy_evaluation = persistence.legacy_evaluation
+synthetic_png = persistence.synthetic_png
 
 pytestmark = pytest.mark.skipif(not TEST_URL, reason="Requiere PostgreSQL aislado SPEC101_TEST_DATABASE_URL")
 
@@ -60,6 +66,8 @@ async def visual_http(visual_scope, monkeypatch):
         app.include_router(router, prefix="/api")
         from app.modules.evaluaciones.router import router as evaluation_router
         app.include_router(evaluation_router, prefix="/api")
+        from app.modules.calificaciones.router import router as grading_router
+        app.include_router(grading_router, prefix="/api")
 
         async def user_override():
             return SimpleNamespace(id=user_id, rol=role, _effective_permissions=default_permissions_for_role(role))
@@ -73,6 +81,60 @@ async def visual_http(visual_scope, monkeypatch):
         return app
 
     return app_for, owner, student_id, ids
+
+
+@pytest.mark.asyncio
+async def test_online_start_is_idempotent_private_and_submit_keeps_old_content(visual_http, visual_scope, monkeypatch):
+    import asyncio
+    from app.modules.calificaciones import router as grading_router
+    from unittest.mock import AsyncMock
+    sessions, _, _, _ = visual_scope
+    app_for, _, student, ids = visual_http
+    async with sessions() as db:
+        evaluation = await get_evaluation_or_404(db, ids['evaluation'])
+        evaluation = await update_evaluation(db, evaluation, EvaluacionUpdate(
+            expected_updated_at=evaluation.updated_at, expected_content_version_id=evaluation.contenido_version_id,
+            nombre='Contenido A', modalidad='online', politica_intento='practica_libre'))
+        evaluation.recepcion_habilitada = True
+        await db.commit()
+        version_a = evaluation.contenido_version_id
+    queued = AsyncMock()
+    monkeypatch.setattr(grading_router, '_enqueue_persisted_grading', queued)
+    path = f"/api/evaluaciones/{ids['evaluation']}"
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app_for('estudiante', student)), base_url='http://testserver') as client:
+        first, simultaneous = await asyncio.gather(client.post(path + '/iniciar-entrega'), client.post(path + '/iniciar-entrega'))
+        assert first.status_code == 200, first.text
+        attempt = first.json()
+        assert simultaneous.status_code == 200, simultaneous.text
+        assert simultaneous.json()['entrega_id'] == attempt['entrega_id']
+        assert attempt['evaluacion']['contenido_version_id'] == str(version_a)
+        assert attempt['evaluacion']['respuestas_esperadas'] == []
+        assert str(ids['original']) not in first.text
+        assert attempt['evaluacion']['blueprint'] is None
+        second = await client.post(path + '/iniciar-entrega')
+        assert second.status_code == 200, second.text
+        assert second.json()['entrega_id'] == attempt['entrega_id']
+        assert (await client.get(path + '/mi-entrega')).json()['id'] != attempt['entrega_id']
+        async with sessions() as db:
+            evaluation = await get_evaluation_or_404(db, ids['evaluation'])
+            await update_evaluation(db, evaluation, EvaluacionUpdate(
+                expected_updated_at=evaluation.updated_at, expected_content_version_id=version_a, nombre='Contenido B'))
+            await db.commit()
+        resumed = await client.post(path + '/iniciar-entrega')
+        assert resumed.json()['evaluacion']['nombre'] == 'Contenido A'
+        payload = {'entrega_id': attempt['entrega_id'], 'respuesta_texto': 'P1: Respuesta A'}
+        submitted = await client.post(path + '/entregas', json=payload)
+        assert submitted.status_code == 201, submitted.text
+        assert submitted.json()['id'] == attempt['entrega_id']
+        assert queued.await_count == 1
+        assert queued.await_args.kwargs['entrega'].contenido_version_id == version_a
+        repeated = await client.post(path + '/entregas', json=payload)
+        assert repeated.status_code == 201, repeated.text
+        assert queued.await_count == 1
+        changed = await client.post(path + '/entregas', json={**payload, 'respuesta_texto': 'Otra respuesta'})
+        assert changed.status_code == 409
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app_for('estudiante', uuid4())), base_url='http://testserver') as client:
+        assert (await client.post(path + '/iniciar-entrega')).status_code == 403
 
 
 @pytest.mark.asyncio

@@ -239,6 +239,7 @@ async def _student_progress_by_evaluation(
                 .where(
                     Entrega.evaluacion_id.in_(evaluation_ids),
                     Entrega.estudiante_id == estudiante_id,
+                    Entrega.estado.not_in({EntregaEstado.EN_PROGRESO.value, EntregaEstado.PENDIENTE.value}),
                 )
                 .order_by(Entrega.created_at.desc())
             )

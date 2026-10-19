@@ -50,6 +50,15 @@ Construcción común: preguntas + bloques en orden + estímulos compartidos + pu
 
 ## Calificador y verificador
 
+### Inicio de intento y cola (T022, implementado localmente)
+
+- `POST /evaluaciones/{id}/iniciar-entrega`: alumno matriculado, evaluación online/mixta activa y recepción abierta. Sin paso adicional en la pantalla: fija o retoma un borrador `en_progreso` bajo bloqueo de la evaluación; devuelve `{ entrega_id, evaluacion }` con preguntas y estímulos de esa revisión, nunca claves, snapshot privado ni original contestado. Dos solicitudes simultáneas retoman el mismo borrador.
+- `POST /evaluaciones/{id}/entregas` acepta `entrega_id` opcional. Es obligatorio para contenido versionado; se valida propietario, evaluación y revisión. El envío repetido idéntico no crea otra entrega ni trabajo; cambiar respuestas de un intento enviado devuelve 409. Evaluaciones legacy conservan su contrato sin ID. Una edición que aparece mientras se envía una respuesta legacy no se adopta automáticamente.
+- `en_progreso` y `pendiente` no cuentan como entregas realizadas ni consumen intentos. La pantalla espera el contenido fijado antes de permitir escribir y conserva borrador por intento; refrescar la evaluación no sustituye sus preguntas por las actuales.
+- Las entradas por foto, lote síncrono/asíncrono, modo salón y archivo del estudiante fijan contenido antes de commit/cola. Reemplazos/reintentos conservan la revisión anterior; entregas legacy con contenido posterior requieren revisión explícita.
+- Trabajos individuales/padres de una entrega incluyen `contenido_version_id` y `contenido_hash`; el padre de lote usa `contenido_por_entrega` y cada hijo lleva su referencia concreta. Solo referencias, no bytes, rutas ni respuestas correctas nuevas.
+- Esta captura no acredita todavía la entrega del material a los modelos: el consumo del snapshot en workers/fingerprint y el transporte multimodal quedan en T023–025. Escritura nueva sigue desactivada en producción.
+
 Extender `AgentContext` con colección tipada `evaluation_visuals` separada de la evidencia `image_bytes/image_mime`. Elementos: revisión, recurso, preguntas aplicables, descripción y bytes/MIME internos; no URLs privadas dentro del prompt. Agentes reciben bloques etiquetados «material de la pregunta» frente a «respuesta del estudiante».
 
 Mantener llamadas y proveedores configurados; deduplicar estímulos, incluir todas las asociaciones pertinentes y validar presupuesto antes de invocar. Si un modelo seleccionado carece de visión y el recurso la exige, usar solo fallback de capacidad autorizado; de no existir, revisión explícita. No convertir una omisión por límite en respuesta vacía ni añadir arbitraje redundante.

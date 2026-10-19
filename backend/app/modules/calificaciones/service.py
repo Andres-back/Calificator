@@ -101,7 +101,8 @@ async def ensure_student_can_submit_new_evidence(
         select(func.count(Entrega.id)).where(
             Entrega.evaluacion_id == evaluacion.id,
             Entrega.estudiante_id == estudiante_id,
-            Entrega.estado != EntregaEstado.REQUIERE_REINTENTO.value,
+            Entrega.estado.not_in({EntregaEstado.REQUIERE_REINTENTO.value,
+                EntregaEstado.EN_PROGRESO.value, EntregaEstado.PENDIENTE.value}),
         )
     )
     attempt_count = int(attempts or 0)
