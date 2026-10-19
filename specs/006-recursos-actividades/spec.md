@@ -2,6 +2,10 @@
 
 **Rama**: codex/006-recursos-actividades | **Creada**: 2026-08-14 | **Estado**: Aprobada | **Issue**: #7
 
+## Evolución 106: recursos docentes claros
+
+[106-recursos-vista-clara](../106-recursos-vista-clara/spec.md), issue #220: biblioteca con búsqueda/filtros y carga incremental explícita; lectura antes de ayudas; PDF estudiantil separado del solucionario autorizado; editor amplio con foco, teclado móvil y protección de cambios. Conserva contratos, contenido, juegos y permisos del servidor. Acciones de autor requieren consulta autorizada vigente de evaluaciones vinculadas, no el rol de administrador. Plan y requisitos aprobados; resultados y limitaciones en [quickstart](../106-recursos-vista-clara/quickstart.md). PR/CI y autorización separada antes de fusionar o desplegar.
+
 ## Escenarios de usuario y pruebas
 
 ### Historia 1 - Flujo principal (Prioridad: P1)

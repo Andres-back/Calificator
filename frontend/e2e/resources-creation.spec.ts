@@ -6,7 +6,7 @@ const teacher = {
   email: 'recursos@example.test',
   rol: 'profesor',
   estado: 'activo',
-  permissions: ['subjects.read', 'dba.read', 'resources.read', 'resources.create', 'resources.update', 'resources.assign'],
+  permissions: ['subjects.read', 'dba.read', 'resources.read', 'resources.create', 'resources.update', 'resources.assign', 'evaluations.create'],
 };
 
 const materia = {

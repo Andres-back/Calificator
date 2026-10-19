@@ -132,7 +132,7 @@ function RecordFields({ value, onChange }: { value: Record<string, unknown>; onC
 function ObjectList({ fieldKey, values, onChange }: { fieldKey: string; values: Record<string, unknown>[]; onChange: (value: Record<string, unknown>[]) => void }) {
   const renumber = (items: Record<string, unknown>[]) => items.map((item, index) => 'numero' in item ? { ...item, numero: index + 1 } : item);
   return (
-    <section className="rounded-xl border border-border bg-surface-2/50 p-4">
+    <section data-resource-field={fieldKey} aria-label={labelFor(fieldKey)} tabIndex={-1} className="focus-ring rounded-xl border border-border bg-surface-2/50 p-4">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div><h4 className="font-semibold">{labelFor(fieldKey)}</h4><p className="text-xs text-muted">Edita, agrega o elimina elementos sin trabajar con código.</p></div>
         <Button type="button" size="sm" variant="outline" onClick={() => onChange(renumber([...values, objectTemplate(values)]))}><Plus className="h-4 w-4" /> Añadir</Button>

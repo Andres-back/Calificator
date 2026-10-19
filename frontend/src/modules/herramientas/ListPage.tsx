@@ -1,200 +1,115 @@
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Download, Trash2, Wrench, Gamepad2, Copy, Pencil, Send } from 'lucide-react';
-import { ActionMenu, Badge, Button, Card, CollectionToolbar, ConfirmDialog, EducationalIcon, EmptyState, QueryState, Skeleton } from '@/components/ui';
-import type { EducationalIconName } from '@/components/ui/EducationalIcon';
-import { PageHeader } from '@/components/layout/PageHeader';
-import { listMaterials, deleteMaterial, pdfUrl, duplicateMaterial } from './api';
+import { useEffect, useMemo, useRef } from 'react';
+import { Link, useLocation, useSearchParams } from 'react-router-dom';
+import { useInfiniteQuery } from '@tanstack/react-query';
+import { Plus, Search, Wrench } from 'lucide-react';
+import { Badge, Button, Card, EducationalIcon, EmptyState, QueryState, Skeleton } from '@/components/ui';
+import { listMaterials } from './api';
 import { TOOL_BY_TIPO, TOOL_EDUCATIONAL_ICON } from './meta';
-import { queryClient } from '@/lib/queryClient';
+import { filterResources, mergeResourcePages, resourceLinkClass, resourceState } from './resourcePresentationModel';
 import { routes } from '@/config/routes';
-import toast from 'react-hot-toast';
-import { useDeleteConfirm } from '@/lib/hooks';
 import { formatDate } from '@/lib/dates';
 import { useAuth } from '@/stores/auth';
+import { ResourceCardActions } from './components/ResourceActions';
 
-const CATEGORIES = ['Todos', 'Juego', 'Evaluación', 'Material'] as const;
-
+const PAGE_SIZE = 50;
 export function ListPage() {
-  const user = useAuth((state) => state.user);
+  const user = useAuth(state => state.user);
   const permissions = new Set(user?.permissions ?? []);
-  const canCreate = permissions.has('resources.create');
-  const canUpdate = permissions.has('resources.update');
-  const canDelete = permissions.has('resources.delete');
-  const canAssign = permissions.has('resources.assign');
-  const canReadEvaluations = permissions.has('evaluations.read');
-  const navigate = useNavigate();
-  const [cat, setCat] = useState<(typeof CATEGORIES)[number]>('Todos');
-  const [query, setQuery] = useState('');
-  const { target: deleteTarget, setTarget: setDeleteTarget, mutation: deleteMutation } = useDeleteConfirm({
-    mutationFn: deleteMaterial,
-    queryKey: ['materials'],
-    successMessage: 'Material eliminado.',
+  const [params, setParams] = useSearchParams();
+  const latestParams = useRef(new URLSearchParams(params));
+  useEffect(() => { latestParams.current = new URLSearchParams(params); }, [params]);
+  const account = useRef(user?.id);
+  useEffect(() => {
+    if (account.current !== user?.id) { account.current = user?.id; latestParams.current = new URLSearchParams(); setParams({}, { replace: true }); }
+  }, [user?.id, setParams]);
+  const location = useLocation();
+  const query = params.get('q') ?? '';
+  const subject = params.get('materia') ?? '';
+  const type = params.get('tipo') ?? '';
+  const changeFilter = (key: string, value: string) => {
+    const next = new URLSearchParams(latestParams.current);
+    if (value) next.set(key, value); else next.delete(key);
+    latestParams.current = next;
+    setParams(next, { replace: true });
+  };
+  const materialsQuery = useInfiniteQuery({
+    queryKey: ['materials', user?.id],
+    queryFn: ({ pageParam }) => listMaterials(undefined, { limit: PAGE_SIZE, offset: pageParam }),
+    initialPageParam: 0,
+    enabled: Boolean(user?.id && permissions.has('resources.read')),
+    getNextPageParam: (lastPage, pages) => lastPage.length === PAGE_SIZE ? pages.reduce((sum, page) => sum + page.length, 0) : undefined,
   });
-  const { data, isLoading, isError, error, refetch } = useQuery({ queryKey: ['materials'], queryFn: () => listMaterials() });
-
-  const normalizedQuery = query.trim().toLocaleLowerCase('es');
-  const filtered = (data ?? []).filter((material) => {
-    const matchesCategory = cat === 'Todos' || TOOL_BY_TIPO[material.tipo]?.category === cat;
-    const searchable = [material.titulo, material.materia_nombre, TOOL_BY_TIPO[material.tipo]?.label, material.tipo]
-      .filter(Boolean)
-      .join(' ')
-      .toLocaleLowerCase('es');
-    return matchesCategory && (!normalizedQuery || searchable.includes(normalizedQuery));
-  });
-  const total = data?.length ?? 0;
-  const interactive = (data ?? []).filter((m) => TOOL_BY_TIPO[m.tipo]?.interactive).length;
-  const evaluable = (data ?? []).filter((m) => TOOL_BY_TIPO[m.tipo]?.category === 'Evaluación').length;
-  const printable = total;
-  const stats: Array<{ label: string; value: number; icon: EducationalIconName }> = [
-    { label: 'Materiales', value: total, icon: 'resources' },
-    { label: 'Interactivos', value: interactive, icon: 'interactive-games' },
-    { label: 'Borradores antiguos', value: evaluable, icon: 'archived-drafts' },
-    { label: 'PDF listos', value: printable, icon: 'pdf-ready' },
-  ];
-
-
-
-  return (
-    <div className="space-y-6">
-      <PageHeader
-        title="Recursos didácticos"
-        eyebrow="Recursos didácticos"
-        subtitle="Crea, revisa y descarga materiales de práctica y apoyo para tu clase."
-        action={canCreate ? <Link to="/app/herramientas/nuevo"><Button><Plus className="h-4 w-4" /> Crear material</Button></Link> : undefined}
-      />
-
-      <Card className="flex flex-col gap-4 border-brand-200 bg-brand-50/60 p-5 dark:border-brand-500/30 dark:bg-brand-500/10 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-start gap-3">
-          <div className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-white/90 shadow-sm ring-1 ring-brand-200 dark:bg-white/10 dark:ring-brand-500/30">
-            <EducationalIcon name="prepare-evaluation" className="h-12 w-12" />
-          </div>
-          <div>
-            <h2 className="font-display text-lg font-extrabold">Evaluaciones calificables</h2>
-            <p className="mt-1 max-w-2xl text-sm text-muted">
-              Los exámenes, quices y rúbricas se crean, publican y califican en un solo lugar: dentro de la materia.
-            </p>
-          </div>
-        </div>
-        {canReadEvaluations && <Link to={routes.materiasPara('evaluar')} className="shrink-0">
-          <Button variant="outline">Ir a Evaluaciones</Button>
-        </Link>}
-      </Card>
-
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        {stats.map((item, index) => (
-          <motion.div
-            key={item.label}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.04 }}
-            className="card p-4"
-          >
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-muted">{item.label}</p>
-                <p className="mt-1 font-display text-3xl font-extrabold">{item.value}</p>
-              </div>
-              <div className="grid h-14 w-14 place-items-center rounded-2xl bg-white/90 shadow-sm ring-1 ring-border dark:bg-white/10">
-                <EducationalIcon name={item.icon} className="h-12 w-12" />
-              </div>
-            </div>
-          </motion.div>
-        ))}
+  const materials = useMemo(() => mergeResourcePages(materialsQuery.data?.pages ?? []), [materialsQuery.data]);
+  const filtered = useMemo(() => filterResources(materials, { query, subject, type }), [materials, query, subject, type]);
+  const subjects = [...new Map(materials.filter(item => item.materia_id).map(item => [item.materia_id!, item.materia_nombre ?? 'Materia'])).entries()];
+  const types = [...new Set(materials.map(item => item.tipo))];
+  const origin = { resourceOrigin: { accountId: user?.id, path: location.pathname + location.search } };
+  return <div className="space-y-4">
+    <header className="flex flex-wrap items-center justify-between gap-2">
+      <h1 className="font-display text-xl font-extrabold sm:text-2xl">Recursos didácticos</h1>
+      {permissions.has('resources.create') && <Link to="/app/herramientas/nuevo" className={resourceLinkClass}><Plus className="h-4 w-4" /> Crear material</Link>}
+    </header>
+    <section aria-label="Buscar y filtrar recursos" className="space-y-2">
+      <label className="relative block">
+        <Search aria-hidden="true" className="absolute left-3 top-3.5 h-4 w-4 text-muted" />
+        <input type="search" aria-label="Buscar recursos" value={query} onChange={event => changeFilter('q', event.target.value)} placeholder="Buscar título, materia o tipo" className="focus-ring min-h-11 w-full rounded-xl border border-border bg-surface py-2 pl-10 pr-3 text-base" />
+      </label>
+      <div className="grid grid-cols-2 gap-2">
+        <select aria-label="Materia" value={subject} onChange={event => changeFilter('materia', event.target.value)} className="focus-ring min-h-11 min-w-0 rounded-xl border border-border bg-surface px-2 text-base">
+          <option value="">Todas las materias</option><option value="none">Sin materia</option>
+          {subjects.map(([id, name]) => <option key={id} value={id}>{name}</option>)}
+        </select>
+        <select aria-label="Tipo de recurso" value={type} onChange={event => changeFilter('tipo', event.target.value)} className="focus-ring min-h-11 min-w-0 rounded-xl border border-border bg-surface px-2 text-base">
+          <option value="">Todos los tipos</option>
+          {types.map(value => <option key={value} value={value}>{TOOL_BY_TIPO[value]?.label ?? value}</option>)}
+        </select>
       </div>
-
-      <CollectionToolbar
-        query={query}
-        onQueryChange={setQuery}
-        placeholder="Buscar por título, materia o tipo…"
-        resultCount={filtered.length}
-        value={cat}
-        onChange={setCat}
-        ariaLabel="Filtrar materiales"
-        options={CATEGORIES.map((category) => ({ value: category, label: category === 'Evaluación' ? 'Borradores antiguos' : category }))}
-      />
-
-      <QueryState
-        isLoading={isLoading}
-        isError={isError}
-        error={error}
-        onRetry={() => void refetch()}
-        isEmpty={!data || data.length === 0}
-        loading={<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{Array.from({ length: 6 }).map((_, index) => <Skeleton key={index} className="h-40" />)}</div>}
-        empty={<EmptyState icon={Wrench} title="Sin material todavía" description={canCreate ? 'Crea tu primer crucigrama, sopa de letras o guía en segundos.' : 'Todavía no hay materiales disponibles.'} action={canCreate ? <Link to="/app/herramientas/nuevo"><Button><Plus className="h-4 w-4" /> Crear material</Button></Link> : undefined} />}
-      >
-        {filtered.length === 0 ? (
-          <EmptyState icon={Wrench} title="No encontramos recursos" description={query ? 'Prueba otro término o cambia el filtro.' : 'Cambia el filtro o crea un recurso nuevo.'} />
-        ) : (
-          <motion.div layout className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            <AnimatePresence mode="popLayout">
-              {filtered.map((material) => {
-                const meta = TOOL_BY_TIPO[material.tipo];
-                const stateLabel = material.asignacion_tipo === "actividad"
-                  ? material.publicado_estudiantes
-                    ? material.evaluacion_recepcion_habilitada ? "Actividad · recibe entregas" : "Actividad · entregas cerradas"
-                    : "Actividad oculta"
-                  : material.asignacion_tipo === "apoyo"
-                    ? material.publicado_estudiantes ? "Apoyo visible" : "Apoyo oculto"
-                    : "Borrador";
-                const stateTone = material.publicado_estudiantes
-                  ? "success" as const
-                  : material.asignacion_tipo === "actividad" ? "violet" as const : "neutral" as const;
-                const assignmentLabel = material.evaluacion_id
-                  ? "Abrir actividad"
-                  : material.asignacion_tipo === "apoyo" ? "Administrar" : "Asignar";
-                return (
-                  <motion.div key={material.id} layout initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }}>
-                    <Card interactive className="group flex h-full flex-col p-5">
-                      <Link to={`/app/herramientas/${material.id}`} className="flex-1">
-                        <div className="mb-3 grid h-16 w-16 place-items-center rounded-2xl bg-white/90 shadow-sm ring-1 ring-border dark:bg-white/10"><EducationalIcon name={TOOL_EDUCATIONAL_ICON[material.tipo]} className="h-14 w-14" /></div>
-                        <div className="flex flex-wrap items-center gap-2">
-                          <Badge tone="neutral">{meta?.label ?? material.tipo}</Badge>
-                          <Badge tone={stateTone}>{stateLabel}</Badge>
-
-
-                          {meta?.interactive && <Badge tone="violet"><Gamepad2 className="h-3 w-3" /> Interactivo</Badge>}
-                        </div>
-                        {material.materia_nombre && <p className="mt-2 text-xs font-semibold text-brand-600">{material.materia_nombre}</p>}
-                        <p className="mt-2 font-semibold line-clamp-2">{material.titulo}</p>
-                        <p className="mt-1 text-xs text-muted">{formatDate(material.created_at)}</p>
-                      </Link>
-                      <div className="mt-4 flex items-center gap-2 border-t border-border pt-3">
-                        {canUpdate && <Link to={`/app/herramientas/${material.id}?action=edit`} className="min-w-0 flex-1">
-                          <Button size="sm" variant="outline" className="w-full"><Pencil className="h-4 w-4" /> Editar</Button>
-                        </Link>}
-                        {canAssign && <Link to={material.evaluacion_id && material.materia_id ? routes.materiaEvaluaciones(material.materia_id) : `/app/herramientas/${material.id}?action=assign`} className="min-w-0 flex-1">
-                          <Button size="sm" className="w-full"><Send className="h-4 w-4" /> {assignmentLabel}</Button>
-                        </Link>}
-                        <ActionMenu
-                          label={`Más acciones para ${material.titulo}`}
-                          items={[
-                            { label: 'Descargar PDF', href: pdfUrl(material.id), icon: <Download className="h-4 w-4" aria-hidden="true" /> },
-                            ...(canCreate ? [{ label: 'Duplicar recurso', icon: <Copy className="h-4 w-4" aria-hidden="true" />, onSelect: async () => { try { const duplicated = await duplicateMaterial(material.id); await queryClient.invalidateQueries({ queryKey: ['materials'] }); toast.success('Duplicado'); navigate(`/app/herramientas/${duplicated.id}`); } catch { toast.error('Error al duplicar'); } } }] : []),
-                            ...(canDelete ? [{ label: 'Eliminar recurso', tone: 'danger' as const, icon: <Trash2 className="h-4 w-4" aria-hidden="true" />, onSelect: () => setDeleteTarget({ id: material.id, title: material.titulo }) }] : []),
-                          ]}
-                        />
-                      </div>
-                    </Card>
-                  </motion.div>
-                );
-              })}
-            </AnimatePresence>
-          </motion.div>
-        )}
-      </QueryState>
-      <ConfirmDialog
-        open={Boolean(deleteTarget)}
-        onClose={() => setDeleteTarget(null)}
-        onConfirm={() => deleteMutation.mutate()}
-        title="Eliminar material"
-        description={<>Se eliminará <strong className="text-fg">{deleteTarget?.title}</strong>. Esta acción no se puede deshacer.</>}
-        confirmLabel="Eliminar"
-        tone="danger"
-        loading={deleteMutation.isPending}
-      />
-    </div>
-  );
+      <div className="flex min-h-11 flex-wrap items-center justify-between gap-2 text-sm text-muted">
+        <p role="status">{filtered.length} {filtered.length === 1 ? 'resultado' : 'resultados'}</p>
+        {(query || subject || type) && <Button variant="ghost" onClick={() => setParams({})}>Limpiar filtros</Button>}
+      </div>
+    </section>
+    <QueryState isLoading={materialsQuery.isLoading} isError={materialsQuery.isError && !materials.length} error={materialsQuery.error} onRetry={() => void materialsQuery.refetch()} isEmpty={!materials.length}
+      loading={<div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{Array.from({ length: 6 }, (_, i) => <Skeleton key={i} className="h-48" />)}</div>}
+      empty={<EmptyState icon={Wrench} title="Sin material todavía" description="Los recursos que prepares aparecerán aquí." />}>
+      {!filtered.length ? <EmptyState icon={Wrench} title="No encontramos recursos" description="Prueba otro término o limpia los filtros." /> :
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {filtered.map(material => {
+            const state = resourceState(material);
+            const href = `/app/herramientas/${material.id}`;
+            return <Card key={material.id} className="flex min-w-0 flex-col p-4">
+              <div className="flex items-start gap-3">
+                <EducationalIcon name={TOOL_EDUCATIONAL_ICON[material.tipo]} className="h-12 w-12 shrink-0" />
+                <div className="min-w-0 flex-1"><p className="text-xs text-muted">{TOOL_BY_TIPO[material.tipo]?.label ?? material.tipo}</p><h2 className="mt-1 break-words font-bold"><Link to={href} state={origin} className="focus-ring rounded">{material.titulo}</Link></h2></div>
+              </div>
+              <div className="mt-2"><Badge tone={state.tone}>{state.label}</Badge></div>
+              <p className="mt-2 text-xs text-muted">{material.materia_nombre ?? 'Sin materia'} · {formatDate(material.created_at)}</p>
+              <div className="mt-auto flex flex-wrap gap-2 pt-3">
+                <Link to={href} state={origin} className={`${resourceLinkClass} flex-1 bg-brand-600 text-white hover:bg-brand-700`}>Ver recurso</Link>
+                {permissions.has('resources.assign') && (!material.evaluacion_id || permissions.has('evaluations.read')) && <Link to={material.evaluacion_id && material.materia_id ? routes.materiaEvaluaciones(material.materia_id) : `${href}?action=assign`} state={origin} className={resourceLinkClass}>{material.evaluacion_id ? 'Abrir actividad' : material.asignacion_tipo === 'apoyo' ? 'Administrar' : 'Asignar'}</Link>}
+                <ResourceCardActions id={material.id} title={material.titulo} destination={href} origin={origin} canManage={['resources.update', 'resources.assign', 'resources.create', 'resources.delete'].some(permission => permissions.has(permission))} />
+              </div>
+            </Card>;
+          })}
+        </div>}
+    </QueryState>
+    {materialsQuery.hasNextPage && <div className="space-y-2 text-center">
+      <p className="text-sm text-muted">La búsqueda y los filtros se aplican a los {materials.length} recursos cargados. Carga más para ampliar los resultados.</p>
+      <Button variant="outline" onClick={() => void materialsQuery.fetchNextPage()} disabled={materialsQuery.isFetchingNextPage} loading={materialsQuery.isFetchingNextPage}>Cargar más</Button>
+    </div>}
+    {materialsQuery.isFetchNextPageError && <div role="alert" className="text-sm text-rose-600">No pudimos cargar más recursos. Los anteriores siguen disponibles. Intenta «Cargar más» de nuevo.</div>}
+    <details className="rounded-xl border border-border bg-surface p-3">
+      <summary className="focus-ring min-h-11 cursor-pointer content-center rounded font-semibold">Resumen y ayuda</summary>
+      <div className="grid grid-cols-2 gap-3 py-3 sm:grid-cols-4">
+        {([
+          ['Materiales cargados', materials.length, 'resources'],
+          ['Interactivos', materials.filter(item => TOOL_BY_TIPO[item.tipo]?.interactive).length, 'interactive-games'],
+          ['Borradores antiguos', materials.filter(item => TOOL_BY_TIPO[item.tipo]?.category === 'Evaluación').length, 'archived-drafts'],
+          ['PDF disponibles', materials.length, 'pdf-ready'],
+        ] as const).map(([label, count, icon]) => <div key={label} className="flex items-center gap-2"><EducationalIcon name={icon} className="h-10 w-10" /><p className="text-sm">{label}<strong className="block">{count}</strong></p></div>)}
+      </div>
+      <div className="flex items-center gap-2 text-sm"><EducationalIcon name="prepare-evaluation" className="h-10 w-10 shrink-0" /><p>Las evaluaciones se crean y califican dentro de la materia.</p></div>
+      {permissions.has('evaluations.read') && <Link to={routes.materiasPara('evaluar')} className={`${resourceLinkClass} mt-2`}>Ir a Evaluaciones</Link>}
+    </details>
+  </div>;
 }

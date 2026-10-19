@@ -40,21 +40,21 @@
 | endpoint | `POST:/xali/evaluaciones/{evaluacion_id}/recursos` | admin, estudiante, profesor | covered | `backend/app/modules/xali/router.py:75` |
 | frontend_route | `/app/herramientas` | admin, profesor | covered | `frontend/src/config/routes.ts:54` |
 | frontend_route | `/app/herramientas/{id}` | admin, profesor | covered | `frontend/src/config/routes.ts:57` |
-| frontend_route | `/app/materias/{id}/recursos` | authenticated | covered | `frontend/src/config/routes.ts:36` |
+| frontend_route | `/app/materias/{id}/recursos` | authenticated | covered | `frontend/src/modules/materias/MateriaRecursos.tsx:67` |
 | frontend_route | `/app/recursos/{id}` | estudiante | covered | `frontend/src/config/routes.ts:58` |
-| frontend_call | `DELETE:/herramientas/{id}` | admin, profesor | covered | `frontend/src/modules/herramientas/api.ts:44` |
+| frontend_call | `DELETE:/herramientas/{id}` | admin, profesor | covered | `frontend/src/modules/herramientas/api.ts:45` |
 | frontend_call | `GET:/herramientas/catalogo` | admin, profesor | covered | `frontend/src/modules/herramientas/api.ts:19` |
-| frontend_call | `GET:/herramientas/materias/{materiaId}/recursos` | admin, profesor | covered | `frontend/src/modules/herramientas/api.ts:29` |
-| frontend_call | `GET:/herramientas/{id}/evaluaciones` | admin, profesor | covered | `frontend/src/modules/herramientas/api.ts:98` |
-| frontend_call | `GET:/herramientas/{id}` | admin, profesor | covered | `frontend/src/modules/herramientas/api.ts:34` |
+| frontend_call | `GET:/herramientas/materias/{materiaId}/recursos` | admin, profesor | covered | `frontend/src/modules/herramientas/api.ts:30` |
+| frontend_call | `GET:/herramientas/{id}/evaluaciones` | admin, profesor | covered | `frontend/src/modules/herramientas/api.ts:99` |
+| frontend_call | `GET:/herramientas/{id}` | admin, profesor | covered | `frontend/src/modules/herramientas/api.ts:35` |
 | frontend_call | `GET:/xali/evaluaciones/{evaluacionId}/recursos` | ambiguous | covered | `frontend/src/modules/xali/api.ts:25` |
-| frontend_call | `PATCH:/herramientas/{id}/visibilidad` | admin, profesor | covered | `frontend/src/modules/herramientas/api.ts:68` |
-| frontend_call | `PATCH:/herramientas/{id}` | admin, profesor | covered | `frontend/src/modules/herramientas/api.ts:53` |
-| frontend_call | `POST:/herramientas/{endpoint}` | admin, profesor | covered | `frontend/src/modules/herramientas/api.ts:39` |
-| frontend_call | `POST:/herramientas/{id}/asignar-apoyo` | admin, profesor | covered | `frontend/src/modules/herramientas/api.ts:58` |
-| frontend_call | `POST:/herramientas/{id}/convertir-evaluacion` | admin, profesor | covered | `frontend/src/modules/herramientas/api.ts:93` |
-| frontend_call | `POST:/herramientas/{id}/duplicar` | admin, profesor | covered | `frontend/src/modules/herramientas/api.ts:73` |
-| frontend_call | `POST:/herramientas/{id}/retirar-apoyo` | admin, profesor | covered | `frontend/src/modules/herramientas/api.ts:63` |
+| frontend_call | `PATCH:/herramientas/{id}/visibilidad` | admin, profesor | covered | `frontend/src/modules/herramientas/api.ts:69` |
+| frontend_call | `PATCH:/herramientas/{id}` | admin, profesor | covered | `frontend/src/modules/herramientas/api.ts:54` |
+| frontend_call | `POST:/herramientas/{endpoint}` | admin, profesor | covered | `frontend/src/modules/herramientas/api.ts:40` |
+| frontend_call | `POST:/herramientas/{id}/asignar-apoyo` | admin, profesor | covered | `frontend/src/modules/herramientas/api.ts:59` |
+| frontend_call | `POST:/herramientas/{id}/convertir-evaluacion` | admin, profesor | covered | `frontend/src/modules/herramientas/api.ts:94` |
+| frontend_call | `POST:/herramientas/{id}/duplicar` | admin, profesor | covered | `frontend/src/modules/herramientas/api.ts:74` |
+| frontend_call | `POST:/herramientas/{id}/retirar-apoyo` | admin, profesor | covered | `frontend/src/modules/herramientas/api.ts:64` |
 | frontend_call | `POST:/xali/evaluaciones/{evaluacionId}/recursos` | ambiguous | covered | `frontend/src/modules/xali/api.ts:21` |
 
 ## Decisiones explícitas de permiso

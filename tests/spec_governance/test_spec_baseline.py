@@ -103,6 +103,7 @@ ALL_SPECS = {
     "102-camara-visor-completo",
     "104-xali-docente-visual",
     "105-materia-movil-cola",
+    "106-recursos-vista-clara",
 }
 OWNED_SPECS = {
     name

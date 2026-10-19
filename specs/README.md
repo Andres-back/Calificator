@@ -312,6 +312,10 @@ actualizar la especificación propietaria, su plan y sus tareas; no debe crear d
 
 - [100-feedback-demo-movil](100-feedback-demo-movil/spec.md), [issue #209](https://github.com/Andres-back/Calificator/issues/209): lectura/edición amplia, cálculo provisional claro, decimales exactos y «Añadir al inicio» como guía de acceso directo Android/iPhone. Propietarios 008/002; sin backend, modelos, cambios académicos, extensión, APK ni offline. Alcance/[plan](100-feedback-demo-movil/plan.md) aprobados, listas base 16/16 y UX 8/8 revisadas con autorización. Implementación y verificaciones locales: [evidencia](100-feedback-demo-movil/quickstart.md). CI remoto pendiente; sin fusión/despliegue. Impresión 098 fuera del cambio.
 
+## Evolución 106: recursos docentes claros
+
+- [106-recursos-vista-clara](106-recursos-vista-clara/spec.md), [issue #220](https://github.com/Andres-back/Calificator/issues/220): búsqueda y filtros antes de resúmenes, «Ver recurso», lectura compacta, documentos diferenciados y editor móvil protegido. Propietarios 006/003, exclusivamente frontend; sin cambiar datos guardados, juegos, generación o contratos. Spec/plan aprobados y listas base 16/16 y UX 8/8 revisadas con autorización; [validación y limitaciones](106-recursos-vista-clara/quickstart.md). CI y aprobación separada obligatorios antes de fusionar/desplegar.
+
 ## Evolución 105: materia móvil y cola discreta
 
 - [105-materia-movil-cola](105-materia-movil-cola/spec.md), [issue #218](https://github.com/Andres-back/Calificator/issues/218): formulario de materia breve con escritura móvil adaptada; monitor compacto/minimizable sin detener trabajos; éxito contextual del borrador. Propietarios 003/005/008. Alcance y plan aprobados el 2026-10-18, revisión base y UX completas. Pruebas sintéticas en Chromium/WebKit y ambos temas; [resultados](105-materia-movil-cola/quickstart.md). Sin cambios académicos, pruebas físicas ni producción. CI remoto y autorización separada antes de fusión.
