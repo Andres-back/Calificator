@@ -40,3 +40,15 @@ Converge: nueve FR, cuatro SC, ocho principios constitucionales y siete decision
 ## Corrección de gobernanza tras CI
 
 CI del HEAD inicial detectó un registro omitido en `ALL_SPECS`: faltaba 103. Converge añadió T012; se registró la especificación y se regeneró el inventario mediante el script oficial. Se mantienen 573 superficies; la deriva correspondía a referencias/cobertura de tests y digest de fuentes, sin añadir endpoints ni cambiar permisos. Se conserva la comparación estricta de especificaciones, sin exclusiones ni controles desactivados. La primera repetición local detectó únicamente la propia T012 aún abierta (40 pruebas correctas); se cerró tras completar registro/regeneración y se repitió el control completo.
+
+## Reconciliación para entrega autorizada — 2026-10-18
+
+El usuario autorizó actualizar los iconos administrativos en producción y fusionar el PR pendiente. Se incorporó `main` conservando los escenarios WebKit de 103, 104 y 105, todas las entradas del índice y del registro de especificaciones, y el inventario regenerado. No se descartaron pruebas ni funcionalidades de las ramas integradas.
+
+- 98 pruebas unitarias focalizadas aprobadas en seis archivos de cámaras, iconos, navegación, usuarios y correo.
+- 20 E2E existentes aprobados en Chromium/WebKit, 360/390/1440 px, claro/oscuro y cámaras sintéticas; cero escrituras académicas.
+- 41 pruebas de gobernanza aprobadas; inventario vigente de 573 superficies.
+- Tipos, lint sin advertencias, build y auditorías de acciones/recursos aprobados. Se conserva la advertencia general de tamaño de chunks.
+- Los primeros intentos dentro del sandbox fallaron por permisos de archivos temporales; se repitieron fuera del sandbox y terminaron con código 0, sin relajar comprobaciones.
+
+CI del HEAD actualizado y verificación de producción siguen siendo obligatorios; estos resultados locales no acreditan cámara física ni despliegue.

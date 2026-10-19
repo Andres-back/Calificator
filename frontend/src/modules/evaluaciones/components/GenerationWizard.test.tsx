@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import toast from 'react-hot-toast';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { GenerationWizard } from './GenerationWizard';
 import { createEmptyWizardState, persistWizardDraft } from './generationWizardModel';
@@ -269,6 +270,8 @@ describe('GenerationWizard', () => {
     await user.click(screen.getByRole('button', { name: 'Generar evaluación' }));
     await waitFor(() => expect(mocks.generate).toHaveBeenCalledWith(expect.objectContaining({ nombre: 'Evaluación de Fracciones', tema: 'Fracciones', cantidad_preguntas: 10, modalidad: 'fisica' })));
     expect(await screen.findByRole('button', { name: 'Guardar borrador' })).toBeInTheDocument();
+    expect(toast.success).not.toHaveBeenCalledWith('Borrador generado. Revísalo antes de continuar.');
+    expect(screen.getByText('Revisa y edita la evaluación')).toBeInTheDocument();
     expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '2');
     await user.click(screen.getByRole('button', { name: 'Guardar borrador' }));
     await waitFor(() => expect(onCompleted).toHaveBeenCalledWith(evaluation));

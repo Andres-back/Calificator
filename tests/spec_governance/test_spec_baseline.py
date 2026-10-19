@@ -102,6 +102,8 @@ ALL_SPECS = {
     "100-feedback-demo-movil",
     "102-camara-visor-completo",
     "103-camaras-iconos-admin",
+    "104-xali-docente-visual",
+    "105-materia-movil-cola",
 }
 OWNED_SPECS = {
     name

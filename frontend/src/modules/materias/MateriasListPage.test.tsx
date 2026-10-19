@@ -92,6 +92,23 @@ beforeEach(() => {
 });
 
 describe('MateriasListPage guided creation', () => {
+  it('starts without editable autofocus and preserves optional description when folded', async () => {
+    const user = userEvent.setup();
+    renderPage();
+    await user.click(await screen.findByRole('button', { name: 'Nueva materia' }));
+    expect(screen.getByLabelText(/Nombre de la materia/i)).not.toHaveFocus();
+    expect(screen.getByText('Más opciones').closest('details')).not.toHaveAttribute('open');
+    await fillRequiredFields(user);
+    const options = screen.getByText('Más opciones');
+    await user.click(options);
+    await user.type(screen.getByRole('textbox', { name: /Descripción/ }), 'Curso 7A');
+    await user.click(options);
+    expect(mocks.create).not.toHaveBeenCalled();
+    await user.click(options);
+    expect(screen.getByRole('textbox', { name: /Descripción/ })).toHaveValue('Curso 7A');
+    await user.click(screen.getByRole('button', { name: /Crear y continuar/ }));
+    await waitFor(() => expect(mocks.create).toHaveBeenCalledWith(expect.objectContaining({ descripcion: 'Curso 7A' })));
+  });
   it('requires pedagogical context and continues to the guided overview', async () => {
     const user = userEvent.setup();
     renderPage();
@@ -113,7 +130,7 @@ describe('MateriasListPage guided creation', () => {
     expect(submit).toBeEnabled();
     expect(
       screen.getByText(
-        /Todo listo. Crearemos la materia y continuaremos con invitar a tus estudiantes/i,
+        /Después podrás invitar a tus estudiantes/i,
       ),
     ).toBeInTheDocument();
 
@@ -148,7 +165,7 @@ describe('MateriasListPage guided creation', () => {
       screen.getByRole('button', { name: 'Nueva materia' }),
     );
     expect(
-      screen.getByText(/Después te llevaremos a preparar la evaluación/i),
+      screen.getByText(/Después podrás preparar la evaluación/i),
     ).toBeInTheDocument();
 
     await fillRequiredFields(user);

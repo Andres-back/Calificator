@@ -332,7 +332,6 @@ export function GenerationWizard({
         generatedCriteria: normalizeRubricCriteria((evaluation.criterios ?? []) as Record<string, unknown>[]),
         questions: evaluationToEditableQuestions(evaluation),
       }));
-      toast.success('Borrador generado. Revísalo antes de continuar.');
     },
     onError: (error) => setGenerationError(toApiError(error).detail),
     onSettled: () => { generateLock.current = false; },

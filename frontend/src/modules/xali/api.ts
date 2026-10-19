@@ -1,12 +1,12 @@
 import { api } from '@/lib/api';
 import type { ChatMessage, XaliEvaluacionEntregada, XaliEvaluationChatResponse, XaliStudentResource, XaliStudentResourceType } from '@/types/api';
 
-export async function getHistory(materiaId?: string): Promise<ChatMessage[]> {
-  const { data } = await api.get<ChatMessage[]>('/xali/history', { params: materiaId ? { materia_id: materiaId } : undefined });
+export async function getHistory(materiaId?: string, signal?: AbortSignal): Promise<ChatMessage[]> {
+  const { data } = await api.get<ChatMessage[]>('/xali/history', { params: materiaId ? { materia_id: materiaId } : undefined, signal });
   return data;
 }
-export async function sendMessage(mensaje: string, materiaId?: string): Promise<{ respuesta: string }> {
-  const { data } = await api.post<{ respuesta: string }>('/xali/chat', { mensaje, materia_id: materiaId ?? null });
+export async function sendMessage(mensaje: string, materiaId?: string, signal?: AbortSignal): Promise<{ respuesta: string }> {
+  const { data } = await api.post<{ respuesta: string }>('/xali/chat', { mensaje, materia_id: materiaId ?? null }, { signal });
   return data;
 }
 export async function listEvaluacionesEntregadas(): Promise<XaliEvaluacionEntregada[]> {
@@ -25,6 +25,6 @@ export async function listEvaluationResources(evaluacionId: string): Promise<Xal
   const { data } = await api.get<XaliStudentResource[]>(`/xali/evaluaciones/${evaluacionId}/recursos`);
   return data;
 }
-export async function clearHistory(materiaId?: string): Promise<void> {
-  await api.delete('/xali/history', { params: materiaId ? { materia_id: materiaId } : undefined });
+export async function clearHistory(materiaId?: string, signal?: AbortSignal): Promise<void> {
+  await api.delete('/xali/history', { params: materiaId ? { materia_id: materiaId } : undefined, signal });
 }

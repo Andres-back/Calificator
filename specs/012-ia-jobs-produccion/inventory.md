@@ -8,12 +8,12 @@
 |---|---|---|---|---|
 | endpoint | `GET:/jobs/pendientes` | authenticated | covered | `backend/app/modules/jobs/router.py:53` |
 | endpoint | `GET:/jobs/{job_id}` | authenticated | covered | `backend/app/modules/jobs/router.py:115` |
-| endpoint | `GET:/jobs/{job_id}/estado` | authenticated | missing | `backend/app/modules/jobs/router.py:167` |
-| endpoint | `GET:/jobs/{job_id}/items` | authenticated | missing | `backend/app/modules/jobs/router.py:177` |
-| endpoint | `POST:/jobs/{job_id}/cancelar` | authenticated | missing | `backend/app/modules/jobs/router.py:364` |
-| endpoint | `POST:/jobs/{job_id}/reintentar` | authenticated | missing | `backend/app/modules/jobs/router.py:233` |
-| frontend_call | `GET:/jobs/pendientes` | ambiguous | covered | `frontend/src/modules/calificaciones/gradingJobs.ts:90` |
-| frontend_call | `GET:/jobs/{jobId}` | ambiguous | covered | `frontend/src/modules/calificaciones/gradingJobs.ts:156` |
+| endpoint | `GET:/jobs/{job_id}/estado` | authenticated | covered | `backend/app/modules/jobs/router.py:167` |
+| endpoint | `GET:/jobs/{job_id}/items` | authenticated | covered | `backend/app/modules/jobs/router.py:177` |
+| endpoint | `POST:/jobs/{job_id}/cancelar` | authenticated | covered | `backend/app/modules/jobs/router.py:364` |
+| endpoint | `POST:/jobs/{job_id}/reintentar` | authenticated | covered | `backend/app/modules/jobs/router.py:233` |
+| frontend_call | `GET:/jobs/pendientes` | ambiguous | covered | `frontend/src/modules/calificaciones/gradingJobs.ts:109` |
+| frontend_call | `GET:/jobs/{jobId}` | ambiguous | covered | `frontend/src/modules/calificaciones/gradingJobs.ts:183` |
 | frontend_call | `GET:/jobs/{jobId}` | ambiguous | covered | `frontend/src/modules/evaluaciones/components/DigitalizationJobMonitor.tsx:116` |
 | frontend_call | `POST:/jobs/{jobId}` | ambiguous | covered | `frontend/src/modules/evaluaciones/components/DigitalizationJobMonitor.tsx:227` |
 | integration | `celery` | system | covered | `backend/app/workers/tasks_ai_config.py:1` |
@@ -45,5 +45,5 @@ Sin decisiones explícitas de permiso para este dominio.
 
 ## Hallazgos
 
+- **low · missing_coverage**: 8 superficies de 012-ia-jobs-produccion no tienen evidencia de prueba observable.
 - **medium · contract_mismatch**: 5 llamadas frontend no tienen endpoint backend canónico coincidente en el análisis estático.
-- **low · missing_coverage**: 12 superficies de 012-ia-jobs-produccion no tienen evidencia de prueba observable.

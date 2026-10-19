@@ -70,6 +70,10 @@ Como equipo, necesito actualizar estos artefactos cuando cambie el comportamient
 
 [096-evaluacion-dos-pantallas](../096-evaluacion-dos-pantallas/spec.md), issue #202, simplifica el asistente IA a Preparar/Revisar con nombre sugerido, reparto visible, opciones y ayuda desplegables. Una entrada común ofrece IA, foto/PDF y creación manual desde materia o acceso general. Guarda el mismo borrador con validación/versionado y publica mediante acción separada. Conserva borradores v7, selección explícita de criterios, modalidades, respuestas y contratos de documentos; no cambia notas, evidencia ni proveedores.
 
+## Evolución 105: éxito contextual
+
+[105-materia-movil-cola](../105-materia-movil-cola/spec.md) conserva el éxito visible en el paso Revisar y elimina únicamente el toast redundante de generación que podía cubrir la cabecera. No altera errores, advertencias, preguntas, guardado, modalidades ni publicación.
+
 ## Evolución 097: escritura móvil despejada
 
 [097-escritura-docente-movil](../097-escritura-docente-movil/spec.md), issue #204, reduce la cabecera al escribir, evita enfoque textual automático en celular y adapta únicamente los formularios IA/manual al espacio visible. Listo termina la edición local sin generar ni guardar; preguntas/respuestas manuales usan áreas de texto y los ajustes siguen disponibles en Personalizar. Conserva datos, borradores, permisos y reglas académicas; las pruebas de viewport sintético no acreditan un teclado físico.

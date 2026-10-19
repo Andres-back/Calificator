@@ -1,0 +1,19 @@
+{
+  "validos": [
+    {"id":"tabla","tipo":"tabla","titulo":"Puntos","descripcion":"Coordenadas para representar.","columnas":["Punto","x","y"],"filas":[["A",-2,3],["O",0,0],["B",3,-1]]},
+    {"id":"barras","tipo":"grafico","titulo":"Resultados de ejemplo","descripcion":"Datos de ejemplo, no de estudiantes.","subtipo":"barras","etiquetas":["A","B","C"],"series":[{"nombre":"Cantidad","valores":[2,4,3]}],"unidad":"unidades"},
+    {"id":"linea","tipo":"grafico","titulo":"Cambio","descripcion":"Mismos datos en línea.","subtipo":"linea","etiquetas":["A","B","C"],"series":[{"nombre":"Cantidad","valores":[2,4,3]}]},
+    {"id":"plano","tipo":"plano","titulo":"Plano cartesiano","descripcion":"A en segundo cuadrante, O en origen y B en cuarto cuadrante.","x":[-5,5],"y":[-5,5],"puntos":[{"x":-2,"y":3,"etiqueta":"A"},{"x":0,"y":0,"etiqueta":"O"},{"x":3,"y":-1,"etiqueta":"B"}],"rectas":[{"pendiente":1,"intercepto":0}]},
+    {"id":"figura","tipo":"figura","titulo":"Medidas","descripcion":"Círculo de radio 2 y rectángulo de 4 por 2.","x":[-5,8],"y":[-5,5],"primitivas":[{"tipo":"circulo","x":0,"y":0,"radio":2},{"tipo":"rectangulo","x":3,"y":0,"ancho":4,"alto":2},{"tipo":"etiqueta","x":0,"y":3,"texto":"Radio 2"}]}
+  ],
+  "invalidos": [
+    {"id":"a","tipo":"tabla","titulo":"Irregular","descripcion":"No rectangular.","columnas":["A","B"],"filas":[[1]]},
+    {"id":"a","tipo":"grafico","titulo":"Longitudes","descripcion":"No coinciden.","subtipo":"barras","etiquetas":["A","B"],"series":[{"nombre":"Valor","valores":[1]}]},
+    {"id":"a","tipo":"plano","titulo":"Dominio","descripcion":"Invertido.","x":[5,-5],"y":[-5,5],"puntos":[]},
+    {"id":"a","tipo":"plano","titulo":"Fuera","descripcion":"Punto fuera del dominio.","x":[-5,5],"y":[-5,5],"puntos":[{"x":20,"y":0}]},
+    {"id":"a","tipo":"figura","titulo":"Medida","descripcion":"Radio negativo.","x":[-5,5],"y":[-5,5],"primitivas":[{"tipo":"circulo","x":0,"y":0,"radio":-2}]},
+    {"id":"a","tipo":"tabla","titulo":"Código","descripcion":"No permitido.","columnas":["A"],"filas":[["<script>alert(1)</script>"]]},
+    {"id":"a","tipo":"tabla","titulo":"Campos","descripcion":"Extra no permitido.","columnas":["A"],"filas":[[1]],"url":"https://example.test"},
+    {"id":"a","tipo":"plano","titulo":"Booleano","descripcion":"No es coordenada.","x":[-5,5],"y":[-5,5],"puntos":[{"x":true,"y":0}]}
+  ]
+}

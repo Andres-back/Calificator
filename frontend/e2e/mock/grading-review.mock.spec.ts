@@ -91,7 +91,7 @@ test('088 lote largo y temporizador opcional conservan controles alcanzables', a
   const job = { jobId: 'batch1', evaluacionId: 'e1', materiaId: 'm1', estudianteId: '', estudianteNombre: 'Lote sintético',
     createdAt: new Date().toISOString(), kind: 'batch', completed: true,
     summary: { total: 30, queued: 0, running: 0, retrying: 0, success: 0, requires_review: 30, failed_permanent: 0, cancelled: 0 } };
-  await page.addInitScript((stored) => localStorage.setItem('xcalificator.pending-gradings.v1', JSON.stringify([stored])), job);
+  await page.addInitScript((stored) => localStorage.setItem('xcalificator.pending-gradings.v1:p1', JSON.stringify([stored])), job);
   await login(page, 'profesor', { rosterSize: 30 });
   await page.route('**/api/jobs/batch1/items*', (route) => route.fulfill({ json: { items: Array.from({ length: 30 }, (_, index) => ({
     job_id: `item${index}`, estudiante_nombre: `Alumno ${index + 1}`, estado: 'requires_review', progreso: 100,
@@ -102,6 +102,7 @@ test('088 lote largo y temporizador opcional conservan controles alcanzables', a
   await page.goto('/app/calificaciones?evaluacion=e1&calificacion=c1&estudiante=s1');
   const workspace = page.locator('[data-grading-layout]');
   const monitor = workspace.getByLabel('Calificaciones en cola');
+  await monitor.getByRole('button', { name: 'Ver progreso', exact: true }).click();
   await monitor.getByRole('button', { name: 'Ver casos', exact: true }).click();
   const lastCase = monitor.getByText('Caso 30 · Alumno 30', { exact: true });
   await lastCase.scrollIntoViewIfNeeded();
