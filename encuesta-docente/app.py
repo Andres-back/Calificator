@@ -170,6 +170,8 @@ def validate(payload, schema, settings):
     signature = payload['signature']
     if not isinstance(signature, dict) or set(signature) != {'method', 'name', 'strokes'} or signature['method'] not in ('drawn', 'typed'):
         raise Invalid('Revise la constancia de firma.')
+    if settings.get('require_drawn_signature') and signature['method'] != 'drawn':
+        raise Invalid('Para enviar debe dibujar su firma con el dedo o el ratón y autorizar su guardado. El nombre escrito no reemplaza la firma.')
     if text(signature['name'], 180).casefold() != text(identity['name'], 180).casefold():
         raise Invalid('El nombre de la firma debe coincidir con el nombre de identificación.')
     strokes = signature['strokes']
@@ -190,7 +192,7 @@ def validate(payload, schema, settings):
     if count > 12000:
         raise Invalid('La firma es demasiado extensa. Bórrela e intente de nuevo.')
     if signature['method'] == 'drawn' and (not consent['signature_storage'] or count < 8 or length < .08):
-        raise Invalid('Dibuje su firma y autorice guardar ese dibujo, o elija confirmar con su nombre.')
+        raise Invalid('Dibuje su firma dentro del recuadro y autorice guardar el dibujo antes de enviar.')
     if signature['method'] == 'typed' and (strokes or consent['signature_storage']):
         raise Invalid('La confirmación con nombre no debe incluir dibujo de firma.')
     return payload
@@ -207,7 +209,7 @@ def consent_document(settings):
         {'title': 'Confidencialidad y publicación', 'text': 'Los investigadores responsables accederán a los registros identificados para esta investigación. La tesis y un eventual artículo presentarán resultados agrupados, sin publicar nombres, contactos ni firmas. Los registros completos no se publicarán en la página. Las respuestas abiertas se revisarán para retirar identificadores antes de utilizarse en publicaciones. La web y su almacenamiento serán administrados por los investigadores en el servidor destinado al estudio.'},
         {'title': 'Conservación', 'text': settings['retention']},
         {'title': 'Sus derechos y copia', 'text': 'Puede solicitar conocer, consultar, actualizar o rectificar sus datos; obtener prueba de la autorización; pedir revocación o supresión cuando proceda y conocer el uso de su información. Puede dirigirse a los correos indicados y, cuando corresponda, presentar queja ante la Superintendencia de Industria y Comercio. Al enviar recibirá una constancia descargable con un código para identificar su solicitud. Si los datos ya fueron anonimizados de manera irreversible o incorporados a resultados agregados, no será posible aislar su contribución.'},
-        {'title': 'Constancia electrónica e invitaciones posteriores', 'text': 'Puede dibujar su firma con el dedo o el ratón, o confirmar mediante su nombre completo y aceptación expresa. El dibujo es opcional y se guarda solo para dejar constancia de este consentimiento; no es una firma digital certificada. Se conserva la relación entre aceptación, contenido, versión y fecha. La autenticidad no queda certificada por esta aplicación. Expresar interés en una demostración o prueba piloto no lo compromete a participar ni autoriza nuevas mediciones, acceso a datos de estudiantes u otros procedimientos. Cualquier prueba posterior tendrá su información y autorización correspondientes.'}
+        {'title': 'Constancia electrónica e invitaciones posteriores', 'text': 'Para enviar este formulario debe dibujar su firma con el dedo o el ratón y autorizar expresamente que se conserve ese dibujo como constancia del consentimiento. Escribir su nombre no reemplaza el dibujo. Si no desea firmar o autorizar su guardado, puede retirarse sin enviar la encuesta y sin consecuencias académicas o laborales. Se conserva la relación entre aceptación, contenido, versión y fecha; no es una firma digital certificada ni esta aplicación certifica identidad. Expresar interés en una demostración o prueba piloto no lo compromete a participar ni autoriza nuevas mediciones, acceso a datos de estudiantes u otros procedimientos. Cualquier prueba posterior tendrá su información y autorización correspondientes.'}
     ]
 
 
@@ -220,7 +222,7 @@ def feedback_consent_document(settings):
         {'title': 'Confidencialidad y publicación', 'text': 'Los investigadores responsables tendrán acceso a los registros identificados para analizar la prueba y documentar mejoras del programa. La tesis y un eventual artículo presentarán resultados agrupados y síntesis de los comentarios, sin publicar nombres, contactos, firmas ni formularios identificados. Se revisarán los textos y detalles contextuales antes de publicar para retirar identificadores. Las constancias firmadas se conservarán como evidencia privada de la investigación; no se publicarán en la web. El servidor y almacenamiento serán administrados por los investigadores.'},
         {'title': 'Conservación', 'text': settings['retention']},
         {'title': 'Sus derechos y copia', 'text': 'Puede consultar, actualizar o rectificar sus datos, obtener prueba de la autorización, solicitar revocación o supresión cuando proceda y conocer el uso de su información. Dirija su solicitud a los contactos indicados y, cuando corresponda, presente queja ante la Superintendencia de Industria y Comercio. Al enviar podrá descargar una constancia con sus respuestas, autorización, firma y código de consulta. Si su contribución ya fue anonimizada irreversiblemente o incorporada a resultados agregados, no será posible aislarla.'},
-        {'title': 'Confirmación y firma', 'text': 'Al final confirme que las observaciones describen su experiencia de uso o demostración. Puede dibujar su firma con el dedo o ratón, autorizando guardar ese dibujo, o confirmar con su nombre completo y aceptación expresa. La firma dibujada es opcional y no es una firma digital certificada; la aplicación no certifica identidad ni acredita por sí sola participación efectiva. Se vinculan respuestas, autorización, versiones y fecha mediante una constancia. Firmar no equivale a aprobar todos los resultados del proyecto, certificar su eficacia ni garantizar una publicación.'}
+        {'title': 'Confirmación y firma', 'text': 'Al final confirme que las observaciones describen su experiencia de uso o demostración. Para enviar debe dibujar su firma con el dedo o ratón y autorizar expresamente que se conserve ese dibujo como constancia del consentimiento; escribir su nombre no lo reemplaza. Si no desea firmar o autorizar su guardado, puede retirarse sin enviar el formulario y sin consecuencias académicas o laborales. No es una firma digital certificada; la aplicación no certifica identidad ni acredita por sí sola participación efectiva. Se vinculan respuestas, autorización, versiones y fecha mediante una constancia. Firmar no equivale a aprobar todos los resultados del proyecto, certificar su eficacia ni garantizar una publicación.'}
     ]
 
 

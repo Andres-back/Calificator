@@ -25,7 +25,7 @@ class FeedbackTests(unittest.TestCase):
         self.assertEqual(status, 200)
         self.csrf = json.loads(body)['csrf']
         self.cookie = dict(headers)['Set-Cookie'].split(';')[0]
-        self.data = dict(submission_id=str(uuid.uuid4()), instrument_version=self.feedback.settings['instrument_version'], consent_version=self.feedback.settings['consent_version'], identity={'name':'DOCENTE FICTICIO DEL PILOTO','email':'test@example.org','phone':''}, answers={'institution':'COLEGIO DE PRUEBA','feedback.date':study_today().isoformat(),'feedback.experience':'direct','feedback.functions':['grading','reports'],'feedback.observation':'No logré abrir el reporte al terminar la revisión.','feedback.suggestion':'=PROPUESTA_DE_PRUEBA()'}, times=[], measurement={'date':'','deliveries':None,'open_answers':None,'group':'','condition':'pilot_feedback','scope':''}, consent={'participation':True,'data_processing':True,'signature_storage':False,'feedback_confirmation':True}, signature={'method':'typed','name':'DOCENTE FICTICIO DEL PILOTO','strokes':[]})
+        self.data = dict(submission_id=str(uuid.uuid4()), instrument_version=self.feedback.settings['instrument_version'], consent_version=self.feedback.settings['consent_version'], identity={'name':'DOCENTE FICTICIO DEL PILOTO','email':'test@example.org','phone':''}, answers={'institution':'COLEGIO DE PRUEBA','feedback.date':study_today().isoformat(),'feedback.experience':'direct','feedback.functions':['grading','reports'],'feedback.observation':'No logré abrir el reporte al terminar la revisión.','feedback.suggestion':'=PROPUESTA_DE_PRUEBA()'}, times=[], measurement={'date':'','deliveries':None,'open_answers':None,'group':'','condition':'pilot_feedback','scope':''}, consent={'participation':True,'data_processing':True,'signature_storage':True,'feedback_confirmation':True}, signature={'method':'drawn','name':'DOCENTE FICTICIO DEL PILOTO','strokes':[[[.1+i*.025,.3+i*.01] for i in range(12)]]})
 
     def tearDown(self):
         self.temp.cleanup()
@@ -88,6 +88,7 @@ class FeedbackTests(unittest.TestCase):
 
     def test_drawn_signature_still_requires_specific_storage_authorization(self):
         self.data['signature'].update(method='drawn',strokes=[[[.1+i*.025,.3+i*.01] for i in range(12)]])
+        self.data['consent']['signature_storage'] = False
         self.assertEqual(self.submit()[0],400)
 
     def test_private_export_excludes_identity_signature_and_unrequested_measurements(self):

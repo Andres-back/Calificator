@@ -53,6 +53,14 @@ El administrador inicia sesión desde un formulario web sobre HTTPS con las cred
 
 ## Operación y conservación
 
+Desde el 19 de octubre de 2026 los nuevos envíos de ambos formularios requieren
+firma dibujada con dedo o ratón y autorización expresa para guardar el dibujo.
+El nombre escrito identifica a quien firma, pero no reemplaza el trazo. La API
+también aplica esta regla. Se actualizaron los consentimientos a CI-NEC-01-v4-2026-10-19
+y CI-PIL-RET-01-v2-2026-10-19; no se cambiaron las preguntas del instrumento.
+Las respuestas anteriores, incluidas las confirmadas solo con nombre, conservan
+su contenido, versión, consentimiento y hash originales y siguen disponibles en admin.
+
 Las respuestas y los dibujos de firma se almacenan en el volumen Docker `respuestas`. No están en archivos servidos por la web. No ejecutar `docker compose down -v` mientras se deban conservar datos. La configuración de acceso no contiene contraseñas predeterminadas útiles. Si la contraseña de administración está vacía o tiene menos de 20 caracteres, el panel no permite entrar.
 
 Después de confirmar una respuesta, el docente puede descargar una constancia HTML autocontenida o imprimirla/guardar PDF desde el navegador. Incluye respuestas, consentimiento aceptado, firma, versión, fecha UTC del servidor, código y huella SHA-256. Cada registro conserva también los enunciados y alternativas de la versión respondida, para reproducir la constancia aunque después cambie el cuestionario. No se envía por correo automáticamente. La firma dibujada no autentica por sí sola la identidad ni es firma digital certificada; la huella no es un sello externo de tiempo.

@@ -2,6 +2,11 @@
 
 Fecha de creación: 19 de octubre de 2026. Código **FR-PIL-01**, versión **1.0-web**, consentimiento **CI-PIL-RET-01-v1-2026-10-19**. Es un formato propio de registro de observaciones solicitado por el asesor. No se presenta como escala estandarizada o validada.
 
+Actualización del mismo día: los nuevos envíos usan el consentimiento
+**CI-PIL-RET-01-v2-2026-10-19** y requieren firma dibujada más autorización expresa
+para conservar el dibujo. No se acepta el nombre escrito como sustituto de la firma.
+Los registros recibidos con la versión anterior permanecen intactos y consultables.
+
 ## Finalidad y aplicación
 
 Recoger comentarios escritos de los docentes sobre su experiencia en las pruebas o plan piloto de XCalificator y conservar una constancia de aceptación al final. Aplicarlo después de una sesión o período de uso, indicando su última fecha. Quienes solo observan una demostración deben marcar esa modalidad; su registro no demuestra uso directo ni participación sostenida en el piloto.

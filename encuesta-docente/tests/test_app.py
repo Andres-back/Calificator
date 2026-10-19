@@ -21,7 +21,7 @@ class SurveyTests(unittest.TestCase):
         self.assertEqual(status, 200)
         self.csrf = json.loads(response)['csrf']
         self.cookie = dict(headers)['Set-Cookie'].split(';')[0]
-        self.data = dict(submission_id=str(uuid.uuid4()), instrument_version=self.app.settings['instrument_version'], consent_version=self.app.settings['consent_version'], identity={'name':'DOCENTE PRUEBA SINTÉTICA', 'email':'test@example.org','phone':''}, answers={'institution':'COLEGIO DE PRUEBA','1.2':'1','9.1':'=NO_PUBLICAR()'}, times=[], measurement={'date':'','deliveries':None,'open_answers':None,'group':'','condition':'manual','scope':''}, consent={'participation':True,'data_processing':True,'signature_storage':False}, signature={'method':'typed','name':'DOCENTE PRUEBA SINTÉTICA','strokes':[]})
+        self.data = dict(submission_id=str(uuid.uuid4()), instrument_version=self.app.settings['instrument_version'], consent_version=self.app.settings['consent_version'], identity={'name':'DOCENTE PRUEBA SINTÉTICA', 'email':'test@example.org','phone':''}, answers={'institution':'COLEGIO DE PRUEBA','1.2':'1','9.1':'=NO_PUBLICAR()'}, times=[], measurement={'date':'','deliveries':None,'open_answers':None,'group':'','condition':'manual','scope':''}, consent={'participation':True,'data_processing':True,'signature_storage':True}, signature={'method':'drawn','name':'DOCENTE PRUEBA SINTÉTICA','strokes':[[[.1+i*.025,.3+i*.01] for i in range(12)]]})
 
     def tearDown(self):
         self.temp.cleanup()
@@ -105,6 +105,7 @@ class SurveyTests(unittest.TestCase):
 
     def test_drawn_signature_requires_ink_consent_and_valid_coordinates(self):
         data=copy.deepcopy(self.data);data['signature'].update(method='drawn',strokes=[[[.1+i*.025,.3+i*.01] for i in range(12)]])
+        data['consent']['signature_storage']=False
         self.assertEqual(self.submit(data)[0],400)
         data['consent']['signature_storage']=True;self.assertEqual(self.submit(data)[0],200)
         data['submission_id']=str(uuid.uuid4());data['signature']['strokes'][0][0]=[-1,5]

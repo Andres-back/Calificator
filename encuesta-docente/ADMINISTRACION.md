@@ -21,6 +21,11 @@ Cada respuesta admite hasta ocho etiquetas y una nota privada.
 La organizacion se guarda en response_reviews, separada de responses.
 No modifica los campos respondidos, consentimiento, firma ni hash original.
 
+Desde el 2026-10-19 solo se aceptan nuevos envios con firma dibujada y autorizacion
+expresa de guardado. Nombre escrito no sustituye el dibujo. Las respuestas
+historicas con nombre siguen consultables y descargables sin modificacion.
+No se debe convertir un nombre antiguo en una firma ni reescribir su consentimiento.
+
 El CSV conserva todas las respuestas e incluye estado_revision y etiquetas_revision.
 Para analizar la muestra, filtre las excluidas; marcarlas no elimina la constancia.
 El CSV no incluye identidad, contactos, firma ni notas privadas.

@@ -2,7 +2,7 @@
   "kind": "pilot_feedback",
   "instrument_code": "FR-PIL-01",
   "instrument_version": "1.0-web",
-  "consent_version": "CI-PIL-RET-01-v1-2026-10-19",
+  "consent_version": "CI-PIL-RET-01-v2-2026-10-19",
   "title": "Retroalimentación docente de las pruebas y plan piloto de XCalificator",
   "enabled": true,
   "ui": {
