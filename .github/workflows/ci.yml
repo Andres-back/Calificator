@@ -171,7 +171,7 @@ jobs:
         run: npm run test:e2e
 
       - name: Run contextual teacher flow regressions
-        run: npm run test:mock -- grading-review.mock.spec.ts
+        run: npm run test:mock -- grading-review.mock.spec.ts evaluation-visuals.mock.spec.ts
 
       - name: Upload E2E diagnostics on failure
         if: failure()

@@ -97,6 +97,42 @@ async def test_evaluation_and_list_response_keep_teacher_original_private_from_s
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize('delivery_state,delivery_type', [('en_progreso', 'online'), ('recibida', 'foto')])
+async def test_attempt_or_photo_pinned_before_queue_keeps_a_after_evaluation_changes_to_b(
+    visual_http, visual_scope, delivery_state, delivery_type,
+):
+    from copy import deepcopy
+    from sqlalchemy import select
+    from app.modules.calificaciones.models import Calificacion
+    from app.modules.evaluaciones.grading_visual_context import load_grading_context, pin_new_submission_content
+    sessions, _, _, _ = visual_scope
+    _, _, student, ids = visual_http
+    async with sessions() as db:
+        evaluation = await get_evaluation_or_404(db, ids['evaluation'])
+        old_name = evaluation.nombre
+        grades = list(await db.scalars(select(Calificacion).where(Calificacion.evaluacion_id == evaluation.id)))
+        notes_before = [(grade.id, grade.nota_confirmada, deepcopy(grade.resultado_json)) for grade in grades]
+        delivery = Entrega(evaluacion_id=evaluation.id, estudiante_id=student, materia_id=evaluation.materia_id,
+            tipo=delivery_type, estado=delivery_state, visual_text_json={})
+        reference = await pin_new_submission_content(db, evaluation, delivery)
+        assert reference['contenido_version_id'] == str(ids['version'])
+        db.add(delivery)
+        await db.commit()
+        evaluation = await get_evaluation_or_404(db, evaluation.id)
+        updated = await update_evaluation(db, evaluation, EvaluacionUpdate(
+            expected_updated_at=evaluation.updated_at, expected_content_version_id=ids['version'], nombre='Versión B',
+        ))
+        assert updated.contenido_version_id != delivery.contenido_version_id
+        context = await load_grading_context(db, updated, delivery)
+        assert context.version_id == ids['version']
+        assert context.blueprint['nombre'] == old_name
+        assert len(context.visuals) == 1
+        assert context.visuals[0].image_bytes == synthetic_png()
+        after = list(await db.scalars(select(Calificacion).where(Calificacion.evaluacion_id == evaluation.id)))
+        assert [(grade.id, grade.nota_confirmada, grade.resultado_json) for grade in after] == notes_before
+
+
+@pytest.mark.asyncio
 async def test_owner_and_admin_read_original_but_student_and_other_teacher_cannot(visual_http):
     app_for, owner, student, ids = visual_http
     for role, user, allowed in (("profesor", owner, True), ("admin", uuid4(), True),
