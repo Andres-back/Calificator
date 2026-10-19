@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, Response, Upl
 from starlette.concurrency import run_in_threadpool
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import settings
 from app.core.permissions import get_current_user, require_permission_now
 from app.core.rate_limit import rate_limit
 from app.db.session import get_db
@@ -131,6 +132,7 @@ async def digitalize_from_file(
                 "descripcion": descripcion,
                 "nota_maxima": str(nota_maxima),
                 "modalidad": modalidad.value,
+                "_visual_import_schema": 1 if settings.EVALUATION_VISUAL_IMPORT_ENABLED else None,
             },
         )
         await db.commit()

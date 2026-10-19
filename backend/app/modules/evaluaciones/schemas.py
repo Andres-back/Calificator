@@ -5,6 +5,8 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+from app.modules.evaluaciones.visual_schemas import VisualManifest
+
 from app.shared.enums import (
     BlueprintNivelContexto,
     EvaluacionEstado,
@@ -31,10 +33,13 @@ class EvaluacionCreate(BaseModel):
     criterios: list[dict[str, Any]] = Field(default_factory=list)
     preguntas: list[dict[str, Any]] = Field(default_factory=list)
     respuestas_esperadas: list[dict[str, Any]] = Field(default_factory=list)
+    contenido_visual: VisualManifest | None = None
 
 
 class EvaluacionUpdate(BaseModel):
     expected_updated_at: datetime | None = None
+    expected_content_version_id: UUID | None = None
+    contenido_visual: VisualManifest | None = None
     nombre: str | None = Field(default=None, min_length=2, max_length=220)
     descripcion: str | None = None
     nota_maxima: Decimal | None = Field(default=None, gt=0)
@@ -137,6 +142,8 @@ class EvaluacionSorpresaCreate(BaseModel):
 
 
 class EvaluacionEstructuraValidacion(BaseModel):
+    expected_updated_at: datetime | None = None
+    expected_content_version_id: UUID | None = None
     criterios: list[dict[str, Any]] | None = None
     preguntas: list[dict[str, Any]] | None = None
     respuestas_esperadas: list[dict[str, Any]] | None = None

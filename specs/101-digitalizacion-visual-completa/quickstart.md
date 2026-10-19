@@ -1,0 +1,116 @@
+# Guía de validación — 101
+
+La implementación está en curso; esta guía distingue la línea base comprobada de los recorridos todavía pendientes. No acredita una entrega completa.
+
+## Línea base comprobada — 2026-10-15
+
+- Rama `codex/101-digitalizacion-visual-completa`, base `f1a98fb051e93dd7ba4ee8a184b66e3894c8e3cb`.
+- Se conservaron sin cambios los archivos ajenos no versionados de `specs/098-retroalimentacion-recortable/`.
+- `.gitignore`, `.dockerignore`, los ignorados de ambos contenedores y `frontend/eslint.config.js` cubren secretos, dependencias, salidas, cachés y archivos locales pertinentes. Frontend es privado y no tiene configuración de publicación npm, Prettier, Terraform ni Helm que requiera un ignorado nuevo.
+- Backend: las tres suites indicadas abajo dieron **67 aprobadas, 1 omitida**; advertencia de deprecación preexistente de `dateutil`. Python local 3.13; esto no sustituye la validación del contenedor Python 3.11.
+- Frontend: las dos suites indicadas dieron **31 aprobadas**. Se usó el Node del runtime suministrado.
+- El sandbox bloqueó el runtime y el renombrado de temporales de Vitest. Las comprobaciones repetidas fuera del sandbox terminaron correctamente; no se conectó a producción, base de datos ni proveedor IA.
+- No se realizaron mediciones de digitalización visual ni pruebas en dispositivos físicos. Los nuevos recorridos siguen pendientes.
+
+## Checkpoint de implementación T001–T004 — 2026-10-15
+
+- Corpus en memoria de seis clases de archivo, con inventarios declarados independientemente: Word con tablas nativas; Word con cuatro tablas PNG y gráfico circular; PDF mixto con imagen y barras vectoriales; PDF escaneado; imagen de hoja; estímulo y preguntas en páginas distintas. Variantes con anotaciones ficticias incorrectas. No se incorporó material real ni se llamó a IA.
+- Contrato tipado nuevo en `visual_schemas.py`: tablas rectangulares, gráficas coherentes y finitas, referencias opacas, asociaciones compartidas, procedencia, cobertura localizada y peticiones de carga/propuesta. No altera esquemas de evaluación vigentes ni preguntas antiguas.
+- Proyección estudiante por lista de campos permitidos: solo estímulos confirmados, sin original privado ni procedencia. Esto es una validación de contrato, **no sustituye** las autorizaciones y comprobaciones de recursos persistidos pendientes de T007–T009.
+- TDD: el contrato falló primero por módulo inexistente. Casos de desbordamiento numérico y seguridad pendiente fallaron antes de añadir su validación; después quedaron verdes.
+- **50 pruebas nuevas aprobadas** (46 de contrato y 4 del corpus). Ruff focalizado sin errores. La comprobación conjunta anterior dio **113 aprobadas y 1 omitida**: 46 nuevas de aquel momento y 67 regresiones existentes; los cuatro casos nuevos finales adicionales pasaron en la ejecución focalizada de 50. Frontend permanece sin cambios y su línea base fue 31 aprobadas.
+- T005–T039 siguen pendientes. No hay migración, almacenamiento, extracción visual integrada, editor, exportadores ni calificación versionada implementados todavía. Tampoco PR, commit, despliegue o modificación de registros.
+
+## Checkpoint de implementación T005–T009 — 2026-10-15
+
+Este checkpoint sustituye el estado pendiente de T005–T009 descrito al cerrar T004. La función completa continúa en desarrollo y no está habilitada en producción.
+
+- Migración aditiva `202610150001`: recursos privados y revisiones, referencias nullable en evaluaciones y entregas, sin backfill. Prueba sobre tablas legacy sintéticas: preguntas, claves, evidencia y nota confirmada permanecen idénticas. Trigger de inmutabilidad de revisiones y rechazo explícito de downgrade destructivo. Alembic registra una única cabeza.
+- Almacenamiento: validación efectiva de PNG/JPEG/WebP, PDF y DOCX originales, límites de bytes/píxeles/páginas, rechazo de contenido activo/externo, XML con DTD incluso UTF-16, hashes verificados al leer y resolución confinada. Escritura exclusiva por UUID. La comprobación Linux confirma el rechazo de enlaces simbólicos que salgan del directorio privado.
+- Idempotencia por propietario y petición bajo bloqueo transaccional, incluida carga concurrente y reintento después de guardar el borrador. Recursos asociados pasan a ready únicamente tras comprobar el archivo. Limpieza de propuestas caducadas excluye recursos asociados, referidos por revisiones o pertenecientes a jobs activos. La recuperación general de fallos y los temporales restantes siguen en T032–T033.
+- Revisión de contenido bajo bloqueo y comprobación de versión/fecha: primera edición visual conserva una línea base etiquetada como estado observado, no como reconstrucción histórica. Guarda snapshot completo con hash, sin asignar una revisión nueva a entregas legacy. El cambio de material marca claves pendientes sin reemplazarlas. Bloquea edición si hay entregas o jobs legacy activos sin revisión y rechaza publicación con claves/cobertura pendientes. Edición de texto de contenido versionado conserva su manifiesto.
+- Endpoints registrados de carga, consulta de recurso, propuesta privada y original: autorización por permiso y materia/evaluación/versión. Administrador y propietario acceden al original; alumno matriculado solo obtiene recursos confirmados de una versión autorizada. Las respuestas de carga no revelan rutas internas y las descargas usan cache privada y nosniff. Generación de propuestas IA todavía pendiente de T027, no se añadió un stub.
+- El template Nginx de contenedor ya bloqueaba `/uploads/` por completo. Se añadió bloqueo explícito de `.private` a la configuración alternativa `frontend/nginx.conf`; `nginx -t` aprobado en contenedor temporal. La prueba de aplicación real comprueba que tampoco se sirven originales anónimamente, incluida ruta con punto codificado.
+- `EVALUATION_VISUAL_EDITOR_ENABLED=false` por defecto protege nuevas cargas/ediciones; lectores de recursos no dependen del flag. Las otras activaciones y su matriz completa siguen pendientes de T036. No se activa la escritura hasta completar lectores, exportación y fijación de revisiones de calificación.
+- TDD: las pruebas nuevas fallaron primero por modelos/servicios/rutas ausentes, y los casos de versionado por ausencia de su implementación. Verificación focalizada final en Python local 3.13: **159 aprobadas, 2 omitidas**, sin llamadas IA ni datos reales. Una omisión es el permiso Windows para crear symlinks; la otra ya existía en la suite de regresión. Ruff focalizado y `git diff --check` sin errores.
+- Compatibilidad adicional: **65 pruebas nuevas aprobadas en Python 3.11/Linux** usando la imagen local de pruebas existente, código montado de solo lectura, red deshabilitada y temporales efímeros. Esto no sustituye construir las imágenes finales de la rama ni el CI completo pendiente de T038.
+- T001–T009 completadas localmente; T010–T039 pendientes. Próxima fase: pruebas de extracción híbrida y conversor aislado para conservar las figuras reales de PDF, Word e imágenes. No hay commit, PR, merge, despliegue ni modificación de registros de producción de esta entrega.
+
+## Checkpoint T010–T012 — 2026-10-16
+
+- Pruebas de extracción redactadas antes de implementar: fallaron inicialmente por módulo ausente. Se verifican PDF mixto/vectorial, escaneado, foto, estímulo en otra página, Word nativo y Word con cuatro tablas PNG/gráfico; imágenes repetidas conservan usos distintos con bytes compartidos. Los campos manuscritos permanecen como evidencia de fuente, nunca como solucionario inferido.
+- Extractor híbrido local: inventario ordenado con anclas OOXML y regiones de página, texto completo, filas/celdas nativas, imágenes y grupos vectoriales; render de todas las páginas aun con texto seleccionable. Conserva originales mediante hash y entrega assets privados en memoria. La asociación a preguntas y la seguridad de publicación quedan por revisar. Las celdas combinadas conservan sus metadatos y requieren comprobación antes de anunciar edición estructurada.
+- Límites efectivos: entrada de 20 MB, páginas de `MAX_GRADING_PDF_PAGES` comprobadas antes del render y después de convertir Word, lado visual de `VISION_MAX_IMAGE_SIDE`, 64 MB de assets normalizados y presupuesto de texto vigente. Los excesos rechazan el documento completo; no se recorta texto ni se omiten páginas para simular éxito. Un exceso de bytes no se confunde con un formato gráfico no interpretable.
+- Conversor LibreOffice construido: imagen local aproximada de 205 MB antes de los últimos cambios mínimos de código; límites de ejecución de 768 MB/1 CPU, UID 10001, raíz de solo lectura, tmpfs, capacidades retiradas, procesos acotados y red interna. No monta uploads ni recibe secretos. La comprobación contrasta tanto Compose como el contenedor ejecutado.
+- Conversión real de muestras sintéticas finales: Word con cuatro tablas PNG y circular produce dos páginas y conserva cinco usos de imagen en **1,936 s**; Word con tablas nativas produce dos páginas y conserva los valores comprobados en **1,795 s**. El primer arranque anterior tardó aproximadamente 8 s. Son tiempos locales de conversión, no latencias completas de digitalización ni mediciones de producción.
+- Recorrido real del adaptador HTTP y extractor en Linux: cinco imágenes nativas conservadas, dos páginas disponibles y cobertura `requiere_revision`. Red externa denegada, escritura en raíz rechazada, ausencia de secretos/puertos/volúmenes del host y limpieza de temporales/procesos comprobadas. Dos documentos inseguros recibieron rechazo 422. Las pruebas unitarias también cubren DTD UTF-16, campos DDE, SVG externo y macros en libros de datos incrustados; se comparte el mismo validador entre almacenamiento y conversión.
+- Validación conjunta local: **158 aprobadas, 2 omitidas** en extracción, contrato, corpus, almacenamiento, digitalización anterior, cola, exportación y conversor. Después se añadieron y aprobaron por separado dos casos de libros de datos incrustados; la suite de almacenamiento final dio **19 aprobadas, 1 omitida**. Linux/Python 3.11 final: **44 aprobadas**, incluida la comprobación de symlinks omitida en Windows. Ruff focalizado y `git diff --check` sin errores.
+- CI incorpora la base aislada de Spec 101, contratos del conversor, construcción y comprobación real de aislamiento. CI remoto aún no ejecutado; no se ha creado PR ni realizado despliegue. Los recursos efímeros de las comprobaciones se retiraron; los servicios ajenos permanecen intactos.
+- T001–T012 completadas localmente. **T013–T039 pendientes**: aún no está integrado el resultado visual en la digitalización persistente ni en la pantalla docente. No se presenta este checkpoint como una función de importación terminada. El helper compartido de DBA no se modificó.
+
+## Checkpoint T013 — 2026-10-16
+
+Este incremento conecta el manifiesto conservado con la normalización y el guardado. No conecta todavía el extractor al worker: T014 permanece pendiente y no hay nueva función habilitada para usuarios.
+
+- Identidad de preguntas estable por trabajo y número, asignada por el servidor. La IA solo propone asociaciones con bloques conocidos; un estímulo puede corresponder a varias preguntas. Referencias desconocidas o ausentes producen revisión localizada, no asociaciones inventadas ni pérdida del original/recursos. Se conservan los avisos del extractor y la privacidad de los bloques.
+- Contexto de estructuración visual completo dentro del límite configurado, sin el recorte legacy a 12.000 caracteres. El exceso se rechaza antes de invocar IA. El prompt no incluye IDs de archivos originales ni rutas de almacenamiento; las respuestas del alumno etiquetadas se excluyen también de textos anidados en tablas y gráficas. Los píxeles no se interpretan desde una simple descripción: la clave dependiente de material visual sigue pendiente de comprobación docente.
+- La ruta visual exige procedencia independiente para propuestas de solucionario, incluso en preguntas objetivas. Conserva propuestas justificadas sin anunciarlas como clave aprobada cuando falta revisar contexto. La ruta legacy mantiene su contrato y no acepta manifiestos/identidades arbitrarias provenientes de la respuesta del modelo.
+- Creación visual guarda una revisión inicial completa, con reglas y errores comunes del blueprint incluidos antes del hash, sin fabricar una baseline legacy. La creación puede participar en la transacción del worker sin commit intermedio; rollback elimina evaluación/revisión sin perder recursos staged ya durables. Una importación administrativa conserva la propiedad del docente de la materia.
+- `EVALUATION_VISUAL_IMPORT_ENABLED=false` por defecto, independiente del editor. La nueva escritura se rechaza antes de crear una evaluación cuando está apagada. Las activaciones completas y sus consumidores siguen pendientes de T036.
+- TDD: las pruebas de normalización fallaron primero por parámetros inexistentes; la prueba adicional de celda con respuesta de alumno detectó su inclusión en el prompt y pasó después de corregirla. Batería focalizada Windows: **118 aprobadas**, incluyendo digitalización/cola anteriores, permisos, revisiones y los primeros 16 contratos nuevos. Después, suite final de normalización: **18 aprobadas**. Linux/Python 3.11: **26 aprobadas** de normalización y persistencia antes de los dos casos adicionales. Tres casos nuevos de PostgreSQL verifican revisión inicial, rollback y flag apagado. Ruff focalizado y `git diff --check` sin errores.
+- No se usaron documentos reales ni inferencias externas; no se modificó producción ni se creó commit/PR. La base PostgreSQL temporal se retiró al cerrar las pruebas. **T001–T013 completadas; T014–T039 pendientes**, incluyendo checkpoint durable del worker, revisión visual docente, documentos y calificación con contexto fijado.
+
+## Checkpoint T014 — 2026-10-16
+
+- La elección de ruta se captura al encolar como `_visual_import_schema`; un trabajo legacy no cambia de extractor al reintentarse. La ruta nueva ignora el checkpoint textual anterior y utiliza `_visual_checkpoint` privado con esquema, extractor, trabajo, propietario, materia, hash del original, inventario nativo, recursos durables, cobertura y lecturas por página. Sin bytes/base64 ni URLs en ese JSON; los campos internos quedan fuera del resultado público del job.
+- El original se guarda y confirma antes de convertir o invocar visión. Páginas y recortes se guardan por petición idempotente; las páginas completas permanecen `privado_original`, incluso si el archivo fuente ya era una imagen. El texto de tablas nativas no confirmado se conserva como fuente privada, sin anunciarlo como una tabla limpia editable. Las representaciones finales y edición estructurada siguen pendientes de T017–T019.
+- Cada reanudación comprueba ámbito, existencia y hash de los recursos. Cambiar la versión del extractor invalida inventario/lecturas, no el original durable. Visión lee cada página renderizada con instrucciones de conservar pasajes, filas, columnas, unidades, ejes y valores impresos sin usar respuestas del alumno. Cada lectura válida se confirma por separado; un fallo en la segunda página no repite la primera. El exceso de texto se rechaza antes de almacenar la lectura sobredimensionada o seguir llamando al proveedor.
+- La organización de preguntas se cachea por texto completo, manifiesto, extractor y configuración capturada. Se corrigió mediante prueba de PostgreSQL la estabilidad del inventario: el reordenamiento de claves JSONB no debe provocar una segunda llamada. Datos de checkpoint incompatibles y temporales ausentes tienen mensajes sin contenido privado ni rutas del servidor.
+- Todo checkpoint y cierre comprueba el lease bajo bloqueo del trabajo. Evaluación, recursos asociados, revisión inicial y resultado terminal se confirman en una sola transacción; una ejecución que perdió la propiedad no guarda un borrador ni marca el trabajo ajeno. Los estados visuales con material/clave pendiente son `requires_review`, no éxito publicable. La eliminación posterior del temporal no afecta al original durable.
+- Pruebas redactadas antes del worker: detectaron importación/finalización inexistente, invalidación innecesaria del cache por JSONB y lectura adicional fuera del presupuesto; los casos quedaron corregidos. Suite focalizada Windows: **84 aprobadas** en importación, worker, normalización, digitalización/cola legacy, persistencia y permisos. Después se añadieron dos casos de presupuesto/error privado; suite final importación/worker: **9 aprobadas**. Python 3.11/Linux final: **10 aprobadas**, incluidos los nueve contratos y la recuperación PostgreSQL real. Ruff focalizado y diff limpios.
+- La prueba de persistencia fuerza un fallo al cerrar, comprueba ausencia de evaluación/revisión parcial, elimina únicamente el temporal sintético y reintenta desde recursos privados: una evaluación/revisión, mismos recursos, sin releer páginas ni volver a estructurar. Una repetición posterior pierde el lease y no duplica el borrador. Base temporal retirada al finalizar; servicios ajenos intactos. No hubo documentos reales, llamadas IA externas, commit, PR, merge ni cambios de producción.
+- **T001–T014 completadas; T015–T039 pendientes.** La importación sigue apagada por defecto: faltan lectores/revisión docente, exportaciones, contexto de calificación fijado, editor visual y recuperación/QA transversal. En particular, el monitor visible de `requires_review` se completa en T033 antes de habilitar la función; esta entrega local no se presenta como lista para usuarios.
+
+## Preparación segura
+
+1. Usar esta rama y una base/volumen aislados; nunca copiar credenciales, Word del docente ni fotos reales a fixtures.
+2. Preparar seis documentos sintéticos con inventario humano de texto, preguntas, valores y recursos: Word con tablas nativas; Word equivalente a cuatro tablas PNG y gráfico circular; PDF mixto con trazos vectoriales; PDF escaneado; fotografía; estímulo compartido/separado por páginas.
+3. Añadir variantes con alumno ficticio, respuestas manuscritas incorrectas, borrosidad y límites excedidos. Los datos y soluciones se conocen antes de pasar por IA.
+4. Instalar dependencias de desarrollo según README y usar configuración aislada. La conversión DOCX debe ejecutarse en el contenedor restringido definido por esta función; no abrir el Word real en servicios externos.
+
+## Línea base existente
+
+Desde `backend`:
+
+```powershell
+python -m pytest tests/unit/test_evaluation_digitalization.py tests/unit/test_digitalization_queue.py tests/unit/test_evaluation_exports.py -q
+python -m ruff check --select F401,F821,F822,F823,F841 app tests
+```
+
+Desde `frontend`:
+
+```powershell
+npm run typecheck
+npm run test:run -- src/modules/evaluaciones/components/generationWizardModel.test.ts src/modules/evaluaciones/components/EvaluationPreviewModal.test.tsx
+```
+
+Para implementación se añadirán regresiones específicas de manifiesto, revisiones, editor visual y contextos multimodales a estas suites. No ejecutar repetidamente toda la batería durante cada cambio; CI completo sigue siendo obligatorio.
+
+## Recorridos de aceptación
+
+1. **Importar** cada muestra; navegar a otra pantalla y volver; comprobar inventario contra original. Confirmar tablas/figuras y su asociación, especialmente una tabla compartida por preguntas 1–3. Todo límite excedido o contenido ilegible produce aviso localizado, nunca éxito incompleto.
+2. **Editar** evaluaciones de los tres orígenes; subir y crear mediante IA cada clase de recurso. Corregir celdas o datos, regenerar, cancelar y aceptar; guardar y reabrir. Simular resultado tardío y edición concurrente sin sobrescritura.
+3. **Consultar como alumno** autorizado: ve los estímulos necesarios, no original contestado, propuestas ni claves. Otro docente/alumno ajeno no accede por IDs copiados.
+4. **Exportar PDF/Word**: comparar visualmente cada pregunta, tabla, gráfico, etiquetas y unidades. Renderizar Word a PDF dentro del entorno de pruebas y revisar páginas; verificar que no hay cortes ni soluciones en versión estudiante. Forzar recurso faltante y confirmar error, no descarga incompleta.
+5. **Calificar con dobles**: capturar material y evidencia en principal/verificador, con recurso compartido sin duplicación. Forzar contexto faltante y comprobar revisión sin cero ni publicación. Comprobar verificador apagado sin alterar configuración de producción.
+6. **Versionar**: encolar con revisión A, guardar B y procesar; resultado usa A. Entrega online iniciada en A conserva A. Reintentar usa A. Una entrega legacy y una nota antigua no reciben B ni cambian sus campos; trabajo legacy activo impide edición que lo afecte.
+7. **Recuperar**: cortar conversión/proveedor/persistencia; reintentar sin recursos/evaluaciones duplicados ni borrado del original. Deshabilitar escritura nueva y comprobar que los documentos ya guardados se siguen leyendo.
+8. **Responsividad**: 360/390 px Chromium y WebKit, escritorio, claro/oscuro; imagen ampliable, tabla desplazable localmente, campos y botones accesibles con espacio visible reducido. Etiquetar emulación y teclado simulado; no declararlos prueba física de iPhone/Android.
+
+## Rendimiento y comprobación final
+
+- Registrar con muestras sintéticas latencias por fase y p95 de abrir/guardar preguntas de texto frente a la línea base, en el mismo entorno. Comparar llamadas IA por página/estímulo; reintentos con cache no repiten lecturas ya válidas.
+- Verificar límites y aislamiento del conversor: red externa denegada, sin secretos/volúmenes persistentes, temporales limpios al expirar, macros/enlaces externos no ejecutados/cargados. Construir su imagen y probar un DOCX realista antes de activar.
+- Aplicar migraciones en base aislada con registros previos sintéticos y comparar notas, claves y evidencias antes/después. Probar recuperación operativa sin downgrade destructivo.
+- Tras implementación, ejecutar controles requeridos: Backend quality and tests, Frontend quality, build and E2E, Container builds y Spec governance. Actualizar inventario con el script del repositorio; no eludir fallos ni cambiar protecciones.
+- La comprobación en producción y cualquier inferencia real requieren autorización de su fase. No subir documentos reales como parte de esta guía ni recalificar alumnos para probar la UI.

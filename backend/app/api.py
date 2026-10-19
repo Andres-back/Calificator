@@ -10,6 +10,7 @@ from app.modules.calificaciones.router import router as calificaciones_router
 from app.modules.dba.router import custom_router as dba_custom_router
 from app.modules.dba.router import router as dba_router
 from app.modules.evaluaciones.router import router as evaluaciones_router
+from app.modules.evaluaciones.visual_router import router as evaluaciones_visual_router
 from app.modules.herramientas.router import router as herramientas_router
 from app.modules.imagenes.router import biblioteca_router as imagenes_biblioteca_router
 from app.modules.imagenes.router import router as imagenes_router
@@ -36,6 +37,7 @@ api_router.include_router(matriculas_router)
 api_router.include_router(ollama_connector_router)
 api_router.include_router(dba_router)
 api_router.include_router(dba_custom_router)
+api_router.include_router(evaluaciones_visual_router)
 api_router.include_router(evaluaciones_router)
 api_router.include_router(rag_router)
 api_router.include_router(calificaciones_router)
