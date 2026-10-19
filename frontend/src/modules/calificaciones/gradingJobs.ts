@@ -1,7 +1,19 @@
 import { api } from '@/lib/api';
+import { useAuth } from '@/stores/auth';
 
 const STORAGE_KEY = 'xcalificator.pending-gradings.v1';
 const CHANGE_EVENT = 'xcalificator:gradings-changed';
+
+// Never attribute legacy, unowned names to the next person using this browser.
+function storageKey() {
+  const owner = useAuth.getState().user?.id;
+  return owner ? `${STORAGE_KEY}:${encodeURIComponent(owner)}` : null;
+}
+
+let sessionRevision = 0;
+useAuth.subscribe((state, previous) => {
+  if (state.user?.id !== previous.user?.id) sessionRevision += 1;
+});
 
 export interface PendingGradingJob {
   jobId: string;
@@ -65,8 +77,10 @@ interface PendingGradingJobFromServer {
 
 export function readPendingGradings(): PendingGradingJob[] {
   if (typeof window === 'undefined') return [];
+  const key = storageKey();
+  if (!key) return [];
   try {
-    const parsed = JSON.parse(window.localStorage.getItem(STORAGE_KEY) ?? '[]');
+    const parsed = JSON.parse(window.localStorage.getItem(key) ?? '[]');
     if (!Array.isArray(parsed)) return [];
     return parsed.filter((item): item is PendingGradingJob => (
       typeof item?.jobId === 'string'
@@ -82,14 +96,20 @@ export function readPendingGradings(): PendingGradingJob[] {
 }
 
 function writePendingGradings(jobs: PendingGradingJob[]) {
-  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(jobs));
+  const key = storageKey();
+  if (!key) return;
+  window.localStorage.setItem(key, JSON.stringify(jobs));
   window.dispatchEvent(new Event(CHANGE_EVENT));
 }
 
 export async function recoverPendingGradings(): Promise<PendingGradingJob[]> {
+  const revision = sessionRevision;
+  if (!storageKey()) return [];
+  const initialJobs = readPendingGradings();
   const { data } = await api.get<{ items: PendingGradingJobFromServer[] }>(
     '/jobs/pendientes',
   );
+  if (sessionRevision !== revision) return [];
   if (!Array.isArray(data?.items)) return readPendingGradings();
   const localById = new Map(readPendingGradings().map((job) => [job.jobId, job]));
   const recovered = data.items.map((item): PendingGradingJob => {
@@ -111,8 +131,15 @@ export async function recoverPendingGradings(): Promise<PendingGradingJob[]> {
   const completedLocal = [...localById.values()].filter(
     (job) => job.completed && !activeIds.has(job.jobId),
   );
-  writePendingGradings([...completedLocal, ...recovered]);
-  return [...completedLocal, ...recovered];
+  // An accepted upload can arrive while recovery is in flight. Do not discard it
+  // simply because it was absent from the earlier server snapshot.
+  const initialIds = new Set(initialJobs.map(job => job.jobId));
+  const newlyAccepted = [...localById.values()].filter(
+    job => !job.completed && !initialIds.has(job.jobId) && !activeIds.has(job.jobId),
+  );
+  const next = [...completedLocal, ...recovered, ...newlyAccepted];
+  writePendingGradings(next);
+  return next;
 }
 
 export function addPendingGrading(job: Omit<PendingGradingJob, 'createdAt'>) {

@@ -60,6 +60,10 @@ Como equipo, necesito actualizar estos artefactos cuando cambie el comportamient
 
 - [Ver superficies, permisos y cobertura de este dominio](./inventory.md).
 
+## Evolución 105: crear materia desde celular
+
+[105-materia-movil-cola](../105-materia-movil-cola/spec.md) prioriza nombre, área y grado; descripción y ayuda quedan en Más opciones. Reutiliza adaptación al espacio visible, no fuerza teclado al abrir y ofrece Listo sin enviar. Conserva valores, sugerencias, validaciones, límite de materias, permisos, payload y destino del alta.
+
 ## Evolución 095: contexto docente y sesión
 
 [095-flujo-docente-ligero](../095-flujo-docente-ligero/spec.md) mantiene matrícula y perfil actuales; compacta la cabecera docente mostrando grado. El marcador local de continuación guarda únicamente IDs/fecha por docente y caduca a los siete días; cerrar/perder sesión o cambiar de cuenta lo elimina sin cambiar autenticación ni caché académica. No guarda archivos, respuestas, notas o contraseñas ni concede permisos. El rol estudiante conserva acceso y sus comprobaciones.

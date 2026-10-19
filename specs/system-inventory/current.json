@@ -1,8 +1,8 @@
 {
   "counts": {
     "by_coverage": {
-      "covered": 479,
-      "missing": 94
+      "covered": 483,
+      "missing": 90
     },
     "by_kind": {
       "endpoint": 269,
@@ -95,6 +95,23 @@
     },
     {
       "category": "missing_coverage",
+      "description": "8 superficies de 012-ia-jobs-produccion no tienen evidencia de prueba observable.",
+      "id": "F-4DBB17A51B89",
+      "issue_url": "",
+      "severity": "low",
+      "surface_ids": [
+        "job:tasks.assign_overdue_grades",
+        "job:tasks.cleanup_expired_roster_imports",
+        "job:tasks.cleanup_password_reset_requests",
+        "job:tasks.export_report",
+        "job:tasks.get_ai_config_version",
+        "job:tasks.ingest_rag",
+        "job:tasks.recover_expired_local_jobs",
+        "job:tasks.send_password_reset_email"
+      ]
+    },
+    {
+      "category": "missing_coverage",
       "description": "13 superficies de 002-arquitectura-roles-seguridad no tienen evidencia de prueba observable.",
       "id": "F-5403AC2120D0",
       "issue_url": "",
@@ -146,27 +163,6 @@
         "backend:POST:/materias/{materia_id}/importaciones-estudiantes/manual",
         "backend:POST:/materias/{materia_id}/importaciones-estudiantes/{lote_id}/confirmar",
         "backend:PUT:/materias/{materia_id}/importaciones-estudiantes/{lote_id}"
-      ]
-    },
-    {
-      "category": "missing_coverage",
-      "description": "12 superficies de 012-ia-jobs-produccion no tienen evidencia de prueba observable.",
-      "id": "F-B4FA37D13617",
-      "issue_url": "",
-      "severity": "low",
-      "surface_ids": [
-        "backend:GET:/jobs/{job_id}/estado",
-        "backend:GET:/jobs/{job_id}/items",
-        "backend:POST:/jobs/{job_id}/cancelar",
-        "backend:POST:/jobs/{job_id}/reintentar",
-        "job:tasks.assign_overdue_grades",
-        "job:tasks.cleanup_expired_roster_imports",
-        "job:tasks.cleanup_password_reset_requests",
-        "job:tasks.export_report",
-        "job:tasks.get_ai_config_version",
-        "job:tasks.ingest_rag",
-        "job:tasks.recover_expired_local_jobs",
-        "job:tasks.send_password_reset_email"
       ]
     },
     {
@@ -383,7 +379,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "695787aaf70c3864eed5900a9ee4e243b9ba29e53bdb76084dbbcfdfd0a1edf7",
+  "source_digest": "13af1d8067a6029035e7be977e5b2b9a7e146a1b52fa2c9696d43fa9d0e5b387",
   "surfaces": [
     {
       "actors": [
@@ -5270,10 +5266,22 @@
       "states": [],
       "tests": [
         {
+          "level": "e2e",
+          "reference": "GET:/jobs/pendientes",
+          "status": "direct",
+          "test_path": "frontend/e2e/materia-queue-mobile.spec.ts"
+        },
+        {
           "level": "unit",
           "reference": "GET:/jobs/pendientes",
           "status": "direct",
           "test_path": "frontend/src/modules/calificaciones/GradingJobMonitor.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/jobs/pendientes",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/gradingJobs.test.ts"
         }
       ]
     },
@@ -5315,6 +5323,12 @@
           "level": "e2e",
           "reference": "GET:/jobs/{job_id}",
           "status": "direct",
+          "test_path": "frontend/e2e/materia-queue-mobile.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/jobs/{job_id}",
+          "status": "direct",
           "test_path": "frontend/e2e/mock/grading-review.mock.spec.ts"
         },
         {
@@ -5322,6 +5336,12 @@
           "reference": "GET:/jobs/{job_id}",
           "status": "direct",
           "test_path": "frontend/src/modules/calificaciones/GradingJobMonitor.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/jobs/{job_id}",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/gradingJobs.test.ts"
         },
         {
           "level": "unit",
@@ -5339,7 +5359,7 @@
         "get_current_user"
       ],
       "consumers": [],
-      "coverage": "missing",
+      "coverage": "covered",
       "details": {
         "function": "get_estado",
         "registered": true,
@@ -5352,7 +5372,14 @@
       "source_line": 167,
       "source_path": "backend/app/modules/jobs/router.py",
       "states": [],
-      "tests": []
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "GET:/jobs/{job_id}/estado",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/gradingJobs.test.ts"
+        }
+      ]
     },
     {
       "actors": [
@@ -5362,7 +5389,7 @@
         "get_current_user"
       ],
       "consumers": [],
-      "coverage": "missing",
+      "coverage": "covered",
       "details": {
         "function": "get_job_items",
         "registered": true,
@@ -5375,7 +5402,14 @@
       "source_line": 177,
       "source_path": "backend/app/modules/jobs/router.py",
       "states": [],
-      "tests": []
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "GET:/jobs/{job_id}/items",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/gradingJobs.test.ts"
+        }
+      ]
     },
     {
       "actors": [
@@ -5461,6 +5495,12 @@
           "reference": "GET:/materias",
           "status": "direct",
           "test_path": "frontend/e2e/explainable-grading.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/materias",
+          "status": "direct",
+          "test_path": "frontend/e2e/materia-queue-mobile.spec.ts"
         },
         {
           "level": "e2e",
@@ -5710,6 +5750,12 @@
           "reference": "GET:/materias/{materia_id}",
           "status": "direct",
           "test_path": "frontend/e2e/explainable-grading.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/materias/{materia_id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/materia-queue-mobile.spec.ts"
         },
         {
           "level": "e2e",
@@ -8925,6 +8971,12 @@
           "reference": "PATCH:/materias/{materia_id}",
           "status": "direct",
           "test_path": "frontend/e2e/explainable-grading.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/materias/{materia_id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/materia-queue-mobile.spec.ts"
         },
         {
           "level": "e2e",
@@ -13803,7 +13855,7 @@
         "get_current_user"
       ],
       "consumers": [],
-      "coverage": "missing",
+      "coverage": "covered",
       "details": {
         "function": "cancelar_job",
         "registered": true,
@@ -13816,7 +13868,14 @@
       "source_line": 364,
       "source_path": "backend/app/modules/jobs/router.py",
       "states": [],
-      "tests": []
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "POST:/jobs/{job_id}/cancelar",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/gradingJobs.test.ts"
+        }
+      ]
     },
     {
       "actors": [
@@ -13826,7 +13885,7 @@
         "get_current_user"
       ],
       "consumers": [],
-      "coverage": "missing",
+      "coverage": "covered",
       "details": {
         "function": "retry_job",
         "registered": true,
@@ -13839,7 +13898,14 @@
       "source_line": 233,
       "source_path": "backend/app/modules/jobs/router.py",
       "states": [],
-      "tests": []
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "POST:/jobs/{job_id}/reintentar",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/gradingJobs.test.ts"
+        }
+      ]
     },
     {
       "actors": [
@@ -13923,6 +13989,12 @@
           "reference": "POST:/materias",
           "status": "direct",
           "test_path": "frontend/e2e/explainable-grading.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/materias",
+          "status": "direct",
+          "test_path": "frontend/e2e/materia-queue-mobile.spec.ts"
         },
         {
           "level": "e2e",
@@ -16043,6 +16115,12 @@
           "level": "e2e",
           "reference": "/",
           "status": "direct",
+          "test_path": "frontend/e2e/materia-queue-mobile.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/",
+          "status": "direct",
           "test_path": "frontend/e2e/mock/example.mock.spec.ts"
         },
         {
@@ -16428,6 +16506,12 @@
           "reference": "/",
           "status": "direct",
           "test_path": "frontend/src/modules/calificaciones/gradingFailure.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/gradingJobs.test.ts"
         },
         {
           "level": "unit",
@@ -16967,6 +17051,12 @@
           "reference": "/app",
           "status": "direct",
           "test_path": "frontend/e2e/explainable-grading.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app",
+          "status": "direct",
+          "test_path": "frontend/e2e/materia-queue-mobile.spec.ts"
         },
         {
           "level": "e2e",
@@ -18129,6 +18219,12 @@
           "level": "e2e",
           "reference": "/app/calificaciones",
           "status": "direct",
+          "test_path": "frontend/e2e/materia-queue-mobile.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app/calificaciones",
+          "status": "direct",
           "test_path": "frontend/e2e/mock/grading-review.mock.spec.ts"
         },
         {
@@ -19251,6 +19347,12 @@
           "level": "e2e",
           "reference": "/app/materias",
           "status": "direct",
+          "test_path": "frontend/e2e/materia-queue-mobile.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app/materias",
+          "status": "direct",
           "test_path": "frontend/e2e/mock/exports.mock.spec.ts"
         },
         {
@@ -19461,6 +19563,12 @@
           "reference": "/app/materias/{id}",
           "status": "direct",
           "test_path": "frontend/e2e/explainable-grading.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app/materias/{id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/materia-queue-mobile.spec.ts"
         },
         {
           "level": "e2e",
@@ -26552,7 +26660,7 @@
       "kind": "frontend_call",
       "owner_spec": "012-ia-jobs-produccion",
       "signature": "GET:/jobs/pendientes",
-      "source_line": 90,
+      "source_line": 109,
       "source_path": "frontend/src/modules/calificaciones/gradingJobs.ts",
       "states": [],
       "tests": [
@@ -26579,6 +26687,12 @@
           "reference": "GET:/jobs/pendientes",
           "status": "domain",
           "test_path": "backend/tests/unit/test_calificaciones_revision_workspace.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/jobs/pendientes",
+          "status": "direct",
+          "test_path": "frontend/e2e/materia-queue-mobile.spec.ts"
         },
         {
           "level": "unit",
@@ -26616,7 +26730,7 @@
       "kind": "frontend_call",
       "owner_spec": "012-ia-jobs-produccion",
       "signature": "GET:/jobs/{jobId}",
-      "source_line": 156,
+      "source_line": 183,
       "source_path": "frontend/src/modules/calificaciones/gradingJobs.ts",
       "states": [],
       "tests": [
@@ -26649,6 +26763,12 @@
           "reference": "GET:/jobs/{jobId}",
           "status": "direct",
           "test_path": "backend/tests/unit/test_ollama_cloud_provider.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/jobs/{jobId}",
+          "status": "direct",
+          "test_path": "frontend/e2e/materia-queue-mobile.spec.ts"
         },
         {
           "level": "e2e",
@@ -26713,6 +26833,12 @@
           "reference": "GET:/jobs/{jobId}",
           "status": "direct",
           "test_path": "backend/tests/unit/test_ollama_cloud_provider.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/jobs/{jobId}",
+          "status": "direct",
+          "test_path": "frontend/e2e/materia-queue-mobile.spec.ts"
         },
         {
           "level": "e2e",
@@ -26847,6 +26973,12 @@
           "reference": "GET:/materias/{id}",
           "status": "direct",
           "test_path": "frontend/e2e/explainable-grading.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/materias/{id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/materia-queue-mobile.spec.ts"
         },
         {
           "level": "e2e",
@@ -27363,6 +27495,12 @@
           "reference": "GET:/materias",
           "status": "direct",
           "test_path": "frontend/e2e/explainable-grading.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/materias",
+          "status": "direct",
+          "test_path": "frontend/e2e/materia-queue-mobile.spec.ts"
         },
         {
           "level": "e2e",
@@ -29726,6 +29864,12 @@
           "reference": "PATCH:/materias/{id}",
           "status": "direct",
           "test_path": "frontend/e2e/explainable-grading.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/materias/{id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/materia-queue-mobile.spec.ts"
         },
         {
           "level": "e2e",
@@ -33375,6 +33519,12 @@
           "level": "e2e",
           "reference": "POST:/jobs/{jobId}",
           "status": "direct",
+          "test_path": "frontend/e2e/materia-queue-mobile.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/jobs/{jobId}",
+          "status": "direct",
           "test_path": "frontend/e2e/mock/grading-review.mock.spec.ts"
         },
         {
@@ -33640,6 +33790,12 @@
           "reference": "POST:/materias",
           "status": "direct",
           "test_path": "frontend/e2e/explainable-grading.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/materias",
+          "status": "direct",
+          "test_path": "frontend/e2e/materia-queue-mobile.spec.ts"
         },
         {
           "level": "e2e",
@@ -38175,6 +38331,12 @@
           "level": "e2e",
           "reference": "calificaciones",
           "status": "direct",
+          "test_path": "frontend/e2e/materia-queue-mobile.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "calificaciones",
+          "status": "direct",
           "test_path": "frontend/e2e/mock/exports.mock.spec.ts"
         },
         {
@@ -39828,6 +39990,12 @@
           "reference": "materias",
           "status": "direct",
           "test_path": "frontend/e2e/explainable-grading.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "materias",
+          "status": "direct",
+          "test_path": "frontend/e2e/materia-queue-mobile.spec.ts"
         },
         {
           "level": "e2e",

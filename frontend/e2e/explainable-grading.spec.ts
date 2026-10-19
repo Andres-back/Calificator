@@ -693,7 +693,7 @@ test('dos paquetes quedan en cola, un fallo conserva hojas para reintentar', asy
     expect(packet.toString()).toContain('name="rotaciones"\r\n\r\n[0]');
   }
   await page.reload();
-  expect(await page.evaluate(() => JSON.parse(localStorage.getItem('xcalificator.pending-gradings.v1') ?? '[]').length)).toBe(2);
+  expect(await page.evaluate(() => JSON.parse(localStorage.getItem('xcalificator.pending-gradings.v1:p1') ?? '[]').length)).toBe(2);
 });
 
 test('lectura docente y enlaces antiguos conservan contexto sin habilitar escritura', async ({ page }) => {
