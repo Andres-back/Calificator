@@ -1,9 +1,9 @@
 import { expect, test, type Page, type Locator } from '@playwright/test';
 
-async function activate(button: Locator, browserName: string) {
+async function activate(button: Locator, browserName: string, keyboardAllowed = true) {
   // WebKit headless on Windows can stop its rAF stability clock. Keyboard
   // activation still exercises the accessible real handler, never force/eval.
-  if (browserName === 'webkit') await button.press('Enter');
+  if (browserName === 'webkit' && keyboardAllowed) await button.press('Enter');
   else await button.click();
 }
 
@@ -73,10 +73,10 @@ for (const width of [360, 390, 1440]) for (const dark of [false, true]) {
     if (dark) await page.addInitScript(() => localStorage.setItem('xc-theme', JSON.stringify({ state: { mode: 'dark' }, version: 0 })));
     const seen = await mockApp(page);
     await page.goto(`/app/materias/${subject.id}/evaluaciones`);
-    await page.getByRole('button', { name: 'Visualizar' }).click();
+    await activate(page.getByRole('button', { name: 'Visualizar' }), browserName, width >= 768);
     const dialog = page.getByRole('dialog', { name: 'Visualizar evaluación' });
-    await dialog.getByRole('button', { name: 'Opciones' }).click();
-    await dialog.getByRole('button', { name: 'Ver preguntas y figuras' }).click();
+    await activate(dialog.getByRole('button', { name: 'Opciones' }), browserName, width >= 768);
+    await activate(dialog.getByRole('button', { name: 'Ver preguntas y figuras' }), browserName, width >= 768);
     const figure = dialog.getByAltText('Triángulo de la pregunta');
     await expect(figure).toBeVisible();
     await expect.poll(() => figure.evaluate(image => (image as HTMLImageElement).naturalWidth)).toBe(160);
@@ -120,10 +120,10 @@ for (const [originIndex, origin] of ['nativa', 'externa_digitalizada', 'sorpresa
       if (dark) await page.addInitScript(() => localStorage.setItem('xc-theme', JSON.stringify({ state: { mode: 'dark' }, version: 0 })));
       await mockApp(page, false, origin);
       await page.goto(`/app/materias/${subject.id}/evaluaciones`);
-      await page.getByText('Más opciones', { exact: true }).click();
-      await page.getByRole('button', { name: 'Editar preguntas' }).click();
+      await activate(page.locator('summary').filter({ hasText: 'Más opciones' }), browserName, width >= 768);
+      await activate(page.getByRole('button', { name: 'Editar preguntas' }), browserName, width >= 768);
       const wizard = page.getByRole('dialog', { name: 'Editar contenido de la evaluación' });
-      await wizard.getByRole('button', { name: 'Añadir contenido', exact: true }).click();
+      await activate(wizard.getByRole('button', { name: 'Añadir contenido', exact: true }), browserName, width >= 768);
       const editor = page.getByRole('dialog', { name: 'Material de la pregunta' });
       await editor.getByLabel('Tipo de material').selectOption(kind);
       if (width < 500) {
