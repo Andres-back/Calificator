@@ -11,12 +11,13 @@ from uuid import UUID
 
 from fastapi import HTTPException
 from sqlalchemy import inspect, select
+from app.modules.calificaciones.grading_visuals import EvaluationVisualInput, describe_evaluation_material
 
 from app.modules.evaluaciones.blueprint_service import evaluation_to_grading_blueprint
 from app.modules.evaluaciones.models import Evaluacion
 from app.modules.evaluaciones.visual_render import ResolvedVisualBlock, resolve_visual_material
 from app.modules.evaluaciones.visual_schemas import VisualManifest
-from app.modules.evaluaciones.visual_service import get_content_revision
+from app.modules.evaluaciones.visual_service import get_content_revision, inspect_resource_bytes
 
 
 @dataclass(frozen=True)
@@ -26,6 +27,7 @@ class GradingVisualContext:
     visuals: tuple[ResolvedVisualBlock, ...] = ()
     version_id: UUID | None = None
     content_hash: str | None = None
+    agent_visuals: tuple[EvaluationVisualInput, ...] = ()
 
 
 def _check_scope(evaluation, delivery):
@@ -70,13 +72,19 @@ async def grading_job_reference(db, evaluation, delivery) -> dict:
     return {'contenido_version_id': str(revision.id), 'contenido_hash': revision.content_hash}
 
 
-async def load_grading_context(db, evaluation, delivery) -> GradingVisualContext:
+async def load_grading_context(db, evaluation, delivery, *, expected_reference: dict | None = None) -> GradingVisualContext:
     _check_scope(evaluation, delivery)
     version_id = getattr(delivery, 'contenido_version_id', None)
     if version_id is None:
+        if expected_reference and (expected_reference.get('contenido_version_id') or expected_reference.get('contenido_hash')):
+            raise HTTPException(409, 'El trabajo y la entrega no tienen la misma versión. Conserva la evidencia y solicita revisión.')
         await grading_job_reference(db, evaluation, delivery)
         return GradingVisualContext(evaluation=evaluation, blueprint=evaluation_to_grading_blueprint(evaluation))
     revision = await get_content_revision(db, evaluation.id, version_id)
+    if expected_reference is not None and (
+            expected_reference.get('contenido_version_id') != str(version_id)
+            or expected_reference.get('contenido_hash') != revision.content_hash):
+        raise HTTPException(409, 'El material del trabajo no coincide con la entrega conservada. No se calificará con otra versión.')
     data = deepcopy(revision.snapshot_json)
     source_blueprint = data.get('blueprint')
     data['blueprint'] = SimpleNamespace(**source_blueprint) if source_blueprint is not None else None
@@ -95,5 +103,14 @@ async def load_grading_context(db, evaluation, delivery) -> GradingVisualContext
         raise HTTPException(409, 'No pudimos reunir todo el material de la pregunta. Conserva la evidencia y revisa las figuras antes de calificar.') from exc
     blueprint = evaluation_to_grading_blueprint(frozen)
     blueprint.update(contenido_version_id=str(version_id), contenido_hash=revision.content_hash)
+    agent_visuals = tuple(EvaluationVisualInput(
+        block_id=str(item.block.id), question_ids=tuple(str(value) for value in item.block.pregunta_ids),
+        kind=item.block.tipo, description=item.block.descripcion, caption=item.block.pie or '', text=item.block.texto or '',
+        resource_id=str(item.block.recurso_id) if item.block.recurso_id else None,
+        structured_data_json=(item.block.tabla or item.block.grafica).model_dump_json() if item.block.tabla or item.block.grafica else '',
+        image_bytes=item.image_bytes,
+        image_mime=inspect_resource_bytes(item.image_bytes, clase='imagen')['mime'] if item.image_bytes else 'image/png',
+    ) for item in visuals)
+    describe_evaluation_material(agent_visuals, blueprint)
     return GradingVisualContext(evaluation=frozen, blueprint=blueprint, visuals=visuals,
-                                version_id=version_id, content_hash=revision.content_hash)
+                                version_id=version_id, content_hash=revision.content_hash, agent_visuals=agent_visuals)

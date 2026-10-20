@@ -97,9 +97,8 @@ def test_salon_mode_persists_explainable_breakdown_before_commit(monkeypatch):
     monkeypatch.setattr(salon_mode_service, 'save_upload', save)
     monkeypatch.setattr(salon_mode_service.photo_service, "grade_submission", grading)
     monkeypatch.setattr(salon_mode_service.photo_service, "create_automatic_breakdown", persist)
-    monkeypatch.setattr(salon_mode_service.photo_service, "evaluation_to_grading_blueprint", lambda _evaluation: {"nota_maxima": 5, "preguntas": [{"numero": 1, "puntaje": 1}]})
-
-    evaluation = SimpleNamespace(id=uuid4(), materia_id=uuid4())
+    evaluation = SimpleNamespace(id=uuid4(), materia_id=uuid4(), nombre='Evaluación salón', nota_maxima=Decimal('5'),
+        blueprint=None, metas_profesor=[], criterios=[], preguntas=[{'numero': 1, 'puntaje': 1}], respuestas_esperadas=[])
     asyncio.run(salon_mode_service.grade_student_photo(
         FakeDB(),
         evaluacion=evaluation,

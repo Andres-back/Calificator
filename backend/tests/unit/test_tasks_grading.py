@@ -17,6 +17,7 @@ from app.shared.enums import (
 )
 from app.workers import tasks_grading
 from app.services import storage_service
+from app.modules.evaluaciones.blueprint_service import evaluation_to_grading_blueprint
 
 
 class FakeDB:
@@ -288,7 +289,7 @@ def test_grade_delivery_reuses_a_compatible_vision_checkpoint(monkeypatch) -> No
     db = FakeDB()
     job_id = uuid4()
     evidence = b"same-photo"
-    blueprint = tasks_grading.evaluation_to_grading_blueprint(evaluation)
+    blueprint = evaluation_to_grading_blueprint(evaluation)
     fingerprint = tasks_grading._extraction_fingerprint(
         image_bytes=evidence,
         image_mime="image/jpeg",

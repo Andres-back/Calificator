@@ -133,7 +133,8 @@ def create_domain_tables(connection):
         for fk in table.foreign_keys:
             include(fk.column.table)
 
-    for name in ("evaluacion_recursos", "evaluacion_contenido_versiones", "entregas", "calificaciones", "evaluacion_blueprints", "matriculas"):
+    for name in ("evaluacion_recursos", "evaluacion_contenido_versiones", "entregas", "calificaciones", "evaluacion_blueprints", "matriculas",
+                 'calificacion_desgloses', 'calificacion_componentes', 'calificacion_ajustes'):
         include(Base.metadata.tables[name])
     Base.metadata.create_all(connection, tables=list(tables))
 

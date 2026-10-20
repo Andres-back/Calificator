@@ -14,6 +14,7 @@ from app.core.logging import get_logger
 from app.modules.calificaciones.orchestrator import orchestrate_grading
 from app.modules.calificaciones.schemas import GradingResult
 from app.modules.evaluaciones.blueprint_service import grading_answer_key_status
+from app.modules.calificaciones.grading_visuals import EvaluationVisualInput
 
 logger = get_logger(__name__)
 
@@ -31,6 +32,7 @@ async def grade_submission(
     ai_config: dict | None = None,
     vision_checkpoint: dict | None = None,
     on_vision_checkpoint: Callable[[dict], Awaitable[None]] | None = None,
+    evaluation_visuals: tuple[EvaluationVisualInput, ...] = (),
 ) -> GradingResult:
     """
     Califica una entrega usando orquestación multi-agente.
@@ -66,6 +68,7 @@ async def grade_submission(
         ai_config=ai_config,
         vision_checkpoint=vision_checkpoint,
         on_vision_checkpoint=on_vision_checkpoint,
+        **({'evaluation_visuals': evaluation_visuals} if evaluation_visuals else {}),
     )
     key_complete, missing_answers = grading_answer_key_status(blueprint)
     if not key_complete:

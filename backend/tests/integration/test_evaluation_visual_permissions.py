@@ -195,6 +195,65 @@ async def test_attempt_or_photo_pinned_before_queue_keeps_a_after_evaluation_cha
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize('entry', ['worker', 'direct_photo'])
+async def test_grading_and_breakdown_consume_a_after_current_evaluation_changes_to_b(visual_http, visual_scope, monkeypatch, entry):
+    from copy import deepcopy
+    from decimal import Decimal
+    from unittest.mock import AsyncMock
+    from sqlalchemy import select
+    from app.modules.calificaciones import photo_service
+    from app.modules.calificaciones.models import Calificacion
+    from app.modules.calificaciones.schemas import GradingResult
+    from app.modules.calificaciones.breakdown_models import CalificacionDesglose
+    from app.modules.evaluaciones.grading_visual_context import pin_new_submission_content
+    from app.services.storage_service import save_upload
+    from app.workers import tasks_grading
+    sessions, _, _, _ = visual_scope
+    _, owner, student, ids = visual_http
+    async with sessions() as db:
+        evaluation = await get_evaluation_or_404(db, ids['evaluation'])
+        existing = list(await db.scalars(select(Calificacion).where(Calificacion.evaluacion_id == evaluation.id)))
+        before = [(grade.id, grade.nota_confirmada, deepcopy(grade.resultado_json)) for grade in existing]
+        old_name = evaluation.nombre
+        photo = synthetic_png('red')
+        path = await save_upload(photo, 'synthetic.png', subfolder='entregas')
+        delivery = Entrega(evaluacion_id=evaluation.id, estudiante_id=student, materia_id=evaluation.materia_id,
+            tipo='foto', estado='recibida', archivo_url=path, visual_text_json={})
+        reference = await pin_new_submission_content(db, evaluation, delivery)
+        db.add(delivery)
+        await db.commit()
+        evaluation = await get_evaluation_or_404(db, evaluation.id)
+        evaluation = await update_evaluation(db, evaluation, EvaluacionUpdate(
+            expected_updated_at=evaluation.updated_at, expected_content_version_id=ids['version'], nombre='Contenido B', nota_maxima=1,
+            preguntas=[{**question, 'puntaje': 1} for question in evaluation.preguntas]))
+        await db.commit()
+        component = {'clave': 'pregunta:1', 'puntaje': 4, 'estado': 'parcial', 'respuesta_estudiante': 'Respuesta',
+                     'explicacion': 'Compara la figura', 'confianza': .95}
+        grade = AsyncMock(return_value=GradingResult(nota_sugerida=Decimal('4'), nota_maxima=Decimal('5'), confianza=.95,
+            componentes=[component], raw_model_output={'grader_a': {'componentes': [component]}, 'grader_b': {'componentes': [component]}}))
+        if entry == 'worker':
+            monkeypatch.setattr(tasks_grading, 'grade_submission', grade)
+            result, created = await tasks_grading._grade_delivery(db, evaluacion=evaluation, entrega=delivery,
+                profesor_id=owner, expected_content_reference=reference)
+            assert created
+        else:
+            monkeypatch.setattr(photo_service, 'grade_submission', grade)
+            result = await photo_service.grade_persisted_photo(db, evaluacion=evaluation, entrega=delivery,
+                estudiante_id=student, profesor_id=owner, image_bytes=photo, image_mime='image/png')
+        assert result.nota_sugerida == Decimal('4'), result.resultado_json
+        sent = grade.await_args.kwargs
+        assert sent['blueprint']['nombre'] == old_name and sent['blueprint']['nota_maxima'] == 5
+        assert sent['image_bytes'] == photo
+        assert sent['evaluation_visuals'][0].image_bytes == synthetic_png()
+        assert result.resultado_json['evaluation_content']['version_id'] == str(ids['version'])
+        breakdown = await db.scalar(select(CalificacionDesglose).where(CalificacionDesglose.calificacion_id == result.id))
+        assert breakdown.nota_maxima == 5
+        assert delivery.archivo_url == path
+        after = list(await db.scalars(select(Calificacion).where(Calificacion.id.in_([value[0] for value in before]))))
+        assert [(record.id, record.nota_confirmada, record.resultado_json) for record in after] == before
+
+
+@pytest.mark.asyncio
 async def test_owner_and_admin_read_original_but_student_and_other_teacher_cannot(visual_http):
     app_for, owner, student, ids = visual_http
     for role, user, allowed in (("profesor", owner, True), ("admin", uuid4(), True),

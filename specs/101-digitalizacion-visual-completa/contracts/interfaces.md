@@ -1,6 +1,6 @@
 # Contratos propuestos — 101
 
-Contratos de la función en desarrollo. T009 implementa localmente carga de imagen/dibujo, consulta de recurso, propuesta privada y original. T010–T012 añaden extractor y conversor aislado comprobados; su integración con el job y los consumidores sigue pendiente, al igual que la generación. Prefijos relativos a `/api`; conservar respuestas y endpoints vigentes para evaluaciones sin contenido visual. Validación tipada y autorización siempre en servidor.
+Contratos de la función en desarrollo. T009–T020 implementan localmente conservación, importación, lectores y exportadores. T022–T024 fijan el contexto por entrega y lo transportan al calificador/verificador. Publicación/lectura histórica de notas, generación, editor y recuperación completa siguen pendientes. No habilitado en producción. Prefijos relativos a `/api`; conservar respuestas y endpoints vigentes para evaluaciones sin contenido visual. Validación tipada y autorización siempre en servidor.
 
 ## Lectura y edición de evaluación
 
@@ -59,7 +59,13 @@ Construcción común: preguntas + bloques en orden + estímulos compartidos + pu
 - Trabajos individuales/padres de una entrega incluyen `contenido_version_id` y `contenido_hash`; el padre de lote usa `contenido_por_entrega` y cada hijo lleva su referencia concreta. Solo referencias, no bytes, rutas ni respuestas correctas nuevas.
 - Esta captura no acredita todavía la entrega del material a los modelos: el consumo del snapshot en workers/fingerprint y el transporte multimodal quedan en T023–025. Escritura nueva sigue desactivada en producción.
 
-Extender `AgentContext` con colección tipada `evaluation_visuals` separada de la evidencia `image_bytes/image_mime`. Elementos: revisión, recurso, preguntas aplicables, descripción y bytes/MIME internos; no URLs privadas dentro del prompt. Agentes reciben bloques etiquetados «material de la pregunta» frente a «respuesta del estudiante».
+`AgentContext.evaluation_visuals` usa tuplas de `EvaluationVisualInput` inmutables: bloque/recurso, preguntas aplicables, descripción/pie, texto/datos estructurados y bytes/MIME privados, separados de `image_bytes/image_mime` del alumno. Revisión/hash viajan en el blueprint y se verifican contra los del job antes de cargar evidencia o ejecutar modelos. Los prompts separan «MATERIAL DE LA EVALUACIÓN» de «RESPUESTA DEL ESTUDIANTE»; los datos de tablas/gráficas acompañan su representación determinista. No incluyen URLs ni procedencia privada.
+
+El transporte deduplica imágenes por SHA-256 conservando todos los usos. `image_count` cuenta evidencia más estímulos. `GRADING_MULTIMODAL_MAX_IMAGES` (32 por defecto, máximo efectivo 64) y `GRADING_MULTIMODAL_MAX_BYTES` (32 MiB por defecto, máximo efectivo 64 MiB) limitan la entrada mediante estimación conservadora del cuerpo base64/texto antes de reservarlo. Presupuesto textual existente se aplica sin truncamiento: partición por pregunta cuando procede; material indivisible demasiado grande devuelve revisión, no entrada parcial.
+
+Un modelo sin visión no recibe una versión textual incompleta de un estímulo gráfico. Solo puede recuperarlo el respaldo con capacidad expresamente configurado; el router de respaldo exclusivamente textual rechaza ese caso. Lecturas puramente textuales pueden usar modelos de texto. Ambos protocolos existentes, sus reintentos y el uso del principal por sí solo conservan el material; esto no añade ni cambia selectores de modo rápido/verificación.
+
+Worker y foto directa usan el mismo snapshot para preguntas, clave, máximo, material y desglose. Un hash distinto invalida la extracción almacenada. Registro de procedencia del resultado: versión/hash y IDs/hashes de estímulos, nunca bytes, prompts, rutas o claves. Fallo de contexto conserva evidencia y no produce cero ni un desglose ficticio con preguntas actuales. T025 debe terminar los controles de publicación y consulta histórica; el transporte no sustituye esa tarea.
 
 Mantener llamadas y proveedores configurados; deduplicar estímulos, incluir todas las asociaciones pertinentes y validar presupuesto antes de invocar. Si un modelo seleccionado carece de visión y el recurso la exige, usar solo fallback de capacidad autorizado; de no existir, revisión explícita. No convertir una omisión por límite en respuesta vacía ni añadir arbitraje redundante.
 

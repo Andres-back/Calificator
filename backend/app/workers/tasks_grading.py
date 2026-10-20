@@ -26,7 +26,8 @@ from app.modules.calificaciones.breakdown_service import create_automatic_breakd
 from app.modules.calificaciones.grading_service import grade_submission
 from app.modules.calificaciones.models import Calificacion, Entrega
 from app.modules.calificaciones.salon_mode_service import update_estudiante_estado
-from app.modules.evaluaciones.blueprint_service import evaluation_to_grading_blueprint
+from app.modules.evaluaciones.grading_visual_context import load_grading_context
+from app.modules.calificaciones.grading_visuals import visual_provenance
 from app.modules.evaluaciones.models import Evaluacion
 from app.modules.jobs import service as jobs_service
 from app.services.storage_service import resolve_upload_path, validate_mime
@@ -149,6 +150,8 @@ def _extraction_fingerprint(
             "vision": vision_config,
             "max_side": settings.VISION_MAX_IMAGE_SIDE,
             "pdf_dpi": settings.GRADING_PDF_RENDER_DPI,
+            **({'evaluation_content': {'version_id': blueprint.get('contenido_version_id'), 'hash': blueprint.get('contenido_hash')}}
+               if blueprint.get('contenido_version_id') else {}),
         },
         ensure_ascii=False,
         sort_keys=True,
@@ -193,6 +196,7 @@ async def _grade_delivery(
     ai_config: dict | None = None,
     job_id: UUID | None = None,
     claim_token: str | None = None,
+    expected_content_reference: dict | None = None,
 ) -> tuple[Calificacion, bool]:
     if job_id and claim_token:
         await jobs_service.lock_owned_job(db, job_id, claim_token)
@@ -224,6 +228,8 @@ async def _grade_delivery(
             await db.commit()
         return existing, False
 
+    context = await load_grading_context(db, evaluacion, entrega, expected_reference=expected_content_reference)
+    blueprint = context.blueprint
     running_payload = {
         **queued_payload,
         "pipeline_status": "running",
@@ -236,7 +242,6 @@ async def _grade_delivery(
     await db.commit()
 
     submission = await _load_submission(entrega)
-    blueprint = evaluation_to_grading_blueprint(evaluacion)
     checkpoint: dict | None = None
     fingerprint = _extraction_fingerprint(
         image_bytes=submission["image_bytes"],
@@ -294,6 +299,7 @@ async def _grade_delivery(
         ai_config=ai_config,
         vision_checkpoint=checkpoint,
         on_vision_checkpoint=persist_checkpoint,
+        **({'evaluation_visuals': context.agent_visuals} if context.agent_visuals else {}),
     )
     if job_id and claim_token:
         await jobs_service.lock_owned_job(db, job_id, claim_token)
@@ -312,17 +318,19 @@ async def _grade_delivery(
             **grading.raw_model_output,
             "evidencia_consolidada": evidence_metadata,
         }
+    if context.version_id:
+        grading.raw_model_output = {**grading.raw_model_output, 'evaluation_content': visual_provenance(blueprint, context.agent_visuals)}
     if grading.nota_sugerida is not None:
         calificaciones_service.validate_score_within_evaluation(
             grading.nota_sugerida,
-            evaluacion,
+            context.evaluation,
             "nota_sugerida",
         )
         calificaciones_service.transition_to_grading_if_needed(evaluacion)
     persistence_started = time.monotonic()
     calificacion = photo_service.apply_grading_result(
         entrega=entrega,
-        evaluacion=evaluacion,
+        evaluacion=context.evaluation,
         estudiante_id=entrega.estudiante_id,
         profesor_id=profesor_id,
         grading=grading,
@@ -515,6 +523,7 @@ async def _grade_batch_async(
         }
         job_fallbacks: list[dict[str, str]] = []
         job_ai_config: dict | None = None
+        job_input: dict = {}
 
         def build_result(**values) -> dict:
             job_timings["total"] = max(
@@ -659,6 +668,7 @@ async def _grade_batch_async(
                         ai_config=job_ai_config,
                         job_id=job_id,
                         claim_token=claim_token,
+                        expected_content_reference=(job_input.get('contenido_por_entrega') or {}).get(str(entrega.id), job_input) if job_id else None,
                     )
                     calificacion_ids.append(str(calificacion.id))
                     record_grade_telemetry(calificacion)

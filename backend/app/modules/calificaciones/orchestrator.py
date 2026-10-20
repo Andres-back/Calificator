@@ -37,6 +37,7 @@ from app.modules.calificaciones.agents import (
     partition_grading_context,
 )
 from app.modules.calificaciones.schemas import GradingResult
+from app.modules.calificaciones.grading_visuals import EvaluationVisualInput, visual_provenance
 from app.modules.evaluaciones.modality_service import (
     normalize_question_modalities,
     question_numbers_by_section,
@@ -153,7 +154,7 @@ async def _run_grader_cascade(
             model=model,
             multimodal=bool(
                 multimodal
-                and ctx.image_bytes
+                and (ctx.image_bytes or ctx.requires_visual_material)
                 and model_supports_vision(model)
             ),
             client=client,
@@ -189,7 +190,7 @@ async def _run_grader_until_complete(
     return await _run_grader_cascade(
         ctx,
         models=_ordered_unique_models(*models),
-        multimodal=bool(ctx.image_bytes),
+        multimodal=bool(ctx.image_bytes or ctx.requires_visual_material),
         client=client,
         timeout=None,
         max_attempts=max(1, int(settings.PHOTO_GRADING_MODEL_MAX_ATTEMPTS)),
@@ -571,6 +572,7 @@ async def orchestrate_grading(
     verifier_model: str = DEFAULT_VERIFIER_MODEL,
     grader_b_model: str = DEFAULT_GRADER_B_MODEL,
     comparator_model: str = DEFAULT_COMPARATOR_MODEL,
+    evaluation_visuals: tuple[EvaluationVisualInput, ...] = (),
 ) -> GradingResult:
     """Orquesta el pipeline completo de calificación multi-agente.
 
@@ -1052,6 +1054,7 @@ async def orchestrate_grading(
             objective_validation=objective_validation,
             image_bytes=image_bytes,
             image_mime=image_mime_for_grading,
+            evaluation_visuals=evaluation_visuals,
         )
         grading_contexts = partition_grading_context(
             ctx_grading,
@@ -1098,7 +1101,7 @@ async def orchestrate_grading(
                         client=verification_client,
                         timeout=None,
                         max_attempts=max(1, int(settings.PHOTO_GRADING_MODEL_MAX_ATTEMPTS)),
-                        multimodal=bool(partition.image_bytes),
+                        multimodal=bool(partition.image_bytes or partition.requires_visual_material),
                     ))
             grading_a = merge_partition_results(
                 primary_parts,
@@ -1146,7 +1149,7 @@ async def orchestrate_grading(
                     1,
                     int(settings.PHOTO_GRADING_MODEL_MAX_ATTEMPTS),
                 ),
-                multimodal=bool(ctx_grading.image_bytes),
+                multimodal=bool(ctx_grading.image_bytes or ctx_grading.requires_visual_material),
             )
             arbiter_reason = _arbitration_reason(grading_a, grading_b)
             arbiter_invoked = (
@@ -1380,6 +1383,7 @@ async def orchestrate_grading(
             "orchestrator": "multi_agent_v2",
             "provider_policy": "opencode_go_primary",
             "evidence_mode": "multimodal" if image_bytes else "digital_text",
+            **({'evaluation_content': visual_provenance(blueprint, evaluation_visuals)} if blueprint.get('contenido_version_id') else {}),
             "objective_validation": objective_validation,
             "objective_score_floor": float(deterministic_floor),
             "objective_floor_applied": objective_floor_applied,
