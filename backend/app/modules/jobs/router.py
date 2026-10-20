@@ -370,7 +370,7 @@ async def cancelar_job(
     await db.execute(
         text(
             "UPDATE ai_jobs SET estado='cancelled' "
-            "WHERE id=:id AND user_id=:u AND estado IN ('queued','running')"
+            "WHERE id=:id AND user_id=:u AND estado IN ('queued','running','retrying')"
         ),
         {"id": str(job_id), "u": str(current_user.id)},
     )

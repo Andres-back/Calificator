@@ -1,9 +1,11 @@
 """Authorized private evaluation files, never a public asset library."""
+import asyncio
 from typing import Literal
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Response, UploadFile
 from pydantic import ValidationError
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
@@ -11,7 +13,7 @@ from app.core.permissions import get_current_user, require_any_permission_now, r
 from app.db.session import get_db
 from app.modules.evaluaciones import service
 from app.modules.evaluaciones.models import EvaluacionRecurso
-from app.modules.evaluaciones.visual_schemas import VisualManifest, VisualUploadRequest
+from app.modules.evaluaciones.visual_schemas import VisualCropRequest, VisualManifest, VisualProposalRequest, VisualUploadRequest
 from app.modules.evaluaciones.visual_service import MAX_RESOURCE_BYTES, get_content_revision, read_resource_bytes, stage_resource
 from app.modules.evaluaciones.visual_serialization import authorized_content_revision
 from app.modules.materias.service import ensure_can_manage_materia
@@ -19,6 +21,101 @@ from app.modules.users.models import User
 from app.services.storage_service import PRIVATE_MIME_EXTENSIONS, read_upload_limited
 
 router = APIRouter(tags=["evaluaciones"])
+
+
+@router.get('/evaluaciones/contenido-visual/capacidades')
+async def visual_capabilities(current_user: User = Depends(get_current_user)) -> dict:
+    require_any_permission_now(current_user, 'evaluations.create', 'evaluations.update')
+    return {'importacion': settings.EVALUATION_VISUAL_IMPORT_ENABLED,
+            'editor': settings.EVALUATION_VISUAL_EDITOR_ENABLED,
+            'generacion': settings.EVALUATION_VISUAL_EDITOR_ENABLED and settings.EVALUATION_VISUAL_GENERATION_ENABLED,
+            'max_bytes': MAX_RESOURCE_BYTES}
+
+
+async def _proposal_scope(db, request, user):
+    require_permission_now(user, 'evaluations.update' if request.evaluacion_id else 'evaluations.create')
+    if not settings.EVALUATION_VISUAL_EDITOR_ENABLED:
+        raise HTTPException(409, 'Añadir material todavía no está habilitado. Tu borrador se conserva.')
+    subject = await ensure_can_manage_materia(db, request.materia_id, user)
+    if request.evaluacion_id:
+        evaluation = await service.ensure_can_manage_evaluation(db, request.evaluacion_id, user)
+        if evaluation.materia_id != request.materia_id:
+            raise HTTPException(404, 'Evaluación no disponible en esta materia')
+        if evaluation.contenido_version_id != request.expected_version_id:
+            raise HTTPException(409, 'La evaluación cambió. Conserva tu edición y abre la versión actual.')
+    return subject
+
+
+@router.post('/evaluaciones/recursos/recortar', status_code=201)
+async def crop_resource(request: VisualCropRequest, current_user: User = Depends(get_current_user),
+                        db: AsyncSession = Depends(get_db)) -> dict:
+    from app.modules.evaluaciones.visual_generation import crop_proposal_bytes, proposal_block
+    subject = await _proposal_scope(db, request, current_user)
+    source = await _resource_or_404(db, request.source_resource_id)
+    if (source.propietario_id != subject.profesor_id or source.materia_id != request.materia_id
+            or source.evaluacion_id != request.evaluacion_id):
+        raise HTTPException(404, 'Página no disponible para esta evaluación')
+    try:
+        content = await asyncio.to_thread(crop_proposal_bytes, await read_resource_bytes(source), request.region)
+    except ValueError as exc:
+        raise HTTPException(422, 'Selecciona una región legible de una página PNG, JPEG o WebP.') from exc
+    resource = await stage_resource(db, propietario_id=subject.profesor_id,
+        request=VisualUploadRequest.model_validate(request.model_dump(include=set(VisualUploadRequest.model_fields))),
+        content=content, clase=request.tipo, origen='subido',
+        procedencia={'source_resource_id': str(source.id), 'region': list(request.region)})
+    await db.commit()
+    return {'bloque': proposal_block(request, resource.id).model_dump(mode='json')}
+
+
+@router.post('/evaluaciones/recursos/estructurado', status_code=201)
+async def structured_resource(request: VisualProposalRequest, current_user: User = Depends(get_current_user),
+                              db: AsyncSession = Depends(get_db)) -> dict:
+    from app.modules.evaluaciones.visual_generation import proposal_block
+    from app.modules.evaluaciones.visual_render import render_structured_visual
+    subject = await _proposal_scope(db, request, current_user)
+    value = request.tabla or request.grafica
+    if value is None:
+        raise HTTPException(422, 'Completa los datos de la tabla o gráfica antes de previsualizar.')
+    try:
+        content = await asyncio.to_thread(render_structured_visual, value)
+    except ValueError as exc:
+        raise HTTPException(422, str(exc)) from exc
+    resource = await stage_resource(db, propietario_id=subject.profesor_id,
+        request=VisualUploadRequest.model_validate(request.model_dump(include=set(VisualUploadRequest.model_fields))),
+        content=content, clase='render_' + request.tipo, origen='subido')
+    await db.commit()
+    return {'bloque': proposal_block(request, resource.id, table=request.tabla, chart=request.grafica).model_dump(mode='json')}
+
+
+@router.post('/evaluaciones/recursos/generar', status_code=202)
+async def generate_resource(request: VisualProposalRequest, current_user: User = Depends(get_current_user),
+                            db: AsyncSession = Depends(get_db)) -> dict:
+    from app.modules.jobs import service as jobs
+    await _proposal_scope(db, request, current_user)
+    if not settings.EVALUATION_VISUAL_GENERATION_ENABLED:
+        raise HTTPException(409, 'Crear material con IA todavía no está habilitado. Puedes subir una imagen o introducir los datos.')
+    # One owner lock serializes idempotency and admission, before paid work.
+    await db.execute(text('SELECT pg_advisory_xact_lock(hashtextextended(:owner, 101))'), {'owner': str(current_user.id)})
+    existing = (await db.execute(text('SELECT user_id,input_json FROM ai_jobs WHERE id=:id'), {'id': request.request_key})).mappings().first()
+    proposal = request.model_dump(mode='json')
+    if existing:
+        if existing['user_id'] != current_user.id or existing['input_json'].get('proposal') != proposal:
+            raise HTTPException(409, 'Esta solicitud ya corresponde a otro material. Inicia una nueva propuesta.')
+        return {'job_id': request.request_key}
+    active = await db.scalar(text("SELECT count(*) FROM ai_jobs WHERE user_id=:user AND tipo='evaluacion_visual' AND estado IN ('queued','running','retrying')"), {'user': current_user.id})
+    if active >= 2:
+        raise HTTPException(409, 'Ya tienes dos propuestas en preparación. Espera o cancela una antes de pedir otra.')
+    config = await jobs._resolve_job_ai_config(db, tipo='evaluacion_visual', feature='generacion_imagenes', user_id=current_user.id)
+    payload = {'proposal': proposal, '_ai_config': config}
+    job_id = await jobs.create_job(db, user_id=current_user.id, tipo='evaluacion_visual',
+        input_json=payload, job_id=request.request_key)
+    await db.commit()
+    try:
+        jobs.dispatch_persisted_job({'id': job_id, 'tipo': 'evaluacion_visual', 'user_id': current_user.id, 'input_json': payload})
+    except Exception:
+        # The recovery task republishes this already-durable job.
+        pass
+    return {'job_id': job_id}
 
 
 def _is_manager(user: User, owner_id: UUID) -> bool:

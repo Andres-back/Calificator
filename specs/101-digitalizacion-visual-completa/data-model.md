@@ -46,7 +46,7 @@ Un estímulo compartido es un bloque con varias asociaciones, no una pregunta ad
 
 ## Propuesta IA y estado del trabajo
 
-Se reutiliza `jobs` (tipo `imagen` con subtipo de recurso en la entrada, sin cambiar la semántica de jobs existentes). Guardar IDs de propietario, materia, evaluación/borrador, pregunta estable, versión esperada, petición y configuración IA capturada. Resultado: referencia a propuesta/datos y recursos staged; no insertar automáticamente en la evaluación.
+Se reutilizan la tabla, permisos, leases y recuperación de `jobs`, con tipo aislado `evaluacion_visual` en la cola `presentations`. La implementación separa este tipo del stub `imagen` para no cambiar el comportamiento de sus consumidores ni ejecutar la generación en la cola de calificaciones. No requiere otra tabla ni modifica trabajos existentes. Guarda propietario, materia, evaluación/borrador, pregunta estable, versión esperada, petición y configuración IA capturada sin secretos. Resultado: propuesta/datos y recursos staged; nunca se insertan automáticamente en la evaluación.
 
 Estados visibles: en cola → creando/leyendo → propuesta lista para revisar → aceptada en borrador → guardada. Fallo/cancelación no cambia la revisión vigente. Una propuesta calculada para otra versión se presenta como desactualizada y no sobrescribe el borrador actual.
 

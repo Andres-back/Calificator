@@ -30,6 +30,186 @@ synthetic_png = persistence.synthetic_png
 pytestmark = pytest.mark.skipif(not TEST_URL, reason="Requiere PostgreSQL aislado SPEC101_TEST_DATABASE_URL")
 
 
+@pytest.mark.asyncio
+async def test_independent_write_flags_keep_saved_readers_and_reject_new_work(visual_http, monkeypatch):
+    from app.core.config import settings
+    from app.modules.jobs import service as jobs
+    from unittest.mock import AsyncMock
+    app_for, owner, _, ids = visual_http
+    resolver = AsyncMock()
+    monkeypatch.setattr(jobs, '_resolve_job_ai_config', resolver)
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app_for('profesor', owner)), base_url='http://testserver') as client:
+        for imported, edited, generated in ((False, False, False), (True, False, False), (False, True, False), (False, True, True)):
+            monkeypatch.setattr(settings, 'EVALUATION_VISUAL_IMPORT_ENABLED', imported)
+            monkeypatch.setattr(settings, 'EVALUATION_VISUAL_EDITOR_ENABLED', edited)
+            monkeypatch.setattr(settings, 'EVALUATION_VISUAL_GENERATION_ENABLED', generated)
+            capabilities = (await client.get('/api/evaluaciones/contenido-visual/capacidades')).json()
+            assert (capabilities['importacion'], capabilities['editor'], capabilities['generacion']) == (imported, edited, edited and generated)
+            assert (await client.get(f"/api/evaluaciones/{ids['evaluation']}/recursos/{ids['image']}")).status_code == 200
+            if not edited or not generated:
+                response = await client.post('/api/evaluaciones/recursos/generar', json={
+                    'materia_id': str(ids['subject']), 'evaluacion_id': str(ids['evaluation']), 'expected_version_id': str(ids['version']),
+                    'pregunta_id': str(uuid4()), 'tipo': 'imagen', 'descripcion': 'Dibujo de prueba', 'request_key': str(uuid4())})
+                assert response.status_code == 409
+        resolver.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_cleanup_retires_unaccepted_bound_proposal_but_keeps_originals_and_revisions(visual_http, visual_scope):
+    from datetime import datetime, timedelta, timezone
+    from app.modules.evaluaciones.visual_service import cleanup_staged_resources, read_resource_bytes
+    from app.modules.evaluaciones.models import EvaluacionRecurso
+    sessions, _, _, _ = visual_scope
+    _, owner, _, ids = visual_http
+    async with sessions() as db:
+        proposal = await stage_resource(db, propietario_id=owner,
+            request=VisualUploadRequest(materia_id=ids['subject'], evaluacion_id=ids['evaluation'], request_key=uuid4()),
+            content=synthetic_png(), clase='imagen', origen='subido')
+        proposal.created_at = datetime.now(timezone.utc) - timedelta(days=9)
+        await db.commit()
+        count = await cleanup_staged_resources(db, before=datetime.now(timezone.utc) - timedelta(days=7))
+        assert count == 1 and proposal.estado == 'retired'
+        assert await read_resource_bytes(await db.get(EvaluacionRecurso, ids['original'])) == synthetic_png()
+        assert await read_resource_bytes(await db.get(EvaluacionRecurso, ids['image'])) == synthetic_png()
+        assert (await get_evaluation_or_404(db, ids['evaluation'])).contenido_version_id == ids['version']
+
+
+@pytest.mark.asyncio
+async def test_proposals_three_origins_manual_and_ai_persist_without_implicit_acceptance(visual_http, visual_scope, monkeypatch):
+    import base64
+    from unittest.mock import AsyncMock
+    from sqlalchemy import text
+    from app.core.config import settings
+    from app.modules.evaluaciones import visual_generation as generation
+    from app.modules.evaluaciones.models import EvaluacionContenidoVersion, EvaluacionRecurso
+    from app.modules.jobs import service as jobs
+    from app.modules.authorization import service as authorization
+    from app.workers import tasks_evaluation_visuals as worker
+    sessions, _, _, _ = visual_scope
+    app_for, owner, student, ids = visual_http
+    monkeypatch.setattr(settings, 'EVALUATION_VISUAL_GENERATION_ENABLED', True)
+    monkeypatch.setattr(worker, 'AsyncSessionLocal', sessions)
+    monkeypatch.setattr(worker, '_heartbeat', AsyncMock())
+    monkeypatch.setattr(authorization, 'effective_permissions', AsyncMock(return_value=default_permissions_for_role('profesor')))
+    monkeypatch.setattr(jobs, '_resolve_job_ai_config', AsyncMock(return_value={'image': {}, 'content': {}}))
+    monkeypatch.setattr(jobs, 'dispatch_persisted_job', lambda row: True)
+    image = AsyncMock(return_value=SimpleNamespace(is_placeholder=False, b64_data=base64.b64encode(synthetic_png()).decode()))
+    monkeypatch.setattr(generation, 'generate_image', image)
+    table = {'encabezados': ['Número', 'Cantidad'], 'filas': [['A', '12']]}
+    chart = {'tipo': 'barras', 'categorias': ['A'], 'series': [{'nombre': 'Cantidad', 'valores': [12]}]}
+    text_model = SimpleNamespace(generate_json=AsyncMock(return_value={'tabla': table, 'grafica': chart}))
+    monkeypatch.setattr(generation, 'LLMRouter', lambda **kwargs: text_model)
+    async with sessions() as db:
+        for column in ('user_id uuid', 'tipo text', 'progreso int DEFAULT 0', "resultado_json jsonb DEFAULT '{}'",
+                       'parent_job_id uuid', 'stage text', 'attempt_count int DEFAULT 0', 'claim_token text',
+                       'heartbeat_at timestamptz', 'lease_expires_at timestamptz', 'started_at timestamptz',
+                       'finished_at timestamptz', 'error text', 'created_at timestamptz DEFAULT NOW()'):
+            await db.execute(text('ALTER TABLE ai_jobs ADD COLUMN ' + column))
+        evaluation = await get_evaluation_or_404(db, ids['evaluation'])
+        evaluation.estado = 'borrador'
+        await db.commit()
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app_for('profesor', owner)), base_url='http://testserver') as client:
+        for origin in ('nativa', 'externa_digitalizada', 'sorpresa'):
+            async with sessions() as db:
+                evaluation = await get_evaluation_or_404(db, ids['evaluation'])
+                evaluation.tipo_origen = origin
+                await db.commit()
+            for kind in ('imagen', 'dibujo', 'tabla', 'grafica'):
+                for source in ('manual', 'ia'):
+                    async with sessions() as db:
+                        evaluation = await get_evaluation_or_404(db, ids['evaluation'])
+                        version_before = evaluation.contenido_version_id
+                        question = evaluation.preguntas[0]['contenido_id']
+                    request = {'materia_id': str(ids['subject']), 'evaluacion_id': str(ids['evaluation']),
+                        'expected_version_id': str(version_before), 'request_key': str(uuid4()),
+                        'pregunta_id': question, 'tipo': kind, 'descripcion': f'Material {origin} {kind} {source}'}
+                    if source == 'ia':
+                        response = await client.post('/api/evaluaciones/recursos/generar', json=request)
+                        assert response.status_code == 202, response.text
+                        job_id = response.json()['job_id']
+                        assert (await client.post('/api/evaluaciones/recursos/generar', json=request)).json()['job_id'] == job_id
+                        assert (await worker._generate(__import__('uuid').UUID(job_id), 'synthetic-token'))['status'] == 'success'
+                        async with sessions() as db:
+                            result = await jobs.get_job_result(db, __import__('uuid').UUID(job_id))
+                            block = result['bloque']
+                    elif kind in {'tabla', 'grafica'}:
+                        response = await client.post('/api/evaluaciones/recursos/estructurado', json={**request, kind: table if kind == 'tabla' else chart})
+                        assert response.status_code == 201, response.text
+                        block = response.json()['bloque']
+                    else:
+                        response = await client.post('/api/evaluaciones/recursos', data={key: request[key] for key in ('materia_id', 'evaluacion_id', 'request_key')},
+                            files={'file': ('synthetic.png', synthetic_png(), 'image/png')})
+                        assert response.status_code == 201, response.text
+                        block = {'id': str(uuid4()), 'tipo': kind, 'orden': 0, 'pregunta_ids': [question],
+                            'recurso_id': response.json()['id'], 'seguridad_contenido': 'pendiente_revision'}
+                    async with sessions() as db:
+                        evaluation = await get_evaluation_or_404(db, ids['evaluation'])
+                        assert evaluation.contenido_version_id == version_before  # A proposal never edits.
+                        block['seguridad_contenido'] = 'publicable_confirmado'
+                        manifest = {'pregunta_ids': [question], 'bloques': [block], 'recurso_ids': [block['recurso_id']], 'cobertura': {}}
+                        evaluation = await update_evaluation(db, evaluation, EvaluacionUpdate(expected_updated_at=evaluation.updated_at,
+                            expected_content_version_id=version_before, contenido_visual=manifest,
+                            claves_visuales_revisadas=[question]))
+                        revision = await db.get(EvaluacionContenidoVersion, evaluation.contenido_version_id)
+                        assert not revision.snapshot_json['claves_pendientes_revision']
+                        assert revision.snapshot_json['contenido_visual']['bloques'][0]['recurso_id'] == block['recurso_id']
+                        assert (await db.get(EvaluacionRecurso, __import__('uuid').UUID(block['recurso_id']))).estado == 'ready'
+                        from app.modules.evaluaciones.visual_render import resolve_visual_material
+                        from app.modules.evaluaciones.export_service import build_evaluation_material, render_evaluation_docx
+                        from app.modules.herramientas.pdf_render import render_material_pdf
+                        material = build_evaluation_material(evaluation, soluciones=False,
+                            visual_blocks=await resolve_visual_material(db, evaluation.id, revision))
+                        assert render_evaluation_docx(material, soluciones=False).startswith(b'PK')
+                        assert render_material_pdf(material, soluciones=False).startswith(b'%PDF')
+        assert image.await_count == 6 and text_model.generate_json.await_count == 6
+        forbidden = await client.post('/api/evaluaciones/recursos/recortar', json={**request, 'tipo': 'imagen',
+            'source_resource_id': str(ids['original']), 'region': [-1, 0, 1, 1]})
+        assert forbidden.status_code == 422
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app_for('estudiante', student)), base_url='http://testserver') as client:
+        assert (await client.post('/api/evaluaciones/recursos/generar', json=request)).status_code == 403
+
+
+@pytest.mark.asyncio
+async def test_saved_grade_details_reports_and_manual_adjustment_keep_historical_scale(visual_http, visual_scope, monkeypatch):
+    from decimal import Decimal
+    from app.modules.calificaciones import service as grading
+    from app.modules.calificaciones.models import Calificacion
+    from app.modules.calificaciones.schemas import CalificacionManualCreate
+    from app.modules.evaluaciones.models import EvaluacionRecurso
+    from app.modules.users.models import User
+    from app.services.storage_service import resolve_private_upload_path
+    sessions, _, _, _ = visual_scope
+    _, owner, student, ids = visual_http
+    async with sessions() as db:
+        evaluation = await get_evaluation_or_404(db, ids['evaluation'])
+        delivery = Entrega(evaluacion_id=evaluation.id, estudiante_id=student, materia_id=evaluation.materia_id,
+            contenido_version_id=ids['version'], tipo='foto', estado='revisada', visual_text_json={})
+        db.add(delivery)
+        await db.flush()
+        grade = Calificacion(evaluacion_id=evaluation.id, estudiante_id=student, materia_id=evaluation.materia_id,
+            profesor_id=owner, entrega_id=delivery.id, nota_confirmada=4, nota_sugerida=4,
+            revisado_por_docente=True, estado='confirmada', resultado_json={})
+        db.add(grade)
+        await db.commit()
+        old_name = evaluation.nombre
+        evaluation = await update_evaluation(db, evaluation, EvaluacionUpdate(expected_updated_at=evaluation.updated_at,
+            expected_content_version_id=ids['version'], nombre='Nueva versión', nota_maxima=1,
+            preguntas=[{**evaluation.preguntas[0], 'puntaje': 1}]))
+        # Storage outage must not hide the old note, key, evidence or denominator.
+        resource = await db.get(EvaluacionRecurso, ids['image'])
+        resolve_private_upload_path(resource.storage_key).unlink()
+        detail = await grading.get_calificacion_detalle(db, grade.id)
+        assert detail['nota_maxima'] == 5 and detail['evaluacion_nombre'] == old_name
+        boletin = await grading.get_boletin(db, student, evaluation.materia_id)
+        assert boletin[-1]['nota_maxima'] == 5
+        summary = await grading.get_resumen_academico(db, student)
+        assert summary['promedio_general'] <= 5
+        actor = await db.get(User, owner)
+        revised = await grading.set_manual_grade(db, evaluation,
+            CalificacionManualCreate(estudiante_id=student, nota_confirmada=Decimal('4.5'), motivo='Revisé la evidencia original.'), actor)
+        assert revised.nota_confirmada == Decimal('4.5') and evaluation.nota_maxima == 1
+
+
 @pytest_asyncio.fixture
 async def visual_http(visual_scope, monkeypatch):
     from app.core.config import settings

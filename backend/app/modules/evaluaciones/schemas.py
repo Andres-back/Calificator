@@ -37,6 +37,7 @@ class EvaluacionCreate(BaseModel):
 
 
 class EvaluacionUpdate(BaseModel):
+    claves_visuales_revisadas: list[UUID] = Field(default_factory=list, max_length=500)
     expected_updated_at: datetime | None = None
     expected_content_version_id: UUID | None = None
     contenido_visual: VisualManifest | None = None
@@ -76,6 +77,7 @@ class EvaluacionBlueprintRead(BaseModel):
 
 
 class EvaluacionRead(BaseModel):
+    claves_visuales_pendientes: list[UUID] = Field(default_factory=list)
     id: UUID
     materia_id: UUID
     profesor_id: UUID
@@ -114,6 +116,7 @@ class EvaluacionRead(BaseModel):
     intentos_realizados: int = 0
     entrega_realizada: bool = False
     mi_nota_confirmada: Decimal | None = None
+    mi_nota_maxima: Decimal | None = None
     mi_calificacion_estado: str | None = None
 
     model_config = ConfigDict(from_attributes=True)

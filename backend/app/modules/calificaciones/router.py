@@ -23,6 +23,7 @@ from fastapi.responses import FileResponse
 from fastapi.concurrency import run_in_threadpool
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.core.permissions import get_current_user, is_student_enrolled, require_any_permission_now, require_permission_now
 from app.db.session import get_db
@@ -1757,6 +1758,7 @@ async def get_mi_desglose(
     require_permission_now(current_user, "grading.read")
     cal = await db.scalar(
         select(Calificacion)
+        .options(selectinload(Calificacion.entrega))
         .where(
             Calificacion.evaluacion_id == evaluacion_id,
             Calificacion.estudiante_id == current_user.id,

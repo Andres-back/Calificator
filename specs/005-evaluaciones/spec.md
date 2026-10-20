@@ -76,4 +76,6 @@ Como equipo, necesito actualizar estos artefactos cuando cambie el comportamient
 
 ## Evolución 097: escritura móvil despejada
 
+La evolución [101 — digitalización y edición visual completa](../101-digitalizacion-visual-completa/spec.md), issue #211, conserva originales privados, inventario de páginas y recursos versionados para PDF, DOCX e imagen. Añade revisión de asociaciones y material limpio, carga/recorte manual, edición estructurada y propuestas IA aceptadas expresamente por pregunta. El mismo material se consulta y exporta a PDF/Word; omisión o clave pendiente impide publicar una evaluación incompleta. Conflictos conservan la edición sin sobrescribir revisiones. Importación/editor/generación están desactivados por defecto y los lectores permanecen disponibles.
+
 [097-escritura-docente-movil](../097-escritura-docente-movil/spec.md), issue #204, reduce la cabecera al escribir, evita enfoque textual automático en celular y adapta únicamente los formularios IA/manual al espacio visible. Listo termina la edición local sin generar ni guardar; preguntas/respuestas manuales usan áreas de texto y los ajustes siguen disponibles en Personalizar. Conserva datos, borradores, permisos y reglas académicas; las pruebas de viewport sintético no acreditan un teclado físico.

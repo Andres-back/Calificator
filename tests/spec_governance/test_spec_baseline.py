@@ -100,6 +100,7 @@ ALL_SPECS = {
     "097-escritura-docente-movil",
     "099-revision-docente-enfocada",
     "100-feedback-demo-movil",
+    "101-digitalizacion-visual-completa",
     "102-camara-visor-completo",
     "103-camaras-iconos-admin",
     "104-xali-docente-visual",

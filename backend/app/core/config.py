@@ -46,6 +46,7 @@ class Settings(BaseSettings):
     # New writes stay off until readers, exports and grading support revisions.
     EVALUATION_VISUAL_EDITOR_ENABLED: bool = False
     EVALUATION_VISUAL_IMPORT_ENABLED: bool = False
+    EVALUATION_VISUAL_GENERATION_ENABLED: bool = False
     DOCUMENT_RENDERER_URL: str = "http://document-renderer:8080"
     DOCUMENT_RENDERER_TIMEOUT_SECONDS: int = 55
     DOCUMENT_VISUAL_MAX_BYTES: int = 64 * 1024 * 1024

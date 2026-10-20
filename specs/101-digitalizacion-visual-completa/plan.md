@@ -2,7 +2,7 @@
 
 **Rama**: `codex/101-digitalizacion-visual-completa` | **Fecha**: 2026-10-15 | **Spec**: [spec.md](./spec.md) | **Issue**: #211
 
-**Estado**: Plan aprobado por el usuario el 2026-10-15 mediante «aprove»; aprobación registrada como `plan-approved` en el issue #211. Implementación local en curso: T001–T014 comprobadas; T015–T039 pendientes. Función no desplegada ni activada.
+**Estado**: Plan aprobado por el usuario el 2026-10-15 mediante «aprove»; aprobación registrada como `plan-approved` en el issue #211. Implementación local integrada; el estado verificable de cada tarea y del CI se mantiene en tasks y quickstart. Función no desplegada ni activada.
 
 ## Resumen
 
@@ -54,7 +54,7 @@ Módulos nuevos previstos, acotados al dominio:
 - `document-renderer/`: conversión DOCX→PDF aislada, sin puerto publicado ni acceso a datos guardados.
 - Componentes `QuestionVisualEditor`, `EvaluationContentViewer` y `EvaluationSourceReview`, con estilos y pruebas junto a cada componente.
 
-Los módulos de contrato, persistencia, rutas privadas, extractor y conversor aislado ya tienen implementación local comprobada. La integración con trabajos, lectores, exportación, calificación y editor continúa pendiente. El detalle de datos y operaciones está en [data-model.md](./data-model.md) y [contracts/interfaces.md](./contracts/interfaces.md).
+Contratos, persistencia, rutas privadas, extractor, conversor aislado, trabajos, lectores, exportación, calificación versionada y editor están integrados localmente. El detalle de datos y operaciones está en [data-model.md](./data-model.md) y [contracts/interfaces.md](./contracts/interfaces.md). Las comprobaciones locales no sustituyen los cuatro controles CI ni autorizan activación en producción.
 
 ## Decisiones y complejidad
 

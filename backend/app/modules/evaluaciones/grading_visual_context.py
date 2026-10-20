@@ -4,7 +4,7 @@ Submission snapshots and job references contain IDs/hashes only. Images remain
 internal byte values, separate from the student's evidence. No provider calls.
 """
 from copy import deepcopy
-from dataclasses import dataclass
+from dataclasses import dataclass, field, replace
 from decimal import Decimal
 from types import SimpleNamespace
 from uuid import UUID
@@ -28,6 +28,7 @@ class GradingVisualContext:
     version_id: UUID | None = None
     content_hash: str | None = None
     agent_visuals: tuple[EvaluationVisualInput, ...] = ()
+    revision: object | None = field(default=None, repr=False)
 
 
 def _check_scope(evaluation, delivery):
@@ -72,13 +73,18 @@ async def grading_job_reference(db, evaluation, delivery) -> dict:
     return {'contenido_version_id': str(revision.id), 'contenido_hash': revision.content_hash}
 
 
-async def load_grading_context(db, evaluation, delivery, *, expected_reference: dict | None = None) -> GradingVisualContext:
+async def read_grading_definition(db, evaluation, delivery, *, expected_reference: dict | None = None) -> GradingVisualContext:
+    """Read immutable educational metadata without requiring image storage.
+
+    Historical notes remain readable during a storage incident. This is not an
+    inference/publication readiness check; those callers use load_grading_context.
+    Current access/release policy is deliberately not part of the snapshot.
+    """
     _check_scope(evaluation, delivery)
     version_id = getattr(delivery, 'contenido_version_id', None)
     if version_id is None:
         if expected_reference and (expected_reference.get('contenido_version_id') or expected_reference.get('contenido_hash')):
             raise HTTPException(409, 'El trabajo y la entrega no tienen la misma versión. Conserva la evidencia y solicita revisión.')
-        await grading_job_reference(db, evaluation, delivery)
         return GradingVisualContext(evaluation=evaluation, blueprint=evaluation_to_grading_blueprint(evaluation))
     revision = await get_content_revision(db, evaluation.id, version_id)
     if expected_reference is not None and (
@@ -97,12 +103,22 @@ async def load_grading_context(db, evaluation, delivery, *, expected_reference: 
         questions = {str(question.get('contenido_id')) for question in data['preguntas']}
         if questions != {str(identifier) for identifier in manifest.pregunta_ids}:
             raise HTTPException(409, 'El material y las preguntas no coinciden. Conserva la evidencia y revisa esta versión.')
-    try:
-        visuals = tuple(await resolve_visual_material(db, evaluation.id, revision))
-    except ValueError as exc:
-        raise HTTPException(409, 'No pudimos reunir todo el material de la pregunta. Conserva la evidencia y revisa las figuras antes de calificar.') from exc
     blueprint = evaluation_to_grading_blueprint(frozen)
     blueprint.update(contenido_version_id=str(version_id), contenido_hash=revision.content_hash)
+    return GradingVisualContext(evaluation=frozen, blueprint=blueprint, version_id=version_id,
+                                content_hash=revision.content_hash, revision=revision)
+
+
+async def load_grading_context(db, evaluation, delivery, *, expected_reference: dict | None = None) -> GradingVisualContext:
+    if getattr(delivery, 'contenido_version_id', None) is None:
+        await grading_job_reference(db, evaluation, delivery)
+    context = await read_grading_definition(db, evaluation, delivery, expected_reference=expected_reference)
+    if context.revision is None:
+        return context
+    try:
+        visuals = tuple(await resolve_visual_material(db, evaluation.id, context.revision))
+    except ValueError as exc:
+        raise HTTPException(409, 'No pudimos reunir todo el material de la pregunta. Conserva la evidencia y revisa las figuras antes de calificar.') from exc
     agent_visuals = tuple(EvaluationVisualInput(
         block_id=str(item.block.id), question_ids=tuple(str(value) for value in item.block.pregunta_ids),
         kind=item.block.tipo, description=item.block.descripcion, caption=item.block.pie or '', text=item.block.texto or '',
@@ -111,6 +127,5 @@ async def load_grading_context(db, evaluation, delivery, *, expected_reference: 
         image_bytes=item.image_bytes,
         image_mime=inspect_resource_bytes(item.image_bytes, clase='imagen')['mime'] if item.image_bytes else 'image/png',
     ) for item in visuals)
-    describe_evaluation_material(agent_visuals, blueprint)
-    return GradingVisualContext(evaluation=frozen, blueprint=blueprint, visuals=visuals,
-                                version_id=version_id, content_hash=revision.content_hash, agent_visuals=agent_visuals)
+    describe_evaluation_material(agent_visuals, context.blueprint)
+    return replace(context, visuals=visuals, agent_visuals=agent_visuals)

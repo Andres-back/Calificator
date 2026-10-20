@@ -43,7 +43,16 @@ export function EvaluationSourceReview({ evaluationId, versionId, manifest, ques
       {manifest.original_recurso_id && <Button type="button" variant="outline" loading={loading} onClick={original}>Descargar original para comparar</Button>}
       {error && <p role="alert" className="text-sm text-amber-800 dark:text-amber-200">No pudimos abrir el original. Tu evaluación sigue guardada; vuelve a intentarlo.</p>}
       {manifest.cobertura.avisos.length > 0 && <details><summary className="focus-ring min-h-11 cursor-pointer py-2 font-semibold">Qué falta comprobar ({manifest.cobertura.avisos.length})</summary>
-        <ul className="list-disc space-y-2 pl-5 text-sm">{manifest.cobertura.avisos.map((warning, index) => <li key={index}>{warning.pagina ? `Página ${warning.pagina}: ` : ''}{warning.mensaje}</li>)}</ul>
+        <ul className="list-disc space-y-3 pl-5 text-sm">{manifest.cobertura.avisos.map((warning, index) => <li key={index}>{warning.pagina ? `Página ${warning.pagina}: ` : ''}{warning.mensaje}
+          {onChange && !['asociacion_pendiente', 'publicacion_pendiente'].includes(warning.motivo) && <label className="mt-2 block">Material revisado que resuelve este aviso
+            <select className="mt-1 min-h-11 w-full rounded-lg border border-border bg-surface px-2" value="" onChange={event => {
+              if (!event.target.value) return;
+              const avisos = manifest.cobertura.avisos.filter((_, i) => i !== index);
+              onChange({ ...manifest, cobertura: { ...manifest.cobertura, avisos, estado: avisos.length ? 'requiere_revision' : 'completa',
+                conservados: [...new Set([...manifest.cobertura.conservados, ...(warning.elemento_id ? [warning.elemento_id] : [])])] } });
+            }}><option value="">Selecciona solo después de comparar con el original</option>{manifest.bloques.filter(block => block.seguridad_contenido === 'publicable_confirmado' && block.legible !== false && block.pregunta_ids.length).map(block => <option key={block.id} value={block.id}>{block.descripcion || 'Material revisado'}</option>)}</select>
+          </label>}
+        </li>)}</ul>
       </details>}
       {manifest.bloques.map(block => <div key={block.id} className="min-w-0 space-y-3 border-t border-border pt-4">
         <EvaluationContentViewer evaluationId={evaluationId} versionId={versionId} content={{ schema_version: 1, bloques: [block] }} showPrivate />

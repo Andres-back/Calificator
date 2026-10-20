@@ -19,7 +19,7 @@ from app.modules.evaluaciones.modality_service import (
     normalize_question_modalities,
     validate_mixed_question_modalities,
 )
-from app.modules.evaluaciones.models import Evaluacion, EvaluacionBlueprint
+from app.modules.evaluaciones.models import Evaluacion, EvaluacionBlueprint, EvaluacionContenidoVersion
 from app.modules.calificaciones.models import Calificacion, Entrega
 from app.modules.evaluaciones.schemas import (
     DigitalizarEvaluacionExternaRequest,
@@ -278,10 +278,19 @@ async def _student_progress_by_evaluation(
     for grade in grades:
         latest_grade.setdefault(grade.evaluacion_id, grade)
 
+    deliveries_by_id = {delivery.id: delivery for delivery in deliveries}
+    version_ids = {delivery.contenido_version_id for delivery in deliveries
+                   if getattr(delivery, 'contenido_version_id', None)}
+    versions = {revision.id: revision.snapshot_json for revision in await db.scalars(
+        select(EvaluacionContenidoVersion).where(EvaluacionContenidoVersion.id.in_(version_ids))
+    )} if version_ids else {}
+
     progress: dict[UUID, dict] = {}
     for evaluacion in evaluaciones:
         delivery = latest_delivery.get(evaluacion.id)
         grade = latest_grade.get(evaluacion.id)
+        graded_delivery = deliveries_by_id.get(getattr(grade, 'entrega_id', None))
+        graded_revision = getattr(graded_delivery, 'contenido_version_id', None)
         delivered = bool(
             delivery
             and delivery.estado != EntregaEstado.REQUIERE_REINTENTO.value
@@ -294,6 +303,7 @@ async def _student_progress_by_evaluation(
             "intentos_realizados": attempt_counts.get(evaluacion.id, 0),
             "entrega_realizada": delivered,
             "mi_nota_confirmada": grade.nota_confirmada if grade else None,
+            "mi_nota_maxima": Decimal(str(versions[graded_revision]['nota_maxima'])) if graded_revision in versions else evaluacion.nota_maxima,
             "mi_calificacion_estado": (
                 CalificacionEstado.PROCESANDO.value
                 if delivery and delivery.estado == EntregaEstado.PROCESANDO.value
@@ -589,6 +599,9 @@ async def update_evaluation(
     data = payload.model_dump(exclude_unset=True)
     expected_updated_at = data.pop("expected_updated_at", None)
     expected_content_version_id = data.pop("expected_content_version_id", None)
+    reviewed_visual_keys = data.pop('claves_visuales_revisadas', [])
+    if reviewed_visual_keys and not settings.EVALUATION_VISUAL_EDITOR_ENABLED:
+        raise HTTPException(409, 'La revisión de material todavía no está habilitada.')
     visual_requested = "contenido_visual" in data
     data.pop("contenido_visual", None)
     if visual_requested and not settings.EVALUATION_VISUAL_EDITOR_ENABLED:
@@ -596,7 +609,7 @@ async def update_evaluation(
     if visual_requested and payload.contenido_visual is None:
         raise HTTPException(422, "Indica el contenido que quieres guardar; para quitar un recurso, edita su asociación.")
     content_edit = None
-    if visual_requested or (getattr(evaluacion, "contenido_version_id", None) is not None and data):
+    if visual_requested or (getattr(evaluacion, "contenido_version_id", None) is not None and (data or reviewed_visual_keys)):
         content_edit = await prepare_content_edit(db, evaluacion.id,
             expected_version_id=expected_content_version_id, expected_updated_at=expected_updated_at,
             manifest=payload.contenido_visual)
@@ -676,7 +689,7 @@ async def update_evaluation(
         validate_publication_structure(evaluacion)
 
     if content_edit is not None:
-        await save_content_revision(db, content_edit)
+        await save_content_revision(db, content_edit, reviewed_question_ids=reviewed_visual_keys)
     await db.commit()
     return await get_evaluation_or_404(db, evaluacion.id)
 
@@ -820,6 +833,11 @@ async def publish_evaluation(db: AsyncSession, evaluacion: Evaluacion) -> Evalua
         revision = await get_content_revision(db, evaluacion.id, evaluacion.contenido_version_id)
         if revision.snapshot_json.get("claves_pendientes_revision") or revision.coverage_json.get("estado") != "completa":
             raise HTTPException(409, "Revisa el material y las respuestas correctas de las preguntas modificadas antes de publicar.")
+        from app.modules.evaluaciones.visual_render import resolve_visual_material
+        try:
+            await resolve_visual_material(db, evaluacion.id, revision)
+        except ValueError as exc:
+            raise HTTPException(409, 'No pudimos reunir el material completo. Revisa las figuras antes de publicar.') from exc
     if not evaluacion.blueprint:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,

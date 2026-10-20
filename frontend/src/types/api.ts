@@ -211,6 +211,7 @@ export interface StudentEvaluationVisualContent {
   bloques: EvaluationVisualBlock[];
 }
 export interface Evaluacion {
+  claves_visuales_pendientes?: string[];
   id: string;
   materia_id: string;
   profesor_id: string;
@@ -253,6 +254,7 @@ export interface Evaluacion {
   intentos_realizados?: number;
   entrega_realizada?: boolean;
   mi_nota_confirmada?: number | null;
+  mi_nota_maxima?: number | null;
   mi_calificacion_estado?: string | null;
   created_at: string;
   updated_at: string;

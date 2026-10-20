@@ -163,7 +163,7 @@ async def cleanup_staged_resources(db: AsyncSession, *, before: datetime, limit:
     )))
     active_job = text("NOT EXISTS (SELECT 1 FROM ai_jobs WHERE ai_jobs.id = evaluacion_recursos.job_id AND ai_jobs.estado IN ('queued','running','retrying'))")
     resources = list(await db.scalars(select(EvaluacionRecurso).where(
-        EvaluacionRecurso.estado.in_(["staged", "failed"]), EvaluacionRecurso.evaluacion_id.is_(None),
+        EvaluacionRecurso.estado.in_(["staged", "failed"]),
         EvaluacionRecurso.created_at < before, ~referenced, active_job,
     ).order_by(EvaluacionRecurso.created_at).limit(min(max(limit, 1), 1000)).with_for_update(skip_locked=True)))
     for resource in resources:
@@ -270,7 +270,7 @@ def _question_visuals(manifest: dict | None) -> dict[str, list[dict]]:
     return grouped
 
 
-async def save_content_revision(db: AsyncSession, edit: ContentEdit) -> EvaluacionContenidoVersion:
+async def save_content_revision(db: AsyncSession, edit: ContentEdit, *, reviewed_question_ids=()) -> EvaluacionContenidoVersion:
     evaluation, previous, manifest = edit.evaluation, edit.previous, edit.manifest
     if previous is None and evaluation.contenido_version_id is not None:
         raise HTTPException(409, "La evaluación ya tiene una versión. Abre la versión actual antes de guardar.")
@@ -311,7 +311,22 @@ async def save_content_revision(db: AsyncSession, edit: ContentEdit) -> Evaluaci
     if previous is None:
         pending_numbers = set((snapshot.get("blueprint") or {}).get("reglas_feedback", {}).get("claves_pendientes", []))
         pending.update(str(question["contenido_id"]) for question in evaluation.preguntas if question.get("numero") in pending_numbers)
-    snapshot["claves_pendientes_revision"] = sorted(pending & {str(value) for value in question_ids})
+    reviewed = {str(value) for value in reviewed_question_ids}
+    if not reviewed.issubset({str(value) for value in question_ids}):
+        raise HTTPException(422, 'La revisión de respuestas contiene preguntas que no pertenecen a esta evaluación.')
+    if reviewed:
+        from app.modules.evaluaciones.blueprint_service import grading_answer_key_status
+        selected_questions = [question for question in evaluation.preguntas if question['contenido_id'] in reviewed]
+        complete, _ = grading_answer_key_status({'preguntas': selected_questions, 'respuestas_esperadas': evaluation.respuestas_esperadas})
+        if not complete:
+            raise HTTPException(422, 'Completa las respuestas correctas de las preguntas revisadas antes de guardar.')
+        numbers = {question['numero'] for question in selected_questions}
+        if snapshot['blueprint'] is not None:
+            rules = dict(snapshot['blueprint']['reglas_feedback'] or {})
+            rules['claves_pendientes'] = [number for number in rules.get('claves_pendientes', []) if number not in numbers]
+            evaluation.blueprint.reglas_feedback = rules
+            snapshot['blueprint']['reglas_feedback'] = rules
+    snapshot["claves_pendientes_revision"] = sorted((pending - reviewed) & {str(value) for value in question_ids})
     snapshot["recursos"] = [{"id": str(resource.id), "sha256": resource.sha256, "mime": resource.mime,
                              "bytes_size": resource.bytes_size} for resource in resources]
     revision = EvaluacionContenidoVersion(

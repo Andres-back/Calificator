@@ -1,6 +1,6 @@
 # Guía de validación — 101
 
-La implementación está en curso; esta guía distingue la línea base comprobada de los recorridos todavía pendientes. No acredita una entrega completa.
+Implementación integrada localmente. Los checkpoints fechados documentan el avance histórico; el cierre local y las puertas de CI/lanzamiento se registran al final. Ningún resultado local acredita por sí solo producción ni inferencias reales.
 
 ## Línea base comprobada — 2026-10-15
 
@@ -122,6 +122,50 @@ Este incremento conecta el manifiesto conservado con la normalización y el guar
 4. Instalar dependencias de desarrollo según README y usar configuración aislada. La conversión DOCX debe ejecutarse en el contenedor restringido definido por esta función; no abrir el Word real en servicios externos.
 
 ## Línea base existente
+
+## Cierre integrado local — 2026-10-19
+
+Se completaron el editor opcional por pregunta, propuestas durables con aceptación explícita, revisión de claves afectadas, monitor recuperable y lectores históricos. La calificación conserva la escala y el contenido de su entrega aunque la evaluación actual cambie. Una consulta histórica no necesita descargar otra vez las imágenes; publicar un resultado automático sí comprueba integridad y procedencia. No se recalculan notas anteriores.
+
+- Backend Python 3.11/Linux: **1.096 pruebas unitarias** aprobadas en una ejecución completa; después se añadió la prueba de listado por lotes y pasaron **39 pruebas focalizadas** de serialización/exportación. Ruff F401/F821/F822/F823/F841 limpio. No se ocultan fallos por omisión.
+- PostgreSQL aislado: **31 pruebas** aprobadas, incluida migración aditiva sobre registros legacy, versiones inmutables, permisos cruzados, 24 combinaciones de tres orígenes × cuatro tipos × carga/IA, Word/PDF reales por combinación, flags independientes y limpieza sin borrar originales/versiones guardados. Ninguna prueba usa datos reales.
+- Frontend: **788 pruebas en 122 archivos**, TypeScript y lint estricto aprobados; build Vite aprobado. Conserva borradores visuales por cuenta/evaluación, consulta el job guardado al recargar, rechaza conflicto de versión y no acepta una propuesta si la imagen real no cargó. Reintentar preview no regenera ni descarta los datos.
+- E2E: **62 escenarios únicos** Chromium/WebKit, 360/390/1440 px, claro/oscuro. La ejecución conjunta dio 61 aprobados y un timeout WebKit durante builds simultáneos; ese caso pasó aislado, sin modificar timeout, introducir force ni eludir handlers. IA y documentos escolares se sustituyen por fixtures sintéticos. El PDF 422 de esta muestra es un fallo deliberado para comprobar el fallback. En WebKit Windows algunos botones se activan por teclado accesible ante la inestabilidad de rAF del headless. Viewport reducido simula el espacio de teclado: no es prueba física de Android/iPhone.
+- Capturas locales revisadas de editor móvil y escritorio: propuesta ampliada, confirmación y acciones sin desbordamiento global. Las tablas anchas tienen desplazamiento propio. QA previo de documentos conserva cuatro páginas de PDF y cuatro del Word renderizado en `tmp/spec101-phase4-qa/` (artefactos sintéticos ignorados por Git).
+- Imágenes backend runtime, web/Nginx y conversor construidas. Conversor: **4 pruebas** aprobadas y comprobación real de aislamiento aprobada; rechaza dos entradas activas/externas, conserva cinco usos de imagen del Word en dos páginas (**2,733 s**) y valores de tablas nativas (**2,052 s**). Root readonly, usuario restringido, red interna sin salida y limpieza de procesos/temporales comprobados. Los valores de tablas raster se conservan visualmente; no se afirma que sean texto nativo editable.
+- Listado optimizado: veinte evaluaciones usan una consulta conjunta de versiones para docente y dos para estudiante (versiones + recursos), validando hash y ámbito por cada fila. Las evaluaciones solo texto añaden cero consultas visuales. Las pruebas de ámbitos cruzados y hash alterado rechazan datos impropios.
+- Inventario regenerado mediante script: **596 superficies**. Los permisos delegados del editor se documentan con evidencia en `permission-overrides.json`, sin cambiar permisos ni silenciar el validador. Spec 098 ajeno permanece sin versionar ni modificar; por ello el test local que enumera todos los directorios ve esa carpeta adicional, no presente en el checkout limpio de CI.
+
+### Perfil sintético reproducible
+
+`SPEC101_PROFILE=1` y `SPEC101_TEST_DATABASE_URL` deben apuntar a la base desechable. Ejecutar `tests/integration/test_evaluation_visual_performance.py` con el renderer interno disponible. **2 pruebas aprobadas**; no invocan proveedores.
+
+| Muestra | Extracción/render ms | Páginas | Elementos | Assets / bytes |
+| --- | ---: | ---: | ---: | ---: |
+| Word con tablas nativas | 3000,98 | 2 | 32 | 4 / 210948 |
+| Word con cuatro tablas PNG y circular | 2247,41 | 2 | 25 | 9 / 275480 |
+| PDF mixto | 86,69 | 1 | 12 | 4 / 79860 |
+| PDF escaneado | 181,07 | 1 | 1 | 2 / 153448 |
+| Foto sintética | 33,21 | 1 | 0 | 1 / 60633 |
+| Estímulo en varias páginas | 161,59 | 2 | 12 | 5 / 90469 |
+
+Todas las páginas se conservan; cobertura `requiere_revision` cuando la asociación/limpieza aún no está confirmada, no éxito ficticio. Llamadas a proveedores: **0**. Estas cifras no miden cola, IA ni calificación en producción.
+
+p95 texto: 150 muestras por configuración tras 20 iteraciones de calentamiento, orden alternado en el mismo entorno. Flags apagadas: abrir **3,198 ms**, guardar **80,968 ms**; encendidas: abrir **3,281 ms** (+2,6 %, dentro del 10 % previsto), guardar **64,509 ms**. Texto sigue sin crear snapshots visuales. Los dobles de propuestas verifican seis llamadas imagen y seis contenido en las 24 combinaciones; idempotencia/recuperación no repiten el proveedor.
+
+### Converge y puertas externas
+
+La revisión confronta 22 FR, 9 SC, escenarios de cinco historias, diez decisiones y ocho principios. Los hallazgos T040–T043 cierran recuperación, preview real, verificación de propuesta y consultas del listado. No se sustituyen pruebas por checks documentales. Las tareas se marcan únicamente con evidencia.
+
+Converge final: **sin brechas de implementación nuevas**, 22 FR, 9 SC, 25 escenarios, diez decisiones y ocho principios comprobados; no se añadieron tareas vacías. T039 completada. La puerta externa de PR/CI de T038 no se presenta como aprobada antes de existir resultados remotos. No hay hooks de extensión configurados.
+
+El registro de CI es una puerta de entrega posterior a crear el PR, no una afirmación previa: **Backend quality and tests**, **Frontend quality, build and E2E**, **Container builds** y **Spec governance** deben estar verdes para el HEAD final. Se registrarán URLs/estado real en el PR y en esta sección. Nada autoriza fusionar, activar flags, inferir con material real ni desplegar automáticamente.
+
+### Activación y recuperación operativa
+
+Las tres variables `EVALUATION_VISUAL_IMPORT_ENABLED`, `EVALUATION_VISUAL_EDITOR_ENABLED`, `EVALUATION_VISUAL_GENERATION_ENABLED` siguen en `false` por defecto. Tras autorización separada y migración compatible: levantar el conversor interno restringido, comprobar su salud, habilitar importación/editor y solo después generación con proveedor configurado y presupuesto. Ante incidente, apagar las tres escrituras y conservar lectores, archivos y migración: no ejecutar downgrade destructivo ni borrar versiones/evidencias. Los trabajos ya iniciados conservan su ruta capturada; propuestas sin aceptación no se publican.
+
+## Comandos de regresión
 
 Desde `backend`:
 

@@ -43,6 +43,7 @@ export interface EvaluacionGenerarRequest {
 
 export type EvaluacionUpdate = Partial<Omit<EvaluacionCreate, 'materia_id' | 'tipo_origen'>> & {
   expected_updated_at?: string; expected_content_version_id?: string | null;
+  claves_visuales_revisadas?: string[];
 };
 
 export interface ListDBAParams {
@@ -122,6 +123,9 @@ export async function crearEntregaOnline(evaluacionId: string, payload: EntregaO
 }
 export async function iniciarEntregaOnline(evaluacionId: string): Promise<{ entrega_id: string; evaluacion: Evaluacion }> {
   const { data } = await api.post<{ entrega_id: string; evaluacion: Evaluacion }>(`/evaluaciones/${evaluacionId}/iniciar-entrega`);
+  if (!data?.entrega_id || !data.evaluacion?.contenido_version_id || !Array.isArray(data.evaluacion.preguntas)) {
+    throw new Error('No pudimos comprobar el contenido de tu intento. Vuelve a prepararlo antes de responder.');
+  }
   return data;
 }
 export async function getMiEntrega(evaluacionId: string): Promise<EntregaRead | null> {

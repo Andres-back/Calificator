@@ -176,7 +176,7 @@ export function ResolverEvaluacionPage() {
     }
   }, [location.hash, showDeliverySummary, isLoading, myDelivery.isLoading]);
   const answerFormEnabled = permiteRespuestaOnline
-    && (!needsContentAttempt || (contentAttempt.isSuccess && !contentAttempt.isFetching))
+    && (!needsContentAttempt || (Boolean(pinned) && contentAttempt.isSuccess && !contentAttempt.isFetching))
     && disponible
     && !estaCerrada
     && !enviada
@@ -395,7 +395,7 @@ export function ResolverEvaluacionPage() {
         subtitle="Resuelve únicamente tu actividad y entrégala para revisión docente."
         breadcrumbs={[{ label: 'Evaluaciones', to: '/app/evaluaciones' }, { label: evaluacion.nombre }]}
         backAction={<Link to="/app/evaluaciones" className="focus-ring inline-flex h-11 items-center justify-center gap-2 rounded-lg border border-border bg-surface px-5 text-sm font-semibold text-fg transition-colors hover:bg-surface-2"><ArrowLeft className="h-4 w-4" aria-hidden="true" /> Volver</Link>}
-        action={<a href={evaluationPdfUrl(evaluacionId, true, contentAttempt.data?.evaluacion.contenido_version_id)} className="focus-ring inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-border bg-surface px-4 text-sm font-semibold"><Download className="h-4 w-4" /> {assignedMaterial ? 'Descargar material' : 'Descargar evaluación'}</a>}
+        action={<a href={evaluationPdfUrl(evaluacionId, true, pinned?.contenido_version_id)} className="focus-ring inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-border bg-surface px-4 text-sm font-semibold"><Download className="h-4 w-4" /> {assignedMaterial ? 'Descargar material' : 'Descargar evaluación'}</a>}
       />
 
       <Card className="space-y-4 border-l-4 border-l-brand-500 p-5">
@@ -572,7 +572,7 @@ export function ResolverEvaluacionPage() {
                   </p>
                   <p className="text-sm text-muted">
                     {evaluacion?.mi_nota_confirmada != null
-                      ? `Tu nota es ${Number(evaluacion.mi_nota_confirmada).toFixed(1)} de ${Number(evaluacion.nota_maxima).toFixed(1)}.`
+                      ? `Tu nota es ${Number(evaluacion.mi_nota_confirmada).toFixed(1)} de ${Number(evaluacion.mi_nota_maxima ?? evaluacion.nota_maxima).toFixed(1)}.`
                       : modalidad === 'mixta' && !physicalSubmitted
                         ? 'Ahora entrega la parte física adjuntando una foto o PDF.'
                         : deliveryIsGrading

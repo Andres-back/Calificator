@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import {
   AlertTriangle, ArrowDown, ArrowLeft, ArrowUp, Bot, Check,
@@ -19,17 +19,20 @@ import { TYPE_COPY } from './generationWizardOptions';
 import { RubricEditor } from './RubricEditor';
 import { EvaluationCriteriaEditor } from './EvaluationCriteriaEditor';
 import { EvaluationSourceReview } from './EvaluationSourceReview';
+import { QuestionVisualEditor } from './QuestionVisualEditor';
+import { getVisualCapabilities } from '../visualApi';
 import { PasosGuia } from './PasosGuia';
 import {
   createBlankQuestion, createEmptyWizardState, discardWizardDraft, duplicateQuestion, getWizardStorage,
   evaluationToEditableQuestions, evaluationToWizardState, loadWizardDraft, MAX_QUESTIONS,
   moveQuestion, normalizeRubricCriteria, persistWizardDraft, prepareRubricCriteriaForSave, QUESTION_TYPES, questionsToUpdatePayload,
   renumberQuestions, selectedQuestionTypes, totalQuestionCount, validateQuestion,
-  updateWizardTopic, validatePreparation, validateReferenceFile, validateRubricCriteria, validateStep, type EditableQuestion, type QuestionType, type WizardState,
+  updateWizardTopic, updateQuestionVisual, reconcileVisualQuestions, validatePreparation, validateReferenceFile, validateRubricCriteria, validateStep, type EditableQuestion, type QuestionType, type WizardState,
+  loadVisualEditDraft, discardVisualEditDraft,
 } from './generationWizardModel';
 
 function QuestionCard({
-  question, index, total, evaluationModality, onChange, onDelete, onDuplicate, onMove,
+  question, index, total, evaluationModality, onChange, onDelete, onDuplicate, onMove, visualEditor,
 }: {
   question: EditableQuestion;
   index: number;
@@ -39,6 +42,7 @@ function QuestionCard({
   onDelete: () => void;
   onDuplicate: () => void;
   onMove: (direction: -1 | 1) => void;
+  visualEditor?: ReactNode;
 }) {
   const confirmAnswer = (respuestaEsperada: string): Partial<EditableQuestion> => ({
     respuestaEsperada,
@@ -107,6 +111,7 @@ function QuestionCard({
           <Field label="Enunciado" required>
             <Textarea value={question.enunciado} onChange={(event) => onChange({ enunciado: event.target.value })} className="min-h-24 text-base" />
           </Field>
+          {visualEditor}
 
           {evaluationModality === 'mixta' && (
             <Field label="Dónde responde el estudiante" required>
@@ -309,6 +314,8 @@ export function GenerationWizard({
   const selectedMateria = availableMaterias.find((materia) => materia.id === state.materiaId);
   const materiaNombre = selectedMateria?.nombre ?? '';
   const fixedContext = Boolean(initialMateriaId || initialEvaluation);
+  const visualCapabilities = useQuery({ queryKey: ['evaluation-visual-capabilities'], queryFn: getVisualCapabilities,
+    enabled: open && state.step === 5, staleTime: 30_000, retry: false });
 
   const dba = useQuery({
     queryKey: queryKeys.materias.dbaCombined(state.materiaId),
@@ -378,6 +385,7 @@ export function GenerationWizard({
     onSuccess: (evaluation, context) => {
       if (activeContext.current.userId !== context.userId || activeContext.current.id !== context.id) return;
       if (!initialEvaluation) discardWizardDraft(getWizardStorage(), userId, state.materiaId);
+      else discardVisualEditDraft(getWizardStorage(), userId, initialEvaluation.id);
       setSaveError(null);
       onCompleted(evaluation);
     },
@@ -404,8 +412,10 @@ export function GenerationWizard({
     setStorageNotice(false);
     setCanPersist(false);
     if (initialEvaluation) {
-      setState(initialSavedState.current!);
-      setRestorePrompt(false);
+      const restored = loadVisualEditDraft(getWizardStorage(), userId, initialEvaluation.id);
+      setState(restored || initialSavedState.current!);
+      setRestorePrompt(Boolean(restored));
+      setCanPersist(!restored);
       return;
     }
     const restored = materiaId ? loadWizardDraft(getWizardStorage(), userId, Date.now(), materiaId) : null;
@@ -420,7 +430,8 @@ export function GenerationWizard({
   }, [availableMaterias, initialEvaluation, initialMateriaId, open, userId]);
 
   useEffect(() => {
-    if (open && canPersist && !initialEvaluation && state.materiaId && !persistWizardDraft(getWizardStorage(), userId, state)) setStorageNotice(true);
+    if (open && canPersist && state.materiaId && (!initialEvaluation || state.contenidoVisual || state.visualJobs)
+        && !persistWizardDraft(getWizardStorage(), userId, state, Date.now(), initialEvaluation?.id)) setStorageNotice(true);
   }, [canPersist, initialEvaluation, open, state, userId]);
 
   useEffect(() => {
@@ -591,6 +602,7 @@ export function GenerationWizard({
       dba_personalizado_ids: current.useDba ? current.dbaPersonalizadoIds : [],
       criterios: current.useRubric ? prepareRubricCriteriaForSave(current.generatedCriteria, current.notaMaxima) : current.generatedCriteria,
       ...questionsToUpdatePayload(current.questions),
+      ...(current.contenidoVisual ? { contenido_visual: current.contenidoVisual, claves_visuales_revisadas: current.visualKeysReviewed ?? [] } : {}),
     };
   }
 
@@ -603,6 +615,12 @@ export function GenerationWizard({
   }
 
   function resetDraft(close = false) {
+    if (initialEvaluation) {
+      discardVisualEditDraft(getWizardStorage(), userId, initialEvaluation.id);
+      setState(evaluationToWizardState(initialEvaluation)); setRestorePrompt(false); setCanPersist(!close);
+      if (close) onClose();
+      return;
+    }
     discardWizardDraft(getWizardStorage(), userId, state.materiaId);
     setState(createEmptyWizardState(initialMateriaId || state.materiaId || availableMaterias[0]?.id || ''));
     setRestorePrompt(false);
@@ -689,7 +707,7 @@ export function GenerationWizard({
                           <div><h3 id="wizard-step-title" className="text-xl font-bold">Revisa y edita la evaluación</h3><p className="mt-1 text-base text-muted">Ajusta la rúbrica y las preguntas antes de confirmar. La IA propone; tú decides.</p></div>
                           <div className="flex flex-wrap items-center gap-2">
                             <Badge tone={questionErrors || !state.questions.length ? 'warning' : 'success'}>{!state.questions.length ? 'Agrega una pregunta' : questionErrors ? `${questionErrors} por corregir` : 'Todas válidas'}</Badge>
-                            <Button type="button" variant="outline" onClick={() => patch({ questions: createBlankQuestion(state.questions, state.modalidad) })} disabled={state.questions.length >= MAX_QUESTIONS}><Plus className="h-4 w-4" /> Agregar pregunta</Button>
+                            <Button type="button" variant="outline" onClick={() => patch(reconcileVisualQuestions(state, createBlankQuestion(state.questions, state.modalidad)))} disabled={state.questions.length >= MAX_QUESTIONS}><Plus className="h-4 w-4" /> Agregar pregunta</Button>
                           </div>
                         </div>
                         {initialEvaluation && initialEvaluation.estado !== 'borrador' && (
@@ -706,8 +724,10 @@ export function GenerationWizard({
                         <Button type="button" variant="outline" onClick={editCriteria}>Criterios y rúbrica</Button>
                         </details>
                         <div role="list" aria-label="Preguntas editables" className="space-y-4">
+                          {visualCapabilities.isError && <div role="status" className="rounded-lg border border-border p-3 text-sm"><p>El contenido guardado sigue disponible. No pudimos cargar las opciones para añadir figuras.</p><Button variant="outline" onClick={() => { void visualCapabilities.refetch(); }}>Cargar opciones de figuras</Button></div>}
                           {state.contenidoVisual && state.generatedEvaluationId && <EvaluationSourceReview
                             evaluationId={state.generatedEvaluationId} versionId={state.contenidoVersionId} manifest={state.contenidoVisual}
+                            onChange={visualCapabilities.data?.editor ? contenidoVisual => patch({ contenidoVisual, visualKeysReviewed: [], visualKeysPending: contenidoVisual.pregunta_ids }) : undefined}
                             questions={state.questions.filter(question => question.contenidoId).map(question => ({ id: question.contenidoId!, label: `Pregunta ${question.numero}` }))} />}
                           {state.questions.map((question, index) => (
                             <QuestionCard
@@ -716,10 +736,28 @@ export function GenerationWizard({
                               index={index}
                               total={state.questions.length}
                               evaluationModality={state.modalidad}
+                              visualEditor={visualCapabilities.data?.editor && state.generatedEvaluationId ? <div className="min-w-0 space-y-3">
+                                {state.contenidoVisual?.bloques.filter(block => block.pregunta_ids.includes(question.contenidoId || '')).map(block => <QuestionVisualEditor
+                                  key={block.id} existing={block} evaluationId={state.generatedEvaluationId!} materiaId={state.materiaId} questionId={question.contenidoId!}
+                                  versionId={state.contenidoVersionId} generationEnabled={visualCapabilities.data.generacion}
+                                  pendingJobId={state.visualJobs?.[`${question.contenidoId}:${block.id}`]}
+                                  onJobChange={jobId => setState(current => { const visualJobs = { ...current.visualJobs }; const key = `${question.contenidoId}:${block.id}`; if (jobId) visualJobs[key] = jobId; else delete visualJobs[key]; return { ...current, visualJobs }; })}
+                                  onAccept={value => setState(current => updateQuestionVisual(current, question.contenidoId!, value, block.id))}
+                                  onRemove={() => setState(current => updateQuestionVisual(current, question.contenidoId!, null, block.id))} />)}
+                                <QuestionVisualEditor evaluationId={state.generatedEvaluationId} materiaId={state.materiaId} questionId={question.contenidoId || ''}
+                                  pendingJobId={state.visualJobs?.[`${question.contenidoId}:new`]}
+                                  onJobChange={jobId => setState(current => { const visualJobs = { ...current.visualJobs }; const key = `${question.contenidoId}:new`; if (jobId) visualJobs[key] = jobId; else delete visualJobs[key]; return { ...current, visualJobs }; })}
+                                  onBegin={() => setState(current => ({ ...current, questions: current.questions.map(item => ({ ...item, contenidoId: item.contenidoId || crypto.randomUUID() })) }))}
+                                  versionId={state.contenidoVersionId} generationEnabled={visualCapabilities.data.generacion}
+                                  onAccept={value => setState(current => updateQuestionVisual(current, value.pregunta_ids[0], value))} />
+                                {state.visualKeysPending?.includes(question.contenidoId || '') && <label className="flex min-h-11 items-start gap-2 text-sm leading-6"><input type="checkbox" checked={state.visualKeysReviewed?.includes(question.contenidoId || '') || false}
+                                  onChange={event => { const checked = event.target.checked; setState(current => ({ ...current,
+                                    visualKeysReviewed: checked ? [...new Set([...(current.visualKeysReviewed ?? []), question.contenidoId!])] : (current.visualKeysReviewed ?? []).filter(id => id !== question.contenidoId) })); }} />He comprobado la respuesta correcta con este material.</label>}
+                              </div> : undefined}
                               onChange={(questionPatch) => patch({ questions: state.questions.map((current, currentIndex) => currentIndex === index ? { ...current, ...questionPatch } : current) })}
-                              onDelete={() => patch({ questions: renumberQuestions(state.questions.filter((_, currentIndex) => currentIndex !== index)) })}
-                              onDuplicate={() => patch({ questions: duplicateQuestion(state.questions, index) })}
-                              onMove={(direction) => patch({ questions: moveQuestion(state.questions, index, direction) })}
+                              onDelete={() => patch(reconcileVisualQuestions(state, renumberQuestions(state.questions.filter((_, currentIndex) => currentIndex !== index))))}
+                              onDuplicate={() => patch(reconcileVisualQuestions(state, duplicateQuestion(state.questions, index), question.contenidoId))}
+                              onMove={(direction) => patch(reconcileVisualQuestions(state, moveQuestion(state.questions, index, direction)))}
                             />
                           ))}
                         </div>

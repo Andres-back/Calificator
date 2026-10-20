@@ -246,8 +246,18 @@ class VisualProposalRequest(VisualUploadRequest):
 
     @model_validator(mode="after")
     def explicit_version_and_data(self) -> VisualProposalRequest:
-        if self.evaluacion_id is not None and self.expected_version_id is None:
-            raise ValueError("Indica la versión que estás editando.")
         if (self.tabla is not None and self.tipo != "tabla") or (self.grafica is not None and self.tipo != "grafica"):
             raise ValueError("Los datos no corresponden al recurso solicitado.")
+        return self
+
+
+class VisualCropRequest(VisualProposalRequest):
+    source_resource_id: UUID
+    region: tuple[float, float, float, float]
+
+    @model_validator(mode='after')
+    def safe_crop(self):
+        left, top, right, bottom = self.region
+        if self.tipo not in {'imagen', 'dibujo'} or not (0 <= left < right <= 1 and 0 <= top < bottom <= 1):
+            raise ValueError('Selecciona una región válida de la página.')
         return self

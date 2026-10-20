@@ -2,6 +2,55 @@
   "schema_version": 1,
   "permission_overrides": [
     {
+      "surface_id": "backend:POST:/evaluaciones/recursos/estructurado",
+      "actors": ["admin", "profesor"],
+      "reason": "_proposal_scope exige evaluations.create/update y gestión de la materia/evaluación; no basta estar autenticado.",
+      "issue_url": "https://github.com/Andres-back/Calificator/issues/211",
+      "evidence": ["backend/tests/integration/test_evaluation_visual_permissions.py"]
+    },
+    {
+      "surface_id": "backend:POST:/evaluaciones/recursos/recortar",
+      "actors": ["admin", "profesor"],
+      "reason": "_proposal_scope comprueba gestión y el recorte exige recurso del mismo ámbito; no es contenido público.",
+      "issue_url": "https://github.com/Andres-back/Calificator/issues/211",
+      "evidence": ["backend/tests/integration/test_evaluation_visual_permissions.py"]
+    },
+    {
+      "surface_id": "backend:POST:/evaluaciones/recursos/generar",
+      "actors": ["admin", "profesor"],
+      "reason": "La ruta y el worker comprueban permiso de edición/creación y gestión de materia antes de inferir.",
+      "issue_url": "https://github.com/Andres-back/Calificator/issues/211",
+      "evidence": ["backend/tests/integration/test_evaluation_visual_permissions.py", "backend/tests/unit/test_evaluation_visual_generation.py"]
+    },
+    {
+      "surface_id": "frontend_call:POST:/evaluaciones/recursos/estructurado:frontend/src/modules/evaluaciones/visualApi.ts",
+      "actors": ["admin", "profesor"],
+      "reason": "Cliente del editor docente habilitado por permisos/capacidades; /recursos/ no designa aquí el reproductor estudiante.",
+      "issue_url": "https://github.com/Andres-back/Calificator/issues/211",
+      "evidence": ["frontend/src/modules/evaluaciones/components/QuestionVisualEditor.test.tsx", "backend/tests/integration/test_evaluation_visual_permissions.py"]
+    },
+    {
+      "surface_id": "frontend_call:POST:/evaluaciones/recursos/recortar:frontend/src/modules/evaluaciones/visualApi.ts",
+      "actors": ["admin", "profesor"],
+      "reason": "Solo el editor docente de material privado usa este cliente; el servidor vuelve a comprobar propiedad.",
+      "issue_url": "https://github.com/Andres-back/Calificator/issues/211",
+      "evidence": ["backend/tests/integration/test_evaluation_visual_permissions.py"]
+    },
+    {
+      "surface_id": "frontend_call:POST:/evaluaciones/recursos/generar:frontend/src/modules/evaluaciones/visualApi.ts",
+      "actors": ["admin", "profesor"],
+      "reason": "Propuestas opcionales del editor docente, no generación desde el flujo estudiante.",
+      "issue_url": "https://github.com/Andres-back/Calificator/issues/211",
+      "evidence": ["frontend/src/modules/evaluaciones/components/QuestionVisualEditor.test.tsx", "frontend/e2e/mock/evaluation-visuals.mock.spec.ts"]
+    },
+    {
+      "surface_id": "frontend_call:GET:/evaluaciones/recursos/{id}/propuesta:frontend/src/modules/evaluaciones/visualApi.ts",
+      "actors": ["admin", "profesor"],
+      "reason": "Vista previa privada del editor; el estudiante recibe únicamente recursos publicables por otra ruta.",
+      "issue_url": "https://github.com/Andres-back/Calificator/issues/211",
+      "evidence": ["backend/tests/integration/test_evaluation_visual_permissions.py", "frontend/e2e/mock/evaluation-visuals.mock.spec.ts"]
+    },
+    {
       "surface_id": "backend:GET:/evaluaciones/{evaluacion_id}/pdf",
       "actors": ["admin", "estudiante", "profesor"],
       "reason": "La autorización compartida exige evaluations.read y ensure_can_read_evaluation; el solucionario solo admite propietario docente o administrador autorizado.",

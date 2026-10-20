@@ -11,7 +11,7 @@ export function getStudentEvaluationStatus(evaluation: Evaluacion): {
 } {
   if (evaluation.mi_nota_confirmada != null) {
     return {
-      label: `Calificada: ${Number(evaluation.mi_nota_confirmada).toFixed(1)} / ${Number(evaluation.nota_maxima).toFixed(1)}`,
+      label: `Calificada: ${Number(evaluation.mi_nota_confirmada).toFixed(1)} / ${Number(evaluation.mi_nota_maxima ?? evaluation.nota_maxima).toFixed(1)}`,
       tone: 'success',
     };
   }

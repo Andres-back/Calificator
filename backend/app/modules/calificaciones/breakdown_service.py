@@ -143,7 +143,7 @@ def _automatic_provenance(
                 "pipeline_run_id": pipeline_run_id,
                 "nota_final": float(note),
             }
-    return {
+    provenance = {
         "orchestrator": raw_output.get("orchestrator"),
         "provider_policy": raw_output.get("provider_policy"),
         "primera_sugerencia": first,
@@ -153,6 +153,12 @@ def _automatic_provenance(
             "nota_final": float(note),
         },
     }
+    content = raw_output.get('evaluation_content')
+    if isinstance(content, dict):
+        provenance['evaluation_content'] = {
+            key: content[key] for key in ('version_id', 'content_hash', 'block_ids', 'image_hashes') if key in content
+        }
+    return provenance
 
 
 def _is_initial_automatic_breakdown(breakdown: CalificacionDesglose) -> bool:
@@ -400,6 +406,8 @@ def student_breakdown_is_publishable(calificacion: Calificacion, breakdown: Cali
     return Decimal(str(official)) == Decimal(str(breakdown.nota_final))
 
 def answers_released(evaluation: Evaluacion) -> bool:
+    if hasattr(evaluation, 'respuestas_liberadas_actual'):
+        return bool(evaluation.respuestas_liberadas_actual)
     rules = dict(evaluation.blueprint.reglas_feedback or {}) if evaluation.blueprint else {}
     if "respuestas_liberadas" in rules:
         return bool(rules["respuestas_liberadas"])

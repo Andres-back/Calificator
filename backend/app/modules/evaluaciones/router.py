@@ -11,7 +11,7 @@ from app.core.permissions import get_current_user, require_permission_now
 from app.core.rate_limit import rate_limit
 from app.db.session import get_db
 from app.modules.evaluaciones import export_service, generation_service, service
-from app.modules.evaluaciones.visual_serialization import authorized_content_revision, visual_read_fields
+from app.modules.evaluaciones.visual_serialization import authorized_content_revision, visual_read_fields, batch_visual_read_fields
 from app.modules.evaluaciones.visual_render import resolve_visual_material
 from app.modules.evaluaciones.digitalize_service import (
     detect_digitalization_mime,
@@ -40,13 +40,13 @@ from app.workers.tasks_digitalization import digitalize_evaluation
 router = APIRouter(tags=["evaluaciones"])
 
 
-async def _evaluation_response(db, evaluation, current_user):
+async def _evaluation_response(db, evaluation, current_user, prepared_fields=None):
     """Authorize first at the call site; never serialize a full manifest to pupils."""
     source = SimpleNamespace(**evaluation) if isinstance(evaluation, dict) else evaluation
     if not getattr(source, 'contenido_version_id', None):
         return evaluation
     student = not (current_user.rol == UserRole.ADMIN.value or source.profesor_id == current_user.id)
-    fields = await visual_read_fields(db, source, student=student)
+    fields = prepared_fields if prepared_fields is not None else await visual_read_fields(db, source, student=student)
     response = EvaluacionRead.model_validate(evaluation).model_dump()
     response.update(fields)
     return response
@@ -249,7 +249,12 @@ async def list_evaluations_for_materia(
 ) -> list[object]:
     require_permission_now(current_user, "evaluations.read")
     values = await service.list_evaluations_for_materia(db, materia_id, current_user)
-    return [await _evaluation_response(db, value, current_user) for value in values]
+    sources = [SimpleNamespace(**value) if isinstance(value, dict) else value for value in values]
+    teacher_rows = [value for value in sources if current_user.rol == UserRole.ADMIN.value or value.profesor_id == current_user.id]
+    student_rows = [value for value in sources if value not in teacher_rows]
+    fields = await batch_visual_read_fields(db, teacher_rows, student=False)
+    fields.update(await batch_visual_read_fields(db, student_rows, student=True))
+    return [await _evaluation_response(db, value, current_user, fields.get(source.id, {})) for value, source in zip(values, sources)]
 
 
 @router.get("/evaluaciones/{evaluacion_id}", response_model=EvaluacionRead)

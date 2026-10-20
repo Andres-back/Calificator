@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { Evaluacion } from '@/types/api';
 import {
+  updateQuestionVisual, reconcileVisualQuestions, loadVisualEditDraft,
   createEmptyWizardState,
   createBlankQuestion,
   discardWizardDraft,
@@ -30,6 +31,31 @@ import {
   wizardStorageKey,
   type EditableQuestion,
 } from './generationWizardModel';
+
+it('replaces one use of shared material while preserving other uses and review state', () => {
+  const state = createEmptyWizardState();
+  state.questions = [validQuestion({ contenidoId: 'q1' }), validQuestion({ clientId: 'q2', contenidoId: 'q2' })];
+  state.contenidoVisual = { schema_version: 1, pregunta_ids: ['q1', 'q2'], recurso_ids: ['r'],
+    bloques: [{ id: 'shared', tipo: 'imagen', orden: 0, pregunta_ids: ['q1', 'q2'], recurso_id: 'r', seguridad_contenido: 'publicable_confirmado' }],
+    cobertura: { detectados: [], conservados: [], avisos: [], estado: 'completa' } };
+  const changed = updateQuestionVisual(state, 'q1', { id: 'new', tipo: 'imagen', orden: 1, pregunta_ids: ['q1'], recurso_id: 'r2', seguridad_contenido: 'publicable_confirmado' }, 'shared');
+  expect(changed.contenidoVisual?.bloques[0].pregunta_ids).toEqual(['q2']);
+  expect(changed.visualKeysPending).toEqual(['q1']);
+  const removed = reconcileVisualQuestions(changed, [changed.questions[0]]);
+  expect(removed.contenidoVisual?.pregunta_ids).toEqual(['q1']);
+  expect(removed.contenidoVisual?.bloques.map(block => block.id)).toEqual(['new']);
+  expect(state.contenidoVisual.bloques[0].pregunta_ids).toEqual(['q1', 'q2']);
+});
+
+it('isolates recoverable visual edits and jobs by user and evaluation', () => {
+  const state = createEmptyWizardState('subject');
+  state.generatedEvaluationId = 'evaluation'; state.visualJobs = { q1: 'job-1' };
+  state.questions = [validQuestion({ contenidoId: 'q1' })];
+  persistWizardDraft(localStorage, 'owner', state, 1000, 'evaluation');
+  expect(loadVisualEditDraft(localStorage, 'owner', 'evaluation', 1001)?.visualJobs).toEqual({ q1: 'job-1' });
+  expect(loadVisualEditDraft(localStorage, 'other-owner', 'evaluation', 1001)).toBeNull();
+  expect(loadVisualEditDraft(localStorage, 'owner', 'another-evaluation', 1001)).toBeNull();
+});
 
 function validQuestion(overrides: Partial<EditableQuestion> = {}): EditableQuestion {
   return {

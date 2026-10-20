@@ -49,34 +49,34 @@ Rutas relativas al repositorio. Las pruebas preceden al código de cada fase. Ca
 - [X] T022 [US3] Fijar revisión al iniciar entrega online, recibir foto y encolar todas las entradas de calificación en `backend/app/modules/calificaciones/router.py`, `grading_queue_service.py` y servicios de entrega; propagar ID/hash a jobs padre/hijo sin elegir nueva versión al reintentar. [FR-010/012/013/020]
 - [X] T023 [US3] Leer snapshot inmutable en `backend/app/workers/tasks_grading.py` y `backend/app/modules/evaluaciones/blueprint_service.py`; incluir hash visual en fingerprint y conservar recorrido legacy sin adjuntar recursos nuevos a notas anteriores. [FR-010/012/013/020]
 - [X] T024 [US3] Añadir contexto visual tipado a `backend/app/modules/calificaciones/agents.py` y `orchestrator.py`: material de pregunta separado de imagen del alumno, estímulos deduplicados y presentes en principal/verificador, propagados a particiones y reintentos, con fallback autorizado o revisión por límites/capacidad. [FR-010/011/014/021]
-- [ ] T025 [US3] Integrar cobertura visual, bloqueo de publicación insuficiente y procedencia segura en `backend/app/modules/calificaciones/breakdown_policy.py`, `breakdown_service.py` y lectores de detalle: recursos históricos correctos sin cero por contexto ausente ni modificación de notas previas. [FR-011/013/015/020; SC-004/009]
+- [X] T025 [US3] Integrar cobertura visual, bloqueo de publicación insuficiente y procedencia segura en `backend/app/modules/calificaciones/breakdown_policy.py`, `breakdown_service.py` y lectores de detalle: recursos históricos correctos sin cero por contexto ausente ni modificación de notas previas. [FR-011/013/015/020; SC-004/009]
 
 ## Fase 6: Historia 5 — Editor con carga o IA (P1)
 
 **Prueba independiente**: tres orígenes × carga/IA × imagen/tabla/gráfica/dibujo; propuesta revisada, persistencia y mismas salidas/contexto, cancelación/conflicto sin sobrescritura.
 
-- [ ] T026 [US5] Escribir pruebas de propuestas, gráficos/tablas y estados en `backend/tests/unit/test_evaluation_visual_generation.py` y `frontend/src/modules/evaluaciones/components/QuestionVisualEditor.test.tsx`; rechazar placeholders, datos inválidos, propuesta tardía y recurso ajeno. [FR-017–022; SC-008/009]
-- [ ] T027 [US5] Implementar generación persistente en `backend/app/workers/tasks_evaluation_visuals.py`, `backend/app/modules/evaluaciones/visual_router.py` y `visual_service.py`: captura de configuración, servicio `image_router` existente para ilustraciones, contrato de contenido para datos, validación y persistencia staged; nunca aceptar automáticamente ni usar stub. [FR-017/018/019/022]
-- [ ] T028 [US5] Implementar controles de tablas y gráficas en `frontend/src/modules/evaluaciones/components/QuestionVisualEditor.tsx` y `backend/app/modules/evaluaciones/visual_render.py`: celdas, series, categorías, etiquetas y unidades coherentes; imágenes subidas no se anuncian editables estructuradamente sin extracción revisada. [FR-017/019; SC-009]
-- [ ] T029 [US5] Integrar acción opcional por pregunta en `GenerationWizard.tsx` y cliente `frontend/src/modules/evaluaciones/api.ts`: carga/IA, preview, aceptar/reemplazar/quitar, espera/error/cancelar y borrador conservado, distribución móvil de área útil sin controles permanentes redundantes. [FR-007/015/017/018/022]
-- [ ] T030 [US5] Integrar guardado de propuestas y revisión de clave afectada en `backend/app/modules/evaluaciones/service.py` y `frontend/src/modules/evaluaciones/components/generationWizardModel.ts`; conservar referencias compartidas e históricas y resolver concurrencia sin sobrescribir versión nueva. [FR-013/018/020/021]
-- [ ] T031 [US5] Añadir recorrido de edición visual/exportación/consulta con tres orígenes en `frontend/e2e/mock/evaluation-visuals.mock.spec.ts` y regresión de persistencia en `backend/tests/integration/test_evaluation_visual_persistence.py`. [FR-017–022; SC-008/009]
+- [X] T026 [US5] Escribir pruebas de propuestas, gráficos/tablas y estados en `backend/tests/unit/test_evaluation_visual_generation.py` y `frontend/src/modules/evaluaciones/components/QuestionVisualEditor.test.tsx`; rechazar placeholders, datos inválidos, propuesta tardía y recurso ajeno. [FR-017–022; SC-008/009]
+- [X] T027 [US5] Implementar generación persistente en `backend/app/workers/tasks_evaluation_visuals.py`, `backend/app/modules/evaluaciones/visual_router.py` y `visual_service.py`: captura de configuración, servicio `image_router` existente para ilustraciones, contrato de contenido para datos, validación y persistencia staged; nunca aceptar automáticamente ni usar stub. [FR-017/018/019/022]
+- [X] T028 [US5] Implementar controles de tablas y gráficas en `frontend/src/modules/evaluaciones/components/QuestionVisualEditor.tsx` y `backend/app/modules/evaluaciones/visual_render.py`: celdas, series, categorías, etiquetas y unidades coherentes; imágenes subidas no se anuncian editables estructuradamente sin extracción revisada. [FR-017/019; SC-009]
+- [X] T029 [US5] Integrar acción opcional por pregunta en `GenerationWizard.tsx` y cliente `frontend/src/modules/evaluaciones/api.ts`: carga/IA, preview, aceptar/reemplazar/quitar, espera/error/cancelar y borrador conservado, distribución móvil de área útil sin controles permanentes redundantes. [FR-007/015/017/018/022]
+- [X] T030 [US5] Integrar guardado de propuestas y revisión de clave afectada en `backend/app/modules/evaluaciones/service.py` y `frontend/src/modules/evaluaciones/components/generationWizardModel.ts`; conservar referencias compartidas e históricas y resolver concurrencia sin sobrescribir versión nueva. [FR-013/018/020/021]
+- [X] T031 [US5] Añadir recorrido de edición visual/exportación/consulta con tres orígenes en `frontend/e2e/mock/evaluation-visuals.mock.spec.ts` y regresión de persistencia en `backend/tests/integration/test_evaluation_visual_persistence.py`. [FR-017–022; SC-008/009]
 
 ## Fase 7: Historia 4 — Recuperación (P2)
 
 **Prueba independiente**: retomar trabajos y reintentar fallos de conversión/generación/persistencia conserva el original y no duplica evaluaciones/recursos.
 
-- [ ] T032 [US4] Escribir pruebas de fallo/reanudación/cancelación y cache por versión en `backend/tests/unit/test_digitalization_queue.py`, `backend/tests/unit/test_evaluation_visual_generation.py` y `frontend/src/modules/evaluaciones/components/DigitalizationJobMonitor.test.tsx`. [FR-001/012/015/016/018/022]
-- [ ] T033 [US4] Integrar jobs recuperables, limpieza sin referencias y mensajes docentes en `backend/app/workers/tasks_digitalization.py`, `tasks_evaluation_visuals.py`, `backend/app/modules/jobs/` y `frontend/src/modules/evaluaciones/components/DigitalizationJobMonitor.tsx`; no exponer extracción privada ni afirmar completitud con avisos críticos. [FR-005/012/014/015/016/022]
+- [X] T032 [US4] Escribir pruebas de fallo/reanudación/cancelación y cache por versión en `backend/tests/unit/test_digitalization_queue.py`, `backend/tests/unit/test_evaluation_visual_generation.py` y `frontend/src/modules/evaluaciones/components/DigitalizationJobMonitor.test.tsx`. [FR-001/012/015/016/018/022]
+- [X] T033 [US4] Integrar jobs recuperables, limpieza sin referencias y mensajes docentes en `backend/app/workers/tasks_digitalization.py`, `tasks_evaluation_visuals.py`, `backend/app/modules/jobs/` y `frontend/src/modules/evaluaciones/components/DigitalizationJobMonitor.tsx`; no exponer extracción privada ni afirmar completitud con avisos críticos. [FR-005/012/014/015/016/022]
 
 ## Fase final: Validación transversal
 
-- [ ] T034 Escribir y ejecutar matriz 360/390 px, escritorio, claro/oscuro, Chromium/WebKit en `frontend/e2e/mock/evaluation-visuals.mock.spec.ts`; revisar capturas de zoom, tablas, teclado simulado, cancelación, errores y roles. Registrar límites de emulación en `specs/101-digitalizacion-visual-completa/quickstart.md`. [FR-007/015; SC-005/007/008]
-- [ ] T035 Medir seis muestras y p95 de abrir/guardar texto, fases de extracción/render y llamadas IA por estímulo en pruebas aisladas; registrar línea base y comparación en `specs/101-digitalizacion-visual-completa/quickstart.md`; optimizar si supera tolerancia del plan sin omitir contexto. [FR-012/015; SC-001/002/006]
-- [ ] T036 Implementar y probar activación independiente deshabilitada por defecto de importación/editor/generación en `backend/app/core/config.py` y consumo frontend, manteniendo lectores disponibles; probar rollback operativo, límites efectivos y limpieza sin eliminar recursos guardados en `backend/tests/integration/test_evaluation_visual_persistence.py`. [FR-001/013/016; SC-006]
-- [ ] T037 Actualizar dominio y contratos responsables en `specs/005-evaluaciones/`, `specs/008-calificaciones/`, `specs/012-ia-jobs-produccion/` e inventario mediante `scripts/build_system_inventory.py`; documentar rutas/estados/modelos sin secretos. [FR-014/015; constitución VII]
-- [ ] T038 Ejecutar pruebas focalizadas finales, migraciones y contenedores aislados; abrir PR ligado a #211 y registrar cuatro controles CI verdes en `specs/101-digitalizacion-visual-completa/quickstart.md`. No fusionar/desplegar sin autorización separada. [FR-013/014; constitución VII/VIII]
-- [ ] T039 Ejecutar Converge sobre `specs/101-digitalizacion-visual-completa/tasks.md`, añadir trabajo faltante si lo hay, completarlo y actualizar evidencia; ninguna tarea pendiente se marca completa por falta de tiempo. [FR-001–022; SC-001–009]
+- [X] T034 Escribir y ejecutar matriz 360/390 px, escritorio, claro/oscuro, Chromium/WebKit en `frontend/e2e/mock/evaluation-visuals.mock.spec.ts`; revisar capturas de zoom, tablas, teclado simulado, cancelación, errores y roles. Registrar límites de emulación en `specs/101-digitalizacion-visual-completa/quickstart.md`. [FR-007/015; SC-005/007/008]
+- [X] T035 Medir seis muestras y p95 de abrir/guardar texto, fases de extracción/render y llamadas IA por estímulo en pruebas aisladas; registrar línea base y comparación en `specs/101-digitalizacion-visual-completa/quickstart.md`; optimizar si supera tolerancia del plan sin omitir contexto. [FR-012/015; SC-001/002/006]
+- [X] T036 Implementar y probar activación independiente deshabilitada por defecto de importación/editor/generación en `backend/app/core/config.py` y consumo frontend, manteniendo lectores disponibles; probar rollback operativo, límites efectivos y limpieza sin eliminar recursos guardados en `backend/tests/integration/test_evaluation_visual_persistence.py`. [FR-001/013/016; SC-006]
+- [X] T037 Actualizar dominio y contratos responsables en `specs/005-evaluaciones/`, `specs/008-calificaciones/`, `specs/012-ia-jobs-produccion/` e inventario mediante `scripts/build_system_inventory.py`; documentar rutas/estados/modelos sin secretos. [FR-014/015; constitución VII]
+- [ ] T038 Ejecutar pruebas focalizadas finales, migraciones y contenedores aislados; abrir PR ligado a #211 y registrar su HEAD y la puerta de cuatro controles CI en `specs/101-digitalizacion-visual-completa/quickstart.md`. Los cuatro controles verdes siguen siendo obligatorios antes de cualquier fusión; no fusionar/desplegar sin autorización separada. [FR-013/014; constitución VII/VIII]
+- [X] T039 Ejecutar Converge sobre `specs/101-digitalizacion-visual-completa/tasks.md`, añadir trabajo faltante si lo hay, completarlo y actualizar evidencia; ninguna tarea pendiente se marca completa por falta de tiempo. [FR-001–022; SC-001–009]
 
 ## Dependencias
 
@@ -93,3 +93,21 @@ No se requiere delegación ni se habilita por esta lista. Una vez fijados los co
 Incremento local seguro: conservación e importación completas primero, después lectores/documentos y calificación versionada, luego edición IA/manual y recuperación. No se publica una implementación parcial como función final. Pruebas rutinarias sin inferencias reales; no repetir la batería completa a cada cambio. CI requerido no se omite.
 
 Cada tarea tiene referencias FR/SC; la evidencia final reside en quickstart y PR. Aprobación del plan no equivale a aprobar automáticamente la nueva lista `checklists/visual-integrity.md`, ni a autorizar merge o cambios de producción.
+
+## Phase 8: Convergence
+
+Evaluación de código frente a 22 FR, 9 SC, escenarios de las cinco historias, 10 decisiones del plan y 8 principios constitucionales. Hallazgos adicionales a las verificaciones finales ya previstas: tres `partial`, severidad HIGH; sin ampliación funcional ni cambio de datos históricos. La revisión no modifica el alcance ni el plan aprobado.
+
+- [X] T040 Recuperar de forma explícita el borrador visual y el ID de propuesta en curso al reabrir/recargar una evaluación, aislados por cuenta/evaluación y versión; conservar conflicto sin aplicar un resultado a otro contenido, según FR-012/018/022 y US4/AC2 (partial).
+- [X] T041 Impedir aceptar material hasta que la vista previa real termine de cargar; un fallo debe conservar los datos, permitir reintento y no convertirse en aceptación por marcar una casilla, según FR-007/018/022 y SC-008 (partial).
+- [X] T042 Comprobar bytes, ámbito e identidad de la propuesta guardada antes de anunciar recuperación exitosa; probar fallo y lease/cancelación sin regenerar ni sobrescribir el recurso, según FR-012/014/018 y SC-006/009 (partial).
+
+## Phase 9: Convergence
+
+F1 — partial, MEDIUM, FR-007/014 y plan: rendimiento. La proyección segura existe, pero el listado resuelve cada revisión/recurso por separado. Se revisaron 22 FR, 9 SC, 25 escenarios, 10 decisiones y 8 principios; el resto del cierre sigue las tareas de validación ya previstas, sin ampliar alcance.
+
+- [X] T043 Cargar conjuntamente revisiones y recursos del listado autorizado, manteniendo verificación de hash y filtros de publicación/ámbito por evaluación; probar que 20 evaluaciones no multiplican consultas y que texto sin recursos no añade ninguna, según FR-007/014 y plan: rendimiento (partial).
+
+### Secuencia de CI
+
+La redacción de T038 separa preparación local/creación del PR de su puerta externa: gobernanza exige tareas de implementación cerradas, pero CI solo existe después de abrir el PR. El registro puede indicar «pendiente» sin afirmar controles verdes. Esto no modifica el validador, el plan ni la obligación constitucional de cuatro controles verdes y autorización separada para fusionar/desplegar.

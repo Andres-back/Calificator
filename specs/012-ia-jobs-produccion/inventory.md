@@ -2,7 +2,7 @@
 
 > Archivo generado por `python scripts/build_system_inventory.py --write`. No editar manualmente.
 
-**Superficies propietarias:** 32
+**Superficies propietarias:** 35
 
 | Tipo | Firma | Actores | Cobertura | Fuente |
 |---|---|---|---|---|
@@ -21,20 +21,23 @@
 | integration | `ollama` | system | covered | `backend/app/services/ai_capability_registry.py:1` |
 | integration | `openai` | system | covered | `backend/app/services/ai_capability_registry.py:1` |
 | job | `tasks.assign_overdue_grades` | system | missing | `backend/app/workers/tasks_deadlines.py:46` |
+| job | `tasks.cleanup_evaluation_visual_proposals` | system | missing | `backend/app/workers/tasks_evaluation_visuals.py:155` |
 | job | `tasks.cleanup_expired_roster_imports` | system | missing | `backend/app/workers/tasks_roster_import.py:150` |
 | job | `tasks.cleanup_password_reset_requests` | system | missing | `backend/app/workers/tasks_password_recovery.py:156` |
-| job | `tasks.digitalize_evaluation` | system | covered | `backend/app/workers/tasks_digitalization.py:392` |
+| job | `tasks.digitalize_evaluation` | system | covered | `backend/app/workers/tasks_digitalization.py:496` |
 | job | `tasks.export_report` | system | missing | `backend/app/workers/tasks_reports.py:5` |
 | job | `tasks.extract_roster_import` | system | covered | `backend/app/workers/tasks_roster_import.py:120` |
+| job | `tasks.generate_evaluation_visual` | system | missing | `backend/app/workers/tasks_evaluation_visuals.py:120` |
 | job | `tasks.generate_image` | system | covered | `backend/app/workers/tasks_images.py:5` |
 | job | `tasks.generate_presentation` | system | covered | `backend/app/workers/tasks_presentations.py:33` |
 | job | `tasks.get_ai_config_version` | system | missing | `backend/app/workers/tasks_ai_config.py:30` |
-| job | `tasks.grade_batch` | system | covered | `backend/app/workers/tasks_grading.py:857` |
-| job | `tasks.grade_delivery` | system | covered | `backend/app/workers/tasks_grading.py:911` |
+| job | `tasks.grade_batch` | system | covered | `backend/app/workers/tasks_grading.py:867` |
+| job | `tasks.grade_delivery` | system | covered | `backend/app/workers/tasks_grading.py:921` |
 | job | `tasks.ingest_rag` | system | missing | `backend/app/workers/tasks_rag.py:5` |
+| job | `tasks.recover_evaluation_visuals` | system | missing | `backend/app/workers/tasks_evaluation_visuals.py:138` |
 | job | `tasks.recover_expired_local_jobs` | system | missing | `backend/app/workers/tasks_ai_config.py:55` |
-| job | `tasks.recover_stale_digitalization_jobs` | system | covered | `backend/app/workers/tasks_digitalization.py:455` |
-| job | `tasks.recover_stale_grading_jobs` | system | covered | `backend/app/workers/tasks_grading.py:1018` |
+| job | `tasks.recover_stale_digitalization_jobs` | system | covered | `backend/app/workers/tasks_digitalization.py:559` |
+| job | `tasks.recover_stale_grading_jobs` | system | covered | `backend/app/workers/tasks_grading.py:1028` |
 | job | `tasks.recover_stale_presentation_jobs` | system | covered | `backend/app/workers/tasks_presentations.py:84` |
 | job | `tasks.recover_stale_roster_import_jobs` | system | covered | `backend/app/workers/tasks_roster_import.py:143` |
 | job | `tasks.send_password_reset_email` | system | missing | `backend/app/workers/tasks_password_recovery.py:116` |
@@ -45,5 +48,5 @@ Sin decisiones explícitas de permiso para este dominio.
 
 ## Hallazgos
 
-- **low · missing_coverage**: 8 superficies de 012-ia-jobs-produccion no tienen evidencia de prueba observable.
+- **low · missing_coverage**: 11 superficies de 012-ia-jobs-produccion no tienen evidencia de prueba observable.
 - **medium · contract_mismatch**: 5 llamadas frontend no tienen endpoint backend canónico coincidente en el análisis estático.

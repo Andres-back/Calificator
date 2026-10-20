@@ -18,6 +18,7 @@ celery_app = Celery(
         "app.workers.tasks_reports",
         "app.workers.tasks_ai_config",
         "app.workers.tasks_digitalization",
+        "app.workers.tasks_evaluation_visuals",
         "app.workers.tasks_deadlines",
         "app.workers.tasks_password_recovery",
         "app.workers.tasks_roster_import",
@@ -39,6 +40,9 @@ celery_app.conf.update(
     broker_connection_retry_on_startup=True,
     task_default_queue="default",
     task_routes={
+        'tasks.generate_evaluation_visual': {'queue': 'presentations'},
+        'tasks.recover_evaluation_visuals': {'queue': 'presentations'},
+        'tasks.cleanup_evaluation_visual_proposals': {'queue': 'presentations'},
         "tasks.grade_batch": {"queue": "grading"},
         "tasks.grade_delivery": {"queue": "grading"},
         "tasks.recover_stale_grading_jobs": {"queue": "grading"},
@@ -52,6 +56,13 @@ celery_app.conf.update(
         "tasks.generate_image": {"queue": "presentations"},
     },
     beat_schedule={
+        'cleanup-evaluation-visual-proposals': {
+            'task': 'tasks.cleanup_evaluation_visual_proposals', 'schedule': 86400.0,
+        },
+        'recover-evaluation-visuals': {
+            'task': 'tasks.recover_evaluation_visuals',
+            'schedule': float(settings.AI_JOB_RECOVERY_INTERVAL_SECONDS),
+        },
         "assign-overdue-grades-every-minute": {
             "task": "tasks.assign_overdue_grades",
             "schedule": 60.0,

@@ -1,6 +1,21 @@
 # Contratos propuestos — 101
 
-Contratos de la función en desarrollo. T009–T020 implementan localmente conservación, importación, lectores y exportadores. T022–T024 fijan el contexto por entrega y lo transportan al calificador/verificador. Publicación/lectura histórica de notas, generación, editor y recuperación completa siguen pendientes. No habilitado en producción. Prefijos relativos a `/api`; conservar respuestas y endpoints vigentes para evaluaciones sin contenido visual. Validación tipada y autorización siempre en servidor.
+## Contratos implementados de propuestas y cierre local
+
+- `GET /evaluaciones/contenido-visual/capacidades`: autorización crear/editar; comunica importación/editor/generación y máximo de bytes. Flags independientes, todos `false` por defecto. Deshabilitar escritura nunca deshabilita lectores.
+- `POST /evaluaciones/recursos/estructurado`: datos tipados de tabla/gráfica; render determinista fuera del hilo HTTP, staging privado y bloque pendiente de aceptación. No llama a IA.
+- `POST /evaluaciones/recursos/recortar`: `source_resource_id` autorizado en la misma materia/evaluación y `region=[izquierda,arriba,derecha,abajo]` normalizada. Solo imágenes raster reales; no descarga URLs ni modifica el original. El nuevo recorte también requiere confirmación de contenido limpio.
+- `POST /evaluaciones/recursos/generar`: admite `expected_version_id=null` para una evaluación legacy sin revisión, o la revisión actual exacta. El guardado sigue exigiendo timestamp y versión de origen. Congela las rutas efectivas de imagen/contenido, admite como máximo dos propuestas activas por cuenta y reutiliza `request_key` sin duplicar trabajo. Devuelve 202/job_id; el resultado incluye `bloque` todavía pendiente de revisión.
+- Trabajo `evaluacion_visual`: cola de presentaciones, lease/heartbeat, autorización vigente, cancelación y recuperación existentes. Una propuesta persistida se reutiliza tras pérdida del worker. `success` significa propuesta disponible, no evaluación modificada. Fallo/placeholder/JSON inválido produce mensaje recuperable; no éxito ficticio. No hay llamadas de pago en las pruebas rutinarias.
+- PATCH añade `claves_visuales_revisadas: UUID[]`: comprobación docente explícita y limitada a preguntas existentes con respuesta correcta completa. Cambiar un estímulo mantiene la clave anterior pero la deja pendiente hasta esa comprobación. El snapshot registra las claves pendientes; el lector docente expone `claves_visuales_pendientes`, no el del estudiante.
+- Detalle/decisión docente/boletín/resumen y denominador de nota del estudiante usan la revisión de su entrega. Políticas actuales de autorización, recepción y liberación de respuestas no se heredan del pasado. Consultar una nota anterior no necesita recuperar sus imágenes ni recalcula esa nota.
+- Confirmar/publicar resultados automáticos versionados exige material completo y procedencia coherente. La decisión manual con motivo y actor permanece disponible y conserva su propio desglose. Contexto ausente no se transforma en un cero.
+- Digitalización guardada con `requires_review` ofrece «Revisar material del borrador», sin anunciar fallo de importación ni éxito listo para publicar. Los checkpoints internos siguen filtrados de las respuestas de jobs.
+- Limpieza diaria: solo propuestas staged/failed de más de siete días sin referencia histórica ni trabajo activo. Nunca elimina originales/figuras ready conservados, ni sus versiones.
+
+Documentación oficial consultada para el adaptador existente de imagen: [Images / Generate](https://developers.openai.com/api/reference/resources/images/methods/generate). Se reutiliza la configuración administrada; ilustraciones de prueba usan dobles y tablas/gráficas usan render propio.
+
+Contratos integrados localmente de conservación, importación, lectores, exportadores, contexto fijado por entrega, publicación, lectura histórica, propuestas y editor recuperable. No habilitado en producción. Prefijos relativos a `/api`; se conservan respuestas y endpoints vigentes para evaluaciones sin contenido visual. Validación tipada y autorización siempre en servidor. CI y autorización de lanzamiento permanecen como puertas separadas.
 
 ## Lectura y edición de evaluación
 
