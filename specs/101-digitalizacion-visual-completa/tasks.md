@@ -115,3 +115,9 @@ La redacción de T038 separa preparación local/creación del PR de su puerta ex
 ### Referencias explícitas para el validador
 
 Los rangos abreviados anteriores se expanden aquí sin modificar requisitos ni tareas: FR-015 → T029/T033/T034; FR-016 → T033/T036; FR-018 → T026/T027/T029/T030/T040/T041/T042; FR-019 → T028/T031; FR-020 → T025/T030; FR-021 → T019/T024/T031; FR-022 → T026/T027/T029/T033/T040/T041. El registro del índice principal y estas referencias forman parte de T037/T038, no son una omisión de requisitos.
+
+## Phase 10: Convergence
+
+F1 — partial, HIGH, constitución VII/VIII y T038: el job frontend encadena 268 E2E generales (25,3 min aprobados) y 105 adicionales dentro de 35 min; se agotó antes de completar el segundo grupo e imprimir su fallo. No es evidencia de un frontend aprobado.
+
+- [X] T044 Separar calidad/build y las dos baterías E2E en jobs acotados, conservar las 373 pruebas y sus límites individuales, imprimir fallos en línea y subir diagnósticos antes del límite global; mantener el nombre del control requerido y exigir éxito de todas sus dependencias incluso ante fallos/cancelaciones. Probar contratos del workflow y registrar resultados reales en #222, según constitución VII/VIII y T038 (partial).
