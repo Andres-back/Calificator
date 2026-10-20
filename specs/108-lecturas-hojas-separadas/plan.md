@@ -61,3 +61,7 @@ Superficies: `backend/app/modules/herramientas/pdf_render.py`, `generators/cuent
 ## Complexity Tracking
 
 Sin excepciones ni nuevas dependencias. Fuera de alcance importación visual de Spec 101, datos de alumnos y cambios globales de modelos. La ilustración de cuentos se prueba con el generador configurado, sin reintentos pagados automáticos en el ensayo real.
+
+## Mantenimiento de CI autorizado
+
+El usuario solicita «repáralo y vuelve a enviar CI» tras el fallo de auditoría en el PR #225. Resolver el aviso alto GHSA-q3jh-wrc6-jgq8 / GHSA-8r9p-f939-6h3c actualizando solo `follow-redirects` 1.16.0 → 1.16.1 dentro del rango existente de Axios. No ejecutar `audit fix --force`, no actualizar KaTeX con cambio incompatible, no rebajar umbrales ni renovar el hash de excepción 503 para saltar controles. Probar auditoría, instalación reproducible, sesión/API y build; reenviar CI con el nuevo HEAD y conservar bloqueo de fusión hasta controles verdes.

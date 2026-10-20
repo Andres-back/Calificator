@@ -48,3 +48,7 @@ Prueba independiente: recurso antiguo antes/después idéntico y copia alumno si
 ## Dependencias y estrategia
 
 T001 → T002 → T003 → T005; T004 puede desarrollarse en archivos distintos tras fijar contrato, sin obligación de delegar. Ampliación: T011 → T012/T013 → T014 → T015/T016. Después T006/T007, T008/T009 y T010. MVP US1: orden/separación; entrega completa requiere US2/US3/US4 y validación. US1 2 tareas, US2 2, US3 1, US4 6; preparación/fundamentos 2 y transversal 3. Total 16. Todas tienen ID, ruta y referencias. No hay hooks configurados.
+
+## Reparación de CI autorizada el 2026-10-20
+
+- [X] T017 Corregir exclusivamente la dependencia transitiva `follow-redirects` vulnerable en `frontend/package-lock.json`, comprobar auditoría productiva con el mismo umbral, instalación reproducible, API/sesión, TypeScript/build y registrar evidencia en `validation.md`; preparar el nuevo HEAD del PR #225 para CI, sin bypass ni despliegue. [FR-008; SC-004/005; Constitución VII/VIII]
