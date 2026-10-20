@@ -89,6 +89,10 @@ export function Modal({
     });
 
     const handleKeyDown = (event: KeyboardEvent) => {
+      // A figure can open above an existing evaluation preview. Only the
+      // topmost dialog traps focus or handles Escape; the underlying draft stays.
+      const dialogs = document.querySelectorAll('[role="dialog"][aria-modal="true"]');
+      if (dialogs.item(dialogs.length - 1) !== dialogRef.current) return;
       if (event.key === 'Escape' && closeOnEscape) {
         event.preventDefault();
         onCloseRef.current();
@@ -125,6 +129,10 @@ export function Modal({
     };
   }, [closeOnEscape, initialFocusRef, open]);
 
+  // Reduced-motion users must not wait for an exit frame before the overlay
+  // releases the underlying form. A zero-duration transition still needs rAF.
+  if (reduceMotion && !open) return null;
+
   return (
     <AnimatePresence>
       {open && (
@@ -133,6 +141,7 @@ export function Modal({
           initial={reduceMotion ? false : { opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
+          transition={reduceMotion ? { duration: 0 } : undefined}
         >
           <div
             className="absolute inset-0 bg-slate-950/60 backdrop-blur-[2px]"

@@ -16,3 +16,15 @@ def test_uploaded_evidence_is_not_served_anonymously(tmp_path, monkeypatch) -> N
 
     assert response.status_code in {400, 404}
     assert response.content != b"student-evidence"
+
+
+def test_private_original_is_not_served_anonymously(tmp_path, monkeypatch) -> None:
+    original = tmp_path / ".private" / "evaluation-visuals" / "original.png"
+    original.parent.mkdir(parents=True)
+    original.write_bytes(b"private-original")
+    monkeypatch.setattr(settings, "UPLOADS_DIR", str(tmp_path))
+    with TestClient(create_app()) as client:
+        for path in ("/uploads/.private/evaluation-visuals/original.png", "/uploads/%2eprivate/evaluation-visuals/original.png"):
+            response = client.get(path)
+            assert response.status_code in {400, 404}
+            assert response.content != b"private-original"

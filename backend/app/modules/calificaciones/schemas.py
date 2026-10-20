@@ -7,6 +7,7 @@ from uuid import UUID
 from pydantic import BaseModel, Field
 
 from app.shared.enums import EntregaTipo
+from app.modules.evaluaciones.schemas import EvaluacionRead
 
 
 class RevisionResumen(BaseModel):
@@ -51,6 +52,12 @@ class EntregaCreate(BaseModel):
 
 class EntregaOnlineCreate(BaseModel):
     respuesta_texto: str = Field(..., min_length=1)
+    entrega_id: UUID | None = None
+
+
+class IntentoOnlineRead(BaseModel):
+    entrega_id: UUID
+    evaluacion: EvaluacionRead
 
 
 class ReemplazoEvidenciaCreate(BaseModel):

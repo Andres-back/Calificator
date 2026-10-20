@@ -13,6 +13,9 @@ from app.core.config import settings
 from app.core.logging import get_logger
 from app.modules.analytics.usage_logger import log_ai_usage
 from app.modules.calificaciones.breakdown_policy import build_component_scaffold, sanitize_component_payload
+from app.modules.calificaciones.grading_visuals import (
+    EvaluationVisualInput, VisualContextError, describe_evaluation_material, visual_image_groups,
+)
 from app.services.image_preprocessing import prepare_orientation_variants
 from app.services.llm_router import (
     LLMOutputTruncatedError,
@@ -274,6 +277,11 @@ class AgentContext:
     objective_validation: list[dict] = field(default_factory=list)
     image_bytes: bytes | None = None
     image_mime: str = "image/jpeg"
+    evaluation_visuals: tuple[EvaluationVisualInput, ...] = ()
+
+    @property
+    def requires_visual_material(self) -> bool:
+        return any(item.image_bytes for item in self.evaluation_visuals)
 
 
 @dataclass
@@ -562,7 +570,7 @@ class OpenCodeClient:
         self,
         model: str,
         text: str,
-        image_bytes: bytes,
+        image_bytes: bytes | None,
         image_mime: str = "image/jpeg",
         json_mode: bool = True,
         max_tokens: int = 2048,
@@ -570,6 +578,7 @@ class OpenCodeClient:
         timeout: int | None = None,
         max_attempts: int | None = None,
         stage: str = "extraction",
+        evaluation_visuals: tuple[EvaluationVisualInput, ...] = (),
     ) -> dict[str, Any]:
         """Chat completions con imagen incluida (multimodal).
 
@@ -580,9 +589,21 @@ class OpenCodeClient:
         numerada para que ninguna respuesta quede fuera del analisis.
         """
         import base64
-        images = _prepare_multimodal_images(image_bytes, image_mime)
+        images = _prepare_multimodal_images(image_bytes, image_mime) if image_bytes else []
+        material_images = visual_image_groups(evaluation_visuals)
+        total_images = len(images) + len(material_images)
+        image_sizes = [len(data) for data, _, _ in images] + [len(group[0].image_bytes) for group in material_images]
+        # Conservative encoded-body estimate, before allocating base64 strings.
+        label_bytes = sum(len(json.dumps([{'bloque': item.block_id, 'pregunta_ids': item.question_ids} for item in group]).encode())
+                          for group in material_images)
+        total_bytes = len(text.encode('utf-8')) + label_bytes + sum(4 * ((size + 2) // 3) + 512 for size in image_sizes)
+        if evaluation_visuals and (total_images > max(1, min(64, settings.GRADING_MULTIMODAL_MAX_IMAGES))
+                or total_bytes > max(1, min(64 * 1024 * 1024, settings.GRADING_MULTIMODAL_MAX_BYTES))):
+            raise VisualContextError('evaluation_visual_budget_exceeded', 'El material completo supera el límite de lectura. Divide la evaluación o revisa sus figuras; no se enviará incompleta.')
         content: list[dict[str, Any]] = [{"type": "text", "text": text}]
         total_pages = len(images)
+        if images and evaluation_visuals:
+            content.append({'type': 'text', 'text': 'RESPUESTA DEL ESTUDIANTE: las siguientes páginas son su evidencia.'})
         for image_data, mime_type, page_number in images:
             if total_pages > 1:
                 content.append({
@@ -594,6 +615,14 @@ class OpenCodeClient:
                 "type": "image_url",
                 "image_url": {"url": f"data:{mime_type};base64,{b64}"},
             })
+
+        for number, group in enumerate(material_images, 1):
+            labels = [{'bloque': item.block_id, 'pregunta_ids': item.question_ids} for item in group]
+            content.append({'type': 'text', 'text': f'MATERIAL DE LA EVALUACIÓN / imagen {number}: '
+                + json.dumps(labels, ensure_ascii=False) + '. No es respuesta del estudiante.'})
+            first = group[0]
+            b64 = base64.b64encode(first.image_bytes).decode()
+            content.append({'type': 'image_url', 'image_url': {'url': f'data:{first.image_mime};base64,{b64}'}})
 
         msg: dict = {
             "role": "user",
@@ -608,7 +637,7 @@ class OpenCodeClient:
             timeout=timeout,
             max_attempts=max_attempts,
             stage=stage,
-            image_count=total_pages,
+            image_count=total_images,
         )
 
     async def close(self) -> None:
@@ -913,7 +942,7 @@ def render_grader_prompt(ctx: AgentContext) -> str:
             ensure_ascii=False,
         ),
         student_response=ctx.student_response_text,
-    )
+    ) + describe_evaluation_material(ctx.evaluation_visuals, ctx.blueprint)
 
 
 def _answer_text(item: dict | None) -> str:
@@ -987,6 +1016,8 @@ def partition_grading_context(
             ],
             image_bytes=ctx.image_bytes,
             image_mime=ctx.image_mime,
+            evaluation_visuals=tuple(item for item in ctx.evaluation_visuals
+                if str(question.get('contenido_id')) in item.question_ids),
         ))
     return partitions
 
@@ -1051,7 +1082,6 @@ async def grader_agent(
     max_tokens: int | None = None,
 ) -> AgentResult:
     """Agente calificador. Califica la respuesta del estudiante contra el blueprint."""
-    prompt = render_grader_prompt(ctx)
     own_client = False
     if client is None:
         client = OpenCodeClient()
@@ -1059,12 +1089,18 @@ async def grader_agent(
 
     start = time.monotonic()
     try:
-        if multimodal and ctx.image_bytes:
+        prompt = render_grader_prompt(ctx)
+        if ctx.requires_visual_material and not model_supports_vision(model):
+            raise VisualContextError('evaluation_visual_model_unsupported', 'El modelo seleccionado no puede ver las figuras. Se necesita un modelo con visión o revisión docente.')
+        if ctx.evaluation_visuals and len(prompt) > max(1000, int(settings.PHOTO_GRADING_CONTEXT_BUDGET_CHARS)):
+            raise VisualContextError('evaluation_visual_budget_exceeded', 'El material de esta pregunta es demasiado extenso para revisarlo completo.')
+        if (multimodal and ctx.image_bytes) or ctx.requires_visual_material:
             raw = await client.chat_multimodal(
                 model=model, text=prompt,
                 image_bytes=ctx.image_bytes, image_mime=ctx.image_mime,
                 json_mode=True, max_tokens=max_tokens or settings.PHOTO_GRADING_PRIMARY_MAX_TOKENS,
                 timeout=timeout, max_attempts=max_attempts, stage=stage,
+                **({'evaluation_visuals': ctx.evaluation_visuals} if ctx.evaluation_visuals else {}),
             )
         else:
             raw = await client.chat(
@@ -1109,7 +1145,7 @@ async def grader_agent(
             feedback_estudiante="",
             proveedor="opencode",
             modelo=model,
-            error=type(exc).__name__,
+            error=exc.code if isinstance(exc, VisualContextError) else type(exc).__name__,
             requiere_revision_docente=True,
             tiempo_ms=max(0, int((time.monotonic() - start) * 1000)),
         )
@@ -1226,6 +1262,11 @@ async def verification_agent(
     )
     started = time.monotonic()
     try:
+        prompt += describe_evaluation_material(ctx.evaluation_visuals, ctx.blueprint)
+        if ctx.requires_visual_material and not model_supports_vision(model):
+            raise VisualContextError('evaluation_visual_model_unsupported', 'El verificador seleccionado no puede ver las figuras necesarias.')
+        if ctx.evaluation_visuals and len(prompt) > max(1000, int(settings.PHOTO_GRADING_CONTEXT_BUDGET_CHARS)):
+            raise VisualContextError('evaluation_visual_budget_exceeded', 'El material de esta pregunta es demasiado extenso para verificarlo completo.')
         request_options = {
             "model": model,
             "json_mode": True,
@@ -1235,12 +1276,13 @@ async def verification_agent(
             "max_attempts": max_attempts,
             "stage": "grading_secondary",
         }
-        if multimodal and ctx.image_bytes and model_supports_vision(model):
+        if (multimodal and ctx.image_bytes and model_supports_vision(model)) or ctx.requires_visual_material:
             raw = await client.chat_multimodal(
                 **request_options,
                 text=prompt,
                 image_bytes=ctx.image_bytes,
                 image_mime=ctx.image_mime,
+                **({'evaluation_visuals': ctx.evaluation_visuals} if ctx.evaluation_visuals else {}),
             )
         else:
             raw = await client.chat(
@@ -1284,7 +1326,7 @@ async def verification_agent(
             feedback_estudiante="",
             proveedor="opencode",
             modelo=model,
-            error=type(exc).__name__,
+            error=exc.code if isinstance(exc, VisualContextError) else type(exc).__name__,
             requiere_revision_docente=True,
             tiempo_ms=max(0, int((time.monotonic() - started) * 1000)),
         )
@@ -1294,6 +1336,9 @@ async def verification_agent(
 
 async def router_grader_agent(ctx: AgentContext) -> AgentResult:
     """Calificador de respaldo mediante la cascada configurada de proveedores."""
+    if ctx.requires_visual_material:
+        return AgentResult(nota_sugerida=None, confianza=0, feedback_estudiante='', requiere_revision_docente=True,
+            proveedor='llm_router', modelo='configured_cascade', error='evaluation_visual_model_unsupported')
     prompt = render_grader_prompt(ctx)
     start = time.monotonic()
     try:

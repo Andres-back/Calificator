@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 import toast from 'react-hot-toast';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { GenerationWizard } from './GenerationWizard';
-import { createEmptyWizardState, persistWizardDraft } from './generationWizardModel';
+import { createEmptyWizardState, persistWizardDraft, evaluationToWizardState, loadVisualEditDraft } from './generationWizardModel';
 import type { Evaluacion, Materia } from '@/types/api';
 
 const mocks = vi.hoisted(() => ({
@@ -131,6 +131,24 @@ function renderWizard(onCompleted = vi.fn(), initialEvaluation: Evaluacion | nul
     ),
   };
 }
+
+it('101 restores scoped visual editing without replacing local changes and persists fresh visual edits', async () => {
+  const visualEvaluation: Evaluacion = { ...evaluation, contenido_version_id: 'revision-a',
+    contenido_visual: { schema_version: 1, pregunta_ids: [], recurso_ids: [], bloques: [],
+      cobertura: { detectados: [], conservados: [], avisos: [], estado: 'completa' } } };
+  mocks.get.mockResolvedValue(visualEvaluation);
+  const fresh = renderWizard(vi.fn(), visualEvaluation);
+  await waitFor(() => expect(loadVisualEditDraft(localStorage, 'profesor-1', evaluation.id)).not.toBeNull());
+  fresh.unmount();
+  const draft = evaluationToWizardState(visualEvaluation);
+  draft.questions[0].enunciado = 'Cambio visual conservado';
+  persistWizardDraft(localStorage, 'profesor-1', draft, Date.now(), evaluation.id);
+  renderWizard(vi.fn(), visualEvaluation);
+  fireEvent.click(await screen.findByRole('button', { name: 'Continuar' }));
+  await waitFor(() => expect(mocks.get).toHaveBeenCalledWith(evaluation.id));
+  expect(screen.getAllByLabelText(/Enunciado/)[0]).toHaveValue('Cambio visual conservado');
+  expect(mocks.update).not.toHaveBeenCalled();
+});
 
 beforeEach(() => {
   vi.clearAllMocks();

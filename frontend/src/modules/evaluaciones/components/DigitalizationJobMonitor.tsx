@@ -145,9 +145,9 @@ export function DigitalizationJobMonitor() {
             continue;
           }
 
-          if (state.data.estado === 'success') {
+          if (state.data.estado === 'success' || (state.data.estado === 'requires_review' && state.data.resultado_json.evaluacion_id)) {
             updatePendingDigitalization(state.job.jobId, {
-              status: 'success',
+              status: state.data.estado === 'requires_review' ? 'requires_review' : 'success',
               progress: 100,
               evaluationId: state.data.resultado_json.evaluacion_id,
               questionsCount: state.data.resultado_json.preguntas_count,
@@ -160,7 +160,7 @@ export function DigitalizationJobMonitor() {
             await queryClient.invalidateQueries({
               queryKey: ['evaluaciones', state.job.materiaId],
             });
-            toast.success('La evaluación digitalizada está lista para revisar.', {
+            toast.success(state.data.estado === 'requires_review' ? 'Borrador guardado. Revisa las figuras y respuestas correctas.' : 'La evaluación digitalizada está lista para revisar.', {
               id: 'digitalization-ready-' + state.job.jobId,
               duration: 8000,
             });
@@ -274,6 +274,8 @@ export function DigitalizationJobMonitor() {
               ? 'Estamos trabajando en tu documento'
               : success
                 ? 'Evaluación lista para revisar'
+                : visibleJob.status === 'requires_review'
+                  ? 'Borrador guardado: falta revisar el material'
                 : visibleJob.status === 'cancelled'
                   ? 'Digitalización cancelada'
                   : 'No se pudo completar la digitalización'}
@@ -284,7 +286,7 @@ export function DigitalizationJobMonitor() {
             <div className="mt-1 text-xs leading-5 text-muted">
               <p>
                 {isTakingLonger
-                  ? 'OpenCode sigue trabajando. La solicitud permanece activa y conservaremos el resultado cuando llegue.'
+                  ? 'La IA sigue leyendo el documento. Puedes continuar navegando; conservaremos el resultado.'
                   : 'Puedes continuar navegando. Conservaremos este proceso aunque recargues la página.'}
               </p>
               {timing && (timing.slowest || timing.totalSeconds > 0) ? (
@@ -340,13 +342,13 @@ export function DigitalizationJobMonitor() {
 
       {!active && (
         <div className="mt-3 flex flex-wrap justify-end gap-2">
-          {success ? (
+          {success || visibleJob.status === 'requires_review' ? (
             <button
               type="button"
               className="focus-ring rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
               onClick={review}
             >
-              Revisar borrador
+              {visibleJob.status === 'requires_review' ? 'Revisar material del borrador' : 'Revisar borrador'}
             </button>
           ) : (
             <button

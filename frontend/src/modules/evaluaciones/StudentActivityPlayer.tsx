@@ -3,7 +3,8 @@ import { Puzzle } from 'lucide-react';
 
 import { ContenidoView, MatchingView, SopaLetrasView } from '@/modules/herramientas/views';
 import type { ToolContent } from '@/modules/herramientas/views/ContenidoView';
-import type { MatchingContenido, SopaContenido, StudentActivity } from '@/types/api';
+import type { Evaluacion, MatchingContenido, SopaContenido, StudentActivity } from '@/types/api';
+import { EvaluationContentViewer } from './components/EvaluationContentViewer';
 
 type Answers = Record<number, string>;
 
@@ -96,7 +97,7 @@ function CrosswordPlayer({ activity, onAnswersChange, readOnly }: { activity: St
   );
 }
 
-export function StudentActivityPlayer({ activity, onAnswersChange, readOnly = false }: { activity: StudentActivity; onAnswersChange: (answers: Answers) => void; readOnly?: boolean }) {
+export function StudentActivityPlayer({ activity, onAnswersChange, readOnly = false, evaluation }: { activity: StudentActivity; onAnswersChange: (answers: Answers) => void; readOnly?: boolean; evaluation?: Pick<Evaluacion, 'id' | 'contenido_visual' | 'contenido_version_id'> }) {
   const normalized = useCallback((value: string) => value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase().replace(/[^A-ZÑ]/g, ''), []);
 
   const handleFound = useCallback((found: string[]) => {
@@ -121,6 +122,7 @@ export function StudentActivityPlayer({ activity, onAnswersChange, readOnly = fa
         <div><p className="text-xs font-bold uppercase tracking-wide text-violet-700 dark:text-violet-300">{readOnly ? 'Material asignado' : 'Actividad interactiva'}</p><h2 id="interactive-activity-title" className="font-display text-xl font-bold">{activity.titulo}</h2></div>
       </div>
       {activity.tipo === 'crucigrama' && <CrosswordPlayer activity={activity} onAnswersChange={onAnswersChange} readOnly={readOnly} />}
+      {evaluation && <EvaluationContentViewer evaluationId={evaluation.id} versionId={evaluation.contenido_version_id} content={evaluation.contenido_visual} />}
       {activity.tipo === 'sopa_letras' && <SopaLetrasView data={activity.contenido as unknown as SopaContenido} onFoundChange={readOnly ? undefined : handleFound} />}
       {(activity.tipo === 'emparejar' || activity.tipo === 'unir_columnas') && <MatchingView data={activity.contenido as unknown as MatchingContenido} allowCheck={false} onMatchesChange={readOnly ? undefined : handleMatches} />}
       {!activity.interactivo && <ContenidoView tipo={activity.tipo} data={activity.contenido as unknown as ToolContent} />}

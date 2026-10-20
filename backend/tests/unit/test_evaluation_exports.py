@@ -6,12 +6,57 @@ from datetime import datetime
 from io import BytesIO
 from types import SimpleNamespace
 from uuid import uuid4
+from unittest.mock import AsyncMock
 
 import pytest
 from docx import Document
 from fastapi import HTTPException
 
 from app.modules.evaluaciones import export_service, router, service
+
+
+def test_visual_export_preserves_stable_question_ids_without_exposing_answer_fields():
+    item = evaluation()
+    identifier = str(uuid4())
+    item.preguntas[0]['contenido_id'] = identifier
+    before = deepcopy(item.preguntas)
+    material = export_service.build_evaluation_material(item, soluciones=False)
+    assert material['contenido_json']['preguntas'][0]['contenido_id'] == identifier
+    assert 'respuesta_correcta' not in material['contenido_json']['preguntas'][0]
+    assert item.preguntas == before
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize('format_name', ['pdf', 'docx'])
+async def test_versioned_exports_use_snapshot_questions_title_and_key_not_current_evaluation(monkeypatch, format_name):
+    item = evaluation()
+    item.contenido_version_id = uuid4()
+    user = SimpleNamespace(id=item.profesor_id, rol='profesor', _effective_permissions={'evaluations.read'})
+    historical_id = uuid4()
+    revision = SimpleNamespace(created_at=item.created_at, snapshot_json={
+        'nombre': 'Versión conservada', 'descripcion': 'Lee la versión anterior', 'nota_maxima': '5',
+        'preguntas': [{'numero': 1, 'enunciado': 'Pregunta conservada', 'puntaje': 5}],
+        'respuestas_esperadas': [{'numero': 1, 'respuesta': 'Clave conservada'}], 'contenido_visual': None,
+    })
+    monkeypatch.setattr(service, 'ensure_can_read_evaluation', AsyncMock(return_value=item))
+    monkeypatch.setattr(service, 'get_evaluation_or_404', AsyncMock(return_value=item))
+    authorize = AsyncMock(return_value=(item, revision))
+    monkeypatch.setattr(router, 'authorized_content_revision', authorize)
+    monkeypatch.setattr(router, 'resolve_visual_material', AsyncMock(return_value=[]))
+    from app.modules.herramientas import pdf_render
+    def render(material, **kwargs):
+        assert material['titulo'] == 'Versión conservada'
+        assert material['contenido_json']['preguntas'][0]['enunciado'] == 'Pregunta conservada'
+        return b'%PDF-snapshot'
+    monkeypatch.setattr(pdf_render, 'render_material_pdf', render)
+    operation = router.download_evaluation_pdf if format_name == 'pdf' else router.download_evaluation_docx
+    db = object()
+    response = await operation(evaluacion_id=item.id, soluciones=True, current_user=user, db=db, version_id=historical_id)
+    authorize.assert_awaited_once_with(db, item.id, historical_id, user)
+    if format_name == 'docx':
+        text = text_of(response.body)
+        assert 'Pregunta conservada' in text and 'Clave conservada' in text
+        assert '3 × 4' not in text
 
 
 def evaluation():

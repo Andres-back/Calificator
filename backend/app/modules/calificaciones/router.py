@@ -23,6 +23,7 @@ from fastapi.responses import FileResponse
 from fastapi.concurrency import run_in_threadpool
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.core.permissions import get_current_user, is_student_enrolled, require_any_permission_now, require_permission_now
 from app.db.session import get_db
@@ -58,6 +59,7 @@ from app.modules.calificaciones.schemas import (
     CalificacionRead,
     ConfirmarNota,
     EntregaOnlineCreate,
+    IntentoOnlineRead,
     EntregaRead,
     IncidenciaCreate,
     IncidenciaRead,
@@ -74,6 +76,8 @@ from app.modules.calificaciones.schemas import (
     SolicitudRevisionCreate,
 )
 from app.modules.evaluaciones import service as evaluaciones_service
+from app.modules.evaluaciones.grading_visual_context import pin_new_submission_content, grading_job_reference
+from app.modules.calificaciones import submission_content_service
 from app.modules.jobs import service as jobs_service
 from app.modules.materias import service as materias_service
 from app.modules.users.models import User
@@ -201,8 +205,10 @@ async def calificar_foto(
                 materia_id=evaluacion.materia_id,
                 visual_text_json={},
             )
+            await pin_new_submission_content(db, evaluacion, entrega)
             db.add(entrega)
 
+    await grading_job_reference(db, evaluacion, entrega)
     previous_url = entrega.archivo_url
     new_url = await save_upload(
         bundle.content,
@@ -422,6 +428,8 @@ async def calificar_lote(
     for i, foto in enumerate(files):
         sid = estudiante_ids[i]
         sid_uuid = UUID(sid) if isinstance(sid, str) else sid
+        archivo_url = None
+        persisted = False
         try:
             content = await read_upload_limited(foto, MAX_EVIDENCE_BYTES)
             mime = validate_mime(content, foto.filename or "image.jpg")
@@ -444,8 +452,10 @@ async def calificar_lote(
                 estado=EntregaEstado.PROCESANDO.value,
                 visual_text_json={},
             )
+            await pin_new_submission_content(db, evaluacion, entrega)
             db.add(entrega)
             await db.commit()
+            persisted = True
             await db.refresh(entrega)
 
             cal = await photo_service.grade_persisted_photo(
@@ -459,6 +469,9 @@ async def calificar_lote(
             )
             calificaciones_list.append(CalificacionRead.model_validate(cal))
         except Exception as e:
+            await db.rollback()
+            if archivo_url and not persisted:
+                _delete_replaced_evidence(archivo_url)
             errores.append(
                 {
                     "estudiante_id": str(sid),
@@ -594,10 +607,12 @@ async def calificar_lote_asincrono(
                 archivo_url=archivo_url,
                 estado=EntregaEstado.RECIBIDA.value,
             )
+            await pin_new_submission_content(db, evaluacion, entrega)
             db.add(entrega)
             entregas.append(entrega)
         await db.flush()
         entrega_ids = [entrega.id for entrega in entregas]
+        content_references = {str(entrega.id): await grading_job_reference(db, evaluacion, entrega) for entrega in entregas}
         job_id = await jobs_service.create_job(
             db,
             user_id=current_user.id,
@@ -607,6 +622,7 @@ async def calificar_lote_asincrono(
                 "entrega_ids": [str(value) for value in entrega_ids],
                 "estudiante_ids": [str(value) for value in estudiante_ids],
                 "modalidad": "foto",
+                "contenido_por_entrega": content_references,
             },
         )
         parent_input = await jobs_service.get_job_input(db, job_id)
@@ -625,6 +641,7 @@ async def calificar_lote_asincrono(
                     "estudiante_ids": [str(entrega.estudiante_id)],
                     "modalidad": "foto",
                     "_ai_config": parent_input.get("_ai_config"),
+                    **content_references[str(entrega.id)],
                 },
             )
             queued_grade = photo_service.prepare_queued_grading(
@@ -1049,14 +1066,15 @@ async def salon_foto(
         estado=EntregaEstado.RECIBIDA.value,
         visual_text_json={},
     )
-    db.add(entrega)
-    await db.flush()
-    await update_estudiante_estado(
-        db,
-        sesion_id,
-        estudiante_id,
-        "fotografiado",
-    )
+    try:
+        await pin_new_submission_content(db, evaluacion, entrega)
+        db.add(entrega)
+        await db.flush()
+        await update_estudiante_estado(db, sesion_id, estudiante_id, "fotografiado")
+    except Exception:
+        await db.rollback()
+        _delete_replaced_evidence(archivo_url)
+        raise
     return await _enqueue_persisted_grading(
         db,
         evaluacion=evaluacion,
@@ -1115,11 +1133,37 @@ async def get_my_delivery(
         .where(
             Entrega.evaluacion_id == evaluacion.id,
             Entrega.estudiante_id == current_user.id,
+            Entrega.estado.not_in({EntregaEstado.EN_PROGRESO.value, EntregaEstado.PENDIENTE.value}),
         )
         .order_by(Entrega.created_at.desc())
         .limit(1)
     )
     return _entrega_read(entrega) if entrega else None
+
+
+def _ensure_online_time_remaining(evaluacion) -> None:
+    if evaluacion.tiempo_limite_minutos and evaluacion.fecha_publicacion:
+        deadline = (evaluacion.fecha_publicacion.replace(tzinfo=timezone.utc)
+            if evaluacion.fecha_publicacion.tzinfo is None else evaluacion.fecha_publicacion)
+        elapsed = (datetime.now(timezone.utc) - deadline).total_seconds() / 60
+        if elapsed > evaluacion.tiempo_limite_minutos:
+            raise HTTPException(410, f"El tiempo límite de {evaluacion.tiempo_limite_minutos} minuto(s) para esta evaluación ha expirado.")
+
+
+@router.post('/evaluaciones/{evaluacion_id}/iniciar-entrega', response_model=IntentoOnlineRead)
+async def iniciar_entrega_online(evaluacion_id: UUID, current_user: User = Depends(get_current_user),
+                                db: AsyncSession = Depends(get_db)):
+    require_permission_now(current_user, 'evaluations.submit')
+    evaluation = await evaluaciones_service.get_evaluation_or_404(db, evaluacion_id)
+    if not await is_student_enrolled(db, evaluation.materia_id, current_user.id):
+        raise HTTPException(403, 'No estás matriculado en esta materia')
+    service.ensure_evaluation_accepts_grading(evaluation)
+    if evaluation.modalidad not in {EvaluacionModalidad.ONLINE.value, EvaluacionModalidad.MIXTA.value}:
+        raise HTTPException(409, 'Esta evaluación se entrega mediante foto o PDF.')
+    _ensure_online_time_remaining(evaluation)
+    delivery = await submission_content_service.start_online_content_attempt(db, evaluation, current_user.id)
+    return {'entrega_id': delivery.id,
+        'evaluacion': await submission_content_service.student_attempt_evaluation(db, evaluation, delivery)}
 
 
 @router.post(
@@ -1152,18 +1196,13 @@ async def crear_entrega_online(
             status_code=403, detail="No estas matriculado en esta materia"
         )
 
-    if evaluacion.tiempo_limite_minutos and evaluacion.fecha_publicacion:
-        deadline = (
-            evaluacion.fecha_publicacion.replace(tzinfo=timezone.utc)
-            if evaluacion.fecha_publicacion.tzinfo is None
-            else evaluacion.fecha_publicacion
-        )
-        elapsed = (datetime.now(timezone.utc) - deadline).total_seconds() / 60
-        if elapsed > evaluacion.tiempo_limite_minutos:
-            raise HTTPException(
-                status_code=status.HTTP_410_GONE,
-                detail=f"El tiempo límite de {evaluacion.tiempo_limite_minutos} minuto(s) para esta evaluación ha expirado.",
-            )
+    _ensure_online_time_remaining(evaluacion)
+
+    entrega = await submission_content_service.get_online_content_attempt(db, evaluacion, current_user.id, payload.entrega_id)
+    if entrega is not None and entrega.estado != EntregaEstado.EN_PROGRESO.value:
+        if entrega.respuesta_texto == payload.respuesta_texto:
+            return _entrega_read(entrega)
+        raise HTTPException(409, 'Este intento ya fue enviado. No reemplazaremos tus respuestas guardadas.')
 
     await service.ensure_student_can_submit_new_evidence(
         db,
@@ -1178,16 +1217,17 @@ async def crear_entrega_online(
     mixed_submission = (
         getattr(evaluacion, "modalidad", None) == EvaluacionModalidad.MIXTA.value
     )
-    entrega = Entrega(
-        evaluacion_id=evaluacion.id,
-        estudiante_id=current_user.id,
-        materia_id=evaluacion.materia_id,
-        tipo=EntregaTipo.MIXTA.value if mixed_submission else EntregaTipo.ONLINE.value,
-        respuesta_texto=respuesta_texto,
-        estado=EntregaEstado.RECIBIDA.value,
-        visual_text_json={},
-    )
-    db.add(entrega)
+    if entrega is None:  # Legacy text-only evaluations keep their existing path.
+        entrega = Entrega(evaluacion_id=evaluacion.id, estudiante_id=current_user.id,
+            materia_id=evaluacion.materia_id,
+            tipo=EntregaTipo.MIXTA.value if mixed_submission else EntregaTipo.ONLINE.value,
+            visual_text_json={})
+        await pin_new_submission_content(db, evaluacion, entrega)
+        if entrega.contenido_version_id is not None:
+            raise HTTPException(409, 'La evaluación cambió mientras respondías. Conserva tus respuestas y vuelve a abrirla para comprobar el material antes de enviar.')
+        db.add(entrega)
+    entrega.respuesta_texto = respuesta_texto
+    entrega.estado = EntregaEstado.RECIBIDA.value
     await db.commit()
     await db.refresh(entrega)
 
@@ -1295,8 +1335,10 @@ async def crear_entrega_archivo_estudiante(
                 materia_id=evaluacion.materia_id,
                 visual_text_json={},
             )
+            await pin_new_submission_content(db, evaluacion, entrega)
             db.add(entrega)
 
+    await grading_job_reference(db, evaluacion, entrega)
     previous_url = entrega.archivo_url
     new_url = await save_upload(
         bundle.content,
@@ -1716,6 +1758,7 @@ async def get_mi_desglose(
     require_permission_now(current_user, "grading.read")
     cal = await db.scalar(
         select(Calificacion)
+        .options(selectinload(Calificacion.entrega))
         .where(
             Calificacion.evaluacion_id == evaluacion_id,
             Calificacion.estudiante_id == current_user.id,

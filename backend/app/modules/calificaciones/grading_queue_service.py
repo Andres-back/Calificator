@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modules.calificaciones import photo_service
 from app.modules.calificaciones.models import Calificacion, Entrega
+from app.modules.evaluaciones.grading_visual_context import grading_job_reference
 from app.modules.jobs import service as jobs_service
 from app.shared.enums import JobTipo
 from app.workers.tasks_grading import grade_delivery
@@ -22,6 +23,7 @@ async def enqueue_persisted_grading(
     calificacion: Calificacion | None = None,
 ) -> Calificacion:
     """Crea un trabajo persistente y devuelve sin esperar a los modelos."""
+    content_reference = await grading_job_reference(db, evaluacion, entrega)
     parent_job_id = await jobs_service.create_job(
         db,
         user_id=profesor_id,
@@ -31,6 +33,7 @@ async def enqueue_persisted_grading(
             "entrega_ids": [str(entrega.id)],
             "estudiante_ids": [str(estudiante_id)],
             "modalidad": "vision",
+            **content_reference,
         },
     )
     parent_input = await jobs_service.get_job_input(db, parent_job_id)
@@ -47,6 +50,7 @@ async def enqueue_persisted_grading(
             "estudiante_ids": [str(estudiante_id)],
             "modalidad": "vision",
             "_ai_config": parent_input.get("_ai_config"),
+            **content_reference,
         },
     )
     queued_grade = photo_service.prepare_queued_grading(

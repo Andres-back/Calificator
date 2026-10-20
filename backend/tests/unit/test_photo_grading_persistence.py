@@ -42,6 +42,9 @@ class FakeDB:
         self.scalar_values = list(scalar_values or [])
 
     async def scalar(self, _query):
+        from app.modules.evaluaciones.models import Evaluacion
+        if _query.column_descriptions[0].get('entity') is Evaluacion:
+            return SimpleNamespace(contenido_version_id=None)
         return self.scalar_values.pop(0) if self.scalar_values else None
 
     def add(self, value: object) -> None:

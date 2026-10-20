@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { AxiosError } from 'axios';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -10,6 +10,7 @@ const mocks = vi.hoisted(() => ({
   getEvaluation: vi.fn(),
   getMyDelivery: vi.fn(),
   createDelivery: vi.fn(),
+  startAttempt: vi.fn(),
   createFileDelivery: vi.fn(),
   getStudentActivity: vi.fn(),
   getMyReviewRequest: vi.fn(),
@@ -24,6 +25,7 @@ vi.mock('./api', () => ({
   getEvaluacion: mocks.getEvaluation,
   getMiEntrega: mocks.getMyDelivery,
   crearEntregaOnline: mocks.createDelivery,
+  iniciarEntregaOnline: mocks.startAttempt,
   crearEntregaArchivo: mocks.createFileDelivery,
   getActividadEstudiante: mocks.getStudentActivity,
   getMiSolicitudRevision: mocks.getMyReviewRequest,
@@ -46,7 +48,7 @@ function renderPage(entry = '/app/evaluaciones/evaluation-1/resolver') {
       mutations: { retry: false },
     },
   });
-  return render(
+  const result = render(
     <QueryClientProvider client={client}>
       <MemoryRouter initialEntries={[entry]}>
         <Routes>
@@ -58,6 +60,7 @@ function renderPage(entry = '/app/evaluaciones/evaluation-1/resolver') {
       </MemoryRouter>
     </QueryClientProvider>,
   );
+  return { ...result, client };
 }
 
 beforeEach(() => {
@@ -115,6 +118,45 @@ beforeEach(() => {
 });
 
 describe('ResolverEvaluacionPage', () => {
+  it('waits for the pinned version before answering and sends its attempt identifier', async () => {
+    const current = { ...await mocks.getEvaluation(), contenido_version_id: 'version-b' };
+    mocks.getEvaluation.mockResolvedValue(current);
+    let finish!: (value: unknown) => void;
+    mocks.startAttempt.mockReturnValue(new Promise((resolve) => { finish = resolve; }));
+    const page = renderPage();
+    await waitFor(() => expect(mocks.startAttempt).toHaveBeenCalledWith('evaluation-1'));
+    expect(screen.queryByLabelText('Tu respuesta')).not.toBeInTheDocument();
+    finish({ entrega_id: 'attempt-a', evaluacion: { ...current, nombre: 'Versión A', contenido_version_id: 'version-a',
+      preguntas: [{ numero: 1, enunciado: 'Pregunta conservada A' }] } });
+    expect(await screen.findByText('Pregunta conservada A')).toBeInTheDocument();
+    const user = userEvent.setup();
+    await user.type(screen.getByLabelText('Tu respuesta'), 'Mi respuesta A');
+    act(() => page.client.setQueryData(['evaluacion', 'evaluation-1'], {
+      ...current, preguntas: [{ numero: 1, enunciado: 'Nueva pregunta B' }],
+    }));
+    expect(screen.getByText('Pregunta conservada A')).toBeInTheDocument();
+    expect(screen.queryByText('Nueva pregunta B')).not.toBeInTheDocument();
+    expect(screen.getByLabelText('Tu respuesta')).toHaveValue('Mi respuesta A');
+    await user.click(screen.getByRole('button', { name: /Revisar respuestas y entregar/i }));
+    await user.click(screen.getByRole('button', { name: 'Sí, entregar ahora' }));
+    await waitFor(() => expect(mocks.createDelivery).toHaveBeenCalledWith('evaluation-1', {
+      entrega_id: 'attempt-a', respuesta_texto: 'P1: Mi respuesta A',
+    }));
+  });
+
+  it('offers retry instead of letting a versioned evaluation submit unpinned', async () => {
+    const current = { ...await mocks.getEvaluation(), contenido_version_id: 'version-a' };
+    mocks.getEvaluation.mockResolvedValue(current);
+    mocks.startAttempt.mockRejectedValueOnce(new Error('No disponible')).mockResolvedValueOnce({
+      entrega_id: 'attempt-a', evaluacion: current,
+    });
+    renderPage();
+    expect(await screen.findByRole('button', { name: 'Reintentar' })).toBeInTheDocument();
+    expect(screen.queryByLabelText('Tu respuesta')).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Reintentar' }));
+    expect(await screen.findByLabelText('Tu respuesta')).toBeInTheDocument();
+    expect(mocks.createDelivery).not.toHaveBeenCalled();
+  });
   it('scrolls to the result after a slower delivery lookup finishes', async () => {
     mocks.getEvaluation.mockResolvedValue({ ...await mocks.getEvaluation(), mi_nota_confirmada: 4 });
     let finishDelivery!: (value: null) => void;

@@ -157,7 +157,61 @@ export interface MateriaConEstudiantes extends Materia {
 /* ── Evaluaciones ── */
 export type EvaluacionEstado = 'borrador' | 'publicada' | 'en_calificacion' | 'pendiente_revision' | 'cerrada';
 export type EvaluacionModalidad = 'online' | 'fisica' | 'mixta';
+export interface EvaluationVisualTable {
+  encabezados: string[];
+  filas: string[][];
+  unidad?: string | null;
+}
+export interface EvaluationVisualChart {
+  tipo: 'barras' | 'lineas' | 'circular';
+  categorias: string[];
+  series: { nombre: string; valores: number[] }[];
+  unidad?: string | null;
+  eje_x?: string | null;
+  eje_y?: string | null;
+}
+export interface EvaluationVisualBlock {
+  id: string;
+  tipo: 'texto' | 'imagen' | 'dibujo' | 'formula' | 'tabla' | 'grafica';
+  orden: number;
+  pregunta_ids: string[];
+  descripcion?: string;
+  recurso_id?: string | null;
+  pie?: string | null;
+  texto?: string | null;
+  tabla?: EvaluationVisualTable | null;
+  grafica?: EvaluationVisualChart | null;
+  legible?: boolean;
+}
+export interface EvaluationVisualWarning {
+  elemento_id?: string | null;
+  bloque_id?: string | null;
+  pregunta_ids?: string[];
+  pagina?: number | null;
+  motivo: 'no_conservado' | 'ilegible' | 'asociacion_pendiente' | 'publicacion_pendiente' | 'limite' | 'formato_no_interpretable';
+  mensaje: string;
+}
+export interface EvaluationVisualManifest {
+  schema_version: 1;
+  pregunta_ids: string[];
+  recurso_ids: string[];
+  original_recurso_id?: string | null;
+  bloques: (EvaluationVisualBlock & {
+    seguridad_contenido: 'privado_original' | 'pendiente_revision' | 'publicable_confirmado';
+    procedencia?: { pagina?: number | null; region?: number[] | null; ancla_ooxml?: string | null; extractor_version?: string | null } | null;
+  })[];
+  cobertura: {
+    detectados: string[]; conservados: string[];
+    paginas_detectadas?: number[]; paginas_conservadas?: number[];
+    avisos: EvaluationVisualWarning[]; estado: 'completa' | 'requiere_revision';
+  };
+}
+export interface StudentEvaluationVisualContent {
+  schema_version: 1;
+  bloques: EvaluationVisualBlock[];
+}
 export interface Evaluacion {
+  claves_visuales_pendientes?: string[];
   id: string;
   materia_id: string;
   profesor_id: string;
@@ -181,6 +235,8 @@ export interface Evaluacion {
   criterios: Record<string, unknown>[];
   preguntas: Record<string, unknown>[];
   respuestas_esperadas: Record<string, unknown>[];
+  contenido_version_id?: string | null;
+  contenido_visual?: EvaluationVisualManifest | StudentEvaluationVisualContent | null;
   blueprint?: {
     reglas_feedback?: {
       trazabilidad?: {
@@ -198,6 +254,7 @@ export interface Evaluacion {
   intentos_realizados?: number;
   entrega_realizada?: boolean;
   mi_nota_confirmada?: number | null;
+  mi_nota_maxima?: number | null;
   mi_calificacion_estado?: string | null;
   created_at: string;
   updated_at: string;
@@ -487,6 +544,7 @@ export interface EntregaRead {
 
 export interface EntregaOnlineCreate {
   respuesta_texto: string;
+  entrega_id?: string;
 }
 
 export interface StudentActivity {

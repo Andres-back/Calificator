@@ -7,7 +7,7 @@ from decimal import Decimal
 from uuid import UUID
 
 from fastapi import HTTPException, status
-from sqlalchemy import case, func, select, text
+from sqlalchemy import Numeric, case, cast, func, select, text
 from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -29,7 +29,7 @@ from app.modules.calificaciones.schemas import (
     ConfirmarNota,
     RevisionManualCreate,
 )
-from app.modules.evaluaciones.models import Evaluacion
+from app.modules.evaluaciones.models import Evaluacion, EvaluacionContenidoVersion
 from app.modules.evaluaciones.blueprint_service import (
     evaluation_to_grading_blueprint,
     grading_answer_key_status,
@@ -101,7 +101,8 @@ async def ensure_student_can_submit_new_evidence(
         select(func.count(Entrega.id)).where(
             Entrega.evaluacion_id == evaluacion.id,
             Entrega.estudiante_id == estudiante_id,
-            Entrega.estado != EntregaEstado.REQUIERE_REINTENTO.value,
+            Entrega.estado.not_in({EntregaEstado.REQUIERE_REINTENTO.value,
+                EntregaEstado.EN_PROGRESO.value, EntregaEstado.PENDIENTE.value}),
         )
     )
     attempt_count = int(attempts or 0)
@@ -138,7 +139,29 @@ async def get_evaluation_for_calificacion(
     )
     if not evaluacion:
         raise HTTPException(status_code=404, detail="Evaluacion no encontrada")
-    return evaluacion
+    return await _historical_grade_evaluation(db, cal, evaluacion)
+
+
+async def _historical_grade_evaluation(db, cal, evaluacion):
+    delivery = getattr(cal, 'entrega', None)
+    if delivery is None or getattr(delivery, 'contenido_version_id', None) is None:
+        return evaluacion
+    from app.modules.evaluaciones.grading_visual_context import read_grading_definition
+    definition = await read_grading_definition(db, evaluacion, delivery)
+    frozen = definition.evaluation
+    # Content belongs to the attempt; permissions, reception and answer release
+    # remain governed by the CURRENT evaluation, never a historical policy.
+    for name in ('politica_intento', 'estado', 'recepcion_habilitada', 'intentos_permitidos',
+                 'fecha_publicacion', 'fecha_limite_entrega', 'tiempo_limite_minutos'):
+        setattr(frozen, name, getattr(evaluacion, name, None))
+    frozen.respuestas_liberadas_actual = answers_released(evaluacion)
+    return frozen
+
+
+def grade_maximum_expression():
+    """Use with outer joins through Entrega and its immutable content revision."""
+    return func.coalesce(cast(EvaluacionContenidoVersion.snapshot_json['nota_maxima'].astext, Numeric),
+                         Evaluacion.nota_maxima)
 
 
 async def get_calificacion_or_404(
@@ -160,6 +183,8 @@ async def confirmar_nota(
     payload: ConfirmarNota,
 ) -> Calificacion:
     evaluacion = await get_evaluation_for_calificacion(db, cal)
+    from app.modules.calificaciones.visual_grade_policy import ensure_visual_grade_publishable
+    await ensure_visual_grade_publishable(db, cal, evaluacion)
     validate_score_within_evaluation(
         payload.nota_confirmada, evaluacion, "nota_confirmada"
     )
@@ -187,6 +212,8 @@ async def ajustar_nota(
     payload: AjustarNota,
 ) -> Calificacion:
     evaluacion = await get_evaluation_for_calificacion(db, cal)
+    from app.modules.calificaciones.visual_grade_policy import ensure_visual_grade_publishable
+    await ensure_visual_grade_publishable(db, cal, evaluacion)
     validate_score_within_evaluation(
         payload.nota_confirmada, evaluacion, "nota_confirmada"
     )
@@ -279,18 +306,17 @@ async def set_manual_grade(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="El estudiante no está matriculado activamente en esta materia.",
         )
-    validate_score_within_evaluation(
-        payload.nota_confirmada, evaluacion, "nota_confirmada"
-    )
-
     cal = await db.scalar(
         select(Calificacion)
+        .options(selectinload(Calificacion.entrega))
         .where(
             Calificacion.evaluacion_id == evaluacion.id,
             Calificacion.estudiante_id == payload.estudiante_id,
         )
         .order_by(Calificacion.updated_at.desc(), Calificacion.created_at.desc())
     )
+    grade_evaluation = await _historical_grade_evaluation(db, cal, evaluacion) if cal else evaluacion
+    validate_score_within_evaluation(payload.nota_confirmada, grade_evaluation, "nota_confirmada")
     previous_score = None
     if cal is None:
         cal = Calificacion(
@@ -332,7 +358,7 @@ async def set_manual_grade(
         detalle=f"Nota establecida directamente por el docente: {reason}",
     )
     await create_manual_breakdown(
-        db, calificacion=cal, nota_maxima=evaluacion.nota_maxima,
+        db, calificacion=cal, nota_maxima=grade_evaluation.nota_maxima,
         nota=payload.nota_confirmada, motivo=feedback, actor_id=current_user.id,
     )
     await db.commit()
@@ -829,18 +855,30 @@ async def get_boletin(
 
     result = await db.execute(
         select(Calificacion, Evaluacion)
+        .options(selectinload(Calificacion.entrega))
         .outerjoin(Evaluacion, Evaluacion.id == Calificacion.evaluacion_id)
         .where(*where_clauses)
     )
     rows = list(result.all())
     visible_rows = _official_report_rows(rows) if publicada_only else rows
+    version_ids = {cal.entrega.contenido_version_id for cal, _ in visible_rows
+                   if getattr(cal, 'entrega', None) and getattr(cal.entrega, 'contenido_version_id', None)}
+    versions = {revision.id: revision.snapshot_json for revision in await db.scalars(
+        select(EvaluacionContenidoVersion).where(EvaluacionContenidoVersion.id.in_(version_ids))
+    )} if version_ids else {}
+
+    def definition(cal, evaluation):
+        revision_id = getattr(getattr(cal, 'entrega', None), 'contenido_version_id', None)
+        if revision_id and revision_id not in versions:
+            raise HTTPException(409, 'No pudimos recuperar la escala original de una nota. No la sustituiremos por la escala actual.')
+        return versions.get(revision_id, {})
     return [
         {
             "evaluacion_id": cal.evaluacion_id,
-            "evaluacion_nombre": evaluacion.nombre if evaluacion else "",
+            "evaluacion_nombre": definition(cal, evaluacion).get('nombre', evaluacion.nombre if evaluacion else ''),
             "nota_confirmada": cal.nota_confirmada,
             "nota_sugerida": cal.nota_sugerida,
-            "nota_maxima": evaluacion.nota_maxima if evaluacion else Decimal("5"),
+            "nota_maxima": Decimal(str(definition(cal, evaluacion).get('nota_maxima', evaluacion.nota_maxima if evaluacion else '5'))),
             "estado": cal.estado,
             "feedback": cal.feedback,
         }
@@ -879,9 +917,11 @@ async def get_resumen_academico(
             Calificacion.materia_id,
             Materia.nombre,
             Calificacion.nota_confirmada,
-            Evaluacion.nota_maxima,
+            grade_maximum_expression(),
         )
         .join(Evaluacion, Evaluacion.id == Calificacion.evaluacion_id)
+        .outerjoin(Entrega, Entrega.id == Calificacion.entrega_id)
+        .outerjoin(EvaluacionContenidoVersion, EvaluacionContenidoVersion.id == Entrega.contenido_version_id)
         .join(Materia, Materia.id == Calificacion.materia_id)
         .join(Matricula, Matricula.materia_id == Calificacion.materia_id)
         .where(*where_clauses)
@@ -998,6 +1038,9 @@ async def get_calificacion_detalle(
     )
     materia = await db.scalar(select(Materia).where(Materia.id == cal.materia_id))
     estudiante = await db.scalar(select(User).where(User.id == cal.estudiante_id))
+    current_evaluation = evaluacion
+    if evaluacion:
+        evaluacion = await _historical_grade_evaluation(db, cal, evaluacion)
 
     timeline_raw = cal.resultado_json.get("_timeline", []) if cal.resultado_json else []
     grading_blueprint = evaluation_to_grading_blueprint(evaluacion) if evaluacion else {}
@@ -1034,7 +1077,7 @@ async def get_calificacion_detalle(
         "resultado_json": result_payload,
         "desglose": serialize_breakdown(active_breakdown) if active_breakdown else None,
         "desglose_heredado": active_breakdown is None,
-        "respuestas_liberadas": answers_released(evaluacion) if evaluacion else False,
+        "respuestas_liberadas": answers_released(current_evaluation) if current_evaluation else False,
         "entrega_tipo": cal.entrega.tipo if cal.entrega else None,
         "entrega_archivo_url": (
             f"/api/calificaciones/entregas/{cal.entrega.id}/evidencia"
@@ -1077,6 +1120,8 @@ async def confirmar_nota_batch(
             validate_score_within_evaluation(
                 item.nota_confirmada, evaluacion, "nota_confirmada"
             )
+            from app.modules.calificaciones.visual_grade_policy import ensure_visual_grade_publishable
+            await ensure_visual_grade_publishable(db, cal, evaluacion)
             cal.nota_confirmada = item.nota_confirmada
             cal.revisado_por_docente = True
             cal.estado = CalificacionEstado.CONFIRMADA.value
@@ -1142,6 +1187,8 @@ async def ajustar_nota_batch(
             validate_score_within_evaluation(
                 item.nota_confirmada, evaluacion, "nota_confirmada"
             )
+            from app.modules.calificaciones.visual_grade_policy import ensure_visual_grade_publishable
+            await ensure_visual_grade_publishable(db, cal, evaluacion)
             nota_anterior = cal.nota_confirmada or cal.nota_sugerida
             cal.nota_confirmada = item.nota_confirmada
             if item.feedback:
@@ -1209,6 +1256,12 @@ async def _prepare_grade_publication(
     calificacion: Calificacion,
     evaluacion: Evaluacion,
 ) -> None:
+    from app.modules.calificaciones.visual_grade_policy import ensure_visual_grade_publishable
+    await ensure_visual_grade_publishable(db, calificacion, evaluacion)
+    if settings.EXPLAINABLE_GRADING_AUTHORITY_ENABLED:
+        desglose = await get_active_breakdown(db, calificacion.id)
+        if desglose and (desglose.requiere_revision or calificacion.nota_confirmada != desglose.nota_final):
+            raise HTTPException(409, 'Revisa los puntajes pendientes y comprueba que coincidan con la nota antes de publicarla.')
     policy = evaluacion.politica_intento or PoliticaIntento.UN_INTENTO.value
     if policy == PoliticaIntento.PRACTICA_LIBRE.value:
         raise HTTPException(

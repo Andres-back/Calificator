@@ -1,10 +1,13 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { Evaluacion } from '@/types/api';
 import {
+  updateQuestionVisual, reconcileVisualQuestions, loadVisualEditDraft,
   createEmptyWizardState,
   createBlankQuestion,
   discardWizardDraft,
   evaluationToEditableQuestions,
+  evaluationToWizardState,
+  questionsToUpdatePayload,
   duplicateQuestion,
   loadWizardDraft,
   getWizardStorage,
@@ -29,6 +32,31 @@ import {
   type EditableQuestion,
 } from './generationWizardModel';
 
+it('replaces one use of shared material while preserving other uses and review state', () => {
+  const state = createEmptyWizardState();
+  state.questions = [validQuestion({ contenidoId: 'q1' }), validQuestion({ clientId: 'q2', contenidoId: 'q2' })];
+  state.contenidoVisual = { schema_version: 1, pregunta_ids: ['q1', 'q2'], recurso_ids: ['r'],
+    bloques: [{ id: 'shared', tipo: 'imagen', orden: 0, pregunta_ids: ['q1', 'q2'], recurso_id: 'r', seguridad_contenido: 'publicable_confirmado' }],
+    cobertura: { detectados: [], conservados: [], avisos: [], estado: 'completa' } };
+  const changed = updateQuestionVisual(state, 'q1', { id: 'new', tipo: 'imagen', orden: 1, pregunta_ids: ['q1'], recurso_id: 'r2', seguridad_contenido: 'publicable_confirmado' }, 'shared');
+  expect(changed.contenidoVisual?.bloques[0].pregunta_ids).toEqual(['q2']);
+  expect(changed.visualKeysPending).toEqual(['q1']);
+  const removed = reconcileVisualQuestions(changed, [changed.questions[0]]);
+  expect(removed.contenidoVisual?.pregunta_ids).toEqual(['q1']);
+  expect(removed.contenidoVisual?.bloques.map(block => block.id)).toEqual(['new']);
+  expect(state.contenidoVisual.bloques[0].pregunta_ids).toEqual(['q1', 'q2']);
+});
+
+it('isolates recoverable visual edits and jobs by user and evaluation', () => {
+  const state = createEmptyWizardState('subject');
+  state.generatedEvaluationId = 'evaluation'; state.visualJobs = { q1: 'job-1' };
+  state.questions = [validQuestion({ contenidoId: 'q1' })];
+  persistWizardDraft(localStorage, 'owner', state, 1000, 'evaluation');
+  expect(loadVisualEditDraft(localStorage, 'owner', 'evaluation', 1001)?.visualJobs).toEqual({ q1: 'job-1' });
+  expect(loadVisualEditDraft(localStorage, 'other-owner', 'evaluation', 1001)).toBeNull();
+  expect(loadVisualEditDraft(localStorage, 'owner', 'another-evaluation', 1001)).toBeNull();
+});
+
 function validQuestion(overrides: Partial<EditableQuestion> = {}): EditableQuestion {
   return {
     clientId: 'question-1',
@@ -46,6 +74,33 @@ function validQuestion(overrides: Partial<EditableQuestion> = {}): EditableQuest
 }
 
 describe('generation wizard model', () => {
+  it('preserves visual question identity, shared content and the revision while editing text', () => {
+    const evaluation = {
+      id: 'exam', materia_id: 'subject', nombre: 'Tabla de precios', modalidad: 'fisica',
+      nota_maxima: 5, contenido_version_id: 'revision-a',
+      contenido_visual: { schema_version: 1, pregunta_ids: ['question-a'], recurso_ids: [],
+        bloques: [{ id: 'shared', tipo: 'texto', orden: 0, pregunta_ids: ['question-a'],
+          texto: 'Precios de la tienda', seguridad_contenido: 'publicable_confirmado' }],
+        cobertura: { estado: 'completa', avisos: [] } },
+      preguntas: [{ numero: 1, contenido_id: 'question-a', tipo: 'abierta', enunciado: '¿Qué cuesta más?', puntaje: 5 }],
+      respuestas_esperadas: [{ numero: 1, respuesta: 'El libro' }],
+    } as unknown as Evaluacion;
+    const state = evaluationToWizardState(evaluation);
+    expect(state.contenidoVisual).toEqual(evaluation.contenido_visual);
+    expect(state.contenidoVersionId).toBe('revision-a');
+    const edited = [{ ...state.questions[0], enunciado: 'Compara los precios.' }];
+    expect(questionsToUpdatePayload(edited).preguntas[0]).toMatchObject({ contenido_id: 'question-a' });
+    expect(moveQuestion(edited, 0, 1)[0].contenidoId).toBe('question-a');
+    expect(duplicateQuestion(edited, 0)[1].contenidoId).not.toBe('question-a');
+    persistWizardDraft(localStorage, 'visual-teacher', { ...state, questions: edited }, 1000);
+    expect(loadWizardDraft(localStorage, 'visual-teacher', 1001, 'subject')).toMatchObject({
+      contenidoVisual: evaluation.contenido_visual, contenidoVersionId: 'revision-a',
+    });
+  });
+
+  it('does not silently add visual identity to legacy questions on a text-only save', () => {
+    expect(questionsToUpdatePayload([validQuestion()]).preguntas[0]).not.toHaveProperty('contenido_id');
+  });
   it.each([{ questions: [null] }, { dbaIds: null }, { generatedCriteria: [null] }, { descripcion: null }])('rejects structurally malformed drafts safely: %j', corrupt => {
     localStorage.setItem(wizardStorageKey('teacher', 'm'), JSON.stringify({ version: WIZARD_VERSION, userId: 'teacher', savedAt: 1000, state: { ...createEmptyWizardState('m'), ...corrupt } }));
     expect(loadWizardDraft(localStorage, 'teacher', 1001, 'm')).toBeNull();

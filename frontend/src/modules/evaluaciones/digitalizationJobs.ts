@@ -6,6 +6,7 @@ export type DigitalizationJobStatus =
   | 'running'
   | 'retrying'
   | 'success'
+  | 'requires_review'
   | 'failed'
   | 'cancelled'
   | 'unavailable';
@@ -38,6 +39,7 @@ const VALID_STATUSES = new Set<DigitalizationJobStatus>([
   'running',
   'retrying',
   'success',
+  'requires_review',
   'failed',
   'cancelled',
   'unavailable',

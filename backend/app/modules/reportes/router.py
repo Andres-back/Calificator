@@ -58,9 +58,12 @@ async def reporte_estudiante(
 
     rows = await db.execute(
         text(
-            "SELECT c.*, e.nombre as eval_nombre, e.nota_maxima "
+            "SELECT c.*, COALESCE(v.snapshot_json->>'nombre', e.nombre) as eval_nombre, "
+            "COALESCE((v.snapshot_json->>'nota_maxima')::numeric, e.nota_maxima) as nota_maxima "
             "FROM calificaciones c "
             "JOIN evaluaciones e ON e.id = c.evaluacion_id "
+            "LEFT JOIN entregas d ON d.id = c.entrega_id "
+            "LEFT JOIN evaluacion_contenido_versiones v ON v.id = d.contenido_version_id "
             "WHERE c.estudiante_id=:s AND c.materia_id=:m "
             "ORDER BY c.created_at DESC"
         ),

@@ -17,6 +17,8 @@ from app.core.config import settings
 from app.core.logging import get_logger
 from app.modules.calificaciones.agents import AgentContext, OpenCodeClient, vision_agent
 from app.modules.dba.document_service import extraer_texto_docx, extraer_texto_pdf
+from app.modules.evaluaciones.visual_normalization import bind_visual_structure, visual_prompt_context
+from app.modules.evaluaciones.visual_schemas import VisualManifest
 from app.services.image_preprocessing import (
     prepare_orientation_variants,
     quality_warning_messages,
@@ -272,6 +274,8 @@ async def _extract_image_text(
     name: str,
     user_id: UUID | None = None,
     ai_config: dict[str, Any] | None = None,
+    *,
+    prompt_override: str | None = None,
 ) -> tuple[str, list[str]]:
     variants = prepare_orientation_variants(content, mime)
     quality = variants[0].quality if variants else None
@@ -309,7 +313,7 @@ async def _extract_image_text(
                 context,
                 model=vision_model,
                 client=client,
-                prompt_override=DIGITALIZATION_VISION_PROMPT,
+                prompt_override=prompt_override or DIGITALIZATION_VISION_PROMPT,
                 timeout=settings.OPEN_CODE_DIGITALIZATION_VISION_TIMEOUT_SECONDS,
                 max_attempts=max(1, int(settings.PHOTO_GRADING_MODEL_MAX_ATTEMPTS)),
             )
@@ -887,6 +891,8 @@ def normalize_detected_structure(
     *,
     nota_maxima: Decimal,
     initial_warnings: list[str] | None = None,
+    contenido_visual: VisualManifest | None = None,
+    visual_scope_id: UUID | None = None,
 ) -> dict[str, Any]:
     """Valida, completa pesos y produce el contrato persistible de una evaluación."""
     raw_questions = structure.get("preguntas") if isinstance(structure, dict) else None
@@ -941,6 +947,8 @@ def normalize_detected_structure(
         independently_supported = origin in {
             "resolucion_independiente", "solucion_impresa", "verificacion_determinista"
         }
+        if contenido_visual is not None and not independently_supported:
+            continue
         if origin in {"respuesta_observada", "respuesta_estudiante", "pendiente"}:
             continue
         if not is_objective and not (
@@ -1028,7 +1036,7 @@ def normalize_detected_structure(
         "claves_pendientes": missing,
         "advertencias": warnings,
     })
-    return {
+    normalized = {
         "preguntas": questions,
         "respuestas_esperadas": [answer_map[number] for number in numbers if number in answer_map],
         "criterios": criteria,
@@ -1044,6 +1052,9 @@ def normalize_detected_structure(
         "claves_pendientes": missing,
         "advertencias": warnings,
     }
+    if contenido_visual is not None:
+        return bind_visual_structure(structure, normalized, contenido_visual, visual_scope_id)
+    return normalized
 
 
 async def detectar_estructura_evaluacion(
@@ -1053,6 +1064,8 @@ async def detectar_estructura_evaluacion(
     nota_maxima: Decimal = Decimal("5.0"),
     initial_warnings: list[str] | None = None,
     ai_config: dict[str, Any] | None = None,
+    contenido_visual: VisualManifest | None = None,
+    visual_scope_id: UUID | None = None,
 ) -> dict[str, Any]:
     """Detecta preguntas y propone una clave independiente para revisión docente."""
     if not contenido_texto.strip():
@@ -1071,6 +1084,12 @@ async def detectar_estructura_evaluacion(
         pipeline_warnings.append(
             "Se excluyó la escritura del estudiante al construir preguntas y respuestas correctas."
         )
+    visual_context = visual_prompt_context(contenido_visual, _strip_student_answer_annotations) if contenido_visual is not None else ""
+    if contenido_visual is not None:
+        if visual_scope_id is None:
+            raise ValueError("La importación visual necesita su identificador de trabajo.")
+        if len(contenido_preguntas) + len(visual_context) > settings.PHOTO_GRADING_CONTEXT_BUDGET_CHARS:
+            raise HTTPException(422, "El documento supera el límite de procesamiento. Divídelo para conservar todo su contenido.")
     stages = ai_config.get("stages") if isinstance(ai_config, dict) and isinstance(ai_config.get("stages"), dict) else {}
     structure_snapshot = stages.get("structure") or ai_config
     llm = LLMRouter(user_id=user_id, ai_config=structure_snapshot) if structure_snapshot is not None else LLMRouter(user_id=user_id)
@@ -1079,9 +1098,9 @@ async def detectar_estructura_evaluacion(
     if callable(set_tracking):
         set_tracking(stage="structure")
     prompt = PROMPT_DETECTAR_ESTRUCTURA.format(
-        contenido=contenido_preguntas[:12000],
+        contenido=contenido_preguntas if contenido_visual is not None else contenido_preguntas[:12000],
         nota_maxima=str(nota_maxima),
-    )
+    ) + visual_context
     try:
         result = await llm.generate_json(DIGITALIZATION_STRUCTURE_TASK, prompt)
     except Exception as exc:
@@ -1099,6 +1118,8 @@ async def detectar_estructura_evaluacion(
                 local_structure,
                 nota_maxima=nota_maxima,
                 initial_warnings=fallback_warnings,
+                contenido_visual=contenido_visual,
+                visual_scope_id=visual_scope_id,
             )
             logger.info(
                 "Evaluación recuperada localmente: %d preguntas",
@@ -1122,6 +1143,8 @@ async def detectar_estructura_evaluacion(
         result,
         nota_maxima=nota_maxima,
         initial_warnings=pipeline_warnings,
+        contenido_visual=contenido_visual,
+        visual_scope_id=visual_scope_id,
     )
     logger.info(
         "Evaluación digitalizada: %d preguntas, clave completa=%s, advertencias=%d",

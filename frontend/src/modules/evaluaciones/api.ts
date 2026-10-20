@@ -1,6 +1,6 @@
 import { api } from '@/lib/api';
 import { useQuery } from '@tanstack/react-query';
-import type { DBARead, EntregaOnlineCreate, EntregaRead, Evaluacion, EvaluacionModalidad, GradeBreakdownData, IncidenciaRead, SolicitudRevisionMotivo, StudentActivity } from '@/types/api';
+import type { EvaluationVisualManifest, DBARead, EntregaOnlineCreate, EntregaRead, Evaluacion, EvaluacionModalidad, GradeBreakdownData, IncidenciaRead, SolicitudRevisionMotivo, StudentActivity } from '@/types/api';
 
 export interface EvaluacionCreate {
   materia_id: string;
@@ -16,6 +16,7 @@ export interface EvaluacionCreate {
   criterios?: Record<string, unknown>[];
   preguntas?: Record<string, unknown>[];
   respuestas_esperadas?: Record<string, unknown>[];
+  contenido_visual?: EvaluationVisualManifest;
 }
 
 export interface EvaluacionGenerarRequest {
@@ -40,7 +41,10 @@ export interface EvaluacionGenerarRequest {
   fecha_limite_entrega?: string | null;
 }
 
-export type EvaluacionUpdate = Partial<Omit<EvaluacionCreate, 'materia_id' | 'tipo_origen'>> & { expected_updated_at?: string };
+export type EvaluacionUpdate = Partial<Omit<EvaluacionCreate, 'materia_id' | 'tipo_origen'>> & {
+  expected_updated_at?: string; expected_content_version_id?: string | null;
+  claves_visuales_revisadas?: string[];
+};
 
 export interface ListDBAParams {
   area?: string;
@@ -53,6 +57,19 @@ export async function listEvaluaciones(materiaId: string): Promise<Evaluacion[]>
 }
 export async function getEvaluacion(id: string): Promise<Evaluacion> {
   const { data } = await api.get<Evaluacion>(`/evaluaciones/${id}`);
+  return data;
+}
+export async function getEvaluationResource(evaluationId: string, resourceId: string, versionId?: string | null, signal?: AbortSignal): Promise<Blob> {
+  const { data } = await api.get<Blob>(`/evaluaciones/${encodeURIComponent(evaluationId)}/recursos/${encodeURIComponent(resourceId)}`, {
+    params: versionId ? { version_id: versionId } : undefined, responseType: 'blob', signal,
+  });
+  if (!['image/png', 'image/jpeg', 'image/webp'].includes(data.type)) throw new Error('Formato de imagen no disponible');
+  return data;
+}
+export async function getEvaluationOriginal(evaluationId: string, versionId?: string | null): Promise<Blob> {
+  const { data } = await api.get<Blob>(`/evaluaciones/${encodeURIComponent(evaluationId)}/original`, {
+    params: versionId ? { version_id: versionId } : undefined, responseType: 'blob',
+  });
   return data;
 }
 export async function createEvaluacion(payload: EvaluacionCreate): Promise<Evaluacion> {
@@ -104,6 +121,13 @@ export async function crearEntregaOnline(evaluacionId: string, payload: EntregaO
   const { data } = await api.post<EntregaRead>(`/evaluaciones/${evaluacionId}/entregas`, payload);
   return data;
 }
+export async function iniciarEntregaOnline(evaluacionId: string): Promise<{ entrega_id: string; evaluacion: Evaluacion }> {
+  const { data } = await api.post<{ entrega_id: string; evaluacion: Evaluacion }>(`/evaluaciones/${evaluacionId}/iniciar-entrega`);
+  if (!data?.entrega_id || !data.evaluacion?.contenido_version_id || !Array.isArray(data.evaluacion.preguntas)) {
+    throw new Error('No pudimos comprobar el contenido de tu intento. Vuelve a prepararlo antes de responder.');
+  }
+  return data;
+}
 export async function getMiEntrega(evaluacionId: string): Promise<EntregaRead | null> {
   try {
     const { data } = await api.get<EntregaRead>(`/evaluaciones/${evaluacionId}/mi-entrega`);
@@ -118,9 +142,12 @@ export async function getActividadEstudiante(evaluacionId: string): Promise<Stud
   const { data } = await api.get<StudentActivity | null>(`/evaluaciones/${evaluacionId}/actividad`);
   return data;
 }
-export function evaluationPdfUrl(evaluacionId: string, descargar = false): string {
+export function evaluationPdfUrl(evaluacionId: string, descargar = false, versionId?: string | null): string {
   const base = import.meta.env.VITE_API_URL ?? '/api';
-  return base + '/evaluaciones/' + evaluacionId + '/pdf' + (descargar ? '?descargar=true' : '');
+  const params = new URLSearchParams();
+  if (descargar) params.set('descargar', 'true');
+  if (versionId) params.set('version_id', versionId);
+  return base + '/evaluaciones/' + evaluacionId + '/pdf' + (params.size ? '?' + params.toString() : '');
 }
 
 export async function getEvaluationDocument(
@@ -128,10 +155,11 @@ export async function getEvaluationDocument(
   format: 'pdf' | 'docx',
   soluciones = false,
   signal?: AbortSignal,
+  versionId?: string | null,
 ): Promise<Blob> {
   try {
     const { data } = await api.get<Blob>(`/evaluaciones/${evaluacionId}/${format}`, {
-      params: { soluciones }, responseType: 'blob', signal,
+      params: { soluciones, ...(versionId ? { version_id: versionId } : {}) }, responseType: 'blob', signal,
     });
     return data;
   } catch (error) {

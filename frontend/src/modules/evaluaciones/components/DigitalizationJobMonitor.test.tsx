@@ -53,6 +53,15 @@ beforeEach(() => {
 });
 
 describe('DigitalizationJobMonitor', () => {
+  it('opens the saved visual draft needing review instead of claiming digitalization failed', async () => {
+    queueJob();
+    mocks.get.mockResolvedValue({ data: { id: 'job-1', estado: 'requires_review', progreso: 100,
+      resultado_json: { evaluacion_id: 'saved-visual', preguntas_count: 4, clave_completa: false }, error: null } });
+    renderMonitor();
+    expect(await screen.findByRole('button', { name: 'Revisar material del borrador' })).toBeEnabled();
+    expect(screen.queryByText('No se pudo completar la digitalización')).not.toBeInTheDocument();
+    expect(readPendingDigitalizations()[0]).toMatchObject({ status: 'requires_review', evaluationId: 'saved-visual' });
+  });
   it('keeps a failed job visible with its error and retry action', async () => {
     queueJob();
     mocks.get.mockResolvedValue({
@@ -172,7 +181,7 @@ describe('DigitalizationJobMonitor', () => {
 
     renderMonitor();
 
-    expect(await screen.findByText(/OpenCode sigue trabajando/)).toHaveTextContent(
-      'La solicitud permanece activa',
+    expect(await screen.findByText(/La IA sigue leyendo el documento/)).toHaveTextContent(
+      'conservaremos el resultado',
     );
   });});

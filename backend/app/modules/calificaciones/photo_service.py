@@ -11,7 +11,8 @@ from app.modules.calificaciones.breakdown_service import create_automatic_breakd
 from app.modules.calificaciones.grading_service import grade_submission
 from app.modules.calificaciones.models import Calificacion, Entrega
 from app.modules.calificaciones.schemas import GradingResult
-from app.modules.evaluaciones.blueprint_service import evaluation_to_grading_blueprint
+from app.modules.evaluaciones.grading_visual_context import load_grading_context
+from app.modules.calificaciones.grading_visuals import visual_provenance
 from app.modules.evaluaciones.models import Evaluacion
 from app.shared.enums import CalificacionEstado, EntregaEstado
 
@@ -151,28 +152,35 @@ async def grade_persisted_photo(
     calificacion: Calificacion | None = None,
 ) -> Calificacion:
     """Califica una entrega que ya sobrevivió a un commit previo."""
+    context = None
     try:
+        context = await load_grading_context(db, evaluacion, entrega)
         grading = await grade_submission(
             db,
             evaluacion_id=evaluacion.id,
             materia_id=evaluacion.materia_id,
-            blueprint=evaluation_to_grading_blueprint(evaluacion),
+            blueprint=context.blueprint,
             student_response_text=student_response_text,
             image_bytes=image_bytes,
             image_mime=image_mime,
             user_id=profesor_id,
+            **({'evaluation_visuals': context.agent_visuals} if context.agent_visuals else {}),
         )
         if grading.nota_sugerida is not None:
             service.validate_score_within_evaluation(
                 grading.nota_sugerida,
-                evaluacion,
+                context.evaluation,
                 "nota_sugerida",
             )
     except Exception as exc:  # La entrega ya existe y no debe perderse.
         grading = technical_failure_result(
-            evaluacion,
+            context.evaluation if context is not None else evaluacion,
             error_type=type(exc).__name__,
+            motivo_revision='evaluation_context_unavailable' if context is None else 'pipeline_error',
         )
+
+    if context and context.version_id:
+        grading.raw_model_output = {**grading.raw_model_output, 'evaluation_content': visual_provenance(context.blueprint, context.agent_visuals)}
 
     if evidence_metadata:
         grading.raw_model_output = {
@@ -185,7 +193,7 @@ async def grade_persisted_photo(
 
     result = apply_grading_result(
         entrega=entrega,
-        evaluacion=evaluacion,
+        evaluacion=context.evaluation if context is not None else evaluacion,
         estudiante_id=estudiante_id,
         profesor_id=profesor_id,
         grading=grading,
@@ -193,13 +201,12 @@ async def grade_persisted_photo(
     )
     if calificacion is None:
         db.add(result)
-    await create_automatic_breakdown(
-        db,
-        calificacion=result,
-        blueprint=evaluation_to_grading_blueprint(evaluacion),
-        raw_output=grading.raw_model_output,
-        pipeline_run_id=str((grading.raw_model_output or {}).get("job_id") or "") or None,
-    )
+    if context is not None:
+        await create_automatic_breakdown(
+            db, calificacion=result, blueprint=context.blueprint,
+            raw_output=grading.raw_model_output,
+            pipeline_run_id=str((grading.raw_model_output or {}).get("job_id") or "") or None,
+        )
     await db.commit()
     await db.refresh(result)
     return result

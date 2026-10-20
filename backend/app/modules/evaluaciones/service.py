@@ -7,6 +7,7 @@ from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from app.core.config import settings
 from app.core.permissions import is_student_enrolled
 from app.modules.dba.service import get_dba_personalizado_records_for_evaluation, get_dba_records
 from app.modules.evaluaciones.blueprint_service import (
@@ -18,7 +19,7 @@ from app.modules.evaluaciones.modality_service import (
     normalize_question_modalities,
     validate_mixed_question_modalities,
 )
-from app.modules.evaluaciones.models import Evaluacion, EvaluacionBlueprint
+from app.modules.evaluaciones.models import Evaluacion, EvaluacionBlueprint, EvaluacionContenidoVersion
 from app.modules.calificaciones.models import Calificacion, Entrega
 from app.modules.evaluaciones.schemas import (
     DigitalizarEvaluacionExternaRequest,
@@ -28,6 +29,7 @@ from app.modules.evaluaciones.schemas import (
     EvaluacionUpdate,
 )
 from app.modules.evaluaciones.state_machine import transition_evaluation_state
+from app.modules.evaluaciones.visual_service import ContentEdit, get_content_revision, prepare_content_edit, save_content_revision
 from app.modules.materias.service import ensure_can_manage_materia, ensure_can_read_materia
 from app.modules.users.models import User
 from app.shared.enums import (
@@ -211,6 +213,7 @@ def _student_safe_evaluation(evaluacion: Evaluacion, progress: dict | None = Non
         "criterios": sanitize_student_payload(evaluacion.criterios),
         "preguntas": sanitize_student_payload(safe_questions),
         "respuestas_esperadas": [],
+        "contenido_version_id": getattr(evaluacion, 'contenido_version_id', None),
         "created_at": evaluacion.created_at,
         "updated_at": evaluacion.updated_at,
         "blueprint": None,
@@ -236,6 +239,7 @@ async def _student_progress_by_evaluation(
                 .where(
                     Entrega.evaluacion_id.in_(evaluation_ids),
                     Entrega.estudiante_id == estudiante_id,
+                    Entrega.estado.not_in({EntregaEstado.EN_PROGRESO.value, EntregaEstado.PENDIENTE.value}),
                 )
                 .order_by(Entrega.created_at.desc())
             )
@@ -274,10 +278,19 @@ async def _student_progress_by_evaluation(
     for grade in grades:
         latest_grade.setdefault(grade.evaluacion_id, grade)
 
+    deliveries_by_id = {delivery.id: delivery for delivery in deliveries}
+    version_ids = {delivery.contenido_version_id for delivery in deliveries
+                   if getattr(delivery, 'contenido_version_id', None)}
+    versions = {revision.id: revision.snapshot_json for revision in await db.scalars(
+        select(EvaluacionContenidoVersion).where(EvaluacionContenidoVersion.id.in_(version_ids))
+    )} if version_ids else {}
+
     progress: dict[UUID, dict] = {}
     for evaluacion in evaluaciones:
         delivery = latest_delivery.get(evaluacion.id)
         grade = latest_grade.get(evaluacion.id)
+        graded_delivery = deliveries_by_id.get(getattr(grade, 'entrega_id', None))
+        graded_revision = getattr(graded_delivery, 'contenido_version_id', None)
         delivered = bool(
             delivery
             and delivery.estado != EntregaEstado.REQUIERE_REINTENTO.value
@@ -290,6 +303,7 @@ async def _student_progress_by_evaluation(
             "intentos_realizados": attempt_counts.get(evaluacion.id, 0),
             "entrega_realizada": delivered,
             "mi_nota_confirmada": grade.nota_confirmada if grade else None,
+            "mi_nota_maxima": Decimal(str(versions[graded_revision]['nota_maxima'])) if graded_revision in versions else evaluacion.nota_maxima,
             "mi_calificacion_estado": (
                 CalificacionEstado.PROCESANDO.value
                 if delivery and delivery.estado == EntregaEstado.PROCESANDO.value
@@ -494,8 +508,15 @@ async def create_evaluation(
     *,
     material_origen_id: UUID | None = None,
     tipo_actividad: str | None = None,
+    commit: bool = True,
+    initial_validation: EvaluacionEstructuraValidacion | None = None,
+    visual_import: bool = False,
 ) -> Evaluacion:
     materia = await ensure_can_manage_materia(db, payload.materia_id, current_user)
+    if payload.contenido_visual is not None:
+        enabled = settings.EVALUATION_VISUAL_IMPORT_ENABLED if visual_import else settings.EVALUATION_VISUAL_EDITOR_ENABLED
+        if not enabled:
+            raise HTTPException(503, "La edición visual todavía no está habilitada. Conserva tu documento para continuar después.")
     questions = normalize_question_modalities(payload.preguntas, payload.modalidad)
     evaluacion = Evaluacion(
         materia_id=materia.id,
@@ -522,9 +543,13 @@ async def create_evaluation(
     )
     db.add(evaluacion)
     await db.flush()
-    await _build_or_update_blueprint(db, evaluacion, payload.dba_ids, payload.dba_personalizado_ids)
-    await db.commit()
-    return await get_evaluation_or_404(db, evaluacion.id)
+    await _build_or_update_blueprint(db, evaluacion, payload.dba_ids, payload.dba_personalizado_ids, initial_validation)
+    if payload.contenido_visual is not None:
+        await save_content_revision(db, ContentEdit(evaluation=evaluacion, previous=None, manifest=payload.contenido_visual))
+    if commit:
+        await db.commit()
+        return await get_evaluation_or_404(db, evaluacion.id)
+    return evaluacion
 
 
 async def list_evaluations_for_materia(
@@ -573,6 +598,23 @@ async def update_evaluation(
 ) -> Evaluacion:
     data = payload.model_dump(exclude_unset=True)
     expected_updated_at = data.pop("expected_updated_at", None)
+    expected_content_version_id = data.pop("expected_content_version_id", None)
+    reviewed_visual_keys = data.pop('claves_visuales_revisadas', [])
+    if reviewed_visual_keys and not settings.EVALUATION_VISUAL_EDITOR_ENABLED:
+        raise HTTPException(409, 'La revisión de material todavía no está habilitada.')
+    visual_requested = "contenido_visual" in data
+    data.pop("contenido_visual", None)
+    if visual_requested and not settings.EVALUATION_VISUAL_EDITOR_ENABLED:
+        raise HTTPException(409, "La edición de imágenes todavía no está habilitada. Tu evaluación sigue disponible.")
+    if visual_requested and payload.contenido_visual is None:
+        raise HTTPException(422, "Indica el contenido que quieres guardar; para quitar un recurso, edita su asociación.")
+    content_edit = None
+    if visual_requested or (getattr(evaluacion, "contenido_version_id", None) is not None and (data or reviewed_visual_keys)):
+        content_edit = await prepare_content_edit(db, evaluacion.id,
+            expected_version_id=expected_content_version_id, expected_updated_at=expected_updated_at,
+            manifest=payload.contenido_visual)
+        evaluacion = content_edit.evaluation
+        expected_updated_at = None  # Already checked while holding the row lock.
     if expected_updated_at is not None:
         # Refresh under a row lock: a read-before-lock comparison loses races.
         locked = await db.scalar(
@@ -646,6 +688,8 @@ async def update_evaluation(
     if structural_update and evaluacion.estado != EvaluacionEstado.BORRADOR.value:
         validate_publication_structure(evaluacion)
 
+    if content_edit is not None:
+        await save_content_revision(db, content_edit, reviewed_question_ids=reviewed_visual_keys)
     await db.commit()
     return await get_evaluation_or_404(db, evaluacion.id)
 
@@ -683,6 +727,8 @@ async def rebuild_blueprint(
     db: AsyncSession,
     evaluacion: Evaluacion,
 ) -> EvaluacionBlueprint:
+    if getattr(evaluacion, "contenido_version_id", None) is not None:
+        raise HTTPException(409, "Guarda los cambios desde el editor para conservar la versión de las entregas anteriores.")
     dba_ids = [UUID(value) for value in evaluacion.dba_ids]
     dba_personalizado_ids = [UUID(value) for value in evaluacion.dba_personalizado_ids]
     blueprint = await _build_or_update_blueprint(db, evaluacion, dba_ids, dba_personalizado_ids)
@@ -783,6 +829,15 @@ def validate_publication_structure(evaluacion: Evaluacion) -> None:
 
 
 async def publish_evaluation(db: AsyncSession, evaluacion: Evaluacion) -> Evaluacion:
+    if getattr(evaluacion, "contenido_version_id", None) is not None:
+        revision = await get_content_revision(db, evaluacion.id, evaluacion.contenido_version_id)
+        if revision.snapshot_json.get("claves_pendientes_revision") or revision.coverage_json.get("estado") != "completa":
+            raise HTTPException(409, "Revisa el material y las respuestas correctas de las preguntas modificadas antes de publicar.")
+        from app.modules.evaluaciones.visual_render import resolve_visual_material
+        try:
+            await resolve_visual_material(db, evaluacion.id, revision)
+        except ValueError as exc:
+            raise HTTPException(409, 'No pudimos reunir el material completo. Revisa las figuras antes de publicar.') from exc
     if not evaluacion.blueprint:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
@@ -803,6 +858,8 @@ async def publish_evaluation(db: AsyncSession, evaluacion: Evaluacion) -> Evalua
             detail=str(exc),
         ) from exc
     if normalized_questions != evaluacion.preguntas:
+        if getattr(evaluacion, "contenido_version_id", None) is not None:
+            raise HTTPException(409, "Revisa y guarda las preguntas desde el editor antes de publicar esta versión.")
         evaluacion.preguntas = normalized_questions
         await _build_or_update_blueprint(
             db,
@@ -904,6 +961,8 @@ async def digitalize_external_evaluation(
     db: AsyncSession,
     payload: DigitalizarEvaluacionExternaRequest,
     current_user: User,
+    *,
+    commit: bool = True,
 ) -> Evaluacion:
     """Crea una evaluacion externa desde estructura ya detectada; no ejecuta Vision Router."""
     structure = payload.estructura_detectada
@@ -920,7 +979,14 @@ async def digitalize_external_evaluation(
         criterios=payload.criterios or structure.get("criterios", []),
         preguntas=structure.get("preguntas", []),
         respuestas_esperadas=structure.get("respuestas_esperadas", []),
+        contenido_visual=structure.get("contenido_visual"),
     )
+    if create_payload.contenido_visual is not None or not commit:
+        # Build the complete blueprint before snapshotting, in the caller's transaction.
+        return await create_evaluation(db, create_payload, current_user, commit=commit,
+            initial_validation=EvaluacionEstructuraValidacion(
+                errores_comunes=structure.get("errores_comunes"), reglas_feedback=structure.get("reglas_feedback")),
+            visual_import=True)
     evaluacion = await create_evaluation(db, create_payload, current_user)
     if structure.get("errores_comunes") or structure.get("reglas_feedback"):
         validation = EvaluacionEstructuraValidacion(
@@ -941,6 +1007,11 @@ async def validate_structure(
             status_code=status.HTTP_409_CONFLICT,
             detail=STRUCTURE_LOCKED_MESSAGE,
         )
+    content_edit = None
+    if getattr(evaluacion, "contenido_version_id", None) is not None:
+        content_edit = await prepare_content_edit(db, evaluacion.id,
+            expected_version_id=payload.expected_content_version_id, expected_updated_at=payload.expected_updated_at)
+        evaluacion = content_edit.evaluation
     if payload.criterios is not None:
         evaluacion.criterios = payload.criterios
     if payload.preguntas is not None:
@@ -955,5 +1026,7 @@ async def validate_structure(
     dba_ids = [UUID(value) for value in evaluacion.dba_ids]
     dba_personalizado_ids = [UUID(value) for value in evaluacion.dba_personalizado_ids]
     await _build_or_update_blueprint(db, evaluacion, dba_ids, dba_personalizado_ids, payload)
+    if content_edit is not None:
+        await save_content_revision(db, content_edit)
     await db.commit()
     return await get_evaluation_or_404(db, evaluacion.id)

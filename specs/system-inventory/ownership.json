@@ -1,6 +1,8 @@
 {
   "schema_version": 1,
   "rules": [
+    {"spec":"005-evaluaciones","priority":80,"source_patterns":["backend/app/modules/evaluaciones/visual_*.py","backend/app/modules/evaluaciones/grading_visual_context.py","frontend/src/modules/evaluaciones/visualApi.ts","frontend/src/modules/evaluaciones/components/QuestionVisualEditor.tsx"],"consumers":["101-digitalizacion-visual-completa"]},
+    {"spec":"012-ia-jobs-produccion","priority":80,"source_patterns":["backend/app/workers/tasks_evaluation_visuals.py"],"consumers":["101-digitalizacion-visual-completa"]},
     {"spec":"067-privacidad-legal","priority":95,"kinds":["frontend_route"],"signature_patterns":["/privacidad","/terminos","/cookies","/aviso-privacidad","/piloto"]},
     {"spec":"067-privacidad-legal","priority":95,"kinds":["table"],"signature_patterns":["legal_acceptances"]},
     {"spec":"067-privacidad-legal","priority":90,"source_patterns":["backend/app/modules/legal/**","frontend/src/modules/legal/**","frontend/src/components/legal/**"]},
@@ -15,7 +17,7 @@
     {"spec":"021-configuracion-ia-docente","priority":60,"source_patterns":["backend/app/modules/admin_ai_config/**","backend/app/services/ai_config_service.py","backend/app/services/ai_credentials_service.py","backend/app/services/ai_configuration_resolver.py","frontend/src/modules/admin/**","frontend/src/modules/profesor_ai/**"]},
     {"spec":"003-usuarios-materias-matriculas","priority":35,"kinds":["frontend_route","frontend_call","endpoint"],"signature_patterns":["*/auth*","*/users*","*/materias*","*/matriculas*","/login"]},
     {"spec":"004-dba-asistencia-curriculo","priority":36,"kinds":["frontend_route","frontend_call","endpoint"],"signature_patterns":["*/dba*","*/asistencia*"]},
-    {"spec":"005-evaluaciones","priority":37,"kinds":["frontend_route","frontend_call","endpoint"],"signature_patterns":["*:/evaluaciones*","/app/evaluaciones*","/app/materias/*/evaluaciones*"]},
+    {"spec":"005-evaluaciones","priority":38,"kinds":["frontend_route","frontend_call","endpoint"],"signature_patterns":["*:/evaluaciones*","/app/evaluaciones*","/app/materias/*/evaluaciones*"]},
     {"spec":"006-recursos-actividades","priority":37,"kinds":["frontend_route","frontend_call","endpoint"],"signature_patterns":["*/herramientas*","*/recursos*"]},
     {"spec":"007-entregas-estudiante","priority":45,"kinds":["frontend_route"],"signature_patterns":["*/evaluaciones/*/resolver"]},
     {"spec":"008-calificaciones","priority":36,"kinds":["frontend_route","frontend_call","endpoint"],"signature_patterns":["*/calificaciones*","*/boletin*","*/calificar*"]},

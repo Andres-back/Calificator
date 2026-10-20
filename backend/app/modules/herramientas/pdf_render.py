@@ -455,13 +455,19 @@ def _render_taller(c: dict, soluciones: bool) -> str:
 
 
 def _render_examen(c: dict, soluciones: bool) -> str:
+    from app.modules.evaluaciones.visual_render import ResolvedVisualBlock, visual_block_html
+
     out = ['<div class="sectionbar">EXAMEN</div>']
     if c.get("instrucciones"):
         out.append(f'<div class="instr indigo">{_e(c["instrucciones"])}</div>')
     for q in c.get("preguntas") or []:
-        out.append('<div class="card">')
+        out.append('<div class="card" style="break-inside:avoid">' if q.get('_evaluation_visuals') else '<div class="card">')
         pts = f' <span class="pts">[{_e(q.get("puntaje"))} pts]</span>' if q.get("puntaje") is not None else ""
         out.append(f'<p class="p"><b>{_e(q.get("numero"))}. {_e(q.get("enunciado"))}</b>{pts}</p>')
+        for visual in q.get('_evaluation_visuals') or []:
+            if not isinstance(visual, ResolvedVisualBlock):
+                raise ValueError('El material visual necesita revisión antes de descargar.')
+            out.append(visual_block_html(visual))
         for idx, op in enumerate(q.get("opciones") or []):
             letra = chr(65 + idx)
             # El LLM a veces ya antepone "A)"/"a)"; lo quitamos para no duplicar.

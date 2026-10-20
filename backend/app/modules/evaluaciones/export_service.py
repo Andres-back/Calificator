@@ -9,6 +9,7 @@ import unicodedata
 from urllib.parse import quote
 
 from app.modules.evaluaciones.service import sanitize_student_payload
+from app.modules.evaluaciones.visual_render import ResolvedVisualBlock, append_visual_docx
 
 MISSING_ANSWER = 'Sin respuesta esperada guardada'
 WORD_TYPES = {'examen', 'quiz_rapido', 'taller', 'ficha', 'lectura_comprensiva'}
@@ -27,17 +28,26 @@ def _answer(item: dict) -> object:
                  if item.get(key) not in (None, '', [])), None)
 
 
-def build_evaluation_material(evaluation, *, soluciones: bool) -> dict:
+def build_evaluation_material(evaluation, *, soluciones: bool, visual_blocks: list[ResolvedVisualBlock] | None = None) -> dict:
     expected = {str(answer.get('numero', index)): _answer(answer)
                 for index, answer in enumerate(evaluation.respuestas_esperadas or [], 1)
                 if isinstance(answer, dict)}
     questions = []
+    pending_visuals = {str(item.block.id): item for item in visual_blocks or []}
     for index, raw in enumerate(evaluation.preguntas or [], 1):
         raw = raw if isinstance(raw, dict) else {'enunciado': str(raw)}
         clean = sanitize_student_payload(deepcopy(raw))
         number = raw.get('numero', index)
         clean['numero'] = number
         clean['opciones'] = [_text(option) for option in clean.get('opciones') or []]
+        # Only trusted, internally resolved values enter the rendering channel.
+        clean.pop('_evaluation_visuals', None)
+        related = [item for item in pending_visuals.values()
+                   if str(raw.get('contenido_id')) in {str(value) for value in item.block.pregunta_ids}]
+        if related:
+            clean['_evaluation_visuals'] = related
+            for item in related:
+                pending_visuals.pop(str(item.block.id))
         if soluciones:
             # El contrato canónico separado es la fuente de verdad de la clave.
             answer = expected.get(str(number))
@@ -48,6 +58,8 @@ def build_evaluation_material(evaluation, *, soluciones: bool) -> dict:
         questions.append(clean)
     if not questions:
         raise ValueError('La evaluación aún no tiene preguntas para visualizar o descargar.')
+    if pending_visuals:
+        raise ValueError('Revisa a qué preguntas pertenece el material antes de descargar la evaluación.')
     return {'tipo': 'examen', 'titulo': evaluation.nombre, 'created_at': evaluation.created_at,
             'contenido_json': {'titulo': evaluation.nombre,
                               'instrucciones': evaluation.descripcion or 'Lee y responde cada punto.',
@@ -63,6 +75,7 @@ def document_disposition(name: str, extension: str, attachment: bool) -> str:
 
 def render_evaluation_docx(material: dict, *, soluciones: bool) -> bytes:
     from docx import Document
+    from docx.oxml.ns import qn
     from docx.shared import Cm, Pt, RGBColor
 
     kind = material.get('tipo')
@@ -86,6 +99,15 @@ def render_evaluation_docx(material: dict, *, soluciones: bool) -> bytes:
         style = document.styles[style_name]
         style.font.name = 'Arial'
         style.font.color.rgb = RGBColor(0, 0, 0)
+        # Word's theme can override an explicit font and add a blue title rule.
+        # These printouts use a plain, portable typographic hierarchy.
+        fonts = style.element.get_or_add_rPr().rFonts
+        if fonts is not None:
+            for key in ('asciiTheme', 'hAnsiTheme', 'eastAsiaTheme', 'cstheme'):
+                fonts.attrib.pop(qn('w:' + key), None)
+        if style.element.pPr is not None:
+            for border in list(style.element.pPr.findall(qn('w:pBdr'))):
+                style.element.pPr.remove(border)
     normal = document.styles['Normal']
     normal.font.size = Pt(11)
     normal.paragraph_format.space_after = Pt(7)
@@ -114,6 +136,10 @@ def render_evaluation_docx(material: dict, *, soluciones: bool) -> bytes:
         paragraph = document.add_paragraph()
         paragraph.paragraph_format.keep_with_next = True
         paragraph.add_run(f'{number}. {_text(safe.get("enunciado"))}{suffix}').bold = True
+        for visual in raw.get('_evaluation_visuals') or []:
+            if not isinstance(visual, ResolvedVisualBlock):
+                raise ValueError('El material visual necesita revisión antes de descargar.')
+            append_visual_docx(document, visual)
         for option_index, option in enumerate(safe.get('opciones') or []):
             text = re.sub(r'^\s*[A-Za-z][).]\s*', '', _text(option))
             p = document.add_paragraph(f'{chr(65 + option_index)}) {text}')
@@ -130,8 +156,9 @@ def render_evaluation_docx(material: dict, *, soluciones: bool) -> bytes:
                 lines = max(1, min(8, int(raw.get('lineas_respuesta') or (3 if kind in {'taller', 'lectura_comprensiva'} else 2))))
             except (TypeError, ValueError):
                 lines = 3
-            for _ in range(lines):
-                document.add_paragraph('________________________________________________________________')
+            for line in range(lines):
+                paragraph = document.add_paragraph('________________________________________________________________')
+                paragraph.paragraph_format.keep_with_next = line < lines - 1
     if soluciones and content.get('criterios_revision'):
         document.add_paragraph('Criterios de revisión', 'Heading 1')
         for criterion in content['criterios_revision']:

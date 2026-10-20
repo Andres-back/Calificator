@@ -6,6 +6,8 @@ import pytest
 from fastapi import UploadFile
 
 from app.modules.evaluaciones import router
+from app.core.config import settings
+from app.modules.evaluaciones.document_visual_extractor import DocumentRendererUnavailable
 from app.workers import tasks_digitalization
 from app.modules.authorization.catalog import default_permissions_for_role
 from app.modules.materias import service as materias_service
@@ -16,6 +18,7 @@ def test_digitalization_retries_transport_errors_but_not_invalid_content() -> No
     assert tasks_digitalization._is_transient_error(TimeoutError("provider timeout"))
     assert tasks_digitalization._is_transient_error(RuntimeError("HTTP 503"))
     assert not tasks_digitalization._is_transient_error(ValueError("archivo invalido"))
+    assert tasks_digitalization._is_transient_error(DocumentRendererUnavailable("El conversor está ocupado"))
 
 
 class FakeDB:
@@ -63,7 +66,9 @@ async def test_digitalization_reuses_normalized_extraction_on_retry(monkeypatch)
 
 
 @pytest.mark.anyio
-async def test_digitalization_is_persisted_and_enqueued(monkeypatch) -> None:
+@pytest.mark.parametrize("visual_enabled", [False, True])
+async def test_digitalization_is_persisted_and_enqueued(monkeypatch, visual_enabled) -> None:
+    monkeypatch.setattr(settings, "EVALUATION_VISUAL_IMPORT_ENABLED", visual_enabled)
     materia_id = uuid4()
     user = SimpleNamespace(
         id=uuid4(), rol=UserRole.PROFESOR.value,
@@ -116,6 +121,7 @@ async def test_digitalization_is_persisted_and_enqueued(monkeypatch) -> None:
     assert queued[0]["job_id"] == str(job_id)
     assert queued[0]["file_key"].startswith(".private/digitalizaciones/")
     assert db.commits == 1
+    assert created[0]["input_json"]["_visual_import_schema"] == (1 if visual_enabled else None)
 
 
 @pytest.mark.anyio

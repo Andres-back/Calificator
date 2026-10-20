@@ -9,6 +9,10 @@ export default defineConfig({
   testMatch: '**/*.mock.spec.ts',
   timeout: 30_000,
   retries: 0,
+  projects: [
+    { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
+    { name: 'webkit', testMatch: '**/evaluation-visuals.mock.spec.ts', use: { ...devices['Desktop Safari'] } },
+  ],
   use: {
     baseURL: 'http://127.0.0.1:4175',
     trace: 'retain-on-failure',
