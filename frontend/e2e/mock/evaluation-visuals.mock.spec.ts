@@ -1,6 +1,10 @@
 import { expect, test, type Page, type Locator } from '@playwright/test';
 
 async function activate(button: Locator, browserName: string, keyboardAllowed = true) {
+  // press() does not perform click()'s enabled/actionability checks. Wait for
+  // React state and loaded previews before sending a real keyboard activation.
+  await expect(button).toBeVisible();
+  await expect(button).toBeEnabled();
   // WebKit headless on Windows can stop its rAF stability clock. Keyboard
   // activation still exercises the accessible real handler, never force/eval.
   if (browserName === 'webkit' && keyboardAllowed) await button.press('Enter');
@@ -142,12 +146,14 @@ for (const [originIndex, origin] of ['nativa', 'externa_digitalizada', 'sorpresa
       await page.screenshot({ path: testInfo.outputPath('visual-editor.png') });
       if (browserName === 'webkit') await confirmation.press('Space');
       else await confirmation.check();
+      await expect(confirmation).toBeChecked();
       await activate(editor.getByRole('button', { name: 'Añadir a la pregunta' }), browserName);
       await expect(editor).not.toBeVisible();
       if (width < 500) await page.setViewportSize({ width, height: 844 });
       const keyCheck = wizard.getByRole('checkbox', { name: 'He comprobado la respuesta correcta con este material.' });
       if (browserName === 'webkit') await keyCheck.press('Space');
       else await keyCheck.check();
+      await expect(keyCheck).toBeChecked();
       const saving = page.waitForRequest(request => request.method() === 'PATCH' && request.url().endsWith(`/evaluaciones/${evaluation.id}`));
       await activate(wizard.getByRole('button', { name: 'Guardar cambios' }), browserName);
       const payload = (await saving).postDataJSON();

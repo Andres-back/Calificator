@@ -2,6 +2,28 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { expect, it, vi } from 'vitest';
 import { Modal } from './Modal';
 
+const motionPreference = vi.hoisted(() => ({ reduced: false }));
+vi.mock('framer-motion', async (importOriginal) => ({
+  ...await importOriginal<typeof import('framer-motion')>(),
+  useReducedMotion: () => motionPreference.reduced,
+}));
+
+it('removes a closed reduced-motion dialog without waiting for animation frames', () => {
+  motionPreference.reduced = true;
+  const frame = vi.spyOn(window, 'requestAnimationFrame').mockReturnValue(1);
+  const opener = document.createElement('button');
+  document.body.append(opener); opener.focus();
+  const view = render(<Modal open title="Material" onClose={vi.fn()}>Propuesta</Modal>);
+  try {
+    expect(screen.getByRole('dialog', { name: 'Material' })).toBeVisible();
+    view.rerender(<Modal open={false} title="Material" onClose={vi.fn()}>Propuesta</Modal>);
+    expect(screen.queryByRole('dialog', { name: 'Material' })).not.toBeInTheDocument();
+    expect(opener).toHaveFocus();
+  } finally {
+    view.unmount(); opener.remove(); frame.mockRestore(); motionPreference.reduced = false;
+  }
+});
+
 it('only closes the top dialog when a figure is enlarged above a preview', () => {
   const parentClose = vi.fn(); const childClose = vi.fn();
   render(<><Modal open title="Evaluación" onClose={parentClose}>Borrador conservado</Modal>

@@ -129,6 +129,10 @@ export function Modal({
     };
   }, [closeOnEscape, initialFocusRef, open]);
 
+  // Reduced-motion users must not wait for an exit frame before the overlay
+  // releases the underlying form. A zero-duration transition still needs rAF.
+  if (reduceMotion && !open) return null;
+
   return (
     <AnimatePresence>
       {open && (
@@ -137,6 +141,7 @@ export function Modal({
           initial={reduceMotion ? false : { opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
+          transition={reduceMotion ? { duration: 0 } : undefined}
         >
           <div
             className="absolute inset-0 bg-slate-950/60 backdrop-blur-[2px]"

@@ -121,3 +121,7 @@ Los rangos abreviados anteriores se expanden aquí sin modificar requisitos ni t
 F1 — partial, HIGH, constitución VII/VIII y T038: el job frontend encadena 268 E2E generales (25,3 min aprobados) y 105 adicionales dentro de 35 min; se agotó antes de completar el segundo grupo e imprimir su fallo. No es evidencia de un frontend aprobado.
 
 - [X] T044 Separar calidad/build y las dos baterías E2E en jobs acotados, conservar las 373 pruebas y sus límites individuales, imprimir fallos en línea y subir diagnósticos antes del límite global; mantener el nombre del control requerido y exigir éxito de todas sus dependencias incluso ante fallos/cancelaciones. Probar contratos del workflow y registrar resultados reales en #222, según constitución VII/VIII y T038 (partial).
+
+## Phase 11: Corrección de regresiones de CI
+
+- [X] T045 Corregir el cierre de diálogos con movimiento reducido sin depender de fotogramas de salida y sincronizar la activación por teclado con los controles habilitados. Añadir regresión unitaria, repetir los casos WebKit afectados y mantener obligatorias las baterías CI completas, según FR-012/022, SC-008 y T038.

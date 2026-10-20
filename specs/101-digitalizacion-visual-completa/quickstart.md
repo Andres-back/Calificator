@@ -173,6 +173,14 @@ En `f475eb5` backend, contenedores y gobernanza quedaron verdes. Frontend aprob�
 
 Estabilidad WebKit headless de escritorio: las aperturas de menú/modal emplean la misma activación accesible por teclado que sus acciones finales, sobre controles reales (summary y botones), sin force/evaluate ni ampliar timeout. Se mantienen puntero en aperturas móviles/Chromium y zoom móvil. Los dos recorridos antes lentos de tabla nativa y dibujo digitalizado pasan en **8,3/7,9 s** (frente a aproximadamente 23–29 s); lectores claro/oscuro pasan en **5,4/4,1 s**. Cuatro casos focalizados aprobados con mismas aserciones. No cambia la UI de aplicación ni la cantidad de pruebas.
 
+### Regresión de cierre y activación — 2026-10-20
+
+El HEAD `ec5ad5e` aprobó backend, contenedores, gobernanza, calidad/build y los **268 E2E generales**. La batería contextual dio **102 aprobados y tres fallidos** en WebKit de escritorio: dos aceptaciones de tabla y el cierre del editor tras guardar un dibujo. El control agregado falló correctamente; no se fusionó ni se cambió producción.
+
+Las trazas mostraron que `press()` podía enviarse antes de que React habilitara el botón y que `AnimatePresence` mantenía el diálogo cerrado hasta recibir un fotograma, incluso con movimiento reducido. La nueva regresión unitaria falló primero y luego pasó al retirar inmediatamente el diálogo cerrado cuando el usuario solicita reducir movimiento; conserva limpieza de listeners, scroll y devolución del foco. Las pruebas esperan visibilidad, habilitación y casillas comprobadas antes de activar por teclado. No se ampliaron tiempos, omitieron casos ni introdujeron `force`/handlers simulados. **40 pruebas unitarias focalizadas**, TypeScript y lint estricto aprobados; el resultado visual y el HEAD remoto final se registran en el PR.
+
+Los tres recorridos WebKit afectados pasan localmente con las mismas aserciones: tabla manual **11,5 s**, tabla IA sintética **9,1 s** y dibujo digitalizado **7,8 s**. Las ocho pruebas del workflow vuelven a pasar; Git Bash requirió ejecución fuera del sandbox para arrancar, sin cambios al test ni al script. La batería completa remota del nuevo HEAD sigue siendo una puerta pendiente, no se extrapola de estas tres comprobaciones.
+
 ### Activación y recuperación operativa
 
 Las tres variables `EVALUATION_VISUAL_IMPORT_ENABLED`, `EVALUATION_VISUAL_EDITOR_ENABLED`, `EVALUATION_VISUAL_GENERATION_ENABLED` siguen en `false` por defecto. Tras autorización separada y migración compatible: levantar el conversor interno restringido, comprobar su salud, habilitar importación/editor y solo después generación con proveedor configurado y presupuesto. Ante incidente, apagar las tres escrituras y conservar lectores, archivos y migración: no ejecutar downgrade destructivo ni borrar versiones/evidencias. Los trabajos ya iniciados conservan su ruta capturada; propuestas sin aceptación no se publican.
