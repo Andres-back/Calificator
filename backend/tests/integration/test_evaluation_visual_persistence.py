@@ -33,7 +33,11 @@ async def database():
     admin = create_async_engine(TEST_URL)
     async with admin.begin() as connection:
         await connection.execute(text(f"CREATE SCHEMA {schema}"))
-    engine = create_async_engine(TEST_URL, connect_args={"server_settings": {"search_path": schema + ",public"}})
+    # search_path alone lets create_all(checkfirst=True) find public tables
+    # from earlier CI suites and skip our local copies. Qualify ORM DDL/DML
+    # explicitly while keeping public visible only for extension functions.
+    engine = create_async_engine(TEST_URL, connect_args={"server_settings": {"search_path": schema + ",public"}},
+                                 execution_options={"schema_translate_map": {None: schema}})
     try:
         yield engine
     finally:
@@ -137,6 +141,10 @@ def create_domain_tables(connection):
                  'calificacion_desgloses', 'calificacion_componentes', 'calificacion_ajustes'):
         include(Base.metadata.tables[name])
     Base.metadata.create_all(connection, tables=list(tables))
+    schema = connection.execute(text('SELECT current_schema()')).scalar_one()
+    # A shared CI database must not cause this fixture to use another suite's rows.
+    local_tables = set(inspect(connection).get_table_names(schema=schema))
+    assert {table.name for table in tables} <= local_tables
 
 
 def test_migration_refuses_destructive_downgrade():
