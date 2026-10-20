@@ -161,6 +161,8 @@ Converge final: **sin brechas de implementación nuevas**, 22 FR, 9 SC, 25 escen
 
 El registro de CI es una puerta de entrega posterior a crear el PR, no una afirmación previa: **Backend quality and tests**, **Frontend quality, build and E2E**, **Container builds** y **Spec governance** deben estar verdes para el HEAD final. Se registrarán URLs/estado real en el PR y en esta sección. Nada autoriza fusionar, activar flags, inferir con material real ni desplegar automáticamente.
 
+PR creado: [#222](https://github.com/Andres-back/Calificator/pull/222), ligado a #211, rama `codex/101-digitalizacion-visual-completa`, código integrado `8af3b32`. HEAD exacto y cuatro resultados vigentes se consultan en el PR (el commit documental posterior no se identifica a sí mismo). **CI pendiente al abrir; no se afirma verde**. T038 cierra preparación/registro de la puerta, no autorización de lanzamiento. El PR permanece en borrador hasta revisar los resultados.
+
 ### Activación y recuperación operativa
 
 Las tres variables `EVALUATION_VISUAL_IMPORT_ENABLED`, `EVALUATION_VISUAL_EDITOR_ENABLED`, `EVALUATION_VISUAL_GENERATION_ENABLED` siguen en `false` por defecto. Tras autorización separada y migración compatible: levantar el conversor interno restringido, comprobar su salud, habilitar importación/editor y solo después generación con proveedor configurado y presupuesto. Ante incidente, apagar las tres escrituras y conservar lectores, archivos y migración: no ejecutar downgrade destructivo ni borrar versiones/evidencias. Los trabajos ya iniciados conservan su ruta capturada; propuestas sin aceptación no se publican.
