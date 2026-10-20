@@ -326,6 +326,12 @@ actualizar la especificación propietaria, su plan y sus tareas; no debe crear d
 
 ## Evolución 102: cámara y evaluación completa
 
+## Evolución 101: digitalización visual completa
+
+- [101-digitalizacion-visual-completa](101-digitalizacion-visual-completa/spec.md), [issue #211](https://github.com/Andres-back/Calificator/issues/211), [PR #222](https://github.com/Andres-back/Calificator/pull/222): originales privados, tablas/figuras de PDF/Word/foto, lector y documentos completos, editor opcional manual/IA y contexto de calificación versionado. Propietarios 005/008/012; alcance y plan aprobados, listas 16/16 y 8/8 completas. [Validación, rendimiento y límites](101-digitalizacion-visual-completa/quickstart.md). Flags apagadas por defecto, sin datos reales, inferencia pagada, cambios académicos ni despliegue. CI y autorización separada obligatorios antes de fusionar.
+
+## Evolución 102: cámara y evaluación completa (detalle)
+
 - [102-camara-visor-completo](102-camara-visor-completo/spec.md), [issue #212](https://github.com/Andres-back/Calificator/issues/212): cámara integrada confirmada y subida alternativa; lectura amplia continua con documentos bajo Opciones. Propietarios 005/008; sin alterar notas/evidencias/IA ni mezclar Spec 101. Usuario aprobó [plan](102-camara-visor-completo/plan.md) y autorizó revisión de [lista UX](102-camara-visor-completo/checklists/ux.md): Specify 16/16, UX 8/8. Implementación y regresiones locales en [quickstart](102-camara-visor-completo/quickstart.md); PR/CI pendientes. Sin fusión/despliegue manual.
 
 ## Evolución 099: revisión docente enfocada

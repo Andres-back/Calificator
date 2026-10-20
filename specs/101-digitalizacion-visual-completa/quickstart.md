@@ -163,6 +163,8 @@ El registro de CI es una puerta de entrega posterior a crear el PR, no una afirm
 
 PR creado: [#222](https://github.com/Andres-back/Calificator/pull/222), ligado a #211, rama `codex/101-digitalizacion-visual-completa`, código integrado `8af3b32`. HEAD exacto y cuatro resultados vigentes se consultan en el PR (el commit documental posterior no se identifica a sí mismo). **CI pendiente al abrir; no se afirma verde**. T038 cierra preparación/registro de la puerta, no autorización de lanzamiento. El PR permanece en borrador hasta revisar los resultados.
 
+Primer control remoto de gobernanza falló por índice sin entrada 101 y referencias FR abreviadas no reconocidas por regex. Se añadieron entrada y referencias explícitas; no se modificó el validador ni se omitieron pruebas. Los tres controles técnicos aún estaban pendientes al corregirlo. El historial de ejecuciones conserva ese fallo; solo se considerará el resultado del HEAD vigente.
+
 ### Activación y recuperación operativa
 
 Las tres variables `EVALUATION_VISUAL_IMPORT_ENABLED`, `EVALUATION_VISUAL_EDITOR_ENABLED`, `EVALUATION_VISUAL_GENERATION_ENABLED` siguen en `false` por defecto. Tras autorización separada y migración compatible: levantar el conversor interno restringido, comprobar su salud, habilitar importación/editor y solo después generación con proveedor configurado y presupuesto. Ante incidente, apagar las tres escrituras y conservar lectores, archivos y migración: no ejecutar downgrade destructivo ni borrar versiones/evidencias. Los trabajos ya iniciados conservan su ruta capturada; propuestas sin aceptación no se publican.

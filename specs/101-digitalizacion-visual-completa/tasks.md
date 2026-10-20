@@ -111,3 +111,7 @@ F1 — partial, MEDIUM, FR-007/014 y plan: rendimiento. La proyección segura ex
 ### Secuencia de CI
 
 La redacción de T038 separa preparación local/creación del PR de su puerta externa: gobernanza exige tareas de implementación cerradas, pero CI solo existe después de abrir el PR. El registro puede indicar «pendiente» sin afirmar controles verdes. Esto no modifica el validador, el plan ni la obligación constitucional de cuatro controles verdes y autorización separada para fusionar/desplegar.
+
+### Referencias explícitas para el validador
+
+Los rangos abreviados anteriores se expanden aquí sin modificar requisitos ni tareas: FR-015 → T029/T033/T034; FR-016 → T033/T036; FR-018 → T026/T027/T029/T030/T040/T041/T042; FR-019 → T028/T031; FR-020 → T025/T030; FR-021 → T019/T024/T031; FR-022 → T026/T027/T029/T033/T040/T041. El registro del índice principal y estas referencias forman parte de T037/T038, no son una omisión de requisitos.
