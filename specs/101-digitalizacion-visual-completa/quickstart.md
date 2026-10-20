@@ -165,6 +165,8 @@ PR creado: [#222](https://github.com/Andres-back/Calificator/pull/222), ligado a
 
 Primer control remoto de gobernanza falló por índice sin entrada 101 y referencias FR abreviadas no reconocidas por regex. Se añadieron entrada y referencias explícitas; no se modificó el validador ni se omitieron pruebas. Los tres controles técnicos aún estaban pendientes al corregirlo. El historial de ejecuciones conserva ese fallo; solo se considerará el resultado del HEAD vigente.
 
+Después de corregirlo: **41 pruebas de gobernanza aprobadas en un archivo limpio del commit** (sin incorporar ni borrar Spec 098). Auditoría frontend: 489 botones y 120 enlaces con propósito verificable; assets/precargas dentro del presupuesto. Listado docente/estudiante volvió a pasar contra PostgreSQL tras la optimización. Los resultados remotos finales se registran como comentario en el PR para no provocar otra ejecución al escribir el resultado de la propia ejecución.
+
 ### Activación y recuperación operativa
 
 Las tres variables `EVALUATION_VISUAL_IMPORT_ENABLED`, `EVALUATION_VISUAL_EDITOR_ENABLED`, `EVALUATION_VISUAL_GENERATION_ENABLED` siguen en `false` por defecto. Tras autorización separada y migración compatible: levantar el conversor interno restringido, comprobar su salud, habilitar importación/editor y solo después generación con proveedor configurado y presupuesto. Ante incidente, apagar las tres escrituras y conservar lectores, archivos y migración: no ejecutar downgrade destructivo ni borrar versiones/evidencias. Los trabajos ya iniciados conservan su ruta capturada; propuestas sin aceptación no se publican.
