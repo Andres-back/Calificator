@@ -557,6 +557,8 @@ function LecturaContent({ data }: { data: ToolContent }) {
   const questions = data.preguntas ?? [];
   return (
     <div className="space-y-5">
+      <h2 className="text-center font-display text-2xl font-bold">{data.titulo || 'Lectura comprensiva'}</h2>
+      {imageSrc(data.imagen) && <ImageFrame image={data.imagen} alt={data.titulo || 'Ilustración de la lectura'} className="mx-auto w-full max-w-2xl" />}
       {(data.instrucciones || data.estrategia_lectora) && (
         <div className="rounded-xl border border-brand-200 bg-brand-50 p-4 text-sm leading-6 dark:border-brand-500/30 dark:bg-brand-500/10">
           {data.instrucciones && <p><b>Cómo trabajar:</b> {data.instrucciones}</p>}
@@ -586,7 +588,7 @@ function LecturaContent({ data }: { data: ToolContent }) {
         <Block key={`${question.numero}-${index}`} i={index}>
           <div className="flex flex-wrap items-start gap-2">
             <p className="font-semibold leading-6">
-              <span className="text-brand-600">{question.numero ?? index + 1}.</span> {question.enunciado}
+              <span className="text-brand-600">{index + 1}.</span> {question.enunciado?.replace(/^\s*\d+\s*[.)]\s+/, '')}
             </p>
             {question.tipo && <Badge tone="violet">{question.tipo}</Badge>}
             {question.dificultad && <Badge tone="neutral">{question.dificultad}</Badge>}

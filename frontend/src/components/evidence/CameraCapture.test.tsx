@@ -52,7 +52,7 @@ describe('CameraCapture', () => {
     await screen.findByRole('option', { name: 'USB' });
     readyVideo();
     fireEvent.click(screen.getByRole('button', { name: 'Tomar foto' }));
-    expect(await screen.findByRole('img', { name: 'Foto para revisar' })).toBeVisible();
+    await waitFor(() => expect(screen.getByRole('img', { name: 'Foto para revisar' })).toBeVisible());
     expect(selected.track.stop).toHaveBeenCalledOnce();
     expect(accept).not.toHaveBeenCalled();
   });
