@@ -128,6 +128,7 @@ export function CuentoForm({ loading, onSubmit }: ToolFormProps) {
   const b = useBaseForm();
   const [personajes, setPersonajes] = useState<string[]>([]);
   const [longitud, setLongitud] = useState('corto');
+  const [moraleja, setMoraleja] = useState('automatico');
   return (
     <div className="space-y-5">
       <BaseFields base={b.base} set={b.set} tituloPlaceholder="El viaje de una gota de agua" />
@@ -135,7 +136,7 @@ export function CuentoForm({ loading, onSubmit }: ToolFormProps) {
       <FormSection title="Personajes" hint="Opcional. Si lo dejas vacío, la IA elige.">
         <TagInput value={personajes} onChange={setPersonajes} placeholder="Lina, Tomás, Profe Ana…" />
       </FormSection>
-      <FormSection title="Longitud del cuento">
+      <FormSection title="Longitud del cuento" hint="Corto: una página. Medio y largo: hasta dos, sin contar las preguntas.">
         <Segmented
           value={longitud}
           onChange={setLongitud}
@@ -146,8 +147,15 @@ export function CuentoForm({ loading, onSubmit }: ToolFormProps) {
           ]}
         />
       </FormSection>
+      <FormSection title="Moraleja" hint="Si eliges automática, revisa si la enseñanza encaja con la historia.">
+        <Segmented value={moraleja} onChange={setMoraleja} options={[
+          { value: 'automatico', label: 'Automática' },
+          { value: 'con', label: 'Con moraleja' },
+          { value: 'sin', label: 'Sin moraleja' },
+        ]} />
+      </FormSection>
       <ExtraInstructions value={b.base.instrucciones_adicionales} onChange={(v) => b.set('instrucciones_adicionales', v)} />
-      <GenerateButton loading={loading} disabled={!b.valid} onClick={() => onSubmit({ ...b.payload(), personajes, longitud })} />
+      <GenerateButton loading={loading} disabled={!b.valid} onClick={() => onSubmit({ ...b.payload(), personajes, longitud, moraleja })} />
     </div>
   );
 }

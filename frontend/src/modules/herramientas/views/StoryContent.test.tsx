@@ -3,6 +3,16 @@ import { describe, expect, it } from 'vitest';
 import { StoryContent } from './StoryContent';
 
 describe('StoryContent', () => {
+  it('108 presenta título, ilustración completa y narración en ese orden', () => {
+    render(<StoryContent data={{ titulo: 'Lectura vertical', imagen: { b64_data: 'synthetic' }, parrafos: ['Narración después de la imagen.'] }} />);
+    const title = screen.getByRole('heading', { name: 'Lectura vertical' });
+    const image = screen.getByRole('img', { name: 'Lectura vertical' });
+    const narrative = screen.getByLabelText('Narración del cuento');
+    expect(title.compareDocumentPosition(image) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(image.compareDocumentPosition(narrative) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(image).toHaveClass('object-contain');
+    expect(image.closest('[class*="lg:grid-cols-"]')).toBeNull();
+  });
   it('organiza portada, personajes, narración, enseñanza y preguntas con jerarquía legible', () => {
     render(
       <StoryContent
@@ -30,5 +40,13 @@ describe('StoryContent', () => {
 
     expect(screen.getByText('Historia lista para leer')).toBeVisible();
     expect(screen.getByText('La historia continúa.')).toBeInTheDocument();
+    expect(screen.queryByRole('img')).not.toBeInTheDocument();
+    expect(screen.getByText('La ilustración todavía no está disponible.')).toBeVisible();
+  });
+
+  it('no duplica el prefijo numérico de preguntas generadas', () => {
+    render(<StoryContent data={{ parrafos: ['Lina cuidó la huerta.'], preguntas_comprension: ['1. ¿Qué pasó?'] }} />);
+    expect(screen.getByText('¿Qué pasó?')).toBeVisible();
+    expect(screen.queryByText('1. ¿Qué pasó?')).not.toBeInTheDocument();
   });
 });

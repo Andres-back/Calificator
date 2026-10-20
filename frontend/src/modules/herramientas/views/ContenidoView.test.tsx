@@ -68,6 +68,17 @@ const cases: Array<{ tipo: MaterialTipo; expected: string; data: ToolContent }> 
 ];
 
 describe('renderización de herramientas', () => {
+  it('108 muestra la ilustración de lectura entre título y texto sin alterar los datos', () => {
+    const data = { ...cases.find(item => item.tipo === 'lectura_comprensiva')!.data, titulo: 'Lectura con imagen', imagen: { b64_data: 'synthetic' } };
+    const before = JSON.stringify(data);
+    render(<ContenidoView tipo="lectura_comprensiva" data={data} />);
+    const title = screen.getByRole('heading', { name: 'Lectura con imagen' });
+    const image = screen.getByRole('img', { name: 'Lectura con imagen' });
+    const text = screen.getByText('El agua cambia de estado.');
+    expect(title.compareDocumentPosition(image) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(image.compareDocumentPosition(text) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(JSON.stringify(data)).toBe(before);
+  });
   it.each(cases)('renderiza $tipo con contenido legible', ({ tipo, data, expected }) => {
     const { container } = render(<ContenidoView tipo={tipo} data={data} />);
 

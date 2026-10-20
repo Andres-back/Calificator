@@ -29,17 +29,17 @@ function imageSrc(image?: StoryImage) {
 }
 
 function readableQuestion(value: unknown) {
-  if (typeof value === 'string' || typeof value === 'number') return String(value);
+  if (typeof value === 'string' || typeof value === 'number') return String(value).replace(/^\s*\d+\s*[.)]\s+/, '');
   if (!value || typeof value !== 'object') return '';
   const item = value as Record<string, unknown>;
-  return String(item.enunciado ?? item.pregunta ?? item.texto ?? item.descripcion ?? '');
+  return String(item.enunciado ?? item.pregunta ?? item.texto ?? item.descripcion ?? '').replace(/^\s*\d+\s*[.)]\s+/, '');
 }
 
 function StoryImageFrame({ image, alt }: { image?: StoryImage; alt: string }) {
   const src = imageSrc(image);
   if (!src) {
     return (
-      <div className="grid aspect-[4/3] place-items-center rounded-2xl border border-dashed border-violet-200 bg-white/75 p-6 text-center dark:border-violet-500/25 dark:bg-surface/70">
+      <div className="rounded-xl border border-dashed border-violet-200 bg-white/75 p-3 text-center dark:border-violet-500/25 dark:bg-surface/70">
         <div>
           <BookOpen className="mx-auto h-9 w-9 text-violet-400" aria-hidden="true" />
           <p className="mt-3 text-sm font-semibold text-fg">Historia lista para leer</p>
@@ -50,7 +50,7 @@ function StoryImageFrame({ image, alt }: { image?: StoryImage; alt: string }) {
   }
   return (
     <div className="overflow-hidden rounded-2xl border border-white/80 bg-white/85 p-2 shadow-xl dark:border-white/10 dark:bg-surface/80">
-      <img src={src} alt={alt} className="aspect-[4/3] max-h-[430px] w-full rounded-xl object-cover" />
+      <img src={src} alt={alt} className="mx-auto max-h-[340px] w-full rounded-xl object-contain" />
     </div>
   );
 }
@@ -74,7 +74,8 @@ export function StoryContent({ data }: { data: StoryData }) {
       <section className="relative isolate overflow-hidden rounded-3xl border border-violet-200 bg-gradient-to-br from-violet-50 via-white to-amber-50 p-4 shadow-sm dark:border-violet-500/30 dark:from-violet-500/10 dark:via-surface dark:to-amber-500/10 sm:p-6">
         <div className="pointer-events-none absolute -right-16 -top-20 h-56 w-56 rounded-full bg-violet-200/50 blur-3xl dark:bg-violet-500/10" aria-hidden="true" />
         <div className="pointer-events-none absolute -bottom-24 -left-16 h-52 w-52 rounded-full bg-amber-200/55 blur-3xl dark:bg-amber-500/10" aria-hidden="true" />
-        <div className="relative grid gap-6 lg:grid-cols-[minmax(280px,0.9fr)_minmax(0,1.25fr)] lg:items-center">
+        <div className="relative mx-auto grid max-w-4xl gap-6">
+          <h2 className="text-balance text-center font-display text-2xl font-black leading-tight text-slate-950 dark:text-white sm:text-3xl">{data.titulo || 'Una historia para aprender'}</h2>
           <div className="relative">
             <div className="absolute -left-2 -top-2 z-10 inline-flex items-center gap-1.5 rounded-full border border-white/80 bg-white/90 px-3 py-1.5 text-xs font-extrabold uppercase tracking-[0.12em] text-violet-700 shadow-sm backdrop-blur dark:border-white/10 dark:bg-surface/90 dark:text-violet-200">
               <Sparkles className="h-3.5 w-3.5" aria-hidden="true" /> Historia ilustrada
@@ -85,7 +86,6 @@ export function StoryContent({ data }: { data: StoryData }) {
             <div className="inline-flex items-center gap-2 rounded-full bg-violet-100 px-3 py-1 text-xs font-bold text-violet-700 dark:bg-violet-500/15 dark:text-violet-200">
               <BookOpen className="h-4 w-4" aria-hidden="true" /> Momento de leer
             </div>
-            <h2 className="mt-3 text-balance font-display text-2xl font-black leading-tight text-slate-950 dark:text-white sm:text-3xl">{data.titulo || 'Una historia para aprender'}</h2>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-muted">Lee con calma, imagina cada escena y descubre el aprendizaje que guarda esta historia.</p>
             {characters.length > 0 && (
               <div className="mt-5 rounded-2xl border border-white/80 bg-white/75 p-4 shadow-sm backdrop-blur dark:border-white/10 dark:bg-surface/70">

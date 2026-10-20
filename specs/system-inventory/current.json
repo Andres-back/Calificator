@@ -470,7 +470,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "98136223f5ba5e6f7eb38ff850229cf36f304186f84f2f9982d61d2a70e4fcf1",
+  "source_digest": "707b28bf0422ff241ee2f2a3f22ec2529ac5fd723cdc8742735a4027ab88954a",
   "surfaces": [
     {
       "actors": [
@@ -6055,6 +6055,12 @@
           "level": "unit",
           "reference": "GET:/materias",
           "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/forms/cuento.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias",
+          "status": "direct",
           "test_path": "frontend/src/modules/herramientas/resourcePresentationModel.test.ts"
         },
         {
@@ -6335,6 +6341,12 @@
           "reference": "GET:/materias/{materia_id}",
           "status": "direct",
           "test_path": "frontend/src/modules/herramientas/forms/base.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias/{materia_id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/forms/cuento.test.tsx"
         },
         {
           "level": "unit",
@@ -9670,6 +9682,12 @@
           "reference": "PATCH:/materias/{materia_id}",
           "status": "direct",
           "test_path": "frontend/src/modules/herramientas/forms/base.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/materias/{materia_id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/forms/cuento.test.tsx"
         },
         {
           "level": "unit",
@@ -15048,6 +15066,12 @@
           "level": "unit",
           "reference": "POST:/materias",
           "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/forms/cuento.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/materias",
+          "status": "direct",
           "test_path": "frontend/src/modules/herramientas/resourcePresentationModel.test.ts"
         },
         {
@@ -17019,6 +17043,12 @@
           "level": "unit",
           "reference": "/",
           "status": "direct",
+          "test_path": "backend/tests/unit/test_reading_worksheet_layout.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
           "test_path": "backend/tests/unit/test_tasks_grading.py"
         },
         {
@@ -17764,6 +17794,12 @@
           "reference": "/",
           "status": "direct",
           "test_path": "frontend/src/modules/herramientas/forms/base.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/forms/cuento.test.tsx"
         },
         {
           "level": "unit",
@@ -28724,6 +28760,12 @@
           "level": "unit",
           "reference": "GET:/materias/{id}",
           "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/forms/cuento.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias/{id}",
+          "status": "direct",
           "test_path": "frontend/src/modules/herramientas/resourcePresentationModel.test.ts"
         },
         {
@@ -29271,6 +29313,12 @@
           "reference": "GET:/materias",
           "status": "direct",
           "test_path": "frontend/src/modules/herramientas/forms/base.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias",
+          "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/forms/cuento.test.tsx"
         },
         {
           "level": "unit",
@@ -31766,6 +31814,12 @@
           "reference": "PATCH:/materias/{id}",
           "status": "direct",
           "test_path": "frontend/src/modules/herramientas/forms/base.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/materias/{id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/forms/cuento.test.tsx"
         },
         {
           "level": "unit",
@@ -36099,6 +36153,12 @@
           "reference": "POST:/materias",
           "status": "direct",
           "test_path": "frontend/src/modules/herramientas/forms/base.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/materias",
+          "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/forms/cuento.test.tsx"
         },
         {
           "level": "unit",
@@ -42862,6 +42922,12 @@
           "reference": "materias",
           "status": "direct",
           "test_path": "frontend/src/modules/herramientas/forms/base.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "materias",
+          "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/forms/cuento.test.tsx"
         },
         {
           "level": "unit",

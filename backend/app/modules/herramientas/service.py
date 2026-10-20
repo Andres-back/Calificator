@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import asyncio
 from typing import Any
 from uuid import UUID
 
@@ -26,6 +27,7 @@ from app.modules.herramientas.puzzle_builder import (
 )
 from app.modules.herramientas.content_quality import normalize_material_content, prepare_evaluation_criteria
 from app.modules.herramientas.evaluation_criteria import teacher_criteria_from
+from app.modules.herramientas.story_quality import StoryQualityError, validate_story
 from app.modules.herramientas.generators import (
     crucigrama,
     cuento,
@@ -135,12 +137,17 @@ async def _generate_with_quality(
     try:
         for attempt in range(2):
             result = await generator()
-            normalized, issues = normalize_material_content(
-                tipo,
-                result,
-                fallback_title=str(getattr(req, "titulo", "Material")),
-                expected_count=expected_count,
-            )
+            try:
+                if tipo == MaterialTipo.CUENTO:
+                    await asyncio.to_thread(validate_story, result, req)
+                normalized, issues = normalize_material_content(
+                    tipo,
+                    result,
+                    fallback_title=str(getattr(req, "titulo", "Material")),
+                    expected_count=expected_count,
+                )
+            except StoryQualityError as exc:
+                normalized, issues = {}, [str(exc)]
             if not issues:
                 return _ensure_alignment_metadata(normalized, req, tipo)
             last_issues = issues
@@ -1025,7 +1032,7 @@ async def gen_cuento(db: AsyncSession, req: CuentoRequest, current_user: User) -
     )
     image_prompt = cuento.build_image_prompt(req, result)
     image = await generate_image(
-        prompt=image_prompt, image_type="educativa_profesional", size="1024x1024",
+        prompt=image_prompt, image_type="educativa_profesional", size="1024x1024", strict_provider=True,
         db=db, teacher_id=current_user.id,
     )
     await imagenes_service.register_imagen_generada(
@@ -1054,8 +1061,8 @@ async def gen_cuento(db: AsyncSession, req: CuentoRequest, current_user: User) -
         commit=False,
     )
     result["imagen"] = {
-        "url": image.url,
-        "b64_data": image.b64_data,
+        "url": None if image.is_placeholder else image.url,
+        "b64_data": None if image.is_placeholder else image.b64_data,
         "provider": image.provider,
         "is_placeholder": image.is_placeholder,
         "prompt": image_prompt,

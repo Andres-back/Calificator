@@ -29,6 +29,7 @@ TOOL_LABELS = {
     "unir_columnas": "Unir Columnas",
     "emparejar": "Emparejar",
     "cuento": "Cuento",
+    "lectura_comprensiva": "Lectura comprensiva",
     "para_colorear": "Para Colorear",
     "guia": "Guía de Aprendizaje",
     "taller": "Taller",
@@ -140,6 +141,15 @@ table.grid td {{ padding: 6px 8px; border: 1px solid #E5E7EB; vertical-align: to
 .opt {{ font-size: 11px; margin: 3px 0 3px 8px; }}
 .opt .circle {{ color: {INDIGO}; font-weight: bold; }}
 .pts {{ color: {VIOLET}; font-weight: bold; font-size: 10px; }}
+.reading-illustration {{ text-align: center; margin: 0 0 14px; }}
+.reading-illustration .material-image {{ max-height: 220px; max-width: 100%; }}
+.reading-narrative {{ font-size: 12.5px; line-height: 1.6; white-space: pre-line; }}
+.reading-narrative .p {{ font-size: inherit; line-height: inherit; }}
+.worksheet-questions {{ break-before: page; page-break-before: always; }}
+.worksheet-question {{ margin-bottom: 6mm; break-inside: auto; }}
+.question-start {{ break-inside: avoid; page-break-inside: avoid; }}
+.question-number {{ font-weight: bold; }}
+.answer-line {{ border-bottom: 1px solid #9CA3AF; height: 7mm; }}
 """
 
 
@@ -364,21 +374,66 @@ def _render_cuento(c: dict, soluciones: bool) -> str:
 def _render_cuento_mejorado(c: dict, soluciones: bool) -> str:
     personajes = ", ".join(c.get("personajes") or [])
     parrafos = "".join(f'<p class="p">{_e(p)}</p>' for p in c.get("parrafos") or [])
-    image = _render_image_box(c.get("imagen"), alt=c.get("titulo") or "Cuento")
+    image = _reading_illustration(c)
     out = ['<div class="sectionbar">CUENTO</div>']
-    out.append('<div class="story-grid">')
     out.append(image)
-    out.append('<div class="story-panel">')
+    out.append('<div class="reading-narrative">')
     if personajes:
         out.append(f'<p class="p"><b>Personajes:</b> {_e(personajes)}</p>')
     out.append(parrafos)
-    out.append("</div></div>")
+    out.append("</div>")
     if c.get("moraleja"):
         out.append(f'<div class="moraleja"><b>Moraleja:</b> {_e(c["moraleja"])}</div>')
-    if c.get("preguntas_comprension"):
-        out.append('<div class="h3">Preguntas de comprension</div>')
-        out.append(_ul(c["preguntas_comprension"]))
+    out.append(_reading_questions(c.get("preguntas_comprension"), soluciones))
     return "".join(out)
+
+
+def _reading_illustration(content: dict) -> str:
+    if not _image_src(content.get("imagen")):
+        return ""
+    return '<div class="reading-illustration">' + _render_image_box(content["imagen"], alt=content.get("titulo") or "Ilustración de la lectura") + '</div>'
+
+
+def _reading_answer_lines(question: dict) -> int:
+    text = str(question.get("enunciado") or "").casefold()
+    kind = str(question.get("tipo") or "").casefold()
+    if kind in {"inferencial", "critica", "crítica"} or re.search(r"explic|justific|por\s+qu[eé]|argument|razona|opini[oó]n", text):
+        return 4
+    answer = question.get("respuesta_esperada")
+    if answer is None or not str(answer).strip():
+        return 3
+    return 4 if len(str(answer).split()) > 16 or len(str(answer)) > 120 else 2
+
+
+def _reading_questions(questions: Any, soluciones: bool) -> str:
+    if not isinstance(questions, list):
+        return ""
+    # Proyectar solo enunciados: nunca convertir un dict entero en texto visible,
+    # pues podría contener el solucionario de un recurso previo.
+    visible = []
+    for item in questions:
+        question = item if isinstance(item, dict) else {"enunciado": item} if isinstance(item, str) else {}
+        text = question.get("enunciado") or question.get("pregunta") or question.get("texto")
+        if isinstance(text, str) and text.strip():
+            visible.append({**question, "enunciado": re.sub(r"^\s*\d+\s*[.)]\s+", "", text.strip())})
+    if not visible:
+        return ""
+    out = ['<section class="worksheet-questions"><div class="sectionbar">Preguntas de comprensión</div>',
+           '<p class="p"><b>Nombre:</b> <span class="header-line">&nbsp;</span></p>']
+    for number, question in enumerate(visible, 1):
+        out.append('<div class="worksheet-question"><div class="question-start">')
+        out.append(f'<p class="p"><span class="question-number">{number}.</span> {_e(question["enunciado"])}</p>')
+        if not soluciones:
+            out.append('<div class="answer-line"></div></div>')
+            out.extend('<div class="answer-line"></div>' for _ in range(_reading_answer_lines(question) - 1))
+        else:
+            out.append('</div>')
+            for key, label in (("respuesta_esperada", "Respuesta"), ("evidencia_textual", "Evidencia"), ("justificacion", "Por qué")):
+                if question.get(key):
+                    out.append(f'<p class="opt"><b>{label}:</b> {_e(question[key])}</p>')
+        out.append('</div>')
+    out.append('</section>')
+    return ''.join(out)
 
 
 def _render_para_colorear(c: dict, soluciones: bool) -> str:
@@ -566,33 +621,18 @@ _RENDERERS = {
 # ── Lectura comprensiva ──────────────────────────────────────────────────────
 def _render_lectura_comprensiva(c: dict, soluciones: bool) -> str:
     out = ['<div class="sectionbar">LECTURA COMPRENSIVA</div>']
+    out.append(_reading_illustration(c))
     if c.get("instrucciones"):
         out.append(f'<div class="instr indigo">{_e(c["instrucciones"])}</div>')
     if c.get("estrategia_lectora"):
         out.append(f'<div class="instr"><b>Estrategia:</b> {_e(c["estrategia_lectora"])}</div>')
     if c.get("texto"):
-        out.append('<div class="card" style="background:#EFF6FF; border-color:#BFDBFE;">')
-        out.append(f'<p class="p" style="font-size:11.5px; line-height:1.6; margin:0;">{_e(c["texto"])}</p>')
+        out.append('<div class="reading-narrative">')
+        out.append(f'<p class="p">{_e(c["texto"])}</p>')
         if c.get("fuente"):
             out.append(f'<p class="opt"><b>Fuente:</b> {_e(c["fuente"])}</p>')
         out.append("</div>")
-    if c.get("preguntas"):
-        out.append('<div class="h3">Preguntas de comprensión</div>')
-        for q in c["preguntas"]:
-            out.append('<div class="card">')
-            badge_values = [q.get("tipo"), q.get("dificultad")]
-            badge = " · ".join(_e(value) for value in badge_values if value)
-            tipo_badge = f' <span class="pts">[{badge}]</span>' if badge else ""
-            out.append(f'<p class="p"><b>{_e(q.get("numero"))}.</b> {_e(q.get("enunciado"))}{tipo_badge}</p>')
-            if soluciones and q.get("respuesta_esperada"):
-                out.append(f'<p class="opt" style="color:#15803D"><b>Respuesta:</b> {_e(q["respuesta_esperada"])}</p>')
-                if q.get("evidencia_textual"):
-                    out.append(f'<p class="opt" style="color:#15803D"><b>Evidencia:</b> {_e(q["evidencia_textual"])}</p>')
-                if q.get("justificacion"):
-                    out.append(f'<p class="opt" style="color:#15803D"><b>Por qué:</b> {_e(q["justificacion"])}</p>')
-            else:
-                out.append('<div class="line"></div><div class="line"></div><div class="line"></div>')
-            out.append("</div>")
+    out.append(_reading_questions(c.get("preguntas"), soluciones))
     return "".join(out)
 
 
@@ -775,3 +815,21 @@ def render_material_pdf(material: dict, soluciones: bool = False) -> bytes:
 
     html = render_material_html(material, soluciones)
     return HTML(string=html).write_pdf()
+
+
+def count_story_narrative_pages(content: dict) -> int:
+    """Measure new text with worst-case image space, excluding questions.
+
+    The reservation is internal measurement only, not a placeholder illustration.
+    Existing exports never call this gate and retain their entire text.
+    """
+    from weasyprint import HTML
+
+    projection = {**content, "imagen": None, "preguntas_comprension": []}
+    html = render_material_html({"tipo": "cuento", "contenido_json": projection})
+    html = html.replace(
+        '<div class="reading-narrative">',
+        '<div style="height:260px;margin-bottom:14px"></div><div class="reading-narrative">',
+        1,
+    )
+    return len(HTML(string=html).render().pages)

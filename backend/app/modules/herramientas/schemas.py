@@ -67,7 +67,8 @@ class EmparejarRequest(HerramientaBaseRequest):
 
 class CuentoRequest(HerramientaBaseRequest):
     personajes: list[str] = Field(default_factory=list)
-    longitud: str = "corto"  # corto | medio | largo
+    longitud: Literal["corto", "medio", "largo"] = "corto"
+    moraleja: Literal["automatico", "con", "sin"] = "automatico"
 
 
 class ParaColorearRequest(HerramientaBaseRequest):
