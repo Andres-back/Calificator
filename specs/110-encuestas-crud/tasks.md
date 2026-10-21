@@ -59,3 +59,7 @@ Cobertura: 11/11 requisitos y 5/5 resultados asociados a tareas; no implica prue
 | FR-009 | T002, T004, T007 |
 | FR-010 | T005, T008, T011, T014 |
 | FR-011 | T012, T015, T016 |
+
+## Fase 7: Reparación de CI autorizada
+
+- [x] T018 Añadir una regresión de carga diferida del inicio en frontend/e2e/materia-queue-mobile.spec.ts, corregir la preparación de navegación en frontend/e2e/fixtures/explainableGrading.ts, verificar regresión/materia/cola y preparar la nueva ejecución completa de CI; registrar evidencia y consumidores adicionales en quickstart.md. No reducir controles ni cambiar la app productiva (FR-012). Fusión bloqueada hasta que todos los controles remotos terminen verdes.

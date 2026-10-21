@@ -68,6 +68,7 @@ El administrador retira una respuesta duplicada o no utilizable, con confirmaci�
 - **FR-009**: Todas las consultas y cambios DEBEN exigir acceso administrativo del instrumento correspondiente; los cambios DEBEN protegerse contra solicitudes ajenas al sitio. La versión pública no expondrá historial ni datos privados.
 - **FR-010**: Las acciones DEBEN funcionar desde 360 px hasta escritorio, con teclado y foco accesibles, estados visibles de guardado/error y sin desbordamiento horizontal de la página.
 - **FR-011**: La nueva entrega DEBE subir la versión del software sin cambiar preguntas ni renumerar respuestas de instrumentos ya aplicados; las pruebas DEBEN usar datos sintéticos aislados.
+- **FR-012**: Las pruebas de navegación DEBEN esperar a que se muestre el contenido del inicio autenticado antes de abrir otra vista. Una carga lenta no debe interrumpirse por una navegación prematura del propio test ni ocultarse con reintentos o controles debilitados. Reparación y fusión con CI verde autorizadas por el usuario el 2026-10-21.
 
 ### Entidades clave
 

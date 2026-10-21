@@ -64,6 +64,8 @@ El módulo administrativo encapsula comandos/historial; `app.py` mantiene el lí
 
 ## Validación y entrega
 
+Ampliación autorizada el 2026-10-21 tras fallo remoto de E2E: la traza muestra «Redirigiendo…» cuando el helper compartido de login ya permite abrir Materias. El helper solo espera una URL que contiene /app, no contenido. Añadir primero regresión con módulo de inicio retenido de forma controlada; comprobar que login sigue pendiente mientras el contenido no aparece. Corregir únicamente el helper compartido para esperar el h1 visible en main#main-content, ejecutar la matriz de materia/cola y los consumidores del helper. No modificar código productivo, mocks funcionales, expectativas existentes, timeouts, retries ni la configuración de CI. FR-012 cubierto por T018; todos los controles verdes antes de squash con HEAD exacto. No desplegar manualmente.
+
 - FR-001/010: pruebas de los controles y recorrido completo en ambos paneles desde 360 px y escritorio; constancias descargables y foco recuperado.
 - FR-002/003/004: comparar bytes/huellas originales, migrar base anterior dos veces, versiones 4/5 y piloto, límites de campos y diff completo, cuenta compartida identificada como cuenta.
 - FR-005/006: confirmación errónea, retirada repetida, restauración, carrera de revisiones, repetición tras pérdida de confirmación, error de almacenamiento sin éxito falso.

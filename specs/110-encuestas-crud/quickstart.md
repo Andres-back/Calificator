@@ -66,3 +66,17 @@ Registrar resultados reales en tasks/quickstart al ejecutarlos. PR con issue #22
 | FR-011 | T012, T015, T016 | Software 5.1.0, instrumentos intactos, inventario y PR |
 
 No se crearon, corrigieron, retiraron ni restauraron respuestas reales durante estas verificaciones. La recepción pública y los informes de producción no han sido modificados por este trabajo.
+
+## Reparación del bloqueo remoto de CI — 2026-10-21
+
+El CI del commit e283545 pasó backend, encuesta/contenedor, frontend build, contextual y gobernanza vigente; general quedó en 269/270. La traza de `materia-queue-mobile`, WebKit 390 px oscuro, conserva la pantalla «Redirigiendo…» al ejecutar `page.goto('/app/materias')`: el helper solo esperaba la URL /app, antes del montaje del contenido diferido.
+
+Regresión nueva con una compuerta sobre la carga de DashboardPage: sin corrección el test falla exactamente porque `loginFinished` es true mientras aún no hay h1. Con corrección espera la aparición del h1 en main#main-content. No se añaden sleeps de preparación, retries, skips, force ni cambios a expectativas existentes. La compuerta solo retiene y libera el recurso sintético de la prueba.
+
+Validación inicial: 36/36 casos Chromium (materia/cola y revisión explicable) y 7/7 WebKit (materia/cola y regresión). La ejecución inicial con Chromium visible no pudo lanzar el proceso en Windows (`spawn UNKNOWN`); su ejecución headless completó los 36. Tipos, lint estricto y compilación correctos. No se modifica ningún archivo de código productivo por esta reparación.
+
+Recepción de encuesta repetida tras la reparación: 74 pruebas Python y 4 Node correctas. Los 43 consumidores contextuales de grading-review se lanzaron de forma aislada; resultado final se registrará en el PR. CI remoto completo sigue siendo condición de fusión, no se presume aprobado por completar tareas de implementación.
+
+Hallazgo adicional fuera del CI requerido: `exports.mock.spec.ts` espera una sola lectura de notas para todo el recorrido, que ahora incluye lectura del boletín y lectura fresca de la descarga. Se observaron dos lecturas. Se retiró temporalmente la espera nueva del helper y se reprodujo exactamente el mismo fallo con su código original; después se restauró la corrección. No se cambia esa expectativa ni el flujo de exportaciones en este PR. El primer recorrido mixto de pruebas adicionales se interrumpió; no se presenta como aprobado. Los consumidores contextuales del CI se validan aparte, aislados.
+
+Autorización explícita del usuario: reparar y dejar fusionado el PR con todos los controles verdes. Fusión por squash con coincidencia del HEAD verificado, sin bypass. No incluye despliegue manual ni comprobaciones mediante escritura sobre respuestas reales.
