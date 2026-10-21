@@ -122,6 +122,11 @@ class LLMRouter:
         self._output_budget: int | None = None
         self._active_task_type = "content_generation"
         self._open_code_session_id = new_opencode_session_id()
+        self._explicit_routing = False
+        self._compact_reasoning = False
+        self._explicit_routing_requested = False
+        self._compact_reasoning_requested = False
+        self._provider_max_attempts = OPEN_CODE_MAX_ATTEMPTS
 
     async def generate_json(
         self,
@@ -140,6 +145,14 @@ class LLMRouter:
         self._output_budget = (
             max(256, int(max_tokens)) if max_tokens is not None else None
         )
+
+    def use_explicit_routing(self, *, max_attempts: int = 1, compact_reasoning: bool = True) -> None:
+        """Opt into administered routes, without global provider/template fallback."""
+        self._explicit_routing = True
+        self._compact_reasoning = compact_reasoning
+        self._explicit_routing_requested = True
+        self._compact_reasoning_requested = compact_reasoning
+        self._provider_max_attempts = max(1, min(int(max_attempts), OPEN_CODE_MAX_ATTEMPTS))
 
     def _routing_telemetry(self) -> dict[str, Any]:
         snapshot = self._ai_config or {}
@@ -177,6 +190,8 @@ class LLMRouter:
             except Exception as exc:  # noqa: BLE001
                 logger.warning("LLM provider %s failed: %s", provider, exc)
 
+        if self._explicit_routing:
+            raise RuntimeError("Los proveedores configurados no pudieron responder")
         if self._personal_route_without_fallback:
             raise RuntimeError("La API personal no respondió y no autorizaste fallback institucional")
         if task_type == "evaluacion_digitalizar":
@@ -186,6 +201,11 @@ class LLMRouter:
 
     async def _load_providers(self, task_type: str) -> list[tuple[str, Any]]:
         """Load provider cascade dynamically from DB config, fallback to defaults."""
+        from app.services.ai_config_service import uses_managed_text_routing
+
+        managed_text = uses_managed_text_routing(task_type)
+        self._explicit_routing = self._explicit_routing_requested or managed_text
+        self._compact_reasoning = self._compact_reasoning_requested or managed_text
         ordered = []
         personal_route = False
         resolved_fallback: dict[str, Any] = {}
@@ -209,7 +229,13 @@ class LLMRouter:
             async with AsyncSessionLocal() as db:
                 svc = AIConfigService(db=db)
                 await svc.init()
-                feature = await svc.get_feature_config(task_type)
+                feature = (
+                    await svc.get_feature_config(task_type, require_persisted=True)
+                    if self._explicit_routing
+                    else await svc.get_feature_config(task_type)
+                )
+                if self._explicit_routing and not feature.get("active", True):
+                    return []
                 text_providers = await svc.get_text_providers()
                 credentials = await get_effective_ai_credentials(db)
                 self._credentials = {
@@ -296,6 +322,8 @@ class LLMRouter:
                             ),
                         }
                     except Exception as exc:
+                        if self._explicit_routing:
+                            raise RuntimeError("No se pudo resolver la configuración de IA") from exc
                         logger.warning("Teacher AI configuration unavailable; using institutional route: %s", type(exc).__name__)
 
                 # Document extraction remains vision-capable; the resolved route decides the model.
@@ -385,7 +413,7 @@ class LLMRouter:
                         ordered.append((f"{fallback}:institutional", fallback_call))
 
                 # A personal route may use only its captured explicit fallback.
-                if personal_route:
+                if personal_route or self._explicit_routing:
                     return ordered
 
                 # Then remaining by priority.
@@ -404,6 +432,8 @@ class LLMRouter:
                             ordered.append((tp["id"], f))
                             break
         except Exception as exc:
+            if self._explicit_routing:
+                raise RuntimeError("No se pudo cargar la configuración de IA") from exc
             logger.debug("Cannot load admin config for providers: %s; using defaults", exc)
 
         # Fallback to hardcoded defaults
@@ -443,6 +473,8 @@ class LLMRouter:
         api_keys = [configured_key] if configured_key else []
         if environment_key and environment_key not in api_keys:
             api_keys.append(environment_key)
+        if self._provider_max_attempts == 1:
+            api_keys = api_keys[:1]
         if not api_keys:
             raise ValueError("OPEN_CODE_API_KEY not configured")
 
@@ -462,6 +494,10 @@ class LLMRouter:
         thinking = opencode_thinking_control(str(model))
         if thinking:
             body["thinking"] = thinking
+        if self._compact_reasoning:
+            effort = opencode_reasoning_effort(str(model))
+            if effort:
+                body["reasoning_effort"] = effort
         use_messages_api = _open_code_uses_messages_api(model)
         if use_messages_api:
             endpoint = "messages"
@@ -491,7 +527,7 @@ class LLMRouter:
                         session_id=self._open_code_session_id,
                         messages_api=use_messages_api,
                     )
-                    for attempt in range(1, OPEN_CODE_MAX_ATTEMPTS + 1):
+                    for attempt in range(1, self._provider_max_attempts + 1):
                         resp = await client.post(
                             f"{base_url}/{endpoint}",
                             headers=headers,
@@ -506,7 +542,7 @@ class LLMRouter:
                             break
                         should_retry = (
                             resp.status_code in OPEN_CODE_RETRYABLE_STATUS_CODES
-                            and attempt < OPEN_CODE_MAX_ATTEMPTS
+                            and attempt < self._provider_max_attempts
                         )
                         if should_retry:
                             delay = _open_code_retry_delay_seconds(attempt, resp)
@@ -514,7 +550,7 @@ class LLMRouter:
                                 "OpenCode transient HTTP %s; retry %d/%d in %.2fs",
                                 resp.status_code,
                                 attempt + 1,
-                                OPEN_CODE_MAX_ATTEMPTS,
+                                self._provider_max_attempts,
                                 delay,
                             )
                             await asyncio.sleep(delay)

@@ -366,6 +366,7 @@ def _feature_candidates(feature: str) -> tuple[str, ...]:
         "presentacion": ("presentaciones", "presentations"),
         "xali_chat": ("xali",),
         "xali_evaluacion_post_entrega": ("xali",),
+        "xali_recurso_post_entrega": ("xali",),
     }
     stage_parents: dict[str, tuple[str, ...]] = {
         "calificacion.extraccion": ("calificacion_foto", "grading_photo"),
@@ -397,6 +398,15 @@ def _feature_candidates(feature: str) -> tuple[str, ...]:
     if feature in stage_parents:
         return (feature, *stage_parents[feature])
     return (feature, *aliases.get(feature, ()))
+
+
+def uses_managed_text_routing(feature: str) -> bool:
+    """Only assistance/resource text opts into the administrator's exact routes."""
+    return any(
+        candidate in {"xali", "retroalimentacion", "herramientas_educativas"}
+        or candidate.startswith("herramienta.")
+        for candidate in _feature_candidates(feature)
+    )
 
 
 class AIConfigService:
@@ -561,11 +571,11 @@ class AIConfigService:
         await self._set_cache(CACHE_KEY_EFFECTIVE, {"providers": providers})
         return [p for p in providers if p.get("tipo") == tipo and p.get("active")]
 
-    async def get_feature_config(self, feature: str) -> dict[str, Any]:
+    async def get_feature_config(self, feature: str, *, require_persisted: bool = False) -> dict[str, Any]:
         """Devuelve configuración de ruteo para una funcionalidad."""
         candidates = _feature_candidates(feature)
         cached = await self._get_cache(CACHE_KEY_FEATURES)
-        if cached:
+        if cached and not require_persisted:
             features = cached.get("features", [])
             for candidate in candidates:
                 for item in features:
@@ -573,6 +583,8 @@ class AIConfigService:
                         return item
 
         features = await self._load_features_from_db()
+        if require_persisted and not features:
+            raise RuntimeError("No se pudo leer la configuración de IA guardada")
         if not features:
             features = DEFAULT_FEATURES
 
@@ -581,6 +593,8 @@ class AIConfigService:
             for item in features:
                 if item["feature"] == candidate:
                     return item
+        if require_persisted:
+            raise RuntimeError("Esta función no tiene una ruta de IA guardada")
         if feature in {"evaluacion_digitalizar", "importacion_estudiantes.extraccion"}:
             return {
                 "feature": feature,

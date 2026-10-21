@@ -61,6 +61,9 @@ def _observed_stage(stage: Any, rows: list[dict[str, Any]]) -> dict[str, Any] | 
         "answer": {"answer", "other"},
         "retrieval": {"retrieval", "embedding", "other"},
     }.get(stage.stage_id, {stage.stage_id})
+    if stage.function_id == "xali" and stage.stage_id == "feedback":
+        feature_aliases = {"xali_evaluacion_post_entrega"}
+        stage_aliases = {"feedback", "other"}
     candidates = [
         row for row in rows
         if str(row.get("feature")) in feature_aliases
@@ -105,6 +108,7 @@ async def get_control_center(db: AsyncSession) -> dict[str, Any]:
             }
         grouped[stage.function_id].append({
             **stage.as_dict(),
+            "inherits_from": inherits_from,
             "configured": configured,
             "effective": effective,
             "observed": _observed_stage(stage, observed),

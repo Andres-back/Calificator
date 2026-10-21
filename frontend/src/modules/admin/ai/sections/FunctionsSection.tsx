@@ -106,6 +106,9 @@ export function FunctionsSection({
             <ChevronDown className="h-5 w-5 shrink-0 text-muted transition-transform group-open:rotate-180" aria-hidden="true" />
           </summary>
           <div className="grid gap-3 border-t border-border p-3 sm:p-5">
+            {(item.function_id === 'xali' || item.function_id === 'recursos') && (
+              <p className="text-sm text-muted">Para las respuestas y el texto de recursos solo se usarán los proveedores elegidos aquí. «Sin respaldo» no enviará la solicitud a otro proveedor. Las imágenes y los evaluadores se configuran por separado.</p>
+            )}
             {item.function_id === 'calificacion' && <GradingPipelineSummary stages={item.stages} />}
             {item.stages.map((stage) => {
               const route = routeForStage(stage, features);

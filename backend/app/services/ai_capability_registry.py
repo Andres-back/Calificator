@@ -254,6 +254,19 @@ STAGES: tuple[AIStage, ...] = (
         None,
         ("open_code", "openai", "groq", "ollama"),
     ),
+    AIStage(
+        "xali",
+        "Asistente Xali",
+        "feedback",
+        "Ayuda sobre nota y retroalimentación",
+        "xali_evaluacion_post_entrega",
+        "text",
+        "feedback_sharing.chat_service",
+        "Preguntas posteriores; no vuelve a calificar",
+        True,
+        "xali",
+        ("open_code", "openai", "groq", "ollama"),
+    ),
 )
 
 
