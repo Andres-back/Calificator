@@ -213,6 +213,7 @@ async def test_new_import_has_one_complete_initial_revision_and_no_fake_legacy_b
     sessions, owner, subject, _ = visual_scope
     async with sessions() as db:
         payload, resource, question = await new_import_payload(db, owner, subject)
+        payload.estructura_detectada['reglas_feedback']['lectura'] = 'La cuenca reúne el agua de sus afluentes.'
         # An administrator imports on behalf of the subject owner, not into their own namespace.
         admin = User(nombre="Admin sintético", email=f"{uuid4()}@example.test", password_hash="no-login", rol="admin")
         db.add(admin)
@@ -224,6 +225,8 @@ async def test_new_import_has_one_complete_initial_revision_and_no_fake_legacy_b
         assert evaluation.profesor_id == owner
         assert revision.snapshot_json["blueprint"]["errores_comunes"] == ["Confundir los símbolos"]
         assert revision.snapshot_json["blueprint"]["reglas_feedback"]["clave_completa"] is False
+        assert evaluation.lectura == 'La cuenca reúne el agua de sus afluentes.'
+        assert revision.snapshot_json['blueprint']['reglas_feedback']['lectura'] == evaluation.lectura
         assert revision.snapshot_json["claves_pendientes_revision"] == [str(question)]
         assert resource.estado == "ready" and resource.evaluacion_id == evaluation.id
         assert len(list(await db.scalars(select(EvaluacionContenidoVersion)))) == 1

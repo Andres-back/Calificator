@@ -24,7 +24,7 @@
 | job | `tasks.cleanup_evaluation_visual_proposals` | system | missing | `backend/app/workers/tasks_evaluation_visuals.py:155` |
 | job | `tasks.cleanup_expired_roster_imports` | system | missing | `backend/app/workers/tasks_roster_import.py:150` |
 | job | `tasks.cleanup_password_reset_requests` | system | missing | `backend/app/workers/tasks_password_recovery.py:156` |
-| job | `tasks.digitalize_evaluation` | system | covered | `backend/app/workers/tasks_digitalization.py:496` |
+| job | `tasks.digitalize_evaluation` | system | covered | `backend/app/workers/tasks_digitalization.py:499` |
 | job | `tasks.export_report` | system | missing | `backend/app/workers/tasks_reports.py:5` |
 | job | `tasks.extract_roster_import` | system | covered | `backend/app/workers/tasks_roster_import.py:120` |
 | job | `tasks.generate_evaluation_visual` | system | missing | `backend/app/workers/tasks_evaluation_visuals.py:120` |
@@ -36,7 +36,7 @@
 | job | `tasks.ingest_rag` | system | missing | `backend/app/workers/tasks_rag.py:5` |
 | job | `tasks.recover_evaluation_visuals` | system | missing | `backend/app/workers/tasks_evaluation_visuals.py:138` |
 | job | `tasks.recover_expired_local_jobs` | system | missing | `backend/app/workers/tasks_ai_config.py:55` |
-| job | `tasks.recover_stale_digitalization_jobs` | system | covered | `backend/app/workers/tasks_digitalization.py:559` |
+| job | `tasks.recover_stale_digitalization_jobs` | system | covered | `backend/app/workers/tasks_digitalization.py:562` |
 | job | `tasks.recover_stale_grading_jobs` | system | covered | `backend/app/workers/tasks_grading.py:1029` |
 | job | `tasks.recover_stale_presentation_jobs` | system | covered | `backend/app/workers/tasks_presentations.py:84` |
 | job | `tasks.recover_stale_roster_import_jobs` | system | covered | `backend/app/workers/tasks_roster_import.py:143` |

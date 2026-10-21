@@ -76,7 +76,51 @@ def evaluation():
 
 def text_of(data):
     document = Document(BytesIO(data))
-    return '\n'.join(p.text for p in document.paragraphs)
+    return '\n'.join([*(p.text for p in document.paragraphs),
+        *(cell.text for table in document.tables for row in table.rows for cell in row.cells)])
+
+
+def test_evaluation_reading_is_kept_in_student_export_with_compact_options():
+    from app.modules.herramientas.pdf_render import _render_examen
+    item = evaluation()
+    item.blueprint = SimpleNamespace(reglas_feedback={'lectura': 'Los ríos de América.\n\nNacen en las montañas.', 'clave': 'privada'})
+    material = export_service.build_evaluation_material(item, soluciones=False)
+    assert material['contenido_json']['texto'] == item.blueprint.reglas_feedback['lectura']
+    assert material['contenido_json']['impresion_compacta'] is True
+    html = _render_examen(material['contenido_json'], False)
+    word = text_of(export_service.render_evaluation_docx(material, soluciones=False))
+    assert 'Los ríos de América.' in html and 'Nacen en las montañas.' in word
+    assert 'compact-options' in html
+    assert 'privada' not in html + word
+    assert html.index('Los ríos') < html.index('¿Cuánto')
+
+
+def test_compact_word_keeps_small_table_and_its_options_with_question():
+    from app.modules.evaluaciones.visual_render import ResolvedVisualBlock, render_structured_visual
+    from app.modules.evaluaciones.visual_schemas import VisualBlock, VisualTable
+    item = evaluation()
+    question_id = uuid4()
+    item.preguntas[0]['contenido_id'] = str(question_id)
+    table = VisualTable(encabezados=['Río', 'Longitud'], filas=[['A', '120'], ['B', '240']])
+    visual = ResolvedVisualBlock(VisualBlock(id=uuid4(), tipo='tabla', orden=0,
+        pregunta_ids=[question_id], recurso_id=uuid4(), tabla=table, pie='Datos de clase',
+        seguridad_contenido='publicable_confirmado'), render_structured_visual(table))
+    output = export_service.render_evaluation_docx(export_service.build_evaluation_material(item,
+        soluciones=False, visual_blocks=[visual]), soluciones=False)
+    document = Document(BytesIO(output))
+    for row in document.tables[0].rows:
+        assert row._tr.xpath('./w:trPr/w:cantSplit')
+        assert all(p.paragraph_format.keep_with_next for cell in row.cells for p in cell.paragraphs)
+    assert all(not p.paragraph_format.keep_with_next for cell in document.tables[1].rows[-1].cells for p in cell.paragraphs)
+
+
+def test_compact_word_does_not_chain_long_options_into_one_indivisible_question():
+    item = evaluation()
+    item.preguntas[0]['opciones'] = ['Explicación extensa. ' * 100, 'Otra posibilidad']
+    output = export_service.render_evaluation_docx(export_service.build_evaluation_material(item, soluciones=False), soluciones=False)
+    document = Document(BytesIO(output))
+    option = next(p for p in document.paragraphs if p.text.startswith('A) Explicación extensa.'))
+    assert option.paragraph_format.keep_with_next is not True
 
 
 def test_printable_and_word_preserve_questions_options_scores_without_private_keys():

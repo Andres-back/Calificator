@@ -121,7 +121,7 @@ def _photos_to_bundle(
             image.close()
     if len(content) > max_total_bytes:
         raise EvidenceBundleError(
-            "El documento normalizado supera el límite total de 40 MB"
+            f"El documento normalizado supera el límite total de {max_total_bytes // (1024 * 1024)} MB"
         )
     return content, filename, mime
 
@@ -130,10 +130,17 @@ async def build_evidence_bundle(
     uploads: UploadFile | list[UploadFile],
     *,
     rotations: list[int] | None = None,
+    total_bytes_limit: int | None = None,
+    image_bytes_limit: int | None = None,
+    file_count_limit: int | None = None,
 ) -> EvidenceBundle:
     """Valida todos los archivos antes de producir una evidencia persistible."""
     files = list(uploads) if isinstance(uploads, (list, tuple)) else [uploads]
     max_files, per_image_bytes, max_total_bytes, max_pdf_pages = _limits()
+    max_files = file_count_limit if file_count_limit is not None else max_files
+    per_image_bytes = image_bytes_limit if image_bytes_limit is not None else per_image_bytes
+    max_total_bytes = total_bytes_limit if total_bytes_limit is not None else max_total_bytes
+    total_mb = max_total_bytes // (1024 * 1024)
     if not files:
         raise EvidenceBundleError("Selecciona al menos una foto o un PDF")
     if len(files) > max_files:
@@ -155,12 +162,12 @@ async def build_evidence_bundle(
     for upload in files:
         remaining = max_total_bytes - total_bytes
         if remaining <= 0:
-            raise EvidenceBundleError("La entrega supera el límite total de 40 MB")
+            raise EvidenceBundleError(f"La entrega supera el límite total de {total_mb} MB")
         try:
             content = await read_upload_limited(upload, remaining)
         except ValueError as exc:
             raise EvidenceBundleError(
-                "La entrega supera el límite total de 40 MB"
+                f"La entrega supera el límite total de {total_mb} MB"
             ) from exc
         filename = upload.filename or "evidencia"
         try:
@@ -171,7 +178,7 @@ async def build_evidence_bundle(
             ) from exc
         if mime in ALLOWED_IMAGE_MIMES and len(content) > per_image_bytes:
             raise EvidenceBundleError(
-                "Cada fotografía debe pesar máximo 10 MB"
+                f"Cada fotografía debe pesar máximo {per_image_bytes // (1024 * 1024)} MB"
             )
         total_bytes += len(content)
         loaded.append((content, filename, mime))

@@ -125,10 +125,12 @@ def build_blueprint_payload(
 
 
 def evaluation_to_grading_blueprint(evaluacion: Any) -> dict[str, Any]:
+    from app.modules.evaluaciones.reading_service import evaluation_reading
     blueprint = evaluacion.blueprint
     source_questions = blueprint.preguntas if blueprint else evaluacion.preguntas
     return {
         "nombre": evaluacion.nombre,
+        "lectura": evaluation_reading(evaluacion),
         "nota_maxima": float(evaluacion.nota_maxima),
         "dba": blueprint.dba if blueprint else [],
         "metas": blueprint.metas if blueprint else evaluacion.metas_profesor,

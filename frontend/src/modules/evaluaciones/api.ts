@@ -42,6 +42,7 @@ export interface EvaluacionGenerarRequest {
 }
 
 export type EvaluacionUpdate = Partial<Omit<EvaluacionCreate, 'materia_id' | 'tipo_origen'>> & {
+  lectura?: string | null;
   expected_updated_at?: string; expected_content_version_id?: string | null;
   claves_visuales_revisadas?: string[];
 };

@@ -269,24 +269,32 @@ const routesByRole: Record<Role, string[]> = {
   admin: ['/app', '/app/admin/configuracion-ia', '/app/analytics', '/app/presentaciones', '/app/reportes', '/app/xali'],
 };
 
+async function loginAndWaitForHome(page: Page, role: Role) {
+  await page.goto('/login');
+  await page.getByLabel(/Correo/i).fill(users[role].email);
+  await page.locator('input[type="password"]').fill('password-for-test');
+  await page.getByRole('button', { name: /Iniciar sesión/i }).click();
+  await expect(page).toHaveURL(/\/app$/);
+  // The shell mounts before its lazy dashboard. A full navigation at that point
+  // can abort the module import and WebKit's network process in CI.
+  await expect(page.locator('main#main-content').getByRole('heading', { level: 1 })).toBeVisible();
+}
+
 for (const role of ['profesor', 'estudiante', 'admin'] as const) {
   for (const viewport of viewports) {
     test(`${role} es usable en ${viewport.name} sin overflow general`, async ({ page }) => {
       test.setTimeout(60_000);
       await page.setViewportSize({ width: viewport.width, height: viewport.height });
       await installApiMocks(page, role);
+      // Layout/menu coverage is independent of the delayed first-visit guide.
+      // Dedicated guide tests below retain the first-visit and focus assertions.
+      if (role === 'profesor') await page.addInitScript(() => {
+        localStorage.setItem('xcalificator:tour:profesor:teacher-home:v1', 'completed');
+      });
       const errors: string[] = [];
 
-      await page.goto('/login');
-      await expect(page.getByRole('button', { name: /Iniciar sesión/i })).toBeVisible();
-      await page.getByLabel(/Correo/i).fill(users[role].email);
-      await page.locator('input[type="password"]').fill('password-for-test');
-      await page.getByRole('button', { name: /Iniciar sesión/i }).click();
-      await expect(page).toHaveURL(/\/app$/);
-      await expect(page.locator('main#main-content')).toBeVisible();
+      await loginAndWaitForHome(page, role);
       await page.waitForLoadState('networkidle');
-      const welcomeGuide = page.getByRole('button', { name: 'Saltar', exact: true });
-      if (await welcomeGuide.isVisible()) await welcomeGuide.click();
       const atmosphere = page.locator('.app-atmosphere');
       await expect(atmosphere).toHaveAttribute('aria-hidden', 'true');
       await expect(atmosphere.locator('img')).toHaveAttribute('src', '/branding/learning-atmosphere-v2.webp');
@@ -475,10 +483,7 @@ test(`asistencia sin superposición ${viewport.name} ${theme}`, async ({ page })
     resumen: { total: 30, presentes: 0, tarde: 0, ausentes: 0, excusas: 0, pendientes: 30 },
   }));
 
-  await page.goto('/login');
-  await page.getByLabel(/Correo/i).fill(users.profesor.email);
-  await page.locator('input[type="password"]').fill('password-for-test');
-  await page.getByRole('button', { name: /Iniciar sesión/i }).click();
+  await loginAndWaitForHome(page, 'profesor');
   await page.goto('/app/materias/m1/asistencia');
 
   const summaryCard = page.getByLabel('Resumen y guardado de asistencia');
@@ -524,6 +529,32 @@ test(`asistencia sin superposición ${viewport.name} ${theme}`, async ({ page })
 });
 }
 }
+
+test('113 inicio docente móvil espera el contenido antes de abrir asistencia', async ({ page }) => {
+  await page.setViewportSize({ width: 768, height: 1024 });
+  await installApiMocks(page, 'profesor');
+  await page.route('**/api/materias/m1/asistencia?**', route => fulfillJson(route, {
+    materia_id: 'm1', fecha: new URL(route.request().url()).searchParams.get('fecha'),
+    registros: [{ estudiante_id: 'student-113', estudiante_nombre: 'Estudiante sintético',
+      estudiante_email: 'alumno@example.test', estado: null, observacion: null }],
+    resumen: { total: 1, presentes: 0, tarde: 0, ausentes: 0, excusas: 0, pendientes: 1 },
+  }));
+  await page.route('**/src/modules/dashboard/DashboardPage.tsx', async route => {
+    const response = await route.fetch();
+    await new Promise(resolve => setTimeout(resolve, 500)); // Controlled fixture latency.
+    await route.fulfill({ response });
+  });
+  await page.addInitScript(() => {
+    window.addEventListener('pagehide', () => {
+      if (location.pathname === '/app') sessionStorage.setItem('qa113-dashboard-ready',
+        String(Boolean(document.querySelector('main#main-content h1'))));
+    });
+  });
+  await loginAndWaitForHome(page, 'profesor');
+  await page.goto('/app/materias/m1/asistencia');
+  expect(await page.evaluate(() => sessionStorage.getItem('qa113-dashboard-ready'))).toBe('true');
+  await expect(page.getByLabel('Resumen y guardado de asistencia')).toBeVisible();
+});
 
 async function prepareTeacherHome(page: Page, theme = 'light') {
   await page.addInitScript((mode) => {

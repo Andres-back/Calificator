@@ -110,6 +110,7 @@ export function ResolverEvaluacionPage() {
   const pinned = contentAttempt.data?.evaluacion;
   const evaluacion = currentEvaluation && pinned ? { ...currentEvaluation,
     nombre: pinned.nombre, descripcion: pinned.descripcion, nota_maxima: pinned.nota_maxima,
+    lectura: pinned.lectura,
     modalidad: pinned.modalidad, tipo_origen: pinned.tipo_origen,
     preguntas: pinned.preguntas, criterios: pinned.criterios, metas_profesor: pinned.metas_profesor,
     contenido_visual: pinned.contenido_visual, contenido_version_id: pinned.contenido_version_id,
@@ -412,6 +413,11 @@ export function ResolverEvaluacionPage() {
           </div>
         </div>
       </Card>
+
+      {evaluacion.lectura && <Card className="min-w-0 space-y-3 p-4 sm:p-6">
+        <h2 className="font-semibold">Lectura o texto de apoyo</h2>
+        <p className="whitespace-pre-wrap break-words text-base leading-7">{evaluacion.lectura}</p>
+      </Card>}
 
       {!estadoVisible && (
         <Card className="flex items-start gap-3 border-amber-200 p-5 dark:border-amber-500/30">

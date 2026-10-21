@@ -18,6 +18,7 @@ vi.mock('@/lib/api', () => ({
 vi.mock('react-hot-toast', () => ({
   default: { success: mocks.success, error: mocks.error },
 }));
+vi.mock('@/components/evidence/imageQuality', () => ({ analyzeEvidenceImage: vi.fn().mockResolvedValue({ status: 'good', warnings: [] }) }));
 
 function renderModal(onCompleted = vi.fn()) {
   const client = new QueryClient({
@@ -42,6 +43,8 @@ function renderModal(onCompleted = vi.fn()) {
 beforeEach(() => {
   vi.clearAllMocks();
   window.localStorage.clear();
+  URL.createObjectURL = vi.fn(() => 'blob:photo');
+  URL.revokeObjectURL = vi.fn();
   mocks.post.mockResolvedValue({
     data: {
       job_id: 'job-1',
@@ -56,7 +59,8 @@ describe('DigitalizarEvaluacionModal', () => {
   it('queues FormData, persists the job and lets the teacher continue navigating', async () => {
     const user = userEvent.setup();
     const { container } = renderModal();
-    const fileInput = container.querySelector<HTMLInputElement>('input[type="file"]');
+    await user.click(screen.getByRole('button', { name: 'PDF o Word' }));
+    const fileInput = container.querySelector<HTMLInputElement>('input[type="file"][accept*="docx"]');
     expect(fileInput).not.toBeNull();
 
     const file = new File(['%PDF-1.7'], 'prueba.pdf', { type: 'application/pdf' });
@@ -97,5 +101,20 @@ describe('DigitalizarEvaluacionModal', () => {
         nombre: 'Prueba multiplicación',
       }),
     ]);
+  });
+
+  it('sends ordered photos and rotations as one request, without constructing a PDF in the phone', async () => {
+    const user = userEvent.setup();
+    renderModal();
+    const files = ['primera', 'segunda', 'tercera'].map(name => new File([name], name + '.png', { type: 'image/png' }));
+    await user.click(screen.getByRole('button', { name: /^Subir fotos/ }));
+    await user.upload(screen.getByLabelText('Seleccionar fotografías'), files);
+    await user.click(screen.getByRole('button', { name: 'Subir hoja 3' }));
+    await user.click(screen.getByRole('button', { name: 'Rotar hoja 2' }));
+    await user.click(screen.getByRole('button', { name: 'Digitalizar' }));
+    await waitFor(() => expect(mocks.post).toHaveBeenCalledTimes(1));
+    const form = mocks.post.mock.calls[0][1] as FormData;
+    expect(form.getAll('file')).toEqual([files[0], files[2], files[1]]);
+    expect(JSON.parse(String(form.get('rotaciones')))).toEqual([0, 90, 0]);
   });
 });

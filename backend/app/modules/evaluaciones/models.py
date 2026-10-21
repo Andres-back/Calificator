@@ -120,6 +120,11 @@ class Evaluacion(Base):
         uselist=False,
     )
 
+    @property
+    def lectura(self) -> str | None:
+        from app.modules.evaluaciones.reading_service import evaluation_reading
+        return evaluation_reading(self)
+
 
 Index("idx_evaluaciones_materia", Evaluacion.materia_id)
 Index("idx_evaluaciones_profesor", Evaluacion.profesor_id)

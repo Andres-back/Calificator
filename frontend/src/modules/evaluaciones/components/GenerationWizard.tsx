@@ -596,6 +596,7 @@ export function GenerationWizard({
   function evaluationPayload(current: WizardState) {
     return {
       nombre: current.nombre.trim(), descripcion: current.descripcion.trim() || undefined,
+      ...(current.lectura !== undefined ? { lectura: current.lectura.trim() || null } : {}),
       modalidad: current.modalidad, nota_maxima: current.notaMaxima,
       fecha_limite_entrega: current.fechaLimiteEntrega ? new Date(current.fechaLimiteEntrega).toISOString() : null,
       dba_ids: current.useDba ? current.dbaIds : [],
@@ -716,6 +717,13 @@ export function GenerationWizard({
                             <p>Los cambios quedarán disponibles de inmediato. No se borrarán entregas ni notas anteriores; revísalas si modificas criterios, puntajes o respuestas correctas.</p>
                           </div>
                         )}
+                        <details className="rounded-xl border border-border bg-surface p-3" open={Boolean(state.lectura)}>
+                          <summary className="focus-ring min-h-11 cursor-pointer py-2 font-semibold">Lectura o texto de apoyo</summary>
+                          <p className="mb-2 text-xs text-muted">Se muestra antes de las preguntas y se conserva al imprimir.</p>
+                          <Textarea aria-label="Lectura o texto de apoyo" value={state.lectura ?? ''} maxLength={60000} rows={8}
+                            className="min-h-48 text-base leading-7" placeholder="Añade o corrige aquí la lectura de la evaluación."
+                            onChange={event => patch({ lectura: event.target.value })} />
+                        </details>
                         <details open={gradingOptionsOpen} onToggle={event => setGradingOptionsOpen(event.currentTarget.open)} className="rounded-xl border border-border bg-surface p-3">
                           <summary className="writing-secondary focus-ring min-h-12 cursor-pointer py-2 font-semibold">Cómo se calificará</summary>
                           {state.useRubric && (

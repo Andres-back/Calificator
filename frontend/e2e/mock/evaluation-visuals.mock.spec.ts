@@ -27,15 +27,19 @@ const content = {
 const evaluation = { id: 'visual-evaluation', materia_id: subject.id, profesor_id: teacher.id, nombre: 'Figuras y medidas', descripcion: 'Observa y compara.', tipo_origen: 'externa_digitalizada', modalidad: 'online', nota_maxima: 5, estado: 'publicada', contenido_version_id: 'revision-a', contenido_visual: content,
   preguntas: [{ numero: 1, contenido_id: 'question-a', tipo: 'abierta', enunciado: 'Compara los lados del triángulo.', puntaje: 5 }], respuestas_esperadas: [{ numero: 1, respuesta: 'Clave exclusiva del docente' }], criterios: [], dba_ids: [], dba_personalizado_ids: [], metas_profesor: [], created_at: '2026-10-19', updated_at: '2026-10-19' };
 
-async function mockApp(page: Page, student = false, editOrigin?: string) {
+async function mockApp(page: Page, student = false, editOrigin?: string, creation = false, lectura?: string) {
   const user = student ? { ...teacher, id: 'visual-student', rol: 'estudiante', permissions: ['subjects.read', 'evaluations.read', 'evaluations.submit'] }
-    : editOrigin ? { ...teacher, permissions: [...teacher.permissions, 'evaluations.update'] } : teacher;
+    : editOrigin ? { ...teacher, permissions: [...teacher.permissions, 'evaluations.update', ...(creation ? ['evaluations.create'] : [])] } : teacher;
   const seen: string[] = [];
   let item = student ? { ...evaluation, respuestas_esperadas: [], contenido_visual: { schema_version: 1, bloques: content.bloques.filter(block => block.seguridad_contenido === 'publicable_confirmado').map(({ seguridad_contenido: _private, ...block }) => block) } } : { ...evaluation, tipo_origen: editOrigin || evaluation.tipo_origen };
+  if (lectura) item = { ...item, lectura } as typeof item;
   let generated = {};
   await page.route('**/api/**', route => {
     const url = new URL(route.request().url()); const path = url.pathname.replace(/^\/api/, ''); seen.push(path);
     if (path === '/auth/me') return route.fulfill({ json: { user } });
+    if (path === '/evaluaciones/externa/digitalizar-con-archivo') return route.fulfill({ status: 202, json: {
+      job_id: 'synthetic-multipage-job', estado: 'queued', materia_id: subject.id, nombre: 'Cuencas y ríos',
+    } });
     if (path === '/users/me/authorization') return route.fulfill({ json: { profile: user.rol, permissions: user.permissions } });
     if (path === '/materias') return route.fulfill({ json: [subject] });
     if (path === `/materias/${subject.id}` || path === `/materias/${subject.id}/estudiantes`) return route.fulfill({ json: subject });
@@ -71,6 +75,47 @@ async function mockApp(page: Page, student = false, editOrigin?: string) {
 }
 
 test.use({ reducedMotion: 'reduce' });
+for (const width of [360, 1440]) {
+  test(`113 digitalización de tres hojas ${width}px`, async ({ page, browserName }, testInfo) => {
+    await page.setViewportSize({ width, height: 844 });
+    await mockApp(page, false, 'externa_digitalizada', true);
+    await page.goto(`/app/materias/${subject.id}/evaluaciones`);
+    await activate(page.getByRole('button', { name: 'Crear evaluación', exact: true }), browserName);
+    await activate(page.getByRole('button', { name: 'Usar foto o PDF' }), browserName);
+    const dialog = page.getByRole('dialog', { name: 'Digitalizar evaluación', exact: true });
+    const choosing = page.waitForEvent('filechooser');
+    await activate(dialog.getByRole('button', { name: /^Subir fotos/ }), browserName);
+    await (await choosing).setFiles(['lectura', 'preguntas', 'continuación'].map(name => ({ name: name + '.png', mimeType: 'image/png', buffer: triangle })));
+    await expect(dialog.getByText('3 hojas seleccionadas')).toBeVisible();
+    await activate(dialog.getByRole('button', { name: 'Subir hoja 3' }), browserName);
+    await activate(dialog.getByRole('button', { name: 'Rotar hoja 2' }), browserName);
+    await dialog.getByLabel('Nombre de la evaluación').fill('Cuencas y ríos');
+    expect(await dialog.evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true);
+    await page.screenshot({ path: testInfo.outputPath('multipagina.png') });
+    const sent = page.waitForRequest(request => request.method() === 'POST' && request.url().endsWith('/digitalizar-con-archivo'));
+    await activate(dialog.getByRole('button', { name: 'Digitalizar', exact: true }), browserName);
+    const payload = (await sent).postDataBuffer()!.toString();
+    expect(payload.match(/name="file"/g)).toHaveLength(3);
+    expect(payload).toContain('[0,90,0]');
+    await expect(dialog.getByText('Estamos trabajando en tu documento')).toBeVisible();
+    await activate(dialog.getByRole('button', { name: 'Continuar navegando' }), browserName);
+    await expect(dialog).not.toBeVisible();
+  });
+  test(`113 lectura completa antes de preguntas ${width}px`, async ({ page, browserName }, testInfo) => {
+    await page.setViewportSize({ width, height: 844 });
+    const text = 'Los afluentes llevan agua al río principal.\n\nEl relieve delimita la cuenca.';
+    await mockApp(page, false, undefined, false, text);
+    await page.goto(`/app/materias/${subject.id}/evaluaciones`);
+    await activate(page.getByRole('button', { name: 'Visualizar' }), browserName);
+    const dialog = page.getByRole('dialog', { name: 'Visualizar evaluación' });
+    await activate(dialog.getByRole('button', { name: 'Opciones' }), browserName);
+    await activate(dialog.getByRole('button', { name: 'Ver lectura y preguntas' }), browserName);
+    await expect(dialog.getByRole('heading', { name: 'Lectura o texto de apoyo' })).toBeVisible();
+    await expect(dialog.getByText(/Los afluentes llevan/)).toContainText('El relieve delimita la cuenca.');
+    expect(await dialog.evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true);
+    await page.screenshot({ path: testInfo.outputPath('lectura-completa.png') });
+  });
+}
 for (const width of [360, 390, 1440]) for (const dark of [false, true]) {
   test(`101 lector docente con figuras ${width}px ${dark ? 'oscuro' : 'claro'}`, async ({ page, browserName }, testInfo) => {
     await page.setViewportSize({ width, height: width < 500 ? 844 : 1000 });

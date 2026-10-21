@@ -30,6 +30,7 @@ vi.mock('@/modules/materias/dbaApi', () => ({
 vi.mock('@/modules/xali/api', () => ({
   sendMessage: mocks.sendMessage,
 }));
+vi.mock('../visualApi', () => ({ getVisualCapabilities: vi.fn().mockResolvedValue({ editor: false, generacion: false, importacion: false, max_bytes: 20971520 }) }));
 vi.mock('react-hot-toast', () => ({
   default: { success: vi.fn(), error: vi.fn() },
 }));
@@ -174,6 +175,18 @@ beforeEach(() => {
 });
 
 describe('GenerationWizard', () => {
+  it('113 keeps an editable reading and sends it apart from the answer key', async () => {
+    const user = userEvent.setup();
+    renderWizard(vi.fn(), { ...evaluation, lectura: 'Una cuenca recoge el agua.' });
+    const reading = await screen.findByLabelText('Lectura o texto de apoyo');
+    expect(reading).toHaveValue('Una cuenca recoge el agua.');
+    await user.clear(reading);
+    await user.type(reading, 'Los afluentes llegan al río principal.');
+    await user.click(screen.getByRole('button', { name: 'Guardar cambios' }));
+    await waitFor(() => expect(mocks.update).toHaveBeenCalledTimes(1));
+    expect(mocks.update.mock.calls[0][1]).toMatchObject({ lectura: 'Los afluentes llegan al río principal.', expected_updated_at: evaluation.updated_at });
+    expect(mocks.update.mock.calls[0][1].respuestas_esperadas).toBeUndefined();
+  });
   it('097 opens mobile without text autofocus and Listo preserves the topic without submitting', async () => {
     const media = vi.spyOn(window, 'matchMedia').mockImplementation(query => ({ matches: query.includes('max-width'), media: query, onchange: null, addListener() {}, removeListener() {}, addEventListener() {}, removeEventListener() {} } as unknown as MediaQueryList));
     try {

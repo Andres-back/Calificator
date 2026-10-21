@@ -4,6 +4,7 @@ from uuid import uuid4
 
 import pytest
 from fastapi import UploadFile
+from fastapi import HTTPException
 
 from app.modules.evaluaciones import router
 from app.core.config import settings
@@ -31,6 +32,23 @@ class FakeDB:
 
     async def rollback(self) -> None:
         self.rollbacks += 1
+
+
+@pytest.mark.anyio
+async def test_multiple_photos_are_not_read_before_subject_permission(monkeypatch):
+    read = []
+    async def denied(*args, **kwargs):
+        raise HTTPException(403, 'Materia no disponible')
+    async def bundle(*args, **kwargs):
+        read.append(True)
+        raise AssertionError('Must authorize first')
+    monkeypatch.setattr(materias_service, 'ensure_can_manage_materia', denied)
+    monkeypatch.setattr(router, 'build_evidence_bundle', bundle)
+    user = SimpleNamespace(id=uuid4(), rol='profesor', _effective_permissions={'evaluations.create'})
+    with pytest.raises(HTTPException) as caught:
+        await router.digitalize_from_file(materia_id=uuid4(), nombre='Privada', file=[object(), object()], current_user=user, db=FakeDB())
+    assert caught.value.status_code == 403
+    assert not read
 
 
 @pytest.mark.anyio
@@ -67,7 +85,8 @@ async def test_digitalization_reuses_normalized_extraction_on_retry(monkeypatch)
 
 @pytest.mark.anyio
 @pytest.mark.parametrize("visual_enabled", [False, True])
-async def test_digitalization_is_persisted_and_enqueued(monkeypatch, visual_enabled) -> None:
+@pytest.mark.parametrize('multiple_photos', [False, True])
+async def test_digitalization_is_persisted_and_enqueued(monkeypatch, visual_enabled, multiple_photos) -> None:
     monkeypatch.setattr(settings, "EVALUATION_VISUAL_IMPORT_ENABLED", visual_enabled)
     materia_id = uuid4()
     user = SimpleNamespace(
@@ -102,6 +121,14 @@ async def test_digitalization_is_persisted_and_enqueued(monkeypatch, visual_enab
     )
     db = FakeDB()
     upload = UploadFile(filename="evaluacion.pdf", file=BytesIO(b"%PDF-1.7"))
+    if multiple_photos:
+        from PIL import Image
+        photos = []
+        for color in ('red', 'green', 'blue'):
+            stream = BytesIO()
+            Image.new('RGB', (60, 80), color).save(stream, format='PNG')
+            photos.append(UploadFile(filename=f'{color}.png', file=BytesIO(stream.getvalue())))
+        upload = photos
 
     response = await router.digitalize_from_file(
         materia_id=materia_id,
@@ -122,6 +149,9 @@ async def test_digitalization_is_persisted_and_enqueued(monkeypatch, visual_enab
     assert queued[0]["file_key"].startswith(".private/digitalizaciones/")
     assert db.commits == 1
     assert created[0]["input_json"]["_visual_import_schema"] == (1 if visual_enabled else None)
+    if multiple_photos:
+        assert len(created) == len(queued) == 1
+        assert created[0]['input_json']['hojas']['paginas'] == 3
 
 
 @pytest.mark.anyio

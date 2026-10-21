@@ -109,6 +109,7 @@ ALL_SPECS = {
     "109-encuesta-envio-seguro",
     "110-encuestas-crud",
     "112-evaluacion-multipagina",
+    "113-digitalizacion-documento-completo",
 }
 OWNED_SPECS = {
     name

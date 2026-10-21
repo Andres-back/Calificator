@@ -211,6 +211,7 @@ export interface StudentEvaluationVisualContent {
   bloques: EvaluationVisualBlock[];
 }
 export interface Evaluacion {
+  lectura?: string | null;
   claves_visuales_pendientes?: string[];
   id: string;
   materia_id: string;

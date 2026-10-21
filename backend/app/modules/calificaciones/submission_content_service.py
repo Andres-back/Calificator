@@ -70,6 +70,8 @@ async def student_attempt_evaluation(db, evaluation, delivery) -> dict:
     revision = await get_content_revision(db, evaluation.id, delivery.contenido_version_id)
     result = _student_safe_evaluation(evaluation)
     source = revision.snapshot_json
+    from app.modules.evaluaciones.reading_service import evaluation_reading
+    result['lectura'] = evaluation_reading(source)
     for key in ('nombre', 'descripcion', 'nota_maxima', 'modalidad', 'tipo_origen', 'criterios',
                 'dba_ids', 'dba_personalizado_ids', 'metas_profesor'):
         if key in source:
