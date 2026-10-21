@@ -1,0 +1,1864 @@
+{
+  "sections": [
+    {
+      "id": "contexto",
+      "title": "Su contexto docente",
+      "intro": "Describa su práctica habitual de evaluación manual. No necesita conocer ni haber utilizado XCalificator. Los grupos y estudiantes a su cargo no equivalen a entregas medidas. Las preguntas sobre evidencia se refieren a las últimas cuatro semanas de actividad docente.",
+      "questions": [
+        {
+          "id": "institution",
+          "label": "Institución educativa",
+          "type": "text",
+          "required": true,
+          "maxlength": 150
+        },
+        {
+          "id": "area",
+          "label": "Área o asignatura",
+          "type": "text",
+          "maxlength": 150
+        },
+        {
+          "id": "grades",
+          "label": "Grado(s)",
+          "type": "text",
+          "maxlength": 100
+        },
+        {
+          "id": "workload_groups",
+          "label": "Número de grupos a su cargo",
+          "type": "number",
+          "min": 1,
+          "max": 100
+        },
+        {
+          "id": "workload_students",
+          "label": "Total aproximado de estudiantes a su cargo",
+          "type": "number",
+          "min": 1,
+          "max": 5000
+        },
+        {
+          "id": "1.1",
+          "label": "Tamaño habitual del grupo que califica",
+          "type": "radio",
+          "options": [
+            {
+              "value": "1",
+              "label": "Menos de 20"
+            },
+            {
+              "value": "2",
+              "label": "20-30"
+            },
+            {
+              "value": "3",
+              "label": "31-40"
+            },
+            {
+              "value": "4",
+              "label": "Más de 40"
+            }
+          ]
+        },
+        {
+          "id": "1.2",
+          "label": "Modalidad de evaluación más frecuente",
+          "type": "radio",
+          "options": [
+            {
+              "value": "1",
+              "label": "Papel"
+            },
+            {
+              "value": "2",
+              "label": "En línea"
+            },
+            {
+              "value": "3",
+              "label": "Ambas por igual"
+            }
+          ]
+        },
+        {
+          "id": "1.3",
+          "label": "¿Con qué frecuencia aplica evaluaciones calificables?",
+          "type": "radio",
+          "options": [
+            {
+              "value": "1",
+              "label": "Semanal"
+            },
+            {
+              "value": "2",
+              "label": "Quincenal"
+            },
+            {
+              "value": "3",
+              "label": "Mensual"
+            },
+            {
+              "value": "4",
+              "label": "Ocasional"
+            }
+          ]
+        },
+        {
+          "id": "1.4",
+          "label": "¿Con qué frecuencia incluye preguntas abiertas?",
+          "type": "radio",
+          "options": [
+            {
+              "value": "1",
+              "label": "Nunca"
+            },
+            {
+              "value": "2",
+              "label": "Rara vez"
+            },
+            {
+              "value": "3",
+              "label": "A veces"
+            },
+            {
+              "value": "4",
+              "label": "Frecuentemente"
+            },
+            {
+              "value": "5",
+              "label": "Siempre"
+            }
+          ]
+        },
+        {
+          "id": "1.5",
+          "label": "Conectividad habitual durante el trabajo docente",
+          "type": "radio",
+          "options": [
+            {
+              "value": "1",
+              "label": "Estable"
+            },
+            {
+              "value": "2",
+              "label": "Intermitente"
+            },
+            {
+              "value": "3",
+              "label": "Limitada"
+            },
+            {
+              "value": "4",
+              "label": "Sin acceso"
+            }
+          ]
+        },
+        {
+          "id": "1.6",
+          "label": "Tipos de preguntas o evidencias que utiliza (puede elegir varias)",
+          "type": "multi",
+          "options": [
+            {
+              "value": "1",
+              "label": "Selección múltiple"
+            },
+            {
+              "value": "2",
+              "label": "Verdadero/falso"
+            },
+            {
+              "value": "3",
+              "label": "Respuesta corta"
+            },
+            {
+              "value": "4",
+              "label": "Pregunta abierta/ensayo"
+            },
+            {
+              "value": "5",
+              "label": "Problemas matemáticos"
+            },
+            {
+              "value": "6",
+              "label": "Tablas/gráficos"
+            },
+            {
+              "value": "7",
+              "label": "Dibujos/esquemas"
+            },
+            {
+              "value": "8",
+              "label": "Talleres escritos"
+            },
+            {
+              "value": "9",
+              "label": "Otro"
+            }
+          ]
+        },
+        {
+          "id": "1.6.other",
+          "label": "Otro tipo de pregunta o evidencia",
+          "type": "text",
+          "maxlength": 250
+        },
+        {
+          "id": "evidence.storage",
+          "label": "En las últimas cuatro semanas de actividad docente, ¿cómo conservó las evaluaciones calificadas? Puede elegir varias opciones.",
+          "type": "multi",
+          "options": [
+            {
+              "value": "1",
+              "label": "Hojas físicas archivadas por estudiante o grupo"
+            },
+            {
+              "value": "2",
+              "label": "Hojas físicas sin un orden de archivo definido"
+            },
+            {
+              "value": "3",
+              "label": "Fotografías o archivos en carpetas digitales"
+            },
+            {
+              "value": "4",
+              "label": "Una plataforma que vincula cada evidencia con el estudiante y la evaluación"
+            },
+            {
+              "value": "5",
+              "label": "No conservé las evaluaciones después de entregarlas"
+            },
+            {
+              "value": "6",
+              "label": "Otro medio"
+            }
+          ]
+        },
+        {
+          "id": "evidence.other",
+          "label": "Si eligió otro medio, descríbalo.",
+          "type": "text",
+          "maxlength": 300
+        },
+        {
+          "id": "evidence.retrieval",
+          "label": "Cuando necesitó localizar una evaluación física ya calificada de un estudiante, ¿qué dificultad encontró para localizarla? Considere las últimas cuatro semanas de actividad docente.",
+          "type": "radio",
+          "options": [
+            {
+              "value": "1",
+              "label": "Ninguna dificultad"
+            },
+            {
+              "value": "2",
+              "label": "Poca dificultad"
+            },
+            {
+              "value": "3",
+              "label": "Dificultad moderada"
+            },
+            {
+              "value": "4",
+              "label": "Mucha dificultad"
+            },
+            {
+              "value": "5",
+              "label": "No logré localizarla"
+            },
+            {
+              "value": "na",
+              "label": "No necesité buscarla o no utilicé evaluaciones físicas"
+            },
+            {
+              "value": "skip",
+              "label": "Prefiero no responder"
+            }
+          ]
+        },
+        {
+          "id": "evidence.traceability",
+          "label": "Cuando revisó una nota anterior, ¿con qué frecuencia pudo consultar también los criterios o la rúbrica que había utilizado para asignarla? Considere las últimas cuatro semanas de actividad docente.",
+          "type": "radio",
+          "options": [
+            {
+              "value": "1",
+              "label": "Nunca"
+            },
+            {
+              "value": "2",
+              "label": "Rara vez"
+            },
+            {
+              "value": "3",
+              "label": "A veces"
+            },
+            {
+              "value": "4",
+              "label": "Frecuentemente"
+            },
+            {
+              "value": "5",
+              "label": "Siempre"
+            },
+            {
+              "value": "na",
+              "label": "No aplica"
+            },
+            {
+              "value": "skip",
+              "label": "Prefiero no responder"
+            }
+          ]
+        },
+        {
+          "id": "evidence.reporting",
+          "label": "En las últimas cuatro semanas de actividad docente, ¿con qué frecuencia necesitó reunir resultados de varias evaluaciones de un estudiante para preparar un informe o seguimiento?",
+          "type": "radio",
+          "options": [
+            {
+              "value": "1",
+              "label": "Nunca"
+            },
+            {
+              "value": "2",
+              "label": "Rara vez"
+            },
+            {
+              "value": "3",
+              "label": "A veces"
+            },
+            {
+              "value": "4",
+              "label": "Frecuentemente"
+            },
+            {
+              "value": "5",
+              "label": "Siempre"
+            },
+            {
+              "value": "na",
+              "label": "No aplica"
+            },
+            {
+              "value": "skip",
+              "label": "Prefiero no responder"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "tiempos",
+      "title": "Tiempo y esfuerzo de calificación manual",
+      "intro": "Piense únicamente en la calificación manual, sin XCalificator ni otra herramienta que sugiera notas o retroalimentación automáticamente. Indique minutos por grupo y cómo obtuvo cada dato. No sume actividades que se solapen; puede omitir los datos que no tenga.",
+      "questions": []
+    },
+    {
+      "id": "dificultades",
+      "title": "Dificultades actuales",
+      "intro": "1 = nunca / nada problemático · 2 = poco · 3 = moderado · 4 = frecuente · 5 = muy frecuente / crítico.",
+      "questions": [
+        {
+          "id": "3.1",
+          "label": "Calificar consume tiempo fuera de mi jornada habitual.",
+          "type": "scale",
+          "options": [
+            {
+              "value": "1",
+              "label": "1"
+            },
+            {
+              "value": "2",
+              "label": "2"
+            },
+            {
+              "value": "3",
+              "label": "3"
+            },
+            {
+              "value": "4",
+              "label": "4"
+            },
+            {
+              "value": "5",
+              "label": "5"
+            },
+            {
+              "value": "na",
+              "label": "No aplica"
+            },
+            {
+              "value": "skip",
+              "label": "Prefiero no responder"
+            }
+          ]
+        },
+        {
+          "id": "3.2",
+          "label": "Dar retroalimentación individual a todos los estudiantes es difícil.",
+          "type": "scale",
+          "options": [
+            {
+              "value": "1",
+              "label": "1"
+            },
+            {
+              "value": "2",
+              "label": "2"
+            },
+            {
+              "value": "3",
+              "label": "3"
+            },
+            {
+              "value": "4",
+              "label": "4"
+            },
+            {
+              "value": "5",
+              "label": "5"
+            },
+            {
+              "value": "na",
+              "label": "No aplica"
+            },
+            {
+              "value": "skip",
+              "label": "Prefiero no responder"
+            }
+          ]
+        },
+        {
+          "id": "3.3",
+          "label": "Registrar las notas después de calificar genera trabajo duplicado.",
+          "type": "scale",
+          "options": [
+            {
+              "value": "1",
+              "label": "1"
+            },
+            {
+              "value": "2",
+              "label": "2"
+            },
+            {
+              "value": "3",
+              "label": "3"
+            },
+            {
+              "value": "4",
+              "label": "4"
+            },
+            {
+              "value": "5",
+              "label": "5"
+            },
+            {
+              "value": "na",
+              "label": "No aplica"
+            },
+            {
+              "value": "skip",
+              "label": "Prefiero no responder"
+            }
+          ]
+        },
+        {
+          "id": "3.4",
+          "label": "Las preguntas abiertas requieren demasiado tiempo para revisar.",
+          "type": "scale",
+          "options": [
+            {
+              "value": "1",
+              "label": "1"
+            },
+            {
+              "value": "2",
+              "label": "2"
+            },
+            {
+              "value": "3",
+              "label": "3"
+            },
+            {
+              "value": "4",
+              "label": "4"
+            },
+            {
+              "value": "5",
+              "label": "5"
+            },
+            {
+              "value": "na",
+              "label": "No aplica"
+            },
+            {
+              "value": "skip",
+              "label": "Prefiero no responder"
+            }
+          ]
+        },
+        {
+          "id": "3.5",
+          "label": "Me cuesta mantener criterios de calificación consistentes entre muchas respuestas.",
+          "type": "scale",
+          "options": [
+            {
+              "value": "1",
+              "label": "1"
+            },
+            {
+              "value": "2",
+              "label": "2"
+            },
+            {
+              "value": "3",
+              "label": "3"
+            },
+            {
+              "value": "4",
+              "label": "4"
+            },
+            {
+              "value": "5",
+              "label": "5"
+            },
+            {
+              "value": "na",
+              "label": "No aplica"
+            },
+            {
+              "value": "skip",
+              "label": "Prefiero no responder"
+            }
+          ]
+        },
+        {
+          "id": "3.6",
+          "label": "Me cuesta identificar rápidamente errores comunes del grupo.",
+          "type": "scale",
+          "options": [
+            {
+              "value": "1",
+              "label": "1"
+            },
+            {
+              "value": "2",
+              "label": "2"
+            },
+            {
+              "value": "3",
+              "label": "3"
+            },
+            {
+              "value": "4",
+              "label": "4"
+            },
+            {
+              "value": "5",
+              "label": "5"
+            },
+            {
+              "value": "na",
+              "label": "No aplica"
+            },
+            {
+              "value": "skip",
+              "label": "Prefiero no responder"
+            }
+          ]
+        },
+        {
+          "id": "3.7",
+          "label": "Las evaluaciones en papel dificultan organizar, revisar o conservar la evidencia.",
+          "type": "scale",
+          "options": [
+            {
+              "value": "1",
+              "label": "1"
+            },
+            {
+              "value": "2",
+              "label": "2"
+            },
+            {
+              "value": "3",
+              "label": "3"
+            },
+            {
+              "value": "4",
+              "label": "4"
+            },
+            {
+              "value": "5",
+              "label": "5"
+            },
+            {
+              "value": "na",
+              "label": "No aplica"
+            },
+            {
+              "value": "skip",
+              "label": "Prefiero no responder"
+            }
+          ]
+        },
+        {
+          "id": "3.8",
+          "label": "Cuando hay muchos estudiantes, la retroalimentación suele ser más breve de lo que quisiera.",
+          "type": "scale",
+          "options": [
+            {
+              "value": "1",
+              "label": "1"
+            },
+            {
+              "value": "2",
+              "label": "2"
+            },
+            {
+              "value": "3",
+              "label": "3"
+            },
+            {
+              "value": "4",
+              "label": "4"
+            },
+            {
+              "value": "5",
+              "label": "5"
+            },
+            {
+              "value": "na",
+              "label": "No aplica"
+            },
+            {
+              "value": "skip",
+              "label": "Prefiero no responder"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "prioridades",
+      "title": "Lo que necesita de XCalificator",
+      "intro": "1 = no necesario · 2 = baja prioridad · 3 = útil · 4 = importante · 5 = indispensable.",
+      "questions": [
+        {
+          "id": "4.1",
+          "label": "Calificar evaluaciones respondidas en línea.",
+          "type": "scale",
+          "options": [
+            {
+              "value": "1",
+              "label": "1"
+            },
+            {
+              "value": "2",
+              "label": "2"
+            },
+            {
+              "value": "3",
+              "label": "3"
+            },
+            {
+              "value": "4",
+              "label": "4"
+            },
+            {
+              "value": "5",
+              "label": "5"
+            },
+            {
+              "value": "na",
+              "label": "No aplica"
+            },
+            {
+              "value": "skip",
+              "label": "Prefiero no responder"
+            }
+          ]
+        },
+        {
+          "id": "4.2",
+          "label": "Calificar evaluaciones en papel a partir de fotografías o PDF.",
+          "type": "scale",
+          "options": [
+            {
+              "value": "1",
+              "label": "1"
+            },
+            {
+              "value": "2",
+              "label": "2"
+            },
+            {
+              "value": "3",
+              "label": "3"
+            },
+            {
+              "value": "4",
+              "label": "4"
+            },
+            {
+              "value": "5",
+              "label": "5"
+            },
+            {
+              "value": "na",
+              "label": "No aplica"
+            },
+            {
+              "value": "skip",
+              "label": "Prefiero no responder"
+            }
+          ]
+        },
+        {
+          "id": "4.3",
+          "label": "Procesar varias evaluaciones de un grupo en lote.",
+          "type": "scale",
+          "options": [
+            {
+              "value": "1",
+              "label": "1"
+            },
+            {
+              "value": "2",
+              "label": "2"
+            },
+            {
+              "value": "3",
+              "label": "3"
+            },
+            {
+              "value": "4",
+              "label": "4"
+            },
+            {
+              "value": "5",
+              "label": "5"
+            },
+            {
+              "value": "na",
+              "label": "No aplica"
+            },
+            {
+              "value": "skip",
+              "label": "Prefiero no responder"
+            }
+          ]
+        },
+        {
+          "id": "4.4",
+          "label": "Calificar automáticamente preguntas objetivas cuando exista respuesta correcta definida.",
+          "type": "scale",
+          "options": [
+            {
+              "value": "1",
+              "label": "1"
+            },
+            {
+              "value": "2",
+              "label": "2"
+            },
+            {
+              "value": "3",
+              "label": "3"
+            },
+            {
+              "value": "4",
+              "label": "4"
+            },
+            {
+              "value": "5",
+              "label": "5"
+            },
+            {
+              "value": "na",
+              "label": "No aplica"
+            },
+            {
+              "value": "skip",
+              "label": "Prefiero no responder"
+            }
+          ]
+        },
+        {
+          "id": "4.5",
+          "label": "Proponer una calificación para preguntas abiertas usando criterios o rúbricas del docente.",
+          "type": "scale",
+          "options": [
+            {
+              "value": "1",
+              "label": "1"
+            },
+            {
+              "value": "2",
+              "label": "2"
+            },
+            {
+              "value": "3",
+              "label": "3"
+            },
+            {
+              "value": "4",
+              "label": "4"
+            },
+            {
+              "value": "5",
+              "label": "5"
+            },
+            {
+              "value": "na",
+              "label": "No aplica"
+            },
+            {
+              "value": "skip",
+              "label": "Prefiero no responder"
+            }
+          ]
+        },
+        {
+          "id": "4.6",
+          "label": "Generar retroalimentación individual relacionada con los errores de cada estudiante.",
+          "type": "scale",
+          "options": [
+            {
+              "value": "1",
+              "label": "1"
+            },
+            {
+              "value": "2",
+              "label": "2"
+            },
+            {
+              "value": "3",
+              "label": "3"
+            },
+            {
+              "value": "4",
+              "label": "4"
+            },
+            {
+              "value": "5",
+              "label": "5"
+            },
+            {
+              "value": "na",
+              "label": "No aplica"
+            },
+            {
+              "value": "skip",
+              "label": "Prefiero no responder"
+            }
+          ]
+        },
+        {
+          "id": "4.7",
+          "label": "Generar un resumen de errores frecuentes y temas con bajo desempeño del grupo.",
+          "type": "scale",
+          "options": [
+            {
+              "value": "1",
+              "label": "1"
+            },
+            {
+              "value": "2",
+              "label": "2"
+            },
+            {
+              "value": "3",
+              "label": "3"
+            },
+            {
+              "value": "4",
+              "label": "4"
+            },
+            {
+              "value": "5",
+              "label": "5"
+            },
+            {
+              "value": "na",
+              "label": "No aplica"
+            },
+            {
+              "value": "skip",
+              "label": "Prefiero no responder"
+            }
+          ]
+        },
+        {
+          "id": "4.8",
+          "label": "Permitir al docente revisar y modificar cualquier nota sugerida.",
+          "type": "scale",
+          "options": [
+            {
+              "value": "1",
+              "label": "1"
+            },
+            {
+              "value": "2",
+              "label": "2"
+            },
+            {
+              "value": "3",
+              "label": "3"
+            },
+            {
+              "value": "4",
+              "label": "4"
+            },
+            {
+              "value": "5",
+              "label": "5"
+            },
+            {
+              "value": "na",
+              "label": "No aplica"
+            },
+            {
+              "value": "skip",
+              "label": "Prefiero no responder"
+            }
+          ]
+        },
+        {
+          "id": "4.9",
+          "label": "Mostrar la respuesta detectada y la evidencia usada para proponer una nota.",
+          "type": "scale",
+          "options": [
+            {
+              "value": "1",
+              "label": "1"
+            },
+            {
+              "value": "2",
+              "label": "2"
+            },
+            {
+              "value": "3",
+              "label": "3"
+            },
+            {
+              "value": "4",
+              "label": "4"
+            },
+            {
+              "value": "5",
+              "label": "5"
+            },
+            {
+              "value": "na",
+              "label": "No aplica"
+            },
+            {
+              "value": "skip",
+              "label": "Prefiero no responder"
+            }
+          ]
+        },
+        {
+          "id": "4.10",
+          "label": "Marcar automáticamente respuestas ilegibles o de baja confianza para revisión docente.",
+          "type": "scale",
+          "options": [
+            {
+              "value": "1",
+              "label": "1"
+            },
+            {
+              "value": "2",
+              "label": "2"
+            },
+            {
+              "value": "3",
+              "label": "3"
+            },
+            {
+              "value": "4",
+              "label": "4"
+            },
+            {
+              "value": "5",
+              "label": "5"
+            },
+            {
+              "value": "na",
+              "label": "No aplica"
+            },
+            {
+              "value": "skip",
+              "label": "Prefiero no responder"
+            }
+          ]
+        },
+        {
+          "id": "4.11",
+          "label": "Distinguir entre respuesta incorrecta, respuesta en blanco y respuesta ilegible.",
+          "type": "scale",
+          "options": [
+            {
+              "value": "1",
+              "label": "1"
+            },
+            {
+              "value": "2",
+              "label": "2"
+            },
+            {
+              "value": "3",
+              "label": "3"
+            },
+            {
+              "value": "4",
+              "label": "4"
+            },
+            {
+              "value": "5",
+              "label": "5"
+            },
+            {
+              "value": "na",
+              "label": "No aplica"
+            },
+            {
+              "value": "skip",
+              "label": "Prefiero no responder"
+            }
+          ]
+        },
+        {
+          "id": "4.12",
+          "label": "Permitir usar una rúbrica, respuesta esperada o criterios definidos por el docente.",
+          "type": "scale",
+          "options": [
+            {
+              "value": "1",
+              "label": "1"
+            },
+            {
+              "value": "2",
+              "label": "2"
+            },
+            {
+              "value": "3",
+              "label": "3"
+            },
+            {
+              "value": "4",
+              "label": "4"
+            },
+            {
+              "value": "5",
+              "label": "5"
+            },
+            {
+              "value": "na",
+              "label": "No aplica"
+            },
+            {
+              "value": "skip",
+              "label": "Prefiero no responder"
+            }
+          ]
+        },
+        {
+          "id": "4.13",
+          "label": "Mantener historial de cambios y quién confirmó la calificación.",
+          "type": "scale",
+          "options": [
+            {
+              "value": "1",
+              "label": "1"
+            },
+            {
+              "value": "2",
+              "label": "2"
+            },
+            {
+              "value": "3",
+              "label": "3"
+            },
+            {
+              "value": "4",
+              "label": "4"
+            },
+            {
+              "value": "5",
+              "label": "5"
+            },
+            {
+              "value": "na",
+              "label": "No aplica"
+            },
+            {
+              "value": "skip",
+              "label": "Prefiero no responder"
+            }
+          ]
+        },
+        {
+          "id": "4.14",
+          "label": "Permitir reintentar una calificación cuando ocurra un fallo técnico sin perder la evidencia.",
+          "type": "scale",
+          "options": [
+            {
+              "value": "1",
+              "label": "1"
+            },
+            {
+              "value": "2",
+              "label": "2"
+            },
+            {
+              "value": "3",
+              "label": "3"
+            },
+            {
+              "value": "4",
+              "label": "4"
+            },
+            {
+              "value": "5",
+              "label": "5"
+            },
+            {
+              "value": "na",
+              "label": "No aplica"
+            },
+            {
+              "value": "skip",
+              "label": "Prefiero no responder"
+            }
+          ]
+        },
+        {
+          "id": "4.15",
+          "label": "Exportar o registrar fácilmente las calificaciones confirmadas.",
+          "type": "scale",
+          "options": [
+            {
+              "value": "1",
+              "label": "1"
+            },
+            {
+              "value": "2",
+              "label": "2"
+            },
+            {
+              "value": "3",
+              "label": "3"
+            },
+            {
+              "value": "4",
+              "label": "4"
+            },
+            {
+              "value": "5",
+              "label": "5"
+            },
+            {
+              "value": "na",
+              "label": "No aplica"
+            },
+            {
+              "value": "skip",
+              "label": "Prefiero no responder"
+            }
+          ]
+        },
+        {
+          "id": "4.16",
+          "label": "Consultar el historial de evaluaciones de un estudiante y abrir la evidencia de cada evaluación.",
+          "type": "scale",
+          "options": [
+            {
+              "value": "1",
+              "label": "1"
+            },
+            {
+              "value": "2",
+              "label": "2"
+            },
+            {
+              "value": "3",
+              "label": "3"
+            },
+            {
+              "value": "4",
+              "label": "4"
+            },
+            {
+              "value": "5",
+              "label": "5"
+            },
+            {
+              "value": "na",
+              "label": "No aplica"
+            },
+            {
+              "value": "skip",
+              "label": "Prefiero no responder"
+            }
+          ]
+        },
+        {
+          "id": "4.17",
+          "label": "Generar un reporte por estudiante con sus resultados de evaluación y referencias a las evidencias correspondientes.",
+          "type": "scale",
+          "options": [
+            {
+              "value": "1",
+              "label": "1"
+            },
+            {
+              "value": "2",
+              "label": "2"
+            },
+            {
+              "value": "3",
+              "label": "3"
+            },
+            {
+              "value": "4",
+              "label": "4"
+            },
+            {
+              "value": "5",
+              "label": "5"
+            },
+            {
+              "value": "na",
+              "label": "No aplica"
+            },
+            {
+              "value": "skip",
+              "label": "Prefiero no responder"
+            }
+          ]
+        },
+        {
+          "id": "4.top1",
+          "label": "4.1 · Función de mayor impacto #1 (hasta cinco, sin repetir)",
+          "type": "text",
+          "maxlength": 300
+        },
+        {
+          "id": "4.top2",
+          "label": "4.1 · Función de mayor impacto #2 (hasta cinco, sin repetir)",
+          "type": "text",
+          "maxlength": 300
+        },
+        {
+          "id": "4.top3",
+          "label": "4.1 · Función de mayor impacto #3 (hasta cinco, sin repetir)",
+          "type": "text",
+          "maxlength": 300
+        },
+        {
+          "id": "4.top4",
+          "label": "4.1 · Función de mayor impacto #4 (hasta cinco, sin repetir)",
+          "type": "text",
+          "maxlength": 300
+        },
+        {
+          "id": "4.top5",
+          "label": "4.1 · Función de mayor impacto #5 (hasta cinco, sin repetir)",
+          "type": "text",
+          "maxlength": 300
+        }
+      ]
+    },
+    {
+      "id": "flujo",
+      "title": "Calificación y retroalimentación esperadas",
+      "intro": "Seleccione una opción principal en cada pregunta. Estas preguntas recogen preferencias; no evalúan resultados del aplicativo.",
+      "questions": [
+        {
+          "id": "5.1",
+          "label": "Cuando el sistema tenga alta confianza en una pregunta objetiva:",
+          "type": "radio",
+          "options": [
+            {
+              "value": "1",
+              "label": "Mostrar la respuesta y la nota sugerida para revisión."
+            },
+            {
+              "value": "2",
+              "label": "Calificar automáticamente y permitir corrección posterior."
+            },
+            {
+              "value": "3",
+              "label": "Exigir confirmación docente antes de guardar cualquier nota."
+            },
+            {
+              "value": "skip",
+              "label": "Prefiero no responder"
+            }
+          ]
+        },
+        {
+          "id": "5.2",
+          "label": "Cuando una respuesta sea ilegible o la IA tenga baja confianza:",
+          "type": "radio",
+          "options": [
+            {
+              "value": "1",
+              "label": "Enviarla directamente a revisión docente."
+            },
+            {
+              "value": "2",
+              "label": "Intentar una segunda lectura automática y, si persiste la duda, pedir revisión."
+            },
+            {
+              "value": "3",
+              "label": "Marcarla como incorrecta automáticamente."
+            },
+            {
+              "value": "skip",
+              "label": "Prefiero no responder"
+            }
+          ]
+        },
+        {
+          "id": "5.3",
+          "label": "Para preguntas abiertas:",
+          "type": "radio",
+          "options": [
+            {
+              "value": "1",
+              "label": "La IA propone nota y justificación según criterios; el docente confirma o modifica."
+            },
+            {
+              "value": "2",
+              "label": "La IA solo transcribe o resume; el docente asigna la nota."
+            },
+            {
+              "value": "3",
+              "label": "La IA asigna la nota automáticamente sin confirmación."
+            },
+            {
+              "value": "skip",
+              "label": "Prefiero no responder"
+            }
+          ]
+        },
+        {
+          "id": "5.4",
+          "label": "Al revisar un grupo completo:",
+          "type": "radio",
+          "options": [
+            {
+              "value": "1",
+              "label": "Ver primero los casos dudosos o de baja confianza."
+            },
+            {
+              "value": "2",
+              "label": "Ver primero un resumen general de resultados."
+            },
+            {
+              "value": "3",
+              "label": "Revisar todas las respuestas una por una en el orden original."
+            },
+            {
+              "value": "skip",
+              "label": "Prefiero no responder"
+            }
+          ]
+        },
+        {
+          "id": "6.1",
+          "label": "¿Qué tipo de retroalimentación considera más útil para el estudiante? Elija la principal.",
+          "type": "radio",
+          "options": [
+            {
+              "value": "1",
+              "label": "Indicar únicamente qué estuvo bien o mal."
+            },
+            {
+              "value": "2",
+              "label": "Explicar brevemente el error y cómo mejorarlo."
+            },
+            {
+              "value": "3",
+              "label": "Dar retroalimentación por criterio o componente de la respuesta."
+            },
+            {
+              "value": "4",
+              "label": "Incluir recomendaciones de estudio o refuerzo relacionadas con el error."
+            },
+            {
+              "value": "skip",
+              "label": "Prefiero no responder"
+            }
+          ]
+        },
+        {
+          "id": "6.2",
+          "label": "¿Cómo debería presentar XCalificator la retroalimentación antes de entregarla al estudiante?",
+          "type": "radio",
+          "options": [
+            {
+              "value": "1",
+              "label": "Mostrarla siempre al docente, para revisión y edición."
+            },
+            {
+              "value": "2",
+              "label": "Mostrarla al docente solo cuando la confianza sea baja."
+            },
+            {
+              "value": "3",
+              "label": "Enviarla automáticamente si la confianza es alta."
+            },
+            {
+              "value": "skip",
+              "label": "Prefiero no responder"
+            }
+          ]
+        },
+        {
+          "id": "6.3",
+          "label": "¿Qué tan importante es conservar el estilo o criterio definido por el docente?",
+          "type": "radio",
+          "options": [
+            {
+              "value": "1",
+              "label": "Muy importante."
+            },
+            {
+              "value": "2",
+              "label": "Importante."
+            },
+            {
+              "value": "3",
+              "label": "Poco importante."
+            },
+            {
+              "value": "4",
+              "label": "No es necesario."
+            },
+            {
+              "value": "skip",
+              "label": "Prefiero no responder"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "calidad",
+      "title": "Calidad, confianza y control docente",
+      "intro": "Primero indique cómo espera que funcione la herramienta. En las afirmaciones de confianza: 1 = totalmente en desacuerdo y 5 = totalmente de acuerdo.",
+      "questions": [
+        {
+          "id": "7.1",
+          "label": "Tiempo máximo aceptable para ver una calificación individual:",
+          "type": "radio",
+          "options": [
+            {
+              "value": "1",
+              "label": "Menos de 10 segundos."
+            },
+            {
+              "value": "2",
+              "label": "10 a 30 segundos."
+            },
+            {
+              "value": "3",
+              "label": "31 a 60 segundos."
+            },
+            {
+              "value": "4",
+              "label": "1 a 3 minutos."
+            },
+            {
+              "value": "5",
+              "label": "Más de 3 minutos."
+            },
+            {
+              "value": "skip",
+              "label": "Prefiero no responder"
+            }
+          ]
+        },
+        {
+          "id": "7.2",
+          "label": "Para un grupo de aproximadamente 30 estudiantes, ¿qué espera?",
+          "type": "radio",
+          "options": [
+            {
+              "value": "1",
+              "label": "Ver resultados progresivos mientras se procesan."
+            },
+            {
+              "value": "2",
+              "label": "Esperar y ver todos los resultados al final."
+            },
+            {
+              "value": "3",
+              "label": "No tengo preferencia."
+            },
+            {
+              "value": "skip",
+              "label": "Prefiero no responder"
+            }
+          ]
+        },
+        {
+          "id": "7.3",
+          "label": "Si ocurre un fallo de conexión o del modelo:",
+          "type": "radio",
+          "options": [
+            {
+              "value": "1",
+              "label": "Conservar la evidencia y permitir reintentar sin volver a cargarla."
+            },
+            {
+              "value": "2",
+              "label": "Mostrar el error y pedir iniciar de nuevo."
+            },
+            {
+              "value": "3",
+              "label": "Enviar directamente a revisión manual."
+            },
+            {
+              "value": "skip",
+              "label": "Prefiero no responder"
+            }
+          ]
+        },
+        {
+          "id": "7.4",
+          "label": "¿Qué debe mostrar el sistema para justificar una nota sugerida?",
+          "type": "radio",
+          "options": [
+            {
+              "value": "1",
+              "label": "Solo la nota."
+            },
+            {
+              "value": "2",
+              "label": "Nota y comentario breve."
+            },
+            {
+              "value": "3",
+              "label": "Nota, criterio aplicado y justificación."
+            },
+            {
+              "value": "4",
+              "label": "Nota, criterio, justificación y evidencia de la respuesta."
+            },
+            {
+              "value": "skip",
+              "label": "Prefiero no responder"
+            }
+          ]
+        },
+        {
+          "id": "8.1",
+          "label": "Necesito poder revisar y modificar cualquier calificación sugerida.",
+          "type": "scale",
+          "options": [
+            {
+              "value": "1",
+              "label": "1"
+            },
+            {
+              "value": "2",
+              "label": "2"
+            },
+            {
+              "value": "3",
+              "label": "3"
+            },
+            {
+              "value": "4",
+              "label": "4"
+            },
+            {
+              "value": "5",
+              "label": "5"
+            },
+            {
+              "value": "na",
+              "label": "No aplica"
+            },
+            {
+              "value": "skip",
+              "label": "Prefiero no responder"
+            }
+          ]
+        },
+        {
+          "id": "8.2",
+          "label": "El sistema debe diferenciar una respuesta incorrecta de una respuesta ilegible.",
+          "type": "scale",
+          "options": [
+            {
+              "value": "1",
+              "label": "1"
+            },
+            {
+              "value": "2",
+              "label": "2"
+            },
+            {
+              "value": "3",
+              "label": "3"
+            },
+            {
+              "value": "4",
+              "label": "4"
+            },
+            {
+              "value": "5",
+              "label": "5"
+            },
+            {
+              "value": "na",
+              "label": "No aplica"
+            },
+            {
+              "value": "skip",
+              "label": "Prefiero no responder"
+            }
+          ]
+        },
+        {
+          "id": "8.3",
+          "label": "Quiero saber por qué se asignó una nota cuando intervenga IA.",
+          "type": "scale",
+          "options": [
+            {
+              "value": "1",
+              "label": "1"
+            },
+            {
+              "value": "2",
+              "label": "2"
+            },
+            {
+              "value": "3",
+              "label": "3"
+            },
+            {
+              "value": "4",
+              "label": "4"
+            },
+            {
+              "value": "5",
+              "label": "5"
+            },
+            {
+              "value": "na",
+              "label": "No aplica"
+            },
+            {
+              "value": "skip",
+              "label": "Prefiero no responder"
+            }
+          ]
+        },
+        {
+          "id": "8.4",
+          "label": "Preferiría revisar principalmente los casos de baja confianza.",
+          "type": "scale",
+          "options": [
+            {
+              "value": "1",
+              "label": "1"
+            },
+            {
+              "value": "2",
+              "label": "2"
+            },
+            {
+              "value": "3",
+              "label": "3"
+            },
+            {
+              "value": "4",
+              "label": "4"
+            },
+            {
+              "value": "5",
+              "label": "5"
+            },
+            {
+              "value": "na",
+              "label": "No aplica"
+            },
+            {
+              "value": "skip",
+              "label": "Prefiero no responder"
+            }
+          ]
+        },
+        {
+          "id": "8.5",
+          "label": "Confiaría más si el sistema muestra la evidencia y el criterio usado para calificar.",
+          "type": "scale",
+          "options": [
+            {
+              "value": "1",
+              "label": "1"
+            },
+            {
+              "value": "2",
+              "label": "2"
+            },
+            {
+              "value": "3",
+              "label": "3"
+            },
+            {
+              "value": "4",
+              "label": "4"
+            },
+            {
+              "value": "5",
+              "label": "5"
+            },
+            {
+              "value": "na",
+              "label": "No aplica"
+            },
+            {
+              "value": "skip",
+              "label": "Prefiero no responder"
+            }
+          ]
+        },
+        {
+          "id": "8.6",
+          "label": "Aceptaría usar el sistema si reduce tiempo sin quitarme control sobre la nota final.",
+          "type": "scale",
+          "options": [
+            {
+              "value": "1",
+              "label": "1"
+            },
+            {
+              "value": "2",
+              "label": "2"
+            },
+            {
+              "value": "3",
+              "label": "3"
+            },
+            {
+              "value": "4",
+              "label": "4"
+            },
+            {
+              "value": "5",
+              "label": "5"
+            },
+            {
+              "value": "na",
+              "label": "No aplica"
+            },
+            {
+              "value": "skip",
+              "label": "Prefiero no responder"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "casos",
+      "title": "Casos difíciles e invitación a una demostración o piloto",
+      "intro": "No incluya información identificable de estudiantes. Al final puede expresar si desea recibir una invitación para conocer o probar XCalificator. Su respuesta no lo compromete a participar.",
+      "questions": [
+        {
+          "id": "9.1",
+          "label": "Describa una evaluación o tipo de respuesta que considere difícil de calificar automáticamente.",
+          "type": "textarea",
+          "maxlength": 2500
+        },
+        {
+          "id": "9.2",
+          "label": "¿Qué error del sistema sería inaceptable durante una calificación?",
+          "type": "textarea",
+          "maxlength": 2500
+        },
+        {
+          "id": "9.3",
+          "label": "¿Qué necesitaría ver para confiar en una nota sugerida por XCalificator?",
+          "type": "textarea",
+          "maxlength": 2500
+        },
+        {
+          "id": "9.4",
+          "label": "¿Qué parte NO debería automatizarse sin intervención docente?",
+          "type": "textarea",
+          "maxlength": 2500
+        },
+        {
+          "id": "9.5",
+          "label": "Otro requerimiento o necesidad importante",
+          "type": "textarea",
+          "maxlength": 2500
+        },
+        {
+          "id": "10.3",
+          "label": "¿Le gustaría que le contactemos para invitarle a una demostración o prueba piloto de XCalificator?",
+          "type": "radio",
+          "options": [
+            {
+              "value": "1",
+              "label": "Sí."
+            },
+            {
+              "value": "2",
+              "label": "Tal vez."
+            },
+            {
+              "value": "3",
+              "label": "No."
+            },
+            {
+              "value": "skip",
+              "label": "Prefiero no responder"
+            }
+          ]
+        },
+        {
+          "id": "observations",
+          "label": "Observaciones adicionales",
+          "type": "textarea",
+          "maxlength": 2500
+        }
+      ]
+    }
+  ],
+  "time_activities": [
+    "Revisar y calificar todas las entregas",
+    "Calificar preguntas abiertas",
+    "Escribir retroalimentación individual",
+    "Registrar o transcribir calificaciones",
+    "Revisar casos dudosos o reclamos",
+    "Identificar errores frecuentes del grupo"
+  ],
+  "time_methods": [
+    {
+      "value": "measured",
+      "label": "Cronometrado"
+    },
+    {
+      "value": "estimated",
+      "label": "Estimado"
+    },
+    {
+      "value": "not_performed",
+      "label": "No realizo esta actividad"
+    },
+    {
+      "value": "unknown",
+      "label": "No dispongo del dato"
+    }
+  ]
+}

@@ -52,7 +52,7 @@ describe('CameraCapture', () => {
     await screen.findByRole('option', { name: 'USB' });
     readyVideo();
     fireEvent.click(screen.getByRole('button', { name: 'Tomar foto' }));
-    expect(await screen.findByRole('img', { name: 'Foto para revisar' })).toBeVisible();
+    await waitFor(() => expect(screen.getByRole('img', { name: 'Foto para revisar' })).toBeVisible());
     expect(selected.track.stop).toHaveBeenCalledOnce();
     expect(accept).not.toHaveBeenCalled();
   });
@@ -139,7 +139,7 @@ describe('CameraCapture', () => {
     await screen.findByRole('option', { name: 'USB' });
     readyVideo();
     fireEvent.click(screen.getByRole('button', { name: 'Tomar foto' }));
-    expect(await screen.findByRole('img', { name: 'Foto para revisar' })).toBeVisible();
+    await waitFor(() => expect(screen.getByRole('img', { name: 'Foto para revisar' })).toBeVisible());
     enumerate.mockResolvedValue(devices.slice(1));
     await act(async () => deviceEvents.dispatchEvent(new Event('devicechange')));
     expect(screen.getByRole('img', { name: 'Foto para revisar' })).toBeVisible();
@@ -173,7 +173,7 @@ describe('CameraCapture', () => {
     await waitFor(() => expect(document.querySelector('video')?.srcObject).toBe(stream));
     readyVideo();
     await user.click(screen.getByRole('button', { name: 'Tomar foto' }));
-    expect(await screen.findByRole('img', { name: 'Foto para revisar' })).toBeVisible();
+    await waitFor(() => expect(screen.getByRole('img', { name: 'Foto para revisar' })).toBeVisible());
     expect(accept).not.toHaveBeenCalled();
     expect(stop).toHaveBeenCalled();
     await user.dblClick(screen.getByRole('button', { name: 'Usar esta foto' }));

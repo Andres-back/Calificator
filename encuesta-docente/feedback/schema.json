@@ -1,0 +1,47 @@
+{
+  "sections": [
+    {
+      "id": "prueba",
+      "title": "Contexto de la prueba",
+      "intro": "Indique la prueba o período de uso al que se refieren sus comentarios. Si solo observó una demostración, señálelo para distinguirlo del uso directo.",
+      "questions": [
+        {"id":"institution","number":1,"label":"Institución educativa","type":"text","required":true,"maxlength":150},
+        {"id":"area","number":2,"label":"Área o asignatura","type":"text","maxlength":150},
+        {"id":"feedback.date","number":3,"label":"Fecha de la prueba o último día del período de uso comentado","type":"date","required":true},
+        {"id":"feedback.experience","number":4,"label":"¿Cuál fue su experiencia en esta prueba?","type":"radio","required":true,"options":[
+          {"value":"direct","label":"Utilicé XCalificator directamente"},
+          {"value":"assisted","label":"Utilicé XCalificator con acompañamiento"},
+          {"value":"demo","label":"Observé una demostración, sin utilizarlo directamente"}
+        ]},
+        {"id":"feedback.functions","number":5,"label":"¿Qué funciones utilizó u observó? Puede elegir varias.","type":"multi","required":true,"options":[
+          {"value":"capture","label":"Cargar o consultar evaluaciones y evidencias"},
+          {"value":"rubric","label":"Configurar criterios o rúbricas"},
+          {"value":"grading","label":"Obtener sugerencias de notas y revisarlas"},
+          {"value":"feedback","label":"Consultar o ajustar la retroalimentación"},
+          {"value":"history","label":"Consultar el historial de un estudiante"},
+          {"value":"reports","label":"Generar o consultar reportes"},
+          {"value":"other","label":"Otra actividad que describiré en mis observaciones"}
+        ]},
+        {"id":"feedback.version","number":6,"label":"Versión de XCalificator o referencia de la sesión, si la conoce","type":"text","maxlength":180,"hint":"Puede dejarlo vacío si no conoce la versión. No escriba contraseñas, enlaces privados ni nombres de estudiantes."}
+      ]
+    },
+    {
+      "id": "observaciones",
+      "title": "Observaciones y sugerencias",
+      "intro": "Describa lo que realmente utilizó u observó. Puede registrar aspectos útiles, dificultades o ausencia de problemas. No se exige una opinión favorable ni proponer una mejora si no la considera necesaria.",
+      "questions": [
+        {"id":"feedback.observation","number":7,"label":"¿Qué observó durante la prueba? Describa la actividad y lo que ocurrió.","type":"textarea","required":true,"maxlength":3000,"hint":"Puede incluir aspectos que funcionaron y dificultades. Si encontró un fallo, indique qué intentaba hacer, qué esperaba y qué ocurrió. No incluya datos personales de estudiantes."},
+        {"id":"feedback.suggestion","number":8,"label":"¿Qué cambio o mejora sugiere y para qué le serviría?","type":"textarea","maxlength":3000,"hint":"Si no tiene sugerencias, puede dejar este campo vacío o indicarlo expresamente."},
+        {"id":"feedback.priority","number":9,"label":"Si propuso alguna mejora, ¿qué prioridad le daría?","type":"radio","options":[
+          {"value":"high","label":"Alta: afecta una tarea importante o impide continuar"},
+          {"value":"medium","label":"Media: permitiría trabajar con mayor facilidad"},
+          {"value":"low","label":"Baja: sería un ajuste conveniente"},
+          {"value":"na","label":"No propuse mejoras"},
+          {"value":"skip","label":"Prefiero no responder"}
+        ]}
+      ]
+    }
+  ],
+  "time_activities": [],
+  "time_methods": []
+}
