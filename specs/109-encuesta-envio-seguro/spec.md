@@ -60,6 +60,7 @@ Firma de pocos puntos o demasiado corta; correo incorrecto; respuesta ajena al e
 - **FR-011**: Mostrar y exportar recuentos por versión; distinguir respuestas de docentes declarados por nombre/institución normalizados, sin acreditar identidad.
 - **FR-012**: Retirar la estimación 5–7 minutos no medida y registrar duración transcurrida y visible del formulario, no de calificación. La preprueba humana queda pendiente, sin inventar resultados.
 - **FR-013**: Admitir formularios 4.0 ya abiertos con exactamente su esquema y consentimiento archivados; mantener cierre global y rechazar versiones desconocidas.
+- **FR-014**: Pedir nombre completo solo al inicio; en la firma mostrar ese nombre automáticamente, permitir corregirlo desde un único campo y enviar el mismo nombre sin repetir su escritura. Conservar el dibujo de firma y su autorización; si se corrige la identidad después de firmar, solicitar nueva firma/autorización. Prioridad explícita del usuario antes de continuar el CRUD.
 
 ### Key Entities
 
@@ -83,3 +84,4 @@ Firma de pocos puntos o demasiado corta; correo incorrecto; respuesta ajena al e
 - Se incorpora a main únicamente el servicio independiente ya desplegado desde `5d05751`, más este hotfix; la rama anterior contiene cambios académicos ajenos que no se fusionarán.
 - La actualización exige PR y CI verde; no se amplía el consentimiento para guardar borradores identificados.
 - Esta ampliación explícita del usuario publica el conjunto como 5.0. Retroalimentación del piloto mantiene 1.0 porque sus preguntas no cambian. La encuesta no demuestra reducción causal del 40 %.
+- La prioridad nombre único se entrega en release 5.0.1, sin cambiar preguntas 5.0 ni consentimiento. El CRUD solicitado queda pendiente y separado en [borrador](admin-crud-draft.md), no se presume terminado.

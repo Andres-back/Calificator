@@ -1,5 +1,9 @@
 # Historial de versiones
 
+## Servicio 5.0.1 · nombre escrito una sola vez · 2026-10-20
+
+El docente escribe el nombre solo en identificación. En la firma se muestra ese mismo nombre y la opción Corregir mi nombre vuelve al único campo inicial. Se elimina la repetición y el bloqueo por diferencias de escritura entre dos campos. El dibujo y la autorización siguen siendo obligatorios; cambiar el nombre después de firmar exige volver a dibujar y autorizar. No cambia el contrato del servidor ni constancias anteriores. Instrumento 5.0 y consentimiento v5 permanecen, pues no se modifican preguntas. CRUD queda pendiente como una ampliación separada, no implementado en este parche.
+
 ## Servicio 5.0.0 · LR-CR-01 5.0-web-medicion · 2026-10-20
 
 24 preguntas: minutos numéricos en lugar de intervalos, procedencia medida/estimada y entregas de la misma evaluación; porcentaje de abiertas, legibilidad, cámara, entrega de hojas y respaldo. Consentimiento v5. Se retira la estimación no comprobada 5–7 minutos y se diferencian duración del formulario y tiempo de calificación. Preprueba humana pendiente.

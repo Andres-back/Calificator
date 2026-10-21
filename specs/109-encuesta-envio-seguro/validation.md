@@ -30,3 +30,11 @@ main todavía contiene follow-redirects 1.16.0, cuyo bloqueo alto ya fue diagnos
 ## Pendiente de entrega
 
 PR/CI/merge y verificación productiva no se consideran realizados por completar el código. La preprueba humana de duración requiere docentes y se realizará posteriormente; no se sustituye por los tiempos de automatización.
+
+## Prioridad nombre único · release 5.0.1
+
+El usuario indicó arreglar el nombre repetido antes del CRUD. Se elimina signature-name del DOM y se deriva la firma del único identity.name. Nombre mostrado como texto y botón de corrección al primer paso; si cambia tras dibujar, se limpia firma/autorización en memoria y se exige firmar de nuevo. Se mantiene la validación de consistencia del backend para clientes externos. Ninguna constancia previa se edita.
+
+59 pruebas WSGI PASS (2.456 s); Node 4/4 (139 ms), incluida regresión de nombre único, actualización, ausencia de segundo campo y firma; sintaxis JS y diff check PASS. Prueba WebKit móvil de diagnóstico: nombre con tildes, corrección tras firmar, nueva firma y confirmación real en base sintética local. Se comprobó en SQLite que identity.name y signature.name coinciden y existe una sola constancia de ese caso. Confirmación a 360 px sin desbordamiento. Prueba Chrome del piloto: alta con nombre inicial único, confirmaciones y firma, constancia guardada y nombres coincidentes. Capturas sintéticas en output/playwright/qa109/single-name-confirmed.png y pilot-single-name-confirmed.png. No son pruebas de hardware físico ni se usó la muestra real.
+
+CRUD solicitado queda como borrador pendiente, no implementado ni anunciado en producción. El PR #227 obtuvo en su HEAD anterior encuesta/gobernanza/contenedores/frontend quality en verde; backend bloqueado por 8 vulnerabilidades de Pillow 12.3.0 cuyo arreglo indicado es 13.0.0. No se cambia esta dependencia mayor sin autorización adicional; no se elude el control y no se despliega. Los controles deben volver a ejecutarse sobre el nuevo HEAD de nombre único.

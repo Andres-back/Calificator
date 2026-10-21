@@ -1,4 +1,7 @@
 const DEFAULT_LIMITS={min_points:8,min_length:.08,max_points:12000,max_strokes:100};
+export function signatureForIdentity(identity,strokes){
+  return {method:'drawn',name:identity.name.trim(),strokes};
+}
 export function signatureError(signature,authorized,limits=DEFAULT_LIMITS){
   limits={...DEFAULT_LIMITS,...limits};
   if(!authorized)return 'Debe autorizar guardar el dibujo de su firma para enviar.';

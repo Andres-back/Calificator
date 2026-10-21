@@ -26,3 +26,7 @@ CSRF, permisos, firma obligatoria, idempotencia y constancias intactos. Borrador
 ## Release and rollback
 
 Tras CI/merge, snapshot privado y huellas antes de reconstruir únicamente encuesta-docente desde main. Conservar .env/volumen y etiqueta de imagen anterior. Comprobar publicación, recepción con base temporal de la misma imagen, resumen real de solo lectura y huellas. Si falla salud, recuperar imagen previa sin borrar datos. No declarar preprueba humana realizada.
+
+## Prioridad adicional: nombre único
+
+Release 5.0.1, instrumento 5.0 sin cambiar preguntas/consentimiento. Suprimir signature-name del DOM, derivar signature.name de identity.name con un helper puro, mostrar nombre escapado y ofrecer Corregir mi nombre al paso de identidad. Al cambiarlo después de firmar, borrar dibujo y autorización en memoria para volver a firmar; nunca modificar constancias guardadas. Bloquear el botón mientras un envío es incierto para respetar el paquete idempotente. El backend conserva el contrato y rechaza nombres distintos enviados por clientes no válidos. Pruebas Node de helper/ausencia del segundo campo y navegador real: completar, corregir nombre, volver a firmar, enviar y comprobar constancia. CRUD continúa pendiente en admin-crud-draft.md; no hay migración en esta entrega.

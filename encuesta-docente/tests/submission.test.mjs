@@ -1,6 +1,19 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {signatureError, confirmedReceipt, requestJSON} from '../public/submission.js';
+import {signatureError, signatureForIdentity, confirmedReceipt, requestJSON} from '../public/submission.js';
+import {readFileSync} from 'node:fs';
+
+test('nombre único: la firma usa el nombre ya registrado, sin segundo campo',()=>{
+  const identity={name:'  María José Pérez  '};
+  const ink=[[[.1,.1],[.5,.4]]];
+  assert.deepEqual(signatureForIdentity(identity,ink),{method:'drawn',name:'María José Pérez',strokes:ink});
+  identity.name='María José Pérez García';
+  assert.equal(signatureForIdentity(identity,ink).name,identity.name);
+  const source=readFileSync(new URL('../public/app.js',import.meta.url),'utf8');
+  assert.doesNotMatch(source,/id="signature-name"/);
+  assert.doesNotMatch(source,/data\.signature\.name\.toLocaleLowerCase/);
+  assert.match(source,/change-identity-name/);
+});
 
 const signature={method:'drawn',name:'DOCENTE FICTICIO',strokes:[Array.from({length:12},(_,i)=>[.1+i*.025,.3+i*.01])]};
 test('firma: coincide mínimo de puntos y longitud del servidor',()=>{

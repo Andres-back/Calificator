@@ -2,7 +2,7 @@
 
 Web pública sin cuenta, con la identidad visual de XCalificator: logotipo original, paleta índigo/violeta y tipografías locales Inter y Plus Jakarta Sans (licencias SIL OFL incluidas en `public/branding/`). No carga fuentes ni servicios externos.
 
-Versión actual **LR-CR-01 5.0-web-medicion**, release **5.0.0**: 24 preguntas, identificación, consentimiento v5 y firma. La duración real está pendiente de preprueba con docentes; no se anuncia 5–7 minutos. Guarda minutos de calificación numéricos, entregas de la misma evaluación, porcentaje de preguntas abiertas, legibilidad, cámara y conservación posterior a entregar las hojas. Servicio independiente del backend académico.
+Versión actual **LR-CR-01 5.0-web-medicion**, release **5.0.1**: 24 preguntas, identificación, consentimiento v5 y firma. La duración real está pendiente de preprueba con docentes; no se anuncia 5–7 minutos. Guarda minutos de calificación numéricos, entregas de la misma evaluación, porcentaje de preguntas abiertas, legibilidad, cámara y conservación posterior a entregar las hojas. Servicio independiente del backend académico. El nombre se escribe una sola vez en identificación y se muestra automáticamente al firmar, con opción de corregirlo; no hay un segundo campo que deba coincidir manualmente.
 
 Recoge contexto, carga de calificación manual por rangos, dificultades, organización/consulta de evidencias y necesidades de apoyo. Una sola invitación final permite expresar interés en demo/piloto. No requiere haber usado el programa ni participar en el piloto. No evalúa satisfacción/TAM ni compara tiempos asistidos; la medición exacta del piloto es separada.
 
