@@ -1,5 +1,6 @@
 """Recepción en la imagen real, con SQLite temporal y sin red/credenciales reales."""
 import hashlib
+import base64
 import io
 import json
 import tempfile
@@ -24,4 +25,20 @@ with tempfile.TemporaryDirectory() as folder:
     with app.connect() as db:assert db.execute('select count(*) from responses').fetchone()[0]==1
     assert request('/admin/summary')['status'].startswith('401')
     assert request('/submission.js')['status']=='200 OK'
-    print('OK: imagen, recepción idempotente, firma, versión, integridad y permisos; base temporal, sin red.')
+    auth={'HTTP_AUTHORIZATION':'Basic '+base64.b64encode(b'synthetic:'+b'a'*32).decode(),**headers}
+    record_id=data['submission_id'];route='/admin/manage/'+record_id
+    with app.connect() as db:original=db.execute('SELECT * FROM responses').fetchall()
+    def command(action,revision,**extra):
+        return dict(action=action,expected_revision=revision,request_id=str(uuid.uuid4()),reason='Prueba aislada de imagen',**extra)
+    correction=command('correct',0,patch={'answers':{'area':'Corrección sintética'}})
+    saved=request(route,'POST',correction,auth)
+    assert saved['status']=='200 OK' and request(route,'POST',correction,auth)['body']==saved['body']
+    assert request(route,'POST',command('remove',1,confirm_id=record_id),auth)['status']=='200 OK'
+    report=json.loads(request('/admin/summary',headers=auth)['body'])
+    assert report['removed_responses']==1 and report['active_responses']==0
+    assert request(route,'POST',command('restore',2),auth)['status']=='200 OK'
+    assert request('/administration.js')['status']=='200 OK'
+    with app.connect() as db:
+        assert db.execute('SELECT * FROM responses').fetchall()==original
+        assert db.execute('SELECT count(*) FROM response_admin_events').fetchone()[0]==3
+    print('OK: imagen, recepción, CRUD, idempotencia, integridad y permisos; base temporal, sin red.')

@@ -29,12 +29,15 @@
       <div><strong id="count-follow">—</strong><span>En seguimiento</span></div>
     </div>
     <div class="inline-actions">
-      <a class="button primary" href="export.csv">Exportar respuestas (CSV)</a>
+      <a class="button primary" href="../" target="_blank" rel="noopener">Registrar respuesta</a>
+      <a class="button secondary" href="export.csv">Exportar originales activos (CSV)</a>
+      <a class="button secondary" href="corrections.csv">Exportar vista corregida (CSV)</a>
       <button class="button secondary" id="refresh" type="button">Actualizar</button>
     </div>
-    <p class="admin-privacy">Acceso reservado a los investigadores. El CSV excluye nombres, contactos y firmas; revise los textos libres antes de compartirlo.</p>
+    <p class="admin-privacy">Registrar abre el formulario para que el docente lo complete y firme. Los informes usan declaraciones originales activas; las correcciones se exportan aparte. Los CSV excluyen identificación y firmas; revise textos libres antes de compartirlos.</p>
     <form id="filters" class="admin-filters" role="search">
       <label class="filter-search">Buscar<input type="search" id="search" placeholder="Docente, código, institución, etiqueta…"></label>
+      <label>Conservación<select id="conservation"><option value="active">Respuestas activas</option><option value="trash">Papelera</option><option value="all">Todas las recibidas</option></select></label>
       <label>Institución<select id="institution"><option value="">Todas</option></select></label>
       <label>Estado<select id="status"><option value="">Todos</option><option value="pending">Por revisar</option><option value="reviewed">Revisada</option><option value="follow_up">Seguimiento</option><option value="excluded">Excluida del análisis</option></select></label>
       <label>Etiqueta<select id="tag"><option value="">Todas</option></select></label>
@@ -58,6 +61,27 @@
     <header class="record-heading"><h2 id="record-title">Respuesta</h2><button type="button" id="close-record" class="button secondary">Cerrar</button></header>
     <p id="record-identity"></p>
     <div class="inline-actions"><button type="button" id="download-record" class="button secondary">Descargar constancia</button><button type="button" id="print-record" class="button secondary">Imprimir</button></div>
+    <section class="management" aria-labelledby="management-heading">
+      <h3 id="management-heading">Administrar respuesta</h3>
+      <p id="management-state"></p>
+      <div class="inline-actions">
+        <button type="button" class="button secondary" id="edit-response">Corregir datos</button>
+        <button type="button" class="button secondary danger" id="remove-response">Eliminar de la lista</button>
+        <button type="button" class="button secondary" id="restore-response" hidden>Restaurar respuesta</button>
+      </div>
+      <form id="management-form" hidden>
+        <p class="notice" id="management-explanation"></p>
+        <fieldset id="management-fields"><legend class="sr-only">Datos corregidos</legend><div id="management-inputs"></div></fieldset>
+        <label class="field-label" id="confirm-code-label" hidden>Código de la respuesta<input type="text" id="confirm-code" autocomplete="off"><span class="hint" id="confirm-code-hint"></span></label>
+        <label class="field-label">Motivo del cambio<textarea id="change-reason" maxlength="1000" rows="3" required></textarea><span class="hint">Explique por qué realiza este cambio. Esta nota es privada.</span></label>
+        <details id="changes-preview" open><summary>Cambios que va a guardar</summary><ul id="changes-list"></ul></details>
+        <div class="inline-actions"><button class="button primary" type="submit" id="save-management">Guardar corrección</button><button class="button secondary" type="button" id="cancel-management">Cancelar</button></div>
+      </form>
+      <p id="management-message" role="status" aria-live="polite" tabindex="-1"></p>
+      <button class="button secondary" type="button" id="reload-management" hidden>Volver a consultar</button>
+      <details><summary>Historial de cambios administrativos</summary><div id="management-history"></div></details>
+      <details id="effective-details" hidden><summary>Datos actuales con correcciones administrativas</summary><div id="effective-answers"></div></details>
+    </section>
     <form id="review-form" class="review-editor">
       <h3>Organización</h3>
       <div class="field-grid">
@@ -68,8 +92,7 @@
       <button type="submit" class="button primary" id="save-review">Guardar organización</button>
       <p id="review-status-message" role="status" aria-live="polite"></p>
     </form>
-    <h3>Respuestas originales</h3>
-    <div id="record-answers"></div>
+    <details><summary>Respuestas originales firmadas</summary><div id="record-answers"></div></details>
   </dialog>
 </body>
 </html>

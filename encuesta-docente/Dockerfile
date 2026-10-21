@@ -5,7 +5,7 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt \
     && groupadd -g 10001 encuesta && useradd -u 10001 -g encuesta encuesta \
     && mkdir /data && chown encuesta:encuesta /data
-COPY --chown=encuesta:encuesta app.py measurement.py manage.py settings.json ./
+COPY --chown=encuesta:encuesta app.py administration.py measurement.py manage.py settings.json ./
 COPY --chown=encuesta:encuesta public ./public
 COPY --chown=encuesta:encuesta feedback ./feedback
 COPY --chown=encuesta:encuesta versions/4.0-web-breve ./versions/4.0-web-breve

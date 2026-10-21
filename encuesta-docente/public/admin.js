@@ -1,4 +1,5 @@
 import {escapeHTML as esc, downloadReceipt, printReceipt} from './app.js';
+import {createManagement} from './administration.js';
 
 const $ = selector => document.querySelector(selector);
 const root = new URL('./', location.href);
@@ -9,11 +10,15 @@ const dateLabel = value => new Date(value).toLocaleString('es-CO', {timeZone:'Am
 let records = [], schema, activeRecord, activeReceipt, saving = false;
 
 async function request(url, options = {}) {
-  const response = await fetch(url, {cache:'no-store', credentials:'same-origin', ...options});
-  if (response.status === 401) location.replace(new URL('login', root));
-  const value = response.status === 204 ? {} : await response.json();
-  if (!response.ok) throw new Error(value.error || 'No fue posible consultar las respuestas.');
-  return value;
+  const controller=new AbortController();
+  const timer=setTimeout(()=>controller.abort(),20000);
+  try {
+    const response = await fetch(url, {cache:'no-store', credentials:'same-origin', signal:controller.signal, ...options});
+    if (response.status === 401) location.replace(new URL('login', root));
+    const value = response.status === 204 ? {} : await response.json();
+    if (!response.ok) { const error=new Error(value.error || 'No fue posible consultar las respuestas.'); error.status=response.status; throw error; }
+    return value;
+  } finally { clearTimeout(timer); }
 }
 
 function populate(selector, values, allLabel) {
@@ -38,7 +43,7 @@ async function load() {
       const card=document.createElement('div');card.className='notice small';
       const rates=row.minutes_per_delivery_by_basis;
       const rateText=Object.entries(rates).filter(([,v])=>v.n).map(([basis,v])=>`${basis==='measured'?'Cronometrado declarado':'Estimado de memoria'}: ${v.mean} min/entrega (n=${v.n})`).join(' · ');
-      card.innerHTML=`<strong>${esc(row.version)}</strong><p>${row.responses} respuestas · ${row.teachers_declared} docentes declarados</p>${rateText?`<p>${esc(rateText)}. No demuestra ahorro ni causalidad.</p>`:''}<p>Duración del formulario: ${row.form_duration_n?`${row.form_duration_n} registros; mediana transcurrida ${row.form_elapsed_median_seconds} s; pestaña visible ${row.form_visible_median_seconds} s. Puede incluir pausas; no es una preprueba humana validada.`:'todavía sin mediciones en esta versión.'}</p>`;
+      card.innerHTML=`<strong>${esc(row.version)}</strong><p>${row.received_responses} recibidas · ${row.responses} activas · ${row.removed_responses} en papelera · ${row.teachers_declared} docentes declarados (originales activos)</p>${rateText?`<p>${esc(rateText)}. No demuestra ahorro ni causalidad.</p>`:''}<p>Duración del formulario: ${row.form_duration_n?`${row.form_duration_n} registros; mediana transcurrida ${row.form_elapsed_median_seconds} s; pestaña visible ${row.form_visible_median_seconds} s. Puede incluir pausas; no es una preprueba humana validada.`:'todavía sin mediciones en esta versión.'}</p>`;
       $('#version-summary').append(card);
     }
     populate('#institution', records.map(record => record.institution), 'Todas');
@@ -50,14 +55,16 @@ async function load() {
 }
 
 function render() {
+  const active=records.filter(record=>!record.deleted);
   $('#count-total').textContent = records.length;
-  $('#count-pending').textContent = records.filter(record => record.review.status === 'pending').length;
-  $('#count-reviewed').textContent = records.filter(record => record.review.status === 'reviewed').length;
-  $('#count-follow').textContent = records.filter(record => record.review.status === 'follow_up').length;
+  $('#count-pending').textContent = active.filter(record => record.review.status === 'pending').length;
+  $('#count-reviewed').textContent = active.filter(record => record.review.status === 'reviewed').length;
+  $('#count-follow').textContent = active.filter(record => record.review.status === 'follow_up').length;
   const query = normalize($('#search').value.trim());
   const filtered = records.filter(record => {
     const received = day(record.received_at);
     return (!query || normalize([record.name, record.id, record.institution, record.area, record.grades, record.review.notes, ...record.review.tags].join(' ')).includes(query))
+      && ($('#conservation').value==='all' || record.deleted===($('#conservation').value==='trash'))
       && (!$('#institution').value || record.institution === $('#institution').value)
       && (!$('#status').value || record.review.status === $('#status').value)
       && (!$('#tag').value || record.review.tags.includes($('#tag').value))
@@ -78,6 +85,12 @@ function render() {
     const tr = document.createElement('tr');
     tr.innerHTML = `<td><strong>${esc(record.name)}</strong><small class="record-code">${esc(record.id)}</small></td><td>${esc(record.institution)}<small>${esc([record.area, record.grades].filter(Boolean).join(' · '))}</small></td><td><time datetime="${esc(record.received_at)}">${esc(dateLabel(record.received_at))}</time><small>${esc(record.version)}</small></td><td><span class="review-state ${esc(record.review.status)}">${esc(statuses[record.review.status])}</span><div class="review-tags">${record.review.tags.map(tag => `<span>${esc(tag)}</span>`).join('')}</div></td><td><button type="button" class="button secondary open-record">Ver y organizar</button></td>`;
     tr.querySelector('.open-record').addEventListener('click', () => openRecord(record));
+    const actions=tr.lastElementChild;
+    for(const [label,mode] of record.deleted ? [['Restaurar','restore']] : [['Corregir','correct'],['Eliminar de la lista','remove']]) {
+      const button=document.createElement('button');button.type='button';button.className='button secondary';button.textContent=label;
+      button.addEventListener('click',()=>openRecord(record,mode));actions.append(button);
+    }
+    if(record.deleted || record.corrected) { const flag=document.createElement('small');flag.textContent=record.deleted?'En papelera':'Con correcciones administrativas';tr.firstElementChild.append(flag); }
     tbody.append(tr);
   }
 }
@@ -88,13 +101,17 @@ function answerLabel(question, value) {
   return values.map(item => question.options?.find(option => option.value === item)?.label ?? String(item)).join('; ');
 }
 
-async function openRecord(record) {
+let opening=0;
+async function openRecord(record,mode) {
+  if(saving || !management.canLeave()) return;
+  const turn=++opening;
   try {
-    const receipt = await request(new URL(`receipt/${encodeURIComponent(record.id)}`, root));
+    const [receipt,state] = await Promise.all([request(new URL(`receipt/${encodeURIComponent(record.id)}`, root)),request(new URL(`manage/${encodeURIComponent(record.id)}`,root))]);
+    if(turn!==opening)return;
     activeRecord = record;
     activeReceipt = receipt;
     const response = receipt.response;
-    $('#record-title').textContent = record.name;
+    $('#record-title').textContent = state.effective.identity.name;
     $('#record-identity').textContent = [record.institution, dateLabel(record.received_at), response.identity.email, response.identity.phone].filter(Boolean).join(' · ');
     $('#review-status').value = record.review.status;
     $('#review-tags').value = record.review.tags.join(', ');
@@ -102,7 +119,9 @@ async function openRecord(record) {
     $('#review-status-message').textContent = '';
     const original = receipt.schema_snapshot || schema;
     $('#record-answers').innerHTML = original.sections.map(section => `<details open><summary>${esc(section.title)}</summary><dl class="review-list">${section.questions.map(question => `<dt>${esc(question.label)}</dt><dd>${esc(answerLabel(question, response.answers[question.id]))}</dd>`).join('')}</dl></details>`).join('');
+    management.show(state,receipt);
     $('#record-dialog').showModal();
+    if(mode)management.begin(mode);
   } catch (error) { $('#admin-status').textContent = error.message; }
 }
 
@@ -130,8 +149,11 @@ $('#review-form').addEventListener('submit', async event => {
   finally { saving = false; $('#save-review').disabled = false; $('#close-record').disabled = false; }
 });
 
-$('#close-record').addEventListener('click', () => $('#record-dialog').close());
-$('#record-dialog').addEventListener('cancel', event => { if (saving) event.preventDefault(); });
+const management=createManagement({root,request,onSaved:load,isSaving:()=>saving,setSaving:value=>{
+  saving=value;$('#close-record').disabled=value;$('#save-review').disabled=value;
+},answerLabel});
+$('#close-record').addEventListener('click', () => {if(!saving && management.canLeave())$('#record-dialog').close();});
+$('#record-dialog').addEventListener('cancel', event => { if (saving || !management.canLeave()) event.preventDefault(); });
 $('#download-record').addEventListener('click', () => downloadReceipt(activeReceipt, schema));
 $('#print-record').addEventListener('click', () => printReceipt(activeReceipt, schema));
 $('#refresh').addEventListener('click', load);

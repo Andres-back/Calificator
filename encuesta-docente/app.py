@@ -21,6 +21,7 @@ from http.cookies import CookieError, SimpleCookie
 from pathlib import Path
 from urllib.parse import urlsplit
 from measurement import RELEASE, SIGNATURE_LIMITS, summary, valid_number
+import administration
 
 ROOT = Path(__file__).resolve().parent
 MAX_BODY = 384 * 1024
@@ -282,6 +283,7 @@ class SurveyApplication:
             # Researcher annotations do not alter the signed response or its hash.
             db.execute('CREATE TABLE IF NOT EXISTS response_reviews (response_id TEXT PRIMARY KEY REFERENCES responses(id) ON DELETE CASCADE, status TEXT NOT NULL, tags_json TEXT NOT NULL, notes TEXT NOT NULL, updated_at TEXT NOT NULL)')
             db.execute('CREATE TABLE IF NOT EXISTS admin_sessions (token_hash TEXT PRIMARY KEY, expires_at INTEGER NOT NULL, credential_version TEXT NOT NULL)')
+            administration.migrate(db)
         if os.name != 'nt':
             os.chmod(self.database.parent, 0o700)
             os.chmod(self.database, 0o600)
@@ -480,6 +482,23 @@ class SurveyApplication:
                         with self.connect() as db:
                             db.execute('DELETE FROM admin_sessions WHERE token_hash=?', (hashlib.sha256(token.encode()).hexdigest(),))
                     return respond('204 No Content', b'', extra=[('Set-Cookie', self.session_cookie(clear=True))])
+                if path.startswith('/admin/manage/') and method in ('GET', 'POST'):
+                    record_id = path.removeprefix('/admin/manage/')
+                    if method == 'GET':
+                        with self.connect() as db:
+                            state, _ = administration.get_state(db, record_id)
+                        return respond('200 OK', state)
+                    if not self.csrf_ok(environ):
+                        return respond('403 Forbidden', {'error': 'Actualice la página antes de guardar el cambio.'})
+                    length = int(environ.get('CONTENT_LENGTH') or '0')
+                    if length < 1 or length > 65536:
+                        return respond('413 Content Too Large', {'error': 'El cambio supera el tamaño permitido.'})
+                    if environ.get('CONTENT_TYPE', '').split(';')[0].strip().lower() != 'application/json':
+                        return respond('415 Unsupported Media Type', {'error': 'Se requiere JSON.'})
+                    command = json.loads(environ['wsgi.input'].read(length).decode('utf-8'))
+                    with self.connect() as db:
+                        confirmation = administration.execute(db, record_id, command, self.admin_user, validate)
+                    return respond('200 OK', confirmation)
                 if path.startswith('/admin/review/') and method == 'PUT':
                     if not self.csrf_ok(environ):
                         return respond('403 Forbidden', {'error': 'Actualice la página antes de guardar la revisión.'})
@@ -513,20 +532,25 @@ class SurveyApplication:
                     return respond('302 Found', b'', extra=[('Location', self.base + '/admin/')])
                 if path in ('/admin/summary','/admin/summary.csv'):
                     with self.connect() as db:
-                        report=summary(db.execute('SELECT receipt_json FROM responses').fetchall(),self.settings['instrument_version'])
+                        report=administration.report(db,self.settings['instrument_version'],summary)
                     if path.endswith('.csv'):
                         output=io.StringIO(newline='');writer=csv.writer(output)
-                        writer.writerow(['version','respuestas','docentes_declarados','n_duracion_formulario','mediana_segundos_formulario','mediana_segundos_pestana_visible','n_minutos_medidos_declarados','promedio_minutos_por_entrega_medidos_declarados','n_minutos_estimados','promedio_minutos_por_entrega_estimados'])
+                        writer.writerow(['version','respuestas','docentes_declarados','n_duracion_formulario','mediana_segundos_formulario','mediana_segundos_pestana_visible','n_minutos_medidos_declarados','promedio_minutos_por_entrega_medidos_declarados','n_minutos_estimados','promedio_minutos_por_entrega_estimados','recibidas','retiradas'])
                         for row in report['versions']:
                             values=[row[k] for k in ('version','responses','teachers_declared','form_duration_n','form_elapsed_median_seconds','form_visible_median_seconds')]
                             for basis in ('measured','estimated'):
                                 rate=row['minutes_per_delivery_by_basis'][basis];values.extend([rate['n'],rate['mean']])
-                            writer.writerow(values)
+                            writer.writerow(values+[row['received_responses'],row['removed_responses']])
                         return respond('200 OK',('\ufeff'+output.getvalue()).encode(),'text/csv; charset=utf-8',[('Content-Disposition','attachment; filename="resumen_por_version.csv"')])
                     return respond('200 OK',report)
+                if path == '/admin/corrections.csv':
+                    with self.connect() as db:
+                        content = administration.corrections_csv(db)
+                    return respond('200 OK', content, 'text/csv; charset=utf-8', [('Content-Disposition', 'attachment; filename="respuestas_vista_administrativa.csv"')])
                 if path == '/admin/export.csv':
                     with self.connect() as db:
                         rows = db.execute('SELECT r.id, r.created_at, r.receipt_json, v.status, v.tags_json FROM responses r LEFT JOIN response_reviews v ON v.response_id=r.id ORDER BY r.created_at').fetchall()
+                        states = administration.states(db)
                     data = io.StringIO(newline='')
                     writer = csv.writer(data)
                     writer.writerow(['codigo', 'fecha_recepcion_utc', 'version', 'campo', 'pregunta', 'valor', 'respuesta_textual', 'estado', 'estado_revision', 'etiquetas_revision'])
@@ -534,6 +558,8 @@ class SurveyApplication:
                         display = canonical(value) if isinstance(value, (list, dict)) else '' if value is None else str(value)
                         return "'" + display if display.lstrip().startswith(('=', '+', '-', '@', '\t', '\r')) else display
                     for id, stamp, document, review_status, review_tags in rows:
+                        if states[id]['deleted']:
+                            continue
                         stored = json.loads(document)
                         value = stored['response']
                         original_schema = stored.get('schema_snapshot', self.schema)
@@ -565,11 +591,13 @@ class SurveyApplication:
                 if path == '/admin/records':
                     with self.connect() as db:
                         rows = db.execute('SELECT r.id, r.created_at, r.receipt_json, v.status, v.tags_json, v.notes, v.updated_at FROM responses r LEFT JOIN response_reviews v ON v.response_id=r.id ORDER BY r.created_at DESC').fetchall()
+                        states = administration.states(db)
                     records = []
                     for record_id, stamp, encoded, review_status, tags, notes, updated in rows:
                         response = json.loads(encoded)['response']
-                        answers = response['answers']
-                        records.append({'id': record_id, 'received_at': stamp, 'name': response['identity']['name'], 'institution': answers.get('institution') or '', 'area': answers.get('area') or '', 'grades': answers.get('grades') or '', 'version': response['instrument_version'], 'demo_interest': answers.get('10.3'), 'review': {'status': review_status or 'pending', 'tags': json.loads(tags) if tags else [], 'notes': notes or '', 'updated_at': updated}})
+                        state = states[record_id]
+                        answers = state['effective']['answers']
+                        records.append({'id': record_id, 'received_at': stamp, 'name': state['effective']['identity']['name'], 'institution': answers.get('institution') or '', 'area': answers.get('area') or '', 'grades': answers.get('grades') or '', 'version': response['instrument_version'], 'demo_interest': answers.get('10.3'), 'revision': state['revision'], 'deleted': state['deleted'], 'corrected': state['corrected'], 'review': {'status': review_status or 'pending', 'tags': json.loads(tags) if tags else [], 'notes': notes or '', 'updated_at': updated}})
                     return respond('200 OK', records)
                 if path.startswith('/admin/receipt/'):
                     id = path.removeprefix('/admin/receipt/')
@@ -582,11 +610,15 @@ class SurveyApplication:
             files = {'/': ('index.html', 'text/html'), '/app.js': ('app.js', 'text/javascript'), '/admin.js': ('admin.js', 'text/javascript'), '/login.js': ('login.js', 'text/javascript'), '/styles.css': ('styles.css', 'text/css'), '/branding/logo-full.webp': ('branding/logo-full.webp', 'image/webp'), '/branding/logo-favicon.png': ('branding/logo-favicon.png', 'image/png'), '/branding/inter-latin-400-normal.woff2': ('branding/inter-latin-400-normal.woff2', 'font/woff2'), '/branding/inter-latin-600-normal.woff2': ('branding/inter-latin-600-normal.woff2', 'font/woff2'), '/branding/plus-jakarta-sans-latin-600-normal.woff2': ('branding/plus-jakarta-sans-latin-600-normal.woff2', 'font/woff2')}
             if path=='/submission.js' and method=='GET':
                 return respond('200 OK',(ROOT/'public/submission.js').read_bytes(),'text/javascript; charset=utf-8')
+            if path=='/administration.js' and method=='GET':
+                return respond('200 OK',(ROOT/'public/administration.js').read_bytes(),'text/javascript; charset=utf-8')
             if path in files and method == 'GET':
                 name, mime = files[path]
                 content = self.index_html() if path == '/' else (ROOT / 'public' / name).read_bytes()
                 return respond('200 OK', content, mime + '; charset=utf-8')
             return respond('404 Not Found', {'error': 'Página no encontrada.'})
+        except administration.AdminError as exc:
+            return respond(exc.status, {'error': str(exc)})
         except (Invalid, ValueError, UnicodeError, TypeError, KeyError) as exc:
             message = str(exc) if isinstance(exc, Invalid) else 'No se pudo interpretar el envío. Revise los campos.'
             code=exc.code if isinstance(exc,Invalid) else 'format'

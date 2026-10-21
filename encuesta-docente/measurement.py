@@ -4,7 +4,7 @@ import math
 import statistics
 import unicodedata
 
-RELEASE = '5.0.1'
+RELEASE = '5.1.0'
 SIGNATURE_LIMITS = {'min_points':8,'min_length':0.08,'max_points':12000,'max_strokes':100}
 
 
