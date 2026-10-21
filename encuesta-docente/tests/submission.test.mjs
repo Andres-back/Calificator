@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {signatureError, signatureForIdentity, confirmedReceipt, requestJSON} from '../public/submission.js';
+import {signatureError, signatureForIdentity, confirmedReceipt, requestJSON, numericAnswer} from '../public/submission.js';
 import {readFileSync} from 'node:fs';
 
 test('nombre único: la firma usa el nombre ya registrado, sin segundo campo',()=>{
@@ -16,6 +16,14 @@ test('nombre único: la firma usa el nombre ya registrado, sin segundo campo',()
 });
 
 const signature={method:'drawn',name:'DOCENTE FICTICIO',strokes:[Array.from({length:12},(_,i)=>[.1+i*.025,.3+i*.01])]};
+test('números flexibles: porcentajes, coma decimal, omisión y texto no medible',()=>{
+  const percent={id:'manual.open_percent',min:0,max:100,step:.1};
+  for(const [raw,expected] of [['50 %',50],['50,5',50.5],['50.5%',50.5],['0',0],['',null],['aprox. la mitad','aprox. la mitad'],['120','120'],['1e2','1e2'],['50%%','50%%']])assert.equal(numericAnswer(raw,percent),expected);
+  assert.equal(numericAnswer('32,5',{id:'manual.minutes',min:.1,max:10080,step:.1}),32.5);
+  assert.equal(numericAnswer('25',{id:'manual.deliveries',min:1,max:1000}),25);
+  assert.equal(numericAnswer('2,5',{id:'manual.deliveries',min:1,max:1000}),'2,5');
+  assert.equal(numericAnswer('50%',{id:'manual.deliveries',min:1,max:1000}),'50%');
+});
 test('firma: coincide mínimo de puntos y longitud del servidor',()=>{
   assert.equal(signatureError(signature,true),null);
   assert.match(signatureError({...signature,strokes:[Array.from({length:11},(_,i)=>[.1+i*.0001,.3])]},true),/más amplia/);

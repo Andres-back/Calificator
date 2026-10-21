@@ -1,4 +1,14 @@
 const DEFAULT_LIMITS={min_points:8,min_length:.08,max_points:12000,max_strokes:100};
+// No adivinar cantidades: conservar el texto ambiguo sin usarlo como medición.
+export function numericAnswer(raw,question){
+  const original=raw.trim();
+  if(!original)return null;
+  const candidate=question.id==='manual.open_percent'?original.replace(/\s*%\s*$/,''):original;
+  if(!/^[+-]?(?:\d+(?:[.,]\d+)?|[.,]\d+)$/.test(candidate))return original;
+  const value=Number(candidate.replace(',','.'));
+  const integer=(question.step??1)===1;
+  return Number.isFinite(value)&&value>=question.min&&value<=question.max&&(!integer||Number.isInteger(value))?value:original;
+}
 export function signatureForIdentity(identity,strokes){
   return {method:'drawn',name:identity.name.trim(),strokes};
 }

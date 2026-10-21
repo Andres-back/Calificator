@@ -352,6 +352,10 @@ actualizar la especificación propietaria, su plan y sus tareas; no debe crear d
 
 - [110-encuestas-crud](110-encuestas-crud/spec.md), [issue #228](https://github.com/Andres-back/Calificator/issues/228): registrar mediante formulario firmado, consultar, corregir con motivo e historial, eliminar de la lista y restaurar desde papelera en diagnóstico y piloto. Originales inmutables, informes originales activos y exportación corregida separada. Software 5.1.0, sin modificar instrumentos 5.0/1.0 ni registros académicos. Spec y plan aprobados por el usuario el 2026-10-21. [Validación](110-encuestas-crud/quickstart.md); CI y autorización de entrega antes de producción.
 
+## Hotfix 111: encuesta flexible
+
+- [111-encuesta-flexible](111-encuesta-flexible/spec.md), [issue #230](https://github.com/Andres-back/Calificator/issues/230): diagnóstico 5.1 con preguntas opcionales, porcentajes con coma o símbolo y aproximaciones preservadas como texto; sin dependencias bloqueantes. Archivo 5.0, informes separados, consentimiento y firma conservados. Software 5.2.0. [Verificación](111-encuesta-flexible/quickstart.md).
+
 ## Evolución 094: revisión docente sencilla
 
 - [094-revision-docente-simple](094-revision-docente-simple/spec.md), [issue #198](https://github.com/Andres-back/Calificator/issues/198): mensajes humanos, avisos activos frente a historial, evidencia/puntajes accesibles y distribución celular/computador. Evoluciona 087/088 bajo el propietario 008; sin cambiar APIs, cálculo, modelos ni registros. Alcance y [plan](094-revision-docente-simple/plan.md) aprobados; listas base 16/16 y UX 8/8 revisadas con autorización. Implementación y regresiones locales completas: [evidencia](094-revision-docente-simple/quickstart.md). CI remoto y aprobación separada obligatorios antes de fusionar/desplegar.

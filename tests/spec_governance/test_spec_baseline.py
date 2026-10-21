@@ -108,6 +108,7 @@ ALL_SPECS = {
     "106-recursos-vista-clara",
     "109-encuesta-envio-seguro",
     "110-encuestas-crud",
+    "111-encuesta-flexible",
 }
 OWNED_SPECS = {
     name

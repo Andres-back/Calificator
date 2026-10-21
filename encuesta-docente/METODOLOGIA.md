@@ -1,6 +1,6 @@
 # Diagnóstico docente: versión y análisis
 
-Actualización: 20 de octubre de 2026. **LR-CR-01 5.0-web-medicion**, consentimiento **CI-NEC-01-v5-2026-10-20**, release **5.0.0**. La metodología previa se conserva en versions/4.0-web-breve/METODOLOGIA.md.
+Actualización: 21 de octubre de 2026. **LR-CR-01 5.1-web-flexible**, consentimiento **CI-NEC-01-v5.1-2026-10-21**, release **5.2.0**. El cambio responde a dificultades reales para escribir porcentajes y avanzar. Se conserva el contenido de las 24 preguntas, pero todas son opcionales y ya no se exige completar preguntas relacionadas. Nombre, autorizaciones y firma siguen siendo necesarios para recibir la constancia. El piloto 1.0 no cambia. Settings y schema 5.0 están archivados; las respuestas anteriores no se reetiquetan.
 
 ## Propósito y población
 
@@ -8,7 +8,7 @@ Documentar necesidades declaradas de calificación manual y gestión de evidenci
 
 ## Contenido y unidad de análisis
 
-Son 24 preguntas, además de identificación, autorizaciones y firma obligatoria. Las preguntas de opinión son opcionales. Minutos y entregas se refieren a la misma última evaluación manual de un grupo: se excluye preparar el examen y transcribir notas a otra plataforma. Registrar tiempo efectivo de revisión y asignación de notas, señalando si procede de cronómetro/horas registradas o recuerdo estimado.
+Son 24 preguntas, además de identificación, autorizaciones y firma obligatoria. Todas las preguntas son opcionales, incluida institución. Minutos y entregas se refieren a la misma última evaluación manual de un grupo: se excluye preparar el examen y transcribir notas a otra plataforma. Puede omitirse cualquier componente; solo se calculará minutos por entrega cuando estén completos minutos, cantidad y método válidos. Se aceptan coma o punto decimal y símbolo % en porcentaje. Texto ambiguo o fuera de rango se conserva como texto breve, sin convertirlo en cero ni medición numérica.
 
 Se añade porcentaje de preguntas abiertas de esa evaluación (0–100), legibilidad declarada de respuestas manuscritas, disponibilidad/calidad percibida de cámara, entrega de hojas al alumnado y respaldo posterior. Un porcentaje declarado puede ser estimado: no equivale al análisis independiente de la prueba. La calidad de cámara declarada tampoco es una medición óptica. Las preguntas permiten N/A, desconocimiento u omisión sin convertirlos en cero.
 
@@ -16,7 +16,7 @@ Se añade porcentaje de preguntas abiertas de esa evaluación (0–100), legibil
 
 La versión 4.0 contiene 19 preguntas y rangos amplios de tiempo. No se convierten intervalos a minutos exactos ni se asigna valor arbitrario al intervalo abierto. No mezclar distribuciones de ítems modificados con 5.0. El panel muestra respuestas y docentes declarados por versión; este segundo conteo normaliza nombre/institución, no verifica identidad, no resuelve homónimos y no debe sumarse entre versiones sin conciliar aplicaciones repetidas.
 
-Las constancias conservan su contenido, esquema, consentimiento, fecha y firma originales. Se admite el envío de una pestaña 4.0 ya abierta con su versión archivada, sin reetiquetarla. Cambios posteriores del contenido requieren otra versión y su registro de motivos, fecha y recuentos.
+Las constancias conservan su contenido, esquema, consentimiento, fecha y firma originales. Se admite el envío de pestañas 4.0 y 5.0 ya abiertas con su versión archivada y reglas originales, sin reetiquetarlas. 5.1 se informa por separado incluso cuando las preguntas coinciden: los cambios de obligatoriedad pueden afectar omisiones y comparabilidad. Cambios posteriores requieren otra versión y su registro de motivos, fecha y recuentos.
 
 ## Minutos por entrega y alcance de resultados
 
