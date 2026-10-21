@@ -100,4 +100,7 @@ export async function login(page: Page, role: 'profesor' | 'estudiante', options
   await page.locator('input[type="password"]').fill('Password123!');
   await page.getByRole('button', { name: /Iniciar sesi.n/i }).click();
   await expect(page).toHaveURL(/\/app/);
+  // The URL changes before the lazy authenticated page finishes mounting.
+  // Navigating again here can abort its import and WebKit's next navigation.
+  await expect(page.locator('main#main-content').getByRole('heading', { level: 1 })).toBeVisible();
 }

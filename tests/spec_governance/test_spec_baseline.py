@@ -100,12 +100,17 @@ ALL_SPECS = {
     "097-escritura-docente-movil",
     "099-revision-docente-enfocada",
     "100-feedback-demo-movil",
+    "101-digitalizacion-visual-completa",
     "102-camara-visor-completo",
     "103-camaras-iconos-admin",
     "104-xali-docente-visual",
     "105-materia-movil-cola",
     "106-recursos-vista-clara",
     "107-retroalimentacion-familiar",
+    "109-encuesta-envio-seguro",
+    "110-encuestas-crud",
+    "112-evaluacion-multipagina",
+    "113-digitalizacion-documento-completo",
 }
 OWNED_SPECS = {
     name

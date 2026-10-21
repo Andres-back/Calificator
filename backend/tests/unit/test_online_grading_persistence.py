@@ -41,6 +41,9 @@ class FakeDB:
         self.refreshes += 1
 
     async def scalar(self, _query):
+        from app.modules.evaluaciones.models import Evaluacion
+        if _query.column_descriptions[0].get('entity') is Evaluacion:
+            return SimpleNamespace(contenido_version_id=None)
         raise AssertionError("La política de práctica libre no consulta intentos previos")
 
 

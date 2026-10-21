@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+from unittest.mock import AsyncMock
 from decimal import Decimal
 from types import SimpleNamespace
 from uuid import uuid4
@@ -199,3 +200,31 @@ def test_publish_failure_marks_same_child_for_recovery(monkeypatch) -> None:
     assert result.estado == CalificacionEstado.PROCESANDO.value
     assert result.nota_sugerida is None
     assert delivery.estado == EntregaEstado.PROCESANDO.value
+
+
+def test_parent_and_child_keep_the_same_pinned_content_reference(monkeypatch) -> None:
+    evaluation = _evaluation()
+    delivery = _delivery(evaluation, uuid4())
+    delivery.contenido_version_id = uuid4()
+    reference = {'contenido_version_id': str(delivery.contenido_version_id), 'contenido_hash': 'f' * 64}
+    monkeypatch.setattr(grading_queue_service, 'grading_job_reference', AsyncMock(return_value=reference))
+    db = FakeDB()
+    _, _, created, _, _ = _install_job_fakes(monkeypatch, db)
+    asyncio.run(grading_queue_service.enqueue_persisted_grading(db, evaluacion=evaluation,
+        entrega=delivery, estudiante_id=delivery.estudiante_id, profesor_id=evaluation.profesor_id))
+    for job in created:
+        assert all(job['input_json'][key] == value for key, value in reference.items())
+
+
+def test_invalid_context_never_creates_jobs_or_overwrites_a_grade(monkeypatch) -> None:
+    import pytest
+    from fastapi import HTTPException
+    evaluation = _evaluation()
+    delivery = _delivery(evaluation, uuid4())
+    monkeypatch.setattr(grading_queue_service, 'grading_job_reference', AsyncMock(side_effect=HTTPException(409, 'Revisa el material')))
+    db = FakeDB()
+    _, _, created, published, _ = _install_job_fakes(monkeypatch, db)
+    with pytest.raises(HTTPException):
+        asyncio.run(grading_queue_service.enqueue_persisted_grading(db, evaluacion=evaluation,
+            entrega=delivery, estudiante_id=delivery.estudiante_id, profesor_id=evaluation.profesor_id))
+    assert created == [] and published == [] and db.added == []

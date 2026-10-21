@@ -324,6 +324,10 @@ actualizar la especificación propietaria, su plan y sus tareas; no debe crear d
 
 - [105-materia-movil-cola](105-materia-movil-cola/spec.md), [issue #218](https://github.com/Andres-back/Calificator/issues/218): formulario de materia breve con escritura móvil adaptada; monitor compacto/minimizable sin detener trabajos; éxito contextual del borrador. Propietarios 003/005/008. Alcance y plan aprobados el 2026-10-18, revisión base y UX completas. Pruebas sintéticas en Chromium/WebKit y ambos temas; [resultados](105-materia-movil-cola/quickstart.md). Sin cambios académicos, pruebas físicas ni producción. CI remoto y autorización separada antes de fusión.
 
+## Evolución 101: digitalización visual completa
+
+- [101-digitalizacion-visual-completa](101-digitalizacion-visual-completa/spec.md), [issue #211](https://github.com/Andres-back/Calificator/issues/211), [PR #222](https://github.com/Andres-back/Calificator/pull/222): originales privados, tablas/figuras de PDF/Word/foto, lector y documentos completos, editor opcional manual/IA y contexto de calificación versionado. Propietarios 005/008/012; alcance y plan aprobados, listas 16/16 y 8/8 completas. [Validación, rendimiento y límites](101-digitalizacion-visual-completa/quickstart.md). Flags apagadas por defecto, sin datos reales, inferencia pagada, cambios académicos ni despliegue. CI y autorización separada obligatorios antes de fusionar.
+
 ## Evolución 102: cámara y evaluación completa
 
 - [102-camara-visor-completo](102-camara-visor-completo/spec.md), [issue #212](https://github.com/Andres-back/Calificator/issues/212): cámara integrada confirmada y subida alternativa; lectura amplia continua con documentos bajo Opciones. Propietarios 005/008; sin alterar notas/evidencias/IA ni mezclar Spec 101. Usuario aprobó [plan](102-camara-visor-completo/plan.md) y autorizó revisión de [lista UX](102-camara-visor-completo/checklists/ux.md): Specify 16/16, UX 8/8. Implementación y regresiones locales en [quickstart](102-camara-visor-completo/quickstart.md); PR/CI pendientes. Sin fusión/despliegue manual.
@@ -343,6 +347,22 @@ actualizar la especificación propietaria, su plan y sus tareas; no debe crear d
 ## Evolución 095: flujo docente ligero en fase demo
 
 - [095-flujo-docente-ligero](095-flujo-docente-ligero/spec.md), [issue #200](https://github.com/Andres-back/Calificator/issues/200): cabeceras y acciones compactas, boletín progresivo, claridad de nota, continuación por cuenta, progreso y elección segura del siguiente alumno, vocabulario uniforme. Alcance/[plan](095-flujo-docente-ligero/plan.md) aprobados; listas base 16/16 y UX 10/10 revisadas con autorización. Conserva propietarios 003/005/008, API y registros. [PR #201](https://github.com/Andres-back/Calificator/pull/201) fusionado con cuatro controles verdes; producción verificada el 2026-10-13 en main `9bc4455`, assets nuevos públicos y servicios saludables. [Evidencia de cierre](https://github.com/Andres-back/Calificator/pull/201#issuecomment-6152159782); sin modificaciones manuales de notas/evidencias.
+
+## Hotfix 109: encuesta docente fiable y versionada
+
+- [109-encuesta-envio-seguro](109-encuesta-envio-seguro/spec.md), [issue #226](https://github.com/Andres-back/Calificator/issues/226): recepción confirmada, firma validada antes de enviar, reintento idéntico en memoria y diagnóstico 5.0 con minutos/abiertas/legibilidad/cámara/entrega y respaldo. Recuentos y CSV privados por versión, conservación de 4.0 y constancias históricas. Autorización explícita del usuario el 2026-10-20. No demuestra ahorro causal ni sustituye preprueba humana; sin cambios académicos. PR/CI/main obligatorios antes de actualizar el servicio independiente.
+
+## Hotfix 112: calificación multipágina
+
+- [112-evaluacion-multipagina](112-evaluacion-multipagina/spec.md), [issue #232](https://github.com/Andres-back/Calificator/issues/232): conservar fragmentos legibles y fuentes sin que la lectura inicial los anule; distinguir preguntas ausentes, conservar páginas al timeout y excluir fragmentos parciales de pisos objetivos. Recuperación acotada con respaldo, auditoría y protección de notas docentes. [Verificación](112-evaluacion-multipagina/quickstart.md). Lectura/impresión/captura múltiple tienen entrega independiente en issue #233. CI, despliegue y recuperación real no se presuponen completados.
+
+## Evolución 110: CRUD administrativo de encuestas
+
+- [110-encuestas-crud](110-encuestas-crud/spec.md), [issue #228](https://github.com/Andres-back/Calificator/issues/228): registrar mediante formulario firmado, consultar, corregir con motivo e historial, eliminar de la lista y restaurar desde papelera en diagnóstico y piloto. Originales inmutables, informes originales activos y exportación corregida separada. Software 5.1.0, sin modificar instrumentos 5.0/1.0 ni registros académicos. Spec y plan aprobados por el usuario el 2026-10-21. [Validación](110-encuestas-crud/quickstart.md); CI y autorización de entrega antes de producción.
+
+## Evolución 113: documento de evaluación completo
+
+- [113-digitalizacion-documento-completo](113-digitalizacion-documento-completo/spec.md), [issue #233](https://github.com/Andres-back/Calificator/issues/233): lectura editable y pública separada del solucionario privado, PDF/Word compactos y hasta diez fotos ordenadas/giradas en una sola digitalización (20 MB). Plan aprobado expresamente el 2026-10-21; no reescribe evaluaciones antiguas ni notas. Recuperación urgente separada en Spec 112 / PR #234. [Validación](113-digitalizacion-documento-completo/quickstart.md).
 
 ## Evolución 094: revisión docente sencilla
 

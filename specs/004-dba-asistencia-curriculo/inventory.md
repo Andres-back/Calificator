@@ -21,7 +21,7 @@
 | frontend_route | `/app/materias/{id}/asistencia` | admin, profesor | covered | `frontend/src/config/routes.ts:38` |
 | frontend_route | `/app/materias/{id}/dba` | admin, profesor | covered | `frontend/src/config/routes.ts:40` |
 | frontend_call | `DELETE:/dba-personalizados/{id}` | ambiguous | covered | `frontend/src/modules/materias/dbaApi.ts:33` |
-| frontend_call | `GET:/dba` | ambiguous | covered | `frontend/src/modules/evaluaciones/api.ts:172` |
+| frontend_call | `GET:/dba` | ambiguous | covered | `frontend/src/modules/evaluaciones/api.ts:201` |
 | frontend_call | `GET:/materias/{materiaId}/asistencia/reporte` | ambiguous | covered | `frontend/src/modules/materias/asistenciaApi.ts:82` |
 | frontend_call | `GET:/materias/{materiaId}/asistencia` | admin, profesor | covered | `frontend/src/modules/materias/asistenciaApi.ts:70` |
 | frontend_call | `GET:/materias/{materiaId}/dba-personalizados` | ambiguous | covered | `frontend/src/modules/materias/dbaApi.ts:13` |

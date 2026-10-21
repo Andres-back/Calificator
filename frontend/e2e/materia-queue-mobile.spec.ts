@@ -9,6 +9,32 @@ async function touchTarget(control: Locator) {
   expect(box!.width).toBeGreaterThanOrEqual(43.999);
 }
 
+test('105 110 login espera el contenido del inicio antes de abrir materias', async ({ page }) => {
+  let releaseDashboard!: () => void;
+  let dashboardRequested!: () => void;
+  const release = new Promise<void>(resolve => { releaseDashboard = resolve; });
+  const requested = new Promise<void>(resolve => { dashboardRequested = resolve; });
+  await page.route('**/src/modules/dashboard/DashboardPage.tsx', async route => {
+    dashboardRequested();
+    await release;
+    await route.continue();
+  });
+  let loginFinished = false;
+  const signingIn = login(page, 'profesor', { permissions: ['subjects.read', 'subjects.create'] }).then(() => { loginFinished = true; });
+  try {
+    await requested;
+    await expect(page.getByRole('button', { name: /Abrir menú de cuenta/ })).toBeVisible();
+    await expect(page.locator('main#main-content').getByRole('heading', { level: 1 })).toHaveCount(0);
+    expect(loginFinished).toBe(false);
+  } finally {
+    releaseDashboard();
+    await signingIn;
+  }
+  await expect(page.locator('main#main-content').getByRole('heading', { level: 1 })).toBeVisible();
+  await page.goto('/app/materias');
+  await expect(page.getByRole('button', { name: 'Nueva materia', exact: true })).toBeVisible();
+});
+
 for (const width of [360, 390, 1440]) for (const theme of ['light', 'dark']) {
   test(`105 materia y cola discreta ${width}px ${theme}`, async ({ page }, info) => {
     await page.setViewportSize({ width, height: 844 });

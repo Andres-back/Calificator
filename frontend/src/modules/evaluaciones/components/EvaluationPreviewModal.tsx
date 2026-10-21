@@ -1,6 +1,8 @@
 import { lazy, Suspense, useEffect, useId, useRef, useState } from 'react';
 import { Download, ExternalLink, FileText } from 'lucide-react';
-import { Button, Modal, Select } from '@/components/ui';
+import { Button, Modal, RichContent, Select } from '@/components/ui';
+import { EvaluationContentViewer } from './EvaluationContentViewer';
+import { EvaluationSourceReview } from './EvaluationSourceReview';
 import { toApiError } from '@/lib/api';
 import { getEvaluationDocument } from '../api';
 import type { Evaluacion } from '@/types/api';
@@ -34,14 +36,17 @@ export function EvaluationPreviewModal({ evaluation, canViewSolutions, onClose }
   const [wordPending, setWordPending] = useState(false);
   const [wordError, setWordError] = useState<string | null>(null);
   const [optionsOpen, setOptionsOpen] = useState(false);
+  const [contentView, setContentView] = useState(false);
   const optionsId = useId();
   const wordController = useRef<AbortController | null>(null);
   const evaluationId = evaluation?.id;
+  const versionId = evaluation?.contenido_version_id;
   const showSolutions = solutions && canViewSolutions;
 
   useEffect(() => {
     setSolutions(false);
     setOptionsOpen(false);
+    setContentView(false);
   }, [evaluationId]);
 
   useEffect(() => {
@@ -57,7 +62,9 @@ export function EvaluationPreviewModal({ evaluation, canViewSolutions, onClose }
     if (!evaluationId) return;
     const controller = new AbortController();
     let url: string | undefined;
-    getEvaluationDocument(evaluationId, 'pdf', showSolutions, controller.signal)
+    const request = versionId ? getEvaluationDocument(evaluationId, 'pdf', showSolutions, controller.signal, versionId)
+      : getEvaluationDocument(evaluationId, 'pdf', showSolutions, controller.signal);
+    request
       .then((blob) => {
         if (controller.signal.aborted) return;
         url = URL.createObjectURL(blob);
@@ -67,7 +74,7 @@ export function EvaluationPreviewModal({ evaluation, canViewSolutions, onClose }
         if (!controller.signal.aborted) setError(toApiError(failure).detail);
       });
     return () => { controller.abort(); if (url) URL.revokeObjectURL(url); };
-  }, [evaluationId, showSolutions, retry]);
+  }, [evaluationId, versionId, showSolutions, retry]);
 
   const currentFile = file && file.evaluationId === evaluationId && file.solutions === showSolutions ? file : null;
 
@@ -78,7 +85,8 @@ export function EvaluationPreviewModal({ evaluation, canViewSolutions, onClose }
     setWordPending(true);
     setWordError(null);
     try {
-      const blob = await getEvaluationDocument(evaluation.id, 'docx', showSolutions, controller.signal);
+      const blob = await (versionId ? getEvaluationDocument(evaluation.id, 'docx', showSolutions, controller.signal, versionId)
+        : getEvaluationDocument(evaluation.id, 'docx', showSolutions, controller.signal));
       if (controller.signal.aborted) return;
       const url = URL.createObjectURL(blob);
       downloadUrl(url, documentName(evaluation, showSolutions, 'docx'));
@@ -108,6 +116,9 @@ export function EvaluationPreviewModal({ evaluation, canViewSolutions, onClose }
               </Select>
             </label>
           ) : <p className="text-sm text-muted">Evaluación para estudiantes · Sin respuestas</p>}
+          {(evaluation?.contenido_visual || evaluation?.lectura) && <Button type="button" variant="outline" className="min-h-11 w-full" onClick={() => { setContentView(value => !value); setOptionsOpen(false); }}>
+            {contentView ? 'Ver formato para imprimir' : evaluation?.lectura ? 'Ver lectura y preguntas' : 'Ver preguntas y figuras'}
+          </Button>}
           {currentFile && (
             <a href={currentFile.url} target="_blank" rel="noopener noreferrer"
               className="focus-ring flex min-h-11 items-center gap-2 rounded-lg px-2 text-sm font-semibold text-brand-600 dark:text-brand-300">
@@ -129,7 +140,23 @@ export function EvaluationPreviewModal({ evaluation, canViewSolutions, onClose }
         </div>}
       </div>
       <div className="min-h-0 flex-1 overflow-hidden rounded-lg border border-border bg-surface-2">
-        {error ? (
+        {contentView && evaluation ? <div className="h-full min-w-0 space-y-4 overflow-y-auto p-3 sm:p-5">
+          {evaluation.lectura && <article className="min-w-0 space-y-3 rounded-xl border border-border bg-surface p-4 sm:p-6">
+            <h3 className="font-semibold">Lectura o texto de apoyo</h3>
+            <p className="whitespace-pre-wrap break-words text-base leading-7">{evaluation.lectura}</p>
+          </article>}
+          {evaluation.preguntas.map((question, index) => <article key={String(question.contenido_id || index)} className="min-w-0 space-y-3 rounded-xl border border-border bg-surface p-4">
+            <h3 className="font-semibold">Pregunta {String(question.numero || index + 1)}</h3>
+            <RichContent content={String(question.enunciado || '')} variant="evaluation" />
+            <EvaluationContentViewer evaluationId={evaluation.id} versionId={evaluation.contenido_version_id}
+              content={evaluation.contenido_visual} questionId={String(question.contenido_id || '')} />
+            {Array.isArray(question.opciones) && <ul className="space-y-2">{question.opciones.map((option, optionIndex) => <li key={optionIndex} className="break-words text-sm">{String(typeof option === 'object' && option ? (option as { texto?: string }).texto || '' : option)}</li>)}</ul>}
+            {showSolutions && <p className="text-sm"><strong>Respuesta esperada: </strong>{String(evaluation.respuestas_esperadas.find(answer => Number(answer.numero) === Number(question.numero || index + 1))?.respuesta || 'Pendiente de confirmar')}</p>}
+          </article>)}
+          {canViewSolutions && evaluation.contenido_visual && 'cobertura' in evaluation.contenido_visual && <EvaluationSourceReview evaluationId={evaluation.id}
+            versionId={evaluation.contenido_version_id} manifest={evaluation.contenido_visual}
+            questions={evaluation.preguntas.filter(question => question.contenido_id).map(question => ({ id: String(question.contenido_id), label: `Pregunta ${question.numero}` }))} />}
+        </div> : error ? (
           <div role="alert" className="space-y-3 p-5">
             <p className="text-sm">{error}</p>
             <Button variant="outline" onClick={() => setRetry((value) => value + 1)}>Volver a intentar</Button>

@@ -39,6 +39,19 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 10
+      feedback-postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_DB: spec107
+          POSTGRES_USER: spec107
+          POSTGRES_PASSWORD: synthetic-ci-only
+        ports:
+          - 55417:5432
+        options: >-
+          --health-cmd "pg_isready -U spec107 -d spec107"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
       redis:
         image: redis:7-alpine
         ports:
@@ -61,7 +74,9 @@ jobs:
       SPEC061_TEST_DATABASE_URL: postgresql+asyncpg://xcalificator:test-password@127.0.0.1:5432/xcalificator_test
       SPEC084_TEST_DATABASE_URL: postgresql+asyncpg://xcalificator:test-password@127.0.0.1:5432/xcalificator_test
       SPEC085_TEST_DATABASE_URL: postgresql+asyncpg://xcalificator:test-password@127.0.0.1:5432/xcalificator_test
+      SPEC101_TEST_DATABASE_URL: postgresql+asyncpg://xcalificator:test-password@127.0.0.1:5432/xcalificator_test
       SPEC104_TEST_DATABASE_URL: postgresql+asyncpg://xcalificator:test-password@127.0.0.1:5432/xcalificator_test
+      SPEC107_TEST_DATABASE_URL: postgresql+asyncpg://spec107:synthetic-ci-only@127.0.0.1:55417/spec107
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -90,14 +105,20 @@ jobs:
       - name: Apply database migrations
         run: alembic upgrade head
 
+      - name: Apply isolated feedback database migrations
+        run: DATABASE_URL="$SPEC107_TEST_DATABASE_URL" alembic upgrade head
+
       - name: Run backend unit tests
         run: python -m pytest tests/unit -v
 
       - name: Run backend integration tests
         run: python -m pytest tests/integration -v
 
-  frontend:
-    name: Frontend quality, build and E2E
+      - name: Run isolated document converter contracts
+        run: python -m pytest ../document-renderer/tests -v
+
+  frontend-quality:
+    name: Frontend quality and build
     runs-on: ubuntu-22.04
     timeout-minutes: 35
     defaults:
@@ -160,20 +181,53 @@ jobs:
       - name: Build production bundle
         run: npm run build
 
+  frontend-e2e:
+    name: Frontend E2E (${{ matrix.suite }})
+    needs: frontend-quality
+    runs-on: ubuntu-22.04
+    timeout-minutes: 35
+    strategy:
+      fail-fast: false
+      matrix:
+        suite: [general, contextual]
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Use supported npm client
+        run: npm install --global npm@${{ env.NPM_VERSION }}
+
+      - name: Install dependencies
+        run: npm ci
+
       - name: Install Playwright Chromium and WebKit
         run: npx playwright install --with-deps chromium webkit
 
-      - name: Run mocked end-to-end tests
-        run: npm run test:e2e
+      - name: Run general end-to-end tests
+        if: matrix.suite == 'general'
+        timeout-minutes: 30
+        run: npm run test:e2e -- --reporter=line
 
       - name: Run contextual teacher flow regressions
-        run: npm run test:mock -- grading-review.mock.spec.ts
+        if: matrix.suite == 'contextual'
+        timeout-minutes: 25
+        run: npm run test:mock -- grading-review.mock.spec.ts evaluation-visuals.mock.spec.ts --reporter=line
 
       - name: Upload E2E diagnostics on failure
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: playwright-diagnostics
+          name: playwright-diagnostics-${{ matrix.suite }}
           if-no-files-found: ignore
           retention-days: 7
           path: |
@@ -181,10 +235,26 @@ jobs:
             frontend/playwright-report/
             output/playwright/
 
+  frontend:
+    name: Frontend quality, build and E2E
+    needs: [frontend-quality, frontend-e2e]
+    if: always()
+    runs-on: ubuntu-22.04
+    timeout-minutes: 5
+    steps:
+      - name: Require all frontend validations
+        env:
+          QUALITY: ${{ needs.frontend-quality.result }}
+          E2E: ${{ needs.frontend-e2e.result }}
+        run: |
+          set -eu
+          test "$QUALITY" = success
+          test "$E2E" = success
+
   containers:
     name: Container builds
     runs-on: ubuntu-22.04
-    timeout-minutes: 25
+    timeout-minutes: 35
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -197,3 +267,9 @@ jobs:
 
       - name: Build frontend image
         run: docker build -f frontend/Dockerfile -t xcalificator-web .
+
+      - name: Build isolated document converter
+        run: docker build -f document-renderer/Dockerfile -t xcalificator-document-renderer .
+
+      - name: Verify converter isolation and real DOCX conversion
+        run: python document-renderer/check_isolation.py --image xcalificator-document-renderer

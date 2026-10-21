@@ -1,4 +1,4 @@
-import type { Evaluacion, EvaluacionModalidad } from '@/types/api';
+import type { Evaluacion, EvaluacionModalidad, EvaluationVisualManifest } from '@/types/api';
 
 export const WIZARD_VERSION = 7;
 export const WIZARD_TTL_MS = 7 * 24 * 60 * 60 * 1000;
@@ -32,6 +32,7 @@ export interface ReferenceFileMetadata {
 }
 
 export interface EditableQuestion {
+  contenidoId?: string;
   clientId: string;
   numero: number;
   tipo: QuestionType;
@@ -59,6 +60,12 @@ export interface EditableRubricCriterion extends Record<string, unknown> {
   dba_ids: string[];
 }
 export interface WizardState {
+  lectura?: string;
+  visualJobs?: Record<string, string>;
+  visualKeysReviewed?: string[];
+  visualKeysPending?: string[];
+  contenidoVisual?: EvaluationVisualManifest;
+  contenidoVersionId?: string | null;
   step: number;
   materiaId: string;
   nombre: string;
@@ -414,6 +421,7 @@ export function evaluationToEditableQuestions(evaluation: Evaluacion): EditableQ
         : [];
     return {
       clientId: `${evaluation.id}-${index}-${Date.now()}`,
+      contenidoId: typeof question.contenido_id === 'string' ? question.contenido_id : undefined,
       numero: index + 1,
       tipo,
       enunciado: String(question.enunciado ?? ''),
@@ -526,6 +534,7 @@ export function evaluationToWizardState(evaluation: Evaluacion): WizardState {
     nombre: evaluation.nombre,
     nombreAutomatico: false,
     descripcion: evaluation.descripcion ?? '',
+    lectura: evaluation.lectura ?? '',
     modalidad: evaluation.modalidad ?? 'online',
     notaMaxima: Number(evaluation.nota_maxima),
     fechaLimiteEntrega: toDatetimeLocalValue(evaluation.fecha_limite_entrega),
@@ -536,10 +545,53 @@ export function evaluationToWizardState(evaluation: Evaluacion): WizardState {
     rubricCriteria: criteria.map((criterion) => String(criterion.nombre ?? '')).filter(Boolean),
     counts,
     generatedEvaluationId: evaluation.id,
+    contenidoVisual: evaluation.contenido_visual && 'cobertura' in evaluation.contenido_visual
+      ? evaluation.contenido_visual : undefined,
+    contenidoVersionId: evaluation.contenido_version_id,
+    visualKeysPending: evaluation.claves_visuales_pendientes ?? [],
     generatedCriteria: normalizeRubricCriteria(criteria),
     generationWarnings: evaluation.blueprint?.reglas_feedback?.trazabilidad?.advertencias ?? [],
     questions,
   };
+}
+
+export function updateQuestionVisual(state: WizardState, questionId: string, block: EvaluationVisualManifest['bloques'][number] | null, replacedId?: string): WizardState {
+  const manifest: EvaluationVisualManifest = state.contenidoVisual ?? { schema_version: 1,
+    pregunta_ids: [], recurso_ids: [], bloques: [], cobertura: { detectados: [], conservados: [], avisos: [], estado: 'completa' } };
+  // Removing/replacing one use must retain a shared stimulus for other questions.
+  const retained = manifest.bloques.flatMap(item => {
+    if (item.id !== replacedId) return [item];
+    const ids = item.pregunta_ids.filter(id => id !== questionId);
+    return ids.length ? [{ ...item, pregunta_ids: ids }] : [];
+  });
+  const bloques = [...retained, ...(block ? [{ ...block, orden: retained.length, pregunta_ids: [questionId] }] : [])];
+  const keptIds = new Set(bloques.map(item => item.id));
+  const avisos = manifest.cobertura.avisos.filter(warning => !warning.bloque_id || keptIds.has(warning.bloque_id));
+  return { ...state, visualKeysReviewed: (state.visualKeysReviewed ?? []).filter(id => id !== questionId),
+    visualKeysPending: [...new Set([...(state.visualKeysPending ?? []), questionId])],
+    contenidoVisual: { ...manifest, pregunta_ids: state.questions.map(question => question.contenidoId!), bloques,
+      recurso_ids: [...new Set(bloques.flatMap(item => item.recurso_id ? [item.recurso_id] : []))],
+      cobertura: { ...manifest.cobertura, avisos, estado: avisos.length ? 'requiere_revision' : 'completa' } } };
+}
+
+export function reconcileVisualQuestions(state: WizardState, questions: EditableQuestion[], duplicateFrom?: string): Partial<WizardState> {
+  if (!state.contenidoVisual) return { questions };
+  const next = questions.map(question => ({ ...question, contenidoId: question.contenidoId || crypto.randomUUID() }));
+  const ids = next.map(question => question.contenidoId!);
+  const copied = duplicateFrom ? next.find(question => !state.questions.some(previous => previous.contenidoId === question.contenidoId))?.contenidoId : undefined;
+  const bloques = state.contenidoVisual.bloques.flatMap(block => {
+    const associations = block.pregunta_ids.filter(id => ids.includes(id));
+    if (copied && duplicateFrom && block.pregunta_ids.includes(duplicateFrom)) associations.push(copied);
+    return associations.length || !block.pregunta_ids.length ? [{ ...block, pregunta_ids: associations }] : [];
+  });
+  const kept = new Set(bloques.map(block => block.id));
+  const avisos = state.contenidoVisual.cobertura.avisos.filter(warning => !warning.bloque_id || kept.has(warning.bloque_id))
+    .map(warning => ({ ...warning, pregunta_ids: warning.pregunta_ids?.filter(id => ids.includes(id)) }));
+  return { questions: next, contenidoVisual: { ...state.contenidoVisual, pregunta_ids: ids, bloques,
+    recurso_ids: [...new Set(bloques.flatMap(block => block.recurso_id ? [block.recurso_id] : []))],
+    cobertura: { ...state.contenidoVisual.cobertura, avisos, estado: avisos.length ? 'requiere_revision' : 'completa' } },
+    visualKeysReviewed: state.visualKeysReviewed?.filter(id => ids.includes(id)),
+    visualKeysPending: [...new Set([...(state.visualKeysPending ?? []).filter(id => ids.includes(id)), ...(copied ? [copied] : [])])] };
 }
 
 export function duplicateQuestion(questions: EditableQuestion[], index: number) {
@@ -548,6 +600,7 @@ export function duplicateQuestion(questions: EditableQuestion[], index: number) 
   const copy: EditableQuestion = {
     ...original,
     clientId: `${original.clientId}-copy-${Date.now()}`,
+    contenidoId: original.contenidoId ? crypto.randomUUID() : undefined,
     enunciado: `${original.enunciado} (copia)`,
     opciones: [...original.opciones],
     dbaIds: [...original.dbaIds],
@@ -572,6 +625,7 @@ export function moveQuestion(questions: EditableQuestion[], index: number, direc
 export function questionsToUpdatePayload(questions: EditableQuestion[]) {
   return {
     preguntas: questions.map((question) => ({
+      ...(question.contenidoId ? { contenido_id: question.contenidoId } : {}),
       numero: question.numero,
       tipo: question.tipo,
       enunciado: question.enunciado.trim(),
@@ -597,7 +651,7 @@ export function getWizardStorage(): Storage | null {
   try { return window.localStorage; } catch { return null; }
 }
 
-export function persistWizardDraft(storage: Storage | null, userId: string, state: WizardState, now = Date.now()): boolean {
+export function persistWizardDraft(storage: Storage | null, userId: string, state: WizardState, now = Date.now(), editingEvaluationId?: string): boolean {
   if (!storage) return false;
   const safeState: WizardState = {
     ...state,
@@ -612,21 +666,40 @@ export function persistWizardDraft(storage: Storage | null, userId: string, stat
     state: safeState,
   };
   try {
-    storage.setItem(wizardStorageKey(userId, state.materiaId), JSON.stringify(draft));
-    if (state.materiaId) removeMatchingLegacyDraft(storage, userId, state.materiaId);
+    storage.setItem(editingEvaluationId ? visualEditKey(userId, editingEvaluationId) : wizardStorageKey(userId, state.materiaId), JSON.stringify(draft));
+    if (!editingEvaluationId && state.materiaId) removeMatchingLegacyDraft(storage, userId, state.materiaId);
     return true;
   } catch { return false; }
+}
+
+function visualEditKey(userId: string, evaluationId: string) {
+  return `xcal:visual-edit:v1:${encodeURIComponent(userId)}:${encodeURIComponent(evaluationId)}`;
+}
+
+export function loadVisualEditDraft(storage: Storage | null, userId: string, evaluationId: string, now = Date.now()) {
+  if (!storage) return null;
+  const draft = readWizardDraft(storage, userId, visualEditKey(userId, evaluationId), now);
+  return draft?.generatedEvaluationId === evaluationId ? draft : null;
+}
+
+export function discardVisualEditDraft(storage: Storage | null, userId: string, evaluationId: string) {
+  try { storage?.removeItem(visualEditKey(userId, evaluationId)); } catch { /* Device storage remains optional. */ }
 }
 
 /** Comprueba estructura, no completitud: un borrador editable puede tener campos vacíos. */
 function hasDraftShape(state: WizardState): boolean {
   const strings = (value: unknown): value is string[] => Array.isArray(value) && value.every(item => typeof item === 'string');
   return ['materiaId', 'nombre', 'descripcion', 'fechaLimiteEntrega', 'referenceText', 'instruccionesAdicionales'].every(key => typeof state[key as keyof WizardState] === 'string')
+    && (state.lectura === undefined || typeof state.lectura === 'string' && state.lectura.length <= 60000)
     && ['online', 'fisica', 'mixta'].includes(state.modalidad)
     && Number.isFinite(state.step) && Number.isFinite(state.notaMaxima)
     && typeof state.useDba === 'boolean' && typeof state.useRubric === 'boolean'
     && (state.nombreAutomatico === undefined || typeof state.nombreAutomatico === 'boolean')
     && (state.generatedUpdatedAt === undefined || typeof state.generatedUpdatedAt === 'string')
+    && (state.visualJobs === undefined || Boolean(state.visualJobs && typeof state.visualJobs === 'object'
+      && !Array.isArray(state.visualJobs) && Object.values(state.visualJobs).every(value => typeof value === 'string')))
+    && (!state.visualKeysPending || strings(state.visualKeysPending))
+    && (!state.visualKeysReviewed || strings(state.visualKeysReviewed))
     && strings(state.dbaIds) && strings(state.dbaPersonalizadoIds) && strings(state.rubricCriteria)
     && (!state.generationWarnings || strings(state.generationWarnings))
     && (state.generatedEvaluationId === null || typeof state.generatedEvaluationId === 'string')

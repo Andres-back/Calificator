@@ -17,6 +17,7 @@ from app.shared.enums import (
 )
 from app.workers import tasks_grading
 from app.services import storage_service
+from app.modules.evaluaciones.blueprint_service import evaluation_to_grading_blueprint
 
 
 class FakeDB:
@@ -166,6 +167,14 @@ def test_extraction_fingerprint_invalidates_only_visual_dependencies() -> None:
     )
 
 
+def test_extraction_policy_version_invalidates_old_checkpoints(monkeypatch) -> None:
+    params=dict(image_bytes=b'same-evidence',image_mime='image/jpeg',blueprint={'preguntas':[]},ai_config=None)
+    current=tasks_grading._extraction_fingerprint(**params)
+    monkeypatch.setattr(tasks_grading,'VISION_EXTRACTION_VERSION',1)
+    previous=tasks_grading._extraction_fingerprint(**params)
+    assert current!=previous
+
+
 def test_grade_delivery_is_idempotent_when_grade_exists(monkeypatch) -> None:
     existing = SimpleNamespace(id=uuid4(), estado=CalificacionEstado.SUGERIDA.value)
     delivery = delivery_fixture()
@@ -288,7 +297,7 @@ def test_grade_delivery_reuses_a_compatible_vision_checkpoint(monkeypatch) -> No
     db = FakeDB()
     job_id = uuid4()
     evidence = b"same-photo"
-    blueprint = tasks_grading.evaluation_to_grading_blueprint(evaluation)
+    blueprint = evaluation_to_grading_blueprint(evaluation)
     fingerprint = tasks_grading._extraction_fingerprint(
         image_bytes=evidence,
         image_mime="image/jpeg",

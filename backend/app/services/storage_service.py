@@ -91,17 +91,22 @@ async def save_private_upload(
     if not extension:
         raise ValueError("Tipo de archivo privado no permitido")
     relative_path = Path(".private") / subfolder / f"{uuid.uuid4().hex}{extension}"
-    destination = get_upload_dir() / relative_path
+    destination = resolve_private_upload_path(relative_path.as_posix())
     destination.parent.mkdir(parents=True, exist_ok=True)
-    async with aiofiles.open(destination, "wb") as target:
+    async with aiofiles.open(destination, "xb") as target:
         await target.write(content)
     return relative_path.as_posix()
 
 
 def resolve_private_upload_path(relative_path: str) -> Path:
     uploads_root = get_upload_dir().resolve()
+    key = Path(relative_path)
+    if key.is_absolute() or not key.parts or key.parts[0] != ".private" or ".." in key.parts:
+        raise ValueError("Ruta privada fuera del almacenamiento permitido")
     candidate = (uploads_root / relative_path).resolve()
-    private_root = (uploads_root / ".private").resolve()
+    # Keep the expected root lexical: resolving a symlink here would authorize
+    # a .private directory pointing outside UPLOADS_DIR.
+    private_root = uploads_root / ".private"
     if candidate == private_root or private_root not in candidate.parents:
         raise ValueError("Ruta privada fuera del almacenamiento permitido")
     return candidate

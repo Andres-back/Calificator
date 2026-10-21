@@ -41,6 +41,12 @@ class FakeDB:
     def add(self, value: object) -> None:
         self.added.append(value)
 
+    async def scalar(self, query):
+        from app.modules.evaluaciones.models import Evaluacion
+        assert query.column_descriptions[0].get('entity') is Evaluacion
+        assert query._for_update_arg is not None
+        return SimpleNamespace(contenido_version_id=getattr(self, 'version_id', None))
+
     async def flush(self) -> None:
         for value in self.added:
             if getattr(value, "id", None) is None:
@@ -55,7 +61,8 @@ class FakeDB:
 
 @pytest.mark.parametrize('student_count', [1, 2, 30])
 @pytest.mark.parametrize('fail_publish', [False, True])
-def test_async_batch_endpoint_persists_then_enqueues_exact_deliveries(monkeypatch, student_count, fail_publish) -> None:
+@pytest.mark.parametrize('versioned', [False, True])
+def test_async_batch_endpoint_persists_then_enqueues_exact_deliveries(monkeypatch, student_count, fail_publish, versioned) -> None:
     materia_id = uuid4()
     evaluacion = SimpleNamespace(
         id=uuid4(),
@@ -71,6 +78,13 @@ def test_async_batch_endpoint_persists_then_enqueues_exact_deliveries(monkeypatc
     )
     student_ids = [uuid4() for _ in range(student_count)]
     db = FakeDB()
+    db.version_id = uuid4() if versioned else None
+    evaluacion.contenido_version_id = db.version_id
+    if versioned:
+        from unittest.mock import AsyncMock
+        from app.modules.evaluaciones import grading_visual_context
+        monkeypatch.setattr(grading_visual_context, 'get_content_revision', AsyncMock(return_value=SimpleNamespace(
+            id=db.version_id, content_hash='c' * 64)))
     job_id = uuid4()
     queued: list[dict] = []
     created_jobs: list[dict] = []
@@ -146,6 +160,11 @@ def test_async_batch_endpoint_persists_then_enqueues_exact_deliveries(monkeypatc
         assert child['input_json']['estudiante_ids'] == [str(student_ids[i])]
         assert grades[i].estudiante_id == student_ids[i]
         assert grades[i].entrega_id == delivery_ids[i]
+        assert deliveries[i].contenido_version_id == db.version_id
+        reference = {'contenido_version_id': str(db.version_id), 'contenido_hash': 'c' * 64} if versioned else {}
+        assert created_jobs[0]['input_json']['contenido_por_entrega'][str(delivery_ids[i])] == reference
+        for key, value in reference.items():
+            assert child['input_json'][key] == value
 
     assert created_jobs[0]["tipo"] == JobTipo.CALIFICACION_LOTE.value
     assert created_jobs[0]["input_json"]["entrega_ids"] == [

@@ -2,6 +2,61 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { expect, it, vi } from 'vitest';
 import { Modal } from './Modal';
 
+const motionPreference = vi.hoisted(() => ({ reduced: false }));
+vi.mock('framer-motion', async (importOriginal) => ({
+  ...await importOriginal<typeof import('framer-motion')>(),
+  useReducedMotion: () => motionPreference.reduced,
+}));
+
+it.each([false, true])('removes a closed dialog without animation frames (reduced motion: %s)', (reduced) => {
+  motionPreference.reduced = reduced;
+  const frame = vi.spyOn(window, 'requestAnimationFrame').mockReturnValue(1);
+  const opener = document.createElement('button');
+  document.body.append(opener); opener.focus();
+  const view = render(<Modal open title="Material" onClose={vi.fn()}>Propuesta</Modal>);
+  try {
+    expect(screen.getByRole('dialog', { name: 'Material' })).toBeInTheDocument();
+    if (reduced) expect(screen.getByRole('dialog', { name: 'Material' })).toBeVisible();
+    view.rerender(<Modal open={false} title="Material" onClose={vi.fn()}>Propuesta</Modal>);
+    expect(screen.queryByRole('dialog', { name: 'Material' })).not.toBeInTheDocument();
+    expect(opener).toHaveFocus();
+    expect(document.body.style.overflow).not.toBe('hidden');
+  } finally {
+    view.unmount(); opener.remove(); frame.mockRestore(); motionPreference.reduced = false;
+  }
+});
+
+it('a closed child stops blocking Escape on the underlying draft even without animation frames', () => {
+  motionPreference.reduced = false;
+  const frame = vi.spyOn(window, 'requestAnimationFrame').mockReturnValue(1);
+  const parentClose = vi.fn(); const childClose = vi.fn();
+  const content = (childOpen: boolean) => <>
+    <Modal open title="Evaluación" onClose={parentClose}><input aria-label="Borrador" defaultValue="Texto conservado" /></Modal>
+    <Modal open={childOpen} title="Figura" onClose={childClose}>Propuesta</Modal>
+  </>;
+  const view = render(content(true));
+  try {
+    view.rerender(content(false));
+    expect(screen.queryByRole('dialog', { name: 'Figura' })).not.toBeInTheDocument();
+    expect(screen.getByLabelText('Borrador')).toHaveValue('Texto conservado');
+    expect(document.body.style.overflow).toBe('hidden');
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(parentClose).toHaveBeenCalledOnce();
+    expect(childClose).not.toHaveBeenCalled();
+  } finally {
+    view.unmount(); frame.mockRestore();
+  }
+});
+
+it('only closes the top dialog when a figure is enlarged above a preview', () => {
+  const parentClose = vi.fn(); const childClose = vi.fn();
+  render(<><Modal open title="Evaluación" onClose={parentClose}>Borrador conservado</Modal>
+    <Modal open title="Figura" onClose={childClose}>Figura ampliada</Modal></>);
+  fireEvent.keyDown(document, { key: 'Escape' });
+  expect(childClose).toHaveBeenCalledOnce();
+  expect(parentClose).not.toHaveBeenCalled();
+});
+
 it('keeps focus within opt-in writing forms without focusing folded controls', () => {
   render(<Modal open title="Escribir" onClose={vi.fn()} mobileWriting>
     <details><summary>Opciones</summary><input aria-label="Oculto" /></details>

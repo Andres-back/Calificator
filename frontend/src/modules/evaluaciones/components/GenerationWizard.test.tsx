@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 import toast from 'react-hot-toast';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { GenerationWizard } from './GenerationWizard';
-import { createEmptyWizardState, persistWizardDraft } from './generationWizardModel';
+import { createEmptyWizardState, persistWizardDraft, evaluationToWizardState, loadVisualEditDraft } from './generationWizardModel';
 import type { Evaluacion, Materia } from '@/types/api';
 
 const mocks = vi.hoisted(() => ({
@@ -30,6 +30,7 @@ vi.mock('@/modules/materias/dbaApi', () => ({
 vi.mock('@/modules/xali/api', () => ({
   sendMessage: mocks.sendMessage,
 }));
+vi.mock('../visualApi', () => ({ getVisualCapabilities: vi.fn().mockResolvedValue({ editor: false, generacion: false, importacion: false, max_bytes: 20971520 }) }));
 vi.mock('react-hot-toast', () => ({
   default: { success: vi.fn(), error: vi.fn() },
 }));
@@ -132,6 +133,24 @@ function renderWizard(onCompleted = vi.fn(), initialEvaluation: Evaluacion | nul
   };
 }
 
+it('101 restores scoped visual editing without replacing local changes and persists fresh visual edits', async () => {
+  const visualEvaluation: Evaluacion = { ...evaluation, contenido_version_id: 'revision-a',
+    contenido_visual: { schema_version: 1, pregunta_ids: [], recurso_ids: [], bloques: [],
+      cobertura: { detectados: [], conservados: [], avisos: [], estado: 'completa' } } };
+  mocks.get.mockResolvedValue(visualEvaluation);
+  const fresh = renderWizard(vi.fn(), visualEvaluation);
+  await waitFor(() => expect(loadVisualEditDraft(localStorage, 'profesor-1', evaluation.id)).not.toBeNull());
+  fresh.unmount();
+  const draft = evaluationToWizardState(visualEvaluation);
+  draft.questions[0].enunciado = 'Cambio visual conservado';
+  persistWizardDraft(localStorage, 'profesor-1', draft, Date.now(), evaluation.id);
+  renderWizard(vi.fn(), visualEvaluation);
+  fireEvent.click(await screen.findByRole('button', { name: 'Continuar' }));
+  await waitFor(() => expect(mocks.get).toHaveBeenCalledWith(evaluation.id));
+  expect(screen.getAllByLabelText(/Enunciado/)[0]).toHaveValue('Cambio visual conservado');
+  expect(mocks.update).not.toHaveBeenCalled();
+});
+
 beforeEach(() => {
   vi.clearAllMocks();
   mocks.listDba.mockResolvedValue([{
@@ -156,6 +175,18 @@ beforeEach(() => {
 });
 
 describe('GenerationWizard', () => {
+  it('113 keeps an editable reading and sends it apart from the answer key', async () => {
+    const user = userEvent.setup();
+    renderWizard(vi.fn(), { ...evaluation, lectura: 'Una cuenca recoge el agua.' });
+    const reading = await screen.findByLabelText('Lectura o texto de apoyo');
+    expect(reading).toHaveValue('Una cuenca recoge el agua.');
+    await user.clear(reading);
+    await user.type(reading, 'Los afluentes llegan al río principal.');
+    await user.click(screen.getByRole('button', { name: 'Guardar cambios' }));
+    await waitFor(() => expect(mocks.update).toHaveBeenCalledTimes(1));
+    expect(mocks.update.mock.calls[0][1]).toMatchObject({ lectura: 'Los afluentes llegan al río principal.', expected_updated_at: evaluation.updated_at });
+    expect(mocks.update.mock.calls[0][1].respuestas_esperadas).toBeUndefined();
+  });
   it('097 opens mobile without text autofocus and Listo preserves the topic without submitting', async () => {
     const media = vi.spyOn(window, 'matchMedia').mockImplementation(query => ({ matches: query.includes('max-width'), media: query, onchange: null, addListener() {}, removeListener() {}, addEventListener() {}, removeEventListener() {} } as unknown as MediaQueryList));
     try {

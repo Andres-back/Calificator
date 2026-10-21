@@ -1,14 +1,19 @@
 from decimal import Decimal
+import json
+from types import SimpleNamespace
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Response, UploadFile, status
 from starlette.concurrency import run_in_threadpool
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import settings
 from app.core.permissions import get_current_user, require_permission_now
 from app.core.rate_limit import rate_limit
 from app.db.session import get_db
 from app.modules.evaluaciones import export_service, generation_service, service
+from app.modules.evaluaciones.visual_serialization import authorized_content_revision, visual_read_fields, batch_visual_read_fields
+from app.modules.evaluaciones.visual_render import resolve_visual_material
 from app.modules.evaluaciones.digitalize_service import (
     detect_digitalization_mime,
     extract_evaluation_text,
@@ -30,10 +35,23 @@ from app.services.storage_service import (
     resolve_private_upload_path,
     save_private_upload,
 )
+from app.services.evidence_bundle_service import build_evidence_bundle
 from app.shared.enums import EvaluacionModalidad, JobEstado, JobTipo, UserRole
 from app.workers.tasks_digitalization import digitalize_evaluation
 
 router = APIRouter(tags=["evaluaciones"])
+
+
+async def _evaluation_response(db, evaluation, current_user, prepared_fields=None):
+    """Authorize first at the call site; never serialize a full manifest to pupils."""
+    source = SimpleNamespace(**evaluation) if isinstance(evaluation, dict) else evaluation
+    if not getattr(source, 'contenido_version_id', None):
+        return evaluation
+    student = not (current_user.rol == UserRole.ADMIN.value or source.profesor_id == current_user.id)
+    fields = prepared_fields if prepared_fields is not None else await visual_read_fields(db, source, student=student)
+    response = EvaluacionRead.model_validate(evaluation).model_dump()
+    response.update(fields)
+    return response
 
 
 @router.post("/evaluaciones/referencia/extraer")
@@ -86,7 +104,8 @@ async def digitalize_from_file(
     descripcion: str | None = Form(default=None),
     nota_maxima: Decimal = Form(default=Decimal("5.0"), gt=0),
     modalidad: EvaluacionModalidad = Form(default=EvaluacionModalidad.FISICA),
-    file: UploadFile = File(...),
+    file: list[UploadFile] = File(...),
+    rotaciones: str | None = Form(default=None),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
     _: None = Depends(
@@ -102,10 +121,27 @@ async def digitalize_from_file(
     from app.modules.materias.service import ensure_can_manage_materia
 
     await ensure_can_manage_materia(db, materia_id, current_user)
-    content = await read_upload_limited(file, 20 * 1024 * 1024)
-    filename = file.filename or "evaluacion"
     try:
-        mime = detect_digitalization_mime(content, filename)
+        files = list(file) if isinstance(file, (list, tuple)) else [file]
+        if not 1 <= len(files) <= 10:
+            raise ValueError('Selecciona entre una y diez fotografías, o un único PDF o Word.')
+        rotations = json.loads(rotaciones) if isinstance(rotaciones, str) and rotaciones else None
+        if rotations is not None and (not isinstance(rotations, list) or len(rotations) != len(files)
+                or any(type(value) is not int or value not in {0, 90, 180, 270} for value in rotations)):
+            raise ValueError('Revisa el giro de las hojas antes de enviarlas.')
+        metadata = None
+        if len(files) == 1:
+            content = await read_upload_limited(files[0], 20 * 1024 * 1024)
+            filename = files[0].filename or 'evaluacion'
+            mime = detect_digitalization_mime(content, filename)
+            if mime.startswith('image/'):
+                await files[0].seek(0)
+            elif rotations and any(rotations):
+                raise ValueError('El giro de hojas solo se aplica a fotografías.')
+        if len(files) > 1 or mime.startswith('image/'):
+            bundle = await build_evidence_bundle(files, rotations=rotations,
+                total_bytes_limit=20 * 1024 * 1024, image_bytes_limit=20 * 1024 * 1024, file_count_limit=10)
+            content, mime, filename, metadata = bundle.content, bundle.mime, bundle.filename, bundle.metadata
         file_key = await save_private_upload(
             content,
             mime,
@@ -131,6 +167,9 @@ async def digitalize_from_file(
                 "descripcion": descripcion,
                 "nota_maxima": str(nota_maxima),
                 "modalidad": modalidad.value,
+                "hojas": metadata,
+                "_document_source_schema": 113,
+                "_visual_import_schema": 1 if settings.EVALUATION_VISUAL_IMPORT_ENABLED else None,
             },
         )
         await db.commit()
@@ -191,7 +230,7 @@ async def generate_evaluation_draft(
     db: AsyncSession = Depends(get_db),
 ) -> object:
     require_permission_now(current_user, "evaluations.create")
-    return await generation_service.generate_evaluation_draft(db, payload, current_user)
+    return await _evaluation_response(db, await generation_service.generate_evaluation_draft(db, payload, current_user), current_user)
 
 
 @router.post("/evaluaciones/externa/digitalizar", response_model=EvaluacionRead, status_code=status.HTTP_201_CREATED)
@@ -201,7 +240,7 @@ async def digitalize_external_evaluation(
     db: AsyncSession = Depends(get_db),
 ) -> object:
     require_permission_now(current_user, "evaluations.create")
-    return await service.digitalize_external_evaluation(db, payload, current_user)
+    return await _evaluation_response(db, await service.digitalize_external_evaluation(db, payload, current_user), current_user)
 
 
 @router.post("/evaluaciones/sorpresa", response_model=EvaluacionRead, status_code=status.HTTP_201_CREATED)
@@ -211,7 +250,7 @@ async def create_surprise_evaluation(
     db: AsyncSession = Depends(get_db),
 ) -> object:
     require_permission_now(current_user, "evaluations.create")
-    return await service.create_surprise_evaluation(db, payload, current_user)
+    return await _evaluation_response(db, await service.create_surprise_evaluation(db, payload, current_user), current_user)
 
 
 @router.post("/evaluaciones", response_model=EvaluacionRead, status_code=status.HTTP_201_CREATED)
@@ -221,7 +260,7 @@ async def create_evaluation(
     db: AsyncSession = Depends(get_db),
 ) -> object:
     require_permission_now(current_user, "evaluations.create")
-    return await service.create_evaluation(db, payload, current_user)
+    return await _evaluation_response(db, await service.create_evaluation(db, payload, current_user), current_user)
 
 
 @router.get("/materias/{materia_id}/evaluaciones", response_model=list[EvaluacionRead])
@@ -231,7 +270,13 @@ async def list_evaluations_for_materia(
     db: AsyncSession = Depends(get_db),
 ) -> list[object]:
     require_permission_now(current_user, "evaluations.read")
-    return await service.list_evaluations_for_materia(db, materia_id, current_user)
+    values = await service.list_evaluations_for_materia(db, materia_id, current_user)
+    sources = [SimpleNamespace(**value) if isinstance(value, dict) else value for value in values]
+    teacher_rows = [value for value in sources if current_user.rol == UserRole.ADMIN.value or value.profesor_id == current_user.id]
+    student_rows = [value for value in sources if value not in teacher_rows]
+    fields = await batch_visual_read_fields(db, teacher_rows, student=False)
+    fields.update(await batch_visual_read_fields(db, student_rows, student=True))
+    return [await _evaluation_response(db, value, current_user, fields.get(source.id, {})) for value, source in zip(values, sources)]
 
 
 @router.get("/evaluaciones/{evaluacion_id}", response_model=EvaluacionRead)
@@ -241,7 +286,7 @@ async def get_evaluation(
     db: AsyncSession = Depends(get_db),
 ) -> object:
     require_permission_now(current_user, "evaluations.read")
-    return await service.ensure_can_read_evaluation(db, evaluacion_id, current_user)
+    return await _evaluation_response(db, await service.ensure_can_read_evaluation(db, evaluacion_id, current_user), current_user)
 
 
 @router.get("/evaluaciones/{evaluacion_id}/actividad", response_model=dict | None)
@@ -254,7 +299,7 @@ async def get_student_activity(
     return await service.get_student_activity(db, evaluacion_id, current_user)
 
 
-async def _load_export_material(db, evaluacion_id, current_user, soluciones):
+async def _load_export_material(db, evaluacion_id, current_user, soluciones, version_id=None):
     require_permission_now(current_user, "evaluations.read")
     await service.ensure_can_read_evaluation(db, evaluacion_id, current_user)
     evaluacion = await service.get_evaluation_or_404(db, evaluacion_id)
@@ -267,6 +312,16 @@ async def _load_export_material(db, evaluacion_id, current_user, soluciones):
             detail="Las soluciones son exclusivas del docente",
         )
 
+    if version_id is not None or getattr(evaluacion, 'contenido_version_id', None) is not None:
+        _, revision = await authorized_content_revision(db, evaluacion_id, version_id, current_user)
+        # Never combine today's questions/key with yesterday's figures.
+        snapshot = SimpleNamespace(**revision.snapshot_json, created_at=revision.created_at)
+        try:
+            blocks = await resolve_visual_material(db, evaluacion_id, revision)
+            material = export_service.build_evaluation_material(snapshot, soluciones=soluciones, visual_blocks=blocks)
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+        return snapshot, material
     if evaluacion.material_origen_id:
         from app.modules.herramientas import service as materiales_service
 
@@ -290,13 +345,17 @@ async def download_evaluation_pdf(
     descargar: bool = False,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
+    version_id: UUID | None = None,
 ) -> Response:
     """Documento final para estudiantes o solucionario autorizado, sin mutaciones."""
-    evaluacion, material = await _load_export_material(db, evaluacion_id, current_user, soluciones)
+    evaluacion, material = await _load_export_material(db, evaluacion_id, current_user, soluciones, version_id)
 
     from app.modules.herramientas.pdf_render import render_material_pdf
 
-    pdf = await run_in_threadpool(render_material_pdf, material, soluciones=soluciones)
+    try:
+        pdf = await run_in_threadpool(render_material_pdf, material, soluciones=soluciones)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
     name = evaluacion.nombre + (" - solucionario" if soluciones else "")
     return Response(
         content=pdf,
@@ -315,8 +374,9 @@ async def download_evaluation_docx(
     soluciones: bool = False,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
+    version_id: UUID | None = None,
 ) -> Response:
-    evaluacion, material = await _load_export_material(db, evaluacion_id, current_user, soluciones)
+    evaluacion, material = await _load_export_material(db, evaluacion_id, current_user, soluciones, version_id)
     try:
         document = await run_in_threadpool(export_service.render_evaluation_docx, material, soluciones=soluciones)
     except ValueError as exc:
@@ -341,7 +401,7 @@ async def update_evaluation(
 ) -> object:
     require_permission_now(current_user, "evaluations.update")
     evaluacion = await service.ensure_can_manage_evaluation(db, evaluacion_id, current_user)
-    return await service.update_evaluation(db, evaluacion, payload)
+    return await _evaluation_response(db, await service.update_evaluation(db, evaluacion, payload), current_user)
 
 
 @router.post("/evaluaciones/{evaluacion_id}/crear-blueprint", response_model=EvaluacionBlueprintRead)
@@ -363,7 +423,7 @@ async def publish_evaluation(
 ) -> object:
     require_permission_now(current_user, "evaluations.publish")
     evaluacion = await service.ensure_can_manage_evaluation(db, evaluacion_id, current_user)
-    return await service.publish_evaluation(db, evaluacion)
+    return await _evaluation_response(db, await service.publish_evaluation(db, evaluacion), current_user)
 
 
 @router.post("/evaluaciones/{evaluacion_id}/cerrar", response_model=EvaluacionRead)
@@ -374,7 +434,7 @@ async def close_evaluation(
 ) -> object:
     require_permission_now(current_user, "evaluations.update")
     evaluacion = await service.ensure_can_manage_evaluation(db, evaluacion_id, current_user)
-    return await service.close_evaluation(db, evaluacion)
+    return await _evaluation_response(db, await service.close_evaluation(db, evaluacion), current_user)
 
 
 @router.post("/evaluaciones/{evaluacion_id}/activar-recepcion", response_model=EvaluacionRead)
@@ -385,7 +445,7 @@ async def activate_reception(
 ) -> object:
     require_permission_now(current_user, "evaluations.publish")
     evaluacion = await service.ensure_can_manage_evaluation(db, evaluacion_id, current_user)
-    return await service.activate_reception(db, evaluacion)
+    return await _evaluation_response(db, await service.activate_reception(db, evaluacion), current_user)
 
 
 @router.post("/evaluaciones/{evaluacion_id}/pausar-recepcion", response_model=EvaluacionRead)
@@ -396,7 +456,7 @@ async def pause_reception(
 ) -> object:
     require_permission_now(current_user, "evaluations.publish")
     evaluacion = await service.ensure_can_manage_evaluation(db, evaluacion_id, current_user)
-    return await service.pause_reception(db, evaluacion)
+    return await _evaluation_response(db, await service.pause_reception(db, evaluacion), current_user)
 
 
 @router.delete("/evaluaciones/{evaluacion_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -419,4 +479,4 @@ async def validate_structure(
 ) -> object:
     require_permission_now(current_user, "evaluations.update")
     evaluacion = await service.ensure_can_manage_evaluation(db, evaluacion_id, current_user)
-    return await service.validate_structure(db, evaluacion, payload)
+    return await _evaluation_response(db, await service.validate_structure(db, evaluacion, payload), current_user)

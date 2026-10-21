@@ -25,6 +25,23 @@ class FakeClient:
         return None
 
 
+def test_partial_visual_answer_reaches_both_prompt_paths_without_objective_guarantee() -> None:
+    detected=[{'pregunta':1,'pagina':2,'respuesta':'El río Amazonas',
+               'legible':True,'requiere_revision':True,'respuesta_parcial':True}]
+    rendered=orchestrator.format_structured_visual_answers(detected)
+    assert 'El río Amazonas' in rendered
+    assert 'fragmento' in rendered.lower()
+    assert 'revis' in rendered.lower()
+    partition_text=agents._answer_text(detected[0])
+    assert 'El río Amazonas' in partition_text
+    assert 'fragmento' in partition_text.lower()
+    blueprint={'preguntas':[{'numero':1,'tipo':'opcion_multiple','enunciado':'Identifique el río'}],
+               'respuestas_esperadas':[{'numero':1,'respuesta':'El río Amazonas'}]}
+    assert orchestrator.build_objective_validation(blueprint,detected)==[]
+    complete=[{**detected[0],'respuesta_parcial':False,'requiere_revision':False}]
+    assert orchestrator.build_objective_validation(blueprint,complete)[0]['correcta'] is True
+
+
 def test_comprehension_prompts_grade_meaning_without_unrequested_style_penalties() -> None:
     required_rules = (
         "No exijas que la respuesta repita el sujeto o el contexto ya indicado en la pregunta",

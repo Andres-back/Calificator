@@ -15,7 +15,11 @@ describe('102 camera permissions in shipped configuration', () => {
       const privateEnd = source.indexOf('\n    }', privateStart) + 6;
       const privatePage = source.slice(privateStart, privateEnd);
       expect(privatePage).toContain('Permissions-Policy "camera=(), microphone=(), geolocation=()"');
-      const captureSurfaces = source.slice(0, privateStart) + source.slice(privateEnd);
+      const apiStart = source.indexOf('location ^~ /api/public/devolucion {');
+      const apiEnd = source.indexOf('\n    }', apiStart) + 6;
+      const privateApi = source.slice(apiStart, apiEnd);
+      expect(privateApi).toContain('Permissions-Policy "camera=(), microphone=(), geolocation=()"');
+      const captureSurfaces = (source.slice(0, privateStart) + source.slice(privateEnd)).replace(privateApi, '');
       const policies = [...captureSurfaces.matchAll(/add_header Permissions-Policy "([^"]+)"/g)];
       expect(policies.length).toBeGreaterThanOrEqual(2);
       policies.forEach((match) => {

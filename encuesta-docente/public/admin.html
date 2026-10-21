@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>Respuestas · Investigación XCalificator</title>
+  <link rel="icon" href="../branding/logo-favicon.png" type="image/png">
+  <link rel="stylesheet" href="../styles.css">
+  <script type="module" src="../admin.js"></script>
+</head>
+<body class="admin-page">
+  <main class="admin-layout">
+    <header class="admin-heading">
+      <a class="brand" href="../"><span class="brand-logo"><img src="../branding/logo-full.webp" alt="XCalificator" width="210" height="210"></span></a>
+      <div class="admin-account"><span class="tag">INVESTIGACIÓN · ACCESO PRIVADO</span><button class="button secondary" type="button" id="logout">Salir</button></div>
+    </header>
+    <h1>Respuestas de la encuesta</h1>
+    <section aria-labelledby="versions-heading">
+      <h2 id="versions-heading">Respuestas por versión</h2>
+      <p class="admin-privacy">No mezcle preguntas modificadas entre versiones. «Docentes declarados» agrupa nombre e institución; no verifica identidad. No sume docentes de varias versiones sin conciliar aplicaciones repetidas.</p>
+      <div id="version-summary" aria-live="polite">Consultando recuentos…</div>
+      <a href="summary.csv" class="button secondary">Exportar resumen por versión</a>
+    </section>
+    <div class="admin-summary" aria-label="Resumen de respuestas">
+      <div><strong id="count-total">—</strong><span>Recibidas</span></div>
+      <div><strong id="count-pending">—</strong><span>Por revisar</span></div>
+      <div><strong id="count-reviewed">—</strong><span>Revisadas</span></div>
+      <div><strong id="count-follow">—</strong><span>En seguimiento</span></div>
+    </div>
+    <div class="inline-actions">
+      <a class="button primary" href="../" target="_blank" rel="noopener">Registrar respuesta</a>
+      <a class="button secondary" href="export.csv">Exportar originales activos (CSV)</a>
+      <a class="button secondary" href="corrections.csv">Exportar vista corregida (CSV)</a>
+      <button class="button secondary" id="refresh" type="button">Actualizar</button>
+    </div>
+    <p class="admin-privacy">Registrar abre el formulario para que el docente lo complete y firme. Los informes usan declaraciones originales activas; las correcciones se exportan aparte. Los CSV excluyen identificación y firmas; revise textos libres antes de compartirlos.</p>
+    <form id="filters" class="admin-filters" role="search">
+      <label class="filter-search">Buscar<input type="search" id="search" placeholder="Docente, código, institución, etiqueta…"></label>
+      <label>Conservación<select id="conservation"><option value="active">Respuestas activas</option><option value="trash">Papelera</option><option value="all">Todas las recibidas</option></select></label>
+      <label>Institución<select id="institution"><option value="">Todas</option></select></label>
+      <label>Estado<select id="status"><option value="">Todos</option><option value="pending">Por revisar</option><option value="reviewed">Revisada</option><option value="follow_up">Seguimiento</option><option value="excluded">Excluida del análisis</option></select></label>
+      <label>Etiqueta<select id="tag"><option value="">Todas</option></select></label>
+      <label>Interés en demo<select id="interest"><option value="">Todos</option><option value="1">Sí</option><option value="2">Tal vez</option><option value="3">No</option><option value="skip">Prefiere no responder</option><option value="unanswered">Sin respuesta</option></select></label>
+      <label>Versión<select id="version"><option value="">Todas</option></select></label>
+      <label>Desde<input type="date" id="date-from"></label>
+      <label>Hasta<input type="date" id="date-to"></label>
+      <label>Ordenar<select id="sort"><option value="newest">Más recientes</option><option value="oldest">Más antiguas</option><option value="name">Nombre A–Z</option><option value="institution">Institución A–Z</option></select></label>
+      <button class="text-button" type="reset">Limpiar filtros</button>
+    </form>
+    <p id="admin-status" role="status" aria-live="polite">Cargando…</p>
+    <div class="admin-table-wrap" role="region" aria-label="Lista de respuestas" tabindex="0">
+      <table class="admin-table">
+        <thead><tr><th>Docente</th><th>Institución y área</th><th>Fecha</th><th>Revisión</th><th>Acciones</th></tr></thead>
+        <tbody id="records"></tbody>
+      </table>
+    </div>
+    <p id="empty-state" class="admin-empty" hidden>No hay respuestas para estos filtros.</p>
+  </main>
+  <dialog id="record-dialog" aria-labelledby="record-title">
+    <header class="record-heading"><h2 id="record-title">Respuesta</h2><button type="button" id="close-record" class="button secondary">Cerrar</button></header>
+    <p id="record-identity"></p>
+    <div class="inline-actions"><button type="button" id="download-record" class="button secondary">Descargar constancia</button><button type="button" id="print-record" class="button secondary">Imprimir</button></div>
+    <section class="management" aria-labelledby="management-heading">
+      <h3 id="management-heading">Administrar respuesta</h3>
+      <p id="management-state"></p>
+      <div class="inline-actions">
+        <button type="button" class="button secondary" id="edit-response">Corregir datos</button>
+        <button type="button" class="button secondary danger" id="remove-response">Eliminar de la lista</button>
+        <button type="button" class="button secondary" id="restore-response" hidden>Restaurar respuesta</button>
+      </div>
+      <form id="management-form" hidden>
+        <p class="notice" id="management-explanation"></p>
+        <fieldset id="management-fields"><legend class="sr-only">Datos corregidos</legend><div id="management-inputs"></div></fieldset>
+        <label class="field-label" id="confirm-code-label" hidden>Código de la respuesta<input type="text" id="confirm-code" autocomplete="off"><span class="hint" id="confirm-code-hint"></span></label>
+        <label class="field-label">Motivo del cambio<textarea id="change-reason" maxlength="1000" rows="3" required></textarea><span class="hint">Explique por qué realiza este cambio. Esta nota es privada.</span></label>
+        <details id="changes-preview" open><summary>Cambios que va a guardar</summary><ul id="changes-list"></ul></details>
+        <div class="inline-actions"><button class="button primary" type="submit" id="save-management">Guardar corrección</button><button class="button secondary" type="button" id="cancel-management">Cancelar</button></div>
+      </form>
+      <p id="management-message" role="status" aria-live="polite" tabindex="-1"></p>
+      <button class="button secondary" type="button" id="reload-management" hidden>Volver a consultar</button>
+      <details><summary>Historial de cambios administrativos</summary><div id="management-history"></div></details>
+      <details id="effective-details" hidden><summary>Datos actuales con correcciones administrativas</summary><div id="effective-answers"></div></details>
+    </section>
+    <form id="review-form" class="review-editor">
+      <h3>Organización</h3>
+      <div class="field-grid">
+        <label class="field-label">Estado<select id="review-status"><option value="pending">Por revisar</option><option value="reviewed">Revisada</option><option value="follow_up">Seguimiento</option><option value="excluded">Excluida del análisis</option></select></label>
+        <label class="field-label">Etiquetas<input type="text" id="review-tags" maxlength="326" placeholder="Colegio A, piloto, grupo 1"><span class="hint">Hasta 8 etiquetas separadas por comas.</span></label>
+      </div>
+      <label class="field-label">Notas privadas<textarea id="review-notes" maxlength="2500" rows="3"></textarea></label>
+      <button type="submit" class="button primary" id="save-review">Guardar organización</button>
+      <p id="review-status-message" role="status" aria-live="polite"></p>
+    </form>
+    <details><summary>Respuestas originales firmadas</summary><div id="record-answers"></div></details>
+  </dialog>
+</body>
+</html>

@@ -127,6 +127,9 @@ services:
     command: celery -A app.workers.worker.celery_app worker --loglevel=info -Q digitalization --concurrency=${CELERY_DIGITALIZATION_CONCURRENCY:-1} -n digitalization@%h
     env_file:
       - .env
+    networks:
+      - default
+      - document-rendering
     volumes:
       - ./uploads:/app/uploads
     depends_on:
@@ -144,6 +147,32 @@ services:
       timeout: 15s
       retries: 3
       start_period: 45s
+    restart: unless-stopped
+
+  document-renderer:
+    build:
+      context: .
+      dockerfile: document-renderer/Dockerfile
+    image: xcalificator-document-renderer:local
+    user: "10001:10001"
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=256m,mode=1777
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    cpus: "1.0"
+    mem_limit: 768m
+    pids_limit: 128
+    networks:
+      - document-rendering
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/health',timeout=3).read()"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
     restart: unless-stopped
 
   worker-presentations:
@@ -315,6 +344,10 @@ services:
     restart: unless-stopped
     profiles:
       - production
+
+networks:
+  document-rendering:
+    internal: true
 
 volumes:
   pgdata:

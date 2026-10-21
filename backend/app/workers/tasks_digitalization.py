@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import asyncio
+import hashlib
+import json
 import time
 from contextlib import suppress
 from decimal import Decimal
@@ -22,6 +24,9 @@ from app.modules.evaluaciones.digitalize_service import (
     extract_evaluation_text,
 )
 from app.modules.evaluaciones.schemas import DigitalizarEvaluacionExternaRequest
+from app.modules.evaluaciones.document_visual_extractor import DocumentRendererUnavailable, EXTRACTOR_VERSION
+from app.modules.evaluaciones.visual_import_service import prepare_visual_import, read_visual_import
+from app.modules.materias.service import ensure_can_manage_materia
 from app.modules.jobs import service as jobs_service
 from app.modules.users.models import User
 from app.services.storage_service import resolve_private_upload_path
@@ -32,7 +37,7 @@ logger = get_logger(__name__)
 
 
 def _is_transient_error(exc: Exception) -> bool:
-    if isinstance(exc, (TimeoutError, httpx.TimeoutException, httpx.TransportError)):
+    if isinstance(exc, (TimeoutError, httpx.TimeoutException, httpx.TransportError, DocumentRendererUnavailable)):
         return True
     value = str(exc).lower()
     return any(marker in value for marker in (
@@ -86,6 +91,86 @@ async def _cancel_if_requested(db, job_id: UUID, result: dict) -> bool:
     return True
 
 
+async def _digitalize_visual_owned(*, db, user, job_id, materia_id, private_path, nombre,
+                                  descripcion, score, modalidad, ai_config, result, timings_ms, refresh_total):
+    """Called after claiming the job. Every durable checkpoint checks the lease."""
+    subject = await ensure_can_manage_materia(db, materia_id, user)
+    claim_token = result["claim_token"]
+
+    async def persist_result(extra):
+        candidate = {**result, **extra}
+        await jobs_service.lock_owned_job(db, job_id, claim_token)
+        updated = await jobs_service.update_job_progress(db, job_id,
+            progreso=int(candidate.get("progreso", 15)), resultado_json=candidate)
+        if not updated:
+            raise jobs_service.JobOwnershipLost("El trabajo cambió mientras guardábamos el avance")
+        await db.commit()
+        # Do not retain references to rolled-back resources after a failed commit.
+        result.update(extra)
+
+    async def checkpoint(value):
+        await persist_result({"_visual_checkpoint": value})
+
+    await persist_result({"progreso": 15, "stage": "reading"})
+    content = None
+    saved = result.get("_visual_checkpoint")
+    if saved is None:
+        try:
+            async with aiofiles.open(private_path, "rb") as source:
+                content = await source.read(20 * 1024 * 1024 + 1)
+        except OSError:
+            # Never expose a private storage path in the teacher's job error.
+            raise ValueError("No encontramos el archivo temporal y todavía no hay un original guardado. Vuelve a subir el documento.") from None
+    started = time.monotonic()
+    saved = await prepare_visual_import(db, job_id=job_id, owner_id=subject.profesor_id, materia_id=materia_id,
+        content=content, checkpoint=saved, persist=checkpoint)
+    extracted_text, manifest = await read_visual_import(db, saved, user_id=user.id, ai_config=ai_config, persist=checkpoint)
+    timings_ms["extraction"] = int((time.monotonic() - started) * 1000)
+    refresh_total()
+    await persist_result({"progreso": 50, "stage": "structuring"})
+    # Separate from legacy normalized_extraction: cache is bound to full visual
+    # context, extractor version and captured configuration, never text alone.
+    structure_key = hashlib.sha256(json.dumps({"extractor": EXTRACTOR_VERSION, "text": extracted_text,
+        "visual": manifest.model_dump(mode="json"), "ai_config": ai_config}, sort_keys=True, ensure_ascii=False).encode()).hexdigest()
+    cached = result.get("_visual_structure")
+    if isinstance(cached, dict) and result.get("_visual_structure_key") == structure_key:
+        structure = cached
+    else:
+        started = time.monotonic()
+        structure = await detectar_estructura_evaluacion(user_id=user.id, contenido_texto=extracted_text,
+            nota_maxima=score, ai_config=ai_config, contenido_visual=manifest, visual_scope_id=job_id)
+        timings_ms["structure"] = int((time.monotonic() - started) * 1000)
+        refresh_total()
+        await persist_result({"_visual_structure": structure, "_visual_structure_key": structure_key})
+    await persist_result({"progreso": 80, "stage": "saving"})
+    payload = DigitalizarEvaluacionExternaRequest(materia_id=materia_id, nombre=nombre, descripcion=descripcion,
+        nota_maxima=score, modalidad=EvaluacionModalidad(modalidad), criterios=structure.get("criterios", []), estructura_detectada=structure)
+    # The row lock serializes finalization with recovery/cancel/another delivery
+    # of this same job. Evaluation, resources, revision and terminal job share
+    # one transaction: there is no committed evaluation without its result ID.
+    await jobs_service.lock_owned_job(db, job_id, claim_token)
+    started = time.monotonic()
+    evaluation = await evaluaciones_service.digitalize_external_evaluation(db, payload, user, commit=False)
+    timings_ms["persistence"] = int((time.monotonic() - started) * 1000)
+    refresh_total()
+    needs_review = manifest.cobertura.estado != "completa" or not structure.get("clave_completa")
+    state = JobEstado.REQUIRES_REVIEW.value if needs_review else JobEstado.SUCCESS.value
+    output = {**result, "status": state, "evaluacion_id": str(evaluation.id), "materia_id": str(evaluation.materia_id),
+        "contenido_version_id": str(evaluation.contenido_version_id), "nombre": evaluation.nombre,
+        "preguntas_count": len(structure.get("preguntas", [])), "respuestas_count": len(structure.get("respuestas_esperadas", [])),
+        "clave_completa": bool(structure.get("clave_completa")), "claves_pendientes": structure.get("claves_pendientes", []),
+        "advertencias": structure.get("advertencias", []), "cobertura_visual": manifest.cobertura.estado,
+        "progreso": 100, "stage": "review_required" if needs_review else "completed",
+        "terminal_reason": "visual_review_required" if needs_review else "success", "timings_ms": timings_ms}
+    finished = await jobs_service.finish_job(db, job_id, estado=state, resultado_json=output)
+    if not finished:
+        raise jobs_service.JobOwnershipLost("El trabajo cambió antes de confirmar el borrador")
+    await db.commit()
+    result.update(output)
+    result["_visual_saved"] = True
+    return result
+
+
 async def _digitalize_async(
     *,
     job_id: UUID,
@@ -130,7 +215,12 @@ async def _digitalize_async(
         timings_ms["queue"] = await jobs_service.get_job_queue_time_ms(db, job_id)
         job_input = await jobs_service.get_job_input(db, job_id)
         persisted_result = await jobs_service.get_job_result(db, job_id)
-        if isinstance(persisted_result.get("normalized_extraction"), dict):
+        visual_mode = job_input.get("_visual_import_schema") == 1
+        if visual_mode:
+            for key in ("_visual_checkpoint", "_visual_structure", "_visual_structure_key"):
+                if key in persisted_result:
+                    result[key] = persisted_result[key]
+        elif isinstance(persisted_result.get("normalized_extraction"), dict):
             result["normalized_extraction"] = persisted_result["normalized_extraction"]
         stored_snapshot = job_input.get("_ai_config")
         job_ai_config = stored_snapshot if isinstance(stored_snapshot, dict) else None
@@ -154,6 +244,10 @@ async def _digitalize_async(
                 JobEstado.REQUIRES_REVIEW.value,
                 JobEstado.FAILED_PERMANENT.value,
             }:
+                if visual_mode and persisted_result.get("evaluacion_id"):
+                    result.update(persisted_result)
+                    result["_visual_saved"] = True
+                    return {key: value for key, value in result.items() if not key.startswith("_") and key != "claim_token"}
                 return {**result, "status": state}
 
             claimed = await jobs_service.claim_job_running(
@@ -173,6 +267,12 @@ async def _digitalize_async(
                 raise ValueError(
                     "El profesor que inició la digitalización ya no existe"
                 )
+            if visual_mode:
+                result["strategy"] = {"visual_import_schema": 1, "text_structuring": True}
+                await _digitalize_visual_owned(db=db, user=user, job_id=job_id, materia_id=materia_id,
+                    private_path=private_path, nombre=nombre, descripcion=descripcion, score=Decimal(nota_maxima),
+                    modalidad=modalidad, ai_config=job_ai_config, result=result, timings_ms=timings_ms, refresh_total=refresh_total)
+                return {key: value for key, value in result.items() if not key.startswith("_") and key != "claim_token"}
 
             cached_extraction = result.get("normalized_extraction")
             content = b""
@@ -289,6 +389,10 @@ async def _digitalize_async(
             )
             await db.commit()
             return result
+        except jobs_service.JobOwnershipLost:
+            await db.rollback()
+            result["status"] = "superseded"
+            return {"status": "superseded", "pipeline_run_id": str(job_id)}
         except Exception as exc:
             await db.rollback()
             refresh_total()
@@ -341,10 +445,13 @@ async def _digitalize_async(
                 with suppress(asyncio.CancelledError):
                     await heartbeat_task
             try:
-                if result.get("status") in {
-                    JobEstado.SUCCESS.value,
-                    JobEstado.CANCELLED.value,
-                }:
+                # New non-visual imports retain their normalized source privately
+                # in the durable job, linked to the resulting evaluation. Visual
+                # imports already archive it as a resource before deleting temp.
+                preserve_source = job_input.get('_document_source_schema') == 113 and not visual_mode
+                if (result.get('status') == JobEstado.SUCCESS.value and not preserve_source
+                    or result.get('status') == JobEstado.CANCELLED.value
+                    or result.get('status') == JobEstado.REQUIRES_REVIEW.value and result.get('_visual_saved')):
                     private_path.unlink(missing_ok=True)
             except OSError:
                 logger.warning(

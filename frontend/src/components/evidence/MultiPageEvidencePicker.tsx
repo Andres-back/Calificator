@@ -23,6 +23,9 @@ interface Props {
   disabled?: boolean;
   onError?: (message: string) => void;
   contextKey?: string;
+  allowPdf?: boolean;
+  maxTotalBytes?: number;
+  maxImageBytes?: number;
 }
 
 function PageVisual({ page, className }: { page: EvidencePage; className: string }) {
@@ -68,7 +71,7 @@ function PreviewModal({ page, pageNumber, onClose }: { page: EvidencePage | null
   );
 }
 
-export function MultiPageEvidencePicker({ pages, onChange, disabled = false, onError, contextKey = '' }: Props) {
+export function MultiPageEvidencePicker({ pages, onChange, disabled = false, onError, contextKey = '', allowPdf = true, maxTotalBytes = MAX_TOTAL_BYTES, maxImageBytes = MAX_IMAGE_BYTES }: Props) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const replacementIdRef = useRef<string | null>(null);
@@ -111,8 +114,8 @@ export function MultiPageEvidencePicker({ pages, onChange, disabled = false, onE
     const retainedPages = replacementIndex < 0
       ? currentPages
       : currentPages.filter((page) => page.id !== replacementId);
-    if (incoming.some((file) => !ALLOWED_TYPES.has(file.type))) {
-      reportError('Selecciona fotografías JPG, PNG o WebP, o un único PDF.'); return;
+    if (incoming.some((file) => !ALLOWED_TYPES.has(file.type) || (!allowPdf && file.type === 'application/pdf'))) {
+      reportError(allowPdf ? 'Selecciona fotografías JPG, PNG o WebP, o un único PDF.' : 'Selecciona fotografías JPG, PNG o WebP. Para PDF o Word, usa la opción de documento.'); return;
     }
     const incomingPdf = incoming.some((file) => file.type === 'application/pdf');
     const existingPdf = retainedPages.some((page) => page.file.type === 'application/pdf');
@@ -122,12 +125,12 @@ export function MultiPageEvidencePicker({ pages, onChange, disabled = false, onE
     if (!incomingPdf && retainedPages.length + incoming.length > MAX_FILES) {
       reportError(`Puedes seleccionar máximo ${MAX_FILES} fotografías.`); return;
     }
-    if (incoming.some((file) => file.type !== 'application/pdf' && file.size > MAX_IMAGE_BYTES)) {
-      reportError('Cada fotografía debe pesar máximo 10 MB.'); return;
+    if (incoming.some((file) => file.type !== 'application/pdf' && file.size > maxImageBytes)) {
+      reportError(`Cada fotografía debe pesar máximo ${maxImageBytes / 1024 / 1024} MB.`); return;
     }
     const totalBytes = [...retainedPages.map((page) => page.file), ...incoming].reduce((total, file) => total + file.size, 0);
-    if (totalBytes > MAX_TOTAL_BYTES) {
-      reportError('El paquete completo debe pesar máximo 40 MB.'); return;
+    if (totalBytes > maxTotalBytes) {
+      reportError(`El paquete completo debe pesar máximo ${maxTotalBytes / 1024 / 1024} MB.`); return;
     }
     const existingKeys = new Set(retainedPages.map((page) => `${page.file.name}:${page.file.size}:${page.file.lastModified}`));
     const unique = incoming.filter((file) => {
@@ -194,20 +197,20 @@ export function MultiPageEvidencePicker({ pages, onChange, disabled = false, onE
       <div className="grid gap-3 sm:grid-cols-2">
         <button type="button" disabled={disabled || isPdf || pages.length >= MAX_FILES} onClick={() => selectFiles(false)} className="focus-ring flex min-h-24 items-center gap-3 rounded-xl border-2 border-dashed border-brand-300 bg-brand-50/60 p-4 text-left transition hover:border-brand-500 hover:bg-brand-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-brand-500/40 dark:bg-brand-500/10">
           <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-white text-brand-600 shadow-sm dark:bg-white/10 dark:text-brand-200"><FilePlus2 className="h-6 w-6" /></span>
-          <span><strong className="block text-sm text-fg">{pages.length ? 'Agregar más fotos' : 'Subir fotos o PDF'}</strong><span className="mt-1 block text-xs leading-5 text-muted">Hasta 10 fotos ordenadas o un PDF</span></span>
+          <span><strong className="block text-sm text-fg">{pages.length ? 'Agregar más fotos' : allowPdf ? 'Subir fotos o PDF' : 'Subir fotos'}</strong><span className="mt-1 block text-xs leading-5 text-muted">{allowPdf ? 'Hasta 10 fotos ordenadas o un PDF' : 'Hasta 10 fotos ordenadas'}</span></span>
         </button>
         <button type="button" disabled={disabled || isPdf || pages.length >= MAX_FILES} onClick={() => openCamera()} className="focus-ring flex min-h-24 items-center gap-3 rounded-xl border border-border bg-surface p-4 text-left transition hover:border-sky-400 hover:bg-sky-50/50 disabled:cursor-not-allowed disabled:opacity-50 dark:hover:bg-sky-500/10">
           <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-sky-100 text-sky-700 dark:bg-sky-500/20 dark:text-sky-200"><Camera className="h-6 w-6" /></span>
           <span><strong className="block text-sm text-fg">{pages.length ? 'Tomar otra foto' : 'Tomar foto'}</strong><span className="mt-1 block text-xs leading-5 text-muted">Abre la cámara y revisa la foto antes de añadirla</span></span>
         </button>
       </div>
-      <input ref={fileInputRef} type="file" disabled={disabled} multiple accept="image/jpeg,image/png,image/webp,application/pdf" className="hidden" onChange={(event) => { const replacementId = replacementIdRef.current; replacementIdRef.current = null; if (event.target.files && selectionContext.current === contextKey) void addFiles(event.target.files, replacementId); event.target.value = ''; }} />
+      <input ref={fileInputRef} type="file" disabled={disabled} multiple accept={`image/jpeg,image/png,image/webp${allowPdf ? ',application/pdf' : ''}`} aria-label="Seleccionar fotografías" className="hidden" onChange={(event) => { const replacementId = replacementIdRef.current; replacementIdRef.current = null; if (event.target.files && selectionContext.current === contextKey) void addFiles(event.target.files, replacementId); event.target.value = ''; }} />
       <input ref={cameraInputRef} type="file" disabled={disabled} accept="image/*" capture="environment" className="hidden" onChange={(event) => { const replacementId = replacementIdRef.current; replacementIdRef.current = null; if (event.target.files && selectionContext.current === contextKey) void addFiles(event.target.files, replacementId); event.target.value = ''; }} />
 
       {pages.length > 0 && <>
         <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-surface-2 px-4 py-3">
           <p className="flex items-center gap-2 text-sm font-semibold text-fg"><Images className="h-4 w-4 text-brand-600" />{isPdf ? '1 PDF seleccionado' : `${pages.length} ${pages.length === 1 ? 'hoja seleccionada' : 'hojas seleccionadas'}`}</p>
-          <p className="text-xs text-muted">{totalMb.toFixed(1)} MB de 40 MB</p>
+          <p className="text-xs text-muted">{totalMb.toFixed(1)} MB de {maxTotalBytes / 1024 / 1024} MB</p>
         </div>
         <ol className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
           {pages.map((page, index) => <li key={page.id} className="overflow-hidden rounded-xl border border-border bg-surface shadow-sm">

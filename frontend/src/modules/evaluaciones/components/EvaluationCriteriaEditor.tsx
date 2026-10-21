@@ -52,6 +52,7 @@ export function EvaluationCriteriaEditor({ evaluation, onClose, onCompleted }: {
   const save = useMutation({
     mutationFn: () => updateEvaluacion(original.id, {
       expected_updated_at: original.updated_at,
+      ...(original.contenido_version_id ? { expected_content_version_id: original.contenido_version_id } : {}),
       ...(JSON.stringify(official) !== JSON.stringify(original.dba_ids ?? []) ? { dba_ids: official } : {}),
       ...(JSON.stringify(custom) !== JSON.stringify(original.dba_personalizado_ids ?? []) ? { dba_personalizado_ids: custom } : {}),
       ...(rubricChanged ? { criterios: prepareRubricCriteriaForSave(criteria, Number(original.nota_maxima)) } : {}),

@@ -38,6 +38,7 @@ from app.modules.calificaciones.agents import (
 )
 from app.modules.calificaciones.schemas import GradingResult
 from app.modules.calificaciones.feedback_refinement import refine_feedback_if_needed
+from app.modules.calificaciones.grading_visuals import EvaluationVisualInput, visual_provenance
 from app.modules.evaluaciones.modality_service import (
     normalize_question_modalities,
     question_numbers_by_section,
@@ -154,7 +155,7 @@ async def _run_grader_cascade(
             model=model,
             multimodal=bool(
                 multimodal
-                and ctx.image_bytes
+                and (ctx.image_bytes or ctx.requires_visual_material)
                 and model_supports_vision(model)
             ),
             client=client,
@@ -190,7 +191,7 @@ async def _run_grader_until_complete(
     return await _run_grader_cascade(
         ctx,
         models=_ordered_unique_models(*models),
-        multimodal=bool(ctx.image_bytes),
+        multimodal=bool(ctx.image_bytes or ctx.requires_visual_material),
         client=client,
         timeout=None,
         max_attempts=max(1, int(settings.PHOTO_GRADING_MODEL_MAX_ATTEMPTS)),
@@ -410,7 +411,9 @@ def format_structured_visual_answers(answers: list[dict]) -> str:
             if isinstance(page, int) and page > 0
             else ""
         )
-        if item.get("legible", True) is False or item.get("requiere_revision", False):
+        if item.get("respuesta_parcial") and str(item.get("respuesta") or "").strip():
+            answer = str(item["respuesta"]).strip() + " [fragmento legible; evidencia incompleta o ambigua, requiere revisión]"
+        elif item.get("legible", True) is False or item.get("requiere_revision", False):
             answer = "[ilegible o ambigua; requiere revision]"
         elif item.get("sin_respuesta", False) or item.get("blank", False):
             answer = "[sin respuesta]"
@@ -454,6 +457,8 @@ def build_objective_validation(
         str(answer.get("pregunta", answer.get("numero"))): answer.get("respuesta")
         for answer in (detected_answers or [])
         if answer.get("pregunta", answer.get("numero")) is not None
+        and not answer.get("respuesta_parcial")
+        and answer.get("legible", True) is not False
     }
     validation: list[dict] = []
     for number, question in questions.items():
@@ -572,6 +577,7 @@ async def orchestrate_grading(
     verifier_model: str = DEFAULT_VERIFIER_MODEL,
     grader_b_model: str = DEFAULT_GRADER_B_MODEL,
     comparator_model: str = DEFAULT_COMPARATOR_MODEL,
+    evaluation_visuals: tuple[EvaluationVisualInput, ...] = (),
 ) -> GradingResult:
     """Orquesta el pipeline completo de calificación multi-agente.
 
@@ -1053,6 +1059,7 @@ async def orchestrate_grading(
             objective_validation=objective_validation,
             image_bytes=image_bytes,
             image_mime=image_mime_for_grading,
+            evaluation_visuals=evaluation_visuals,
         )
         grading_contexts = partition_grading_context(
             ctx_grading,
@@ -1099,7 +1106,7 @@ async def orchestrate_grading(
                         client=verification_client,
                         timeout=None,
                         max_attempts=max(1, int(settings.PHOTO_GRADING_MODEL_MAX_ATTEMPTS)),
-                        multimodal=bool(partition.image_bytes),
+                        multimodal=bool(partition.image_bytes or partition.requires_visual_material),
                     ))
             grading_a = merge_partition_results(
                 primary_parts,
@@ -1147,7 +1154,7 @@ async def orchestrate_grading(
                     1,
                     int(settings.PHOTO_GRADING_MODEL_MAX_ATTEMPTS),
                 ),
-                multimodal=bool(ctx_grading.image_bytes),
+                multimodal=bool(ctx_grading.image_bytes or ctx_grading.requires_visual_material),
             )
             arbiter_reason = _arbitration_reason(grading_a, grading_b)
             arbiter_invoked = (
@@ -1394,6 +1401,7 @@ async def orchestrate_grading(
             "orchestrator": "multi_agent_v2",
             "provider_policy": "opencode_go_primary",
             "evidence_mode": "multimodal" if image_bytes else "digital_text",
+            **({'evaluation_content': visual_provenance(blueprint, evaluation_visuals)} if blueprint.get('contenido_version_id') else {}),
             "objective_validation": objective_validation,
             "objective_score_floor": float(deterministic_floor),
             "objective_floor_applied": objective_floor_applied,

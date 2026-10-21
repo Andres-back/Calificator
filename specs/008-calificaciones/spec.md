@@ -115,4 +115,6 @@ Carga, nota manual, reemplazo, ajuste, confirmación y publicación conservan su
 
 ## Evolución 100: retroalimentación legible y precisión visible
 
+La evolución [101 — contexto visual conservado](../101-digitalizacion-visual-completa/spec.md), issue #211, fija una revisión antes de iniciar una entrega/encolar, separa estímulos de evidencia del alumno y entrega el contexto al principal/verificador habilitado. Reintentos, particiones y desgloses conservan esa revisión; faltar material requiere revisión, no cero ni publicación automática. Detalle, corrección manual y reportes usan el máximo/clave originales, mientras permisos y liberación de respuestas siguen vigentes. No se recalculan notas antiguas ni se adjudican figuras nuevas a entregas legacy.
+
 [100-feedback-demo-movil](../100-feedback-demo-movil/spec.md) muestra feedback íntegro como texto, con Editar al inicio y editor creciente, guardado actual y descarte confirmado solo del mensaje. Conserva avisos provisionales sin reescribirlos. Identifica el cálculo incompleto como provisional e informa preguntas/criterios sin puntaje, diferenciando null de cero y propuesta de IA de decisión confirmada. El formato de edición quita ceros redundantes, preserva decimales significativos y máximo real sin marcar cambios por abrir. Sin alterar cálculos, APIs, notas, evidencias, versiones ni permisos.

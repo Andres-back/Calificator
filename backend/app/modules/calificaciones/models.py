@@ -38,6 +38,9 @@ class Entrega(Base):
     respuesta_texto: Mapped[str | None] = mapped_column(Text, nullable=True)
     archivo_url: Mapped[str | None] = mapped_column(Text, nullable=True)
     visual_text_json: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
+    contenido_version_id: Mapped[PyUUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("evaluacion_contenido_versiones.id", name="fk_entregas_contenido_version"), nullable=True,
+    )
     estado: Mapped[str] = mapped_column(String(40), nullable=False, default=EntregaEstado.PENDIENTE.value)
     created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(

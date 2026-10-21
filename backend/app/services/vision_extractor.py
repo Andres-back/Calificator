@@ -25,6 +25,7 @@ from app.services.ollama_provider import OllamaCloudProvider, OllamaProviderErro
 from app.services.opencode_request import new_opencode_session_id, opencode_headers
 
 logger = get_logger(__name__)
+VISION_EXTRACTION_VERSION = 2
 RETRYABLE_HTTP = {429, 502, 503, 504}
 RETRYABLE_ERRORS = (httpx.TimeoutException, httpx.NetworkError, httpx.RemoteProtocolError)
 _SOLUTION_CONTEXT_KEYS = {
@@ -69,6 +70,7 @@ class ExtractedAnswer(BaseModel):
     blank: bool = False
     needs_review: bool = False
     correction_detected: bool = False
+    partial: bool = False
 
     @model_validator(mode="after")
     def preserve_uncertainty(self) -> "ExtractedAnswer":
@@ -88,6 +90,7 @@ class ExtractedAnswer(BaseModel):
 
 class VisionPageResult(BaseModel):
     page: int
+    page_role: Literal["reading", "responses", "mixed", "unknown"] = "unknown"
     status: Literal["extracted", "requires_review", "failed_temporary", "failed_permanent"]
     duration_ms: int = 0
     parsing_ms: int = 0
@@ -152,6 +155,7 @@ class VisionExtraction(BaseModel):
                 "respuesta": _answer_with_visual_description(a),
                 "descripcion_visual": a.visual_description,
                 "legible": a.legible, "sin_respuesta": a.blank,
+                "respuesta_parcial": a.partial,
                 "confianza": a.confidence, "requiere_revision": a.needs_review,
             } for a in self.answers],
             "calidad_imagen": {"confianza": self.document_quality, "paginas": len(self.pages)},
@@ -227,6 +231,8 @@ def _normalize(raw: dict[str, Any], page: int, size: int) -> VisionPageResult:
     for item in raw.get("answers", raw.get("respuestas_detectadas", [])) or []:
         if not isinstance(item, dict):
             continue
+        if item.get("present") is False:
+            continue
         number = item.get("question_number", item.get("pregunta", item.get("numero")))
         if number is None:
             continue
@@ -241,6 +247,7 @@ def _normalize(raw: dict[str, Any], page: int, size: int) -> VisionPageResult:
             blank=bool(item.get("blank", item.get("sin_respuesta", False))),
             needs_review=bool(item.get("needs_review", item.get("requiere_revision", False))),
             correction_detected=bool(item.get("correction_detected", False)),
+            partial=bool(item.get("partial", item.get("respuesta_parcial", False))),
         ))
     quality = raw.get("document_quality", raw.get("confidence", 0))
     if isinstance(quality, dict):
@@ -248,9 +255,15 @@ def _normalize(raw: dict[str, Any], page: int, size: int) -> VisionPageResult:
     warnings = raw.get("warnings", raw.get("alertas", [])) or []
     if not isinstance(warnings, list):
         warnings = [warnings]
-    review = any(answer.needs_review for answer in answers)
+    role = raw.get("page_role", "unknown")
+    if role not in {"reading", "responses", "mixed", "unknown"}:
+        role = "unknown"
+    if role == "reading" and not any(a.answer or a.visual_description for a in answers):
+        # A reading-only sheet cannot declare the other sheets' answers illegible.
+        answers = []
+    review = any(answer.needs_review or answer.partial for answer in answers)
     return VisionPageResult(
-        page=page, status="requires_review" if review else "extracted",
+        page=page, page_role=role, status="requires_review" if review else "extracted",
         size_bytes=size, document_quality=max(0, min(1, float(quality or 0))),
         page_text=str(raw.get("page_text") or raw.get("texto_extraido") or "").strip(),
         answers=answers, warnings=[str(item) for item in warnings],
@@ -258,28 +271,33 @@ def _normalize(raw: dict[str, Any], page: int, size: int) -> VisionPageResult:
 
 
 def _merge(pages: list[VisionPageResult]) -> list[ExtractedAnswer]:
-    merged: dict[str, ExtractedAnswer] = {}
-    for page in pages:
+    grouped: dict[str, list[ExtractedAnswer]] = {}
+    for page in sorted(pages, key=lambda item: item.page):
         for answer in page.answers:
             key = str(answer.question_id or answer.question_number).lower()
-            if key not in merged:
-                merged[key] = answer.model_copy(deep=True)
-                continue
-            current = merged[key]
-            current.source_pages = sorted(set(current.source_pages + answer.source_pages))
-            current.confidence = min(current.confidence, answer.confidence)
-            if not current.legible or not answer.legible:
-                current.answer, current.legible, current.needs_review = None, False, True
-            elif current.answer and answer.answer and answer.answer not in current.answer:
-                current.answer = answer.answer if current.answer in answer.answer else f"{current.answer}\n{answer.answer}"
-            elif answer.answer:
-                current.answer = answer.answer
-            if answer.visual_description and answer.visual_description not in (current.visual_description or ""):
-                current.visual_description = (
-                    f"{current.visual_description}\n{answer.visual_description}"
-                    if current.visual_description else answer.visual_description
-                )
-    return list(merged.values())
+            grouped.setdefault(key, []).append(answer)
+    merged = []
+    for candidates in grouped.values():
+        observed = [a for a in candidates if a.answer or a.visual_description]
+        current = (observed[0] if observed else candidates[0]).model_copy(deep=True)
+        current.source_pages = sorted({p for a in candidates for p in a.source_pages})
+        current.correction_detected = any(a.correction_detected for a in candidates)
+        if observed:
+            texts = list(dict.fromkeys(a.answer.strip() for a in observed if a.answer and a.answer.strip()))
+            drawings = list(dict.fromkeys(a.visual_description.strip() for a in observed if a.visual_description and a.visual_description.strip()))
+            current.answer = "\n".join(texts) or None
+            current.visual_description = "\n".join(drawings) or None
+            current.legible, current.blank = True, False
+            current.partial = any(a.partial for a in candidates) or len(observed) != len(candidates) or len(texts) > 1 or len(drawings) > 1
+            current.needs_review = current.partial or any(a.needs_review for a in candidates)
+            current.confidence = min(a.confidence for a in observed)
+        else:
+            current.legible = all(a.legible for a in candidates)
+            current.blank = current.legible and all(a.blank for a in candidates)
+            current.needs_review = not current.legible or any(a.needs_review for a in candidates)
+            current.confidence = min(a.confidence for a in candidates)
+        merged.append(current)
+    return merged
 
 
 def _answer_with_visual_description(answer: ExtractedAnswer) -> str | None:
@@ -381,6 +399,11 @@ Una respuesta incorrecta sigue siendo una respuesta: transcríbela literalmente.
 Solo usa blank=true cuando revisaste toda el área de respuesta y está realmente vacía.
 Si observas grafito pero no puedes leerlo, usa legible=false y needs_review=true, nunca blank=true.
 Transcribe solo lo visible. No completes, infieras ni corrijas. Conserva errores ortográficos.
+Clasifica page_role: reading si solo contiene lectura/material de apoyo sin preguntas ni áreas
+de respuesta; responses si contiene preguntas/respuestas; mixed si reúne ambas; unknown si no puedes decidir.
+En una hoja reading devuelve answers=[]: NO repitas las preguntas del contexto como si estuvieran
+ilegibles o en blanco en esta hoja. Omite preguntas que están en otras hojas, o usa present=false.
+No confundas pregunta ausente con respuesta vacía. Solo present=true cuando su área está visible.
 El contexto solo sirve para ubicar la pregunta: no copies los números del contexto como si fueran
 la respuesta. En operaciones aritméticas transcribe dígito por dígito los operandos escritos por
 el estudiante, los productos parciales y el resultado final. Si los operandos visibles difieren
@@ -389,7 +412,7 @@ distingue, usa answer=null, legible=false y needs_review=true; nunca lo complete
 {drawing_rule}
 Distingue vacío de ilegible. Ilegible: answer=null, legible=false, needs_review=true.
 Informa tachones, correcciones y preguntas ausentes. Devuelve SOLO JSON:
-{{"student_detected":true,"document_quality":0.0,"page_text":"","answers":[{{"question_id":null,"question_number":1,"answer":null,"visual_description":null,"confidence":0.0,"legible":false,"blank":false,"needs_review":true,"correction_detected":false}}],"warnings":[]}}"""
+{{"student_detected":true,"page_role":"unknown","document_quality":0.0,"page_text":"","answers":[{{"question_id":null,"question_number":1,"present":true,"answer":null,"visual_description":null,"confidence":0.0,"legible":false,"blank":false,"needs_review":true,"correction_detected":false}}],"warnings":[]}}"""
 
     async def _event(self, event: str, request_id: str, model: str, attempt: int, started: float, page: int, size: int, status: str, error: str | None = None, usage: dict | None = None, http_status: int | None = None) -> None:
         duration = int((time.monotonic() - started) * 1000)
@@ -530,6 +553,7 @@ Informa tachones, correcciones y preguntas ausentes. Devuelve SOLO JSON:
                             purpose == "student_response"
                             and isinstance(blueprint, dict)
                             and blueprint.get("preguntas")
+                            and not (total > 1 and result.page_role == "reading" and not result.answers)
                         )
                         has_student_answer = any(
                             bool((answer.answer or "").strip())
@@ -620,13 +644,21 @@ Informa tachones, correcciones y preguntas ausentes. Devuelve SOLO JSON:
         async def run(item: tuple[int, bytes, str, bool]) -> VisionPageResult:
             async with semaphore:
                 return await self._one(item, len(prepared), blueprint or {}, purpose)
+        tasks = [asyncio.create_task(run(item)) for item in prepared]
         try:
-            gathered = await asyncio.wait_for(
-                asyncio.gather(*(run(item) for item in prepared)),
-                timeout=max(1, settings.VISION_TOTAL_TIMEOUT_SECONDS),
-            )
-        except asyncio.TimeoutError as exc:
-            raise VisionExtractionError("vision_failed_temporary", True) from exc
+            _, pending = await asyncio.wait(tasks, timeout=max(1, settings.VISION_TOTAL_TIMEOUT_SECONDS))
+        finally:
+            unfinished = [task for task in tasks if not task.done()]
+            for task in unfinished:
+                task.cancel()
+            if unfinished:
+                await asyncio.gather(*unfinished, return_exceptions=True)
+        gathered = [
+            VisionPageResult(page=item[0], status="failed_temporary", error_code="vision_timeout",
+                             warnings=["La lectura de esta página tardó demasiado; puede reintentarse."])
+            if task in pending else task.result()
+            for item, task in zip(prepared, tasks, strict=True)
+        ]
         results = sorted(gathered, key=lambda item: item.page)
         success = [item for item in results if item.status in {"extracted", "requires_review"}]
         if not success:

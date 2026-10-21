@@ -12,6 +12,7 @@ from app.modules.dba.router import router as dba_router
 from app.modules.evaluaciones.router import router as evaluaciones_router
 from app.modules.feedback_sharing.router import router as feedback_sharing_router
 from app.modules.feedback_sharing.public_router import router as public_feedback_router
+from app.modules.evaluaciones.visual_router import router as evaluaciones_visual_router
 from app.modules.herramientas.router import router as herramientas_router
 from app.modules.imagenes.router import biblioteca_router as imagenes_biblioteca_router
 from app.modules.imagenes.router import router as imagenes_router
@@ -38,6 +39,7 @@ api_router.include_router(matriculas_router)
 api_router.include_router(ollama_connector_router)
 api_router.include_router(dba_router)
 api_router.include_router(dba_custom_router)
+api_router.include_router(evaluaciones_visual_router)
 api_router.include_router(evaluaciones_router)
 api_router.include_router(feedback_sharing_router)
 api_router.include_router(public_feedback_router)

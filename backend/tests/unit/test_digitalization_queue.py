@@ -4,8 +4,11 @@ from uuid import uuid4
 
 import pytest
 from fastapi import UploadFile
+from fastapi import HTTPException
 
 from app.modules.evaluaciones import router
+from app.core.config import settings
+from app.modules.evaluaciones.document_visual_extractor import DocumentRendererUnavailable
 from app.workers import tasks_digitalization
 from app.modules.authorization.catalog import default_permissions_for_role
 from app.modules.materias import service as materias_service
@@ -16,6 +19,7 @@ def test_digitalization_retries_transport_errors_but_not_invalid_content() -> No
     assert tasks_digitalization._is_transient_error(TimeoutError("provider timeout"))
     assert tasks_digitalization._is_transient_error(RuntimeError("HTTP 503"))
     assert not tasks_digitalization._is_transient_error(ValueError("archivo invalido"))
+    assert tasks_digitalization._is_transient_error(DocumentRendererUnavailable("El conversor está ocupado"))
 
 
 class FakeDB:
@@ -28,6 +32,23 @@ class FakeDB:
 
     async def rollback(self) -> None:
         self.rollbacks += 1
+
+
+@pytest.mark.anyio
+async def test_multiple_photos_are_not_read_before_subject_permission(monkeypatch):
+    read = []
+    async def denied(*args, **kwargs):
+        raise HTTPException(403, 'Materia no disponible')
+    async def bundle(*args, **kwargs):
+        read.append(True)
+        raise AssertionError('Must authorize first')
+    monkeypatch.setattr(materias_service, 'ensure_can_manage_materia', denied)
+    monkeypatch.setattr(router, 'build_evidence_bundle', bundle)
+    user = SimpleNamespace(id=uuid4(), rol='profesor', _effective_permissions={'evaluations.create'})
+    with pytest.raises(HTTPException) as caught:
+        await router.digitalize_from_file(materia_id=uuid4(), nombre='Privada', file=[object(), object()], current_user=user, db=FakeDB())
+    assert caught.value.status_code == 403
+    assert not read
 
 
 @pytest.mark.anyio
@@ -63,7 +84,10 @@ async def test_digitalization_reuses_normalized_extraction_on_retry(monkeypatch)
 
 
 @pytest.mark.anyio
-async def test_digitalization_is_persisted_and_enqueued(monkeypatch) -> None:
+@pytest.mark.parametrize("visual_enabled", [False, True])
+@pytest.mark.parametrize('multiple_photos', [False, True])
+async def test_digitalization_is_persisted_and_enqueued(monkeypatch, visual_enabled, multiple_photos) -> None:
+    monkeypatch.setattr(settings, "EVALUATION_VISUAL_IMPORT_ENABLED", visual_enabled)
     materia_id = uuid4()
     user = SimpleNamespace(
         id=uuid4(), rol=UserRole.PROFESOR.value,
@@ -97,6 +121,14 @@ async def test_digitalization_is_persisted_and_enqueued(monkeypatch) -> None:
     )
     db = FakeDB()
     upload = UploadFile(filename="evaluacion.pdf", file=BytesIO(b"%PDF-1.7"))
+    if multiple_photos:
+        from PIL import Image
+        photos = []
+        for color in ('red', 'green', 'blue'):
+            stream = BytesIO()
+            Image.new('RGB', (60, 80), color).save(stream, format='PNG')
+            photos.append(UploadFile(filename=f'{color}.png', file=BytesIO(stream.getvalue())))
+        upload = photos
 
     response = await router.digitalize_from_file(
         materia_id=materia_id,
@@ -116,6 +148,10 @@ async def test_digitalization_is_persisted_and_enqueued(monkeypatch) -> None:
     assert queued[0]["job_id"] == str(job_id)
     assert queued[0]["file_key"].startswith(".private/digitalizaciones/")
     assert db.commits == 1
+    assert created[0]["input_json"]["_visual_import_schema"] == (1 if visual_enabled else None)
+    if multiple_photos:
+        assert len(created) == len(queued) == 1
+        assert created[0]['input_json']['hojas']['paginas'] == 3
 
 
 @pytest.mark.anyio

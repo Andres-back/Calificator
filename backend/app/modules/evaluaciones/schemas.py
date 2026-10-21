@@ -5,6 +5,8 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+from app.modules.evaluaciones.visual_schemas import StudentVisualContent, VisualManifest
+
 from app.shared.enums import (
     BlueprintNivelContexto,
     EvaluacionEstado,
@@ -31,10 +33,15 @@ class EvaluacionCreate(BaseModel):
     criterios: list[dict[str, Any]] = Field(default_factory=list)
     preguntas: list[dict[str, Any]] = Field(default_factory=list)
     respuestas_esperadas: list[dict[str, Any]] = Field(default_factory=list)
+    contenido_visual: VisualManifest | None = None
 
 
 class EvaluacionUpdate(BaseModel):
+    lectura: str | None = Field(default=None, max_length=60_000)
+    claves_visuales_revisadas: list[UUID] = Field(default_factory=list, max_length=500)
     expected_updated_at: datetime | None = None
+    expected_content_version_id: UUID | None = None
+    contenido_visual: VisualManifest | None = None
     nombre: str | None = Field(default=None, min_length=2, max_length=220)
     descripcion: str | None = None
     nota_maxima: Decimal | None = Field(default=None, gt=0)
@@ -71,6 +78,8 @@ class EvaluacionBlueprintRead(BaseModel):
 
 
 class EvaluacionRead(BaseModel):
+    lectura: str | None = None
+    claves_visuales_pendientes: list[UUID] = Field(default_factory=list)
     id: UUID
     materia_id: UUID
     profesor_id: UUID
@@ -94,6 +103,8 @@ class EvaluacionRead(BaseModel):
     criterios: list[dict[str, Any]]
     preguntas: list[dict[str, Any]]
     respuestas_esperadas: list[dict[str, Any]]
+    contenido_version_id: UUID | None = None
+    contenido_visual: StudentVisualContent | VisualManifest | None = None
     created_at: datetime
     updated_at: datetime
     blueprint: EvaluacionBlueprintRead | None = None
@@ -107,6 +118,7 @@ class EvaluacionRead(BaseModel):
     intentos_realizados: int = 0
     entrega_realizada: bool = False
     mi_nota_confirmada: Decimal | None = None
+    mi_nota_maxima: Decimal | None = None
     mi_calificacion_estado: str | None = None
 
     model_config = ConfigDict(from_attributes=True)
@@ -137,6 +149,8 @@ class EvaluacionSorpresaCreate(BaseModel):
 
 
 class EvaluacionEstructuraValidacion(BaseModel):
+    expected_updated_at: datetime | None = None
+    expected_content_version_id: UUID | None = None
     criterios: list[dict[str, Any]] | None = None
     preguntas: list[dict[str, Any]] | None = None
     respuestas_esperadas: list[dict[str, Any]] | None = None

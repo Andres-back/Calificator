@@ -4,7 +4,7 @@ import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 
 revision = "202610200001"
-down_revision = "202609240001"
+down_revision = "202610150001"
 branch_labels = None
 depends_on = None
 

@@ -45,6 +45,13 @@ class Settings(BaseSettings):
     MAX_EVIDENCE_FILE_MB: int = 10
     MAX_EVIDENCE_TOTAL_MB: int = 40
     MAX_GRADING_PDF_PAGES: int = 20
+    # New writes stay off until readers, exports and grading support revisions.
+    EVALUATION_VISUAL_EDITOR_ENABLED: bool = False
+    EVALUATION_VISUAL_IMPORT_ENABLED: bool = False
+    EVALUATION_VISUAL_GENERATION_ENABLED: bool = False
+    DOCUMENT_RENDERER_URL: str = "http://document-renderer:8080"
+    DOCUMENT_RENDERER_TIMEOUT_SECONDS: int = 55
+    DOCUMENT_VISUAL_MAX_BYTES: int = 64 * 1024 * 1024
     GRADING_PDF_RENDER_DPI: int = 150
 
     CORS_ORIGINS: str = (
@@ -121,6 +128,9 @@ class Settings(BaseSettings):
     PHOTO_GRADING_VERIFIER_MAX_TOKENS: int = 2048
     # Presupuesto de entrada aproximado. No trunca: activa partición por pregunta.
     PHOTO_GRADING_CONTEXT_BUDGET_CHARS: int = 320000
+    # Aggregate wire limits: reject visibly, never drop required question material.
+    GRADING_MULTIMODAL_MAX_IMAGES: int = 32
+    GRADING_MULTIMODAL_MAX_BYTES: int = 32 * 1024 * 1024
     PHOTO_GRADING_ARBITRATION_MIN_CONFIDENCE: float = 0.75
     PHOTO_GRADING_ARBITRATION_SCORE_DELTA: float = 0.5
     PHOTO_GRADING_MODEL_MAX_ATTEMPTS: int = 1

@@ -145,9 +145,11 @@ async function loginAndOpenEvaluations(page: Page) {
   await page.locator('input[type="password"]').fill('password-for-test');
   await page.getByRole('button', { name: /Iniciar sesi.n/i }).click();
   await expect(page).toHaveURL(/\/app(?:\/materias)?$/);
-  // URL changes before the authenticated shell finishes mounting. Navigating
-  // again during that redirect can abort a WebKit load.
+  // The shell can mount while its lazy dashboard module is still loading.
+  // Wait for page content, not just the account button, before a full navigation
+  // can abort that import (and WebKit's network process in CI).
   await expect(page.getByRole('button', { name: /Abrir menú de cuenta/ })).toBeVisible();
+  await expect(page.locator('main#main-content').getByRole('heading', { level: 1 })).toBeVisible();
   await page.goto('/app/evaluaciones');
   await expect(page).toHaveURL(/\/app\/evaluaciones/);
 }
@@ -156,6 +158,27 @@ async function openAI(page: Page) {
   await page.getByRole('button', { name: 'Crear evaluación', exact: true }).click();
   await page.getByRole('button', { name: 'Crear con IA', exact: true }).click();
 }
+
+test('096 109 waits for the authenticated dashboard module before navigating to evaluations 360px', async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 844 });
+  await mockApplication(page);
+  await page.route('**/src/modules/dashboard/DashboardPage.tsx', async route => {
+    const response = await route.fetch();
+    // Controlled fixture latency, not a readiness sleep in the navigation helper.
+    await new Promise(resolve => setTimeout(resolve, 500));
+    await route.fulfill({ response });
+  });
+  await page.addInitScript(() => {
+    window.addEventListener('pagehide', () => {
+      if (location.pathname === '/app') {
+        sessionStorage.setItem('qa109-dashboard-ready', String(Boolean(document.querySelector('main#main-content h1'))));
+      }
+    });
+  });
+  await loginAndOpenEvaluations(page);
+  expect(await page.evaluate(() => sessionStorage.getItem('qa109-dashboard-ready'))).toBe('true');
+  await expect(page.getByRole('button', { name: 'Crear evaluación', exact: true })).toBeVisible();
+});
 
 async function finishWritingIfVisible(page: Page) {
   const done = page.getByRole('button', { name: 'Listo', exact: true });

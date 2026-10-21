@@ -29,6 +29,7 @@ async def lock_owned_job(db: AsyncSession, job_id: UUID, claim_token: str) -> No
         raise JobOwnershipLost("La ejecución ya no es propietaria del trabajo")
 
 JOB_FEATURES = {
+    "evaluacion_visual": "generacion_imagenes",
     "presentacion": "presentaciones",
     "imagen": "generacion_imagenes",
     "calificacion_lote": "calificacion_foto",
@@ -48,6 +49,13 @@ async def _resolve_job_ai_config(
 ) -> dict[str, Any]:
     """Freeze the effective routes used by a job without serializing secrets."""
     from app.services.ai_configuration_resolver import resolve_ai_configuration
+
+    if tipo == 'evaluacion_visual':
+        image = await resolve_ai_configuration(db, feature='generacion_imagenes', teacher_id=user_id)
+        content = await resolve_ai_configuration(db, feature='content_generation', teacher_id=user_id)
+        # This new pipeline always consumes its captured effective selection.
+        # No global route or rollout flag is changed for existing features.
+        return {'image': {**image, 'rollout_enabled': True}, 'content': {**content, 'rollout_enabled': True}}
 
     if tipo == "evaluacion_digitalizacion":
         extraction = await resolve_ai_configuration(
@@ -303,6 +311,12 @@ def dispatch_persisted_job(job: dict[str, Any]) -> bool:
             },
             queue="grading",
         )
+        return True
+
+    if job_type == 'evaluacion_visual':
+        if not user_id or not payload.get('proposal'):
+            return False
+        celery_app.send_task('tasks.generate_evaluation_visual', kwargs={'job_id': job_id}, queue='presentations')
         return True
 
     if job_type == "evaluacion_digitalizacion":

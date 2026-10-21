@@ -20,7 +20,7 @@ MIGRATION = Path(__file__).resolve().parents[2] / "alembic/versions/202610200001
 
 def test_migration_is_additive_and_has_explicit_parent():
     source = MIGRATION.read_text(encoding="utf8")
-    assert 'down_revision = "202609240001"' in source
+    assert 'down_revision = "202610150001"' in source
     assert "create_table" in source
     upgrade = source.split("def upgrade()", 1)[1].split("def downgrade()", 1)[0].upper()
     for forbidden in ("DELETE FROM", "UPDATE CALIFICACIONES", "ALTER TABLE USERS", "DROP TABLE", "TRUNCATE"):
@@ -58,7 +58,7 @@ async def test_upgrade_preserves_whole_existing_grade(fb_db, fb_case_factory):
     async with admin.connect() as connection:
         await connection.execute(text(f'CREATE DATABASE "{name}"'))
     try:
-        await upgrade("202609240001")
+        await upgrade("202610150001")
         sessions = async_sessionmaker(temporary, expire_on_commit=False)
         async with sessions() as db:
             case = await fb_case_factory(db)

@@ -17,6 +17,8 @@ from app.core.config import settings
 from app.core.logging import get_logger
 from app.modules.calificaciones.agents import AgentContext, OpenCodeClient, vision_agent
 from app.modules.dba.document_service import extraer_texto_docx, extraer_texto_pdf
+from app.modules.evaluaciones.visual_normalization import bind_visual_structure, visual_prompt_context
+from app.modules.evaluaciones.visual_schemas import VisualManifest
 from app.services.image_preprocessing import (
     prepare_orientation_variants,
     quality_warning_messages,
@@ -51,6 +53,7 @@ será revisada por el docente y usada para calificar respuestas en papel.
 
 Devuelve SOLO JSON válido con esta estructura exacta:
 {{
+  "lectura": "texto de lectura o apoyo completo, separado de las preguntas; null si no existe",
   "preguntas": [
     {{
       "numero": 1,
@@ -78,6 +81,7 @@ Devuelve SOLO JSON válido con esta estructura exacta:
 }}
 
 REGLAS OBLIGATORIAS:
+- Conserva íntegra la lectura o texto de apoyo impreso en lectura, incluidos título y párrafos; no la resumas ni la confundas con preguntas o respuestas manuscritas. Si no existe, usa null.
 - Incluye TODAS las preguntas y conserva su numeración. Si el OCR numeró una lista de ejercicios originalmente sin número, conserva esa numeración secuencial.
 - El contenido puede incluir etiquetas [RESPUESTA DEL ESTUDIANTE: ...]. No copies esas respuestas en la clave ni las mezcles con el enunciado: resuelve cada ejercicio de forma independiente.
 - Construye la clave EXCLUSIVAMENTE desde el enunciado y material impreso. La presencia,
@@ -109,6 +113,7 @@ vacía o ya resuelta por un estudiante.
 
 Transcribe todo el contenido educativo visible:
 - título e instrucciones;
+- lectura y textos de apoyo completos, conservando sus párrafos aunque la hoja no tenga preguntas;
 - cada pregunta con su número;
 - todas las opciones de respuesta;
 - expresiones matemáticas preservando +, -, ×, ÷, =, paréntesis y decimales;
@@ -119,7 +124,7 @@ Transcribe todo el contenido educativo visible:
 
 Devuelve SOLO JSON válido con este formato:
 {
-  "texto_preguntas": "solo título, instrucciones, preguntas y opciones impresas",
+  "texto_preguntas": "título, instrucciones, lectura íntegra, preguntas y opciones impresas; sin respuestas del estudiante",
   "texto_extraido": "transcripción completa con respuestas observadas etiquetadas",
   "preguntas_detectadas": [1, 2],
   "respuestas_detectadas": [{"pregunta": 1, "respuesta": "respuesta manuscrita visible"}],
@@ -128,7 +133,7 @@ Devuelve SOLO JSON válido con este formato:
   "alertas": []
 }
 
-Marca usable=true si puedes reconstruir al menos una pregunta, incluso cuando el texto sea
+Marca usable=true si puedes reconstruir una lectura o al menos una pregunta, incluso cuando el texto sea
 manuscrito, la hoja esté inclinada o existan imperfecciones menores. Usa false únicamente
 si no hay contenido educativo recuperable. No inventes texto que no esté visible.
 En texto_preguntas NUNCA incluyas respuestas, selecciones, operaciones ni correcciones
@@ -272,6 +277,8 @@ async def _extract_image_text(
     name: str,
     user_id: UUID | None = None,
     ai_config: dict[str, Any] | None = None,
+    *,
+    prompt_override: str | None = None,
 ) -> tuple[str, list[str]]:
     variants = prepare_orientation_variants(content, mime)
     quality = variants[0].quality if variants else None
@@ -309,7 +316,7 @@ async def _extract_image_text(
                 context,
                 model=vision_model,
                 client=client,
-                prompt_override=DIGITALIZATION_VISION_PROMPT,
+                prompt_override=prompt_override or DIGITALIZATION_VISION_PROMPT,
                 timeout=settings.OPEN_CODE_DIGITALIZATION_VISION_TIMEOUT_SECONDS,
                 max_attempts=max(1, int(settings.PHOTO_GRADING_MODEL_MAX_ATTEMPTS)),
             )
@@ -887,6 +894,8 @@ def normalize_detected_structure(
     *,
     nota_maxima: Decimal,
     initial_warnings: list[str] | None = None,
+    contenido_visual: VisualManifest | None = None,
+    visual_scope_id: UUID | None = None,
 ) -> dict[str, Any]:
     """Valida, completa pesos y produce el contrato persistible de una evaluación."""
     raw_questions = structure.get("preguntas") if isinstance(structure, dict) else None
@@ -941,6 +950,8 @@ def normalize_detected_structure(
         independently_supported = origin in {
             "resolucion_independiente", "solucion_impresa", "verificacion_determinista"
         }
+        if contenido_visual is not None and not independently_supported:
+            continue
         if origin in {"respuesta_observada", "respuesta_estudiante", "pendiente"}:
             continue
         if not is_objective and not (
@@ -1019,6 +1030,14 @@ def normalize_detected_structure(
         criteria = [dict(item) for item in DEFAULT_CRITERIA]
 
     rules = dict(structure.get("reglas_feedback") or {})
+    from app.modules.evaluaciones.reading_service import normalize_reading
+    try:
+        reading = normalize_reading(structure.get('lectura', rules.get('lectura')))
+        if reading:
+            reading = normalize_reading(_strip_student_answer_annotations(reading))
+        rules['lectura'] = reading
+    except ValueError as exc:
+        raise HTTPException(422, str(exc)) from exc
     rules.update({
         "tono": rules.get("tono") or "formativo",
         "orientar_sin_dar_respuesta": True,
@@ -1028,7 +1047,7 @@ def normalize_detected_structure(
         "claves_pendientes": missing,
         "advertencias": warnings,
     })
-    return {
+    normalized = {
         "preguntas": questions,
         "respuestas_esperadas": [answer_map[number] for number in numbers if number in answer_map],
         "criterios": criteria,
@@ -1044,6 +1063,9 @@ def normalize_detected_structure(
         "claves_pendientes": missing,
         "advertencias": warnings,
     }
+    if contenido_visual is not None:
+        return bind_visual_structure(structure, normalized, contenido_visual, visual_scope_id)
+    return normalized
 
 
 async def detectar_estructura_evaluacion(
@@ -1053,6 +1075,8 @@ async def detectar_estructura_evaluacion(
     nota_maxima: Decimal = Decimal("5.0"),
     initial_warnings: list[str] | None = None,
     ai_config: dict[str, Any] | None = None,
+    contenido_visual: VisualManifest | None = None,
+    visual_scope_id: UUID | None = None,
 ) -> dict[str, Any]:
     """Detecta preguntas y propone una clave independiente para revisión docente."""
     if not contenido_texto.strip():
@@ -1071,6 +1095,12 @@ async def detectar_estructura_evaluacion(
         pipeline_warnings.append(
             "Se excluyó la escritura del estudiante al construir preguntas y respuestas correctas."
         )
+    visual_context = visual_prompt_context(contenido_visual, _strip_student_answer_annotations) if contenido_visual is not None else ""
+    if contenido_visual is not None:
+        if visual_scope_id is None:
+            raise ValueError("La importación visual necesita su identificador de trabajo.")
+    if len(contenido_preguntas) + len(visual_context) > settings.PHOTO_GRADING_CONTEXT_BUDGET_CHARS:
+        raise HTTPException(422, "El documento supera el límite de procesamiento. Divídelo para conservar todo su contenido.")
     stages = ai_config.get("stages") if isinstance(ai_config, dict) and isinstance(ai_config.get("stages"), dict) else {}
     structure_snapshot = stages.get("structure") or ai_config
     llm = LLMRouter(user_id=user_id, ai_config=structure_snapshot) if structure_snapshot is not None else LLMRouter(user_id=user_id)
@@ -1079,9 +1109,9 @@ async def detectar_estructura_evaluacion(
     if callable(set_tracking):
         set_tracking(stage="structure")
     prompt = PROMPT_DETECTAR_ESTRUCTURA.format(
-        contenido=contenido_preguntas[:12000],
+        contenido=contenido_preguntas,
         nota_maxima=str(nota_maxima),
-    )
+    ) + visual_context
     try:
         result = await llm.generate_json(DIGITALIZATION_STRUCTURE_TASK, prompt)
     except Exception as exc:
@@ -1092,13 +1122,16 @@ async def detectar_estructura_evaluacion(
                 *pipeline_warnings,
                 (
                     "OpenCode no respondió; se utilizó recuperación local. "
-                    "Revisa preguntas y respuestas antes de publicar."
+                    "Revisa preguntas y respuestas antes de publicar. "
+                    "Si había una lectura, incorpórala desde el documento conservado: no pudimos separarla automáticamente."
                 ),
             ]
             normalized = normalize_detected_structure(
                 local_structure,
                 nota_maxima=nota_maxima,
                 initial_warnings=fallback_warnings,
+                contenido_visual=contenido_visual,
+                visual_scope_id=visual_scope_id,
             )
             logger.info(
                 "Evaluación recuperada localmente: %d preguntas",
@@ -1122,6 +1155,8 @@ async def detectar_estructura_evaluacion(
         result,
         nota_maxima=nota_maxima,
         initial_warnings=pipeline_warnings,
+        contenido_visual=contenido_visual,
+        visual_scope_id=visual_scope_id,
     )
     logger.info(
         "Evaluación digitalizada: %d preguntas, clave completa=%s, advertencias=%d",
