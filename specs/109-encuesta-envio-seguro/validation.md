@@ -64,3 +64,13 @@ Suite contextual idéntica a CI (`grading-review.mock.spec.ts` y `evaluation-vis
 Comprobación completa terminada: **122 archivos / 791 pruebas unitarias de frontend PASS (259.14 s, dos workers)**. Gobernanza local 49/49 PASS (18.19 s). CI del commit db6b9c0 detectó posteriormente deriva del digest del inventario técnico al cambiar Modal: se regenera con el script oficial, sin cambiar sus validaciones ni excepciones. Esta actualización documental exige un nuevo commit y CI vigente, no se ignora el fallo anterior.
 
 Inventario regenerado y `--check` PASS: las mismas 596 superficies, solo cambia source_digest. Validador de especificación contra el cuerpo/etiquetas reales del PR #227: PASS. No hay hooks de extensión configurados. El cambio queda preparado para nuevo CI; sin merge ni despliegue manual.
+
+## Último fallo general: navegación antes de cargar el inicio
+
+El usuario pidió «CORRIGE Y FUSIONA». En f6ec74a pasó contextual; general tuvo 267 PASS/1 FAIL. La traza sintética muestra el segundo page.goto en 743965.836 ms, fallo de importación de un componente lazy inmediatamente después (743997.228 ms) y caída del proceso de red WebKit unos cinco segundos después. La cabecera ya estaba visible pero el panel inicial no había terminado de montar.
+
+Regresión añadida al archivo E2E existente: retrasar 500 ms la entrega del módulo DashboardPage y registrar en pagehide si el h1 del contenido inicial llegó a montar. Con el helper anterior falló de forma determinista en Chromium (esperado true, obtenido false); con la espera por el h1 autenticado pasó. Esta latencia es del fixture, no un sleep del helper. Se conserva login, URL, comprobación de cuenta y todas las aserciones del creador, sin catch/retry, force, skip ni ampliación de timeout. No cambia código productivo ni contratos.
+
+Local: regresión Chromium PASS (6.1 s); matriz WebKit visible, un worker, regresión y creación 360/390 px en claro/oscuro: 5/5 PASS (3.0 min). La primera matriz headless concurrente de Windows se interrumpió tras dos timeouts de estabilidad del clic Listo; no se registra como superada ni se oculta el fallo. Tipos y lint PASS; inventario vigente con 596 superficies (digest actualizado). El nuevo CI Linux seguirá siendo obligatorio antes de la fusión exacta por squash.
+
+Permisos de estudiante con el mismo helper: PASS (9.8 s), sin controles de creación manual/IA. La actualización de la encuesta y el CRUD no se presumen publicados por preparar o fusionar este código.

@@ -39,3 +39,6 @@ T014 precede la continuación de CRUD, por indicación explícita del usuario. R
 
 ## Cierre independiente de animaciones (autorizado en chat)
 - [x] T016 Reproducir mediante regresión de Modal con fotogramas detenidos y corregir cierre/foco/scroll/diálogo subyacente sin modificar guardado ni pruebas de CI; ejecutar validaciones locales y documentarlas (FR-016). Resultado remoto y entrega siguen condicionados a CI verde, no se presumen por esta comprobación local.
+
+## Navegación autenticada estable
+- [x] T017 Añadir regresión de módulo inicial retrasado, corregir sincronización del helper en frontend/e2e/evaluation-ai-wizard.spec.ts y verificar matriz móvil, gobernanza e inventario sin relajar controles (FR-017). La fusión y resultado de CI se registran aparte; no se presumen por terminar el código.
