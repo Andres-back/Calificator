@@ -4,6 +4,7 @@ import { useAuth } from '@/stores/auth';
 import { LoadingScreen } from '@/components/ui';
 import { routes } from '@/config/routes';
 import { isInstalledApp } from '@/lib/installedApp';
+import { isFeedbackSurface } from '@/modules/feedback_sharing/privacy';
 
 const PUBLIC_PATHS = new Set([
   routes.home,
@@ -22,7 +23,7 @@ const PUBLIC_PATHS = new Set([
 export function AuthBootstrap({ children }: { children: React.ReactNode }) {
   const { status, fetchMe } = useAuth();
   const isPublicPath =
-    typeof window !== 'undefined' && PUBLIC_PATHS.has(window.location.pathname)
+    typeof window !== 'undefined' && (PUBLIC_PATHS.has(window.location.pathname) || isFeedbackSurface())
     && !(window.location.pathname === routes.home && isInstalledApp());
 
   useEffect(() => {

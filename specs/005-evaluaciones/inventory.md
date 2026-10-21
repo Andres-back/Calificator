@@ -2,7 +2,7 @@
 
 > Archivo generado por `python scripts/build_system_inventory.py --write`. No editar manualmente.
 
-**Superficies propietarias:** 51
+**Superficies propietarias:** 55
 
 | Tipo | Firma | Actores | Cobertura | Fuente |
 |---|---|---|---|---|
@@ -16,6 +16,7 @@
 | endpoint | `GET:/evaluaciones/{evaluacion_id}/mi-solicitud-revision` | admin, estudiante, profesor | covered | `backend/app/modules/calificaciones/router.py:1541` |
 | endpoint | `GET:/evaluaciones/{evaluacion_id}/pdf` | admin, estudiante, profesor | covered | `backend/app/modules/evaluaciones/router.py:286` |
 | endpoint | `GET:/evaluaciones/{evaluacion_id}/revision` | admin, estudiante, profesor | covered | `backend/app/modules/calificaciones/router.py:744` |
+| endpoint | `GET:/evaluaciones/{evaluation_id}/devoluciones/accesos` | authenticated | covered | `backend/app/modules/feedback_sharing/router.py:95` |
 | endpoint | `PATCH:/evaluaciones/{evaluacion_id}` | admin, profesor | covered | `backend/app/modules/evaluaciones/router.py:335` |
 | endpoint | `PATCH:/evaluaciones/{evaluacion_id}/respuestas-liberadas` | admin, profesor | covered | `backend/app/modules/calificaciones/router.py:1697` |
 | endpoint | `PATCH:/evaluaciones/{evaluacion_id}/validar-estructura` | admin, profesor | covered | `backend/app/modules/evaluaciones/router.py:413` |
@@ -32,6 +33,9 @@
 | endpoint | `POST:/evaluaciones/{evaluacion_id}/pausar-recepcion` | admin, profesor | covered | `backend/app/modules/evaluaciones/router.py:391` |
 | endpoint | `POST:/evaluaciones/{evaluacion_id}/publicar` | admin, profesor | covered | `backend/app/modules/evaluaciones/router.py:358` |
 | endpoint | `POST:/evaluaciones/{evaluacion_id}/solicitud-revision` | admin, estudiante, profesor | covered | `backend/app/modules/calificaciones/router.py:1558` |
+| endpoint | `POST:/evaluaciones/{evaluation_id}/devoluciones/accesos` | authenticated | covered | `backend/app/modules/feedback_sharing/router.py:80` |
+| endpoint | `POST:/evaluaciones/{evaluation_id}/devoluciones/fichas` | authenticated | covered | `backend/app/modules/feedback_sharing/router.py:118` |
+| endpoint | `POST:/evaluaciones/{evaluation_id}/devoluciones/previsualizar` | authenticated | covered | `backend/app/modules/feedback_sharing/router.py:54` |
 | frontend_route | `/app/evaluaciones` | authenticated | covered | `frontend/src/config/routes.ts:43` |
 | frontend_route | `/app/materias/{id}/evaluaciones` | authenticated | covered | `frontend/src/config/routes.ts:35` |
 | frontend_call | `DELETE:/evaluaciones/{id}` | ambiguous | covered | `frontend/src/modules/evaluaciones/api.ts:101` |
@@ -65,4 +69,4 @@
 
 ## Hallazgos
 
-- **medium · contract_mismatch**: 5 llamadas frontend no tienen endpoint backend canónico coincidente en el análisis estático.
+- **medium · contract_mismatch**: 6 llamadas frontend no tienen endpoint backend canónico coincidente en el análisis estático.

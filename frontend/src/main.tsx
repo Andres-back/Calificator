@@ -20,6 +20,7 @@ import './print.css';
 
 // ── Observabilidad desacoplada ────────────────────────────────────────
 import { installGlobalErrorHandlers } from '@/lib/errorReporter';
+import { installFeedbackPrivacy, isFeedbackSurface } from '@/modules/feedback_sharing/privacy';
 
 // ── Service worker rogue cleanup ──
 // era la fuente del `sw.js` que interceptaba fetches e imponía una CSP ajena.
@@ -29,7 +30,8 @@ if ('serviceWorker' in navigator) {
 }
 
 // ── Global error handlers (siempre al inicio) ──
-installGlobalErrorHandlers();
+if (isFeedbackSurface()) installFeedbackPrivacy();
+else installGlobalErrorHandlers();
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

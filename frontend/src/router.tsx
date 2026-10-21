@@ -53,8 +53,11 @@ const XaliPage = lazy(() => import('@/modules/xali/XaliPage').then((m) => ({ def
 const AnalyticsPage = lazy(() => import('@/modules/analytics/AnalyticsPage').then((m) => ({ default: m.AnalyticsPage })));
 
 const lazyPage = (el: React.ReactNode) => <Suspense fallback={<LoadingScreen />}>{el}</Suspense>;
+const PublicFeedbackPage = lazy(() => import('@/modules/feedback_sharing/PublicFeedbackPage').then(m => ({ default: m.PublicFeedbackPage })));
 
-export const router = createBrowserRouter([{
+export const router = createBrowserRouter([
+  { path: '/devolucion', element: lazyPage(<PublicFeedbackPage />), errorElement: <main className="min-h-screen bg-bg p-6 text-fg"><p>Este enlace no está disponible. Pide a tu profesor que lo revise.</p></main> },
+{
   element: <RootMetadataLayout />,
   errorElement: <RouterErrorBoundary />,
   children: [

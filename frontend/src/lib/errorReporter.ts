@@ -1,3 +1,5 @@
+import { isFeedbackSurface } from '@/modules/feedback_sharing/privacy';
+
 /**
  * Capa de observabilidad frontend desacoplada.
  *
@@ -254,6 +256,7 @@ export function installGlobalErrorHandlers(): void {
   const version = APP_VERSION;
 
   window.addEventListener('error', (event) => {
+    if (isFeedbackSurface()) return;
     reporter.captureException(event.error ?? event.message, {
       route: window.location.pathname,
       frontendVersion: version,
@@ -261,6 +264,7 @@ export function installGlobalErrorHandlers(): void {
   });
 
   window.addEventListener('unhandledrejection', (event) => {
+    if (isFeedbackSurface()) return;
     reporter.captureException(event.reason, {
       route: window.location.pathname,
       frontendVersion: version,

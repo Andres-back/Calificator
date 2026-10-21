@@ -1,0 +1,19 @@
+.feedback-preview .feedback-paper { margin: 0 0 16px; border: 1px solid var(--border); padding: 12px; }
+.feedback-slip { overflow-wrap: anywhere; white-space: normal; }
+.feedback-preview .feedback-slip { border-bottom: 1px dashed currentColor; padding: 12px 0; }
+.feedback-slip h2 { font-weight: 700; }
+.feedback-slip-context { margin: 4px 0; }
+.feedback-slip-text { white-space: pre-wrap; margin-top: 8px; }
+#feedback-private-print { display: none; }
+@media print {
+  @page { margin: 12mm; }
+  body.feedback-printing > :not(#feedback-private-print) { display: none !important; }
+  html:has(body.feedback-printing), body.feedback-printing { position: static !important; top: auto !important; left: auto !important; width: auto !important; max-height: none !important; overflow: visible !important; height: auto !important; margin: 0 !important; padding: 0 !important; }
+  body.feedback-printing #feedback-private-print { display: block !important; width: 180mm !important; margin: 0 auto !important; font: 12pt/18pt Arial, sans-serif !important; color: black !important; }
+  #feedback-private-print .feedback-paper { display: block !important; width: 180mm !important; margin: 0 !important; padding: 0 !important; break-after: page; }
+  #feedback-private-print .feedback-paper:last-child { break-after: auto; }
+  #feedback-private-print .feedback-slip { display: block !important; padding: 4mm 2mm !important; margin: 0 !important; border: 0 !important; border-bottom: 1px dashed #555 !important; break-inside: avoid; }
+  #feedback-private-print .feedback-slip h2, #feedback-private-print .feedback-slip p { font: inherit !important; line-height: 18pt !important; margin: 0 !important; padding: 0 !important; overflow: visible !important; }
+  #feedback-private-print .feedback-slip h2 { font-weight: bold !important; }
+  #feedback-private-print .feedback-slip-text { white-space: pre-wrap !important; margin-top: 2mm !important; }
+}

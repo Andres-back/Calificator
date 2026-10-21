@@ -101,7 +101,7 @@ def test_deepseek_keeps_openai_chat_completions() -> None:
     assert result is payload
 
 
-@pytest.mark.parametrize("stage", ["grading_secondary", "targeted_recheck"])
+@pytest.mark.parametrize("stage", ["grading_secondary", "targeted_recheck", "feedback_refinement"])
 def test_qwen_flash_review_disables_thinking_and_keeps_visual_evidence(stage: str) -> None:
     payload = {
         "content": [{"type": "text", "text": '{"nota_sugerida": 4.5}'}],

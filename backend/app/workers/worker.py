@@ -21,6 +21,7 @@ celery_app = Celery(
         "app.workers.tasks_deadlines",
         "app.workers.tasks_password_recovery",
         "app.workers.tasks_roster_import",
+        "app.workers.tasks_feedback_chat",
     ],
 )
 
@@ -39,6 +40,9 @@ celery_app.conf.update(
     broker_connection_retry_on_startup=True,
     task_default_queue="default",
     task_routes={
+        "tasks.feedback_question": {"queue": "feedback"},
+        "tasks.recover_feedback_questions": {"queue": "feedback"},
+        "tasks.cleanup_feedback_conversations": {"queue": "feedback"},
         "tasks.grade_batch": {"queue": "grading"},
         "tasks.grade_delivery": {"queue": "grading"},
         "tasks.recover_stale_grading_jobs": {"queue": "grading"},
@@ -52,6 +56,14 @@ celery_app.conf.update(
         "tasks.generate_image": {"queue": "presentations"},
     },
     beat_schedule={
+        "cleanup-feedback-conversations": {
+            "task": "tasks.cleanup_feedback_conversations",
+            "schedule": 86400.0,
+        },
+        "recover-feedback-questions": {
+            "task": "tasks.recover_feedback_questions",
+            "schedule": 60.0,
+        },
         "assign-overdue-grades-every-minute": {
             "task": "tasks.assign_overdue_grades",
             "schedule": 60.0,

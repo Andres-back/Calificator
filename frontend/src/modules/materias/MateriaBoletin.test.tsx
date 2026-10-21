@@ -6,6 +6,8 @@ import { MemoryRouter } from 'react-router-dom';
 import { MateriaBoletin } from './MateriaBoletin';
 import { useAuth } from '@/stores/auth';
 
+vi.mock('@/modules/feedback_sharing/FeedbackToolsButton', () => ({ FeedbackToolsButton: () => null }));
+
 const mocks = vi.hoisted(() => ({ list: vi.fn(), grades: vi.fn(), boletin: vi.fn(), context: { canManageMateria: true, materia: { id: 'materia-1', nombre: 'Ciencias', estudiantes: Array.from({ length: 30 }, (_, index) => ({ id: `student-${index}`, nombre: `Alumno ${index}`, email: `${index}@example.test` })) } } }));
 vi.mock('./MateriaContext', () => ({ useMateriaContext: () => mocks.context }));
 vi.mock('@/modules/evaluaciones/api', () => ({ listEvaluaciones: mocks.list }));

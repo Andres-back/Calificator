@@ -13,6 +13,7 @@ from app.core.config import settings
 from app.core.logging import get_logger
 from app.modules.analytics.usage_logger import log_ai_usage
 from app.modules.calificaciones.breakdown_policy import build_component_scaffold, sanitize_component_payload
+from app.modules.calificaciones.feedback_usefulness import is_generic_feedback
 from app.services.image_preprocessing import prepare_orientation_variants
 from app.services.llm_router import (
     LLMOutputTruncatedError,
@@ -46,6 +47,7 @@ CANONICAL_AI_STAGES = {
     "grading_secondary": "grading_secondary",
     "targeted_recheck": "targeted_recheck",
     "consolidation": "consolidation",
+    "feedback_refinement": "feedback_refinement",
 }
 
 
@@ -845,6 +847,9 @@ REGLAS OBLIGATORIAS:
 ## Retroalimentación formativa
 - Usa lenguaje respetuoso, claro y adecuado al nivel disponible; vincula la explicación con la evidencia y ofrece una acción concreta cuando haga falta mejorar.
 - Empieza por un acierto realmente observado. Después identifica la pregunta o el paso exacto que debe mejorar y termina con una acción breve y verificable.
+- Si no hay aciertos observables, no inventes elogios. Si todo está correcto, reconoce un logro concreto sin inventar dificultades para completar el formato.
+- No uses «estudia más», «sigue practicando» o «mejora en matemáticas» como devolución completa. Di qué pregunta o procedimiento revisar, por qué y qué debe hacer para comprobar su mejora, sin exigir internet ni un computador.
+- Para cada componente parcial o incorrecto, explica la evidencia que sustenta el puntaje según el criterio y da un siguiente paso pertinente. Ante una foto ilegible, pide comprobar la evidencia; no mandes estudiar un error que no pudiste verificar.
 - No afirmes que todo está correcto si algún componente es parcial, incorrecto, ilegible, no evaluable o está pendiente de revisión.
 - Evita tecnicismos pedagógicos innecesarios para el estudiante. Prefiere palabras y oraciones breves acordes con el grado disponible en el mapa.
 - Si el grado no está disponible, usa español sencillo dirigido al estudiante y explica cualquier término indispensable con un ejemplo breve.
@@ -1394,11 +1399,11 @@ def _select_consensus_feedback(
     if not candidates:
         return ""
 
-    # Prefer the most reliable evaluator. On equal confidence, keep the more
-    # complete message, while preserving evaluator A as the final tie-breaker.
+    # Confianza alta no vuelve útil un elogio vacío. Entre textos no genéricos
+    # se conserva el criterio previo; esto no certifica su corrección académica.
     return max(
         candidates,
-        key=lambda item: (item[1], min(len(item[0]), 1600), -item[2]),
+        key=lambda item: (not is_generic_feedback(item[0]), item[1], min(len(item[0]), 1600), -item[2]),
     )[0]
 
 

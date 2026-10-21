@@ -44,7 +44,7 @@ def opencode_thinking_control(model: str, *, stage: str | None = None) -> dict[s
     model_id = str(model).rsplit("/", 1)[-1].lower()
     if model_id in OPEN_CODE_THINKING_DISABLED_MODELS:
         return {"type": "disabled"}
-    if model_id == "qwen3.8-flash" and stage in {"grading_secondary", "targeted_recheck"}:
+    if model_id == "qwen3.8-flash" and stage in {"grading_secondary", "targeted_recheck", "feedback_refinement"}:
         return {"type": "disabled"}
     return None
 

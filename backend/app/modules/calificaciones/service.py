@@ -12,6 +12,7 @@ from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
+from app.modules.feedback_sharing.invalidations import suspend_grade_publications
 from app.modules.calificaciones.breakdown_service import answers_released, create_manual_breakdown, get_active_breakdown, serialize_breakdown
 from app.modules.calificaciones.models import (
     Calificacion,
@@ -176,6 +177,7 @@ async def confirmar_nota(
         detalle="Confirmada por docente",
     )
     await _update_salon_estudiante_estado(db, cal, "confirmado")
+    await suspend_grade_publications(db, cal.id)
     await db.commit()
     await db.refresh(cal)
     return cal
@@ -207,6 +209,7 @@ async def ajustar_nota(
         detalle="Ajustada por docente",
     )
     await _update_salon_estudiante_estado(db, cal, "confirmado")
+    await suspend_grade_publications(db, cal.id)
     await db.commit()
     await db.refresh(cal)
     return cal
@@ -246,6 +249,7 @@ async def marcar_revision_manual(
         actor_nombre=actor.nombre,
         detalle=motivo,
     )
+    await suspend_grade_publications(db, cal.id)
     await db.commit()
     await db.refresh(cal)
     return cal
@@ -335,6 +339,7 @@ async def set_manual_grade(
         db, calificacion=cal, nota_maxima=evaluacion.nota_maxima,
         nota=payload.nota_confirmada, motivo=feedback, actor_id=current_user.id,
     )
+    await suspend_grade_publications(db, cal.id)
     await db.commit()
     await db.refresh(cal)
     return cal
@@ -1092,6 +1097,7 @@ async def confirmar_nota_batch(
                 detalle="Confirmada en lote",
             )
             await _update_salon_estudiante_estado(db, cal, "confirmado")
+            await suspend_grade_publications(db, cal.id)
             results.append(
                 BatchResultItem(calificacion_id=item.calificacion_id, success=True)
             )
@@ -1161,6 +1167,7 @@ async def ajustar_nota_batch(
                 detalle="Ajustada en lote",
             )
             await _update_salon_estudiante_estado(db, cal, "confirmado")
+            await suspend_grade_publications(db, cal.id)
             results.append(
                 BatchResultItem(calificacion_id=item.calificacion_id, success=True)
             )

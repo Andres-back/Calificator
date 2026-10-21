@@ -9,6 +9,8 @@ class Settings(BaseSettings):
     ENVIRONMENT: str | None = None
     APP_NAME: str = "XCalificator"
     API_PREFIX: str = "/api"
+    FEEDBACK_SHARING_ENABLED: bool = False
+    FEEDBACK_REFINEMENT_ENABLED: bool = False
     SECRET_KEY: str = "change-me"
     JWT_SECRET: str | None = None
     COOKIE_SECURE: bool | None = None

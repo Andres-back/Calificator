@@ -15,6 +15,7 @@ def import_models() -> None:
     from app.modules.calificaciones import models as calificaciones_models  # noqa: F401
     from app.modules.dba import models as dba_models  # noqa: F401
     from app.modules.evaluaciones import models as evaluaciones_models  # noqa: F401
+    from app.modules.feedback_sharing import models as feedback_sharing_models  # noqa: F401
     from app.modules.imagenes import models as imagenes_models  # noqa: F401
     from app.modules.impacto_tesis import models as impacto_models  # noqa: F401
     from app.modules.importacion_estudiantes import models as importacion_estudiantes_models  # noqa: F401
