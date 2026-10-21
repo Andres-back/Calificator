@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+from contextlib import asynccontextmanager
 from io import BytesIO
 
 import httpx
@@ -232,8 +233,50 @@ def test_multipage_merge_keeps_source_and_uncertainty() -> None:
     ]
     merged = _merge(pages)
     assert merged[0].source_pages == [1, 2]
-    assert merged[0].answer is None
+    assert merged[0].answer == "inicio"
+    assert merged[0].partial is True
     assert merged[0].needs_review is True
+
+
+@pytest.mark.parametrize('placeholder', ['illegible', 'blank'])
+@pytest.mark.parametrize('reverse', [False, True])
+def test_reading_placeholders_never_erase_following_answers(placeholder: str, reverse: bool) -> None:
+    reading=VisionPageResult(page=1,status='requires_review',answers=[
+        ExtractedAnswer(question_number=i,page=1,legible=placeholder=='blank',blank=placeholder=='blank')
+        for i in range(1,18)])
+    responses=VisionPageResult(page=2,status='extracted',answers=[
+        ExtractedAnswer(question_number=i,page=2,answer=f'respuesta {i}',confidence=.9)
+        for i in range(1,14)])
+    notebook=VisionPageResult(page=3,status='extracted',answers=[
+        ExtractedAnswer(question_number=i,page=3,answer=f'respuesta {i}',confidence=.85)
+        for i in range(14,18)])
+    pages=[reading,responses,notebook]
+    merged=_merge(list(reversed(pages)) if reverse else pages)
+    assert len(merged)==17
+    for answer in merged:
+        assert answer.answer==f'respuesta {answer.question_number}'
+        assert answer.blank is False
+        assert answer.legible is True
+        assert answer.needs_review is True
+        assert answer.partial is True
+        assert 1 in answer.source_pages
+
+
+def test_question_not_present_on_page_does_not_become_illegible_answer() -> None:
+    page=_normalize({'page_role':'reading','page_text':'Texto de lectura completo',
+                     'answers':[{'question_number':1,'present':False,'legible':False}]},1,100)
+    assert page.page_role=='reading'
+    assert page.answers==[]
+
+
+def test_drawn_fragment_survives_unreadable_duplicate() -> None:
+    pages=[VisionPageResult(page=1,status='requires_review',answers=[
+        ExtractedAnswer(question_number=4,page=1,legible=False)]),
+        VisionPageResult(page=2,status='extracted',answers=[
+        ExtractedAnswer(question_number=4,page=2,visual_description='Una recta y tres puntos',confidence=.8)])]
+    answer=_merge(pages)[0]
+    assert answer.visual_description=='Una recta y tres puntos'
+    assert answer.partial and answer.needs_review and not answer.blank
 
 
 def test_student_extraction_prompt_excludes_nested_solutions_and_rubrics() -> None:
@@ -419,8 +462,13 @@ def _configured_extractor(monkeypatch: pytest.MonkeyPatch, responses: list[_Resp
     async def event(*_args: object, **_kwargs: object) -> None:
         return None
 
+    @asynccontextmanager
+    async def capacity():
+        yield
+
     monkeypatch.setattr(extractor, "_keys", keys)
     monkeypatch.setattr(extractor, "_event", event)
+    monkeypatch.setattr(module, "provider_capacity", capacity)
     monkeypatch.setattr(module.httpx, "AsyncClient", lambda **kwargs: _Client(responses, calls, **kwargs))
     return extractor
 
@@ -436,6 +484,50 @@ def test_429_is_retried_once_then_succeeds(monkeypatch: pytest.MonkeyPatch) -> N
     assert len(calls) == 2
     assert calls[0]["_headers"]["x-opencode-session"] == calls[1]["_headers"]["x-opencode-session"]
     assert calls[0]["_headers"]["User-Agent"] == "XCalificator/1.0"
+
+
+def test_introductory_page_does_not_exhaust_models_for_missing_answers(monkeypatch: pytest.MonkeyPatch) -> None:
+    responses=[_Response(200,{'choices':[{'message':{'content':json.dumps({
+        'page_role':'reading','page_text':'Una lectura sin preguntas ni zonas de respuesta.',
+        'document_quality':.95,'answers':[],'warnings':[]})}}]})]
+    calls=[]
+    extractor=_configured_extractor(monkeypatch,responses,calls)
+    monkeypatch.setattr(module.settings,'VISION_FALLBACK_ENABLED',True)
+    result=asyncio.run(extractor._one((1,_image(),'image/jpeg',False),3,
+        {'preguntas':[{'numero':1,'enunciado':'Una pregunta en la siguiente hoja'}]},'student_response'))
+    assert result.status=='extracted'
+    assert result.page_role=='reading'
+    assert result.answers==[]
+    assert result.page_text
+    assert len(calls)==1
+
+
+def test_global_timeout_preserves_completed_pages(monkeypatch: pytest.MonkeyPatch) -> None:
+    extractor=VisionExtractor()
+    async def one(item,total,blueprint,purpose):
+        if item[0]==2:
+            await asyncio.sleep(10)
+        return VisionPageResult(page=item[0],status='extracted',page_text='1. respuesta conocida',
+            answers=[ExtractedAnswer(question_number=1,page=1,answer='respuesta conocida',confidence=.9)])
+    monkeypatch.setattr(extractor,'_one',one)
+    monkeypatch.setattr(module.settings,'VISION_TOTAL_TIMEOUT_SECONDS',1)
+    result=asyncio.run(extractor.extract(_pdf(2),'application/pdf'))
+    assert result.answers[0].answer=='respuesta conocida'
+    assert result.pages[1].status=='failed_temporary'
+    assert result.pages[1].error_code=='vision_timeout'
+    assert result.requires_review
+    assert result.pages_processed==2
+
+
+def test_global_timeout_with_no_completed_page_stays_temporary(monkeypatch: pytest.MonkeyPatch) -> None:
+    extractor=VisionExtractor()
+    async def one(*args):
+        await asyncio.sleep(10)
+    monkeypatch.setattr(extractor,'_one',one)
+    monkeypatch.setattr(module.settings,'VISION_TOTAL_TIMEOUT_SECONDS',1)
+    with pytest.raises(VisionExtractionError) as exc:
+        asyncio.run(extractor.extract(_image(),'image/jpeg'))
+    assert exc.value.code=='vision_failed_temporary'
 
 
 def test_timeout_is_retried_once_and_stays_temporary(monkeypatch: pytest.MonkeyPatch) -> None:

@@ -31,7 +31,7 @@ from app.modules.calificaciones.grading_visuals import visual_provenance
 from app.modules.evaluaciones.models import Evaluacion
 from app.modules.jobs import service as jobs_service
 from app.services.storage_service import resolve_upload_path, validate_mime
-from app.services.vision_extractor import build_extraction_context
+from app.services.vision_extractor import VISION_EXTRACTION_VERSION, build_extraction_context
 from app.shared.enums import (
     CalificacionEstado,
     EntregaEstado,
@@ -145,6 +145,7 @@ def _extraction_fingerprint(
     metadata = json.dumps(
         {
             "schema_version": 1,
+            "extraction_policy_version": VISION_EXTRACTION_VERSION,
             "mime": image_mime,
             "context": build_extraction_context(blueprint),
             "vision": vision_config,

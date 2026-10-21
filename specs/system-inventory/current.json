@@ -470,7 +470,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "961387217f2e2b7285bf7bf36f7f1cbb7b2f8ebd263733158b24fe5db0838836",
+  "source_digest": "352f9f4e02f8d0af66ab7454f64de4ec24ed5f1f8b66a737ae26d79b92eaa6dc",
   "surfaces": [
     {
       "actors": [
@@ -16653,6 +16653,12 @@
           "level": "unit",
           "reference": "/",
           "status": "direct",
+          "test_path": "backend/tests/integration/test_multipage_recovery.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
           "test_path": "backend/tests/integration/test_password_recovery_api.py"
         },
         {
@@ -16942,6 +16948,12 @@
           "reference": "/",
           "status": "direct",
           "test_path": "backend/tests/unit/test_mixed_evaluation_flow.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_multipage_recovery.py"
         },
         {
           "level": "unit",
@@ -38616,7 +38628,7 @@
       "kind": "job",
       "owner_spec": "012-ia-jobs-produccion",
       "signature": "tasks.grade_batch",
-      "source_line": 867,
+      "source_line": 868,
       "source_path": "backend/app/workers/tasks_grading.py",
       "states": [
         "cancelled",
@@ -38670,7 +38682,7 @@
       "kind": "job",
       "owner_spec": "012-ia-jobs-produccion",
       "signature": "tasks.grade_delivery",
-      "source_line": 921,
+      "source_line": 922,
       "source_path": "backend/app/workers/tasks_grading.py",
       "states": [
         "cancelled",
@@ -38895,7 +38907,7 @@
       "kind": "job",
       "owner_spec": "012-ia-jobs-produccion",
       "signature": "tasks.recover_stale_grading_jobs",
-      "source_line": 1028,
+      "source_line": 1029,
       "source_path": "backend/app/workers/tasks_grading.py",
       "states": [
         "cancelled",
@@ -39268,6 +39280,12 @@
           "reference": "ai_jobs",
           "status": "direct",
           "test_path": "backend/tests/integration/test_explainable_grading_pipeline.py"
+        },
+        {
+          "level": "unit",
+          "reference": "ai_jobs",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_multipage_recovery.py"
         }
       ]
     },
@@ -39644,6 +39662,12 @@
           "reference": "audit_events",
           "status": "domain",
           "test_path": "backend/tests/fixtures/authorization.py"
+        },
+        {
+          "level": "unit",
+          "reference": "audit_events",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_multipage_recovery.py"
         },
         {
           "level": "unit",
@@ -40483,6 +40507,12 @@
           "level": "unit",
           "reference": "calificaciones",
           "status": "direct",
+          "test_path": "backend/tests/integration/test_multipage_recovery.py"
+        },
+        {
+          "level": "unit",
+          "reference": "calificaciones",
+          "status": "direct",
           "test_path": "backend/tests/integration/test_xali_teacher_visual.py"
         },
         {
@@ -40664,6 +40694,12 @@
           "reference": "calificaciones",
           "status": "direct",
           "test_path": "backend/tests/unit/test_model_metadata.py"
+        },
+        {
+          "level": "unit",
+          "reference": "calificaciones",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_multipage_recovery.py"
         },
         {
           "level": "unit",
@@ -41595,6 +41631,12 @@
           "reference": "evaluaciones",
           "status": "direct",
           "test_path": "backend/tests/integration/test_explainable_grading_flow.py"
+        },
+        {
+          "level": "unit",
+          "reference": "evaluaciones",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_multipage_recovery.py"
         },
         {
           "level": "unit",
@@ -42598,6 +42640,12 @@
           "reference": "materias",
           "status": "direct",
           "test_path": "backend/tests/integration/test_explainable_grading_pipeline.py"
+        },
+        {
+          "level": "unit",
+          "reference": "materias",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_multipage_recovery.py"
         },
         {
           "level": "unit",
@@ -43987,6 +44035,12 @@
           "reference": "users",
           "status": "direct",
           "test_path": "backend/tests/integration/test_explainable_grading_pipeline.py"
+        },
+        {
+          "level": "unit",
+          "reference": "users",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_multipage_recovery.py"
         },
         {
           "level": "unit",

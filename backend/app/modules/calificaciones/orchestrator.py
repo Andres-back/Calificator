@@ -410,7 +410,9 @@ def format_structured_visual_answers(answers: list[dict]) -> str:
             if isinstance(page, int) and page > 0
             else ""
         )
-        if item.get("legible", True) is False or item.get("requiere_revision", False):
+        if item.get("respuesta_parcial") and str(item.get("respuesta") or "").strip():
+            answer = str(item["respuesta"]).strip() + " [fragmento legible; evidencia incompleta o ambigua, requiere revisión]"
+        elif item.get("legible", True) is False or item.get("requiere_revision", False):
             answer = "[ilegible o ambigua; requiere revision]"
         elif item.get("sin_respuesta", False) or item.get("blank", False):
             answer = "[sin respuesta]"
@@ -454,6 +456,8 @@ def build_objective_validation(
         str(answer.get("pregunta", answer.get("numero"))): answer.get("respuesta")
         for answer in (detected_answers or [])
         if answer.get("pregunta", answer.get("numero")) is not None
+        and not answer.get("respuesta_parcial")
+        and answer.get("legible", True) is not False
     }
     validation: list[dict] = []
     for number, question in questions.items():

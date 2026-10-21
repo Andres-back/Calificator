@@ -348,6 +348,10 @@ actualizar la especificación propietaria, su plan y sus tareas; no debe crear d
 
 - [109-encuesta-envio-seguro](109-encuesta-envio-seguro/spec.md), [issue #226](https://github.com/Andres-back/Calificator/issues/226): recepción confirmada, firma validada antes de enviar, reintento idéntico en memoria y diagnóstico 5.0 con minutos/abiertas/legibilidad/cámara/entrega y respaldo. Recuentos y CSV privados por versión, conservación de 4.0 y constancias históricas. Autorización explícita del usuario el 2026-10-20. No demuestra ahorro causal ni sustituye preprueba humana; sin cambios académicos. PR/CI/main obligatorios antes de actualizar el servicio independiente.
 
+## Hotfix 112: calificación multipágina
+
+- [112-evaluacion-multipagina](112-evaluacion-multipagina/spec.md), [issue #232](https://github.com/Andres-back/Calificator/issues/232): conservar fragmentos legibles y fuentes sin que la lectura inicial los anule; distinguir preguntas ausentes, conservar páginas al timeout y excluir fragmentos parciales de pisos objetivos. Recuperación acotada con respaldo, auditoría y protección de notas docentes. [Verificación](112-evaluacion-multipagina/quickstart.md). Lectura/impresión/captura múltiple tienen entrega independiente en issue #233. CI, despliegue y recuperación real no se presuponen completados.
+
 ## Evolución 110: CRUD administrativo de encuestas
 
 - [110-encuestas-crud](110-encuestas-crud/spec.md), [issue #228](https://github.com/Andres-back/Calificator/issues/228): registrar mediante formulario firmado, consultar, corregir con motivo e historial, eliminar de la lista y restaurar desde papelera en diagnóstico y piloto. Originales inmutables, informes originales activos y exportación corregida separada. Software 5.1.0, sin modificar instrumentos 5.0/1.0 ni registros académicos. Spec y plan aprobados por el usuario el 2026-10-21. [Validación](110-encuestas-crud/quickstart.md); CI y autorización de entrega antes de producción.
