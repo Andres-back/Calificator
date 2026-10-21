@@ -1,315 +1,147 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
-import { AlertTriangle, Camera, CheckCircle2, FileImage, FileText, LoaderCircle, Upload } from 'lucide-react';
+import { FileText, Upload } from 'lucide-react';
 import { Button, Field, Input, Modal, Select, Textarea } from '@/components/ui';
-import { analyzeEvidenceImage, type ImageQualityResult } from '@/components/evidence/imageQuality';
+import { MultiPageEvidencePicker } from '@/components/evidence/MultiPageEvidencePicker';
+import { evidenceRotations, hasUnusableEvidence, type EvidencePage } from '@/components/evidence/evidencePayload';
 import { api, toApiError } from '@/lib/api';
 import { addPendingDigitalization } from '@/modules/evaluaciones/digitalizationJobs';
 import { DocumentProcessingAnimation } from './DocumentProcessingAnimation';
 
-interface DigitalizationQueued {
-  job_id: string;
-  estado: 'queued';
-  materia_id: string;
-  nombre: string;
-}
+interface DigitalizationQueued { job_id: string; estado: 'queued' | 'retrying'; materia_id: string; nombre: string }
+interface Props { open: boolean; onClose: () => void; materiaId: string; onCompleted: () => void }
+const MAX_BYTES = 20 * 1024 * 1024;
+const DOCX = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
 
-interface Props {
-  open: boolean;
-  onClose: () => void;
-  materiaId: string;
-  onCompleted: () => void;
-}
-
-const VALID_TYPES = [
-  'application/pdf',
-  'image/jpeg',
-  'image/jpg',
-  'image/png',
-  'image/webp',
-  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-];
-const MAX_FILE_SIZE = 20 * 1024 * 1024;
-
-function DigitalizarEvaluacionModal({
-  open,
-  onClose,
-  materiaId,
-  onCompleted,
-}: Props) {
+function DigitalizarEvaluacionModal({ open, onClose, materiaId, onCompleted }: Props) {
+  const [pages, setPages] = useState<EvidencePage[]>([]);
   const [file, setFile] = useState<File | null>(null);
+  const [mode, setMode] = useState<'photos' | 'document'>('photos');
   const [nombre, setNombre] = useState('');
   const [descripcion, setDescripcion] = useState('');
   const [notaMaxima, setNotaMaxima] = useState('5');
   const [modalidad, setModalidad] = useState<'fisica' | 'online' | 'mixta'>('fisica');
   const [queued, setQueued] = useState<DigitalizationQueued | null>(null);
-  const [quality, setQuality] = useState<ImageQualityResult | null>(null);
-  const [checkingQuality, setCheckingQuality] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
-
-  const reset = () => {
-    setFile(null);
-    setQueued(null);
-    setQuality(null);
-    setCheckingQuality(false);
-    setNombre('');
-    setDescripcion('');
-    setNotaMaxima('5');
-    setModalidad('fisica');
-    if (fileRef.current) fileRef.current.value = '';
-  };
-
-  const handleSelect = async (selected: File) => {
-    const extensionAllowed = /.(pdf|docx|jpg|jpeg|png|webp)$/i.test(selected.name);
-    if (!VALID_TYPES.includes(selected.type) && !extensionAllowed) {
-      toast.error('Solo se aceptan PDF, Word o imágenes (JPEG, PNG o WebP).');
-      return;
-    }
-    if (selected.size > MAX_FILE_SIZE) {
-      toast.error('El archivo no debe superar 20 MB.');
-      return;
-    }
-    setFile(selected);
-    setQueued(null);
-    setQuality(null);
-    if (!nombre && selected.name) {
-      setNombre(
-        selected.name
-          .replace(/.[^.]+$/, '')
-          .replace(/[_-]/g, ' ')
-          .replace(/s+/g, ' ')
-          .trim(),
-      );
-    }
-    if (selected.type.startsWith('image/')) {
-      setCheckingQuality(true);
-      setQuality(await analyzeEvidenceImage(selected));
-      setCheckingQuality(false);
-    }
-  };
+  const scope = useRef(0);
+  const mounted = useRef(true);
+  const submitLock = useRef(false);
 
   const digitalizar = useMutation({
-    mutationFn: async () => {
-      if (!file) throw new Error('Selecciona un archivo.');
-      const form = new FormData();
-      form.append('materia_id', materiaId);
-      form.append('nombre', nombre.trim());
-      form.append('nota_maxima', notaMaxima);
-      form.append('modalidad', modalidad);
-      if (descripcion.trim()) form.append('descripcion', descripcion.trim());
-      form.append('file', file);
-      const { data } = await api.post<DigitalizationQueued>(
-        '/evaluaciones/externa/digitalizar-con-archivo',
-        form,
-      );
-      return data;
+    mutationFn: async ({ form, context }: { form: FormData; context: number }) => {
+      const { data } = await api.post<DigitalizationQueued>('/evaluaciones/externa/digitalizar-con-archivo', form);
+      return { data, context };
     },
-    onSuccess: (data) => {
-      addPendingDigitalization({
-        jobId: data.job_id,
-        materiaId: data.materia_id,
-        nombre: data.nombre,
-      });
+    onSuccess: ({ data, context }) => {
+      // An accepted job still belongs in the tracker, even after closing/changing subject.
+      addPendingDigitalization({ jobId: data.job_id, materiaId: data.materia_id, nombre: data.nombre });
+      if (!mounted.current || context !== scope.current) return;
       setQueued(data);
       toast.success('Documento recibido. Puedes seguir trabajando mientras lo digitalizamos.');
     },
-    onError: (error) => toast.error(toApiError(error).detail),
+    onError: (error, request) => {
+      if (mounted.current && request.context === scope.current) toast.error(toApiError(error).detail);
+    },
+    onSettled: (_result, _error, request) => {
+      if (request.context === scope.current) submitLock.current = false;
+    },
   });
+  const resetMutation = digitalizar.reset;
+  useEffect(() => {
+    scope.current += 1;
+    submitLock.current = false;
+    setPages([]); setFile(null); setQueued(null); setMode('photos');
+    setNombre(''); setDescripcion(''); setNotaMaxima('5'); setModalidad('fisica');
+    resetMutation();
+  }, [open, materiaId, resetMutation]);
+  useEffect(() => {
+    mounted.current = true;
+    return () => { mounted.current = false; scope.current += 1; };
+  }, []);
 
-  const handleClose = () => {
+  const titleFromFile = (selected: File) => {
+    if (!nombre.trim()) setNombre(selected.name.replace(/\.[^.]+$/, '').replace(/[_-]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 220));
+  };
+  const selectDocument = (selected: File) => {
+    if (![DOCX, 'application/pdf'].includes(selected.type) && !/\.(pdf|docx)$/i.test(selected.name)) {
+      toast.error('Selecciona un PDF o Word. Para fotografías usa la opción Fotos.'); return;
+    }
+    if (selected.size > MAX_BYTES) { toast.error('El archivo no debe superar 20 MB.'); return; }
+    setFile(selected); titleFromFile(selected);
+  };
+  const close = () => {
+    scope.current += 1;
     if (queued) onCompleted();
-    reset();
+    setQueued(null);
     onClose();
   };
+  const submit = () => {
+    const files = mode === 'photos' ? pages.map(page => page.file) : file ? [file] : [];
+    if (!files.length || digitalizar.isPending || submitLock.current) return;
+    submitLock.current = true;
+    const form = new FormData();
+    form.append('materia_id', materiaId); form.append('nombre', nombre.trim());
+    form.append('nota_maxima', notaMaxima); form.append('modalidad', modalidad);
+    if (descripcion.trim()) form.append('descripcion', descripcion.trim());
+    files.forEach(selected => form.append('file', selected));
+    if (mode === 'photos') form.append('rotaciones', JSON.stringify(evidenceRotations(pages)));
+    digitalizar.mutate({ form, context: scope.current });
+  };
+  const canSubmit = nombre.trim().length >= 2 && Number(notaMaxima) > 0
+    && (mode === 'document' ? Boolean(file) : pages.length > 0 && !hasUnusableEvidence(pages));
 
-  const validMaxScore = Number(notaMaxima) > 0;
-
-  return (
-    <Modal
-      open={open}
-      onClose={handleClose}
-      title="Digitalizar evaluación desde archivo"
-      className="max-w-2xl"
-    >
-      {!queued ? (
-        <div className="space-y-5">
-          <div className="rounded-2xl border border-brand-200 bg-gradient-to-br from-brand-50 to-cyan-50/70 p-4 text-sm leading-6 text-brand-950 dark:border-brand-500/30 dark:from-brand-500/10 dark:to-cyan-500/5 dark:text-brand-100">
-            <p className="font-semibold">Convierte una hoja en un borrador editable.</p>
-            <p className="mt-1">
-              Xali reconstruye preguntas y resuelve la clave desde el enunciado. Si la hoja ya está respondida, no toma la respuesta del estudiante como correcta. Tú revisas todo antes de publicar.
-            </p>
-            <div className="mt-3 grid grid-cols-3 gap-2 text-center text-xs font-medium">
-              <span className="rounded-lg bg-white/75 px-2 py-2 dark:bg-white/10">1. Completa</span>
-              <span className="rounded-lg bg-white/75 px-2 py-2 dark:bg-white/10">2. Sube</span>
-              <span className="rounded-lg bg-white/75 px-2 py-2 dark:bg-white/10">3. Revisa</span>
-            </div>
-          </div>
-
-          <div>
-            <p className="mb-3 text-sm font-semibold text-fg">Datos básicos</p>
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-[minmax(0,1fr)_9rem_12rem]">
-              <Field label="Nombre de la evaluación" required>
-                <Input
-                  value={nombre}
-                  onChange={(event) => setNombre(event.target.value)}
-                  placeholder="Ej: Evaluación de multiplicación"
-                  required
-                  minLength={2}
-                />
-              </Field>
-              <Field label="Nota máxima" required hint="Escala final">
-                <Input
-                  type="number"
-                  min="0.1"
-                  step="0.1"
-                  value={notaMaxima}
-                  onChange={(event) => setNotaMaxima(event.target.value)}
-                  aria-label="Nota máxima"
-                />
-              </Field>
-              <Field label="Cómo se responderá" required>
-                <Select
-                  value={modalidad}
-                  onChange={(event) => setModalidad(
-                    event.target.value as 'fisica' | 'online' | 'mixta',
-                  )}
-                  aria-label="Modalidad de respuesta"
-                >
-                  <option value="fisica">En papel / foto</option>
-                  <option value="online">En línea</option>
-                  <option value="mixta">Mixta</option>
-                </Select>
-              </Field>
-            </div>
-          </div>
-
-          <Field label="Descripción" hint="Opcional">
-            <Textarea
-              value={descripcion}
-              onChange={(event) => setDescripcion(event.target.value)}
-              placeholder="¿Qué temas cubre esta evaluación?"
-            />
-          </Field>
-
-          <div>
-            <p className="mb-3 text-sm font-semibold text-fg">Archivo</p>
-            <div
-              className="flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-border bg-surface-2/50 p-6 text-center transition hover:border-brand-400 hover:bg-brand-50/30 sm:p-8"
-              onClick={() => fileRef.current?.click()}
-              onKeyDown={(event) => {
-                if (event.key === 'Enter' || event.key === ' ') fileRef.current?.click();
-              }}
-              tabIndex={0}
-              role="button"
-              aria-label="Subir evaluación desde archivo"
-            >
-              <Upload className="mb-3 h-10 w-10 text-brand-600" />
-              <p className="text-sm font-semibold">Foto, PDF o Word</p>
-              <p className="mt-1 text-xs text-muted">Máximo 20 MB</p>
-              <div className="mt-3 flex flex-wrap justify-center gap-4 text-xs text-muted">
-                <span className="flex items-center gap-1"><FileImage className="h-4 w-4" /> Imagen</span>
-                <span className="flex items-center gap-1"><FileText className="h-4 w-4" /> PDF</span>
-                <span className="flex items-center gap-1"><FileText className="h-4 w-4" /> Word</span>
-              </div>
-              <input
-                ref={fileRef}
-                type="file"
-                accept=".pdf,.docx,.jpg,.jpeg,.png,.webp,application/pdf,image/*"
-                className="hidden"
-                onChange={(event) => {
-                  const selected = event.target.files?.[0];
-                  if (selected) void handleSelect(selected);
-                }}
-              />
-            </div>
-          </div>
-
-          {file && (
-            <div className="flex flex-col gap-3 rounded-xl border border-border bg-card p-3 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex min-w-0 items-center gap-2">
-                {file.type.startsWith('image/') ? (
-                  <Camera className="h-5 w-5 shrink-0 text-brand-500" />
-                ) : (
-                  <FileText className="h-5 w-5 shrink-0 text-brand-500" />
-                )}
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-medium">{file.name}</p>
-                  <p className="text-xs text-muted">{(file.size / 1024).toFixed(0)} KB</p>
-                </div>
-              </div>
-              {checkingQuality && (
-                <p className="flex items-center gap-2 text-xs font-semibold text-muted">
-                  <LoaderCircle className="h-4 w-4 animate-spin" /> Revisando nitidez e iluminación…
-                </p>
-              )}
-              {quality?.status === 'good' && (
-                <p className="flex items-center gap-2 text-xs font-semibold text-emerald-700 dark:text-emerald-300">
-                  <CheckCircle2 className="h-4 w-4" /> Foto lista para leer
-                </p>
-              )}
-              {quality?.status === 'warning' && (
-                <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs leading-5 text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-100">
-                  <p className="flex items-center gap-2 font-bold"><AlertTriangle className="h-4 w-4" /> Esta foto puede ser difícil de leer</p>
-                  <p>{quality.warnings.join(' ')} Puedes elegir otra o continuar; XCalificator ajustará una copia automáticamente.</p>
-                </div>
-              )}
-              {quality?.status === 'unusable' && (
-                <div className="rounded-lg border border-rose-200 bg-rose-50 p-3 text-xs leading-5 text-rose-900 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-100">
-                  <p className="flex items-center gap-2 font-bold"><AlertTriangle className="h-4 w-4" /> Selecciona otra foto</p>
-                  <p>{quality.warnings.join(' ')}</p>
-                </div>
-              )}
-              <div className="flex shrink-0 justify-end gap-2">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => { setFile(null); setQuality(null); }}
-                  disabled={digitalizar.isPending}
-                >
-                  Quitar
-                </Button>
-                <Button
-                  size="sm"
-                  onClick={() => digitalizar.mutate()}
-                  loading={digitalizar.isPending}
-                  disabled={
-                    digitalizar.isPending
-                    || checkingQuality
-                    || quality?.status === 'unusable'
-                    || nombre.trim().length < 2
-                    || !validMaxScore
-                  }
-                >
-                  Digitalizar
-                </Button>
-              </div>
-            </div>
-          )}
-        </div>
-      ) : (
-        <div className="flex flex-col items-center py-4 text-center sm:py-7">
-          <DocumentProcessingAnimation />
-          <h3 className="mt-2 font-display text-xl font-bold text-fg">
-            Estamos trabajando en tu documento
-          </h3>
-          <p className="mt-2 max-w-md text-sm leading-6 text-muted">
-            Estamos leyendo preguntas, puntajes y respuestas de <strong>{queued.nombre}</strong>.
-            Puedes continuar navegando; te avisaremos cuando el borrador esté listo.
-          </p>
-          <div className="mt-5 flex items-center gap-2" aria-label="Proceso en segundo plano">
-            <span className="h-2 w-2 rounded-full bg-brand-500" />
-            <span className="text-xs font-semibold uppercase tracking-wider text-brand-700 dark:text-brand-200">
-              Digitalización en segundo plano
-            </span>
-          </div>
-          <Button className="mt-6 min-w-48" onClick={handleClose}>
-            Continuar navegando
+  return <Modal open={open} onClose={close} title="Digitalizar evaluación" className="max-w-3xl">
+    {!queued ? <div className="min-w-0 space-y-5">
+      <p className="text-sm leading-6 text-muted">Añade todas las hojas, incluida la lectura. Recibirás un borrador para revisar antes de publicar.</p>
+      <Field label="Nombre de la evaluación" required>
+        <Input value={nombre} onChange={event => setNombre(event.target.value)} minLength={2} maxLength={220}
+          placeholder="Ej. Sociales · Hidrografía" disabled={digitalizar.isPending} />
+      </Field>
+      <div className="flex gap-2" role="group" aria-label="Cómo subir la evaluación">
+        <Button variant={mode === 'photos' ? 'primary' : 'outline'} disabled={digitalizar.isPending} aria-pressed={mode === 'photos'} onClick={() => setMode('photos')}>Fotos</Button>
+        <Button variant={mode === 'document' ? 'primary' : 'outline'} disabled={digitalizar.isPending} aria-pressed={mode === 'document'} onClick={() => setMode('document')}>PDF o Word</Button>
+      </div>
+      {mode === 'photos' ? <MultiPageEvidencePicker pages={pages} onChange={selected => {
+        setPages(selected); if (selected[0]) titleFromFile(selected[0].file);
+      }} contextKey={materiaId + ':' + scope.current} disabled={digitalizar.isPending} allowPdf={false}
+        maxTotalBytes={MAX_BYTES} maxImageBytes={MAX_BYTES} />
+        : <div className="space-y-3">
+          <Button variant="outline" className="min-h-16 w-full" disabled={digitalizar.isPending} onClick={() => fileRef.current?.click()}>
+            <Upload className="h-5 w-5" /> {file ? 'Cambiar documento' : 'Seleccionar PDF o Word'}
           </Button>
+          <input ref={fileRef} type="file" accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            aria-label="Seleccionar PDF o Word" className="hidden" disabled={digitalizar.isPending}
+            onChange={event => { if (event.target.files?.[0]) selectDocument(event.target.files[0]); event.target.value = ''; }} />
+          {file && <div className="flex min-w-0 items-center gap-2 rounded-xl border border-border p-3">
+            <FileText className="h-5 w-5 shrink-0 text-brand-500" />
+            <span className="min-w-0 flex-1 break-words text-sm">{file.name}</span>
+            <Button variant="ghost" size="sm" disabled={digitalizar.isPending} onClick={() => setFile(null)}>Quitar</Button>
+          </div>}
+        </div>}
+      <p className="text-xs text-muted">Hasta 10 fotos y 20 MB en total, o un único PDF o Word de hasta 20 MB.</p>
+      <details className="rounded-xl border border-border p-3">
+        <summary className="min-h-8 cursor-pointer font-semibold">Opciones de la evaluación</summary>
+        <div className="mt-3 space-y-4">
+          <Field label="Nota máxima"><Input type="number" min="0.1" step="0.1" value={notaMaxima}
+            disabled={digitalizar.isPending} onChange={event => setNotaMaxima(event.target.value)} /></Field>
+          <Field label="Cómo se responderá"><Select value={modalidad} disabled={digitalizar.isPending}
+            onChange={event => setModalidad(event.target.value as typeof modalidad)}>
+            <option value="fisica">En papel / foto</option><option value="online">En línea</option><option value="mixta">Mixta</option>
+          </Select></Field>
+          <Field label="Descripción" hint="Opcional"><Textarea value={descripcion} disabled={digitalizar.isPending} onChange={event => setDescripcion(event.target.value)} /></Field>
         </div>
-      )}
-    </Modal>
-  );
+      </details>
+      <div className="flex flex-wrap justify-end gap-2">
+        <Button variant="outline" onClick={close}>Cerrar</Button>
+        <Button onClick={submit} loading={digitalizar.isPending} disabled={!canSubmit || digitalizar.isPending}>Digitalizar</Button>
+      </div>
+    </div> : <div className="flex flex-col items-center py-4 text-center sm:py-7">
+      <DocumentProcessingAnimation />
+      <h3 className="mt-2 font-display text-xl font-bold">Estamos trabajando en tu documento</h3>
+      <p className="mt-2 max-w-md text-sm leading-6 text-muted">Estamos leyendo todas las hojas de <strong>{queued.nombre}</strong>. Puedes continuar navegando; te avisaremos cuando el borrador esté listo.</p>
+      <Button className="mt-6 min-w-48" onClick={close}>Continuar navegando</Button>
+    </div>}
+  </Modal>;
 }
-
 export { DigitalizarEvaluacionModal };

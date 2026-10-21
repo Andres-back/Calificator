@@ -116,3 +116,11 @@ def test_rotation_count_must_match_the_selected_pages() -> None:
     with pytest.raises(EvidenceBundleError) as error:
         asyncio.run(build_evidence_bundle(files, rotations=[90]))
     assert "rotacion" in str(error.value).lower().replace("ó", "o")
+
+
+def test_digitalization_can_lower_total_limit_without_changing_grading_defaults():
+    oversized = b'%PDF' + b'0' * (20 * 1024 * 1024)
+    with pytest.raises(EvidenceBundleError, match='20 MB'):
+        asyncio.run(build_evidence_bundle(upload('grande.pdf', oversized, 'application/pdf'), total_bytes_limit=20 * 1024 * 1024))
+    from app.services.evidence_bundle_service import _limits
+    assert _limits()[2] == 40 * 1024 * 1024

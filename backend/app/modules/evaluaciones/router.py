@@ -1,4 +1,5 @@
 from decimal import Decimal
+import json
 from types import SimpleNamespace
 from uuid import UUID
 
@@ -34,6 +35,7 @@ from app.services.storage_service import (
     resolve_private_upload_path,
     save_private_upload,
 )
+from app.services.evidence_bundle_service import build_evidence_bundle
 from app.shared.enums import EvaluacionModalidad, JobEstado, JobTipo, UserRole
 from app.workers.tasks_digitalization import digitalize_evaluation
 
@@ -102,7 +104,8 @@ async def digitalize_from_file(
     descripcion: str | None = Form(default=None),
     nota_maxima: Decimal = Form(default=Decimal("5.0"), gt=0),
     modalidad: EvaluacionModalidad = Form(default=EvaluacionModalidad.FISICA),
-    file: UploadFile = File(...),
+    file: list[UploadFile] = File(...),
+    rotaciones: str | None = Form(default=None),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
     _: None = Depends(
@@ -118,10 +121,27 @@ async def digitalize_from_file(
     from app.modules.materias.service import ensure_can_manage_materia
 
     await ensure_can_manage_materia(db, materia_id, current_user)
-    content = await read_upload_limited(file, 20 * 1024 * 1024)
-    filename = file.filename or "evaluacion"
     try:
-        mime = detect_digitalization_mime(content, filename)
+        files = list(file) if isinstance(file, (list, tuple)) else [file]
+        if not 1 <= len(files) <= 10:
+            raise ValueError('Selecciona entre una y diez fotografías, o un único PDF o Word.')
+        rotations = json.loads(rotaciones) if isinstance(rotaciones, str) and rotaciones else None
+        if rotations is not None and (not isinstance(rotations, list) or len(rotations) != len(files)
+                or any(type(value) is not int or value not in {0, 90, 180, 270} for value in rotations)):
+            raise ValueError('Revisa el giro de las hojas antes de enviarlas.')
+        metadata = None
+        if len(files) == 1:
+            content = await read_upload_limited(files[0], 20 * 1024 * 1024)
+            filename = files[0].filename or 'evaluacion'
+            mime = detect_digitalization_mime(content, filename)
+            if mime.startswith('image/'):
+                await files[0].seek(0)
+            elif rotations and any(rotations):
+                raise ValueError('El giro de hojas solo se aplica a fotografías.')
+        if len(files) > 1 or mime.startswith('image/'):
+            bundle = await build_evidence_bundle(files, rotations=rotations,
+                total_bytes_limit=20 * 1024 * 1024, image_bytes_limit=20 * 1024 * 1024, file_count_limit=10)
+            content, mime, filename, metadata = bundle.content, bundle.mime, bundle.filename, bundle.metadata
         file_key = await save_private_upload(
             content,
             mime,
@@ -147,6 +167,8 @@ async def digitalize_from_file(
                 "descripcion": descripcion,
                 "nota_maxima": str(nota_maxima),
                 "modalidad": modalidad.value,
+                "hojas": metadata,
+                "_document_source_schema": 113,
                 "_visual_import_schema": 1 if settings.EVALUATION_VISUAL_IMPORT_ENABLED else None,
             },
         )

@@ -37,6 +37,7 @@ class EvaluacionCreate(BaseModel):
 
 
 class EvaluacionUpdate(BaseModel):
+    lectura: str | None = Field(default=None, max_length=60_000)
     claves_visuales_revisadas: list[UUID] = Field(default_factory=list, max_length=500)
     expected_updated_at: datetime | None = None
     expected_content_version_id: UUID | None = None
@@ -77,6 +78,7 @@ class EvaluacionBlueprintRead(BaseModel):
 
 
 class EvaluacionRead(BaseModel):
+    lectura: str | None = None
     claves_visuales_pendientes: list[UUID] = Field(default_factory=list)
     id: UUID
     materia_id: UUID

@@ -31,6 +31,17 @@ beforeEach(() => {
 });
 
 describe('EvaluationPreviewModal', () => {
+  it('offers readable public support text before questions, without a private solution control', async () => {
+    const user = userEvent.setup();
+    render(<EvaluationPreviewModal evaluation={{ ...evaluation, lectura: 'Los ríos nacen en las montañas.' }} canViewSolutions={false} onClose={vi.fn()} />);
+    await user.click(screen.getByRole('button', { name: 'Opciones' }));
+    await user.click(screen.getByRole('button', { name: 'Ver lectura y preguntas' }));
+    const reading = screen.getByText('Los ríos nacen en las montañas.');
+    expect(reading).toBeVisible();
+    expect(reading.className).toContain('whitespace-pre-wrap');
+    expect(screen.queryByRole('combobox')).not.toBeInTheDocument();
+    expect(screen.getByText('Pregunta 1')).toBeVisible();
+  });
   it('loads final document without answers by default, no editing, and cleans up on close', async () => {
     const close = vi.fn();
     const user = userEvent.setup();

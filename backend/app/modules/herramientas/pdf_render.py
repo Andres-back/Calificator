@@ -456,23 +456,47 @@ def _render_taller(c: dict, soluciones: bool) -> str:
 
 def _render_examen(c: dict, soluciones: bool) -> str:
     from app.modules.evaluaciones.visual_render import ResolvedVisualBlock, visual_block_html
+    from app.modules.evaluaciones.print_layout import option_columns
 
     out = ['<div class="sectionbar">EXAMEN</div>']
+    compact = bool(c.get('impresion_compacta'))
     if c.get("instrucciones"):
         out.append(f'<div class="instr indigo">{_e(c["instrucciones"])}</div>')
+    if c.get('texto'):
+        out.append('<h2 class="h3">Lectura o texto de apoyo</h2>')
+        out.append(f'<div style="white-space:pre-wrap;line-height:1.5;margin-bottom:12px">{_e(c["texto"])}</div>')
     for q in c.get("preguntas") or []:
-        out.append('<div class="card" style="break-inside:avoid">' if q.get('_evaluation_visuals') else '<div class="card">')
+        short = len(str(q.get('enunciado') or '')) + sum(len(str(op)) for op in q.get('opciones') or []) < 650
+        style = 'padding:6px 2px;margin-bottom:5px;border:0;border-bottom:1px solid #ddd;border-radius:0;' if compact else ''
+        if (compact and short) or q.get('_evaluation_visuals'):
+            style += 'break-inside:avoid;'
+        out.append(f'<div class="card" style="{style}">')
         pts = f' <span class="pts">[{_e(q.get("puntaje"))} pts]</span>' if q.get("puntaje") is not None else ""
         out.append(f'<p class="p"><b>{_e(q.get("numero"))}. {_e(q.get("enunciado"))}</b>{pts}</p>')
         for visual in q.get('_evaluation_visuals') or []:
             if not isinstance(visual, ResolvedVisualBlock):
                 raise ValueError('El material visual necesita revisión antes de descargar.')
             out.append(visual_block_html(visual))
-        for idx, op in enumerate(q.get("opciones") or []):
+        options = q.get('opciones') or []
+        columns = option_columns([str(option) for option in options]) if compact else 1
+        if columns == 2:
+            out.append('<table class="compact-options" style="width:100%;border-collapse:collapse"><tbody>')
+        for idx, op in enumerate(options):
             letra = chr(65 + idx)
             # El LLM a veces ya antepone "A)"/"a)"; lo quitamos para no duplicar.
             txt = _e(re.sub(r"^\s*[A-Ha-h]\)\s*", "", str(op or "")))
-            out.append(f'<p class="opt"><span class="circle">○ {letra})</span> {txt}</p>')
+            if columns == 2:
+                if idx % 2 == 0:
+                    out.append('<tr>')
+                out.append(f'<td style="width:50%;vertical-align:top;padding:1px 6px"><p class="opt"><span class="circle">○ {letra})</span> {txt}</p></td>')
+                if idx % 2 == 1:
+                    out.append('</tr>')
+            else:
+                out.append(f'<p class="opt"><span class="circle">○ {letra})</span> {txt}</p>')
+        if columns == 2:
+            if len(options) % 2:
+                out.append('<td></td></tr>')
+            out.append('</tbody></table>')
         if soluciones and q.get("respuesta_correcta") is not None:
             out.append(f'<p class="opt" style="color:#15803D"><b>Respuesta:</b> {_e(q.get("respuesta_correcta"))}</p>')
         elif not q.get("opciones"):

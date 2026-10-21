@@ -44,6 +44,7 @@ const ESTADO_LABEL: Record<EvaluacionEstado, string> = {
 type ListField = 'metas' | 'criterios' | 'preguntas' | 'respuestas';
 
 interface EvaluationForm {
+  lectura: string;
   materia_id: string;
   nombre: string;
   descripcion: string;
@@ -63,6 +64,7 @@ interface EvaluationForm {
 }
 
 const emptyForm = (materiaId = ''): EvaluationForm => ({
+  lectura: '',
   materia_id: materiaId,
   nombre: '',
   descripcion: '',
@@ -90,6 +92,7 @@ const emptyPending: Record<ListField, string> = {
 
 function evaluacionToForm(ev: Evaluacion): EvaluationForm {
   return {
+    lectura: ev.lectura ?? '',
     materia_id: ev.materia_id,
     nombre: ev.nombre,
     descripcion: ev.descripcion ?? '',
@@ -343,6 +346,9 @@ function EvaluationFormModal({
             <Field label="Descripcion">
               <Textarea value={form.descripcion} onChange={(event) => setForm({ ...form, descripcion: event.target.value })} placeholder="Proposito, alcance o instrucciones generales." />
             </Field>
+            {isEdit && <Field label="Lectura o texto de apoyo" hint="Opcional. Se conserva junto a las preguntas.">
+              <Textarea value={form.lectura} maxLength={60000} rows={8} className="min-h-48 text-base" onChange={(event) => setForm({ ...form, lectura: event.target.value })} placeholder="Texto que los estudiantes deben leer antes de responder." />
+            </Field>}
 
               <div className="grid gap-5 md:grid-cols-2">
               <DynamicTextList
@@ -613,6 +619,9 @@ export function EvaluacionesPage() {
     }
     return {
       nombre, descripcion: form.descripcion.trim() || undefined,
+      ...(form.lectura.trim() !== (editingEval?.lectura ?? '').trim() ? { lectura: form.lectura.trim() || null } : {}),
+      expected_updated_at: editingEval?.updated_at,
+      expected_content_version_id: editingEval?.contenido_version_id,
       modalidad: form.modalidad, nota_maxima: form.nota_maxima,
       dba_ids: form.dba_ids, dba_personalizado_ids: form.dba_personalizado_ids,
       metas_profesor: form.metas.map((m) => m.trim()).filter(Boolean),

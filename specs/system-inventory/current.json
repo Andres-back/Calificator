@@ -470,7 +470,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "352f9f4e02f8d0af66ab7454f64de4ec24ed5f1f8b66a737ae26d79b92eaa6dc",
+  "source_digest": "6bae175afbaa6bf4e20059f678e0241822549686345939861dc2660e14696f3b",
   "surfaces": [
     {
       "actors": [
@@ -712,7 +712,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "DELETE:/evaluaciones/{evaluacion_id}",
-      "source_line": 440,
+      "source_line": 462,
       "source_path": "backend/app/modules/evaluaciones/router.py",
       "states": [],
       "tests": [
@@ -4079,7 +4079,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "GET:/evaluaciones/{evaluacion_id}",
-      "source_line": 260,
+      "source_line": 282,
       "source_path": "backend/app/modules/evaluaciones/router.py",
       "states": [],
       "tests": [
@@ -4340,7 +4340,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "GET:/evaluaciones/{evaluacion_id}/actividad",
-      "source_line": 270,
+      "source_line": 292,
       "source_path": "backend/app/modules/evaluaciones/router.py",
       "states": [],
       "tests": [
@@ -4441,7 +4441,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "GET:/evaluaciones/{evaluacion_id}/docx",
-      "source_line": 349,
+      "source_line": 371,
       "source_path": "backend/app/modules/evaluaciones/router.py",
       "states": [],
       "tests": [
@@ -4708,7 +4708,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "GET:/evaluaciones/{evaluacion_id}/pdf",
-      "source_line": 319,
+      "source_line": 341,
       "source_path": "backend/app/modules/evaluaciones/router.py",
       "states": [],
       "tests": [
@@ -6634,7 +6634,7 @@
       "kind": "endpoint",
       "owner_spec": "003-usuarios-materias-matriculas",
       "signature": "GET:/materias/{materia_id}/evaluaciones",
-      "source_line": 244,
+      "source_line": 266,
       "source_path": "backend/app/modules/evaluaciones/router.py",
       "states": [],
       "tests": [
@@ -8808,7 +8808,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "PATCH:/evaluaciones/{evaluacion_id}",
-      "source_line": 373,
+      "source_line": 395,
       "source_path": "backend/app/modules/evaluaciones/router.py",
       "states": [],
       "tests": [
@@ -9136,7 +9136,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "PATCH:/evaluaciones/{evaluacion_id}/validar-estructura",
-      "source_line": 451,
+      "source_line": 473,
       "source_path": "backend/app/modules/evaluaciones/router.py",
       "states": [],
       "tests": [
@@ -12446,7 +12446,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "POST:/evaluaciones",
-      "source_line": 234,
+      "source_line": 256,
       "source_path": "backend/app/modules/evaluaciones/router.py",
       "states": [],
       "tests": [
@@ -12706,7 +12706,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "POST:/evaluaciones/externa/digitalizar",
-      "source_line": 214,
+      "source_line": 236,
       "source_path": "backend/app/modules/evaluaciones/router.py",
       "states": [],
       "tests": [
@@ -12715,6 +12715,12 @@
           "reference": "POST:/evaluaciones/externa/digitalizar",
           "status": "direct",
           "test_path": "backend/tests/integration/test_api_contract.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/evaluaciones/externa/digitalizar",
+          "status": "direct",
+          "test_path": "frontend/e2e/mock/evaluation-visuals.mock.spec.ts"
         },
         {
           "level": "unit",
@@ -12750,7 +12756,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "POST:/evaluaciones/externa/digitalizar-con-archivo",
-      "source_line": 95,
+      "source_line": 97,
       "source_path": "backend/app/modules/evaluaciones/router.py",
       "states": [],
       "tests": [
@@ -12759,6 +12765,12 @@
           "reference": "POST:/evaluaciones/externa/digitalizar-con-archivo",
           "status": "direct",
           "test_path": "backend/tests/integration/test_api_contract.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/evaluaciones/externa/digitalizar-con-archivo",
+          "status": "direct",
+          "test_path": "frontend/e2e/mock/evaluation-visuals.mock.spec.ts"
         },
         {
           "level": "unit",
@@ -12794,7 +12806,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "POST:/evaluaciones/generar-borrador",
-      "source_line": 200,
+      "source_line": 222,
       "source_path": "backend/app/modules/evaluaciones/router.py",
       "states": [],
       "tests": [
@@ -13041,7 +13053,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "POST:/evaluaciones/referencia/extraer",
-      "source_line": 55,
+      "source_line": 57,
       "source_path": "backend/app/modules/evaluaciones/router.py",
       "states": [],
       "tests": [
@@ -13073,7 +13085,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "POST:/evaluaciones/sorpresa",
-      "source_line": 224,
+      "source_line": 246,
       "source_path": "backend/app/modules/evaluaciones/router.py",
       "states": [],
       "tests": [
@@ -13111,7 +13123,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "POST:/evaluaciones/{evaluacion_id}/activar-recepcion",
-      "source_line": 418,
+      "source_line": 440,
       "source_path": "backend/app/modules/evaluaciones/router.py",
       "states": [],
       "tests": [
@@ -13211,7 +13223,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "POST:/evaluaciones/{evaluacion_id}/cerrar",
-      "source_line": 407,
+      "source_line": 429,
       "source_path": "backend/app/modules/evaluaciones/router.py",
       "states": [],
       "tests": [
@@ -13249,7 +13261,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "POST:/evaluaciones/{evaluacion_id}/crear-blueprint",
-      "source_line": 385,
+      "source_line": 407,
       "source_path": "backend/app/modules/evaluaciones/router.py",
       "states": [],
       "tests": [
@@ -13473,7 +13485,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "POST:/evaluaciones/{evaluacion_id}/pausar-recepcion",
-      "source_line": 429,
+      "source_line": 451,
       "source_path": "backend/app/modules/evaluaciones/router.py",
       "states": [],
       "tests": [
@@ -13511,7 +13523,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "POST:/evaluaciones/{evaluacion_id}/publicar",
-      "source_line": 396,
+      "source_line": 418,
       "source_path": "backend/app/modules/evaluaciones/router.py",
       "states": [],
       "tests": [
@@ -23437,7 +23449,7 @@
       "kind": "frontend_call",
       "owner_spec": "005-evaluaciones",
       "signature": "DELETE:/evaluaciones/{id}",
-      "source_line": 118,
+      "source_line": 119,
       "source_path": "frontend/src/modules/evaluaciones/api.ts",
       "states": [],
       "tests": [
@@ -26644,7 +26656,7 @@
       "kind": "frontend_call",
       "owner_spec": "004-dba-asistencia-curriculo",
       "signature": "GET:/dba",
-      "source_line": 200,
+      "source_line": 201,
       "source_path": "frontend/src/modules/evaluaciones/api.ts",
       "states": [],
       "tests": [
@@ -26888,7 +26900,7 @@
       "kind": "frontend_call",
       "owner_spec": "005-evaluaciones",
       "signature": "GET:/evaluaciones/{evaluacionId}/actividad",
-      "source_line": 142,
+      "source_line": 143,
       "source_path": "frontend/src/modules/evaluaciones/api.ts",
       "states": [],
       "tests": [
@@ -26974,7 +26986,7 @@
       "kind": "frontend_call",
       "owner_spec": "005-evaluaciones",
       "signature": "GET:/evaluaciones/{evaluacionId}/mi-desglose",
-      "source_line": 212,
+      "source_line": 213,
       "source_path": "frontend/src/modules/evaluaciones/api.ts",
       "states": [],
       "tests": [
@@ -27002,7 +27014,7 @@
       "kind": "frontend_call",
       "owner_spec": "005-evaluaciones",
       "signature": "GET:/evaluaciones/{evaluacionId}/mi-entrega",
-      "source_line": 133,
+      "source_line": 134,
       "source_path": "frontend/src/modules/evaluaciones/api.ts",
       "states": [],
       "tests": [
@@ -27030,7 +27042,7 @@
       "kind": "frontend_call",
       "owner_spec": "005-evaluaciones",
       "signature": "GET:/evaluaciones/{evaluacionId}/mi-solicitud-revision",
-      "source_line": 175,
+      "source_line": 176,
       "source_path": "frontend/src/modules/evaluaciones/api.ts",
       "states": [],
       "tests": [
@@ -27058,7 +27070,7 @@
       "kind": "frontend_call",
       "owner_spec": "005-evaluaciones",
       "signature": "GET:/evaluaciones/{evaluacionId}/{format}",
-      "source_line": 161,
+      "source_line": 162,
       "source_path": "frontend/src/modules/evaluaciones/api.ts",
       "states": [],
       "tests": [
@@ -27314,7 +27326,7 @@
       "kind": "frontend_call",
       "owner_spec": "005-evaluaciones",
       "signature": "GET:/evaluaciones/{evaluationId}/original",
-      "source_line": 70,
+      "source_line": 71,
       "source_path": "frontend/src/modules/evaluaciones/api.ts",
       "states": [],
       "tests": [
@@ -27344,7 +27356,7 @@
       "kind": "frontend_call",
       "owner_spec": "005-evaluaciones",
       "signature": "GET:/evaluaciones/{evaluationId}/recursos/{resourceId}",
-      "source_line": 63,
+      "source_line": 64,
       "source_path": "frontend/src/modules/evaluaciones/api.ts",
       "states": [],
       "tests": [
@@ -27430,7 +27442,7 @@
       "kind": "frontend_call",
       "owner_spec": "005-evaluaciones",
       "signature": "GET:/evaluaciones/{id}",
-      "source_line": 59,
+      "source_line": 60,
       "source_path": "frontend/src/modules/evaluaciones/api.ts",
       "states": [],
       "tests": [
@@ -28980,7 +28992,7 @@
       "kind": "frontend_call",
       "owner_spec": "003-usuarios-materias-matriculas",
       "signature": "GET:/materias/{materiaId}/evaluaciones",
-      "source_line": 55,
+      "source_line": 56,
       "source_path": "frontend/src/modules/evaluaciones/api.ts",
       "states": [],
       "tests": [
@@ -31054,7 +31066,7 @@
       "kind": "frontend_call",
       "owner_spec": "005-evaluaciones",
       "signature": "PATCH:/evaluaciones/{id}",
-      "source_line": 98,
+      "source_line": 99,
       "source_path": "frontend/src/modules/evaluaciones/api.ts",
       "states": [],
       "tests": [
@@ -34404,7 +34416,7 @@
       "kind": "frontend_call",
       "owner_spec": "005-evaluaciones",
       "signature": "POST:/evaluaciones/externa/digitalizar-con-archivo",
-      "source_line": 102,
+      "source_line": 33,
       "source_path": "frontend/src/modules/evaluaciones/components/DigitalizarEvaluacionModal.tsx",
       "states": [],
       "tests": [
@@ -34413,6 +34425,12 @@
           "reference": "POST:/evaluaciones/externa/digitalizar-con-archivo",
           "status": "direct",
           "test_path": "backend/tests/integration/test_api_contract.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/evaluaciones/externa/digitalizar-con-archivo",
+          "status": "direct",
+          "test_path": "frontend/e2e/mock/evaluation-visuals.mock.spec.ts"
         },
         {
           "level": "unit",
@@ -34438,7 +34456,7 @@
       "kind": "frontend_call",
       "owner_spec": "005-evaluaciones",
       "signature": "POST:/evaluaciones/generar-borrador",
-      "source_line": 80,
+      "source_line": 81,
       "source_path": "frontend/src/modules/evaluaciones/api.ts",
       "states": [],
       "tests": [
@@ -34675,7 +34693,7 @@
       "kind": "frontend_call",
       "owner_spec": "005-evaluaciones",
       "signature": "POST:/evaluaciones/referencia/extraer",
-      "source_line": 94,
+      "source_line": 95,
       "source_path": "frontend/src/modules/evaluaciones/api.ts",
       "states": [],
       "tests": [
@@ -34761,7 +34779,7 @@
       "kind": "frontend_call",
       "owner_spec": "007-entregas-estudiante",
       "signature": "POST:/evaluaciones/{evaluacionId}/entregas/archivo",
-      "source_line": 196,
+      "source_line": 197,
       "source_path": "frontend/src/modules/evaluaciones/api.ts",
       "states": [],
       "tests": [
@@ -34789,7 +34807,7 @@
       "kind": "frontend_call",
       "owner_spec": "007-entregas-estudiante",
       "signature": "POST:/evaluaciones/{evaluacionId}/entregas",
-      "source_line": 121,
+      "source_line": 122,
       "source_path": "frontend/src/modules/evaluaciones/api.ts",
       "states": [],
       "tests": [
@@ -34817,7 +34835,7 @@
       "kind": "frontend_call",
       "owner_spec": "005-evaluaciones",
       "signature": "POST:/evaluaciones/{evaluacionId}/solicitud-revision",
-      "source_line": 182,
+      "source_line": 183,
       "source_path": "frontend/src/modules/evaluaciones/api.ts",
       "states": [],
       "tests": [
@@ -34845,7 +34863,7 @@
       "kind": "frontend_call",
       "owner_spec": "005-evaluaciones",
       "signature": "POST:/evaluaciones/{id}/activar-recepcion",
-      "source_line": 110,
+      "source_line": 111,
       "source_path": "frontend/src/modules/evaluaciones/api.ts",
       "states": [],
       "tests": [
@@ -34873,7 +34891,7 @@
       "kind": "frontend_call",
       "owner_spec": "005-evaluaciones",
       "signature": "POST:/evaluaciones/{id}/cerrar",
-      "source_line": 106,
+      "source_line": 107,
       "source_path": "frontend/src/modules/evaluaciones/api.ts",
       "states": [],
       "tests": [
@@ -34901,7 +34919,7 @@
       "kind": "frontend_call",
       "owner_spec": "005-evaluaciones",
       "signature": "POST:/evaluaciones/{id}/pausar-recepcion",
-      "source_line": 114,
+      "source_line": 115,
       "source_path": "frontend/src/modules/evaluaciones/api.ts",
       "states": [],
       "tests": [
@@ -34929,7 +34947,7 @@
       "kind": "frontend_call",
       "owner_spec": "005-evaluaciones",
       "signature": "POST:/evaluaciones/{id}/publicar",
-      "source_line": 102,
+      "source_line": 103,
       "source_path": "frontend/src/modules/evaluaciones/api.ts",
       "states": [],
       "tests": [
@@ -34957,7 +34975,7 @@
       "kind": "frontend_call",
       "owner_spec": "005-evaluaciones",
       "signature": "POST:/evaluaciones",
-      "source_line": 76,
+      "source_line": 77,
       "source_path": "frontend/src/modules/evaluaciones/api.ts",
       "states": [],
       "tests": [
@@ -38311,7 +38329,7 @@
       "kind": "job",
       "owner_spec": "012-ia-jobs-produccion",
       "signature": "tasks.digitalize_evaluation",
-      "source_line": 496,
+      "source_line": 499,
       "source_path": "backend/app/workers/tasks_digitalization.py",
       "states": [
         "cancelled",
@@ -38858,7 +38876,7 @@
       "kind": "job",
       "owner_spec": "012-ia-jobs-produccion",
       "signature": "tasks.recover_stale_digitalization_jobs",
-      "source_line": 559,
+      "source_line": 562,
       "source_path": "backend/app/workers/tasks_digitalization.py",
       "states": [
         "cancelled",
@@ -41354,7 +41372,7 @@
       "kind": "table",
       "owner_spec": "005-evaluaciones",
       "signature": "evaluacion_blueprints",
-      "source_line": 137,
+      "source_line": 142,
       "source_path": "backend/app/modules/evaluaciones/models.py",
       "states": [
         "completo",
@@ -41414,7 +41432,7 @@
       "kind": "table",
       "owner_spec": "005-evaluaciones",
       "signature": "evaluacion_contenido_versiones",
-      "source_line": 229,
+      "source_line": 234,
       "source_path": "backend/app/modules/evaluaciones/models.py",
       "states": [],
       "tests": [
@@ -41476,7 +41494,7 @@
       "kind": "table",
       "owner_spec": "005-evaluaciones",
       "signature": "evaluacion_recursos",
-      "source_line": 185,
+      "source_line": 190,
       "source_path": "backend/app/modules/evaluaciones/models.py",
       "states": [
         "dibujo",
@@ -41607,6 +41625,12 @@
           "reference": "evaluaciones",
           "status": "direct",
           "test_path": "backend/tests/integration/test_evaluation_criteria_update.py"
+        },
+        {
+          "level": "unit",
+          "reference": "evaluaciones",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_evaluation_reading.py"
         },
         {
           "level": "unit",
@@ -41745,6 +41769,12 @@
           "reference": "evaluaciones",
           "status": "direct",
           "test_path": "backend/tests/unit/test_evaluation_publish_readiness.py"
+        },
+        {
+          "level": "unit",
+          "reference": "evaluaciones",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_evaluation_reading.py"
         },
         {
           "level": "unit",
@@ -44017,6 +44047,12 @@
           "reference": "users",
           "status": "direct",
           "test_path": "backend/tests/integration/test_evaluation_criteria_update.py"
+        },
+        {
+          "level": "unit",
+          "reference": "users",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_evaluation_reading.py"
         },
         {
           "level": "unit",

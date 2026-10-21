@@ -20,6 +20,7 @@ from app.modules.evaluaciones.modality_service import (
     validate_mixed_question_modalities,
 )
 from app.modules.evaluaciones.models import Evaluacion, EvaluacionBlueprint, EvaluacionContenidoVersion
+from app.modules.evaluaciones.reading_service import evaluation_reading, normalize_reading
 from app.modules.calificaciones.models import Calificacion, Entrega
 from app.modules.evaluaciones.schemas import (
     DigitalizarEvaluacionExternaRequest,
@@ -195,6 +196,7 @@ def _student_safe_evaluation(evaluacion: Evaluacion, progress: dict | None = Non
         "profesor_id": evaluacion.profesor_id,
         "nombre": evaluacion.nombre,
         "descripcion": evaluacion.descripcion,
+        "lectura": evaluation_reading(evaluacion),
         "tipo_origen": evaluacion.tipo_origen,
         "modalidad": evaluacion.modalidad,
         "material_origen_id": getattr(evaluacion, "material_origen_id", None),
@@ -615,7 +617,7 @@ async def update_evaluation(
             manifest=payload.contenido_visual)
         evaluacion = content_edit.evaluation
         expected_updated_at = None  # Already checked while holding the row lock.
-    if expected_updated_at is not None:
+    if expected_updated_at is not None or 'lectura' in data:
         # Refresh under a row lock: a read-before-lock comparison loses races.
         locked = await db.scalar(
             select(Evaluacion)
@@ -628,8 +630,13 @@ async def update_evaluation(
         evaluacion = locked
         def utc_naive(value):
             return value.astimezone(timezone.utc).replace(tzinfo=None) if value.tzinfo else value
-        if utc_naive(evaluacion.updated_at) != utc_naive(expected_updated_at):
+        if expected_updated_at is not None and utc_naive(evaluacion.updated_at) != utc_naive(expected_updated_at):
             raise HTTPException(status_code=409, detail="La evaluación cambió. Conservamos tu edición; vuelve a abrirla con la versión actual antes de guardar.")
+    reading_changed = 'lectura' in data and normalize_reading(data['lectura']) != evaluation_reading(evaluacion)
+    if reading_changed and getattr(evaluacion, 'contenido_version_id', None) is None:
+        existing_delivery = await db.scalar(select(Entrega.id).where(Entrega.evaluacion_id == evaluacion.id).limit(1))
+        if existing_delivery is not None:
+            raise HTTPException(409, 'Esta evaluación ya tiene entregas guardadas. Conservamos su lectura original para no cambiar cómo se calificaron. Crea una copia para cambiarla.')
     if "estado" in data:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -644,7 +651,9 @@ async def update_evaluation(
     dba_personalizado_ids = [UUID(value) for value in evaluacion.dba_personalizado_ids]
 
     for field, value in data.items():
-        if field == "dba_ids" and value is not None:
+        if field == 'lectura':
+            continue  # Persisted in the blueprint below, never as an unmapped ORM field.
+        elif field == "dba_ids" and value is not None:
             dba_ids = value
             evaluacion.dba_ids = _uuid_values(value)
             rebuild_blueprint = True
@@ -682,6 +691,15 @@ async def update_evaluation(
             await _update_blueprint_criteria(db, evaluacion, dba_ids, dba_personalizado_ids, retained_custom_ids)
         else:
             await _build_or_update_blueprint(db, evaluacion, dba_ids, dba_personalizado_ids)
+
+    if 'lectura' in data:
+        blueprint = evaluacion.blueprint
+        if blueprint is None:
+            blueprint = await _build_or_update_blueprint(db, evaluacion, dba_ids, dba_personalizado_ids)
+        blueprint.reglas_feedback = {**(blueprint.reglas_feedback or {}), 'lectura': normalize_reading(data['lectura'])}
+        # A JSON-only edit must still invalidate stale editor timestamps.
+        if reading_changed:
+            evaluacion.updated_at = utcnow()
 
     # Una evaluación asignada continúa siendo editable por su profesor, pero
     # debe conservar una estructura válida mientras siga visible al estudiante.

@@ -60,6 +60,7 @@ export interface EditableRubricCriterion extends Record<string, unknown> {
   dba_ids: string[];
 }
 export interface WizardState {
+  lectura?: string;
   visualJobs?: Record<string, string>;
   visualKeysReviewed?: string[];
   visualKeysPending?: string[];
@@ -533,6 +534,7 @@ export function evaluationToWizardState(evaluation: Evaluacion): WizardState {
     nombre: evaluation.nombre,
     nombreAutomatico: false,
     descripcion: evaluation.descripcion ?? '',
+    lectura: evaluation.lectura ?? '',
     modalidad: evaluation.modalidad ?? 'online',
     notaMaxima: Number(evaluation.nota_maxima),
     fechaLimiteEntrega: toDatetimeLocalValue(evaluation.fecha_limite_entrega),
@@ -688,6 +690,7 @@ export function discardVisualEditDraft(storage: Storage | null, userId: string, 
 function hasDraftShape(state: WizardState): boolean {
   const strings = (value: unknown): value is string[] => Array.isArray(value) && value.every(item => typeof item === 'string');
   return ['materiaId', 'nombre', 'descripcion', 'fechaLimiteEntrega', 'referenceText', 'instruccionesAdicionales'].every(key => typeof state[key as keyof WizardState] === 'string')
+    && (state.lectura === undefined || typeof state.lectura === 'string' && state.lectura.length <= 60000)
     && ['online', 'fisica', 'mixta'].includes(state.modalidad)
     && Number.isFinite(state.step) && Number.isFinite(state.notaMaxima)
     && typeof state.useDba === 'boolean' && typeof state.useRubric === 'boolean'

@@ -116,8 +116,8 @@ export function EvaluationPreviewModal({ evaluation, canViewSolutions, onClose }
               </Select>
             </label>
           ) : <p className="text-sm text-muted">Evaluación para estudiantes · Sin respuestas</p>}
-          {evaluation?.contenido_visual && <Button type="button" variant="outline" className="min-h-11 w-full" onClick={() => { setContentView(value => !value); setOptionsOpen(false); }}>
-            {contentView ? 'Ver formato para imprimir' : 'Ver preguntas y figuras'}
+          {(evaluation?.contenido_visual || evaluation?.lectura) && <Button type="button" variant="outline" className="min-h-11 w-full" onClick={() => { setContentView(value => !value); setOptionsOpen(false); }}>
+            {contentView ? 'Ver formato para imprimir' : evaluation?.lectura ? 'Ver lectura y preguntas' : 'Ver preguntas y figuras'}
           </Button>}
           {currentFile && (
             <a href={currentFile.url} target="_blank" rel="noopener noreferrer"
@@ -141,6 +141,10 @@ export function EvaluationPreviewModal({ evaluation, canViewSolutions, onClose }
       </div>
       <div className="min-h-0 flex-1 overflow-hidden rounded-lg border border-border bg-surface-2">
         {contentView && evaluation ? <div className="h-full min-w-0 space-y-4 overflow-y-auto p-3 sm:p-5">
+          {evaluation.lectura && <article className="min-w-0 space-y-3 rounded-xl border border-border bg-surface p-4 sm:p-6">
+            <h3 className="font-semibold">Lectura o texto de apoyo</h3>
+            <p className="whitespace-pre-wrap break-words text-base leading-7">{evaluation.lectura}</p>
+          </article>}
           {evaluation.preguntas.map((question, index) => <article key={String(question.contenido_id || index)} className="min-w-0 space-y-3 rounded-xl border border-border bg-surface p-4">
             <h3 className="font-semibold">Pregunta {String(question.numero || index + 1)}</h3>
             <RichContent content={String(question.enunciado || '')} variant="evaluation" />

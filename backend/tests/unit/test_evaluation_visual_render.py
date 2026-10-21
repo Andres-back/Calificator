@@ -53,7 +53,9 @@ def test_shared_table_is_once_in_word_and_html_and_images_embed_without_urls():
         question['contenido_id'] = identifier
     material = export_service.build_evaluation_material(item, soluciones=False, visual_blocks=[block])
     document = Document(BytesIO(export_service.render_evaluation_docx(material, soluciones=False)))
-    assert len(document.tables) == 1
+    # The shared educational table stays unique; a separate table now lays out
+    # short answer options compactly without duplicating the source content.
+    assert sum('2400' in cell.text for table_item in document.tables for row in table_item.rows for cell in row.cells) == 1
     assert document.tables[0].cell(1, 1).text == '2400'
     assert document.tables[0].rows[0]._tr.xml.count('tblHeader') >= 1
     from app.modules.herramientas.pdf_render import render_material_html

@@ -76,7 +76,23 @@ def evaluation():
 
 def text_of(data):
     document = Document(BytesIO(data))
-    return '\n'.join(p.text for p in document.paragraphs)
+    return '\n'.join([*(p.text for p in document.paragraphs),
+        *(cell.text for table in document.tables for row in table.rows for cell in row.cells)])
+
+
+def test_evaluation_reading_is_kept_in_student_export_with_compact_options():
+    from app.modules.herramientas.pdf_render import _render_examen
+    item = evaluation()
+    item.blueprint = SimpleNamespace(reglas_feedback={'lectura': 'Los ríos de América.\n\nNacen en las montañas.', 'clave': 'privada'})
+    material = export_service.build_evaluation_material(item, soluciones=False)
+    assert material['contenido_json']['texto'] == item.blueprint.reglas_feedback['lectura']
+    assert material['contenido_json']['impresion_compacta'] is True
+    html = _render_examen(material['contenido_json'], False)
+    word = text_of(export_service.render_evaluation_docx(material, soluciones=False))
+    assert 'Los ríos de América.' in html and 'Nacen en las montañas.' in word
+    assert 'compact-options' in html
+    assert 'privada' not in html + word
+    assert html.index('Los ríos') < html.index('¿Cuánto')
 
 
 def test_printable_and_word_preserve_questions_options_scores_without_private_keys():

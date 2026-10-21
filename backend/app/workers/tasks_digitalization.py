@@ -445,10 +445,13 @@ async def _digitalize_async(
                 with suppress(asyncio.CancelledError):
                     await heartbeat_task
             try:
-                if result.get("status") in {
-                    JobEstado.SUCCESS.value,
-                    JobEstado.CANCELLED.value,
-                } or (result.get("status") == JobEstado.REQUIRES_REVIEW.value and result.get("_visual_saved")):
+                # New non-visual imports retain their normalized source privately
+                # in the durable job, linked to the resulting evaluation. Visual
+                # imports already archive it as a resource before deleting temp.
+                preserve_source = job_input.get('_document_source_schema') == 113 and not visual_mode
+                if (result.get('status') == JobEstado.SUCCESS.value and not preserve_source
+                    or result.get('status') == JobEstado.CANCELLED.value
+                    or result.get('status') == JobEstado.REQUIRES_REVIEW.value and result.get('_visual_saved')):
                     private_path.unlink(missing_ok=True)
             except OSError:
                 logger.warning(
