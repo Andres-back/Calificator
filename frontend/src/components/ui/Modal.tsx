@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef, type CSSProperties, type ReactNode, type RefObject } from 'react';
-import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
 import { X } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
@@ -129,61 +129,55 @@ export function Modal({
     };
   }, [closeOnEscape, initialFocusRef, open]);
 
-  // Reduced-motion users must not wait for an exit frame before the overlay
-  // releases the underlying form. A zero-duration transition still needs rAF.
-  if (reduceMotion && !open) return null;
+  // Closing is functional state, not an animation: a paused frame clock must
+  // never retain an overlay or a ghost dialog above the underlying draft.
+  if (!open) return null;
 
   return (
-    <AnimatePresence>
-      {open && (
-        <motion.div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4"
-          initial={reduceMotion ? false : { opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={reduceMotion ? { duration: 0 } : undefined}
-        >
-          <div
-            className="absolute inset-0 bg-slate-950/60 backdrop-blur-[2px]"
-            onClick={closeOnBackdrop ? onClose : undefined}
-            aria-hidden="true"
-          />
-          <motion.div
-            ref={dialogRef}
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby={title ? titleId : undefined}
-            aria-describedby={description ? descriptionId : undefined}
-            aria-label={title ? undefined : ariaLabel}
-            data-writing={mobileWriting === undefined ? undefined : String(mobileWriting)}
-            tabIndex={-1}
-            style={mobileViewport ? {
-              position: 'fixed', top: mobileViewport.top, left: 0, right: 0, bottom: 'auto',
-              height: mobileViewport.height, maxHeight: mobileViewport.height,
-              '--mobile-form-height': `${mobileViewport.height}px`,
-            } as CSSProperties : undefined}
-            className={cn('safe-area-pb relative max-h-[calc(100dvh-2rem)] w-full max-w-lg overflow-y-auto card glass p-5 sm:p-6', className)}
-            initial={reduceMotion ? false : { opacity: 0, scale: 0.96, y: 12 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.96, y: 12 }}
-            transition={reduceMotion ? { duration: 0 } : { type: 'spring', damping: 24, stiffness: 280 }}
+    <motion.div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      initial={reduceMotion ? false : { opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={reduceMotion ? { duration: 0 } : undefined}
+    >
+      <div
+        className="absolute inset-0 bg-slate-950/60 backdrop-blur-[2px]"
+        onClick={closeOnBackdrop ? onClose : undefined}
+        aria-hidden="true"
+      />
+      <motion.div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={title ? titleId : undefined}
+        aria-describedby={description ? descriptionId : undefined}
+        aria-label={title ? undefined : ariaLabel}
+        data-writing={mobileWriting === undefined ? undefined : String(mobileWriting)}
+        tabIndex={-1}
+        style={mobileViewport ? {
+          position: 'fixed', top: mobileViewport.top, left: 0, right: 0, bottom: 'auto',
+          height: mobileViewport.height, maxHeight: mobileViewport.height,
+          '--mobile-form-height': `${mobileViewport.height}px`,
+        } as CSSProperties : undefined}
+        className={cn('safe-area-pb relative max-h-[calc(100dvh-2rem)] w-full max-w-lg overflow-y-auto card glass p-5 sm:p-6', className)}
+        initial={reduceMotion ? false : { opacity: 0, scale: 0.96, y: 12 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        transition={reduceMotion ? { duration: 0 } : { type: 'spring', damping: 24, stiffness: 280 }}
+      >
+        {title && <h2 id={titleId} className="mb-4 pr-10 font-display text-xl font-bold">{title}</h2>}
+        {description && <div id={descriptionId} className="mb-4 text-sm leading-6 text-secondary">{description}</div>}
+        {showCloseButton && (
+          <button
+            type="button"
+            onClick={onClose}
+            className="focus-ring absolute right-3 top-3 grid min-h-11 min-w-11 place-items-center rounded-lg text-muted transition hover:bg-surface-2 hover:text-fg"
+            aria-label="Cerrar diálogo"
           >
-            {title && <h2 id={titleId} className="mb-4 pr-10 font-display text-xl font-bold">{title}</h2>}
-            {description && <div id={descriptionId} className="mb-4 text-sm leading-6 text-secondary">{description}</div>}
-            {showCloseButton && (
-              <button
-                type="button"
-                onClick={onClose}
-                className="focus-ring absolute right-3 top-3 grid min-h-11 min-w-11 place-items-center rounded-lg text-muted transition hover:bg-surface-2 hover:text-fg"
-                aria-label="Cerrar diálogo"
-              >
-                <X className="h-5 w-5" aria-hidden="true" />
-              </button>
-            )}
-            {children}
-          </motion.div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+            <X className="h-5 w-5" aria-hidden="true" />
+          </button>
+        )}
+        {children}
+      </motion.div>
+    </motion.div>
   );
 }

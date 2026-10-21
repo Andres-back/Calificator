@@ -63,6 +63,7 @@ Firma de pocos puntos o demasiado corta; correo incorrecto; respuesta ajena al e
 - **FR-014**: Pedir nombre completo solo al inicio; en la firma mostrar ese nombre automáticamente, permitir corregirlo desde un único campo y enviar el mismo nombre sin repetir su escritura. Conservar el dibujo de firma y su autorización; si se corrige la identidad después de firmar, solicitar nueva firma/autorización. Prioridad explícita del usuario antes de continuar el CRUD.
 
 - **FR-015**: Resolver el bloqueo de auditoría de Pillow mediante actualización a 13.0.0 autorizada expresamente por el usuario; comprobar preparación de imágenes, extracción visual y exportaciones con datos sintéticos antes de fusionar. No reducir auditorías ni alterar registros productivos.
+- **FR-016**: Corregir el bloqueo de cierre de ventanas detectado en CI y autorizado en chat: una ventana cerrada debe dejar de interceptar pantalla, teclado y navegación sin esperar fotogramas de animación, con movimiento normal o reducido. Mantener borradores de la ventana subyacente, foco, permisos y condiciones de guardado; no eludir controles ni cambiar las solicitudes o registros.
 
 ### Key Entities
 

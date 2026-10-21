@@ -29,6 +29,10 @@ Ampliación autorizada en chat el 2026-10-20: Pillow 12.3.0 → 13.0.0 para desb
 
 Tras CI/merge, snapshot privado y huellas antes de reconstruir únicamente encuesta-docente desde main. Conservar .env/volumen y etiqueta de imagen anterior. Comprobar publicación, recepción con base temporal de la misma imagen, resumen real de solo lectura y huellas. Si falla salud, recuperar imagen previa sin borrar datos. No declarar preprueba humana realizada.
 
+## Hotfix de ventanas autorizado tras el fallo de CI
+
+FR-016: crear primero una regresión unitaria que detenga requestAnimationFrame y cierre Modal con movimiento normal/reducido; comprobar DOM retirado, scroll/foco restaurados y Escape dirigido al diálogo subyacente. Retirar únicamente la dependencia de la animación de salida para desmontar la ventana; conservar la entrada animada y el respeto a movimiento reducido, sin temporizadores ni detección especial de Safari. Ejecutar los casos WebKit fallidos de tablas manual/IA y la suite contextual existente, además de typecheck/lint/build/unitarias y gobernanza. No modificar mocks, expectativas, retries ni timeouts para ocultar el fallo. El usuario autorizó investigar/corregir mediante «adelante» después del diagnóstico concreto.
+
 ## Prioridad adicional: nombre único
 
 Release 5.0.1, instrumento 5.0 sin cambiar preguntas/consentimiento. Suprimir signature-name del DOM, derivar signature.name de identity.name con un helper puro, mostrar nombre escapado y ofrecer Corregir mi nombre al paso de identidad. Al cambiarlo después de firmar, borrar dibujo y autorización en memoria para volver a firmar; nunca modificar constancias guardadas. Bloquear el botón mientras un envío es incierto para respetar el paquete idempotente. El backend conserva el contrato y rechaza nombres distintos enviados por clientes no válidos. Pruebas Node de helper/ausencia del segundo campo y navegador real: completar, corregir nombre, volver a firmar, enviar y comprobar constancia. CRUD continúa pendiente en admin-crud-draft.md; no hay migración en esta entrega.

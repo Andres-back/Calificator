@@ -36,3 +36,6 @@ T014 precede la continuación de CRUD, por indicación explícita del usuario. R
 
 ## Desbloqueo de seguridad autorizado
 - [x] T015 Actualizar Pillow a 13.0.0 en backend/requirements.txt, revisar compatibilidad y ejecutar regresiones sintéticas locales de imágenes/evidencia/digitalización/exportaciones (FR-015); registrar resultados y preparar nueva ejecución de CI sin omitir controles. No implica que CI remoto ni Linux hayan terminado: su resultado se registra aparte en validation.md.
+
+## Cierre independiente de animaciones (autorizado en chat)
+- [x] T016 Reproducir mediante regresión de Modal con fotogramas detenidos y corregir cierre/foco/scroll/diálogo subyacente sin modificar guardado ni pruebas de CI; ejecutar validaciones locales y documentarlas (FR-016). Resultado remoto y entrega siguen condicionados a CI verde, no se presumen por esta comprobación local.
