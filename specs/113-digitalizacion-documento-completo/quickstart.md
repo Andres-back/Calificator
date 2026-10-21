@@ -36,6 +36,14 @@ La inspección detectó una tabla de Word separada de sus opciones por un salto 
 
 ## Convergencia
 
-Revisados siete requisitos funcionales, cuatro criterios de éxito, doce escenarios de aceptación, siete decisiones del plan y ocho principios constitucionales. Sin trabajo de implementación adicional respecto al alcance aprobado. Trece tareas completadas; índices e inventario actualizados. Las 49 pruebas locales de gobernanza pasaron y el inventario contiene 596 superficies. No hay migraciones, backfill, cambio de modelos ni regeneración de evaluaciones antiguas. Abrir PR ligado a #233 y exigir nuevamente CI y gobernanza verdes sobre el HEAD final antes de fusionar.
+Revisados siete requisitos funcionales, cuatro criterios de éxito, doce escenarios de aceptación, siete decisiones del plan y ocho principios constitucionales. Sin trabajo de implementación adicional respecto al alcance aprobado. Catorce tareas completadas, incluida la regresión de CI T014; índices e inventario actualizados. Las 49 pruebas locales de gobernanza pasaron y el inventario contiene 596 superficies. No hay migraciones, backfill, cambio de modelos ni regeneración de evaluaciones antiguas. PR #235 ligado a #233; exigir nuevamente CI y gobernanza verdes sobre el HEAD final antes de fusionar.
+
+## Cierre de regresiones del CI de PR #235
+
+El CI 39648551719 aprobó backend, frontend quality/build, contenedores y E2E contextual; el general registró 270 pruebas aprobadas y dos fallidas en WebKit: restauración de foco del menú y navegación a asistencia durante el inicio de sesión. No se fusionó ni se omitió el control agregado.
+
+T014 separa la prueba general de distribución del recorrido automático de bienvenida (la guía conserva sus pruebas específicas) y espera la URL autenticada y el encabezado del módulo cargado antes de una navegación completa. Un caso adicional retarda 500 ms el módulo como latencia sintética y comprueba que el inicio terminó antes de salir hacia asistencia. Mantiene las aserciones de foco, responsive, guía y permisos, sin reintentos adicionales ni cambios de código de aplicación.
+
+Validación local: nueve comprobaciones WebKit aprobadas (los dos casos fallidos y la carga lenta, tres repeticiones cada uno); cuatro Chromium aprobadas (carga lenta y guía inicial, dos repeticiones). TypeScript y lint estricto correctos. Estos resultados no sustituyen el nuevo CI completo sobre el HEAD final ni certifican despliegue.
 
 Esta segunda entrega aún no está desplegada. El incidente urgente se resolvió por separado con PR #234: nueve notas sugeridas recuperadas, 13 evidencias y cuatro resultados anteriores conservados; comprobación registrada en el PR sin identidades de alumnos.

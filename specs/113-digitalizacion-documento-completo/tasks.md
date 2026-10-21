@@ -37,4 +37,8 @@ T001 → T002 → US1 (T003–T005); T006 → T007 → T008 depende del contrato
 
 ## Trazabilidad
 
-FR-001 → T002–T005; FR-002 → T002/T004/T005/T012; FR-003 → T006–T008; FR-004 → T009–T011; FR-005 → T009/T011/T012; FR-006 → T002/T004/T012; FR-007 → T008/T012/T013.
+FR-001 → T002–T005; FR-002 → T002/T004/T005/T012; FR-003 → T006–T008; FR-004 → T009–T011; FR-005 → T009/T011/T012; FR-006 → T002/T004/T012; FR-007 → T008/T012/T013/T014.
+
+## Cierre de regresiones de CI
+
+- [x] T014 Estabilizar en frontend/e2e/p2-responsive.spec.ts la espera de inicio de sesión/módulo antes de navegar y aislar la guía automática de la prueba de menú; conservar aserciones de foco, responsive y guía dedicada, añadir latencia sintética y repetir en Chromium/WebKit según FR-007 y Constitución VII. No aumentar reintentos ni modificar producción para ocultar fallos.
