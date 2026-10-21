@@ -39,6 +39,19 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 10
+      feedback-postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_DB: spec107
+          POSTGRES_USER: spec107
+          POSTGRES_PASSWORD: synthetic-ci-only
+        ports:
+          - 55417:5432
+        options: >-
+          --health-cmd "pg_isready -U spec107 -d spec107"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
       redis:
         image: redis:7-alpine
         ports:
@@ -63,6 +76,7 @@ jobs:
       SPEC085_TEST_DATABASE_URL: postgresql+asyncpg://xcalificator:test-password@127.0.0.1:5432/xcalificator_test
       SPEC101_TEST_DATABASE_URL: postgresql+asyncpg://xcalificator:test-password@127.0.0.1:5432/xcalificator_test
       SPEC104_TEST_DATABASE_URL: postgresql+asyncpg://xcalificator:test-password@127.0.0.1:5432/xcalificator_test
+      SPEC107_TEST_DATABASE_URL: postgresql+asyncpg://spec107:synthetic-ci-only@127.0.0.1:55417/spec107
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -90,6 +104,9 @@ jobs:
 
       - name: Apply database migrations
         run: alembic upgrade head
+
+      - name: Apply isolated feedback database migrations
+        run: DATABASE_URL="$SPEC107_TEST_DATABASE_URL" alembic upgrade head
 
       - name: Run backend unit tests
         run: python -m pytest tests/unit -v

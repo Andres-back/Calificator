@@ -201,6 +201,15 @@ def test_consensus_deduplicates_equal_feedback() -> None:
     assert consolidated.feedback_estudiante == feedback
 
 
+def test_consensus_does_not_choose_generic_praise_just_for_higher_confidence() -> None:
+    generic = result(feedback="Buen trabajo. Sigue practicando.", confidence=0.99)
+    specific = result(feedback="En la pregunta 2 alinea las comas decimales antes de sumar.", confidence=0.9)
+    original_score = generic.nota_sugerida
+    consolidated = asyncio.run(comparator_agent(generic, specific))
+    assert consolidated.feedback_estudiante == specific.feedback_estudiante
+    assert consolidated.nota_sugerida == original_score
+
+
 def test_consensus_preserves_teacher_review_and_both_alerts_without_arbiter() -> None:
     class NoArbiter:
         async def chat(self, **_kwargs):

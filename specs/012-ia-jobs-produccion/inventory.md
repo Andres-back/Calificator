@@ -2,7 +2,7 @@
 
 > Archivo generado por `python scripts/build_system_inventory.py --write`. No editar manualmente.
 
-**Superficies propietarias:** 35
+**Superficies propietarias:** 38
 
 | Tipo | Firma | Actores | Cobertura | Fuente |
 |---|---|---|---|---|
@@ -23,10 +23,12 @@
 | job | `tasks.assign_overdue_grades` | system | missing | `backend/app/workers/tasks_deadlines.py:46` |
 | job | `tasks.cleanup_evaluation_visual_proposals` | system | missing | `backend/app/workers/tasks_evaluation_visuals.py:155` |
 | job | `tasks.cleanup_expired_roster_imports` | system | missing | `backend/app/workers/tasks_roster_import.py:150` |
+| job | `tasks.cleanup_feedback_conversations` | system | missing | `backend/app/workers/tasks_feedback_chat.py:58` |
 | job | `tasks.cleanup_password_reset_requests` | system | missing | `backend/app/workers/tasks_password_recovery.py:156` |
 | job | `tasks.digitalize_evaluation` | system | covered | `backend/app/workers/tasks_digitalization.py:499` |
 | job | `tasks.export_report` | system | missing | `backend/app/workers/tasks_reports.py:5` |
 | job | `tasks.extract_roster_import` | system | covered | `backend/app/workers/tasks_roster_import.py:120` |
+| job | `tasks.feedback_question` | system | covered | `backend/app/workers/tasks_feedback_chat.py:35` |
 | job | `tasks.generate_evaluation_visual` | system | missing | `backend/app/workers/tasks_evaluation_visuals.py:120` |
 | job | `tasks.generate_image` | system | covered | `backend/app/workers/tasks_images.py:5` |
 | job | `tasks.generate_presentation` | system | covered | `backend/app/workers/tasks_presentations.py:33` |
@@ -36,6 +38,7 @@
 | job | `tasks.ingest_rag` | system | missing | `backend/app/workers/tasks_rag.py:5` |
 | job | `tasks.recover_evaluation_visuals` | system | missing | `backend/app/workers/tasks_evaluation_visuals.py:138` |
 | job | `tasks.recover_expired_local_jobs` | system | missing | `backend/app/workers/tasks_ai_config.py:55` |
+| job | `tasks.recover_feedback_questions` | system | covered | `backend/app/workers/tasks_feedback_chat.py:40` |
 | job | `tasks.recover_stale_digitalization_jobs` | system | covered | `backend/app/workers/tasks_digitalization.py:562` |
 | job | `tasks.recover_stale_grading_jobs` | system | covered | `backend/app/workers/tasks_grading.py:1029` |
 | job | `tasks.recover_stale_presentation_jobs` | system | covered | `backend/app/workers/tasks_presentations.py:84` |
@@ -48,5 +51,5 @@ Sin decisiones explícitas de permiso para este dominio.
 
 ## Hallazgos
 
-- **low · missing_coverage**: 11 superficies de 012-ia-jobs-produccion no tienen evidencia de prueba observable.
-- **medium · contract_mismatch**: 5 llamadas frontend no tienen endpoint backend canónico coincidente en el análisis estático.
+- **low · missing_coverage**: 12 superficies de 012-ia-jobs-produccion no tienen evidencia de prueba observable.
+- **medium · contract_mismatch**: 6 llamadas frontend no tienen endpoint backend canónico coincidente en el análisis estático.

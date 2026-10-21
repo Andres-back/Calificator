@@ -37,6 +37,7 @@ from app.modules.calificaciones.agents import (
     partition_grading_context,
 )
 from app.modules.calificaciones.schemas import GradingResult
+from app.modules.calificaciones.feedback_refinement import refine_feedback_if_needed
 from app.modules.calificaciones.grading_visuals import EvaluationVisualInput, visual_provenance
 from app.modules.evaluaciones.modality_service import (
     normalize_question_modalities,
@@ -1353,6 +1354,17 @@ async def orchestrate_grading(
             or bool(graphic_uncertain_questions)
         )
 
+        feedback_review = await refine_feedback_if_needed(
+            final.feedback_estudiante or grading_a.feedback_estudiante or grading_b.feedback_estudiante,
+            final.componentes or grading_a.componentes or grading_b.componentes,
+            client=verification_client, model=verifier_model,
+            enabled=bool(settings.FEEDBACK_REFINEMENT_ENABLED
+                         and (verification_snapshot.get("primary") or {}).get("provider", "open_code") == "open_code"),
+        )
+        if feedback_review.report["status"] == "draft":
+            final.feedback_estudiante = feedback_review.feedback
+            requiere_revision = True  # Reescribir no equivale a aprobación docente.
+
         # Los fallos dobles ya se manejaron antes del comparador.
         # Construir raw_model_output con trazabilidad completa
         fallbacks: list[dict[str, str]] = []
@@ -1380,10 +1392,12 @@ async def orchestrate_grading(
             "primary": grading_a.tiempo_ms,
             "secondary": grading_b.tiempo_ms,
             "consolidation": final.tiempo_ms,
+            "feedback_refinement": feedback_review.report["tiempo_ms"],
             "persistence": 0,
             "total": max(0, int((time.monotonic() - pipeline_started) * 1000)),
         }
         raw_output = {
+            "feedback_refinement": feedback_review.report,
             "orchestrator": "multi_agent_v2",
             "provider_policy": "opencode_go_primary",
             "evidence_mode": "multimodal" if image_bytes else "digital_text",

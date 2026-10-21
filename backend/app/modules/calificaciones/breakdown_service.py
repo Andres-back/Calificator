@@ -11,6 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.core.config import settings
+from app.modules.feedback_sharing.invalidations import suspend_grade_publications
 from app.modules.calificaciones.breakdown_models import CalificacionAjuste, CalificacionComponente, CalificacionDesglose
 from app.modules.calificaciones.breakdown_policy import (
     build_component_scaffold,
@@ -390,6 +391,7 @@ async def update_breakdown(db: AsyncSession, *, calificacion: Calificacion, expe
     calificacion.nota_confirmada = new.nota_final
     calificacion.revisado_por_docente = True
     calificacion.estado = (CalificacionEstado.PUBLICADA.value if calificacion.estado == CalificacionEstado.PUBLICADA.value else CalificacionEstado.AJUSTADA.value)
+    await suspend_grade_publications(db, calificacion.id)
     await db.commit()
     return await get_active_breakdown(db, calificacion.id)  # type: ignore[return-value]
 

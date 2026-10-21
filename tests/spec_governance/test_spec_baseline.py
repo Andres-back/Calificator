@@ -106,6 +106,7 @@ ALL_SPECS = {
     "104-xali-docente-visual",
     "105-materia-movil-cola",
     "106-recursos-vista-clara",
+    "107-retroalimentacion-familiar",
     "109-encuesta-envio-seguro",
     "110-encuestas-crud",
     "112-evaluacion-multipagina",

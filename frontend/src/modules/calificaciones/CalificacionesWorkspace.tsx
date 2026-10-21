@@ -27,6 +27,7 @@ import {
 } from '@/lib/analytics';
 import { routes } from '@/config/routes';
 import { useAuth } from '@/stores/auth';
+import { FeedbackToolsButton } from '@/modules/feedback_sharing/FeedbackToolsButton';
 import { GradingUploadPanel } from '@/modules/materias/MateriaCalificar';
 import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
@@ -2164,6 +2165,7 @@ function GradingCenter() {
             {mobileMoreActionsOpen && <div id="grading-more-actions" className="absolute right-0 top-full z-20 grid w-64 max-w-[calc(100vw-2rem)] gap-1 rounded-xl border border-border bg-surface p-2 shadow-lg">
               {materiaId && permissions.includes('evaluations.read') && <Link to={routes.materiaEvaluaciones(materiaId)} className="focus-ring flex min-h-11 items-center gap-2 rounded-lg px-3 text-sm font-semibold hover:bg-surface-2"><ArrowLeft className="h-4 w-4" /> Volver a evaluaciones</Link>}
               {materiaId && <Link to={routes.materiaBoletin(materiaId)} className="focus-ring flex min-h-11 items-center gap-2 rounded-lg px-3 text-sm font-semibold hover:bg-surface-2"><BookOpenCheck className="h-4 w-4" /> Libro de notas</Link>}
+              {evalId && <FeedbackToolsButton evaluationId={evalId} disabled={mobileDirty} />}
               {canGrade && evalId && estudiantes.length > 0 && <Button variant="ghost" fullWidth disabled={mobileDirty} onClick={() => { setManualGradeOpen(true); setMobileMoreActionsOpen(false); }}><Pencil className="h-4 w-4" /> Establecer nota</Button>}
               {canPublish && <Button variant="ghost" fullWidth disabled={!evalId} onClick={() => { changeContext({ modo: mode === 'publicacion' ? null : 'publicacion', calificacion: null, estudiante: null, pregunta: null, hoja: null }); setMobileMoreActionsOpen(false); }}>{mode === 'publicacion' ? 'Volver a revisión' : 'Resumen y publicación'}</Button>}
             </div>}

@@ -29,6 +29,7 @@ import { isGradeProcessing } from '@/modules/calificaciones/gradePresentation';
 import { useMateriaContext } from './MateriaContext';
 import { StudentResultCard } from '@/modules/calificaciones/StudentResultCard';
 import { GradebookExport } from './GradebookExport';
+import { FeedbackToolsButton } from '@/modules/feedback_sharing/FeedbackToolsButton';
 import { StudentGradebookPreview, StudentGradeSummary } from './StudentGradebookPreview';
 import {
   buildFollowUpRows,
@@ -154,6 +155,7 @@ function TeacherGradebook() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="font-display text-xl font-extrabold">Boletines</h2>
         {canReadGrades && trackedEvaluations.length > 0 && <Button variant="outline" className="min-h-11" onClick={() => { setSelection(null); setExportOpen(true); }}>Exportar notas</Button>}
+        {canReadGrades && selectedEvaluation && <FeedbackToolsButton evaluationId={selectedEvaluation.id} />}
       </div>
       <div className="mt-2">
         <label className="block min-w-0"><span className="text-sm font-semibold">Buscar estudiante</span>

@@ -22,6 +22,7 @@ celery_app = Celery(
         "app.workers.tasks_deadlines",
         "app.workers.tasks_password_recovery",
         "app.workers.tasks_roster_import",
+        "app.workers.tasks_feedback_chat",
     ],
 )
 
@@ -40,6 +41,9 @@ celery_app.conf.update(
     broker_connection_retry_on_startup=True,
     task_default_queue="default",
     task_routes={
+        "tasks.feedback_question": {"queue": "feedback"},
+        "tasks.recover_feedback_questions": {"queue": "feedback"},
+        "tasks.cleanup_feedback_conversations": {"queue": "feedback"},
         'tasks.generate_evaluation_visual': {'queue': 'presentations'},
         'tasks.recover_evaluation_visuals': {'queue': 'presentations'},
         'tasks.cleanup_evaluation_visual_proposals': {'queue': 'presentations'},
@@ -56,6 +60,14 @@ celery_app.conf.update(
         "tasks.generate_image": {"queue": "presentations"},
     },
     beat_schedule={
+        "cleanup-feedback-conversations": {
+            "task": "tasks.cleanup_feedback_conversations",
+            "schedule": 86400.0,
+        },
+        "recover-feedback-questions": {
+            "task": "tasks.recover_feedback_questions",
+            "schedule": 60.0,
+        },
         'cleanup-evaluation-visual-proposals': {
             'task': 'tasks.cleanup_evaluation_visual_proposals', 'schedule': 86400.0,
         },
