@@ -14,6 +14,8 @@ El acceso se autoriza por estudiante/evaluación y revisión concreta, no por ap
 
 Mantener modelos vigentes mientras se completa la comparación con referencia docente. DeepSeek principal y Luna revisor son una candidatura, no una migración de producción aprobada. La impresión mínima de #206 se incluye aquí sin copiar/modificar la propuesta 098 ajena.
 
+El 2026-10-21 el usuario aprobó separar la ejecución experimental al issue #236 y mantener los modelos actuales. Se conservan harness/contrato y las condiciones de calidad, pero la tarea de esta entrega es registrar la separación sin inventar resultados. La comparación humana sigue pendiente de la tesis, no es una aceptación ya obtenida ni una autorización para activar modelos o refinamiento pagado.
+
 ## Contexto técnico
 
 **Lenguajes/versiones**: Python 3.11 del contenedor; TypeScript 5.6 y React 18.3 del frontend.

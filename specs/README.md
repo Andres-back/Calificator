@@ -330,6 +330,10 @@ actualizar la especificación propietaria, su plan y sus tareas; no debe crear d
 
 ## Evolución 099: revisión docente enfocada
 
+## Evolución 107: devolución individual y lista docente
+
+- [107-retroalimentacion-familiar](107-retroalimentacion-familiar/spec.md), [issue #223](https://github.com/Andres-back/Calificator/issues/223): lista por evaluación, fichas privadas recortables y enlaces individuales temporales con Xali limitado a cinco preguntas por diez minutos. Alcance/plan y revisión de requisitos aprobados. Modelos actuales sin cambios; comparación académica de 20 actividades separada con aprobación humana al [issue #236](https://github.com/Andres-back/Calificator/issues/236), pendiente real de la tesis. Implementación/validación local en [evidencia](107-retroalimentacion-familiar/validation.md); banderas apagadas hasta entrega protegida, sin afirmar despliegue ni calidad académica demostrada. Propietarios 008-calificaciones y 012-ia-jobs-produccion.
+
 - [099-revision-docente-enfocada](099-revision-docente-enfocada/spec.md), [issue #207](https://github.com/Andres-back/Calificator/issues/207): resumen compacto de nota, accesos a respuestas/evidencia/retroalimentación/historial y reclamos contextuales; avisos íntegros sin saturación, mensajes de discrepancia sin atribuir decisiones inexistentes. Propietario 008; sin cambios académicos ni inferencias nuevas. Alcance/[plan](099-revision-docente-enfocada/plan.md) aprobados, listas base 16/16 y UX 8/8 revisadas con autorización. Implementación, validación local y Converge completos: [evidencia](099-revision-docente-enfocada/quickstart.md). CI remoto pendiente; sin fusión/despliegue. Impresión del issue #206 queda pendiente y fuera del cambio.
 
 ## Evolución 096: creación de evaluaciones en dos pantallas

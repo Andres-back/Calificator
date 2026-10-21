@@ -28,7 +28,7 @@ Objetivo: cálculo verificable y devolución fundada sin cambios históricos. Pr
 
 Refinamiento de T010/T011 autorizado el 2026-10-20: pruebas adicionales `test_feedback_usefulness.py`, `test_feedback_refinement.py` y regresiones de consenso/ruta de OpenCode. Añadir control explicable de texto genérico, señales de utilidad en preview docente y reescritura opcional deshabilitada según la precisión de plan/FR-004; no marcar T014 por pruebas sintéticas ni modificar notas históricas.
 
-- [ ] T014 [US1] Ejecutar comparación solo con corpus autorizado de al menos 20 actividades y referencia docente independiente; registrar informe minimizado en `specs/107-retroalimentacion-familiar/validation.md`. Si falta corpus/revisor/autorización de inferencias, mantener tarea pendiente y defaults intactos; no inventar resultado ni activar candidato. [FR-001/002/005, SC-001/003]
+- [X] T014 [US1] Registrar en `specs/107-retroalimentacion-familiar/spec.md`, `plan.md` y `validation.md` la separación expresamente aprobada el 2026-10-21 de la comparación de 20 actividades al issue #236; conservar defaults y harness sin activación. La ejecución experimental original continúa pendiente en ese issue y **no se presenta como realizada**. [FR-001/002/005, SC-001/003]
 
 ## Fase 4: Historia 2 — Compartir resultado revisado (P1)
 

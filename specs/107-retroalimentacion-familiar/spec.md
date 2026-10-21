@@ -6,6 +6,8 @@ Evoluciona 008-calificaciones, 012-ia-jobs-produccion, 047-retroalimentacion-for
 
 **Solicitud**: usar modelos adecuados a velocidad y corrección, revisar la utilidad de la retroalimentación y ofrecer dos formatos complementarios: hoja completa con estudiante y retroalimentación, solo para que el docente imprima/recorte y entregue cada ficha por separado, y un enlace individual directo que permite leer y preguntar a Xali sin cuenta ni inicio de sesión. El docente controla la vigencia y puede desactivar/reactivar. La opción A elegida excluye compartir una hoja nominal completa con el grupo de familias.
 
+**Separación aprobada el 2026-10-21**: el usuario confirmó «Sí, separar la comparación y mantener los modelos actuales». La validación experimental de 20 actividades y referencia docente (SC-001/003) continúa **pendiente, no realizada**, en [issue #236](https://github.com/Andres-back/Calificator/issues/236). No bloquea construir/entregar lista, fichas y enlaces de resultados ya revisados por su docente, pero sigue siendo obligatoria antes de recomendar/activar nuevos modelos o afirmar mejora académica demostrada. Esta entrega conserva defaults y revisión docente; no certifica la corrección semántica por pruebas sintéticas. FR-001/002/005 se conserva como restricción e interfaz de registro, no como experimento completado.
+
 ## Clarifications
 
 ### Session 2026-10-20
