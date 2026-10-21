@@ -18,7 +18,7 @@
 
 - [x] T006 [US2] Probar integridad y compactación sintéticas en backend/tests/unit/test_evaluation_exports.py y test_herramientas_pdf_total.py.
 - [x] T007 [US2] Incluir lectura y distribución compacta opt-in en backend/app/modules/evaluaciones/export_service.py y backend/app/modules/herramientas/pdf_render.py, sin alterar otros recursos.
-- [ ] T008 [US2] Renderizar y revisar PDF/Word mixtos en output/pdf/ y registrar evidencia en specs/113-digitalizacion-documento-completo/quickstart.md.
+- [x] T008 [US2] Renderizar y revisar PDF/Word mixtos en output/pdf/ y registrar evidencia en specs/113-digitalizacion-documento-completo/quickstart.md.
 
 ## Fase 5: Historia 3 — varias fotos
 
@@ -28,8 +28,8 @@
 
 ## Fase final: Validación
 
-- [ ] T012 Ejecutar regresiones de backend/frontend, Chromium/WebKit desde 360 px, permisos y persistencia aislada; registrar resultados reales en specs/113-digitalizacion-documento-completo/quickstart.md.
-- [ ] T013 Ejecutar convergencia, actualizar specs/README.md, tests/spec_governance/test_spec_baseline.py e inventario de superficies, abrir PR ligado a #233; no fusionar sin todos los controles verdes.
+- [x] T012 Ejecutar regresiones de backend/frontend, Chromium/WebKit desde 360 px, permisos y persistencia aislada; registrar resultados reales en specs/113-digitalizacion-documento-completo/quickstart.md.
+- [x] T013 Ejecutar convergencia, actualizar specs/README.md, tests/spec_governance/test_spec_baseline.py e inventario de superficies, abrir PR ligado a #233; no fusionar sin todos los controles verdes.
 
 ## Dependencias
 

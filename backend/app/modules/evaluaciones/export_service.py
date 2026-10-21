@@ -76,6 +76,36 @@ def document_disposition(name: str, extension: str, attachment: bool) -> str:
     return f'{mode}; filename="{ascii_name}.{extension}"; filename*=UTF-8\'\'{quote(name + "." + extension)}'
 
 
+def _keep_short_word_question(document, start: int, question: dict) -> None:
+    """Keep bounded questions/figures with their choices, not across page-sized text."""
+    from docx.oxml import OxmlElement
+    from docx.text.paragraph import Paragraph
+
+    elements = list(document.element.body)[start:]
+    elements = [element for element in elements if element.tag.endswith(('}p', '}tbl'))]
+    if not elements or len(_text(question.get('enunciado'))) + sum(len(_text(option)) for option in question.get('opciones') or []) >= 650:
+        return
+    # Large figures/tables must be allowed to continue on another page.
+    if len(question.get('_evaluation_visuals') or []) > 1 or any(
+        len(table.xpath('./w:tr')) > 8 or any(len(''.join(cell.itertext())) > 180 for cell in table.xpath('.//w:tc'))
+        for element in elements for table in ([element] if element.tag.endswith('}tbl') else [])
+    ):
+        return
+    paragraphs = [p for element in elements for p in ([element] if element.tag.endswith('}p') else element.xpath('.//w:p'))]
+    for element in paragraphs:
+        paragraph = Paragraph(element, document)
+        paragraph.paragraph_format.keep_with_next = True
+        paragraph.paragraph_format.keep_together = True
+    for element in elements:
+        if element.tag.endswith('}tbl'):
+            for row in element.xpath('./w:tr'):
+                row.get_or_add_trPr().append(OxmlElement('w:cantSplit'))
+    last = elements[-1]
+    ending = [last] if last.tag.endswith('}p') else last.xpath('./w:tr[last()]//w:p')
+    for element in ending:
+        Paragraph(element, document).paragraph_format.keep_with_next = False
+
+
 def render_evaluation_docx(material: dict, *, soluciones: bool) -> bytes:
     from docx import Document
     from docx.oxml.ns import qn
@@ -135,6 +165,7 @@ def render_evaluation_docx(material: dict, *, soluciones: bool) -> bytes:
         if content.get('fuente'):
             document.add_paragraph(f'Fuente: {_text(content["fuente"])}')
     for index, raw in enumerate(questions, 1):
+        question_start = len(document.element.body) - 1  # Inserted before sectPr.
         raw = raw if isinstance(raw, dict) else {'enunciado': str(raw)}
         safe = sanitize_student_payload(raw)
         number = raw.get('numero', index)
@@ -174,6 +205,8 @@ def render_evaluation_docx(material: dict, *, soluciones: bool) -> bytes:
             for line in range(lines):
                 paragraph = document.add_paragraph('________________________________________________________________')
                 paragraph.paragraph_format.keep_with_next = line < lines - 1
+        if compact:
+            _keep_short_word_question(document, question_start, raw)
     if soluciones and content.get('criterios_revision'):
         document.add_paragraph('Criterios de revisión', 'Heading 1')
         for criterion in content['criterios_revision']:
