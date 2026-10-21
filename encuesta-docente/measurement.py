@@ -4,7 +4,7 @@ import math
 import statistics
 import unicodedata
 
-RELEASE = '5.1.0'
+RELEASE = '5.2.0'
 SIGNATURE_LIMITS = {'min_points':8,'min_length':0.08,'max_points':12000,'max_strokes':100}
 
 
@@ -24,7 +24,7 @@ def summary(rows, current_version):
         rates={basis:[] for basis in ('measured','estimated')};elapsed=[];visible=[]
         for r in records:
             a=r['answers'];minutes=a.get('manual.minutes');deliveries=a.get('manual.deliveries');basis=a.get('manual.basis')
-            if version=='5.0-web-medicion' and valid_number(minutes,.1,10080) and isinstance(deliveries,int) and valid_number(deliveries,1,1000) and basis in rates:
+            if version in ('5.0-web-medicion','5.1-web-flexible') and valid_number(minutes,.1,10080) and isinstance(deliveries,int) and valid_number(deliveries,1,1000) and basis in rates:
                 rates[basis].append(minutes/deliveries)
             m=r.get('completion_metrics') or {}
             if m.get('source')=='browser' and valid_number(m.get('elapsed_seconds'),0,86400) and valid_number(m.get('visible_seconds'),0,m['elapsed_seconds']):

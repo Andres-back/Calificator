@@ -3,13 +3,12 @@
     {
       "id": "contexto",
       "title": "Su contexto docente",
-      "intro": "No necesita conocer ni haber usado XCalificator. Describa su práctica habitual. Las preguntas son opcionales salvo la institución, necesaria para vincular su autorización.",
+      "intro": "Cuéntenos lo que desee sobre su trabajo. Todas las preguntas son opcionales.",
       "questions": [
         {
           "id": "institution",
           "label": "Institución educativa",
           "type": "text",
-          "required": true,
           "maxlength": 150,
           "number": 1
         },
@@ -33,7 +32,9 @@
           "type": "number",
           "min": 1,
           "max": 1000,
-          "number": 4
+          "number": 4,
+          "maxlength": 80,
+          "hint": "Opcional. Puede usar coma o punto decimal. Si escribe una aproximación, la guardaremos como texto sin impedir el envío."
         },
         {
           "id": "1.2",
@@ -93,8 +94,9 @@
           "min": 0.1,
           "max": 10080,
           "step": 0.1,
-          "hint": "Escriba minutos, no horas: 1 hora y media son 90 minutos. Puede indicar decimales. Si no recuerda o no aplica, déjelo vacío. Debe ser la misma evaluación y el grupo de la pregunta sobre entregas.",
-          "number": 7
+          "hint": "Opcional. Puede usar coma o punto decimal. Si escribe una aproximación, la guardaremos como texto sin impedir el envío.",
+          "number": 7,
+          "maxlength": 80
         },
         {
           "id": "manual.basis",
@@ -126,8 +128,10 @@
           "type": "number",
           "min": 0,
           "max": 100,
-          "hint": "De 0 a 100. Por ejemplo: 4 abiertas de 10 preguntas son 40 %. No cuente selección múltiple ni verdadero/falso. Puede estimarlo; déjelo vacío si no lo sabe.",
-          "number": 9
+          "hint": "Opcional. Por ejemplo: 50 %, 50,5 o 50.5. También puede dejarlo vacío.",
+          "number": 9,
+          "maxlength": 80,
+          "step": 0.1
         },
         {
           "id": "handwriting.legibility",

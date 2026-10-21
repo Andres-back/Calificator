@@ -9,6 +9,7 @@ COPY --chown=encuesta:encuesta app.py administration.py measurement.py manage.py
 COPY --chown=encuesta:encuesta public ./public
 COPY --chown=encuesta:encuesta feedback ./feedback
 COPY --chown=encuesta:encuesta versions/4.0-web-breve ./versions/4.0-web-breve
+COPY --chown=encuesta:encuesta versions/5.0-web-medicion ./versions/5.0-web-medicion
 USER encuesta
 EXPOSE 8092
 CMD ["gunicorn", "app:create_application()", "--bind", "0.0.0.0:8092", "--workers", "1", "--threads", "4", "--timeout", "45", "--access-logfile", "/dev/null"]

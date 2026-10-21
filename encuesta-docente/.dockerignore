@@ -13,3 +13,5 @@
 !versions/
 !versions/4.0-web-breve/
 !versions/4.0-web-breve/**
+!versions/5.0-web-medicion/
+!versions/5.0-web-medicion/**

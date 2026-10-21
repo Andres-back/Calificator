@@ -1,5 +1,5 @@
 export const escapeHTML = (v) => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-import {signatureError,signatureForIdentity,confirmedReceipt,requestJSON} from './submission.js';
+import {signatureError,signatureForIdentity,confirmedReceipt,requestJSON,numericAnswer} from './submission.js';
 const $ = (s, root = document) => root.querySelector(s);
 const base = new URL('./', location.href);
 const api = path => new URL(path, base);
@@ -13,6 +13,7 @@ function saveState(text){let box=$('#save-state');if(!box){box=document.createEl
 function lockPending(){document.querySelectorAll('#survey input,#survey textarea,#survey select,#clear-signature,#change-identity-name').forEach(el=>el.disabled=Boolean(pendingPacket));$('#back').disabled=Boolean(pendingPacket);}
 function guideField(field){if(!field)return;const target=document.getElementById(field)||document.querySelector(`[data-q="${field.replace(/^q-/,'').replaceAll('-','.')}"] input`);const panel=target?.closest('.panel');if(panel?.hidden)show(Number(panel.id.split('-')[1]));target?.setAttribute('aria-invalid','true');target?.focus();}
 const esc = escapeHTML;
+const flexibleAnswers = () => config?.settings.flexible_answers === true;
 const isFeedback = () => config?.settings.kind === 'pilot_feedback';
 function colombiaDate(){return new Intl.DateTimeFormat('en-CA',{timeZone:'America/Bogota',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());}
 const qid = id => 'q-' + id.replaceAll('.', '-');
@@ -25,8 +26,9 @@ function question(q) {
     const compact=['3.1','3.2','rubric.use','evidence.traceability','evidence.reporting'].includes(q.id);
     return `<fieldset class="question" data-q="${esc(q.id)}"><legend>${label}</legend><div class="${q.type === 'scale' ? 'scale' : compact ? 'options compact' : 'options'}">${options}</div></fieldset>`;
   }
+  const flexibleNumber=flexibleAnswers()&&q.type==='number';
   const attrs = `id="${id}" name="${esc(q.id)}" ${q.required ? 'required' : ''} ${q.maxlength ? `maxlength="${q.maxlength}"` : ''} ${q.type==='date'?`max="${colombiaDate()}"`:''} ${q.hint?`aria-describedby="${id}-hint"`:''}`;
-  return `<div class="question" data-q="${esc(q.id)}"><label class="field-label" for="${id}">${label}${q.required ? '' : ' <span class="optional">· opcional</span>'}</label>${q.type === 'textarea' ? `<textarea ${attrs} rows="3"></textarea>` : `<input ${attrs} type="${q.type}" ${q.type==='number' ? `min="${q.min}" max="${q.max}" step="${q.step||1}" inputmode="${q.step?'decimal':'numeric'}"` : ''}>`}${q.hint?`<span class="hint" id="${id}-hint">${esc(q.hint)}</span>`:''}</div>`;
+  return `<div class="question" data-q="${esc(q.id)}"><label class="field-label" for="${id}">${label}${q.required ? '' : ' <span class="optional">· opcional</span>'}</label>${q.type === 'textarea' ? `<textarea ${attrs} rows="3"></textarea>` : `<input ${attrs} type="${flexibleNumber?'text':q.type}" ${flexibleNumber?'inputmode="decimal"':q.type==='number' ? `min="${q.min}" max="${q.max}" step="${q.step||1}" inputmode="${q.step?'decimal':'numeric'}"` : ''}>`}${q.hint?`<span class="hint" id="${id}-hint">${esc(q.hint)}</span>`:''}</div>`;
 }
 
 function setup() {
@@ -56,6 +58,10 @@ function setup() {
   $('#change-identity-name').addEventListener('click',()=>{if(sending||pendingPacket)return;show(1);$('#identity-name').focus();});
   $('#survey').addEventListener('submit',e=>{e.preventDefault(); next();});
   $('#clear-signature').addEventListener('click',()=>{strokes=[];redraw();});
+  if(flexibleAnswers())for(const q of config.schema.sections.flatMap(s=>s.questions).filter(q=>q.type==='number')){
+    const input=document.getElementById(qid(q.id)),hint=document.getElementById(qid(q.id)+'-hint');
+    input.addEventListener('input',()=>{const value=numericAnswer(input.value,q);hint.textContent=typeof value==='string'?'Lo guardaremos tal como lo escribió. Puede continuar; este texto no se usará como medición numérica.':q.hint;});
+  }
   initSignature(); show(0,false);
 }
 
@@ -66,12 +72,12 @@ function readAnswers(){
     const wrap=$(`[data-q="${q.id}"]`);
     if(q.type==='multi')answers[q.id]=[...wrap.querySelectorAll('input:checked')].map(x=>x.value);
     else if(q.type==='radio'||q.type==='scale')answers[q.id]=$('input:checked',wrap)?.value??null;
-    else {const input=$('input,textarea',wrap);answers[q.id]=q.type==='number'?num(input):input.value.trim()||null;}
+    else {const input=$('input,textarea',wrap);answers[q.id]=q.type==='number'?(flexibleAnswers()?numericAnswer(input.value,q):num(input)):input.value.trim()||null;}
   });return answers;
 }
 function payload(){
   const method='drawn';
-  return {submission_id:submissionId,instrument_version:config.settings.instrument_version,consent_version:config.settings.consent_version,...(config.settings.instrument_version==='5.0-web-medicion'?{completion_metrics:completionMetrics()}:{}),identity:{name:$('#identity-name').value.trim(),email:$('#identity-email').value.trim(),phone:$('#identity-phone').value.trim()},answers:readAnswers(),times:[],measurement:{date:'',group:'',deliveries:null,open_answers:null,condition:isFeedback()?'pilot_feedback':'manual',scope:''},consent:{...(isFeedback()?{feedback_confirmation:$('#feedback-confirmation').checked}:{}),participation:$('#consent-participation').checked,data_processing:$('#consent-data').checked,signature_storage:method==='drawn'&&$('#consent-signature').checked},signature:signatureForIdentity({name:$('#identity-name').value},strokes)};
+  return {submission_id:submissionId,instrument_version:config.settings.instrument_version,consent_version:config.settings.consent_version,...(['5.0-web-medicion','5.1-web-flexible'].includes(config.settings.instrument_version)?{completion_metrics:completionMetrics()}:{}),identity:{name:$('#identity-name').value.trim(),email:$('#identity-email').value.trim(),phone:$('#identity-phone').value.trim()},answers:readAnswers(),times:[],measurement:{date:'',group:'',deliveries:null,open_answers:null,condition:isFeedback()?'pilot_feedback':'manual',scope:''},consent:{...(isFeedback()?{feedback_confirmation:$('#feedback-confirmation').checked}:{}),participation:$('#consent-participation').checked,data_processing:$('#consent-data').checked,signature_storage:method==='drawn'&&$('#consent-signature').checked},signature:signatureForIdentity({name:$('#identity-name').value},strokes)};
 }
 
 function formatAnswer(q,value){
@@ -111,13 +117,13 @@ async function next(){
       message('Complete el campo requerido: '+q.label);return;
     }
   }
-  if(answers['needs.support']?.includes('none')&&answers['needs.support'].length>1){message('Elija las tareas que requieren apoyo o la opción No necesito apoyo, sin combinarlas.');return;}
+  if(!flexibleAnswers()&&answers['needs.support']?.includes('none')&&answers['needs.support'].length>1){message('Elija las tareas que requieren apoyo o la opción No necesito apoyo, sin combinarlas.');return;}
   const duration=answers['manual.duration'],basis=answers['manual.basis'];
   const numericMinutes=config.schema.sections.some(s=>s.questions.some(q=>q.id==='manual.minutes'));
-  if(numericMinutes&&answers['manual.minutes']!==null&&!['measured','estimated'].includes(basis)){message('Indique si los minutos fueron medidos o estimados de memoria.');return;}
-  if(numericMinutes&&['measured','estimated'].includes(basis)&&answers['manual.minutes']===null){message('Escriba los minutos o quite la selección de tiempo medido/estimado.');return;}
-  if(!numericMinutes&&['measured','estimated'].includes(basis)&&[null,'unknown','na','skip'].includes(duration)){message('Indique un rango de tiempo o quite el método de obtención.');return;}
-  if(['lt30','30to59','60to119','120to239','240plus'].includes(duration)&&basis==='na'){message('Si indicó un tiempo, elija cómo lo obtuvo o deje esa pregunta sin responder.');return;}
+  if(!flexibleAnswers()&&numericMinutes&&answers['manual.minutes']!==null&&!['measured','estimated'].includes(basis)){message('Indique si los minutos fueron medidos o estimados de memoria.');return;}
+  if(!flexibleAnswers()&&numericMinutes&&['measured','estimated'].includes(basis)&&answers['manual.minutes']===null){message('Escriba los minutos o quite la selección de tiempo medido/estimado.');return;}
+  if(!flexibleAnswers()&&!numericMinutes&&['measured','estimated'].includes(basis)&&[null,'unknown','na','skip'].includes(duration)){message('Indique un rango de tiempo o quite el método de obtención.');return;}
+  if(!flexibleAnswers()&&['lt30','30to59','60to119','120to239','240plus'].includes(duration)&&basis==='na'){message('Si indicó un tiempo, elija cómo lo obtuvo o deje esa pregunta sin responder.');return;}
   if(step<labels.length-1){show(step+1);return;}
   const data=pendingPacket||payload();
   if(isFeedback()&&!data.consent.feedback_confirmation){message('Confirme que las observaciones corresponden a su experiencia antes de firmar.');return;}

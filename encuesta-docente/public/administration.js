@@ -1,4 +1,5 @@
 import {escapeHTML as esc} from './app.js';
+import {numericAnswer} from './submission.js';
 
 const $=selector=>document.querySelector(selector);
 const same=(a,b)=>JSON.stringify(a??null)===JSON.stringify(b??null);
@@ -65,6 +66,7 @@ export function createManagement({root,request,onSaved,setSaving,isSaving,answer
     const id='correction-'+fields.length,wrap=document.createElement('div');wrap.className='correction-field';
     const label=document.createElement('label');label.className='field-label';label.htmlFor=id;label.textContent=question.label;wrap.append(label);
     let read;
+    const flexibleNumber=receipt.settings?.flexible_answers===true&&question.type==='number';
     if(question.type==='multi'){
       label.removeAttribute('for');const box=document.createElement('fieldset');box.className='options';
       const legend=document.createElement('legend');legend.className='sr-only';legend.textContent=question.label;box.append(legend);
@@ -73,10 +75,11 @@ export function createManagement({root,request,onSaved,setSaving,isSaving,answer
     }else{
       const input=document.createElement(question.options?'select':question.type==='text'?'textarea':'input');input.id=id;
       if(question.options){input.add(new Option('Sin respuesta',''));for(const option of question.options)input.add(new Option(option.label,option.value));}
-      else if(input.tagName==='INPUT')input.type=question.type==='number'?'number':question.type==='date'?'date':question.type==='email'?'email':question.type==='tel'?'tel':'text';
-      for(const attr of ['min','max','step','maxlength'])if(question[attr]!==undefined)input.setAttribute(attr,question[attr]);
+      else if(input.tagName==='INPUT')input.type=flexibleNumber?'text':question.type==='number'?'number':question.type==='date'?'date':question.type==='email'?'email':question.type==='tel'?'tel':'text';
+      if(flexibleNumber)input.inputMode='decimal';
+      for(const attr of (flexibleNumber?['maxlength']:['min','max','step','maxlength']))if(question[attr]!==undefined)input.setAttribute(attr,question[attr]);
       input.required=Boolean(question.required);input.value=value??'';wrap.append(input);
-      read=()=>input.value===''?null:question.type==='number'?Number(input.value):input.value;
+      read=()=>input.value===''?null:question.type==='number'?(flexibleNumber?numericAnswer(input.value,question):Number(input.value)):input.value;
     }
     fields.push({group,key,read});$('#management-inputs').append(wrap);
   }

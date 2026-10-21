@@ -1,7 +1,7 @@
 {
   "instrument_code": "LR-CR-01",
-  "instrument_version": "5.0-web-medicion",
-  "consent_version": "CI-NEC-01-v5-2026-10-20",
+  "instrument_version": "5.1-web-flexible",
+  "consent_version": "CI-NEC-01-v5.1-2026-10-21",
   "require_drawn_signature": true,
   "title": "Diagnóstico breve de calificación y gestión de evidencias",
   "research_title": "XCalificator: impacto de la automatización de la evaluación con LLM, OCR y RAG en la eficiencia docente y la calidad de la retroalimentación",
@@ -19,6 +19,8 @@
   "enabled": true,
   "ui": {
     "description": "Su experiencia al calificar respuestas abiertas y conservar las evaluaciones. No necesita haber utilizado XCalificator.",
-    "duration": "24 preguntas · duración por comprobar con docentes"
-  }
+    "duration": "24 preguntas · duración por comprobar con docentes",
+    "identity_note": "Todas las preguntas son opcionales, incluida la institución. Solo necesitamos su nombre, consentimiento y firma para recibir la encuesta. Puede dejar vacío lo que no sepa."
+  },
+  "flexible_answers": true
 }

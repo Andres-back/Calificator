@@ -46,7 +46,7 @@ def project(record_id, receipt, rows):
     settings = receipt.get('settings')
     # Unknown legacy contexts stay readable, removable and restorable, not guessed.
     result['editable'] = bool(isinstance(schema, dict) and isinstance(settings, dict)
-                              and original['instrument_version'] in ('5.0-web-medicion', '4.0-web-breve', '1.0-web')
+                              and original['instrument_version'] in ('5.1-web-flexible', '5.0-web-medicion', '4.0-web-breve', '1.0-web')
                               and settings.get('instrument_version') == original['instrument_version'])
     result['edit_notice'] = '' if result['editable'] else 'Esta versión no tiene un contexto de edición compatible. Puede consultar el original o gestionar su conservación.'
     for _, revision, action, actor, stamp, reason, changes_json in rows:

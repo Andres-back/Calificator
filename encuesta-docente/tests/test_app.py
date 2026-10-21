@@ -10,13 +10,18 @@ import uuid
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from app import SurveyApplication, canonical
+from app import SurveyApplication, canonical, consent_document
 
 
 class SurveyTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.app = SurveyApplication(database=Path(self.temp.name)/'responses.sqlite3', origin='http://127.0.0.1:8092', secret='s'*48, admin_user='research', admin_password='a'*32)
+        # Congelar las regresiones del contrato 5.0, incluso tras publicar versiones nuevas.
+        archived = Path(__file__).resolve().parents[1]/'versions/5.0-web-medicion'
+        self.app.settings = json.loads((archived/'settings.json').read_text(encoding='utf-8'))
+        self.app.schema = json.loads((archived/'schema.json').read_text(encoding='utf-8'))
+        self.app.consent = consent_document(self.app.settings)
         status, headers, response = self.request('/api/session')
         self.assertEqual(status, 200)
         self.csrf = json.loads(response)['csrf']

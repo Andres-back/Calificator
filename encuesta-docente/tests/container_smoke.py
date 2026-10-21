@@ -41,4 +41,8 @@ with tempfile.TemporaryDirectory() as folder:
     with app.connect() as db:
         assert db.execute('SELECT * FROM responses').fetchall()==original
         assert db.execute('SELECT count(*) FROM response_admin_events').fetchone()[0]==3
+    archived=json.loads(canonical(data));archived.update(submission_id=str(uuid.uuid4()),instrument_version='5.0-web-medicion',consent_version='CI-NEC-01-v5-2026-10-20')
+    assert request('/api/responses','POST',archived,headers)['status']=='200 OK'
+    partial=json.loads(canonical(data));partial.update(submission_id=str(uuid.uuid4()),answers={'manual.open_percent':'aprox. la mitad','manual.minutes':32.5})
+    assert request('/api/responses','POST',partial,headers)['status']=='200 OK'
     print('OK: imagen, recepción, CRUD, idempotencia, integridad y permisos; base temporal, sin red.')

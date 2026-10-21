@@ -58,6 +58,7 @@ def integer(value, minimum, maximum):
 
 
 def validate(payload, schema, settings):
+    flexible = settings.get('flexible_answers') is True
     keys={'submission_id','instrument_version','consent_version','identity','answers','times','measurement','consent','signature'}
     if not isinstance(payload, dict) or set(payload)-{'completion_metrics'} != keys:
         raise Invalid('El envío no tiene el formato esperado. Actualice la página.')
@@ -70,7 +71,7 @@ def validate(payload, schema, settings):
     consent = payload['consent']
     if 'completion_metrics' in payload:
         m=payload['completion_metrics']
-        if settings['instrument_version']!='5.0-web-medicion' or not isinstance(m,dict) or set(m)!={'elapsed_seconds','visible_seconds','source'} or m['source']!='browser' or not valid_number(m['elapsed_seconds'],0,86400) or not valid_number(m['visible_seconds'],0,m['elapsed_seconds']):
+        if settings['instrument_version'] not in ('5.0-web-medicion','5.1-web-flexible') or not isinstance(m,dict) or set(m)!={'elapsed_seconds','visible_seconds','source'} or m['source']!='browser' or not valid_number(m['elapsed_seconds'],0,86400) or not valid_number(m['visible_seconds'],0,m['elapsed_seconds']):
             raise Invalid('No se pudo comprobar la duración del formulario.',code='form_duration')
     consent_keys = {'participation', 'data_processing', 'signature_storage'}
     feedback = settings.get('kind') == 'pilot_feedback'
@@ -109,6 +110,9 @@ def validate(payload, schema, settings):
             if not isinstance(value, list) or len(value) != len(set(value)) or any(v not in allowed for v in value):
                 raise Invalid('Revise la selección de tipos de pregunta.')
         elif q['type'] == 'number':
+            if flexible and isinstance(value,str):
+                text(value,80)
+                continue
             if q.get('step',1)==1:
                 integer(value,q['min'],q['max'])
             elif not valid_number(value,q['min'],q['max']):
@@ -126,22 +130,22 @@ def validate(payload, schema, settings):
                 raise Invalid('Complete el campo requerido: ' + q['label'])
     if feedback and not (answers.get('feedback.functions') or []):
         raise Invalid('Seleccione al menos una función utilizada u observada, o la opción Otra actividad.')
-    if '9' in answers.get('1.6', []) and not str(answers.get('1.6.other') or '').strip():
+    if not flexible and '9' in answers.get('1.6', []) and not str(answers.get('1.6.other') or '').strip():
         raise Invalid('Describa el otro tipo de pregunta o quite la opción Otro.')
-    if 'evidence.other' in questions and '6' in answers.get('evidence.storage', []) and not str(answers.get('evidence.other') or '').strip():
+    if not flexible and 'evidence.other' in questions and '6' in answers.get('evidence.storage', []) and not str(answers.get('evidence.other') or '').strip():
         raise Invalid('Describa el otro medio de conservación de evaluaciones o quite la opción Otro medio.')
     support = answers.get('needs.support') or []
-    if 'none' in support and len(support) > 1:
+    if not flexible and 'none' in support and len(support) > 1:
         raise Invalid('No necesito apoyo no puede combinarse con tareas que requieren apoyo.')
     duration, basis = answers.get('manual.duration'), answers.get('manual.basis')
     numeric_minutes='manual.minutes' in questions
-    if numeric_minutes and answers.get('manual.minutes') is not None and basis not in ('measured','estimated'):
+    if not flexible and numeric_minutes and answers.get('manual.minutes') is not None and basis not in ('measured','estimated'):
         raise Invalid('Indique si los minutos fueron medidos o estimados de memoria.',field='q-manual-basis',code='minutes_basis')
-    if numeric_minutes and basis in ('measured','estimated') and answers.get('manual.minutes') is None:
+    if not flexible and numeric_minutes and basis in ('measured','estimated') and answers.get('manual.minutes') is None:
         raise Invalid('Escriba los minutos o quite la selección de tiempo medido/estimado.',field='q-manual-minutes',code='minutes')
-    if not numeric_minutes and basis in ('measured', 'estimated') and duration in (None, '', 'unknown', 'na', 'skip'):
+    if not flexible and not numeric_minutes and basis in ('measured', 'estimated') and duration in (None, '', 'unknown', 'na', 'skip'):
         raise Invalid('Indique un rango de tiempo o quite el método de obtención.')
-    if duration in ('lt30', '30to59', '60to119', '120to239', '240plus') and basis == 'na':
+    if not flexible and duration in ('lt30', '30to59', '60to119', '120to239', '240plus') and basis == 'na':
         raise Invalid('Si indicó un tiempo, elija cómo lo obtuvo o deje esa pregunta sin responder.')
     times = payload['times']
     if not isinstance(times, list) or len(times) != len(schema['time_activities']):
@@ -231,9 +235,12 @@ def consent_document(settings):
     ]
 
 
-    if settings['instrument_version']=='5.0-web-medicion':
+    if settings['instrument_version'] in ('5.0-web-medicion','5.1-web-flexible'):
         document[1]={'title':'Propósito y actividades','text':'Identificar necesidades de calificación manual y gestión de evidencias. Son 24 preguntas, además de identificación, autorizaciones y firma. Se solicitan minutos y entregas de una misma evaluación, indicando si el tiempo fue medido o estimado; proporción de preguntas abiertas, legibilidad, cámara y conservación de hojas. La duración de este cuestionario está por comprobar con docentes; no se promete un tiempo fijo. No se demuestra aquí una reducción del 40 % ni se comparan tiempos con XCalificator.'}
         document[3]['text']+=' Para comprobar la duración del cuestionario se conservan el tiempo transcurrido y el tiempo con la pestaña visible calculados por el navegador. Pueden incluir pausas: no miden su atención ni el tiempo de calificación. No se guarda un historial detallado de interacción ni se usan servicios externos de analítica.'
+    if settings.get('flexible_answers'):
+        document[2]['text']=document[2]['text'].replace('omitir preguntas de opinión','omitir cualquiera de las preguntas, incluida la institución')
+        document[2]['text']+=' Solo se requiere su nombre, las autorizaciones y la firma para recibir la constancia. Las aproximaciones no numéricas se conservan como texto y no se usan como mediciones.'
     return document
 
 
@@ -300,8 +307,8 @@ class SurveyApplication:
         return markup.encode('utf-8')
 
     def submission_context(self, payload):
-        if self.settings.get('kind')!='pilot_feedback' and isinstance(payload,dict) and payload.get('instrument_version')=='4.0-web-breve':
-            folder=ROOT/'versions/4.0-web-breve'
+        if self.settings.get('kind')!='pilot_feedback' and isinstance(payload,dict) and payload.get('instrument_version') in ('4.0-web-breve','5.0-web-medicion'):
+            folder=ROOT/'versions'/payload['instrument_version']
             settings=json.loads((folder/'settings.json').read_text(encoding='utf-8'))
             schema=json.loads((folder/'schema.json').read_text(encoding='utf-8'))
             return settings,schema,consent_document(settings)
