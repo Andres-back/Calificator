@@ -33,3 +33,6 @@ T001 → T002/T003 → T004/T005 → T006. T003 → T007 → T008/T009. Todo lo 
 - [x] T014 [US1] Eliminar la repetición manual del nombre de firma en encuesta-docente/public/app.js, derivar el nombre de identidad en submission.js y cubrir envío/corrección en tests/submission.test.mjs y navegador local (FR-014).
 
 T014 precede la continuación de CRUD, por indicación explícita del usuario. Release del hotfix 5.0.1; 5.1.0 queda reservada para CRUD todavía no terminado y documentado en admin-crud-draft.md. Instrumento LR-CR-01 sigue siendo 5.0; no cambian preguntas. El bloqueo Pillow de CI no se elude.
+
+## Desbloqueo de seguridad autorizado
+- [x] T015 Actualizar Pillow a 13.0.0 en backend/requirements.txt, revisar compatibilidad y ejecutar regresiones sintéticas locales de imágenes/evidencia/digitalización/exportaciones (FR-015); registrar resultados y preparar nueva ejecución de CI sin omitir controles. No implica que CI remoto ni Linux hayan terminado: su resultado se registra aparte en validation.md.

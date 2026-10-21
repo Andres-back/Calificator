@@ -25,6 +25,8 @@ CSRF, permisos, firma obligatoria, idempotencia y constancias intactos. Borrador
 
 ## Release and rollback
 
+Ampliación autorizada en chat el 2026-10-20: Pillow 12.3.0 → 13.0.0 para desbloquear la auditoría de seguridad. Python de producción/CI es 3.11, compatible con 13.0.0. Revisar usos de APIs retiradas y ejecutar regresiones de preparación de fotos, evidencia, extracción y recursos visuales/exportaciones con imágenes sintéticas. No actualizar otras dependencias ni modificar el flujo de calificación. El CRUD sigue separado y pendiente; primero cerrar este hotfix con CI completo.
+
 Tras CI/merge, snapshot privado y huellas antes de reconstruir únicamente encuesta-docente desde main. Conservar .env/volumen y etiqueta de imagen anterior. Comprobar publicación, recepción con base temporal de la misma imagen, resumen real de solo lectura y huellas. Si falla salud, recuperar imagen previa sin borrar datos. No declarar preprueba humana realizada.
 
 ## Prioridad adicional: nombre único
