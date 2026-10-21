@@ -42,3 +42,4 @@ T014 precede la continuación de CRUD, por indicación explícita del usuario. R
 
 ## Navegación autenticada estable
 - [x] T017 Añadir regresión de módulo inicial retrasado, corregir sincronización del helper en frontend/e2e/evaluation-ai-wizard.spec.ts y verificar matriz móvil, gobernanza e inventario sin relajar controles (FR-017). La fusión y resultado de CI se registran aparte; no se presumen por terminar el código.
+- [x] T018 Sincronizar la aserción de foto visible en frontend/src/components/evidence/CameraCapture.test.tsx, conservando controles de captura/aceptación/parada y verificar sus regresiones e inventario antes del CI final (FR-018).

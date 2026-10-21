@@ -74,3 +74,7 @@ Regresión añadida al archivo E2E existente: retrasar 500 ms la entrega del mó
 Local: regresión Chromium PASS (6.1 s); matriz WebKit visible, un worker, regresión y creación 360/390 px en claro/oscuro: 5/5 PASS (3.0 min). La primera matriz headless concurrente de Windows se interrumpió tras dos timeouts de estabilidad del clic Listo; no se registra como superada ni se oculta el fallo. Tipos y lint PASS; inventario vigente con 596 superficies (digest actualizado). El nuevo CI Linux seguirá siendo obligatorio antes de la fusión exacta por squash.
 
 Permisos de estudiante con el mismo helper: PASS (9.8 s), sin controles de creación manual/IA. La actualización de la encuesta y el CRUD no se presumen publicados por preparar o fusionar este código.
+
+## Visibilidad de la foto en la prueba unitaria
+
+CI de 7374630: 790 pruebas frontend PASS/1 FAIL en CameraCapture, primera cámara integrada; falla toBeVisible inmediatamente después de findByRole. La foto ya está en DOM pero su diálogo tiene entrada animada. Se conserva la misma comprobación de visibilidad dentro de waitFor con configuración predeterminada en los tres casos de primera captura, sin modificar cámara/Modal, permisos, otros controles, retries ni umbrales. Regresiones de CameraCapture y Modal: **22/22 PASS (7.65 s)**, incluidas las 15 de cámara y las 7 de ventana; no es prueba de cámara física. Se regenera inventario y se vuelve a exigir CI completo antes de fusionar el HEAD exacto.

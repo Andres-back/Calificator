@@ -65,6 +65,7 @@ Firma de pocos puntos o demasiado corta; correo incorrecto; respuesta ajena al e
 - **FR-015**: Resolver el bloqueo de auditoría de Pillow mediante actualización a 13.0.0 autorizada expresamente por el usuario; comprobar preparación de imágenes, extracción visual y exportaciones con datos sintéticos antes de fusionar. No reducir auditorías ni alterar registros productivos.
 - **FR-016**: Corregir el bloqueo de cierre de ventanas detectado en CI y autorizado en chat: una ventana cerrada debe dejar de interceptar pantalla, teclado y navegación sin esperar fotogramas de animación, con movimiento normal o reducido. Mantener borradores de la ventana subyacente, foco, permisos y condiciones de guardado; no eludir controles ni cambiar las solicitudes o registros.
 - **FR-017**: Sincronizar la navegación de la prueba de creación con el contenido inicial autenticado, no solo la cabecera. Demostrar con un módulo inicial retrasado que no se interrumpe su carga al abrir evaluaciones. Conservar autenticación real simulada, expectativas, timeouts y cero reintentos; fusionar únicamente el HEAD exacto con todos los controles vigentes verdes, sin bypass.
+- **FR-018**: La prueba de captura debe esperar la visibilidad real de la foto de revisión tras la entrada del diálogo, no confundir presencia en DOM con visibilidad. Conservar la exigencia de foto visible, parada de cámara, aceptación explícita y ausencia de envío automático, sin cambiar código de cámara ni elevar límites o añadir retries.
 
 ### Key Entities
 
