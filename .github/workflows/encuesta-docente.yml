@@ -1,0 +1,29 @@
+name: Encuesta docente
+on:
+  pull_request:
+    branches: [main]
+    paths: ['encuesta-docente/**', '.github/workflows/encuesta-docente.yml']
+  push:
+    branches: [main]
+    paths: ['encuesta-docente/**', '.github/workflows/encuesta-docente.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  reception:
+    name: Survey reception, versions and container
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: python -B -m unittest discover -s encuesta-docente/tests -q
+      - run: node --test encuesta-docente/tests/submission.test.mjs
+      - run: node --check encuesta-docente/public/app.js
+      - run: docker build -t encuesta-docente:ci encuesta-docente
+      - run: docker run --rm --network none -i --tmpfs /data:uid=10001,gid=10001 encuesta-docente:ci python - < encuesta-docente/tests/container_smoke.py

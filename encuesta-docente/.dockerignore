@@ -1,0 +1,14 @@
+*
+!Dockerfile
+!requirements.txt
+!app.py
+!measurement.py
+!manage.py
+!settings.json
+!public/
+!public/**
+!feedback/
+!feedback/**
+!versions/
+!versions/4.0-web-breve/
+!versions/4.0-web-breve/**
