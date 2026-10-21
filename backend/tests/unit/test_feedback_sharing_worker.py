@@ -56,3 +56,11 @@ async def test_feature_off_worker_does_not_open_database_or_infer(monkeypatch):
         pytest.fail("Flag apagada no debe abrir tablas nuevas")
 
     assert await chat_service.run_request(uuid4(), sessions=forbidden) == "disabled"
+
+
+@pytest.mark.asyncio
+async def test_feature_off_cleanup_does_not_open_unmigrated_schema(monkeypatch):
+    from app.workers import tasks_feedback_chat
+    monkeypatch.setattr("app.core.config.settings.FEEDBACK_SHARING_ENABLED", False)
+    monkeypatch.setattr(tasks_feedback_chat, 'AsyncSessionLocal', lambda: pytest.fail('Flag apagada no consulta ni purga tablas'))
+    assert await tasks_feedback_chat._cleanup() == {'purged_texts': 0}

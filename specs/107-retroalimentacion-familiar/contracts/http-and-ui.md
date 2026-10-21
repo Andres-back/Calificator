@@ -1,6 +1,6 @@
 # Contratos HTTP y UI propuestos — Spec 107
 
-Diseño aditivo, no endpoints implementados. Prefijo API existente `/api`. Fechas ISO-8601 UTC; cliente muestra fecha/hora local y usa `server_now`, no reloj local para autorizar. Nombres/IDs nunca se deducen de apellidos.
+Contrato aditivo implementado y validado localmente; su despliegue y habilitación siguen pendientes de entrega protegida. Prefijo API existente `/api`. Fechas ISO-8601 UTC; cliente muestra fecha/hora local y usa `server_now`, no reloj local para autorizar. Nombres/IDs nunca se deducen de apellidos.
 
 ## Superficie docente autenticada
 

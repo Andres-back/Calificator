@@ -472,7 +472,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "3890a0395922ab7dad058d98c28fb44fc8def6a5a48d0e685bbce337db50df89",
+  "source_digest": "6b7634eb9a694caf3211afdb3a1a3611dc150f688e324d5806d996d82db0c2be",
   "surfaces": [
     {
       "actors": [
@@ -7724,7 +7724,7 @@
       "kind": "endpoint",
       "owner_spec": "002-arquitectura-roles-seguridad",
       "signature": "GET:/public/devolucion",
-      "source_line": 43,
+      "source_line": 47,
       "source_path": "backend/app/modules/feedback_sharing/public_router.py",
       "states": [],
       "tests": [
@@ -7791,7 +7791,7 @@
         {
           "level": "unit",
           "reference": "GET:/public/devolucion",
-          "status": "domain",
+          "status": "direct",
           "test_path": "backend/tests/unit/test_feedback_sharing_abuse.py"
         },
         {
@@ -7860,7 +7860,7 @@
       "kind": "endpoint",
       "owner_spec": "002-arquitectura-roles-seguridad",
       "signature": "GET:/public/devolucion/evidencia/{page}",
-      "source_line": 51,
+      "source_line": 55,
       "source_path": "backend/app/modules/feedback_sharing/public_router.py",
       "states": [],
       "tests": [
@@ -7990,7 +7990,7 @@
       "kind": "endpoint",
       "owner_spec": "002-arquitectura-roles-seguridad",
       "signature": "GET:/public/devolucion/preguntas/{request_id}",
-      "source_line": 38,
+      "source_line": 42,
       "source_path": "backend/app/modules/feedback_sharing/public_router.py",
       "states": [],
       "tests": [
@@ -17188,7 +17188,7 @@
       "kind": "endpoint",
       "owner_spec": "002-arquitectura-roles-seguridad",
       "signature": "POST:/public/devolucion/preguntas",
-      "source_line": 27,
+      "source_line": 31,
       "source_path": "backend/app/modules/feedback_sharing/public_router.py",
       "states": [],
       "tests": [
@@ -18634,6 +18634,12 @@
           "reference": "/",
           "status": "direct",
           "test_path": "backend/tests/unit/test_feedback_model_comparison.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_feedback_sharing_abuse.py"
         },
         {
           "level": "unit",
@@ -24280,6 +24286,12 @@
           "reference": "/devolucion",
           "status": "direct",
           "test_path": "backend/tests/integration/test_feedback_sharing_routes.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/devolucion",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_feedback_sharing_abuse.py"
         },
         {
           "level": "unit",
@@ -40344,6 +40356,12 @@
       "source_path": "backend/app/core/config.py",
       "states": [],
       "tests": [
+        {
+          "level": "unit",
+          "reference": "redis",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_feedback_sharing_abuse.py"
+        },
         {
           "level": "unit",
           "reference": "redis",

@@ -22,6 +22,8 @@ El 2026-10-21 el usuario aprobó separar la ejecución experimental al issue #23
 **Dependencias**: FastAPI, SQLAlchemy 2 async, Alembic, PostgreSQL, Celery/Redis, LLMRouter; React Router, TanStack Query y componentes/estilos existentes. Sin nueva dependencia de proveedor.
 **Persistencia**: tablas aditivas de publicación, acceso, cuota y solicitud/respuesta; notas/desgloses siguen siendo fuente académica, snapshots son proyecciones autorizadas, no calificaciones nuevas.
 **Pruebas**: pytest/pytest-asyncio con PostgreSQL aislado, Vitest/Testing Library, Playwright Chromium/WebKit, CI y contenedores existentes. Inferencias simuladas por defecto; comparación pagada solo con autorización específica y evidencias minimizadas.
+
+Verificación de navegador mediante Playwright CLI (flujo autorizado por la skill de esta sesión), con fixtures temporales sintéticos y capturas; regresiones persistentes de selección, estados, privacidad y controles en Vitest y contratos API con PostgreSQL. No se promete un archivo `feedback-sharing.spec.ts` que no existe ni prueba física de equipos. El CI general/contextual existente se conserva completo; no se añade un segundo sistema de automatización.
 **Plataforma objetivo**: navegador desde 360 px, iPhone/Android y escritorio, ambos temas. Emulación no equivale a prueba física.
 **Rendimiento y escala**: 30 fichas por escenario de impresión; cinco preguntas/600 s por estudiante/evaluación con admisión atómica. Objetivo de validación local: lectura/aceptación de chat p95 < 1 s sin proveedor bajo 30 consultas concurrentes sintéticas precargadas; informar hardware/carga y resultado real, no prometer SLA de inferencia. Chat en segundo plano con capacidad aislada de la cola prioritaria de calificación.
 
@@ -44,7 +46,7 @@ Resultado del diseño: sin excepción constitucional. La adopción inicial de Sp
 
 Existentes a integrar: `backend/app/modules/calificaciones/` (selección vigente, confirmación, ajustes y desglose), `backend/app/modules/xali/service.py` (política, no consulta/contexto crudo), `backend/app/services/llm_router.py`, `backend/app/workers/worker.py`, `backend/app/db/base.py`, `backend/app/api.py`; frontend de calificaciones, router, rutas y tratamiento de metadatos/errores/caché. Revisar `frontend/nginx.conf` y `nginx/templates/default.conf.template` sin relajar CSP global.
 
-Adiciones previstas, todavía no existentes:
+Adiciones definidas en el diseño y ahora implementadas localmente (ver evidencia y límites en `validation.md`; no equivale a despliegue):
 
 - `backend/app/modules/feedback_sharing/`: modelos, schemas, autorización/proyección, cuota y routers docente/público.
 - `backend/app/workers/tasks_feedback_chat.py`, migración en `backend/alembic/versions/` y pruebas focalizadas en `backend/tests/`.

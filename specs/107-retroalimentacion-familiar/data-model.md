@@ -1,6 +1,6 @@
 # Modelo de datos y estados — Spec 107
 
-Diseño propuesto, aún sin migración. Tablas aditivas; sin modificar/rellenar notas, evidencias, usuarios o historiales existentes.
+Contrato de diseño implementado mediante migración aditiva `202610200001`, cuyo padre vigente es `202610150001` tras integrar main. Validado en PostgreSQL sintético; no aplicado por esta entrega a producción. Sin modificar/rellenar notas, evidencias, usuarios o historiales existentes.
 
 ## Publicación (`feedback_publications`)
 

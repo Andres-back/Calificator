@@ -7,6 +7,22 @@ from app.modules.feedback_sharing import chat_service
 
 
 @pytest.mark.asyncio
+async def test_public_transport_guard_limits_attempts_without_using_student_quota(monkeypatch):
+    from starlette.requests import Request
+    from app.core import rate_limit as limits
+    from app.modules.feedback_sharing.public_router import limit_feedback_access
+
+    redis = AsyncMock()
+    redis.eval.return_value = [1801, 21]
+    monkeypatch.setattr(limits, '_redis_client', lambda: redis)
+    request = Request({'type': 'http', 'method': 'GET', 'path': '/api/public/devolucion', 'headers': [], 'client': ('127.0.0.1', 1234)})
+    with pytest.raises(HTTPException) as exc:
+        await limit_feedback_access(request)
+    assert exc.value.status_code == 429 and exc.value.headers['Retry-After'] == '21'
+    assert 'credential' not in str(redis.eval.call_args) and 'Bearer' not in str(redis.eval.call_args)
+
+
+@pytest.mark.asyncio
 async def test_global_capacity_is_independent_of_student_quota_and_fail_closed(monkeypatch):
     db = AsyncMock()
     check_token = AsyncMock()

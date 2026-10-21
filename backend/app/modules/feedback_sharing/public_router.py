@@ -6,6 +6,7 @@ from fastapi.concurrency import run_in_threadpool
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.session import get_db
+from app.core.rate_limit import rate_limit
 from app.modules.feedback_sharing.access_policy import UNAVAILABLE, db_now, guard_token
 from app.modules.feedback_sharing.http_policy import PrivateRoute
 from app.modules.feedback_sharing.http_policy import PRIVATE_HEADERS
@@ -15,7 +16,10 @@ from app.modules.feedback_sharing.schemas import QuestionInput
 from app.modules.calificaciones.evidence_service import EvidencePageError, MAX_EVIDENCE_PAGES, _render_cached_evidence_page
 from app.services.storage_service import resolve_upload_path
 
-router = APIRouter(prefix="/public/devolucion", tags=["devolucion_individual"], route_class=PrivateRoute)
+# Transport abuse guard, deliberately generous for a shared school NAT.
+# Academic quota remains PostgreSQL-based and independent of IP/device.
+limit_feedback_access = rate_limit(limit=1800, window_seconds=60, scope="feedback_public_access")
+router = APIRouter(prefix="/public/devolucion", tags=["devolucion_individual"], route_class=PrivateRoute, dependencies=[Depends(limit_feedback_access)])
 
 
 def read_credential(authorization: str | None = Header(default=None)) -> str:

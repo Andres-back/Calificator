@@ -74,10 +74,10 @@ Objetivo: desactivar/reactivar/renovar sin alterar notas ni cuota. Prueba indepe
 ## Fase final: Validación transversal
 
 - [X] T036 Proteger bootstrap/telemetría/metadatos/caché y proxy en `frontend/src/router.tsx`, `frontend/src/main.tsx`, `frontend/nginx.conf`, `nginx/templates/default.conf.template` y superficies reales encontradas; añadir regresiones en `frontend/src/modules/feedback_sharing/privacy.test.ts` y `backend/tests/unit/test_feedback_sharing_headers.py`, sin relajar CSP ni registrar tokens. [FR-013/017/023/024, SC-005/006/007/008]
-- [ ] T037 Ejecutar Playwright Chromium/WebKit 360/390/1440, ambos temas/teclado y revisión de impresión A4/Carta de 30 fichas en `frontend/e2e/mock/feedback-sharing.spec.ts`; inspeccionar páginas y registrar limitaciones de emulación en `specs/107-retroalimentacion-familiar/validation.md`. [FR-023/025, SC-004/007/009]
+- [X] T037 Ejecutar Playwright CLI Chromium/WebKit 360/390/1440, ambos temas y altura reducida, y revisión de impresión A4/Carta de 30 fichas; inspeccionar páginas y registrar comandos/resultados y límites en `specs/107-retroalimentacion-familiar/validation.md`. Se utiliza CLI conforme a la skill; no se presenta un archivo E2E inexistente como entregado ni emulación como teclado físico. La regresión persistente de estados/privacidad/selección reside en `frontend/src/modules/feedback_sharing/*.test.tsx`. [FR-023/025, SC-004/007/009]
 - [X] T038 Medir carga sintética de 30 consultas, prioridad grading/feedback y regresión de hashes/cantidades previas en `backend/tests/integration/test_feedback_sharing_regression.py` y `specs/107-retroalimentacion-familiar/validation.md`; verificar rollback de app/bandera sin downgrade destructivo. [FR-007/019/020/024, SC-008/010]
-- [ ] T039 Ejecutar calidad backend/frontend, E2E, contenedores e inventario/gobernanza; registrar comandos/resultados reales en `specs/107-retroalimentacion-familiar/validation.md`, sin sustituciones de CI ni falsos aprobados. [FR-024, SC-007/008]
-- [ ] T040 Ejecutar Converge y reconciliar `specs/107-retroalimentacion-familiar/tasks.md` con spec/plan/código/pruebas, mantener pendientes corpus/pruebas humanas faltantes y preparar PR enlazado #223 sin fusionar/desplegar ni activar modelos sin autorización propia. [FR-001/002/005/024, SC-001/003/008]
+- [X] T039 Ejecutar calidad backend/frontend, E2E, contenedores e inventario/gobernanza; registrar comandos/resultados reales en `specs/107-retroalimentacion-familiar/validation.md`, sin sustituciones de CI ni falsos aprobados. [FR-024, SC-007/008]
+- [X] T040 Ejecutar Converge y reconciliar `specs/107-retroalimentacion-familiar/tasks.md` con spec/plan/código/pruebas, mantener pendientes corpus/pruebas humanas faltantes y preparar PR enlazado #223 sin fusionar/desplegar ni activar modelos sin autorización propia. [FR-001/002/005/024, SC-001/003/008]
 
 ## Dependencias y estrategia incremental
 
@@ -85,7 +85,7 @@ Incremento de consulta pública del 2026-10-20: T019 y T030 cubiertos por 26 pru
 
 T001 bloquea implementación; T002 precede tests de DB. Fundamentos T003..009 preceden historias. Pruebas T003/T005/T007 se escriben y fallan por carencia reproducible antes del código correspondiente. No usar SQLite como sustituto de bloqueos PostgreSQL.
 
-US1 T010..013 prepara consistencia/revisión y harness; T014 es validación humana/experimental externa y queda pendiente si falta evidencia. US2 necesita fundamentos y puerta de calidad T011, no activación de modelos ni terminar T014 para desarrollar localmente. US3 depende de preview/proyección US2. US4 depende de acceso público US2 y cuota durable; US5 se integra con los mismos servicios de autorización, sin edición simultánea de archivos compartidos. Cierre no declara toda la feature terminada mientras falten tareas, CI o evidencia exigida.
+US1 T010..013 prepara consistencia/revisión y harness. T014 registró la separación aprobada de la validación humana/experimental externa al issue #236: esa validación sigue pendiente y no se declara ejecutada. US2 necesita fundamentos y puerta de calidad T011, no activación de modelos ni terminar el experimento para esta entrega. US3 depende de preview/proyección US2. US4 depende de acceso público US2 y cuota durable; US5 se integra con los mismos servicios de autorización, sin edición simultánea de archivos compartidos. Cierre local no declara CI verde, despliegue ni evidencia académica obtenida.
 
 MVP seguro: fundamentos + coherencia local US1 + preview/enlace de lectura US2, con bandera apagada hasta validación. No exponer chat sin T025..031 ni generar hoja colectiva pública. Después impresión, chat y ciclo de vida, y validación completa. No recortar garantías para acelerar demo.
 
@@ -93,4 +93,40 @@ Paralelismo posible, sin obligación de delegar: US1 fixtures de benchmark frent
 
 ## Control de formato y cobertura
 
-40 tareas, IDs T001..T040. Historias: US1 5, US2 6, US3 4, US4 7, US5 4; preparación/fundamentos 9 y transversal 5. Cada tarea lleva ruta y referencias explícitas FR/SC; ninguna marca implica que haya implementación. Sin hooks de extensión configurados.
+40 tareas originales, IDs T001..T040, más T041 añadida por convergencia. Historias originales: US1 5, US2 6, US3 4, US4 7, US5 4; preparación/fundamentos 9 y transversal 5. Cada tarea lleva ruta y referencias explícitas FR/SC; las marcas corresponden a su evidencia local registrada, no sustituyen revisión humana, CI o despliegue. Sin hooks de extensión configurados.
+
+## Phase 9: Convergence
+
+- [X] T041 Añadir defensa independiente contra intentos masivos de lectura/credenciales públicas en `backend/app/modules/feedback_sharing/public_router.py`, reutilizando el limitador de transporte y probándolo en `backend/tests/unit/test_feedback_sharing_abuse.py`; preservar cuota académica durable, NAT compartido, cabeceras privadas y fallo de acceso sin inferencia por FR-013/020, casos límite de acceso abusivo, plan decisión 2 (partial, HIGH).
+
+## Matriz explícita de requisitos
+
+| Requisito | Tareas |
+|---|---|
+| FR-001 | T009, T012, T014 |
+| FR-002 | T012, T014 |
+| FR-003 | T005, T006, T010, T011 |
+| FR-004 | T010, T011, T013 |
+| FR-005 | T012, T013, T014 |
+| FR-006 | T005, T006, T015, T016, T017, T018 |
+| FR-007 | T008, T009, T018, T038 |
+| FR-008 | T004, T007, T008, T032, T033, T034 |
+| FR-009 | T007, T008, T032, T033, T034, T035 |
+| FR-010 | T007, T019, T020, T027, T028 |
+| FR-011 | T021, T022, T024 |
+| FR-012 | T006, T008, T019, T020, T024 |
+| FR-013 | T007, T008, T031, T036, T041 |
+| FR-014 | T017, T018, T019, T021, T022, T024 |
+| FR-015 | T006, T019, T020, T028 |
+| FR-016 | T027, T028, T029, T030, T031 |
+| FR-017 | T006, T007, T020, T028, T036 |
+| FR-018 | T008, T032, T033 |
+| FR-019 | T025, T026, T027, T028, T029, T030, T031 |
+| FR-020 | T025, T026, T029, T030, T031, T035, T038, T041 |
+| FR-021 | T008, T032, T033, T034, T035 |
+| FR-022 | T015, T016, T017, T018, T034 |
+| FR-023 | T019, T023, T030, T034, T036, T037 |
+| FR-024 | T003, T004, T008, T009, T035, T038, T039, T040 |
+| FR-025 | T021, T022, T023, T037 |
+| FR-026 | T018, T021, T022, T024, T034 |
+| FR-027 | T025, T026, T027, T028, T029, T030, T035 |
