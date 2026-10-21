@@ -52,6 +52,8 @@ try:
             parser.error('El código y --confirm-id deben coincidir.')
         with db:
             db.execute('PRAGMA secure_delete=ON')
+            if db.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='response_admin_events'").fetchone():
+                db.execute('DELETE FROM response_admin_events WHERE response_id=?', (args.id,))
             result = db.execute('DELETE FROM responses WHERE id=?', (args.id,))
         db.execute('PRAGMA wal_checkpoint(TRUNCATE)')
         db.execute('VACUUM')

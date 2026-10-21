@@ -2,6 +2,7 @@
 !Dockerfile
 !requirements.txt
 !app.py
+!administration.py
 !measurement.py
 !manage.py
 !settings.json

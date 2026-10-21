@@ -107,6 +107,7 @@ ALL_SPECS = {
     "105-materia-movil-cola",
     "106-recursos-vista-clara",
     "109-encuesta-envio-seguro",
+    "110-encuestas-crud",
 }
 OWNED_SPECS = {
     name
