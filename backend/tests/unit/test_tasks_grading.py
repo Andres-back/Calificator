@@ -167,6 +167,14 @@ def test_extraction_fingerprint_invalidates_only_visual_dependencies() -> None:
     )
 
 
+def test_extraction_policy_version_invalidates_old_checkpoints(monkeypatch) -> None:
+    params=dict(image_bytes=b'same-evidence',image_mime='image/jpeg',blueprint={'preguntas':[]},ai_config=None)
+    current=tasks_grading._extraction_fingerprint(**params)
+    monkeypatch.setattr(tasks_grading,'VISION_EXTRACTION_VERSION',1)
+    previous=tasks_grading._extraction_fingerprint(**params)
+    assert current!=previous
+
+
 def test_grade_delivery_is_idempotent_when_grade_exists(monkeypatch) -> None:
     existing = SimpleNamespace(id=uuid4(), estado=CalificacionEstado.SUGERIDA.value)
     delivery = delivery_fixture()

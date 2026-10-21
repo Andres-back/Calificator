@@ -949,6 +949,8 @@ def _answer_text(item: dict | None) -> str:
     if not item:
         return "[sin respuesta detectada]"
     response = item.get("respuesta")
+    if item.get("respuesta_parcial") and response is not None and str(response).strip():
+        return str(response) + " [fragmento legible; evidencia incompleta o ambigua, requiere revisión]"
     if response is not None and str(response).strip():
         return str(response)
     if item.get("legible") is False or item.get("needs_review") or item.get("requiere_revision"):
