@@ -111,6 +111,7 @@ ALL_SPECS = {
     "110-encuestas-crud",
     "112-evaluacion-multipagina",
     "113-digitalizacion-documento-completo",
+    "114-recalificar-evidencia",
 }
 OWNED_SPECS = {
     name

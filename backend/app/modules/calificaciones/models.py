@@ -145,6 +145,25 @@ Index(
 )
 
 
+class CalificacionRevision(Base):
+    """Instantánea privada anterior a una reapertura, nunca otra nota vigente."""
+    __tablename__ = "calificacion_revisiones"
+    __table_args__ = (
+        CheckConstraint("accion IN ('recalificar','cambiar_evidencia')", name="ck_calificacion_revision_accion"),
+        Index("ix_calificacion_revision_grade", "calificacion_id", "created_at"),
+        Index("ix_calificacion_revision_archivo", "archivo_url"),
+    )
+    id: Mapped[PyUUID] = mapped_column(UUID(as_uuid=True), primary_key=True)
+    calificacion_id: Mapped[PyUUID] = mapped_column(UUID(as_uuid=True), ForeignKey("calificaciones.id"), nullable=False)
+    actor_id: Mapped[PyUUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    accion: Mapped[str] = mapped_column(String(32), nullable=False)
+    motivo: Mapped[str | None] = mapped_column(String(1000), nullable=True)
+    request_fingerprint: Mapped[str] = mapped_column(String(64), nullable=False)
+    archivo_url: Mapped[str | None] = mapped_column(Text, nullable=True)
+    snapshot_json: Mapped[dict] = mapped_column(JSONB, nullable=False)
+
+
 class SalonSesion(Base):
     """Persiste una sesión de Modo Salón para sobrevivir reinicios del servidor."""
     __tablename__ = "salon_sesiones"

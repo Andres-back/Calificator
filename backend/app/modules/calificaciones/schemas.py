@@ -61,7 +61,19 @@ class IntentoOnlineRead(BaseModel):
 
 
 class ReemplazoEvidenciaCreate(BaseModel):
-    motivo: str = Field(..., min_length=10, max_length=1000)
+    motivo: str | None = Field(default=None, max_length=1000)
+
+
+class CalificacionRevisionRead(BaseModel):
+    id: UUID
+    created_at: datetime
+    actor_nombre: str
+    accion: str
+    motivo: str | None = None
+    estado_anterior: str | None = None
+    nota_anterior: Decimal | None = None
+    feedback_anterior: str | None = None
+    evidencia_url: str | None = None
 
 
 class EntregaRead(BaseModel):

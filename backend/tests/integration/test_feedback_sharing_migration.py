@@ -67,7 +67,9 @@ async def test_upgrade_preserves_whole_existing_grade(fb_db, fb_case_factory):
             query = text("SELECT to_jsonb(c) FROM calificaciones c WHERE id=:id")
             before = await db.scalar(query, {"id": grade_id})
             assert await db.scalar(text("SELECT to_regclass('feedback_accesses')")) is None
-        await upgrade("head")
+        # Exercise this migration exactly. A later head has its own preservation
+        # tests and must not change the meaning of this historical regression.
+        await upgrade("202610200001")
         async with sessions() as db:
             assert await db.scalar(query, {"id": grade_id}) == before
             assert await db.scalar(text("SELECT version_num FROM alembic_version")) == "202610200001"

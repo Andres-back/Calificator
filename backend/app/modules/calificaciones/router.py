@@ -32,6 +32,7 @@ from app.modules.calificaciones import (
     evidence_service,
     grading_queue_service,
     photo_service,
+    revision_service,
     service,
 )
 from app.modules.calificaciones.breakdown_schemas import (
@@ -99,7 +100,10 @@ from app.shared.enums import (
 )
 from app.workers.tasks_grading import grade_delivery
 
+from app.modules.calificaciones.revision_router import router as revision_router
+
 router = APIRouter(tags=["calificaciones"])
+router.include_router(revision_router)
 MAX_ASYNC_BATCH_FILES = 30
 MAX_ASYNC_BATCH_BYTES = 100 * 1024 * 1024
 MAX_EVIDENCE_BYTES = 15 * 1024 * 1024
@@ -197,7 +201,6 @@ async def calificar_foto(
             existing_calificacion = await db.scalar(
                 select(Calificacion).where(Calificacion.entrega_id == entrega.id)
             )
-            entrega.respuesta_texto = None
         else:
             entrega = Entrega(
                 evaluacion_id=evaluacion.id,
@@ -208,6 +211,10 @@ async def calificar_foto(
             await pin_new_submission_content(db, evaluacion, entrega)
             db.add(entrega)
 
+    if existing_calificacion is not None:
+        raise HTTPException(409, "Esta entrega ya tiene una calificación. Ábrela y usa «Cambiar evidencia» para conservar lo anterior.")
+    if getattr(evaluacion, "modalidad", None) != EvaluacionModalidad.MIXTA.value:
+        entrega.respuesta_texto = None
     await grading_job_reference(db, evaluacion, entrega)
     previous_url = entrega.archivo_url
     new_url = await save_upload(
@@ -246,7 +253,7 @@ async def calificar_foto(
         )
     except HTTPException as exc:
         if exc.status_code == status.HTTP_503_SERVICE_UNAVAILABLE:
-            _delete_replaced_evidence(previous_url)
+            await revision_service.delete_unarchived_evidence(db, previous_url)
         else:
             await db.rollback()
             _delete_replaced_evidence(new_url)
@@ -256,7 +263,7 @@ async def calificar_foto(
         _delete_replaced_evidence(new_url)
         raise
 
-    _delete_replaced_evidence(previous_url)
+    await revision_service.delete_unarchived_evidence(db, previous_url)
     return result
 
 
@@ -364,7 +371,7 @@ async def solicitar_reemplazo_evidencia(
         **current_payload,
         "pipeline_status": "replacement_requested",
         "reemplazo_solicitado": True,
-        "motivo_reemplazo": payload.motivo.strip(),
+        "motivo_reemplazo": (payload.motivo or "").strip() or None,
     }
     entrega.estado = EntregaEstado.REQUIERE_REINTENTO.value
     calificacion.estado = CalificacionEstado.REQUIERE_REVISION.value
@@ -1367,7 +1374,7 @@ async def crear_entrega_archivo_estudiante(
         _delete_replaced_evidence(new_url)
         raise
     await db.refresh(entrega)
-    _delete_replaced_evidence(previous_url)
+    await revision_service.delete_unarchived_evidence(db, previous_url)
 
     existing_calificacion = await db.scalar(
         select(Calificacion).where(Calificacion.entrega_id == entrega.id)

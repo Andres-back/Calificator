@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import hashlib
 from io import BytesIO
 from typing import Any
 
@@ -27,6 +28,7 @@ class EvidenceBundle:
     page_count: int
     evidence_type: str
     metadata: dict[str, Any]
+    source_fingerprint: str = ""
 
 
 def _limits() -> tuple[int, int, int, int]:
@@ -183,6 +185,11 @@ async def build_evidence_bundle(
         total_bytes += len(content)
         loaded.append((content, filename, mime))
 
+    digest = hashlib.sha256()
+    for (raw_content, source_name, _mime), rotation in zip(loaded, normalized_rotations):
+        digest.update(hashlib.sha256(raw_content).digest())
+        digest.update(f"{rotation}:{source_name}".encode())
+    source_fingerprint = digest.hexdigest()
     pdf_files = [item for item in loaded if item[2] == "application/pdf"]
     if pdf_files:
         if len(loaded) != 1:
@@ -203,6 +210,7 @@ async def build_evidence_bundle(
             page_count=page_count,
             evidence_type="pdf",
             metadata=metadata,
+            source_fingerprint=source_fingerprint,
         )
 
     photos = [(content, filename) for content, filename, _mime in loaded]
@@ -230,4 +238,5 @@ async def build_evidence_bundle(
         page_count=len(photos),
         evidence_type=metadata["tipo"],
         metadata=metadata,
+        source_fingerprint=source_fingerprint,
     )
