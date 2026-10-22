@@ -206,6 +206,9 @@ async def calificar_foto(
                 evaluacion_id=evaluacion.id,
                 estudiante_id=estudiante_id,
                 materia_id=evaluacion.materia_id,
+                # The revision lookup below can autoflush this new delivery.
+                tipo=(EntregaTipo.PDF.value if bundle.mime == "application/pdf"
+                      else EntregaTipo.FOTO.value),
                 visual_text_json={},
             )
             await pin_new_submission_content(db, evaluacion, entrega)
@@ -1340,6 +1343,8 @@ async def crear_entrega_archivo_estudiante(
                 evaluacion_id=evaluacion.id,
                 estudiante_id=current_user.id,
                 materia_id=evaluacion.materia_id,
+                tipo=(EntregaTipo.PDF.value if bundle.mime == "application/pdf"
+                      else EntregaTipo.FOTO.value),
                 visual_text_json={},
             )
             await pin_new_submission_content(db, evaluacion, entrega)
