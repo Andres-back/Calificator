@@ -375,3 +375,7 @@ actualizar la especificación propietaria, su plan y sus tareas; no debe crear d
 ## Evolución 093: criterios de recursos y vista docente compacta
 
 - [093-recursos-vista-docente](093-recursos-vista-docente/spec.md), [issue #196](https://github.com/Andres-back/Calificator/issues/196), [PR #197](https://github.com/Andres-back/Calificator/pull/197): distinguir criterios/rúbricas de preguntas y claves al generar/asignar recursos, ocultar reclamos vacíos y compactar asistencia conservando guardado automático. Reutiliza propietarios 006 (recursos), 008 (bandeja) y 004 (asistencia); no añade herramientas, rutas ni altera registros guardados. Alcance y [plan](093-recursos-vista-docente/plan.md) aprobados; lista base 16/16 y [lista UX/criterios](093-recursos-vista-docente/checklists/ux-criterios.md) revisada (8/8) con autorización. Implementación, pruebas locales y Converge completos: [evidencia](093-recursos-vista-docente/quickstart.md). CI remoto y autorización separada antes de merge. No desplegado.
+
+## Hotfix 117: envío de foto con revisión digitalizada
+
+- [117-foto-entrega-completa](117-foto-entrega-completa/spec.md), [issue #244](https://github.com/Andres-back/Calificator/issues/244): inicializar el tipo antes del autoflush al recibir evidencia nueva de docente o estudiante. Regresión HTTP con PostgreSQL aislado, foto y varias hojas; sin cambiar notas, evidencias anteriores ni modelos. Reparación urgente autorizada el 2026-10-22; Spec 116 sigue independiente.

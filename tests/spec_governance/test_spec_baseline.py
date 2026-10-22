@@ -112,6 +112,7 @@ ALL_SPECS = {
     "112-evaluacion-multipagina",
     "113-digitalizacion-documento-completo",
     "114-recalificar-evidencia",
+    "117-foto-entrega-completa",
 }
 OWNED_SPECS = {
     name

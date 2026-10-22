@@ -51,6 +51,9 @@ class FakeDB:
         return self.scalar_values.pop(0) if self.scalar_values else None
 
     def add(self, value: object) -> None:
+        if isinstance(value, Entrega):
+            # Queries may autoflush immediately after add, before final flush.
+            assert value.tipo in {kind.value for kind in EntregaTipo}
         self.added.append(value)
 
     async def flush(self) -> None:

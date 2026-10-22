@@ -264,6 +264,81 @@ async def visual_http(visual_scope, monkeypatch):
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize('pages', [1, 2])
+@pytest.mark.parametrize('role', ['profesor', 'estudiante'])
+async def test_first_photo_with_content_revision_survives_autoflush(
+    visual_http, visual_scope, monkeypatch, pages, role,
+):
+    """Exercise the real revision query and PostgreSQL NOT NULL constraint.
+
+    A mock session cannot reproduce the autoflush between adding the delivery
+    and storing its photo. No external model or broker is used in this test.
+    """
+    from copy import deepcopy
+    from sqlalchemy import select
+    from app.modules.calificaciones import router as grading_router
+    from app.modules.calificaciones.models import Calificacion
+    from app.modules.users.models import User
+    from app.services.storage_service import resolve_upload_path
+
+    sessions, _, _, _ = visual_scope
+    app_for, owner, _, ids = visual_http
+    async with sessions() as db:
+        evaluation = await get_evaluation_or_404(db, ids['evaluation'])
+        evaluation.recepcion_habilitada = True
+        student = User(nombre='Nuevo alumno sintético', email=f'{uuid4()}@example.test',
+                       password_hash='no-login', rol='estudiante')
+        db.add(student)
+        await db.flush()
+        student_id = student.id
+        db.add(Matricula(materia_id=ids['subject'], estudiante_id=student_id, estado='activo'))
+        await db.commit()
+        old_grades = [(item.id, item.nota_confirmada, deepcopy(item.resultado_json))
+                      for item in await db.scalars(select(Calificacion))]
+
+    queued = []
+
+    async def enqueue(db, **kwargs):
+        delivery = kwargs['entrega']
+        assert delivery.tipo == ('foto' if pages == 1 else 'pdf')
+        assert delivery.contenido_version_id == ids['version']
+        assert delivery.estado == 'recibida'
+        assert resolve_upload_path(delivery.archivo_url).is_file()
+        assert kwargs['evidence_metadata']['paginas'] == pages
+        await db.commit()
+        await db.refresh(delivery)
+        queued.append(delivery.id)
+        # Return the same public shape as the real queue, without calling AI.
+        return {'id': str(uuid4()), 'evaluacion_id': str(ids['evaluation']),
+                'entrega_id': str(delivery.id), 'estudiante_id': str(student_id),
+                'materia_id': str(ids['subject']), 'profesor_id': str(owner),
+                'nota_sugerida': None, 'nota_confirmada': None, 'confianza': None,
+                'feedback': None, 'estado': 'procesando', 'resultado_json': {},
+                'revisado_por_docente': False, 'created_at': delivery.created_at,
+                'updated_at': delivery.updated_at}
+
+    monkeypatch.setattr(grading_router, '_enqueue_persisted_grading', enqueue)
+    field = 'foto' if role == 'profesor' else 'archivo'
+    files = [(field, (f'hoja-{page}.png', synthetic_png(), 'image/png')) for page in range(pages)]
+    actor = owner if role == 'profesor' else student_id
+    path = '/api/calificaciones/foto' if role == 'profesor' else f"/api/evaluaciones/{ids['evaluation']}/entregas/archivo"
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app_for(role, actor)), base_url='http://testserver') as client:
+        response = await client.post(path, files=files,
+            data={'evaluacion_id': str(ids['evaluation']), 'estudiante_id': str(student_id)})
+        assert response.status_code == 202, response.text
+        assert response.json()['estado'] == ('procesando' if role == 'profesor' else 'recibida')
+        assert response.json().get('nota_sugerida') is None
+    async with sessions() as db:
+        deliveries = list(await db.scalars(select(Entrega).where(Entrega.estudiante_id == student_id)))
+        assert len(deliveries) == len(queued) == 1
+        assert deliveries[0].id == queued[0]
+        assert deliveries[0].contenido_version_id == ids['version']
+        assert resolve_upload_path(deliveries[0].archivo_url).is_file()
+        assert [(item.id, item.nota_confirmada, item.resultado_json)
+                for item in await db.scalars(select(Calificacion))] == old_grades
+
+
+@pytest.mark.asyncio
 async def test_online_start_is_idempotent_private_and_submit_keeps_old_content(visual_http, visual_scope, monkeypatch):
     import asyncio
     from app.modules.calificaciones import router as grading_router
