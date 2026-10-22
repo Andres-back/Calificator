@@ -472,7 +472,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "6b7634eb9a694caf3211afdb3a1a3611dc150f688e324d5806d996d82db0c2be",
+  "source_digest": "33b270016efb5b72762203277be7b41f07ab4edfc9f12390cdca9d916ce83cf6",
   "surfaces": [
     {
       "actors": [
@@ -19203,6 +19203,12 @@
           "level": "unit",
           "reference": "/",
           "status": "direct",
+          "test_path": "frontend/src/modules/admin/ai/sections/FunctionsSection.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
           "test_path": "frontend/src/modules/admin/ai/sections/ProvidersSection.test.tsx"
         },
         {
@@ -25089,6 +25095,12 @@
           "test_path": "backend/tests/unit/test_admin_embedding_check.py"
         },
         {
+          "level": "unit",
+          "reference": "DELETE:/admin/roles/{id}",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_feedback_admin_route.py"
+        },
+        {
           "level": "e2e",
           "reference": "DELETE:/admin/roles/{id}",
           "status": "domain",
@@ -25207,6 +25219,12 @@
           "reference": "DELETE:/admin/users/{id}",
           "status": "domain",
           "test_path": "backend/tests/unit/test_admin_embedding_check.py"
+        },
+        {
+          "level": "unit",
+          "reference": "DELETE:/admin/users/{id}",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_feedback_admin_route.py"
         },
         {
           "level": "e2e",
@@ -26114,6 +26132,12 @@
           "test_path": "backend/tests/unit/test_admin_embedding_check.py"
         },
         {
+          "level": "unit",
+          "reference": "GET:/admin/ai-audit",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_feedback_admin_route.py"
+        },
+        {
           "level": "e2e",
           "reference": "GET:/admin/ai-audit",
           "status": "direct",
@@ -26228,6 +26252,12 @@
           "test_path": "backend/tests/unit/test_admin_embedding_check.py"
         },
         {
+          "level": "unit",
+          "reference": "GET:/admin/ai-config-hash",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_feedback_admin_route.py"
+        },
+        {
           "level": "e2e",
           "reference": "GET:/admin/ai-config-hash",
           "status": "direct",
@@ -26340,6 +26370,12 @@
           "reference": "GET:/admin/ai-control-center/usage",
           "status": "domain",
           "test_path": "backend/tests/unit/test_admin_embedding_check.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/admin/ai-control-center/usage",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_feedback_admin_route.py"
         },
         {
           "level": "e2e",
@@ -26460,6 +26496,12 @@
           "reference": "GET:/admin/ai-control-center",
           "status": "domain",
           "test_path": "backend/tests/unit/test_admin_embedding_check.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/admin/ai-control-center",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_feedback_admin_route.py"
         },
         {
           "level": "e2e",
@@ -26588,6 +26630,12 @@
           "test_path": "backend/tests/unit/test_admin_embedding_check.py"
         },
         {
+          "level": "unit",
+          "reference": "GET:/admin/ai-settings",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_feedback_admin_route.py"
+        },
+        {
           "level": "e2e",
           "reference": "GET:/admin/ai-settings",
           "status": "direct",
@@ -26708,6 +26756,12 @@
           "test_path": "backend/tests/unit/test_admin_embedding_check.py"
         },
         {
+          "level": "unit",
+          "reference": "GET:/admin/ai-usage",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_feedback_admin_route.py"
+        },
+        {
           "level": "e2e",
           "reference": "GET:/admin/ai-usage",
           "status": "domain",
@@ -26822,6 +26876,12 @@
           "test_path": "backend/tests/unit/test_admin_embedding_check.py"
         },
         {
+          "level": "unit",
+          "reference": "GET:/admin/authorization/audit",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_feedback_admin_route.py"
+        },
+        {
           "level": "e2e",
           "reference": "GET:/admin/authorization/audit",
           "status": "domain",
@@ -26928,6 +26988,12 @@
           "reference": "GET:/admin/authorization/modules",
           "status": "domain",
           "test_path": "backend/tests/unit/test_admin_embedding_check.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/admin/authorization/modules",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_feedback_admin_route.py"
         },
         {
           "level": "e2e",
@@ -27044,6 +27110,12 @@
           "test_path": "backend/tests/unit/test_admin_embedding_check.py"
         },
         {
+          "level": "unit",
+          "reference": "GET:/admin/mail/config",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_feedback_admin_route.py"
+        },
+        {
           "level": "e2e",
           "reference": "GET:/admin/mail/config",
           "status": "domain",
@@ -27152,6 +27224,12 @@
           "test_path": "backend/tests/unit/test_admin_embedding_check.py"
         },
         {
+          "level": "unit",
+          "reference": "GET:/admin/mail/recovery-status",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_feedback_admin_route.py"
+        },
+        {
           "level": "e2e",
           "reference": "GET:/admin/mail/recovery-status",
           "status": "domain",
@@ -27258,6 +27336,12 @@
           "reference": "GET:/admin/roles",
           "status": "domain",
           "test_path": "backend/tests/unit/test_admin_embedding_check.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/admin/roles",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_feedback_admin_route.py"
         },
         {
           "level": "e2e",
@@ -27380,6 +27464,12 @@
           "test_path": "backend/tests/unit/test_admin_embedding_check.py"
         },
         {
+          "level": "unit",
+          "reference": "GET:/admin/users/{id}",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_feedback_admin_route.py"
+        },
+        {
           "level": "e2e",
           "reference": "GET:/admin/users/{id}",
           "status": "domain",
@@ -27492,6 +27582,12 @@
           "reference": "GET:/admin/users",
           "status": "domain",
           "test_path": "backend/tests/unit/test_admin_embedding_check.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/admin/users",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_feedback_admin_route.py"
         },
         {
           "level": "e2e",
@@ -31836,6 +31932,12 @@
           "test_path": "backend/tests/unit/test_admin_embedding_check.py"
         },
         {
+          "level": "unit",
+          "reference": "GET:/users/me/authorization",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_feedback_admin_route.py"
+        },
+        {
           "level": "e2e",
           "reference": "GET:/users/me/authorization",
           "status": "direct",
@@ -32292,6 +32394,12 @@
           "test_path": "backend/tests/unit/test_admin_embedding_check.py"
         },
         {
+          "level": "unit",
+          "reference": "PATCH:/admin/ai-config",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_feedback_admin_route.py"
+        },
+        {
           "level": "e2e",
           "reference": "PATCH:/admin/ai-config",
           "status": "direct",
@@ -32412,6 +32520,12 @@
           "test_path": "backend/tests/unit/test_admin_embedding_check.py"
         },
         {
+          "level": "unit",
+          "reference": "PATCH:/admin/ai-providers/{id}",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_feedback_admin_route.py"
+        },
+        {
           "level": "e2e",
           "reference": "PATCH:/admin/ai-providers/{id}",
           "status": "domain",
@@ -32524,6 +32638,12 @@
           "reference": "PATCH:/admin/roles/{id}",
           "status": "domain",
           "test_path": "backend/tests/unit/test_admin_embedding_check.py"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/admin/roles/{id}",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_feedback_admin_route.py"
         },
         {
           "level": "e2e",
@@ -32640,6 +32760,12 @@
           "test_path": "backend/tests/unit/test_admin_embedding_check.py"
         },
         {
+          "level": "unit",
+          "reference": "PATCH:/admin/users/{id}/solicitud-docente",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_feedback_admin_route.py"
+        },
+        {
           "level": "e2e",
           "reference": "PATCH:/admin/users/{id}/solicitud-docente",
           "status": "domain",
@@ -32752,6 +32878,12 @@
           "reference": "PATCH:/admin/users/{id}",
           "status": "domain",
           "test_path": "backend/tests/unit/test_admin_embedding_check.py"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/admin/users/{id}",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_feedback_admin_route.py"
         },
         {
           "level": "e2e",
@@ -34226,6 +34358,12 @@
           "test_path": "backend/tests/unit/test_admin_embedding_check.py"
         },
         {
+          "level": "unit",
+          "reference": "POST:/admin/ai-cache/clear",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_feedback_admin_route.py"
+        },
+        {
           "level": "e2e",
           "reference": "POST:/admin/ai-cache/clear",
           "status": "domain",
@@ -34332,6 +34470,12 @@
           "reference": "POST:/admin/ai-control-center/validate",
           "status": "domain",
           "test_path": "backend/tests/unit/test_admin_embedding_check.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/admin/ai-control-center/validate",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_feedback_admin_route.py"
         },
         {
           "level": "e2e",
@@ -34442,6 +34586,12 @@
           "test_path": "backend/tests/unit/test_admin_embedding_check.py"
         },
         {
+          "level": "unit",
+          "reference": "POST:/admin/ai-providers/{providerId}/models/refresh",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_feedback_admin_route.py"
+        },
+        {
           "level": "e2e",
           "reference": "POST:/admin/ai-providers/{providerId}/models/refresh",
           "status": "domain",
@@ -34548,6 +34698,12 @@
           "reference": "POST:/admin/ai-providers/{providerId}/test",
           "status": "domain",
           "test_path": "backend/tests/unit/test_admin_embedding_check.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/admin/ai-providers/{providerId}/test",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_feedback_admin_route.py"
         },
         {
           "level": "e2e",
@@ -34658,6 +34814,12 @@
           "test_path": "backend/tests/unit/test_admin_embedding_check.py"
         },
         {
+          "level": "unit",
+          "reference": "POST:/admin/ai-settings/restore-defaults",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_feedback_admin_route.py"
+        },
+        {
           "level": "e2e",
           "reference": "POST:/admin/ai-settings/restore-defaults",
           "status": "domain",
@@ -34764,6 +34926,12 @@
           "reference": "POST:/admin/ai-settings/restore-previous",
           "status": "domain",
           "test_path": "backend/tests/unit/test_admin_embedding_check.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/admin/ai-settings/restore-previous",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_feedback_admin_route.py"
         },
         {
           "level": "e2e",
@@ -34880,6 +35048,12 @@
           "test_path": "backend/tests/unit/test_admin_embedding_check.py"
         },
         {
+          "level": "unit",
+          "reference": "POST:/admin/mail/test",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_feedback_admin_route.py"
+        },
+        {
           "level": "e2e",
           "reference": "POST:/admin/mail/test",
           "status": "domain",
@@ -34986,6 +35160,12 @@
           "reference": "POST:/admin/roles/{id}",
           "status": "domain",
           "test_path": "backend/tests/unit/test_admin_embedding_check.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/admin/roles/{id}",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_feedback_admin_route.py"
         },
         {
           "level": "e2e",
@@ -35100,6 +35280,12 @@
           "reference": "POST:/admin/roles",
           "status": "domain",
           "test_path": "backend/tests/unit/test_admin_embedding_check.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/admin/roles",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_feedback_admin_route.py"
         },
         {
           "level": "e2e",
@@ -35220,6 +35406,12 @@
           "reference": "POST:/admin/users",
           "status": "domain",
           "test_path": "backend/tests/unit/test_admin_embedding_check.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/admin/users",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_feedback_admin_route.py"
         },
         {
           "level": "e2e",
@@ -39060,6 +39252,12 @@
           "test_path": "backend/tests/unit/test_admin_embedding_check.py"
         },
         {
+          "level": "unit",
+          "reference": "PUT:/admin/ai-control-center/publish",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_feedback_admin_route.py"
+        },
+        {
           "level": "e2e",
           "reference": "PUT:/admin/ai-control-center/publish",
           "status": "direct",
@@ -39180,6 +39378,12 @@
           "test_path": "backend/tests/unit/test_admin_embedding_check.py"
         },
         {
+          "level": "unit",
+          "reference": "PUT:/admin/ai-features",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_feedback_admin_route.py"
+        },
+        {
           "level": "e2e",
           "reference": "PUT:/admin/ai-features",
           "status": "domain",
@@ -39294,6 +39498,12 @@
           "test_path": "backend/tests/unit/test_admin_embedding_check.py"
         },
         {
+          "level": "unit",
+          "reference": "PUT:/admin/ai-providers",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_feedback_admin_route.py"
+        },
+        {
           "level": "e2e",
           "reference": "PUT:/admin/ai-providers",
           "status": "domain",
@@ -39406,6 +39616,12 @@
           "reference": "PUT:/admin/ai-settings/publish",
           "status": "domain",
           "test_path": "backend/tests/unit/test_admin_embedding_check.py"
+        },
+        {
+          "level": "unit",
+          "reference": "PUT:/admin/ai-settings/publish",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_feedback_admin_route.py"
         },
         {
           "level": "e2e",
@@ -39526,6 +39742,12 @@
           "reference": "PUT:/admin/mail/config",
           "status": "domain",
           "test_path": "backend/tests/unit/test_admin_embedding_check.py"
+        },
+        {
+          "level": "unit",
+          "reference": "PUT:/admin/mail/config",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_feedback_admin_route.py"
         },
         {
           "level": "e2e",
@@ -39920,6 +40142,12 @@
           "level": "unit",
           "reference": "groq",
           "status": "direct",
+          "test_path": "backend/tests/unit/test_llm_router_explicit_routing.py"
+        },
+        {
+          "level": "unit",
+          "reference": "groq",
+          "status": "direct",
           "test_path": "backend/tests/unit/test_photo_grading_failures.py"
         },
         {
@@ -39939,6 +40167,12 @@
           "reference": "groq",
           "status": "direct",
           "test_path": "frontend/src/modules/admin/AdminAIConfigPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "groq",
+          "status": "direct",
+          "test_path": "frontend/src/modules/admin/ai/sections/FunctionsSection.test.tsx"
         },
         {
           "level": "unit",
@@ -40007,6 +40241,12 @@
           "reference": "ollama",
           "status": "direct",
           "test_path": "backend/tests/unit/test_evaluation_generation.py"
+        },
+        {
+          "level": "unit",
+          "reference": "ollama",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_llm_router_explicit_routing.py"
         },
         {
           "level": "unit",
@@ -40134,6 +40374,12 @@
           "level": "unit",
           "reference": "open_code",
           "status": "direct",
+          "test_path": "backend/tests/unit/test_ai_capability_registry.py"
+        },
+        {
+          "level": "unit",
+          "reference": "open_code",
+          "status": "direct",
           "test_path": "backend/tests/unit/test_ai_configuration_resolver.py"
         },
         {
@@ -40158,6 +40404,12 @@
           "level": "unit",
           "reference": "open_code",
           "status": "direct",
+          "test_path": "backend/tests/unit/test_feedback_admin_route.py"
+        },
+        {
+          "level": "unit",
+          "reference": "open_code",
+          "status": "direct",
           "test_path": "backend/tests/unit/test_grading_provider_policy.py"
         },
         {
@@ -40165,6 +40417,12 @@
           "reference": "open_code",
           "status": "direct",
           "test_path": "backend/tests/unit/test_legacy_usage_adapter.py"
+        },
+        {
+          "level": "unit",
+          "reference": "open_code",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_llm_router_explicit_routing.py"
         },
         {
           "level": "unit",
@@ -40213,6 +40471,12 @@
           "reference": "open_code",
           "status": "direct",
           "test_path": "frontend/src/modules/admin/AdminAIConfigPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "open_code",
+          "status": "direct",
+          "test_path": "frontend/src/modules/admin/ai/sections/FunctionsSection.test.tsx"
         },
         {
           "level": "unit",
@@ -40275,6 +40539,12 @@
           "reference": "openai",
           "status": "direct",
           "test_path": "backend/tests/unit/test_image_prompts.py"
+        },
+        {
+          "level": "unit",
+          "reference": "openai",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_llm_router_explicit_routing.py"
         },
         {
           "level": "unit",

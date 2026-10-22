@@ -21,3 +21,11 @@ def test_editable_route_registry_contains_no_deterministic_stage():
     assert "calificacion.extraccion" in features
     assert None not in features
     assert all("export" not in feature for feature in features)
+
+
+def test_feedback_chat_route_can_be_changed_from_the_admin_control_center():
+    stage = stage_for('xali', 'feedback')
+    assert stage.runtime_feature == 'xali_evaluacion_post_entrega'
+    assert stage.inherits_from == 'xali'
+    assert stage.editable and stage.capability == 'text'
+    assert 'open_code' in stage.supported_providers

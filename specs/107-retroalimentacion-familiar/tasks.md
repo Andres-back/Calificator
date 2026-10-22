@@ -101,6 +101,13 @@ Paralelismo posible, sin obligación de delegar: US1 fixtures de benchmark frent
 
 ## Matriz explícita de requisitos
 
+### Hotfix operativo aprobado el 2026-10-21
+
+- [X] T042 Reproducir con regresiones en `backend/tests/unit/test_llm_router_explicit_routing.py` el escape a proveedores no elegidos, el fallo de configuración, respuesta truncada, reintentos HTTP y plantilla exitosa; probar que consumidores sin política conservan su cascada. Cubrir el payload GLM compacto en `test_llm_router_output_budget.py` antes del código. [FR-028/029/030]
+- [X] T043 Implementar política opt-in de ruta explícita, perfil compacto y un intento de transporte solicitado desde `backend/app/modules/feedback_sharing/chat_service.py`, con orientación breve y privacidad intacta. Resolver política textual de recursos según T045, manteniendo sus presupuestos y correcciones de contenido. Ejecutar T042 y pruebas de contexto/errores. [FR-028/029/030]
+- [X] T044 Registrar resultados, límites, revisión de consistencia e instrucciones operativas en `specs/107-retroalimentacion-familiar/validation.md`; comprobar calidad backend, inventario y gobernanza y preparar PR del hotfix. No declarar CI ni despliegue antes de comprobarlos; mantener #236 pendiente y modelos de calificación intactos. [FR-028/029/030]
+- [X] T045 Exponer y probar la etapa de asistencia sobre devoluciones en `ai_capability_registry.py`, `admin_ai_config/control_center_service.py` y `frontend/src/modules/admin/ai/sections/FunctionsSection.tsx`; probar edición de proveedor/modelo sin cambiar calificación e imágenes. Incluir texto general/por herramienta en política explícita sin fijar proveedor/modelo en negocio. [FR-028/030/031]
+
 | Requisito | Tareas |
 |---|---|
 | FR-001 | T009, T012, T014 |
@@ -130,3 +137,7 @@ Paralelismo posible, sin obligación de delegar: US1 fixtures de benchmark frent
 | FR-025 | T021, T022, T023, T037 |
 | FR-026 | T018, T021, T022, T024, T034 |
 | FR-027 | T025, T026, T027, T028, T029, T030, T035 |
+| FR-028 | T042, T043, T044, T045 |
+| FR-029 | T042, T043, T044 |
+| FR-030 | T042, T043, T044, T045 |
+| FR-031 | T045 |
