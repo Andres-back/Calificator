@@ -1031,12 +1031,6 @@ function PanelDetalle({
           </Badge>
         </div>
 
-        {canGrade && <GradeReprocessing key={cal.id} cal={cal} onDirtyChange={setReprocessingDirty} disabled={isDirty || editingComponentDirty || showGlobalAdjustment || claimDirty}
-          onAccepted={(grade) => {
-            const jobId = grade.resultado_json?.job_id;
-            if (typeof jobId === 'string') addPendingGrading({ jobId, evaluacionId: grade.evaluacion_id, materiaId: grade.materia_id, estudianteId: grade.estudiante_id, estudianteNombre: cal.estudiante_nombre || 'Estudiante' });
-            onSaved();
-          }} />}
         <section aria-label="Cálculo y criterios registrados" className="text-sm">
           {!presentation.processing && <GradeNoteExplanation compact cal={cal} score={presentation.score} />}
           {criterionRows.length ? <details className="mt-2">
@@ -1064,6 +1058,12 @@ function PanelDetalle({
         {/* Los avisos no cambian la nota ni las políticas de confirmación. */}
         {(hasReviewNotices || scoreDifference) && !done && !presentation.processing && reviewNotices}
         <ReviewNavigation active={mobileTab} onChange={changeDetailView} />
+        {canGrade && <GradeReprocessing key={cal.id} cal={cal} onDirtyChange={setReprocessingDirty} disabled={isDirty || editingComponentDirty || showGlobalAdjustment || claimDirty}
+          onAccepted={(grade) => {
+            const jobId = grade.resultado_json?.job_id;
+            if (typeof jobId === 'string') addPendingGrading({ jobId, evaluacionId: grade.evaluacion_id, materiaId: grade.materia_id, estudianteId: grade.estudiante_id, estudianteNombre: cal.estudiante_nombre || 'Estudiante' });
+            onSaved();
+          }} />}
         {canReviewClaims && <IncidenciasSection calificacionId={cal.id} active={mobileTab === 'reclamos'} onToggle={() => changeDetailView('reclamos')} onDirtyChange={setClaimDirty} onOpenComponent={(id) => {
           const component = activeBreakdown?.componentes.find((item) => item.id === id || item.clave === id);
           if (component) openReviewComponent(component.id);

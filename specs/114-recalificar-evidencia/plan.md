@@ -3,6 +3,8 @@
 **Rama**: `codex/114-recalificar-evidencia` | **Fecha**: 2026-10-22 | **Spec**: [spec.md](spec.md) | **Issue**: #240
 Hotfix autorizado para preparar PR; pausa adicional de plan omitida según constitución. Sin merge/despliegue autorizado.
 
+Actualización de autorización: el usuario pidió «fusion» después de revisar el CI del PR #241. Se autoriza su fusión únicamente tras corregir los fallos y obtener CI verde; no se autorizan bypass ni operaciones manuales del VPS.
+
 ## Resumen y contexto técnico
 Reutilizar FastAPI/Python, SQLAlchemy/PostgreSQL, Celery y la cola de calificación, React/TypeScript, Query y el selector de evidencia existente. Sin paquetes nuevos. Nueva tabla aditiva de revisiones conserva snapshots sin duplicar la calificación vigente; sin backfill de notas.
 
@@ -17,6 +19,8 @@ Reutilizar FastAPI/Python, SQLAlchemy/PostgreSQL, Celery y la cola de calificaci
 `calificaciones/{models,schemas,router,revision_router,revision_service}.py`, `services/evidence_bundle_service.py` (huella estable de archivos originales para reintentos multipágina), migración `202610220001_grading_revisions.py`, `calificaciones/api.ts`, `components/GradeReprocessing.tsx`, `CalificacionesWorkspace.tsx`, pruebas adyacentes, inventario y documentación. El alta general de fotos rechaza sustituir una calificación existente y remite a la nueva acción explícita, evitando una sobrescritura sin archivo histórico.
 
 La comprobación visual se realiza mediante Playwright CLI con APIs sintéticas, sin añadir otro runner. La integración PostgreSQL usa exclusivamente el fixture guardado de CI `127.0.0.1:55417/spec107`. Si Docker local no responde, documentar las pruebas omitidas y exigir que integración, migración real y contenedores pasen en CI antes de cualquier fusión; no probar contra producción ni declarar estas comprobaciones locales como superadas.
+
+Correcciones de convergencia tras CI: opciones avanzadas plegadas después de la navegación principal; guardia de autofoco en `components/ui/Modal.tsx` con regresión de diálogo superpuesto; registro de Spec 114 en la lista base y prueba de feedback fijada a su migración concreta. No se relajan los E2E existentes ni las confirmaciones; no se modifican modelos ni reglas de notas.
 
 ## Constitución
 Permisos en servidor y UI; historial inmutable privado; una nota vigente y nueva aprobación; cola/idempotencia; migración aditiva recuperable; responsive; sin cambiar modelos o secretos. Issue, spec aprobada por alcance conversado, tareas, regresión, PR y CI obligatorios. No hay excepción a main protegida.

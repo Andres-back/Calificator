@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import { expect, it, vi } from 'vitest';
 import { Modal } from './Modal';
 
@@ -7,6 +7,27 @@ vi.mock('framer-motion', async (importOriginal) => ({
   ...await importOriginal<typeof import('framer-motion')>(),
   useReducedMotion: () => motionPreference.reduced,
 }));
+
+it('a delayed background autofocus cannot steal focus from the active child dialog', () => {
+  motionPreference.reduced = true;
+  const callbacks: FrameRequestCallback[] = [];
+  const frame = vi.spyOn(window, 'requestAnimationFrame').mockImplementation(callback => {
+    callbacks.push(callback);
+    return callbacks.length;
+  });
+  const view = render(<>
+    <Modal open title="Evaluación" onClose={vi.fn()}>Borrador conservado</Modal>
+    <Modal open title="Material" onClose={vi.fn()}><button type="button">Crear propuesta</button></Modal>
+  </>);
+  try {
+    const action = screen.getByRole('button', { name: 'Crear propuesta' });
+    action.focus();
+    act(() => { for (const callback of [...callbacks]) callback(0); });
+    expect(action).toHaveFocus();
+  } finally {
+    view.unmount(); frame.mockRestore(); motionPreference.reduced = false;
+  }
+});
 
 it.each([false, true])('removes a closed dialog without animation frames (reduced motion: %s)', (reduced) => {
   motionPreference.reduced = reduced;

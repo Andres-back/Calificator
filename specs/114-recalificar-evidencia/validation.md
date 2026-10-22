@@ -1,6 +1,6 @@
 # Validación — Spec 114 / issue #240
 
-Fecha: 2026-10-22. Entrega autorizada: rama y PR, sin fusión ni despliegue.
+Fecha: 2026-10-22. Entrega inicial autorizada: rama y PR. Autorización posterior del usuario: «fusion», con CI verde y sin operaciones manuales de producción.
 
 ## Comprobado localmente
 
@@ -34,3 +34,17 @@ La nueva evidencia genera una sugerencia pendiente de decisión docente. El hist
 Un fallo previo al commit revierte los cambios de base. Ante un commit incierto no se elimina el archivo recién escrito: podría estar referenciado por un trabajo ya admitido; un posible archivo huérfano privado se conserva para limpieza posterior verificada, priorizando no borrar evidencia válida. La cola existente gestiona la recuperación de publicación al worker.
 
 Rollback: volver al código anterior manteniendo tabla y archivos; no ejecutar downgrade con historial material. No se autoriza eliminar revisiones ni reescribir notas como parte de este PR.
+
+## Correcciones después de la primera ejecución de CI
+
+La ejecución `39801772185` aprobó las nueve pruebas PostgreSQL nuevas, incluida la migración real en un esquema desechable, concurrencia, permisos e historial. Falló una regresión antigua de feedback que ejecutaba `upgrade head` pero exigía la versión de octubre 20: ahora prueba explícitamente `202610200001` manteniendo la comparación completa de la nota antes/después. El head de la aplicación sigue comprobándose por separado.
+
+Se registró Spec 114 en `ALL_SPECS` sin quitar comprobaciones de gobernanza. Los siete documentos ajenos pendientes de Spec 034 permanecen fuera del PR; la prueba global local detecta legítimamente sus requisitos no implementados, por lo que la comprobación final del candidato se realiza sobre un archivo limpio del commit y CI.
+
+El E2E móvil original pasa en 360, 390 y 1366 px sin cambiar sus aserciones: las acciones nuevas se pliegan y quedan después de la navegación principal. Se conserva acceso a recalificar, evidencia e historial.
+
+WebKit reprodujo el fallo original (1 de 3 intentos). El diagnóstico detectó autofoco tardío del diálogo de fondo; una nueva regresión unitaria falló reproduciendo exactamente que el foco terminaba en «Cerrar diálogo» y pasó con la guardia de diálogo superior. El E2E WebKit original, sin instrumentación ni relajación, pasó 6/6 repeticiones tras el ajuste. No se aceptan imágenes ni materiales automáticamente.
+
+Converge posterior a las correcciones: 4 hallazgos parciales registrados en T016–T019 y resueltos. Se mantienen los 10 FR, 4 SC y las mismas garantías de datos. La nueva ejecución de CI y la verificación exacta de HEAD siguen siendo condición de fusión; no se presuponen aprobadas por estas pruebas locales.
+
+Regresión frontend posterior: 845 pruebas aprobadas, TypeScript, lint estricto y build correctos. Los E2E móviles originales aprobaron 3/3 tamaños; WebKit aprobó 6/6 sin cambiar sus aserciones. Captura compacta a 360 px inspeccionada visualmente en `output/playwright/revision114/compact-360-light.png`.

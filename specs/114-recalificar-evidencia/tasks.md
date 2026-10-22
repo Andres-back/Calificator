@@ -29,3 +29,10 @@
 
 ## Dependencias y estrategia
 T001 → T002 → T003 → T004/T005; T007/T008 comparten la misma transacción y dependen de T004. T009 puede avanzar tras fijar contrato; T010 tras T009. T011/T012 completan historial. T013/T014/T015 cierran la entrega. Solo se paralelizan verificaciones independientes, no agentes ni ediciones concurrentes. MVP US1; US2/US3 obligatorias para el PR autorizado.
+
+## Phase 7: Convergence
+
+- [x] T016 Compactar las acciones nuevas para que no desplacen la navegación principal de revisión a 360 px; conservar acceso, historial y objetivos táctiles según FR-009 y SC-001 (partial, HIGH).
+- [x] T017 Registrar Spec 114 en la lista base sin eliminar controles de gobernanza según SC-004 y Constitución VII (partial, MEDIUM).
+- [x] T018 Aislar la expectativa de la migración histórica de feedback de nuevas revisiones sin reducir la comprobación de conservación según FR-010 (partial, MEDIUM).
+- [x] T019 Reproducir y resolver el E2E WebKit de confirmación de material sin omitir confirmación ni aceptar propuestas automáticamente según SC-004 y Constitución VII (partial, MEDIUM).

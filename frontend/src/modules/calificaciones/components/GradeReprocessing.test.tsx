@@ -9,14 +9,22 @@ vi.mock('../api', () => ({ reprocessGrade: mocks.send, listGradingRevisions: moc
 vi.mock('@/components/evidence/MultiPageEvidencePicker', () => ({ MultiPageEvidencePicker: ({ onChange }: { onChange: (pages: unknown[]) => void }) => <button onClick={() => onChange([{ id: 'page', file: new File(['synthetic'], 'photo.jpg', { type: 'image/jpeg' }), rotation: 90 }])}>Tomar foto sintética</button> }));
 const cal = { id: 'c1', evaluacion_id: 'e1', materia_id: 'm1', estudiante_id: 's1', estudiante_nombre: 'Alumno sintético', evaluacion_nombre: 'Actividad sintética',
   estado: 'confirmada', nota_confirmada: 0, revisado_por_docente: true, entrega_archivo_url: '/api/evidencia', updated_at: '2026-10-22T00:00:00', resultado_json: {} } as unknown as CalificacionDetalle;
-function setup(changes: Partial<CalificacionDetalle> = {}) {
+function setup(changes: Partial<CalificacionDetalle> = {}, expandOptions = true) {
   const accepted = vi.fn();
   render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })}><GradeReprocessing cal={{ ...cal, ...changes }} onAccepted={accepted} /></QueryClientProvider>);
+  if (expandOptions) fireEvent.click(screen.getByText('Recalificar y cambiar evidencia'));
   return accepted;
 }
 beforeEach(() => { vi.clearAllMocks(); mocks.history.mockResolvedValue([]); mocks.send.mockResolvedValue({ ...cal, estado: 'procesando', nota_confirmada: null, resultado_json: { job_id: 'job1' } }); });
 
 describe('corregir una entrega desde la revisión docente', () => {
+  it('mantiene las opciones avanzadas plegadas hasta que el docente las abre', () => {
+    setup({}, false);
+    expect(screen.getByRole('button', { name: 'Volver a calificar' })).not.toBeVisible();
+    fireEvent.click(screen.getByText('Recalificar y cambiar evidencia'));
+    expect(screen.getByRole('button', { name: 'Volver a calificar' })).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Cambiar evidencia' })).toBeVisible();
+  });
   it('reabre una nota cero con confirmación y sin motivo obligatorio', async () => {
     const accepted = setup();
     fireEvent.click(screen.getByRole('button', { name: 'Volver a calificar' }));

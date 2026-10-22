@@ -350,7 +350,7 @@ actualizar la especificación propietaria, su plan y sus tareas; no debe crear d
 
 ## Hotfix 114: recalificar y corregir evidencia
 
-- [114-recalificar-evidencia](114-recalificar-evidencia/spec.md), [issue #240](https://github.com/Andres-back/Calificator/issues/240): acciones docentes de recalificación y sustitución directa de fotos/PDF, motivo opcional, confirmación de reapertura e historial privado con evidencia y resultado anteriores. Mantiene una nota vigente, versiones del contenido y aprobación docente; sin cambios en modelos ni datos productivos. [Validación](114-recalificar-evidencia/validation.md). Solo se autoriza crear el PR; CI obligatorio y fusión/despliegue no autorizados.
+- [114-recalificar-evidencia](114-recalificar-evidencia/spec.md), [issue #240](https://github.com/Andres-back/Calificator/issues/240): acciones docentes de recalificación y sustitución directa de fotos/PDF, motivo opcional, confirmación de reapertura e historial privado con evidencia y resultado anteriores. Mantiene una nota vigente, versiones del contenido y aprobación docente; sin cambios en modelos ni datos productivos durante las pruebas. [Validación](114-recalificar-evidencia/validation.md). [PR #241](https://github.com/Andres-back/Calificator/pull/241): el usuario autorizó posteriormente fusionar; CI verde obligatorio, sin bypass ni operaciones manuales del VPS.
 
 ## Hotfix 109: encuesta docente fiable y versionada
 

@@ -78,6 +78,10 @@ export function Modal({
     previouslyFocusedRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
 
     const frame = window.requestAnimationFrame(() => {
+      // A background dialog's delayed autofocus must never steal focus from
+      // the material/camera dialog opened above it (notably in WebKit).
+      const dialogs = document.querySelectorAll('[role="dialog"][aria-modal="true"]');
+      if (dialogs.item(dialogs.length - 1) !== dialogRef.current) return;
       // No interrumpir al usuario si ya empezó a escribir antes del autofocus.
       const dialog = dialogRef.current;
       if (dialog?.contains(document.activeElement) && document.activeElement !== dialog) return;

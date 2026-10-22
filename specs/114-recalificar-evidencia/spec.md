@@ -1,7 +1,7 @@
 # Especificación: recalificar y corregir evidencia desde la revisión docente
 
 **Rama**: `codex/114-recalificar-evidencia` | **Fecha**: 2026-10-22 | **Issue**: [#240](https://github.com/Andres-back/Calificator/issues/240)
-**Estado**: alcance autorizado en el chat después de aclarar motivo opcional: «bien me ire a dormir no pares hasta dejar el pr echo». Entrega mediante PR, sin autorización de merge ni despliegue.
+**Estado**: alcance autorizado en el chat después de aclarar motivo opcional: «bien me ire a dormir no pares hasta dejar el pr echo». PR #241 creado; el usuario posteriormente pidió «fusion». Fusión solo con CI verde, sin operaciones manuales de producción ni cambios ajenos al alcance.
 
 ## Escenarios de usuario y pruebas
 

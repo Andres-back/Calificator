@@ -53,6 +53,9 @@ export function GradeReprocessing({ cal, onAccepted, onDirtyChange, disabled = f
     && (mode !== 'replace' || (pages.length > 0 && !hasUnusableEvidence(pages)));
 
   return <div className="min-w-0 space-y-3" aria-label="Corregir entrega y consultar historial">
+    <details className="rounded-xl border border-border px-3">
+      <summary className="focus-ring min-h-11 cursor-pointer py-3 text-sm font-semibold">Recalificar y cambiar evidencia</summary>
+      <div className="space-y-3 pb-3">
     {cal.entrega_archivo_url && <div className="flex flex-wrap gap-2">
       <Button type="button" size="sm" variant="outline" className="min-h-11" disabled={disabled || processing} onClick={() => open('regrade')}><RotateCcw className="h-4 w-4" /> Volver a calificar</Button>
       <Button type="button" size="sm" variant="outline" className="min-h-11" disabled={disabled || processing} onClick={() => open('replace')}><Camera className="h-4 w-4" /> Cambiar evidencia</Button>
@@ -71,6 +74,8 @@ export function GradeReprocessing({ cal, onAccepted, onDirtyChange, disabled = f
         {item.motivo && <p>Motivo: {item.motivo}</p>}
         {item.evidencia_url && <a href={item.evidencia_url} target="_blank" rel="noreferrer" className="focus-ring inline-flex min-h-11 items-center font-semibold text-brand-700 dark:text-brand-200">Abrir evidencia anterior</a>}
       </article>)}
+    </details>
+      </div>
     </details>
     <Modal open={mode !== null} onClose={() => { if (!mutation.isPending) setMode(null); }} title={mode === 'replace' ? 'Cambiar evidencia' : 'Volver a calificar'}
       className="max-w-3xl" closeOnBackdrop={!mutation.isPending} closeOnEscape={!mutation.isPending} showCloseButton={!mutation.isPending}
