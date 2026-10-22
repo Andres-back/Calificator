@@ -348,6 +348,10 @@ actualizar la especificación propietaria, su plan y sus tareas; no debe crear d
 
 - [095-flujo-docente-ligero](095-flujo-docente-ligero/spec.md), [issue #200](https://github.com/Andres-back/Calificator/issues/200): cabeceras y acciones compactas, boletín progresivo, claridad de nota, continuación por cuenta, progreso y elección segura del siguiente alumno, vocabulario uniforme. Alcance/[plan](095-flujo-docente-ligero/plan.md) aprobados; listas base 16/16 y UX 10/10 revisadas con autorización. Conserva propietarios 003/005/008, API y registros. [PR #201](https://github.com/Andres-back/Calificator/pull/201) fusionado con cuatro controles verdes; producción verificada el 2026-10-13 en main `9bc4455`, assets nuevos públicos y servicios saludables. [Evidencia de cierre](https://github.com/Andres-back/Calificator/pull/201#issuecomment-6152159782); sin modificaciones manuales de notas/evidencias.
 
+## Hotfix 114: recalificar y corregir evidencia
+
+- [114-recalificar-evidencia](114-recalificar-evidencia/spec.md), [issue #240](https://github.com/Andres-back/Calificator/issues/240): acciones docentes de recalificación y sustitución directa de fotos/PDF, motivo opcional, confirmación de reapertura e historial privado con evidencia y resultado anteriores. Mantiene una nota vigente, versiones del contenido y aprobación docente; sin cambios en modelos ni datos productivos. [Validación](114-recalificar-evidencia/validation.md). Solo se autoriza crear el PR; CI obligatorio y fusión/despliegue no autorizados.
+
 ## Hotfix 109: encuesta docente fiable y versionada
 
 - [109-encuesta-envio-seguro](109-encuesta-envio-seguro/spec.md), [issue #226](https://github.com/Andres-back/Calificator/issues/226): recepción confirmada, firma validada antes de enviar, reintento idéntico en memoria y diagnóstico 5.0 con minutos/abiertas/legibilidad/cámara/entrega y respaldo. Recuentos y CSV privados por versión, conservación de 4.0 y constancias históricas. Autorización explícita del usuario el 2026-10-20. No demuestra ahorro causal ni sustituye preprueba humana; sin cambios académicos. PR/CI/main obligatorios antes de actualizar el servicio independiente.

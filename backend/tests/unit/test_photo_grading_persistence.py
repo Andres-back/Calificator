@@ -5,6 +5,9 @@ from decimal import Decimal
 from types import SimpleNamespace
 from uuid import uuid4
 
+import pytest
+from fastapi import HTTPException
+
 from app.modules.calificaciones import grading_queue_service, photo_service, router
 from app.modules.authorization.catalog import default_permissions_for_role
 from app.modules.calificaciones.models import Entrega
@@ -401,7 +404,7 @@ def test_two_photos_create_one_delivery_and_one_queue_entry(monkeypatch) -> None
     assert queued[0]["evidence_metadata"]["paginas"] == 2
 
 
-def test_teacher_replaces_existing_delivery_without_consuming_student_attempt(
+def test_existing_grade_requires_explicit_replacement_route_without_consuming_attempt(
     monkeypatch,
 ) -> None:
     evaluation = evaluation_fixture()
@@ -420,7 +423,6 @@ def test_teacher_replaces_existing_delivery_without_consuming_student_attempt(
         revisado_por_docente=True,
     )
     db = FakeDB([delivery, existing_grade])
-    sentinel = object()
 
     async def ensure_manage(*_args, **_kwargs):
         return evaluation
@@ -429,14 +431,10 @@ def test_teacher_replaces_existing_delivery_without_consuming_student_attempt(
         return True
 
     async def save(*_args, **_kwargs):
-        return "/uploads/entregas/reemplazo.pdf"
+        raise AssertionError("El alta de fotos no debe sobrescribir una evidencia calificada")
 
     async def grade_replacement(_db, **kwargs):
-        assert kwargs["entrega"] is delivery
-        assert kwargs["calificacion"] is existing_grade
-        assert delivery.archivo_url == "/uploads/entregas/reemplazo.pdf"
-        assert delivery.tipo == "pdf"
-        return sentinel
+        raise AssertionError("Debe usarse la ruta explícita con historial y confirmación")
 
     async def forbidden_attempt_check(*_args, **_kwargs):
         raise AssertionError("La politica de intentos no aplica al reemplazo docente")
@@ -469,19 +467,22 @@ def test_teacher_replaces_existing_delivery_without_consuming_student_attempt(
         grade_replacement,
     )
 
-    result = asyncio.run(
-        router.calificar_foto(
-            evaluacion_id=evaluation.id,
-            estudiante_id=student_id,
-            foto=FakeUpload(),
-            current_user=teacher,
-            db=db,
+    with pytest.raises(HTTPException) as denied:
+        asyncio.run(
+            router.calificar_foto(
+                evaluacion_id=evaluation.id,
+                estudiante_id=student_id,
+                foto=FakeUpload(),
+                current_user=teacher,
+                db=db,
+            )
         )
-    )
-
-    assert result is sentinel
+    assert denied.value.status_code == 409
+    assert "Cambiar evidencia" in denied.value.detail
+    assert delivery.archivo_url == "/uploads/entregas/anterior.jpg"
+    assert existing_grade.revisado_por_docente is True
     assert db.added == []
-    assert db.events == ["flush"]
+    assert db.events == []
 
 
 def test_student_file_submission_returns_received_delivery_and_enqueues(monkeypatch) -> None:

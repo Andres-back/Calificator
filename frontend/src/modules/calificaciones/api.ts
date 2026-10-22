@@ -70,6 +70,32 @@ export async function reintentarCalificacionFoto(calificacionId: string): Promis
   const { data } = await api.post<Calificacion>(`/calificaciones/${calificacionId}/reintentar-foto`);
   return data;
 }
+
+export interface GradingRevision {
+  id: string; created_at: string; actor_nombre: string; accion: string;
+  motivo: string | null; estado_anterior: string | null; nota_anterior: string | number | null;
+  feedback_anterior: string | null; evidencia_url: string | null;
+}
+
+export async function listGradingRevisions(id: string): Promise<GradingRevision[]> {
+  const { data } = await api.get<GradingRevision[]>(`/calificaciones/${id}/revisiones`);
+  return data;
+}
+
+export async function reprocessGrade(id: string, payload: {
+  requestId: string; version: string; confirmed: boolean; reason: string;
+  files?: File[]; rotations?: number[];
+}): Promise<Calificacion> {
+  const body = new FormData();
+  body.append('solicitud_id', payload.requestId);
+  body.append('version_esperada', payload.version);
+  body.append('confirmar_reapertura', String(payload.confirmed));
+  if (payload.reason.trim()) body.append('motivo', payload.reason.trim());
+  payload.files?.forEach((file) => body.append('foto', file));
+  if (payload.files?.length) body.append('rotaciones', JSON.stringify(payload.rotations ?? payload.files.map(() => 0)));
+  const { data } = await api.post<Calificacion>(`/calificaciones/${id}/recalificar`, body);
+  return data;
+}
 export async function iniciarSalon(evaluacionId: string): Promise<SalonSesionRead> {
   const { data } = await api.post<SalonSesionRead>('/calificaciones/modo-salon/iniciar', null, {
     params: { evaluacion_id: evaluacionId },

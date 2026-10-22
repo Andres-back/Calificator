@@ -95,5 +95,5 @@ Sin decisiones explícitas de permiso para este dominio.
 
 ## Hallazgos
 
+- **low · orphan_candidate**: 23 superficies no alcanzables o históricas se conservan como candidatas a retiro.
 - **low · missing_coverage**: 27 superficies de 021-configuracion-ia-docente no tienen evidencia de prueba observable.
-- **low · orphan_candidate**: 20 superficies no alcanzables o históricas se conservan como candidatas a retiro.

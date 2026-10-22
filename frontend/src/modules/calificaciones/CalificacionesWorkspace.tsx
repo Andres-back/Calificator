@@ -38,7 +38,6 @@ import {
   crearIncidencia, getEvaluationReview, getCalificacionDetalle, listarIncidencias, listCalificaciones,
   establecerNotaManual, publicarNota, publicarNotaBatch,
   marcarRevisionManual, resolverIncidencia, setAnswersReleased, solicitarReemplazoEvidencia, updateGradeBreakdown,
-  reintentarCalificacionFoto,
 } from './api';
 import { addPendingGrading } from './gradingJobs';
 import { GradingJobMonitor } from './GradingJobMonitor';
@@ -46,6 +45,7 @@ import { RevisionGuide } from './RevisionGuide';
 import { GradeBreakdown } from './components/GradeBreakdown';
 import { GradeComponentEditor } from './components/GradeComponentEditor';
 import { GradeFeedback } from './components/GradeFeedback';
+import { GradeReprocessing } from './components/GradeReprocessing';
 import { gradeCalculationPresentation } from './components/gradeCalculationPresentation';
 import { GradeGlobalAdjustmentEditor } from './components/GradeGlobalAdjustmentEditor';
 import { GradeBreakdownHistory } from './components/GradeBreakdownHistory';
@@ -631,6 +631,7 @@ function PanelDetalle({
   const [adjError, setAdjError] = useState('');
   const [replacementOpen, setReplacementOpen] = useState(false);
   const [replacementReason, setReplacementReason] = useState('');
+  const [reprocessingDirty, setReprocessingDirty] = useState(false);
   const [editingComponentId, setEditingComponentId] = useState<string | null>(null);
   const [editingSnapshot, setEditingSnapshot] = useState<GradeBreakdownData | null>(null);
   const [editingComponentDirty, setEditingComponentDirty] = useState(false);
@@ -696,17 +697,6 @@ function PanelDetalle({
   const evidenceSectionRef = useRef<HTMLElement | null>(null);
   const feedbackSectionRef = useRef<HTMLDivElement | null>(null);
   const adjustmentSectionRef = useRef<HTMLDivElement | null>(null);
-  const retryMutation = useMutation({
-    mutationFn: () => reintentarCalificacionFoto(cal.id),
-    onSuccess: (grade) => {
-      const jobId = grade.resultado_json?.job_id;
-      if (typeof jobId === 'string') addPendingGrading({ jobId, evaluacionId: grade.evaluacion_id, materiaId: grade.materia_id, estudianteId: grade.estudiante_id, estudianteNombre: cal.estudiante_nombre || 'Estudiante' });
-      void queryClient.invalidateQueries({ queryKey: ['calificacion-detalle', cal.id] });
-      void queryClient.invalidateQueries({ queryKey: ['evaluation-review', cal.evaluacion_id] });
-      toast.success('Reintento en cola. Puedes revisar otro estudiante.');
-    },
-    onError: (error) => toast.error(toApiError(error).detail),
-  });
 
   const replacementMutation = useMutation({
     mutationFn: () => solicitarReemplazoEvidencia(cal.id, replacementReason.trim()),
@@ -798,8 +788,8 @@ function PanelDetalle({
 
   // Notify parent about dirty state
   useEffect(() => {
-    onDirtyChange?.(isDirty || editingComponentDirty || showGlobalAdjustment || breakdownMutation.isPending || claimDirty);
-  }, [isDirty, editingComponentDirty, showGlobalAdjustment, breakdownMutation.isPending, claimDirty, onDirtyChange]);
+    onDirtyChange?.(isDirty || editingComponentDirty || showGlobalAdjustment || breakdownMutation.isPending || claimDirty || reprocessingDirty);
+  }, [isDirty, editingComponentDirty, showGlobalAdjustment, breakdownMutation.isPending, claimDirty, reprocessingDirty, onDirtyChange]);
 
   function requestComponentEdit(componentId: string) {
     if (editingComponentId && editingComponentId !== componentId && editingComponentDirty) {
@@ -1041,6 +1031,12 @@ function PanelDetalle({
           </Badge>
         </div>
 
+        {canGrade && <GradeReprocessing key={cal.id} cal={cal} onDirtyChange={setReprocessingDirty} disabled={isDirty || editingComponentDirty || showGlobalAdjustment || claimDirty}
+          onAccepted={(grade) => {
+            const jobId = grade.resultado_json?.job_id;
+            if (typeof jobId === 'string') addPendingGrading({ jobId, evaluacionId: grade.evaluacion_id, materiaId: grade.materia_id, estudianteId: grade.estudiante_id, estudianteNombre: cal.estudiante_nombre || 'Estudiante' });
+            onSaved();
+          }} />}
         <section aria-label="Cálculo y criterios registrados" className="text-sm">
           {!presentation.processing && <GradeNoteExplanation compact cal={cal} score={presentation.score} />}
           {criterionRows.length ? <details className="mt-2">
@@ -1234,7 +1230,6 @@ function PanelDetalle({
         ) : null}
         <Timeline events={cal.timeline} />
         </details>
-        {canGrade && manualReview && evidenceUrl && <Button variant="outline" loading={retryMutation.isPending} disabled={retryMutation.isPending} onClick={() => retryMutation.mutate()}><RotateCcw className="h-4 w-4" /> Volver a analizar la evidencia</Button>}
         </div>
         {/* Acciones */}
         {canGrade && !done && !presentation.processing && (
@@ -1335,7 +1330,7 @@ function PanelDetalle({
       description="El estudiante deberá volver a seleccionar y enviar el paquete completo. La evidencia actual se conservará hasta que llegue la nueva."
       confirmLabel="Solicitar reemplazo"
     >
-      <Field label="Motivo para el estudiante" required hint="Indica qué hoja falta o qué debe corregir.">
+      <Field label="Motivo para el estudiante (opcional)" hint="Si quieres, indica qué hoja falta o qué debe corregir.">
         <Textarea
           value={replacementReason}
           onChange={(event) => setReplacementReason(event.target.value)}
@@ -1344,7 +1339,6 @@ function PanelDetalle({
           maxLength={1000}
         />
       </Field>
-      {replacementReason.trim().length < 10 && <p className="text-xs text-amber-700 dark:text-amber-300">Escribe al menos 10 caracteres para explicar el reemplazo.</p>}
     </ConfirmDialog>
     </>
   );

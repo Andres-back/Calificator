@@ -1,0 +1,5 @@
+# Contrato aditivo
+- `POST /calificaciones/{id}/recalificar`, multipart: `solicitud_id` UUID, `version_esperada` datetime, `confirmar_reapertura` bool false, `motivo` opcional hasta 1000, `foto` opcional lista, `rotaciones` JSON opcional. Sin fotos reutiliza archivo; con fotos sustituye paquete. Respuesta CalificacionRead, 202. Misma solicitud/huella no duplica. 409 para activo, versión, falta de confirmación o archivo/contexto ausente; 400/422 para archivo/cuerpo inválido; 403 ajeno/sin permiso.
+- `GET /calificaciones/{id}/revisiones`, permiso `grading.grade` y propietario. Fecha, actor, acción, motivo, nota/feedback/estado anteriores y enlace privado de evidencia, sin path interno ni resultados crudos.
+- `GET /calificaciones/{id}/revisiones/{revision_id}/evidencia`: misma autorización, archivo inline privado `no-store`, sin enlaces públicos.
+- Solicitar reemplazo al estudiante mantiene ruta, pero admite motivo vacío. Los archivos archivados nunca se eliminan mediante reemplazos posteriores.
