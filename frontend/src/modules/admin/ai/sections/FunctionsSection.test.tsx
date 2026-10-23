@@ -17,6 +17,12 @@ const functions: AIFunctionControl[] = [{ function_id: 'xali', label: 'Asistente
 }] }];
 
 describe('administración de IA de devoluciones', () => {
+  it('does not assign duplicate navigation targets to deterministic stages', () => {
+    const deterministic = { ...functions[0].stages[0], runtime_feature: null, editable: false, configured: null, effective: null };
+    const { container } = render(<FunctionsSection functions={[{ ...functions[0], stages: [{ ...deterministic, stage_id: 'prepare' }, { ...deterministic, stage_id: 'consolidation' }, ...functions[0].stages] }]} features={[route]} providers={providers} models={models} onUpsert={vi.fn()} />);
+    const ids = [...container.querySelectorAll('[id^="ai-route-"]')].map((element) => element.id);
+    expect(ids).toEqual([`ai-route-${route.feature}`]);
+  });
   it('permite cambiar proveedor y modelo desde el frontend sin fijar GLM en negocio', async () => {
     const update = vi.fn();
     render(<FunctionsSection functions={functions} features={[route]} providers={providers} models={models} onUpsert={update} />);

@@ -140,7 +140,7 @@ export function FunctionsSection({
                 ? unavailableModel(models, route.fallback_provider, route.fallback_model)
                 : null;
               return (
-                <Card key={`${item.function_id}:${stage.stage_id}`} id={`ai-route-${stage.runtime_feature}`} className="space-y-4 p-4">
+                <Card key={`${item.function_id}:${stage.stage_id}`} id={stage.runtime_feature ? `ai-route-${stage.runtime_feature}` : undefined} className="space-y-4 p-4">
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div>
                       <div className="flex flex-wrap items-center gap-2"><h3 className="font-bold">{stage.label}</h3><Badge tone={stage.editable ? 'violet' : 'neutral'}>{stage.editable ? stage.capability : 'Sin IA'}</Badge></div>
