@@ -169,8 +169,9 @@ async def test_new_api_profiles_secrets_proof_publication_and_snapshot(
                 else changed_model
                 for m in models
             ]
-            with pytest.raises(APIConnectionError, match="Prueba nuevamente"):
+            with pytest.raises(APIConnectionError, match="Vuelve a comprobar") as invalid_profile:
                 await validate_compatible_publication(db, actual, altered, features)
+            assert invalid_profile.value.field.endswith(".primary_model")
             assert (await service.get_feature_config("calificacion.valoracion"))[
                 "primary_model"
             ] == model["model_id"]
@@ -193,7 +194,7 @@ async def test_new_api_profiles_secrets_proof_publication_and_snapshot(
                 {**probe["model"], "verification_id": str(uuid4())},
                 {**probe["model"], "capabilities": ["text", "vision"]},
             ):
-                with pytest.raises(APIConnectionError, match="Prueba nuevamente"):
+                with pytest.raises(APIConnectionError, match="Vuelve a comprobar") as invalid_proof:
                     await validate_compatible_publication(
                         db,
                         actual,
@@ -206,6 +207,7 @@ async def test_new_api_profiles_secrets_proof_publication_and_snapshot(
                         ],
                         features,
                     )
+                assert invalid_proof.value.field.endswith(".primary_model")
             assert snapshot["primary"]["runtime_profile"]["protocol"] == "responses"
     finally:
         await engine.dispose()

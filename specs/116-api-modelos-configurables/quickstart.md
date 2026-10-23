@@ -80,3 +80,5 @@ Verificación local: 1.289 pruebas unitarias backend; 858 pruebas frontend en 13
 Convergencia de la corrección: FR-005/FR-009, SC-001/SC-005 y la aceptación US1/AC2 cubiertos; se mantiene la decisión de arquitectura de prueba única explícita y publicación versionada. No quedan tareas de construcción abiertas. No hay hooks de extensiones.
 
 Revisión final de accesibilidad: las etapas sin IA no reciben identificadores repetidos; una prueba adicional comprueba los destinos de navegación (cuatro casos de FunctionsSection verdes). No modifica selecciones ni permisos.
+
+Primer CI del hotfix: una integración seguía comparando el texto «Prueba nuevamente» después del cambio a «Vuelve a comprobar». Se actualizó esa expectativa y se añadió la comprobación del campo `primary_model`; el rechazo de formato/capacidad/comprobante inválidos sigue siendo obligatorio. Los cinco contratos PostgreSQL de Spec 116 pasaron en la base local aislada antes de reenviar CI.
