@@ -17,6 +17,7 @@ La entrega parte de main `557b5ccf76783b22cd761715c8003d8e5e3cee31`, con Spec 11
 - Migraciones: base nueva hasta `202610230001`; downgrade a `202610220001` y nuevo upgrade en otra base vacía. El downgrade de una base con perfiles utilizados fue rechazado y conservó el esquema.
 - Contenedores: builds locales de backend y web. El cambio no añade dependencias de producción ni modifica el convertidor de documentos.
 - Datos: las pruebas crean únicamente registros sintéticos en bases aisladas; comparan notas y evidencias antes/después de publicar. No se han enviado entregas reales a proveedores para esta implementación.
+- Primera ejecución CI del PR #246: cuatro regresiones de integración usaban dobles anteriores que no contemplaban la lectura nueva del catálogo/dependencias. Se actualizaron sus contratos sintéticos, sin omitir aserciones ni relajar validaciones de producción. Los ocho casos de esos archivos pasaron localmente; se exige una nueva ejecución completa de CI antes de fusionar.
 
 ## Uso del panel
 
