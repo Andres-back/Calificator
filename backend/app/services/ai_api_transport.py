@@ -12,6 +12,19 @@ from pydantic import BaseModel, ConfigDict, field_validator, model_validator
 class APIOutputError(RuntimeError):
     """Stable safe error code: never put provider output in exceptions/logs."""
 
+    def __init__(self, code: str, *, usage: dict[str, Any] | None = None):
+        self.code = code if code in {
+            "output_budget_exhausted", "output_incomplete", "output_refused",
+            "output_empty", "protocol_not_supported",
+        } else "output_incomplete"
+        usage = usage if isinstance(usage, dict) else {}
+        def count(primary: str, alias: str) -> int | None:
+            value = usage.get(primary, usage.get(alias))
+            return value if type(value) is int and 0 <= value <= 10**9 else None
+        self.input_tokens = count("input_tokens", "prompt_tokens")
+        self.output_tokens = count("output_tokens", "completion_tokens")
+        super().__init__(self.code)
+
 
 class ModelRuntimeProfile(BaseModel):
     model_config = ConfigDict(extra="forbid")
@@ -167,18 +180,21 @@ def build_api_request(
 
 def normalize_api_response(protocol: str, data: dict[str, Any]) -> dict[str, Any]:
     """Normalize successful, complete final text into the application's contract."""
-    usage = deepcopy(data.get("usage") or {})
+    usage = deepcopy(data.get("usage")) if isinstance(data.get("usage"), dict) else {}
     if protocol == "responses":
         if data.get("status") != "completed" or data.get("error"):
-            raise APIOutputError("output_incomplete")
+            reason = data.get("incomplete_details") or {}
+            exhausted = (data.get("status") == "incomplete" and not data.get("error")
+                         and isinstance(reason, dict) and reason.get("reason") == "max_output_tokens")
+            raise APIOutputError("output_budget_exhausted" if exhausted else "output_incomplete", usage=usage)
         blocks = []
         for item in data.get("output") or []:
             if item.get("type") == "message":
                 if item.get("status") not in (None, "completed"):
-                    raise APIOutputError("output_incomplete")
+                    raise APIOutputError("output_incomplete", usage=usage)
                 blocks.extend(item.get("content") or [])
         if any(b.get("type") == "refusal" for b in blocks):
-            raise APIOutputError("output_refused")
+            raise APIOutputError("output_refused", usage=usage)
         content = "".join(
             str(b.get("text") or "") for b in blocks if b.get("type") == "output_text"
         )
@@ -187,7 +203,8 @@ def normalize_api_response(protocol: str, data: dict[str, Any]) -> dict[str, Any
         finish = str(data.get("stop_reason") or "")
         blocks = data.get("content") or []
         if data.get("type") == "error" or finish not in {"end_turn", "stop_sequence"}:
-            raise APIOutputError("output_incomplete")
+            exhausted = data.get("type") != "error" and finish == "max_tokens"
+            raise APIOutputError("output_budget_exhausted" if exhausted else "output_incomplete", usage=usage)
         content = (
             blocks
             if isinstance(blocks, str)
@@ -198,19 +215,19 @@ def normalize_api_response(protocol: str, data: dict[str, Any]) -> dict[str, Any
     elif protocol == "chat_completions":
         choices = data.get("choices") or []
         if not choices:
-            raise APIOutputError("output_empty")
+            raise APIOutputError("output_empty", usage=usage)
         choice = choices[0]
         finish = str(choice.get("finish_reason") or "")
         message = choice.get("message") or {}
-        if finish != "stop":
-            raise APIOutputError("output_incomplete")
         if message.get("refusal"):
-            raise APIOutputError("output_refused")
+            raise APIOutputError("output_refused", usage=usage)
+        if finish != "stop":
+            raise APIOutputError("output_budget_exhausted" if finish == "length" else "output_incomplete", usage=usage)
         content = message.get("content") or ""
     else:
         raise APIOutputError("protocol_not_supported")
     if not isinstance(content, str) or not content.strip():
-        raise APIOutputError("output_empty")
+        raise APIOutputError("output_empty", usage=usage)
     usage.setdefault("prompt_tokens", usage.get("input_tokens", 0))
     usage.setdefault("completion_tokens", usage.get("output_tokens", 0))
     usage.setdefault("input_tokens", usage.get("prompt_tokens", 0))

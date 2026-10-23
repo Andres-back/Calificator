@@ -14,6 +14,7 @@ from app.core.logging import get_logger
 from app.modules.analytics.usage_logger import log_ai_usage
 from app.modules.calificaciones.breakdown_policy import build_component_scaffold, sanitize_component_payload
 from app.modules.calificaciones.feedback_usefulness import is_generic_feedback
+from app.modules.calificaciones.output_budget import grading_output_budget
 from app.modules.calificaciones.grading_visuals import (
     EvaluationVisualInput, VisualContextError, describe_evaluation_material, visual_image_groups,
 )
@@ -29,6 +30,7 @@ from app.services.vision_service import interpret_image
 from app.services.vision_extractor import VisionExtractionError, VisionExtractor
 from app.services.ai_model_discovery import model_supports_vision
 from app.services.ai_api_connections import call_configured_api
+from app.services.ai_api_transport import APIOutputError
 
 logger = get_logger(__name__)
 
@@ -393,7 +395,11 @@ class OpenCodeClient:
             except Exception as exc:
                 retryable = _is_retryable_transport_error(exc) or (isinstance(exc, httpx.HTTPStatusError) and exc.response.status_code in OPEN_CODE_RETRYABLE_STATUS_CODES)
                 await self._log_call(stage=stage, model=model, status="retry" if retryable and attempt < attempts else "failed",
-                    started_at=started, image_count=image_count, attempt_number=attempt, error_code=type(exc).__name__, provider=str(selection.get("provider") or "open_code"))
+                    started_at=started, image_count=image_count, attempt_number=attempt,
+                    input_tokens=exc.input_tokens if isinstance(exc, APIOutputError) else None,
+                    output_tokens=exc.output_tokens if isinstance(exc, APIOutputError) else None,
+                    error_code=exc.code if isinstance(exc, APIOutputError) else type(exc).__name__,
+                    provider=str(selection.get("provider") or "open_code"))
                 if not retryable or attempt == attempts:
                     raise
                 await asyncio.sleep(_retry_delay_seconds(attempt))
@@ -1183,6 +1189,7 @@ async def grader_agent(
     start = time.monotonic()
     try:
         prompt = render_grader_prompt(ctx)
+        output_tokens = grading_output_budget(ctx.blueprint, stage=stage, requested=max_tokens)
         if ctx.requires_visual_material and not client_supports_vision(client, model):
             raise VisualContextError('evaluation_visual_model_unsupported', 'El modelo seleccionado no puede ver las figuras. Se necesita un modelo con visión o revisión docente.')
         if ctx.evaluation_visuals and len(prompt) > max(1000, int(settings.PHOTO_GRADING_CONTEXT_BUDGET_CHARS)):
@@ -1191,14 +1198,14 @@ async def grader_agent(
             raw = await client.chat_multimodal(
                 model=model, text=prompt,
                 image_bytes=ctx.image_bytes, image_mime=ctx.image_mime,
-                json_mode=True, max_tokens=max_tokens or settings.PHOTO_GRADING_PRIMARY_MAX_TOKENS,
+                json_mode=True, max_tokens=output_tokens,
                 timeout=timeout, max_attempts=max_attempts, stage=stage,
                 **({'evaluation_visuals': ctx.evaluation_visuals} if ctx.evaluation_visuals else {}),
             )
         else:
             raw = await client.chat(
                 model=model, messages=[{"role": "user", "content": prompt}],
-                json_mode=True, max_tokens=max_tokens or settings.PHOTO_GRADING_PRIMARY_MAX_TOKENS,
+                json_mode=True, max_tokens=output_tokens,
                 timeout=timeout,
                 max_attempts=max_attempts, stage=stage,
             )
@@ -1242,7 +1249,7 @@ async def grader_agent(
             feedback_estudiante="",
             proveedor=client_provider_for_model(client, model),
             modelo=model,
-            error=exc.code if isinstance(exc, VisualContextError) else type(exc).__name__,
+            error=exc.code if isinstance(exc, (VisualContextError, APIOutputError)) else type(exc).__name__,
             requiere_revision_docente=True,
             tiempo_ms=max(0, int((time.monotonic() - start) * 1000)),
         )
@@ -1367,7 +1374,7 @@ async def verification_agent(
         request_options = {
             "model": model,
             "json_mode": True,
-            "max_tokens": max(256, int(settings.PHOTO_GRADING_VERIFIER_MAX_TOKENS)),
+            "max_tokens": grading_output_budget(ctx.blueprint, stage="grading_secondary"),
             "temperature": 0.1,
             "timeout": timeout,
             "max_attempts": max_attempts,
@@ -1427,7 +1434,7 @@ async def verification_agent(
             feedback_estudiante="",
             proveedor=client_provider_for_model(client, model),
             modelo=model,
-            error=exc.code if isinstance(exc, VisualContextError) else type(exc).__name__,
+            error=exc.code if isinstance(exc, (VisualContextError, APIOutputError)) else type(exc).__name__,
             requiere_revision_docente=True,
             tiempo_ms=max(0, int((time.monotonic() - started) * 1000)),
         )

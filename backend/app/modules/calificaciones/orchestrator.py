@@ -1185,10 +1185,15 @@ async def orchestrate_grading(
 
             if grading_a.nota_sugerida is None and grading_b.nota_sugerida is None:
                 logger.error("Todos los calificadores habilitados fallaron sin producir una nota")
+                output_error_codes = {"output_budget_exhausted", "output_incomplete", "output_refused", "output_empty"}
                 failure_details = {
                     "orchestrator": "all_graders_failed",
                     "grader_a_failed": grading_a.error is not None,
                     "grader_b_failed": grading_b.error is not None,
+                    "grader_a_error": grading_a.error if grading_a.error in output_error_codes
+                        else "provider_error",
+                    "grader_b_error": grading_b.error if grading_b.error in output_error_codes
+                        else "provider_error",
                     "cross_provider_fallback_enabled": (
                         settings.PHOTO_GRADING_CROSS_PROVIDER_FALLBACK_ENABLED
                     ),

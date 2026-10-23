@@ -126,6 +126,8 @@ class Settings(BaseSettings):
     PHOTO_GRADING_ARBITER_TIMEOUT_SECONDS: int = 30
     PHOTO_GRADING_PRIMARY_MAX_TOKENS: int = 3072
     PHOTO_GRADING_VERIFIER_MAX_TOKENS: int = 2048
+    # Finite per-call ceiling for adaptive structured output, independent of model.
+    PHOTO_GRADING_OUTPUT_MAX_TOKENS: int = 16384
     # Presupuesto de entrada aproximado. No trunca: activa partición por pregunta.
     PHOTO_GRADING_CONTEXT_BUDGET_CHARS: int = 320000
     # Aggregate wire limits: reject visibly, never drop required question material.
