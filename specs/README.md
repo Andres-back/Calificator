@@ -383,3 +383,7 @@ actualizar la especificación propietaria, su plan y sus tareas; no debe crear d
 ## Evolución 116: APIs y modelos configurables
 
 - [116-api-modelos-configurables](116-api-modelos-configurables/spec.md), [issue #243](https://github.com/Andres-back/Calificator/issues/243): conexiones institucionales cifradas, catálogo completo, perfiles Chat Completions/Responses/Messages y prueba sintética antes de publicar por función. Captura de destino, formato y revisión de clave en trabajos nuevos. Conserva notas, evidencias y adaptadores de imágenes/embeddings. [Plan aprobado](116-api-modelos-configurables/plan.md) y [validación/entrega](116-api-modelos-configurables/quickstart.md); no implica activación en producción.
+
+## Hotfix 118: salida de calificación completa
+
+- [118-calificacion-salida-completa](118-calificacion-salida-completa/spec.md), [issue #251](https://github.com/Andres-back/Calificator/issues/251): presupuesto finito por componentes para valoración y verificación, diagnóstico de truncamiento explícito y conteos seguros. Aprobado el 2026-10-23; sin cambios de modelos, notas, evidencias ni recalificación masiva. La [prueba anónima](118-calificacion-salida-completa/quickstart.md) confirmó agotamiento del límite anterior y una salida completa al ampliarlo. Pendientes publicación del PR y CI; no desplegado.

@@ -12,6 +12,8 @@ def test_error_codes_never_keep_provider_or_student_text() -> None:
     assert usage_logger._safe_error_code("La respuesta del estudiante fue secreta") == "provider_error"
     assert usage_logger._safe_error_code("request timed out with respuesta 27") == "provider_timeout"
     assert usage_logger._safe_error_code("HTTP 429: demasiadas solicitudes") == "rate_limited"
+    assert usage_logger._safe_error_code("output_budget_exhausted") == "output_budget_exhausted"
+    assert usage_logger._safe_error_code("output_budget_exhausted: private response") == "provider_error"
 
 
 def test_unknown_stages_are_collapsed_without_leaking_labels() -> None:

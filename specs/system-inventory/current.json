@@ -479,7 +479,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "a1b9d15927278bd5685dd4255135ddff274543af19e3d737efbbdeddcd4bafdd",
+  "source_digest": "7b72065181d21ea7f78eb9a1fa0f93fbb0eac22bb6b7070ce98593f613fd918b",
   "surfaces": [
     {
       "actors": [
@@ -44964,6 +44964,12 @@
           "reference": "calificaciones",
           "status": "direct",
           "test_path": "backend/tests/unit/test_grading_component_consensus.py"
+        },
+        {
+          "level": "unit",
+          "reference": "calificaciones",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_grading_output_budget.py"
         },
         {
           "level": "unit",

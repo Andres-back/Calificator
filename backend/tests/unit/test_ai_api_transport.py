@@ -127,7 +127,7 @@ def test_incomplete_empty_or_refused_responses_are_never_grades(payload, code):
     ],
 )
 def test_truncated_other_protocols_are_not_accepted(protocol, payload):
-    with pytest.raises(APIOutputError, match="output_incomplete"):
+    with pytest.raises(APIOutputError, match="output_budget_exhausted"):
         normalize_api_response(protocol, payload)
 
 
@@ -182,6 +182,34 @@ def test_chat_completion_token_field_is_configurable_without_model_names():
         max_tokens=777,
     )
     assert body["max_completion_tokens"] == 777 and "max_tokens" not in body
+
+
+@pytest.mark.parametrize("protocol,payload", [
+    ("responses", {"status": "incomplete", "incomplete_details": {"reason": "max_output_tokens"},
+                   "output": [{"text": "PRIVATE CONTENT"}], "usage": {"input_tokens": 12, "output_tokens": 3072}}),
+    ("chat_completions", {"choices": [{"finish_reason": "length", "message": {"content": "PRIVATE CONTENT"}}],
+                          "usage": {"prompt_tokens": 12, "completion_tokens": 3072}}),
+    ("messages", {"stop_reason": "max_tokens", "content": "PRIVATE CONTENT",
+                  "usage": {"input_tokens": 12, "output_tokens": 3072}}),
+])
+def test_explicit_output_limit_keeps_safe_code_and_usage_only(protocol, payload):
+    with pytest.raises(APIOutputError) as raised:
+        normalize_api_response(protocol, payload)
+    error = raised.value
+    assert error.code == "output_budget_exhausted"
+    assert error.input_tokens == 12 and error.output_tokens == 3072
+    assert "PRIVATE" not in str(error) + repr(vars(error))
+
+
+def test_unknown_incomplete_reason_is_not_inferred_and_usage_is_sanitized():
+    with pytest.raises(APIOutputError) as raised:
+        normalize_api_response("responses", {
+            "status": "incomplete", "incomplete_details": {"reason": "PRIVATE DATA"},
+            "usage": {"input_tokens": "secret", "output_tokens": -5, "reasoning": "private"},
+        })
+    assert raised.value.code == "output_incomplete"
+    assert raised.value.input_tokens is None and raised.value.output_tokens is None
+    assert "private" not in repr(vars(raised.value)).lower()
 
 
 @pytest.mark.parametrize("protocol", ["responses", "messages", "chat_completions"])

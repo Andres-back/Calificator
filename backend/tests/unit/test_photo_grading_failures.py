@@ -362,13 +362,18 @@ def test_comparison_modifier_is_not_accepted_as_the_requested_comparison() -> No
     ) is False
 
 
-def test_both_failed_graders_return_no_score(monkeypatch) -> None:
+@pytest.mark.parametrize("error, safe_code", [
+    ("provider_failed", "provider_error"),
+    ("output_budget_exhausted", "output_budget_exhausted"),
+    ("private student response", "provider_error"),
+])
+def test_both_failed_graders_return_no_score(monkeypatch, error, safe_code) -> None:
     async def failed_grader(*_args, **_kwargs):
         return AgentResult(
             nota_sugerida=None,
             confianza=0,
             feedback_estudiante="",
-            error="provider_failed",
+            error=error,
         )
 
     async def exploding_comparator(*_args, **_kwargs):
@@ -383,6 +388,8 @@ def test_both_failed_graders_return_no_score(monkeypatch) -> None:
     assert result.nota_sugerida is None
     assert result.motivo_revision == "all_graders_failed"
     assert result.raw_model_output["grader_a_failed"] is True
+    assert result.raw_model_output["grader_a_error"] == safe_code
+    assert result.raw_model_output["grader_b_error"] == safe_code
 
 
 def test_composite_job_snapshot_routes_vision_and_grading_models(monkeypatch) -> None:
