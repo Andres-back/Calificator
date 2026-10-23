@@ -27,3 +27,9 @@
 ## Dependencias
 
 T001 → T002 → T003 → T004. T005 requiere T002; T006 requiere T004/T005. T007/T008 → T009. Las pruebas sintéticas de presupuesto y transporte son separables; se ejecutan sin agentes adicionales. MVP: US1, pero ambas historias son obligatorias para cerrar el hotfix.
+
+## Fase 6: Margen automático ampliado aprobado
+
+- [X] T010 Añadir y ejecutar primero regresiones de margen para 1, 8, 24 y 100 componentes y recuperación con imagen/texto en `backend/tests/unit/test_grading_output_budget.py` (FR-001, FR-002, FR-003).
+- [X] T011 Ampliar el margen del estimador acotado en `backend/app/modules/calificaciones/output_budget.py` y documentar la decisión en `specs/118-calificacion-salida-completa/research.md` sin añadir llamadas ni cambiar modelos (FR-001, FR-002, FR-005).
+- [X] T012 Ejecutar regresiones, lint, inventario y gobernanza en copia limpia; actualizar la evidencia y publicar en el PR #252, sin tocar producción (FR-004, FR-005, FR-006).

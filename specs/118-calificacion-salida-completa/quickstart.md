@@ -49,6 +49,21 @@ python -m ruff check --select F401,F821,F822,F823,F841 backend/app backend/tests
 - Las copias temporales originales con identidad y la vista previa insuficientemente anonimizada fueron eliminadas; permanece la copia anónima. Original de producción intacto. Navegador y servidores de laboratorio detenidos, sin nuevas llamadas a IA.
 - La revisión de permisos se restableció al reanudar; se publicó [PR #252](https://github.com/Andres-back/Calificator/pull/252) sin los cambios ajenos ni archivos privados. No fusionado ni desplegado. El cierre documental de T009 acompaña la actualización del mismo PR; CI remoto seguirá siendo obligatorio.
 
-Convergencia Spec Kit: seis requisitos funcionales, cuatro criterios de éxito, cinco escenarios de aceptación y ocho principios constitucionales revisados. Sin trabajo funcional pendiente ni ampliaciones de alcance. Las nueve tareas están completas; la autorización de merge y el resultado de CI son controles de entrega independientes. Sin hooks configurados.
+Convergencia base Spec Kit: seis requisitos funcionales, cuatro criterios de éxito, cinco escenarios de aceptación y ocho principios constitucionales revisados. Las nueve tareas iniciales están completas; la ampliación autorizada se registra en T010–T012. La autorización de merge y el resultado de CI son controles de entrega independientes. Sin hooks configurados.
+
+### Ampliación del margen automático autorizada
+
+El usuario confirmó conservar la estimación automática pero con más espacio, en lugar de fijar 10 000 tokens para toda actividad. El presupuesto ampliado es:
+
+| Componentes | Valoración / recuperación | Verificación |
+|---:|---:|---:|
+| 1 | 5120 | 4096 |
+| 8 | 8192 | 6144 |
+| 24 | 16 384 | 12 288 |
+| 100 | 16 384 | 16 384 |
+
+Se mantienen techo, mínimo institucional configurable, formatos y número de intentos. La reserva no cambia los prompts ni obliga a consumir todo el límite. No garantiza ausencia de fallos por indisponibilidad o actividades superiores a la capacidad.
+
+TDD de ampliación: tres casos de margen fallaron antes del cambio; después se actualizaron dos aserciones antiguas que exigían los límites fijos de 3072/2048 para comprobar la política automática y el techo, sin quitar controles de timeout ni de etapa. Resultado final: **1370 pruebas unitarias aprobadas, 2 omitidas**, 62,70 s; lint obligatorio de CI aprobado. Gobernanza final: **49/49 aprobadas**, 15,77 s; inventario vigente, 632 superficies. Sin nuevas llamadas a IA ni cambios en producción. Convergencia de la ampliación sin trabajo funcional pendiente; doce tareas completas y ningún hook configurado.
 
 No desplegado. Los cambios ajenos de Specs 034/115 se excluyen de la entrega.

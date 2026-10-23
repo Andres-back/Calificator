@@ -39,8 +39,29 @@ def test_rubric_and_explicit_limits_are_also_bounded(monkeypatch):
     assert grading_output_budget(blueprint(100), requested=100000) == 8192
     assert grading_output_budget(blueprint(24), requested=512) == 512
     assert (
-        grading_output_budget(blueprint(1)) == settings.PHOTO_GRADING_PRIMARY_MAX_TOKENS
+        grading_output_budget(blueprint(1)) >= settings.PHOTO_GRADING_PRIMARY_MAX_TOKENS
     )
+
+
+@pytest.mark.parametrize(
+    "count,primary,verifier",
+    [
+        (1, 5120, 4096),
+        (8, 8192, 6144),
+        (24, 16384, 12288),
+        (100, 16384, 16384),
+    ],
+)
+def test_generous_automatic_margin_includes_reasoning_and_feedback(
+    monkeypatch, count, primary, verifier
+):
+    monkeypatch.setattr(settings, "PHOTO_GRADING_PRIMARY_MAX_TOKENS", 3072)
+    monkeypatch.setattr(settings, "PHOTO_GRADING_VERIFIER_MAX_TOKENS", 2048)
+    monkeypatch.setattr(settings, "PHOTO_GRADING_OUTPUT_MAX_TOKENS", 16384)
+    activity = blueprint(count)
+    assert grading_output_budget(activity) == primary
+    assert grading_output_budget(activity, stage="targeted_recheck") == primary
+    assert grading_output_budget(activity, stage="grading_secondary") == verifier
 
 
 class CapturingClient:
@@ -74,7 +95,8 @@ class CapturingClient:
 
 
 @pytest.mark.parametrize("multimodal", [False, True])
-def test_grader_and_verifier_use_component_budget_with_any_model(multimodal):
+@pytest.mark.parametrize("stage", ["grading_primary", "targeted_recheck"])
+def test_grader_and_verifier_use_component_budget_with_any_model(multimodal, stage):
     ctx = agents.AgentContext(
         evaluacion_nombre="Sintética",
         nota_maxima=5,
@@ -84,7 +106,11 @@ def test_grader_and_verifier_use_component_budget_with_any_model(multimodal):
     client = CapturingClient()
     primary = asyncio.run(
         agents.grader_agent(
-            ctx, model="arbitrary-2099", client=client, multimodal=multimodal
+            ctx,
+            model="arbitrary-2099",
+            client=client,
+            multimodal=multimodal,
+            stage=stage,
         )
     )
     secondary = asyncio.run(

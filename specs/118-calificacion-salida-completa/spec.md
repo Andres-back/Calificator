@@ -40,7 +40,7 @@ Como responsable necesito distinguir si la respuesta terminó por falta de espac
 
 ### Requisitos funcionales
 
-- **FR-001**: El sistema DEBE dimensionar de forma acotada la respuesta esperada según los componentes de la actividad en valoración, verificación y recuperación existentes.
+- **FR-001**: El sistema DEBE dimensionar de forma acotada la respuesta esperada según los componentes de la actividad en valoración, verificación y recuperación existentes, incluyendo margen adicional para el razonamiento, el desglose y la retroalimentación; no solo el tamaño mínimo de una respuesta observada.
 - **FR-002**: El sistema DEBE conservar los modelos, proveedores, formatos y credenciales seleccionados, sin condiciones por nombre comercial.
 - **FR-003**: El sistema DEBE rechazar respuestas incompletas y distinguir el agotamiento explícito del límite de otros motivos de terminación.
 - **FR-004**: El registro técnico DEBE conservar únicamente códigos permitidos y conteos numéricos disponibles; nunca texto del examen, razonamiento privado, identidad o secretos.
@@ -66,3 +66,4 @@ Como responsable necesito distinguir si la respuesta terminó por falta de espac
 - Se mantienen los reintentos y límites de concurrencia existentes; no se añade una nueva llamada automática.
 - Se usará un techo inicial de 16 384 unidades de salida, configurable por operación del servidor; un proveedor con menor capacidad necesita un ajuste compatible, no una aceptación silenciosa.
 - El usuario aprobó este hotfix y dos nuevas llamadas con la misma copia anónima el 2026-10-23; no implica permiso de despliegue ni recuperación masiva.
+- Aclaración aprobada el mismo día: conservar ajuste automático y ampliar su margen, no fijar un límite de 10 000 para todas las actividades. No autoriza nuevas llamadas a IA; la ampliación se comprueba sintéticamente.

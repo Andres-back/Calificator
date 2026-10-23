@@ -20,8 +20,9 @@ def grading_output_budget(
         if verifier
         else settings.PHOTO_GRADING_PRIMARY_MAX_TOKENS
     )
-    # Includes JSON scaffolding and reasoning headroom. A higher limit does not
-    # require the provider to consume it; explanations still follow the prompt.
-    estimate = (1024 + 256 * count) if verifier else (2048 + 384 * count)
+    # Generous reserve for JSON, reasoning and per-answer feedback, even in small
+    # activities. It remains a ceiling, not a requested response length; the
+    # existing compact prompts and retry count are unchanged.
+    estimate = (3072 + 384 * count) if verifier else (4096 + 512 * count)
     estimate = ((estimate + 1023) // 1024) * 1024
     return min(ceiling, max(256, floor, estimate))

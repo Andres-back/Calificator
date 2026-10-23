@@ -38,3 +38,7 @@ Hotfix aprobado: estimar la salida por componentes del blueprint y etapa dentro 
 ## Decisiones y complejidad
 
 Estimación por componentes y tamaño del contrato, con mínimo de etapa y techo; calibración con salida real permitida. No recortar preguntas, respuestas ni imágenes. Alternativas rechazadas: aceptar JSON truncado (inseguro), aumentar intentos a ciegas (coste), cambiar modelos (fuera de alcance) o una llamada por pregunta (latencia). Sin tecnologías nuevas que investigar; se reutilizan contratos inspeccionados. Revisión constitucional tras diseño: cumple.
+
+### Margen ampliado aprobado
+
+Reservar `4096 + 512 × componentes` en valoración/recuperación y `3072 + 384 × componentes` en verificación, redondeando hacia arriba a múltiplos de 1024 y respetando los mínimos de etapa y techo de 16 384. Con 24 preguntas: 16 384 y 12 288 respectivamente. El mayor límite no fuerza a consumirlo ni elimina otros posibles fallos del proveedor. Sin llamadas adicionales ni cambios a modelos, datos o configuración de producción.

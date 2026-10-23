@@ -668,11 +668,12 @@ def test_text_grader_does_not_apply_an_inference_deadline() -> None:
 
     assert result.nota_sugerida == 4
     assert client.timeout is None
-    assert client.max_tokens <= 3072
+    assert client.max_tokens == agents.grading_output_budget(context.blueprint)
+    assert client.max_tokens <= agents.settings.PHOTO_GRADING_OUTPUT_MAX_TOKENS
     assert client.stage == "grading_primary"
 
 
-def test_fast_verifier_uses_compact_output_budget() -> None:
+def test_fast_verifier_uses_bounded_automatic_output_budget() -> None:
     client = CapturingGraderClient()
     context = AgentContext(
         evaluacion_nombre="Prueba",
@@ -700,7 +701,8 @@ def test_fast_verifier_uses_compact_output_budget() -> None:
 
     assert result.nota_sugerida == 4
     assert client.timeout == 15
-    assert client.max_tokens <= 2048
+    assert client.max_tokens == agents.grading_output_budget(context.blueprint, stage="grading_secondary")
+    assert client.max_tokens <= agents.settings.PHOTO_GRADING_OUTPUT_MAX_TOKENS
     assert client.stage == "grading_secondary"
 
 
