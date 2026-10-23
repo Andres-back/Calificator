@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
 from app.shared.enums import JobEstado
+from app.modules.calificaciones.execution_policy import execution_policy
 from app.core.logging import get_logger
 
 logger = get_logger(__name__)
@@ -91,6 +92,7 @@ async def _resolve_job_ai_config(
     return {
         "schema_version": 2,
         "pipeline": "calificacion_foto",
+        "execution_policy": execution_policy(),
         # Compatibility aliases consumed by jobs admitted before stage routing.
         "vision": extraction,
         "grading": primary,
@@ -196,6 +198,25 @@ async def save_grading_checkpoint(
             "lease_seconds": max(60, settings.AI_JOB_LEASE_SECONDS),
         },
     )
+    return bool(result.rowcount)
+
+
+async def save_grading_review_progress(
+    db: AsyncSession, job_id: UUID, *, delivery_id: UUID,
+    claim_token: str, checkpoint: dict[str, Any],
+) -> bool:
+    """Private per-delivery progress; only the current claim may reserve attempts."""
+    result = await db.execute(text(
+        "UPDATE ai_jobs SET resultado_json=COALESCE(resultado_json, '{}'::jsonb) || "
+        "jsonb_build_object('_grading_review_v1', "
+        "COALESCE(resultado_json->'_grading_review_v1', '{}'::jsonb) || "
+        "jsonb_build_object(CAST(:delivery_id AS text), CAST(:checkpoint AS jsonb))), "
+        "heartbeat_at=NOW(), lease_expires_at=NOW() + (:lease_seconds * INTERVAL '1 second') "
+        "WHERE id=CAST(:id AS uuid) AND estado=:running AND claim_token=:claim_token "
+        "AND (entrega_id IS NULL OR entrega_id=CAST(:delivery_id AS uuid))"
+    ), {"id": str(job_id), "delivery_id": str(delivery_id),
+        "running": JobEstado.RUNNING.value, "claim_token": claim_token,
+        "checkpoint": _json_value(checkpoint), "lease_seconds": max(60, settings.AI_JOB_LEASE_SECONDS)})
     return bool(result.rowcount)
 
 
@@ -571,6 +592,7 @@ async def aggregate_parent_job(db: AsyncSession, parent_job_id: UUID) -> dict[st
                 "SELECT COUNT(*) AS total, "
                 "COUNT(*) FILTER (WHERE estado='success') AS success, "
                 "COUNT(*) FILTER (WHERE estado IN ('failed','failed_permanent','requires_review')) AS failed, "
+                "COUNT(*) FILTER (WHERE estado='requires_review') AS review, "
                 "COUNT(*) FILTER (WHERE estado='cancelled') AS cancelled, "
                 "COUNT(*) FILTER (WHERE estado IN ('queued','running','retrying')) AS active "
                 "FROM ai_jobs WHERE parent_job_id=CAST(:id AS uuid)"
@@ -583,10 +605,12 @@ async def aggregate_parent_job(db: AsyncSession, parent_job_id: UUID) -> dict[st
     failed = int(row["failed"] or 0)
     cancelled = int(row["cancelled"] or 0)
     active = int(row["active"] or 0)
+    review = int(row.get("review") or 0)
     completed = success + failed + cancelled
     progress = round((completed / total) * 100) if total else 0
     if total and active == 0:
-        state = JobEstado.SUCCESS.value if success > 0 else JobEstado.FAILED.value
+        state = (JobEstado.SUCCESS.value if success > 0 else JobEstado.REQUIRES_REVIEW.value
+                 if review > 0 else JobEstado.FAILED.value)
     else:
         state = JobEstado.RUNNING.value
     payload = {

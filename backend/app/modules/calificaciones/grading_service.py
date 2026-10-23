@@ -15,6 +15,7 @@ from app.modules.calificaciones.orchestrator import orchestrate_grading
 from app.modules.calificaciones.schemas import GradingResult
 from app.modules.evaluaciones.blueprint_service import grading_answer_key_status
 from app.modules.calificaciones.grading_visuals import EvaluationVisualInput
+from app.modules.calificaciones.recovery import ReviewProgress
 
 logger = get_logger(__name__)
 
@@ -32,6 +33,7 @@ async def grade_submission(
     ai_config: dict | None = None,
     vision_checkpoint: dict | None = None,
     on_vision_checkpoint: Callable[[dict], Awaitable[None]] | None = None,
+    review_progress: ReviewProgress | None = None,
     evaluation_visuals: tuple[EvaluationVisualInput, ...] = (),
 ) -> GradingResult:
     """
@@ -68,6 +70,7 @@ async def grade_submission(
         ai_config=ai_config,
         vision_checkpoint=vision_checkpoint,
         on_vision_checkpoint=on_vision_checkpoint,
+        **({"review_progress": review_progress} if review_progress is not None else {}),
         **({'evaluation_visuals': evaluation_visuals} if evaluation_visuals else {}),
     )
     key_complete, missing_answers = grading_answer_key_status(blueprint)

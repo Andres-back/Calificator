@@ -389,7 +389,7 @@ def test_both_failed_graders_return_no_score(monkeypatch, error, safe_code) -> N
     assert result.motivo_revision == "all_graders_failed"
     assert result.raw_model_output["grader_a_failed"] is True
     assert result.raw_model_output["grader_a_error"] == safe_code
-    assert result.raw_model_output["grader_b_error"] == safe_code
+    assert result.raw_model_output["grader_b_error"] == "primary_unavailable"
 
 
 def test_composite_job_snapshot_routes_vision_and_grading_models(monkeypatch) -> None:

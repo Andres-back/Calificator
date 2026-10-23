@@ -46,6 +46,7 @@ import { GradeBreakdown } from './components/GradeBreakdown';
 import { GradeComponentEditor } from './components/GradeComponentEditor';
 import { GradeFeedback } from './components/GradeFeedback';
 import { GradeReprocessing } from './components/GradeReprocessing';
+import { VerificationPendingNotice } from './components/VerificationPendingNotice';
 import { gradeCalculationPresentation } from './components/gradeCalculationPresentation';
 import { GradeGlobalAdjustmentEditor } from './components/GradeGlobalAdjustmentEditor';
 import { GradeBreakdownHistory } from './components/GradeBreakdownHistory';
@@ -1026,9 +1027,12 @@ function PanelDetalle({
               </p>
             )}
           </div>
-          <Badge tone={presentation.processing ? 'brand' : done ? (published ? 'brand' : 'success') : 'warning'}>
-            {published ? 'Publicada' : done ? 'Confirmada' : presentation.processing ? 'Calificando' : 'Por revisar'}
-          </Badge>
+          <div className="flex flex-col items-end gap-1">
+            <Badge tone={presentation.processing ? 'brand' : done ? (published ? 'brand' : 'success') : 'warning'}>
+              {published ? 'Publicada' : done ? 'Confirmada' : presentation.processing ? 'Calificando' : 'Por revisar'}
+            </Badge>
+            {!done && !presentation.processing && <VerificationPendingNotice status={cal.resultado_json?.verification_status} />}
+          </div>
         </div>
 
         <section aria-label="Cálculo y criterios registrados" className="text-sm">

@@ -34,7 +34,8 @@ const tool = {
 const controlCenter = {
   version: 4,
   functions: [{
-    function_id: 'calificacion', label: 'Calificación', stages: [{
+    function_id: 'calificacion', label: 'Calificación',
+    execution_policy: { schema_version: 1, call_timeout_seconds: 60, max_stage_attempts: 2 }, stages: [{
       function_id: 'calificacion', function_label: 'Calificación', stage_id: 'grading_primary',
       label: 'Valoración principal', runtime_feature: 'calificacion.valoracion', capability: 'text',
       consumer: 'grading.primary_evaluator', condition: 'Siempre', editable: true,
@@ -107,6 +108,7 @@ test('centro de control mantiene funciones, herramientas y uso accesibles en amb
     await page.setViewportSize(viewport);
     await page.goto('/app/admin/configuracion-ia');
     await expect(page.getByRole('heading', { name: 'Configuración de IA' })).toBeVisible();
+    await expect(page.getByText(/Máximo de 60 segundos por llamada/)).toBeVisible();
     for (const theme of ['light', 'dark'] as const) {
       const isDark = await page.locator('html').evaluate((element) => element.classList.contains('dark'));
       if ((theme === 'dark') !== isDark) await page.getByRole('button', { name: 'Cambiar tema' }).click();

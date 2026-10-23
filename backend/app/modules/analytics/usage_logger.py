@@ -31,6 +31,12 @@ def _safe_error_code(value: str | None) -> str | None:
     if not value:
         return None
     normalized = value.lower()
+    if normalized in {
+        "provider_read_timeout", "provider_connect_timeout", "provider_write_timeout",
+        "provider_pool_timeout", "provider_deadline_exceeded", "provider_network_error",
+        "capacity_unavailable",
+    }:
+        return normalized
     if normalized in {"output_budget_exhausted", "output_incomplete", "output_refused", "output_empty"}:
         return normalized
     if "timeout" in normalized or "timed out" in normalized:

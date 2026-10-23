@@ -1,10 +1,10 @@
 """Orquestador de calificación multi-agente.
 
 Pipeline:
-  1. DeepSeek V4 Flash Vision Exp extrae la evidencia con fallbacks configurables
-  2. El modelo textual configurado produce el desglose transparente
-  3. Un verificador compacto comprueba puntajes y formula
-  4. DeepSeek V4 Pro arbitra solo discrepancias, baja confianza o fallos
+  1. La ruta de visión configurada extrae la evidencia
+  2. El evaluador configurado produce el desglose transparente
+  3. El verificador configurado comprueba puntajes y fórmula
+  4. La revisión adicional arbitra discrepancias o baja confianza
 
 La imagen se extrae una vez y acompana al evaluador y verificador cuando admiten vision.
 """
@@ -38,6 +38,8 @@ from app.modules.calificaciones.agents import (
 )
 from app.modules.calificaciones.schemas import GradingResult
 from app.modules.calificaciones.feedback_refinement import refine_feedback_if_needed
+from app.modules.calificaciones.execution_policy import execution_policy
+from app.modules.calificaciones.recovery import ReviewProgress, context_fingerprint
 from app.modules.calificaciones.grading_visuals import EvaluationVisualInput, visual_provenance
 from app.modules.evaluaciones.modality_service import (
     normalize_question_modalities,
@@ -56,7 +58,6 @@ logger = get_logger(__name__)
 DEFAULT_VISION_MODEL = settings.PHOTO_GRADING_VISION_MODEL
 DEFAULT_GRADER_A_MODEL = settings.PHOTO_GRADING_TEXT_MODEL
 DEFAULT_VERIFIER_MODEL = settings.PHOTO_GRADING_VERIFIER_MODEL
-DEFAULT_GRADER_B_MODEL = settings.PHOTO_GRADING_TEXT_REVIEW_MODEL
 DEFAULT_COMPARATOR_MODEL = settings.PHOTO_GRADING_COMPARATOR_MODEL
 
 
@@ -166,7 +167,7 @@ async def _run_grader_cascade(
         if last_result.nota_sugerida is not None:
             return last_result
         logger.warning(
-            "OpenCode grader %s no produjo una nota; probando contingencia",
+            "Grader %s no produjo una nota; la etapa queda pendiente",
             model,
         )
     return last_result or AgentResult(
@@ -187,7 +188,7 @@ async def _run_grader_until_complete(
     client: OpenCodeClient,
     stage: str = "grading_primary",
 ) -> AgentResult:
-    """Espera la cascada sin abandonar una inferencia aceptada por duración."""
+    """Una valoración bajo la política de llamada; recuperación por etapa aparte."""
     return await _run_grader_cascade(
         ctx,
         models=_ordered_unique_models(*models),
@@ -572,10 +573,10 @@ async def orchestrate_grading(
     ai_config: dict | None = None,
     vision_checkpoint: dict | None = None,
     on_vision_checkpoint: Callable[[dict], Awaitable[None]] | None = None,
+    review_progress: ReviewProgress | None = None,
     vision_model: str = DEFAULT_VISION_MODEL,
     grader_a_model: str = DEFAULT_GRADER_A_MODEL,
     verifier_model: str = DEFAULT_VERIFIER_MODEL,
-    grader_b_model: str = DEFAULT_GRADER_B_MODEL,
     comparator_model: str = DEFAULT_COMPARATOR_MODEL,
     evaluation_visuals: tuple[EvaluationVisualInput, ...] = (),
 ) -> GradingResult:
@@ -593,7 +594,6 @@ async def orchestrate_grading(
         vision_model: Modelo OpenCode Go para visión (default: deepseek-v4-flash-vision-exp).
         grader_a_model: Modelo Flash que genera el desglose completo.
         verifier_model: Modelo Flash de verificación compacta.
-        grader_b_model: Modelo Pro de contingencia si el principal falla.
         comparator_model: Modelo Pro de arbitraje excepcional.
 
     Returns:
@@ -601,6 +601,23 @@ async def orchestrate_grading(
     """
     pipeline_run_id = str(uuid.uuid4())
     pipeline_started = time.monotonic()
+    progress = review_progress or ReviewProgress(
+        fingerprint=context_fingerprint({"evaluation": str(evaluacion_id), "blueprint": blueprint,
+            "configuration": ai_config, "response": student_response_text}), payload=None)
+    try:
+        pipeline_run_id = str(UUID(str(progress.payload.get("pipeline_run_id") or pipeline_run_id)))
+    except (ValueError, TypeError):
+        pass
+    progress.payload["pipeline_run_id"] = pipeline_run_id
+    vision_checkpoint = progress.payload.get("vision") or vision_checkpoint
+    previous_vision_callback = on_vision_checkpoint
+
+    async def save_vision(payload: dict) -> None:
+        await progress.save_vision(payload)
+        if previous_vision_callback:
+            await previous_vision_callback(payload)
+
+    on_vision_checkpoint = save_vision
     ai_snapshot: dict = dict(ai_config) if ai_config else {}
     stage_snapshots = (
         ai_snapshot.get("stages")
@@ -675,17 +692,10 @@ async def orchestrate_grading(
                 and grading_selected.get("model")
             ):
                 grader_a_model = str(grading_selected["model"])
-                grading_fallback = grading_snapshot.get("fallback") or {}
-                if (
-                    grading_fallback.get("provider") == "open_code"
-                    and grading_fallback.get("model")
-                ):
-                    grader_b_model = str(grading_fallback["model"])
             if (verification_selected.get("provider") == "open_code" or verification_selected.get("runtime_profile")) and verification_selected.get("model"):
                 verifier_model = str(verification_selected["model"])
             if (recheck_selected.get("provider") == "open_code" or recheck_selected.get("runtime_profile")) and recheck_selected.get("model"):
                 comparator_model = str(recheck_selected["model"])
-                grader_b_model = str(recheck_selected["model"])
 
         except Exception as exc:
             logger.warning("Grading AI configuration unavailable; using institutional defaults: %s", type(exc).__name__)
@@ -718,6 +728,10 @@ async def orchestrate_grading(
         "teacher_id": str(user_id) if user_id else None,
         "_ai_config": recheck_snapshot,
     })
+    for managed_client in (client, verification_client, recheck_client):
+        tracking = getattr(managed_client, "_tracking", None)
+        if isinstance(tracking, dict):
+            tracking["_bounded_recovery"] = True
 
     if user_id is not None or ai_snapshot:
         try:
@@ -812,6 +826,7 @@ async def orchestrate_grading(
             online_answers,
         )
         vision_result: AgentResult | None = None
+        vision_reused = False
         coverage_analysis: dict | None = None
         vision_requires_review = False
 
@@ -833,6 +848,7 @@ async def orchestrate_grading(
                 else None
             )
             if isinstance(checkpoint_result, dict):
+                vision_reused = True
                 vision_result = AgentResult(
                     nota_sugerida=None,
                     confianza=float(checkpoint_result.get("confianza") or 0),
@@ -840,7 +856,7 @@ async def orchestrate_grading(
                     alertas=list(checkpoint_result.get("alertas") or []),
                     proveedor=str(checkpoint_result.get("proveedor") or ""),
                     modelo=str(checkpoint_result.get("modelo") or vision_model),
-                    tiempo_ms=int(checkpoint_result.get("tiempo_ms") or 0),
+                    tiempo_ms=0,
                     raw_output=dict(checkpoint_result.get("raw_output") or {}),
                     requiere_revision_docente=bool(
                         checkpoint_result.get("requiere_revision_docente", False)
@@ -1062,7 +1078,7 @@ async def orchestrate_grading(
             }
         rag_context = format_question_context_as_text(question_context)
 
-        # ── Paso 3: Calificación dual (en paralelo) ──────────────────
+        # ── Paso 3: valoración y verificación recuperables ───────────
         ctx_grading = AgentContext(
             evaluacion_nombre=blueprint.get("nombre", ""),
             nota_maxima=float(blueprint.get("nota_maxima", 5)),
@@ -1088,91 +1104,47 @@ async def orchestrate_grading(
         arbiter_reason: str | None = None
         secondary_mode = "fast_verifier"
 
-        if context_partitioned:
-            primary_parts: list[AgentResult] = []
-            verifier_parts: list[AgentResult] = []
-            partition_recovery = False
-            for partition in grading_contexts:
-                primary_part = await _run_grader_until_complete(
-                    partition,
-                    models=[grader_a_model],
-                    client=client,
-                    stage="grading_primary",
-                )
-                if primary_part.nota_sugerida is None:
-                    partition_recovery = True
-                    primary_part = await _run_grader_until_complete(
-                        partition,
-                        models=[grader_b_model],
-                        client=recheck_client,
-                        stage="targeted_recheck",
-                    )
-                    primary_part.requiere_revision_docente = True
-                primary_parts.append(primary_part)
-                if primary_part.nota_sugerida is None:
-                    verifier_parts.append(primary_part)
-                else:
-                    verifier_parts.append(await verification_agent(
-                        partition,
-                        primary_part,
-                        model=verifier_model,
-                        client=verification_client,
-                        timeout=None,
-                        max_attempts=max(1, int(settings.PHOTO_GRADING_MODEL_MAX_ATTEMPTS)),
-                        multimodal=bool(partition.image_bytes or partition.requires_visual_material),
-                    ))
-            grading_a = merge_partition_results(
-                primary_parts,
-                nota_maxima=ctx_grading.nota_maxima,
-            )
-            grading_b = merge_partition_results(
-                verifier_parts,
-                nota_maxima=ctx_grading.nota_maxima,
-            )
-            secondary_mode = "partitioned_verifier"
-            arbiter_reason = _arbitration_reason(grading_a, grading_b)
-            if partition_recovery and arbiter_reason is None:
-                arbiter_reason = "partition_recovery"
-            arbiter_invoked = (
-                arbiter_reason is not None and grading_b.nota_sugerida is not None
-            )
-        else:
-            grading_a = await _run_grader_until_complete(
-                ctx_grading,
-                models=[grader_a_model],
-                client=client,
-                stage="grading_primary",
-            )
+        primary_parts: list[AgentResult] = []
+        verifier_parts: list[AgentResult] = []
+        for index, partition in enumerate(grading_contexts):
+            part_key = context_fingerprint({"index": index, "blueprint": partition.blueprint,
+                "response": partition.student_response_text})
+            context_key = context_fingerprint({"rag": partition.rag_context,
+                "objective": partition.objective_validation,
+                "visuals": visual_provenance(partition.blueprint, partition.evaluation_visuals)})
 
-        if not context_partitioned and grading_a.nota_sugerida is None:
-            # Contingencia excepcional: si Flash no produjo ningún desglose, Pro
-            # intenta rescatar una única valoración; seguirá marcada para revisión.
-            arbiter_invoked = True
-            arbiter_reason = "primary_failure"
-            secondary_mode = "pro_recovery"
-            grading_b = await _run_grader_until_complete(
-                ctx_grading,
-                models=[grader_b_model],
-                client=recheck_client,
-                stage="targeted_recheck",
-            )
-        elif not context_partitioned:
-            grading_b = await verification_agent(
-                ctx_grading,
-                grading_a,
-                model=verifier_model,
-                client=verification_client,
-                timeout=None,
-                max_attempts=max(
-                    1,
-                    int(settings.PHOTO_GRADING_MODEL_MAX_ATTEMPTS),
-                ),
-                multimodal=bool(ctx_grading.image_bytes or ctx_grading.requires_visual_material),
-            )
-            arbiter_reason = _arbitration_reason(grading_a, grading_b)
-            arbiter_invoked = (
-                arbiter_reason is not None and grading_b.nota_sugerida is not None
-            )
+            async def primary_call() -> AgentResult:
+                return await _run_grader_until_complete(partition, models=[grader_a_model],
+                    client=client, stage="grading_primary")
+
+            primary_part = await progress.run(f"grading_primary:{part_key}", primary_call,
+                maximum_score=partition.nota_maxima, input_fingerprint=context_key)
+            primary_part.modelo = primary_part.modelo or grader_a_model
+            primary_parts.append(primary_part)
+            if primary_part.nota_sugerida is None:
+                verifier_parts.append(AgentResult(nota_sugerida=None, confianza=0,
+                    feedback_estudiante="", modelo=verifier_model, error="primary_unavailable"))
+                continue
+
+            async def verify_call() -> AgentResult:
+                return await verification_agent(partition, primary_part, model=verifier_model,
+                    client=verification_client, timeout=None, max_attempts=1,
+                    multimodal=bool(partition.image_bytes or partition.requires_visual_material))
+
+            verifier_part = await progress.run(f"grading_secondary:{part_key}", verify_call,
+                maximum_score=partition.nota_maxima, input_fingerprint=context_key)
+            verifier_part.modelo = verifier_part.modelo or verifier_model
+            verifier_parts.append(verifier_part)
+
+        grading_a = merge_partition_results(primary_parts, nota_maxima=ctx_grading.nota_maxima) if context_partitioned else primary_parts[0]
+        grading_b = merge_partition_results(verifier_parts, nota_maxima=ctx_grading.nota_maxima) if context_partitioned else verifier_parts[0]
+        pending_stages = [role for role, parts in (
+            ("grading_primary", primary_parts), ("grading_secondary", verifier_parts)
+        ) if any(part.nota_sugerida is None or part.error for part in parts)]
+        dual_complete = not pending_stages
+        secondary_mode = "partitioned_verifier" if context_partitioned else "fast_verifier"
+        arbiter_reason = _arbitration_reason(grading_a, grading_b)
+        arbiter_invoked = bool(dual_complete and arbiter_reason)
 
         if grading_a.nota_sugerida is None and grading_b.nota_sugerida is None:
             router_grading: AgentResult | None = None
@@ -1189,15 +1161,19 @@ async def orchestrate_grading(
                 failure_details = {
                     "orchestrator": "all_graders_failed",
                     "grader_a_failed": grading_a.error is not None,
-                    "grader_b_failed": grading_b.error is not None,
+                    "grader_b_failed": grading_b.error not in {None, "primary_unavailable"},
                     "grader_a_error": grading_a.error if grading_a.error in output_error_codes
                         else "provider_error",
-                    "grader_b_error": grading_b.error if grading_b.error in output_error_codes
+                    "grader_b_error": grading_b.error if grading_b.error in output_error_codes | {"primary_unavailable"}
                         else "provider_error",
                     "cross_provider_fallback_enabled": (
                         settings.PHOTO_GRADING_CROSS_PROVIDER_FALLBACK_ENABLED
                     ),
                     "pipeline_run_id": pipeline_run_id,
+                    "verification_status": "pending",
+                    "pending_stages": pending_stages,
+                    "stage_recovery": progress.summary(),
+                    "execution_policy": execution_policy(),
                     "timings_ms": {
                         "queue": 0,
                         "prepare": 0,
@@ -1262,17 +1238,27 @@ async def orchestrate_grading(
 
         # El comparador solo hace una llamada externa cuando force_arbitration es
         # verdadero. En consenso cercano consolida localmente y termina de inmediato.
-        final = await comparator_agent(
-            grading_a,
-            grading_b,
-            umbral=float(settings.PHOTO_GRADING_ARBITRATION_SCORE_DELTA),
-            model=comparator_model,
-            force_arbitration=bool(
-                arbiter_invoked
-                and grading_a.nota_sugerida is not None
-            ),
-            client=recheck_client,
-        )
+        async def compare() -> AgentResult:
+            return await comparator_agent(grading_a, grading_b,
+                umbral=float(settings.PHOTO_GRADING_ARBITRATION_SCORE_DELTA),
+                model=comparator_model, force_arbitration=arbiter_invoked,
+                client=recheck_client)
+
+        if arbiter_invoked:
+            final = await progress.run("targeted_recheck:consolidation", compare,
+                maximum_score=ctx_grading.nota_maxima,
+                input_fingerprint=context_fingerprint({
+                    "primary": grading_a.componentes, "primary_score": grading_a.nota_sugerida,
+                    "secondary": grading_b.componentes, "secondary_score": grading_b.nota_sugerida}))
+            if final.nota_sugerida is None:
+                # Keep the same deterministic fallback as comparator_agent;
+                # failing arbitration must not erase two valid evaluations.
+                final = AgentResult(nota_sugerida=round((float(grading_a.nota_sugerida)
+                    + float(grading_b.nota_sugerida)) / 2, 2), confianza=0,
+                    feedback_estudiante="", modelo="fallback", proveedor="comparator",
+                    error=final.error or "arbitration_pending", requiere_revision_docente=True)
+        else:
+            final = await compare()
         comparator_failed = bool(final.error)
         if comparator_failed and final.nota_sugerida is not None:
             valid_graders = [
@@ -1314,6 +1300,8 @@ async def orchestrate_grading(
         verifier_requires_review = bool(
             grading_b.requiere_revision_docente or verifier_alerts
         )
+        if not dual_complete:
+            final.alertas.append("Falta completar la segunda revisión. Conservamos la nota propuesta y la evidencia.")
         # ── Paso 5: Armado del resultado final ───────────────────────
         nota_maxima = Decimal(str(blueprint.get("nota_maxima", 5)))
         if final.nota_sugerida is None:
@@ -1370,6 +1358,7 @@ async def orchestrate_grading(
             or coverage_requires_review
             or vision_requires_review
             or bool(graphic_uncertain_questions)
+            or not dual_complete
         )
 
         feedback_review = await refine_feedback_if_needed(
@@ -1399,17 +1388,22 @@ async def orchestrate_grading(
         )
         if vision_trace.get("fallback_used"):
             fallbacks.append({"stage": "extraction", "reason": "configured_provider_fallback"})
-        vision_prepare_ms = max(0, int(vision_trace.get("preparation_ms") or 0))
-        vision_parsing_ms = max(0, int(vision_trace.get("parsing_ms") or 0))
+        vision_prepare_ms = 0 if vision_reused else max(0, int(vision_trace.get("preparation_ms") or 0))
+        vision_parsing_ms = 0 if vision_reused else max(0, int(vision_trace.get("parsing_ms") or 0))
         vision_total_ms = vision_result.tiempo_ms if vision_result else 0
+        run_timings = progress.run_timings()
+        admission = {role: max(0, int((getattr(target, "_tracking", {}) or {}).get("capacity_wait_ms", 0)))
+            for role, target in (("grading_primary", client), ("grading_secondary", verification_client),
+                                 ("targeted_recheck", recheck_client))}
         timings_ms = {
             "queue": 0,
             "prepare": vision_prepare_ms,
             "extraction": max(0, vision_total_ms - vision_prepare_ms - vision_parsing_ms),
             "parsing": vision_parsing_ms,
-            "primary": grading_a.tiempo_ms,
-            "secondary": grading_b.tiempo_ms,
-            "consolidation": final.tiempo_ms,
+            "primary": max(0, run_timings.get("grading_primary", 0) - admission["grading_primary"]),
+            "secondary": max(0, run_timings.get("grading_secondary", 0) - admission["grading_secondary"]),
+            "consolidation": max(0, run_timings.get("targeted_recheck", final.tiempo_ms) - admission["targeted_recheck"]),
+            "capacity_wait": sum(admission.values()),
             "feedback_refinement": feedback_review.report["tiempo_ms"],
             "persistence": 0,
             "total": max(0, int((time.monotonic() - pipeline_started) * 1000)),
@@ -1424,6 +1418,11 @@ async def orchestrate_grading(
             "objective_score_floor": float(deterministic_floor),
             "objective_floor_applied": objective_floor_applied,
             "pipeline_run_id": pipeline_run_id,
+            "verification_status": "complete" if dual_complete else "pending",
+            "pending_stages": pending_stages,
+            "stage_recovery": progress.summary(),
+            "execution_policy": execution_policy(),
+            "timing_scope": "current_attempt",
             "timings_ms": timings_ms,
             "fallbacks": fallbacks,
             "terminal_reason": "review_required" if requiere_revision else "success",
@@ -1447,6 +1446,7 @@ async def orchestrate_grading(
                 "tiempo_ms": vision_result.tiempo_ms if vision_result else 0,
                 "usable": vision_result.raw_output.get("usable") if vision_result and vision_result.raw_output else None,
                 "rotation_applied": applied_rotation,
+                "reused": vision_reused,
                 "extraction": vision_result.raw_output.get("vision_extraction"),
             } if vision_result and not vision_result.error else None,
             "grader_a": {
@@ -1460,6 +1460,7 @@ async def orchestrate_grading(
                 "alertas": grading_a.alertas,
                 "requiere_revision_docente": grading_a.requiere_revision_docente,
                 "error_type": "grader_error" if grading_a.error else None,
+                "error_code": grading_a.error,
             },
             "grader_b": {
                 "proveedor": grading_b.proveedor,
@@ -1472,6 +1473,7 @@ async def orchestrate_grading(
                 "alertas": verifier_alerts,
                 "requiere_revision_docente": grading_b.requiere_revision_docente,
                 "error_type": "grader_error" if grading_b.error else None,
+                "error_code": grading_b.error,
             },
             "comparator": {
                 "proveedor": final.proveedor,

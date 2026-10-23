@@ -387,3 +387,7 @@ actualizar la especificación propietaria, su plan y sus tareas; no debe crear d
 ## Hotfix 118: salida de calificación completa
 
 - [118-calificacion-salida-completa](118-calificacion-salida-completa/spec.md), [issue #251](https://github.com/Andres-back/Calificator/issues/251), [PR #252](https://github.com/Andres-back/Calificator/pull/252): presupuesto finito por componentes para valoración y verificación, diagnóstico de truncamiento explícito y conteos seguros. Aprobado el 2026-10-23; sin cambios de modelos, notas, evidencias ni recalificación masiva. La [prueba anónima](118-calificacion-salida-completa/quickstart.md) confirmó agotamiento del límite anterior y una salida completa al ampliarlo. CI remoto y autorización antes de merge; no desplegado.
+
+## Hotfix 119: recuperación de la revisión pendiente
+
+- [119-calificacion-lotes-resiliente](119-calificacion-lotes-resiliente/spec.md), [issue #253](https://github.com/Andres-back/Calificator/issues/253): tope de 60 segundos por llamada de valoración/verificación/revisión adicional, admisión global, progreso privado por entrega y recuperación del mismo rol pendiente con dos intentos máximos incluso tras reinicio. El principal recuperado recibe verificación; una propuesta parcial no se presenta como revisión dual completa. No cambia modelos, claves, notas docentes o evidencias; pruebas sintéticas de veinte entregas y [validación](119-calificacion-lotes-resiliente/quickstart.md). Alcance y revisión de requisitos autorizados el 2026-10-23; CI y autorización de merge antes de producción.

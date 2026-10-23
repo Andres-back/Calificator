@@ -24,6 +24,8 @@ from app.db.session import AsyncSessionLocal, engine
 from app.modules.calificaciones import photo_service, service as calificaciones_service
 from app.modules.calificaciones.breakdown_service import create_automatic_breakdown
 from app.modules.calificaciones.grading_service import grade_submission
+from app.modules.calificaciones.execution_policy import execution_policy
+from app.modules.calificaciones.recovery import ReviewProgress, context_fingerprint
 from app.modules.calificaciones.models import Calificacion, Entrega
 from app.modules.calificaciones.salon_mode_service import update_estudiante_estado
 from app.modules.evaluaciones.grading_visual_context import load_grading_context
@@ -243,6 +245,28 @@ async def _grade_delivery(
     await db.commit()
 
     submission = await _load_submission(entrega)
+    review_progress = None
+    if job_id and claim_token:
+        job_result = await jobs_service.get_job_result(db, job_id)
+        saved_reviews = job_result.get("_grading_review_v1")
+        saved_review = saved_reviews.get(str(entrega.id)) if isinstance(saved_reviews, dict) else None
+        review_fingerprint = context_fingerprint({
+            "delivery": str(entrega.id), "blueprint": blueprint, "ai_config": ai_config,
+            "execution_policy": execution_policy(), "student_text": submission["student_response_text"],
+            "image_sha256": hashlib.sha256(submission["image_bytes"] or b"").hexdigest(),
+            "image_mime": submission["image_mime"], "extraction_version": VISION_EXTRACTION_VERSION,
+            "vision_max_side": settings.VISION_MAX_IMAGE_SIDE, "pdf_dpi": settings.GRADING_PDF_RENDER_DPI,
+        })
+
+        async def persist_review(payload: dict) -> None:
+            saved = await jobs_service.save_grading_review_progress(db, job_id,
+                delivery_id=entrega.id, claim_token=claim_token, checkpoint=payload)
+            if not saved:
+                raise jobs_service.JobOwnershipLost("La ejecución perdió el trabajo al guardar el progreso")
+            await db.commit()
+
+        review_progress = ReviewProgress(fingerprint=review_fingerprint,
+            payload=saved_review, save=persist_review)
     checkpoint: dict | None = None
     fingerprint = _extraction_fingerprint(
         image_bytes=submission["image_bytes"],
@@ -300,6 +324,7 @@ async def _grade_delivery(
         ai_config=ai_config,
         vision_checkpoint=checkpoint,
         on_vision_checkpoint=persist_checkpoint,
+        **({"review_progress": review_progress} if review_progress is not None else {}),
         **({'evaluation_visuals': context.agent_visuals} if context.agent_visuals else {}),
     )
     if job_id and claim_token:
@@ -523,6 +548,7 @@ async def _grade_batch_async(
             "secondary": 0, "consolidation": 0, "persistence": 0, "total": 0,
         }
         job_fallbacks: list[dict[str, str]] = []
+        verification_pending = 0
         job_ai_config: dict | None = None
         job_input: dict = {}
 
@@ -533,6 +559,7 @@ async def _grade_batch_async(
             status_value = str(values.get("status_value") or "")
             terminal_reason = (
                 "success" if status_value == JobEstado.SUCCESS.value
+                else "verification_pending" if status_value == JobEstado.REQUIRES_REVIEW.value
                 else "processing_failed" if status_value == JobEstado.FAILED.value
                 else None
             )
@@ -544,14 +571,18 @@ async def _grade_batch_async(
                 "terminal_reason": terminal_reason,
                 "deadline_ms": None,
                 "slow_after_ms": int(settings.PHOTO_GRADING_SLOW_WARNING_SECONDS) * 1000,
+                "verification_pending": verification_pending,
             })
             if claim_token:
                 payload["claim_token"] = claim_token
             return payload
 
         def record_grade_telemetry(calificacion: Calificacion) -> None:
+            nonlocal verification_pending
             raw_value = getattr(calificacion, "resultado_json", None)
             raw = raw_value if isinstance(raw_value, dict) else {}
+            if raw.get("verification_status") == "pending":
+                verification_pending += 1
             timings = raw.get("timings_ms") if isinstance(raw.get("timings_ms"), dict) else {}
             for stage in ("prepare", "extraction", "parsing", "primary", "secondary", "consolidation", "persistence"):
                 job_timings[stage] += max(0, int(timings.get(stage) or 0))
@@ -760,6 +791,7 @@ async def _grade_batch_async(
             final_state = (
                 JobEstado.FAILED.value
                 if errors and processed == 0 and skipped == 0
+                else JobEstado.REQUIRES_REVIEW.value if verification_pending
                 else JobEstado.SUCCESS.value
             )
             result = build_result(
@@ -774,7 +806,8 @@ async def _grade_batch_async(
                 error_summary = (
                     f"{len(errors)} entrega(s) no pudieron calificarse"
                     if errors
-                    else None
+                    else "Falta completar la segunda revisión. Conservamos la nota propuesta y la evidencia."
+                    if verification_pending else None
                 )
                 finished = await jobs_service.finish_job(
                     db,

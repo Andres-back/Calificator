@@ -479,7 +479,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "8e1b7a2218aeca313f434dfe171c2cc385d1fc86b486478285aba6ec20467cc9",
+  "source_digest": "3a044956794841828e3f8887ed7dd371fef9ff7c617c2ebf59b3e2d26de439e3",
   "surfaces": [
     {
       "actors": [
@@ -18793,6 +18793,12 @@
           "level": "unit",
           "reference": "/",
           "status": "direct",
+          "test_path": "backend/tests/integration/test_grading_recovery_persistence.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
           "test_path": "backend/tests/integration/test_grading_revisions_persistence.py"
         },
         {
@@ -19076,6 +19082,12 @@
           "reference": "/",
           "status": "direct",
           "test_path": "backend/tests/unit/test_glm_independent_review.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_grading_recovery.py"
         },
         {
           "level": "unit",
@@ -19784,6 +19796,12 @@
           "reference": "/",
           "status": "direct",
           "test_path": "frontend/src/modules/calificaciones/components/GradeReprocessing.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/components/VerificationPendingNotice.test.tsx"
         },
         {
           "level": "unit",
@@ -26767,7 +26785,7 @@
       "kind": "frontend_call",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "GET:/admin/ai-audit",
-      "source_line": 452,
+      "source_line": 453,
       "source_path": "frontend/src/modules/admin/api.ts",
       "states": [],
       "tests": [
@@ -26893,7 +26911,7 @@
       "kind": "frontend_call",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "GET:/admin/ai-config-hash",
-      "source_line": 442,
+      "source_line": 443,
       "source_path": "frontend/src/modules/admin/api.ts",
       "states": [],
       "tests": [
@@ -27019,7 +27037,7 @@
       "kind": "frontend_call",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "GET:/admin/ai-control-center/usage",
-      "source_line": 300,
+      "source_line": 301,
       "source_path": "frontend/src/modules/admin/api.ts",
       "states": [],
       "tests": [
@@ -27151,7 +27169,7 @@
       "kind": "frontend_call",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "GET:/admin/ai-control-center",
-      "source_line": 287,
+      "source_line": 288,
       "source_path": "frontend/src/modules/admin/api.ts",
       "states": [],
       "tests": [
@@ -27283,7 +27301,7 @@
       "kind": "frontend_call",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "GET:/admin/ai-settings",
-      "source_line": 282,
+      "source_line": 283,
       "source_path": "frontend/src/modules/admin/api.ts",
       "states": [],
       "tests": [
@@ -27421,7 +27439,7 @@
       "kind": "frontend_call",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "GET:/admin/ai-usage",
-      "source_line": 447,
+      "source_line": 448,
       "source_path": "frontend/src/modules/admin/api.ts",
       "states": [],
       "tests": [
@@ -33177,7 +33195,7 @@
       "kind": "frontend_call",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "PATCH:/admin/ai-config",
-      "source_line": 341,
+      "source_line": 342,
       "source_path": "frontend/src/modules/admin/api.ts",
       "states": [],
       "tests": [
@@ -33309,7 +33327,7 @@
       "kind": "frontend_call",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "PATCH:/admin/ai-providers/{id}",
-      "source_line": 423,
+      "source_line": 424,
       "source_path": "frontend/src/modules/admin/api.ts",
       "states": [],
       "tests": [
@@ -35177,7 +35195,7 @@
       "kind": "frontend_call",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "POST:/admin/ai-api/models/discover",
-      "source_line": 175,
+      "source_line": 176,
       "source_path": "frontend/src/modules/admin/api.ts",
       "states": [],
       "tests": [
@@ -35297,7 +35315,7 @@
       "kind": "frontend_call",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "POST:/admin/ai-api/models/probe",
-      "source_line": 182,
+      "source_line": 183,
       "source_path": "frontend/src/modules/admin/api.ts",
       "states": [],
       "tests": [
@@ -35417,7 +35435,7 @@
       "kind": "frontend_call",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "POST:/admin/ai-cache/clear",
-      "source_line": 437,
+      "source_line": 438,
       "source_path": "frontend/src/modules/admin/api.ts",
       "states": [],
       "tests": [
@@ -35537,7 +35555,7 @@
       "kind": "frontend_call",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "POST:/admin/ai-control-center/validate",
-      "source_line": 313,
+      "source_line": 314,
       "source_path": "frontend/src/modules/admin/api.ts",
       "states": [],
       "tests": [
@@ -35657,7 +35675,7 @@
       "kind": "frontend_call",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "POST:/admin/ai-providers/{providerId}/models/refresh",
-      "source_line": 357,
+      "source_line": 358,
       "source_path": "frontend/src/modules/admin/api.ts",
       "states": [],
       "tests": [
@@ -35777,7 +35795,7 @@
       "kind": "frontend_call",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "POST:/admin/ai-providers/{providerId}/test",
-      "source_line": 349,
+      "source_line": 350,
       "source_path": "frontend/src/modules/admin/api.ts",
       "states": [],
       "tests": [
@@ -35897,7 +35915,7 @@
       "kind": "frontend_call",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "POST:/admin/ai-settings/restore-defaults",
-      "source_line": 432,
+      "source_line": 433,
       "source_path": "frontend/src/modules/admin/api.ts",
       "states": [],
       "tests": [
@@ -36017,7 +36035,7 @@
       "kind": "frontend_call",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "POST:/admin/ai-settings/restore-previous",
-      "source_line": 428,
+      "source_line": 429,
       "source_path": "frontend/src/modules/admin/api.ts",
       "states": [],
       "tests": [
@@ -40435,7 +40453,7 @@
       "kind": "frontend_call",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "PUT:/admin/ai-control-center/publish",
-      "source_line": 330,
+      "source_line": 331,
       "source_path": "frontend/src/modules/admin/api.ts",
       "states": [],
       "tests": [
@@ -40561,7 +40579,7 @@
       "kind": "frontend_call",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "PUT:/admin/ai-features",
-      "source_line": 415,
+      "source_line": 416,
       "source_path": "frontend/src/modules/admin/api.ts",
       "states": [],
       "tests": [
@@ -40693,7 +40711,7 @@
       "kind": "frontend_call",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "PUT:/admin/ai-providers",
-      "source_line": 398,
+      "source_line": 399,
       "source_path": "frontend/src/modules/admin/api.ts",
       "states": [],
       "tests": [
@@ -40819,7 +40837,7 @@
       "kind": "frontend_call",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "PUT:/admin/ai-settings/publish",
-      "source_line": 367,
+      "source_line": 368,
       "source_path": "frontend/src/modules/admin/api.ts",
       "states": [],
       "tests": [
@@ -41940,7 +41958,19 @@
           "level": "unit",
           "reference": "redis",
           "status": "direct",
+          "test_path": "backend/tests/unit/conftest.py"
+        },
+        {
+          "level": "unit",
+          "reference": "redis",
+          "status": "direct",
           "test_path": "backend/tests/unit/test_feedback_sharing_abuse.py"
+        },
+        {
+          "level": "unit",
+          "reference": "redis",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_grading_recovery.py"
         },
         {
           "level": "unit",
@@ -42571,7 +42601,7 @@
       "kind": "job",
       "owner_spec": "012-ia-jobs-produccion",
       "signature": "tasks.grade_batch",
-      "source_line": 868,
+      "source_line": 901,
       "source_path": "backend/app/workers/tasks_grading.py",
       "states": [
         "cancelled",
@@ -42625,7 +42655,7 @@
       "kind": "job",
       "owner_spec": "012-ia-jobs-produccion",
       "signature": "tasks.grade_delivery",
-      "source_line": 922,
+      "source_line": 955,
       "source_path": "backend/app/workers/tasks_grading.py",
       "states": [
         "cancelled",
@@ -42905,7 +42935,7 @@
       "kind": "job",
       "owner_spec": "012-ia-jobs-produccion",
       "signature": "tasks.recover_stale_grading_jobs",
-      "source_line": 1029,
+      "source_line": 1062,
       "source_path": "backend/app/workers/tasks_grading.py",
       "states": [
         "cancelled",
@@ -43349,6 +43379,12 @@
           "reference": "ai_jobs",
           "status": "direct",
           "test_path": "backend/tests/integration/test_explainable_grading_pipeline.py"
+        },
+        {
+          "level": "unit",
+          "reference": "ai_jobs",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_grading_recovery_persistence.py"
         },
         {
           "level": "unit",
@@ -44771,6 +44807,12 @@
           "level": "unit",
           "reference": "calificaciones",
           "status": "direct",
+          "test_path": "backend/tests/integration/test_grading_recovery_persistence.py"
+        },
+        {
+          "level": "unit",
+          "reference": "calificaciones",
+          "status": "direct",
           "test_path": "backend/tests/integration/test_grading_revisions_persistence.py"
         },
         {
@@ -44784,6 +44826,12 @@
           "reference": "calificaciones",
           "status": "direct",
           "test_path": "backend/tests/integration/test_xali_teacher_visual.py"
+        },
+        {
+          "level": "unit",
+          "reference": "calificaciones",
+          "status": "direct",
+          "test_path": "backend/tests/unit/conftest.py"
         },
         {
           "level": "unit",
@@ -44976,6 +45024,12 @@
           "reference": "calificaciones",
           "status": "direct",
           "test_path": "backend/tests/unit/test_grading_queue_service.py"
+        },
+        {
+          "level": "unit",
+          "reference": "calificaciones",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_grading_recovery.py"
         },
         {
           "level": "unit",

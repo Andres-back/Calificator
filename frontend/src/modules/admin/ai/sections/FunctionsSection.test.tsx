@@ -17,6 +17,13 @@ const functions: AIFunctionControl[] = [{ function_id: 'xali', label: 'Asistente
 }] }];
 
 describe('administración de IA de devoluciones', () => {
+  it('shows the effective grading deadline separately from shared provider settings', () => {
+    render(<FunctionsSection functions={[{ ...functions[0], function_id: 'calificacion',
+      execution_policy: { schema_version: 1, call_timeout_seconds: 60, max_stage_attempts: 2 },
+    }]} features={[route]} providers={providers} models={models} onUpsert={vi.fn()} />);
+    expect(screen.getByText(/Máximo de 60 segundos por llamada/)).toBeInTheDocument();
+    expect(screen.getByText(/no incluye la espera en cola/i)).toBeInTheDocument();
+  });
   it('does not assign duplicate navigation targets to deterministic stages', () => {
     const deterministic = { ...functions[0].stages[0], runtime_feature: null, editable: false, configured: null, effective: null };
     const { container } = render(<FunctionsSection functions={[{ ...functions[0], stages: [{ ...deterministic, stage_id: 'prepare' }, { ...deterministic, stage_id: 'consolidation' }, ...functions[0].stages] }]} features={[route]} providers={providers} models={models} onUpsert={vi.fn()} />);

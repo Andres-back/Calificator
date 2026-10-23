@@ -240,6 +240,32 @@ def test_retry_does_not_overwrite_a_teacher_decision() -> None:
     assert db.events == ["rollback"]
 
 
+def test_partial_verification_finishes_as_review_not_success(monkeypatch) -> None:
+    from unittest.mock import AsyncMock
+    evaluation = evaluation_fixture()
+    delivery = delivery_fixture()
+    db = FakeDB(scalar_value=evaluation)
+    finish = AsyncMock(return_value=True)
+    monkeypatch.setattr(tasks_grading, "AsyncSessionLocal", lambda: SessionContext(db))
+    monkeypatch.setattr(tasks_grading.jobs_service, "get_job_input", AsyncMock(return_value={}))
+    monkeypatch.setattr(tasks_grading.jobs_service, "get_job_queue_time_ms", AsyncMock(return_value=0))
+    monkeypatch.setattr(tasks_grading.jobs_service, "get_job_state", AsyncMock(return_value="running"))
+    monkeypatch.setattr(tasks_grading.jobs_service, "mark_job_running", AsyncMock(return_value=True))
+    monkeypatch.setattr(tasks_grading.jobs_service, "update_job_progress", AsyncMock(return_value=True))
+    monkeypatch.setattr(tasks_grading.jobs_service, "finish_job", finish)
+    monkeypatch.setattr(tasks_grading, "_load_deliveries", AsyncMock(return_value=([delivery], [])))
+    monkeypatch.setattr(tasks_grading, "_grade_delivery", AsyncMock(return_value=(SimpleNamespace(
+        id=uuid4(), nota_sugerida=Decimal("3.5"),
+        resultado_json={"verification_status": "pending"}), True)))
+    result = asyncio.run(tasks_grading._grade_batch_async(evaluacion_id=evaluation.id,
+        estudiante_ids=[], entrega_ids=[delivery.id], job_id=uuid4(), profesor_id=evaluation.profesor_id))
+    assert result["status"] == JobEstado.REQUIRES_REVIEW.value
+    assert result["verification_pending"] == 1
+    assert result["processed"] == 1
+    assert finish.call_args.kwargs["estado"] == JobEstado.REQUIRES_REVIEW.value
+    assert result["terminal_reason"] == "verification_pending"
+
+
 def test_grade_delivery_creates_only_a_teacher_pending_suggestion(monkeypatch) -> None:
     evaluation = evaluation_fixture()
     delivery = delivery_fixture()
