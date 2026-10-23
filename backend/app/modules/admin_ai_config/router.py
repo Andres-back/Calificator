@@ -538,7 +538,7 @@ async def _validate_publication(db: AsyncSession, payload: AIConfigurationPublic
         result["normalized"]["features"] = [normalized.get(item["feature"], item) for item in features]
         return result
     except (APIConnectionError, ValueError) as exc:
-        return {"valid": False, "errors": [{"field": "configuration", "message": str(exc) if isinstance(exc, APIConnectionError) else "Revisa el formato y prueba de nuevo la conexión antes de guardar."}], "warnings": []}
+        return {"valid": False, "errors": [{"field": exc.field if isinstance(exc, APIConnectionError) else "configuration", "message": str(exc) if isinstance(exc, APIConnectionError) else "Revisa el formato y prueba de nuevo la conexión antes de guardar."}], "warnings": []}
 
 
 @router.post("/admin/ai-api/connections", response_model=AIProvider)
