@@ -22,7 +22,7 @@
 
 - [X] T007 Documentar prueba real del botón con copia anónima, duración, cobertura y límites en `specs/118-calificacion-salida-completa/quickstart.md`, sin contenido sensible (FR-006, SC-004).
 - [X] T008 Ejecutar lint, suite backend y regresiones de cálculo/recalificación; registrar resultados en `specs/118-calificacion-salida-completa/quickstart.md` (FR-005, FR-006).
-- [ ] T009 Revisar convergencia, inventario y gobernanza; registrar entrega en `specs/README.md` y abrir PR sin incluir cambios ajenos (FR-006).
+- [X] T009 Revisar convergencia, inventario y gobernanza; registrar entrega en `specs/README.md` y abrir PR sin incluir cambios ajenos (FR-006). PR #252 publicado; controles remotos obligatorios antes de cualquier merge.
 
 ## Dependencias
 

@@ -45,8 +45,10 @@ python -m ruff check --select F401,F821,F822,F823,F841 backend/app backend/tests
 ### Estado de entrega
 
 - Inventario regenerado en una exportación limpia de `main` más los archivos propios del hotfix: 632 superficies. Solo cambió `specs/system-inventory/current.json`; no se incorporaron las modificaciones ajenas de Specs 034/115.
-- Gobernanza en esa copia: 47 pruebas aprobadas y 2 fallidas. Una exige completar T009 (incluye publicar el PR, aún pendiente); la otra no pudo arrancar Git Bash por la restricción Windows `NtCreateDirectoryObject / 0xC0000022`. No se omitió ni modificó ninguno de esos controles para aprobarlos.
+- Primera comprobación de gobernanza: 47 pruebas aprobadas y 2 fallidas. Una exigía completar T009 (publicar el PR, ya realizado en #252); la otra no pudo arrancar Git Bash por la restricción Windows `NtCreateDirectoryObject / 0xC0000022`. Al repetir toda la suite en entorno permitido, con las tareas completas: **49/49 aprobadas**. No se omitió ni modificó ninguno de esos controles para aprobarlos. Inventario comprobado: vigente, 632 superficies.
 - Las copias temporales originales con identidad y la vista previa insuficientemente anonimizada fueron eliminadas; permanece la copia anónima. Original de producción intacto. Navegador y servidores de laboratorio detenidos, sin nuevas llamadas a IA.
-- No hay PR nuevo ni despliegue. La revisión automática de permisos del entorno devolvió un fallo por límite de uso antes de ejecutar la siguiente operación privilegiada. No se intentó eludirla. T009 sigue abierta hasta publicar y comprobar gobernanza/CI en el entorno permitido.
+- La revisión de permisos se restableció al reanudar; se publicó [PR #252](https://github.com/Andres-back/Calificator/pull/252) sin los cambios ajenos ni archivos privados. No fusionado ni desplegado. El cierre documental de T009 acompaña la actualización del mismo PR; CI remoto seguirá siendo obligatorio.
+
+Convergencia Spec Kit: seis requisitos funcionales, cuatro criterios de éxito, cinco escenarios de aceptación y ocho principios constitucionales revisados. Sin trabajo funcional pendiente ni ampliaciones de alcance. Las nueve tareas están completas; la autorización de merge y el resultado de CI son controles de entrega independientes. Sin hooks configurados.
 
 No desplegado. Los cambios ajenos de Specs 034/115 se excluyen de la entrega.
