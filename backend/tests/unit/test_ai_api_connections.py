@@ -349,6 +349,22 @@ def test_admin_observed_structure_shows_the_actual_granular_route():
     assert observed["model"] == "future-model" and observed["config_version"] == 8
 
 
+def test_admin_observed_generation_includes_the_actual_draft_task():
+    from app.services.ai_capability_registry import STAGES
+    from app.modules.admin_ai_config.control_center_service import _observed_stage
+
+    stage = next(s for s in STAGES if s.runtime_feature == "generacion_preguntas")
+    observed = _observed_stage(stage, [{
+        "feature": "evaluacion_generar_dba_rag", "stage": "other",
+        "provider": "api_direct", "model": "admin-selected",
+        "config_version": 14, "status": "success",
+        "observed_at": "2026-10-23T12:00:00Z",
+    }])
+    assert observed is not None
+    assert observed["model"] == "admin-selected"
+    assert observed["config_version"] == 14
+
+
 def test_changed_primary_identifies_legacy_fallback_without_weakening_proof(monkeypatch):
     from types import SimpleNamespace
     import app.services.ai_credentials_service as credentials

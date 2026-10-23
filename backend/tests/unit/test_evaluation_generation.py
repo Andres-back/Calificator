@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import copy
 from decimal import Decimal
 from types import SimpleNamespace
 from uuid import uuid4
@@ -280,6 +281,9 @@ def test_generate_draft_persists_private_answers_and_teacher_review_trace(
         def __init__(self, user_id=None) -> None:
             captured["router_user_id"] = user_id
 
+        def use_explicit_routing(self, **kwargs):
+            captured["routing_options"] = kwargs
+
         async def generate_json(self, task_type, prompt):
             captured["task_type"] = task_type
             captured["prompt"] = prompt
@@ -328,6 +332,7 @@ def test_generate_draft_persists_private_answers_and_teacher_review_trace(
     assert db.rollbacks == 0
     assert captured["task_type"] == "evaluacion_generar_dba_rag"
     assert captured["router_user_id"] == teacher.id
+    assert captured["routing_options"]["max_attempts"] == 1
     assert sum(Decimal(item["puntaje"]) for item in result.preguntas) == Decimal("5")
     assert all("respuesta_esperada" not in item for item in result.preguntas)
     assert len(result.respuestas_esperadas) == 3
@@ -351,6 +356,83 @@ def test_generation_route_is_declared_before_dynamic_evaluation_route() -> None:
     paths = app.openapi()["paths"]
     assert "/api/evaluaciones/generar-borrador" in paths
     assert "post" in paths["/api/evaluaciones/generar-borrador"]
+
+
+@pytest.mark.parametrize('defect', ['empty_goals', 'blank_goals', 'null_questions', 'unknown_dba', 'invalid_json'])
+def test_invalid_draft_has_one_bounded_correction_on_the_same_router(defect):
+    request = make_request(dba_ids=[])
+    valid = make_content([]).model_dump(mode='json')
+    invalid = copy.deepcopy(valid)
+    if defect == 'empty_goals':
+        invalid['metas_aprendizaje'] = []
+    elif defect == 'blank_goals':
+        invalid['metas_aprendizaje'] = [' ']
+    elif defect == 'null_questions':
+        invalid['preguntas'] = None
+    elif defect == 'unknown_dba':
+        invalid['preguntas'][0]['dba_ids'] = [str(uuid4())]
+    else:
+        invalid = {'error': 'invalid_json'}
+
+    class Router:
+        def __init__(self):
+            self.prompts = []
+
+        async def generate_json(self, task, prompt):
+            assert task == 'evaluacion_generar_dba_rag'
+            self.prompts.append(prompt)
+            return invalid if len(self.prompts) == 1 else valid
+
+    router = Router()
+    content = asyncio.run(generation_service.generate_validated_content(
+        router, request, 'synthetic original prompt', allowed_dba_ids=set(), allowed_rag_ids=set(),
+    ))
+    assert len(router.prompts) == 2
+    assert router.prompts[1].startswith(router.prompts[0])
+    assert len(content.metas_aprendizaje) >= 1
+    assert len(content.preguntas) == 3
+
+
+def test_repeated_incomplete_output_is_rejected_without_logging_its_content(caplog):
+    request = make_request(dba_ids=[])
+    raw = make_content([]).model_dump(mode='json')
+    raw['metas_aprendizaje'] = []
+    raw['instrucciones'] = 'PRIVATE_SYNTHETIC_SENTINEL'
+
+    class Router:
+        calls = 0
+
+        async def generate_json(self, *_args):
+            self.calls += 1
+            return raw
+
+    router = Router()
+    with pytest.raises(HTTPException) as exc:
+        asyncio.run(generation_service.generate_validated_content(
+            router, request, 'synthetic', allowed_dba_ids=set(), allowed_rag_ids=set(),
+        ))
+    assert exc.value.status_code == 502
+    assert router.calls == 2
+    assert 'PRIVATE_SYNTHETIC_SENTINEL' not in caplog.text
+    assert 'PRIVATE_SYNTHETIC_SENTINEL' not in str(exc.value.detail)
+
+
+def test_unavailable_provider_is_not_retried_as_a_content_correction():
+    class Router:
+        calls = 0
+
+        async def generate_json(self, *_args):
+            self.calls += 1
+            raise RuntimeError('PRIVATE_PROVIDER_SENTINEL')
+
+    router = Router()
+    with pytest.raises(HTTPException) as exc:
+        asyncio.run(generation_service.generate_validated_content(
+            router, make_request(dba_ids=[]), 'synthetic', allowed_dba_ids=set(), allowed_rag_ids=set(),
+        ))
+    assert exc.value.status_code == 503
+    assert router.calls == 1
+    assert 'PRIVATE_PROVIDER_SENTINEL' not in str(exc.value.detail)
 
 
 def test_rag_vector_failure_does_not_fabricate_context(monkeypatch) -> None:

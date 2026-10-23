@@ -82,3 +82,20 @@ Convergencia de la corrección: FR-005/FR-009, SC-001/SC-005 y la aceptación US
 Revisión final de accesibilidad: las etapas sin IA no reciben identificadores repetidos; una prueba adicional comprueba los destinos de navegación (cuatro casos de FunctionsSection verdes). No modifica selecciones ni permisos.
 
 Primer CI del hotfix: una integración seguía comparando el texto «Prueba nuevamente» después del cambio a «Vuelve a comprobar». Se actualizó esa expectativa y se añadió la comprobación del campo `primary_model`; el rechazo de formato/capacidad/comprobante inválidos sigue siendo obligatorio. Los cinco contratos PostgreSQL de Spec 116 pasaron en la base local aislada antes de reenviar CI.
+
+## Hotfix de generación — 23-10-2026, issue #249
+
+Dos respuestas 502 procedían del generador, no de CSP: la tarea real no estaba enlazada al selector `generacion_preguntas`; Groq devolvió `model_not_found` y una cascada heredada usó OpenAI. Su JSON omitió las metas mínimas y se rechazó. La ruta publicada de generación seguía en Groq; no confundir esa ruta con las etapas Luna/GLM de digitalización y valoración. No se cambió su modelo durante este hotfix.
+
+T021 enlaza el selector canónico y excluye proveedores/plantillas no elegidos. La misma instancia captura sus transportes para una posible corrección, incluso si el administrador publica otra versión durante la solicitud. Una instancia capturada no puede reutilizarse para otra función. El último uso reconoce la tarea real de borradores. T022 explicita metas no vacías, valida estructura y alineación antes de añadir la evaluación y permite solo una corrección de contenido; disponibilidad fallida termina en 503 comprensible sin esa corrección. Un segundo JSON inválido se rechaza sin persistir contenido parcial. Los logs del validador ya no incluyen el contenido del proveedor.
+
+Pruebas: las regresiones nuevas fallaron primero (13 fallos esperados); después pasaron 77 casos focalizados. Una regresión detectó que extender la política por el alias padre afectaba a digitalización: se limitó a las dos tareas concretas, sin modificar la prueba. Suite unitaria completa local: 1.350 correctas, dos omisiones por condiciones ya existentes. Ruff y comprobación de espacios correctos. Docker local no respondió; los procesos asyncio de Python necesitaron permisos normales de ejecución para sus sockets internos. No se subió código al VPS ni se ejecutaron builds o reinicios en producción.
+
+Comprobaciones reales sintéticas, sin alumnos, notas o evidencias guardadas:
+
+- Calificación con configuración publicada: lectura DeepSeek 2,37 s, valoración Luna 5,51 s, verificación GLM 2,72 s. Las dos respuestas se transcribieron correctamente y ambos evaluadores dieron el 2,5/5 esperado. No incluye admisión HTTP ni cola y no garantiza esa latencia para otras hojas.
+- Candidato de generación cargado solo en memoria de un proceso desechable, usando el perfil Luna ya comprobado: tres preguntas, metas no vacías y claves 4/6/7 correctas en 7,73 s, una llamada. Un primer intento de comprobación se detuvo antes de llamar a IA porque el proceso conservaba el alias antiguo; se incorporó también el alias corregido en ese proceso. No se modificó el código desplegado, la ruta publicada ni el ledger de uso con esa selección experimental.
+
+Antes de afirmar que generar está reparado en producción: CI completo, autorización de fusión, despliegue automático verificado y elección administrativa de un modelo disponible para Generación del contenido. Esta aprobación permite preparar el PR, no publicar otra configuración ni fusionarlo. No relajar CSP para solucionar bloqueos de analítica; los 401/403 requieren comprobar sesión y permisos por separado. Reversión: revertir el commit por PR sin borrar datos o restaurar configuración ajena.
+
+Convergencia acotada a FR-004/005/009/010/011, la decisión de transportes/snapshots y los ocho principios: dos brechas parciales altas cerradas con T021/T022. Lista de calidad 10/10 consultada sin editar sus marcas; no hay hooks de extensiones. CI y entrega se registrarán por separado.
