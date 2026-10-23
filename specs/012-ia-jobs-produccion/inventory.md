@@ -2,7 +2,7 @@
 
 > Archivo generado por `python scripts/build_system_inventory.py --write`. No editar manualmente.
 
-**Superficies propietarias:** 38
+**Superficies propietarias:** 37
 
 | Tipo | Firma | Actores | Cobertura | Fuente |
 |---|---|---|---|---|
@@ -18,7 +18,6 @@
 | frontend_call | `POST:/jobs/{jobId}` | ambiguous | covered | `frontend/src/modules/evaluaciones/components/DigitalizationJobMonitor.tsx:227` |
 | integration | `celery` | system | covered | `backend/app/workers/tasks_ai_config.py:1` |
 | integration | `groq` | system | covered | `backend/app/services/ai_capability_registry.py:1` |
-| integration | `ollama` | system | covered | `backend/app/services/ai_capability_registry.py:1` |
 | integration | `openai` | system | covered | `backend/app/services/ai_capability_registry.py:1` |
 | job | `tasks.assign_overdue_grades` | system | missing | `backend/app/workers/tasks_deadlines.py:46` |
 | job | `tasks.cleanup_evaluation_visual_proposals` | system | missing | `backend/app/workers/tasks_evaluation_visuals.py:155` |

@@ -42,6 +42,7 @@ function ProviderEditor({
   const Icon = PROVIDER_ICONS[provider.id] ?? Cpu;
   const isTemplate = provider.id === 'template';
   const isInternal = provider.id === 'ollama_internal';
+  const isCompatible = Boolean(provider.credential_revision);
 
   return (
     <Card className="p-4">
@@ -94,7 +95,7 @@ function ProviderEditor({
         />
       </label>
 
-      {!isTemplate && !isInternal && (
+      {!isTemplate && !isInternal && !provider.id.startsWith('api_') && (
         <label className="mt-3 flex cursor-pointer items-center justify-between gap-3 rounded-xl border border-border bg-surface-2/60 p-3 text-sm">
           <span>
             <span className="block font-semibold">Permitir API propia del docente</span>
@@ -154,9 +155,13 @@ function ProviderEditor({
         <span>{provider.last_test_latency_ms != null ? `${provider.last_test_latency_ms} ms` : 'Sin latencia registrada'}</span>
         <span>{provider.last_test_http_code ? `HTTP ${provider.last_test_http_code}` : ''}</span>
       </div>
-      <Button size="sm" variant="outline" className="mt-3 w-full" loading={isTesting} disabled={testsDisabled} onClick={() => onTest(provider.id)}>
-        Probar conexión
-      </Button>
+      {isCompatible ? (
+        <p className="mt-3 text-xs text-muted">Prueba cada modelo y su formato en «APIs compatibles y formatos de modelos» antes de publicar.</p>
+      ) : (
+        <Button size="sm" variant="outline" className="mt-3 w-full" loading={isTesting} disabled={testsDisabled} onClick={() => onTest(provider.id)}>
+          Probar conexión
+        </Button>
+      )}
       {!isTemplate && !isInternal && (
         <Button size="sm" variant="outline" className="mt-2 w-full" loading={isRefreshingModels} disabled={!provider.auth_configured || isRefreshingModels} onClick={() => onRefreshModels(provider.id)}>
           <RefreshCw className="h-4 w-4" /> Actualizar modelos

@@ -5,6 +5,7 @@ import base64
 import hashlib
 from dataclasses import dataclass
 from typing import Any
+from uuid import UUID, uuid4
 
 from cryptography.fernet import Fernet, InvalidToken
 from sqlalchemy import text
@@ -75,6 +76,39 @@ class EffectiveAICredentials:
         if provider == "ollama":
             return bool(self.ollama_key)
         return provider == "template"
+
+
+async def create_api_credential_revision(
+    db: AsyncSession, *, provider_id: str, base_url: str, secret: str, actor_id: UUID | None,
+) -> str:
+    """Create a destination-bound revision without publishing it or revoking jobs."""
+    await db.execute(text("SELECT pg_advisory_xact_lock(hashtext(:provider))"), {"provider": "api_credential:" + provider_id})
+    version = await db.scalar(text("SELECT COALESCE(MAX(version), 0) + 1 FROM ai_api_credentials WHERE provider_id=:provider"), {"provider": provider_id})
+    identifier = str(uuid4())
+    await db.execute(text(
+        "INSERT INTO ai_api_credentials (id, provider_id, version, base_url, secret_encrypted, created_by) "
+        "VALUES (:id, :provider, :version, :url, :secret, :actor)"
+    ), {"id": identifier, "provider": provider_id, "version": version, "url": base_url.rstrip("/"),
+        "secret": encrypt_ai_secret(secret), "actor": str(actor_id) if actor_id else None})
+    return identifier
+
+
+async def resolve_api_credential(db: AsyncSession, provider: dict[str, Any]) -> str:
+    """Resolve exactly the revision captured in a job; never cross destinations."""
+    revision = provider.get("credential_revision")
+    if revision:
+        row = (await db.execute(text(
+            "SELECT secret_encrypted FROM ai_api_credentials WHERE id=:id AND provider_id=:provider "
+            "AND base_url=:url AND revoked_at IS NULL"
+        ), {"id": str(revision), "provider": provider.get("id") or provider.get("provider"),
+            "url": str(provider.get("base_url") or "").rstrip("/")})).first()
+        value = decrypt_ai_secret(row[0]) if row else ""
+        if not value:
+            raise ValueError("La revisión de credencial no está disponible para esta conexión.")
+        return value
+    credentials = await get_effective_ai_credentials(db)
+    field = {"open_code": "open_code_key", "openai": "openai_key", "groq": "groq_key", "ollama": "ollama_key"}.get(str(provider.get("id") or provider.get("provider")))
+    return str(getattr(credentials, field, "") or "") if field else ""
 
 
 async def _read_database_credentials(db: AsyncSession) -> dict[str, Any]:

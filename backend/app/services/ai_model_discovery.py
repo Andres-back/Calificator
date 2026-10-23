@@ -58,7 +58,7 @@ def _credential_for(provider: str, credentials: EffectiveAICredentials) -> str:
     return ""
 
 
-def _capabilities(model_id: str, item: dict[str, Any]) -> tuple[str, ...]:
+def _capabilities(model_id: str, item: dict[str, Any], *, infer_name: bool = True) -> tuple[str, ...]:
     declared = item.get("capabilities") or item.get("capability") or []
     if isinstance(declared, str):
         declared = [declared]
@@ -82,10 +82,10 @@ def _capabilities(model_id: str, item: dict[str, Any]) -> tuple[str, ...]:
         result.add("embedding")
 
     # OpenCode may return only an id for some catalog entries.
-    if name.startswith(KNOWN_MULTIMODAL_MODEL_PREFIXES):
+    if infer_name and name.startswith(KNOWN_MULTIMODAL_MODEL_PREFIXES):
         result.update({"text", "vision"})
 
-    if not result:
+    if not result and infer_name:
         if "embed" in name:
             result.add("embedding")
         elif any(token in name for token in ("gpt-image", "dall-e", "flux", "stable-diffusion", "imagen")):
@@ -97,7 +97,7 @@ def _capabilities(model_id: str, item: dict[str, Any]) -> tuple[str, ...]:
     return tuple(sorted(result.intersection(SUPPORTED_CAPABILITIES)))
 
 
-def normalize_model_payload(provider: str, payload: Any) -> list[DiscoveredModel]:
+def normalize_model_payload(provider: str, payload: Any, *, infer_names: bool = True, include_unknown: bool = False) -> list[DiscoveredModel]:
     if isinstance(payload, dict):
         raw_models = payload.get("data") or payload.get("models") or payload.get("result") or []
     elif isinstance(payload, list):
@@ -115,10 +115,10 @@ def normalize_model_payload(provider: str, payload: Any) -> list[DiscoveredModel
         model_id = str(item.get("id") or item.get("model") or item.get("name") or "").strip()
         if not model_id:
             continue
-        capabilities = _capabilities(model_id, item)
+        capabilities = _capabilities(model_id, item, infer_name=infer_names)
         if provider in {"openai_image", "cloudflare_image"}:
             capabilities = tuple(value for value in capabilities if value == "image")
-        if not capabilities:
+        if not capabilities and not include_unknown:
             continue
         context = item.get("context_window") or item.get("max_context_tokens")
         normalized[model_id] = DiscoveredModel(
@@ -245,9 +245,73 @@ async def persist_discovered_models(
         )
     result = await db.execute(
         text(
-            "SELECT provider_id, model_id, label, capabilities, recommended, active, max_context_tokens "
+            "SELECT provider_id, model_id, label, capabilities, recommended, active, max_context_tokens, NULLIF(runtime_profile, '{}'::jsonb) AS runtime_profile, verification_id::text "
             "FROM ai_provider_models WHERE provider_id=:provider ORDER BY active DESC, recommended DESC, model_id"
         ),
         {"provider": provider},
     )
     return [dict(row._mapping) for row in result.fetchall()]
+
+
+async def discover_compatible_models(db: AsyncSession, provider: dict[str, Any], *, transport=None) -> list[dict[str, Any]]:
+    """Fetch a whole compatible catalog or keep the previous draft untouched."""
+    import asyncio
+    from urllib.parse import urljoin, urlsplit
+    from app.services.ai_api_connections import APIConnectionError, public_api_transport, validate_api_base_url
+    from app.services.ai_credentials_service import resolve_api_credential
+
+    base = await asyncio.to_thread(validate_api_base_url, str(provider.get("base_url") or ""))
+    if not provider.get("credential_revision"):
+        from app.services.ai_config_service import AIConfigService
+        saved = await AIConfigService(db=db).get_provider_config(str(provider["id"]))
+        if str(saved.get("base_url") or "").rstrip("/") != base:
+            raise APIConnectionError("Para consultar otro destino crea una conexión con su propia clave.")
+    key = await resolve_api_credential(db, provider)
+    if not key:
+        raise APIConnectionError("Configura primero una clave para esta conexión.")
+    headers = opencode_headers(key, session_id=new_opencode_session_id("catalog-check"))
+    # Providing both standard auth forms also supports Messages-only catalogs;
+    # headers never follow redirects and the key is bound to this exact origin.
+    headers.update({"x-api-key": key, "anthropic-version": "2023-06-01"})
+    found: dict[str, DiscoveredModel] = {}
+    next_url, params = f"{base}/models", None
+    seen: set[str] = set()
+    try:
+        async with httpx.AsyncClient(timeout=httpx.Timeout(20, connect=5), headers=headers,
+                                     transport=transport or public_api_transport(), follow_redirects=False, trust_env=False) as client:
+            for _ in range(10):
+                marker = next_url + str(params)
+                if marker in seen:
+                    raise AIModelDiscoveryError("El catálogo repitió una página; no se reemplazó la lista anterior.")
+                seen.add(marker)
+                response = await client.get(next_url, params=params)
+                response.raise_for_status()
+                payload = response.json()
+                entries = normalize_model_payload(str(provider["id"]), payload, infer_names=False, include_unknown=True)
+                if not entries or len(found) + len(entries) > 2000:
+                    raise AIModelDiscoveryError("El catálogo está vacío o incompleto; se conserva la lista anterior.")
+                found.update({m.model_id: m for m in entries})
+                more = isinstance(payload, dict) and payload.get("has_more") is True
+                following = (payload.get("next") or payload.get("next_cursor")) if isinstance(payload, dict) else None
+                if not more and not following:
+                    total = payload.get("total") if isinstance(payload, dict) else None
+                    if isinstance(total, int) and total > len(found):
+                        raise AIModelDiscoveryError("El proveedor devolvió un catálogo parcial; no se reemplazó la lista.")
+                    return [{"provider_id": provider["id"], "model_id": m.model_id, "label": m.label,
+                             "capabilities": list(m.capabilities), "max_context_tokens": m.max_context_tokens,
+                             "active": True, "recommended": False, "runtime_profile": None, "verification_id": None} for m in found.values()]
+                if following and (str(following).startswith(("https:", "/"))):
+                    candidate = urljoin(next_url, str(following))
+                    if (urlsplit(candidate).scheme, urlsplit(candidate).netloc, urlsplit(candidate).path) != (urlsplit(base).scheme, urlsplit(base).netloc, urlsplit(base).path + "/models"):
+                        raise AIModelDiscoveryError("La siguiente página del catálogo no pertenece a la misma conexión.")
+                    next_url, params = candidate, None
+                else:
+                    cursor = following or (payload.get("last_id") if isinstance(payload, dict) else None)
+                    if not cursor:
+                        raise AIModelDiscoveryError("Falta la siguiente página del catálogo; se conserva la lista anterior.")
+                    params = {"after": str(cursor)}
+            raise AIModelDiscoveryError("El catálogo supera el límite de páginas; se conserva la lista anterior.")
+    except (httpx.HTTPError, ValueError) as exc:
+        if isinstance(exc, (AIModelDiscoveryError, APIConnectionError)):
+            raise
+        raise AIModelDiscoveryError("No fue posible consultar el catálogo. Revisa acceso y disponibilidad; no se cambió la lista.") from exc

@@ -5,12 +5,13 @@ import { BarChart3, BrainCircuit, ImageIcon, KeyRound, MessageSquare, Server, Wr
 import { Badge, Button, Card, ConfirmDialog, QueryError, Skeleton } from '@/components/ui';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { toApiError } from '@/lib/api';
-import { getAISettings, getConfigHash, getAIAudit, getAIControlCenter, getAIControlCenterUsage, refreshGlobalProviderModels, validateAIControlCenter, type AIModel, type AIToolControl } from './api';
+import { discoverCompatibleModels, getAISettings, getConfigHash, getAIAudit, getAIControlCenter, getAIControlCenterUsage, refreshGlobalProviderModels, validateAIControlCenter, type AIModel, type AIToolControl } from './api';
 import { AICredentialsPanel } from './AICredentialsPanel';
 import { useAISettingsDraft } from './ai/hooks/useAISettingsDraft';
 import { useAIMutations } from './ai/hooks/useAIMutations';
 import { OverviewSection } from './ai/sections/OverviewSection';
 import { ProvidersSection } from './ai/sections/ProvidersSection';
+import { CompatibleAPISection } from './ai/sections/CompatibleAPISection';
 import { FunctionsSection } from './ai/sections/FunctionsSection';
 import { ToolsSection } from './ai/sections/ToolsSection';
 import { ConfigConsistencyCard } from './ai/sections/ConsistencySection';
@@ -71,6 +72,8 @@ export function AdminAIConfigPage() {
     updateProvider,
     updateModel,
     replaceProviderModels,
+    prepareProvider,
+    prepareModels,
     upsertFeature,
     removeFeature,
     setDraftProviders,
@@ -89,6 +92,18 @@ export function AdminAIConfigPage() {
   });
 
   function refreshProviderModels(providerId: string) {
+    const provider = draftProviders.find((p) => p.id === providerId);
+    if (provider?.credential_revision) {
+      setRefreshingProvider(providerId);
+      void discoverCompatibleModels(provider).then((catalog) => {
+        prepareModels(catalog.map((entry) => {
+          const previous = draftModels.find((m) => m.provider_id === entry.provider_id && m.model_id === entry.model_id);
+          return previous ? { ...entry, runtime_profile: previous.runtime_profile, verification_id: previous.verification_id, capabilities: [...new Set([...entry.capabilities, ...previous.capabilities])] } : entry;
+        }));
+        toast.success('Catálogo actualizado en el borrador. Se conservaron tus modelos y perfiles.');
+      }).catch((error) => toast.error(toApiError(error).detail)).finally(() => setRefreshingProvider(null));
+      return;
+    }
     setRefreshingProvider(providerId);
     refreshModelsMutation.mutate(providerId);
   }
@@ -280,6 +295,7 @@ export function AdminAIConfigPage() {
           />}
 
           {activeSection === 'providers' && <div className="space-y-6">
+          <CompatibleAPISection providers={draftProviders} models={draftModels} onProvider={prepareProvider} onModels={prepareModels} />
           <AICredentialsPanel config={settingsQuery.data.global_config} onModelsRefreshed={mergeCredentialModels} />
           <ProvidersSection
             title="Proveedores de texto"

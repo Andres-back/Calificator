@@ -8,6 +8,7 @@ export interface AIProvider {
   tipo: 'texto' | 'imagen' | string;
   label: string;
   base_url: string | null;
+  credential_revision?: string | null;
   model: string | null;
   active: boolean;
   priority: number;
@@ -149,7 +150,37 @@ export interface AIModel {
   recommended: boolean;
   active: boolean;
   max_context_tokens?: number | null;
+  runtime_profile?: ModelRuntimeProfile | null;
+  verification_id?: string | null;
   performance?: AIModelPerformance[];
+}
+
+export interface ModelRuntimeProfile {
+  protocol: 'chat_completions' | 'responses' | 'messages';
+  endpoint?: string | null;
+  reasoning_effort?: 'none' | 'minimal' | 'low' | 'medium' | 'high' | null;
+  thinking?: 'enabled' | 'disabled' | null;
+  send_temperature?: boolean;
+  auth_style?: 'auto' | 'bearer' | 'api_key';
+  chat_token_field?: 'max_tokens' | 'max_completion_tokens';
+}
+
+export async function prepareCompatibleConnection(payload: { label: string; base_url: string; api_key: string }, providerId?: string): Promise<AIProvider> {
+  const path = providerId ? `/admin/ai-api/connections/${providerId}/credential` : '/admin/ai-api/connections';
+  const { data } = await api.post<AIProvider>(path, payload);
+  return data;
+}
+
+export async function discoverCompatibleModels(provider: AIProvider): Promise<AIModel[]> {
+  const { data } = await api.post<AIModel[]>('/admin/ai-api/models/discover', provider);
+  return data;
+}
+
+export async function probeCompatibleModel(provider: AIProvider, model: AIModel): Promise<{
+  status: 'ok' | 'error'; detail: string; latency_ms: number; provider?: AIProvider; model?: AIModel;
+}> {
+  const { data } = await api.post('/admin/ai-api/models/probe', { provider, model });
+  return data;
 }
 
 export interface AIModelPerformance {
@@ -335,12 +366,12 @@ export async function publishAIConfiguration(
 ): Promise<ApiResponse & { version?: number }> {
   const { data } = await api.put<ApiResponse & { version?: number }>('/admin/ai-settings/publish', {
     expected_version: expectedVersion,
-    providers: providers.map(({ id, name, tipo, label, base_url, model, active, priority, timeout_seconds, max_retries, allow_teacher_credentials, allow_institutional_fallback, config_version }) => ({
+    providers: providers.map(({ id, name, tipo, label, base_url, model, active, priority, timeout_seconds, max_retries, allow_teacher_credentials, allow_institutional_fallback, config_version, credential_revision }) => ({
       id, name, tipo, label, base_url, model, active, priority, timeout_seconds, max_retries,
-      allow_teacher_credentials, allow_institutional_fallback, config_version,
+      allow_teacher_credentials, allow_institutional_fallback, config_version, credential_revision,
     })),
-    models: models.map(({ provider_id, model_id, label, capabilities, recommended, active, max_context_tokens }) => ({
-      provider_id, model_id, label, capabilities, recommended, active, max_context_tokens,
+    models: models.map(({ provider_id, model_id, label, capabilities, recommended, active, max_context_tokens, runtime_profile, verification_id }) => ({
+      provider_id, model_id, label, capabilities, recommended, active, max_context_tokens, runtime_profile, verification_id,
     })),
     features: features.map(({ feature, label, capability, primary_provider, primary_model, fallback_provider, fallback_model, rollout_enabled, config_version, active }) => ({
       feature, label, capability, primary_provider, primary_model, fallback_provider,

@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 from datetime import datetime
+from uuid import UUID
 
 from pydantic import BaseModel, Field, SecretStr, field_validator
+from app.services.ai_api_transport import ModelRuntimeProfile
 
 
 class GlobalAIConfigUpdate(BaseModel):
@@ -70,6 +72,7 @@ class AIProvider(BaseModel):
     label: str
     active: bool = True
     base_url: str | None = None
+    credential_revision: str | None = None
     model: str | None = None
     priority: int = 0
     timeout_seconds: int = 30
@@ -83,6 +86,11 @@ class AIProvider(BaseModel):
     last_test_http_code: int | None = None
     last_test_error: str | None = None
     last_test_at: datetime | None = None
+
+    @field_validator("credential_revision")
+    @classmethod
+    def valid_credential_revision(cls, value: str | None) -> str | None:
+        return str(UUID(value)) if value else None
 
 
 class AIProviderUpdate(BaseModel):
@@ -178,7 +186,25 @@ class AIModel(BaseModel):
     recommended: bool = False
     active: bool = True
     max_context_tokens: int | None = None
+    runtime_profile: ModelRuntimeProfile | None = None
+    verification_id: str | None = None
     performance: list[AIModelPerformance] = Field(default_factory=list)
+
+    @field_validator("verification_id")
+    @classmethod
+    def valid_verification_id(cls, value: str | None) -> str | None:
+        return str(UUID(value)) if value else None
+
+
+class CompatibleAPIConnectionCreate(BaseModel):
+    label: str = Field(min_length=1, max_length=100)
+    base_url: str = Field(min_length=10, max_length=500)
+    api_key: SecretStr
+
+
+class CompatibleAPIProbe(BaseModel):
+    provider: AIProvider
+    model: AIModel
 
 
 class OllamaModelRead(BaseModel):

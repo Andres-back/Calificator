@@ -245,6 +245,19 @@ async def resolve_ai_configuration(
             "reason": "global_route",
         }
 
+    # Explicit profiles and destination-bound credential revisions are captured
+    # independently for primary/fallback. Legacy snapshots keep their old shape.
+    catalog = await config_service.get_all_models()
+    for candidate in (selection, fallback):
+        if not candidate:
+            continue
+        entry = next((m for m in catalog if m.get("provider_id") == candidate["provider"] and m.get("model_id") == candidate.get("model")), None)
+        if entry and entry.get("runtime_profile"):
+            connection = await config_service.get_provider_config(candidate["provider"])
+            candidate["runtime_profile"] = dict(entry["runtime_profile"])
+            candidate["capabilities"] = list(entry.get("capabilities") or [])
+            candidate["connection"] = {key: connection.get(key) for key in ("id", "base_url", "credential_revision", "timeout_seconds", "max_retries")}
+
     core = {
         "schema_version": 1,
         "feature": feature,

@@ -246,6 +246,19 @@ class LLMRouter:
                 }
                 institutional_credentials = dict(self._credentials)
                 self._provider_configs = {str(item["id"]): item for item in text_providers}
+                # Profile-backed routes are independent of provider IDs/model
+                # prefixes. This path also works without a teacher override.
+                from app.services.ai_configuration_resolver import resolve_ai_configuration
+                configured = self._ai_config or {}
+                catalog_method = getattr(svc, "get_all_models", None)
+                has_profiles = any((configured.get(slot) or {}).get("runtime_profile") for slot in ("primary", "fallback"))
+                if not configured and callable(catalog_method):
+                    has_profiles = any(m.get("runtime_profile") for m in await catalog_method())
+                    if has_profiles:
+                        configured = await resolve_ai_configuration(db, feature=task_type, teacher_id=self._user_id)
+                if any((configured.get(slot) or {}).get("runtime_profile") for slot in ("primary", "fallback")):
+                    self._explicit_routing = True
+                    return await self._profile_provider_order(db, configured)
                 if task_type == "evaluacion_digitalizar":
                     document_provider = self._provider_configs.setdefault(
                         LLMProvider.OPEN_CODE.value, {}
@@ -451,6 +464,52 @@ class LLMRouter:
 
     async def _template_call(self, prompt: str, json_mode: bool) -> str:
         return self._safe_template("fallback")
+
+    async def _profile_provider_order(self, db, snapshot: dict[str, Any]):
+        from app.services.ai_api_connections import call_configured_api
+        from app.services.ai_credentials_service import resolve_api_credential, get_teacher_ai_credential
+        self._ai_config = dict(snapshot)
+        ordered = []
+        for slot in ("primary", "fallback"):
+            selection = snapshot.get(slot) or {}
+            if not selection:
+                continue
+            provider_id = str(selection.get("provider") or "")
+            if selection.get("runtime_profile"):
+                if selection.get("credential_source") == "teacher" and self._user_id:
+                    secret = await get_teacher_ai_credential(db, teacher_id=self._user_id, provider_id=provider_id)
+                else:
+                    secret = await resolve_api_credential(db, selection.get("connection") or {})
+
+                async def request_profile(prompt, json_mode, selected=dict(selection), api_key=secret, fallback=slot == "fallback"):
+                    started = time.monotonic()
+                    try:
+                        result = await call_configured_api(selected, api_key or "", [{"role": "user", "content": prompt}],
+                            max_tokens=self._output_budget or 8192, json_mode=json_mode,
+                            timeout=min(300, max(5, float((selected.get("connection") or {}).get("timeout_seconds") or 120))), session_id=self._open_code_session_id)
+                        usage = result.get("usage") or {}
+                        await log_ai_usage(feature=self._active_task_type, provider=selected["provider"].replace("open_code", "opencode"),
+                            model=result.get("model") or selected["model"], status="success", latency_ms=int((time.monotonic()-started)*1000),
+                            input_tokens=usage.get("input_tokens"), output_tokens=usage.get("output_tokens"),
+                            **self._tracking, **{**self._routing_telemetry(), "fallback_used": fallback})
+                        return result["choices"][0]["message"]["content"]
+                    except Exception:
+                        await log_ai_usage(feature=self._active_task_type, provider=selected["provider"].replace("open_code", "opencode"),
+                            model=selected["model"], status="failed", latency_ms=int((time.monotonic()-started)*1000),
+                            error_code="configured_api_failed", **self._tracking,
+                            **{**self._routing_telemetry(), "fallback_used": fallback})
+                        raise
+                ordered.append((provider_id, request_profile))
+            else:
+                # Existing native adapters remain available as explicit fallback.
+                legacy = copy.copy(self)
+                legacy._provider_configs = {key: dict(value) for key, value in self._provider_configs.items()}
+                legacy._provider_configs.setdefault(provider_id, {})["model"] = selection.get("model")
+                call = legacy._call_for_provider(provider_id)
+                if call:
+                    ordered.append((provider_id, call))
+        self._explicit_routing = True
+        return ordered
 
     def _call_for_provider(self, provider_id: str) -> Any | None:
         if provider_id == LLMProvider.OPENAI.value:

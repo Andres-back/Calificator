@@ -12,6 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import settings
 from app.core.logging import get_logger
 from app.core.permissions import get_current_user, require_permission_now
+from app.core.rate_limit import rate_limit
 from app.db.session import get_db
 from app.services.ai_credentials_service import (
     EffectiveAICredentials,
@@ -45,6 +46,9 @@ from app.modules.admin_ai_config.control_center_service import (
     validate_control_center_payload,
 )
 from app.modules.admin_ai_config.schemas import (
+    CompatibleAPIConnectionCreate,
+    CompatibleAPIProbe,
+    AIProvider,
     AIProviderTestResponse,
     AIProviderUpdate,
     AISettingsRead,
@@ -386,13 +390,20 @@ async def get_full_ai_settings(
     for persisted in persisted_providers:
         provider_id = str(persisted["id"])
         error_info = last_errors.get(provider_id, {})
+        configured = credentials.configured_for(provider_id)
+        if persisted.get("credential_revision"):
+            from app.services.ai_credentials_service import resolve_api_credential
+            try:
+                configured = bool(await resolve_api_credential(db, persisted))
+            except ValueError:
+                configured = False
         providers.append({
             **persisted,
             # Keep name for legacy frontend consumers while exposing the real id.
             "id": provider_id,
             "name": provider_id,
             "tipo": persisted.get("tipo", "imagen" if "image" in provider_id else "texto"),
-            "auth_configured": credentials.configured_for(provider_id),
+            "auth_configured": configured,
             "last_test_status": "error" if error_info else None,
             "last_test_error": error_info.get("error"),
             "last_test_at": error_info.get("at"),
@@ -502,13 +513,80 @@ async def validate_ai_control_center(
     db: AsyncSession = Depends(get_db),
 ) -> dict:
     require_permission_now(current_user, "admin_ai.manage")
-    del db
-    return validate_control_center_payload(
-        [item.model_dump() for item in payload.providers],
-        [item.model_dump() for item in payload.models],
-        [item.model_dump() for item in payload.features],
-        [item.model_dump() for item in payload.tools] if payload.tools is not None else None,
-    )
+    return await _validate_publication(db, payload)
+
+
+async def _validate_publication(db: AsyncSession, payload: AIConfigurationPublication) -> dict:
+    from app.services.ai_api_connections import APIConnectionError, validate_compatible_publication
+    providers = [item.model_dump() for item in payload.providers]
+    models = [item.model_dump() for item in payload.models]
+    features = [item.model_dump() for item in payload.features]
+    tools = [item.model_dump() for item in payload.tools] if payload.tools is not None else None
+    try:
+        providers, changed = await validate_compatible_publication(db, providers, models, features)
+        result = validate_control_center_payload(providers, models, changed, tools)
+        for error in result["errors"]:
+            field = str(error.get("field") or "")
+            if field.startswith("features."):
+                index = int(field.split(".")[1])
+                if index < len(changed):
+                    feature = changed[index]
+                    actual_index = next(i for i, item in enumerate(features) if item["feature"] == feature["feature"])
+                    error["field"] = f"features.{actual_index}"
+                    error["message"] = f"«{feature.get('label') or feature['feature']}»: {error['message']}"
+        normalized = {item["feature"]: item for item in result["normalized"]["features"]}
+        result["normalized"]["features"] = [normalized.get(item["feature"], item) for item in features]
+        return result
+    except (APIConnectionError, ValueError) as exc:
+        return {"valid": False, "errors": [{"field": "configuration", "message": str(exc) if isinstance(exc, APIConnectionError) else "Revisa el formato y prueba de nuevo la conexión antes de guardar."}], "warnings": []}
+
+
+@router.post("/admin/ai-api/connections", response_model=AIProvider)
+async def create_compatible_api(payload: CompatibleAPIConnectionCreate, current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    require_permission_now(current_user, "admin_ai.manage")
+    from app.services.ai_api_connections import APIConnectionError, create_compatible_connection
+    try:
+        return await create_compatible_connection(db, label=payload.label, base_url=payload.base_url,
+            secret=payload.api_key.get_secret_value(), actor_id=current_user.id)
+    except (APIConnectionError, ValueError) as exc:
+        await db.rollback()
+        raise HTTPException(status_code=422, detail="La conexión no es válida. Revisa la URL HTTPS y su clave.") from exc
+
+
+@router.post("/admin/ai-api/connections/{provider_id}/credential", response_model=AIProvider)
+async def rotate_compatible_api(provider_id: str, payload: CompatibleAPIConnectionCreate, current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    require_permission_now(current_user, "admin_ai.manage")
+    from app.services.ai_api_connections import APIConnectionError, create_compatible_connection
+    existing = await AIConfigService(db=db).get_provider_config(provider_id)
+    if existing.get("id") != provider_id or not existing.get("base_url"):
+        raise HTTPException(status_code=404, detail="No se encontró la conexión publicada.")
+    if existing.get("tipo") != "texto" or not existing.get("credential_revision"):
+        raise HTTPException(status_code=422, detail="Esta conexión todavía usa el adaptador original. Prepara y prueba primero un perfil compatible.")
+    try:
+        prepared = await create_compatible_connection(db, label=payload.label, base_url=payload.base_url,
+            secret=payload.api_key.get_secret_value(), actor_id=current_user.id, provider_id=provider_id)
+        return {**existing, **{key: prepared[key] for key in ("label", "base_url", "credential_revision", "auth_configured")}}
+    except (APIConnectionError, ValueError) as exc:
+        await db.rollback()
+        raise HTTPException(status_code=422, detail="No se pudo preparar la nueva credencial.") from exc
+
+
+@router.post("/admin/ai-api/models/probe", dependencies=[Depends(rate_limit(limit=10, window_seconds=60, scope="admin-api-model-probe"))])
+async def probe_compatible_api(payload: CompatibleAPIProbe, current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    require_permission_now(current_user, "admin_ai.manage")
+    from app.services.ai_api_connections import probe_compatible_model
+    return await probe_compatible_model(db, provider=payload.provider.model_dump(), model=payload.model.model_dump(), actor_id=current_user.id)
+
+
+@router.post("/admin/ai-api/models/discover", response_model=list[AIModel], dependencies=[Depends(rate_limit(limit=10, window_seconds=60, scope="admin-api-model-catalog"))])
+async def discover_compatible_api(payload: AIProvider, current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    require_permission_now(current_user, "admin_ai.manage")
+    from app.services.ai_api_connections import APIConnectionError
+    from app.services.ai_model_discovery import discover_compatible_models
+    try:
+        return await discover_compatible_models(db, payload.model_dump())
+    except (APIConnectionError, AIModelDiscoveryError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
 
 
 @router.put("/admin/ai-control-center/publish")
@@ -518,16 +596,7 @@ async def publish_ai_control_center(
     db: AsyncSession = Depends(get_db),
 ) -> dict:
     require_permission_now(current_user, "admin_ai.manage")
-    providers = [item.model_dump() for item in payload.providers]
-    models = [item.model_dump() for item in payload.models]
-    features = [item.model_dump() for item in payload.features]
-    tools = [item.model_dump() for item in payload.tools] if payload.tools is not None else None
-    validation = validate_control_center_payload(providers, models, features, tools)
-    if not validation["valid"]:
-        raise HTTPException(
-            status_code=422,
-            detail={"code": "invalid_ai_configuration", "errors": validation["errors"]},
-        )
+    await db.execute(text("SELECT pg_advisory_xact_lock(1162026)"))
     locked = await db.execute(text("SELECT config_version FROM ai_feature_routing FOR UPDATE"))
     current_version = max((int(row.config_version or 1) for row in locked.fetchall()), default=1)
     if current_version != payload.expected_version:
@@ -539,6 +608,9 @@ async def publish_ai_control_center(
                 "current_version": current_version,
             },
         )
+    validation = await _validate_publication(db, payload)
+    if not validation["valid"]:
+        raise HTTPException(status_code=422, detail={"code": "invalid_ai_configuration", "errors": validation["errors"]})
     normalized = validation["normalized"]
     service = AIConfigService(db=db)
     version = await service.publish_configuration(
@@ -583,6 +655,11 @@ async def test_provider(
         if not compatible:
             raise HTTPException(status_code=422, detail="El modelo no es compatible con la capacidad seleccionada.")
         provider_config = {**(provider_config or {}), "model": payload.model}
+    selected_model = next((item for item in await svc.get_all_models()
+        if item.get("provider_id") == provider and item.get("model_id") == provider_config.get("model") and item.get("runtime_profile")), None)
+    if selected_model:
+        from app.services.ai_api_connections import probe_compatible_model
+        return await probe_compatible_model(db, provider=provider_config, model=selected_model, actor_id=current_user.id)
     result = await _test_provider_connection(provider, credentials, provider_config)
     return {
         "status": result["status"],
@@ -608,6 +685,8 @@ async def refresh_global_provider_models(
         (item for item in await service.get_all_providers() if item.get("id") == provider),
         {},
     )
+    if any(model.get("provider_id") == provider and model.get("runtime_profile") for model in await service.get_all_models()):
+        raise HTTPException(status_code=409, detail="Consulta el catálogo desde APIs compatibles; así conservarás los perfiles comprobados antes de publicar.")
     try:
         discovered = await discover_provider_models(provider, provider_config, credentials)
         models = await persist_discovered_models(
@@ -663,63 +742,8 @@ async def publish_ai_configuration(
 ) -> dict:
     """Publish providers, models and routes in one version-checked transaction."""
     require_permission_now(current_user, "admin_ai.manage")
-    svc = AIConfigService(db=db)
-    await svc.init()
-    locked = await db.execute(text("SELECT config_version FROM ai_feature_routing FOR UPDATE"))
-    current_version = max((int(row.config_version or 1) for row in locked.fetchall()), default=1)
-    if current_version != payload.expected_version:
-        raise HTTPException(
-            status_code=409,
-            detail="La configuración global cambió en otra sesión. Recarga y vuelve a intentar.",
-        )
+    return await publish_ai_control_center(AIControlCenterPublication(**payload.model_dump()), current_user=current_user, db=db)
 
-    providers = [item.model_dump() for item in payload.providers]
-    models = [item.model_dump() for item in payload.models]
-    features = [item.model_dump() for item in payload.features]
-    if len({item["id"] for item in providers}) != len(providers):
-        raise HTTPException(status_code=422, detail="Hay proveedores duplicados.")
-    if len({(item["provider_id"], item["model_id"]) for item in models}) != len(models):
-        raise HTTPException(status_code=422, detail="Hay modelos duplicados.")
-    provider_map = {item["id"]: item for item in providers}
-    model_map = {(item["provider_id"], item["model_id"]): item for item in models}
-    template = provider_map.get("template")
-    if template:
-        template["active"] = True
-        template["priority"] = 99
-
-    for feature in features:
-        if not feature.get("active"):
-            continue
-        capability = str(feature.get("capability") or "text")
-        primary_provider = str(feature.get("primary_provider") or "")
-        primary_model = feature.get("primary_model") or provider_map.get(primary_provider, {}).get("model")
-        feature["primary_model"] = primary_model
-        provider = provider_map.get(primary_provider)
-        if not provider or not provider.get("active"):
-            raise HTTPException(status_code=422, detail=f"Proveedor principal inválido en {feature.get('feature')}.")
-        if primary_provider != "template":
-            model = model_map.get((primary_provider, primary_model))
-            if not model or not model.get("active") or capability not in (model.get("capabilities") or []):
-                raise HTTPException(status_code=422, detail=f"Modelo principal incompatible o inactivo en {feature.get('label')}.")
-        fallback_provider = feature.get("fallback_provider")
-        if fallback_provider and fallback_provider != "template":
-            fallback_model = feature.get("fallback_model") or provider_map.get(fallback_provider, {}).get("model")
-            feature["fallback_model"] = fallback_model
-            fallback = model_map.get((fallback_provider, fallback_model))
-            if not fallback or not fallback.get("active") or capability not in (fallback.get("capabilities") or []):
-                raise HTTPException(status_code=422, detail=f"Modelo de respaldo incompatible o inactivo en {feature.get('label')}.")
-            if fallback_provider == primary_provider and fallback_model == primary_model:
-                raise HTTPException(status_code=422, detail="La ruta principal y el respaldo deben ser distintos.")
-
-    version = await svc.publish_configuration(
-        providers, models, features, admin_id=current_user.id,
-        tools=[item.model_dump() for item in payload.tools] if payload.tools is not None else None,
-    )
-    return {
-        "status": "ok",
-        "detail": "Configuración de IA publicada.",
-        "version": version,
-    }
 
 @router.put("/admin/ai-providers")
 async def save_providers(
@@ -745,6 +769,8 @@ async def save_providers(
         template[0]["active"] = True
         template[0]["priority"] = 99
 
+    await _require_legacy_configuration(db)
+
     await svc.save_providers(payload, admin_id=current_user.id)
     return {"status": "ok", "detail": "Proveedores actualizados."}
 
@@ -758,6 +784,7 @@ async def save_features(
     require_permission_now(current_user, "admin_ai.manage")
     svc = AIConfigService(db=db)
     await svc.init()
+    await _require_legacy_configuration(db)
     if isinstance(payload, FeatureRoutingPublication):
         locked = await db.execute(text("SELECT config_version FROM ai_feature_routing FOR UPDATE"))
         current_version = max((int(row.config_version or 1) for row in locked.fetchall()), default=1)
@@ -811,8 +838,17 @@ async def update_provider(
     updates = payload.model_dump(exclude_none=True)
     if not updates:
         return {"status": "ok", "detail": "Sin cambios."}
+    await _require_legacy_configuration(db)
     await svc.save_provider(provider_id, updates, admin_id=current_user.id)
     return {"status": "ok", "detail": "Proveedor actualizado."}
+
+
+async def _require_legacy_configuration(db: AsyncSession) -> None:
+    """Legacy partial writes cannot erase credential revisions or bypass probes."""
+    await db.execute(text("SELECT pg_advisory_xact_lock(1162026)"))
+    profiles = await AIConfigService(db=db).get_all_models()
+    if any(model.get("runtime_profile") for model in profiles):
+        raise HTTPException(status_code=409, detail="Esta configuración usa perfiles de API. Guarda los cambios desde el centro de IA para conservar sus pruebas y credenciales.")
 
 
 @router.post("/admin/ai-settings/restore-defaults")
@@ -823,6 +859,7 @@ async def restore_defaults(
     require_permission_now(current_user, "admin_ai.manage")
     svc = AIConfigService(db=db)
     await svc.init()
+    await db.execute(text("SELECT pg_advisory_xact_lock(1162026)"))
     await svc.restore_defaults(admin_id=current_user.id)
     return {"status": "ok", "detail": "Configuración restaurada a valores predeterminados."}
 
@@ -835,6 +872,7 @@ async def restore_previous_configuration(
     require_permission_now(current_user, "admin_ai.manage")
     svc = AIConfigService(db=db)
     await svc.init()
+    await db.execute(text("SELECT pg_advisory_xact_lock(1162026)"))
     version = await svc.restore_previous_configuration(admin_id=current_user.id)
     if version is None:
         raise HTTPException(status_code=409, detail="No existe una publicación anterior para restaurar.")

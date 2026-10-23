@@ -64,6 +64,8 @@ def _observed_stage(stage: Any, rows: list[dict[str, Any]]) -> dict[str, Any] | 
     if stage.function_id == "xali" and stage.stage_id == "feedback":
         feature_aliases = {"xali_evaluacion_post_entrega"}
         stage_aliases = {"feedback", "other"}
+    if stage.runtime_feature:
+        feature_aliases.add(str(stage.runtime_feature))
     candidates = [
         row for row in rows
         if str(row.get("feature")) in feature_aliases
@@ -200,17 +202,18 @@ def validate_control_center_payload(
         capability = str(feature.get("capability") or "text")
         primary = str(feature.get("primary_provider") or "")
         primary_provider = provider_map.get(primary)
+        model_id = feature.get("primary_model") or (primary_provider or {}).get("model")
         registered_stage = stage_by_feature.get(feature_id)
         if (
             registered_stage
             and registered_stage.supported_providers
             and primary not in registered_stage.supported_providers
+            and not (capability in {"text", "vision"} and model_map.get((primary, str(model_id)), {}).get("runtime_profile"))
         ):
             errors.append({
                 "field": field,
                 "message": "El consumidor de esta etapa no admite ese proveedor.",
             })
-        model_id = feature.get("primary_model") or (primary_provider or {}).get("model")
         feature["primary_model"] = model_id
         if not primary_provider or not primary_provider.get("active"):
             errors.append({"field": field, "message": "Proveedor principal ausente o inactivo."})
@@ -226,12 +229,13 @@ def validate_control_center_payload(
             fallback_model = feature.get("fallback_model") or (fallback_provider or {}).get("model")
             feature["fallback_model"] = fallback_model
             fallback_entry = model_map.get((str(fallback), str(fallback_model)))
-            if not fallback_provider or not fallback_provider.get("active") or not fallback_entry or capability not in (fallback_entry.get("capabilities") or []):
+            if not fallback_provider or not fallback_provider.get("active") or not fallback_entry or not fallback_entry.get("active") or capability not in (fallback_entry.get("capabilities") or []):
                 errors.append({"field": field, "message": f"Modelo de respaldo incompatible con {capability}."})
             if (
                 registered_stage
                 and registered_stage.supported_providers
                 and str(fallback) not in registered_stage.supported_providers
+                and not (capability in {"text", "vision"} and fallback_entry and fallback_entry.get("runtime_profile"))
             ):
                 errors.append({"field": field, "message": "El consumidor de esta etapa no admite ese proveedor de respaldo."})
             if fallback_provider and not fallback_provider.get("auth_configured", False):

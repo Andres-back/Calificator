@@ -84,4 +84,4 @@
 
 ## Hallazgos
 
-- **low · orphan_candidate**: 23 superficies no alcanzables o históricas se conservan como candidatas a retiro.
+- **low · orphan_candidate**: 25 superficies no alcanzables o históricas se conservan como candidatas a retiro.
