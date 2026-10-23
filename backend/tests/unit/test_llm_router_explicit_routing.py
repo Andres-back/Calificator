@@ -50,7 +50,7 @@ def fake_configuration(monkeypatch):
     return route, Config
 
 
-@pytest.mark.parametrize('task', ['xali_chat', 'xali_evaluacion_post_entrega', 'xali_recurso_post_entrega', 'cuento', 'crucigrama', 'herramienta.taller', 'retroalimentacion'])
+@pytest.mark.parametrize('task', ['xali_chat', 'xali_evaluacion_post_entrega', 'xali_recurso_post_entrega', 'cuento', 'crucigrama', 'herramienta.taller', 'retroalimentacion', 'evaluacion_generar_dba_rag', 'generacion_preguntas'])
 def test_managed_text_uses_only_frontend_configured_routes(fake_configuration, task):
     router = LLMRouter()
     providers = asyncio.run(router._load_providers(task))
@@ -133,3 +133,42 @@ def test_strict_route_uses_current_persisted_model_over_cache(monkeypatch):
     monkeypatch.setattr(service, '_set_cache', AsyncMock())
     result = asyncio.run(service.get_feature_config('xali_recurso_post_entrega', require_persisted=True))
     assert result['primary_provider'] == 'open_code' and result['primary_model'] == 'admin-selected'
+
+
+def test_evaluation_generation_resolves_the_administration_selector(monkeypatch):
+    service = ai_config_service.AIConfigService()
+    monkeypatch.setattr(service, '_load_features_from_db', AsyncMock(return_value=[{
+        'feature': 'generacion_preguntas', 'primary_provider': 'open_code',
+        'primary_model': 'any-admin-model', 'fallback_provider': None,
+    }]))
+    monkeypatch.setattr(service, '_set_cache', AsyncMock())
+    result = asyncio.run(service.get_feature_config('evaluacion_generar_dba_rag', require_persisted=True))
+    assert result['primary_model'] == 'any-admin-model'
+
+
+def test_generation_failure_never_tries_an_unselected_provider(fake_configuration):
+    route, _ = fake_configuration
+    route.update(primary_provider='groq', fallback_provider='template')
+    with pytest.raises(RuntimeError, match='configurados'):
+        asyncio.run(LLMRouter().generate_json('evaluacion_generar_dba_rag', 'synthetic'))
+    LLMRouter._call_groq.assert_awaited_once()
+    LLMRouter._call_openai.assert_not_awaited()
+    LLMRouter._call_open_code.assert_not_awaited()
+
+
+def test_content_correction_keeps_its_captured_route(fake_configuration, monkeypatch):
+    router = LLMRouter()
+    router.use_explicit_routing(pin_configuration=True)
+    provider = AsyncMock(return_value='{"valid": true}')
+    load = AsyncMock(return_value=[('api_synthetic', provider)])
+    monkeypatch.setattr(router, '_load_providers', load)
+
+    async def scenario():
+        assert await router.generate_json('evaluacion_generar_dba_rag', 'first') == {'valid': True}
+        assert await router.generate_json('evaluacion_generar_dba_rag', 'correction') == {'valid': True}
+        with pytest.raises(RuntimeError, match='cambiar de función'):
+            await router.generate_json('unrelated-task', 'must not run')
+
+    asyncio.run(scenario())
+    load.assert_awaited_once()
+    assert provider.await_count == 2

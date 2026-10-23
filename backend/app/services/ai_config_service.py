@@ -354,6 +354,8 @@ _EDUCATIONAL_TOOL_TASKS = {
 
 def _feature_candidates(feature: str) -> tuple[str, ...]:
     """Map runtime task names to the capabilities exposed in the admin UI."""
+    if feature == "evaluacion_generar_dba_rag":
+        return ("generacion_preguntas",)
     aliases: dict[str, tuple[str, ...]] = {
         "grading": (
             "calificacion_texto",
@@ -401,7 +403,9 @@ def _feature_candidates(feature: str) -> tuple[str, ...]:
 
 
 def uses_managed_text_routing(feature: str) -> bool:
-    """Only assistance/resource text opts into the administrator's exact routes."""
+    """Managed text uses only the administrator's exact routes."""
+    if feature in {"evaluacion_generar_dba_rag", "generacion_preguntas"}:
+        return True
     return any(
         candidate in {"xali", "retroalimentacion", "herramientas_educativas"}
         or candidate.startswith("herramienta.")

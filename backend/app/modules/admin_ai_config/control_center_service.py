@@ -52,7 +52,7 @@ def _observed_stage(stage: Any, rows: list[dict[str, Any]]) -> dict[str, Any] | 
         "digitalizacion": {"evaluacion_digitalizar", "digitalization"},
         "presentaciones": {"presentacion", "presentaciones"},
         "recursos": {"tools", "herramientas_educativas", str(stage.runtime_feature)},
-        "evaluaciones": {"generacion_preguntas", "evaluaciones"},
+        "evaluaciones": {"generacion_preguntas", "evaluaciones", "evaluacion_generar_dba_rag"},
         "xali": {"xali", "xali_chat", "rag", "embeddings"},
     }.get(stage.function_id, {str(stage.runtime_feature)})
     stage_aliases = {

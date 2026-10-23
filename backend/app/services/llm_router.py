@@ -127,6 +127,8 @@ class LLMRouter:
         self._explicit_routing_requested = False
         self._compact_reasoning_requested = False
         self._provider_max_attempts = OPEN_CODE_MAX_ATTEMPTS
+        self._pin_configuration = False
+        self._pinned_route: tuple[str, list[tuple[str, Any]]] | None = None
 
     async def generate_json(
         self,
@@ -146,13 +148,14 @@ class LLMRouter:
             max(256, int(max_tokens)) if max_tokens is not None else None
         )
 
-    def use_explicit_routing(self, *, max_attempts: int = 1, compact_reasoning: bool = True) -> None:
+    def use_explicit_routing(self, *, max_attempts: int = 1, compact_reasoning: bool = True, pin_configuration: bool = False) -> None:
         """Opt into administered routes, without global provider/template fallback."""
         self._explicit_routing = True
         self._compact_reasoning = compact_reasoning
         self._explicit_routing_requested = True
         self._compact_reasoning_requested = compact_reasoning
         self._provider_max_attempts = max(1, min(int(max_attempts), OPEN_CODE_MAX_ATTEMPTS))
+        self._pin_configuration = pin_configuration
 
     def _routing_telemetry(self) -> dict[str, Any]:
         snapshot = self._ai_config or {}
@@ -175,7 +178,14 @@ class LLMRouter:
     ) -> str:
         self._active_task_type = task_type
         # Build dynamic provider cascade from admin config
-        providers = await self._load_providers(task_type)
+        if self._pin_configuration and self._pinned_route is not None:
+            pinned_task, providers = self._pinned_route
+            if pinned_task != task_type:
+                raise RuntimeError("Una solicitud con configuración capturada no puede cambiar de función")
+        else:
+            providers = await self._load_providers(task_type)
+            if self._pin_configuration:
+                self._pinned_route = (task_type, providers)
 
         for provider_index, (provider, fn) in enumerate(providers):
             self._usage_fallback_used = provider_index > 0

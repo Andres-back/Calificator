@@ -45,3 +45,8 @@ MVP seguro: conexión/perfil probados y consumidos por un trabajo sintético ant
 ## Phase 6: Convergence
 
 - [x] T020 Corregir la brecha de autoservicio al cambiar un modelo en `FunctionsSection.tsx`, `CompatibleAPISection.tsx` y `AdminAIConfigPage.tsx`: mostrar principal/respaldo pendientes antes de guardar, preparar el modelo seleccionado desde su función sin perder el borrador, ofrecer respaldos comprobados o quitarlo solo por decisión explícita y conservar errores accionables; añadir regresión del caso Luna con respaldo heredado y pruebas móvil/escritorio, sin relajar comprobantes del servidor ni cambiar rutas publicadas automáticamente, conforme a FR-005, FR-009, SC-001 y SC-005 (partial).
+
+## Phase 7: Convergence
+
+- [x] T021 Conectar la tarea de generación `evaluacion_generar_dba_rag` a la ruta administrativa de generación de preguntas en `ai_config_service.py`, `llm_router.py` y `control_center_service.py`, capturando su selección y observando el uso real sin cascadas a proveedores ajenos ni plantillas; probar ruta, respaldo explícito, fallo recuperable y modelos arbitrarios, sin publicar configuraciones nuevas, conforme a FR-004, FR-005, FR-009 y FR-010 (partial).
+- [x] T022 Validar el contrato completo del borrador en `generation_service.py`, explicitar las metas no vacías y limitar a una corrección de salida incompleta usando la misma configuración; conservar alineación, permisos, preguntas y notas existentes, no guardar salidas inválidas ni registrar su contenido. Añadir regresión del fallo `metas_aprendizaje=[]`, pruebas focalizadas y comprobación sintética separada de calificación antes de informar funcionamiento, conforme a FR-005, FR-010, FR-011 y Constitución VI (partial).
